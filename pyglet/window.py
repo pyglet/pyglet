@@ -13,39 +13,51 @@ _fps_atlas = None
 from SDL import *
 from OpenGL.GL import *
 
+import pyglet.event
 import pyglet.image
 
 _width = 0
 _height = 0
+_flags = 0
 
 def set_window(width=640, height=480, 
-             caption='pyglet', fullscreen=False, resizable=False):
+               caption='pyglet', fullscreen=False, resizable=False):
     if not SDL_WasInit(SDL_INIT_VIDEO):
         SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER)
 
-    flags = SDL_OPENGL
+    global _flags
+    _flags = SDL_OPENGL
     if fullscreen:
-        flags |= SDL_FULLSCREEN
+        _flags |= SDL_FULLSCREEN
     if resizable:
-        flags |= SDL_RESIZABLE
+        _flags |= SDL_RESIZABLE
 
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1)
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 1)
-    SDL_SetVideoMode(width, height, 32, flags)
+    resize(width, height)
+
     SDL_WM_SetCaption(caption, caption)
 
+    glClearColor(1, 1, 1, 1)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    if resizable:
+        pyglet.event.on_resize(resize)
+
+def resize(width, height):
     global _width, _height
     _width = width
     _height = height
+
+    SDL_SetVideoMode(width, height, 32, _flags)
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     glOrtho(0, width, height, 0, -1, 1)
     glMatrixMode(GL_MODELVIEW)
 
-    glClearColor(1, 1, 1, 1)
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glViewport(0, 0, width, height)
 
 def get_size():
     return _width, _height

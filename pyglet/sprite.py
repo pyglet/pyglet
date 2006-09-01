@@ -30,7 +30,7 @@ class Sprite(object):
         if not isinstance(image, pyglet.image.Texture):
             if not isinstance(image, SDL_Surface):
                 image = pyglet.image.load(image)
-            image = pyglet.image.Texture(image)
+            image = pyglet.image.Texture.from_surface(image)
         self.texture = image
 
         self.position = (0,0)

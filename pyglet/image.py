@@ -100,9 +100,10 @@ def _get_texture(surface):
 class Texture(object):
     __slots__ = ['size', 'id', 'uv', 'quad_list']
 
-    def __init__(self, surface):
-        self.size = surface.w, surface.h
-        self.id, self.uv = _get_texture(surface)
+    def __init__(self, id, width, height, uv):
+        self.id = id
+        self.size = width, height
+        self.uv = uv
 
         # Make quad display list
         self.quad_list = glGenLists(1)
@@ -125,6 +126,11 @@ class Texture(object):
         glEnable(GL_TEXTURE_2D)
         glCallList(self.quad_list)
         glPopAttrib()
+
+    @classmethod
+    def from_surface(cls, surface):
+        id, uv = _get_texture(surface)
+        return Texture(id, surface.w, surface.h, uv)
 
 class TextureAtlas(object):
     __slots__ = ['size', 'id', 'rows', 'cols', 
