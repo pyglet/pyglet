@@ -18,6 +18,6 @@ GL_MATRIX_INDEX_ARRAY_STRIDE_ARB = 0x8848
 GL_MATRIX_INDEX_ARRAY_POINTER_ARB = 0x8849
 glCurrentPaletteMatrixARB = _get_function('glCurrentPaletteMatrixARB', [_ctypes.c_int], None)
 glMatrixIndexPointerARB = _get_function('glMatrixIndexPointerARB', [_ctypes.c_int, _ctypes.c_uint, _ctypes.c_int, _ctypes.c_void_p], None)
-glMatrixIndexubvARB = _get_function('glMatrixIndexubvARB', [_ctypes.c_int, _ctypes.POINTER(_ctypes.c_ubyte)], None)
+glMatrixIndexubvARB = _get_function('glMatrixIndexubvARB', [_ctypes.c_int, _ctypes.c_char_p], None)
 glMatrixIndexusvARB = _get_function('glMatrixIndexusvARB', [_ctypes.c_int, _ctypes.POINTER(_ctypes.c_ushort)], None)
 glMatrixIndexuivARB = _get_function('glMatrixIndexuivARB', [_ctypes.c_int, _ctypes.POINTER(_ctypes.c_uint)], None)

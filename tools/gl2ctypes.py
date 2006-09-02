@@ -17,6 +17,7 @@ dependencies = {
     'VERSION_1_5': ('VERSION_1_4',),
     'VERSION_1_4': ('VERSION_1_3',),
     'VERSION_1_3': ('VERSION_1_2',),
+    'VERSION_1_2': ('VERSION_1_1',)
 }
 
 basic_types = {

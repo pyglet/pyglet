@@ -102,7 +102,7 @@ def draw_sphere():
     global sphere_angle
 
     glPushMatrix()
-    glTranslatef(0., 0., -2)
+    glTranslatef(0., 0., -4)
     glRotatef(sphere_angle, 0, 1, 0)
     glRotatef(90, 1, 0, 0)
     sphere_angle += 0.01

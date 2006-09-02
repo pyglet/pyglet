@@ -6,6 +6,7 @@ GL_UNSIGNED_BYTE_3_3_2 0x8032
 import ctypes as _ctypes
 from pyglet.GL import get_function as _get_function
 from pyglet.GL import c_ptrdiff_t as _c_ptrdiff_t
+from pyglet.GL.VERSION_1_1 import *
 GL_UNSIGNED_SHORT_4_4_4_4 = 0x8033
 GL_UNSIGNED_SHORT_5_5_5_1 = 0x8034
 GL_UNSIGNED_INT_8_8_8_8 = 0x8035

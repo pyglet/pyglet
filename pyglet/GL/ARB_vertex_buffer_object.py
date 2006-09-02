@@ -48,5 +48,5 @@ glGetBufferParameterivARB = _get_function('glGetBufferParameterivARB', [_ctypes.
 glGetBufferPointervARB = _get_function('glGetBufferPointervARB', [_ctypes.c_uint, _ctypes.c_uint, _ctypes.POINTER(_ctypes.c_void_p)], None)
 glGetBufferSubDataARB = _get_function('glGetBufferSubDataARB', [_ctypes.c_uint, GLintptrARB, GLsizeiptrARB, _ctypes.c_void_p], None)
 glIsBufferARB = _get_function('glIsBufferARB', [_ctypes.c_uint], _ctypes.c_ubyte)
-glMapBufferARB = _get_function('glMapBufferARB', [_ctypes.c_uint, _ctypes.c_uint], GLvoid )
+glMapBufferARB = _get_function('glMapBufferARB', [_ctypes.c_uint, _ctypes.c_uint], _ctypes.c_void_p)
 glUnmapBufferARB = _get_function('glUnmapBufferARB', [_ctypes.c_uint], _ctypes.c_ubyte)

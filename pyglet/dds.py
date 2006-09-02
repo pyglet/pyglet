@@ -11,11 +11,10 @@ __version__ = '$Id$'
 from ctypes import *
 import struct
 
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.VERSION_1_3 import *
 import pyglet.image
 
 try:
-    from pyglet.GL.ARB_texture_compression import *
     from pyglet.GL.EXT_texture_compression_s3tc import *
     _have_s3tc = True
 except ImportError:
@@ -185,8 +184,8 @@ def load_dds(file):
             if not h:
                 h = 1
             size = ((w + 3) / 4) * ((h + 3) / 4) * block_size
-            glCompressedTexImage2DARB(GL_TEXTURE_2D, i, format, w, h, 0,
-                                      size, file.read(size))
+            glCompressedTexImage2D(GL_TEXTURE_2D, i, format, w, h, 0,
+                                   size, file.read(size))
             w >>= 1
             h >>= 1
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
