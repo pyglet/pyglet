@@ -12,6 +12,7 @@ _fps_atlas = None
 
 from SDL import *
 from OpenGL.GL import *
+from OpenGL.GLU import *
 
 import pyglet.event
 import pyglet.image
@@ -19,6 +20,11 @@ import pyglet.image
 _width = 0
 _height = 0
 _flags = 0
+
+_ortho = True
+_fov = 65.0
+_near = 0.1
+_far = 1000.0
 
 def set_window(width=640, height=480, 
                caption='pyglet', fullscreen=False, resizable=False):
@@ -34,6 +40,7 @@ def set_window(width=640, height=480,
 
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1)
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 1)
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16)
     resize(width, height)
 
     SDL_WM_SetCaption(caption, caption)
@@ -45,25 +52,46 @@ def set_window(width=640, height=480,
     if resizable:
         pyglet.event.on_resize(resize)
 
+def set_2d():
+    global _ortho
+    _ortho = True
+    reload_projection()
+
+def set_3d(fov=None, near=None, far=None):
+    global _ortho, _fov, _near, _far
+    _ortho = False
+    if fov:
+        _fov = fov
+    if near:
+        _near = near
+    if far:
+        _far = far
+    reload_projection()
+
 def resize(width, height):
     global _width, _height
     _width = width
     _height = height
 
     SDL_SetVideoMode(width, height, 32, _flags)
+    glViewport(0, 0, width, height)
 
+    reload_projection()
+
+def reload_projection():
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    glOrtho(0, width, height, 0, -1, 1)
+    if _ortho:
+        glOrtho(0, _width, _height, 0, -1, 1)
+    else:
+        gluPerspective(_fov, float(_width) / _height, _near, _far)
     glMatrixMode(GL_MODELVIEW)
-
-    glViewport(0, 0, width, height)
 
 def get_size():
     return _width, _height
 
 def clear():
-    glClear(GL_COLOR_BUFFER_BIT)
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
 
 def flip():

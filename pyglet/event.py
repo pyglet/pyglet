@@ -27,7 +27,7 @@ def dispatch(event):
     if not dispatcher:
         dispatcher = dispatch_user
 
-    for frame in _stack:
+    for frame in _stack[:]:
         handler = frame.get(event.type, None)
         if handler:
             if not dispatcher(handler, event):
