@@ -6,9 +6,11 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+from ctypes import *
+import os.path
 import re
 
-from OpenGL.GL import *
+from pyglet.GL.VERSION_1_1 import *
 from SDL import *
 
 try:
@@ -53,6 +55,21 @@ def load(file):
 
     return image
 
+def save(image, file, format=None):
+    '''Save a texture or SDL_Surface to a file object or filename.'''
+    if isinstance(image, Texture):
+        image = image.create_surface()
+
+    if not hasattr(file, 'write'):
+        format = os.path.splitext(file)[1]
+        file = open(file, 'wb')
+
+    if not _have_PIL or format == '.bmp':
+        SDL_SaveBMP_RW(image, SDL_RWFromObject(file), 1)
+    else:
+        # TODO save with PIL
+        pass
+
 def _nearest_pow2(n):
     i = 1
     while i < n:
@@ -81,7 +98,9 @@ def _get_texture(surface):
     if height > surface.h:
         data += '\0' * ((height - surface.h) * width * bpp)
 
-    id = glGenTextures(1)
+    id = c_uint()
+    glGenTextures(1, byref(id))
+    id = id.value
     glBindTexture(GL_TEXTURE_2D, id)
     glTexImage2D(GL_TEXTURE_2D,
                  0,
@@ -92,8 +111,8 @@ def _get_texture(surface):
                  GL_RGBA,
                  GL_UNSIGNED_BYTE,
                  data)
-    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
     return id, uv
 
@@ -110,14 +129,14 @@ class Texture(object):
         glNewList(self.quad_list, GL_COMPILE)
         glBindTexture(GL_TEXTURE_2D, self.id)
         glBegin(GL_QUADS)
-        glTexCoord(0, 0)
-        glVertex(0, 0)
-        glTexCoord(self.uv[0], 0)
-        glVertex(self.size[0], 0)
-        glTexCoord(self.uv[0], self.uv[1])
-        glVertex(self.size[0], self.size[1])
-        glTexCoord(0, self.uv[1])
-        glVertex(0, self.size[1])
+        glTexCoord2f(0, 0)
+        glVertex2f(0, 0)
+        glTexCoord2f(self.uv[0], 0)
+        glVertex2f(self.size[0], 0)
+        glTexCoord2f(self.uv[0], self.uv[1])
+        glVertex2f(self.size[0], self.size[1])
+        glTexCoord2f(0, self.uv[1])
+        glVertex2f(0, self.size[1])
         glEnd()
         glEndList()
 
@@ -131,6 +150,26 @@ class Texture(object):
     def from_surface(cls, surface):
         id, uv = _get_texture(surface)
         return Texture(id, surface.w, surface.h, uv)
+
+    def create_surface(self, level=0):
+        surface = SDL_CreateRGBSurface(SDL_SWSURFACE, 
+                                       self.size[0], self.size[1], 32,
+                                       SDL_SwapLE32(0x000000ff),
+                                       SDL_SwapLE32(0x0000ff00),
+                                       SDL_SwapLE32(0x00ff0000),
+                                       SDL_SwapLE32(0xff000000))
+        SDL_LockSurface(surface)
+
+        glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
+        glPixelStorei(GL_PACK_ROW_LENGTH, 
+                      surface.pitch / surface.format.BytesPerPixel)
+        glBindTexture(GL_TEXTURE_2D, self.id)
+        glGetTexImage(GL_TEXTURE_2D, level, GL_RGBA, GL_UNSIGNED_BYTE,
+                      surface.pixels.as_ctypes())
+        glPopClientAttrib()
+
+        SDL_UnlockSurface(surface)
+        return surface
 
 class TextureAtlas(object):
     __slots__ = ['size', 'id', 'rows', 'cols', 
@@ -161,14 +200,14 @@ class TextureAtlas(object):
                     glNewList(self.quad_lists[i], GL_COMPILE)
                     glBindTexture(GL_TEXTURE_2D, self.id)
                     glBegin(GL_QUADS)
-                    glTexCoord(u, v)
-                    glVertex(0, 0)
-                    glTexCoord(u + du, v)
-                    glVertex(elem_size[0], 0)
-                    glTexCoord(u + du, v + dv)
-                    glVertex(elem_size[0], elem_size[1])
-                    glTexCoord(u, v + dv)
-                    glVertex(0, elem_size[1])
+                    glTexCoord2f(u, v)
+                    glVertex2f(0, 0)
+                    glTexCoord2f(u + du, v)
+                    glVertex2f(elem_size[0], 0)
+                    glTexCoord2f(u + du, v + dv)
+                    glVertex2f(elem_size[0], elem_size[1])
+                    glTexCoord2f(u, v + dv)
+                    glVertex2f(0, elem_size[1])
                     glEnd()
                     glEndList()
 
@@ -194,14 +233,14 @@ class TextureAtlas(object):
                 glNewList(self.quad_lists[i], GL_COMPILE)
                 glBindTexture(GL_TEXTURE_2D, self.id)
                 glBegin(GL_QUADS)
-                glTexCoord(u, v)
-                glVertex(0, 0)
-                glTexCoord(u + du, v)
-                glVertex(elem_size[0], 0)
-                glTexCoord(u + du, v + dv)
-                glVertex(elem_size[0], elem_size[1])
-                glTexCoord(u, v + dv)
-                glVertex(0, elem_size[1])
+                glTexCoord2f(u, v)
+                glVertex2f(0, 0)
+                glTexCoord2f(u + du, v)
+                glVertex2f(elem_size[0], 0)
+                glTexCoord2f(u + du, v + dv)
+                glVertex2f(elem_size[0], elem_size[1])
+                glTexCoord2f(u, v + dv)
+                glVertex2f(0, elem_size[1])
                 glEnd()
                 glEndList()
 
