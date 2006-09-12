@@ -27,6 +27,7 @@ dependencies = {
 basic_types = {
     'char': '_ctypes.c_char',
     'int': '_ctypes.c_int',
+    'long': '_ctypes.c_long',
     'unsigned': '_ctypes.c_uint',
     'void': 'None',
     'ptrdiff_t': '_c_ptrdiff_t',
@@ -54,6 +55,17 @@ basic_types = {
     'Drawable': '_ctypes.c_ulong',
     'Pixmap': '_ctypes.c_ulong',
     'Bool': '_ctypes.c_int',
+
+    # From /System/Library/Frameworks/AGL.framework/Headers/agl.h
+    'AGLDevice': '_ctypes.c_void_p',
+    'AGLDrawable': '_ctypes.c_void_p',
+    'AGLRendererInfo': '_ctypes.c_void_p',
+    'AGLPixelFormat': '_ctypes.c_void_p',
+    'AGLContext': '_ctypes.c_void_p',
+    'AGLPBuffer': '_ctypes.c_void_p',
+
+    # From MacTypes.h
+    'Style': '_ctypes.c_ubyte',
 }
 
 basic_tokens = {
@@ -107,7 +119,7 @@ replacements = [
     (re.compile('^([A-Z][A-Z0-9_]*)\s+((?:0x)?[0-9A-F]+|[A-Z][A-Z0-9_]*)$'),
      replace_token),    
     # token for gl.h
-    (re.compile('^#define\s+([A-Z][A-Z0-9_]*)\s+((?:0x)?[0-9A-F]+|[A-Z][A-Z0-9_]*)$'),
+    (re.compile('^#define\s+([A-Z][A-Z0-9_]*)\s+((?:0x)?[0-9A-F]+|[A-Z][A-Z0-9_]*)\s*/\*.*$'),
      replace_token),
     # typedef
     (re.compile('^typedef\s+(.+)\s+([\*A-Za-z0-9_]+)$'),
@@ -117,6 +129,9 @@ replacements = [
      replace_function),
     # glx.h function prototype (requires lines to be unwrapped first)
     (re.compile('^extern\s+(.+)\s+([a-zA-Z][a-zA-Z0-9_]*)\((.+)\);$'),
+     replace_function),
+    # agl.h function prototype
+    (re.compile('^extern\s+(.+)\s+([a-zA-Z][a-zA-Z0-9_]*)\s*\((.+)\).*;$'),
      replace_function),
     # GLEW function prototype
     (re.compile('^(.+) ([a-zA-Z][a-zA-Z0-9_]*) \((.+)\)$'),
