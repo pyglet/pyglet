@@ -13,15 +13,21 @@ import sys
 import textwrap
 
 dependencies = {
-    'VERSION_2_0': ('VERSION_1_5',),
-    'VERSION_1_5': ('VERSION_1_4',),
-    'VERSION_1_4': ('VERSION_1_3',),
-    'VERSION_1_3': ('VERSION_1_2',),
-    'VERSION_1_2': ('VERSION_1_1',)
+    'GL_VERSION_2_0': ('pyglet.GL.VERSION_1_5',),
+    'GL_VERSION_1_5': ('pyglet.GL.VERSION_1_4',),
+    'GL_VERSION_1_4': ('pyglet.GL.VERSION_1_3',),
+    'GL_VERSION_1_3': ('pyglet.GL.VERSION_1_2',),
+    'GL_VERSION_1_2': ('pyglet.GL.VERSION_1_1',),
+
+    'GLX_VERSION_1_4': ('pyglet.window.xlib.glx.VERSION_1_3',),
+    'GLX_VERSION_1_3': ('pyglet.window.xlib.glx.VERSION_1_2',),
+    'GLX_VERSION_1_2': ('pyglet.window.xlib.glx.VERSION_1_1',),
 }
 
 basic_types = {
     'char': '_ctypes.c_char',
+    'int': '_ctypes.c_int',
+    'unsigned': '_ctypes.c_uint',
     'void': 'None',
     'ptrdiff_t': '_c_ptrdiff_t',
 
@@ -41,6 +47,13 @@ basic_types = {
     'GLdouble': '_ctypes.c_double',
     'GLclampd': '_ctypes.c_double',
     'GLvoid': 'None',
+
+    # From /usr/include/X11/X.h
+    'XID': '_ctypes.c_ulong',
+    'Window': '_ctypes.c_ulong',
+    'Drawable': '_ctypes.c_ulong',
+    'Pixmap': '_ctypes.c_ulong',
+    'Bool': '_ctypes.c_int',
 }
 
 basic_tokens = {
@@ -54,7 +67,8 @@ def replace_token(out, groups):
 
 def replace_type(out, groups):
     ctype = basic_types.get(groups[0], groups[0])
-    out.write('%s = %s\n' % (groups[1], ctype))
+    if ctype.split()[0] not in ('struct', 'union'):
+        out.write('%s = %s\n' % (groups[1], ctype))
 
 def type_to_ctype(t):
     ctype = ''
@@ -101,6 +115,9 @@ replacements = [
     # gl.h function prototype
     (re.compile('^WINGDIAPI\s+(.+)\s+APIENTRY\s+([a-zA-Z][a-zA-Z0-9_]*)\s+\((.+)\);$'),
      replace_function),
+    # glx.h function prototype (requires lines to be unwrapped first)
+    (re.compile('^extern\s+(.+)\s+([a-zA-Z][a-zA-Z0-9_]*)\((.+)\);$'),
+     replace_function),
     # GLEW function prototype
     (re.compile('^(.+) ([a-zA-Z][a-zA-Z0-9_]*) \((.+)\)$'),
      replace_function),
@@ -114,6 +131,13 @@ def gl2ctypes(gl_filename, py_filename, glew=False):
     else:
         name = 'VERSION_1_1'
         url = gl_filename
+    lines = gl.readlines()
+
+    if url[:7] != 'http://':
+        # Not really the URL
+        lines.insert(0, url)
+        url = ''
+
     out = open(py_filename, 'w')
     out.write(textwrap.dedent('''
         """%s
@@ -124,9 +148,9 @@ def gl2ctypes(gl_filename, py_filename, glew=False):
         from pyglet.GL import get_function as _get_function
         from pyglet.GL import c_ptrdiff_t as _c_ptrdiff_t
         ''' % (name, url)))
-    for dependency in dependencies.get(name, []):
-        out.write('from pyglet.GL.%s import *\n' % dependency)
-    lines = gl.readlines()
+    fullname = os.path.splitext(os.path.basename(gl_filename))[0]
+    for dependency in dependencies.get(fullname, []):
+        out.write('from %s import *\n' % dependency)
     # Must do patterns in correct order, (typedefs before functions)
     for pattern, func in replacements:
         for line in lines:
@@ -137,17 +161,22 @@ def gl2ctypes(gl_filename, py_filename, glew=False):
 
 def usage():
     print textwrap.dedent('''
-        gl2ctypes.py /usr/lib/GL/gl.h pyglet/GL/
+    gl2ctypes.py something.h something.py
 
-            Convert gl.h to pyglet/GL/VERSION_1_1.py
+        Convert something.h to something.py
 
-        gl2ctypes.py --glew glew/auto/ pyglet/GL/ [extension ...]
+    gl2ctypes.py /usr/lib/GL/gl.h pyglet/GL/
 
-            First argument is location of GLEW auto directory (containing
-            "core" and "extensions" subdirectories).  Second argument
-            is output directory for Python files.  Optionally specify
-            which extensions to convert, otherwise it will convert all
-            the extensions it finds.
+        Convert gl.h to pyglet/GL/VERSION_1_1.py
+
+    gl2ctypes.py --glew     glew/auto/ pyglet/GL/ [extension ...]
+    gl2ctypes.py --glew-glx glew/auto/ pyglet/window/xlib/glx/ [extension ...]
+
+        First argument is location of GLEW auto directory (containing
+        "core" and "extensions" subdirectories).  Second argument
+        is output directory for Python files.  Optionally specify
+        which extensions to convert, otherwise it will convert all
+        the extensions it finds.
         ''')
     sys.exit(1)
 
@@ -159,12 +188,17 @@ def main(args):
 
     if args[0] == '--glew':
         del args[0]
-        main_glew(args)
-    else:
+        main_glew(args, 'GL')
+    elif args[0] == '--glew-glx':
+        del args[0]
+        main_glew(args, 'GLX')
+    elif os.path.isdir(args[1]):
         gl2ctypes(args[0], os.path.join(args[1], 'VERSION_1_1.py'))
+    else:
+        gl2ctypes(args[0], args[1])
 
 
-def main_glew(args):
+def main_glew(args, file_prefix):
     auto_dir = args[0]
     output_dir = args[1]
     extensions = args[2:]
@@ -175,7 +209,8 @@ def main_glew(args):
                 prefix, name = file.split('_', 1)
                 if name[0].isdigit():
                     name = '_' + name
-                if prefix == 'GL' and (not extensions or name in extensions):
+                if prefix == file_prefix and \
+                   (not extensions or name in extensions):
                     gl2ctypes(os.path.join(dir, file), 
                               os.path.join(output_dir, '%s.py' % name), True)
 
