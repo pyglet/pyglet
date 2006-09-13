@@ -52,5 +52,14 @@ class KeyPressEvent(KeyEvent):
 class KeyReleaseEvent(KeyEvent):
     pass
 
-from pyglet.window.xlib import XlibWindow
-Window = XlibWindow
+try:
+    from pyglet.window.xlib import XlibWindowFactory
+    WindowFactory = XlibWindowFactory
+except:
+    pass
+
+try:
+    from pyglet.window.carbon import CarbonWindowFactory
+    WindowFactory = CarbonWindowFactory
+except:
+    pass
