@@ -15,11 +15,13 @@ factory = pyglet.window.WindowFactory()
 w1 = factory.create_window()
 glClearColor(1, 0, 1, 1)
 glClear(GL_COLOR_BUFFER_BIT)
+glFlush()
 w1.flip()
 
 w2 = factory.create_window()
 glClearColor(1, 1, 0, 1)
 glClear(GL_COLOR_BUFFER_BIT)
+glFlush()
 w2.flip()
 
 while True:
