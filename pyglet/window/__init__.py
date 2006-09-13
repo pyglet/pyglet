@@ -21,8 +21,8 @@ class BaseWindow(object):
     pass
 
 class BaseGLConfig(object):
-    def __init__(self, **kwargs):
-        self._attributes = kwargs
+    def __init__(self):
+        self._attributes = {}
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self._attributes)

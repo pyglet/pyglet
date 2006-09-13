@@ -27,24 +27,24 @@ class XlibException(WindowException):
     pass
 
 class XlibWindowFactory(BaseWindowFactory):
-    def __init__(self):
+    def __init__(self, display=None):
         super(XlibWindowFactory, self).__init__()
-        self.display = None
-        self.config = XlibGLConfig(None)
+
+        self._display = xlib.XOpenDisplay(display)
+        if not self._display:
+            raise XlibException('Cannot connect to X server') 
+
+        self.config = XlibGLConfig(self._display)
         self.context = None
         self.context_share = None
 
     def create_window(self, width=640, height=480):
-        display = xlib.XOpenDisplay(self.display)
-        if not display:
-            raise XlibException('Cannot connect to X server') 
-
-        configs = self.config.get_compatible_list(display)
+        configs = self.config.get_matches()
         if len(configs) == 0:
             raise XlibException('No matching GL configuration available')
         config = configs[0]
 
-        context = glXCreateNewContext(display, 
+        context = glXCreateNewContext(self._display, 
             config._fbconfig, GLX_RGBA_TYPE, self.context_share, True)
         if context == GLXBadContext:
             raise XlibException('Invalid context share')
@@ -53,7 +53,7 @@ class XlibWindowFactory(BaseWindowFactory):
         elif context < 0:
             raise XlibException('Could not create GL context')
 
-        window = XlibWindow(width, height, display, config, context)
+        window = XlibWindow(width, height, self._display, config, context)
         return window
 
 class XlibWindow(BaseWindow):
@@ -175,11 +175,19 @@ _attribute_ids = {
 }
 
 class XlibGLConfig(BaseGLConfig):
-    def __init__(self, config, **kwargs):
-        super(XlibGLConfig, self).__init__(**kwargs)
-        self._fbconfig = config
+    def __init__(self, display, _fbconfig=None):
+        super(XlibGLConfig, self).__init__()
+        self._display = display
+        self._fbconfig = _fbconfig
+        if _fbconfig:
+            for name, attr in _attribute_ids.items():
+                value = c_int()
+                result = glXGetFBConfigAttrib(self._display, 
+                    self._fbconfig, attr, byref(value))
+                if result >= 0:
+                    self._attributes[name] = value.value
 
-    def get_compatible_list(self, display, screen=0):
+    def get_matches(self):
         attrs = []
         for name, value in self._attributes.items():
             attr = _attribute_ids.get(name, None)
@@ -194,27 +202,17 @@ class XlibGLConfig(BaseGLConfig):
         else:
             attrib_list = None
         elements = c_int()
-        configs = glXChooseFBConfig(display, 
+        screen = 0  # XXX what is this, anyway?
+        configs = glXChooseFBConfig(self._display, 
             screen, attrib_list, byref(elements))
         if configs:
             result = []
             for i in range(elements.value):
-                dict = self._get_config_dict(display, configs[i])
-                result.append(XlibGLConfig(configs[i], **dict))
+                result.append(XlibGLConfig(self._display, configs[i]))
             xlib.XFree(configs)
             return result
         else:
             return []
-
-    @staticmethod
-    def _get_config_dict(display, config):
-        attrs = {}
-        for name, attr in _attribute_ids.items():
-            value = c_int()
-            result = glXGetFBConfigAttrib(display, config, attr, byref(value))
-            if result >= 0:
-                attrs[name] = value.value
-        return attrs
 
 def _key_event(window, event):
     if event.type == KeyPress:
