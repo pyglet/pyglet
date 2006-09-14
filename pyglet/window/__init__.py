@@ -63,3 +63,11 @@ try:
     WindowFactory = CarbonWindowFactory
 except:
     pass
+
+import pyglet.window.win32
+
+try:
+    from pyglet.window.win32 import Win32WindowFactory
+    WindowFactory = Win32WindowFactory
+except:
+    pass
