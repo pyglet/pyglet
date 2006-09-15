@@ -42,9 +42,9 @@ class CarbonWindowFactory(BaseWindowFactory):
     def get_config_matches(self, window):
         return self.config.get_matches()
 
-    def create_context(self, window, config, share_context=None)
+    def create_context(self, window, config, share_context=None):
         context = aglCreateContext(config._pformat, c_void_p())
-        aglSetDrawable(context, carbon.GetWindowPort(window))
+        aglSetDrawable(context, carbon.GetWindowPort(window._window))
         _aglcheck()
         return context
 
