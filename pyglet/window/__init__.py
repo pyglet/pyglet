@@ -15,7 +15,10 @@ class BaseWindowFactory(object):
 
     def create(self, width=640, height=480):
         window = self.create_window(width, height)
-        config = self.create_config()
+        configs = self.get_config_matches(window)
+        if len(configs) == 0:
+            raise WindowException('No matching GL configuration available')
+        config = configs[0]
         context = self.create_context(window, config)
         window.set_context(config, context)
 
@@ -30,7 +33,7 @@ class BaseWindowFactory(object):
     def create_window(self, width, height):
         pass
 
-    def create_config(self):
+    def create_config(self, window):
         pass
 
     def create_context(self, window, config, share_context=None):

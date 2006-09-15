@@ -39,11 +39,8 @@ class CarbonWindowFactory(BaseWindowFactory):
     def create_window(self, width, height):
         return CarbonWindow(width, height)
 
-    def create_config(self):
-        configs = self.config.get_matches()
-        if len(configs) == 0:
-            raise CarbonException('No matching GL configuration available.')
-        return configs[0]
+    def get_config_matches(self, window):
+        return self.config.get_matches()
 
     def create_context(self, window, config, share_context=None)
         context = aglCreateContext(config._pformat, c_void_p())

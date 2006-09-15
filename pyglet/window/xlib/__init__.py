@@ -37,11 +37,8 @@ class XlibWindowFactory(BaseWindowFactory):
     def create_config_prototype(self):
         return XlibGLConfig()
 
-    def create_config(self):
-        configs = self.config._get_matches(self._display)
-        if len(configs) == 0:
-            raise XlibException('No matching GL configuration available')
-        return configs[0]
+    def get_config_matches(self):
+        return self.config._get_matches(self._display)
 
     def create_context(self, window, config, share_context=None):
         context = glXCreateNewContext(self._display, 
