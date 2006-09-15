@@ -12,6 +12,7 @@ import time
 from pyglet.GL.VERSION_1_1 import *
 
 factory = pyglet.window.WindowFactory()
+factory.config._attributes['doublebuffer'] = 1
 w1 = factory.create()
 glClearColor(1, 0, 1, 1)
 glClear(GL_COLOR_BUFFER_BIT)
