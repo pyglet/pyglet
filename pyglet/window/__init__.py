@@ -6,6 +6,8 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import pyglet.window.key
+
 class WindowException(Exception):
     pass
 
@@ -33,7 +35,7 @@ class BaseWindowFactory(object):
     def create_window(self, width, height):
         pass
 
-    def create_config(self, window):
+    def get_config_matches(self, window):
         pass
 
     def create_context(self, window, config, share_context=None):
@@ -75,12 +77,29 @@ class Event(object):
         return '%s()' % self.__class__.__name__
 
 class KeyEvent(Event):
-    def __init__(self, window, sequence, symbol):
+    def __init__(self, window, sequence, symbol, modifiers, characters):
         super(KeyEvent, self).__init__(window, sequence)
         self.symbol = symbol
+        self.modifiers = modifiers
+        self.characters = characters
 
     def __repr__(self):
-        return '%s(symbol=%r)' % (self.__class__.__name__, self.symbol)
+        mod_names = []
+        if self.modifiers & pyglet.window.key.MOD_SHIFT:
+            mod_names.append('MOD_SHIFT')
+        if self.modifiers & pyglet.window.key.MOD_CTRL:
+            mod_names.append('MOD_CTRL')
+        if self.modifiers & pyglet.window.key.MOD_ALT:
+            mod_names.append('MOD_ALT')
+        if self.modifiers & pyglet.window.key.MOD_CAPSLOCK:
+            mod_names.append('MOD_CAPSLOCK')
+        if self.modifiers & pyglet.window.key.MOD_NUMLOCK:
+            mod_names.append('MOD_NUMLOCK')
+        return '%s(symbol=%s, modifiers=%s, characters=%r)' % \
+           (self.__class__.__name__, 
+            pyglet.window.key._key_names.get(self.symbol, str(self.symbol)),
+            '+'.join(mod_names),
+            self.characters)
 
 class KeyPressEvent(KeyEvent):
     pass

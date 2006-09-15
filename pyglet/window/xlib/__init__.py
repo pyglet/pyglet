@@ -9,6 +9,7 @@ __version__ = '$Id$'
 from ctypes import *
 
 from pyglet.window import *
+from pyglet.window.key import *
 from pyglet.window.xlib.constants import *
 from pyglet.window.xlib.types import *
 from pyglet.window.xlib.glx.VERSION_1_4 import *
@@ -37,7 +38,7 @@ class XlibWindowFactory(BaseWindowFactory):
     def create_config_prototype(self):
         return XlibGLConfig()
 
-    def get_config_matches(self):
+    def get_config_matches(self, window):
         return self.config._get_matches(self._display)
 
     def create_context(self, window, config, share_context=None):
@@ -206,13 +207,41 @@ class XlibGLConfig(BaseGLConfig):
             return []
 
 def _key_event(window, event):
+    # pyglet.window.key keysymbols are identical to X11 keysymbols, no
+    # need to map the keysymbol.
+
+    characters = None 
     if event.type == KeyPress:
         cls = KeyPressEvent
+        symbol = c_int()
+        buffer = create_string_buffer(16)
+        count = xlib.XLookupString(byref(event), 
+                                   byref(buffer), 
+                                   len(buffer), 
+                                   byref(symbol), 
+                                   c_void_p())
+        symbol = symbol.value
+        if count:
+            characters = buffer.value[:count]
     else:
         cls = KeyReleaseEvent
+        symbol = xlib.XKeycodeToKeysym(window._display, event.xkey.keycode, 0)
 
-    
-    return cls(window, event.xkey.serial, event.xkey.keycode)
+    modifiers = 0
+    if event.xkey.state & ShiftMask:
+        modifiers |= MOD_SHIFT  
+    if event.xkey.state & ControlMask:
+        modifiers |= MOD_CTRL
+    if event.xkey.state & LockMask:
+        modifiers |= MOD_CAPSLOCK
+    if event.xkey.state & Mod1Mask:
+        modifiers |= MOD_ALT
+    if event.xkey.state & Mod2Mask:
+        modifiers |= MOD_NUMLOCK
+    if event.xkey.state & Mod4Mask:
+        modifiers |= MOD_WINDOWS
+
+    return cls(window, event.xkey.serial, symbol, modifiers, characters)
 
 _event_constructors = {
     KeyPress: _key_event,
