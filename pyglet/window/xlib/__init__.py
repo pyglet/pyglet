@@ -34,33 +34,35 @@ class XlibWindowFactory(BaseWindowFactory):
         if not self._display:
             raise XlibException('Cannot connect to X server') 
 
-        self.config = XlibGLConfig(self._display)
-        self.context = None
-        self.context_share = None
+    def create_config_prototype(self):
+        return XlibGLConfig()
 
-    def create_window(self, width=640, height=480):
-        configs = self.config.get_matches()
+    def create_config(self):
+        configs = self.config._get_matches(self._display)
         if len(configs) == 0:
             raise XlibException('No matching GL configuration available')
-        config = configs[0]
+        return configs[0]
 
+    def create_context(self, window, config, share_context=None):
         context = glXCreateNewContext(self._display, 
-            config._fbconfig, GLX_RGBA_TYPE, self.context_share, True)
+            config._fbconfig, GLX_RGBA_TYPE, share_context, True)
         if context == GLXBadContext:
             raise XlibException('Invalid context share')
         elif context == GLXBadFBConfig:
             raise XlibException('Invalid GL configuration')
         elif context < 0:
-            raise XlibException('Could not create GL context')
+            raise XlibException('Could not create GL context') 
 
-        window = XlibWindow(width, height, self._display, config, context)
-        return window
+        window._glx_window = glXCreateWindow(self._display,
+            config._fbconfig, window._window, None)
+        return context
+
+    def create_window(self, width, height):
+        return XlibWindow(width, height, self._display)
 
 class XlibWindow(BaseWindow):
-    def __init__(self, width, height, display, config, context):
+    def __init__(self, width, height, display):
         self._display = display
-        self._config = config
-        self._context = context
 
         black = xlib.XBlackPixel(self._display, 
             xlib.XDefaultScreen(self._display))
@@ -81,22 +83,14 @@ class XlibWindow(BaseWindow):
         # Select all events
         xlib.XSelectInput(self._display, self._window, 0x1ffffff)
 
-        # Set GL config and context
-        self._glx_window = glXCreateWindow(display,
-            config._fbconfig, self._window, None)
-        self.switch_to()
-
-        import sys
-        self.set_title(sys.argv[0])
-
     def close(self):
-        glXDestroyContext(self._display, self._context)
+        glXDestroyContext(self._display, self.context)
         glXDestroyWindow(self._display, self._glx_window)
         xlib.XDestroyWindow(self._display, self._window)
 
     def switch_to(self):
         glXMakeContextCurrent(self._display,
-            self._glx_window, self._glx_window, self._context)
+            self._glx_window, self._glx_window, self.context)
 
     def flip(self):
         glXSwapBuffers(self._display, self._glx_window)
@@ -175,11 +169,11 @@ _attribute_ids = {
 }
 
 class XlibGLConfig(BaseGLConfig):
-    def __init__(self, display, _fbconfig=None):
+    def __init__(self, display=None, fbconfig=None):
         super(XlibGLConfig, self).__init__()
         self._display = display
-        self._fbconfig = _fbconfig
-        if _fbconfig:
+        self._fbconfig = fbconfig
+        if self._fbconfig:
             for name, attr in _attribute_ids.items():
                 value = c_int()
                 result = glXGetFBConfigAttrib(self._display, 
@@ -187,7 +181,7 @@ class XlibGLConfig(BaseGLConfig):
                 if result >= 0:
                     self._attributes[name] = value.value
 
-    def get_matches(self):
+    def _get_matches(self, display):
         attrs = []
         for name, value in self._attributes.items():
             attr = _attribute_ids.get(name, None)
@@ -203,12 +197,12 @@ class XlibGLConfig(BaseGLConfig):
             attrib_list = None
         elements = c_int()
         screen = 0  # XXX what is this, anyway?
-        configs = glXChooseFBConfig(self._display, 
+        configs = glXChooseFBConfig(display, 
             screen, attrib_list, byref(elements))
         if configs:
             result = []
             for i in range(elements.value):
-                result.append(XlibGLConfig(self._display, configs[i]))
+                result.append(XlibGLConfig(display, configs[i]))
             xlib.XFree(configs)
             return result
         else:

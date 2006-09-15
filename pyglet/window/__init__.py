@@ -11,14 +11,47 @@ class WindowException(Exception):
 
 class BaseWindowFactory(object):
     def __init__(self):
+        self.config = self.create_config_prototype()
+
+    def create(self, width=640, height=480):
+        window = self.create_window(width, height)
+        config = self.create_config()
+        context = self.create_context(window, config)
+        window.set_context(config, context)
+
+        import sys
+        window.set_title(sys.argv[0])
+        window.switch_to()
+        return window
+
+    def create_config_prototype(self):
+        pass
+        
+    def create_window(self, width, height):
         pass
 
-    def set_config(**kwargs):
-        for key, value in kwargs:
-            self.config._attributes[key] = value
+    def create_config(self):
+        pass
+
+    def create_context(self, window, config, share_context=None):
+        pass
 
 class BaseWindow(object):
-    pass
+    def set_title(self, title):
+        self.title = title
+
+    def get_title(self):
+        return self.title
+
+    def set_context(self, config, context):
+        self.config = config
+        self.context = context
+
+    def get_context(self):
+        return self.context
+
+    def get_config(self):
+        return self.config
 
 class BaseGLConfig(object):
     def __init__(self):
@@ -63,8 +96,6 @@ try:
     WindowFactory = CarbonWindowFactory
 except:
     pass
-
-import pyglet.window.win32
 
 try:
     from pyglet.window.win32 import Win32WindowFactory

@@ -12,13 +12,13 @@ import time
 from pyglet.GL.VERSION_1_1 import *
 
 factory = pyglet.window.WindowFactory()
-w1 = factory.create_window()
+w1 = factory.create()
 glClearColor(1, 0, 1, 1)
 glClear(GL_COLOR_BUFFER_BIT)
 glFlush()
 w1.flip()
 
-w2 = factory.create_window()
+w2 = factory.create()
 glClearColor(1, 1, 0, 1)
 glClear(GL_COLOR_BUFFER_BIT)
 glFlush()

@@ -30,26 +30,29 @@ class CarbonException(WindowException):
 class CarbonWindowFactory(BaseWindowFactory):
     def __init__(self):
         super(CarbonWindowFactory, self).__init__()
-        self.config = CarbonGLConfig()
         self.context = None
         self.context_share = None
 
-    def create_window(self, width=640, height=480):
+    def create_config_prototype(self):
+        return CarbonGLConfig()
+
+    def create_window(self, width, height):
+        return CarbonWindow(width, height)
+
+    def create_config(self):
         configs = self.config.get_matches()
         if len(configs) == 0:
             raise CarbonException('No matching GL configuration available.')
-        config = configs[0]
+        return configs[0]
 
+    def create_context(self, window, config, share_context=None)
         context = aglCreateContext(config._pformat, c_void_p())
-
-        window = CarbonWindow(width, height, config, context)
-        return window
+        aglSetDrawable(context, carbon.GetWindowPort(window))
+        _aglcheck()
+        return context
 
 class CarbonWindow(BaseWindow):
-    def __init__(self, width, height, config, context):
-        self._config = config
-        self._context = context
-
+    def __init__(self, width, height):
         rect = Rect()
         rect.top = 0
         rect.left = 0
@@ -67,29 +70,22 @@ class CarbonWindow(BaseWindow):
         self._window = window.value
         self._event_target = carbon.GetEventDispatcherTarget()
 
-        import sys
-        self.set_title(sys.argv[0])
         carbon.RepositionWindow(self._window, c_void_p(),
             kWindowCascadeOnMainScreen)
         carbon.InstallStandardEventHandler(\
             carbon.GetWindowEventTarget(self._window))
 
-        aglSetDrawable(self._context, carbon.GetWindowPort(self._window))
-        _aglcheck()
-
         carbon.ShowWindow(self._window)
-
-        self.switch_to()
 
     def close(self):
         pass
 
     def switch_to(self):
-        aglSetCurrentContext(self._context)
+        aglSetCurrentContext(self.context)
         _aglcheck()
 
     def flip(self):
-        aglSwapBuffers(self._context)
+        aglSwapBuffers(self.context)
         _aglcheck()
 
     def get_events(self):
@@ -105,13 +101,10 @@ class CarbonWindow(BaseWindow):
         return events
 
     def set_title(self, title):
+        super(CarbonWindow, self).set_title(title)
         s = _create_cfstring(title)
         carbon.SetWindowTitleWithCFString(self._window, s)
         carbon.CFRelease(s)
-        self._title = title
-
-    def get_title(self):
-        return title
 
 _attribute_ids = {
     'all_renderers': AGL_ALL_RENDERERS,
