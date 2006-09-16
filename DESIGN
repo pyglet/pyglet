@@ -1,0 +1,90 @@
+Principles
+----------
+
+* pyglet is an umbrella framework for games, multimedia and graphics
+  applications written in Python.
+* No required dependencies where possible.  Instead, core services provided
+  by Windows, OS X and X11 are used.  Some exceptions will have to apply (see
+  below)
+* It is not a game engine.  It's a set of modules that might be helpful,
+  and happen to work well together.
+* Not a single monolithic download.  Use .eggs to bundle related functionality
+  (core, audio, 2d, 3d, ...)
+
+The modules
+-----------
+
+Core modules (required by all others):
+
+pyglet.GL, pyglet.GLU
+  OpenGL, including all extensions and versions to 2.0.  This is a very
+  lightweight wrap, and requires knowledge of ctypes to use.  An application
+  developer writing an OpenGL application would want to use PyOpenGL or
+  OpenGL-ctypes instead, but pyglet itself only uses this (mixing and
+  matching is no problem).
+
+pyglet.window
+  Interface for opening one or more windows with an OpenGL context, and
+  receiving and processing events on those windows.  GL contexts can
+  be separate, shared textures/lists or shared state between windows
+  (separate is default).  Include AGL, GLX, WGL and respective extensions.
+
+pyglet.time
+  High-resolution timing, frames-per-second calculation (and display?)
+  and framerate limiting.
+
+pyglet.image
+  Load and save PNG.  Load DXT.  Proxy for PIL.  Images as both bitmaps
+  and textures.
+
+Optional modules, in approximate increasing pieness of sky:
+
+pyglet.font
+  Rendering and layout of fonts, using Freetype, Windows and OS X for
+  rasterisation.  Includes the Bitstream family of fonts.  
+
+pyglet.gui (requires pyglet.font)
+  Buttons, sliders, text entry, scrollable text, menus and lists.  Widgets
+  can be decorated with a pluggable look-and-feel (useful for quick mockups,
+  level-editors, graphics applications), or with customized images for
+  each widget (game interfaces).  Widgets can be laid out by pixel coordinates
+  (in an editor?), or with simple layout managers.  Transition effects
+  can be applied for buttons sliding on/off screen, fading in/out, rollovers,
+  crossfading, etc.  Command events etc are pushed back through the
+  pyglet.window event queue?  
+
+pyglet.draw
+  Draw ellipses, polygons, rectangles (using GLU?).
+
+pyglet.scene2d  (alternate name suggestions welcome)
+  2D sprites with collision detection, square and hexagon tile maps.  A
+  level editor.  Suitable for side-scrolling, top-down, isometric or
+  flat 3d rendered games.
+
+pyglet.scene3d  (alternate name suggestions welcome)
+  OBJ (and other formats?) model loading.  Models are readily modifiable
+  for vertex weighting, edge extraction (volume shadowing), binormal
+  calculations, etc.  Scene of objects, lights and camera.  Abstract mechanism
+  for frustum culling and collision detection.
+
+pyglet.euclid  (alternate name suggestions welcome)
+  2D and 3D vectors, matrices, quaternions and primitives such as sphere,
+  circle, line, ray, plane, etc.  Collision detection and simple resolution.
+
+pyglet.audio
+  Load, mix and play Wave and MP3 (minimum, more formats better) using
+  gstreamer, DirectAudio, Windows Media Player, Quicktime, CoreAudio, etc.
+  3D positional sound?
+
+pyglet.video
+  Play video (e.g., MPEG2) into a texture using gstreamer, Windows Media
+  Player, Quicktime, CoreVideo, etc.
+
+pyglet.joystick
+  Include force feedback.
+
+pyglet.network
+  Thoughts?
+
+pyglet.ai
+  A*, state machine, thoughts?  (no pun intended)
