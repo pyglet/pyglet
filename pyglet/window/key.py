@@ -131,6 +131,8 @@ K_LWINDOWS      = 0xffeb
 K_RWINDOWS      = 0xffec
 K_LCOMMAND      = 0xffed
 K_RCOMMAND      = 0xffee
+K_LOPTION       = 0xffd0
+K_ROPTION       = 0xffd1
 
 # Latin-1
 K_SPACE         = 0x020

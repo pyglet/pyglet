@@ -12,6 +12,7 @@ import unicodedata
 
 from pyglet.window import *
 from pyglet.window.event import *
+from pyglet.window.key import *
 from pyglet.window.carbon.constants import *
 from pyglet.window.carbon.key import *
 from pyglet.window.carbon.types import *
@@ -36,6 +37,7 @@ carbon.ReceiveNextEvent.argtypes = \
 carbon.GetWindowPort.restype = c_void_p
 EventHandlerProcPtr = CFUNCTYPE(c_int, c_int, c_void_p, c_void_p)
 carbon.NewEventHandlerUPP.restype = c_void_p
+carbon.GetCurrentKeyModifiers = c_uint32
 
 class CarbonWindowFactory(BaseWindowFactory):
     def __init__(self):
@@ -90,6 +92,8 @@ class CarbonWindow(BaseWindow):
             carbon.GetWindowEventTarget(self._window))
 
         # Install Carbon event handlers 
+        self._current_modifiers = carbon.GetCurrentKeyModifiers().value
+        self._mapped_modifiers = self._map_modifiers(self._current_modifiers)
         self._event_handlers = []
         self._install_event_handler(kEventClassTextInput,
                                     kEventTextInputUnicodeForKeyEvent,
@@ -198,11 +202,12 @@ class CarbonWindow(BaseWindow):
             typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
             byref(modifiers))
 
-        symbol = keymap.get(symbol.value, None)
+        return (keymap.get(symbol.value, None), 
+                CarbonWindow._map_modifiers(modifiers.value))
 
-        # Map modifiers
+    @staticmethod
+    def _map_modifiers(modifiers):
         mapped_modifiers = 0
-        modifiers = modifiers.value
         if modifiers & (shiftKey | rightShiftKey):
             mapped_modifiers |= MOD_SHIFT
         if modifiers & (controlKey | rightControlKey):
@@ -214,12 +219,37 @@ class CarbonWindow(BaseWindow):
         if modifiers & cmdKey:
             mapped_modifiers |= MOD_COMMAND
 
-        return symbol, mapped_modifiers
+        return mapped_modifiers
 
     def _on_modifiers_changed(self, next_handler, event, data):
-        # TODO: find delta from last state, report as event(s)
+        modifiers = c_uint32()
+        carbon.GetEventParameter(event, kEventParamKeyModifiers,
+            typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
+            byref(modifiers))
+        modifiers = modifiers.value
+        deltas = modifiers ^ self._current_modifiers
+        for mask, key in [
+            (controlKey, K_LCTRL),
+            (shiftKey, K_LSHIFT),
+            (cmdKey, K_LCOMMAND),
+            (optionKey, K_LOPTION),
+            (rightShiftKey, K_RSHIFT),
+            (rightOptionKey, K_ROPTION),
+            (rightControlKey, K_RCTRL),
+            (alphaLock, K_CAPSLOCK),
+            (numLock, K_NUMLOCK)]:
+            if deltas & mask:
+                if modifiers & mask:
+                    self.dispatch_event(EVENT_KEYPRESS, 
+                        key, self._mapped_modifiers)
+                else:
+                    self.dispatch_event(EVENT_KEYRELEASE,
+                        key, self._mapped_modifiers)
         carbon.CallNextEventHandler(next_handler, event)
 
+        self._mapped_modifiers = self._map_modifiers(modifiers)
+        self._current_modifiers = modifiers
+        return noErr
 
 _attribute_ids = {
     'all_renderers': AGL_ALL_RENDERERS,

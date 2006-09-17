@@ -159,6 +159,7 @@ controlKeyBit                 = 12
 rightShiftKeyBit              = 13
 rightOptionKeyBit             = 14
 rightControlKeyBit            = 15
+numLockBit                    = 16
 
 activeFlag                    = 1 << activeFlagBit
 btnState                      = 1 << btnStateBit
@@ -170,6 +171,7 @@ controlKey                    = 1 << controlKeyBit
 rightShiftKey                 = 1 << rightShiftKeyBit
 rightOptionKey                = 1 << rightOptionKeyBit
 rightControlKey               = 1 << rightControlKeyBit
+numLock                       = 1 << numLockBit
 
 # TextInput
 kEventTextInputUpdateActiveInputArea    = 1
