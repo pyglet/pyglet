@@ -65,7 +65,7 @@ pyglet.scene3d  (alternate name suggestions welcome)
   OBJ (and other formats?) model loading.  Models are readily modifiable
   for vertex weighting, edge extraction (volume shadowing), binormal
   calculations, etc.  Scene of objects, lights and camera.  Abstract mechanism
-  for frustum culling and collision detection.
+  for frustum culling and collision detection. A scene editor.
 
 pyglet.euclid  (alternate name suggestions welcome)
   2D and 3D vectors, matrices, quaternions and primitives such as sphere,
@@ -84,7 +84,10 @@ pyglet.joystick
   Include force feedback.
 
 pyglet.network
-  Thoughts?
+  Network events handled in a similar manner to window events. Abstracted
+  interface to TCP and UDP, similar to nanotubes from FibraNet?
+  http://code.google.com/p/fibranet/
 
 pyglet.ai
   A*, state machine, thoughts?  (no pun intended)
+
