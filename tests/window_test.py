@@ -27,14 +27,27 @@ glClear(GL_COLOR_BUFFER_BIT)
 glFlush()
 w2.flip()
 
-while True:
+class EventHandler(object):
+    running = True
+    def on_text(self, symbol):
+        pass
+    def on_keypress(self, symbol, modifiers):
+        if symbol == pyglet.window.key.K_ESCAPE:
+            self.running = False
+            return
+        return pyglet.window.event.EVENT_UNHANDLED
+main_handler = EventHandler()
+w1.push_handlers(main_handler)
+w2.push_handlers(main_handler)
+
+while main_handler.running:
     w1.dispatch_events()
     w2.dispatch_events()
-'''
 
-    window.switch_to()
+'''
+    w1.switch_to()
     glClear(GL_COLOR_BUFFER_BIT)
-    window.flip()
+    w1.flip()
 
     w2.switch_to()
     glClear(GL_COLOR_BUFFER_BIT)
