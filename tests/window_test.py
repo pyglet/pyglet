@@ -14,14 +14,12 @@ from pyglet.GL.VERSION_1_1 import *
 factory = pyglet.window.WindowFactory()
 factory.config._attributes['doublebuffer'] = 1
 w1 = factory.create()
-w1.push_handlers(pyglet.window.event.DebugEventHandler())
 glClearColor(1, 0, 1, 1)
 glClear(GL_COLOR_BUFFER_BIT)
 glFlush()
 w1.flip()
 
 w2 = factory.create()
-w2.push_handlers(pyglet.window.event.DebugEventHandler())
 glClearColor(1, 1, 0, 1)
 glClear(GL_COLOR_BUFFER_BIT)
 glFlush()
@@ -29,13 +27,9 @@ w2.flip()
 
 class EventHandler(object):
     running = True
-    def on_text(self, symbol):
-        pass
     def on_keypress(self, symbol, modifiers):
         if symbol == pyglet.window.key.K_ESCAPE:
             self.running = False
-            return
-        return pyglet.window.event.EVENT_UNHANDLED
 main_handler = EventHandler()
 w1.push_handlers(main_handler)
 w2.push_handlers(main_handler)
