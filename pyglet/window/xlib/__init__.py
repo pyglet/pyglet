@@ -103,9 +103,9 @@ class XlibWindow(BaseWindow):
         while xlib.XCheckWindowEvent(self._display, 
                                      self._window, 0x1ffffff, byref(e)):
 
-            event_translater = _event_translaters.get(e.type, None)
-            if event_translater:
-                event_translater(self, e)
+            event_translator = _event_translators.get(e.type, None)
+            if event_translator:
+                event_translator(self, e)
 
     def _set_property(self, name, value, allow_utf8=True):
         atom = xlib.XInternAtom(self._display, name, True)
@@ -265,7 +265,7 @@ def _translate_key(window, event):
     elif event.type == KeyRelease:
         window.dispatch_event(EVENT_KEYRELEASE, symbol, modifiers)
 
-_event_translaters = {
+_event_translators = {
     KeyPress: _translate_key,
     KeyRelease: _translate_key,
 }
