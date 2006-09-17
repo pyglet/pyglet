@@ -9,6 +9,7 @@ __version__ = '$Id$'
 from ctypes import *
 
 from pyglet.window import *
+from pyglet.window.event import *
 from pyglet.window.key import *
 from pyglet.window.xlib.constants import *
 from pyglet.window.xlib.types import *
@@ -20,6 +21,9 @@ xlib = cdll.LoadLibrary('libX11.so')
 xlib.XOpenDisplay.argtypes = [c_char_p]
 xlib.XOpenDisplay.restype = POINTER(Display)
 xlib.XNextEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
+xlib.XCheckTypedWindowEvent.argtypes = [POINTER(Display),
+    c_ulong, c_int, POINTER(XEvent)]
+xlib.XPutBackEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
 
 # Do we have the November 2000 UTF8 extension?
 _have_utf8 = hasattr(xlib, 'Xutf8TextListToTextProperty')
@@ -60,6 +64,7 @@ class XlibWindowFactory(BaseWindowFactory):
 
 class XlibWindow(BaseWindow):
     def __init__(self, width, height, display):
+        super(XlibWindow, self).__init__()
         self._display = display
 
         black = xlib.XBlackPixel(self._display, 
@@ -93,16 +98,14 @@ class XlibWindow(BaseWindow):
     def flip(self):
         glXSwapBuffers(self._display, self._glx_window)
 
-    def get_events(self):
-        events = []
+    def dispatch_events(self):
         e = XEvent()
         while xlib.XCheckWindowEvent(self._display, 
                                      self._window, 0x1ffffff, byref(e)):
 
-            event_constructor = _event_constructors.get(e.type, None)
-            if event_constructor:
-                events.append(event_constructor(self, e))
-        return events
+            event_translater = _event_translaters.get(e.type, None)
+            if event_translater:
+                event_translater(self, e)
 
     def _set_property(self, name, value, allow_utf8=True):
         atom = xlib.XInternAtom(self._display, name, True)
@@ -206,26 +209,41 @@ class XlibGLConfig(BaseGLConfig):
         else:
             return []
 
-def _key_event(window, event):
+def _translate_key(window, event):
+    if event.type == KeyRelease:
+        # Look in the queue for a matching KeyPress with same timestamp,
+        # indicating an auto-repeat rather than actual key event.
+        auto_event = XEvent()
+        result = xlib.XCheckTypedWindowEvent(window._display,
+            window._window, KeyPress, byref(auto_event))
+        if result and event.xkey.time == auto_event.xkey.time:
+            buffer = create_string_buffer(16)
+            count = xlib.XLookupString(byref(auto_event), 
+                                       byref(buffer), 
+                                       len(buffer), 
+                                       c_void_p(),
+                                       c_void_p())
+            if count:
+                text = buffer.value[:count]
+            window.dispatch_event(EVENT_TEXT, text)
+            return
+        elif result:
+            # Whoops, put the event back, it's for real.
+            xlib.XPutBackEvent(window._display, byref(event))
+
     # pyglet.window.key keysymbols are identical to X11 keysymbols, no
     # need to map the keysymbol.
-
-    characters = None 
+    text = None 
     if event.type == KeyPress:
-        cls = KeyPressEvent
-        symbol = c_int()
         buffer = create_string_buffer(16)
         count = xlib.XLookupString(byref(event), 
                                    byref(buffer), 
                                    len(buffer), 
-                                   byref(symbol), 
+                                   c_void_p(),
                                    c_void_p())
-        symbol = symbol.value
         if count:
-            characters = buffer.value[:count]
-    else:
-        cls = KeyReleaseEvent
-        symbol = xlib.XKeycodeToKeysym(window._display, event.xkey.keycode, 0)
+            text = buffer.value[:count]
+    symbol = xlib.XKeycodeToKeysym(window._display, event.xkey.keycode, 0)
 
     modifiers = 0
     if event.xkey.state & ShiftMask:
@@ -241,9 +259,14 @@ def _key_event(window, event):
     if event.xkey.state & Mod4Mask:
         modifiers |= MOD_WINDOWS
 
-    return cls(window, event.xkey.serial, symbol, modifiers, characters)
+    if event.type == KeyPress:
+        window.dispatch_event(EVENT_KEYPRESS, symbol, modifiers)
+        if text:
+            window.dispatch_event(EVENT_TEXT, text)
+    elif event.type == KeyRelease:
+        window.dispatch_event(EVENT_KEYRELEASE, symbol, modifiers)
 
-_event_constructors = {
-    KeyPress: _key_event,
-    KeyRelease: _key_event,
+_event_translaters = {
+    KeyPress: _translate_key,
+    KeyRelease: _translate_key,
 }

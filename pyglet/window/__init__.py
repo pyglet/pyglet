@@ -6,6 +6,9 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import inspect
+
+import pyglet.window.event
 import pyglet.window.key
 
 class WindowException(Exception):
@@ -41,7 +44,12 @@ class BaseWindowFactory(object):
     def create_context(self, window, config, share_context=None):
         pass
 
+
+
 class BaseWindow(object):
+    def __init__(self):
+        self._event_stack = [{}]
+
     def set_title(self, title):
         self.title = title
 
@@ -58,6 +66,37 @@ class BaseWindow(object):
     def get_config(self):
         return self.config
 
+    def push_handlers(self, instance=None, **kwargs):
+        self._event_stack.insert(0, {})
+        self.set_handlers(instance, **kwargs)
+
+    def set_handlers(self, instance=None, **kwargs):
+        if instance:
+            for name, handler in inspect.getmembers(instance):
+                event_type = pyglet.window.event._event_types.get(name, None)
+                if event_type:
+                    self._event_stack[0][event_type] = handler
+        else:
+            for event_name, handler in kwargs.items():
+                event_type = pyglet.window.event._event_types.get(event_name, None)
+                if not event_type:
+                    raise WindowException('Unknown event "%s"' % event_name)
+                self._event_stack[0][event_type] = handler
+    
+    def pop_handlers(self):
+        del self._event_stack[0]
+
+    def dispatch_event(self, event_type, *args):
+        for frame in self._event_stack[:]:
+            handler = frame.get(event_type, None)
+            if handler:
+                if handler(*args) != pyglet.window.event.EVENT_UNHANDLED:
+                    break
+        return None
+
+    def dispatch_events(self):
+        raise NotImplementedError('Abstract; this method needs overriding')
+
 class BaseGLConfig(object):
     def __init__(self):
         self._attributes = {}
@@ -66,45 +105,6 @@ class BaseGLConfig(object):
         return '%s(%r)' % (self.__class__.__name__, self._attributes)
 
 class BaseGLContext(object):
-    pass
-
-class Event(object):
-    def __init__(self, window, sequence):
-        self.window = window
-        self.sequence = sequence
-
-    def __repr__(self):
-        return '%s()' % self.__class__.__name__
-
-class KeyEvent(Event):
-    def __init__(self, window, sequence, symbol, modifiers, characters):
-        super(KeyEvent, self).__init__(window, sequence)
-        self.symbol = symbol
-        self.modifiers = modifiers
-        self.characters = characters
-
-    def __repr__(self):
-        mod_names = []
-        if self.modifiers & pyglet.window.key.MOD_SHIFT:
-            mod_names.append('MOD_SHIFT')
-        if self.modifiers & pyglet.window.key.MOD_CTRL:
-            mod_names.append('MOD_CTRL')
-        if self.modifiers & pyglet.window.key.MOD_ALT:
-            mod_names.append('MOD_ALT')
-        if self.modifiers & pyglet.window.key.MOD_CAPSLOCK:
-            mod_names.append('MOD_CAPSLOCK')
-        if self.modifiers & pyglet.window.key.MOD_NUMLOCK:
-            mod_names.append('MOD_NUMLOCK')
-        return '%s(symbol=%s, modifiers=%s, characters=%r)' % \
-           (self.__class__.__name__, 
-            pyglet.window.key._key_names.get(self.symbol, str(self.symbol)),
-            '+'.join(mod_names),
-            self.characters)
-
-class KeyPressEvent(KeyEvent):
-    pass
-
-class KeyReleaseEvent(KeyEvent):
     pass
 
 try:

@@ -14,22 +14,22 @@ from pyglet.GL.VERSION_1_1 import *
 factory = pyglet.window.WindowFactory()
 factory.config._attributes['doublebuffer'] = 1
 w1 = factory.create()
+w1.push_handlers(pyglet.window.event.DebugEventHandler())
 glClearColor(1, 0, 1, 1)
 glClear(GL_COLOR_BUFFER_BIT)
 glFlush()
 w1.flip()
 
 w2 = factory.create()
+w2.push_handlers(pyglet.window.event.DebugEventHandler())
 glClearColor(1, 1, 0, 1)
 glClear(GL_COLOR_BUFFER_BIT)
 glFlush()
 w2.flip()
 
 while True:
-    for e in w2.get_events():
-        print e
-    for e in w1.get_events():
-        print e
+    w1.dispatch_events()
+    w2.dispatch_events()
 '''
 
     window.switch_to()
