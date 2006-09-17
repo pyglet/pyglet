@@ -73,6 +73,18 @@ class XlibWindow(BaseWindow):
             xlib.XDefaultRootWindow(self._display), 
             0, 0, width, height, 0, black, black)
 
+        # <rj> attempting to fix lack of mouse motion events by
+        # initialising the window with no event mask
+#        attrs = XSetWindowAttributes(
+#            background_pixel=black,
+#            border_pixel=black,
+#            event_mask=NoEventMask,
+#        )
+#        self._window = xlib.XCreateWindow(self._display,
+#            xlib.XDefaultRootWindow(self._display), 
+#            0, 0, width, height, 0, CopyFromParent, CopyFromParent,
+#            CopyFromParent, CWEventMask, byref(attrs))
+
         xlib.XSelectInput(self._display, self._window, StructureNotifyMask)
         xlib.XMapWindow(self._display, self._window)
 
@@ -83,8 +95,8 @@ class XlibWindow(BaseWindow):
             if e.type == MapNotify:
                 break
 
-        # Select all events
-        xlib.XSelectInput(self._display, self._window, 0x1ffffff)
+        # Select all events (don't want PointerMotionHintMask)
+        xlib.XSelectInput(self._display, self._window, 0x1ffff7f)
 
     def close(self):
         glXDestroyContext(self._display, self.context)
@@ -208,6 +220,22 @@ class XlibGLConfig(BaseGLConfig):
         else:
             return []
 
+def _translate_modifiers(state):
+    modifiers = 0
+    if state & ShiftMask:
+        modifiers |= MOD_SHIFT  
+    if state & ControlMask:
+        modifiers |= MOD_CTRL
+    if state & LockMask:
+        modifiers |= MOD_CAPSLOCK
+    if state & Mod1Mask:
+        modifiers |= MOD_ALT
+    if state & Mod2Mask:
+        modifiers |= MOD_NUMLOCK
+    if state & Mod4Mask:
+        modifiers |= MOD_WINDOWS
+    return modifiers
+
 def _translate_key(window, event):
     if event.type == KeyRelease:
         # Look in the queue for a matching KeyPress with same timestamp,
@@ -224,6 +252,8 @@ def _translate_key(window, event):
                                        c_void_p())
             if count:
                 text = buffer.value[:count]
+            else:
+                raise NotImplementedError, 'XLookupString had no idea'
             window.dispatch_event(EVENT_TEXT, text)
             return
         elif result:
@@ -244,19 +274,7 @@ def _translate_key(window, event):
             text = buffer.value[:count]
     symbol = xlib.XKeycodeToKeysym(window._display, event.xkey.keycode, 0)
 
-    modifiers = 0
-    if event.xkey.state & ShiftMask:
-        modifiers |= MOD_SHIFT  
-    if event.xkey.state & ControlMask:
-        modifiers |= MOD_CTRL
-    if event.xkey.state & LockMask:
-        modifiers |= MOD_CAPSLOCK
-    if event.xkey.state & Mod1Mask:
-        modifiers |= MOD_ALT
-    if event.xkey.state & Mod2Mask:
-        modifiers |= MOD_NUMLOCK
-    if event.xkey.state & Mod4Mask:
-        modifiers |= MOD_WINDOWS
+    modifiers = _translate_modifiers(event.xkey.state)
 
     if event.type == KeyPress:
         window.dispatch_event(EVENT_KEYPRESS, symbol, modifiers)
@@ -265,7 +283,23 @@ def _translate_key(window, event):
     elif event.type == KeyRelease:
         window.dispatch_event(EVENT_KEYRELEASE, symbol, modifiers)
 
+def _translate_motion(window, event):
+    # XXX do we want to figure the relative movement for convenience?
+    window.dispatch_event(EVENT_MOUSEMOTION, (event.xmotion.x,
+        event.xmotion.y))
+
+def _translate_button(window, event):
+    button = event.xbutton.button
+    modifiers = _translate_modifiers(event.xbutton.state)
+    if event.type == ButtonPress:
+        window.dispatch_event(EVENT_BUTTONPRESS, button, modifiers)
+    else:
+        window.dispatch_event(EVENT_BUTTONRELEASE, button, modifiers)
+
 _event_translators = {
     KeyPress: _translate_key,
     KeyRelease: _translate_key,
+    MotionNotify: _translate_motion,
+    ButtonPress: _translate_button,
+    ButtonRelease: _translate_button,
 }

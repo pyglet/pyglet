@@ -88,15 +88,16 @@ class BaseWindow(object):
             if name not in pyglet.window.event._event_types:
                 raise WindowException('Unknown event "%s"' % name)
             self._event_stack[0][name] = handler
-    
+
     def pop_handlers(self):
         del self._event_stack[0]
 
     def dispatch_event(self, event_type, *args):
-        for frame in self._event_stack[:]:
+        for frame in self._event_stack:
             handler = frame.get(event_type, None)
             if handler:
-                if handler(*args) != pyglet.window.event.EVENT_UNHANDLED:
+                ret = handler(*args)
+                if ret != pyglet.window.event.EVENT_UNHANDLED:
                     break
         return None
 

@@ -10,7 +10,34 @@ from ctypes import *
 
 from pyglet.window.xlib.constants import *
 
-# Events (TODO incomplete)
+# from X.h
+#  XID = c_ulong
+#  ... and a whole lot of things are XIDs
+#  Time is c_ulong
+
+# Window attrs from Xlib.h
+
+
+class XSetWindowAttributes(Structure):
+    _fields_ = [
+    ('background_pixmap', c_ulong),
+    ('background_pixel', c_ulong),
+    ('border_pixmap', c_ulong),
+    ('border_pixel', c_ulong),
+    ('bit_gravity', c_int),
+    ('win_gravity', c_int),
+    ('backing_store', c_int),
+    ('backing_planes', c_ulong),
+    ('backing_pixel', c_ulong),
+    ('save_under', c_int),
+    ('event_mask', c_long),
+    ('do_not_propagate_mask', c_long),
+    ('override_redirect', c_int),
+    ('colormap', c_ulong),
+    ('cursor', c_ulong),
+    ]
+
+# Events (TODO incomplete -- see marker below)
 
 class XAnyEvent(Structure):
     _fields_ = [
@@ -21,6 +48,7 @@ class XAnyEvent(Structure):
         ('window', c_int)
     ]
 
+# TODO all the type-based TODOs below apply to all events
 class XKeyEvent(Structure):
     _fields_ = [
         ('type', c_int),
@@ -46,7 +74,17 @@ class XButtonEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
+        ('root', c_ulong),
+        ('subwindow', c_ulong),
+        ('time', c_ulong),
+        ('x', c_int),
+        ('y', c_int),
+        ('x_root', c_int),
+        ('y_root', c_int),
+        ('state', c_uint),
+        ('button', c_uint),
+        ('same_screen', c_int)
     ]
 
 class XMotionEvent(Structure):
@@ -55,8 +93,20 @@ class XMotionEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
+        ('root', c_ulong),
+        ('subwindow', c_ulong),
+        ('time', c_ulong),
+        ('x', c_int),
+        ('y', c_int),
+        ('x_root', c_int),
+        ('y_root', c_int),
+        ('state', c_uint),
+        ('is_hint', c_char),
+        ('same_screen', c_int)
     ]
+
+# TODO remainder incomplete
 
 class XCrossingEvent(Structure):
     _fields_ = [
@@ -341,7 +391,6 @@ class XEvent(Union):
     _event_names = {
         KeyPress: 'KeyPress',
         KeyRelease: 'KeyRelease',
-        ButtonPress: 'ButtonPress',
         ButtonPress: 'ButtonPress',
         ButtonRelease: 'ButtonRelease',
         MotionNotify: 'MotionNotify',

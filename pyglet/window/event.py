@@ -19,6 +19,9 @@ def _make_event(name):
 EVENT_KEYPRESS = _make_event('on_keypress')
 EVENT_KEYRELEASE = _make_event('on_keyrelease')
 EVENT_TEXT = _make_event('on_text')
+EVENT_MOUSEMOTION = _make_event('on_mousemotion')
+EVENT_BUTTONPRESS = _make_event('on_buttonpress')
+EVENT_BUTTONRELEASE = _make_event('on_buttonrelease')
 
 def _modifiers_to_string(modifiers):
     mod_names = []
@@ -37,7 +40,6 @@ def _modifiers_to_string(modifiers):
 def _symbol_to_string(symbol):
     return pyglet.window.key._key_names.get(symbol, str(symbol))
 
-
 # Does nothing, but shows prototypes.
 class EventHandler(object):
     def on_keypress(self, symbol, modifiers):
@@ -49,21 +51,41 @@ class EventHandler(object):
     def on_text(self, text):
         pass
 
+    def on_mousemotion(self, position, modifiers):
+        pass
+
+    def on_buttonpress(self, button, modifiers):
+        pass
+
+    def on_buttonrelease(self, button, modifiers):
+        pass
+
 class DebugEventHandler(object):
     def on_keypress(self, symbol, modifiers):
         print 'on_keypress(symbol=%s, modifiers=%s)' % (
-            _symbol_to_string(symbol),
-            _modifiers_to_string(modifiers))
+            _symbol_to_string(symbol), _modifiers_to_string(modifiers))
         return EVENT_UNHANDLED
 
     def on_keyrelease(self, symbol, modifiers):
         print 'on_keyrelease(symbol=%s, modifiers=%s)' % (
-            _symbol_to_string(symbol),
-            _modifiers_to_string(modifiers))
+            _symbol_to_string(symbol), _modifiers_to_string(modifiers))
         return EVENT_UNHANDLED
 
     def on_text(self, text):
         print 'on_text(text=%r)' % text
         return EVENT_UNHANDLED
 
+    def on_mousemotion(self, position):
+        print 'on_mousemotion(position=%r)' % (position, )
+        return EVENT_UNHANDLED
+
+    def on_buttonpress(self, button, modifiers):
+        print 'on_buttonpress(button=%r, modifiers=%s)' % (button,
+            _modifiers_to_string(modifiers))
+        return EVENT_UNHANDLED
+
+    def on_buttonrelease(self, button, modifiers):
+        print 'on_buttonrelease(button=%r, modifiers=%s)' % (button,
+            _modifiers_to_string(modifiers))
+        return EVENT_UNHANDLED
 
