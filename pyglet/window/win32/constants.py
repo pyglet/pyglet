@@ -1,6 +1,22 @@
-# This file is win32con.py from Python for Windows Extensions:
+# Most of this file is win32con.py from Python for Windows Extensions:
 # http://www.python.net/crew/mhammond/win32/
-#
+
+# From Windows 2000 API SuperBible:
+
+VK_OEM_1 = 0xba
+VK_OEM_PLUS = 0xbb
+VK_OEM_COMMA = 0xbc
+VK_OEM_MINUS = 0xbd
+VK_OEM_PERIOD = 0xbe
+VK_OEM_2 = 0xbf
+VK_OEM_3 = 0xc0
+VK_OEM_4 = 0xdb
+VK_OEM_5 = 0xdc
+VK_OEM_6 = 0xdd
+VK_OEM_7 = 0xde
+VK_OEM_8 = 0xdf
+VK_OEM_102 = 0xe2
+
 # Copyright (c) 1994-2001, Mark Hammond 
 # All rights reserved.
 # 
@@ -4149,10 +4165,11 @@ ODS_INACTIVE = 128
 PM_NOREMOVE = 0
 PM_REMOVE = 1
 PM_NOYIELD = 2
-MOD_ALT = 1
-MOD_CONTROL = 2
-MOD_SHIFT = 4
-MOD_WIN = 8
+# Name clashes with MOD_ALT, MOD_CONTROL and MOD_SHIFT
+WIN32_MOD_ALT = 1 
+WIN32_MOD_CONTROL = 2
+WIN32_MOD_SHIFT = 4
+WIN32_MOD_WIN = 8
 IDHOT_SNAPWINDOW = (-1)
 IDHOT_SNAPDESKTOP = (-2)
 #EW_RESTARTWINDOWS = 0x0042

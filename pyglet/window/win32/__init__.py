@@ -7,15 +7,21 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 from ctypes import *
+import unicodedata
 
 from pyglet.window import *
+from pyglet.window.event import *
+from pyglet.window.key import *
 from pyglet.window.win32.constants import *
+from pyglet.window.win32.key import *
 from pyglet.window.win32.types import *
 from pyglet.window.win32.WGL import *
 
 _gdi32 = windll.gdi32
 _kernel32 = windll.kernel32
 _user32 = windll.user32
+
+_user32.GetKeyState.restype = c_short
 
 class Win32Exception(WindowException):
     pass
@@ -37,6 +43,7 @@ class Win32WindowFactory(BaseWindowFactory):
 
 class Win32Window(BaseWindow):
     def __init__(self, width, height):
+        super(Win32Window, self).__init__()
         handle = _kernel32.GetModuleHandleA(c_int(0))
         handle = 0
         self._window_class = WNDCLASS()
@@ -59,8 +66,8 @@ class Win32Window(BaseWindow):
             WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
             CW_USEDEFAULT,
             CW_USEDEFAULT,
-            CW_USEDEFAULT,
-            CW_USEDEFAULT,
+            width,
+            height,
             0,
             0,
             self._window_class.hInstance,
@@ -72,8 +79,12 @@ class Win32Window(BaseWindow):
         _user32.UpdateWindow(self._hwnd)
 
     def _wnd_proc(self, hwnd, msg, wParam, lParam):
-        result = _user32.DefWindowProcA(c_int(hwnd), c_int(msg),
-            c_int(wParam), c_int(lParam)) 
+        event_dispatcher = _event_dispatchers.get(msg, None)
+        if event_dispatcher:
+            result = event_dispatcher(self, msg, wParam, lParam)
+        else:
+            result = _user32.DefWindowProcA(c_int(hwnd), c_int(msg),
+                c_int(wParam), c_int(lParam)) 
         return result
 
     def close(self):
@@ -85,13 +96,11 @@ class Win32Window(BaseWindow):
     def flip(self):
         wglSwapLayerBuffers(self._dc, WGL_SWAP_MAIN_PLANE)
 
-    def get_events(self):
-        events = []
+    def dispatch_events(self):
         msg = MSG()
         while _user32.PeekMessageA(byref(msg), 0, 0, 0, PM_REMOVE):
             _user32.TranslateMessage(byref(msg))
             _user32.DispatchMessageA(byref(msg))
-        return events
 
     def set_title(self, title):
         self._title = title
@@ -180,3 +189,52 @@ def _check():
                               len(msg),
                               c_void_p())
         raise Win32Exception(msg.value)
+
+def _dispatch_key(window, msg, wParam, lParam):
+    if lParam & (1 << 30):
+        if msg not in (WM_KEYUP, WM_SYSKEYUP):
+            return 0    # key repeat
+        event = EVENT_KEYRELEASE
+    else:
+        event = EVENT_KEYPRESS
+
+    symbol = keymap.get(wParam, None)
+    if symbol:
+        if symbol == K_LCTRL and lParam & (1 << 24):
+            symbol = K_RCTRL
+        if symbol == K_LALT and lParam & (1 << 24):
+            symbol = K_RALT
+        elif symbol == K_LSHIFT:
+            pass # TODO: some magic with getstate to find out if it's the
+                 # right or left shift key. 
+
+        modifiers = 0
+        if _user32.GetKeyState(VK_SHIFT) & 0xff00:
+            modifiers |= MOD_SHIFT
+        if _user32.GetKeyState(VK_CONTROL) & 0xff00:
+            modifiers |= MOD_CTRL
+        if _user32.GetKeyState(VK_LWIN) & 0xff00:
+            modifiers |= MOD_WINDOWS
+        if _user32.GetKeyState(VK_CAPITAL) & 0x00ff:    # toggle
+            modifiers |= MOD_CAPSLOCK
+        if _user32.GetKeyState(VK_NUMLOCK) & 0x00ff:    # toggle
+            modifiers |= MOD_NUMLOCK
+        if lParam & (1 << 29):
+            modifiers |= MOD_ALT
+
+        window.dispatch_event(event, symbol, modifiers)
+    return 0
+
+def _dispatch_char(window, msg, wParam, lParam):
+    text = unichr(wParam)
+    if unicodedata.category(text) != 'Cc' or text == '\r':
+        window.dispatch_event(EVENT_TEXT, text)
+    return 0
+
+_event_dispatchers = {
+    WM_KEYDOWN: _dispatch_key,
+    WM_KEYUP: _dispatch_key,
+    WM_SYSKEYDOWN: _dispatch_key,
+    WM_SYSKEYUP: _dispatch_key,
+    WM_CHAR: _dispatch_char,
+}
