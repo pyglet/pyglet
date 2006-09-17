@@ -11,15 +11,14 @@ import pyglet.window.key
 EVENT_HANDLED = None 
 EVENT_UNHANDLED = 1 
 
-EVENT_KEYPRESS = 1
-EVENT_KEYRELEASE = 2
-EVENT_TEXT = 3
+_event_types = []
+def _make_event(name):
+    _event_types.append(name)
+    return name
 
-_event_types = {
-    'on_keypress': EVENT_KEYPRESS,
-    'on_keyrelease': EVENT_KEYRELEASE,
-    'on_text': EVENT_TEXT
-}
+EVENT_KEYPRESS = _make_event('on_keypress')
+EVENT_KEYRELEASE = _make_event('on_keyrelease')
+EVENT_TEXT = _make_event('on_text')
 
 def _modifiers_to_string(modifiers):
     mod_names = []

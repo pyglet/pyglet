@@ -66,22 +66,28 @@ class BaseWindow(object):
     def get_config(self):
         return self.config
 
-    def push_handlers(self, instance=None, **kwargs):
+    def push_handlers(self, *args, **kwargs):
         self._event_stack.insert(0, {})
-        self.set_handlers(instance, **kwargs)
+        self.set_handlers(*args, **kwargs)
 
-    def set_handlers(self, instance=None, **kwargs):
-        if instance:
-            for name, handler in inspect.getmembers(instance):
-                event_type = pyglet.window.event._event_types.get(name, None)
-                if event_type:
-                    self._event_stack[0][event_type] = handler
-        else:
-            for event_name, handler in kwargs.items():
-                event_type = pyglet.window.event._event_types.get(event_name, None)
-                if not event_type:
-                    raise WindowException('Unknown event "%s"' % event_name)
-                self._event_stack[0][event_type] = handler
+    def set_handlers(self, *args, **kwargs):
+        for object in args:
+            if inspect.isroutine(object):
+                # Single magically named function
+                name = object.__name__
+                if name not in pyglet.window.event._event_types:
+                    raise WindowException('Unknown event "%s"' % name)
+                self._event_stack[0][name] = object
+            else:
+                # Single instance with magically named methods
+                for name, handler in inspect.getmembers(object):
+                    if name in pyglet.window.event._event_types:
+                        self._event_stack[0][name] = handler
+        for name, handler in kwargs.items():
+            # Function for handling given event (no magic)
+            if name not in pyglet.window.event._event_types:
+                raise WindowException('Unknown event "%s"' % name)
+            self._event_stack[0][name] = handler
     
     def pop_handlers(self):
         del self._event_stack[0]
