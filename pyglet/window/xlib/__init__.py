@@ -285,16 +285,17 @@ def _translate_key(window, event):
 
 def _translate_motion(window, event):
     # XXX do we want to figure the relative movement for convenience?
-    window.dispatch_event(EVENT_MOUSEMOTION, (event.xmotion.x,
-        event.xmotion.y))
+    window.dispatch_event(EVENT_MOUSEMOTION, event.xmotion.x,
+        event.xmotion.y)
 
 def _translate_button(window, event):
-    button = event.xbutton.button
     modifiers = _translate_modifiers(event.xbutton.state)
     if event.type == ButtonPress:
-        window.dispatch_event(EVENT_BUTTONPRESS, button, modifiers)
+        window.dispatch_event(EVENT_BUTTONPRESS, event.xbutton.button,
+            event.xbutton.x, event.xbutton.y, modifiers)
     else:
-        window.dispatch_event(EVENT_BUTTONRELEASE, button, modifiers)
+        window.dispatch_event(EVENT_BUTTONRELEASE, event.xbutton.button,
+            event.xbutton.x, event.xbutton.y, modifiers)
 
 _event_translators = {
     KeyPress: _translate_key,

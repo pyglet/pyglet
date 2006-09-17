@@ -51,13 +51,13 @@ class EventHandler(object):
     def on_text(self, text):
         pass
 
-    def on_mousemotion(self, position, modifiers):
+    def on_mousemotion(self, x, y):
         pass
 
-    def on_buttonpress(self, button, modifiers):
+    def on_buttonpress(self, button, x, y, modifiers):
         pass
 
-    def on_buttonrelease(self, button, modifiers):
+    def on_buttonrelease(self, button, x, y, modifiers):
         pass
 
 class DebugEventHandler(object):
@@ -75,17 +75,17 @@ class DebugEventHandler(object):
         print 'on_text(text=%r)' % text
         return EVENT_UNHANDLED
 
-    def on_mousemotion(self, position):
-        print 'on_mousemotion(position=%r)' % (position, )
+    def on_mousemotion(self, x, y):
+        print 'on_mousemotion(x=%d, y=%d)' % (x, y)
         return EVENT_UNHANDLED
 
-    def on_buttonpress(self, button, modifiers):
-        print 'on_buttonpress(button=%r, modifiers=%s)' % (button,
-            _modifiers_to_string(modifiers))
+    def on_buttonpress(self, button, x, y, modifiers):
+        print 'on_buttonpress(button=%r, x=%d, y=%d, modifiers=%s)' % (
+            button, x, y, _modifiers_to_string(modifiers))
         return EVENT_UNHANDLED
 
-    def on_buttonrelease(self, button, modifiers):
-        print 'on_buttonrelease(button=%r, modifiers=%s)' % (button,
-            _modifiers_to_string(modifiers))
+    def on_buttonrelease(self, button, x, y, modifiers):
+        print 'on_buttonrelease(button=%r, x=%d, y=%d, modifiers=%s)' % (
+            button, x, y, _modifiers_to_string(modifiers))
         return EVENT_UNHANDLED
 
