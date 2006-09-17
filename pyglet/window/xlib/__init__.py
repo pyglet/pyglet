@@ -7,6 +7,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from ctypes import *
+import unicodedata
 
 from pyglet.window import *
 from pyglet.window.event import *
@@ -265,20 +266,22 @@ def _translate_key(window, event):
     text = None 
     if event.type == KeyPress:
         buffer = create_string_buffer(16)
+        # TODO lookup UTF8
         count = xlib.XLookupString(byref(event), 
                                    byref(buffer), 
                                    len(buffer), 
                                    c_void_p(),
                                    c_void_p())
         if count:
-            text = buffer.value[:count]
+            text = unicode(buffer.value[:count])
     symbol = xlib.XKeycodeToKeysym(window._display, event.xkey.keycode, 0)
 
     modifiers = _translate_modifiers(event.xkey.state)
 
     if event.type == KeyPress:
         window.dispatch_event(EVENT_KEYPRESS, symbol, modifiers)
-        if text:
+        if (text and 
+            (unicodedata.category(text) != 'Cc' or text == '\r')):
             window.dispatch_event(EVENT_TEXT, text)
     elif event.type == KeyRelease:
         window.dispatch_event(EVENT_KEYRELEASE, symbol, modifiers)
