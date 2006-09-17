@@ -8,24 +8,34 @@ __version__ = '$Id: $'
 
 from ctypes import *
 import ctypes.util
+import unicodedata
 
 from pyglet.window import *
+from pyglet.window.event import *
 from pyglet.window.carbon.constants import *
+from pyglet.window.carbon.key import *
 from pyglet.window.carbon.types import *
 from pyglet.window.carbon.AGL.VERSION_10_0 import *
+
+class CarbonException(WindowException):
+    pass
 
 carbon_path = ctypes.util.find_library('Carbon')
 if not carbon_path:
     raise ImportError('Carbon framework not found')
 carbon = cdll.LoadLibrary(carbon_path)
 
+import MacOS
+if not MacOS.WMAvailable():
+    raise CarbonException('Window manager is not available.  ' \
+                          'Ensure you run "pythonw", not "python"')
+
 carbon.GetEventDispatcherTarget.restype = EventTargetRef
 carbon.ReceiveNextEvent.argtypes = \
     [c_uint32, c_void_p, c_double, c_ubyte, POINTER(EventRef)]
 carbon.GetWindowPort.restype = c_void_p
-
-class CarbonException(WindowException):
-    pass
+EventHandlerProcPtr = CFUNCTYPE(c_int, c_int, c_void_p, c_void_p)
+carbon.NewEventHandlerUPP.restype = c_void_p
 
 class CarbonWindowFactory(BaseWindowFactory):
     def __init__(self):
@@ -48,8 +58,15 @@ class CarbonWindowFactory(BaseWindowFactory):
         _aglcheck()
         return context
 
+def _name(name):
+    return ord(name[0]) << 24 | \
+           ord(name[1]) << 16 | \
+           ord(name[2]) << 8 | \
+           ord(name[3])
+
 class CarbonWindow(BaseWindow):
     def __init__(self, width, height):
+        super(CarbonWindow, self).__init__()
         rect = Rect()
         rect.top = 0
         rect.left = 0
@@ -65,13 +82,30 @@ class CarbonWindow(BaseWindow):
                                         byref(rect),
                                         byref(window))
         self._window = window.value
-        self._event_target = carbon.GetEventDispatcherTarget()
+        self._event_dispatcher = carbon.GetEventDispatcherTarget()
 
         carbon.RepositionWindow(self._window, c_void_p(),
             kWindowCascadeOnMainScreen)
         carbon.InstallStandardEventHandler(\
             carbon.GetWindowEventTarget(self._window))
 
+        # Install Carbon event handlers 
+        self._event_handlers = []
+        self._install_event_handler(kEventClassTextInput,
+                                    kEventTextInputUnicodeForKeyEvent,
+                                    self._on_text_input)
+
+        self._install_event_handler(kEventClassKeyboard,
+                                    kEventRawKeyDown,
+                                    self._on_key_down)
+
+        self._install_event_handler(kEventClassKeyboard,
+                                    kEventRawKeyUp,
+                                    self._on_key_up)
+        
+        self._install_event_handler(kEventClassKeyboard,
+                                    kEventRawKeyModifiersChanged,
+                                    self._on_modifiers_changed)
         carbon.ShowWindow(self._window)
 
     def close(self):
@@ -85,23 +119,107 @@ class CarbonWindow(BaseWindow):
         aglSwapBuffers(self.context)
         _aglcheck()
 
-    def get_events(self):
-        events = []
+    def dispatch_events(self):
         e = EventRef()
         result = carbon.ReceiveNextEvent(0, c_void_p(), 0, True, byref(e))
         if result == noErr:
-            carbon.SendEventToEventTarget(e, self._event_target)
+            carbon.SendEventToEventTarget(e, self._event_dispatcher)
             carbon.ReleaseEvent(e)
         elif result != eventLoopTimedOutErr:
             raise 'Error %d' % result
-
-        return events
 
     def set_title(self, title):
         super(CarbonWindow, self).set_title(title)
         s = _create_cfstring(title)
         carbon.SetWindowTitleWithCFString(self._window, s)
         carbon.CFRelease(s)
+
+    # Carbon event handlers
+
+    def _install_event_handler(self, cls, kind, handler):
+        proc = EventHandlerProcPtr(handler)
+        self._event_handlers.append(proc)
+        upp = carbon.NewEventHandlerUPP(proc)
+        types = EventTypeSpec()
+        types.eventClass = cls
+        types.eventKind = kind 
+        carbon.InstallEventHandler(
+            carbon.GetWindowEventTarget(self._window),
+            upp,
+            1,
+            byref(types),
+            c_void_p(), c_void_p())
+
+    def _on_text_input(self, next_handler, event, data):
+        size = c_uint32()
+        carbon.GetEventParameter(event, kEventParamTextInputSendText,
+            typeUTF8Text, c_void_p(), 0, byref(size), c_void_p())
+        text = create_string_buffer(size.value)
+        carbon.GetEventParameter(event, kEventParamTextInputSendText,
+            typeUTF8Text, c_void_p(), size.value, c_void_p(), byref(text))
+        text = text.value.decode('utf8')
+
+        modifiers = c_uint32()
+        raw_event = EventRef()
+        carbon.GetEventParameter(event, kEventParamTextInputSendKeyboardEvent,
+            typeEventRef, c_void_p(), sizeof(raw_event), c_void_p(),
+            byref(raw_event))
+        carbon.GetEventParameter(raw_event, kEventParamKeyModifiers,
+            typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
+            byref(modifiers))
+
+        # Don't send command code points.   
+        if ((unicodedata.category(text) != 'Cc' or text == u'\r') and
+            not (modifiers.value & cmdKey)):
+            self.dispatch_event(EVENT_TEXT, text)
+        return noErr
+
+    def _on_key_up(self, next_handler, event, data):
+        symbol, modifiers = self._get_symbol_and_modifiers(event)
+        if symbol: 
+            self.dispatch_event(EVENT_KEYRELEASE, symbol, modifiers)
+        carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+
+    def _on_key_down(self, next_handler, event, data):
+        symbol, modifiers = self._get_symbol_and_modifiers(event)
+        if symbol: 
+            self.dispatch_event(EVENT_KEYPRESS, symbol, modifiers)
+        carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+
+    @staticmethod
+    def _get_symbol_and_modifiers(event):
+        symbol = c_uint32()
+        carbon.GetEventParameter(event, kEventParamKeyCode,
+            typeUInt32, c_void_p(), sizeof(symbol), c_void_p(), byref(symbol))
+        modifiers = c_uint32()
+        carbon.GetEventParameter(event, kEventParamKeyModifiers,
+            typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
+            byref(modifiers))
+
+        symbol = keymap.get(symbol.value, None)
+
+        # Map modifiers
+        mapped_modifiers = 0
+        modifiers = modifiers.value
+        if modifiers & (shiftKey | rightShiftKey):
+            mapped_modifiers |= MOD_SHIFT
+        if modifiers & (controlKey | rightControlKey):
+            mapped_modifiers |= MOD_CTRL
+        if modifiers & (optionKey | rightOptionKey):
+            mapped_modifiers |= MOD_OPTION
+        if modifiers & alphaLock:
+            mapped_modifiers |= MOD_CAPSLOCK
+        if modifiers & cmdKey:
+            mapped_modifiers |= MOD_COMMAND
+
+        return symbol, mapped_modifiers
+
+    def _on_modifiers_changed(self, next_handler, event, data):
+        # TODO: find delta from last state, report as event(s)
+        carbon.CallNextEventHandler(next_handler, event)
+
 
 _attribute_ids = {
     'all_renderers': AGL_ALL_RENDERERS,
@@ -196,3 +314,14 @@ def _aglcheck():
     err = aglGetError()
     if err != AGL_NO_ERROR:
         raise CarbonException(aglErrorString(err))
+
+def _keydown_event(window, e):
+    return KeyPressEvent(window, 0, 0, 0, None)
+
+def _keyup_event(window, e):
+    return KeyReleaseEvent(window, 0, 0, 0, None)
+
+_event_constructors = {
+    (kEventClassTextInput, kEventTextInputUnicodeForKeyEvent): _keydown_event,
+    #(kEventClassKeyboard, kEventRawKeyUp): _keyup_event,
+}

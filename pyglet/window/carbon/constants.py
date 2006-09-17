@@ -82,3 +82,103 @@ kWindowAlertPositionOnMainScreen = 7
 kWindowAlertPositionOnParentWindow = 8
 kWindowAlertPositionOnParentWindowScreen = 9
 
+
+def _name(name):
+    return ord(name[0]) << 24 | \
+           ord(name[1]) << 16 | \
+           ord(name[2]) << 8 | \
+           ord(name[3])
+
+# AEDataModel.h
+
+typeBoolean = _name('bool')
+typeChar = _name('TEXT')
+typeSInt16 = _name('shor')
+typeSInt32 = _name('long')
+typeUInt32 = _name('magn')
+typeSInt64 = _name('comp')
+typeIEEE32BitFloatingPoint = _name('sing')
+typeIEEE64BitFloatingPoint = _name('doub')
+type128BitFloatingPoint = _name('ldbl')
+typeDecimalStruct = _name('decm')
+
+# AERegistry.h
+typeUnicodeText = _name('utxt')
+typeStyledUnicodeText = _name('sutx')
+typeUTF8Text = _name('utf8')
+typeEncodedString = _name('encs')
+typeCString = _name('cstr')
+typePString = _name('pstr')
+typeEventRef = _name('evrf')
+
+# CarbonEvents.h
+
+kEventClassMouse = _name('mous')
+kEventClassKeyboard = _name('keyb')
+kEventClassTextInput = _name('text')
+kEventClassApplication = _name('appl')
+kEventClassAppleEvent = _name('eppc')
+kEventClassMenu = _name('menu')
+kEventClassWindow = _name('wind')
+kEventClassControl = _name('cntl')
+kEventClassCommand = _name('cmds')
+kEventClassTablet = _name('tblt')
+kEventClassVolume = _name('vol ')
+kEventClassAppearance = _name('appm')
+kEventClassService = _name('serv')
+kEventClassToolbar = _name('tbar')
+kEventClassToolbarItem = _name('tbit')
+kEventClassToolbarItemView = _name('tbiv')
+kEventClassAccessibility = _name('acce')
+kEventClassSystem = _name('macs')
+kEventClassInk = _name('ink ')
+kEventClassTSMDocumentAccess = _name('tdac')
+
+# Keyboard
+kEventRawKeyDown                = 1
+kEventRawKeyRepeat              = 2
+kEventRawKeyUp                  = 3
+kEventRawKeyModifiersChanged    = 4
+kEventHotKeyPressed             = 5
+kEventHotKeyReleased            = 6
+
+kEventParamKeyCode = _name('kcod')
+kEventParamKeyMacCharCodes = _name('kchr')
+kEventParamKeyModifiers = _name('kmod')
+kEventParamKeyUnicodes = _name('kuni')
+kEventParamKeyboardType = _name('kbdt')
+typeEventHotKeyID = _name('hkid')
+
+activeFlagBit                 = 0
+btnStateBit                   = 7
+cmdKeyBit                     = 8
+shiftKeyBit                   = 9
+alphaLockBit                  = 10
+optionKeyBit                  = 11
+controlKeyBit                 = 12
+rightShiftKeyBit              = 13
+rightOptionKeyBit             = 14
+rightControlKeyBit            = 15
+
+activeFlag                    = 1 << activeFlagBit
+btnState                      = 1 << btnStateBit
+cmdKey                        = 1 << cmdKeyBit
+shiftKey                      = 1 << shiftKeyBit
+alphaLock                     = 1 << alphaLockBit
+optionKey                     = 1 << optionKeyBit
+controlKey                    = 1 << controlKeyBit
+rightShiftKey                 = 1 << rightShiftKeyBit
+rightOptionKey                = 1 << rightOptionKeyBit
+rightControlKey               = 1 << rightControlKeyBit
+
+# TextInput
+kEventTextInputUpdateActiveInputArea    = 1
+kEventTextInputUnicodeForKeyEvent       = 2
+kEventTextInputOffsetToPos              = 3
+kEventTextInputPosToOffset              = 4
+kEventTextInputShowHideBottomWindow     = 5
+kEventTextInputGetSelectedText          = 6
+kEventTextInputUnicodeText              = 7
+
+kEventParamTextInputSendText = _name('tstx')
+kEventParamTextInputSendKeyboardEvent = _name('tske')

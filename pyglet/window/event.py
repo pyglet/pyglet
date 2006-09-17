@@ -35,7 +35,11 @@ def _modifiers_to_string(modifiers):
         mod_names.append('MOD_CAPSLOCK')
     if modifiers & pyglet.window.key.MOD_NUMLOCK:
         mod_names.append('MOD_NUMLOCK')
-    return '+'.join(mod_names)
+    if modifiers & pyglet.window.key.MOD_COMMAND:
+        mod_names.append('MOD_COMMAND')
+    if modifiers & pyglet.window.key.MOD_OPTION:
+        mod_names.append('MOD_OPTION')
+    return '|'.join(mod_names)
 
 def _symbol_to_string(symbol):
     return pyglet.window.key._key_names.get(symbol, str(symbol))

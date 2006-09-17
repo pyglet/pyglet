@@ -22,6 +22,12 @@ class Point(Structure):
         ('h', c_short),
     ]
 
+class EventTypeSpec(Structure):
+    _fields_ = [
+        ('eventClass', c_uint32),
+        ('eventKind', c_uint32)
+    ]
+
 WindowRef = c_void_p
 EventRef = c_void_p
 EventTargetRef = c_void_p
