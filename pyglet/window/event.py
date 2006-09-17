@@ -22,6 +22,7 @@ EVENT_TEXT = _make_event('on_text')
 EVENT_MOUSEMOTION = _make_event('on_mousemotion')
 EVENT_BUTTONPRESS = _make_event('on_buttonpress')
 EVENT_BUTTONRELEASE = _make_event('on_buttonrelease')
+EVENT_CLOSE = _make_event('on_close')
 
 def _modifiers_to_string(modifiers):
     mod_names = []
@@ -64,6 +65,9 @@ class EventHandler(object):
     def on_buttonrelease(self, button, x, y, modifiers):
         pass
 
+    def on_close(self):
+        pass
+
 class DebugEventHandler(object):
     def on_keypress(self, symbol, modifiers):
         print 'on_keypress(symbol=%s, modifiers=%s)' % (
@@ -91,5 +95,9 @@ class DebugEventHandler(object):
     def on_buttonrelease(self, button, x, y, modifiers):
         print 'on_buttonrelease(button=%r, x=%d, y=%d, modifiers=%s)' % (
             button, x, y, _modifiers_to_string(modifiers))
+        return EVENT_UNHANDLED
+
+    def on_close(self):
+        print 'on_destroy()'
         return EVENT_UNHANDLED
 

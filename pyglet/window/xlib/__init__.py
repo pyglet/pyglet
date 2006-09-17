@@ -18,9 +18,11 @@ from pyglet.window.xlib.glx.VERSION_1_4 import *
 
 # Load X11 library, specify argtypes and restype only when necessary.
 Display = c_void_p
+Atom = c_ulong
 xlib = cdll.LoadLibrary('libX11.so')
 xlib.XOpenDisplay.argtypes = [c_char_p]
 xlib.XOpenDisplay.restype = POINTER(Display)
+xlib.XInternAtom.restype = Atom
 xlib.XNextEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
 xlib.XCheckTypedWindowEvent.argtypes = [POINTER(Display),
     c_ulong, c_int, POINTER(XEvent)]
@@ -63,6 +65,7 @@ class XlibWindowFactory(BaseWindowFactory):
     def create_window(self, width, height):
         return XlibWindow(width, height, self._display)
 
+
 class XlibWindow(BaseWindow):
     def __init__(self, width, height, display):
         super(XlibWindow, self).__init__()
@@ -74,29 +77,23 @@ class XlibWindow(BaseWindow):
             xlib.XDefaultRootWindow(self._display), 
             0, 0, width, height, 0, black, black)
 
-        # <rj> attempting to fix lack of mouse motion events by
-        # initialising the window with no event mask
-#        attrs = XSetWindowAttributes(
-#            background_pixel=black,
-#            border_pixel=black,
-#            event_mask=NoEventMask,
-#        )
-#        self._window = xlib.XCreateWindow(self._display,
-#            xlib.XDefaultRootWindow(self._display), 
-#            0, 0, width, height, 0, CopyFromParent, CopyFromParent,
-#            CopyFromParent, CWEventMask, byref(attrs))
+        # Listen for WM_DELETE_WINDOW
+        wm_delete_window = xlib.XInternAtom(self._display,
+            'WM_DELETE_WINDOW', False)
+        wm_delete_window = c_ulong(wm_delete_window)
+        xlib.XSetWMProtocols(self._display, self._window,
+            byref(wm_delete_window), 1)
 
+        # Map the window, listening for the window mapping event
         xlib.XSelectInput(self._display, self._window, StructureNotifyMask)
         xlib.XMapWindow(self._display, self._window)
-
-        # Wait for window mapping
         e = XEvent()
         while True:
             xlib.XNextEvent(self._display, e)
             if e.type == MapNotify:
                 break
 
-        # Select all events (don't want PointerMotionHintMask)
+        # Now select all events (don't want PointerMotionHintMask)
         xlib.XSelectInput(self._display, self._window, 0x1ffff7f)
 
     def close(self):
@@ -113,12 +110,28 @@ class XlibWindow(BaseWindow):
 
     def dispatch_events(self):
         e = XEvent()
-        while xlib.XCheckWindowEvent(self._display, 
-                                     self._window, 0x1ffffff, byref(e)):
 
-            event_translator = _event_translators.get(e.type, None)
-            if event_translator:
-                event_translator(self, e)
+        # Check for the events specific to this window
+        while xlib.XCheckWindowEvent(self._display, self._window,
+                0x1ffffff, byref(e)):
+            event_dispatcher = _event_dispatchers.get(e.type)
+            if event_dispatcher:
+                event_dispatcher(self, e)
+
+        # Now check generic events for this display and manually filter
+        # them to see whether they're for this window. sigh.
+        # Store off the events we need to push back so we don't confuse
+        # XCheckTypedEvent
+        push_back = []
+        while xlib.XCheckTypedEvent(self._display, ClientMessage, byref(e)):
+            if e.xclient.window != self._window:
+                push_back.append(e)
+            else:
+                event_dispatcher = _event_dispatchers.get(e.type)
+                if event_dispatcher:
+                    event_dispatcher(self, e)
+        for e in push_back:
+            xlib.XPutBackEvent(self._display, byref(e))
 
     def _set_property(self, name, value, allow_utf8=True):
         atom = xlib.XInternAtom(self._display, name, True)
@@ -140,7 +153,7 @@ class XlibWindow(BaseWindow):
                     raise XlibException('Could not create text property')
             xlib.XSetTextProperty(self._display, 
                 self._window, byref(property), atom)
-            # <rj> Xlib doesn't like us freeing this
+            # XXX <rj> Xlib doesn't like us freeing this
             #xlib.XFree(property.value)
 
     def set_title(self, title):
@@ -237,7 +250,7 @@ def _translate_modifiers(state):
         modifiers |= MOD_WINDOWS
     return modifiers
 
-def _translate_key(window, event):
+def _dispatch_key(window, event):
     if event.type == KeyRelease:
         # Look in the queue for a matching KeyPress with same timestamp,
         # indicating an auto-repeat rather than actual key event.
@@ -286,12 +299,20 @@ def _translate_key(window, event):
     elif event.type == KeyRelease:
         window.dispatch_event(EVENT_KEYRELEASE, symbol, modifiers)
 
-def _translate_motion(window, event):
+def _dispatch_motion(window, event):
     # XXX do we want to figure the relative movement for convenience?
     window.dispatch_event(EVENT_MOUSEMOTION, event.xmotion.x,
         event.xmotion.y)
 
-def _translate_button(window, event):
+def _dispatch_clientmessage(window, event):
+    wm_delete_window = xlib.XInternAtom(event.xclient.display,
+        'WM_DELETE_WINDOW', False)
+    if event.xclient.data.l[0] == wm_delete_window:
+        window.dispatch_event(EVENT_CLOSE)
+    else:
+        raise NotImplementedError
+
+def _dispatch_button(window, event):
     modifiers = _translate_modifiers(event.xbutton.state)
     if event.type == ButtonPress:
         window.dispatch_event(EVENT_BUTTONPRESS, event.xbutton.button,
@@ -300,10 +321,11 @@ def _translate_button(window, event):
         window.dispatch_event(EVENT_BUTTONRELEASE, event.xbutton.button,
             event.xbutton.x, event.xbutton.y, modifiers)
 
-_event_translators = {
-    KeyPress: _translate_key,
-    KeyRelease: _translate_key,
-    MotionNotify: _translate_motion,
-    ButtonPress: _translate_button,
-    ButtonRelease: _translate_button,
+_event_dispatchers = {
+    KeyPress: _dispatch_key,
+    KeyRelease: _dispatch_key,
+    MotionNotify: _dispatch_motion,
+    ButtonPress: _dispatch_button,
+    ButtonRelease: _dispatch_button,
+    ClientMessage: _dispatch_clientmessage,
 }

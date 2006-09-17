@@ -106,6 +106,34 @@ class XMotionEvent(Structure):
         ('same_screen', c_int)
     ]
 
+class XDestroyWindowEvent(Structure):
+    _fields_ = [
+        ('type', c_int),
+        ('serial', c_ulong),
+        ('send_event', c_int),
+        ('display', c_void_p),
+        ('window', c_int)
+    ]
+
+class XClientMessageEvent_data(Union):
+    _fields_ = [
+		('b', c_char * 20),
+		('s', c_short * 10),
+		('l', c_long * 5),
+    ]
+
+class XClientMessageEvent(Structure):
+    _fields_ = [
+        ('type', c_int),
+        ('serial', c_ulong),
+        ('send_event', c_int),
+        ('display', c_void_p),
+        ('window', c_int),
+	    ('message_type', c_ulong),
+	    ('format', c_int),
+	    ('data', XClientMessageEvent_data),
+    ]
+
 # TODO remainder incomplete
 
 class XCrossingEvent(Structure):
@@ -163,15 +191,6 @@ class XVisibilityEvent(Structure):
     ]
 
 class XCreateWindowEvent(Structure):
-    _fields_ = [
-        ('type', c_int),
-        ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int)
-    ]
-
-class XDestroyWindowEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
@@ -307,15 +326,6 @@ class XSelectionEvent(Structure):
     ]
 
 class XColormapEvent(Structure):
-    _fields_ = [
-        ('type', c_int),
-        ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int)
-    ]
-
-class XClientMessageEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),

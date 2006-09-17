@@ -29,6 +29,8 @@ w2.flip()
 debug_handler = DebugEventHandler()
 class ExitHandler(object):
     running = True
+    def on_close(self):
+        self.running = False
     def on_keypress(self, symbol, modifiers):
         if symbol == pyglet.window.key.K_ESCAPE:
             self.running = False
