@@ -114,22 +114,21 @@ class XlibWindow(BaseWindow):
         if type(value) in (str, unicode):
             property = XTextProperty()
             if _have_utf8 and allow_utf8:
-                property.buf = create_string_buffer(value.encode('utf8'))
+                buf = create_string_buffer(value.encode('utf8'))
                 result = xlib.Xutf8TextListToTextProperty(self._display,
-                    byref(pointer(property.buf)), 1, XUTF8StringStyle, 
-                    byref(property))
+                    byref(pointer(buf)), 1, XUTF8StringStyle, byref(property))
                 if result < 0:
                     raise XlibException('Could not create UTF8 text property')
             else:
-                property.buf = \
-                    create_string_buffer(value.encode('ascii', 'ignore'))
-                result = xlib.XStringListToTextProperty( 
-                    byref(pointer(property.buf)), 1, byref(property))
+                buf = create_string_buffer(value.encode('ascii', 'ignore'))
+                result = xlib.XStringListToTextProperty(byref(pointer(buf)),
+                    1, byref(property))
                 if result < 0:
                     raise XlibException('Could not create text property')
             xlib.XSetTextProperty(self._display, 
                 self._window, byref(property), atom)
-            xlib.XFree(property.value)
+            # <rj> Xlib doesn't like us freeing this
+            #xlib.XFree(property.value)
 
     def set_title(self, title):
         self._title = title
