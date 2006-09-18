@@ -1,6 +1,55 @@
 #!/usr/bin/env python
-
 '''
+The event implementation scoreboard
+
+                                     X11  Win  OSX
+ EVENT_KEYPRESS / _KEYRELEASE         X    X    X
+ EVENT_TEXT                           X
+ EVENT_TEXT_???   (cursor control)
+ EVENT_BUTTONPRESS / _BUTTONRELEASE   X
+ EVENT_MOUSEMOTION                    X
+ EVENT_CLOSE                          X     (possibly rename WINDOWCLOSE?)
+ EVENT_POINTERIN / _POINTEROUT  (pointer in / out of window)
+ window expose
+ window resize
+ window move
+ window minimize / expose?
+
+
+OPEN QUESTIONS
+--------------
+
+1. If there's no handler for EVENT_CLOSE we probably want to have the
+   application just sys.exit() -- otherwise the close button on X11 does
+   nothing.
+
+2. EVENT_MOUSEMOTION could supply the callback with a relative movement
+   amount. I propose that this be reset to (0, 0) on:
+
+   - the very first callback
+   - the first move after an EVENT_POINTERIN
+
+3. Can we generate EVENT_POINTERIN / _POINTEROUT across all platforms?
+
+   For X11, the actual events to listen to are EnterNotify and LeaveNotify
+   which explicitly track the pointer.
+
+4. Do we also want to track input focus?
+
+
+XLIB NOTES
+----------
+
+Best xlib docs I could find:
+
+   http://tronche.com/gui/x/  (specifically xlib/ and icccm/)
+
+It'd be nice if we didn't have Xlib handlers set up for these if we're not
+actually listening for them:
+ - mouse movement (generates *many* unnecessary events)
+ - WM_DELETE_WINDOW (maybe? if we don't listen for it then the WM will
+   DestroyWindow us -- see point #1 in `OPEN QUESTIONS`_)
+
 '''
 
 __docformat__ = 'restructuredtext'
