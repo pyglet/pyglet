@@ -30,7 +30,7 @@ pyglet.window
   be separate, shared textures/lists or shared state between windows
   (separate is default).  Include AGL, GLX, WGL and respective extensions.
 
-pyglet.time
+pyglet.clock
   High-resolution timing, frames-per-second calculation (and display?)
   and framerate limiting.
 
