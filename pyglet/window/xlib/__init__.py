@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 
 '''
+Documentation sources for Xlib programming:
+
+http://tronche.com/gui/x/ (specifically xlib/ and icccm/)
+
+http://users.actcom.co.il/~choo/lupg/tutorials/xlib-programming/xlib-programming.html
+
 '''
 
 __docformat__ = 'restructuredtext'

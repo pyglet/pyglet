@@ -40,9 +40,6 @@ OPEN QUESTIONS
 XLIB NOTES
 ----------
 
-Best xlib docs I could find:
-
-   http://tronche.com/gui/x/  (specifically xlib/ and icccm/)
 
 It'd be nice if we didn't have Xlib handlers set up for these if we're not
 actually listening for them:
