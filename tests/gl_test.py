@@ -38,7 +38,6 @@ exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)
 
 c = clock.Clock()
-#c.calibrate()
 
 glMatrixMode(GL_PROJECTION)
 glLoadIdentity()
