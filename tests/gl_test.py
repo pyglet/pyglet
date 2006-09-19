@@ -11,7 +11,7 @@ from pyglet.window.event import *
 import time
 
 from pyglet.GL.VERSION_1_1 import *
-from pyglet.GLU.VERSION_1_3 import *
+from pyglet.GLU.VERSION_1_1 import *
 from pyglet import clock
 
 factory = pyglet.window.WindowFactory()
@@ -38,7 +38,6 @@ gluPerspective(60., 1., 1., 100.)
 glMatrixMode(GL_MODELVIEW)
 glClearColor(1, 1, 1, 1)
 glColor4f(.5, .5, .5, .5)
-
 r = 0
 while exit_handler.running:
     c.set_fps(60)

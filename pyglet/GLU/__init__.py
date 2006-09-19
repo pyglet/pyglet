@@ -11,21 +11,13 @@ import ctypes.util
 import sys
 
 if sys.platform == 'win32':
-    import pyglet.window.win32.WGL as _WGL
-    _gl = ctypes.windll.opengl32
+    _glu = ctypes.windll.glu32
     def get_function(name, argtypes, rtype):
-        if hasattr(_gl, name):
-            func = getattr(_gl, name)
+        try:
+            func = getattr(_glu, name)
             func.argtypes = argtypes
             func.restype = rtype
             return func
-
-        # Not in opengl32.dll, ask WGL for a pointer (requires context first)
-        try:
-            fargs = (rtype,) + tuple(argtypes)
-            ftype = ctypes.CFUNCTYPE(*fargs)
-            address = _WGL.wglGetProcAddress(name)
-            return ftype.from_address(address)
         except AttributeError, e:
             raise ImportError(e)
 
