@@ -12,7 +12,21 @@ import ctypes
 import ctypes.util
 
 if sys.platform == 'win32':
-    raise NotImplementedError, 'Need usleep() on Windows'
+    # Win32 Sleep function is only 10-millisecond resolution, so instead
+    # use a waitable timer object, which has up to 100-nanosecond resolution
+    # (hardware and implementation dependent, of course).
+    _kernel32 = ctypes.windll.kernel32
+    class _ClockBase(object):
+        def __init__(self):
+            self._timer = _kernel32.CreateWaitableTimerA(ctypes.c_void_p(), 
+                True, ctypes.c_void_p())
+
+        def sleep(self, microseconds):
+            delay = ctypes.c_longlong(int(-microseconds * 10))
+            _kernel32.SetWaitableTimer(self._timer, ctypes.byref(delay), 
+                0, ctypes.c_void_p(), ctypes.c_void_p(), False)
+            _kernel32.WaitForSingleObject(self._timer, 0xffffffff)
+
 else:
     path = ctypes.util.find_library('c')
     if not path:
@@ -20,7 +34,11 @@ else:
     _c = ctypes.cdll.LoadLibrary(path)
     _c.usleep.argtypes = [ctypes.c_ulong]
 
-class Clock(object):
+    class _ClockBase(object):
+        def sleep(self, microseconds):
+            _c.usleep(int(microseconds))
+
+class Clock(_ClockBase):
     # No attempt to sleep will be made for less than this time.  Setting
     # high will increase accuracy and CPU burn.  Setting low reduces accuracy
     # but ensures more sleeping takes place rather than busy-loop.
@@ -30,23 +48,25 @@ class Clock(object):
     # for operating systems being a bit lazy in returning control.
     SLEEP_UNDERSHOOT = MIN_SLEEP - 0.001
 
-    def __init__(self, time=time.time):
-        self.next_ts = time()
+    def __init__(self, time_function=time.time):
+        super(Clock, self).__init__()
+        self.time = time_function
+        self.next_ts = self.time()
 
-    def set_fps(self, fps, time=time.time, usleep=_c.usleep):
-        ts = time()
+    def set_fps(self, fps):
+        ts = self.time()
 
         # Sleep to just before the desired time
-        sleeptime = self.next_ts - time()
+        sleeptime = self.next_ts - self.time()
         while sleeptime - self.SLEEP_UNDERSHOOT > self.MIN_SLEEP:
             # print >> sys.stderr, 'Sleep %f' % (sleeptime - SLEEP_UNDERSHOOT)
-            usleep(int(1000000 * (sleeptime - self.SLEEP_UNDERSHOOT)))
-            sleeptime = self.next_ts - time()
+            self.sleep(1000000 * (sleeptime - self.SLEEP_UNDERSHOOT))
+            sleeptime = self.next_ts - self.time()
 
         # Busy-loop CPU to get closest to the mark
-        sleeptime = self.next_ts - time()
+        sleeptime = self.next_ts - self.time()
         while sleeptime > 0:
-            sleeptime = self.next_ts - time()
+            sleeptime = self.next_ts - self.time()
 
         if sleeptime < -2. / fps:
             # Missed the time by a long shot, let's reset the clock
