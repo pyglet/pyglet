@@ -11,20 +11,12 @@ from pyglet.window.event import *
 import time
 
 from pyglet.GL.VERSION_1_1 import *
-import ctypes
-import pyglet.GL
+from pyglet.GLU.VERSION_1_3 import *
 from pyglet import clock
-
-gluPerspective = pyglet.GL.get_function('gluPerspective', [ctypes.c_float,
-    ctypes.c_float, ctypes.c_float, ctypes.c_float], ctypes.c_int)
 
 factory = pyglet.window.WindowFactory()
 factory.config._attributes['doublebuffer'] = 1
 w1 = factory.create(width=200, height=200)
-glClearColor(1, 1, 1, 1)
-glClear(GL_COLOR_BUFFER_BIT)
-glFlush()
-w1.flip()
 
 class ExitHandler(object):
     running = True
@@ -42,7 +34,9 @@ c = clock.Clock()
 glMatrixMode(GL_PROJECTION)
 glLoadIdentity()
 gluPerspective(60., 1., 1., 100.)
+
 glMatrixMode(GL_MODELVIEW)
+glClearColor(1, 1, 1, 1)
 glColor4f(.5, .5, .5, .5)
 
 r = 0

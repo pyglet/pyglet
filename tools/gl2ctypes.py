@@ -49,6 +49,11 @@ basic_types = {
     'GLclampd': '_ctypes.c_double',
     'GLvoid': 'None',
 
+    # From /usr/include/GL/glu.h
+    'GLUnurbs': 'None',
+    'GLUquadric': 'None',
+    'GLUtesselator': 'None',
+
     # From /usr/include/X11/X.h
     'XID': '_ctypes.c_ulong',
     'Window': '_ctypes.c_ulong',
