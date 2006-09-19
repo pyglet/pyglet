@@ -7,10 +7,21 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import time
-from ctypes import *
+import sys
+import ctypes
+import ctypes.util
 
-clib = cdll.LoadLibrary('libc.so.6')
-clib.usleep.argtypes = [c_ulong]
+if sys.platform == 'win32':
+    raise NotImplementedError, 'Need usleep() on Windows'
+elif sys.platform == 'darwin':
+    path = ctypes.util.find_library('c')
+    if not path:
+        raise ImportError('libc not found')
+    _c = ctypes.cdll.LoadLibrary(path)
+    _c.usleep.argtypes = [ctypes.c_ulong]
+else:
+    _c = ctypes.cdll.LoadLibrary('libc.so.6')
+    _c.usleep.argtypes = [ctypes.c_ulong]
 
 class Clock:
     last_ts = None
@@ -25,7 +36,7 @@ class Clock:
         cls.calibration = d/100
         print 'CALIBRATION = %f'%cls.calibration
 
-    def set_fps(self, fps, time=time.time, usleep=clib.usleep):
+    def set_fps(self, fps, time=time.time, usleep=_c.usleep):
         delay = 1. / fps
         ts = time()
         if self.last_ts is None:
