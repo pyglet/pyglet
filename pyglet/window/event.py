@@ -15,6 +15,7 @@ The event implementation scoreboard
  window move
  window minimize / expose?
 
+XXX I just noticed pyglet/event.py which needs to match all this
 
 OPEN QUESTIONS
 --------------
@@ -39,7 +40,6 @@ OPEN QUESTIONS
 
 XLIB NOTES
 ----------
-
 
 It'd be nice if we didn't have Xlib handlers set up for these if we're not
 actually listening for them:
