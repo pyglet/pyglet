@@ -132,6 +132,7 @@ class XlibWindow(BaseWindow):
         while xlib.XCheckTypedEvent(self._display, ClientMessage, byref(e)):
             if e.xclient.window != self._window:
                 push_back.append(e)
+                e = XEvent()  # <ah> Let's not break the event we're storing.
             else:
                 event_dispatcher = _event_dispatchers.get(e.type)
                 if event_dispatcher:
