@@ -146,7 +146,7 @@ class CarbonWindow(BaseWindow):
         upp = carbon.NewEventHandlerUPP(proc)
         types = EventTypeSpec()
         types.eventClass = cls
-        types.eventKind = kind 
+        types.eventKind = kind
         carbon.InstallEventHandler(
             carbon.GetWindowEventTarget(self._window),
             upp,
@@ -180,14 +180,14 @@ class CarbonWindow(BaseWindow):
 
     def _on_key_up(self, next_handler, event, data):
         symbol, modifiers = self._get_symbol_and_modifiers(event)
-        if symbol: 
+        if symbol:
             self.dispatch_event(EVENT_KEYRELEASE, symbol, modifiers)
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
 
     def _on_key_down(self, next_handler, event, data):
         symbol, modifiers = self._get_symbol_and_modifiers(event)
-        if symbol: 
+        if symbol:
             self.dispatch_event(EVENT_KEYPRESS, symbol, modifiers)
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
@@ -202,7 +202,7 @@ class CarbonWindow(BaseWindow):
             typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
             byref(modifiers))
 
-        return (keymap.get(symbol.value, None), 
+        return (keymap.get(symbol.value, None),
                 CarbonWindow._map_modifiers(modifiers.value))
 
     @staticmethod
