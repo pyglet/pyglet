@@ -120,9 +120,9 @@ class XlibWindow(BaseWindow):
         # Check for the events specific to this window
         while xlib.XCheckWindowEvent(self._display, self._window,
                 0x1ffffff, byref(e)):
-            event_dispatcher = _event_dispatchers.get(e.type)
-            if event_dispatcher:
-                event_dispatcher(self, e)
+            event_translator = self.__event_translators.get(e.type)
+            if event_translator:
+                event_translator(self, e)
 
         # Now check generic events for this display and manually filter
         # them to see whether they're for this window. sigh.
@@ -134,9 +134,9 @@ class XlibWindow(BaseWindow):
                 push_back.append(e)
                 e = XEvent()  # <ah> Let's not break the event we're storing.
             else:
-                event_dispatcher = _event_dispatchers.get(e.type)
-                if event_dispatcher:
-                    event_dispatcher(self, e)
+                event_translator = self.__event_translators.get(e.type)
+                if event_translator:
+                    event_translator(self, e)
         for e in push_back:
             xlib.XPutBackEvent(self._display, byref(e))
 
@@ -172,6 +172,102 @@ class XlibWindow(BaseWindow):
 
     def get_title(self):
         return self._title
+
+    def __translate_key(window, event):
+        if event.type == KeyRelease:
+            # Look in the queue for a matching KeyPress with same timestamp,
+            # indicating an auto-repeat rather than actual key event.
+            auto_event = XEvent()
+            result = xlib.XCheckTypedWindowEvent(window._display,
+                window._window, KeyPress, byref(auto_event))
+            if result and event.xkey.time == auto_event.xkey.time:
+                buffer = create_string_buffer(16)
+                count = xlib.XLookupString(byref(auto_event), 
+                                           byref(buffer), 
+                                           len(buffer), 
+                                           c_void_p(),
+                                           c_void_p())
+                if count:
+                    text = buffer.value[:count]
+                else:
+                    raise NotImplementedError, 'XLookupString had no idea'
+                window.dispatch_event(EVENT_TEXT, text)
+                return
+            elif result:
+                # Whoops, put the event back, it's for real.
+                xlib.XPutBackEvent(window._display, byref(event))
+
+        # pyglet.window.key keysymbols are identical to X11 keysymbols, no
+        # need to map the keysymbol.
+        text = None 
+        if event.type == KeyPress:
+            buffer = create_string_buffer(16)
+            # TODO lookup UTF8
+            count = xlib.XLookupString(byref(event), 
+                                       byref(buffer), 
+                                       len(buffer), 
+                                       c_void_p(),
+                                       c_void_p())
+            if count:
+                text = unicode(buffer.value[:count])
+        symbol = xlib.XKeycodeToKeysym(window._display, event.xkey.keycode, 0)
+
+        modifiers = _translate_modifiers(event.xkey.state)
+
+        if event.type == KeyPress:
+            window.dispatch_event(EVENT_KEYPRESS, symbol, modifiers)
+            if (text and 
+                (unicodedata.category(text) != 'Cc' or text == '\r')):
+                window.dispatch_event(EVENT_TEXT, text)
+        elif event.type == KeyRelease:
+            window.dispatch_event(EVENT_KEYRELEASE, symbol, modifiers)
+
+    def __translate_motion(window, event):
+        # XXX do we want to figure the relative movement for convenience?
+        window.dispatch_event(EVENT_MOUSEMOTION, event.xmotion.x,
+            event.xmotion.y)
+
+    def __translate_clientmessage(window, event):
+        wm_delete_window = xlib.XInternAtom(event.xclient.display,
+            'WM_DELETE_WINDOW', False)
+        if event.xclient.data.l[0] == wm_delete_window:
+            window.dispatch_event(EVENT_CLOSE)
+        else:
+            raise NotImplementedError
+
+    def __translate_button(window, event):
+        modifiers = _translate_modifiers(event.xbutton.state)
+        if event.type == ButtonPress:
+            window.dispatch_event(EVENT_BUTTONPRESS, event.xbutton.button,
+                event.xbutton.x, event.xbutton.y, modifiers)
+        else:
+            window.dispatch_event(EVENT_BUTTONRELEASE, event.xbutton.button,
+                event.xbutton.x, event.xbutton.y, modifiers)
+
+    __event_translators = {
+        KeyPress: __translate_key,
+        KeyRelease: __translate_key,
+        MotionNotify: __translate_motion,
+        ButtonPress: __translate_button,
+        ButtonRelease: __translate_button,
+        ClientMessage: __translate_clientmessage,
+    }
+
+def _translate_modifiers(state):
+    modifiers = 0
+    if state & ShiftMask:
+        modifiers |= MOD_SHIFT  
+    if state & ControlMask:
+        modifiers |= MOD_CTRL
+    if state & LockMask:
+        modifiers |= MOD_CAPSLOCK
+    if state & Mod1Mask:
+        modifiers |= MOD_ALT
+    if state & Mod2Mask:
+        modifiers |= MOD_NUMLOCK
+    if state & Mod4Mask:
+        modifiers |= MOD_WINDOWS
+    return modifiers
 
 _attribute_ids = {
     'buffer_size': GLX_BUFFER_SIZE,
@@ -241,98 +337,3 @@ class XlibGLConfig(BaseGLConfig):
         else:
             return []
 
-def _translate_modifiers(state):
-    modifiers = 0
-    if state & ShiftMask:
-        modifiers |= MOD_SHIFT  
-    if state & ControlMask:
-        modifiers |= MOD_CTRL
-    if state & LockMask:
-        modifiers |= MOD_CAPSLOCK
-    if state & Mod1Mask:
-        modifiers |= MOD_ALT
-    if state & Mod2Mask:
-        modifiers |= MOD_NUMLOCK
-    if state & Mod4Mask:
-        modifiers |= MOD_WINDOWS
-    return modifiers
-
-def _dispatch_key(window, event):
-    if event.type == KeyRelease:
-        # Look in the queue for a matching KeyPress with same timestamp,
-        # indicating an auto-repeat rather than actual key event.
-        auto_event = XEvent()
-        result = xlib.XCheckTypedWindowEvent(window._display,
-            window._window, KeyPress, byref(auto_event))
-        if result and event.xkey.time == auto_event.xkey.time:
-            buffer = create_string_buffer(16)
-            count = xlib.XLookupString(byref(auto_event), 
-                                       byref(buffer), 
-                                       len(buffer), 
-                                       c_void_p(),
-                                       c_void_p())
-            if count:
-                text = buffer.value[:count]
-            else:
-                raise NotImplementedError, 'XLookupString had no idea'
-            window.dispatch_event(EVENT_TEXT, text)
-            return
-        elif result:
-            # Whoops, put the event back, it's for real.
-            xlib.XPutBackEvent(window._display, byref(event))
-
-    # pyglet.window.key keysymbols are identical to X11 keysymbols, no
-    # need to map the keysymbol.
-    text = None 
-    if event.type == KeyPress:
-        buffer = create_string_buffer(16)
-        # TODO lookup UTF8
-        count = xlib.XLookupString(byref(event), 
-                                   byref(buffer), 
-                                   len(buffer), 
-                                   c_void_p(),
-                                   c_void_p())
-        if count:
-            text = unicode(buffer.value[:count])
-    symbol = xlib.XKeycodeToKeysym(window._display, event.xkey.keycode, 0)
-
-    modifiers = _translate_modifiers(event.xkey.state)
-
-    if event.type == KeyPress:
-        window.dispatch_event(EVENT_KEYPRESS, symbol, modifiers)
-        if (text and 
-            (unicodedata.category(text) != 'Cc' or text == '\r')):
-            window.dispatch_event(EVENT_TEXT, text)
-    elif event.type == KeyRelease:
-        window.dispatch_event(EVENT_KEYRELEASE, symbol, modifiers)
-
-def _dispatch_motion(window, event):
-    # XXX do we want to figure the relative movement for convenience?
-    window.dispatch_event(EVENT_MOUSEMOTION, event.xmotion.x,
-        event.xmotion.y)
-
-def _dispatch_clientmessage(window, event):
-    wm_delete_window = xlib.XInternAtom(event.xclient.display,
-        'WM_DELETE_WINDOW', False)
-    if event.xclient.data.l[0] == wm_delete_window:
-        window.dispatch_event(EVENT_CLOSE)
-    else:
-        raise NotImplementedError
-
-def _dispatch_button(window, event):
-    modifiers = _translate_modifiers(event.xbutton.state)
-    if event.type == ButtonPress:
-        window.dispatch_event(EVENT_BUTTONPRESS, event.xbutton.button,
-            event.xbutton.x, event.xbutton.y, modifiers)
-    else:
-        window.dispatch_event(EVENT_BUTTONRELEASE, event.xbutton.button,
-            event.xbutton.x, event.xbutton.y, modifiers)
-
-_event_dispatchers = {
-    KeyPress: _dispatch_key,
-    KeyRelease: _dispatch_key,
-    MotionNotify: _dispatch_motion,
-    ButtonPress: _dispatch_button,
-    ButtonRelease: _dispatch_button,
-    ClientMessage: _dispatch_clientmessage,
-}

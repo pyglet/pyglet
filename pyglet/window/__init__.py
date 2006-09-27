@@ -7,9 +7,8 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import sys
-import inspect
 
-import pyglet.window.event
+from pyglet.window.event import WindowEventHandler
 import pyglet.window.key
 
 class WindowException(Exception):
@@ -45,11 +44,9 @@ class BaseWindowFactory(object):
     def create_context(self, window, config, share_context=None):
         pass
 
-
-
-class BaseWindow(object):
+class BaseWindow(WindowEventHandler):
     def __init__(self):
-        self._event_stack = [{}]
+        WindowEventHandler.__init__(self)
 
     def set_title(self, title):
         self.title = title
@@ -66,44 +63,6 @@ class BaseWindow(object):
 
     def get_config(self):
         return self.config
-
-    def push_handlers(self, *args, **kwargs):
-        self._event_stack.insert(0, {})
-        self.set_handlers(*args, **kwargs)
-
-    def set_handlers(self, *args, **kwargs):
-        for object in args:
-            if inspect.isroutine(object):
-                # Single magically named function
-                name = object.__name__
-                if name not in pyglet.window.event._event_types:
-                    raise WindowException('Unknown event "%s"' % name)
-                self._event_stack[0][name] = object
-            else:
-                # Single instance with magically named methods
-                for name, handler in inspect.getmembers(object):
-                    if name in pyglet.window.event._event_types:
-                        self._event_stack[0][name] = handler
-        for name, handler in kwargs.items():
-            # Function for handling given event (no magic)
-            if name not in pyglet.window.event._event_types:
-                raise WindowException('Unknown event "%s"' % name)
-            self._event_stack[0][name] = handler
-
-    def pop_handlers(self):
-        del self._event_stack[0]
-
-    def dispatch_event(self, event_type, *args):
-        for frame in self._event_stack:
-            handler = frame.get(event_type, None)
-            if handler:
-                ret = handler(*args)
-                if ret != pyglet.window.event.EVENT_UNHANDLED:
-                    break
-        return None
-
-    def dispatch_events(self):
-        raise NotImplementedError('Abstract; this method needs overriding')
 
 class BaseGLConfig(object):
     def __init__(self):
@@ -124,3 +83,4 @@ elif sys.platform == 'win32':
 else:
     from pyglet.window.xlib import XlibWindowFactory
     WindowFactory = XlibWindowFactory
+

@@ -53,22 +53,18 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import pyglet.window.key
+from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED, EventHandler
 
-EVENT_HANDLED = None 
-EVENT_UNHANDLED = 1 
+class WindowEventHandler(EventHandler):
+    pass
 
-_event_types = []
-def _make_event(name):
-    _event_types.append(name)
-    return name
-
-EVENT_KEYPRESS = _make_event('on_keypress')
-EVENT_KEYRELEASE = _make_event('on_keyrelease')
-EVENT_TEXT = _make_event('on_text')
-EVENT_MOUSEMOTION = _make_event('on_mousemotion')
-EVENT_BUTTONPRESS = _make_event('on_buttonpress')
-EVENT_BUTTONRELEASE = _make_event('on_buttonrelease')
-EVENT_CLOSE = _make_event('on_close')
+EVENT_KEYPRESS = WindowEventHandler.register_event_type('on_keypress')
+EVENT_KEYRELEASE = WindowEventHandler.register_event_type('on_keyrelease')
+EVENT_TEXT = WindowEventHandler.register_event_type('on_text')
+EVENT_MOUSEMOTION = WindowEventHandler.register_event_type('on_mousemotion')
+EVENT_BUTTONPRESS = WindowEventHandler.register_event_type('on_buttonpress')
+EVENT_BUTTONRELEASE = WindowEventHandler.register_event_type('on_buttonrelease')
+EVENT_CLOSE = WindowEventHandler.register_event_type('on_close')
 
 def _modifiers_to_string(modifiers):
     mod_names = []
