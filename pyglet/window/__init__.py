@@ -114,20 +114,12 @@ class BaseGLConfig(object):
 class BaseGLContext(object):
     pass
 
-try:
-    from pyglet.window.xlib import XlibWindowFactory
-    WindowFactory = XlibWindowFactory
-except:
-    pass
-
-try:
+if sys.platform == 'darwin':
     from pyglet.window.carbon import CarbonWindowFactory
     WindowFactory = CarbonWindowFactory
-except:
-    pass
-
-try:
+elif sys.platform == 'win32':
     from pyglet.window.win32 import Win32WindowFactory
     WindowFactory = Win32WindowFactory
-except:
-    pass
+else:
+    from pyglet.window.xlib import XlibWindowFactory
+    WindowFactory = XlibWindowFactory
