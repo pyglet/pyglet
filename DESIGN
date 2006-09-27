@@ -60,13 +60,14 @@ pyglet.draw
 pyglet.scene2d  (alternate name suggestions welcome)
   2D sprites with collision detection, square and hexagon tile maps.  A
   level editor.  Suitable for side-scrolling, top-down, isometric or
-  flat 3d rendered games.
+  flat 3d rendered games. BTree.
 
 pyglet.scene3d  (alternate name suggestions welcome)
   OBJ (and other formats?) model loading.  Models are readily modifiable
   for vertex weighting, edge extraction (volume shadowing), binormal
   calculations, etc.  Scene of objects, lights and camera.  Abstract mechanism
-  for frustum culling and collision detection. A scene editor.
+  for frustum culling and collision detection. A scene editor. Octree,
+  possibly BSP.
 
 pyglet.euclid  (alternate name suggestions welcome)
   2D and 3D vectors, matrices, quaternions and primitives such as sphere,
