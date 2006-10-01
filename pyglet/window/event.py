@@ -8,14 +8,12 @@ The event implementation scoreboard
  EVENT_TEXT_???   (cursor control)
  EVENT_BUTTONPRESS / _BUTTONRELEASE   X
  EVENT_MOUSEMOTION                    X
- EVENT_CLOSE                          X     (possibly rename WINDOWCLOSE?)
- EVENT_POINTERIN / _POINTEROUT  (pointer in / out of window)
- window expose
- window resize
- window move
- window minimize / expose?
+ EVENT_CLOSE                          X
+ EVENT_ENTER / _LEAVE                 X (pointer in / out of window)
+ EVENT_EXPOSE                         X (window expose)
+ EVENT_RESIZE                   (window resize)
+ EVENT_MOVE                     (window move)
 
-XXX I just noticed pyglet/event.py which needs to match all this
 
 OPEN QUESTIONS
 --------------
@@ -28,15 +26,13 @@ OPEN QUESTIONS
    amount. I propose that this be reset to (0, 0) on:
 
    - the very first callback
-   - the first move after an EVENT_POINTERIN
+   - the first move after an EVENT_ENTER
 
-3. Can we generate EVENT_POINTERIN / _POINTEROUT across all platforms?
+3. Can we generate EVENT_ENTER / _LEAVE across all platforms?
 
-   For X11, the actual events to listen to are EnterNotify and LeaveNotify
-   which explicitly track the pointer.
+   X11 gives us mouse motion information with these events.
 
 4. Do we also want to track input focus?
-
 
 XLIB NOTES
 ----------
@@ -46,6 +42,15 @@ actually listening for them:
  - mouse movement (generates *many* unnecessary events)
  - WM_DELETE_WINDOW (maybe? if we don't listen for it then the WM will
    DestroyWindow us -- see point #1 in `OPEN QUESTIONS`_)
+
+Resize and move are handled by a bunch of different events:
+
+- ResizeRequest (reports another client's attempts to change the size of a
+  window)
+- ConfigureNotify (reports actual changes to a window's state, such as
+  size, position, border, and stacking order)
+- ConfigureRequest (reports when another client initiates a configure window
+  request on any child of a specified window)
 
 '''
 
@@ -58,6 +63,7 @@ from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED, EventHandler
 class WindowEventHandler(EventHandler):
     pass
 
+# symbolic names for the window events
 EVENT_KEYPRESS = WindowEventHandler.register_event_type('on_keypress')
 EVENT_KEYRELEASE = WindowEventHandler.register_event_type('on_keyrelease')
 EVENT_TEXT = WindowEventHandler.register_event_type('on_text')
@@ -65,6 +71,18 @@ EVENT_MOUSEMOTION = WindowEventHandler.register_event_type('on_mousemotion')
 EVENT_BUTTONPRESS = WindowEventHandler.register_event_type('on_buttonpress')
 EVENT_BUTTONRELEASE = WindowEventHandler.register_event_type('on_buttonrelease')
 EVENT_CLOSE = WindowEventHandler.register_event_type('on_close')
+EVENT_ENTER = WindowEventHandler.register_event_type('on_enter')
+EVENT_LEAVE = WindowEventHandler.register_event_type('on_leave')
+EVENT_EXPOSE = WindowEventHandler.register_event_type('on_expose')
+EVENT_RESIZE = WindowEventHandler.register_event_type('on_resize')
+EVENT_MOVE = WindowEventHandler.register_event_type('on_move')
+
+# symbolic names for the mouse buttons
+MOUSE_LEFT_BUTTON = 1
+MOUSE_MIDDLE_BUTTON = 2
+MOUSE_RIGHT_BUTTON = 3
+MOUSE_SCROLL_UP = 4
+MOUSE_SCROLL_DOWN = 5
 
 def _modifiers_to_string(modifiers):
     mod_names = []
@@ -98,10 +116,18 @@ class EventHandler(object):
     def on_text(self, text):
         pass
 
-    def on_mousemotion(self, x, y):
+    def on_mousemotion(self, x, y, dx, dy):
         pass
 
     def on_buttonpress(self, button, x, y, modifiers):
+        '''
+            "button" is one of:
+                MOUSE_LEFT_BUTTON = 1
+                MOUSE_MIDDLE_BUTTON = 2
+                MOUSE_RIGHT_BUTTON = 3
+                MOUSE_SCROLL_UP = 4
+                MOUSE_SCROLL_DOWN = 5
+        '''
         pass
 
     def on_buttonrelease(self, button, x, y, modifiers):
@@ -109,6 +135,22 @@ class EventHandler(object):
 
     def on_close(self):
         pass
+
+    def on_enter(self, x, y):
+        pass
+
+    def on_leave(self, x, y):
+        pass
+
+    def on_expose(self):
+        pass
+
+    def on_resize(self):
+        pass
+
+    def on_move(self):
+        pass
+
 
 class DebugEventHandler(object):
     def on_keypress(self, symbol, modifiers):
@@ -125,8 +167,8 @@ class DebugEventHandler(object):
         print 'on_text(text=%r)' % text
         return EVENT_UNHANDLED
 
-    def on_mousemotion(self, x, y):
-        print 'on_mousemotion(x=%d, y=%d)' % (x, y)
+    def on_mousemotion(self, x, y, dx, dy):
+        print 'on_mousemotion(x=%d, y=%d, dx=%d, dy=%d)' % (x, y, dx, dy)
         return EVENT_UNHANDLED
 
     def on_buttonpress(self, button, x, y, modifiers):
@@ -141,5 +183,25 @@ class DebugEventHandler(object):
 
     def on_close(self):
         print 'on_destroy()'
+        return EVENT_UNHANDLED
+
+    def on_enter(self, x, y):
+        print 'on_enter(x=%d, y=%d)' % (x, y)
+        return EVENT_UNHANDLED
+
+    def on_leave(self, x, y):
+        print 'on_leave(x=%d, y=%d)' % (x, y)
+        return EVENT_UNHANDLED
+
+    def on_expose(self):
+        print 'on_expose()'
+        return EVENT_UNHANDLED
+
+    def on_resize(self):
+        print 'on_resize()'
+        return EVENT_UNHANDLED
+
+    def on_move(self):
+        print 'on_move()'
         return EVENT_UNHANDLED
 

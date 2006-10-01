@@ -14,6 +14,11 @@ import pyglet.window.key
 class WindowException(Exception):
     pass
 
+class Mouse(object):
+    def __init__(self):
+        self.x, self.y = 0, 0
+        self.buttons = [False] * 6      # mouse buttons index from 1 + 
+
 class BaseWindowFactory(object):
     def __init__(self):
         self.config = self.create_config_prototype()
@@ -47,6 +52,7 @@ class BaseWindowFactory(object):
 class BaseWindow(WindowEventHandler):
     def __init__(self):
         WindowEventHandler.__init__(self)
+        self.mouse = Mouse()
 
     def set_title(self, title):
         self.title = title

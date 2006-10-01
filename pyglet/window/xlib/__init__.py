@@ -223,9 +223,13 @@ class XlibWindow(BaseWindow):
             window.dispatch_event(EVENT_KEYRELEASE, symbol, modifiers)
 
     def __translate_motion(window, event):
-        # XXX do we want to figure the relative movement for convenience?
-        window.dispatch_event(EVENT_MOUSEMOTION, event.xmotion.x,
-            event.xmotion.y)
+        x = event.xmotion.x
+        y = event.xmotion.y
+        dx = x - window.mouse.x
+        dy = y - window.mouse.y
+        window.mouse.x = x
+        window.mouse.y = y
+        window.dispatch_event(EVENT_MOUSEMOTION, x, y, dx, dy)
 
     def __translate_clientmessage(window, event):
         wm_delete_window = xlib.XInternAtom(event.xclient.display,
@@ -238,11 +242,43 @@ class XlibWindow(BaseWindow):
     def __translate_button(window, event):
         modifiers = _translate_modifiers(event.xbutton.state)
         if event.type == ButtonPress:
+            window.mouse.buttons[event.xbutton.button] = True
             window.dispatch_event(EVENT_BUTTONPRESS, event.xbutton.button,
                 event.xbutton.x, event.xbutton.y, modifiers)
         else:
+            window.mouse.buttons[event.xbutton.button] = False
             window.dispatch_event(EVENT_BUTTONRELEASE, event.xbutton.button,
                 event.xbutton.x, event.xbutton.y, modifiers)
+
+    def __translate_expose(window, event):
+        # Ignore all expose events except the last one. We could be told
+        # about exposure rects - but I don't see the point since we're
+        # working with OpenGL and we'll just redraw the whole scene.
+        if event.xexpose.count > 0: return
+        window.dispatch_event(EVENT_EXPOSE)
+
+    def __translate_enter(window, event):
+        # figure active mouse buttons
+        # XXX ignore modifier state?
+        state = event.xcrossing.state
+        window.mouse.buttons[1] = state & Button1Mask
+        window.mouse.buttons[2] = state & Button2Mask
+        window.mouse.buttons[3] = state & Button3Mask
+        window.mouse.buttons[4] = state & Button4Mask
+        window.mouse.buttons[5] = state & Button5Mask
+
+        # mouse position
+        x = window.mouse.x = event.xcrossing.x
+        y = window.mouse.y = event.xcrossing.y
+
+        # XXX there may be more we could do here
+        window.dispatch_event(EVENT_ENTER, x, y)
+
+    def __translate_leave(window, event):
+        # XXX do we care about mouse buttons?
+        x = window.mouse.x = event.xcrossing.x
+        y = window.mouse.y = event.xcrossing.y
+        window.dispatch_event(EVENT_LEAVE, x, y)
 
     __event_translators = {
         KeyPress: __translate_key,
@@ -251,6 +287,9 @@ class XlibWindow(BaseWindow):
         ButtonPress: __translate_button,
         ButtonRelease: __translate_button,
         ClientMessage: __translate_clientmessage,
+        Expose: __translate_expose,
+        EnterNotify: __translate_enter,
+        LeaveNotify: __translate_leave,
     }
 
 def _translate_modifiers(state):

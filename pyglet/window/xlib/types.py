@@ -45,10 +45,9 @@ class XAnyEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
-# TODO all the type-based TODOs below apply to all events
 class XKeyEvent(Structure):
     _fields_ = [
         ('type', c_int),
@@ -112,7 +111,7 @@ class XDestroyWindowEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XClientMessageEvent_data(Union):
@@ -134,7 +133,19 @@ class XClientMessageEvent(Structure):
 	    ('data', XClientMessageEvent_data),
     ]
 
-# TODO remainder incomplete
+class XExposeEvent(Structure):
+    _fields_ = [
+        ('type', c_int),
+        ('serial', c_ulong),
+        ('send_event', c_int),
+        ('display', c_void_p),
+        ('window', c_int),
+        ('x', c_int),
+        ('y', c_int),
+        ('width', c_int),
+        ('height', c_int),
+        ('count', c_int),
+    ]
 
 class XCrossingEvent(Structure):
     _fields_ = [
@@ -142,8 +153,22 @@ class XCrossingEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
+        ('root', c_int),
+        ('subwindow', c_int),
+        ('time', c_ulong),
+        ('x', c_int),
+        ('y', c_int),
+        ('x_root', c_int),
+        ('y_root', c_int),
+        ('mode', c_int),
+        ('detail', c_int),
+        ('same_screen', c_int),
+        ('focus', c_int),
+        ('state', c_uint),
     ]
+
+# TODO remainder incomplete
 
 class XFocusChangeEvent(Structure):
     _fields_ = [
@@ -151,16 +176,7 @@ class XFocusChangeEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
-    ]
-
-class XExposeEvent(Structure):
-    _fields_ = [
-        ('type', c_int),
-        ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XGraphicsExposeEvent(Structure):
@@ -169,7 +185,7 @@ class XGraphicsExposeEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XNoExposeEvent(Structure):
@@ -178,7 +194,7 @@ class XNoExposeEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XVisibilityEvent(Structure):
@@ -187,7 +203,7 @@ class XVisibilityEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XCreateWindowEvent(Structure):
@@ -196,7 +212,7 @@ class XCreateWindowEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XUnmapEvent(Structure):
@@ -205,7 +221,7 @@ class XUnmapEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XMapEvent(Structure):
@@ -214,7 +230,7 @@ class XMapEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XMapRequestEvent(Structure):
@@ -223,7 +239,7 @@ class XMapRequestEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XReparentEvent(Structure):
@@ -232,7 +248,7 @@ class XReparentEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XConfigureEvent(Structure):
@@ -241,7 +257,7 @@ class XConfigureEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XGravityEvent(Structure):
@@ -250,7 +266,7 @@ class XGravityEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XResizeRequestEvent(Structure):
@@ -259,7 +275,7 @@ class XResizeRequestEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XConfigureRequestEvent(Structure):
@@ -268,7 +284,7 @@ class XConfigureRequestEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XCirculateEvent(Structure):
@@ -277,7 +293,7 @@ class XCirculateEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XCirculateRequestEvent(Structure):
@@ -286,7 +302,7 @@ class XCirculateRequestEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XPropertyEvent(Structure):
@@ -295,7 +311,7 @@ class XPropertyEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XSelectionClearEvent(Structure):
@@ -304,7 +320,7 @@ class XSelectionClearEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XSelectionRequestEvent(Structure):
@@ -313,7 +329,7 @@ class XSelectionRequestEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XSelectionEvent(Structure):
@@ -322,7 +338,7 @@ class XSelectionEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XColormapEvent(Structure):
@@ -331,7 +347,7 @@ class XColormapEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XMappingEvent(Structure):
@@ -340,7 +356,7 @@ class XMappingEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XErrorEvent(Structure):
@@ -349,7 +365,7 @@ class XErrorEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XKeymapEvent(Structure):
@@ -358,7 +374,7 @@ class XKeymapEvent(Structure):
         ('serial', c_ulong),
         ('send_event', c_int),
         ('display', c_void_p),
-        ('window', c_int)
+        ('window', c_int),
     ]
 
 class XEvent(Union):
