@@ -18,6 +18,7 @@ from pyglet.model import obj
 
 factory = pyglet.window.WindowFactory()
 factory.config._attributes['doublebuffer'] = 1
+factory.config._attributes['depth_size'] = 24
 w1 = factory.create(width=200, height=200)
 
 class ExitHandler(object):
