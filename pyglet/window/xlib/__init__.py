@@ -77,6 +77,13 @@ class XlibWindow(BaseWindow):
         super(XlibWindow, self).__init__()
         self._display = display
 
+        self.width = width
+        self.height = height
+
+        # XXX the WM can probably tell us this
+        self.x = 0
+        self.y = 0
+
         black = xlib.XBlackPixel(self._display, 
             xlib.XDefaultScreen(self._display))
         self._window = xlib.XCreateSimpleWindow(self._display,
@@ -280,6 +287,18 @@ class XlibWindow(BaseWindow):
         y = window.mouse.y = event.xcrossing.y
         window.dispatch_event(EVENT_LEAVE, x, y)
 
+    def __translate_configure(window, event):
+        w, h = event.xconfigure.width, event.xconfigure.height
+        x, y = event.xconfigure.x, event.xconfigure.y
+        if window.width != w or window.height != h:
+            window.dispatch_event(EVENT_RESIZE, w, h)
+            window.width = w
+            window.height = h
+        if window.x != x or window.y != y:
+            window.dispatch_event(EVENT_MOVE, x, y)
+            window.x = x
+            window.y = y
+
     __event_translators = {
         KeyPress: __translate_key,
         KeyRelease: __translate_key,
@@ -290,6 +309,7 @@ class XlibWindow(BaseWindow):
         Expose: __translate_expose,
         EnterNotify: __translate_enter,
         LeaveNotify: __translate_leave,
+        ConfigureNotify: __translate_configure,
     }
 
 def _translate_modifiers(state):

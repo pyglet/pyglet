@@ -11,9 +11,10 @@ from ctypes import *
 from pyglet.window.xlib.constants import *
 
 # from X.h
-#  XID = c_ulong
-#  ... and a whole lot of things are XIDs
-#  Time is c_ulong
+XID = Atom = Time = c_ulong
+Window = XID
+Display = c_void_p
+Bool = c_int
 
 # Window attrs from Xlib.h
 
@@ -43,75 +44,75 @@ class XAnyEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XKeyEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_ulong),
-        ('root', c_ulong),
-        ('subwindow', c_ulong),
-        ('time', c_ulong),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
+        ('root', Window),
+        ('subwindow', Window),
+        ('time', Time),
         ('x', c_int),
         ('y', c_int),
         ('x_root', c_int),
         ('y_root', c_int),
         ('state', c_uint),
         ('keycode', c_uint),
-        ('same_screen', c_int)
+        ('same_screen', Bool)
     ]
 
 class XButtonEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
-        ('root', c_ulong),
-        ('subwindow', c_ulong),
-        ('time', c_ulong),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
+        ('root', Window),
+        ('subwindow', Window),
+        ('time', Time),
         ('x', c_int),
         ('y', c_int),
         ('x_root', c_int),
         ('y_root', c_int),
         ('state', c_uint),
         ('button', c_uint),
-        ('same_screen', c_int)
+        ('same_screen', Bool)
     ]
 
 class XMotionEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
-        ('root', c_ulong),
-        ('subwindow', c_ulong),
-        ('time', c_ulong),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
+        ('root', Window),
+        ('subwindow', Window),
+        ('time', Time),
         ('x', c_int),
         ('y', c_int),
         ('x_root', c_int),
         ('y_root', c_int),
         ('state', c_uint),
         ('is_hint', c_char),
-        ('same_screen', c_int)
+        ('same_screen', Bool)
     ]
 
 class XDestroyWindowEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XClientMessageEvent_data(Union):
@@ -125,10 +126,10 @@ class XClientMessageEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
-	    ('message_type', c_ulong),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
+	    ('message_type', Atom),
 	    ('format', c_int),
 	    ('data', XClientMessageEvent_data),
     ]
@@ -137,9 +138,9 @@ class XExposeEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
         ('x', c_int),
         ('y', c_int),
         ('width', c_int),
@@ -151,21 +152,38 @@ class XCrossingEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
-        ('root', c_int),
-        ('subwindow', c_int),
-        ('time', c_ulong),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
+        ('root', Window),
+        ('subwindow', Window),
+        ('time', Time),
         ('x', c_int),
         ('y', c_int),
         ('x_root', c_int),
         ('y_root', c_int),
         ('mode', c_int),
         ('detail', c_int),
-        ('same_screen', c_int),
-        ('focus', c_int),
+        ('same_screen', Bool),
+        ('focus', Bool),
         ('state', c_uint),
+    ]
+
+class XConfigureEvent(Structure):
+    _fields_ = [
+        ('type', c_int),
+        ('serial', c_ulong),
+        ('send_event', Bool),
+        ('display', Display),
+        ('event', Window),
+        ('window', Window),
+        ('x', c_int),
+        ('y', c_int),
+        ('width', c_int),
+        ('height', c_int),
+        ('border_width', c_int),
+        ('window_above', Window),
+        ('override_redirect', Bool),
     ]
 
 # TODO remainder incomplete
@@ -174,207 +192,198 @@ class XFocusChangeEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XGraphicsExposeEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XNoExposeEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XVisibilityEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XCreateWindowEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XUnmapEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XMapEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XMapRequestEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XReparentEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
-    ]
-
-class XConfigureEvent(Structure):
-    _fields_ = [
-        ('type', c_int),
-        ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XGravityEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XResizeRequestEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XConfigureRequestEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XCirculateEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XCirculateRequestEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XPropertyEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XSelectionClearEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XSelectionRequestEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XSelectionEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XColormapEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XMappingEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XErrorEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XKeymapEvent(Structure):
     _fields_ = [
         ('type', c_int),
         ('serial', c_ulong),
-        ('send_event', c_int),
-        ('display', c_void_p),
-        ('window', c_int),
+        ('send_event', Bool),
+        ('display', Display),
+        ('window', Window),
     ]
 
 class XEvent(Union):

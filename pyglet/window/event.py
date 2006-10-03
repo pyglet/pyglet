@@ -11,8 +11,8 @@ The event implementation scoreboard
  EVENT_CLOSE                          X
  EVENT_ENTER / _LEAVE                 X (pointer in / out of window)
  EVENT_EXPOSE                         X (window expose)
- EVENT_RESIZE                   (window resize)
- EVENT_MOVE                     (window move)
+ EVENT_RESIZE                         X (window resize)
+ EVENT_MOVE                           X (window move)
 
 
 OPEN QUESTIONS
@@ -145,10 +145,10 @@ class EventHandler(object):
     def on_expose(self):
         pass
 
-    def on_resize(self):
+    def on_resize(self, width, height):
         pass
 
-    def on_move(self):
+    def on_move(self, x, y):
         pass
 
 
@@ -197,11 +197,11 @@ class DebugEventHandler(object):
         print 'on_expose()'
         return EVENT_UNHANDLED
 
-    def on_resize(self):
-        print 'on_resize()'
+    def on_resize(self, width, height):
+        print 'on_resize(width=%d, height=%d)' % (width, height)
         return EVENT_UNHANDLED
 
-    def on_move(self):
-        print 'on_move()'
+    def on_move(self, x, y):
+        print 'on_move(x=%d, y=%d)' % (x, y)
         return EVENT_UNHANDLED
 
