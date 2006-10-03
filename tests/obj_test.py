@@ -35,9 +35,12 @@ c = clock.Clock()
 
 fourfv = ctypes.c_float * 4
 c_float_p = ctypes.POINTER(ctypes.c_float)
-glLightfv(GL_LIGHT0, GL_POSITION, ctypes.cast(fourfv(100, 200, 100, 0), c_float_p))
-glLightfv(GL_LIGHT0, GL_AMBIENT, ctypes.cast(fourfv(0.2, 0.2, 0.2, 1.0), c_float_p))
-glLightfv(GL_LIGHT0, GL_DIFFUSE, ctypes.cast(fourfv(0.5, 0.5, 0.5, 1.0), c_float_p))
+glLightfv(GL_LIGHT0, GL_POSITION,
+    ctypes.cast(fourfv(100, 200, 100, 0), c_float_p))
+glLightfv(GL_LIGHT0, GL_AMBIENT,
+    ctypes.cast(fourfv(0.2, 0.2, 0.2, 1.0), c_float_p))
+glLightfv(GL_LIGHT0, GL_DIFFUSE,
+    ctypes.cast(fourfv(0.5, 0.5, 0.5, 1.0), c_float_p))
 glEnable(GL_LIGHT0)
 glEnable(GL_LIGHTING)
 glEnable(GL_COLOR_MATERIAL)
@@ -52,8 +55,6 @@ glCullFace(GL_BACK)
 glMatrixMode(GL_PROJECTION)
 glLoadIdentity()
 gluPerspective(60., 1., 1., 100.)
-glRotatef(30, 1, 0, 0)
-glTranslatef(0, -5, -10)
 
 glMatrixMode(GL_MODELVIEW)
 glClearColor(0, 0, 0, 0)
@@ -67,6 +68,7 @@ while exit_handler.running:
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
+    gluLookAt(0, 5, 5, 0, 1, -1, 0, 1, 0)
 
     r += 1
     if r > 360: r = 0
