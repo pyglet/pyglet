@@ -6,69 +6,18 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from ctypes import *
-import os.path
 import re
 
+from ctypes import *
+
 from pyglet.GL.VERSION_1_1 import *
-from SDL import *
 
-try:
-    from SDL.image import *
-    _have_SDL_image = True
-except:
-    _have_SDL_image = False
-
-try:
-    import Image
-    _have_PIL = True
-except:
-    _have_PIL = False
-
-def load(file):
-    '''Load an SDL_Surface from a file object or filename.'''
-    if not hasattr(file, 'read'):
-        file = open(file, 'rb')
-
-    image = None
-    if _have_SDL_image:
-        try:
-            image = IMG_Load_RW(SDL_RWFromObject(file), 0)
-        except:
-            pass
-
-    if not image and _have_PIL:
-        try:
-            # TODO load with PIL
-            pass
-        except:
-            pass
-
-    if not image:
-        try:
-            image = SDL_LoadBMP_RW(SDL_RWFromObject(file), 0)
-        except:
-            pass
-
-    if not image:
-        raise IOError('Could not open file using any available image loader.')
-
-    return image
-
-def save(image, file, format=None):
-    '''Save a texture or SDL_Surface to a file object or filename.'''
-    if isinstance(image, Texture):
-        image = image.create_surface()
-
-    if not hasattr(file, 'write'):
-        format = os.path.splitext(file)[1]
-        file = open(file, 'wb')
-
-    if not _have_PIL or format == '.bmp':
-        SDL_SaveBMP_RW(image, SDL_RWFromObject(file), 1)
-    else:
-        # TODO save with PIL
-        pass
+class Image(object):
+    def __init__(self, data, width, height, components):
+        self.data = data
+        self.width = width
+        self.height = height
+        self.components = components
 
 def _nearest_pow2(n):
     i = 1
@@ -150,26 +99,6 @@ class Texture(object):
     def from_surface(cls, surface):
         id, uv = _get_texture(surface)
         return Texture(id, surface.w, surface.h, uv)
-
-    def create_surface(self, level=0):
-        surface = SDL_CreateRGBSurface(SDL_SWSURFACE, 
-                                       self.size[0], self.size[1], 32,
-                                       SDL_SwapLE32(0x000000ff),
-                                       SDL_SwapLE32(0x0000ff00),
-                                       SDL_SwapLE32(0x00ff0000),
-                                       SDL_SwapLE32(0xff000000))
-        SDL_LockSurface(surface)
-
-        glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
-        glPixelStorei(GL_PACK_ROW_LENGTH, 
-                      surface.pitch / surface.format.BytesPerPixel)
-        glBindTexture(GL_TEXTURE_2D, self.id)
-        glGetTexImage(GL_TEXTURE_2D, level, GL_RGBA, GL_UNSIGNED_BYTE,
-                      surface.pixels.as_ctypes())
-        glPopClientAttrib()
-
-        SDL_UnlockSurface(surface)
-        return surface
 
 class TextureAtlas(object):
     __slots__ = ['size', 'id', 'rows', 'cols', 
@@ -259,3 +188,4 @@ class TextureAtlas(object):
     def get_quad(self, row, col):
         i = row * self.cols + col
         return self.elem_sizes[i], self.uvs[i]
+
