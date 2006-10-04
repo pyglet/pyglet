@@ -49,7 +49,7 @@ def _get_texture(data, width, height, bpp):
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
     glTexImage2D(GL_TEXTURE_2D, 0, format, tex_width, tex_height, 0, format,
         GL_UNSIGNED_BYTE, blank)
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 1, 1, width, height, format,
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format,
         GL_UNSIGNED_BYTE, data)
 
     return id, uv

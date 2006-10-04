@@ -16,7 +16,10 @@ factory = pyglet.window.WindowFactory()
 factory.config._attributes['doublebuffer'] = 1
 w1 = factory.create(width=200, height=200)
 
-filename = os.path.join(os.path.split(__file__)[0], 'kitten.png')
+if len(sys.argv) > 1:
+    filename = sys.argv[1]
+else:
+    filename = os.path.join(os.path.split(__file__)[0], 'kitten.png')
 
 tex = Texture.from_image(png.read(filename))
 
@@ -53,7 +56,7 @@ while exit_handler.running:
     r += 1
     if r > 360: r = 0
     glRotatef(r, 0, 0, 1)
-    glScalef(1./tex.width, 1./tex.height, 1.)
+    glScalef(1./512, 1./512, 1.)
     glTranslatef(-tex.width/2, -tex.height/2, -1.)
     tex.draw()
 
