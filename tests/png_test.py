@@ -11,6 +11,10 @@ from pyglet.image import png
 
 from ctypes import *
 
+factory = pyglet.window.WindowFactory()
+factory.config._attributes['doublebuffer'] = 1
+w1 = factory.create(width=200, height=200)
+
 image = png.read(os.path.join(os.path.split(__file__)[0], 'kitten.png'))
 
 if image.components == 3: tex_comps = GL_RGB
@@ -28,9 +32,7 @@ glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
 del image
 
-factory = pyglet.window.WindowFactory()
-factory.config._attributes['doublebuffer'] = 1
-w1 = factory.create(width=200, height=200)
+
 
 class ExitHandler(object):
     running = True
