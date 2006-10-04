@@ -37,27 +37,20 @@ def _get_texture(data, width, height, bpp):
     tex_height = _nearest_pow2(height)
     uv = (float(width) / tex_width, float(height) / tex_height)
 
-    pitch = width * bpp
-    if tex_width * bpp > pitch:
-        # Pad rows
-        pad = '\0' * ((tex_width - width) * bpp)
-        rows = re.findall('.' * pitch, data, re.DOTALL)
-        rows = [row + pad for row in rows]
-        data = ''.join(rows)
-    if tex_height > height:
-        data += '\0' * ((tex_height - height) * tex_width * bpp)
-
-    if bpp == 3: tex_comps = GL_RGB
-    else: tex_comps = GL_RGBA
+    blank = '\0' * tex_width * tex_height * bpp
+    if bpp == 3: format = GL_RGB
+    else: format = GL_RGBA
 
     id = c_uint()
     glGenTextures(1, byref(id))
     id = id.value
     glBindTexture(GL_TEXTURE_2D, id)
-    glTexImage2D(GL_TEXTURE_2D, 0, bpp, tex_width, tex_height, 0, tex_comps,
-        GL_UNSIGNED_BYTE, data)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexImage2D(GL_TEXTURE_2D, 0, format, tex_width, tex_height, 0, format,
+        GL_UNSIGNED_BYTE, blank)
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 1, 1, width, height, format,
+        GL_UNSIGNED_BYTE, data)
 
     return id, uv
 
