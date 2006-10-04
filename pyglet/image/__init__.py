@@ -13,11 +13,11 @@ from ctypes import *
 from pyglet.GL.VERSION_1_1 import *
 
 class Image(object):
-    def __init__(self, data, width, height, components):
+    def __init__(self, data, width, height, bpp):
         self.data = data
         self.width = width
         self.height = height
-        self.components = components
+        self.bpp = bpp
 
 def _nearest_pow2(n):
     i = 1
@@ -25,52 +25,46 @@ def _nearest_pow2(n):
         i <<= 1
     return i
 
-def _get_texture(surface):
+def _get_texture_from_surface(surface):
     if surface.format.BitsPerPixel != 24 and \
        surface.format.BitsPerPixel != 32:
         raise AttributeError('Unsupported surface format')
+    return _get_texture(surface.pixels.to_string(), surface.w, surface.h,
+        surface.format.BytesPerPixel)
 
-    bpp = surface.format.BytesPerPixel
-    size = surface.w, surface.h
-    width = _nearest_pow2(surface.w)
-    height = _nearest_pow2(surface.h)
-    uv = (float(surface.w) / width,
-               float(surface.h) / height)
+def _get_texture(data, width, height, bpp):
+    tex_width = _nearest_pow2(width)
+    tex_height = _nearest_pow2(height)
+    uv = (float(width) / tex_width, float(height) / tex_height)
 
-    data = surface.pixels.to_string()
-    if width * bpp > surface.pitch:
+    pitch = width * bpp
+    if tex_width * bpp > pitch:
         # Pad rows
-        pad = '\0' * (width * bpp - surface.pitch)
-        rows = re.findall('.' * surface.pitch, data, re.DOTALL)
+        pad = '\0' * ((tex_width - width) * bpp)
+        rows = re.findall('.' * pitch, data, re.DOTALL)
         rows = [row + pad for row in rows]
         data = ''.join(rows)
-    if height > surface.h:
-        data += '\0' * ((height - surface.h) * width * bpp)
+    if tex_height > height:
+        data += '\0' * ((tex_height - height) * tex_width * bpp)
+
+    if bpp == 3: tex_comps = GL_RGB
+    else: tex_comps = GL_RGBA
 
     id = c_uint()
     glGenTextures(1, byref(id))
     id = id.value
     glBindTexture(GL_TEXTURE_2D, id)
-    glTexImage2D(GL_TEXTURE_2D,
-                 0,
-                 bpp,
-                 width,
-                 height,
-                 0,
-                 GL_RGBA,
-                 GL_UNSIGNED_BYTE,
-                 data)
+    glTexImage2D(GL_TEXTURE_2D, 0, bpp, tex_width, tex_height, 0, tex_comps,
+        GL_UNSIGNED_BYTE, data)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
     return id, uv
 
 class Texture(object):
-    __slots__ = ['size', 'id', 'uv', 'quad_list']
-
     def __init__(self, id, width, height, uv):
         self.id = id
-        self.size = width, height
+        self.width, self.height = width, height
         self.uv = uv
 
         # Make quad display list
@@ -80,12 +74,13 @@ class Texture(object):
         glBegin(GL_QUADS)
         glTexCoord2f(0, 0)
         glVertex2f(0, 0)
-        glTexCoord2f(self.uv[0], 0)
-        glVertex2f(self.size[0], 0)
-        glTexCoord2f(self.uv[0], self.uv[1])
-        glVertex2f(self.size[0], self.size[1])
         glTexCoord2f(0, self.uv[1])
-        glVertex2f(0, self.size[1])
+        glVertex2f(0, self.height)
+        glTexCoord2f(self.uv[0], self.uv[1])
+        glVertex2f(self.width, self.height)
+        glTexCoord2f(self.uv[0], 0)
+        glVertex2f(self.width, 0)
+
         glEnd()
         glEndList()
 
@@ -96,18 +91,22 @@ class Texture(object):
         glPopAttrib()
 
     @classmethod
+    def from_image(cls, image):
+        id, uv = _get_texture(image.data, image.width, image.height,
+            image.bpp)
+        return Texture(id, image.width, image.height, uv)
+
+    @classmethod
     def from_surface(cls, surface):
-        id, uv = _get_texture(surface)
+        id, uv = _get_texture_from_surface(surface)
         return Texture(id, surface.w, surface.h, uv)
 
+# XXX ... the following still assumes SDL surface
 class TextureAtlas(object):
-    __slots__ = ['size', 'id', 'rows', 'cols', 
-                 'elem_sizes', 'uvs', 'quad_lists']
-
     def __init__(self, surface, rows=1, cols=1, rects=[]):
         assert rects or (rows >= 1 and cols >= 1)
         self.size = surface.w, surface.h
-        self.id, uv = _get_texture(surface)
+        self.id, uv = _get_texture_from_image(surface)
         self.uvs = []
         self.quad_lists = []
         self.elem_sizes = []
