@@ -12,6 +12,7 @@ from ctypes import *
 
 from pyglet.GL.VERSION_1_1 import *
 
+# XXX include the image filename in the args? might help debugging?
 class Image(object):
     def __init__(self, data, width, height, bpp):
         self.data = data
