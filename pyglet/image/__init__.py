@@ -1,6 +1,26 @@
 #!/usr/bin/env python
 
 '''
+
+Image loading is performed by OS components we believe we can rely on.
+
+We ONLY support PNG and JPEG formats, thus enforcing that we only load the
+formats we have base support for.
+
+Linux (in order of preference):
+
+   GTK?
+   Qt?
+   SDL?
+   libpng           (will ABORT program if PNG is corrupted)
+   libjpeg
+
+Windows:
+
+OS X:
+
+
+
 '''
 
 __docformat__ = 'restructuredtext'
