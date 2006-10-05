@@ -1,3 +1,13 @@
+'''
+
+POSSIBLE TODO ITEMS:
+
+1. error callbacks
+2. load directly into a large buffer rather than via the rows
+'''
+
+
+
 import sys
 
 from ctypes import *
