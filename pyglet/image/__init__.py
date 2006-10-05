@@ -94,12 +94,12 @@ class Texture(object):
         id, uv = _get_texture_from_surface(surface)
         return Texture(id, surface.w, surface.h, uv)
 
-# XXX ... the following still assumes SDL surface
+
 class TextureAtlas(object):
-    def __init__(self, surface, rows=1, cols=1, rects=[]):
+    def __init__(self, id, width, height, uv, rows=1, cols=1, rects=[]):
         assert rects or (rows >= 1 and cols >= 1)
-        self.size = surface.w, surface.h
-        self.id, uv = _get_texture_from_image(surface)
+        self.size = (width, height)
+        self.id = id
         self.uvs = []
         self.quad_lists = []
         self.elem_sizes = []
@@ -109,7 +109,7 @@ class TextureAtlas(object):
             self.rows = rows
             self.cols = cols
 
-            elem_size = self.size[0] / cols, self.size[1] / rows
+            elem_size = width / cols, height / rows
             n = glGenLists(rows * cols)
             self.quad_lists = range(n, n + rows * cols)
             du = uv[0] / cols
@@ -167,6 +167,19 @@ class TextureAtlas(object):
 
                 self.uvs.append(elem_uv)
                 self.elem_sizes.append(elem_size)
+
+    @classmethod
+    def from_image(cls, image, rows=1, cols=1, rects=[]):
+        id, uv = _get_texture(image.data, image.width, image.height,
+            image.bpp)
+        return TextureAtlas(id, image.width, image.height, uv, rows,
+            cols, rects)
+
+    @classmethod
+    def from_surface(cls, surface, rows=1, cols=1, rects=[]):
+        id, uv = _get_texture_from_surface(surface)
+        return TextureAtlas(id, surface.w, surface.h, uv, rows, cols,
+            rects)
 
     def draw(self, row, col):
         glPushAttrib(GL_ENABLE_BIT)
