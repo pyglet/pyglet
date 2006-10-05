@@ -1,6 +1,17 @@
+import sys
+
 from ctypes import *
 
-libpng = cdll.LoadLibrary('libpng.so')
+path = util.find_library('c')
+libc = cdll.LoadLibrary(path)
+#libc = cdll.LoadLibrary('libc.so.6')   # XXX might be needed under linux
+libc.fdopen.argtypes = [c_int, c_char_p]
+libc.fdopen.restype = c_void_p
+libc.rewind.argtypes = [c_char_p]
+
+path = util.find_library('png')
+libpng = cdll.LoadLibrary(path)
+
 PNG_LIBPNG_VER_STRING = "1.2.8"
 
 class png_struct(Structure):
@@ -124,11 +135,6 @@ PNG_INFO_sPLT = 0x2000   # ESR, 1.0.6
 PNG_INFO_sCAL = 0x4000   # ESR, 1.0.6 
 PNG_INFO_IDAT = 0x8000L  # ESR, 1.0.6 
 
-
-libc = cdll.LoadLibrary('libc.so.6')
-libc.fdopen.argtypes = [c_int, c_char_p]
-libc.fdopen.restype = c_void_p
-
 def ptr_add(ptr, offset):
     address = addressof(ptr.contents) + offset
     return pointer(type(ptr.contents).from_address(address))
@@ -138,9 +144,7 @@ def read(filename):
     image = open(filename)
     header = image.read(16)
     if libpng.png_sig_cmp(header, 0, 16):
-        print 'NOT A PNG!'
-        sys.exit(1)
-    image.seek(0)
+        raise ValueError, '%r is not a PNG'%(filename,)
 
     # init our PNG structures
     png_ptr = libpng.png_create_read_struct(PNG_LIBPNG_VER_STRING,
@@ -153,6 +157,7 @@ def read(filename):
 
     # ready reading from the file
     fp = libc.fdopen(image.fileno(), 'rb')
+    libc.rewind(fp)
     libpng.png_init_io(png_ptr, fp)
 
     # read the info struct and pull out the important info
