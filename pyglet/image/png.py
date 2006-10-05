@@ -17,7 +17,7 @@ libc = cdll.LoadLibrary(path)
 #libc = cdll.LoadLibrary('libc.so.6')   # XXX might be needed under linux
 libc.fdopen.argtypes = [c_int, c_char_p]
 libc.fdopen.restype = c_void_p
-libc.rewind.argtypes = [c_char_p]
+libc.rewind.argtypes = [c_void_p]
 
 path = util.find_library('png')
 libpng = cdll.LoadLibrary(path)
