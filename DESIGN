@@ -24,6 +24,17 @@ pyglet.GL, pyglet.GLU
   OpenGL-ctypes instead, but pyglet itself only uses this (mixing and
   matching is no problem).
 
+  Do wrapper classes like for shaders go here?
+
+  Do we want to consider adding wrappers for matrix and attribtue
+  operations so you can:
+
+    with gl_push_matrix():
+        do stuff
+
+    with gl_push_attrib():
+        do stuff
+
 pyglet.window
   Interface for opening one or more windows with an OpenGL context, and
   receiving and processing events on those windows.  GL contexts can
@@ -35,8 +46,26 @@ pyglet.clock
   and framerate limiting.
 
 pyglet.image
-  Load and save PNG.  Load DXT.  Proxy for PIL.  Images as both bitmaps
-  and textures.
+  Load and save PNG.  Load DXT.  Load and save JPEG.
+  Images as both bitmaps and textures.
+
+  Image
+    width, height, data, bpp
+
+  TextureOptions        -- as per blur.py
+
+  Texture               -- single image as texture
+    width, height, draw()
+
+  TextureAtlas          -- split a large texture into a grid of subtextures
+    {row, col: Texture}, draw(row, col)
+
+  PackedTexture         -- pack many texture images as subtextures
+    {name: Texture}
+
+  RenderBuffer?         -- as per blur.py
+
+  Allowing texture etc. creation from PIL images should be possible.
 
 Optional modules, in approximate increasing pieness of sky:
 
