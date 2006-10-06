@@ -24,16 +24,11 @@ pyglet.GL, pyglet.GLU
   OpenGL-ctypes instead, but pyglet itself only uses this (mixing and
   matching is no problem).
 
-  Do wrapper classes like for shaders go here?
+pyglet.shader
+  Shader management goes here. Might also have some shaders.
 
-  Do we want to consider adding wrappers for matrix and attribtue
-  operations so you can:
-
-    with gl_push_matrix():
-        do stuff
-
-    with gl_push_attrib():
-        do stuff
+pyglet.scene
+  Wrappers for setting up 3d and 2d scenes.
 
 pyglet.window
   Interface for opening one or more windows with an OpenGL context, and
@@ -72,6 +67,18 @@ Optional modules, in approximate increasing pieness of sky:
 pyglet.font
   Rendering and layout of fonts, using Freetype, Windows and OS X for
   rasterisation.  Includes the Bitstream family of fonts.  
+
+  Basic interface will have:
+
+  Font      - a font file
+  Glyph     - describes a glyph from the font
+
+  Rendering will be done to a texture. We should try to pack >1 rendered
+  glyph into a texture. Possibly pre-render the ASCII or latin-1 characters
+  when the font is loaded? Possibly just use PackedTexture?
+  
+  User text rendering will returna display list which describes a
+  collection (1+) of rendered glyphs from that texture.
 
 pyglet.gui (requires pyglet.font)
   Buttons, sliders, text entry, scrollable text, menus and lists.  Widgets
