@@ -396,9 +396,93 @@ class FrameBuffer(object):
 
 
 
-class RenderDOFPass1(ShaderMaterial):
+class GaussianFuncs(FragmentShader):
     def __init__(self):
-        ShaderMaterial.__init__(self)
+        FragmentShader.__init__(self, "gaussian_rect_funcs_f", """\
+vec4 _blur3(in sampler2D tex, in vec2 base, in vec2 offset) {
+  return
+      0.52201146875401894 * texture2D(tex, base)
+    + 0.23899426562299048 * (texture2D(tex, base - offset) + texture2D(tex, base + offset));
+}
+
+vec4 _blur5(in sampler2D tex, in vec2 base, in vec2 offset) {
+  return
+      0.28083404410305668 * texture2D(tex, base)
+    + 0.23100778343685141 * (texture2D(tex, base - offset) + texture2D(tex, base + offset))
+    + 0.12857519451162022 * (texture2D(tex, base - 2.0*offset) + texture2D(tex, base + 2.0*offset));
+}
+
+vec4 _blur7(in sampler2D tex, in vec2 base, in vec2 offset) {
+  return
+      0.17524014277641392 * texture2D(tex, base)
+    + 0.16577007239192226 * (texture2D(tex, base - offset) + texture2D(tex, base + offset))
+    + 0.14032133681355632 * (texture2D(tex, base - 2.0*offset) + texture2D(tex, base + 2.0*offset))
+    + 0.10628851940631442 * (texture2D(tex, base - 3.0*offset) + texture2D(tex, base + 3.0*offset));
+}
+
+vec4 _blur9(in sampler2D tex, in vec2 base, in vec2 offset) {
+  return
+      0.13465835724954514  * texture2D(tex, base)
+    + 0.13051535514624768  * (texture2D(tex, base - offset) + texture2D(tex, base + offset))
+    + 0.11883558317985349  * (texture2D(tex, base - 2.0*offset) + texture2D(tex, base + 2.0*offset))
+    + 0.1016454607907402   * (texture2D(tex, base - 3.0*offset) + texture2D(tex, base + 3.0*offset))
+    + 0.081674422258386087 * (texture2D(tex, base - 4.0*offset) + texture2D(tex, base + 4.0*offset));
+}
+
+vec4 _blur11(in sampler2D tex, in vec2 base, in vec2 offset) {
+  return
+      0.1093789154396443   * texture2D(tex, base)
+    + 0.1072130678016711   * (texture2D(tex, base - offset) + texture2D(tex, base + offset))
+    + 0.10096946479237721  * (texture2D(tex, base - 2.0*offset) + texture2D(tex, base + 2.0*offset))
+    + 0.091360949823207332 * (texture2D(tex, base - 3.0*offset) + texture2D(tex, base + 3.0*offset))
+    + 0.079425394122662363 * (texture2D(tex, base - 4.0*offset) + texture2D(tex, base + 4.0*offset))
+    + 0.066341665740259792 * (texture2D(tex, base - 5.0*offset) + texture2D(tex, base + 5.0*offset));
+}
+
+vec4 _blur3_r(in sampler2DRect tex, in vec2 base, in vec2 offset) {
+  return
+      0.52201146875401894 * texture2DRect(tex, base)
+    + 0.23899426562299048 * (texture2DRect(tex, base - offset) + texture2DRect(tex, base + offset));
+}
+
+vec4 _blur5_r(in sampler2DRect tex, in vec2 base, in vec2 offset) {
+  return
+      0.28083404410305668 * texture2DRect(tex, base)
+    + 0.23100778343685141 * (texture2DRect(tex, base - offset) + texture2DRect(tex, base + offset))
+    + 0.12857519451162022 * (texture2DRect(tex, base - 2.0*offset) + texture2DRect(tex, base + 2.0*offset));
+}
+
+vec4 _blur7_r(in sampler2DRect tex, in vec2 base, in vec2 offset) {
+  return
+      0.17524014277641392 * texture2DRect(tex, base)
+    + 0.16577007239192226 * (texture2DRect(tex, base - offset) + texture2DRect(tex, base + offset))
+    + 0.14032133681355632 * (texture2DRect(tex, base - 2.0*offset) + texture2DRect(tex, base + 2.0*offset))
+    + 0.10628851940631442 * (texture2DRect(tex, base - 3.0*offset) + texture2DRect(tex, base + 3.0*offset));
+}
+
+vec4 _blur9_r(in sampler2DRect tex, in vec2 base, in vec2 offset) {
+  return
+      0.13465835724954514  * texture2DRect(tex, base)
+    + 0.13051535514624768  * (texture2DRect(tex, base - offset) + texture2DRect(tex, base + offset))
+    + 0.11883558317985349  * (texture2DRect(tex, base - 2.0*offset) + texture2DRect(tex, base + 2.0*offset))
+    + 0.1016454607907402   * (texture2DRect(tex, base - 3.0*offset) + texture2DRect(tex, base + 3.0*offset))
+    + 0.081674422258386087 * (texture2DRect(tex, base - 4.0*offset) + texture2DRect(tex, base + 4.0*offset));
+}
+
+vec4 _blur11_r(in sampler2DRect tex, in vec2 base, in vec2 offset) {
+  return
+      0.1093789154396443   * texture2DRect(tex, base)
+    + 0.1072130678016711   * (texture2DRect(tex, base - offset) + texture2DRect(tex, base + offset))
+    + 0.10096946479237721  * (texture2DRect(tex, base - 2.0*offset) + texture2DRect(tex, base + 2.0*offset))
+    + 0.091360949823207332 * (texture2DRect(tex, base - 3.0*offset) + texture2DRect(tex, base + 3.0*offset))
+    + 0.079425394122662363 * (texture2DRect(tex, base - 4.0*offset) + texture2DRect(tex, base + 4.0*offset))
+    + 0.066341665740259792 * (texture2DRect(tex, base - 5.0*offset) + texture2DRect(tex, base + 5.0*offset));
+}
+""")
+
+class RenderDOFPass1(ShaderProgram):
+    def __init__(self):
+        ShaderProgram.__init__(self)
         self.setShader(FragmentShader("dof_f", """\
 uniform vec4 dof; // .x = near, .y = focus, .z = far, .w = max_far_blur
 uniform float near;
@@ -421,9 +505,9 @@ void main() {
 }
 """))
 
-class RenderDOFPass2(ShaderMaterial):
+class RenderDOFPass2(ShaderProgram):
     def __init__(self):
-        ShaderMaterial.__init__(self)
+        ShaderProgram.__init__(self)
         self.setShader(FragmentShader("dof_f", """\
 uniform sampler2DRect focus;
 uniform sampler2DRect blur;
@@ -465,9 +549,9 @@ void main() {
 }
 """))
 
-class DownsamplerRect(ShaderMaterial):
+class DownsamplerRect(ShaderProgram):
     def __init__(self):
-        ShaderMaterial.__init__(self)
+        ShaderProgram.__init__(self)
         self.setShader(FragmentShader("downsample_f", """\
 uniform sampler2DRect src;
 uniform vec2 taps[16];
@@ -481,9 +565,9 @@ void main() {
 }
 """))
 
-class Downsampler(ShaderMaterial):
+class Downsampler(ShaderProgram):
     def __init__(self):
-        ShaderMaterial.__init__(self)
+        ShaderProgram.__init__(self)
         self.setShader(FragmentShader("downsample_rect_f", """\
 uniform sampler2D src;
 uniform vec2 taps[16];
@@ -497,109 +581,29 @@ void main() {
 }
 """))
 
-class Gaussian(ShaderMaterial):
+class Gaussian3(ShaderProgram):
     def __init__(self):
-        ShaderMaterial.__init__(self)
+        ShaderProgram.__init__(self)
         self.setShader(FragmentShader("gaussian_f", """\
 uniform sampler2D src;
 uniform vec2 texel;
 
-vec4 _blur3(in sampler2D tex, in vec2 base, in vec2 offset) {
-  return
-      0.52201146875401894 * texture2D(tex, base)
-    + 0.23899426562299048 * (texture2D(tex, base - offset) + texture2D(tex, base + offset));
-}
-
-vec4 _blur5(in sampler2D tex, in vec2 base, in vec2 offset) {
-  return
-      0.28083404410305668 * texture2D(tex, base)
-    + 0.23100778343685141 * (texture2D(tex, base - offset) + texture2D(tex, base + offset))
-    + 0.12857519451162022 * (texture2D(tex, base - 2.0*offset) + texture2D(tex, base + 2.0*offset));
-}
-
-vec4 _blur7(in sampler2D tex, in vec2 base, in vec2 offset) {
-  return
-      0.17524014277641392 * texture2D(tex, base)
-    + 0.16577007239192226 * (texture2D(tex, base - offset) + texture2D(tex, base + offset))
-    + 0.14032133681355632 * (texture2D(tex, base - 2.0*offset) + texture2D(tex, base + 2.0*offset))
-    + 0.10628851940631442 * (texture2D(tex, base - 3.0*offset) + texture2D(tex, base + 3.0*offset));
-}
-
-vec4 _blur9(in sampler2D tex, in vec2 base, in vec2 offset) {
-  return
-      0.13465835724954514  * texture2D(tex, base)
-    + 0.13051535514624768  * (texture2D(tex, base - offset) + texture2D(tex, base + offset))
-    + 0.11883558317985349  * (texture2D(tex, base - 2.0*offset) + texture2D(tex, base + 2.0*offset))
-    + 0.1016454607907402   * (texture2D(tex, base - 3.0*offset) + texture2D(tex, base + 3.0*offset))
-    + 0.081674422258386087 * (texture2D(tex, base - 4.0*offset) + texture2D(tex, base + 4.0*offset));
-}
-
-vec4 _blur11(in sampler2D tex, in vec2 base, in vec2 offset) {
-  return
-      0.1093789154396443   * texture2D(tex, base)
-    + 0.1072130678016711   * (texture2D(tex, base - offset) + texture2D(tex, base + offset))
-    + 0.10096946479237721  * (texture2D(tex, base - 2.0*offset) + texture2D(tex, base + 2.0*offset))
-    + 0.091360949823207332 * (texture2D(tex, base - 3.0*offset) + texture2D(tex, base + 3.0*offset))
-    + 0.079425394122662363 * (texture2D(tex, base - 4.0*offset) + texture2D(tex, base + 4.0*offset))
-    + 0.066341665740259792 * (texture2D(tex, base - 5.0*offset) + texture2D(tex, base + 5.0*offset));
-}
-
 void main() {
   gl_FragColor = _blur3(src, gl_TexCoord[0].st, texel);
 }
-"""))
+""").addDependency(GaussianFuncs()))
 
-class GaussianRect(ShaderMaterial):
+class GaussianRect3(ShaderProgram):
     def __init__(self):
-        ShaderMaterial.__init__(self)
+        ShaderProgram.__init__(self)
         self.setShader(FragmentShader("gaussian_rect_f", """\
 uniform sampler2DRect src;
 uniform vec2 texel;
 
-vec4 _blur3(in sampler2DRect tex, in vec2 base, in vec2 offset) {
-  return
-      0.52201146875401894 * texture2DRect(tex, base)
-    + 0.23899426562299048 * (texture2DRect(tex, base - offset) + texture2DRect(tex, base + offset));
-}
-
-vec4 _blur5(in sampler2DRect tex, in vec2 base, in vec2 offset) {
-  return
-      0.28083404410305668 * texture2DRect(tex, base)
-    + 0.23100778343685141 * (texture2DRect(tex, base - offset) + texture2DRect(tex, base + offset))
-    + 0.12857519451162022 * (texture2DRect(tex, base - 2.0*offset) + texture2DRect(tex, base + 2.0*offset));
-}
-
-vec4 _blur7(in sampler2DRect tex, in vec2 base, in vec2 offset) {
-  return
-      0.17524014277641392 * texture2DRect(tex, base)
-    + 0.16577007239192226 * (texture2DRect(tex, base - offset) + texture2DRect(tex, base + offset))
-    + 0.14032133681355632 * (texture2DRect(tex, base - 2.0*offset) + texture2DRect(tex, base + 2.0*offset))
-    + 0.10628851940631442 * (texture2DRect(tex, base - 3.0*offset) + texture2DRect(tex, base + 3.0*offset));
-}
-
-vec4 _blur9(in sampler2DRect tex, in vec2 base, in vec2 offset) {
-  return
-      0.13465835724954514  * texture2DRect(tex, base)
-    + 0.13051535514624768  * (texture2DRect(tex, base - offset) + texture2DRect(tex, base + offset))
-    + 0.11883558317985349  * (texture2DRect(tex, base - 2.0*offset) + texture2DRect(tex, base + 2.0*offset))
-    + 0.1016454607907402   * (texture2DRect(tex, base - 3.0*offset) + texture2DRect(tex, base + 3.0*offset))
-    + 0.081674422258386087 * (texture2DRect(tex, base - 4.0*offset) + texture2DRect(tex, base + 4.0*offset));
-}
-
-vec4 _blur11(in sampler2DRect tex, in vec2 base, in vec2 offset) {
-  return
-      0.1093789154396443   * texture2DRect(tex, base)
-    + 0.1072130678016711   * (texture2DRect(tex, base - offset) + texture2DRect(tex, base + offset))
-    + 0.10096946479237721  * (texture2DRect(tex, base - 2.0*offset) + texture2DRect(tex, base + 2.0*offset))
-    + 0.091360949823207332 * (texture2DRect(tex, base - 3.0*offset) + texture2DRect(tex, base + 3.0*offset))
-    + 0.079425394122662363 * (texture2DRect(tex, base - 4.0*offset) + texture2DRect(tex, base + 4.0*offset))
-    + 0.066341665740259792 * (texture2DRect(tex, base - 5.0*offset) + texture2DRect(tex, base + 5.0*offset));
-}
-
 void main() {
-  gl_FragColor = _blur3(src, gl_TexCoord[0].st, texel);
+  gl_FragColor = _blur3_r(src, gl_TexCoord[0].st, texel);
 }
-"""))
+""").addDependency(GaussianFuncs()))
 
 
 
@@ -644,23 +648,16 @@ cparams.wrap_t = GL_CLAMP
 cparams.wrap_r = GL_CLAMP
 
 buf = FrameBuffer(800, 600,
-                  Surface(Surface.SURF_COLOUR,
-                          gl_tgt = GL_TEXTURE_RECTANGLE_ARB,
-                          params = cparams),
+                  Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams),
                   Surface(Surface.SURF_DEPTH,
-                          gl_tgt = GL_TEXTURE_RECTANGLE_ARB,
-                          gl_fmt = GL_DEPTH_COMPONENT32_ARB,
-                          is_texture = True,
-                          is_mipmapped = False,
-                          params = cparams))
+                          gl_tgt = GL_TEXTURE_RECTANGLE_ARB, gl_fmt = GL_DEPTH_COMPONENT32_ARB,
+                          is_texture = True, is_mipmapped = False, params = cparams))
 buf.init()
 buf.attach()
 buf.unbind()
 
 alpha_buf = FrameBuffer(800, 600,
-                        Surface(Surface.SURF_COLOUR,
-                                gl_tgt = GL_TEXTURE_RECTANGLE_ARB,
-                                params = cparams))
+                        Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams))
 alpha_buf.init()
 alpha_buf.attach()
 alpha_buf.unbind()
@@ -684,7 +681,7 @@ object_dl = cube_array_list()
 
 def renderScene():
     global r
-    glClearColor(0.1, 0.2, 0.3, 1.0)
+    glClearColor(0.0, 0.0, 0.0, 1.0)
     glClearDepth(1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -713,7 +710,7 @@ def renderScene():
 
 
 
-def gaussianBlur(src, temp_fbo, tgt_fbo, px, py, pw, ph, blur = GaussianRect()):
+def gaussianBlur(src, temp_fbo, tgt_fbo, px, py, pw, ph, blur = GaussianRect3()):
     glDisable(GL_DEPTH_TEST)
 
     # blur horizonally.
@@ -906,10 +903,6 @@ while exit_handler.running:
                  0.0,
                  200.0,
                  150.0)
-
-    glClearColor(0.0, 0.0, 0.0, 0.0)
-    glClearDepth(1.0)
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     renderDOF(buf, alpha_buf, buf_subsampled)
 
