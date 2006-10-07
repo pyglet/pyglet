@@ -38,21 +38,22 @@ class TextureParam(object):
     PRIORITY = 32
     ALL      = 63
 
-    def __init__(self):
+    def __init__(self, wrap = GL_REPEAT, filter = GL_LINEAR, min_filter = None):
         if self.max_anisotropy == 0.0:
             v = c_float()
             glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, byref(v))
             self.max_anisotropy = v.value
 
-        self.min_filter = GL_LINEAR
-        self.mag_filter = GL_LINEAR
+        if min_filter is None: min_filter = filter
+        self.min_filter = min_filter
+        self.mag_filter = filter
         self.min_lod = -1000
         self.max_lod = 1000
         self.min_mipmap = 0
         self.max_mipmap = 1000
-        self.wrap_s = GL_REPEAT
-        self.wrap_t = GL_REPEAT
-        self.wrap_r = GL_REPEAT
+        self.wrap_s = wrap
+        self.wrap_t = wrap
+        self.wrap_r = wrap
         self.priority = 0
         self.anisotropy = 1.0
         self.border_colour = c_float4(0.0, 0.0, 0.0, 0.0)
@@ -642,10 +643,7 @@ clk = pyglet.clock.Clock()
 
 r = 0
 
-cparams = TextureParam()
-cparams.wrap_s = GL_CLAMP
-cparams.wrap_t = GL_CLAMP
-cparams.wrap_r = GL_CLAMP
+cparams = TextureParam(wrap = GL_CLAMP)
 
 buf = FrameBuffer(800, 600,
                   Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams),
@@ -676,7 +674,6 @@ buf_subsampled2.init()
 buf_subsampled2.attach()
 buf_subsampled2.unbind()
 
-#object_dl = torus_list()
 object_dl = cube_array_list()
 
 def renderScene():
