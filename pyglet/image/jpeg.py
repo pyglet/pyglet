@@ -2,7 +2,8 @@
 
 OMG
 
-This library uses setmp/longjmp for error "handling" too!
+This library uses setmp/longjmp for error "handling" too! See comments in
+pyglet.image.png
 
 
 '''

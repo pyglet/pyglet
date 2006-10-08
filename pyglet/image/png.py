@@ -9,7 +9,7 @@ TODO:
    additionally setjmp to set the break-out location (the function passed
    to png_set_error_fn to handle the error can't return).
 
-   At this moment I have no idea how this should be handled in python / ctypes.
+   Handling this will require support from ctypes.
 '''
 
 
