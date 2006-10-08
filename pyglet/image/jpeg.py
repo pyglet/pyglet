@@ -222,7 +222,6 @@ def read(filename):
         raise ValueError, 'Cannot open %r'
 
     cinfo = jpeg_decompress_struct()
-    print sizeof(cinfo)
 
     jerr = jpeg_error_mgr()
     cinfo.err = jpeg_std_error(byref(jerr))

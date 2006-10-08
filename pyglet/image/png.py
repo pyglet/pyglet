@@ -10,6 +10,9 @@ TODO:
    to png_set_error_fn to handle the error can't return).
 
    Handling this will require support from ctypes.
+
+2. revisit this code knowing that there are c_int8,  c_int16, c_int32 etc
+   types
 '''
 
 

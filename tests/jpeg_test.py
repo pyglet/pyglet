@@ -57,7 +57,8 @@ while exit_handler.running:
     r += 1
     if r > 360: r = 0
     glRotatef(r, 0, 0, 1)
-    glScalef(1./512, 1./512, 1.)
+    s = max(tex.width, tex.height)
+    glScalef(1./s, 1./s, 1.)
     glTranslatef(-tex.width/2, -tex.height/2, -1.)
     tex.draw()
 

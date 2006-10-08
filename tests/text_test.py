@@ -7,8 +7,8 @@ from pyglet.window.event import *
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.GLU.VERSION_1_1 import *
 from pyglet import clock
-from pyglet.image import Texture
-from pyglet.image import png
+from pyglet.image import Texture, Image
+from pyglet import freetype2
 
 from ctypes import *
 
@@ -16,12 +16,10 @@ factory = pyglet.window.WindowFactory()
 factory.config._attributes['doublebuffer'] = 1
 w1 = factory.create(width=200, height=200)
 
-if len(sys.argv) > 1:
-    filename = sys.argv[1]
-else:
-    filename = os.path.join(os.path.split(__file__)[0], 'kitten.png')
-
-tex = Texture.from_image(png.read(filename))
+filename = os.path.join(os.path.split(__file__)[0], 'Vera.ttf')
+f = freetype2.load_face(filename, 16)
+image = freetype2.render_char(f, 'A')
+tex = Texture.from_image(image)
 
 class ExitHandler(object):
     running = True
@@ -56,7 +54,7 @@ while exit_handler.running:
     r += 1
     if r > 360: r = 0
     glRotatef(r, 0, 0, 1)
-    s = max(tex.width, tex.height)
+    s = max(image.width, image.height) * 2
     glScalef(1./s, 1./s, 1.)
     glTranslatef(-tex.width/2, -tex.height/2, -1.)
     tex.draw()
