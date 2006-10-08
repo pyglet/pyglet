@@ -80,6 +80,7 @@ def is_png(filename):
     ''' Determine whether "filename" is a PNG file '''
     image = open(filename)
     header = image.read(16)
+    image.close()
     return libpng.png_sig_cmp(header, 0, 16)
 
 def read(filename):
