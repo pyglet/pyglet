@@ -6,11 +6,11 @@ from pyglet.image import Image, Texture
 from pyglet.text import freetype2
 
 class Glyph(object):
-    def __init__(self, face, c):
+    def __init__(self, face, c, image):
         self.face = face
         self.c = c
         # XXX pack into a big texture?
-        self.tex = Texture.from_image(freetype2.render_char(face, c))
+        self.texture = image.as_texture()
 
 class Font(object):
     def __init__(self, face):
@@ -25,9 +25,8 @@ class Font(object):
         l = []
         for c in text:
             if c not in self.glyphs:
-                self.glyphs[c] = Glyph(self.face, c)
-            l.append(self.glyphs[c])
-        
+                self.glyphs[c] = freetype2.render_char(self.face, c, debug=1)
+            l.append(Glyph(self.face, c, self.glyphs[c]))
         return Text(l)
 
 class Text(object):
@@ -45,22 +44,29 @@ class Text(object):
         for i, this in enumerate(glyphs):
             if i > 0:
                 last = glyphs[i-1]
-                if last.face is not this.face:
-                    kern.x = 0; kern.y = 0
-                else:
-                    if freetype2.FT_Get_Kerning(this.face,
-                            ord(last.c), ord(this.c), 0, ctypes.byref(kern)):
-                        kern.x = 0; kern.y = 0
+                
+# XXX this code block is pretty useless as I'm not getting any kerning
+#      information
+#                if last.face is not this.face:
+#                    kern.x = 0; kern.y = 0
+#                elif this.face.has_kerning():
+#                    if freetype2.FT_Get_Kerning(this.face,
+#                            ord(last.c), ord(this.c), 0, ctypes.byref(kern)):
+#                        kern.x = 0; kern.y = 0
+#                    else:
+#                        print 'KERNED', (kern.x, kern.y)
                 # translate
-                glTranslatef(kern.x + last.tex.width, 0, 0)
+                glTranslatef(kern.x + last.texture.width, 0, 0)
                 self.width += kern.x
                 # XXX y kerning?
 
-            # call glyph display list
-            glCallList(this.tex.quad_list)
+            # XXX Y position using baseline...
 
-            self.width += this.tex.width
-            self.height = max(self.height, this.tex.height)
+            # call glyph display list
+            glCallList(this.texture.quad_list)
+
+            self.width += this.texture.width
+            self.height = max(self.height, this.texture.height)
 
         glEndList()
 

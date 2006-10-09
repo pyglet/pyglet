@@ -133,6 +133,20 @@ class FT_SizeRec(Structure):
     ]
 FT_Size = POINTER(FT_SizeRec)
 
+# face_flags values
+FT_FACE_FLAG_SCALABLE          = 1 <<  0
+FT_FACE_FLAG_FIXED_SIZES       = 1 <<  1
+FT_FACE_FLAG_FIXED_WIDTH       = 1 <<  2
+FT_FACE_FLAG_SFNT              = 1 <<  3
+FT_FACE_FLAG_HORIZONTAL        = 1 <<  4
+FT_FACE_FLAG_VERTICAL          = 1 <<  5
+FT_FACE_FLAG_KERNING           = 1 <<  6
+FT_FACE_FLAG_FAST_GLYPHS       = 1 <<  7
+FT_FACE_FLAG_MULTIPLE_MASTERS  = 1 <<  8
+FT_FACE_FLAG_GLYPH_NAMES       = 1 <<  9
+FT_FACE_FLAG_EXTERNAL_STREAM   = 1 << 10
+FT_FACE_FLAG_HINTER            = 1 << 11
+
 class FT_FaceRec(Structure):
     _fields_ = [
           ('num_faces', c_long),
@@ -182,11 +196,15 @@ class FT_FaceRec(Structure):
           ('internal', c_void_p),
     ]
 
+    def dump(self):
+        for (name, type) in self._fields_:
+            print 'FT_FaceRec', name, `getattr(self, name)`
+
+    def has_kerning(self):
+        return self.face_flags & FT_FACE_FLAG_KERNING
+
     def __del__(self, byref=byref, FT_Done_Face=FT_Done_Face):
         # FT_Done_FreeType doc says it will free up faces...
-        # XXX this seems to be getting called when there's still references
-        # to FT_FaceRec objects!!
-        print 'FT_FaceRec.__del__'
         if _library is not None:
             FT_Done_Face(byref(self))
 
@@ -329,28 +347,41 @@ def load_face(path, height):
     if error:
         raise Error("couldn't get requested height")
 
-    return face
-    
-def render_char(face, c):
-    error = FT_Load_Char(face, ord(c), FT_LOAD_RENDER)
-    if error:
-        raise Error('an error occurred drawing the glyph %r'%c, error)
+    return face.contents
+
+def render_char(face, c, debug=False):
+    error = FT_Load_Char(byref(face), ord(c), FT_LOAD_RENDER)
+    if error: raise Error('an error occurred drawing the glyph %r'%c, error)
 
     # expand single grey channel out to RGBA
     s = []
-    b = face.contents.glyph.contents.bitmap
+    g = face.glyph.contents
+    b = g.bitmap
+    if debug: print "RENDERED", c, b.rows, b.width, g.advance.x/64
+
     for i in range(b.rows):
+        if debug: l = []
         for j in range(b.width):
-            elem = chr(b.buffer[i*b.width + j])
+            v = b.buffer[i*b.width + j]
+            if debug:
+                if v == 0: l.append(' ')
+                elif v < 128: l.append('+')
+                else: l.append('*')
+            elem = chr(v)
             s.append(elem)
             s.append(elem)
             s.append(elem)
             s.append(elem)
+        if debug: print ''.join(l)
+
+    # XXX should really be creating a Glyph with the advance and font
+    # metrics (baseline etc) here
     return Image(''.join(s), b.width, b.rows, 4)
 
 if __name__ == '__main__':
     f = load_face("/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf", 16)
 
+    """
     text = 'To WAVA'
     kern = FT_Vector(0,0)
     for i, c in enumerate(text):
@@ -359,6 +390,9 @@ if __name__ == '__main__':
             if FT_Get_Kerning(f, ord(last), ord(c), 0, byref(kern)):
                 print 'error'
             print 'kern "%s%s" = (%s, %s)'%(last, c, kern.x, kern.y)
+    """
+
+    for c in 'WAwa': render_char(f, c, debug=True)
 
     '''
     render_char(f, 'A')

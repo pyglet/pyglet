@@ -16,8 +16,8 @@ factory.config._attributes['doublebuffer'] = 1
 w1 = factory.create(width=200, height=200)
 
 filename = os.path.join(os.path.split(__file__)[0], 'Vera.ttf')
-font = Font.load_font(filename, 32)
-text = font.render('Hello, world')
+font = Font.load_font(filename, 16)
+text = font.render('WAwa')
 
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)
@@ -28,7 +28,6 @@ glMatrixMode(GL_PROJECTION)
 glLoadIdentity()
 gluPerspective(60., 1., 1., 100.)
 glEnable(GL_COLOR_MATERIAL)
-glDisable(GL_BLEND)
 
 glMatrixMode(GL_MODELVIEW)
 glClearColor(0, 0, 0, 0)
