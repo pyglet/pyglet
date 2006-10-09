@@ -1,16 +1,81 @@
-#!/usr/bin/env python
+import ctypes
 
-'''
-'''
+from pyglet.GL.VERSION_1_1 import *
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
+from pyglet.image import Image, Texture
+from pyglet.text import freetype2
 
-from array import array as std_array
+class Glyph(object):
+    def __init__(self, face, c):
+        self.face = face
+        self.c = c
+        # XXX pack into a big texture?
+        self.tex = Texture.from_image(freetype2.render_char(face, c))
 
-from OpenGL.GL import *
-from SDL import *
-from SDL.ttf import *
+class Font(object):
+    def __init__(self, face):
+        self.glyphs = {}
+        self.face = face
+
+    @classmethod
+    def load_font(cls, filename, size):
+        return cls(freetype2.load_face(filename, size))
+
+    def render(self, text):
+        l = []
+        for c in text:
+            if c not in self.glyphs:
+                self.glyphs[c] = Glyph(self.face, c)
+            l.append(self.glyphs[c])
+        
+        return Text(l)
+
+class Text(object):
+    def __init__(self, glyphs):
+        self.glyphs = glyphs
+
+        xpos = ypos = 0
+
+        # create new display list with correct offsets
+        self.gl_list = glGenLists(1)
+        glNewList(self.gl_list, GL_COMPILE)
+        kern = freetype2.FT_Vector()
+        self.width = 0
+        self.height = 0
+        for i, this in enumerate(glyphs):
+            if i > 0:
+                last = glyphs[i-1]
+                if last.face is not this.face:
+                    kern.x = 0; kern.y = 0
+                else:
+                    if freetype2.FT_Get_Kerning(this.face,
+                            ord(last.c), ord(this.c), 0, ctypes.byref(kern)):
+                        kern.x = 0; kern.y = 0
+                # translate
+                glTranslatef(kern.x + last.tex.width, 0, 0)
+                self.width += kern.x
+                # XXX y kerning?
+
+            # call glyph display list
+            glCallList(this.tex.quad_list)
+
+            self.width += this.tex.width
+            self.height = max(self.height, this.tex.height)
+
+        glEndList()
+
+    def draw(self):
+        glPushAttrib(GL_ENABLE_BIT)
+        glEnable(GL_TEXTURE_2D)
+        glCallList(self.gl_list)
+        glPopAttrib()
+
+
+"""
+
+The original implementation - should be reinstated once we can get basic
+freetype rendering going!
+
 
 import pyglet.image
 import pyglet.sprite
@@ -179,3 +244,4 @@ class TextSprite(pyglet.sprite.Sprite):
 
         glPopAttrib()
         glPopMatrix()
+"""

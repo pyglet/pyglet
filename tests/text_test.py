@@ -7,8 +7,7 @@ from pyglet.window.event import *
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.GLU.VERSION_1_1 import *
 from pyglet import clock
-from pyglet.image import Texture, Image
-from pyglet import freetype2
+from pyglet.text import Font
 
 from ctypes import *
 
@@ -17,18 +16,9 @@ factory.config._attributes['doublebuffer'] = 1
 w1 = factory.create(width=200, height=200)
 
 filename = os.path.join(os.path.split(__file__)[0], 'Vera.ttf')
-f = freetype2.load_face(filename, 16)
-image = freetype2.render_char(f, 'A')
-tex = Texture.from_image(image)
+font = Font.load_font(filename, 32)
+text = font.render('Hello, world')
 
-class ExitHandler(object):
-    running = True
-    def on_close(self):
-        self.running = False
-    def on_keypress(self, symbol, modifiers):
-        if symbol == pyglet.window.key.K_ESCAPE:
-            self.running = False
-        return EVENT_UNHANDLED
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)
 
@@ -44,7 +34,7 @@ glMatrixMode(GL_MODELVIEW)
 glClearColor(0, 0, 0, 0)
 glColor4f(1, 1, 1, 1)
 r = 0
-while exit_handler.running:
+while not exit_handler.exit:
     c.set_fps(60)
     w1.dispatch_events()
 
@@ -54,10 +44,10 @@ while exit_handler.running:
     r += 1
     if r > 360: r = 0
     glRotatef(r, 0, 0, 1)
-    s = max(image.width, image.height) * 2
+    s = max(text.width, text.height) * 2
     glScalef(1./s, 1./s, 1.)
-    glTranslatef(-tex.width/2, -tex.height/2, -1.)
-    tex.draw()
+    glTranslatef(-text.width/2, -text.height/2, -1.)
+    text.draw()
 
     w1.flip()
 
