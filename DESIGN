@@ -72,14 +72,13 @@ pyglet.font
 
   Font      - a font file
   Glyph     - describes a glyph from the font
+  Text      - encapsulates a set of Glpyhs in a display list and
+              incorporates kerning in the glyph positioning
 
   Rendering will be done to a texture. We should try to pack >1 rendered
   glyph into a texture. Possibly pre-render the ASCII or latin-1 characters
   when the font is loaded? Possibly just use PackedTexture?
   
-  User text rendering will returna display list which describes a
-  collection (1+) of rendered glyphs from that texture.
-
 pyglet.gui (requires pyglet.font)
   Buttons, sliders, text entry, scrollable text, menus and lists.  Widgets
   can be decorated with a pluggable look-and-feel (useful for quick mockups,
