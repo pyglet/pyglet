@@ -25,7 +25,7 @@ class Font(object):
         l = []
         for c in text:
             if c not in self.glyphs:
-                self.glyphs[c] = freetype2.render_char(self.face, c, debug=1)
+                self.glyphs[c] = freetype2.render_char(self.face, c)
             l.append(Glyph(self.face, c, self.glyphs[c]))
         return Text(l)
 
