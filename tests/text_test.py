@@ -16,8 +16,8 @@ factory.config._attributes['doublebuffer'] = 1
 w1 = factory.create(width=200, height=200)
 
 filename = os.path.join(os.path.split(__file__)[0], 'Vera.ttf')
-font = Font.load_font(filename, 16)
-text = font.render('WAwa')
+font = Font.load_font(filename, 72)
+text = font.render('aWAwa')
 
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)
@@ -26,7 +26,8 @@ c = clock.Clock()
 
 glMatrixMode(GL_PROJECTION)
 glLoadIdentity()
-gluPerspective(60., 1., 1., 100.)
+glOrtho(0, w1.width, 0, w1.height, -1, 1)
+#gluPerspective(60., 1., 1., 100.)
 glEnable(GL_COLOR_MATERIAL)
 
 glMatrixMode(GL_MODELVIEW)
@@ -40,12 +41,13 @@ while not exit_handler.exit:
     glClear(GL_COLOR_BUFFER_BIT)
     glLoadIdentity()
 
-    r += 1
+    #r += 1
     if r > 360: r = 0
+    #s = max(text.width, text.height) * 2
+    #glScalef(1./s, 1./s, 1.)
+    glTranslatef(w1.width/2, w1.height/2, 0) #, -1.)
     glRotatef(r, 0, 0, 1)
-    s = max(text.width, text.height) * 2
-    glScalef(1./s, 1./s, 1.)
-    glTranslatef(-text.width/2, -text.height/2, -1.)
+    glTranslatef(-text.width/2, -text.height/2, 0)
     text.draw()
 
     w1.flip()

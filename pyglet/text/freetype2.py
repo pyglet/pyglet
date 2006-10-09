@@ -7,6 +7,7 @@ from pyglet.image import Image
 
 path = util.find_library('freetype')
 _libfreetype = cdll.LoadLibrary(path)
+_font_data = {}
 
 def _get_function(name, argtypes, rtype):
     try:
@@ -207,6 +208,8 @@ class FT_FaceRec(Structure):
         # FT_Done_FreeType doc says it will free up faces...
         if _library is not None:
             FT_Done_Face(byref(self))
+        if addressof(self) in _font_data:
+            del _font_data[addressof(self)]
 
 FT_Face = POINTER(FT_FaceRec)
 
@@ -306,12 +309,16 @@ class Error(Exception):
 
 FT_LOAD_RENDER = 0x4
 
+FT_F26Dot6 = c_long
+
 FT_Init_FreeType = _get_function('FT_Init_FreeType',
     [POINTER(FT_Library)], c_int)
 FT_New_Memory_Face = _get_function('FT_New_Memory_Face',
     [FT_Library, c_char_p, c_long, c_long, POINTER(FT_Face)], c_int)
 FT_Set_Pixel_Sizes = _get_function('FT_Set_Pixel_Sizes',
     [FT_Face, c_uint, c_uint], c_int)
+FT_Set_Char_Size = _get_function('FT_Set_Char_Size',
+    [FT_Face, FT_F26Dot6, FT_F26Dot6, c_uint, c_uint], c_int)
 FT_Load_Glyph = _get_function('FT_Load_Glyph',
     [FT_Face, c_uint, c_int32], c_int)
 FT_Load_Char = _get_function('FT_Load_Char',
@@ -331,38 +338,44 @@ def load_face(path, height):
             raise Error('an error occurred during library initialization',
                 error)
 
+    face = FT_Face()
+
     # have Python open and read the file as it handles errors nicely
     fp = open(path, 'rb')
-    font_data = fp.read()
+    font_data = create_string_buffer(fp.read())
     fp.close()
 
-    face = FT_Face()
     error = FT_New_Memory_Face(_library, font_data, len(font_data),
         0, byref(face));
     if error:
         raise Error('an error occurred during face loading', error)
 
-    # "height" pixels high
-    error = FT_Set_Pixel_Sizes(face, 0, height)
-    if error:
-        raise Error("couldn't get requested height")
+    # Don't lose this ref.
+    face = face.contents
+    _font_data[addressof(face)] = font_data
 
-    return face.contents
+    # "height" pixels high
+    #error = FT_Set_Pixel_Sizes(face, 0, height)
+    error = FT_Set_Char_Size(face, 0, height << 6, 0, 0)
+    if error:
+        raise Error("couldn't get requested height", error)
+
+    return face
 
 def render_char(face, c, debug=False):
-    error = FT_Load_Char(byref(face), ord(c), FT_LOAD_RENDER)
+    error = FT_Load_Char(face, ord(c), FT_LOAD_RENDER)
     if error: raise Error('an error occurred drawing the glyph %r'%c, error)
 
     # expand single grey channel out to RGBA
     s = []
     g = face.glyph.contents
     b = g.bitmap
-    if debug: print "RENDERED", c, b.rows, b.width, g.advance.x/64
+    if debug: print "RENDERED", c, b.rows, b.width, b.pitch, g.advance.x/64
 
-    for i in range(b.rows):
+    for i in range(b.rows - 1, -1, -1):
         if debug: l = []
         for j in range(b.width):
-            v = b.buffer[i*b.width + j]
+            v = b.buffer[i*b.pitch + j]
             if debug:
                 if v == 0: l.append(' ')
                 elif v < 128: l.append('+')
