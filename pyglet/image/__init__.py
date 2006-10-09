@@ -19,8 +19,6 @@ Windows:
 
 OS X:
 
-
-
 '''
 
 __docformat__ = 'restructuredtext'
@@ -32,6 +30,8 @@ from ctypes import *
 
 from pyglet.GL.VERSION_1_1 import *
 
+from pyglet.image import png, jpeg
+
 # XXX include the image filename in the args? might help debugging?
 class Image(object):
     def __init__(self, data, width, height, bpp):
@@ -39,6 +39,21 @@ class Image(object):
         self.width = width
         self.height = height
         self.bpp = bpp
+
+    @classmethod
+    def load(cls, filename):
+        if re.match(r'.*?\.png$', filename, re.I):
+            return png.read(filename)
+        if re.match(r'.*?\.jpe?g$', filename, re.I):
+            return jpeg.read(filename)
+        if png.is_png(filename):
+            return png.read(filename)
+        if jpeg.is_png(filename):
+            return jpeg.read(filename)
+        raise ValueError, 'File is not a PNG or JPEG'
+
+    def as_texture(self):
+        return Texture.from_image(self)
 
 def _nearest_pow2(n):
     i = 1
