@@ -15,7 +15,10 @@ factory = pyglet.window.WindowFactory()
 factory.config._attributes['doublebuffer'] = 1
 w1 = factory.create(width=400, height=200)
 
-filename = os.path.join(os.path.split(__file__)[0], 'Vera.ttf')
+if len(sys.argv) == 2:
+    filename = sys.argv[1]
+else:
+    filename = os.path.join(os.path.split(__file__)[0], 'Vera.ttf')
 font = Font.load_font(filename, 72)
 text = font.render('Hello World!')
 
