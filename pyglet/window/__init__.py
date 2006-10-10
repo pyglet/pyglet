@@ -50,8 +50,10 @@ class BaseWindowFactory(object):
         pass
 
 class BaseWindow(WindowEventHandler):
-    def __init__(self):
+    def __init__(self, width, height):
         WindowEventHandler.__init__(self)
+        self.width = width
+        self.height = height
         self.mouse = Mouse()
 
     def set_title(self, title):

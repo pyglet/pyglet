@@ -74,11 +74,8 @@ class XlibWindowFactory(BaseWindowFactory):
 
 class XlibWindow(BaseWindow):
     def __init__(self, width, height, display):
-        super(XlibWindow, self).__init__()
+        super(XlibWindow, self).__init__(width, height)
         self._display = display
-
-        self.width = width
-        self.height = height
 
         # XXX the WM can probably tell us this
         self.x = 0

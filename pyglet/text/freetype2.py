@@ -1,11 +1,19 @@
 import sys
+import os
 
 from ctypes import *
 from ctypes import util
 
 from pyglet.image import Image
 
-path = util.find_library('freetype')
+if sys.platform == 'darwin':
+    path = '/usr/X11R6/lib/libfreetype.dylib'
+    if not os.path.exists(path):
+        raise ImportError('Freetype support on Darwin requires X11 install')
+else:
+    path = util.find_library('freetype')
+    if not path:
+        raise ImportError('Cannot locate freetype library')
 _libfreetype = cdll.LoadLibrary(path)
 _font_data = {}
 

@@ -9,28 +9,41 @@ formats we have base support for.
 
 Linux (in order of preference):
 
-   GTK?
-   Qt?
-   SDL?
-   libpng           (will ABORT program if PNG is corrupted)
-   libjpeg
+   PNG:   libpng           (will ABORT program if PNG is corrupted)
+   PNG:   libjpeg
+
+   Fallbacks: GTK? Qt? SDL?
 
 Windows:
 
+   PNG:    ??
+   JPEG:   ??
+
 OS X:
+
+   PNG:    libpng
+   JPEG:   ??
 
 '''
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import sys
 import re
 
 from ctypes import *
 
 from pyglet.GL.VERSION_1_1 import *
 
-from pyglet.image import png, jpeg
+if sys.platform == 'win32':
+    png = jpeg = None
+elif sys.platform == 'darwin':
+    from pyglet.image import png
+    jpeg = None
+else:
+    from pyglet.image import png
+    from pyglet.image import jpeg
 
 # XXX include the image filename in the args? might help debugging?
 class Image(object):
@@ -43,12 +56,16 @@ class Image(object):
     @classmethod
     def load(cls, filename):
         if re.match(r'.*?\.png$', filename, re.I):
+            if png is None:
+                raise ValueError, "Can't load PNG images"
             return png.read(filename)
         if re.match(r'.*?\.jpe?g$', filename, re.I):
+            if jpeg is None:
+                raise ValueError, "Can't load JPEG images"
             return jpeg.read(filename)
-        if png.is_png(filename):
+        if png is not None and png.is_png(filename):
             return png.read(filename)
-        if jpeg.is_png(filename):
+        if jpeg is not None and jpeg.is_jpeg(filename):
             return jpeg.read(filename)
         raise ValueError, 'File is not a PNG or JPEG'
 

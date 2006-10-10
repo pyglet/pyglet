@@ -68,7 +68,7 @@ def _name(name):
 
 class CarbonWindow(BaseWindow):
     def __init__(self, width, height):
-        super(CarbonWindow, self).__init__()
+        super(CarbonWindow, self).__init__(width, height)
         rect = Rect()
         rect.top = 0
         rect.left = 0

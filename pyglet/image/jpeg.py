@@ -12,6 +12,11 @@ import sys
 
 from ctypes import *
 
+path = util.find_library('jpeg')
+if not path:
+    raise ImportError("Cannot locate jpeg library")
+_libjpeg = cdll.LoadLibrary(path)
+
 path = util.find_library('c')
 _libc = cdll.LoadLibrary(path)
 _libc.fopen.argtypes = [c_char_p, c_char_p]
@@ -19,8 +24,6 @@ _libc.fopen.restype = c_void_p
 _libc.fclose.argtypes = [c_void_p]
 _libc.fclose.restype = None
 
-path = util.find_library('jpeg')
-_libjpeg = cdll.LoadLibrary(path)
 def _get_function(name, argtypes, rtype):
     try:
         func = getattr(_libjpeg, name)

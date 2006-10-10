@@ -43,7 +43,7 @@ class Win32WindowFactory(BaseWindowFactory):
 
 class Win32Window(BaseWindow):
     def __init__(self, width, height):
-        super(Win32Window, self).__init__()
+        super(Win32Window, self).__init__(width, height)
         handle = _kernel32.GetModuleHandleA(c_int(0))
         handle = 0
         self._window_class = WNDCLASS()

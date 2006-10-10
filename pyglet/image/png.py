@@ -20,6 +20,7 @@ TODO:
 import sys
 
 from ctypes import *
+from ctypes import util
 
 path = util.find_library('c')
 libc = cdll.LoadLibrary(path)
@@ -84,7 +85,7 @@ def is_png(filename):
     image = open(filename)
     header = image.read(16)
     image.close()
-    return libpng.png_sig_cmp(header, 0, 16)
+    return not libpng.png_sig_cmp(header, 0, 16)
 
 def read(filename):
     ''' Read the PNG from "filename" and return a pyglet.image.Image
@@ -146,4 +147,7 @@ def read(filename):
     # avoid potential circular import
     from pyglet.image import Image
     return Image(image_data, width, height, bpp)
+
+if __name__ == '__main__':
+    print sys.argv[1], is_png(sys.argv[1])
 
