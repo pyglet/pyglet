@@ -137,6 +137,11 @@ class Texture(object):
         glPopAttrib()
 
     @classmethod
+    def from_data(cls, data, width, height, bpp):
+        id, uv = _get_texture(data, width, height, bpp)
+        return Texture(id, width, height, uv)
+
+    @classmethod
     def from_image(cls, image):
         id, uv = _get_texture(image.data, image.width, image.height,
             image.bpp)

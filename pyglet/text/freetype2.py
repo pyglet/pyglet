@@ -4,7 +4,8 @@ import os
 from ctypes import *
 from ctypes import util
 
-from pyglet.image import Image
+from pyglet.image import Texture
+from pyglet.text import base
 
 if sys.platform == 'darwin':
     path = '/usr/X11R6/lib/libfreetype.dylib'
@@ -329,6 +330,8 @@ FT_Set_Char_Size = _get_function('FT_Set_Char_Size',
     [FT_Face, FT_F26Dot6, FT_F26Dot6, c_uint, c_uint], c_int)
 FT_Load_Glyph = _get_function('FT_Load_Glyph',
     [FT_Face, c_uint, c_int32], c_int)
+FT_Get_Char_Index = _get_function('FT_Get_Char_Index',
+    [FT_Face, c_ulong], c_uint)
 FT_Load_Char = _get_function('FT_Load_Char',
     [FT_Face, c_ulong, c_int], c_int)
 FT_Get_Kerning = _get_function('FT_Get_Kerning',
@@ -370,6 +373,32 @@ def load_face(path, height):
 
     return face
 
+
+class FreetypeGlyph(base.Glyph):
+    def has_kerning(self):
+        return self.face.has_kerning()
+
+    def get_kerning_right(self, right):
+        '''This glyph is left and the other glyph is right.'''
+        kern = FT_Vector()
+        left = FT_Get_Char_Index(byref(self.face), ord(self.c))
+        right = FT_Get_Char_Index(byref(self.face), ord(right.c))
+        if FT_Get_Kerning(self.face, left, right, 0, byref(kern)):
+            return 0, 0
+        else:
+            print 'KERNED', (kern.x, kern.y)
+            return kern.x, kern.y
+
+
+class FreetypeFont(base.Font):
+    @classmethod
+    def load_font(cls, filename, size):
+        return cls(load_face(filename, size))
+
+    def render_glyph(self, c):
+        return render_char(self.face, c)
+
+
 def render_char(face, c, debug=False):
     error = FT_Load_Char(face, ord(c), FT_LOAD_RENDER)
     if error: raise Error('an error occurred drawing the glyph %r'%c, error)
@@ -395,9 +424,8 @@ def render_char(face, c, debug=False):
             s.append(elem)
         if debug: print ''.join(l)
 
-    # XXX should really be creating a Glyph with the advance and font
-    # metrics (baseline etc) here
-    return Image(''.join(s), b.width, b.rows, 4)
+    t = Texture.from_data(''.join(s), b.width, b.rows, 4)
+    return FreetypeGlyph(face, c, t, g.advance.x)
 
 if __name__ == '__main__':
     f = load_face("/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf", 16)
