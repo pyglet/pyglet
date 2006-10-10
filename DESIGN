@@ -62,6 +62,7 @@ pyglet.image
 
   Allowing texture etc. creation from PIL images should be possible.
 
+
 Optional modules, in approximate increasing pieness of sky:
 
 pyglet.font
@@ -127,4 +128,29 @@ pyglet.network
 
 pyglet.ai
   A*, state machine, thoughts?  (no pun intended)
+
+
+
+
+Implementation status across platforms:
+
+                                     X11  Win  OSX
+ PNG LOAD                             X         X
+ PNG SAVE
+ JPEG LOAD                            X
+ JPEG SAVE
+ DXT    ?
+
+ TEXT RENDERING                       X
+
+ EVENT_KEYPRESS / _KEYRELEASE         X    X    X
+ EVENT_TEXT                           X
+ EVENT_TEXT_???   (cursor control)
+ EVENT_BUTTONPRESS / _BUTTONRELEASE   X
+ EVENT_MOUSEMOTION                    X
+ EVENT_CLOSE                          X
+ EVENT_ENTER / _LEAVE                 X
+ EVENT_EXPOSE                         X
+ EVENT_RESIZE                         X
+ EVENT_MOVE                           X
 

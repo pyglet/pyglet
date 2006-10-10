@@ -1,19 +1,5 @@
 #!/usr/bin/env python
 '''
-The event implementation scoreboard
-
-                                     X11  Win  OSX
- EVENT_KEYPRESS / _KEYRELEASE         X    X    X
- EVENT_TEXT                           X
- EVENT_TEXT_???   (cursor control)
- EVENT_BUTTONPRESS / _BUTTONRELEASE   X
- EVENT_MOUSEMOTION                    X
- EVENT_CLOSE                          X
- EVENT_ENTER / _LEAVE                 X (pointer in / out of window)
- EVENT_EXPOSE                         X (window expose)
- EVENT_RESIZE                         X (window resize)
- EVENT_MOVE                           X (window move)
-
 
 OPEN QUESTIONS
 --------------

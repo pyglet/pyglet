@@ -13,11 +13,11 @@ from ctypes import *
 
 factory = pyglet.window.WindowFactory()
 factory.config._attributes['doublebuffer'] = 1
-w1 = factory.create(width=200, height=200)
+w1 = factory.create(width=400, height=200)
 
 filename = os.path.join(os.path.split(__file__)[0], 'Vera.ttf')
 font = Font.load_font(filename, 72)
-text = font.render('aWAwa')
+text = font.render('Hello World!')
 
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)
@@ -27,7 +27,6 @@ c = clock.Clock()
 glMatrixMode(GL_PROJECTION)
 glLoadIdentity()
 glOrtho(0, w1.width, 0, w1.height, -1, 1)
-#gluPerspective(60., 1., 1., 100.)
 glEnable(GL_COLOR_MATERIAL)
 
 glMatrixMode(GL_MODELVIEW)
@@ -43,9 +42,7 @@ while not exit_handler.exit:
 
     #r += 1
     if r > 360: r = 0
-    #s = max(text.width, text.height) * 2
-    #glScalef(1./s, 1./s, 1.)
-    glTranslatef(w1.width/2, w1.height/2, 0) #, -1.)
+    glTranslatef(w1.width/2, w1.height/2, 0)
     glRotatef(r, 0, 0, 1)
     glTranslatef(-text.width/2, -text.height/2, 0)
     text.draw()
