@@ -386,8 +386,8 @@ class FreetypeGlyph(base.Glyph):
         if FT_Get_Kerning(self.face, left, right, 0, byref(kern)):
             return 0, 0
         else:
-            print 'KERNED', (kern.x, kern.y)
-            return kern.x, kern.y
+            print 'KERNED', (kern.x/64, kern.y/64)
+            return kern.x/64, kern.y/64
 
 
 class FreetypeFont(base.Font):
@@ -418,9 +418,9 @@ def render_char(face, c, debug=False):
                 elif v < 128: l.append('+')
                 else: l.append('*')
             elem = chr(v)
-            s.append(elem)
-            s.append(elem)
-            s.append(elem)
+            s.append('\xff')
+            s.append('\xff')
+            s.append('\xff')
             s.append(elem)
         if debug: print ''.join(l)
 

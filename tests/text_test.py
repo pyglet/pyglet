@@ -31,6 +31,8 @@ glMatrixMode(GL_PROJECTION)
 glLoadIdentity()
 glOrtho(0, w1.width, 0, w1.height, -1, 1)
 glEnable(GL_COLOR_MATERIAL)
+glEnable(GL_BLEND)
+glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 glMatrixMode(GL_MODELVIEW)
 glClearColor(0, 0, 0, 0)
