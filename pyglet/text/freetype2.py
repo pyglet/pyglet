@@ -406,11 +406,11 @@ def render_char(face, c, debug=False):
     # expand single grey channel out to RGBA
     g = face.glyph.contents
     b = g.bitmap
-    s = ['\xff'] * (b.rows * b.width * 4)
+    s = [255] * (b.rows * b.width * 4)
     for i,j in enumerate(range(b.rows - 1, -1, -1)):
         bs = i*b.width
         ds = j*b.width; de = (j+1)*b.width
-        s[ds*4+3:de*4+3:4] = [chr(b.buffer[bs+i]) for i in xrange(b.width)]
+        s[ds*4+3:de*4+3:4] = b.buffer[bs:bs+b.width]
 
     if debug:
         print "RENDERED", c, b.rows, b.width, b.pitch, g.advance.x/64
@@ -423,7 +423,7 @@ def render_char(face, c, debug=False):
                 else: l.append('*')
         print ''.join(l)
 
-    t = Texture.from_data(''.join(s), b.width, b.rows, 4)
+    t = Texture.from_data(''.join(map(chr, s)), b.width, b.rows, 4)
     return FreetypeGlyph(face, c, t, g.advance.x >> 6)
 
 if __name__ == '__main__':
