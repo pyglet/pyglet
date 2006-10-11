@@ -425,7 +425,7 @@ def render_char(face, c, debug=False):
         if debug: print ''.join(l)
 
     t = Texture.from_data(''.join(s), b.width, b.rows, 4)
-    return FreetypeGlyph(face, c, t, g.advance.x)
+    return FreetypeGlyph(face, c, t, g.advance.x >> 6)
 
 if __name__ == '__main__':
     f = load_face("/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf", 16)

@@ -19,8 +19,8 @@ if len(sys.argv) == 2:
     filename = sys.argv[1]
 else:
     filename = os.path.join(os.path.split(__file__)[0], 'Vera.ttf')
-font = Font.load_font(filename, 72)
-text = font.render('Hello World!')
+font = Font.load_font(filename, 12)
+text = font.render('Hello, World.  VAWAVA. Mr. T.')
 
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)

@@ -58,7 +58,8 @@ class Text(object):
                 elif this.has_kerning():
                     kern_x, kern_y = last.get_kerning_right(this)
                 # translate
-                glTranslatef(kern_x + last.texture.width, 0, 0)
+                glTranslatef(kern_x + last.advance_x, 0, 0)
+                print kern_x, last.advance_x
                 self.width += kern_x
                 # XXX y kerning?
 
@@ -67,7 +68,7 @@ class Text(object):
             # call glyph display list
             glCallList(this.texture.quad_list)
 
-            self.width += this.texture.width
+            self.width += this.advance_x
             self.height = max(self.height, this.texture.height)
 
         glEndList()
