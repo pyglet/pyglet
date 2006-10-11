@@ -386,7 +386,7 @@ class FreetypeGlyph(base.Glyph):
         if FT_Get_Kerning(self.face, left, right, 0, byref(kern)):
             return 0, 0
         else:
-            print 'KERNED', (kern.x/64, kern.y/64)
+            #print 'KERNED', (kern.x/64, kern.y/64)
             return kern.x/64, kern.y/64
 
 
@@ -404,25 +404,24 @@ def render_char(face, c, debug=False):
     if error: raise Error('an error occurred drawing the glyph %r'%c, error)
 
     # expand single grey channel out to RGBA
-    s = []
     g = face.glyph.contents
     b = g.bitmap
-    if debug: print "RENDERED", c, b.rows, b.width, b.pitch, g.advance.x/64
+    s = ['\xff'] * (b.rows * b.width * 4)
+    for i,j in enumerate(range(b.rows - 1, -1, -1)):
+        bs = i*b.width
+        ds = j*b.width; de = (j+1)*b.width
+        s[ds*4+3:de*4+3:4] = [chr(b.buffer[bs+i]) for i in xrange(b.width)]
 
-    for i in range(b.rows - 1, -1, -1):
-        if debug: l = []
-        for j in range(b.width):
-            v = b.buffer[i*b.pitch + j]
-            if debug:
+    if debug:
+        print "RENDERED", c, b.rows, b.width, b.pitch, g.advance.x/64
+        for i in range(b.rows - 1, -1, -1):
+            l = []
+            for j in range(b.width):
+                v = b.buffer[i*b.pitch + j]
                 if v == 0: l.append(' ')
                 elif v < 128: l.append('+')
                 else: l.append('*')
-            elem = chr(v)
-            s.append('\xff')
-            s.append('\xff')
-            s.append('\xff')
-            s.append(elem)
-        if debug: print ''.join(l)
+        print ''.join(l)
 
     t = Texture.from_data(''.join(s), b.width, b.rows, 4)
     return FreetypeGlyph(face, c, t, g.advance.x >> 6)
