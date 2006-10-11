@@ -59,7 +59,6 @@ class Text(object):
                     kern_x, kern_y = last.get_kerning_right(this)
                 # translate
                 glTranslatef(kern_x + last.advance_x, 0, 0)
-                print kern_x, last.advance_x
                 self.width += kern_x
                 # XXX y kerning?
 
