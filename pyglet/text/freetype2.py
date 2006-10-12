@@ -1,5 +1,6 @@
 import sys
 import os
+import itertools
 
 from ctypes import *
 from ctypes import util
@@ -403,27 +404,40 @@ def render_char(face, c, debug=False):
     error = FT_Load_Char(face, ord(c), FT_LOAD_RENDER)
     if error: raise Error('an error occurred drawing the glyph %r'%c, error)
 
-    # expand single grey channel out to RGBA
+    # set image as alhpa channel on a LUMINANCE_ALPHA texture
     g = face.glyph.contents
     b = g.bitmap
-    s = [255] * (b.rows * b.width * 4)
-    for i,j in enumerate(range(b.rows - 1, -1, -1)):
-        bs = i*b.width
-        ds = j*b.width; de = (j+1)*b.width
-        s[ds*4+3:de*4+3:4] = b.buffer[bs:bs+b.width]
+
+    bpp = 2
+    w = b.width
+
+    # Set up a luminance channel and an alpha channel.
+    # We need to pack out the rows so each row starts on a 32-bit boundary.
+    # No idea why we need to do this. It's probably mentioned in some
+    # obscure corner of the manual, or it might be an OSX OpenGL bug.
+    if w%2: width = w + 1
+    else: width = w
+    ew2 = width*2
+    w2 = w*2
+    s = [255,0] * (width * b.rows)
+    for i,j in enumerate(xrange(b.rows - 1, -1, -1)):
+        j = j*ew2 + 1
+        s[j:j+w2:2] = b.buffer[i:i+w]
+
+    s = ''.join(map(chr, s))
 
     if debug:
-        print "RENDERED", c, b.rows, b.width, b.pitch, g.advance.x/64
-        for i in range(b.rows - 1, -1, -1):
+        print "RENDERED", c, b.rows, width, b.pitch, g.advance.x/64
+        for i in range(b.rows):
             l = []
-            for j in range(b.width):
-                v = b.buffer[i*b.pitch + j]
-                if v == 0: l.append(' ')
+            for j in range(width):
+                v = ord(s[i*width*2 + j*2 + 1])
+                if v == 0: l.append('.')
                 elif v < 128: l.append('+')
                 else: l.append('*')
-        print ''.join(l)
+            print ''.join(l)
 
-    t = Texture.from_data(''.join(map(chr, s)), b.width, b.rows, 4)
+    t = Texture.from_data(s, width, b.rows, bpp)
     return FreetypeGlyph(face, c, t, g.advance.x >> 6)
 
 if __name__ == '__main__':

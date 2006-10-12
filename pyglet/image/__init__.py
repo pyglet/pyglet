@@ -86,13 +86,13 @@ def _get_texture_from_surface(surface):
         surface.format.BytesPerPixel)
 
 def _get_texture(data, width, height, bpp):
-    tex_width = _nearest_pow2(width)
-    tex_height = _nearest_pow2(height)
+    tex_width = tex_height = max(_nearest_pow2(width), _nearest_pow2(height))
     uv = (float(width) / tex_width, float(height) / tex_height)
 
     blank = '\0' * tex_width * tex_height * bpp
-    if bpp == 3: format = GL_RGB
-    else: format = GL_RGBA
+    if bpp == 2: iformat = format = GL_LUMINANCE_ALPHA
+    elif bpp == 3: iformat = format = GL_RGB
+    else: iformat = format = GL_RGBA
 
     id = c_uint()
     glGenTextures(1, byref(id))
@@ -100,7 +100,7 @@ def _get_texture(data, width, height, bpp):
     glBindTexture(GL_TEXTURE_2D, id)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    glTexImage2D(GL_TEXTURE_2D, 0, format, tex_width, tex_height, 0, format,
+    glTexImage2D(GL_TEXTURE_2D, 0, iformat, tex_width, tex_height, 0, format,
         GL_UNSIGNED_BYTE, blank)
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format,
         GL_UNSIGNED_BYTE, data)
