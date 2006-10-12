@@ -50,7 +50,7 @@ class Text(object):
         glNewList(self.gl_list, GL_COMPILE)
         kern_x = kern_y = 0
         self.width = 0
-        self.height = 0
+        self.ascent = self.descent = 0
         for i, this in enumerate(glyphs):
             if i > 0:
                 last = glyphs[i-1]
@@ -61,12 +61,11 @@ class Text(object):
                 # translate
                 glTranslatef(kern_x + last.advance_x, 0, 0)
                 self.width += kern_x
-                # XXX y kerning?
 
             glPushMatrix()
 
-            # Y position using baseline...
-            glTranslatef(0, -this.baseline, 0)
+            # Y position using baseline... and y kerning
+            glTranslatef(0, -this.baseline + kern_y, 0)
 
             # call glyph display list
             glCallList(this.texture.quad_list)
@@ -75,16 +74,20 @@ class Text(object):
 
             self.width += this.advance_x
 
-            # XXX this lies because of baseline movement. also, it's not
-            # really all that useful. More useful would be a max height for
-            # the face(s) at this size.
-            self.height = max(self.height, this.texture.height)
+            # keep track of the top and bottom to figure the height
+            self.ascent = max(-this.baseline + this.texture.height, self.ascent)
+            self.descent = min(-this.baseline, self.descent)
+
+        # now set the height
+        self.height = self.ascent - self.descent
 
         glEndList()
 
     def draw(self):
         glPushAttrib(GL_ENABLE_BIT)
+        glEnable(GL_BLEND)
         glEnable(GL_TEXTURE_2D)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glCallList(self.gl_list)
         glPopAttrib()
 
