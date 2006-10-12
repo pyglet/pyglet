@@ -4,12 +4,13 @@ from pyglet.GL.VERSION_1_1 import *
 
 
 class Glyph(object):
-    def __init__(self, face, c, texture, advance_x):
+    def __init__(self, face, c, texture, advance_x, baseline):
         self.face = face
         self.c = c
         # XXX pack into a big texture?
         self.texture = texture
         self.advance_x = advance_x
+        self.baseline = baseline
 
     def has_kerning(self):
         raise NotImplementedError
@@ -62,12 +63,21 @@ class Text(object):
                 self.width += kern_x
                 # XXX y kerning?
 
-            # XXX Y position using baseline...
+            glPushMatrix()
+
+            # Y position using baseline...
+            glTranslatef(0, -this.baseline, 0)
 
             # call glyph display list
             glCallList(this.texture.quad_list)
 
+            glPopMatrix()
+
             self.width += this.advance_x
+
+            # XXX this lies because of baseline movement. also, it's not
+            # really all that useful. More useful would be a max height for
+            # the face(s) at this size.
             self.height = max(self.height, this.texture.height)
 
         glEndList()

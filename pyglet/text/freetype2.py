@@ -55,6 +55,10 @@ class FT_Glyph_Metrics(Structure):
         ('vertAdvance', c_long),
     ]
 
+    def dump(self):
+        for (name, type) in self._fields_:
+            print 'FT_Glyph_Metrics', name, `getattr(self, name)`
+
 class FT_Generic(Structure):
     _fields_ = [('data', c_void_p), ('finalizer', c_void_p)]
 
@@ -421,6 +425,7 @@ def render_char(face, c, debug=False):
     w2 = w*2
     s = [255,0] * (width * b.rows)
     for i,j in enumerate(xrange(b.rows - 1, -1, -1)):
+        i = i * w
         j = j*ew2 + 1
         s[j:j+w2:2] = b.buffer[i:i+w]
 
@@ -438,7 +443,11 @@ def render_char(face, c, debug=False):
             print ''.join(l)
 
     t = Texture.from_data(s, width, b.rows, bpp)
-    return FreetypeGlyph(face, c, t, g.advance.x >> 6)
+    advance = g.advance.x >> 6
+    metrics = g.metrics
+    baseline = (metrics.height - metrics.horiBearingY) >> 6
+    # XXX horiBearingX?
+    return FreetypeGlyph(face, c, t, advance, baseline)
 
 if __name__ == '__main__':
     f = load_face("/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf", 16)
