@@ -144,7 +144,7 @@ Implementation status across platforms:
  PNG SAVE
  JPEG LOAD                            X
  JPEG SAVE
- DDS LOAD                             X    X    X   (untested)
+ DDS LOAD                             /    /    /   (DXT5 only so far)
 
  TEXT RENDERING                       X
 
