@@ -11,12 +11,13 @@ from pyglet.image import Image, Texture
 
 from ctypes import *
 
+if len(sys.argv) != 2:
+    print 'Usage: %s <PNG/JPEG filename>'%sys.argv[0]
+    sys.exit()
+
 factory = pyglet.window.WindowFactory()
 factory.config._attributes['doublebuffer'] = 1
 w1 = factory.create(width=200, height=200)
-
-if len(sys.argv) != 2:
-    print 'Usage: %s <PNG/JPEG filename>'%sys.argv[0]
 
 tex = Image.load(sys.argv[1]).as_texture()
 
