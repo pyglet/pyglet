@@ -11,6 +11,7 @@ import pyglet.window
 import pyglet.clock
 from ctypes import *
 from pyglet.window.event import *
+from pyglet.gui import fps
 
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.GLU.VERSION_1_1 import *
@@ -24,7 +25,6 @@ def setup_scene():
     gluPerspective(60., 1., 1., 100.)
     glMatrixMode(GL_MODELVIEW)
     glClearColor(1, 1, 1, 1)
-    glColor4f(.5, .5, .5, .5)
 
 # handle exit
 class ExitHandler(object):
@@ -77,6 +77,7 @@ def drawBranch(n, l, r):
 
 def drawTree(n=2, r=False):
     glLineWidth(2.)
+    glColor4f(.5, .5, .5, .5)
     glBegin(GL_LINES)
     drawBranch(n-1, euclid.Line3(euclid.Point3(0., 0., 0.),
         euclid.Vector3(0., 1., 0.), 1.), r)
@@ -118,12 +119,13 @@ class Tree(object):
             self.rmb = False
 
     def render(self):
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glPushMatrix()
         glLoadIdentity()
         glTranslatef(self.x/10., -self.y/10., self.zpos)
         glRotatef(self.ry, 1., 0., 0.)
         glRotatef(self.rx, 0., 1., 0.)
         glCallList(self.dl)
+        glPopMatrix()
 
 # need one display list per window
 w1.switch_to()
@@ -140,11 +142,14 @@ while exit_handler.running:
 
     # render
     w1.switch_to()
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     w1.dispatch_events()
     tree1.render()
+    fps.render(w1, c)
     w1.flip()
 
     w2.switch_to()
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     w2.dispatch_events()
     tree2.render()
     w2.flip()

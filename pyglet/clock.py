@@ -8,6 +8,7 @@ __version__ = '$Id$'
 
 import time
 import sys
+import operator
 import ctypes
 import ctypes.util
 
@@ -52,6 +53,8 @@ class Clock(_ClockBase):
         super(Clock, self).__init__()
         self.time = time_function
         self.next_ts = self.time()
+        self.last_ts = None
+        self.times = []
 
     def set_fps(self, fps):
         ts = self.time()
@@ -76,19 +79,40 @@ class Clock(_ClockBase):
             # Otherwise keep the clock steady
             self.next_ts = self.next_ts + 1. / fps
 
+        # XXX this is obviously going to incur additional delay - worth
+        # worrying about?
+        ts = self.time()
+        if self.last_ts is None: delta_t = 0
+        else:
+            delta_t = ts - self.last_ts
+            self.times.insert(0, delta_t)
+            if len(self.times) > fps:
+                self.times.pop()
+        self.last_ts = ts
+
+        return ts
+
+    def get_fps(self):
+        if not self.times: return 0
+        t = reduce(operator.add, self.times, 0.) / len(self.times)
+        if not t: return 0
+        return 1/t
+
 if __name__ == '__main__':
     import sys
     import getopt
     test_seconds = 1 
     test_fps = 60
-     
-    options, args = getopt.getopt(sys.argv[1:], 't:f:h:', 
+    show_fps = False
+    options, args = getopt.getopt(sys.argv[1:], 'vht:f:', 
         ['time=', 'fps=', 'help'])
     for key, value in options:
         if key in ('-t', '--time'):
             test_seconds = float(value)
         elif key in ('-f', '--fps'):
             test_fps = float(value)
+        elif key in ('-v'):
+            show_fps = True
         elif key in ('-h', '--help'):
             print ('Usage: clock.py <options>\n'
                    '\n'
@@ -109,6 +133,8 @@ if __name__ == '__main__':
     print 'Testing %f FPS for %f seconds...' % (test_fps, test_seconds)
     for i in xrange(n_frames):
         c.set_fps(test_fps)
+        if show_fps:
+            print c.get_fps()
     total_time = time.time() - start
     total_error = total_time - test_seconds
     print 'Total clock error: %f secs' % total_error
