@@ -1,0 +1,85 @@
+IMPLEMENTATION STATUS / TODO LIST
+---------------------------------
+
+
+pyglet.GL & pyglet.GLU
+    tools/gl2ctypes.py still needs a bit of work as some files needed
+    fixing by hand.
+
+pyglet.window
+    =================================== ==== ==== ===
+    Component                           X11  Win  OSX
+    =================================== ==== ==== ===
+    MULTIPLE WINDOW OPEN                 X    X    X
+    FULLSCREEN OPEN
+    SWITCH FULLSCREEN / WINDOWED
+    EVENT_KEYPRESS / _KEYRELEASE         X    X    X
+    EVENT_TEXT                           X
+    EVENT_TEXT???   (cursor control)
+    EVENT_BUTTONPRESS / _BUTTONRELEASE   X
+    EVENT_MOUSEMOTION                    X
+    EVENT_CLOSE                          X
+    EVENT_ENTER / _LEAVE                 X
+    EVENT_EXPOSE                         X
+    EVENT_RESIZE                         X
+    EVENT_MOVE                           X
+    =================================== ==== ==== ===
+
+pyglet.event & pyglet.clock
+    Done.
+
+pyglet.console
+    TBD: remove SDL dependency
+
+pyglet.dds
+    TBD: move to pyglet.image
+
+pyglet.sprite
+    TBD: update for pyglet.image changes
+
+pyglet.model
+    TBD: support for the DirectX model format would be good as it has
+    animations and skellingtons.
+
+pyglet.model.obj & pyglet.model.geometric
+    TBD: more geometric models needed.
+
+pyglet.image
+    ========== ==== ==== ===  =========================================
+    Component  X11  Win  OSX  Note
+    ========== ==== ==== ===  =========================================
+    PNG LOAD    X         X   (libpng requires setjmp support)
+    PNG SAVE
+    JPEG LOAD   X             (libjpeg requires setjmp support)
+    JPEG SAVE
+    DDS LOAD    .    /    .   (DXT5 only so far - see pyglet.dds above)
+    ========== ==== ==== ===  =========================================
+
+pyglet.image.sdl
+    TBD: REMOVE
+
+pyglet.shader
+    TBD: documentation
+    TBD: sample shaders
+
+pyglet.text
+    ================= ==== ==== ===
+    Component         X11  Win  OSX
+    ================= ==== ==== ===
+    TEXT RENDERING     X
+    ================= ==== ==== ===
+
+pyglet.text.base
+    TBD: rendering to common texture
+    TBD: pre-rendering of latin-1
+    TBD: multiline rendering (pyglet)
+
+pyglet.gui
+    TBD: more widgets
+
+pyglet.gui.layout
+    TBD: finish, refactor out button and interpolators
+
+pyglet.gui.fps
+    TBD: handle positioning argument
+

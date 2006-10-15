@@ -41,21 +41,14 @@ pyglet.image
   Load and save PNG.  Load DXT.  Load and save JPEG.
   Images as both bitmaps and textures.
 
-  Image
-    width, height, data, bpp
-
-  TextureOptions        -- as per blur.py
-
-  Texture               -- single image as texture
-    width, height, draw()
-
-  TextureAtlas          -- split a large texture into a grid of subtextures
-    {row, col: Texture}, draw(row, col)
-
-  PackedTexture         -- pack many texture images as subtextures
-    {name: Texture}
-
-  RenderBuffer?         -- as per blur.py
+  :Image:          raw image data with attributes width, height, bpp
+  :TextureOptions: as per blur.py
+  :Texture:        single image as texture with width, height, draw()
+  :TextureAtlas:   split a large texture into a grid of subtextures
+                   {row, col: Texture}, draw(row, col)
+  :PackedTexture:  pack many texture images as subtextures
+                   {name: Texture}
+  :RenderBuffer:   as per blur.py
 
   Allowing texture etc. creation from PIL images should be possible.
 
@@ -68,10 +61,10 @@ pyglet.font
 
   Basic interface will have:
 
-  Font      - a font file
-  Glyph     - describes a glyph from the font
-  Text      - encapsulates a set of Glpyhs in a display list and
-              incorporates kerning in the glyph positioning
+  :Font:  a font file
+  :Glyph: describes a glyph from the font
+  :Text:  encapsulates a set of Glpyhs in a display list and
+          incorporates kerning in the glyph positioning
 
   Rendering will be done to a texture. We should try to pack >1 rendered
   glyph into a texture. Possibly pre-render the ASCII or latin-1 characters
@@ -133,29 +126,4 @@ pyglet.network
 
 pyglet.ai
   A*, state machine, thoughts?  (no pun intended)
-
-
-
-
-Implementation status across platforms:
-
-                                     X11  Win  OSX
- PNG LOAD                             X         X
- PNG SAVE
- JPEG LOAD                            X
- JPEG SAVE
- DDS LOAD                             /    /    /   (DXT5 only so far)
-
- TEXT RENDERING                       X
-
- EVENT_KEYPRESS / _KEYRELEASE         X    X    X
- EVENT_TEXT                           X
- EVENT_TEXT_???   (cursor control)
- EVENT_BUTTONPRESS / _BUTTONRELEASE   X
- EVENT_MOUSEMOTION                    X
- EVENT_CLOSE                          X
- EVENT_ENTER / _LEAVE                 X
- EVENT_EXPOSE                         X
- EVENT_RESIZE                         X
- EVENT_MOVE                           X
 

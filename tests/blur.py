@@ -636,7 +636,10 @@ factory.config._attributes['doublebuffer'] = 1
 
 exit_handler = ExitHandler()
 
-window = factory.create(width=800, height=600)
+screen_width = 800
+screen_height = 600
+
+window = factory.create(width=screen_width, height=screen_height)
 window.push_handlers(exit_handler)
 
 clk = pyglet.clock.Clock()
@@ -645,7 +648,7 @@ r = 0
 
 cparams = TextureParam(wrap = GL_CLAMP)
 
-buf = FrameBuffer(800, 600,
+buf = FrameBuffer(screen_width, screen_height,
                   Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams),
                   Surface(Surface.SURF_DEPTH,
                           gl_tgt = GL_TEXTURE_RECTANGLE_ARB, gl_fmt = GL_DEPTH_COMPONENT32_ARB,
@@ -654,7 +657,7 @@ buf.init()
 buf.attach()
 buf.unbind()
 
-alpha_buf = FrameBuffer(800, 600,
+alpha_buf = FrameBuffer(screen_width, screen_height,
                         Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams))
 alpha_buf.init()
 alpha_buf.attach()
@@ -887,7 +890,7 @@ while exit_handler.running:
     window.dispatch_events()
 
     buf.bind()
-    glViewport(0, 0, 800, 600)
+    glViewport(0, 0, screen_width, screen_height)
     renderScene()
     buf.unbind()
 
