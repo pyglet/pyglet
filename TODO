@@ -23,26 +23,44 @@ pyglet.window
     EVENT_EXPOSE                         X
     EVENT_RESIZE                         X
     EVENT_MOVE                           X
+    Border type 
+      (resizable/not/thin/none/etc)
+    Set caption                          X    X    X
+    Set icon
+    Select screen (multi-monitor)
+    Exclusive input
     =================================== ==== ==== ===
+
+    Also:
+       - sensible/usable window factory
 
 pyglet.event & pyglet.clock
     Done.
 
 pyglet.console
     TBD: remove SDL dependency
+         finish, make pretty
 
 pyglet.dds
     TBD: move to pyglet.image
+         Support all formats
+         Software fallback
+         Save
 
 pyglet.sprite
     TBD: update for pyglet.image changes
+         OBB or AABB collision before occlusion query
+         animated sprites
 
 pyglet.model
     TBD: support for the DirectX model format would be good as it has
     animations and skellingtons.
+         Also consider our own format + a blender export for it (for
+           animations, armature etc).
 
 pyglet.model.obj & pyglet.model.geometric
     TBD: more geometric models needed.
+         Integrate with euclid.  Consistent draw/collide/response interface.
 
 pyglet.image
     ========== ==== ==== ===  =========================================
@@ -54,12 +72,13 @@ pyglet.image
     JPEG SAVE
     DDS LOAD    .    /    .   (DXT5 only so far - see pyglet.dds above)
     ========== ==== ==== ===  =========================================
+      - Work around libpng and libjpeg if possible.
 
 pyglet.image.sdl
     TBD: REMOVE
 
 pyglet.shader
-    TBD: documentation
+    TBD: documentation  <--- this goes for everywhere :-)
     TBD: sample shaders
 
 pyglet.text
@@ -68,6 +87,14 @@ pyglet.text
     ================= ==== ==== ===
     TEXT RENDERING     X
     ================= ==== ==== ===
+
+    Also: line breaks, 
+          attributed text, 
+          bidi,
+          vertical text,
+          render to multiple textures,
+          find system fonts,
+          support surrogate pairs (impossible with truetype?)
 
 pyglet.text.base
     TBD: rendering to common texture

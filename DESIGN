@@ -55,7 +55,9 @@ pyglet.image
 
 Optional modules, in approximate increasing pieness of sky:
 
-pyglet.font
+pyglet.font  
+  <ah>: isn't this pyglet.text now?
+
   Rendering and layout of fonts, using Freetype, Windows and OS X for
   rasterisation.  Includes the Bitstream family of fonts.  
 
@@ -85,8 +87,14 @@ pyglet.gui (requires pyglet.font)
     straight horizontal / vertical bars (active/inactive colour)
     image-based where the image is "filled"  (active/inactive image)
 
+     - <ah>: These are the same thing, and should be controlled by look-n-feel
+             object.
+
   Graphical elements like boxes to put other elements in which have
   padding, border, margin like CSS box model.
+
+    - <ah>: Border should be abstracted and controlled by look-n-feel.
+            CSS model possibly too complicated and obfuscated?
 
 pyglet.draw
   Draw ellipses, polygons, rectangles (using GLU?).
