@@ -13,6 +13,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from ctypes import *
+from ctypes import util
 import unicodedata
 
 from pyglet.window import *
@@ -25,7 +26,11 @@ from pyglet.window.xlib.glx.VERSION_1_4 import *
 # Load X11 library, specify argtypes and restype only when necessary.
 Display = c_void_p
 Atom = c_ulong
-xlib = cdll.LoadLibrary('libX11.so')
+
+path = util.find_library('X11')
+if not path:
+    raise ImportError('Cannot locate X11 library')
+xlib = cdll.LoadLibrary(path)
 xlib.XOpenDisplay.argtypes = [c_char_p]
 xlib.XOpenDisplay.restype = POINTER(Display)
 xlib.XInternAtom.restype = Atom
