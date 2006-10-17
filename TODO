@@ -32,6 +32,7 @@ pyglet.window
     =================================== ==== ==== ===
 
     Also:
+       - better failure handling when eg. GLX is not available
        - sensible/usable window factory
 
 pyglet.event & pyglet.clock
