@@ -882,8 +882,6 @@ def blit(surf, x, y, w, h, mode):
 
     surf.unbindAndDisable()
 
-
-
 while exit_handler.running:
     clk.set_fps(60)
 

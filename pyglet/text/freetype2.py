@@ -218,7 +218,8 @@ class FT_FaceRec(Structure):
     def has_kerning(self):
         return self.face_flags & FT_FACE_FLAG_KERNING
 
-    def __del__(self, byref=byref, FT_Done_Face=FT_Done_Face):
+    def __del__(self, byref=byref, FT_Done_Face=FT_Done_Face,
+            addressof=addressof):
         # FT_Done_FreeType doc says it will free up faces...
         if _library is not None:
             FT_Done_Face(byref(self))
@@ -344,7 +345,7 @@ FT_Get_Kerning = _get_function('FT_Get_Kerning',
 
 _library = None
 
-def load_face(path, height):
+def load_face(file, height):
     global _library
     if _library is None:
         # init the library
@@ -356,10 +357,13 @@ def load_face(path, height):
 
     face = FT_Face()
 
-    # have Python open and read the file as it handles errors nicely
-    fp = open(path, 'rb')
-    font_data = create_string_buffer(fp.read())
-    fp.close()
+    # read the file data
+    if hasattr(file, 'read'):
+        font_data = create_string_buffer(file.read())
+    else:
+        fp = open(file, 'rb')
+        font_data = create_string_buffer(fp.read())
+        fp.close()
 
     error = FT_New_Memory_Face(_library, font_data, len(font_data),
         0, byref(face));
@@ -368,6 +372,7 @@ def load_face(path, height):
 
     # Don't lose this ref.
     face = face.contents
+    #print (face.ascender >> 6, face.descender >> 6, face.height >> 6)
     _font_data[addressof(face)] = font_data
 
     # "height" pixels high
@@ -396,15 +401,14 @@ class FreetypeGlyph(base.Glyph):
 
 
 class FreetypeFont(base.Font):
-    @classmethod
-    def load_font(cls, filename, size):
-        return cls(load_face(filename, size))
+    def load_font(self, file, size):
+        return load_face(file, size)
 
     def render_glyph(self, c):
         return render_char(self.face, c)
 
 
-def render_char(face, c, debug=False):
+def render_char(face, c):
     error = FT_Load_Char(face, ord(c), FT_LOAD_RENDER)
     if error: raise Error('an error occurred drawing the glyph %r'%c, error)
 
@@ -431,26 +435,19 @@ def render_char(face, c, debug=False):
 
     s = ''.join(map(chr, s))
 
-    if debug:
-        print "RENDERED", c, b.rows, width, b.pitch, g.advance.x/64
-        for i in range(b.rows):
-            l = []
-            for j in range(width):
-                v = ord(s[i*width*2 + j*2 + 1])
-                if v == 0: l.append('.')
-                elif v < 128: l.append('+')
-                else: l.append('*')
-            print ''.join(l)
-
-    t = Texture.from_data(s, width, b.rows, bpp)
     advance = g.advance.x >> 6
     metrics = g.metrics
     baseline = (metrics.height - metrics.horiBearingY) >> 6
-    # XXX horiBearingX?
-    return FreetypeGlyph(face, c, t, advance, baseline)
+    return s, FreetypeGlyph(face, c, width, b.rows, advance, baseline)
 
 if __name__ == '__main__':
-    f = load_face("/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf", 16)
+    import sys
+    if len(sys.argv) == 2:
+        filename = sys.argv[1]
+    else:
+        filename = os.path.join(os.path.split(__file__)[0],
+            '../../tests/Vera.ttf')
+    f = load_face(filename, 16)
 
     """
     text = 'To WAVA'
@@ -463,7 +460,18 @@ if __name__ == '__main__':
             print 'kern "%s%s" = (%s, %s)'%(last, c, kern.x, kern.y)
     """
 
-    for c in 'WAwa': render_char(f, c, debug=True)
+    for c in 'WAwa':
+        s, glyph = render_char(f, c)
+        print "RENDERED", c
+        for i in range(glyph.height):
+            l = []
+            for j in range(glyph.width):
+                v = ord(s[i*glyph.width*2 + j*2 + 1])
+                if v == 0: l.append('.')
+                elif v < 128: l.append('+')
+                else: l.append('*')
+            print ''.join(l)
+
 
     '''
     render_char(f, 'A')

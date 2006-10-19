@@ -86,10 +86,12 @@ def _get_texture_from_surface(surface):
         surface.format.BytesPerPixel)
 
 def _get_texture(data, width, height, bpp):
+    # XXX get from config...
+    # XXX test whether the hardware can cope with non-^2 texture sizes
+    # XXX test whether the hardware can cope with non-square textures
     tex_width = tex_height = max(_nearest_pow2(width), _nearest_pow2(height))
     uv = (float(width) / tex_width, float(height) / tex_height)
 
-    blank = '\0' * tex_width * tex_height * bpp
     if bpp == 2: iformat = format = GL_LUMINANCE_ALPHA
     elif bpp == 3: iformat = format = GL_RGB
     else: iformat = format = GL_RGBA
@@ -100,10 +102,15 @@ def _get_texture(data, width, height, bpp):
     glBindTexture(GL_TEXTURE_2D, id)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    glTexImage2D(GL_TEXTURE_2D, 0, iformat, tex_width, tex_height, 0, format,
-        GL_UNSIGNED_BYTE, blank)
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format,
-        GL_UNSIGNED_BYTE, data)
+    if tex_width == width and tex_height == height:
+        glTexImage2D(GL_TEXTURE_2D, 0, iformat, tex_width, tex_height, 0,
+            format, GL_UNSIGNED_BYTE, data)
+    else:
+        blank = '\0' * tex_width * tex_height * bpp
+        glTexImage2D(GL_TEXTURE_2D, 0, iformat, tex_width, tex_height, 0,
+            format, GL_UNSIGNED_BYTE, blank)
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format,
+            GL_UNSIGNED_BYTE, data)
 
     return id, uv
 
@@ -202,10 +209,10 @@ class TextureAtlas(object):
             n = glGenLists(len(rects))
             self.quad_lists = range(n, n + len(rects))
             for i, rect in enumerate(rects):
-                u = float(rect[0]) / surface.w * uv[0]
-                v = float(rect[1]) / surface.h * uv[1]
-                du = float(rect[2]) / surface.w * uv[0]
-                dv = float(rect[3]) / surface.h * uv[1]
+                u = float(rect[0]) / width * uv[0]
+                v = float(rect[1]) / height * uv[1]
+                du = float(rect[2]) / width * uv[0]
+                dv = float(rect[3]) / height * uv[1]
                 elem_uv = (u, v, u + du, v + dv)
                 elem_size = (rect[2], rect[3])
 
@@ -225,6 +232,11 @@ class TextureAtlas(object):
 
                 self.uvs.append(elem_uv)
                 self.elem_sizes.append(elem_size)
+
+    @classmethod
+    def from_data(cls, data, width, height, bpp, rows=1, cols=1, rects=[]):
+        id, uv = _get_texture(data, width, height, bpp)
+        return TextureAtlas(id, width, height, uv, rows, cols, rects)
 
     @classmethod
     def from_image(cls, image, rows=1, cols=1, rects=[]):
