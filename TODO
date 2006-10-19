@@ -89,12 +89,20 @@ pyglet.text
     TEXT RENDERING     X
     ================= ==== ==== ===
 
-    Also: line breaks, 
-          attributed text, 
+    TBD: rendering of missing glyphs
+         Currently we pre-render printable ASCII and lay the glyphs out
+         in the container texture in a straight grid using the max height
+         of the ASCII glyphs. Two issues arise:
+
+         - There is a chance that a new glyph is taller than that max height.
+         - We also waste space (though not much)
+
+    Also: render to multiple textures when glyphs don't fit
+          line breaks, 
+          attributed text (what's this? styling?), 
           bidi,
           vertical text,
-          render to multiple textures,
-          find system fonts,
+          find system fonts (and identify variants),
           support surrogate pairs (impossible with truetype?)
 
 pyglet.text.base

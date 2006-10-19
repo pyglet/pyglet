@@ -25,14 +25,12 @@ _default_character_set = 'acemnorsuvwxzfbdhikltgjpqy' \
     'ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
     '1234567890;:,.`!?@#$%^&+*=_-~()[]{}<>\\/"\' '
 
-#_default_character_set = 'AB'
+#_default_character_set = 'ABCD'
 
 # XXX get from config
 _max_texture_width = 1024
 
 class Font(object):
-
-
     def __init__(self, file, size, character_set=_default_character_set):
         '''Create a renderable instance of the given font at the given
         size.
@@ -54,30 +52,38 @@ class Font(object):
         self.face = self.load_font(file, size)
 
         glyphs = []
-        h = 0
-        w = 0
+        max_height = 0
         for c in character_set:
             data, glyph = self.render_glyph(c)
             self.glyphs[c] = glyph
-            h = max(h, glyph.height)
-            w += glyph.width
+            max_height = max(max_height, glyph.height)
             glyphs.append((data, glyph))
 
-        #w += len(character_set) * _min_texture_character_space
-        if w > _max_texture_width:
-            h = (w / _max_texture_width + 1) * h
-            w = _max_texture_width
-        tw, th = pyglet.image._nearest_pow2(w), pyglet.image._nearest_pow2(h)
+        # try to lay the glyphs out in a square
+        location = {}
+        rows = [0]
+        for data, glyph in glyphs:
+            min_length = None
+            for i, length in enumerate(rows):
+                if min_length is None or length < min_length:
+                    min_length = length
+                    rownum = i
+            location[glyph.c] = (min_length, rownum * max_height)
+            rows[rownum] += glyph.width
+            if rows[rownum] > len(rows) * max_height:
+                rows.append(0)
+
+        if rows[-1] == 0: rows.pop()
 
         # create the storage texture
+        tw = max(rows)
+        th = len(rows) * max_height
         texdata = [chr(0)] * (tw*th*2)
+
         rects = []
-        x = y = 0
         tw2 = tw * 2
         for data, glyph in glyphs:
-            if x + glyph.width > tw:
-                x = 0
-                y += h
+            x, y = location[glyph.c]
 
             # copy in the glyph
             gw2 = glyph.width * 2
@@ -87,7 +93,6 @@ class Font(object):
                 texdata[tdx:tdx + gw2] = data[dx:dx + gw2]
 
             rects.append((x, y, glyph.width, glyph.height))
-            x += glyph.width
 
         data = ''.join(texdata)
         self.texture = pyglet.image.TextureAtlas.from_data(data,

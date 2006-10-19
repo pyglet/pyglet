@@ -21,6 +21,7 @@ else:
     filename = os.path.join(os.path.split(__file__)[0], 'Vera.ttf')
 font = Font(filename, 26)
 text = font.render('Hello, World. gVAWAVA. Mr. T.')
+#text = font.render('AD')
 
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)
