@@ -3,6 +3,7 @@ import math
 import ctypes
 
 import pyglet.image
+import pyglet.sprite
 
 from pyglet.GL.VERSION_1_1 import *
 
@@ -26,9 +27,6 @@ _default_character_set = 'acemnorsuvwxzfbdhikltgjpqy' \
     '1234567890;:,.`!?@#$%^&+*=_-~()[]{}<>\\/"\' '
 
 #_default_character_set = 'ABCD'
-
-# XXX get from config
-_max_texture_width = 1024
 
 class Font(object):
     def __init__(self, file, size, character_set=_default_character_set):
@@ -95,11 +93,11 @@ class Font(object):
             rects.append((x, y, glyph.width, glyph.height))
 
         data = ''.join(texdata)
-        self.texture = pyglet.image.TextureAtlas.from_data(data,
+        self.texture = pyglet.image.TextureAtlasRects.from_data(data,
             tw, th, 2, rects=rects)
 
         for index, (data, glyph) in enumerate(glyphs):
-            glyph.tex_info = (self.texture, index)
+            glyph.texture = self.texture.get_texture(index)
 
     def load_font(self, file, size):
         raise NotImplementedError
@@ -111,17 +109,25 @@ class Font(object):
         l = []
         for c in text:
             if c not in self.glyphs:
-                raise NotImplementedError
-#                data, glyph = self.render_glyph(c)
-#                XXX store data in the texture
-#                self.glyphs[c] = glyph
+                # TODO pack these into another larger texture?
+                # XXX using a single texture would allow us to use vert
+                # XXX arrays etc. but might be prohbitive for large font sizes
+                data, glyph = self.render_glyph(c)
+                self.glyphs[c] = glyph
+                glyph.texture = pyglet.image.Texture.from_data(data,
+                    glyph.width, glyph.height, 2)
             l.append(self.glyphs[c])
         return Text(l)
 
 
-class Text(object):
+class Text(pyglet.sprite.Sprite):
     def __init__(self, glyphs):
         self.glyphs = glyphs
+
+        self.position = (0., 0.)
+        self.rotation = 0.0
+        self.scale = 1.
+        self.color = (1., 1., 1., 1.)
 
         xpos = ypos = 0
 
@@ -145,11 +151,11 @@ class Text(object):
             glPushMatrix()
 
             # Y position using baseline... and y kerning
+            # XXX do horizontal fonts *have* y kerning?
             glTranslatef(0, -this.baseline + kern_y, 0)
 
             # call glyph display list
-            texture, index = this.tex_info
-            glCallList(texture.quad_lists[index])
+            glCallList(this.texture.quad_list)
 
             glPopMatrix()
 
@@ -162,90 +168,27 @@ class Text(object):
         # now set the height
         self.height = self.ascent - self.descent
 
+        # XXX anchor on the top? really?
+        self.anchor = 0, self.ascent
+
         glEndList()
 
     def draw(self):
-        glPushAttrib(GL_ENABLE_BIT)
+        glPushMatrix()
+        glPushAttrib(GL_ENABLE_BIT) # ??? glPushAttrib(GL_CURRENT_BIT) ???
+
         glEnable(GL_BLEND)
         glEnable(GL_TEXTURE_2D)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        glColor4f(*self.color)
+        glTranslatef(self.position[0], self.position[1], 0)
+        glRotatef(self.rotation, 0, 0, 1)
+        glScalef(self.scale, self.scale, 1)
+        glTranslatef(-self.anchor[0], -self.anchor[1], 0)
+
         glCallList(self.gl_list)
-        glPopAttrib()
-
-
-"""
-
-The original implementation - should be reinstated once we can get basic
-freetype rendering going!
-
-import pyglet.sprite
-
-_min_texture_character_space = 2
-
-class TextSprite(pyglet.sprite.Sprite):
-    __slots__ = pyglet.sprite.Sprite.__slots__ + \
-                ['vertices', 'n_vertices', 'texcoords']
-
-    def __init__(self, font, text):
-        self.texture = font.atlas.id
-        self.position = (0, 0)
-        self.anchor = 0, font.ascent
-        self.rotation = 0.0
-        self.scale = 1.0
-        self.color = (1, 1, 1, 1)
-        vertices = []
-        texcoords = []
-        x = 0
-        y = 0
-        for c in text:
-            if c == '\n':
-                y += font.line_height
-                x = 0
-                continue
-            i = font.character_set.find(c)
-            vert, tex = font.atlas.get_quad(0, i)
-            vertices.append(x)
-            vertices.append(y)
-            vertices.append(vert[0] + x)
-            vertices.append(y)
-            vertices.append(vert[0] + x)
-            vertices.append(vert[1] + y)
-            vertices.append(x)
-            vertices.append(vert[1] + y)
-            texcoords.append(tex[0])
-            texcoords.append(tex[1])
-            texcoords.append(tex[2])
-            texcoords.append(tex[1])
-            texcoords.append(tex[2])
-            texcoords.append(tex[3])
-            texcoords.append(tex[0])
-            texcoords.append(tex[3])
-            x += font.advances[i]
-        self.n_vertices = len(vertices) / 2
-        self.vertices = std_array('f', vertices).tostring()
-        self.texcoords = std_array('f', texcoords).tostring()
-
-    def draw(self):
-        glPushMatrix()
-        glPushAttrib(GL_CURRENT_BIT)
-
-        glEnable(GL_TEXTURE_2D)
-        glBindTexture(GL_TEXTURE_2D, self.texture)
-        glColor4fv(self.color)
-        glTranslate(self.position[0], self.position[1], 0)
-        glRotate(self.rotation, 0, 0, -1)
-        glScale(self.scale, self.scale, 1)
-        glTranslate(-self.anchor[0], -self.anchor[1], 0)
-
-        # Don't push/pop client state, it leaks memory (the arrays?) badly
-        glVertexPointer(2, GL_FLOAT, 0, self.vertices)
-        glTexCoordPointer(2, GL_FLOAT, 0, self.texcoords)
-        glEnableClientState(GL_VERTEX_ARRAY)
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY)
-        glDrawArrays(GL_QUADS, 0, self.n_vertices)
-        glDisableClientState(GL_VERTEX_ARRAY)
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY)
 
         glPopAttrib()
         glPopMatrix()
-"""
+

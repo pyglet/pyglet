@@ -37,6 +37,7 @@ glMatrixMode(GL_MODELVIEW)
 glClearColor(0, 0, 0, 0)
 glColor4f(1, 1, 1, 1)
 r = 0
+text.position = w1.width/2, w1.height/2
 while not exit_handler.exit:
     c.set_fps(60)
     w1.dispatch_events()
@@ -44,11 +45,9 @@ while not exit_handler.exit:
     glClear(GL_COLOR_BUFFER_BIT)
     glLoadIdentity()
 
-    #r += 1
+    r += 1
     if r > 360: r = 0
-    glTranslatef(w1.width/2, w1.height/2, 0)
-    glRotatef(r, 0, 0, 1)
-    glTranslatef(-text.width/2, -text.height/2, 0)
+    text.rotation = r
     text.draw()
 
     w1.flip()

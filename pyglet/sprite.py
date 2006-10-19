@@ -9,9 +9,6 @@ __version__ = '$Id$'
 import math
 import warnings
 
-from OpenGL.GL import *
-from SDL import *
-
 import pyglet
 import pyglet.image
 
@@ -22,16 +19,15 @@ except ImportError:
                   'Please update your video card driver.')
 
 class Sprite(object):
-    __slots__ = ['texture', 'anchor', 'position', 'rotation', 'scale', 'color']
+    # <rj> slots buy us nothing
+    #__slots__ = ['texture', 'anchor', 'position', 'rotation', 'scale', 'color']
 
     _collision_stencil = 1
 
-    def __init__(self, image, anchor=None):
-        if not isinstance(image, pyglet.image.Texture):
-            if not isinstance(image, SDL_Surface):
-                image = pyglet.image.load(image)
-            image = pyglet.image.Texture.from_surface(image)
-        self.texture = image
+    def __init__(self, texture, anchor=None):
+        if isinstance(texture, pyglet.image.Image):
+            texture = pyglet.image.Texture.from_image(texture)
+        self.texture = texture
 
         self.position = (0,0)
         self.anchor = (self.texture.size[0] / 2,
@@ -78,9 +74,8 @@ class Sprite(object):
 
         # Draw collider into stencil
         glClear(GL_STENCIL_BUFFER_BIT)
-        glStencilFunc(GL_ALWAYS, 
-                      self._collision_stencil, 
-                      self._collision_stencil)
+        glStencilFunc(GL_ALWAYS, self._collision_stencil,
+            self._collision_stencil)
         glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE)
         glEnable(GL_STENCIL_TEST)
         if hasattr(other, '__len__'):
@@ -90,9 +85,8 @@ class Sprite(object):
             other.draw()
 
         # Occlusion query self
-        glStencilFunc(GL_EQUAL, 
-                      self._collision_stencil,
-                      self._collision_stencil)
+        glStencilFunc(GL_EQUAL, self._collision_stencil,
+            self._collision_stencil)
 
         query = c_uint()
         glGenQueries(1, byref(query))
@@ -118,17 +112,15 @@ class Sprite(object):
 
         # Draw self into stencil
         glClear(GL_STENCIL_BUFFER_BIT)
-        glStencilFunc(GL_ALWAYS, 
-                      self._collision_stencil, 
-                      self._collision_stencil)
+        glStencilFunc(GL_ALWAYS, self._collision_stencil,
+            self._collision_stencil)
         glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE)
         glEnable(GL_STENCIL_TEST)
         self.draw()
 
         # Occlusion query each other
-        glStencilFunc(GL_EQUAL, 
-                      self._collision_stencil,
-                      self._collision_stencil)
+        glStencilFunc(GL_EQUAL, self._collision_stencil,
+            self._collision_stencil)
 
         # Using multiple queries is noticeably faster than reusing the
         # one query.
@@ -151,47 +143,3 @@ class Sprite(object):
 
         return collisions
 
-class Window(object):
-    frame_count = 0
-    count_start_time = 0
-
-    def __init__(self, width=640, height=480, 
-                 caption='pyglet', fullscreen=False, resizable=False):
-        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER)
-
-        flags = SDL_OPENGL
-        if fullscreen:
-            flags |= SDL_FULLSCREEN
-        if resizable:
-            flags |= SDL_RESIZABLE
-
-        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1)
-        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 1)
-        SDL_SetVideoMode(width, height, 32, flags)
-        SDL_WM_SetCaption(caption, caption)
-
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(0, width, height, 0, -1, 1)
-        glMatrixMode(GL_MODELVIEW)
-
-        glClearColor(1, 1, 1, 1)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-    @staticmethod
-    def clear():
-        glClear(GL_COLOR_BUFFER_BIT)
-        glLoadIdentity()
-
-    @staticmethod
-    def flip():
-        SDL_GL_SwapBuffers()
-        if Window.frame_count == 0:
-            count_start_time = SDL_GetTicks()
-        Window.frame_count += 1
-
-    @staticmethod
-    def get_fps():
-        return Window.frame_count * 1000 / \
-               (SDL_GetTicks() - Window.count_start_time)

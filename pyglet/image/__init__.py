@@ -87,6 +87,7 @@ def _get_texture_from_surface(surface):
 
 def _get_texture(data, width, height, bpp):
     # XXX get from config...
+    # XXX determine max texture size
     # XXX test whether the hardware can cope with non-^2 texture sizes
     # XXX test whether the hardware can cope with non-square textures
     tex_width = tex_height = max(_nearest_pow2(width), _nearest_pow2(height))
@@ -160,8 +161,89 @@ class Texture(object):
         return Texture(id, surface.w, surface.h, uv)
 
 
-class TextureAtlas(object):
-    def __init__(self, id, width, height, uv, rows=1, cols=1, rects=[]):
+class AtlasSubTexture(object):
+    def __init__(self, quad_list, width, height, uv):
+        self.quad_list = quad_list
+        self.width, self.height = width, height
+        self.uv = uv
+
+    def draw(self):
+        glPushAttrib(GL_ENABLE_BIT)
+        glEnable(GL_TEXTURE_2D)
+        glCallList(self.quad_list)
+        glPopAttrib()
+
+class TextureAtlasRects(object):
+    def __init__(self, id, width, height, uv, rects):
+        self.size = (width, height)
+        self.id = id
+        self.uvs = []
+        self.quad_lists = []
+        self.elem_sizes = []
+
+        n = glGenLists(len(rects))
+        self.quad_lists = range(n, n + len(rects))
+        for i, rect in enumerate(rects):
+            u = float(rect[0]) / width * uv[0]
+            v = float(rect[1]) / height * uv[1]
+            du = float(rect[2]) / width * uv[0]
+            dv = float(rect[3]) / height * uv[1]
+            elem_uv = (u, v, u + du, v + dv)
+            elem_size = (rect[2], rect[3])
+
+            glNewList(self.quad_lists[i], GL_COMPILE)
+            glBindTexture(GL_TEXTURE_2D, self.id)
+            glBegin(GL_QUADS)
+            glTexCoord2f(u, v)
+            glVertex2f(0, 0)
+            glTexCoord2f(u + du, v)
+            glVertex2f(elem_size[0], 0)
+            glTexCoord2f(u + du, v + dv)
+            glVertex2f(elem_size[0], elem_size[1])
+            glTexCoord2f(u, v + dv)
+            glVertex2f(0, elem_size[1])
+            glEnd()
+            glEndList()
+
+            self.uvs.append(elem_uv)
+            self.elem_sizes.append(elem_size)
+
+    @classmethod
+    def from_data(cls, data, width, height, bpp, rects=[]):
+        id, uv = _get_texture(data, width, height, bpp)
+        return cls(id, width, height, uv, rects)
+
+    @classmethod
+    def from_image(cls, image, rects=[]):
+        id, uv = _get_texture(image.data, image.width, image.height,
+            image.bpp)
+        return cls(id, image.width, image.height, uv, rects)
+
+    @classmethod
+    def from_surface(cls, surface, rects=[]):
+        id, uv = _get_texture_from_surface(surface)
+        return cls(id, surface.w, surface.h, uv, rects)
+
+    def draw(self, index):
+        glPushAttrib(GL_ENABLE_BIT)
+        glEnable(GL_TEXTURE_2D)
+        glCallList(self.quad_lists[index])
+        glPopAttrib()
+
+    def get_size(self, index):
+        return self.elem_sizes[index]
+
+    def get_quad(self, index):
+        return self.elem_sizes[index], self.uvs[index]
+
+    def get_texture(self, index):
+        '''Return something that smells like a Texture instance.'''
+        w, h = self.elem_sizes[index]
+        return AtlasSubTexture(self.quad_lists[index], w, h, self.uvs[index])
+
+
+class TextureAtlasGrid(object):
+    def __init__(self, id, width, height, uv, rows=1, cols=1):
         assert rects or (rows >= 1 and cols >= 1)
         self.size = (width, height)
         self.id = id
@@ -169,53 +251,18 @@ class TextureAtlas(object):
         self.quad_lists = []
         self.elem_sizes = []
 
-        if not rects:
-            # Use rows and cols
-            self.rows = rows
-            self.cols = cols
+        self.rows = rows
+        self.cols = cols
 
-            elem_size = width / cols, height / rows
-            n = glGenLists(rows * cols)
-            self.quad_lists = range(n, n + rows * cols)
-            du = uv[0] / cols
-            dv = uv[1] / rows
-            i = v = 0
-            for row in range(rows):
-                u = 0
-                for col in range(cols):
-                    glNewList(self.quad_lists[i], GL_COMPILE)
-                    glBindTexture(GL_TEXTURE_2D, self.id)
-                    glBegin(GL_QUADS)
-                    glTexCoord2f(u, v)
-                    glVertex2f(0, 0)
-                    glTexCoord2f(u + du, v)
-                    glVertex2f(elem_size[0], 0)
-                    glTexCoord2f(u + du, v + dv)
-                    glVertex2f(elem_size[0], elem_size[1])
-                    glTexCoord2f(u, v + dv)
-                    glVertex2f(0, elem_size[1])
-                    glEnd()
-                    glEndList()
-
-                    elem_uv = (u, v, u + du, v + dv)
-                    self.uvs.append(elem_uv)
-                    self.elem_sizes.append(elem_size)
-                    u += du
-                    i += 1
-                v += dv
-        else:
-            self.rows = 1
-            self.cols = len(rects)
-            n = glGenLists(len(rects))
-            self.quad_lists = range(n, n + len(rects))
-            for i, rect in enumerate(rects):
-                u = float(rect[0]) / width * uv[0]
-                v = float(rect[1]) / height * uv[1]
-                du = float(rect[2]) / width * uv[0]
-                dv = float(rect[3]) / height * uv[1]
-                elem_uv = (u, v, u + du, v + dv)
-                elem_size = (rect[2], rect[3])
-
+        elem_size = width / cols, height / rows
+        n = glGenLists(rows * cols)
+        self.quad_lists = range(n, n + rows * cols)
+        du = uv[0] / cols
+        dv = uv[1] / rows
+        i = v = 0
+        for row in range(rows):
+            u = 0
+            for col in range(cols):
                 glNewList(self.quad_lists[i], GL_COMPILE)
                 glBindTexture(GL_TEXTURE_2D, self.id)
                 glBegin(GL_QUADS)
@@ -230,26 +277,28 @@ class TextureAtlas(object):
                 glEnd()
                 glEndList()
 
+                elem_uv = (u, v, u + du, v + dv)
                 self.uvs.append(elem_uv)
                 self.elem_sizes.append(elem_size)
+                u += du
+                i += 1
+            v += dv
 
     @classmethod
-    def from_data(cls, data, width, height, bpp, rows=1, cols=1, rects=[]):
+    def from_data(cls, data, width, height, bpp, rows=1, cols=1):
         id, uv = _get_texture(data, width, height, bpp)
-        return TextureAtlas(id, width, height, uv, rows, cols, rects)
+        return cls(id, width, height, uv, rows, cols)
 
     @classmethod
-    def from_image(cls, image, rows=1, cols=1, rects=[]):
+    def from_image(cls, image, rows=1, cols=1):
         id, uv = _get_texture(image.data, image.width, image.height,
             image.bpp)
-        return TextureAtlas(id, image.width, image.height, uv, rows,
-            cols, rects)
+        return cls(id, image.width, image.height, uv, rows, cols)
 
     @classmethod
-    def from_surface(cls, surface, rows=1, cols=1, rects=[]):
+    def from_surface(cls, surface, rows=1, cols=1):
         id, uv = _get_texture_from_surface(surface)
-        return TextureAtlas(id, surface.w, surface.h, uv, rows, cols,
-            rects)
+        return cls(id, surface.w, surface.h, uv, rows, cols)
 
     def draw(self, row, col):
         glPushAttrib(GL_ENABLE_BIT)
