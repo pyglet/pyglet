@@ -174,21 +174,22 @@ class Text(pyglet.sprite.Sprite):
         glEndList()
 
     def draw(self):
-        glPushMatrix()
-        glPushAttrib(GL_ENABLE_BIT) # ??? glPushAttrib(GL_CURRENT_BIT) ???
+        glPushAttrib(GL_ENABLE_BIT)
 
         glEnable(GL_BLEND)
         glEnable(GL_TEXTURE_2D)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         glColor4f(*self.color)
+
+        glPushMatrix()
         glTranslatef(self.position[0], self.position[1], 0)
         glRotatef(self.rotation, 0, 0, 1)
         glScalef(self.scale, self.scale, 1)
         glTranslatef(-self.anchor[0], -self.anchor[1], 0)
 
         glCallList(self.gl_list)
+        glPopMatrix()
 
         glPopAttrib()
-        glPopMatrix()
 

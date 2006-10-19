@@ -131,6 +131,8 @@ class Tree(object):
 w1.switch_to()
 tree1 = Tree(n=10, r=True)
 w1.push_handlers(tree1)
+fps = fps.FPS()
+
 w2.switch_to()
 tree2 = Tree(n=10, r=True)
 w2.push_handlers(tree2)
@@ -145,7 +147,7 @@ while exit_handler.running:
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     w1.dispatch_events()
     tree1.render()
-    fps.render(w1, c)
+    fps.draw(w1, c)
     w1.flip()
 
     w2.switch_to()
