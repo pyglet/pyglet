@@ -38,13 +38,12 @@ pyglet.event & pyglet.clock
 
 pyglet.console
     TBD: remove SDL dependency
-         finish, make pretty
+    TBD: finish, make pretty  ("finish"?)
 
 pyglet.dds
     TBD: move to pyglet.image
-         Support all formats
-         Software fallback
-         Save
+    TBD: Support all formats
+    TBD: Software fallback
 
 pyglet.sprite
     TBD: OBB or AABB collision before occlusion query
@@ -52,7 +51,7 @@ pyglet.sprite
 
 pyglet.model
     TBD: support for the DirectX model format would be good as it has
-    animations and skellingtons.
+         animations and skellingtons.
 
     <ah> Also consider our own format + a blender export for it (for
          animations, armature etc).
@@ -72,6 +71,7 @@ pyglet.image
     JPEG LOAD   X             (libjpeg requires setjmp support)
     JPEG SAVE
     DDS LOAD    .    /    .   (DXT5 only so far - see pyglet.dds above)
+    DDS SAVE
     ========== ==== ==== ===  =========================================
       - Work around libpng and libjpeg if possible.
 
@@ -89,25 +89,14 @@ pyglet.text
     TEXT RENDERING     X
     ================= ==== ==== ===
 
-    TBD: rendering of missing glyphs
-         Currently we pre-render printable ASCII and lay the glyphs out
-         in the container texture in a straight grid using the max height
-         of the ASCII glyphs. Two issues arise:
-
-         - There is a chance that a new glyph is taller than that max height.
-         - We also waste space (though not much)
-
-    Also: render to multiple textures when glyphs don't fit
-          line breaks, 
-          attributed text (what's this? styling?), 
-          bidi,
-          vertical text,
-          find system fonts (and identify variants),
-          support surrogate pairs (impossible with truetype?)
-
-pyglet.text.base
-    TBD: rendering to common texture
-    TBD: pre-rendering of latin-1
+    TBD: render to multiple textures when glyphs don't fit
+    TBD: line breaks
+    TBD: attributed text (what's this? styling?)
+    TBD: bidi
+    TBD: vertical text
+    TBD: find system fonts (and identify variants)
+    TBD: support surrogate pairs (impossible with truetype?)
+    TBD: pre-rendering of latin-1 (or is ASCII enough?)
     TBD: multiline rendering (pyglet)
 
 pyglet.gui
@@ -117,5 +106,5 @@ pyglet.gui.layout
     TBD: finish, refactor out button and interpolators
 
 pyglet.gui.fps
-    TBD: handle positioning argument
+    Done.
 
