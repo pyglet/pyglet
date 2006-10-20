@@ -9,6 +9,7 @@ import pyglet.clock
 from pyglet.shader import *
 from pyglet.window.event import *
 from pyglet.model.geometric import *
+from pyglet.gui import fps
 
 from pyglet.GL.VERSION_2_0 import *
 from pyglet.GL.EXT_framebuffer_object import *
@@ -630,55 +631,6 @@ class ExitHandler(object):
         return EVENT_UNHANDLED
 
 
-
-factory = pyglet.window.WindowFactory()
-factory.config._attributes['doublebuffer'] = 1
-
-exit_handler = ExitHandler()
-
-screen_width = 800
-screen_height = 600
-
-window = factory.create(width=screen_width, height=screen_height)
-window.push_handlers(exit_handler)
-
-clk = pyglet.clock.Clock()
-
-r = 0
-
-cparams = TextureParam(wrap = GL_CLAMP)
-
-buf = FrameBuffer(screen_width, screen_height,
-                  Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams),
-                  Surface(Surface.SURF_DEPTH,
-                          gl_tgt = GL_TEXTURE_RECTANGLE_ARB, gl_fmt = GL_DEPTH_COMPONENT32_ARB,
-                          is_texture = True, is_mipmapped = False, params = cparams))
-buf.init()
-buf.attach()
-buf.unbind()
-
-alpha_buf = FrameBuffer(screen_width, screen_height,
-                        Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams))
-alpha_buf.init()
-alpha_buf.attach()
-alpha_buf.unbind()
-
-buf_subsampled = FrameBuffer(200, 150,
-                             Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams),
-                             Surface(Surface.SURF_DEPTH, params = cparams))
-buf_subsampled.init()
-buf_subsampled.attach()
-buf_subsampled.unbind()
-
-buf_subsampled2 = FrameBuffer(200, 150,
-                              Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams),
-                              Surface(Surface.SURF_DEPTH, params = cparams))
-buf_subsampled2.init()
-buf_subsampled2.attach()
-buf_subsampled2.unbind()
-
-object_dl = cube_array_list()
-
 def renderScene():
     global r
     glClearColor(0.0, 0.0, 0.0, 1.0)
@@ -859,8 +811,6 @@ def setup2D(w, h):
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
-
-
 def blit(surf, x, y, w, h, mode):
     glActiveTexture(GL_TEXTURE0);
     surf.enableAndBind()
@@ -881,6 +831,57 @@ def blit(surf, x, y, w, h, mode):
     glEnd()
 
     surf.unbindAndDisable()
+
+
+factory = pyglet.window.WindowFactory()
+factory.config._attributes['doublebuffer'] = 1
+
+exit_handler = ExitHandler()
+
+screen_width = 800
+screen_height = 600
+
+window = factory.create(width=screen_width, height=screen_height)
+window.push_handlers(exit_handler)
+
+clk = pyglet.clock.Clock()
+fps = fps.FPS()
+
+
+r = 0
+
+cparams = TextureParam(wrap = GL_CLAMP)
+
+buf = FrameBuffer(screen_width, screen_height,
+                  Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams),
+                  Surface(Surface.SURF_DEPTH,
+                          gl_tgt = GL_TEXTURE_RECTANGLE_ARB, gl_fmt = GL_DEPTH_COMPONENT32_ARB,
+                          is_texture = True, is_mipmapped = False, params = cparams))
+buf.init()
+buf.attach()
+buf.unbind()
+
+alpha_buf = FrameBuffer(screen_width, screen_height,
+                        Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams))
+alpha_buf.init()
+alpha_buf.attach()
+alpha_buf.unbind()
+
+buf_subsampled = FrameBuffer(200, 150,
+                             Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams),
+                             Surface(Surface.SURF_DEPTH, params = cparams))
+buf_subsampled.init()
+buf_subsampled.attach()
+buf_subsampled.unbind()
+
+buf_subsampled2 = FrameBuffer(200, 150,
+                              Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams),
+                              Surface(Surface.SURF_DEPTH, params = cparams))
+buf_subsampled2.init()
+buf_subsampled2.attach()
+buf_subsampled2.unbind()
+
+object_dl = cube_array_list()
 
 while exit_handler.running:
     clk.set_fps(60)
@@ -903,6 +904,8 @@ while exit_handler.running:
                  150.0)
 
     renderDOF(buf, alpha_buf, buf_subsampled)
+
+    fps.draw(window, clk)
 
     window.flip()
 

@@ -168,10 +168,23 @@ class Text(pyglet.sprite.Sprite):
         # now set the height
         self.height = self.ascent - self.descent
 
-        # XXX anchor on the top? really?
+        # TODO default anchor on the top? really?
         self.anchor = 0, self.ascent
 
         glEndList()
+
+    def set_anchor(self, vertical, horizontal):
+        x = {
+            'left': 0,
+            'center': self.width/2,
+            'right': self.width,
+        }[horizontal]
+        y = {
+            'top': self.ascent,
+            'baseline': 0,
+            'bottom': self.descent,
+        }[vertical]
+        self.anchor = x, y
 
     def draw(self):
         glPushAttrib(GL_ENABLE_BIT)

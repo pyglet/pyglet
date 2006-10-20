@@ -38,6 +38,7 @@ glClearColor(0, 0, 0, 0)
 glColor4f(1, 1, 1, 1)
 r = 0
 text.position = w1.width/2, w1.height/2
+text.set_anchor('baseline', 'center')
 while not exit_handler.exit:
     c.set_fps(60)
     w1.dispatch_events()
