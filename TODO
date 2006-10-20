@@ -1,7 +1,6 @@
 IMPLEMENTATION STATUS / TODO LIST
 ---------------------------------
 
-
 pyglet.GL & pyglet.GLU
     tools/gl2ctypes.py still needs a bit of work as some files needed
     fixing by hand.
@@ -31,9 +30,8 @@ pyglet.window
     Exclusive input
     =================================== ==== ==== ===
 
-    Also:
-       - better failure handling when eg. GLX is not available
-       - sensible/usable window factory
+    TBD: better failure handling when eg. GLX is not available
+    TBD: shared OGL context (textures, etc.) between windows
 
 pyglet.event & pyglet.clock
     Done.

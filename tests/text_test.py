@@ -11,9 +11,7 @@ from pyglet.text import Font
 
 from ctypes import *
 
-factory = pyglet.window.WindowFactory()
-factory.config._attributes['doublebuffer'] = 1
-w1 = factory.create(width=400, height=200)
+w1 = pyglet.window.create(400, 200)
 
 if len(sys.argv) == 2:
     filename = sys.argv[1]

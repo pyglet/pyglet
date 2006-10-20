@@ -92,3 +92,12 @@ else:
     from pyglet.window.xlib import XlibWindowFactory
     WindowFactory = XlibWindowFactory
 
+
+_default = []
+def create(width, height, doublebuffer=True, depth_size=_default):
+    factory = WindowFactory()
+    factory.config._attributes['doublebuffer'] = doublebuffer
+    if depth_size is not _default:
+        factory.config._attributes['depth_size'] = depth_size
+    return factory.create(width=width, height=height)
+

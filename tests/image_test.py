@@ -1,6 +1,5 @@
 import sys
 import os
-import time
 
 import pyglet.window
 from pyglet.window.event import *
@@ -15,14 +14,12 @@ if len(sys.argv) != 2:
     print 'Usage: %s <PNG/JPEG filename>'%sys.argv[0]
     sys.exit()
 
-factory = pyglet.window.WindowFactory()
-factory.config._attributes['doublebuffer'] = 1
-w1 = factory.create(width=200, height=200)
+window = pyglet.window.create(width=200, height=200)
 
 tex = Image.load(sys.argv[1]).as_texture()
 
 exit_handler = ExitHandler()
-w1.push_handlers(exit_handler)
+window.push_handlers(exit_handler)
 
 c = clock.Clock()
 
@@ -38,7 +35,7 @@ glColor4f(1, 1, 1, 1)
 r = 0
 while not exit_handler.exit:
     c.set_fps(60)
-    w1.dispatch_events()
+    window.dispatch_events()
 
     glClear(GL_COLOR_BUFFER_BIT)
     glLoadIdentity()
@@ -51,5 +48,5 @@ while not exit_handler.exit:
     glTranslatef(-tex.width/2, -tex.height/2, -1.)
     tex.draw()
 
-    w1.flip()
+    window.flip()
 

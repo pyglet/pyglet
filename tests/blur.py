@@ -618,19 +618,6 @@ def gaussNoise(l):
 
 
 
-class ExitHandler(object):
-    def __init__(self):
-        self.running = True
-
-    def on_close(self):
-        self.running = False
-
-    def on_keypress(self, symbol, modifiers):
-        if symbol == pyglet.window.key.K_ESCAPE:
-            self.running = False
-        return EVENT_UNHANDLED
-
-
 def renderScene():
     global r
     glClearColor(0.0, 0.0, 0.0, 1.0)
@@ -833,15 +820,11 @@ def blit(surf, x, y, w, h, mode):
     surf.unbindAndDisable()
 
 
-factory = pyglet.window.WindowFactory()
-factory.config._attributes['doublebuffer'] = 1
-
-exit_handler = ExitHandler()
-
 screen_width = 800
 screen_height = 600
 
-window = factory.create(width=screen_width, height=screen_height)
+window = pyglet.window.create(screen_width, screen_height)
+exit_handler = ExitHandler()
 window.push_handlers(exit_handler)
 
 clk = pyglet.clock.Clock()
@@ -883,7 +866,7 @@ buf_subsampled2.unbind()
 
 object_dl = cube_array_list()
 
-while exit_handler.running:
+while not exit_handler.exit:
     clk.set_fps(60)
 
     window.dispatch_events()

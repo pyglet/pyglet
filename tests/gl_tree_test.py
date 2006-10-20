@@ -27,24 +27,14 @@ def setup_scene():
     glClearColor(1, 1, 1, 1)
 
 # handle exit
-class ExitHandler(object):
-    running = True
-    def on_close(self):
-        self.running = False
-    def on_keypress(self, symbol, modifiers):
-        if symbol == pyglet.window.key.K_ESCAPE:
-            self.running = False
-        return EVENT_UNHANDLED
 exit_handler = ExitHandler()
 
-factory = pyglet.window.WindowFactory()
-factory.config._attributes['doublebuffer'] = 1
-w1 = factory.create(width=300, height=300)
+w1 = pyglet.window.create(300, 300)
 w1.push_handlers(exit_handler)
 w1.switch_to()
 setup_scene()
 
-w2 = factory.create(width=300, height=300)
+w2 = pyglet.window.create(300, 300)
 w2.push_handlers(exit_handler)
 w2.switch_to()
 setup_scene()
@@ -138,7 +128,7 @@ tree2 = Tree(n=10, r=True)
 w2.push_handlers(tree2)
 
 n = 0
-while exit_handler.running:
+while not exit_handler.exit:
     n += 1
     c.set_fps(50)
 

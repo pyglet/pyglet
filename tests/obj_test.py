@@ -16,19 +16,8 @@ from pyglet.GLU.VERSION_1_1 import *
 from pyglet import clock
 from pyglet.model import obj
 
-factory = pyglet.window.WindowFactory()
-factory.config._attributes['doublebuffer'] = 1
-factory.config._attributes['depth_size'] = 24
-w1 = factory.create(width=200, height=200)
+w1 = pyglet.window.create(200, 200, depth_size=24)
 
-class ExitHandler(object):
-    running = True
-    def on_close(self):
-        self.running = False
-    def on_keypress(self, symbol, modifiers):
-        if symbol == pyglet.window.key.K_ESCAPE:
-            self.running = False
-        return EVENT_UNHANDLED
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)
 
@@ -63,7 +52,7 @@ glClearColor(0, 0, 0, 0)
 bunny = obj.OBJ(os.path.join(os.path.split(__file__)[0], 'rabbit.obj'))
 
 r = 0
-while exit_handler.running:
+while not exit_handler.exit:
     c.set_fps(60)
     w1.dispatch_events()
 
