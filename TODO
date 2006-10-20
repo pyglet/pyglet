@@ -47,15 +47,17 @@ pyglet.dds
          Save
 
 pyglet.sprite
-    TBD: update for pyglet.image changes
-         OBB or AABB collision before occlusion query
-         animated sprites
+    TBD: OBB or AABB collision before occlusion query
+    TBD: animated sprites -- or perhaps animated textures?
 
 pyglet.model
     TBD: support for the DirectX model format would be good as it has
     animations and skellingtons.
-         Also consider our own format + a blender export for it (for
-           animations, armature etc).
+
+    <ah> Also consider our own format + a blender export for it (for
+         animations, armature etc).
+    <rj> Not keen on creating our own format unless it's a cache
+         format (like a marshal of a loaded DX model)
 
 pyglet.model.obj & pyglet.model.geometric
     TBD: more geometric models needed.

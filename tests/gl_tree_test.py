@@ -6,12 +6,14 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-import pygame, math, random, euclid
+import math
+import random
 import pyglet.window
 import pyglet.clock
 from ctypes import *
 from pyglet.window.event import *
 from pyglet.gui import fps
+from pyglet import euclid
 
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.GLU.VERSION_1_1 import *
