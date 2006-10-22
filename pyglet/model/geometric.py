@@ -1,4 +1,7 @@
 import math
+import random
+
+from pyglet import euclid
 
 from pyglet.GL.VERSION_2_0 import *
 
@@ -104,4 +107,44 @@ def cube_array_list():
     glDisable(GL_COLOR_MATERIAL)
     glEndList()
     return cubes_dl
+
+
+_ROT_30_X = euclid.Matrix4.new_rotatex(math.pi / 12)
+_ROT_N30_X = euclid.Matrix4.new_rotatex(-math.pi / 12)
+_ROT_30_Z = euclid.Matrix4.new_rotatez(math.pi / 12)
+_ROT_N30_Z = euclid.Matrix4.new_rotatez(-math.pi / 12)
+def _tree_branch(n, l, r):
+    glVertex3f(l.p1.x, l.p1.y, l.p1.z)
+    glVertex3f(l.p2.x, l.p2.y, l.p2.z)
+    if n == 0:
+        return
+
+    if r:
+        if random.random() > .9: return
+        mag = abs(l.v) * (.5 + .5 * random.random())
+    else:
+        mag = abs(l.v) * .75
+    if n%2:
+        v1 = _ROT_30_X * l.v
+        v2 = _ROT_N30_X * l.v
+    else:
+        v1 = _ROT_30_Z * l.v
+        v2 = _ROT_N30_Z * l.v
+    _tree_branch(n-1, euclid.Line3(l.p2, v1, mag), r)
+    _tree_branch(n-1, euclid.Line3(l.p2, v2, mag), r)
+
+def render_tree(n=10, r=False):
+    glLineWidth(2.)
+    glColor4f(.5, .5, .5, .5)
+    glBegin(GL_LINES)
+    _tree_branch(n-1, euclid.Line3(euclid.Point3(0., 0., 0.),
+        euclid.Vector3(0., 1., 0.), 1.), r)
+    glEnd()
+
+def tree_list(n=10, r=False):
+    dl = glGenLists(1)
+    glNewList(dl, GL_COMPILE)
+    render_tree(n, r)
+    glEndList()
+    return dl
 
