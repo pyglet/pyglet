@@ -53,7 +53,7 @@ many GUI-related tests, which cannot be completely automated).  With no
 command-line arguments, all tests for all components in all sections
 will be run::
 
-    python test/test.py
+    python tests/test.py
 
 Before each test, a description of the test will be printed, including
 some information of what you should look for, and what interactivity
