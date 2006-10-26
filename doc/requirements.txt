@@ -1,0 +1,202 @@
+Functional Requirements
+=======================
+
+This document is parsed by tests/test.py to produce the test cases and
+test reports.  See test.py for an overview of how this all works.
+
+Keep the formatting of this file within reStructured text.  Sections
+are designated with definition lists; section descriptions and the
+implementation table appear within fields.  (One implementation table per
+section).
+
+Add a component by adding a row to the appropriate implementation table.  Add
+a capability by adding a column where it's needed.  Keep these names to
+lower/UPPER case respectively, no non-alphanumeric chars.
+
+Mark off progress for each component/capability pair with:
+
++---+--------------------------------------------+
+| X | Implemented                                |
++---+--------------------------------------------+
+| / | Partially implemented (ignored by test.py) |
++---+--------------------------------------------+
+|   | Not yet implemented.                       |
++---+--------------------------------------------+
+
+Outside of these boundaries, add any valid reStructured text within
+or outside of sections to describe higher-level concerns; this will
+be conveniently ignored by test.py.
+
+pyglet
+    window
+        :description: Platform windowing and events.
+        :implementation:
+            ============================== === === ===
+            Component                      X11 WIN OSX
+            ============================== === === ===
+            MULTIPLE_WINDOW_OPEN            X   X   X
+            FULLSCREEN_OPEN                 
+            FULLSCREEN_TOGGLE
+            EVENT_KEYPRESS                  X   X   X
+            EVENT_KEYRELEASE                X   X   X
+            EVENT_TEXT                      X
+            EVENT_BUTTONPRESS               X
+            EVENT_BUTTONRELEASE             X
+            EVENT_MOUSEMOTION               X
+            EVENT_CLOSE                     X
+            EVENT_ENTER                     X
+            EVENT_LEAVE                     X
+            EVENT_EXPOSE                    X
+            EVENT_RESIZE                    X
+            EVENT_MOVE                      X
+            WINDOW_CAPTION                  X   X   X
+            WINDOW_BORDERS                  
+            WINDOW_ICON
+            MULTIPLE_SCREEN
+            WINDOW_EXCLUSIVE
+            ============================== === === ===
+
+        TBD:
+         - better failure handling when eg. GLX is not available
+         - shared OGL context (textures, etc.) between windows
+
+    event
+        :description: Platform-independent events.
+        :implementation:
+            ============================== === === ===
+            Component                      X11 WIN OSX
+            ============================== === === ===
+            ============================== === === ===
+
+    clock
+        :description: High-resolution timing and FPS measurement.
+        :implementation:
+            ============================== === === ===
+            Component                      X11 WIN OSX
+            ============================== === === ===
+            ============================== === === ===
+
+    console
+        :description: Interactive debug "widget".
+
+        TBD:
+         - remove SDL dependency
+   
+    dds
+        :description: Compressed texture support.
+
+        TBD:
+         - move to pyglet.image
+         - support all formats
+         - software fallback
+
+    sprite
+        TBD:
+         - OBB or AABB collision before occlusion query
+         - animated sprites, or animated textures
+
+    model
+        :description: Abstract interface for 3D modelling.
+
+        TBD:
+         - support for the DirectX model format would be good as it has
+           animations and skellingtons.
+    
+        obj
+            :description: Wavefront OBJ support.
+            :implementation:
+                ============================== =======
+                Component                      GENERIC
+                ============================== =======
+                OBJ_LOAD                          X
+                ============================== =======
+            
+        geometric
+            :description: Parametric 3D geometry support.
+
+            TBD:
+             - integrate with euclid.  Consistent draw/collide/response
+               interface
+            
+    image
+        :description: Image file load and save.
+        :implementation:
+            ============================== === === ===
+            Component                      X11 WIN OSX
+            ============================== === === ===
+            PNG_LOAD                        X       X
+            PNG_SAVE
+            JPEG_LOAD                       X
+            JPEG_SAVE
+            DDS_LOAD                        /   /   /
+            DDS_SAVE
+            ============================== === === ===
+
+        TBD:
+         - libpng and libjpeg require setjmp support; we should work
+           around this or use another library.
+         - DDS stuff, see pyglet.dds.
+
+        sdl
+            :description: SDL_Image support.
+
+            TBD:
+            - remove
+
+    shader
+        :description: Abstract interface to GLSL.
+        
+        TBD:
+         - documentation (this is actually no worse documented than anything
+           else...)
+         - sample shaders
+         - what about creating shader trees?
+
+    text
+        :description: Text rendering.
+        :implementation:
+            ============================== === === ===
+            Component                      X11 WIN OSX
+            ============================== === === ===
+            TTF_LOAD                        X 
+            TEXT_RENDERING                  X
+            ============================== === === ===
+
+        TBD:
+         - render to multiple textures when glyphs don't fit
+         - line breaks
+         - attributed character strings (styling)
+         - bidi
+         - vertical text
+         - find system fonts (and identify variants)
+         - support surrogate pairs (impossible with truetype?)
+         - pre-rendering of latin-1 (or is ASCII enough?)
+         - multiline rendering (pyglyph)
+
+    gui
+        :description: 2D graphical user interface.
+
+        TBD:
+         - more widgets
+        
+        layout
+            :description: Automatic layout of GUI widgets.
+
+            TBD:
+             - finish, refactor out button and interpolators
+
+        fps
+            :description: Render an FPS counter to the screen
+            :implementation:
+                ============================== =======
+                Component                      GENERIC
+                ============================== =======
+                RENDER_FPS                        X 
+                ============================== =======
+        
+process
+    :description: Issues with development and test process.
+
+     - should DESIGN be rolled into this document?
+     - can/should we integrate an issue tracker into requirements/test?
+
