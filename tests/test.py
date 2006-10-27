@@ -221,7 +221,7 @@ class RequirementsSection(object):
         section, component = name.rsplit('.', 1)
         section = self.get_section(section)
         if section:
-            return section.components.get(name, None)
+            return section.components.get(component, None)
 
     def get_all_components(self):
         components = self.components.values()
@@ -325,7 +325,7 @@ class ImplementationParser(docutils.nodes.GenericNodeVisitor):
                 component.set_progress(capability, progress)
 
 def main(args):
-    script_root = os.path.dirname(args[0])
+    script_root = os.path.dirname(args[0]) or os.path.curdir
     requirements_filename = os.path.sep.join(
         [script_root, os.path.pardir, 'doc', 'requirements.txt'])
     test_root = script_root
@@ -385,7 +385,11 @@ def main(args):
             if section:
                 sections.append(requirements.get_section(arg))
             else:
-                components.append(requirements.get_component(arg))
+                component = requirements.get_component(arg)
+                if component:
+                    components.append(requirements.get_component(arg))
+                else:
+                    log.error('No section or component named %s' % arg)
     else:
         sections = [requirements]
         components = []

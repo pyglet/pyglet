@@ -173,7 +173,7 @@ class CarbonWindow(BaseWindow):
             byref(modifiers))
 
         # Don't send command code points.   
-        if ((unicodedata.category(text) != 'Cc' or text == u'\r') and
+        if ((unicodedata.category(text[0]) != 'Cc' or text == u'\r') and
             not (modifiers.value & cmdKey)):
             self.dispatch_event(EVENT_TEXT, text)
         return noErr

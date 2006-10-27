@@ -38,7 +38,7 @@ pyglet
             FULLSCREEN_OPEN                 
             FULLSCREEN_TOGGLE
             EVENT_KEY                       X   X   X
-            EVENT_TEXT                      X
+            EVENT_TEXT                      X   X   X
             EVENT_BUTTONPRESS               X
             EVENT_BUTTONRELEASE             X
             EVENT_MOUSEMOTION               X
@@ -58,6 +58,8 @@ pyglet
         TBD:
          - better failure handling when eg. GLX is not available
          - shared OGL context (textures, etc.) between windows
+         - scroll wheel is not mouse buttons, despite what X11 will tell
+           you; need another event
 
     event
         :description: Platform-independent events.
@@ -80,6 +82,7 @@ pyglet
 
         TBD:
          - remove SDL dependency
+         - move to pyglet.gui
    
     dds
         :description: Compressed texture support.
@@ -93,6 +96,7 @@ pyglet
         TBD:
          - OBB or AABB collision before occlusion query
          - animated sprites, or animated textures
+         - according to DESIGN, this should be in scene2d
 
     model
         :description: Abstract interface for 3D modelling.
@@ -100,6 +104,7 @@ pyglet
         TBD:
          - support for the DirectX model format would be good as it has
            animations and skellingtons.
+         - according to DESIGN, this should be in scene3d
     
         obj
             :description: Wavefront OBJ support.
@@ -150,6 +155,8 @@ pyglet
            else...)
          - sample shaders
          - what about creating shader trees?
+         - what is the value of the usexx methods on ShaderProgram?  do
+           we like wrapping objects around GL?
 
     text
         :description: Text rendering.
