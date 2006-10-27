@@ -102,11 +102,11 @@ class Win32Window(BaseWindow):
             _user32.TranslateMessage(byref(msg))
             _user32.DispatchMessageA(byref(msg))
 
-    def set_title(self, title):
-        self._title = title
+    def set_caption(self, caption):
+        self._caption = caption
 
-    def get_title(self):
-        return self._title
+    def get_caption(self):
+        return self._caption
 
 class Win32GLConfig(BaseGLConfig):
     def __init__(self, _hdc=0, _pf=0):

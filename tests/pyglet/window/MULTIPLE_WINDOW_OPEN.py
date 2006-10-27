@@ -5,7 +5,6 @@ Expected behaviour:
     Two small windows will be opened, one coloured yellow and the other
     purple.
 
-Interaction:
     Close either window or press ESC to end the test.
 '''
 

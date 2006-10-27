@@ -132,8 +132,8 @@ class CarbonWindow(BaseWindow):
         elif result != eventLoopTimedOutErr:
             raise 'Error %d' % result
 
-    def set_title(self, title):
-        super(CarbonWindow, self).set_title(title)
+    def set_caption(self, title):
+        super(CarbonWindow, self).set_caption(title)
         s = _create_cfstring(title)
         carbon.SetWindowTitleWithCFString(self._window, s)
         carbon.CFRelease(s)

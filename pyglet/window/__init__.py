@@ -33,7 +33,7 @@ class BaseWindowFactory(object):
         window.set_context(config, context)
 
         import sys
-        window.set_title(sys.argv[0])
+        window.set_caption(sys.argv[0])
         window.switch_to()
         return window
 
@@ -56,11 +56,11 @@ class BaseWindow(WindowEventHandler):
         self.height = height
         self.mouse = Mouse()
 
-    def set_title(self, title):
-        self.title = title
+    def set_caption(self, caption):
+        self.caption = caption
 
-    def get_title(self):
-        return self.title
+    def get_caption(self):
+        return self.caption
 
     def set_context(self, config, context):
         self.config = config

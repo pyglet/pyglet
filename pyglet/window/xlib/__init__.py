@@ -172,15 +172,15 @@ class XlibWindow(BaseWindow):
             # XXX <rj> Xlib doesn't like us freeing this
             #xlib.XFree(property.value)
 
-    def set_title(self, title):
-        self._title = title
+    def set_caption(self, caption):
+        self._caption = caption
         self._set_property('WM_NAME', title, allow_utf8=False)
         self._set_property('WM_ICON_NAME', title, allow_utf8=False)
         self._set_property('_NET_WM_NAME', title)
         self._set_property('_NET_WM_ICON_NAME', title)
 
-    def get_title(self):
-        return self._title
+    def get_caption(self):
+        return self._caption
 
     def __translate_key(window, event):
         if event.type == KeyRelease:

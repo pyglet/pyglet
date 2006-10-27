@@ -37,8 +37,7 @@ pyglet
             MULTIPLE_WINDOW_OPEN            X   X   X
             FULLSCREEN_OPEN                 
             FULLSCREEN_TOGGLE
-            EVENT_KEYPRESS                  X   X   X
-            EVENT_KEYRELEASE                X   X   X
+            EVENT_KEY                       X   X   X
             EVENT_TEXT                      X
             EVENT_BUTTONPRESS               X
             EVENT_BUTTONRELEASE             X
