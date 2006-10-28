@@ -39,8 +39,7 @@ pyglet
             FULLSCREEN_TOGGLE
             EVENT_KEY                       X   X   X
             EVENT_TEXT                      X   X   X
-            EVENT_BUTTONPRESS               X
-            EVENT_BUTTONRELEASE             X
+            EVENT_BUTTON                    X       X
             EVENT_MOUSEMOTION               X
             EVENT_CLOSE                     X
             EVENT_ENTER                     X

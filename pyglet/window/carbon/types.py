@@ -22,6 +22,28 @@ class Point(Structure):
         ('h', c_short),
     ]
 
+class CGPoint(Structure):
+    _fields_ = [
+        ('x', c_float),
+        ('y', c_float),
+    ]
+
+class CGSize(Structure):
+    _fields = [
+        ('width', c_float),
+        ('height', c_float)
+    ]
+
+class CGRect(Structure):
+    _fields_ = [
+        ('origin', CGPoint),
+        ('size', CGSize)
+    ]
+
+HIPoint = CGPoint
+HISize = CGSize
+HIRect = CGRect
+
 class EventTypeSpec(Structure):
     _fields_ = [
         ('eventClass', c_uint32),
@@ -36,3 +58,4 @@ CFStringEncoding = c_uint
 WindowClass = c_uint32
 WindowAttributes = c_uint32
 WindowPositionMethod = c_uint32
+EventMouseButton = c_uint16

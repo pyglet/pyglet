@@ -83,6 +83,21 @@ kWindowAlertPositionOnParentWindow = 8
 kWindowAlertPositionOnParentWindowScreen = 9
 
 
+kWindowTitleBarRgn            = 0
+kWindowTitleTextRgn           = 1
+kWindowCloseBoxRgn            = 2
+kWindowZoomBoxRgn             = 3
+kWindowDragRgn                = 5
+kWindowGrowRgn                = 6
+kWindowCollapseBoxRgn         = 7
+kWindowTitleProxyIconRgn      = 8
+kWindowStructureRgn           = 32
+kWindowContentRgn             = 33
+kWindowUpdateRgn              = 34
+kWindowOpaqueRgn              = 35
+kWindowGlobalPortRgn          = 40
+kWindowToolbarButtonRgn       = 41
+
 def _name(name):
     return ord(name[0]) << 24 | \
            ord(name[1]) << 16 | \
@@ -112,6 +127,49 @@ typePString = _name('pstr')
 typeEventRef = _name('evrf')
 
 # CarbonEvents.h
+
+kEventParamWindowRef          = _name('wind')
+kEventParamGrafPort           = _name('graf')
+kEventParamMenuRef            = _name('menu')
+kEventParamEventRef           = _name('evnt')
+kEventParamControlRef         = _name('ctrl')
+kEventParamRgnHandle          = _name('rgnh')
+kEventParamEnabled            = _name('enab')
+kEventParamDimensions         = _name('dims')
+kEventParamBounds             = _name('boun')
+kEventParamAvailableBounds    = _name('avlb')
+#kEventParamAEEventID          = keyAEEventID
+#kEventParamAEEventClass       = keyAEEventClass
+kEventParamCGContextRef       = _name('cntx')
+kEventParamDeviceDepth        = _name('devd')
+kEventParamDeviceColor        = _name('devc')
+kEventParamMutableArray       = _name('marr')
+kEventParamResult             = _name('ansr')
+kEventParamMinimumSize        = _name('mnsz')
+kEventParamMaximumSize        = _name('mxsz')
+kEventParamAttributes         = _name('attr')
+kEventParamReason             = _name('why?')
+kEventParamTransactionID      = _name('trns')
+kEventParamGDevice            = _name('gdev')
+kEventParamIndex              = _name('indx')
+kEventParamUserData           = _name('usrd')
+kEventParamShape              = _name('shap')
+typeWindowRef                 = _name('wind')
+typeGrafPtr                   = _name('graf')
+typeGWorldPtr                 = _name('gwld')
+typeMenuRef                   = _name('menu')
+typeControlRef                = _name('ctrl')
+typeCollection                = _name('cltn')
+typeQDRgnHandle               = _name('rgnh')
+typeOSStatus                  = _name('osst')
+typeCFIndex                   = _name('cfix')
+typeCGContextRef              = _name('cntx')
+typeHIPoint                   = _name('hipt')
+typeHISize                    = _name('hisz')
+typeHIRect                    = _name('hirc')
+typeHIShapeRef                = _name('shap')
+typeVoidPtr                   = _name('void')
+typeGDHandle                  = _name('gdev') 
 
 kEventClassMouse = _name('mous')
 kEventClassKeyboard = _name('keyb')
@@ -184,3 +242,30 @@ kEventTextInputUnicodeText              = 7
 
 kEventParamTextInputSendText = _name('tstx')
 kEventParamTextInputSendKeyboardEvent = _name('tske')
+
+# Mouse
+kEventMouseDown                 = 1
+kEventMouseUp                   = 2
+kEventMouseMoved                = 5
+kEventMouseDragged              = 6
+kEventMouseEntered              = 8
+kEventMouseExited               = 9
+kEventMouseWheelMoved           = 10
+kEventParamMouseLocation = _name('mloc')
+kEventParamWindowMouseLocation = _name('wmou')
+kEventParamMouseButton = _name('mbtn')
+kEventParamClickCount = _name('ccnt')
+kEventParamMouseWheelAxis = _name('mwax')
+kEventParamMouseWheelDelta = _name('mwdl')
+kEventParamMouseDelta = _name('mdta')
+kEventParamMouseChord = _name('chor')
+kEventParamTabletEventType = _name('tblt')
+kEventParamMouseTrackingRef = _name('mtrf')
+typeMouseButton         = _name('mbtn')
+typeMouseWheelAxis      = _name('mwax')
+typeMouseTrackingRef    = _name('mtrf')
+
+kEventMouseButtonPrimary = 1
+kEventMouseButtonSecondary = 2
+kEventMouseButtonTertiary = 3
+

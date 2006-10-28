@@ -39,6 +39,7 @@ EventHandlerProcPtr = CFUNCTYPE(c_int, c_int, c_void_p, c_void_p)
 carbon.NewEventHandlerUPP.restype = c_void_p
 carbon.GetCurrentKeyModifiers = c_uint32
 
+
 class CarbonWindowFactory(BaseWindowFactory):
     def __init__(self):
         super(CarbonWindowFactory, self).__init__()
@@ -110,6 +111,14 @@ class CarbonWindow(BaseWindow):
         self._install_event_handler(kEventClassKeyboard,
                                     kEventRawKeyModifiersChanged,
                                     self._on_modifiers_changed)
+
+        self._install_event_handler(kEventClassMouse,
+                                    kEventMouseDown,
+                                    self._on_mouse_down)
+
+        self._install_event_handler(kEventClassMouse,
+                                    kEventMouseUp,
+                                    self._on_mouse_up)
         carbon.ShowWindow(self._window)
 
     def close(self):
@@ -249,6 +258,48 @@ class CarbonWindow(BaseWindow):
 
         self._mapped_modifiers = self._map_modifiers(modifiers)
         self._current_modifiers = modifiers
+        return noErr
+
+    def _get_mouse_position(self, event):
+        position = HIPoint()
+        carbon.GetEventParameter(event, kEventParamMouseLocation,
+            typeHIPoint, c_void_p(), sizeof(position), c_void_p(),
+            byref(position))
+
+        bounds = Rect()
+        carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(bounds))
+        return position.x - bounds.left, position.y - bounds.top
+
+    @staticmethod
+    def _get_mouse_button_and_modifiers(event):
+        button = EventMouseButton()
+        carbon.GetEventParameter(event, kEventParamMouseButton,
+            typeMouseButton, c_void_p(), sizeof(button), c_void_p(),
+            byref(button))
+
+        modifiers = c_uint32()
+        carbon.GetEventParameter(event, kEventParamKeyModifiers,
+            typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
+            byref(modifiers)) 
+
+        return button.value, CarbonWindow._map_modifiers(modifiers.value)
+
+    def _on_mouse_down(self, next_handler, event, data):
+        button, modifiers = self._get_mouse_button_and_modifiers(event)
+        x, y = self._get_mouse_position(event)
+        if x >= 0 and y >= 0:
+            self.dispatch_event(EVENT_BUTTONPRESS, button, x, y, modifiers)
+
+        carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+
+    def _on_mouse_up(self, next_handler, event, data):
+        button, modifiers = self._get_mouse_button_and_modifiers(event)
+        x, y = self._get_mouse_position(event)
+        if x >= 0 and y >= 0:
+            self.dispatch_event(EVENT_BUTTONRELEASE, button, x, y, modifiers)
+
+        carbon.CallNextEventHandler(next_handler, event)
         return noErr
 
 _attribute_ids = {
