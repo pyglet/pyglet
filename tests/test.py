@@ -399,49 +399,49 @@ def main(args):
 
     # Now test each component
     for component in components:
-        if component.is_implemented(capabilities):
-            log.info('Testing %s.', component)
-            module = None
-            try:
-                module = component.get_module(test_root)
-            except IOError:
-                log.warning('No test exists for %s', component)
-            except Exception:
-                log.exception('Cannot load test for %s', component)
-            if module:
-                if interactive:
-                    print '-' * 78
-                    if module.__doc__:
-                        print module.__doc__
-                    print 'Press a key to begin test...',
-                    raw_input()
-                suite = unittest.TestLoader().loadTestsFromModule(module)
-                result = unittest.TestResult()
-                log.info('Begin unit tests for %s', component)
-                suite(result)
-                for failure in result.failures:
-                    log.error('Failure in %s', component)
-                    log.error(failure[1])
-                for error in result.errors:
-                    log.error('Error in %s', component)
-                    log.error(error[1])
-                log.info('%d tests run', result.testsRun)
-
-                if (interactive and 
-                    len(result.failures) == 0 and 
-                    len(result.errors) == 0):
-                    print '[P]assed test, [F]ailed test: ',
-                    result = raw_input()
-                    if result[0] in ('F', 'f'):
-                        print 'Enter failure description: '
-                        print '> ',
-                        description = raw_input()
-                        log.error('User marked fail for %s', component)
-                        log.error(description)
-                    else:
-                        log.info('User marked pass for %s', component)
-        else:
+        if not component.is_implemented(capabilities):
             log.info('%s is marked not implemented, skipping.', component)
+            continue
+        log.info('Testing %s.', component)
+        module = None
+        try:
+            module = component.get_module(test_root)
+        except IOError:
+            log.warning('No test exists for %s', component)
+        except Exception:
+            log.exception('Cannot load test for %s', component)
+        if module:
+            if interactive:
+                print '-' * 78
+                if module.__doc__:
+                    print module.__doc__
+                print 'Press a key to begin test...',
+                raw_input()
+            suite = unittest.TestLoader().loadTestsFromModule(module)
+            result = unittest.TestResult()
+            log.info('Begin unit tests for %s', component)
+            suite(result)
+            for failure in result.failures:
+                log.error('Failure in %s', component)
+                log.error(failure[1])
+            for error in result.errors:
+                log.error('Error in %s', component)
+                log.error(error[1])
+            log.info('%d tests run', result.testsRun)
+
+            if (interactive and 
+                len(result.failures) == 0 and 
+                len(result.errors) == 0):
+                print '[P]assed test, [F]ailed test: ',
+                result = raw_input()
+                if result[0] in ('F', 'f'):
+                    print 'Enter failure description: '
+                    print '> ',
+                    description = raw_input()
+                    log.error('User marked fail for %s', component)
+                    log.error(description)
+                else:
+                        log.info('User marked pass for %s', component)
     
 if __name__ == '__main__':
     main(sys.argv)
