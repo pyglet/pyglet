@@ -174,10 +174,10 @@ class XlibWindow(BaseWindow):
 
     def set_caption(self, caption):
         self._caption = caption
-        self._set_property('WM_NAME', title, allow_utf8=False)
-        self._set_property('WM_ICON_NAME', title, allow_utf8=False)
-        self._set_property('_NET_WM_NAME', title)
-        self._set_property('_NET_WM_ICON_NAME', title)
+        self._set_property('WM_NAME', caption, allow_utf8=False)
+        self._set_property('WM_ICON_NAME', caption, allow_utf8=False)
+        self._set_property('_NET_WM_NAME', caption)
+        self._set_property('_NET_WM_ICON_NAME', caption)
 
     def get_caption(self):
         return self._caption
