@@ -265,7 +265,13 @@ typeMouseButton         = _name('mbtn')
 typeMouseWheelAxis      = _name('mwax')
 typeMouseTrackingRef    = _name('mtrf')
 
+kMouseTrackingOptionsLocalClip = 0
+kMouseTrackingOptionsGlobalClip = 1
+
 kEventMouseButtonPrimary = 1
 kEventMouseButtonSecondary = 2
 kEventMouseButtonTertiary = 3
 
+DEFAULT_CREATOR_CODE = _name('PYGL')    # <ah> this is registered for Pyglet
+                                        # apps.  register your own at:
+                                        # http://developer.apple.com/datatype

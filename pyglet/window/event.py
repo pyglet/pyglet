@@ -26,6 +26,8 @@ XLIB NOTES
 It'd be nice if we didn't have Xlib handlers set up for these if we're not
 actually listening for them:
  - mouse movement (generates *many* unnecessary events)
+    - <ah> this would invalidate public members window.mouse.x/y -- but
+      there's no reason for these to be public anyway...?
  - WM_DELETE_WINDOW (maybe? if we don't listen for it then the WM will
    DestroyWindow us -- see point #1 in `OPEN QUESTIONS`_)
 

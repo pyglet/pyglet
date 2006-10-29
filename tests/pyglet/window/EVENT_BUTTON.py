@@ -3,7 +3,7 @@
 '''Test that mouse button events work correctly.
 
 Expected behaviour:
-    One window will be opened.  Type into this window and check the console
+    One window will be opened.  Click within this window and check the console
     output for mouse events.  
      - Buttons 1, 2, 3 correspond to left, right middle
      - No events for scroll wheel

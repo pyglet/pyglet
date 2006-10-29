@@ -38,7 +38,7 @@ carbon.GetWindowPort.restype = c_void_p
 EventHandlerProcPtr = CFUNCTYPE(c_int, c_int, c_void_p, c_void_p)
 carbon.NewEventHandlerUPP.restype = c_void_p
 carbon.GetCurrentKeyModifiers = c_uint32
-
+carbon.NewRgn.restype = RgnHandle
 
 class CarbonWindowFactory(BaseWindowFactory):
     def __init__(self):
@@ -92,6 +92,7 @@ class CarbonWindow(BaseWindow):
         carbon.InstallStandardEventHandler(\
             carbon.GetWindowEventTarget(self._window))
 
+
         # Install Carbon event handlers 
         self._current_modifiers = carbon.GetCurrentKeyModifiers().value
         self._mapped_modifiers = self._map_modifiers(self._current_modifiers)
@@ -119,7 +120,39 @@ class CarbonWindow(BaseWindow):
         self._install_event_handler(kEventClassMouse,
                                     kEventMouseUp,
                                     self._on_mouse_up)
+
+        self._install_event_handler(kEventClassMouse,
+                                    kEventMouseMoved,
+                                    self._on_mouse_moved)
+
+        self._install_event_handler(kEventClassMouse,
+                                    kEventMouseDragged,
+                                    self._on_mouse_dragged)
+
+        self._install_event_handler(kEventClassMouse,
+                                    kEventMouseEntered,
+                                    self._on_mouse_entered)
+
+        self._install_event_handler(kEventClassMouse,
+                                    kEventMouseExited,
+                                    self._on_mouse_exited)
+
         carbon.ShowWindow(self._window)
+
+        # Create a tracking region for the content part of the window
+        # to receive enter/leave events.
+        # TODO: update this region when window is resized. 
+        track_id = MouseTrackingRegionID()
+        track_id.signature = DEFAULT_CREATOR_CODE
+        track_id.id = 1
+        self._track_ref = MouseTrackingRef()
+        self._track_region = carbon.NewRgn()
+        carbon.GetWindowRegion(self._window, 
+            kWindowContentRgn, self._track_region)
+        carbon.CreateMouseTrackingRegion(self._window,  
+            self._track_region, None, kMouseTrackingOptionsGlobalClip,
+            track_id, None, None,
+            byref(self._track_ref))
 
     def close(self):
         pass
@@ -289,6 +322,8 @@ class CarbonWindow(BaseWindow):
         x, y = self._get_mouse_position(event)
         if x >= 0 and y >= 0:
             self.dispatch_event(EVENT_BUTTONPRESS, button, x, y, modifiers)
+            self.mouse.x = x
+            self.mouse.y = y
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
@@ -298,13 +333,51 @@ class CarbonWindow(BaseWindow):
         x, y = self._get_mouse_position(event)
         if x >= 0 and y >= 0:
             self.dispatch_event(EVENT_BUTTONRELEASE, button, x, y, modifiers)
+            self.mouse.x = x
+            self.mouse.y = y
+
+        carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+
+    def _on_mouse_moved(self, next_handler, event, data):
+        button, modifiers = self._get_mouse_button_and_modifiers(event)
+        x, y = self._get_mouse_position(event)
+        if x >= 0 and y >= 0:
+            dx = x - self.mouse.x
+            dy = y - self.mouse.y
+            self.mouse.x = x
+            self.mouse.y = y
+            self.dispatch_event(EVENT_MOUSEMOTION, x, y, dx, dy)
+
+        carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+
+    def _on_mouse_dragged(self, next_handler, event, data):
+        return self._on_mouse_moved(next_handler, event, data)
+
+    def _on_mouse_entered(self, next_handler, event, data):
+        x, y = self._get_mouse_position(event)
+        if x >= 0 and y >= 0:
+            self.mouse.x = x
+            self.mouse.y = y
+        self.dispatch_event(EVENT_ENTER, x, y)
+
+        carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+
+    def _on_mouse_exited(self, next_handler, event, data):
+        x, y = self._get_mouse_position(event)
+        if x >= 0 and y >= 0:
+            self.mouse.x = x
+            self.mouse.y = y
+        self.dispatch_event(EVENT_LEAVE, x, y)
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
 
 _attribute_ids = {
     'all_renderers': AGL_ALL_RENDERERS,
-    'buffer_size': AGL_BUFFER_SIZE,
+    'buffer_size': AGL_BUFFER_SIZE, 
     'level': AGL_LEVEL,
     'rgba': AGL_RGBA,
     'doublebuffer': AGL_DOUBLEBUFFER,

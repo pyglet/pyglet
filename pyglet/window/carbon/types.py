@@ -59,3 +59,13 @@ WindowClass = c_uint32
 WindowAttributes = c_uint32
 WindowPositionMethod = c_uint32
 EventMouseButton = c_uint16
+
+OSType = c_uint32
+
+class MouseTrackingRegionID(Structure):
+    _fields_ = [('signature', OSType),
+                ('id', c_int32)]
+
+MouseTrackingRef = c_void_p
+
+RgnHandle = c_void_p

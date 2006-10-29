@@ -40,14 +40,13 @@ pyglet
             EVENT_KEY                       X   X   X
             EVENT_TEXT                      X   X   X
             EVENT_BUTTON                    X       X
-            EVENT_MOUSEMOTION               X
+            EVENT_MOUSE_MOTION              X       X
+            EVENT_MOUSE_ENTER_LEAVE         X       X
             EVENT_CLOSE                     X
-            EVENT_ENTER                     X
-            EVENT_LEAVE                     X
-            EVENT_EXPOSE                    X
+            EVENT_EXPOSE                    X 
             EVENT_RESIZE                    X
             EVENT_MOVE                      X
-            WINDOW_CAPTION                  X   X   X
+            WINDOW_CAPTION                  X       X
             WINDOW_BORDERS                  
             WINDOW_ICON
             MULTIPLE_SCREEN
@@ -57,8 +56,43 @@ pyglet
         TBD:
          - better failure handling when eg. GLX is not available
          - shared OGL context (textures, etc.) between windows
+
+           <ah> sharing one context between all windows means the
+           framebuffers are also shared, afaik.  this will be problematic,
+           i expect.  next best thing is to share textures and display
+           lists between all contexts (by default, allow override).  nothing
+           mentioned in GL documentation about programs and buffer objects
+           also being shared -- if they're not then there'll be some
+           nasty surprises.
+
+           an alternative could be to associate fonts, textures, images,
+           sprites, etc with a window.  ugly, maybe.
+
+         - ensure all mouse coordinates are returned as floats
          - scroll wheel is not mouse buttons, despite what X11 will tell
            you; need another event
+         - event for focus
+         - method to set focus
+         - OS X does not receive motion events when window doesn't have
+           focus; ensure this is also the case for other platforms (or
+           find workaround for Carbon).
+         - rename "buttonpress", "buttonrelease" to "mousepress", or
+           "mousebuttonpress" or "mouse_button_press" or something..?  avoid
+           collision with future buttons (e.g. on joysticks), and keep
+           consistent with mousemotion.
+         - similar for enter/leave?
+         - event for click, including click_count (for double/triple clicks)
+         - or should we delegate this to the gui layer, which will know
+           where the click occured?
+         - event for context-menu invocation (right-mouse button, ctrl+click
+           on mac, menu key on some keyboards).
+         - (maybe) event for drag (on os x, this is motion with a button
+           down; also consistent with java awt).
+         - OS X apps require a unique 4 character creator code.  I have
+           registered "PYGL" with Apple, which can be the default; there
+           should probably also be a mechanism for people to use their own
+           creator codes instead.
+         - OS X: update tracking region when window is resized.
 
     event
         :description: Platform-independent events.
