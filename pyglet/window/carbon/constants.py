@@ -275,3 +275,124 @@ kEventMouseButtonTertiary = 3
 DEFAULT_CREATOR_CODE = _name('PYGL')    # <ah> this is registered for Pyglet
                                         # apps.  register your own at:
                                         # http://developer.apple.com/datatype
+
+# Window
+kEventWindowUpdate                  = 1
+kEventWindowDrawContent             = 2
+
+# -- window activation events --
+
+kEventWindowActivated               = 5
+kEventWindowDeactivated             = 6
+kEventWindowHandleActivate          = 91
+kEventWindowHandleDeactivate        = 92
+kEventWindowGetClickActivation      = 7
+kEventWindowGetClickModality        = 8
+
+# -- window state change events --
+
+kEventWindowShowing                 = 22
+kEventWindowHiding                  = 23
+kEventWindowShown                   = 24
+kEventWindowHidden                  = 25
+kEventWindowCollapsing              = 86
+kEventWindowCollapsed               = 67
+kEventWindowExpanding               = 87
+kEventWindowExpanded                = 70
+kEventWindowZoomed                  = 76
+kEventWindowBoundsChanging          = 26
+kEventWindowBoundsChanged           = 27
+kEventWindowResizeStarted           = 28
+kEventWindowResizeCompleted         = 29
+kEventWindowDragStarted             = 30
+kEventWindowDragCompleted           = 31
+kEventWindowClosed                  = 73
+kEventWindowTransitionStarted       = 88
+kEventWindowTransitionCompleted     = 89
+
+# -- window click events --
+
+kEventWindowClickDragRgn            = 32
+kEventWindowClickResizeRgn          = 33
+kEventWindowClickCollapseRgn        = 34
+kEventWindowClickCloseRgn           = 35
+kEventWindowClickZoomRgn            = 36
+kEventWindowClickContentRgn         = 37
+kEventWindowClickProxyIconRgn       = 38
+kEventWindowClickToolbarButtonRgn   = 41
+kEventWindowClickStructureRgn       = 42
+
+# -- window cursor change events --
+
+kEventWindowCursorChange            = 40
+
+# -- window action events --
+
+kEventWindowCollapse                = 66
+kEventWindowCollapsed               = 67
+kEventWindowCollapseAll             = 68
+kEventWindowExpand                  = 69
+kEventWindowExpanded                = 70
+kEventWindowExpandAll               = 71
+kEventWindowClose                   = 72
+kEventWindowClosed                  = 73
+kEventWindowCloseAll                = 74
+kEventWindowZoom                    = 75
+kEventWindowZoomed                  = 76
+kEventWindowZoomAll                 = 77
+kEventWindowContextualMenuSelect    = 78
+kEventWindowPathSelect              = 79
+kEventWindowGetIdealSize            = 80
+kEventWindowGetMinimumSize          = 81
+kEventWindowGetMaximumSize          = 82
+kEventWindowConstrain               = 83
+kEventWindowHandleContentClick      = 85
+kEventWindowCollapsing              = 86
+kEventWindowExpanding               = 87
+kEventWindowTransitionStarted       = 88
+kEventWindowTransitionCompleted     = 89
+kEventWindowGetDockTileMenu         = 90
+kEventWindowHandleActivate          = 91
+kEventWindowHandleDeactivate        = 92
+kEventWindowProxyBeginDrag          = 128
+kEventWindowProxyEndDrag            = 129
+kEventWindowToolbarSwitchMode       = 150
+
+# -- window focus events --
+
+kEventWindowFocusAcquired           = 200
+kEventWindowFocusRelinquish         = 201
+kEventWindowFocusContent            = 202
+kEventWindowFocusToolbar            = 203
+kEventWindowFocusDrawer             = 204
+
+# -- sheet events --
+
+kEventWindowSheetOpening            = 210
+kEventWindowSheetOpened             = 211
+kEventWindowSheetClosing            = 212
+kEventWindowSheetClosed             = 213
+
+# -- drawer events --
+
+kEventWindowDrawerOpening           = 220
+kEventWindowDrawerOpened            = 221
+kEventWindowDrawerClosing           = 222
+kEventWindowDrawerClosed            = 223
+
+# -- window definition events --
+
+kEventWindowDrawFrame               = 1000
+kEventWindowDrawPart                = 1001
+kEventWindowGetRegion               = 1002
+kEventWindowHitTest                 = 1003
+kEventWindowInit                    = 1004
+kEventWindowDispose                 = 1005
+kEventWindowDragHilite              = 1006
+kEventWindowModified                = 1007
+kEventWindowSetupProxyDragImage     = 1008
+kEventWindowStateChanged            = 1009
+kEventWindowMeasureTitle            = 1010
+kEventWindowDrawGrowBox             = 1011
+kEventWindowGetGrowImageRegion      = 1012
+kEventWindowPaint                   = 1013

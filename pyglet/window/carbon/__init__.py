@@ -137,6 +137,10 @@ class CarbonWindow(BaseWindow):
                                     kEventMouseExited,
                                     self._on_mouse_exited)
 
+        self._install_event_handler(kEventClassWindow,
+                                    kEventWindowClose,
+                                    self._on_window_close)
+
         carbon.ShowWindow(self._window)
 
         # Create a tracking region for the content part of the window
@@ -155,7 +159,8 @@ class CarbonWindow(BaseWindow):
             byref(self._track_ref))
 
     def close(self):
-        pass
+        # TODO: there's more stuff to clean up here.
+        carbon.DisposeWindow(self._window)
 
     def switch_to(self):
         aglSetCurrentContext(self.context)
@@ -373,6 +378,14 @@ class CarbonWindow(BaseWindow):
         self.dispatch_event(EVENT_LEAVE, x, y)
 
         carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+
+    def _on_window_close(self, next_handler, event, data):
+        self.dispatch_event(EVENT_CLOSE)
+
+        # Presumably the next event handler is the one that closes
+        # the window; don't do that here. 
+        #carbon.CallNextEventHandler(next_handler, event)
         return noErr
 
 _attribute_ids = {
