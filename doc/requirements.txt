@@ -35,8 +35,6 @@ pyglet
             Component                      X11 WIN OSX
             ============================== === === ===
             MULTIPLE_WINDOW_OPEN            X   X   X
-            FULLSCREEN_OPEN                 
-            FULLSCREEN_TOGGLE
             EVENT_KEY                       X   X   X
             EVENT_TEXT                      X   X   X
             EVENT_BUTTON                    X       X
@@ -49,11 +47,19 @@ pyglet
             EVENT_MOVE                      X       X
             EVENT_ACTIVATE_DEACTIVATE               X
             EVENT_SHOW_HIDE                         X
+            WINDOW_SET_SIZE                         X
+            WINDOW_SET_MIN_MAX_SIZE                 X
+            WINDOW_ACTIVATE                         X
+            WINDOW_SET_VISIBLE                      X
+            WINDOW_MINIMIZE_MAXIMIZE                X
+            WINDOW_SET_EXCLUSIVE
+            WINDOW_SET_FULLSCREEN
+            WINDOW_INITIAL_FULLSCREEN
             WINDOW_CAPTION                  X       X
             WINDOW_BORDERS                  
             WINDOW_ICON
+            WINDOW_CURSOR
             MULTIPLE_SCREEN
-            WINDOW_EXCLUSIVE
             ============================== === === ===
 
         TBD:
@@ -106,6 +112,8 @@ pyglet
            invalidated?
          - windows should be created hidden, and shown by method call.  this
            allows applications to get an initial on_show and on_resize event.
+         - events for system sleep/shutdown and display change
+         - method to disable screensaver
 
     event
         :description: Platform-independent events.

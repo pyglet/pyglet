@@ -72,6 +72,33 @@ class BaseWindow(WindowEventHandler):
     def get_config(self):
         return self.config
 
+    def set_minimum_size(self, width, height):
+        raise NotImplementedError()
+
+    def set_maximum_size(self, width, height):
+        raise NotImplementedError()
+
+    def set_size(self, width, height):
+        raise NotImplementedError()
+
+    def activate(self):
+        raise NotImplementedError()
+
+    def set_visible(self, visible=True):    
+        raise NotImplementedError()
+
+    def minimize(self):
+        raise NotImplementedError()
+
+    def maximize(self):
+        raise NotImplementedError()
+        
+    def set_fullscreen(self, fullscreen=True):
+        raise NotImplementedError()
+
+    def set_exclusive(self, exclusive=True):
+        raise NotImplementedError()
+
 class BaseGLConfig(object):
     def __init__(self):
         self._attributes = {}

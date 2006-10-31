@@ -29,7 +29,7 @@ class CGPoint(Structure):
     ]
 
 class CGSize(Structure):
-    _fields = [
+    _fields_ = [
         ('width', c_float),
         ('height', c_float)
     ]
@@ -70,3 +70,7 @@ class MouseTrackingRegionID(Structure):
 MouseTrackingRef = c_void_p
 
 RgnHandle = c_void_p
+
+class ProcessSerialNumber(Structure):
+    _fields_ = [('highLongOfPSN', c_uint32),
+                ('lowLongOfPSN', c_uint32)]

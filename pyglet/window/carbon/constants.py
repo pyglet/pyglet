@@ -98,6 +98,21 @@ kWindowOpaqueRgn              = 35
 kWindowGlobalPortRgn          = 40
 kWindowToolbarButtonRgn       = 41
 
+inDesk                        = 0
+inNoWindow                    = 0
+inMenuBar                     = 1
+inSysWindow                   = 2
+inContent                     = 3
+inDrag                        = 4
+inGrow                        = 5
+inGoAway                      = 6
+inZoomIn                      = 7
+inZoomOut                     = 8
+inCollapseBox                 = 11
+inProxyIcon                   = 12
+inToolbarButton               = 13
+inStructure                   = 15 
+
 def _name(name):
     return ord(name[0]) << 24 | \
            ord(name[1]) << 16 | \
@@ -399,3 +414,9 @@ kEventWindowMeasureTitle            = 1010
 kEventWindowDrawGrowBox             = 1011
 kEventWindowGetGrowImageRegion      = 1012
 kEventWindowPaint                   = 1013
+
+# Process.h
+
+kNoProcess                    = 0
+kSystemProcess                = 1
+kCurrentProcess               = 2

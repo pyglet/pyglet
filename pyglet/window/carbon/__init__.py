@@ -79,6 +79,9 @@ class CarbonWindow(BaseWindow):
         rect.right = width
         rect.bottom = height
 
+        self._minimum_size = None
+        self._maximum_size = None
+
         window_class = kDocumentWindowClass
         window_attributes = kWindowStandardDocumentAttributes
 
@@ -147,6 +150,72 @@ class CarbonWindow(BaseWindow):
         s = _create_cfstring(title)
         carbon.SetWindowTitleWithCFString(self._window, s)
         carbon.CFRelease(s)
+
+    def set_size(self, width, height):
+        rect = Rect()
+        carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
+        rect.right = rect.left + width
+        rect.bottom = rect.top + height
+        carbon.SetWindowBounds(self._window, kWindowContentRgn, byref(rect))
+
+    def set_minimum_size(self, width, height):
+        self._minimum_size = (width, height)
+        minimum = HISize()
+        minimum.width = width
+        minimum.height = height
+        if self._maximum_size:
+            maximum = HISize()
+            maximum.width, maximum.height = self._maximum_size
+            maximum = byref(maximum)
+        else:
+            maximum = None
+        carbon.SetWindowResizeLimits(self._window, 
+            byref(minimum), maximum)
+
+    def set_maximum_size(self, width, height):
+        self._maximum_size = (width, height)
+        maximum = HISize()
+        maximum.width = width
+        maximum.height = height
+        if self._minimum_size:
+            minimum = HISize()
+            minimum.width, minimum.height = self._minimum_size
+            minimum = byref(minimum)
+        else:
+            minimum = None
+        carbon.SetWindowResizeLimits(self._window, 
+            minimum, byref(maximum))
+
+    def activate(self):
+        carbon.ActivateWindow(self._window, 1)
+
+        # Also make the application the "front" application.  TODO
+        # maybe don't bring forward all of the application's windows?
+        psn = ProcessSerialNumber()
+        psn.highLongOfPSN = 0
+        psn.lowLongOfPSN = kCurrentProcess
+        carbon.SetFrontProcess(byref(psn))
+
+    def set_visible(self, visible=True):
+        if visible:
+            carbon.ShowWindow(self._window)
+        else:
+            carbon.HideWindow(self._window)
+
+    def minimize(self):
+        # TODO FIXME: This only works once.
+        carbon.CollapseWindow(self._window)
+
+    def maximize(self):
+        # TODO FIXME: This only works after the window's been zoomed once
+        # by the user.
+        p = Point()
+        p.v = 200
+        p.h = 200 # TODO FIXME hack, this should be ideal size.
+        if carbon.IsWindowInStandardState(self._window, byref(p), None):
+            carbon.ZoomWindowIdeal(self._window, inZoomIn, byref(p))
+        else:
+            carbon.ZoomWindowIdeal(self._window, inZoomOut, byref(p))
 
     # Carbon event handlers
 
