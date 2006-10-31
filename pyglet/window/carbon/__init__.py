@@ -141,6 +141,9 @@ class CarbonWindow(BaseWindow):
                                     kEventWindowClose,
                                     self._on_window_close)
 
+        self._install_event_handler(kEventClassWindow,
+                                    kEventWindowResizeCompleted,
+                                    self._on_window_resize_completed)
         carbon.ShowWindow(self._window)
 
         # Create a tracking region for the content part of the window
@@ -161,6 +164,7 @@ class CarbonWindow(BaseWindow):
     def close(self):
         # TODO: there's more stuff to clean up here.
         carbon.DisposeWindow(self._window)
+        self._window = None
 
     def switch_to(self):
         aglSetCurrentContext(self.context)
@@ -386,6 +390,18 @@ class CarbonWindow(BaseWindow):
         # Presumably the next event handler is the one that closes
         # the window; don't do that here. 
         #carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+
+    def _on_window_resize_completed(self, next_handler, event, data):
+        print 'hello'
+        rect = Rect()
+        carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
+        width = rect.right - rect.left
+        height = rect.bottom - rect.top
+
+        self.dispatch_event(EVENT_RESIZE, width, height)
+
+        carbon.CallNextEventHandler(next_handler, event)
         return noErr
 
 _attribute_ids = {

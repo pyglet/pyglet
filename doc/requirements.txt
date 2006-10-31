@@ -44,8 +44,10 @@ pyglet
             EVENT_MOUSE_ENTER_LEAVE         X       X
             EVENT_CLOSE                     X       X
             EVENT_EXPOSE                    X 
-            EVENT_RESIZE                    X
+            EVENT_RESIZE                    X       X
             EVENT_MOVE                      X
+            EVENT_ACTIVATE_DEACTIVATE       
+            EVENT_VISIBILITY_CHANGE
             WINDOW_CAPTION                  X       X
             WINDOW_BORDERS                  
             WINDOW_ICON
@@ -71,8 +73,11 @@ pyglet
          - ensure all mouse coordinates are returned as floats
          - scroll wheel is not mouse buttons, despite what X11 will tell
            you; need another event
-         - event for focus
+         - on_activate() and on_deactivate() events for window focus.
          - method to set focus
+         - on_visibility_change(visible:bool) event for hide/show and
+           minimize/restore
+         - methods to show/hide/minimize/restore
          - OS X does not receive motion events when window doesn't have
            focus; ensure this is also the case for other platforms (or
            find workaround for Carbon).
@@ -80,6 +85,9 @@ pyglet
            "mousebuttonpress" or "mouse_button_press" or something..?  avoid
            collision with future buttons (e.g. on joysticks), and keep
            consistent with mousemotion.
+
+           <ah> will be on_mouse_press, on_mouse_release, on_mouse_move, etc.
+
          - similar for enter/leave?
          - event for click, including click_count (for double/triple clicks)
          - or should we delegate this to the gui layer, which will know
@@ -93,6 +101,11 @@ pyglet
            should probably also be a mechanism for people to use their own
            creator codes instead.
          - OS X: update tracking region when window is resized.
+         - Minimum/maximum window size.  
+         - Enable/disable live resizing? (possible on OS X, what about
+           others?)
+         - on_expose should include a list of rectangles that were
+           invalidated?
 
     event
         :description: Platform-independent events.
