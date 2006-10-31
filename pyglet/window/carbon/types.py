@@ -59,6 +59,7 @@ WindowClass = c_uint32
 WindowAttributes = c_uint32
 WindowPositionMethod = c_uint32
 EventMouseButton = c_uint16
+EventMouseWheelAxis = c_uint16
 
 OSType = c_uint32
 

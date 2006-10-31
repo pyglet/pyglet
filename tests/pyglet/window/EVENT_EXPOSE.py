@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 
-'''Test that resize event works correctly.
+'''Test that window expose event works correctly.
 
 Expected behaviour:
-    One window will be opened.  Resize the window and ensure that the
-    dimensions printed to the terminal are correct.
+    One window will be opened.  Uncovering the window from other windows
+    or the edge of the screen should produce the expose event.
+
+    Note that on OS X and other compositing window managers this event
+    is equivalent to EVENT_SHOW.
 
     Close the window or press ESC to end the test.
 '''
@@ -17,11 +20,11 @@ import unittest
 import pyglet.window
 from pyglet.window.event import *
 
-class EVENT_RESIZE(unittest.TestCase):
-    def on_resize(self, width, height):
-        print 'Window resized to %dx%d.' % (width, height)
+class EVENT_EXPOSE(unittest.TestCase):
+    def on_expose(self):
+        print 'Window exposed.'
 
-    def test_resize(self):
+    def test_expose(self):
         w = pyglet.window.create(200, 200)
         exit_handler = ExitHandler()
         w.push_handlers(exit_handler)

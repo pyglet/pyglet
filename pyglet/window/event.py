@@ -58,12 +58,17 @@ EVENT_TEXT = WindowEventHandler.register_event_type('on_text')
 EVENT_MOUSEMOTION = WindowEventHandler.register_event_type('on_mousemotion')
 EVENT_BUTTONPRESS = WindowEventHandler.register_event_type('on_buttonpress')
 EVENT_BUTTONRELEASE = WindowEventHandler.register_event_type('on_buttonrelease')
+EVENT_MOUSE_SCROLL = WindowEventHandler.register_event_type('on_mouse_scroll')
 EVENT_CLOSE = WindowEventHandler.register_event_type('on_close')
 EVENT_ENTER = WindowEventHandler.register_event_type('on_enter')
 EVENT_LEAVE = WindowEventHandler.register_event_type('on_leave')
 EVENT_EXPOSE = WindowEventHandler.register_event_type('on_expose')
 EVENT_RESIZE = WindowEventHandler.register_event_type('on_resize')
 EVENT_MOVE = WindowEventHandler.register_event_type('on_move')
+EVENT_ACTIVATE = WindowEventHandler.register_event_type('on_activate')
+EVENT_DEACTIVATE = WindowEventHandler.register_event_type('on_deactivate')
+EVENT_SHOW = WindowEventHandler.register_event_type('on_show')
+EVENT_HIDE = WindowEventHandler.register_event_type('on_hide')
 
 # symbolic names for the mouse buttons
 MOUSE_LEFT_BUTTON = 1
@@ -121,6 +126,9 @@ class EventHandler(object):
     def on_buttonrelease(self, button, x, y, modifiers):
         pass
 
+    def on_mouse_scroll(self, dx, dy):
+        pass
+
     def on_close(self):
         pass
 
@@ -139,6 +147,17 @@ class EventHandler(object):
     def on_move(self, x, y):
         pass
 
+    def on_activate(self):
+        pass
+
+    def on_deactivate(self):
+        pass
+
+    def on_show(self):
+        pass
+
+    def on_hide(self):
+        pass
 
 class ExitHandler(object):
     '''Simple handler that detects the window close button or escape key
@@ -182,6 +201,9 @@ class DebugEventHandler(object):
             button, x, y, _modifiers_to_string(modifiers))
         return EVENT_UNHANDLED
 
+    def on_mouse_scroll(self, dx, dy):
+        print 'on_mouse_scroll(dx=%f, dy=%f)' % (dx, dy)
+
     def on_close(self):
         print 'on_destroy()'
         return EVENT_UNHANDLED
@@ -206,3 +228,18 @@ class DebugEventHandler(object):
         print 'on_move(x=%d, y=%d)' % (x, y)
         return EVENT_UNHANDLED
 
+    def on_activate(self):
+        print 'on_activate()'
+        return EVENT_UNHANDLED
+
+    def on_deactivate(self):
+        print 'on_deactivate()'
+        return EVENT_UNHANDLED
+
+    def on_show(self):
+        print 'on_show()'
+        return EVENT_UNHANDLED
+
+    def on_hide(self):
+        print 'on_hide()'
+        return EVENT_UNHANDLED

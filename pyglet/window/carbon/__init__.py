@@ -355,6 +355,24 @@ class CarbonWindow(BaseWindow):
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
 
+    @CarbonEventHandler(kEventClassMouse, kEventMouseWheelMoved)
+    def _on_mouse_wheel_moved(self, next_handler, event, data):
+        axis = EventMouseWheelAxis()
+        carbon.GetEventParameter(event, kEventParamMouseWheelAxis,
+            typeMouseWheelAxis, c_void_p(), sizeof(axis), c_void_p(),
+            byref(axis))
+        delta = c_long()
+        carbon.GetEventParameter(event, kEventParamMouseWheelDelta,
+            typeSInt32, c_void_p(), sizeof(delta), c_void_p(),
+            byref(delta))
+        if axis.value == kEventMouseWheelAxisX:
+            self.dispatch_event(EVENT_MOUSE_SCROLL, float(delta.value), 0.)
+        else:
+            self.dispatch_event(EVENT_MOUSE_SCROLL, 0., float(delta.value))
+                
+        carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+
     @CarbonEventHandler(kEventClassWindow, kEventWindowClose)
     def _on_window_close(self, next_handler, event, data):
         self.dispatch_event(EVENT_CLOSE)
@@ -376,6 +394,66 @@ class CarbonWindow(BaseWindow):
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
 
+    @CarbonEventHandler(kEventClassWindow, kEventWindowDragCompleted)
+    def _on_window_drag_completed(self, next_handler, event, data):
+        rect = Rect()
+        carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
+
+        self.dispatch_event(EVENT_MOVE, rect.left, rect.top)
+
+        carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+
+    @CarbonEventHandler(kEventClassWindow, kEventWindowZoomed)
+    def _on_window_zoomed(self, next_handler, event, data):
+        rect = Rect()
+        carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
+        width = rect.right - rect.left
+        height = rect.bottom - rect.top
+
+        self.dispatch_event(EVENT_MOVE, rect.left, rect.top)
+        self.dispatch_event(EVENT_RESIZE, width, height)
+
+        carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+
+    @CarbonEventHandler(kEventClassWindow, kEventWindowActivated)
+    def _on_window_activated(self, next_handler, event, data):
+        self.dispatch_event(EVENT_ACTIVATE)
+
+        carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+
+    @CarbonEventHandler(kEventClassWindow, kEventWindowDeactivated)
+    def _on_window_deactivated(self, next_handler, event, data):
+        self.dispatch_event(EVENT_DEACTIVATE)
+
+        carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+        
+    @CarbonEventHandler(kEventClassWindow, kEventWindowShown)
+    @CarbonEventHandler(kEventClassWindow, kEventWindowExpanded)
+    def _on_window_shown(self, next_handler, event, data):
+        self.dispatch_event(EVENT_SHOW)
+
+        carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+
+    @CarbonEventHandler(kEventClassWindow, kEventWindowHidden)
+    @CarbonEventHandler(kEventClassWindow, kEventWindowCollapsed)
+    def _on_window_hidden(self, next_handler, event, data):
+        self.dispatch_event(EVENT_HIDE)
+
+        carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+
+    @CarbonEventHandler(kEventClassWindow, kEventWindowDrawContent)
+    def _on_window_draw_content(self, next_handler, event, data):
+        self.dispatch_event(EVENT_EXPOSE)
+
+        carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+        
 _attribute_ids = {
     'all_renderers': AGL_ALL_RENDERERS,
     'buffer_size': AGL_BUFFER_SIZE, 

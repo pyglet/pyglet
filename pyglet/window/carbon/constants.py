@@ -272,6 +272,9 @@ kEventMouseButtonPrimary = 1
 kEventMouseButtonSecondary = 2
 kEventMouseButtonTertiary = 3
 
+kEventMouseWheelAxisX = 0
+kEventMouseWheelAxisY = 1
+
 DEFAULT_CREATOR_CODE = _name('PYGL')    # <ah> this is registered for Pyglet
                                         # apps.  register your own at:
                                         # http://developer.apple.com/datatype

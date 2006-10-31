@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-'''Test that resize event works correctly.
+'''Test that window move event works correctly.
 
 Expected behaviour:
-    One window will be opened.  Resize the window and ensure that the
-    dimensions printed to the terminal are correct.
+    One window will be opened.  Move the window and ensure that the
+    location printed to the terminal is correct.
 
     Close the window or press ESC to end the test.
 '''
@@ -17,11 +17,11 @@ import unittest
 import pyglet.window
 from pyglet.window.event import *
 
-class EVENT_RESIZE(unittest.TestCase):
-    def on_resize(self, width, height):
-        print 'Window resized to %dx%d.' % (width, height)
+class EVENT_MOVE(unittest.TestCase):
+    def on_move(self, x, y):
+        print 'Window moved to %dx%d.' % (x, y)
 
-    def test_resize(self):
+    def test_move(self):
         w = pyglet.window.create(200, 200)
         exit_handler = ExitHandler()
         w.push_handlers(exit_handler)
