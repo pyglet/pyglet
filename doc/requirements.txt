@@ -52,7 +52,8 @@ pyglet
             WINDOW_ACTIVATE                         X
             WINDOW_SET_VISIBLE                      X
             WINDOW_MINIMIZE_MAXIMIZE                X
-            WINDOW_SET_EXCLUSIVE
+            WINDOW_SET_EXCLUSIVE_MOUSE              X
+            WINDOW_SET_EXCLUSIVE_KEYBOARD           X
             WINDOW_SET_FULLSCREEN
             WINDOW_INITIAL_FULLSCREEN
             WINDOW_CAPTION                  X       X
@@ -66,22 +67,21 @@ pyglet
          - better failure handling when eg. GLX is not available
          - shared OGL context (textures, etc.) between windows
 
-           <ah> sharing one context between all windows means the
-           framebuffers are also shared, afaik.  this will be problematic,
-           i expect.  next best thing is to share textures and display
-           lists between all contexts (by default, allow override).  nothing
-           mentioned in GL documentation about programs and buffer objects
-           also being shared -- if they're not then there'll be some
-           nasty surprises.
+           <ah> (updated) according to Apple docs, all "objects"
+           are shared: textures, programs, vertex buffers, and
+           object parameters (texture params, env params).  Only
+           current state is not shared.  this looks perfect, and
+           should be the default.
 
-           an alternative could be to associate fonts, textures, images,
-           sprites, etc with a window.  ugly, maybe.
+         - all platforms: update GL context when window is moved, resized,
+           or display properties change (e.g., change resolution).
+         - poll: which platforms can do borderless/translucent GL windows?
+
+           OS X: http://developer.apple.com/samplecode/BoingX/index.html
 
          - ensure all mouse coordinates are returned as floats
          - scroll wheel is not mouse buttons, despite what X11 will tell
            you; use on_mouse_scroll instead.
-         - method to set focus
-         - methods to show/hide/minimize/restore
          - OS X does not receive motion events when window doesn't have
            focus; ensure this is also the case for other platforms (or
            find workaround for Carbon).
@@ -104,8 +104,6 @@ pyglet
            registered "PYGL" with Apple, which can be the default; there
            should probably also be a mechanism for people to use their own
            creator codes instead.
-         - OS X: update tracking region when window is resized.
-         - Minimum/maximum window size.  
          - Enable/disable live resizing? (possible on OS X, what about
            others?)
          - on_expose should include a list of rectangles that were

@@ -22,6 +22,19 @@ noErr = 0
 # CarbonEventsCore.h
 eventLoopTimedOutErr = -9875
 
+# MacApplication.h
+kUIModeNormal                 = 0
+kUIModeContentSuppressed      = 1
+kUIModeContentHidden          = 2
+kUIModeAllSuppressed          = 4
+kUIModeAllHidden              = 3
+kUIOptionAutoShowMenuBar      = 1 << 0
+kUIOptionDisableAppleMenu     = 1 << 2
+kUIOptionDisableProcessSwitch = 1 << 3
+kUIOptionDisableForceQuit     = 1 << 4
+kUIOptionDisableSessionTerminate = 1 << 5
+kUIOptionDisableHide          = 1 << 6
+
 # MacWindows.h
 kAlertWindowClass = 1
 kMovableAlertWindowClass = 2

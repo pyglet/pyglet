@@ -96,7 +96,10 @@ class BaseWindow(WindowEventHandler):
     def set_fullscreen(self, fullscreen=True):
         raise NotImplementedError()
 
-    def set_exclusive(self, exclusive=True):
+    def set_exclusive_mouse(self, exclusive=True):
+        raise NotImplementedError()
+
+    def set_exclusive_keyboard(self, exclusive=True):
         raise NotImplementedError()
 
 class BaseGLConfig(object):

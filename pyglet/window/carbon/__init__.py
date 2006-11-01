@@ -8,6 +8,7 @@ __version__ = '$Id: $'
 
 from ctypes import *
 import ctypes.util
+import os.path
 import unicodedata
 
 from pyglet.window import *
@@ -21,10 +22,26 @@ from pyglet.window.carbon.AGL.VERSION_10_0 import *
 class CarbonException(WindowException):
     pass
 
-carbon_path = ctypes.util.find_library('Carbon')
-if not carbon_path:
-    raise ImportError('Carbon framework not found')
-carbon = cdll.LoadLibrary(carbon_path)
+def _get_framework(*names):
+    '''Load a cdll for a framework name.  Optionally can take a list
+    of names, giving the path to a subframework.  For example::
+
+        _get_framework('ApplicationServices', 'CoreGraphics')
+
+    '''
+    path = ctypes.util.find_library(names[0])
+    if not path:
+        raise ImportError('%s framework not found' % names[0])
+    for sub_framework in names[1:]:
+        path = os.path.dirname(path)
+        path = os.path.join(path,
+                            'Versions/Current/Frameworks/%s.framework/%s' % \
+                                (sub_framework, sub_framework))
+        if not os.path.exists(path):
+            raise ImportError('%s framework not found' % sub_framework)
+    return cdll.LoadLibrary(path)
+
+carbon = _get_framework('Carbon')
 
 import MacOS
 if not MacOS.WMAvailable():
@@ -81,6 +98,7 @@ class CarbonWindow(BaseWindow):
 
         self._minimum_size = None
         self._maximum_size = None
+        self._ideal_size = width, height
 
         window_class = kDocumentWindowClass
         window_attributes = kWindowStandardDocumentAttributes
@@ -110,7 +128,6 @@ class CarbonWindow(BaseWindow):
 
         # Create a tracking region for the content part of the window
         # to receive enter/leave events.
-        # TODO: update this region when window is resized. 
         track_id = MouseTrackingRegionID()
         track_id.signature = DEFAULT_CREATOR_CODE
         track_id.id = 1
@@ -152,6 +169,7 @@ class CarbonWindow(BaseWindow):
         carbon.CFRelease(s)
 
     def set_size(self, width, height):
+        self._ideal_size = width, height
         rect = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
         rect.right = rect.left + width
@@ -203,21 +221,51 @@ class CarbonWindow(BaseWindow):
             carbon.HideWindow(self._window)
 
     def minimize(self):
-        # TODO FIXME: This only works once.
-        carbon.CollapseWindow(self._window)
+        carbon.CollapseWindow(self._window, True)
 
     def maximize(self):
-        # TODO FIXME: This only works after the window's been zoomed once
-        # by the user.
+        # Maximum "safe" value, gets trimmed to screen size automatically.
         p = Point()
-        p.v = 200
-        p.h = 200 # TODO FIXME hack, this should be ideal size.
-        if carbon.IsWindowInStandardState(self._window, byref(p), None):
-            carbon.ZoomWindowIdeal(self._window, inZoomIn, byref(p))
-        else:
+        p.v, p.h = 16000,16000 
+        if not carbon.IsWindowInStandardState(self._window, byref(p), None):
             carbon.ZoomWindowIdeal(self._window, inZoomOut, byref(p))
 
-    # Carbon event handlers
+    def set_exclusive_mouse(self, exclusive=True):
+        if exclusive:
+            # Move mouse to center of window
+            rect = Rect()
+            carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
+            point = CGPoint()
+            point.x = (rect.right + rect.left) / 2
+            point.y = (rect.bottom + rect.top) / 2
+            carbon.CGWarpMouseCursorPosition(point)
+            carbon.CGAssociateMouseAndMouseCursorPosition(False)
+            carbon.HideCursor()
+        else:
+            carbon.CGAssociateMouseAndMouseCursorPosition(True)
+            carbon.ShowCursor()
+
+    def set_exclusive_keyboard(self, exclusive=True):
+        if exclusive:
+            # Note: power switch can also be disabled, with
+            # kUIOptionDisableSessionTerminate.  That seems
+            # a little extreme though.
+            carbon.SetSystemUIMode(kUIModeAllHidden,
+                (kUIOptionDisableAppleMenu |
+                 kUIOptionDisableProcessSwitch |
+                 kUIOptionDisableForceQuit |
+                 kUIOptionDisableHide))
+        else:
+            carbon.SetSystemUIMode(kUIModeNormal, 0)
+
+
+    # Non-public utilities
+
+    def _update_track_region(self):
+        carbon.GetWindowRegion(self._window, 
+            kWindowContentRgn, self._track_region)
+        carbon.ChangeMouseTrackingRegion(self._track_ref,
+            self._track_region, None)
 
     def _install_event_handlers(self):
         for event_class, event_kind, func_name in _carbon_event_handler_types:
@@ -234,6 +282,8 @@ class CarbonWindow(BaseWindow):
                 1,
                 byref(types),
                 c_void_p(), c_void_p())
+
+    # Carbon event handlers
 
     @CarbonEventHandler(kEventClassTextInput, kEventTextInputUnicodeForKeyEvent)
     def _on_text_input(self, next_handler, event, data):
@@ -346,6 +396,10 @@ class CarbonWindow(BaseWindow):
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(bounds))
         return position.x - bounds.left, position.y - bounds.top
 
+    def _get_mouse_delta(self, event):
+        return position.x - bounds.left, position.y - bounds.top
+
+
     @staticmethod
     def _get_mouse_button_and_modifiers(event):
         button = EventMouseButton()
@@ -388,12 +442,14 @@ class CarbonWindow(BaseWindow):
     def _on_mouse_moved(self, next_handler, event, data):
         button, modifiers = self._get_mouse_button_and_modifiers(event)
         x, y = self._get_mouse_position(event)
+        delta = HIPoint()
+        carbon.GetEventParameter(event, kEventParamMouseDelta,
+            typeHIPoint, c_void_p(), sizeof(delta), c_void_p(),
+            byref(delta))
         if x >= 0 and y >= 0:
-            dx = x - self.mouse.x
-            dy = y - self.mouse.y
             self.mouse.x = x
             self.mouse.y = y
-            self.dispatch_event(EVENT_MOUSEMOTION, x, y, dx, dy)
+            self.dispatch_event(EVENT_MOUSEMOTION, x, y, delta.x, delta.y)
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
@@ -469,6 +525,13 @@ class CarbonWindow(BaseWindow):
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
 
         self.dispatch_event(EVENT_MOVE, rect.left, rect.top)
+
+        carbon.CallNextEventHandler(next_handler, event)
+        return noErr
+
+    @CarbonEventHandler(kEventClassWindow, kEventWindowBoundsChanged)
+    def _on_window_bounds_change(self, next_handler, event, data):
+        self._update_track_region()
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
