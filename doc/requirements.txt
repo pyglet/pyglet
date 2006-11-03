@@ -67,11 +67,29 @@ pyglet
          - better failure handling when eg. GLX is not available
          - shared OGL context (textures, etc.) between windows
 
-           <ah> (updated) according to Apple docs, all "objects"
-           are shared: textures, programs, vertex buffers, and
-           object parameters (texture params, env params).  Only
-           current state is not shared.  this looks perfect, and
-           should be the default.
+           OSX: you can share objects by passing a context as "share" in
+                the aglCreateContext call. That specified context is used
+                to store all OpenGL objects created by the new context
+                (ie. the new context doesn't have its own object store).
+
+           X11: you can share objects by passing a context as "share_list"
+                in the glXCreateNewContext call. That specified context
+                is used in the same manner as OSX.
+
+           Win: you call wglShareLists(ctx1, ctx2) to share from one
+                context to another. Context ctx1 is used in the same
+                manner as OSX sharing. If ctx2 has any objects created
+                before calling this function they are destroyed.
+
+           <rj> yes, we should make this the default. We should have a
+                global context, but allow the factory to create a new
+                context if the programmer wishes. The programmer should
+                also be able to pass in another window which they wish to
+                share the context from.
+
+                This could cause programming errors. We will need to store
+                Contexts separately from Windows so that they're only freed
+                when there's no references to them.
 
          - all platforms: update GL context when window is moved, resized,
            or display properties change (e.g., change resolution).
