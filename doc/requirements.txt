@@ -47,6 +47,7 @@ pyglet
             EVENT_MOVE                      X       X
             EVENT_ACTIVATE_DEACTIVATE               X
             EVENT_SHOW_HIDE                         X
+            WINDOW_SET_LOCATION                     X
             WINDOW_SET_SIZE                         X
             WINDOW_SET_MIN_MAX_SIZE                 X
             WINDOW_ACTIVATE                         X
@@ -54,13 +55,14 @@ pyglet
             WINDOW_MINIMIZE_MAXIMIZE                X
             WINDOW_SET_EXCLUSIVE_MOUSE              X
             WINDOW_SET_EXCLUSIVE_KEYBOARD           X
-            WINDOW_SET_FULLSCREEN
-            WINDOW_INITIAL_FULLSCREEN
+            WINDOW_SET_FULLSCREEN                   X
+            WINDOW_INITIAL_FULLSCREEN               X
             WINDOW_CAPTION                  X       X
             WINDOW_BORDERS                  
             WINDOW_ICON
             WINDOW_CURSOR
-            MULTIPLE_SCREEN
+            MULTIPLE_SCREEN                         X
+            CONTEXT_SHARE                           X
             ============================== === === ===
 
         TBD:
@@ -111,9 +113,6 @@ pyglet
            <ah> will be on_mouse_press, on_mouse_release, on_mouse_move, etc.
 
          - similar for enter/leave?
-         - event for click, including click_count (for double/triple clicks)
-         - or should we delegate this to the gui layer, which will know
-           where the click occured?
          - event for context-menu invocation (right-mouse button, ctrl+click
            on mac, menu key on some keyboards).
          - (maybe) event for drag (on os x, this is motion with a button
@@ -124,12 +123,35 @@ pyglet
            creator codes instead.
          - Enable/disable live resizing? (possible on OS X, what about
            others?)
-         - on_expose should include a list of rectangles that were
-           invalidated?
          - windows should be created hidden, and shown by method call.  this
            allows applications to get an initial on_show and on_resize event.
+           OTOH, this would be the cause of many WTF's on the mailing list.
          - events for system sleep/shutdown and display change
          - method to disable screensaver
+         - windows appearing on different devices cannot share context.
+           there should be a mechanism for dealing with this (besides
+           crashing).  moving a window from one device to another should
+           recreate the context automatically, and fire an event
+           (on_context_lost) to instruct the application to reload everything.
+           a similar event (on_context_state_lost) should be fired when
+           a context is replaced (for example, toggling fullscreen): in this
+           case the app doesn't need to reload objects, but will need to
+           reset the state.  yikes.
+         - Possible window borders (check that all platforms have reasonable
+           support):
+
+            - None
+            - Resizable (default)
+            - Fixed
+            - Palette (smaller footprint)
+
+           With these options:
+            - Live resize
+            - Maximize button
+            - Minimize button
+            - Close button / system menu
+            - Modal (specify parent)
+
 
     event
         :description: Platform-independent events.

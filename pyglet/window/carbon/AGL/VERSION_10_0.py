@@ -188,3 +188,4 @@ aglGetInteger = _get_function('aglGetInteger', [_ctypes.c_void_p, _ctypes.c_uint
 aglUseFont = _get_function('aglUseFont', [_ctypes.c_void_p, _ctypes.c_int, _ctypes.c_ubyte, _ctypes.c_int, _ctypes.c_int, _ctypes.c_int, _ctypes.c_int], _ctypes.c_ubyte)
 aglGetError = _get_function('aglGetError', [], _ctypes.c_uint)
 aglResetLibrary = _get_function('aglResetLibrary', [], None)
+aglErrorString = _get_function('aglErrorString', [_ctypes.c_int], _ctypes.c_char_p)

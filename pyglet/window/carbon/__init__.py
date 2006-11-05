@@ -10,6 +10,7 @@ from ctypes import *
 import ctypes.util
 import os.path
 import unicodedata
+import warnings
 
 from pyglet.window import *
 from pyglet.window.event import *
@@ -42,6 +43,7 @@ def _get_framework(*names):
     return cdll.LoadLibrary(path)
 
 carbon = _get_framework('Carbon')
+quicktime = _get_framework('Quicktime')
 
 import MacOS
 if not MacOS.WMAvailable():
@@ -57,26 +59,245 @@ carbon.NewEventHandlerUPP.restype = c_void_p
 carbon.GetCurrentKeyModifiers = c_uint32
 carbon.NewRgn.restype = RgnHandle
 
-class CarbonWindowFactory(BaseWindowFactory):
-    def __init__(self):
-        super(CarbonWindowFactory, self).__init__()
-        self.context = None
-        self.context_share = None
+_attribute_ids = {
+    'all_renderers': AGL_ALL_RENDERERS,
+    'buffer_size': AGL_BUFFER_SIZE, 
+    'level': AGL_LEVEL,
+    'rgba': AGL_RGBA,
+    'doublebuffer': AGL_DOUBLEBUFFER,
+    'stereo': AGL_STEREO,
+    'aux_buffers': AGL_AUX_BUFFERS,
+    'red_size': AGL_RED_SIZE,
+    'green_size': AGL_GREEN_SIZE,
+    'blue_size': AGL_BLUE_SIZE,
+    'alpha_size': AGL_ALPHA_SIZE,
+    'depth_size': AGL_DEPTH_SIZE,
+    'stencil_size': AGL_STENCIL_SIZE,
+    'accum_red_size': AGL_ACCUM_RED_SIZE,
+    'accum_green_size': AGL_ACCUM_GREEN_SIZE,
+    'accum_blue_size': AGL_ACCUM_BLUE_SIZE,
+    'accum_alpha_size': AGL_ACCUM_ALPHA_SIZE,
+    'pixel_size': AGL_PIXEL_SIZE,
+    'minimum_policy': AGL_MINIMUM_POLICY,
+    'maximum_policy': AGL_MAXIMUM_POLICY,
+    'offscreen': AGL_OFFSCREEN,
+    'fullscreen': AGL_FULLSCREEN,
+    'sample_buffers': AGL_SAMPLE_BUFFERS_ARB,
+    'samples': AGL_SAMPLES_ARB,
+    'aux_depth_stencil': AGL_AUX_DEPTH_STENCIL,
+    'color_float': AGL_COLOR_FLOAT,
+    'multisample': AGL_MULTISAMPLE,
+    'supersample': AGL_SUPERSAMPLE,
+    'sample_alpha': AGL_SAMPLE_ALPHA,
+}
 
-    def create_config_prototype(self):
-        return CarbonGLConfig()
+_boolean_attributes = \
+    (AGL_ALL_RENDERERS, 
+     AGL_RGBA,
+     AGL_DOUBLEBUFFER,
+     AGL_STEREO,
+     AGL_MINIMUM_POLICY,
+     AGL_MAXIMUM_POLICY,
+     AGL_OFFSCREEN,
+     AGL_FULLSCREEN,
+     AGL_AUX_DEPTH_STENCIL,
+     AGL_COLOR_FLOAT,
+     AGL_MULTISAMPLE,
+     AGL_SUPERSAMPLE,
+     AGL_SAMPLE_ALPHA)
 
-    def create_window(self, width, height):
-        return CarbonWindow(width, height)
 
-    def get_config_matches(self, window):
-        return self.config.get_matches()
+class CarbonPlatform(BasePlatform):
+    def get_screens(self, factory):
+        count = CGDisplayCount()
+        carbon.CGGetActiveDisplayList(0, None, byref(count))
+        displays = (CGDirectDisplayID * count.value)()
+        carbon.CGGetActiveDisplayList(count.value, displays, byref(count))
+        return [CarbonScreen(id) for id in displays]
+    
+    def create_configs(self, factory):
+        if self._is_version_compatible(10, 3):
+            # In Panther and later, we can use a fullscreen context in a
+            # window to allow fullscreen and windowed contexts to share
+            # objects (necessary for our fullscreen toggle).  Untested
+            # in 10.3.  
+            # Reference http://developer.apple.com/qa/qa2001/qa1248.html
+            factory.set_gl_attribute('fullscreen', True)
+        else:
+            # Fullscreen toggling while sharing contexts will not be possible
+            # in earlier versions of OS X (or when fullscreen is desired
+            # on another device).
+            factory.set_gl_attribute('fullscreen', factory.get_fullscreen())
 
-    def create_context(self, window, config, share_context=None):
-        context = aglCreateContext(config._pformat, c_void_p())
-        aglSetDrawable(context, carbon.GetWindowPort(window._window))
+        # Set some more default attributes
+        factory.set_gl_attribute('all_renderers', True) # support RAGE-II
+        factory.set_gl_attribute('maximum_policy', True)
+        factory.set_gl_attribute('rgba', True)
+
+        # Construct array of attributes for aglChoosePixelFormat
+        attrs = []
+        for name, value in factory.get_gl_attributes().items():
+            attr = _attribute_ids.get(name, None)
+            if not attr:
+                warnings.warn('Unknown AGL attribute "%s"' % name)
+                continue
+            if value or attr not in _boolean_attributes:
+                attrs.append(attr)
+            if attr not in _boolean_attributes:
+                attrs.append(int(value))
+        attrs.append(AGL_NONE)
+        attrib_list = (c_int * len(attrs))(*attrs)
+
+        # If a screen is specified, use that device, otherwise leave device
+        # list empty:
+        screen = factory.get_screen()
+        if screen:
+            device = screen.get_gdevice()
+            pformat = aglChoosePixelFormat(byref(device), 1, attrib_list)
+        else:
+            pformat = aglChoosePixelFormat(c_void_p(), 0, attrib_list)
         _aglcheck()
-        return context
+
+        if not pformat:
+            return []
+        else:
+            return [CarbonGLConfig(pformat)]
+
+    def create_context(self, factory):
+        context_share = factory.get_context_share()
+        config = factory.get_config()
+        if context_share:
+            context = aglCreateContext(config._pformat,
+                                       context_share._context)
+        else:
+            context = aglCreateContext(config._pformat, c_void_p())
+        _aglcheck()
+        return CarbonGLContext(context)
+
+    def create_window(self, factory):
+        window_ref, fullscreen_restore = self._create_window_ref(factory)
+        width, height = factory.get_size()
+
+        window = CarbonWindow(window_ref, factory.get_context(), 
+                              width, height, factory.get_fullscreen())
+        window._fullscreen_restore = fullscreen_restore
+
+        return window
+
+    def replace_window(self, factory, window):
+        window_ref, fullscreen_restore = self._create_window_ref(factory)
+
+        window.close()
+
+        window._agl_context = factory.get_context()._context
+        window._window = window_ref
+        window._fullscreen = factory.get_fullscreen()
+        window._fullscreen_restore = fullscreen_restore
+        window.width, window.height = factory.get_size()
+        window.switch_to()
+
+        window._install_event_handlers()
+        window.set_visible(True)
+        window._create_track_region()
+
+        window.dispatch_event(EVENT_EXPOSE)
+
+    def _create_window_ref(self, factory):
+        window_ref = WindowRef()
+        context = factory.get_context()
+        width, height = factory.get_size()
+        fullscreen = factory.get_fullscreen()
+        fullscreen_restore = None
+
+        if fullscreen:
+            fullscreen_restore = c_void_p()
+            fullscreen_width = c_short(width)
+            fullscreen_height = c_short(height)
+            quicktime.BeginFullScreen(byref(fullscreen_restore), 
+                                      None,
+                                      byref(fullscreen_width),
+                                      byref(fullscreen_height),
+                                      byref(window_ref),
+                                      None,
+                                      0)
+            aglSetFullScreen(context._context, width, height, 0, 0)
+        else:
+            location = factory.get_location()
+
+            rect = Rect()
+            rect.top = rect.left = 0
+            if location is not LOCATION_DEFAULT:
+                rect.left = location[0]
+                rect.top = location[1]
+            rect.right = rect.left + width
+            rect.bottom = rect.top + height
+
+            window_class = kDocumentWindowClass
+            window_attributes = kWindowStandardDocumentAttributes
+
+            carbon.CreateNewWindow(window_class,
+                                   window_attributes,
+                                   byref(rect),
+                                   byref(window_ref))
+
+            if location is LOCATION_DEFAULT:
+                carbon.RepositionWindow(window_ref, c_void_p(),
+                    kWindowCascadeOnMainScreen)
+            aglSetDrawable(context._context,
+                carbon.GetWindowPort(window_ref.value))
+        _aglcheck()
+
+        return window_ref.value, fullscreen_restore
+
+
+    def _get_version(self):
+        '''Get the version of OS X running.
+
+        Returns a tuple, e.g. (10, 4) for 10.4.x.
+        '''
+        import platform
+        return platform._mac_ver_lookup(('sys1', 'sys2'))
+
+    def _is_version_compatible(self, major, minor):
+        version = self._get_version()
+        return version[0] > major or \
+               (version[0] == major and version[1] >= minor)
+
+class CarbonScreen(BaseScreen):
+    def __init__(self, id):
+        width = carbon.CGDisplayPixelsWide(id)
+        height = carbon.CGDisplayPixelsHigh(id)
+        super(CarbonScreen, self).__init__(width, height)
+        self.id = id
+
+    def get_gdevice(self):
+        gdevice = GDHandle()
+        r = carbon.DMGetGDeviceByDisplayID(self.id, byref(gdevice), False)
+        _oscheck(r)
+        return gdevice
+
+class CarbonGLConfig(BaseGLConfig):
+    def __init__(self, pformat):
+        super(CarbonGLConfig, self).__init__()
+        self._pformat = pformat
+        self._attributes = {}
+
+        for name, attr in _attribute_ids.items():
+            value = c_int()
+            result = aglDescribePixelFormat(pformat, attr, byref(value))
+            if result:
+                self._attributes[name] = value.value
+
+    def get_gl_attributes(self):
+        return self._attributes
+
+class CarbonGLContext(BaseGLContext):
+    def __init__(self, context):
+        self._context = context
+
+    def destroy(self):
+        super(CarbonGLContext, self).destroy()
+        aglDestroyContext(self._context)
 
 _carbon_event_handler_types = []
 
@@ -88,44 +309,28 @@ def CarbonEventHandler(event_class, event_kind):
     return handler_wrapper
 
 class CarbonWindow(BaseWindow):
-    def __init__(self, width, height):
+    def __init__(self, window_ref, context, width, height, fullscreen):
         super(CarbonWindow, self).__init__(width, height)
-        rect = Rect()
-        rect.top = 0
-        rect.left = 0
-        rect.right = width
-        rect.bottom = height
-
+        self._window = window_ref
+        self._agl_context = context._context
+        self._fullscreen = fullscreen
         self._minimum_size = None
         self._maximum_size = None
-        self._ideal_size = width, height
-
-        window_class = kDocumentWindowClass
-        window_attributes = kWindowStandardDocumentAttributes
-
-        window = WindowRef()
-        result = carbon.CreateNewWindow(window_class,
-                                        window_attributes,
-                                        byref(rect),
-                                        byref(window))
-        self._window = window.value
-        self._event_dispatcher = carbon.GetEventDispatcherTarget()
-
-        carbon.RepositionWindow(self._window, c_void_p(),
-            kWindowCascadeOnMainScreen)
-        carbon.InstallStandardEventHandler(\
-            carbon.GetWindowEventTarget(self._window))
 
         # Get initial state
+        self._event_dispatcher = carbon.GetEventDispatcherTarget()
         self._current_modifiers = carbon.GetCurrentKeyModifiers().value
         self._mapped_modifiers = self._map_modifiers(self._current_modifiers)
 
         # Install Carbon event handlers 
         self._carbon_event_handlers = []
+        self._carbon_event_handler_refs = []
         self._install_event_handlers()
 
-        carbon.ShowWindow(self._window)
+        self.set_visible(True)
+        self._create_track_region()
 
+    def _create_track_region(self):
         # Create a tracking region for the content part of the window
         # to receive enter/leave events.
         track_id = MouseTrackingRegionID()
@@ -141,16 +346,27 @@ class CarbonWindow(BaseWindow):
             byref(self._track_ref))
 
     def close(self):
-        # TODO: there's more stuff to clean up here.
+        self._agl_context = None
+        self._context.destroy()
+        self._context = None
+
+        for ref in self._carbon_event_handler_refs:
+            carbon.RemoveEventHandler(ref)
+        self._carbon_event_handler_refs = []
+        self._carbon_event_handlers = []
+
+        if self._fullscreen:
+            quicktime.EndFullScreen(self._fullscreen_restore, 0)
+        carbon.ReleaseMouseTrackingRegion(self._track_region)
         carbon.DisposeWindow(self._window)
         self._window = None
 
     def switch_to(self):
-        aglSetCurrentContext(self.context)
+        aglSetCurrentContext(self._agl_context)
         _aglcheck()
 
     def flip(self):
-        aglSwapBuffers(self.context)
+        aglSwapBuffers(self._agl_context)
         _aglcheck()
 
     def dispatch_events(self):
@@ -168,8 +384,23 @@ class CarbonWindow(BaseWindow):
         carbon.SetWindowTitleWithCFString(self._window, s)
         carbon.CFRelease(s)
 
+    def set_location(self, x, y):
+        rect = Rect()
+        carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
+        rect.right += x - rect.left
+        rect.bottom += y - rect.top
+        rect.left = x
+        rect.top = y
+        carbon.SetWindowBounds(self._window, kWindowContentRgn, byref(rect))
+
+    def get_location(self):
+        rect = Rect()
+        carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
+        return rect.left, rect.top
+
     def set_size(self, width, height):
-        self._ideal_size = width, height
+        self.width = width
+        self.height = height
         rect = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
         rect.right = rect.left + width
@@ -258,8 +489,19 @@ class CarbonWindow(BaseWindow):
         else:
             carbon.SetSystemUIMode(kUIModeNormal, 0)
 
-
     # Non-public utilities
+
+    def _update_drawable(self):
+        # We can get there after context has been disposed, in which case
+        # just do nothing.
+        if not self._agl_context:
+            return
+
+        aglUpdateContext(self._agl_context)
+        _aglcheck()
+
+        # Need a redraw
+        self.dispatch_event(EVENT_EXPOSE)
 
     def _update_track_region(self):
         carbon.GetWindowRegion(self._window, 
@@ -268,6 +510,11 @@ class CarbonWindow(BaseWindow):
             self._track_region, None)
 
     def _install_event_handlers(self):
+        if self._fullscreen:
+            target = carbon.GetApplicationEventTarget()
+        else:
+            target = carbon.GetWindowEventTarget(self._window)
+        carbon.InstallStandardEventHandler(target)
         for event_class, event_kind, func_name in _carbon_event_handler_types:
             func = getattr(self, func_name)
             proc = EventHandlerProcPtr(func)
@@ -276,12 +523,15 @@ class CarbonWindow(BaseWindow):
             types = EventTypeSpec()
             types.eventClass = event_class
             types.eventKind = event_kind
+            handler_ref = EventHandlerRef()
             carbon.InstallEventHandler(
-                carbon.GetWindowEventTarget(self._window),
+                target,
                 upp,
                 1,
                 byref(types),
-                c_void_p(), c_void_p())
+                c_void_p(),
+                byref(handler_ref))
+            self._carbon_event_handler_refs.append(handler_ref)
 
     # Carbon event handlers
 
@@ -396,10 +646,6 @@ class CarbonWindow(BaseWindow):
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(bounds))
         return position.x - bounds.left, position.y - bounds.top
 
-    def _get_mouse_delta(self, event):
-        return position.x - bounds.left, position.y - bounds.top
-
-
     @staticmethod
     def _get_mouse_button_and_modifiers(event):
         button = EventMouseButton()
@@ -420,8 +666,6 @@ class CarbonWindow(BaseWindow):
         x, y = self._get_mouse_position(event)
         if x >= 0 and y >= 0:
             self.dispatch_event(EVENT_BUTTONPRESS, button, x, y, modifiers)
-            self.mouse.x = x
-            self.mouse.y = y
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
@@ -432,8 +676,6 @@ class CarbonWindow(BaseWindow):
         x, y = self._get_mouse_position(event)
         if x >= 0 and y >= 0:
             self.dispatch_event(EVENT_BUTTONRELEASE, button, x, y, modifiers)
-            self.mouse.x = x
-            self.mouse.y = y
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
@@ -447,8 +689,6 @@ class CarbonWindow(BaseWindow):
             typeHIPoint, c_void_p(), sizeof(delta), c_void_p(),
             byref(delta))
         if x >= 0 and y >= 0:
-            self.mouse.x = x
-            self.mouse.y = y
             self.dispatch_event(EVENT_MOUSEMOTION, x, y, delta.x, delta.y)
 
         carbon.CallNextEventHandler(next_handler, event)
@@ -461,9 +701,6 @@ class CarbonWindow(BaseWindow):
     @CarbonEventHandler(kEventClassMouse, kEventMouseEntered)
     def _on_mouse_entered(self, next_handler, event, data):
         x, y = self._get_mouse_position(event)
-        if x >= 0 and y >= 0:
-            self.mouse.x = x
-            self.mouse.y = y
         self.dispatch_event(EVENT_ENTER, x, y)
 
         carbon.CallNextEventHandler(next_handler, event)
@@ -472,9 +709,6 @@ class CarbonWindow(BaseWindow):
     @CarbonEventHandler(kEventClassMouse, kEventMouseExited)
     def _on_mouse_exited(self, next_handler, event, data):
         x, y = self._get_mouse_position(event)
-        if x >= 0 and y >= 0:
-            self.mouse.x = x
-            self.mouse.y = y
         self.dispatch_event(EVENT_LEAVE, x, y)
 
         carbon.CallNextEventHandler(next_handler, event)
@@ -511,10 +745,10 @@ class CarbonWindow(BaseWindow):
     def _on_window_resize_completed(self, next_handler, event, data):
         rect = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
-        width = rect.right - rect.left
-        height = rect.bottom - rect.top
+        self.width = rect.right - rect.left
+        self.height = rect.bottom - rect.top
 
-        self.dispatch_event(EVENT_RESIZE, width, height)
+        self.dispatch_event(EVENT_RESIZE, self.width, self.height)
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
@@ -531,7 +765,12 @@ class CarbonWindow(BaseWindow):
 
     @CarbonEventHandler(kEventClassWindow, kEventWindowBoundsChanged)
     def _on_window_bounds_change(self, next_handler, event, data):
+        rect = Rect()
+        carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
+        self.width = rect.right - rect.left
+        self.height = rect.bottom - rect.top
         self._update_track_region()
+        self._update_drawable()
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
@@ -566,6 +805,7 @@ class CarbonWindow(BaseWindow):
     @CarbonEventHandler(kEventClassWindow, kEventWindowShown)
     @CarbonEventHandler(kEventClassWindow, kEventWindowExpanded)
     def _on_window_shown(self, next_handler, event, data):
+        self._update_drawable()
         self.dispatch_event(EVENT_SHOW)
 
         carbon.CallNextEventHandler(next_handler, event)
@@ -586,86 +826,8 @@ class CarbonWindow(BaseWindow):
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
         
-_attribute_ids = {
-    'all_renderers': AGL_ALL_RENDERERS,
-    'buffer_size': AGL_BUFFER_SIZE, 
-    'level': AGL_LEVEL,
-    'rgba': AGL_RGBA,
-    'doublebuffer': AGL_DOUBLEBUFFER,
-    'stereo': AGL_STEREO,
-    'aux_buffers': AGL_AUX_BUFFERS,
-    'red_size': AGL_RED_SIZE,
-    'green_size': AGL_GREEN_SIZE,
-    'blue_size': AGL_BLUE_SIZE,
-    'alpha_size': AGL_ALPHA_SIZE,
-    'depth_size': AGL_DEPTH_SIZE,
-    'stencil_size': AGL_STENCIL_SIZE,
-    'accum_red_size': AGL_ACCUM_RED_SIZE,
-    'accum_green_size': AGL_ACCUM_GREEN_SIZE,
-    'accum_blue_size': AGL_ACCUM_BLUE_SIZE,
-    'accum_alpha_size': AGL_ACCUM_ALPHA_SIZE,
-    'pixel_size': AGL_PIXEL_SIZE,
-    'minimum_policy': AGL_MINIMUM_POLICY,
-    'maximum_policy': AGL_MAXIMUM_POLICY,
-    'offscreen': AGL_OFFSCREEN,
-    'fullscreen': AGL_FULLSCREEN,
-    'sample_buffers_arb': AGL_SAMPLE_BUFFERS_ARB,
-    'samples_arb': AGL_SAMPLES_ARB,
-    'aux_depth_stencil': AGL_AUX_DEPTH_STENCIL,
-    'color_float': AGL_COLOR_FLOAT,
-    'multisample': AGL_MULTISAMPLE,
-    'supersample': AGL_SUPERSAMPLE,
-    'sample_alpha': AGL_SAMPLE_ALPHA,
-}
 
-_boolean_attributes = \
-    (AGL_ALL_RENDERERS, 
-     AGL_RGBA,
-     AGL_DOUBLEBUFFER,
-     AGL_STEREO,
-     AGL_MINIMUM_POLICY,
-     AGL_MAXIMUM_POLICY,
-     AGL_OFFSCREEN,
-     AGL_FULLSCREEN,
-     AGL_COLOR_FLOAT,
-     AGL_MULTISAMPLE,
-     AGL_SUPERSAMPLE,
-     AGL_SAMPLE_ALPHA)
-
-class CarbonGLConfig(BaseGLConfig):
-    def __init__(self, _pformat=None):
-        super(CarbonGLConfig, self).__init__()
-        self._pformat = _pformat
-        if _pformat:
-            for name, attr in _attribute_ids.items():
-                value = c_int()
-                result = aglDescribePixelFormat(_pformat, attr, byref(value))
-                if result:
-                    self._attributes[name] = value.value
-        else:
-            # Defaults
-            self._attributes['maximum_policy'] = True
-            self._attributes['rgba'] = True
-
-    def get_matches(self):
-        attrs = []
-        for name, value in self._attributes.items():
-            attr = _attribute_ids.get(name, None)
-            if not attr:
-                raise CarbonException('Unknown AGL attribute "%s"' % name)
-            if value or attr not in _boolean_attributes:
-                attrs.append(attr)
-            if attr not in _boolean_attributes:
-                attrs.append(int(value))
-        attrs.append(AGL_NONE)
-        attrib_list = (c_int * len(attrs))(*attrs)
-        pformat = aglChoosePixelFormat(c_void_p(), 0, attrib_list)
-        _aglcheck()
-        if not pformat:
-            return []
-        else:
-            return [CarbonGLConfig(pformat)]
-
+       
 def _create_cfstring(text):
     return carbon.CFStringCreateWithCString(c_void_p(), 
                                             text.encode('utf8'),
@@ -680,13 +842,3 @@ def _aglcheck():
     if err != AGL_NO_ERROR:
         raise CarbonException(aglErrorString(err))
 
-def _keydown_event(window, e):
-    return KeyPressEvent(window, 0, 0, 0, None)
-
-def _keyup_event(window, e):
-    return KeyReleaseEvent(window, 0, 0, 0, None)
-
-_event_constructors = {
-    (kEventClassTextInput, kEventTextInputUnicodeForKeyEvent): _keydown_event,
-    #(kEventClassKeyboard, kEventRawKeyUp): _keyup_event,
-}

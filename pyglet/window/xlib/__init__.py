@@ -15,6 +15,7 @@ __version__ = '$Id$'
 from ctypes import *
 from ctypes import util
 import unicodedata
+import warnings
 
 from pyglet.window import *
 from pyglet.window.event import *
@@ -42,26 +43,88 @@ xlib.XPutBackEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
 # Do we have the November 2000 UTF8 extension?
 _have_utf8 = hasattr(xlib, 'Xutf8TextListToTextProperty')
 
+_attribute_ids = {
+    'buffer_size': GLX_BUFFER_SIZE,
+    'level': GLX_LEVEL,
+    'doublebuffer': GLX_DOUBLEBUFFER,
+    'stereo': GLX_STEREO,
+    'aux_buffers': GLX_AUX_BUFFERS,
+    'red_size': GLX_RED_SIZE,
+    'green_size': GLX_GREEN_SIZE,
+    'blue_size': GLX_BLUE_SIZE,
+    'alpha_size': GLX_ALPHA_SIZE,
+    'depth_size': GLX_DEPTH_SIZE,
+    'stencil_size': GLX_STENCIL_SIZE,
+    'accum_red_size': GLX_ACCUM_RED_SIZE,
+    'accum_green_size': GLX_ACCUM_GREEN_SIZE,
+    'accum_blue_size': GLX_ACCUM_BLUE_SIZE,
+    'accum_alpha_size': GLX_ACCUM_ALPHA_SIZE,
+    'sample_buffers': GLX_SAMPLE_BUFFERS,
+    'samples': GLX_SAMPLES,
+    'render_type': GLX_RENDER_TYPE,
+    'config_caveat': GLX_CONFIG_CAVEAT,
+    'transparent_type': GLX_TRANSPARENT_TYPE,
+    'transparent_index_value': GLX_TRANSPARENT_INDEX_VALUE,
+    'transparent_red_value': GLX_TRANSPARENT_RED_VALUE,
+    'transparent_green_value': GLX_TRANSPARENT_GREEN_VALUE,
+    'transparent_blue_value': GLX_TRANSPARENT_BLUE_VALUE,
+    'transparent_alpha_value': GLX_TRANSPARENT_ALPHA_VALUE,
+}
+
 class XlibException(WindowException):
     pass
 
-class XlibWindowFactory(BaseWindowFactory):
-    def __init__(self, display=None):
-        super(XlibWindowFactory, self).__init__()
+class XlibPlatform(BasePlatform):
+    def get_screens(self, factory):
+        # XXX TODO
+        return [XlibScreen()]
+    
+    def create_configs(self, factory):
+        # Get the X display, and resolve name if necessary
+        display = factory.get_x_display()
+        if not display:
+            display = ''
+        if type(display) in (str, unicode):
+            display = xlib.XOpenDisplay(display)
+            if not display:
+                raise XlibException('Cannot connect to X server') 
 
-        self._display = xlib.XOpenDisplay(display)
-        if not self._display:
-            raise XlibException('Cannot connect to X server') 
+        # Construct array of attributes for glXChooseFBConfig
+        attrs = []
+        for name, value in factory.get_gl_attributes().items():
+            attr = _attribute_ids.get(name, None)
+            if not attr:
+                warnings.warn('Unknown GLX attribute "%s"' % name)
+            attrs.append(attr)
+            attrs.append(int(value))
+        if len(attrs):
+            attrs.append(0)
+            attrs.append(0)
+            attrib_list = (c_int * len(attrs))(*attrs)
+        else:
+            attrib_list = None
+        elements = c_int()
+        screen = 0  # XXX what is this, anyway?
+        configs = glXChooseFBConfig(display, 
+            screen, attrib_list, byref(elements))
+        if configs:
+            result = []
+            for i in range(elements.value):
+                result.append(XlibGLConfig(display, configs[i]))
+            xlib.XFree(configs)
+            return result
+        else:
+            return []
 
-    def create_config_prototype(self):
-        return XlibGLConfig()
+    def create_context(self, factory):
+        config = factory.get_config()
+        context_share = factory.get_context_share()
+        if context_share:
+            context_share = context_share._context
 
-    def get_config_matches(self, window):
-        return self.config._get_matches(self._display)
+        context = glXCreateNewContext(config._display, config._fbconfig, 
+            GLX_RGBA_TYPE, context_share, True)
 
-    def create_context(self, window, config, share_context=None):
-        context = glXCreateNewContext(self._display, 
-            config._fbconfig, GLX_RGBA_TYPE, share_context, True)
         if context == GLXBadContext:
             raise XlibException('Invalid context share')
         elif context == GLXBadFBConfig:
@@ -69,22 +132,62 @@ class XlibWindowFactory(BaseWindowFactory):
         elif context < 0:
             raise XlibException('Could not create GL context') 
 
-        window._glx_window = glXCreateWindow(self._display,
-            config._fbconfig, window._window, None)
-        return context
+        return XlibGLContext(config._display, context)
 
-    def create_window(self, width, height):
-        return XlibWindow(width, height, self._display)
+    def create_window(self, factory):
+        width, height = factory.get_size()
+        return XlibWindow(factory.get_config(), factory.get_context(), 
+                          width, height)
+
+    def replace_window(self, factory, window):
+        raise NotImplementedError() # TODO
+
+class XlibScreen(BaseScreen):
+    def __init__(self):
+        width, height = 1024, 768   # XXX TODO
+        super(XlibScreen, self).__init__(width, height)
+
+class XlibGLConfig(BaseGLConfig):
+    def __init__(self, display, fbconfig):
+        super(XlibGLConfig, self).__init__()
+        self._display = display
+        self._fbconfig = fbconfig
+        self._attributes = {}
+        for name, attr in _attribute_ids.items():
+            value = c_int()
+            result = glXGetFBConfigAttrib(self._display, 
+                self._fbconfig, attr, byref(value))
+            if result >= 0:
+                self._attributes[name] = value.value
+
+    def get_gl_attributes(self):
+        return self._attributes
+
+class XlibGLContext(BaseGLContext):
+    def __init__(self, display, context):
+        super(XlibGLContext, self).__init__()
+        self._display = display
+        self._context = context
+
+    def destroy(self):
+        glXDestroyContext(self._display, self._context)
+
+class XlibMouse(object):
+    def __init__(self):
+        self.x, self.y = 0, 0
+        self.buttons = [False] * 6      # mouse buttons index from 1 + 
 
 
 class XlibWindow(BaseWindow):
-    def __init__(self, width, height, display):
+    def __init__(self, config, context, width, height):
         super(XlibWindow, self).__init__(width, height)
-        self._display = display
+        self._display = config._display
+        self._glx_context = context._context
 
         # XXX the WM can probably tell us this
         self.x = 0
         self.y = 0
+        self.mouse = XlibMouse()
 
         black = xlib.XBlackPixel(self._display, 
             xlib.XDefaultScreen(self._display))
@@ -111,14 +214,19 @@ class XlibWindow(BaseWindow):
         # Now select all events (don't want PointerMotionHintMask)
         xlib.XSelectInput(self._display, self._window, 0x1ffff7f)
 
+        # Assign GLX.
+        self._glx_window = glXCreateWindow(self._display,
+            config._fbconfig, self._window, None)
+
     def close(self):
-        glXDestroyContext(self._display, self.context)
+        self._context.destroy()
         glXDestroyWindow(self._display, self._glx_window)
         xlib.XDestroyWindow(self._display, self._window)
+        self._window = None
 
     def switch_to(self):
         glXMakeContextCurrent(self._display,
-            self._glx_window, self._glx_window, self.context)
+            self._glx_window, self._glx_window, self._glx_context)
 
     def flip(self):
         glXSwapBuffers(self._display, self._glx_window)
@@ -330,71 +438,4 @@ def _translate_modifiers(state):
         modifiers |= MOD_WINDOWS
     return modifiers
 
-_attribute_ids = {
-    'buffer_size': GLX_BUFFER_SIZE,
-    'level': GLX_LEVEL,
-    'doublebuffer': GLX_DOUBLEBUFFER,
-    'stereo': GLX_STEREO,
-    'aux_buffers': GLX_AUX_BUFFERS,
-    'red_size': GLX_RED_SIZE,
-    'green_size': GLX_GREEN_SIZE,
-    'blue_size': GLX_BLUE_SIZE,
-    'alpha_size': GLX_ALPHA_SIZE,
-    'depth_size': GLX_DEPTH_SIZE,
-    'stencil_size': GLX_STENCIL_SIZE,
-    'accum_red_size': GLX_ACCUM_RED_SIZE,
-    'accum_green_size': GLX_ACCUM_GREEN_SIZE,
-    'accum_blue_size': GLX_ACCUM_BLUE_SIZE,
-    'accum_alpha_size': GLX_ACCUM_ALPHA_SIZE,
-    'sample_buffers': GLX_SAMPLE_BUFFERS,
-    'samples': GLX_SAMPLES,
-    'render_type': GLX_RENDER_TYPE,
-    'config_caveat': GLX_CONFIG_CAVEAT,
-    'transparent_type': GLX_TRANSPARENT_TYPE,
-    'transparent_index_value': GLX_TRANSPARENT_INDEX_VALUE,
-    'transparent_red_value': GLX_TRANSPARENT_RED_VALUE,
-    'transparent_green_value': GLX_TRANSPARENT_GREEN_VALUE,
-    'transparent_blue_value': GLX_TRANSPARENT_BLUE_VALUE,
-    'transparent_alpha_value': GLX_TRANSPARENT_ALPHA_VALUE,
-}
-
-class XlibGLConfig(BaseGLConfig):
-    def __init__(self, display=None, fbconfig=None):
-        super(XlibGLConfig, self).__init__()
-        self._display = display
-        self._fbconfig = fbconfig
-        if self._fbconfig:
-            for name, attr in _attribute_ids.items():
-                value = c_int()
-                result = glXGetFBConfigAttrib(self._display, 
-                    self._fbconfig, attr, byref(value))
-                if result >= 0:
-                    self._attributes[name] = value.value
-
-    def _get_matches(self, display):
-        attrs = []
-        for name, value in self._attributes.items():
-            attr = _attribute_ids.get(name, None)
-            if not attr:
-                raise XlibException('Unknown GLX attribute "%s"' % name)
-            attrs.append(attr)
-            attrs.append(int(value))
-        if len(attrs):
-            attrs.append(0)
-            attrs.append(0)
-            attrib_list = (c_int * len(attrs))(*attrs)
-        else:
-            attrib_list = None
-        elements = c_int()
-        screen = 0  # XXX what is this, anyway?
-        configs = glXChooseFBConfig(display, 
-            screen, attrib_list, byref(elements))
-        if configs:
-            result = []
-            for i in range(elements.value):
-                result.append(XlibGLConfig(display, configs[i]))
-            xlib.XFree(configs)
-            return result
-        else:
-            return []
 

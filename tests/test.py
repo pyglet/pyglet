@@ -119,6 +119,8 @@ The test file must contain:
 - One or more subclasses of unittest.TestCase.
 - No other module-level code, except perhaps an if __name__ == '__main__'
   condition for running tests stand-alone.
+- Optionally, the attribute "__noninteractive = True" to specify that
+  the test is not interactive; doesn't require user intervention.
 
 Mark off capabilities as implemented earlier rather than later, so that
 the tests get run by default (even if they are failing).
@@ -413,7 +415,10 @@ def main(args):
         if not module:
             continue
 
-        if interactive:
+        module_interactive = interactive and \
+         not (hasattr(module, '__noninteractive') and module.__noninteractive)
+
+        if module_interactive:
             print '-' * 78
             if module.__doc__:
                 print module.__doc__
@@ -431,7 +436,7 @@ def main(args):
             log.error(error[1])
         log.info('%d tests run', result.testsRun)
 
-        if (interactive and 
+        if (module_interactive and 
             len(result.failures) == 0 and 
             len(result.errors) == 0):
             print '[P]assed test, [F]ailed test: ',

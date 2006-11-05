@@ -40,6 +40,17 @@ class CGRect(Structure):
         ('size', CGSize)
     ]
 
+CGDirectDisplayID = c_void_p
+CGDisplayCount = c_uint32
+CGTableCount = c_uint32
+CGDisplayCoord = c_int32
+CGByteValue = c_ubyte
+CGOpenGLDisplayMask = c_uint32
+CGRefreshRate = c_double
+CGCaptureOptions = c_uint32
+
+GDHandle = c_void_p
+
 HIPoint = CGPoint
 HISize = CGSize
 HIRect = CGRect
@@ -53,6 +64,7 @@ class EventTypeSpec(Structure):
 WindowRef = c_void_p
 EventRef = c_void_p
 EventTargetRef = c_void_p
+EventHandlerRef = c_void_p
 
 CFStringEncoding = c_uint
 WindowClass = c_uint32
