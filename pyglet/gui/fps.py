@@ -6,7 +6,7 @@ from pyglet.GLU.VERSION_1_1 import *
 from pyglet.text import Font
 
 # XXX 
-filename = os.path.join(os.path.split(__file__)[0], '../../tests/Vera.ttf')
+filename = os.path.join(os.path.split(__file__)[0], '../../examples/Vera.ttf')
 f = Font(filename, 26)
 
 class FPS(object):

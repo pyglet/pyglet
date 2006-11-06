@@ -40,15 +40,15 @@ pyglet
             EVENT_BUTTON                    X       X
             EVENT_MOUSE_MOTION              X       X
             EVENT_MOUSE_ENTER_LEAVE         X       X
-            EVENT_MOUSE_SCROLL                      X
+            EVENT_MOUSE_SCROLL              X       X
             EVENT_CLOSE                     X       X
             EVENT_EXPOSE                    X       X
             EVENT_RESIZE                    X       X
             EVENT_MOVE                      X       X
             EVENT_ACTIVATE_DEACTIVATE               X
             EVENT_SHOW_HIDE                         X
-            WINDOW_SET_LOCATION                     X
-            WINDOW_SET_SIZE                         X
+            WINDOW_SET_LOCATION             X       X
+            WINDOW_SET_SIZE                 X       X
             WINDOW_SET_MIN_MAX_SIZE                 X
             WINDOW_ACTIVATE                         X
             WINDOW_SET_VISIBLE                      X
@@ -62,7 +62,7 @@ pyglet
             WINDOW_ICON
             WINDOW_CURSOR
             MULTIPLE_SCREEN                         X
-            CONTEXT_SHARE                           X
+            CONTEXT_SHARE                   X       X
             ============================== === === ===
 
         TBD:

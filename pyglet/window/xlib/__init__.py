@@ -32,8 +32,18 @@ path = util.find_library('X11')
 if not path:
     raise ImportError('Cannot locate X11 library')
 xlib = cdll.LoadLibrary(path)
+
+path = util.find_library('Xinerama')
+if path:
+    _have_xinerama = True
+    xinerama = cdll.LoadLibrary(path)
+    xinerama.XineramaQueryScreens.restype = POINTER(XineramaScreenInfo)
+else:
+    _have_xinerama = False
+
 xlib.XOpenDisplay.argtypes = [c_char_p]
 xlib.XOpenDisplay.restype = POINTER(Display)
+xlib.XScreenOfDisplay.restype = POINTER(Screen)
 xlib.XInternAtom.restype = Atom
 xlib.XNextEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
 xlib.XCheckTypedWindowEvent.argtypes = [POINTER(Display),
@@ -76,18 +86,43 @@ class XlibException(WindowException):
 
 class XlibPlatform(BasePlatform):
     def get_screens(self, factory):
-        # XXX TODO
-        return [XlibScreen()]
+        display = self._get_display(factory)
+        x_screen = xlib.XDefaultScreen(display)
+        if _have_xinerama and xinerama.XineramaIsActive(display):
+            number = c_int()
+            infos = xinerama.XineramaQueryScreens(display, byref(number))
+            infos = cast(infos, 
+                         POINTER(XineramaScreenInfo * number.value)).contents
+            result = []
+            for info in infos:
+                result.append(XlibScreen(display,
+                                         x_screen,
+                                         info.x_org,
+                                         info.y_org,
+                                         info.width,
+                                         info.height,
+                                         True))
+            xlib.XFree(infos)
+            return result
+        else:
+            # No xinerama
+            screen_count = xlib.XScreenCount(display)
+            result = []
+            for i in range(screen_count):
+                screen = xlib.XScreenOfDisplay(display, i)
+                result.append(XlibScreen(display,
+                                         i, 
+                                         0, 0,
+                                         screen.contents.width,
+                                         screen.contents.height,
+                                         False))
+            # Move default screen to be first in list.
+            s = result.pop(x_screen)
+            result.insert(0, s)
+            return result
     
     def create_configs(self, factory):
-        # Get the X display, and resolve name if necessary
-        display = factory.get_x_display()
-        if not display:
-            display = ''
-        if type(display) in (str, unicode):
-            display = xlib.XOpenDisplay(display)
-            if not display:
-                raise XlibException('Cannot connect to X server') 
+        display = self._get_display(factory)
 
         # Construct array of attributes for glXChooseFBConfig
         attrs = []
@@ -104,9 +139,9 @@ class XlibPlatform(BasePlatform):
         else:
             attrib_list = None
         elements = c_int()
-        screen = 0  # XXX what is this, anyway?
+        screen = factory.get_screen()
         configs = glXChooseFBConfig(display, 
-            screen, attrib_list, byref(elements))
+            screen._x_screen_id, attrib_list, byref(elements))
         if configs:
             result = []
             for i in range(elements.value):
@@ -142,10 +177,31 @@ class XlibPlatform(BasePlatform):
     def replace_window(self, factory, window):
         raise NotImplementedError() # TODO
 
+    def _get_display(self, factory):
+        # Get the X display, and resolve name if necessary
+        display = factory.get_x_display()
+        if not display:
+            display = ''
+        if type(display) in (str, unicode):
+            display = xlib.XOpenDisplay(display)
+            if not display:
+                raise XlibException('Cannot connect to X server') 
+        return display
+
 class XlibScreen(BaseScreen):
-    def __init__(self):
-        width, height = 1024, 768   # XXX TODO
+    def __init__(self, display, x_screen_id, x, y, width, height, xinerama):
         super(XlibScreen, self).__init__(width, height)
+        self._display = display
+        self._x_screen_id = x_screen_id
+        self._x = x
+        self._y = y
+        self._xinerama = xinerama
+
+    def __repr__(self):
+        return 'XlibScreen(screen=%d, x=%d, y=%d, ' \
+               'width=%d, height=%d, xinerama=%d)' % \
+            (self._x_screen_id, self._x, self._y, self.width, self.height,
+             self._xinerama)
 
 class XlibGLConfig(BaseGLConfig):
     def __init__(self, display, fbconfig):
@@ -231,6 +287,79 @@ class XlibWindow(BaseWindow):
     def flip(self):
         glXSwapBuffers(self._display, self._glx_window)
 
+    def set_caption(self, caption):
+        self._caption = caption
+        self._set_property('WM_NAME', caption, allow_utf8=False)
+        self._set_property('WM_ICON_NAME', caption, allow_utf8=False)
+        self._set_property('_NET_WM_NAME', caption)
+        self._set_property('_NET_WM_ICON_NAME', caption)
+
+    def get_caption(self):
+        return self._caption
+
+    def set_size(self, width, height):
+        self.width = width
+        self.height = height
+        xlib.XResizeWindow(self._display, self._window, width, height)
+
+    def get_size(self):
+        attributes = XWindowAttributes()
+        xlib.XGetWindowAttributes(self._display, self._window,
+                                  byref(attributes))
+        return attributes.width, attributes.height
+
+    def set_location(self, x, y):
+        # Assume the window manager has reparented our top-level window
+        # only once, in which case attributes.x/y give the offset from
+        # the frame to the content window.  Better solution would be
+        # to use _NET_FRAME_EXTENTS, where supported.
+        attributes = XWindowAttributes()
+        xlib.XGetWindowAttributes(self._display, self._window,
+                                  byref(attributes))
+        x -= attributes.x
+        y -= attributes.y
+        xlib.XMoveWindow(self._display, self._window, x, y)
+
+    def get_location(self):
+        child = Window()
+        x = c_int()
+        y = c_int()
+        xlib.XTranslateCoordinates(self._display,
+                                   self._window,
+                                   attributes.root,
+                                   0, 0,
+                                   byref(x),
+                                   byref(y),
+                                   byref(child))
+        return x.value, y.value
+
+    # Private utility
+
+    def _set_property(self, name, value, allow_utf8=True):
+        atom = xlib.XInternAtom(self._display, name, True)
+        if not atom:
+            raise XlibException('Undefined atom "%s"' % name)
+        if type(value) in (str, unicode):
+            property = XTextProperty()
+            if _have_utf8 and allow_utf8:
+                buf = create_string_buffer(value.encode('utf8'))
+                result = xlib.Xutf8TextListToTextProperty(self._display,
+                    byref(pointer(buf)), 1, XUTF8StringStyle, byref(property))
+                if result < 0:
+                    raise XlibException('Could not create UTF8 text property')
+            else:
+                buf = create_string_buffer(value.encode('ascii', 'ignore'))
+                result = xlib.XStringListToTextProperty(byref(pointer(buf)),
+                    1, byref(property))
+                if result < 0:
+                    raise XlibException('Could not create text property')
+            xlib.XSetTextProperty(self._display, 
+                self._window, byref(property), atom)
+            # XXX <rj> Xlib doesn't like us freeing this
+            #xlib.XFree(property.value)
+
+    # Event handling
+
     def dispatch_events(self):
         e = XEvent()
 
@@ -257,38 +386,6 @@ class XlibWindow(BaseWindow):
         for e in push_back:
             xlib.XPutBackEvent(self._display, byref(e))
 
-    def _set_property(self, name, value, allow_utf8=True):
-        atom = xlib.XInternAtom(self._display, name, True)
-        if not atom:
-            raise XlibException('Undefined atom "%s"' % name)
-        if type(value) in (str, unicode):
-            property = XTextProperty()
-            if _have_utf8 and allow_utf8:
-                buf = create_string_buffer(value.encode('utf8'))
-                result = xlib.Xutf8TextListToTextProperty(self._display,
-                    byref(pointer(buf)), 1, XUTF8StringStyle, byref(property))
-                if result < 0:
-                    raise XlibException('Could not create UTF8 text property')
-            else:
-                buf = create_string_buffer(value.encode('ascii', 'ignore'))
-                result = xlib.XStringListToTextProperty(byref(pointer(buf)),
-                    1, byref(property))
-                if result < 0:
-                    raise XlibException('Could not create text property')
-            xlib.XSetTextProperty(self._display, 
-                self._window, byref(property), atom)
-            # XXX <rj> Xlib doesn't like us freeing this
-            #xlib.XFree(property.value)
-
-    def set_caption(self, caption):
-        self._caption = caption
-        self._set_property('WM_NAME', caption, allow_utf8=False)
-        self._set_property('WM_ICON_NAME', caption, allow_utf8=False)
-        self._set_property('_NET_WM_NAME', caption)
-        self._set_property('_NET_WM_ICON_NAME', caption)
-
-    def get_caption(self):
-        return self._caption
 
     def __translate_key(window, event):
         if event.type == KeyRelease:
@@ -306,9 +403,7 @@ class XlibWindow(BaseWindow):
                                            c_void_p())
                 if count:
                     text = buffer.value[:count]
-                else:
-                    raise NotImplementedError, 'XLookupString had no idea'
-                window.dispatch_event(EVENT_TEXT, text)
+                    window.dispatch_event(EVENT_TEXT, text)
                 return
             elif result:
                 # Whoops, put the event back, it's for real.

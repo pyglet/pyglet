@@ -15,28 +15,67 @@ XID = Atom = Time = c_ulong
 Window = XID
 Display = c_void_p
 Bool = c_int
+Colormap = c_uint32
+
+# From Xlib.h
+
+class Screen(Structure):
+    _fields_ = [
+        ('ext_data', c_void_p),
+        ('display', Display),
+        ('root', Window),
+        ('width', c_int),
+        ('height', c_int)
+        # ... there is more, but we don't need it.
+    ]
 
 # Window attrs from Xlib.h
 
-
 class XSetWindowAttributes(Structure):
     _fields_ = [
-    ('background_pixmap', c_ulong),
-    ('background_pixel', c_ulong),
-    ('border_pixmap', c_ulong),
-    ('border_pixel', c_ulong),
-    ('bit_gravity', c_int),
-    ('win_gravity', c_int),
-    ('backing_store', c_int),
-    ('backing_planes', c_ulong),
-    ('backing_pixel', c_ulong),
-    ('save_under', c_int),
-    ('event_mask', c_long),
-    ('do_not_propagate_mask', c_long),
-    ('override_redirect', c_int),
-    ('colormap', c_ulong),
-    ('cursor', c_ulong),
+        ('background_pixmap', c_ulong),
+        ('background_pixel', c_ulong),
+        ('border_pixmap', c_ulong),
+        ('border_pixel', c_ulong),
+        ('bit_gravity', c_int),
+        ('win_gravity', c_int),
+        ('backing_store', c_int),
+        ('backing_planes', c_ulong),
+        ('backing_pixel', c_ulong),
+        ('save_under', c_int),
+        ('event_mask', c_long),
+        ('do_not_propagate_mask', c_long),
+        ('override_redirect', c_int),
+        ('colormap', c_ulong),
+        ('cursor', c_ulong),
     ]
+
+class XWindowAttributes(Structure):
+    _fields_ = [
+        ('x', c_int),
+        ('y', c_int),
+        ('width', c_int),
+        ('height', c_int),
+        ('border_width', c_int),
+        ('depth', c_int),
+        ('visual', c_void_p),
+        ('root', Window),
+        ('c_class', c_int),
+        ('bit_gravity', c_int),
+        ('win_gravity', c_int),
+        ('backing_store', c_int),
+        ('backing_planes', c_ulong),
+        ('backing_pixel', c_ulong),
+        ('save_under', Bool),
+        ('colormap', Colormap),
+        ('map_installed', Bool),
+        ('all_event_masks', c_long),
+        ('your_event_mask', c_long),
+        ('do_not_propogate_mask', c_long),
+        ('override_redirect', Bool),
+        ('screen', POINTER(Screen))
+    ]
+
 
 # Events (TODO incomplete -- see marker below)
 
@@ -492,3 +531,13 @@ class XVisualInfo(Structure):
         ('bits_per_rgb', c_int),
     ]
 
+# Xinerama
+
+class XineramaScreenInfo(Structure):
+    _fields_ = [
+        ('screen_number', c_int),
+        ('x_org', c_short),
+        ('y_org', c_short),
+        ('width', c_short),
+        ('height', c_short)
+    ]
