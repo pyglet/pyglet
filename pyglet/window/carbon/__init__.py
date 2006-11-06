@@ -564,7 +564,7 @@ class CarbonWindow(BaseWindow):
     def _on_key_up(self, next_handler, event, data):
         symbol, modifiers = self._get_symbol_and_modifiers(event)
         if symbol:
-            self.dispatch_event(EVENT_KEYRELEASE, symbol, modifiers)
+            self.dispatch_event(EVENT_KEY_RELEASE, symbol, modifiers)
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
 
@@ -572,7 +572,7 @@ class CarbonWindow(BaseWindow):
     def _on_key_down(self, next_handler, event, data):
         symbol, modifiers = self._get_symbol_and_modifiers(event)
         if symbol:
-            self.dispatch_event(EVENT_KEYPRESS, symbol, modifiers)
+            self.dispatch_event(EVENT_KEY_PRESS, symbol, modifiers)
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
 
@@ -625,10 +625,10 @@ class CarbonWindow(BaseWindow):
             (numLock, K_NUMLOCK)]:
             if deltas & mask:
                 if modifiers & mask:
-                    self.dispatch_event(EVENT_KEYPRESS, 
+                    self.dispatch_event(EVENT_KEY_PRESS, 
                         key, self._mapped_modifiers)
                 else:
-                    self.dispatch_event(EVENT_KEYRELEASE,
+                    self.dispatch_event(EVENT_KEY_RELEASE,
                         key, self._mapped_modifiers)
         carbon.CallNextEventHandler(next_handler, event)
 
@@ -665,7 +665,7 @@ class CarbonWindow(BaseWindow):
         button, modifiers = self._get_mouse_button_and_modifiers(event)
         x, y = self._get_mouse_position(event)
         if x >= 0 and y >= 0:
-            self.dispatch_event(EVENT_BUTTONPRESS, button, x, y, modifiers)
+            self.dispatch_event(EVENT_MOUSE_PRESS, button, x, y, modifiers)
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
@@ -675,7 +675,7 @@ class CarbonWindow(BaseWindow):
         button, modifiers = self._get_mouse_button_and_modifiers(event)
         x, y = self._get_mouse_position(event)
         if x >= 0 and y >= 0:
-            self.dispatch_event(EVENT_BUTTONRELEASE, button, x, y, modifiers)
+            self.dispatch_event(EVENT_MOUSE_RELEASE, button, x, y, modifiers)
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
@@ -689,7 +689,7 @@ class CarbonWindow(BaseWindow):
             typeHIPoint, c_void_p(), sizeof(delta), c_void_p(),
             byref(delta))
         if x >= 0 and y >= 0:
-            self.dispatch_event(EVENT_MOUSEMOTION, x, y, delta.x, delta.y)
+            self.dispatch_event(EVENT_MOUSE_MOTION, x, y, delta.x, delta.y)
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
@@ -701,7 +701,7 @@ class CarbonWindow(BaseWindow):
     @CarbonEventHandler(kEventClassMouse, kEventMouseEntered)
     def _on_mouse_entered(self, next_handler, event, data):
         x, y = self._get_mouse_position(event)
-        self.dispatch_event(EVENT_ENTER, x, y)
+        self.dispatch_event(EVENT_MOUSE_ENTER, x, y)
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
@@ -709,7 +709,7 @@ class CarbonWindow(BaseWindow):
     @CarbonEventHandler(kEventClassMouse, kEventMouseExited)
     def _on_mouse_exited(self, next_handler, event, data):
         x, y = self._get_mouse_position(event)
-        self.dispatch_event(EVENT_LEAVE, x, y)
+        self.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr

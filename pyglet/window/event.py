@@ -52,16 +52,16 @@ class WindowEventHandler(EventHandler):
     pass
 
 # symbolic names for the window events
-EVENT_KEYPRESS = WindowEventHandler.register_event_type('on_keypress')
-EVENT_KEYRELEASE = WindowEventHandler.register_event_type('on_keyrelease')
+EVENT_KEY_PRESS = WindowEventHandler.register_event_type('on_key_press')
+EVENT_KEY_RELEASE = WindowEventHandler.register_event_type('on_key_release')
 EVENT_TEXT = WindowEventHandler.register_event_type('on_text')
-EVENT_MOUSEMOTION = WindowEventHandler.register_event_type('on_mousemotion')
-EVENT_BUTTONPRESS = WindowEventHandler.register_event_type('on_buttonpress')
-EVENT_BUTTONRELEASE = WindowEventHandler.register_event_type('on_buttonrelease')
+EVENT_MOUSE_MOTION = WindowEventHandler.register_event_type('on_mouse_motion')
+EVENT_MOUSE_PRESS = WindowEventHandler.register_event_type('on_mouse_press')
+EVENT_MOUSE_RELEASE = WindowEventHandler.register_event_type('on_mouse_release')
 EVENT_MOUSE_SCROLL = WindowEventHandler.register_event_type('on_mouse_scroll')
+EVENT_MOUSE_ENTER = WindowEventHandler.register_event_type('on_mouse_enter')
+EVENT_MOUSE_LEAVE = WindowEventHandler.register_event_type('on_mouse_leave')
 EVENT_CLOSE = WindowEventHandler.register_event_type('on_close')
-EVENT_ENTER = WindowEventHandler.register_event_type('on_enter')
-EVENT_LEAVE = WindowEventHandler.register_event_type('on_leave')
 EVENT_EXPOSE = WindowEventHandler.register_event_type('on_expose')
 EVENT_RESIZE = WindowEventHandler.register_event_type('on_resize')
 EVENT_MOVE = WindowEventHandler.register_event_type('on_move')
@@ -74,8 +74,6 @@ EVENT_HIDE = WindowEventHandler.register_event_type('on_hide')
 MOUSE_LEFT_BUTTON = 1
 MOUSE_MIDDLE_BUTTON = 2
 MOUSE_RIGHT_BUTTON = 3
-MOUSE_SCROLL_UP = 4
-MOUSE_SCROLL_DOWN = 5
 
 def _modifiers_to_string(modifiers):
     mod_names = []
@@ -100,30 +98,28 @@ def _symbol_to_string(symbol):
 
 # Does nothing, but shows prototypes.
 class EventHandler(object):
-    def on_keypress(self, symbol, modifiers):
+    def on_key_press(self, symbol, modifiers):
         pass
 
-    def on_keyrelease(self, symbol, modifiers):
+    def on_key_release(self, symbol, modifiers):
         pass
 
     def on_text(self, text):
         pass
 
-    def on_mousemotion(self, x, y, dx, dy):
+    def on_mouse_motion(self, x, y, dx, dy):
         pass
 
-    def on_buttonpress(self, button, x, y, modifiers):
+    def on_mouse_press(self, button, x, y, modifiers):
         '''
             "button" is one of:
                 MOUSE_LEFT_BUTTON = 1
                 MOUSE_MIDDLE_BUTTON = 2
                 MOUSE_RIGHT_BUTTON = 3
-                MOUSE_SCROLL_UP = 4
-                MOUSE_SCROLL_DOWN = 5
         '''
         pass
 
-    def on_buttonrelease(self, button, x, y, modifiers):
+    def on_mouse_release(self, button, x, y, modifiers):
         pass
 
     def on_mouse_scroll(self, dx, dy):
@@ -132,10 +128,10 @@ class EventHandler(object):
     def on_close(self):
         pass
 
-    def on_enter(self, x, y):
+    def on_mouse_enter(self, x, y):
         pass
 
-    def on_leave(self, x, y):
+    def on_mouse_leave(self, x, y):
         pass
 
     def on_expose(self):
@@ -166,20 +162,20 @@ class ExitHandler(object):
     exit = False
     def on_close(self):
         self.exit = True
-    def on_keypress(self, symbol, modifiers):
+    def on_key_press(self, symbol, modifiers):
         if symbol == pyglet.window.key.K_ESCAPE:
             self.exit = True
         return EVENT_UNHANDLED
 
 
 class DebugEventHandler(object):
-    def on_keypress(self, symbol, modifiers):
-        print 'on_keypress(symbol=%s, modifiers=%s)' % (
+    def on_key_press(self, symbol, modifiers):
+        print 'on_key_press(symbol=%s, modifiers=%s)' % (
             _symbol_to_string(symbol), _modifiers_to_string(modifiers))
         return EVENT_UNHANDLED
 
-    def on_keyrelease(self, symbol, modifiers):
-        print 'on_keyrelease(symbol=%s, modifiers=%s)' % (
+    def on_key_release(self, symbol, modifiers):
+        print 'on_key_release(symbol=%s, modifiers=%s)' % (
             _symbol_to_string(symbol), _modifiers_to_string(modifiers))
         return EVENT_UNHANDLED
 
@@ -187,17 +183,17 @@ class DebugEventHandler(object):
         print 'on_text(text=%r)' % text
         return EVENT_UNHANDLED
 
-    def on_mousemotion(self, x, y, dx, dy):
+    def on_mouse_motion(self, x, y, dx, dy):
         print 'on_mousemotion(x=%d, y=%d, dx=%d, dy=%d)' % (x, y, dx, dy)
         return EVENT_UNHANDLED
 
-    def on_buttonpress(self, button, x, y, modifiers):
-        print 'on_buttonpress(button=%r, x=%d, y=%d, modifiers=%s)' % (
+    def on_mouse_press(self, button, x, y, modifiers):
+        print 'on_mouse_press(button=%r, x=%d, y=%d, modifiers=%s)' % (
             button, x, y, _modifiers_to_string(modifiers))
         return EVENT_UNHANDLED
 
-    def on_buttonrelease(self, button, x, y, modifiers):
-        print 'on_buttonrelease(button=%r, x=%d, y=%d, modifiers=%s)' % (
+    def on_mouse_release(self, button, x, y, modifiers):
+        print 'on_mouse_release(button=%r, x=%d, y=%d, modifiers=%s)' % (
             button, x, y, _modifiers_to_string(modifiers))
         return EVENT_UNHANDLED
 
@@ -208,12 +204,12 @@ class DebugEventHandler(object):
         print 'on_destroy()'
         return EVENT_UNHANDLED
 
-    def on_enter(self, x, y):
-        print 'on_enter(x=%d, y=%d)' % (x, y)
+    def on_mouse_enter(self, x, y):
+        print 'on_mouse_enter(x=%d, y=%d)' % (x, y)
         return EVENT_UNHANDLED
 
-    def on_leave(self, x, y):
-        print 'on_leave(x=%d, y=%d)' % (x, y)
+    def on_mouse_leave(self, x, y):
+        print 'on_mouse_leave(x=%d, y=%d)' % (x, y)
         return EVENT_UNHANDLED
 
     def on_expose(self):

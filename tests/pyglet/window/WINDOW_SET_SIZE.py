@@ -24,7 +24,7 @@ from pyglet.window.event import *
 from pyglet.window.key import *
 
 class WINDOW_SET_SIZE(unittest.TestCase):
-    def on_keypress(self, symbol, modifiers):
+    def on_key_press(self, symbol, modifiers):
         delta = 20
         if modifiers & MOD_SHIFT:
             delta = -delta

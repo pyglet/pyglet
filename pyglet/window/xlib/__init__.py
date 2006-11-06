@@ -332,12 +332,12 @@ class XlibWindow(BaseWindow):
         modifiers = _translate_modifiers(event.xkey.state)
 
         if event.type == KeyPress:
-            window.dispatch_event(EVENT_KEYPRESS, symbol, modifiers)
+            window.dispatch_event(EVENT_KEY_PRESS, symbol, modifiers)
             if (text and 
                 (unicodedata.category(text) != 'Cc' or text == '\r')):
                 window.dispatch_event(EVENT_TEXT, text)
         elif event.type == KeyRelease:
-            window.dispatch_event(EVENT_KEYRELEASE, symbol, modifiers)
+            window.dispatch_event(EVENT_KEY_RELEASE, symbol, modifiers)
 
     def __translate_motion(window, event):
         x = event.xmotion.x
@@ -346,7 +346,7 @@ class XlibWindow(BaseWindow):
         dy = y - window.mouse.y
         window.mouse.x = x
         window.mouse.y = y
-        window.dispatch_event(EVENT_MOUSEMOTION, x, y, dx, dy)
+        window.dispatch_event(EVENT_MOUSE_MOTION, x, y, dx, dy)
 
     def __translate_clientmessage(window, event):
         wm_delete_window = xlib.XInternAtom(event.xclient.display,
@@ -359,13 +359,19 @@ class XlibWindow(BaseWindow):
     def __translate_button(window, event):
         modifiers = _translate_modifiers(event.xbutton.state)
         if event.type == ButtonPress:
-            window.mouse.buttons[event.xbutton.button] = True
-            window.dispatch_event(EVENT_BUTTONPRESS, event.xbutton.button,
-                event.xbutton.x, event.xbutton.y, modifiers)
+            if event.xbutton.button == 4:
+                window.dispatch_event(EVENT_MOUSE_SCROLL, 0, 1)
+            elif event.xbutton.button == 5:
+                window.dispatch_event(EVENT_MOUSE_SCROLL, 0, -1)
+            else:
+                window.mouse.buttons[event.xbutton.button] = True
+                window.dispatch_event(EVENT_MOUSE_PRESS, event.xbutton.button,
+                    event.xbutton.x, event.xbutton.y, modifiers)
         else:
-            window.mouse.buttons[event.xbutton.button] = False
-            window.dispatch_event(EVENT_BUTTONRELEASE, event.xbutton.button,
-                event.xbutton.x, event.xbutton.y, modifiers)
+            if event.xbutton.button < 4:
+                window.mouse.buttons[event.xbutton.button] = False
+                window.dispatch_event(EVENT_MOUSE_RELEASE, event.xbutton.button,
+                    event.xbutton.x, event.xbutton.y, modifiers)
 
     def __translate_expose(window, event):
         # Ignore all expose events except the last one. We could be told
@@ -389,13 +395,13 @@ class XlibWindow(BaseWindow):
         y = window.mouse.y = event.xcrossing.y
 
         # XXX there may be more we could do here
-        window.dispatch_event(EVENT_ENTER, x, y)
+        window.dispatch_event(EVENT_MOUSE_ENTER, x, y)
 
     def __translate_leave(window, event):
         # XXX do we care about mouse buttons?
         x = window.mouse.x = event.xcrossing.x
         y = window.mouse.y = event.xcrossing.y
-        window.dispatch_event(EVENT_LEAVE, x, y)
+        window.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
 
     def __translate_configure(window, event):
         w, h = event.xconfigure.width, event.xconfigure.height

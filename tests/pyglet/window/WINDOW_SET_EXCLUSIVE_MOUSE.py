@@ -28,13 +28,13 @@ from pyglet.window.event import *
 from pyglet.window.key import *
 
 class WINDOW_SET_EXCLUSIVE_MOUSE(unittest.TestCase):
-    def on_keypress(self, symbol, modifiers):
+    def on_key_press(self, symbol, modifiers):
         if symbol == K_E:
             exclusive = not (modifiers & MOD_SHIFT)
             self.w.set_exclusive_mouse(exclusive)
             print 'Exclusive mouse is now %r' % exclusive
 
-    def on_mousemotion(self, x, y, dx, dy):
+    def on_mouse_motion(self, x, y, dx, dy):
         print 'on_mousemotion(x=%f, y=%f, dx=%f, dy=%f)' % (x, y, dx, dy)
 
     def test_set_exclusive_mouse(self):

@@ -18,10 +18,10 @@ import pyglet.window
 from pyglet.window.event import *
 
 class EVENT_MOUSE_ENTER_LEAVE(unittest.TestCase):
-    def on_enter(self, x, y):
+    def on_mouse_enter(self, x, y):
         print 'Entered at %f, %f' % (x, y)
 
-    def on_leave(self, x, y):
+    def on_mouse_leave(self, x, y):
         print 'Left at %f, %f' % (x, y)
 
     def test_motion(self):

@@ -89,9 +89,17 @@ pyglet
                 also be able to pass in another window which they wish to
                 share the context from.
 
-                This could cause programming errors. We will need to store
+           <ah> that won't work: one context per drawable.  current
+                implementation  shares the most recently created context
+                by default.  can be overridden with
+                WindowFactory.set_context_share().
+
+           <rj> This could cause programming errors. We will need to store
                 Contexts separately from Windows so that they're only freed
                 when there's no references to them.
+
+           <ah> They are stored in pyglet.window._active_contexts, and
+                are destroyed when their owning window is destroyed.
 
          - all platforms: update GL context when window is moved, resized,
            or display properties change (e.g., change resolution).
@@ -100,19 +108,9 @@ pyglet
            OS X: http://developer.apple.com/samplecode/BoingX/index.html
 
          - ensure all mouse coordinates are returned as floats
-         - scroll wheel is not mouse buttons, despite what X11 will tell
-           you; use on_mouse_scroll instead.
          - OS X does not receive motion events when window doesn't have
            focus; ensure this is also the case for other platforms (or
            find workaround for Carbon).
-         - rename "buttonpress", "buttonrelease" to "mousepress", or
-           "mousebuttonpress" or "mouse_button_press" or something..?  avoid
-           collision with future buttons (e.g. on joysticks), and keep
-           consistent with mousemotion.
-
-           <ah> will be on_mouse_press, on_mouse_release, on_mouse_move, etc.
-
-         - similar for enter/leave?
          - event for context-menu invocation (right-mouse button, ctrl+click
            on mac, menu key on some keyboards).
          - (maybe) event for drag (on os x, this is motion with a button

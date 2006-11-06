@@ -29,7 +29,7 @@ from pyglet.window.event import *
 from pyglet.window.key import *
 
 class WINDOW_SET_EXCLUSIVE_KEYBOARD(unittest.TestCase):
-    def on_keypress(self, symbol, modifiers):
+    def on_key_press(self, symbol, modifiers):
         print 'Pressed %s with modifiers %s' % \
             (pyglet.window.event._symbol_to_string(symbol),
              pyglet.window.event._modifiers_to_string(modifiers))
@@ -39,7 +39,7 @@ class WINDOW_SET_EXCLUSIVE_KEYBOARD(unittest.TestCase):
             self.w.set_exclusive_keyboard(exclusive)
             print 'Exclusive keyboard is now %r' % exclusive
 
-    def on_keyrelease(self, symbol, modifiers):
+    def on_key_release(self, symbol, modifiers):
         print 'Released %s with modifiers %s' % \
             (pyglet.window.event._symbol_to_string(symbol),
              pyglet.window.event._modifiers_to_string(modifiers))

@@ -24,7 +24,7 @@ from pyglet.window.key import *
 from pyglet.GL.VERSION_1_1 import *
 
 class WINDOW_SET_FULLSCREEN(unittest.TestCase):
-    def on_keypress(self, symbol, modifiers):
+    def on_key_press(self, symbol, modifiers):
         if symbol == K_F:
             print 'Setting fullscreen.'
             self.w.set_fullscreen(True)

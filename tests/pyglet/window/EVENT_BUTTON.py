@@ -21,11 +21,11 @@ import pyglet.window
 from pyglet.window.event import *
 
 class EVENT_BUTTON(unittest.TestCase):
-    def on_buttonpress(self, button, x, y, modifiers):
+    def on_mouse_press(self, button, x, y, modifiers):
         print 'Mouse button %d pressed at %f,%f with %s' % \
             (button, x, y, pyglet.window.event._modifiers_to_string(modifiers))
 
-    def on_buttonrelease(self, button, x, y, modifiers):
+    def on_mouse_release(self, button, x, y, modifiers):
         print 'Mouse button %d released at %f,%f with %s' % \
             (button, x, y, pyglet.window.event._modifiers_to_string(modifiers))
 

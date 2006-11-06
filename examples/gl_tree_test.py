@@ -52,7 +52,7 @@ class Tree(object):
         self.lmb = False
         self.rmb = False
 
-    def on_mousemotion(self, x, y, dx, dy):
+    def on_mouse_motion(self, x, y, dx, dy):
         if self.lmb:
             self.rx += dx
             self.ry += dy
@@ -60,20 +60,20 @@ class Tree(object):
             self.x += dx
             self.y += dy
 
-    def on_buttonpress(self, button, x, y, modifiers):
+    def on_mouse_press(self, button, x, y, modifiers):
         if button == MOUSE_LEFT_BUTTON:
             self.lmb = True
         elif button == MOUSE_RIGHT_BUTTON:
             self.rmb = True
-        elif button == MOUSE_SCROLL_UP:
-            self.zpos = max(-10, self.zpos + 1)
-        elif button == MOUSE_SCROLL_DOWN:
-            self.zpos -= 1
-    def on_buttonrelease(self, button, x, y, modifiers):
+
+    def on_mouse_release(self, button, x, y, modifiers):
         if button == MOUSE_LEFT_BUTTON:
             self.lmb = False
         elif button == MOUSE_RIGHT_BUTTON:
             self.rmb = False
+
+    def on_mouse_scroll(self, dx, dy):
+        self.zpos = max(-10, self.zpos + dy)
 
     def render(self):
         glPushMatrix()

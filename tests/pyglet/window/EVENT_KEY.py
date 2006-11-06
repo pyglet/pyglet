@@ -19,12 +19,12 @@ import pyglet.window
 from pyglet.window.event import *
 
 class EVENT_KEYPRESS(unittest.TestCase):
-    def on_keypress(self, symbol, modifiers):
+    def on_key_press(self, symbol, modifiers):
         print 'Pressed %s with modifiers %s' % \
             (pyglet.window.event._symbol_to_string(symbol),
              pyglet.window.event._modifiers_to_string(modifiers))
 
-    def on_keyrelease(self, symbol, modifiers):
+    def on_key_release(self, symbol, modifiers):
         print 'Released %s with modifiers %s' % \
             (pyglet.window.event._symbol_to_string(symbol),
              pyglet.window.event._modifiers_to_string(modifiers))

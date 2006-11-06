@@ -27,7 +27,7 @@ class WINDOW_SET_MIN_MAX_SIZE(unittest.TestCase):
         print 'Window size is %dx%d.' % (width, height)
         self.width, self.height = width, height
 
-    def on_keypress(self, symbol, modifiers):
+    def on_key_press(self, symbol, modifiers):
         if symbol == K_N:
             self.w.set_minimum_size(self.width, self.height)
             print 'Minimum size set to %dx%d.' % (self.width, self.height)

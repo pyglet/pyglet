@@ -21,7 +21,7 @@ from pyglet.window.event import *
 from pyglet.window.key import *
 
 class WINDOW_SET_SIZE(unittest.TestCase):
-    def on_keypress(self, symbol, modifiers):
+    def on_key_press(self, symbol, modifiers):
         x, y = self.w.get_location()
         if symbol == K_LEFT:
             x -= 10

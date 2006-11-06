@@ -21,7 +21,7 @@ from pyglet.window.event import *
 from pyglet.window.key import *
 
 class WINDOW_MINIMIZE_MAXIMIZE(unittest.TestCase):
-    def on_keypress(self, symbol, modifiers):
+    def on_key_press(self, symbol, modifiers):
         if symbol == K_X:
             self.w.maximize()
             print 'Window maximized.'
