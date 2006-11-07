@@ -55,7 +55,6 @@ class BaseGLContext(object):
         _active_contexts.remove(self)
 
 class BaseWindow(WindowEventHandler):
-    # Set by WindowFactory
     _context = None
     _config = None
 
@@ -63,10 +62,12 @@ class BaseWindow(WindowEventHandler):
     _windowed_size = None
     _windowed_location = None
 
-    def __init__(self, width, height):
+    def __init__(self, config, context, width, height):
         WindowEventHandler.__init__(self)
         self.width = width
         self.height = height
+        self._config = config
+        self._context = context
 
     def get_context(self):
         return self._context
@@ -376,8 +377,6 @@ class WindowFactory(object):
     def create_window(self):
         # Create a window based on factory attributes.
         window = self._platform.create_window(self)
-        window._config = self._config
-        window._context = self._context
         window.switch_to()
 
         # We should reset now in case someone tries to use the
@@ -389,8 +388,6 @@ class WindowFactory(object):
     def replace_window(self, window):
         # Transform an existing window to use a new configuration.
         self._platform.replace_window(self, window)
-        window._config = self._config
-        window._context = self._context
         self._context = None
         window.switch_to()
 

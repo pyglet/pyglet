@@ -178,7 +178,8 @@ class CarbonPlatform(BasePlatform):
         window_ref, fullscreen_restore = self._create_window_ref(factory)
         width, height = factory.get_size()
 
-        window = CarbonWindow(window_ref, factory.get_context(), 
+        window = CarbonWindow(window_ref, 
+                              factory.get_config(), factory.get_context(), 
                               width, height, factory.get_fullscreen())
         window._fullscreen_restore = fullscreen_restore
 
@@ -191,6 +192,8 @@ class CarbonPlatform(BasePlatform):
 
         window._agl_context = factory.get_context()._context
         window._window = window_ref
+        window._config = factory.get_config()
+        window._context = factory.get_context()
         window._fullscreen = factory.get_fullscreen()
         window._fullscreen_restore = fullscreen_restore
         window.width, window.height = factory.get_size()
@@ -309,8 +312,8 @@ def CarbonEventHandler(event_class, event_kind):
     return handler_wrapper
 
 class CarbonWindow(BaseWindow):
-    def __init__(self, window_ref, context, width, height, fullscreen):
-        super(CarbonWindow, self).__init__(width, height)
+    def __init__(self, window_ref, config, context, width, height, fullscreen):
+        super(CarbonWindow, self).__init__(config, context, width, height)
         self._window = window_ref
         self._agl_context = context._context
         self._fullscreen = fullscreen

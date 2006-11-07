@@ -84,7 +84,7 @@ class XAnyEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -93,7 +93,7 @@ class XKeyEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
         ('root', Window),
         ('subwindow', Window),
@@ -112,7 +112,7 @@ class XButtonEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
         ('root', Window),
         ('subwindow', Window),
@@ -131,7 +131,7 @@ class XMotionEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
         ('root', Window),
         ('subwindow', Window),
@@ -150,7 +150,7 @@ class XDestroyWindowEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -166,7 +166,7 @@ class XClientMessageEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
 	    ('message_type', Atom),
 	    ('format', c_int),
@@ -178,7 +178,7 @@ class XExposeEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
         ('x', c_int),
         ('y', c_int),
@@ -192,7 +192,7 @@ class XCrossingEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
         ('root', Window),
         ('subwindow', Window),
@@ -213,7 +213,7 @@ class XConfigureEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('event', Window),
         ('window', Window),
         ('x', c_int),
@@ -232,7 +232,7 @@ class XFocusChangeEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -241,7 +241,7 @@ class XGraphicsExposeEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -250,7 +250,7 @@ class XNoExposeEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -259,7 +259,7 @@ class XVisibilityEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -268,7 +268,7 @@ class XCreateWindowEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -277,7 +277,7 @@ class XUnmapEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -286,7 +286,7 @@ class XMapEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -295,7 +295,7 @@ class XMapRequestEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -304,7 +304,7 @@ class XReparentEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -313,7 +313,7 @@ class XGravityEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -322,7 +322,7 @@ class XResizeRequestEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -331,7 +331,7 @@ class XConfigureRequestEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -340,7 +340,7 @@ class XCirculateEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -349,7 +349,7 @@ class XCirculateRequestEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -358,7 +358,7 @@ class XPropertyEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -367,7 +367,7 @@ class XSelectionClearEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -376,7 +376,7 @@ class XSelectionRequestEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -385,7 +385,7 @@ class XSelectionEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -394,7 +394,7 @@ class XColormapEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -403,7 +403,7 @@ class XMappingEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -412,7 +412,7 @@ class XErrorEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -421,7 +421,7 @@ class XKeymapEvent(Structure):
         ('type', c_int),
         ('serial', c_ulong),
         ('send_event', Bool),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('window', Window),
     ]
 
@@ -541,3 +541,15 @@ class XineramaScreenInfo(Structure):
         ('width', c_short),
         ('height', c_short)
     ]
+
+# Motif window manager hints
+
+class mwmhints_t(Structure):
+    _fields_ = [
+        ('flags', c_uint32),
+        ('functions', c_uint32),
+        ('decorations', c_uint32),
+        ('input_mode', c_int32),
+        ('status', c_uint32)
+    ]
+

@@ -17,6 +17,7 @@ from ctypes import util
 import unicodedata
 import warnings
 
+from pyglet.GL.VERSION_1_1 import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
@@ -123,6 +124,7 @@ class XlibPlatform(BasePlatform):
     
     def create_configs(self, factory):
         display = self._get_display(factory)
+        screen = factory.get_screen()
 
         # Construct array of attributes for glXChooseFBConfig
         attrs = []
@@ -139,13 +141,12 @@ class XlibPlatform(BasePlatform):
         else:
             attrib_list = None
         elements = c_int()
-        screen = factory.get_screen()
         configs = glXChooseFBConfig(display, 
             screen._x_screen_id, attrib_list, byref(elements))
         if configs:
             result = []
             for i in range(elements.value):
-                result.append(XlibGLConfig(display, configs[i]))
+                result.append(XlibGLConfig(display, screen, configs[i]))
             xlib.XFree(configs)
             return result
         else:
@@ -171,11 +172,19 @@ class XlibPlatform(BasePlatform):
 
     def create_window(self, factory):
         width, height = factory.get_size()
-        return XlibWindow(factory.get_config(), factory.get_context(), 
-                          width, height)
+        window = XlibWindow(factory.get_config(), factory.get_context(), 
+                            width, height)
+        window._create_window(factory)
+        window._set_attributes(factory)
+        window._map()
+        window._set_glx(factory.get_config())
+        return window
 
     def replace_window(self, factory, window):
-        raise NotImplementedError() # TODO
+        # TODO reparent if changed screens
+        window._unmap()
+        window._set_attributes(factory)
+        window._map()
 
     def _get_display(self, factory):
         # Get the X display, and resolve name if necessary
@@ -204,9 +213,10 @@ class XlibScreen(BaseScreen):
              self._xinerama)
 
 class XlibGLConfig(BaseGLConfig):
-    def __init__(self, display, fbconfig):
+    def __init__(self, display, screen, fbconfig):
         super(XlibGLConfig, self).__init__()
         self._display = display
+        self._screen = screen
         self._fbconfig = fbconfig
         self._attributes = {}
         for name, attr in _attribute_ids.items():
@@ -236,21 +246,80 @@ class XlibMouse(object):
 
 class XlibWindow(BaseWindow):
     def __init__(self, config, context, width, height):
-        super(XlibWindow, self).__init__(width, height)
+        super(XlibWindow, self).__init__(config, context, width, height)
         self._display = config._display
+        self._screen = config._screen
         self._glx_context = context._context
 
-        # XXX the WM can probably tell us this
-        self.x = 0
-        self.y = 0
-        self.mouse = XlibMouse()
+        # Set by _create_window
+        self._window = None
 
-        black = xlib.XBlackPixel(self._display, 
-            xlib.XDefaultScreen(self._display))
-        self._window = xlib.XCreateSimpleWindow(self._display,
-            xlib.XDefaultRootWindow(self._display), 
+        # Will be set correctly after first configure event.
+        self._x = 0
+        self._y = 0
+        self._mouse = XlibMouse()
+
+    # Creation methods
+
+    def _create_window(self, factory):
+        screen = factory.get_screen()
+        root = xlib.XDefaultRootWindow(self._display) # XXX correct screen?
+        black = xlib.XBlackPixel(self._display, screen._x_screen_id)
+
+        width, height = factory.get_size()
+        self._window = xlib.XCreateSimpleWindow(self._display, root,
             0, 0, width, height, 0, black, black)
 
+    def _set_attributes(self, factory):
+        fullscreen = factory.get_fullscreen()
+
+        attributes = XSetWindowAttributes()
+        attributes_mask = 0
+
+        #####
+        # 101 ways to fullscreen a window.
+
+        # Undecorate the window using motif hints
+        # XXX.  this doesn't undecorate (toggling out of fullscreen)
+        # XXX.  need to raise above taskbar etc.
+        '''
+        hints = mwmhints_t()
+        hints.flags = MWM_HINTS_DECORATIONS
+        hints.decorations = MWM_DECOR_BORDER
+        prop = xlib.XInternAtom(self._display, '_MOTIF_WM_HINTS', False)
+        xlib.XChangeProperty(self._display, self._window,
+            prop, prop, 32, PropModeReplace, byref(hints),
+            PROP_MWM_HINTS_ELEMENTS)
+        '''
+
+        # This works but makes window activation problems.
+        #attributes.override_redirect = fullscreen
+        #attributes_mask |= CWOverrideRedirect
+
+        # This works, but window size isn't what it's supposed to be.
+        # XXX.  apparently not supported on older WMs.
+        self._set_wm_state('_NET_WM_STATE_FULLSCREEN', fullscreen)
+
+        #
+        ####
+
+
+        if fullscreen:
+            x = self._screen._x
+            y = self._screen._y
+            width = self._screen.width
+            height = self._screen.height
+            xlib.XMoveResizeWindow(self._display, self._window, 
+                x, y, width, height)
+        else:
+            width, height = factory.get_size()
+            xlib.XResizeWindow(self._display, self._window, width, height)
+
+        xlib.XChangeWindowAttributes(self._display, self._window, 
+            attributes_mask, byref(attributes))
+        self._fullscreen = fullscreen
+
+    def _map(self):        
         # Listen for WM_DELETE_WINDOW
         wm_delete_window = xlib.XInternAtom(self._display,
             'WM_DELETE_WINDOW', False)
@@ -260,7 +329,7 @@ class XlibWindow(BaseWindow):
 
         # Map the window, listening for the window mapping event
         xlib.XSelectInput(self._display, self._window, StructureNotifyMask)
-        xlib.XMapWindow(self._display, self._window)
+        xlib.XMapRaised(self._display, self._window)
         e = XEvent()
         while True:
             xlib.XNextEvent(self._display, e)
@@ -270,9 +339,18 @@ class XlibWindow(BaseWindow):
         # Now select all events (don't want PointerMotionHintMask)
         xlib.XSelectInput(self._display, self._window, 0x1ffff7f)
 
-        # Assign GLX.
+    def _unmap(self):
+        xlib.XUnmapWindow(self._display, self._window)
+
+    def _set_glx(self, config):
         self._glx_window = glXCreateWindow(self._display,
             config._fbconfig, self._window, None)
+
+    def _get_root(self):
+        attributes = XWindowAttributes()
+        xlib.XGetWindowAttributes(self._display, self._window,
+                                  byref(attributes))
+        return attributes.root
 
     def close(self):
         self._context.destroy()
@@ -326,7 +404,7 @@ class XlibWindow(BaseWindow):
         y = c_int()
         xlib.XTranslateCoordinates(self._display,
                                    self._window,
-                                   attributes.root,
+                                   self._get_root(),
                                    0, 0,
                                    byref(x),
                                    byref(y),
@@ -357,6 +435,20 @@ class XlibWindow(BaseWindow):
                 self._window, byref(property), atom)
             # XXX <rj> Xlib doesn't like us freeing this
             #xlib.XFree(property.value)
+
+    def _set_wm_state(self, state, add=True):
+        e = XEvent()
+        net_wm_state = xlib.XInternAtom(self._display, '_NET_WM_STATE', True)
+        net_state = xlib.XInternAtom(self._display, state, True)
+        e.xclient.type = ClientMessage
+        e.xclient.message_type = net_wm_state
+        e.xclient.display = self._display
+        e.xclient.window = self._window
+        e.xclient.format = 32
+        e.xclient.data.l[0] = int(add) 
+        e.xclient.data.l[1] = net_state
+        xlib.XSendEvent(self._display, self._get_root(),
+            False, SubstructureRedirectMask, byref(e))
 
     # Event handling
 
@@ -437,10 +529,10 @@ class XlibWindow(BaseWindow):
     def __translate_motion(window, event):
         x = event.xmotion.x
         y = event.xmotion.y
-        dx = x - window.mouse.x
-        dy = y - window.mouse.y
-        window.mouse.x = x
-        window.mouse.y = y
+        dx = x - window._mouse.x
+        dy = y - window._mouse.y
+        window._mouse.x = x
+        window._mouse.y = y
         window.dispatch_event(EVENT_MOUSE_MOTION, x, y, dx, dy)
 
     def __translate_clientmessage(window, event):
@@ -459,12 +551,12 @@ class XlibWindow(BaseWindow):
             elif event.xbutton.button == 5:
                 window.dispatch_event(EVENT_MOUSE_SCROLL, 0, -1)
             else:
-                window.mouse.buttons[event.xbutton.button] = True
+                window._mouse.buttons[event.xbutton.button] = True
                 window.dispatch_event(EVENT_MOUSE_PRESS, event.xbutton.button,
                     event.xbutton.x, event.xbutton.y, modifiers)
         else:
             if event.xbutton.button < 4:
-                window.mouse.buttons[event.xbutton.button] = False
+                window._mouse.buttons[event.xbutton.button] = False
                 window.dispatch_event(EVENT_MOUSE_RELEASE, event.xbutton.button,
                     event.xbutton.x, event.xbutton.y, modifiers)
 
@@ -479,23 +571,23 @@ class XlibWindow(BaseWindow):
         # figure active mouse buttons
         # XXX ignore modifier state?
         state = event.xcrossing.state
-        window.mouse.buttons[1] = state & Button1Mask
-        window.mouse.buttons[2] = state & Button2Mask
-        window.mouse.buttons[3] = state & Button3Mask
-        window.mouse.buttons[4] = state & Button4Mask
-        window.mouse.buttons[5] = state & Button5Mask
+        window._mouse.buttons[1] = state & Button1Mask
+        window._mouse.buttons[2] = state & Button2Mask
+        window._mouse.buttons[3] = state & Button3Mask
+        window._mouse.buttons[4] = state & Button4Mask
+        window._mouse.buttons[5] = state & Button5Mask
 
         # mouse position
-        x = window.mouse.x = event.xcrossing.x
-        y = window.mouse.y = event.xcrossing.y
+        x = window._mouse.x = event.xcrossing.x
+        y = window._mouse.y = event.xcrossing.y
 
         # XXX there may be more we could do here
         window.dispatch_event(EVENT_MOUSE_ENTER, x, y)
 
     def __translate_leave(window, event):
         # XXX do we care about mouse buttons?
-        x = window.mouse.x = event.xcrossing.x
-        y = window.mouse.y = event.xcrossing.y
+        x = window._mouse.x = event.xcrossing.x
+        y = window._mouse.y = event.xcrossing.y
         window.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
 
     def __translate_configure(window, event):
@@ -505,10 +597,13 @@ class XlibWindow(BaseWindow):
             window.dispatch_event(EVENT_RESIZE, w, h)
             window.width = w
             window.height = h
-        if window.x != x or window.y != y:
+            window.switch_to()
+            glViewport(0, 0, w, h)
+            window.dispatch_event(EVENT_EXPOSE)
+        if window._x != x or window._y != y:
             window.dispatch_event(EVENT_MOVE, x, y)
-            window.x = x
-            window.y = y
+            window._x = x
+            window._y = y
 
     __event_translators = {
         KeyPress: __translate_key,

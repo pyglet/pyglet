@@ -55,13 +55,13 @@ pyglet
             WINDOW_MINIMIZE_MAXIMIZE                X
             WINDOW_SET_EXCLUSIVE_MOUSE              X
             WINDOW_SET_EXCLUSIVE_KEYBOARD           X
-            WINDOW_SET_FULLSCREEN                   X
-            WINDOW_INITIAL_FULLSCREEN               X
+            WINDOW_SET_FULLSCREEN           X       X
+            WINDOW_INITIAL_FULLSCREEN       X       X
             WINDOW_CAPTION                  X       X
             WINDOW_BORDERS                  
             WINDOW_ICON
             WINDOW_CURSOR
-            MULTIPLE_SCREEN                         X
+            MULTIPLE_SCREEN                 X       X
             CONTEXT_SHARE                   X       X
             ============================== === === ===
 
