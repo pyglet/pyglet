@@ -355,6 +355,17 @@ class XlibWindow(BaseWindow):
     def close(self):
         self._context.destroy()
         glXDestroyWindow(self._display, self._glx_window)
+        # XXX <rj> I'm pretty sure we need to invoke
+        # glXMakeContextCurrent(self._display, None, None, None) or
+        # similar. I did discover that from test to test
+        # it's the glXMakeContextCurrent() call for the new window (in
+        # switch_to() that makes the old window go away. hence my theory
+        # that we need to "release the current context without assigning
+        # a new one"... So here's a call... But it doesn't seem to work
+        # There might be some subtle ordering of calls that's needed.
+        # Remarkably little seems to be written about applications that
+        # might want to actually close a glx window cleanly...
+        # glXMakeContextCurrent(self._display, None, None, None)
         xlib.XDestroyWindow(self._display, self._window)
         self._window = None
 

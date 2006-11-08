@@ -422,8 +422,7 @@ def main(args):
             print '-' * 78
             if module.__doc__:
                 print module.__doc__
-            print 'Press a key to begin test...',
-            raw_input()
+            raw_input('Press a key to begin test...')
         suite = unittest.TestLoader().loadTestsFromModule(module)
         result = unittest.TestResult()
         log.info('Begin unit tests for %s', component)
@@ -439,16 +438,14 @@ def main(args):
         if (module_interactive and 
             len(result.failures) == 0 and 
             len(result.errors) == 0):
-            print '[P]assed test, [F]ailed test: ',
-            result = raw_input()
+            result = raw_input('[P]assed test, [F]ailed test: ')
             if result[0] in ('F', 'f'):
                 print 'Enter failure description: '
-                print '> ',
-                description = raw_input()
+                description = raw_input('> ')
                 log.error('User marked fail for %s', component)
                 log.error(description)
             else:
-                    log.info('User marked pass for %s', component)
+                log.info('User marked pass for %s', component)
 
 if __name__ == '__main__':
     main(sys.argv)
