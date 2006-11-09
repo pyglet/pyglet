@@ -170,21 +170,8 @@ class XlibPlatform(BasePlatform):
 
         return XlibGLContext(config._display, context)
 
-    def create_window(self, factory):
-        width, height = factory.get_size()
-        window = XlibWindow(factory.get_config(), factory.get_context(), 
-                            width, height)
-        window._create_window(factory)
-        window._set_attributes(factory)
-        window._map()
-        window._set_glx(factory.get_config())
-        return window
-
-    def replace_window(self, factory, window):
-        # TODO reparent if changed screens
-        window._unmap()
-        window._set_attributes(factory)
-        window._map()
+    def create_window(self):
+        return XlibWindow()
 
     def _get_display(self, factory):
         # Get the X display, and resolve name if necessary
@@ -195,21 +182,20 @@ class XlibPlatform(BasePlatform):
             display = xlib.XOpenDisplay(display)
             if not display:
                 raise XlibException('Cannot connect to X server') 
+            factory.set_x_display(display)
         return display
 
 class XlibScreen(BaseScreen):
     def __init__(self, display, x_screen_id, x, y, width, height, xinerama):
-        super(XlibScreen, self).__init__(width, height)
+        super(XlibScreen, self).__init__(x, y, width, height)
         self._display = display
         self._x_screen_id = x_screen_id
-        self._x = x
-        self._y = y
         self._xinerama = xinerama
 
     def __repr__(self):
         return 'XlibScreen(screen=%d, x=%d, y=%d, ' \
                'width=%d, height=%d, xinerama=%d)' % \
-            (self._x_screen_id, self._x, self._y, self.width, self.height,
+            (self._x_screen_id, self.x, self.y, self.width, self.height,
              self._xinerama)
 
 class XlibGLConfig(BaseGLConfig):
@@ -251,6 +237,14 @@ class XlibGLContext(BaseGLContext):
         # Hell, we have the problem now if there's multiple contexts and
         # python's GC cleans up textures which are allocated to various
         # contexts...
+
+        # <ah> Contexts are _never_ shared.  We need to control deletion of
+        # contexts w.r.t. deletion of windows, so I think GC won't work.
+        # I also think tying textures to GC is a bad idea... these are
+        # external resources, not memory blocks.  A bit of manual memory
+        # management never hurt anybody.
+
+        super(XlibGLContext, self).destroy()
         glXDestroyContext(self._display, self._context)
 
 class XlibMouse(object):
@@ -258,91 +252,107 @@ class XlibMouse(object):
         self.x, self.y = 0, 0
         self.buttons = [False] * 6      # mouse buttons index from 1 + 
 
-
 class XlibWindow(BaseWindow):
-    def __init__(self, config, context, width, height):
-        super(XlibWindow, self).__init__(config, context, width, height)
-        self._display = config._display
-        self._screen = config._screen
-        self._glx_context = context._context
+    _display = None         # X display connection
+    _screen_id = None       # X screen index
+    _glx_context = None     # GLX context handle
+    _glx_window = None      # GLX window handle
+    _window = None          # Xlib window handle
 
-        # Set by _create_window
-        self._window = None
+    _x = 0
+    _y = 0                  # Last known window position
+    _width = 0
+    _height = 0             # Last known window size
+    _mouse = None           # Last known mouse position and button state
 
-        # Will be set correctly after first configure event.
-        self._x = 0
-        self._y = 0
+    def __init__(self):
+        super(XlibWindow, self).__init__()
         self._mouse = XlibMouse()
 
-    # Creation methods
+    def create(self, factory):
+        # Unmap existing window if necessary while we fiddle with it.
+        if self._window:
+            self._unmap()
 
-    def _create_window(self, factory):
-        screen = factory.get_screen()
-        root = xlib.XDefaultRootWindow(self._display) # XXX correct screen?
-        black = xlib.XBlackPixel(self._display, screen._x_screen_id)
+        # If flipping to/from fullscreen and using override_redirect,
+        # need to recreate the window.
+        # A possible improvement could be to just hide the top window,
+        # destroy the GLX window, and reshow it again when leaving fullscreen.
+        # This would prevent the floating window from being moved by the
+        # WM.
+        if self._window and factory.get_fullscreen() != self._fullscreen:
+            glXDestroyWindow(self._display, self._glx_window)
+            xlib.XDestroyWindow(self._display, self._window)
+            self._glx_window = None
+            self._window = None
 
-        width, height = factory.get_size()
-        self._window = xlib.XCreateSimpleWindow(self._display, root,
-            0, 0, width, height, 0, black, black)
-
-    def _set_attributes(self, factory):
+        super(XlibWindow, self).create(factory)
+        config = factory.get_config()
+        screen = config._screen
+        context = factory.get_context()
         fullscreen = factory.get_fullscreen()
 
+        self._display = config._display
+        self._screen_id = config._screen._x_screen_id
+        self._glx_context = context._context
+        self._width, self._height = factory.get_size()
+
+        # Create X window if not already existing.
+        if not self._window:
+            root = xlib.XRootWindow(self._display, self._screen_id)
+            black = xlib.XBlackPixel(self._display, self._screen_id)
+
+            self._window = xlib.XCreateSimpleWindow(self._display, root,
+                0, 0, self._width, self._height, 0, black, black)
+
+            # Enable WM_DELETE_WINDOW message
+            wm_delete_window = xlib.XInternAtom(self._display,
+                'WM_DELETE_WINDOW', False)
+            wm_delete_window = c_ulong(wm_delete_window)
+            xlib.XSetWMProtocols(self._display, self._window,
+                byref(wm_delete_window), 1)
+
+        # Set window attributes
         attributes = XSetWindowAttributes()
         attributes_mask = 0
 
-        #####
-        # 101 ways to fullscreen a window.
-
-        # Undecorate the window using motif hints
-        # XXX.  this doesn't undecorate (toggling out of fullscreen)
-        # XXX.  need to raise above taskbar etc.
-        '''
-        hints = mwmhints_t()
-        hints.flags = MWM_HINTS_DECORATIONS
-        hints.decorations = MWM_DECOR_BORDER
-        prop = xlib.XInternAtom(self._display, '_MOTIF_WM_HINTS', False)
-        xlib.XChangeProperty(self._display, self._window,
-            prop, prop, 32, PropModeReplace, byref(hints),
-            PROP_MWM_HINTS_ELEMENTS)
-        '''
-
-        # This works but makes window activation problems.
-        #attributes.override_redirect = fullscreen
-        #attributes_mask |= CWOverrideRedirect
-
-        # This works, but window size isn't what it's supposed to be.
-        # XXX.  apparently not supported on older WMs.
-        self._set_wm_state('_NET_WM_STATE_FULLSCREEN', fullscreen)
-
-        #
-        ####
-
+        # Bypass the window manager in fullscreen.  This is the only reliable
+        # technique (over _NET_WM_STATE_FULLSCREEN, Motif, KDE and Gnome
+        # hints) that is pretty much guaranteed to work.  Unfortunately
+        # we run into window activation and focus problems that require
+        # attention.  Search for "override_redirect" for all occurences.
+        attributes.override_redirect = fullscreen
+        attributes_mask |= CWOverrideRedirect
 
         if fullscreen:
-            x = self._screen._x
-            y = self._screen._y
-            width = self._screen.width
-            height = self._screen.height
             xlib.XMoveResizeWindow(self._display, self._window, 
-                x, y, width, height)
+                screen.x, screen.y, screen.width, screen.height)
         else:
-            width, height = factory.get_size()
-            xlib.XResizeWindow(self._display, self._window, width, height)
+            xlib.XResizeWindow(self._display, self._window, 
+                self._width, self._height)
 
         xlib.XChangeWindowAttributes(self._display, self._window, 
             attributes_mask, byref(attributes))
-        self._fullscreen = fullscreen
+
+        self._map()
+        if fullscreen:
+            # Explicitly set focus to window if using override_redirect.
+            xlib.XSetInputFocus(self._display, self._window,
+                RevertToParent, CurrentTime)
+
+        if not self._glx_window:
+            self._glx_window = glXCreateWindow(self._display,
+                config._fbconfig, self._window, None)
+        else:
+            # XXX Probably need to update context or something after
+            # remapping.
+            pass
+
+        self.switch_to()
+        self.dispatch_event(EVENT_EXPOSE)
 
     def _map(self):
-        # Listen for WM_DELETE_WINDOW
-        wm_delete_window = xlib.XInternAtom(self._display,
-            'WM_DELETE_WINDOW', False)
-        wm_delete_window = c_ulong(wm_delete_window)
-        xlib.XSetWMProtocols(self._display, self._window,
-            byref(wm_delete_window), 1)
-
-        # Map the window, listening for the window mapping event
+        # Map the window, wait for map event before continuing.
         xlib.XSelectInput(self._display, self._window, StructureNotifyMask)
         xlib.XMapRaised(self._display, self._window)
         e = XEvent()
@@ -355,11 +365,14 @@ class XlibWindow(BaseWindow):
         xlib.XSelectInput(self._display, self._window, 0x1ffff7f)
 
     def _unmap(self):
+        xlib.XSelectInput(self._display, self._window, StructureNotifyMask)
         xlib.XUnmapWindow(self._display, self._window)
-
-    def _set_glx(self, config):
-        self._glx_window = glXCreateWindow(self._display,
-            config._fbconfig, self._window, None)
+        e = XEvent()
+        while True:
+            xlib.XNextEvent(self._display, e)
+            if e.type == UnmapNotify:
+                break
+        xlib.XSelectInput(self._display, self._window, 0x1ffff7f)
 
     def _get_root(self):
         attributes = XWindowAttributes()
@@ -379,10 +392,20 @@ class XlibWindow(BaseWindow):
         # Remarkably little seems to be written about applications that
         # might want to actually close a glx window cleanly...
         # glXMakeContextCurrent(self._display, None, None, None)
-        self._context.destroy()
+        
+        # <ah> I'm pretty sure you're wrong.  GL has no capability for
+        # disabling the API, so no point trying to set a null context;
+        # just don't do anything after it's destroyed.
+
+        self._unmap()
         glXDestroyWindow(self._display, self._glx_window)
+        self._context.destroy()
         xlib.XDestroyWindow(self._display, self._window)
+
+        super(XlibWindow, self).close()
+
         self._window = None
+        self._glx_window = None
 
     def switch_to(self):
         glXMakeContextCurrent(self._display,
@@ -402,15 +425,13 @@ class XlibWindow(BaseWindow):
         return self._caption
 
     def set_size(self, width, height):
-        self.width = width
-        self.height = height
         xlib.XResizeWindow(self._display, self._window, width, height)
 
     def get_size(self):
-        attributes = XWindowAttributes()
-        xlib.XGetWindowAttributes(self._display, self._window,
-                                  byref(attributes))
-        return attributes.width, attributes.height
+        # XGetGeometry and XWindowAttributes seem to always return the
+        # original size of the window, which is wrong after the user
+        # has resized it.
+        return self._width, self._height
 
     def set_location(self, x, y):
         # Assume the window manager has reparented our top-level window
@@ -619,11 +640,13 @@ class XlibWindow(BaseWindow):
     def __translate_configure(window, event):
         w, h = event.xconfigure.width, event.xconfigure.height
         x, y = event.xconfigure.x, event.xconfigure.y
-        if window.width != w or window.height != h:
+        if window._width != w or window._height != h:
+            window._width = w
+            window._height = h
             window.dispatch_event(EVENT_RESIZE, w, h)
-            window.width = w
-            window.height = h
             window.switch_to()
+            # XXX <ah> This doesn't work yet; resize doesn't affect
+            # GL area.
             glViewport(0, 0, w, h)
             window.dispatch_event(EVENT_EXPOSE)
         if window._x != x or window._y != y:

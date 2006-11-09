@@ -439,7 +439,7 @@ def main(args):
             len(result.failures) == 0 and 
             len(result.errors) == 0):
             result = raw_input('[P]assed test, [F]ailed test: ')
-            if result[0] in ('F', 'f'):
+            if result and result[0] in ('F', 'f'):
                 print 'Enter failure description: '
                 description = raw_input('> ')
                 log.error('User marked fail for %s', component)

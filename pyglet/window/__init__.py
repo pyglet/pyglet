@@ -17,28 +17,78 @@ import pyglet.window.key
 # destroyed.
 _active_contexts = []
 
-CONTEXT_SHARE_NONE = None
-CONTEXT_SHARE_EXISTING = 1
+# Constants for WindowFactory.set_context_share
+CONTEXT_SHARE_NONE = None           # Do not share the created context.
+CONTEXT_SHARE_EXISTING = 1          # Share the context with any other 
+                                    # arbitrary compatible context.
 
-LOCATION_DEFAULT = None
+# Constants for WindowFactory.set_location
+LOCATION_DEFAULT = None             # No preference for window location.
 
 class WindowException(Exception):
     pass
 
 class BaseScreen(object):
-    def __init__(self, width, height):
+    '''Virtual screen that supports windows and/or fullscreen.
+
+    Virtual screens typically map onto a physical display such as a
+    monitor, television or projector.  Selecting a screen for a window
+    has no effect unless the window is made fullscreen, in which case
+    the window will fill only that particular virtual screen.
+
+    The `width` and `height` attributes of a screen give the current
+    resolution of the display (which can possibly be changed).  The
+    `x` and `y` attributes give the global location of the top-left
+    corner of the screen.  This is useful for determining if screens
+    arranged above or next to one another.  
+    
+    You should not rely on the origin to give the placement of moniters. 
+    For example, an X server with two displays without Xinerama enabled
+    will present two logically separate screens with no relation to each
+    other.
+    '''
+
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
         self.width = width
         self.height = height
 
     def __repr__(self):
-        return '%s(width=%d, height=%d)' % \
+        return '%s(x=%d, y=%d, width=%d, height=%d)' % \
             (self.__class__.__name__, self.width, self.height)
 
+    '''
+    Proposed interface for switching resolution:
+
+    def get_modes(self):
+        raise NotImplementedError()
+
+    def set_mode(self, mode):
+        raise NotImplementedError()
+    '''
+
 class BaseGLConfig(object):
+    '''Graphics configuration.
+
+    A GLConfig stores the preferences for OpenGL attributes such as the
+    number of auxilliary buffers, size of the colour and depth buffers,
+    double buffering, stencilling, multi- and super-sampling, and so on.
+
+    Different platforms support a different set of attributes, so these
+    are set with a string key and a value which is integer or boolean.
+    '''
+
     def get_gl_attribute(self, name):
+        '''Get the value of a GL attribute.
+
+        If the attribute has not been specified, None will be returned,
+        otherwise the result will be an integer.
+        '''
         return self.get_gl_attributes().get(name, None)
 
     def get_gl_attributes():
+        '''Get a dict of all GL attributes set.'''
         raise NotImplementedError()
 
     def __repr__(self):
@@ -48,13 +98,48 @@ class BaseGLConfig(object):
                                          indent=len(prefix)))
 
 class BaseGLContext(object):
+    '''OpenGL context for drawing.
+
+    Windows in pyglet each have their own GL context.  This class boxes
+    the context in a platform-independent manner.  Applications will have
+    no need to deal with contexts directly.
+    '''
     def __repr__(self):
         return '%s()' % self.__class__.__name__
 
     def destroy(self):
+        '''Release the context.
+
+        The context will not be useable after being destroyed.  Each platform
+        has its own convention for releasing the context and the buffer(s)
+        that depend on it in the correct order; this should never be called
+        by an application.
+        '''
         _active_contexts.remove(self)
 
 class BaseWindow(WindowEventHandler):
+    '''Platform-independent application window.
+
+    A window is a "heavyweight" object occupying operating system resources.
+    The "client" or "content" area of a window is filled entirely with
+    an OpenGL viewport.  Applications have no access to operating system
+    widgets or controls; all rendering must be done via OpenGL.
+
+    Windows may appear as floating regions or can be set to fill an entire
+    screen (fullscreen).  When floating, windows may appear borderless or
+    decorated with a platform-specific frame (including, for example, the
+    title bar, minimize and close buttons, resize handles, and so on).
+
+    While it is possible to set the location of a window, it is recommended
+    that applications allow the platform to place it according to local
+    conventions.  This will ensure it is not obscured by other windows,
+    and appears on an appropriate screen for the user.
+
+    To render into a window, you must first call `switch_to`, to make
+    it the current OpenGL context.  If you use only one window in the
+    application, there is no need to do this.
+    '''
+
     _context = None
     _config = None
 
@@ -62,12 +147,18 @@ class BaseWindow(WindowEventHandler):
     _windowed_size = None
     _windowed_location = None
 
-    def __init__(self, config, context, width, height):
+    def __init__(self):
         WindowEventHandler.__init__(self)
-        self.width = width
-        self.height = height
-        self._config = config
-        self._context = context
+
+    def create(self, factory):
+        self._config = factory.get_config()
+        self._context = factory.get_context()
+        self._fullscreen = factory.get_fullscreen()
+
+    def close(self):
+        self._context.destroy()
+        self._config = None
+        self._context = None
 
     def get_context(self):
         return self._context
@@ -81,12 +172,6 @@ class BaseWindow(WindowEventHandler):
     def get_caption(self):
         return self.caption
 
-    def get_context(self):
-        return self._context
-
-    def get_config(self):
-        return self._config
-
     def set_minimum_size(self, width, height):
         raise NotImplementedError()
 
@@ -94,6 +179,9 @@ class BaseWindow(WindowEventHandler):
         raise NotImplementedError()
 
     def set_size(self, width, height):
+        raise NotImplementedError()
+
+    def get_size(self):
         raise NotImplementedError()
 
     def set_location(self, x, y):
@@ -118,14 +206,13 @@ class BaseWindow(WindowEventHandler):
         if fullscreen == self._fullscreen:
             return
 
-        caption = self.get_caption()
-
         factory = get_factory()
         factory.set_gl_attributes(self.get_config().get_gl_attributes())
         if width and height:
             factory.set_size(width, height)
         elif fullscreen:
-            self._windowed_size = self.width, self.height
+            self._windowed_size = self.get_size()
+            print 'windowed size', self._windowed_size
             self._windowed_location = self.get_location()
             screen = factory.get_screen()
             factory.set_size(screen.width, screen.height)
@@ -134,15 +221,22 @@ class BaseWindow(WindowEventHandler):
             factory.set_location(*self._windowed_location)
         factory.set_fullscreen(fullscreen)
         factory.set_context_share(self.get_context())
-        factory.replace_window(self)
-        self._fullscreen = fullscreen
-        self.set_caption(caption)
+        self.create(factory)
+        self.switch_to()
 
     def set_exclusive_mouse(self, exclusive=True):
         raise NotImplementedError()
 
     def set_exclusive_keyboard(self, exclusive=True):
         raise NotImplementedError()
+
+    @property
+    def width(self):
+        return self.get_size()[0]
+
+    @property
+    def height(self):
+        return self.get_size()[1]
 
 class BasePlatform(object):
     # Platform specific abstract methods.
@@ -169,12 +263,6 @@ class BasePlatform(object):
 
     def create_window(self, factory):
         '''Subclasses must override to create and return a BaseWindow.
-        '''
-        raise NotImplementedError()
-
-    def replace_window(self, factory, window):
-        '''Subclasses must override to update a window with the factory
-        configuration.
         '''
         raise NotImplementedError()
 
@@ -376,7 +464,8 @@ class WindowFactory(object):
 
     def create_window(self):
         # Create a window based on factory attributes.
-        window = self._platform.create_window(self)
+        window = self._platform.create_window()
+        window.create(self)
         window.switch_to()
 
         # We should reset now in case someone tries to use the
@@ -384,12 +473,6 @@ class WindowFactory(object):
         self._context = None
 
         return window
-
-    def replace_window(self, window):
-        # Transform an existing window to use a new configuration.
-        self._platform.replace_window(self, window)
-        self._context = None
-        window.switch_to()
 
 def get_platform():
     return _platform
