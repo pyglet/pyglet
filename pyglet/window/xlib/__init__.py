@@ -236,6 +236,21 @@ class XlibGLContext(BaseGLContext):
         self._context = context
 
     def destroy(self):
+        # XXX <rj> I don't think this is a good approach. I think we should
+        # let GC handle destroying contexts, especially given that they may
+        # be shared... Windows should have a reference to XlibGLContext
+        # instances. When those instances are not referenced *then* we're
+        # safe to destroy the context.
+        # We need to make sure we don't delete any OGL objects
+        # (textures, lists, ...) *after* this call is made.
+        # Perhaps we need to manually maintain a reference count to
+        # XlibGLContext and only when a window is manually close()d will we
+        # de-reference and possibly destroy the context. We would still
+        # possibly need to make sure we don't subsequently free anything
+        # belonging to that context.
+        # Hell, we have the problem now if there's multiple contexts and
+        # python's GC cleans up textures which are allocated to various
+        # contexts...
         glXDestroyContext(self._display, self._context)
 
 class XlibMouse(object):
@@ -319,7 +334,7 @@ class XlibWindow(BaseWindow):
             attributes_mask, byref(attributes))
         self._fullscreen = fullscreen
 
-    def _map(self):        
+    def _map(self):
         # Listen for WM_DELETE_WINDOW
         wm_delete_window = xlib.XInternAtom(self._display,
             'WM_DELETE_WINDOW', False)
@@ -353,8 +368,6 @@ class XlibWindow(BaseWindow):
         return attributes.root
 
     def close(self):
-        self._context.destroy()
-        glXDestroyWindow(self._display, self._glx_window)
         # XXX <rj> I'm pretty sure we need to invoke
         # glXMakeContextCurrent(self._display, None, None, None) or
         # similar. I did discover that from test to test
@@ -366,6 +379,8 @@ class XlibWindow(BaseWindow):
         # Remarkably little seems to be written about applications that
         # might want to actually close a glx window cleanly...
         # glXMakeContextCurrent(self._display, None, None, None)
+        self._context.destroy()
+        glXDestroyWindow(self._display, self._glx_window)
         xlib.XDestroyWindow(self._display, self._window)
         self._window = None
 
