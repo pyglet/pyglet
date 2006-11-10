@@ -309,6 +309,11 @@ class XlibWindow(BaseWindow):
             self._window = xlib.XCreateSimpleWindow(self._display, root,
                 0, 0, self._width, self._height, 0, black, black)
 
+            # Setting null background pixmap disables drawing the background,
+            # preventing flicker while resizing.
+            xlib.XSetWindowBackgroundPixmap(self._display, self._window,
+                c_void_p())
+
             # Enable WM_DELETE_WINDOW message
             wm_delete_window = xlib.XInternAtom(self._display,
                 'WM_DELETE_WINDOW', False)
