@@ -62,7 +62,7 @@ pyglet
             WINDOW_ICON
             WINDOW_CURSOR
             MULTIPLE_SCREEN                 X       X
-            CONTEXT_SHARE                   X       X
+            CONTEXT_SHARE                   X   X   X
             ============================== === === ===
 
         TBD:

@@ -26,25 +26,150 @@ _user32.GetKeyState.restype = c_short
 class Win32Exception(WindowException):
     pass
 
-class Win32WindowFactory(BaseWindowFactory):
-    def create_config_prototype(self):
-        return Win32GLConfig()
+class Win32Platform(BasePlatform):
+    def get_screens(self, factory):
+        screens = []
+        def enum_proc(hMonitor, hdcMonitor, lprcMonitor, dwData):
+            r = lprcMonitor.contents
+            screens.append(
+                Win32Screen(hMonitor, r.left, r.top, r.width, r.height))
+            return True
+        enum_proc_type = CFUNCTYPE(BOOL, HMONITOR, HDC, POINTER(RECT), LPARAM)
+        enum_proc_ptr = enum_proc_type(enum_proc)
+        _user32.EnumDisplayMonitors(NULL, NULL, enum_proc_ptr, 0)
+        return screens
 
-    def create_window(self, width, height):
-        return Win32Window(width, height)
+    def create_configs(self, factory):
+        attributes = factory.get_gl_attributes()
 
-    def get_config_matches(self, window):
-        return self.config.get_matches(window._dc)
+        pfd = PIXELFORMATDESCRIPTOR()
+        pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR)
+        pfd.nVersion = 1
+        pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL
 
-    def create_context(self, window, config, share_context=None):
-        _gdi32.SetPixelFormat(window._dc, config._pf, byref(config._pfd))
-        context = wglCreateContext(window._dc)
-        return context
+        if attributes.get('doublebuffer', False):
+            pfd.dwFlags |= PFD_DOUBLEBUFFER
+        else:
+            pfd.dwFlags |= PFD_DOUBLEBUFFER_DONTCARE
+
+        if attributes.get('stereo', False):
+            pfd.dwFlags |= PFD_STEREO
+        else:
+            pfd.dwFlags |= PFD_STEREO_DONTCARE
+
+        if attributes.get('swap_copy', False):
+            pfd.dwFlags |= PFD_SWAP_COPY
+        if attributes.get('swap_exchange', False):
+            pfd.dwFlags |= PFD_SWAP_EXCHANGE
+
+        if not attributes.get('depth_size', 0):
+            pfd.dwFlags |= PFD_DEPTH_DONTCARE
+
+        pfd.iPixelType = PFD_TYPE_RGBA
+        pfd.cColorBits = attributes.get('buffer_size', 0)
+        pfd.cRedBits = attributes.get('red_size', 0)
+        pfd.cGreenBits = attributes.get('green_size', 0)
+        pfd.cBlueBits = attributes.get('blue_size', 0)
+        pfd.cAlphaBits = attributes.get('alpha_size', 0)
+        pfd.cAccumRedBits = attributes.get('accum_red_size', 0)
+        pfd.cAccumGreenBits = attributes.get('accum_green_size', 0)
+        pfd.cAccumBlueBits = attributes.get('accum_blue_size', 0)
+        pfd.cAccumAlphaBits = attributes.get('accum_alpha_size', 0)
+        pfd.cDepthBits = attributes.get('depth_size', 0)
+        pfd.cStencilBits = attributes.get('stencil_size', 0)
+        pfd.cAuxBuffers = attributes.get('aux_buffers', 0)
+
+        # No window created yet, so lets create a config based on
+        # the DC of the entire screen.
+        hdc = _user32.GetDC(0)
+
+        pf = _gdi32.ChoosePixelFormat(hdc, byref(pfd))
+        if pf:
+            return [Win32Config(hdc, pf)]
+        else:
+            return []
+
+    def create_context(self, factory):
+        # The context can't be created until we have the DC of the
+        # window.  It's _possible_ that this could screw things up
+        # (for example, destroying the share context before the new
+        # window is created), but these are unlikely and not in the
+        # ordinary workflow.
+        config = factory.get_config()
+        share = factory.get_context_share()
+        return Win32Context(config, share)
+
+    def create_window(self):
+        return Win32Window()
+
+class Win32Screen(BaseScreen):
+    def __init__(self, handle, x, y, width, height):
+        super(Win32Screen, self).__init__(x, y, width, height)
+        self._handle = handle
+
+class Win32Config(BaseGLConfig):
+    def __init__(self, hdc, pf):
+        self._hdc = hdc
+        self._pf = pf
+        self._pfd = PIXELFORMATDESCRIPTOR()
+        _gdi32.DescribePixelFormat(self._hdc, 
+            self._pf, sizeof(PIXELFORMATDESCRIPTOR), byref(self._pfd))
+
+        self._attributes = {}
+        self._attributes['doublebuffer'] = \
+            bool(self._pfd.dwFlags & PFD_DOUBLEBUFFER)
+        self._attributes['stereo'] = bool(self._pfd.dwFlags & PFD_STEREO)
+        self._attributes['buffer_size'] = self._pfd.cColorBits
+        self._attributes['red_size'] = self._pfd.cRedBits
+        self._attributes['green_size'] = self._pfd.cGreenBits
+        self._attributes['blue_size'] = self._pfd.cBlueBits
+        self._attributes['alpha_size'] = self._pfd.cAlphaBits
+        self._attributes['accum_red_size'] = self._pfd.cAccumRedBits
+        self._attributes['accum_green_size'] = self._pfd.cAccumGreenBits
+        self._attributes['accum_blue_size'] = self._pfd.cAccumBlueBits
+        self._attributes['accum_alpha_size'] = self._pfd.cAccumAlphaBits
+        self._attributes['depth_size'] = self._pfd.cDepthBits
+        self._attributes['stencil_size'] = self._pfd.cStencilBits
+        self._attributes['aux_buffers'] = self._pfd.cAuxBuffers
+
+    def get_gl_attributes(self):
+        return self._attributes
+
+class Win32Context(BaseGLContext):
+    _context = None
+    def __init__(self, config, share):
+        super(Win32Context, self).__init__()
+        self._config = config
+        self._share = share
+
+    def _set_window(self, window):
+        assert self._context is None
+        _gdi32.SetPixelFormat(
+            window._dc, self._config._pf, byref(self._config._pfd))
+        self._context = wglCreateContext(window._dc)
+        if self._share:
+            assert self._share._context is not None
+            wglShareLists(self._share._context, self._context)
+
+    def destroy(self):
+        wglDeleteContext(self._context)
 
 class Win32Window(BaseWindow):
-    def __init__(self, width, height):
-        super(Win32Window, self).__init__(width, height)
-        handle = _kernel32.GetModuleHandleA(c_int(0))
+    _window_class = None
+    _hwnd = None
+    _dc = None
+    _wgl_context = None
+
+    def __init__(self):
+        super(Win32Window, self).__init__()
+
+    def create(self, factory):
+        super(Win32Window, self).create(factory)
+
+        width, height = factory.get_size()
+        context = factory.get_context()
+
+        #handle = _kernel32.GetModuleHandleA(c_int(0))
         handle = 0
         self._window_class = WNDCLASS()
         self._window_class.lpszClassName = 'GenericAppClass'
@@ -75,6 +200,10 @@ class Win32Window(BaseWindow):
 
         self._dc = _user32.GetDC(self._hwnd)
 
+        # Now we have enough to create the context
+        context._set_window(self)
+        self._wgl_context = context._context
+
         _user32.ShowWindow(self._hwnd, SW_SHOWDEFAULT)
         _user32.UpdateWindow(self._hwnd)
 
@@ -91,7 +220,7 @@ class Win32Window(BaseWindow):
         pass
 
     def switch_to(self):
-        wglMakeCurrent(self._dc, self.context)
+        wglMakeCurrent(self._dc, self._wgl_context)
 
     def flip(self):
         wglSwapLayerBuffers(self._dc, WGL_SWAP_MAIN_PLANE)
@@ -101,81 +230,6 @@ class Win32Window(BaseWindow):
         while _user32.PeekMessageA(byref(msg), 0, 0, 0, PM_REMOVE):
             _user32.TranslateMessage(byref(msg))
             _user32.DispatchMessageA(byref(msg))
-
-    def set_caption(self, caption):
-        self._caption = caption
-
-    def get_caption(self):
-        return self._caption
-
-class Win32GLConfig(BaseGLConfig):
-    def __init__(self, _hdc=0, _pf=0):
-        super(Win32GLConfig, self).__init__()
-        self._hdc = _hdc
-        self._pf = _pf
-        if self._hdc and self._pf:
-            self._pfd = PIXELFORMATDESCRIPTOR()
-            _gdi32.DescribePixelFormat(self._hdc, 
-                self._pf, sizeof(PIXELFORMATDESCRIPTOR), byref(self._pfd))
-            self._attributes['doublebuffer'] = \
-                bool(self._pfd.dwFlags & PFD_DOUBLEBUFFER)
-            self._attributes['stereo'] = bool(self._pfd.dwFlags & PFD_STEREO)
-            self._attributes['buffer_size'] = self._pfd.cColorBits
-            self._attributes['red_size'] = self._pfd.cRedBits
-            self._attributes['green_size'] = self._pfd.cGreenBits
-            self._attributes['blue_size'] = self._pfd.cBlueBits
-            self._attributes['alpha_size'] = self._pfd.cAlphaBits
-            self._attributes['accum_red_size'] = self._pfd.cAccumRedBits
-            self._attributes['accum_green_size'] = self._pfd.cAccumGreenBits
-            self._attributes['accum_blue_size'] = self._pfd.cAccumBlueBits
-            self._attributes['accum_alpha_size'] = self._pfd.cAccumAlphaBits
-            self._attributes['depth_size'] = self._pfd.cDepthBits
-            self._attributes['stencil_size'] = self._pfd.cStencilBits
-            self._attributes['aux_buffers'] = self._pfd.cAuxBuffers
-
-    def get_matches(self, hdc):
-        pfd = PIXELFORMATDESCRIPTOR()
-        pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR)
-        pfd.nVersion = 1
-        pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL
-
-        if self._attributes.get('doublebuffer', False):
-            pfd.dwFlags |= PFD_DOUBLEBUFFER
-        else:
-            pfd.dwFlags |= PFD_DOUBLEBUFFER_DONTCARE
-
-        if self._attributes.get('stereo', False):
-            pfd.dwFlags |= PFD_STEREO
-        else:
-            pfd.dwFlags |= PFD_STEREO_DONTCARE
-
-        if self._attributes.get('swap_copy', False):
-            pfd.dwFlags |= PFD_SWAP_COPY
-        if self._attributes.get('swap_exchange', False):
-            pfd.dwFlags |= PFD_SWAP_EXCHANGE
-
-        if not self._attributes.get('depth_size', 0):
-            pfd.dwFlags |= PFD_DEPTH_DONTCARE
-
-        pfd.iPixelType = PFD_TYPE_RGBA
-        pfd.cColorBits = self._attributes.get('buffer_size', 0)
-        pfd.cRedBits = self._attributes.get('red_size', 0)
-        pfd.cGreenBits = self._attributes.get('green_size', 0)
-        pfd.cBlueBits = self._attributes.get('blue_size', 0)
-        pfd.cAlphaBits = self._attributes.get('alpha_size', 0)
-        pfd.cAccumRedBits = self._attributes.get('accum_red_size', 0)
-        pfd.cAccumGreenBits = self._attributes.get('accum_green_size', 0)
-        pfd.cAccumBlueBits = self._attributes.get('accum_blue_size', 0)
-        pfd.cAccumAlphaBits = self._attributes.get('accum_alpha_size', 0)
-        pfd.cDepthBits = self._attributes.get('depth_size', 0)
-        pfd.cStencilBits = self._attributes.get('stencil_size', 0)
-        pfd.cAuxBuffers = self._attributes.get('aux_buffers', 0)
-
-        pf = _gdi32.ChoosePixelFormat(hdc, byref(pfd))
-        if pf:
-            return [Win32GLConfig(hdc, pf)]
-        else:
-            return []
 
 def _check():
     dw = _kernel32.GetLastError()
@@ -194,9 +248,9 @@ def _dispatch_key(window, msg, wParam, lParam):
     if lParam & (1 << 30):
         if msg not in (WM_KEYUP, WM_SYSKEYUP):
             return 0    # key repeat
-        event = EVENT_KEYRELEASE
+        event = EVENT_KEY_RELEASE
     else:
-        event = EVENT_KEYPRESS
+        event = EVENT_KEY_PRESS
 
     symbol = keymap.get(wParam, None)
     if symbol:

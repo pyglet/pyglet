@@ -56,7 +56,7 @@ class BaseScreen(object):
 
     def __repr__(self):
         return '%s(x=%d, y=%d, width=%d, height=%d)' % \
-            (self.__class__.__name__, self.width, self.height)
+            (self.__class__.__name__, self.x, self.y, self.width, self.height)
 
     '''
     Proposed interface for switching resolution:

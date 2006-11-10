@@ -25,4 +25,5 @@ wglGetProcAddress = _get_function('wglGetProcAddress', [_ctypes.c_char_p], _ctyp
 wglCreateContext = _get_function('wglCreateContext', [_ctypes.c_long], _ctypes.c_long)
 wglMakeCurrent = _get_function('wglMakeCurrent', [_ctypes.c_long, _ctypes.c_long], _ctypes.c_int)
 wglSwapLayerBuffers = _get_function('wglSwapLayerBuffers', [_ctypes.c_long, _ctypes.c_uint], _ctypes.c_int)
-
+wglShareLists = _get_function('wglShareLists', [_ctypes.c_long, _ctypes.c_long], _ctypes.c_int)
+wglDeleteContext = _get_function('wglDeleteContext', [_ctypes.c_long], _ctypes.c_int)
