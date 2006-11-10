@@ -265,6 +265,10 @@ class XlibWindow(BaseWindow):
     _height = 0             # Last known window size
     _mouse = None           # Last known mouse position and button state
 
+    _default_event_mask = (0x1ffffff 
+        & ~PointerMotionHintMask
+        & ~ResizeRedirectMask)
+
     def __init__(self):
         super(XlibWindow, self).__init__()
         self._mouse = XlibMouse()
@@ -361,8 +365,7 @@ class XlibWindow(BaseWindow):
             if e.type == MapNotify:
                 break
 
-        # Now select all events (don't want PointerMotionHintMask)
-        xlib.XSelectInput(self._display, self._window, 0x1ffff7f)
+        xlib.XSelectInput(self._display, self._window, self._default_event_mask)
 
     def _unmap(self):
         xlib.XSelectInput(self._display, self._window, StructureNotifyMask)
@@ -372,7 +375,8 @@ class XlibWindow(BaseWindow):
             xlib.XNextEvent(self._display, e)
             if e.type == UnmapNotify:
                 break
-        xlib.XSelectInput(self._display, self._window, 0x1ffff7f)
+
+        xlib.XSelectInput(self._display, self._window, self._default_event_mask)
 
     def _get_root(self):
         attributes = XWindowAttributes()
@@ -399,9 +403,7 @@ class XlibWindow(BaseWindow):
 
         self._unmap()
         glXDestroyWindow(self._display, self._glx_window)
-        self._context.destroy()
         xlib.XDestroyWindow(self._display, self._window)
-
         super(XlibWindow, self).close()
 
         self._window = None
@@ -431,6 +433,7 @@ class XlibWindow(BaseWindow):
         # XGetGeometry and XWindowAttributes seem to always return the
         # original size of the window, which is wrong after the user
         # has resized it.
+        # XXX this is probably fixed now, with fix of resize.
         return self._width, self._height
 
     def set_location(self, x, y):
@@ -643,11 +646,9 @@ class XlibWindow(BaseWindow):
         if window._width != w or window._height != h:
             window._width = w
             window._height = h
-            window.dispatch_event(EVENT_RESIZE, w, h)
             window.switch_to()
-            # XXX <ah> This doesn't work yet; resize doesn't affect
-            # GL area.
             glViewport(0, 0, w, h)
+            window.dispatch_event(EVENT_RESIZE, w, h)
             window.dispatch_event(EVENT_EXPOSE)
         if window._x != x or window._y != y:
             window.dispatch_event(EVENT_MOVE, x, y)
