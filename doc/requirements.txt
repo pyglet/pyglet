@@ -37,16 +37,16 @@ pyglet
             MULTIPLE_WINDOW_OPEN            X   X   X
             EVENT_KEY                       X   X   X
             EVENT_TEXT                      X   X   X
-            EVENT_BUTTON                    X       X
-            EVENT_MOUSE_MOTION              X       X
-            EVENT_MOUSE_ENTER_LEAVE         X       X
-            EVENT_MOUSE_SCROLL              X       X
-            EVENT_CLOSE                     X       X
-            EVENT_EXPOSE                    X       X
-            EVENT_RESIZE                    X       X
-            EVENT_MOVE                      X       X
-            EVENT_ACTIVATE_DEACTIVATE               X
-            EVENT_SHOW_HIDE                         X
+            EVENT_BUTTON                    X   X   X
+            EVENT_MOUSE_MOTION              X   X   X
+            EVENT_MOUSE_ENTER_LEAVE         X   X   X
+            EVENT_MOUSE_SCROLL              X   X   X
+            EVENT_CLOSE                     X   X   X
+            EVENT_EXPOSE                    X   X   X
+            EVENT_RESIZE                    X   X   X
+            EVENT_MOVE                      X   X   X
+            EVENT_ACTIVATE_DEACTIVATE           X   X
+            EVENT_SHOW_HIDE                     X   X
             WINDOW_SET_LOCATION             X       X
             WINDOW_SET_SIZE                 X       X
             WINDOW_SET_MIN_MAX_SIZE                 X
