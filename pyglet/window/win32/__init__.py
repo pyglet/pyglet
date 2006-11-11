@@ -258,6 +258,11 @@ class Win32Window(BaseWindow):
             self._dc = _user32.GetDC(self._hwnd)
         else:
             # Window already exists, update it with new style
+
+            # We need to hide window here, otherwise Windows forgets
+            # to redraw the whole screen after leaving fullscreen.
+            _user32.ShowWindow(self._hwnd, SW_HIDE)
+
             _user32.SetWindowLongA(self._hwnd,
                 GWL_STYLE,
                 self._style)
@@ -586,6 +591,11 @@ class Win32Window(BaseWindow):
         if self._maximum_size:
             info.ptMaxTrackSize.x, info.ptMaxTrackSize.y = \
                 self._client_to_window_size(*self._maximum_size)
+        return 0
+
+    @Win32EventHandler(WM_ERASEBKGND)
+    def _event_erasebkgnd(self, msg, wParam, lParam):
+        # Prevent flicker during resize.
         return 0
 
 def _check():
