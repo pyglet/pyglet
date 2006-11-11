@@ -243,9 +243,21 @@ class XlibGLContext(BaseGLContext):
         # I also think tying textures to GC is a bad idea... these are
         # external resources, not memory blocks.  A bit of manual memory
         # management never hurt anybody.
+        # Alternatively, we can defer freeing of textures and lists etc
+        # by queuing them up until the next switch_to, if the context is
+        # not already active (as it would be in most single-window apps).
 
         super(XlibGLContext, self).destroy()
         glXDestroyContext(self._display, self._context)
+
+_xlib_event_handler_types = []
+
+def XlibEventHandler(event):
+    def handler_wrapper(f):
+        handler = (event, f.__name__)
+        _xlib_event_handler_types.append(handler)
+        return f
+    return handler_wrapper
 
 class XlibMouse(object):
     def __init__(self):
@@ -272,6 +284,12 @@ class XlibWindow(BaseWindow):
     def __init__(self):
         super(XlibWindow, self).__init__()
         self._mouse = XlibMouse()
+
+        # Bind event handlers
+        self._event_handlers = {}
+        for event, func_name in _xlib_event_handler_types:
+            func = getattr(self, func_name)
+            self._event_handlers[event] = func
 
     def create(self, factory):
         # Unmap existing window if necessary while we fiddle with it.
@@ -352,10 +370,6 @@ class XlibWindow(BaseWindow):
         if not self._glx_window:
             self._glx_window = glXCreateWindow(self._display,
                 config._fbconfig, self._window, None)
-        else:
-            # XXX Probably need to update context or something after
-            # remapping.
-            pass
 
         self.switch_to()
         self.dispatch_event(EVENT_EXPOSE)
@@ -514,9 +528,9 @@ class XlibWindow(BaseWindow):
         # Check for the events specific to this window
         while xlib.XCheckWindowEvent(self._display, self._window,
                 0x1ffffff, byref(e)):
-            event_translator = self.__event_translators.get(e.type)
-            if event_translator:
-                event_translator(self, e)
+            event_handler = self._event_handlers.get(e.type)
+            if event_handler:
+                event_handler(e)
 
         # Now check generic events for this display and manually filter
         # them to see whether they're for this window. sigh.
@@ -526,22 +540,42 @@ class XlibWindow(BaseWindow):
         while xlib.XCheckTypedEvent(self._display, ClientMessage, byref(e)):
             if e.xclient.window != self._window:
                 push_back.append(e)
-                e = XEvent()  # <ah> Let's not break the event we're storing.
+                e = XEvent()
             else:
-                event_translator = self.__event_translators.get(e.type)
-                if event_translator:
-                    event_translator(self, e)
+                event_handler = self._event_handlers.get(e.type)
+                if event_handler:
+                    event_handler(e)
         for e in push_back:
             xlib.XPutBackEvent(self._display, byref(e))
 
+    @staticmethod
+    def _translate_modifiers(state):
+        modifiers = 0
+        if state & ShiftMask:
+            modifiers |= MOD_SHIFT  
+        if state & ControlMask:
+            modifiers |= MOD_CTRL
+        if state & LockMask:
+            modifiers |= MOD_CAPSLOCK
+        if state & Mod1Mask:
+            modifiers |= MOD_ALT
+        if state & Mod2Mask:
+            modifiers |= MOD_NUMLOCK
+        if state & Mod4Mask:
+            modifiers |= MOD_WINDOWS
+        return modifiers
 
-    def __translate_key(window, event):
+    # Event handlers
+
+    @XlibEventHandler(KeyPress)
+    @XlibEventHandler(KeyRelease)
+    def _event_key(self, event):
         if event.type == KeyRelease:
             # Look in the queue for a matching KeyPress with same timestamp,
             # indicating an auto-repeat rather than actual key event.
             auto_event = XEvent()
-            result = xlib.XCheckTypedWindowEvent(window._display,
-                window._window, KeyPress, byref(auto_event))
+            result = xlib.XCheckTypedWindowEvent(self._display,
+                self._window, KeyPress, byref(auto_event))
             if result and event.xkey.time == auto_event.xkey.time:
                 buffer = create_string_buffer(16)
                 count = xlib.XLookupString(byref(auto_event), 
@@ -551,13 +585,13 @@ class XlibWindow(BaseWindow):
                                            c_void_p())
                 if count:
                     text = buffer.value[:count]
-                    window.dispatch_event(EVENT_TEXT, text)
+                    self.dispatch_event(EVENT_TEXT, text)
                 return
             elif result:
                 # Whoops, put the event back, it's for real.
-                xlib.XPutBackEvent(window._display, byref(event))
+                xlib.XPutBackEvent(self._display, byref(event))
 
-        # pyglet.window.key keysymbols are identical to X11 keysymbols, no
+        # pyglet.self.key keysymbols are identical to X11 keysymbols, no
         # need to map the keysymbol.
         text = None 
         if event.type == KeyPress:
@@ -570,124 +604,102 @@ class XlibWindow(BaseWindow):
                                        c_void_p())
             if count:
                 text = unicode(buffer.value[:count])
-        symbol = xlib.XKeycodeToKeysym(window._display, event.xkey.keycode, 0)
+        symbol = xlib.XKeycodeToKeysym(self._display, event.xkey.keycode, 0)
 
-        modifiers = _translate_modifiers(event.xkey.state)
+        modifiers = self._translate_modifiers(event.xkey.state)
 
         if event.type == KeyPress:
-            window.dispatch_event(EVENT_KEY_PRESS, symbol, modifiers)
+            self.dispatch_event(EVENT_KEY_PRESS, symbol, modifiers)
             if (text and 
                 (unicodedata.category(text) != 'Cc' or text == '\r')):
-                window.dispatch_event(EVENT_TEXT, text)
+                self.dispatch_event(EVENT_TEXT, text)
         elif event.type == KeyRelease:
-            window.dispatch_event(EVENT_KEY_RELEASE, symbol, modifiers)
+            self.dispatch_event(EVENT_KEY_RELEASE, symbol, modifiers)
 
-    def __translate_motion(window, event):
+    @XlibEventHandler(MotionNotify)
+    def _event_motionnotify(self, event):
         x = event.xmotion.x
         y = event.xmotion.y
-        dx = x - window._mouse.x
-        dy = y - window._mouse.y
-        window._mouse.x = x
-        window._mouse.y = y
-        window.dispatch_event(EVENT_MOUSE_MOTION, x, y, dx, dy)
+        dx = x - self._mouse.x
+        dy = y - self._mouse.y
+        self._mouse.x = x
+        self._mouse.y = y
+        self.dispatch_event(EVENT_MOUSE_MOTION, x, y, dx, dy)
 
-    def __translate_clientmessage(window, event):
+    @XlibEventHandler(ClientMessage)
+    def _event_clientmessage(self, event):
         wm_delete_window = xlib.XInternAtom(event.xclient.display,
             'WM_DELETE_WINDOW', False)
         if event.xclient.data.l[0] == wm_delete_window:
-            window.dispatch_event(EVENT_CLOSE)
+            self.dispatch_event(EVENT_CLOSE)
         else:
             raise NotImplementedError
 
-    def __translate_button(window, event):
-        modifiers = _translate_modifiers(event.xbutton.state)
+    @XlibEventHandler(ButtonPress)
+    @XlibEventHandler(ButtonRelease)
+    def _event_button(self, event):
+        modifiers = self._translate_modifiers(event.xbutton.state)
         if event.type == ButtonPress:
             if event.xbutton.button == 4:
-                window.dispatch_event(EVENT_MOUSE_SCROLL, 0, 1)
+                self.dispatch_event(EVENT_MOUSE_SCROLL, 0, 1)
             elif event.xbutton.button == 5:
-                window.dispatch_event(EVENT_MOUSE_SCROLL, 0, -1)
+                self.dispatch_event(EVENT_MOUSE_SCROLL, 0, -1)
             else:
-                window._mouse.buttons[event.xbutton.button] = True
-                window.dispatch_event(EVENT_MOUSE_PRESS, event.xbutton.button,
+                self._mouse.buttons[event.xbutton.button] = True
+                self.dispatch_event(EVENT_MOUSE_PRESS, event.xbutton.button,
                     event.xbutton.x, event.xbutton.y, modifiers)
         else:
             if event.xbutton.button < 4:
-                window._mouse.buttons[event.xbutton.button] = False
-                window.dispatch_event(EVENT_MOUSE_RELEASE, event.xbutton.button,
+                self._mouse.buttons[event.xbutton.button] = False
+                self.dispatch_event(EVENT_MOUSE_RELEASE, event.xbutton.button,
                     event.xbutton.x, event.xbutton.y, modifiers)
 
-    def __translate_expose(window, event):
+    @XlibEventHandler(Expose)
+    def _event_expose(self, event):
         # Ignore all expose events except the last one. We could be told
         # about exposure rects - but I don't see the point since we're
         # working with OpenGL and we'll just redraw the whole scene.
         if event.xexpose.count > 0: return
-        window.dispatch_event(EVENT_EXPOSE)
+        self.dispatch_event(EVENT_EXPOSE)
 
-    def __translate_enter(window, event):
+    @XlibEventHandler(EnterNotify)
+    def _event_enternotify(self, event):
         # figure active mouse buttons
         # XXX ignore modifier state?
         state = event.xcrossing.state
-        window._mouse.buttons[1] = state & Button1Mask
-        window._mouse.buttons[2] = state & Button2Mask
-        window._mouse.buttons[3] = state & Button3Mask
-        window._mouse.buttons[4] = state & Button4Mask
-        window._mouse.buttons[5] = state & Button5Mask
+        self._mouse.buttons[1] = state & Button1Mask
+        self._mouse.buttons[2] = state & Button2Mask
+        self._mouse.buttons[3] = state & Button3Mask
+        self._mouse.buttons[4] = state & Button4Mask
+        self._mouse.buttons[5] = state & Button5Mask
 
         # mouse position
-        x = window._mouse.x = event.xcrossing.x
-        y = window._mouse.y = event.xcrossing.y
+        x = self._mouse.x = event.xcrossing.x
+        y = self._mouse.y = event.xcrossing.y
 
         # XXX there may be more we could do here
-        window.dispatch_event(EVENT_MOUSE_ENTER, x, y)
+        self.dispatch_event(EVENT_MOUSE_ENTER, x, y)
 
-    def __translate_leave(window, event):
-        # XXX do we care about mouse buttons?
-        x = window._mouse.x = event.xcrossing.x
-        y = window._mouse.y = event.xcrossing.y
-        window.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
+    @XlibEventHandler(LeaveNotify)
+    def _event_leavenotify(self, event):
+        x = self._mouse.x = event.xcrossing.x
+        y = self._mouse.y = event.xcrossing.y
+        self.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
 
-    def __translate_configure(window, event):
+    @XlibEventHandler(ConfigureNotify)
+    def _event_configurenotify(self, event):
         w, h = event.xconfigure.width, event.xconfigure.height
         x, y = event.xconfigure.x, event.xconfigure.y
-        if window._width != w or window._height != h:
-            window._width = w
-            window._height = h
-            window.switch_to()
+        if self._width != w or self._height != h:
+            self._width = w
+            self._height = h
+            self.switch_to()
             glViewport(0, 0, w, h)
-            window.dispatch_event(EVENT_RESIZE, w, h)
-            window.dispatch_event(EVENT_EXPOSE)
-        if window._x != x or window._y != y:
-            window.dispatch_event(EVENT_MOVE, x, y)
-            window._x = x
-            window._y = y
-
-    __event_translators = {
-        KeyPress: __translate_key,
-        KeyRelease: __translate_key,
-        MotionNotify: __translate_motion,
-        ButtonPress: __translate_button,
-        ButtonRelease: __translate_button,
-        ClientMessage: __translate_clientmessage,
-        Expose: __translate_expose,
-        EnterNotify: __translate_enter,
-        LeaveNotify: __translate_leave,
-        ConfigureNotify: __translate_configure,
-    }
-
-def _translate_modifiers(state):
-    modifiers = 0
-    if state & ShiftMask:
-        modifiers |= MOD_SHIFT  
-    if state & ControlMask:
-        modifiers |= MOD_CTRL
-    if state & LockMask:
-        modifiers |= MOD_CAPSLOCK
-    if state & Mod1Mask:
-        modifiers |= MOD_ALT
-    if state & Mod2Mask:
-        modifiers |= MOD_NUMLOCK
-    if state & Mod4Mask:
-        modifiers |= MOD_WINDOWS
-    return modifiers
+            self.dispatch_event(EVENT_RESIZE, w, h)
+            self.dispatch_event(EVENT_EXPOSE)
+        if self._x != x or self._y != y:
+            self.dispatch_event(EVENT_MOVE, x, y)
+            self._x = x
+            self._y = y
 
 
