@@ -177,7 +177,7 @@ class Win32Window(BaseWindow):
     _tracking = False
     _hidden = False
 
-    _style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS
+    _style = 0
     _ex_style = 0
     _minimum_size = None
     _maximum_size = None
@@ -193,56 +193,102 @@ class Win32Window(BaseWindow):
 
         self._mouse = Win32Mouse()
 
-    def create(self, factory):
-        super(Win32Window, self).create(factory)
+    def _context_compatible(self, factory):
+        # XXX TODO determine if context config is the same.
+        return True
 
-        width, height = factory.get_size()
+    def create(self, factory):
+        # Retain old context if possible
+        old_context = None
+        if self._context_compatible(factory):
+            factory.set_context(self.get_context())
+        else:
+            old_context = self.get_context()
+            factory.set_context_share(old_context)
+
+        super(Win32Window, self).create(factory)
+        fullscreen = factory.get_fullscreen()
+
+        # Ensure style is set before determining width/height.
+        if fullscreen:
+            self._style = WS_POPUP
+            self._ex_style = WS_EX_TOPMOST
+        else:
+            self._style = WS_OVERLAPPEDWINDOW
+            self._ex_style = 0
+
+        width, height = self._client_to_window_size(*factory.get_size())
         context = factory.get_context()
 
-        handle = 0
-        self._window_class = WNDCLASS()
-        self._window_class.lpszClassName = 'GenericAppClass'
-        self._window_class.lpfnWndProc = WNDPROC(self._wnd_proc)
-        self._window_class.style = CS_VREDRAW | CS_HREDRAW
-        self._window_class.hInstance = handle
-        self._window_class.hIcon = _user32.LoadIconA(0, IDI_APPLICATION)
-        self._window_class.hCursor = _user32.LoadCursorA(0, IDC_ARROW)
-        self._window_class.hbrBackground = _gdi32.GetStockObject(WHITE_BRUSH)
-        self._window_class.lpszMenuName = None
-        self._window_class.cbClsExtra = 0
-        self._window_class.cbWndExtra = 0
-        if not _user32.RegisterClassA(byref(self._window_class)):
-            _check()
+        if old_context:
+            old_context.destroy()
+            self._wgl_context = None
 
-        rect = RECT()
-        rect.left = 0
-        rect.top = 0
-        rect.right = width
-        rect.bottom = height
-        _user32.AdjustWindowRectEx(byref(rect),
-            self._style, False, self._ex_style)
+        if not self._window_class:
+            white = _gdi32.GetStockObject(WHITE_BRUSH)
+            self._window_class = WNDCLASS()
+            self._window_class.lpszClassName = 'GenericAppClass'
+            self._window_class.lpfnWndProc = WNDPROC(self._wnd_proc)
+            self._window_class.style = CS_VREDRAW | CS_HREDRAW
+            self._window_class.hInstance = 0
+            self._window_class.hIcon = _user32.LoadIconA(0, IDI_APPLICATION)
+            self._window_class.hCursor = _user32.LoadCursorA(0, IDC_ARROW)
+            self._window_class.hbrBackground = white
+            self._window_class.lpszMenuName = None
+            self._window_class.cbClsExtra = 0
+            self._window_class.cbWndExtra = 0
+            if not _user32.RegisterClassA(byref(self._window_class)):
+                _check()
+        
+        if not self._hwnd:
+            self._hwnd = _user32.CreateWindowExA(
+                self._ex_style,
+                self._window_class.lpszClassName,
+                '',
+                self._style,
+                CW_USEDEFAULT,
+                CW_USEDEFAULT,
+                width,
+                height,
+                0,
+                0,
+                self._window_class.hInstance,
+                0)
 
-        self._hwnd = _user32.CreateWindowExA(0,
-            self._window_class.lpszClassName,
-            '',
-            self._style,
-            CW_USEDEFAULT,
-            CW_USEDEFAULT,
-            rect.right - rect.left,
-            rect.bottom - rect.top,
-            0,
-            0,
-            self._window_class.hInstance,
-            0)
+            self._dc = _user32.GetDC(self._hwnd)
+        else:
+            # Window already exists, update it with new style
+            _user32.SetWindowLongA(self._hwnd,
+                GWL_STYLE,
+                self._style)
+            _user32.SetWindowLongA(self._hwnd,
+                GWL_EXSTYLE,
+                self._ex_style)
 
-        self._dc = _user32.GetDC(self._hwnd)
+        if fullscreen:
+            hwnd_after = HWND_TOPMOST
+        else:
+            hwnd_after = HWND_NOTOPMOST
 
-        # Now we have enough to create the context
-        context._set_window(self)
-        self._wgl_context = context._context
+        # Position and size window
+        if factory.get_location() != LOCATION_DEFAULT:
+            x, y = self._client_to_window_pos(*factory.get_location())
+            _user32.SetWindowPos(self._hwnd, hwnd_after,
+                x, y, width, height, SWP_FRAMECHANGED)
+        else:
+            _user32.SetWindowPos(self._hwnd, hwnd_after,
+                0, 0, width, height, SWP_NOMOVE | SWP_FRAMECHANGED)
+
+        # Context must be created after window is created.
+        if not self._wgl_context:
+            context._set_window(self)
+            self._wgl_context = context._context
 
         _user32.ShowWindow(self._hwnd, SW_SHOWDEFAULT)
         _user32.UpdateWindow(self._hwnd)
+
+        if fullscreen:
+            self.activate()
 
     def close(self):
         super(Win32Window, self).close()
@@ -256,14 +302,9 @@ class Win32Window(BaseWindow):
 
     def flip(self):
         wglSwapLayerBuffers(self._dc, WGL_SWAP_MAIN_PLANE)
-        _user32.ValidateRect(self._hwnd, c_void_p())
 
     def set_location(self, x, y):
-        rect = RECT()
-        rect.left = x
-        rect.top = y
-        _user32.AdjustWindowRectEx(byref(rect), 
-            self._style, False, self._ex_style)
+        x, y = self._client_to_window_pos(x, y)
         _user32.SetWindowPos(self._hwnd, 0, rect.left, rect.top, 0, 0, 
             (SWP_NOZORDER |
              SWP_NOSIZE |
@@ -275,23 +316,12 @@ class Win32Window(BaseWindow):
         _user32.ClientToScreen(self._hwnd, byref(rect))
         return rect.left, rect.top
 
-    def _client_to_window_size(self, width, height):
-        rect = RECT()
-        rect.left = 0
-        rect.top = 0
-        rect.right = width
-        rect.bottom = height
-        _user32.AdjustWindowRectEx(byref(rect),
-            self._style, False, self._ex_style)
-        return rect.right - rect.left, rect.bottom - rect.top
-
     def set_size(self, width, height):
         width, height = self._client_to_window_size(width, height)
         _user32.SetWindowPos(self._hwnd, 0, 0, 0, width, height,
             (SWP_NOZORDER |
              SWP_NOMOVE |
              SWP_NOOWNERZORDER))
-
 
     def get_size(self):
         rect = RECT()
@@ -321,7 +351,27 @@ class Win32Window(BaseWindow):
 
     def set_caption(self, caption):
         _user32.SetWindowTextW(self._hwnd, c_wchar_p(caption))
-    
+
+    # Private util
+   
+    def _client_to_window_size(self, width, height):
+        rect = RECT()
+        rect.left = 0
+        rect.top = 0
+        rect.right = width
+        rect.bottom = height
+        _user32.AdjustWindowRectEx(byref(rect),
+            self._style, False, self._ex_style)
+        return rect.right - rect.left, rect.bottom - rect.top
+
+    def _client_to_window_pos(self, x, y):
+        rect = RECT()
+        rect.left = x
+        rect.top = y
+        _user32.AdjustWindowRectEx(byref(rect),
+            self._style, False, self._ex_style)
+        return rect.left, rect.top
+
     # Event dispatching
 
     def dispatch_events(self):

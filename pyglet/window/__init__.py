@@ -212,10 +212,10 @@ class BaseWindow(WindowEventHandler):
             factory.set_size(width, height)
         elif fullscreen:
             self._windowed_size = self.get_size()
-            print 'windowed size', self._windowed_size
             self._windowed_location = self.get_location()
             screen = factory.get_screen()
             factory.set_size(screen.width, screen.height)
+            factory.set_location(screen.x, screen.y)
         elif self._windowed_size:
             factory.set_size(*self._windowed_size)
             factory.set_location(*self._windowed_location)
@@ -229,6 +229,8 @@ class BaseWindow(WindowEventHandler):
 
     def set_exclusive_keyboard(self, exclusive=True):
         raise NotImplementedError()
+
+    
 
     @property
     def width(self):
