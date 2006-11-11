@@ -449,6 +449,7 @@ class XlibWindow(BaseWindow):
         attributes = XWindowAttributes()
         xlib.XGetWindowAttributes(self._display, self._window,
                                   byref(attributes))
+        # XXX at least under KDE's WM these attrs are both 0
         x -= attributes.x
         y -= attributes.y
         xlib.XMoveWindow(self._display, self._window, x, y)
