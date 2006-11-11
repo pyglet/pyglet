@@ -31,8 +31,10 @@ class Win32Platform(BasePlatform):
         screens = []
         def enum_proc(hMonitor, hdcMonitor, lprcMonitor, dwData):
             r = lprcMonitor.contents
+            width = r.right - r.left
+            height = r.bottom - r.top
             screens.append(
-                Win32Screen(hMonitor, r.left, r.top, r.width, r.height))
+                Win32Screen(hMonitor, r.left, r.top, width, height))
             return True
         enum_proc_type = CFUNCTYPE(BOOL, HMONITOR, HDC, POINTER(RECT), LPARAM)
         enum_proc_ptr = enum_proc_type(enum_proc)
@@ -175,6 +177,11 @@ class Win32Window(BaseWindow):
     _tracking = False
     _hidden = False
 
+    _style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS
+    _ex_style = 0
+    _minimum_size = None
+    _maximum_size = None
+
     def __init__(self):
         super(Win32Window, self).__init__()
 
@@ -207,14 +214,22 @@ class Win32Window(BaseWindow):
         if not _user32.RegisterClassA(byref(self._window_class)):
             _check()
 
+        rect = RECT()
+        rect.left = 0
+        rect.top = 0
+        rect.right = width
+        rect.bottom = height
+        _user32.AdjustWindowRectEx(byref(rect),
+            self._style, False, self._ex_style)
+
         self._hwnd = _user32.CreateWindowExA(0,
             self._window_class.lpszClassName,
             '',
-            WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
+            self._style,
             CW_USEDEFAULT,
             CW_USEDEFAULT,
-            width,
-            height,
+            rect.right - rect.left,
+            rect.bottom - rect.top,
             0,
             0,
             self._window_class.hInstance,
@@ -241,18 +256,86 @@ class Win32Window(BaseWindow):
 
     def flip(self):
         wglSwapLayerBuffers(self._dc, WGL_SWAP_MAIN_PLANE)
+        _user32.ValidateRect(self._hwnd, c_void_p())
+
+    def set_location(self, x, y):
+        rect = RECT()
+        rect.left = x
+        rect.top = y
+        _user32.AdjustWindowRectEx(byref(rect), 
+            self._style, False, self._ex_style)
+        _user32.SetWindowPos(self._hwnd, 0, rect.left, rect.top, 0, 0, 
+            (SWP_NOZORDER |
+             SWP_NOSIZE |
+             SWP_NOOWNERZORDER))
+
+    def get_location(self):
+        rect = RECT()
+        _user32.GetClientRect(self._hwnd, byref(rect))
+        _user32.ClientToScreen(self._hwnd, byref(rect))
+        return rect.left, rect.top
+
+    def _client_to_window_size(self, width, height):
+        rect = RECT()
+        rect.left = 0
+        rect.top = 0
+        rect.right = width
+        rect.bottom = height
+        _user32.AdjustWindowRectEx(byref(rect),
+            self._style, False, self._ex_style)
+        return rect.right - rect.left, rect.bottom - rect.top
+
+    def set_size(self, width, height):
+        width, height = self._client_to_window_size(width, height)
+        _user32.SetWindowPos(self._hwnd, 0, 0, 0, width, height,
+            (SWP_NOZORDER |
+             SWP_NOMOVE |
+             SWP_NOOWNERZORDER))
+
+
+    def get_size(self):
+        rect = RECT()
+        _user32.GetClientRect(self._hwnd, byref(rect))
+        return rect.right - rect.left, rect.bottom - rect.top
+
+    def set_minimum_size(self, width, height):
+        self._minimum_size = width, height
+
+    def set_maximum_size(self, width, height):
+        self._maximum_size = width, height
+
+    def activate(self):
+        _user32.SetForegroundWindow(self._hwnd)
+
+    def set_visible(self, visible=True):
+        if visible:
+            _user32.ShowWindow(self._hwnd, SW_SHOW)
+        else:
+            _user32.ShowWindow(self._hwnd, SW_HIDE)
+
+    def minimize(self):
+        _user32.ShowWindow(self._hwnd, SW_MINIMIZE)
+
+    def maximize(self):
+        _user32.ShowWindow(self._hwnd, SW_MAXIMIZE)
+
+    def set_caption(self, caption):
+        _user32.SetWindowTextW(self._hwnd, c_wchar_p(caption))
+    
+    # Event dispatching
 
     def dispatch_events(self):
         msg = MSG()
-        while _user32.PeekMessageA(byref(msg), 0, 0, 0, PM_REMOVE):
+        while _user32.PeekMessageA(byref(msg), self._hwnd, 0, 0, PM_REMOVE):
             _user32.TranslateMessage(byref(msg))
             _user32.DispatchMessageA(byref(msg))
 
     def _wnd_proc(self, hwnd, msg, wParam, lParam):
         event_handler = self._event_handlers.get(msg, None)
+        result = None
         if event_handler:
             result = event_handler(msg, wParam, lParam)
-        else:
+        if result is None:
             result = _user32.DefWindowProcA(c_int(hwnd), c_int(msg),
                 c_int(wParam), c_int(lParam)) 
         return result
@@ -394,8 +477,10 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_PAINT)
     def _event_paint(self, msg, wParam, lParam):
         self.dispatch_event(EVENT_EXPOSE)
-        _user32.ValidateRect(self._hwnd, c_void_p())
-        return 0
+        # Validating the window using ValidateRect or ValidateRgn
+        # doesn't clear the paint message when more than one window
+        # is open [why?]; defer to DefWindowProc instead.
+        return None
 
     @Win32EventHandler(WM_SIZE)
     def _event_size(self, msg, wParam, lParam):
@@ -440,6 +525,17 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_KILLFOCUS)
     def _event_killfocus(self, msg, wParam, lParam):
         self.dispatch_event(EVENT_DEACTIVATE)
+        return 0
+
+    @Win32EventHandler(WM_GETMINMAXINFO)
+    def _event_getminmaxinfo(self, msg, wParam, lParam):
+        info = MINMAXINFO.from_address(lParam)
+        if self._minimum_size:
+            info.ptMinTrackSize.x, info.ptMinTrackSize.y = \
+                self._client_to_window_size(*self._minimum_size)
+        if self._maximum_size:
+            info.ptMaxTrackSize.x, info.ptMaxTrackSize.y = \
+                self._client_to_window_size(*self._maximum_size)
         return 0
 
 def _check():
