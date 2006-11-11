@@ -7,12 +7,15 @@ Expected behaviour:
     to disable exclusive mode.
 
     In exclusive mode:
-     - Pressing Alt+Tab, the Expose keys, etc., should have no effect besides
-       displaying as keyboard events.
+     - Pressing system keys, the Expose keys, etc., should have no effect
+       besides displaying as keyboard events.
         - On OS X, the Power switch is not disabled (though this is possible
           if desired, see source).
         - On OS X, the menu bar and dock will disappear during keyboard
           exclusive mode.
+        - On Windows, only Alt+Tab and Alt-F4 are disabled.  A
+          user can still switch away using Ctrl+Escape, Alt+Escape, the
+          Windows key or Ctrl+Alt+Del.
      - Switching to another application (i.e., with the mouse) should make
        these keys work normally again until this application regains focus.
 
@@ -48,8 +51,8 @@ class WINDOW_SET_EXCLUSIVE_KEYBOARD(unittest.TestCase):
         self.width, self.height = 200, 200
         self.w = w = pyglet.window.create(self.width, self.height)
         exit_handler = ExitHandler()
-        w.push_handlers(exit_handler)
         w.push_handlers(self)
+        w.push_handlers(exit_handler)
         while not exit_handler.exit:
             w.dispatch_events()
         w.close()

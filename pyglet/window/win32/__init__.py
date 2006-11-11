@@ -177,6 +177,12 @@ class Win32Window(BaseWindow):
     _tracking = False
     _hidden = False
 
+    _exclusive_keyboard = False
+    _exclusive_mouse = False
+    _exclusive_mouse_screen = None
+    _exclusive_mouse_client = None
+    _ignore_mousemove = False
+
     _style = 0
     _ex_style = 0
     _minimum_size = None
@@ -355,10 +361,67 @@ class Win32Window(BaseWindow):
         _user32.ShowWindow(self._hwnd, SW_MAXIMIZE)
 
     def set_caption(self, caption):
+        super(Win32Window, self).set_caption(caption)
         _user32.SetWindowTextW(self._hwnd, c_wchar_p(caption))
 
+    def set_exclusive_mouse(self, exclusive=True):
+        if self._exclusive_mouse == exclusive:
+            return
+    
+        if exclusive:
+            p = POINT()
+            # Save the current mouse coordinates for faking pos.
+            _user32.GetCursorPos(byref(p))
+            _user32.ScreenToClient(self._hwnd, byref(p))
+            self._mouse.x = p.x
+            self._mouse.y = p.y
+
+            # Move mouse to the center of the window.
+            rect = RECT()
+            _user32.GetClientRect(self._hwnd, byref(rect))
+            _user32.MapWindowPoints(self._hwnd, HWND_DESKTOP, byref(rect), 2)
+            p.x = (rect.left + rect.right) / 2
+            p.y = (rect.top + rect.bottom) / 2
+
+            # This is the point the mouse will be kept at while in exclusive
+            # mode.
+            self._exclusive_mouse_screen = p.x, p.y
+            self._exclusive_mouse_client = p.x - rect.left, p.y - rect.top
+            self._ignore_mousemove = True
+            _user32.SetCursorPos(p.x, p.y)
+
+            # Clip to client area, to prevent large mouse movements taking
+            # it outside the client area.
+            _user32.ClipCursor(byref(rect))
+        else:
+            # Release clip
+            _user32.ClipCursor(c_void_p())
+
+            # Return mouse to the faked position
+            p = POINT()
+            p.x = self._mouse.x
+            p.y = self._mouse.y
+            _user32.ClientToScreen(self._hwnd, byref(p))
+            _user32.SetCursorPos(p.x, p.y)
+            self._ignore_mousemove = True
+
+        _user32.ShowCursor(not exclusive)
+        self._exclusive_mouse = exclusive
+
+    def set_exclusive_keyboard(self, exclusive=True):
+        if self._exclusive_keyboard == exclusive:
+            return
+
+        if exclusive:
+            _user32.RegisterHotKey(self._hwnd, 0, WIN32_MOD_ALT, VK_TAB)
+        else:
+            for i in range(3):
+                _user32.UnregisterHotKey(self._hwnd, i)
+
+        self._exclusive_keyboard = exclusive
+
     # Private util
-   
+
     def _client_to_window_size(self, width, height):
         rect = RECT()
         rect.left = 0
@@ -442,7 +505,12 @@ class Win32Window(BaseWindow):
                      # right or left shift key. 
             
             self.dispatch_event(event, symbol, self._get_modifiers(lParam))
-        return 0
+
+        # Send on to DefWindowProc if not exclusive.
+        if self._exclusive_keyboard:
+            return 0
+        else:
+            return None
 
     @Win32EventHandler(WM_CHAR)
     def _event_char(self, msg, wParam, lParam):
@@ -454,6 +522,25 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_MOUSEMOVE)
     def _event_mousemove(self, msg, wParam, lParam):
         x, y = self._get_location(lParam)
+        if self._ignore_mousemove:
+            # Ignore the event caused by SetCursorPos
+            self._ignore_mousemove = False
+            return 0
+
+        if self._exclusive_mouse:
+            # Reset mouse position (so we don't hit the edge of the screen).
+            self._ignore_mousemove = True
+            _user32.SetCursorPos(*self._exclusive_mouse_screen)
+            
+            # Fake the cursor position  
+            dx = x - self._exclusive_mouse_client[0]
+            dy = y - self._exclusive_mouse_client[1]
+            x = self._mouse.x + dx
+            y = self._mouse.y + dy
+        else:
+            dx = x - self._mouse.x
+            dy = y - self._mouse.y
+
         if not self._tracking:
             # There is no WM_MOUSEENTER message (!), so fake it from the
             # first WM_MOUSEMOVE event after leaving.  Use self._tracking
@@ -467,8 +554,6 @@ class Win32Window(BaseWindow):
             track.hwndTrack = self._hwnd
             _user32.TrackMouseEvent(byref(track))
 
-        dx = x - self._mouse.x
-        dy = y - self._mouse.y
         self._mouse.x = x
         self._mouse.y = y
         self.dispatch_event(EVENT_MOUSE_MOTION, x, y, dx, dy)

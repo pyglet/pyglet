@@ -33,8 +33,8 @@ class WINDOW_MINIMIZE_MAXIMIZE(unittest.TestCase):
         self.width, self.height = 200, 200
         self.w = w = pyglet.window.create(self.width, self.height)
         exit_handler = ExitHandler()
-        w.push_handlers(exit_handler)
         w.push_handlers(self)
+        w.push_handlers(exit_handler)
         while not exit_handler.exit:
             w.dispatch_events()
         w.close()

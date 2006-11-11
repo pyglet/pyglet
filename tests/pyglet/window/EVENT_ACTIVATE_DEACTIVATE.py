@@ -34,8 +34,8 @@ class EVENT_ACTIVATE_DEACTIVATE(unittest.TestCase):
     def test_activate_deactivate(self):
         w = pyglet.window.create(200, 200)
         exit_handler = ExitHandler()
-        w.push_handlers(exit_handler)
         w.push_handlers(self)
+        w.push_handlers(exit_handler)
         while not exit_handler.exit:
             w.dispatch_events()
         w.close()

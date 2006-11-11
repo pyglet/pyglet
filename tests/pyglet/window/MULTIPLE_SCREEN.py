@@ -40,8 +40,8 @@ class MULTIPLE_SCREEN(unittest.TestCase):
         factory.set_screen(screen)
         self.w = factory.create_window()
         self.exit_handler = ExitHandler()
-        self.w.push_handlers(self.exit_handler)
         self.w.push_handlers(self)
+        self.w.push_handlers(self.exit_handler)
 
     def on_expose(self):
         self.w.switch_to()
