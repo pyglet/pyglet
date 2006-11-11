@@ -608,3 +608,18 @@ MWM_DECOR_TITLE    = (1 << 3)
 MWM_DECOR_MENU     = (1 << 4)
 MWM_DECOR_MINIMIZE = (1 << 5)
 MWM_DECOR_MAXIMIZE = (1 << 6)
+
+#***************************************************************
+# Size hints mask bits
+#***************************************************************
+
+USPosition	= (1L << 0)	# user specified x, y 
+USSize		= (1L << 1)	# user specified width, height 
+PPosition	= (1L << 2)	# program specified position 
+PSize		= (1L << 3)	# program specified size 
+PMinSize	= (1L << 4)	# program specified minimum size 
+PMaxSize	= (1L << 5)	# program specified maximum size 
+PResizeInc	= (1L << 6)	# program specified resize increments 
+PAspect		= (1L << 7)	# program specified min and max aspect ratios 
+PBaseSize	= (1L << 8)
+PWinGravity	= (1L << 9)

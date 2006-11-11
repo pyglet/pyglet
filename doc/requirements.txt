@@ -49,11 +49,11 @@ pyglet
             EVENT_SHOW_HIDE                 X   X   X
             WINDOW_SET_LOCATION             X   X   X
             WINDOW_SET_SIZE                 X   X   X
-            WINDOW_SET_MIN_MAX_SIZE             X   X
-            WINDOW_ACTIVATE                     X   X
-            WINDOW_SET_VISIBLE                  X   X
-            WINDOW_MINIMIZE_MAXIMIZE            X   X
-            WINDOW_SET_EXCLUSIVE_MOUSE          X   X
+            WINDOW_SET_MIN_MAX_SIZE         X   X   X
+            WINDOW_ACTIVATE                 X   X   X
+            WINDOW_SET_VISIBLE              X   X   X
+            WINDOW_MINIMIZE_MAXIMIZE        X   X   X
+            WINDOW_SET_EXCLUSIVE_MOUSE      X   X   X
             WINDOW_SET_EXCLUSIVE_KEYBOARD       X   X
             WINDOW_SET_FULLSCREEN           X   X   X
             WINDOW_INITIAL_FULLSCREEN       X   X   X
@@ -149,6 +149,12 @@ pyglet
             - Minimize button
             - Close button / system menu
             - Modal (specify parent)
+
+         - Different exclusive mouse behaviour in Xlib/Win32  (fake where
+           the cursor would be) and Carbon (pin mouse at 0,0).  Problem
+           with Xlib/Win32: have to update button press/release functions
+           to handle the fake as well.  No easy way to adapt this for Carbon.
+           Maybe just deal with having x,y=0 while in exclusive?
 
 
     event

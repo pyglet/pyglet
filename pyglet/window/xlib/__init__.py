@@ -270,12 +270,18 @@ class XlibWindow(BaseWindow):
     _glx_context = None     # GLX context handle
     _glx_window = None      # GLX window handle
     _window = None          # Xlib window handle
+    _minimum_size = None
+    _maximum_size = None
 
     _x = 0
     _y = 0                  # Last known window position
     _width = 0
     _height = 0             # Last known window size
     _mouse = None           # Last known mouse position and button state
+    _ignore_motion = False  # Set to true to skip the next mousemotion event
+    _exclusive_mouse = False
+    _exclusive_mouse_client = None
+    _mapped = False
 
     _default_event_mask = (0x1ffffff 
         & ~PointerMotionHintMask
@@ -364,8 +370,7 @@ class XlibWindow(BaseWindow):
         self._map()
         if fullscreen:
             # Explicitly set focus to window if using override_redirect.
-            xlib.XSetInputFocus(self._display, self._window,
-                RevertToParent, CurrentTime)
+            self.activate()
 
         if not self._glx_window:
             self._glx_window = glXCreateWindow(self._display,
@@ -375,6 +380,9 @@ class XlibWindow(BaseWindow):
         self.dispatch_event(EVENT_EXPOSE)
 
     def _map(self):
+        if self._mapped:
+            return
+
         # Map the window, wait for map event before continuing.
         xlib.XSelectInput(self._display, self._window, StructureNotifyMask)
         xlib.XMapRaised(self._display, self._window)
@@ -385,8 +393,12 @@ class XlibWindow(BaseWindow):
                 break
 
         xlib.XSelectInput(self._display, self._window, self._default_event_mask)
+        self._mapped = True
 
     def _unmap(self):
+        if not self._mapped:
+            return
+
         xlib.XSelectInput(self._display, self._window, StructureNotifyMask)
         xlib.XUnmapWindow(self._display, self._window)
         e = XEvent()
@@ -396,6 +408,7 @@ class XlibWindow(BaseWindow):
                 break
 
         xlib.XSelectInput(self._display, self._window, self._default_event_mask)
+        self._mapped = False
 
     def _get_root(self):
         attributes = XWindowAttributes()
@@ -481,7 +494,84 @@ class XlibWindow(BaseWindow):
                                    byref(child))
         return x.value, y.value
 
+    def activate(self):
+        xlib.XSetInputFocus(self._display, self._window,
+            RevertToParent, CurrentTime)
+
+    def set_visible(self, visible=True):
+        if visible:
+            self._map()
+        else:
+            self._unmap()
+
+    def set_minimum_size(self, width, height):
+        self._minimum_size = width, height
+        self._set_wm_normal_hints()
+
+    def set_maximum_size(self, width, height):
+        self._maximum_size = width, height
+        self._set_wm_normal_hints()
+
+    def minimize(self):
+        xlib.XIconifyWindow(self._display, self._window, self._screen_id)
+
+    def maximize(self):
+        self._set_wm_state('_NET_WM_STATE_MAXIMIZED_HORZ',
+                           '_NET_WM_STATE_MAXIMIZED_VERT')
+
+    def set_exclusive_mouse(self, exclusive=True):
+        if exclusive == self._exclusive_mouse:
+            return
+
+        if exclusive:
+            # TODO: hide cursor.
+
+            # Restrict to client area
+            xlib.XGrabPointer(self._display, self._window, 
+                True,
+                0,
+                GrabModeAsync,
+                GrabModeAsync,
+                self._window,
+                0,
+                CurrentTime)
+
+            # Move pointer to center of window
+            x = self._width / 2
+            y = self._height / 2
+            self._exclusive_mouse_client = x, y
+            xlib.XWarpPointer(self._display,
+                0,              # src window
+                self._window,   # dst window
+                0, 0,           # src x, y
+                0, 0,           # src w, h
+                x, y)
+            self._ignore_motion = True
+        else:
+            xlib.XUngrabPointer(self._display, CurrentTime)
+
+            # Restore pointer to faked position
+            xlib.XWarpPointer(self._display,
+                0,
+                self._window,
+                0, 0,
+                0, 0, 
+                self._mouse.x, self._mouse.y)
+            self._ignore_motion = True
+
+        self._exclusive_mouse = exclusive
+
     # Private utility
+
+    def _set_wm_normal_hints(self):
+        hints = XSizeHints.from_address(xlib.XAllocSizeHints())
+        if self._minimum_size:
+            hints.flags |= PMinSize
+            hints.min_width, hints.min_height = self._minimum_size
+        if self._maximum_size:
+            hints.flags |= PMaxSize
+            hints.max_width, hints.max_height = self._maximum_size
+        xlib.XSetWMNormalHints(self._display, self._window, byref(hints))
 
     def _set_property(self, name, value, allow_utf8=True):
         atom = xlib.XInternAtom(self._display, name, True)
@@ -506,17 +596,31 @@ class XlibWindow(BaseWindow):
             # XXX <rj> Xlib doesn't like us freeing this
             #xlib.XFree(property.value)
 
-    def _set_wm_state(self, state, add=True):
+    def _set_wm_state(self, *states):
+        # Set property
+        net_wm_state = xlib.XInternAtom(self._display, '_NET_WM_STATE', False)
+        atoms = []
+        for state in states:
+            atoms.append(xlib.XInternAtom(self._display, state, False))
+        atom_type = xlib.XInternAtom(self._display, 'ATOM', False)
+        if len(atoms):
+            atoms_ar = (Atom * len(atoms))(*atoms)
+            xlib.XChangeProperty(self._display, self._window,
+                net_wm_state, atom_type, 32, PropModePrepend, 
+                atoms_ar, len(atoms))
+        else:
+            xlib.XDeleteProperty(self._display, self._window, net_wm_state)
+
+        # Nudge the WM
         e = XEvent()
-        net_wm_state = xlib.XInternAtom(self._display, '_NET_WM_STATE', True)
-        net_state = xlib.XInternAtom(self._display, state, True)
         e.xclient.type = ClientMessage
         e.xclient.message_type = net_wm_state
         e.xclient.display = self._display
         e.xclient.window = self._window
         e.xclient.format = 32
-        e.xclient.data.l[0] = int(add) 
-        e.xclient.data.l[1] = net_state
+        e.xclient.data.l[0] = PropModePrepend
+        for i, atom in enumerate(atoms):
+            e.xclient.data.l[i + 1] = atom
         xlib.XSendEvent(self._display, self._get_root(),
             False, SubstructureRedirectMask, byref(e))
 
@@ -618,10 +722,33 @@ class XlibWindow(BaseWindow):
 
     @XlibEventHandler(MotionNotify)
     def _event_motionnotify(self, event):
+        if self._ignore_motion:
+            # Ignore events caused by XWarpPointer
+            self._ignore_motion = False
+            return
+
         x = event.xmotion.x
         y = event.xmotion.y
-        dx = x - self._mouse.x
-        dy = y - self._mouse.y
+        if self._exclusive_mouse:
+            # Reset pointer position
+            xlib.XWarpPointer(self._display,
+                0,
+                self._window,
+                0, 0,
+                0, 0,
+                self._exclusive_mouse_client[0],
+                self._exclusive_mouse_client[1])
+            self._ignore_motion = True
+
+            # Fake pointer position
+            dx = x - self._exclusive_mouse_client[0]
+            dy = y - self._exclusive_mouse_client[1]
+            x = self._mouse.x + dx
+            y = self._mouse.y + dy
+        else:
+            dx = x - self._mouse.x
+            dy = y - self._mouse.y
+
         self._mouse.x = x
         self._mouse.y = y
         self.dispatch_event(EVENT_MOUSE_MOTION, x, y, dx, dy)
@@ -712,8 +839,10 @@ class XlibWindow(BaseWindow):
 
     @XlibEventHandler(MapNotify)
     def _event_mapnotify(self, event):
+        self._mapped = True
         self.dispatch_event(EVENT_SHOW)
 
     @XlibEventHandler(UnmapNotify)
     def _event_unmapnotify(self, event):
+        self._mapped = False
         self.dispatch_event(EVENT_HIDE)

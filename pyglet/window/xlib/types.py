@@ -532,6 +532,32 @@ class XVisualInfo(Structure):
         ('bits_per_rgb', c_int),
     ]
 
+class _SizeHintsPoint(Structure):
+    _fields_ = [
+        ('x', c_int),
+        ('y', c_int)
+    ]
+
+class XSizeHints(Structure):
+    _fields_ = [
+        ('flags', c_long),
+        ('x', c_int),
+        ('y', c_int),
+        ('width', c_int),
+        ('height', c_int),
+        ('min_width', c_int),
+        ('min_height', c_int),
+        ('max_width', c_int),
+        ('max_height', c_int),
+        ('width_inc', c_int),
+        ('height_inc', c_int),
+        ('min_aspect', _SizeHintsPoint),
+        ('max_aspect', _SizeHintsPoint),
+        ('base_width', c_int),
+        ('base_height', c_int),
+        ('win_gravity', c_int)
+    ]
+
 # Xinerama
 
 class XineramaScreenInfo(Structure):
