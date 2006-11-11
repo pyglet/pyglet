@@ -261,6 +261,7 @@ class XVisibilityEvent(Structure):
         ('send_event', Bool),
         ('display', POINTER(Display)),
         ('window', Window),
+        ('state', c_int)
     ]
 
 class XCreateWindowEvent(Structure):

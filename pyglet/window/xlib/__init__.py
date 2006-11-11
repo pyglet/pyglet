@@ -702,4 +702,18 @@ class XlibWindow(BaseWindow):
             self._x = x
             self._y = y
 
+    @XlibEventHandler(FocusIn)
+    def _event_focusin(self, event):
+        self.dispatch_event(EVENT_ACTIVATE)
 
+    @XlibEventHandler(FocusOut)
+    def _event_focusout(self, event):
+        self.dispatch_event(EVENT_DEACTIVATE)
+
+    @XlibEventHandler(MapNotify)
+    def _event_mapnotify(self, event):
+        self.dispatch_event(EVENT_SHOW)
+
+    @XlibEventHandler(UnmapNotify)
+    def _event_unmapnotify(self, event):
+        self.dispatch_event(EVENT_HIDE)

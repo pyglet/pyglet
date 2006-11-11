@@ -45,8 +45,8 @@ pyglet
             EVENT_EXPOSE                    X   X   X
             EVENT_RESIZE                    X   X   X
             EVENT_MOVE                      X   X   X
-            EVENT_ACTIVATE_DEACTIVATE           X   X
-            EVENT_SHOW_HIDE                     X   X
+            EVENT_ACTIVATE_DEACTIVATE       X   X   X
+            EVENT_SHOW_HIDE                 X   X   X
             WINDOW_SET_LOCATION             X   X   X
             WINDOW_SET_SIZE                 X   X   X
             WINDOW_SET_MIN_MAX_SIZE             X   X
