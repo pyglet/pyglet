@@ -107,6 +107,9 @@ pyglet
 
            OS X: http://developer.apple.com/samplecode/BoingX/index.html
 
+           xlib: http://www.faqs.org/faqs/graphics/opengl-faq/part3/
+                 (borderless window, not translucent)
+
          - ensure all mouse coordinates are returned as floats
          - OS X does not receive motion events when window doesn't have
            focus; ensure this is also the case for other platforms (or
@@ -119,11 +122,17 @@ pyglet
            registered "PYGL" with Apple, which can be the default; there
            should probably also be a mechanism for people to use their own
            creator codes instead.
+         - X11 apps have a WM_CLASS - we should allow programmers to supply
+           a class name. Should we default it?
          - Enable/disable live resizing? (possible on OS X, what about
            others?)
          - windows should be created hidden, and shown by method call.  this
            allows applications to get an initial on_show and on_resize event.
            OTOH, this would be the cause of many WTF's on the mailing list.
+
+           <rj> allow a "intially hidden" boolean in the window create
+           function which defaults to False.
+
          - events for system sleep/shutdown and display change
          - method to disable screensaver
          - windows appearing on different devices cannot share context.
