@@ -109,7 +109,6 @@ pyglet
 
            xlib: http://www.faqs.org/faqs/graphics/opengl-faq/part3/
                  (borderless window, not translucent)
-
          - ensure all mouse coordinates are returned as floats
          - OS X does not receive motion events when window doesn't have
            focus; ensure this is also the case for other platforms (or

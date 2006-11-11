@@ -50,6 +50,12 @@ xlib.XNextEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
 xlib.XCheckTypedWindowEvent.argtypes = [POINTER(Display),
     c_ulong, c_int, POINTER(XEvent)]
 xlib.XPutBackEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
+xlib.XCreateBitmapFromData.argtypes = [POINTER(Display), Window,
+    c_char_p, c_uint, c_uint]
+xlib.XCreateBitmapFromData.restype = Pixmap
+xlib.XCreatePixmapCursor.argtypes = [POINTER(Display), Pixmap, Pixmap,
+    POINTER(XColor), POINTER(XColor), c_uint, c_uint]
+xlib.XCreatePixmapCursor.restype = Cursor
 
 # Do we have the November 2000 UTF8 extension?
 _have_utf8 = hasattr(xlib, 'Xutf8TextListToTextProperty')
@@ -519,12 +525,22 @@ class XlibWindow(BaseWindow):
         self._set_wm_state('_NET_WM_STATE_MAXIMIZED_HORZ',
                            '_NET_WM_STATE_MAXIMIZED_VERT')
 
+    _blank_cursor = None
     def set_exclusive_mouse(self, exclusive=True):
         if exclusive == self._exclusive_mouse:
             return
 
         if exclusive:
-            # TODO: hide cursor.
+            if self._blank_cursor is None:
+                # create blank cursor
+                data = (c_char * 1)()
+                data[0] = '\0'
+                blank = xlib.XCreateBitmapFromData(self._display,
+                    self._window, data, 1, 1)
+                dummy = XColor()
+                self._blank_cursor = xlib.XCreatePixmapCursor(self._display,
+                    blank, blank, byref(dummy), byref(dummy), 0, 0)
+                xlib.XFreePixmap(self._display, blank)
 
             # Restrict to client area
             xlib.XGrabPointer(self._display, self._window, 
@@ -533,7 +549,7 @@ class XlibWindow(BaseWindow):
                 GrabModeAsync,
                 GrabModeAsync,
                 self._window,
-                0,
+                self._blank_cursor,
                 CurrentTime)
 
             # Move pointer to center of window

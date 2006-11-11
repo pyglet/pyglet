@@ -13,6 +13,8 @@ from pyglet.window.xlib.constants import *
 # from X.h
 XID = Atom = Time = c_ulong
 Window = XID
+Pixmap = XID
+Cursor = XID
 Display = c_void_p
 Bool = c_int
 Colormap = c_uint32
@@ -27,6 +29,16 @@ class Screen(Structure):
         ('width', c_int),
         ('height', c_int)
         # ... there is more, but we don't need it.
+    ]
+
+class XColor(Structure):
+    _fields_ = [
+        ('pixel', c_ulong),
+        ('red', c_ushort),
+        ('green', c_ushort),
+        ('blue', c_ushort),
+        ('flags', c_char),
+        ('pad', c_char),
     ]
 
 # Window attrs from Xlib.h
