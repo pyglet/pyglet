@@ -39,7 +39,7 @@ pyglet
             EVENT_TEXT                      X   X   X
             EVENT_BUTTON                    X   X   X
             EVENT_MOUSE_MOTION              X   X   X
-            EVENT_MOUSE_DRAG                X   X
+            EVENT_MOUSE_DRAG                X   X   X
             EVENT_MOUSE_ENTER_LEAVE         X   X   X
             EVENT_MOUSE_SCROLL              X   X   X
             EVENT_CLOSE                     X   X   X
@@ -102,39 +102,27 @@ pyglet
            <ah> They are stored in pyglet.window._active_contexts, and
                 are destroyed when their owning window is destroyed.
 
-         - all platforms: update GL context when window is moved, resized,
-           or display properties change (e.g., change resolution).
+         - all platforms: update GL context when configuration changes
+            (e.g. requesting another buffer)
          - poll: which platforms can do borderless/translucent GL windows?
 
            OS X: http://developer.apple.com/samplecode/BoingX/index.html
 
            xlib: http://www.faqs.org/faqs/graphics/opengl-faq/part3/
                  (borderless window, not translucent)
-         - ensure all mouse coordinates are returned as floats
          - OS X does not receive motion events when window doesn't have
            focus; ensure this is also the case for other platforms (or
            find workaround for Carbon).
          - event for context-menu invocation (right-mouse button, ctrl+click
            on mac, menu key on some keyboards).
-         - (maybe) event for drag (on os x, this is motion with a button
-           down; also consistent with java awt).
          - OS X apps require a unique 4 character creator code.  I have
            registered "PYGL" with Apple, which can be the default; there
            should probably also be a mechanism for people to use their own
            creator codes instead.
          - X11 apps have a WM_CLASS - we should allow programmers to supply
            a class name. Should we default it?
-         - Enable/disable live resizing? (possible on OS X, what about
-           others?)
-         - windows should be created hidden, and shown by method call.  this
-           allows applications to get an initial on_show and on_resize event.
-           OTOH, this would be the cause of many WTF's on the mailing list.
-
-           <rj> allow a "intially hidden" boolean in the window create
-           function which defaults to False.
-
-         - events for system sleep/shutdown and display change
-         - method to disable screensaver
+         - events for system sleep/shutdown and display change?
+         - method to disable screensaver?
          - windows appearing on different devices cannot share context.
            there should be a mechanism for dealing with this (besides
            crashing).  moving a window from one device to another should
@@ -153,18 +141,10 @@ pyglet
             - Palette (smaller footprint)
 
            With these options:
-            - Live resize
             - Maximize button
             - Minimize button
             - Close button / system menu
             - Modal (specify parent)
-
-         - Different exclusive mouse behaviour in Xlib/Win32  (fake where
-           the cursor would be) and Carbon (pin mouse at 0,0).  Problem
-           with Xlib/Win32: have to update button press/release functions
-           to handle the fake as well.  No easy way to adapt this for Carbon.
-           Maybe just deal with having x,y=0 while in exclusive?
-
 
     event
         :description: Platform-independent events.

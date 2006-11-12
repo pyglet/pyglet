@@ -328,7 +328,8 @@ class CarbonWindow(BaseWindow):
             rect.bottom = rect.top + height
 
             window_class = kDocumentWindowClass
-            window_attributes = kWindowStandardDocumentAttributes
+            window_attributes = (kWindowStandardDocumentAttributes | 
+                                 kWindowLiveResizeAttribute)
 
             carbon.CreateNewWindow(window_class,
                                    window_attributes,
@@ -351,8 +352,6 @@ class CarbonWindow(BaseWindow):
         # (re)install Carbon event handlers 
         self._install_event_handlers()
 
-        self.switch_to()
-        self.set_visible(True)
         self._create_track_region()
 
     def _create_track_region(self):
@@ -696,6 +695,12 @@ class CarbonWindow(BaseWindow):
         carbon.GetEventParameter(event, kEventParamMouseButton,
             typeMouseButton, c_void_p(), sizeof(button), c_void_p(),
             byref(button))
+        
+        # kEventMouseButtonPrimary == MOUSE_LEFT_BUTTON == 1
+        # kEventMouseButtonSecondary == MOUSE_MIDDLE_BUTTON == 2
+        # kEventMouseButtonTertiary == 3 != MOUSE_RIGHT_BUTTON == 4
+        if button == 3:
+            button = MOUSE_RIGHT_BUTTON
 
         modifiers = c_uint32()
         carbon.GetEventParameter(event, kEventParamKeyModifiers,
@@ -725,22 +730,28 @@ class CarbonWindow(BaseWindow):
         return noErr
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseMoved)
+    @CarbonEventHandler(kEventClassMouse, kEventMouseDragged)
     def _on_mouse_moved(self, next_handler, event, data):
         button, modifiers = self._get_mouse_button_and_modifiers(event)
         x, y = self._get_mouse_position(event)
+        if x < 0 or y < 0:
+            return
+
         delta = HIPoint()
         carbon.GetEventParameter(event, kEventParamMouseDelta,
             typeHIPoint, c_void_p(), sizeof(delta), c_void_p(),
             byref(delta))
-        if x >= 0 and y >= 0:
+
+        if button:
+            # Drag event
+            self.dispatch_event(EVENT_MOUSE_DRAG,
+                x, y, delta.x, delta.y, button, modifiers)
+        else:
+            # Motion event
             self.dispatch_event(EVENT_MOUSE_MOTION, x, y, delta.x, delta.y)
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
-
-    @CarbonEventHandler(kEventClassMouse, kEventMouseDragged)
-    def _on_mouse_dragged(self, next_handler, event, data):
-        return self._on_mouse_moved(next_handler, event, data)
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseEntered)
     def _on_mouse_entered(self, next_handler, event, data):
