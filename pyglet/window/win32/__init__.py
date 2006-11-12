@@ -180,7 +180,6 @@ class Win32Window(BaseWindow):
     _exclusive_keyboard = False
     _exclusive_mouse = False
     _exclusive_mouse_screen = None
-    _exclusive_mouse_client = None
     _ignore_mousemove = False
 
     _style = 0
@@ -295,11 +294,6 @@ class Win32Window(BaseWindow):
             context._set_window(self)
             self._wgl_context = context._context
 
-        _user32.ShowWindow(self._hwnd, SW_SHOWDEFAULT)
-        _user32.UpdateWindow(self._hwnd)
-
-        if fullscreen:
-            self.activate()
 
     def close(self):
         super(Win32Window, self).close()
@@ -351,6 +345,8 @@ class Win32Window(BaseWindow):
     def set_visible(self, visible=True):
         if visible:
             _user32.ShowWindow(self._hwnd, SW_SHOW)
+            if self._fullscreen:
+                self.activate()
         else:
             _user32.ShowWindow(self._hwnd, SW_HIDE)
 
@@ -369,14 +365,8 @@ class Win32Window(BaseWindow):
             return
     
         if exclusive:
-            p = POINT()
-            # Save the current mouse coordinates for faking pos.
-            _user32.GetCursorPos(byref(p))
-            _user32.ScreenToClient(self._hwnd, byref(p))
-            self._mouse.x = p.x
-            self._mouse.y = p.y
-
             # Move mouse to the center of the window.
+            p = POINT()
             rect = RECT()
             _user32.GetClientRect(self._hwnd, byref(rect))
             _user32.MapWindowPoints(self._hwnd, HWND_DESKTOP, byref(rect), 2)
@@ -386,7 +376,6 @@ class Win32Window(BaseWindow):
             # This is the point the mouse will be kept at while in exclusive
             # mode.
             self._exclusive_mouse_screen = p.x, p.y
-            self._exclusive_mouse_client = p.x - rect.left, p.y - rect.top
             self._ignore_mousemove = True
             _user32.SetCursorPos(p.x, p.y)
 
@@ -396,14 +385,6 @@ class Win32Window(BaseWindow):
         else:
             # Release clip
             _user32.ClipCursor(c_void_p())
-
-            # Return mouse to the faked position
-            p = POINT()
-            p.x = self._mouse.x
-            p.y = self._mouse.y
-            _user32.ClientToScreen(self._hwnd, byref(p))
-            _user32.SetCursorPos(p.x, p.y)
-            self._ignore_mousemove = True
 
         _user32.ShowCursor(not exclusive)
         self._exclusive_mouse = exclusive
@@ -532,14 +513,8 @@ class Win32Window(BaseWindow):
             self._ignore_mousemove = True
             _user32.SetCursorPos(*self._exclusive_mouse_screen)
             
-            # Fake the cursor position  
-            dx = x - self._exclusive_mouse_client[0]
-            dy = y - self._exclusive_mouse_client[1]
-            x = self._mouse.x + dx
-            y = self._mouse.y + dy
-        else:
-            dx = x - self._mouse.x
-            dy = y - self._mouse.y
+        dx = x - self._mouse.x
+        dy = y - self._mouse.y
 
         if not self._tracking:
             # There is no WM_MOUSEENTER message (!), so fake it from the
@@ -556,7 +531,23 @@ class Win32Window(BaseWindow):
 
         self._mouse.x = x
         self._mouse.y = y
-        self.dispatch_event(EVENT_MOUSE_MOTION, x, y, dx, dy)
+        
+        buttons = 0
+        if wParam & MK_LBUTTON:
+            buttons |= MOUSE_LEFT_BUTTON
+        if wParam & MK_MBUTTON:
+            buttons |= MOUSE_MIDDLE_BUTTON
+        if wParam & MK_RBUTTON:
+            buttons |= MOUSE_RIGHT_BUTTON
+
+        if buttons:
+            # Drag event
+            modifiers = self._get_modifiers()
+            self.dispatch_event(EVENT_MOUSE_DRAG, 
+                x, y, dx, dy, buttons, modifiers)
+        else:
+            # Motion event
+            self.dispatch_event(EVENT_MOUSE_MOTION, x, y, dx, dy)
         return 0
 
     @Win32EventHandler(WM_MOUSELEAVE)
@@ -569,6 +560,11 @@ class Win32Window(BaseWindow):
         return 0
 
     def _event_mousebutton(self, event, button, lParam):
+        if event == EVENT_MOUSE_PRESS:
+            _user32.SetCapture(self._hwnd)
+        else:
+            #_user32.ReleaseCapture()
+            pass
         x, y = self._get_location(lParam)
         self.dispatch_event(event, button, x, y, self._get_modifiers())
         return 0
