@@ -288,6 +288,7 @@ class XlibWindow(BaseWindow):
     _ignore_motion = False  # Set to true to skip the next mousemotion event
     _exclusive_mouse = False
     _exclusive_mouse_client = None
+    _exclusive_keyboard = False
     _mapped = False
 
     _default_event_mask = (0x1ffffff 
@@ -520,16 +521,16 @@ class XlibWindow(BaseWindow):
             return
 
         if exclusive:
-            if self._blank_cursor is None:
-                # create blank cursor
-                data = (c_char * 1)()
-                data[0] = '\0'
-                blank = xlib.XCreateBitmapFromData(self._display,
-                    self._window, data, 1, 1)
-                dummy = XColor()
-                self._blank_cursor = xlib.XCreatePixmapCursor(self._display,
-                    blank, blank, byref(dummy), byref(dummy), 0, 0)
-                xlib.XFreePixmap(self._display, blank)
+            # Hide pointer by creating an empty cursor
+            black = xlib.XBlackPixel(self._display, self._screen_id)
+            black = c_int(black)
+            bmp = xlib.XCreateBitmapFromData(self._display, self._window, 
+                (c_byte * 8)(), 8, 8)
+            cursor = xlib.XCreatePixmapCursor(self._display, bmp, bmp,
+                byref(black), byref(black), 0, 0)
+            xlib.XDefineCursor(self._display, self._window, cursor)
+            xlib.XFreeCursor(self._display, cursor)
+            xlib.XFreePixmap(self._display, bmp)
 
             # Restrict to client area
             xlib.XGrabPointer(self._display, self._window, 
@@ -553,18 +554,28 @@ class XlibWindow(BaseWindow):
                 x, y)
             self._ignore_motion = True
         else:
+            # Restore cursor
+            xlib.XUndefineCursor(self._display, self._window)
+
+            # Unclip
             xlib.XUngrabPointer(self._display, CurrentTime)
 
-            # Restore pointer to faked position
-            xlib.XWarpPointer(self._display,
-                0,
-                self._window,
-                0, 0,
-                0, 0, 
-                self._mouse.x, self._mouse.y)
-            self._ignore_motion = True
-
         self._exclusive_mouse = exclusive
+
+    def set_exclusive_keyboard(self, exclusive=True):
+        if exclusive == self._exclusive_keyboard:
+            return
+        
+        self._exclusive_keyboard = exclusive
+        if exclusive:
+            xlib.XGrabKeyboard(self._display,
+                self._window,
+                False,
+                GrabModeAsync,
+                GrabModeAsync,
+                CurrentTime)
+        else:
+             xlib.XUngrabKeyboard(self._display, CurrentTime)
 
     # Private utility
 
@@ -727,13 +738,16 @@ class XlibWindow(BaseWindow):
 
     @XlibEventHandler(MotionNotify)
     def _event_motionnotify(self, event):
+        x = event.xmotion.x
+        y = event.xmotion.y
+
         if self._ignore_motion:
             # Ignore events caused by XWarpPointer
             self._ignore_motion = False
+            self._mouse.x = x
+            self._mouse.y = y
             return
 
-        x = event.xmotion.x
-        y = event.xmotion.y
         if self._exclusive_mouse:
             # Reset pointer position
             xlib.XWarpPointer(self._display,
@@ -745,14 +759,8 @@ class XlibWindow(BaseWindow):
                 self._exclusive_mouse_client[1])
             self._ignore_motion = True
 
-            # Fake pointer position
-            dx = x - self._exclusive_mouse_client[0]
-            dy = y - self._exclusive_mouse_client[1]
-            x = self._mouse.x + dx
-            y = self._mouse.y + dy
-        else:
-            dx = x - self._mouse.x
-            dy = y - self._mouse.y
+        dx = x - self._mouse.x
+        dy = y - self._mouse.y
 
         self._mouse.x = x
         self._mouse.y = y
