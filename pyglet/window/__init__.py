@@ -1,6 +1,181 @@
 #!/usr/bin/env python
 
 '''
+Platform-independent windows and events.
+===========================================================================
+
+This module allows applications to create and display windows with an
+OpenGL context on Windows, OS X and Linux.  Windows can be created with
+a variety of border styles or set fullscreen, and these properties can
+be changed while the window is visible.
+
+You can register event handlers for keyboard, mouse and window events.
+For games and kiosks you can also restrict the input to your windows,
+for example disabling users from switching away from the application
+with certain key combinations or capturing and hiding the mouse.
+
+This module depends on `pyglet.GL`, `pyglet.event` and `pyglet.image`.
+
+---------------
+Getting Started
+---------------
+
+Use the `create` function to create a window::
+
+    >>> import pyglet.window
+    >>> win = pyglet.window.create(width=640, height=480, fullscreen=False)
+    >>> 
+
+Windows are subclasses of EventHandler, so you can push event handlers
+onto them::
+
+    >>> class MyEvents:
+    ...     def on_key_press(self, symbol, modifiers):
+    ...         print 'Pressed key %d' % symbol
+    ...
+    >>> win.push_handlers(MyEvents())
+    >>>
+
+You will almost always want to push on an instance of ExitHandler, which
+will quit the application when the window is closed or the ESC key is
+pressed.  If you don't push this handler on, you will need to manually
+close the window yourself when the close button is pressed::
+
+    >>> import pyglet.window.event
+    >>> win.push_handler(pyglet.window.event.ExitHandler())
+    >>>
+
+The easiest way to find out the events that are available and their
+parameters, use the DebugEventHandler, which will print out all events
+received by the window to the terminal::
+
+    >>> win.push_handler(pyglet.window.event.DebugEventHandler())
+    >>>
+
+For a complete list of events, see the `pyglet.window.event` documentation.
+
+Each window has its own OpenGL buffer and context.  When you create a
+window it will be set as the current context automatically, so you can start
+using OpenGL functions straight away.  Use the window's `flip` method to
+make the back-buffer visible::
+
+    >>> from pyglet.GL.VERSION_1_1 import *
+    >>> glClear(GL_COLOR_BUFFER_BIT)
+    >>> win.flip()
+    >>>
+
+If you are using more than one window, you will need to explicitly select
+which context to send OpenGL commands to using the `switch_to` method::
+
+    >>> window1.switch_to()
+    >>> gl... # Commands for window1
+    >>> window1.flip()
+    >>> window2.switch_to()
+    >>> gl... # Commands for window2
+    >>> window2.flip()
+    >>>
+
+----------------
+Creating Windows
+----------------
+
+The `create` function simplifies the multi-step process involved in
+creating a window.  It accepts the following optional keyword arguments:
+
+width, height
+    The size of the window to create.  These are ignored if the window is
+    fullscreen.
+fullscreen
+    `True` to create a fullscreen window on the default screen.  Defaults
+    to False.
+visible
+    By default, windows are shown as soon as they are created.  To register
+    events and set properties of the window first, set this to `False`.
+    You can then manually show the window using the `set_visible` method.
+doublebuffer
+    Use double-buffering to eliminate flicker and tearing.  Enabled by
+    default.
+
+You can also specify any other OpenGL attributes supported by the platform;
+these are listed elsewhere.  (TODO: where?)
+
+-------------------
+Using WindowFactory
+-------------------
+
+For complete flexibility in creating windows, use the WindowFactory to
+set up your window step by step.  Obtain a WindowFactory using the
+`get_factory` function::
+
+    >>> factory = pyglet.window.get_factory()
+    >>>
+
+Call methods on the factory to set up the initial attributes of the window.
+For example::
+
+    >>> factory.set_fullscreen(False)
+    >>> factory.set_size(640, 480)
+    >>> factory.set_caption('Hello, world!')
+    >>>
+
+You can get a list of the available screens (for example, on a multi-monitor
+system), and then select one to use::
+
+    >>> screens = factory.get_screens()
+    >>> factory.set_screen(screens[0])      # Use the default screen
+    >>>
+
+When you have set the screen (or want to use the default screen) and GL
+attributes, you can get a list of available GL configurations that
+support the attributes you specified::
+
+    >>> configs = factory.get_matching_configs()
+    >>> factory.set_config(configs[0])      # Set the first matching config
+
+If the requested attributes cannot be satisfied by the device (for example,
+requesting a buffer size that's too large), no matching configs will be
+returned, and you should revise the attributes and try again.  Some platforms
+will return multiple matching configurations from which you can pick and
+choose from (by default, the first matching config is used).
+
+Once a config has been set, or you will use the default, you can create
+a GL context::
+
+    >>> context = factory.get_context()
+    >>>
+
+Contexts can optionally share display lists, shaders and textures with another
+context.  By default the WindowFactory will try to share the context with the
+most recently created context, if any.  You can override this explicitly
+before calling `get_context`::
+
+    >>> factory.set_context_share(my_context)
+    >>> context = factory.get_context()
+    >>>
+
+Finally, create the window with the attributes, config and context you have
+set::
+
+    >>> window = factory.create_window()
+    >>>
+
+You can create multiple windows with the same configuration but different
+contexts by repeatedly calling `create_window`.
+
+-----------------
+Modifying Windows
+-----------------
+
+You can modify an existing window (for example, to make it fullscreen or
+windowed, or to change a GL attribute) by calling the `create` method
+with a properly configured factory::
+
+    >>> window.create(factory)
+    >>>
+
+Note that in some cases the context may need to be recreated, and state
+and/or objects may be lost.
+
 '''
 
 __docformat__ = 'restructuredtext'
@@ -242,6 +417,14 @@ class BaseWindow(WindowEventHandler):
         return self.get_size()[1]
 
 class BasePlatform(object):
+    '''Abstraction of platform-specific methods.
+
+    The BasePlatform class is subclassed by each platform to provide
+    methods for creating instances of BaseScreen, BaseGLConfig, BaseGLContext
+    and BaseWindow.  In each case the constructed object will reflect
+    the properties set by the user on a WindowFactory object.
+    '''
+
     # Platform specific abstract methods.
     def get_screens(self, factory):
         '''Subclasses must override to return a list of BaseScreen.
@@ -269,9 +452,26 @@ class BasePlatform(object):
         '''
         raise NotImplementedError()
 
-# This is actually following Builder pattern (GoF) now, not AbstractFactory,
-# but not worth a name change.
 class WindowFactory(object):
+    '''Configuration and build pattern for BaseWindow instances.
+
+    This class fulfils two roles: firstly, applications set the desired
+    configuration on this factory for later interpretation by the 
+    specific Platform.  Secondly, it provides the algorithms necessary
+    for constructing windows in stages.
+
+    This is the class that applications work directly with to create
+    windows by following these steps:
+    
+    1. Use pyglet.window.get_factory() to create a new factory
+       using the appropriate BasePlatform.  
+    2. Set attributes on the factory and (optionally) examine the intermediate
+       Screen, GLConfig and GLContext settings.
+    3. When ready, pass the factory to a BaseWindow's `create` method
+       to apply the factory's settings to the new or existing window.
+
+    '''
+
     _config = None
     _config_attributes = {}
     _context = None
@@ -478,20 +678,44 @@ class WindowFactory(object):
         return window
 
 def get_platform():
+    '''Get an instance of the BasePlatform most appropriate for this
+    system.
+    '''
     return _platform
 
 def get_factory():
+    '''Create a new WindowFactory which can be used to construct or
+    alter windows.
+    '''
     return WindowFactory(_platform)
 
-# Convenience functions for creating simple window with default parameters.
-def create(width, height, 
+def create(width=None, 
+           height=None, 
            fullscreen=False,
-           visible=True):
+           visible=True,
+           doublebuffer=True,
+           depth_size=24,
+           **kwargs):
+    '''Create a new window.
+
+    Unless otherwise specified, the created window will be initially
+    visible and double-buffered.  You can specify additional GL attributes
+    as keyword arguments.
+    '''
     factory = get_factory()
-    factory.set_size(width, height)
+    if width and height:
+        factory.set_size(width, height)
     factory.set_fullscreen(fullscreen)
-    factory.set_gl_attribute('doublebuffer', True)
+    factory.set_gl_attribute('doublebuffer', doublebuffer)
+    factory.set_gl_attribute('depth_size', depth_size)
+    for key, value in kwargs.items():
+        factory.set_gl_attribute(key, value)
     sys.argv = factory.set_arguments(sys.argv)
+
+    if fullscreen:
+        screen = factory.get_screen()
+        factory.set_size(screen.width, screen.height)
+
     window = factory.create_window()
     window.set_caption(sys.argv[0])
     if visible:

@@ -12,6 +12,7 @@ import os.path
 import unicodedata
 import warnings
 
+from pyglet.GL.VERSION_1_1 import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
@@ -735,7 +736,7 @@ class CarbonWindow(BaseWindow):
         button, modifiers = self._get_mouse_button_and_modifiers(event)
         x, y = self._get_mouse_position(event)
         if x < 0 or y < 0:
-            return
+            return noErr
 
         delta = HIPoint()
         carbon.GetEventParameter(event, kEventParamMouseDelta,
@@ -803,6 +804,8 @@ class CarbonWindow(BaseWindow):
         width = rect.right - rect.left
         height = rect.bottom - rect.top
 
+        self.switch_to()
+        glViewport(0, 0, width, height)
         self.dispatch_event(EVENT_RESIZE, width, height)
 
         carbon.CallNextEventHandler(next_handler, event)

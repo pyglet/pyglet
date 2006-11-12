@@ -16,7 +16,7 @@ from pyglet.GLU.VERSION_1_1 import *
 from pyglet import clock
 from pyglet.model import obj
 
-w1 = pyglet.window.create(200, 200, depth_size=24)
+w1 = pyglet.window.create(200, 200)
 
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)
@@ -42,11 +42,14 @@ glDepthFunc(GL_LESS)
 glEnable(GL_CULL_FACE)
 glCullFace(GL_BACK)
 
-glMatrixMode(GL_PROJECTION)
-glLoadIdentity()
-gluPerspective(60., 1., 1., 100.)
+def resize(width, height):
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    gluPerspective(60., float(width)/height, 1., 100.)
+    glMatrixMode(GL_MODELVIEW)
+w1.push_handlers(on_resize=resize)
+resize(200, 200)
 
-glMatrixMode(GL_MODELVIEW)
 glClearColor(0, 0, 0, 0)
 
 bunny = obj.OBJ(os.path.join(os.path.split(__file__)[0], 'rabbit.obj'))
