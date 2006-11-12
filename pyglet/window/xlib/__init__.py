@@ -56,6 +56,7 @@ xlib.XCreateBitmapFromData.restype = Pixmap
 xlib.XCreatePixmapCursor.argtypes = [POINTER(Display), Pixmap, Pixmap,
     POINTER(XColor), POINTER(XColor), c_uint, c_uint]
 xlib.XCreatePixmapCursor.restype = Cursor
+xlib.XFreeCursor.argtypes = [POINTER(Display), Cursor]
 
 # Do we have the November 2000 UTF8 extension?
 _have_utf8 = hasattr(xlib, 'Xutf8TextListToTextProperty')
@@ -423,26 +424,14 @@ class XlibWindow(BaseWindow):
         return attributes.root
 
     def close(self):
-        # XXX <rj> I'm pretty sure we need to invoke
-        # glXMakeContextCurrent(self._display, None, None, None) or
-        # similar. I did discover that from test to test
-        # it's the glXMakeContextCurrent() call for the new window (in
-        # switch_to() that makes the old window go away. hence my theory
-        # that we need to "release the current context without assigning
-        # a new one"... So here's a call... But it doesn't seem to work
-        # There might be some subtle ordering of calls that's needed.
-        # Remarkably little seems to be written about applications that
-        # might want to actually close a glx window cleanly...
-        # glXMakeContextCurrent(self._display, None, None, None)
-        
-        # <ah> I'm pretty sure you're wrong.  GL has no capability for
-        # disabling the API, so no point trying to set a null context;
-        # just don't do anything after it's destroyed.
-
         self._unmap()
+        if self._blank_cursor is not None:
+            xlib.XFreeCursor(self._display, self._blank_cursor)
+            self._blank_cursor = None
         glXDestroyWindow(self._display, self._glx_window)
         xlib.XDestroyWindow(self._display, self._window)
         super(XlibWindow, self).close()
+
 
         self._window = None
         self._glx_window = None
