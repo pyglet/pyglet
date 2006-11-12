@@ -50,13 +50,6 @@ xlib.XNextEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
 xlib.XCheckTypedWindowEvent.argtypes = [POINTER(Display),
     c_ulong, c_int, POINTER(XEvent)]
 xlib.XPutBackEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
-xlib.XCreateBitmapFromData.argtypes = [POINTER(Display), Window,
-    c_char_p, c_uint, c_uint]
-xlib.XCreateBitmapFromData.restype = Pixmap
-xlib.XCreatePixmapCursor.argtypes = [POINTER(Display), Pixmap, Pixmap,
-    POINTER(XColor), POINTER(XColor), c_uint, c_uint]
-xlib.XCreatePixmapCursor.restype = Cursor
-xlib.XFreeCursor.argtypes = [POINTER(Display), Cursor]
 
 # Do we have the November 2000 UTF8 extension?
 _have_utf8 = hasattr(xlib, 'Xutf8TextListToTextProperty')
@@ -426,13 +419,9 @@ class XlibWindow(BaseWindow):
 
     def close(self):
         self._unmap()
-        if self._blank_cursor is not None:
-            xlib.XFreeCursor(self._display, self._blank_cursor)
-            self._blank_cursor = None
         glXDestroyWindow(self._display, self._glx_window)
         xlib.XDestroyWindow(self._display, self._window)
         super(XlibWindow, self).close()
-
 
         self._window = None
         self._glx_window = None
@@ -515,7 +504,6 @@ class XlibWindow(BaseWindow):
         self._set_wm_state('_NET_WM_STATE_MAXIMIZED_HORZ',
                            '_NET_WM_STATE_MAXIMIZED_VERT')
 
-    _blank_cursor = None
     def set_exclusive_mouse(self, exclusive=True):
         if exclusive == self._exclusive_mouse:
             return
@@ -539,7 +527,7 @@ class XlibWindow(BaseWindow):
                 GrabModeAsync,
                 GrabModeAsync,
                 self._window,
-                self._blank_cursor,
+                0,
                 CurrentTime)
 
             # Move pointer to center of window
