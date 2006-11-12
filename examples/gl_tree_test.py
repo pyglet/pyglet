@@ -52,25 +52,13 @@ class Tree(object):
         self.lmb = False
         self.rmb = False
 
-    def on_mouse_motion(self, x, y, dx, dy):
-        if self.lmb:
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if buttons & MOUSE_LEFT_BUTTON:
             self.rx += dx
             self.ry += dy
-        if self.rmb:
+        if buttons & MOUSE_RIGHT_BUTTON:
             self.x += dx
             self.y += dy
-
-    def on_mouse_press(self, button, x, y, modifiers):
-        if button == MOUSE_LEFT_BUTTON:
-            self.lmb = True
-        elif button == MOUSE_RIGHT_BUTTON:
-            self.rmb = True
-
-    def on_mouse_release(self, button, x, y, modifiers):
-        if button == MOUSE_LEFT_BUTTON:
-            self.lmb = False
-        elif button == MOUSE_RIGHT_BUTTON:
-            self.rmb = False
 
     def on_mouse_scroll(self, dx, dy):
         self.zpos = max(-10, self.zpos + dy)

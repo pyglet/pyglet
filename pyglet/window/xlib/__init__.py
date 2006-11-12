@@ -368,18 +368,6 @@ class XlibWindow(BaseWindow):
         xlib.XChangeWindowAttributes(self._display, self._window, 
             attributes_mask, byref(attributes))
 
-        self._map()
-        if fullscreen:
-            # Explicitly set focus to window if using override_redirect.
-            self.activate()
-
-        if not self._glx_window:
-            self._glx_window = glXCreateWindow(self._display,
-                config._fbconfig, self._window, None)
-
-        self.switch_to()
-        self.dispatch_event(EVENT_EXPOSE)
-
     def _map(self):
         if self._mapped:
             return
@@ -395,6 +383,11 @@ class XlibWindow(BaseWindow):
 
         xlib.XSelectInput(self._display, self._window, self._default_event_mask)
         self._mapped = True
+
+        if self._fullscreen:
+            self.activate()
+
+        self.dispatch_event(EVENT_EXPOSE)
 
     def _unmap(self):
         if not self._mapped:
@@ -419,18 +412,28 @@ class XlibWindow(BaseWindow):
 
     def close(self):
         self._unmap()
-        glXDestroyWindow(self._display, self._glx_window)
-        xlib.XDestroyWindow(self._display, self._window)
+        if self._glx_window:
+            glXDestroyWindow(self._display, self._glx_window)
+        if self._window:
+            xlib.XDestroyWindow(self._display, self._window)
         super(XlibWindow, self).close()
 
         self._window = None
         self._glx_window = None
 
     def switch_to(self):
+        if not self._glx_window:
+            self._glx_window = glXCreateWindow(self._display,
+                self._config._fbconfig, self._window, None)
+
         glXMakeContextCurrent(self._display,
             self._glx_window, self._glx_window, self._glx_context)
 
     def flip(self):
+        if not self._glx_window:
+            self._glx_window = glXCreateWindow(self._display,
+                self._config._fbconfig, self._window, None)
+
         glXSwapBuffers(self._display, self._glx_window)
 
     def set_caption(self, caption):
@@ -752,7 +755,23 @@ class XlibWindow(BaseWindow):
 
         self._mouse.x = x
         self._mouse.y = y
-        self.dispatch_event(EVENT_MOUSE_MOTION, x, y, dx, dy)
+
+        buttons = 0
+        if event.xmotion.state & Button1MotionMask:
+            buttons |= MOUSE_LEFT_BUTTON
+        if event.xmotion.state & Button2MotionMask:
+            buttons |= MOUSE_MIDDLE_BUTTON
+        if event.xmotion.state & Button3MotionMask:
+            buttons |= MOUSE_RIGHT_BUTTON
+
+        if buttons:
+            # Drag event
+            modifiers = self._translate_modifiers(event.xmotion.state)
+            self.dispatch_event(EVENT_MOUSE_DRAG, 
+                x, y, dx, dy, buttons, modifiers)
+        else:
+            # Motion event
+            self.dispatch_event(EVENT_MOUSE_MOTION, x, y, dx, dy)
 
     @XlibEventHandler(ClientMessage)
     def _event_clientmessage(self, event):

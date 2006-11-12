@@ -223,6 +223,7 @@ class BaseWindow(WindowEventHandler):
         factory.set_context_share(self.get_context())
         self.create(factory)
         self.switch_to()
+        self.set_visible(True)
 
     def set_exclusive_mouse(self, exclusive=True):
         raise NotImplementedError()
@@ -483,7 +484,9 @@ def get_factory():
     return WindowFactory(_platform)
 
 # Convenience functions for creating simple window with default parameters.
-def create(width, height, fullscreen=False):
+def create(width, height, 
+           fullscreen=False,
+           visible=True):
     factory = get_factory()
     factory.set_size(width, height)
     factory.set_fullscreen(fullscreen)
@@ -491,6 +494,9 @@ def create(width, height, fullscreen=False):
     sys.argv = factory.set_arguments(sys.argv)
     window = factory.create_window()
     window.set_caption(sys.argv[0])
+    if visible:
+        window.set_visible(True)
+        window.activate()
     return window
 
 # Try to determine which platform to use.

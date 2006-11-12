@@ -39,6 +39,7 @@ pyglet
             EVENT_TEXT                      X   X   X
             EVENT_BUTTON                    X   X   X
             EVENT_MOUSE_MOTION              X   X   X
+            EVENT_MOUSE_DRAG                X
             EVENT_MOUSE_ENTER_LEAVE         X   X   X
             EVENT_MOUSE_SCROLL              X   X   X
             EVENT_CLOSE                     X   X   X

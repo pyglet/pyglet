@@ -56,6 +56,7 @@ EVENT_KEY_PRESS = WindowEventHandler.register_event_type('on_key_press')
 EVENT_KEY_RELEASE = WindowEventHandler.register_event_type('on_key_release')
 EVENT_TEXT = WindowEventHandler.register_event_type('on_text')
 EVENT_MOUSE_MOTION = WindowEventHandler.register_event_type('on_mouse_motion')
+EVENT_MOUSE_DRAG = WindowEventHandler.register_event_type('on_mouse_drag')
 EVENT_MOUSE_PRESS = WindowEventHandler.register_event_type('on_mouse_press')
 EVENT_MOUSE_RELEASE = WindowEventHandler.register_event_type('on_mouse_release')
 EVENT_MOUSE_SCROLL = WindowEventHandler.register_event_type('on_mouse_scroll')
@@ -71,9 +72,9 @@ EVENT_SHOW = WindowEventHandler.register_event_type('on_show')
 EVENT_HIDE = WindowEventHandler.register_event_type('on_hide')
 
 # symbolic names for the mouse buttons
-MOUSE_LEFT_BUTTON = 1
-MOUSE_MIDDLE_BUTTON = 2
-MOUSE_RIGHT_BUTTON = 3
+MOUSE_LEFT_BUTTON =   1 << 0
+MOUSE_MIDDLE_BUTTON = 1 << 1
+MOUSE_RIGHT_BUTTON =  1 << 2
 
 def _modifiers_to_string(modifiers):
     mod_names = []
@@ -93,6 +94,16 @@ def _modifiers_to_string(modifiers):
         mod_names.append('MOD_OPTION')
     return '|'.join(mod_names)
 
+def _buttons_to_string(buttons):
+    button_names = []
+    if buttons & MOUSE_LEFT_BUTTON:
+        button_names.append('MOUSE_LEFT_BUTTON')
+    if buttons & MOUSE_MIDDLE_BUTTON:
+        button_names.append('MOUSE_MIDDLE_BUTTON')
+    if buttons & MOUSE_RIGHT_BUTTON:
+        button_names.append('MOUSE_RIGHT_BUTTON')
+    return '|'.join(button_names)
+
 def _symbol_to_string(symbol):
     return pyglet.window.key._key_names.get(symbol, str(symbol))
 
@@ -110,12 +121,15 @@ class EventHandler(object):
     def on_mouse_motion(self, x, y, dx, dy):
         pass
 
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        pass
+
     def on_mouse_press(self, button, x, y, modifiers):
         '''
             "button" is one of:
                 MOUSE_LEFT_BUTTON = 1
                 MOUSE_MIDDLE_BUTTON = 2
-                MOUSE_RIGHT_BUTTON = 3
+                MOUSE_RIGHT_BUTTON = 4
         '''
         pass
 
@@ -184,8 +198,15 @@ class DebugEventHandler(object):
         return EVENT_UNHANDLED
 
     def on_mouse_motion(self, x, y, dx, dy):
-        print 'on_mousemotion(x=%d, y=%d, dx=%d, dy=%d)' % (x, y, dx, dy)
+        print 'on_mouse_motion(x=%d, y=%d, dx=%d, dy=%d)' % (x, y, dx, dy)
         return EVENT_UNHANDLED
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        print 'on_mouse_drag(x=%d, y=%d, dx=%d, dy=%d, '\
+                            'buttons=%s, modifiers=%s)' % (
+              x, y, dx, dy, 
+              _buttons_to_string(buttons),
+              _modifiers_to_string(modifiers))
 
     def on_mouse_press(self, button, x, y, modifiers):
         print 'on_mouse_press(button=%r, x=%d, y=%d, modifiers=%s)' % (
