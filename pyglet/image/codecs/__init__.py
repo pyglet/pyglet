@@ -32,7 +32,7 @@ class ImageDecodeException(Exception):
 
 class ImageDecoder(object):
     def get_file_extensions(self):
-        '''Return a list of accepted file extensions, without the "."
+        '''Return a list of accepted file extensions, e.g. ['.png', '.bmp']
         Lower-case only.
         '''
         return []
@@ -46,7 +46,7 @@ class ImageDecoder(object):
 
 class ImageEncoder(object):
     def get_file_extensions(self):
-        '''Return a list of accepted file extensions, without the ".".
+        '''Return a list of accepted file extensions, e.g. ['.png', '.bmp']
         Lower-case only.
         '''
         return []
@@ -106,18 +106,20 @@ def add_codec(module):
                 _encoder_extensions[extension] = []
             _encoder_extensions[extension].append(encoder)
  
-# Add the codecs we know about
+def add_default_image_codecs():
+    # Add the codecs we know about.  These should be listed in order of
+    # preference.  This is called automatically by pyglet.image.
 
-try:
-    import pyglet.image.codecs.png
-    add_codec(png)
-except ImportError:
-    pass
+    try:
+        import pyglet.image.codecs.pil
+        add_codec(pil)
+    except ImportError:
+        pass
 
-try:
-    import pyglet.image.codecs.pil
-    add_codec(pil)
-except ImportError:
-    pass
+    try:
+        import pyglet.image.codecs.png
+        add_codec(png)
+    except ImportError:
+        pass
 
 

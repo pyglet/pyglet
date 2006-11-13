@@ -14,7 +14,7 @@ import pyglet.image.codecs.pypng
 
 class PNGImageDecoder(ImageDecoder):
     def get_file_extensions(self):
-        return ['png']
+        return ['.png']
 
     def decode(self, file, filename):
         reader = pyglet.image.codecs.pypng.Reader(file=file)
@@ -30,8 +30,7 @@ class PNGImageDecoder(ImageDecoder):
             else:
                 format = GL_RGB
         type = GL_UNSIGNED_BYTE
-        return pyglet.image.RawImage(pixels.tostring(), 
-            width, height, format, type)
+        return RawImage(pixels.tostring(), width, height, format, type)
 
 def get_decoders():
     return [PNGImageDecoder()]

@@ -68,40 +68,6 @@ pyglet
 
         TBD:
          - better failure handling when eg. GLX is not available
-         - shared OGL context (textures, etc.) between windows
-
-           OSX: you can share objects by passing a context as "share" in
-                the aglCreateContext call. That specified context is used
-                to store all OpenGL objects created by the new context
-                (ie. the new context doesn't have its own object store).
-
-           X11: you can share objects by passing a context as "share_list"
-                in the glXCreateNewContext call. That specified context
-                is used in the same manner as OSX.
-
-           Win: you call wglShareLists(ctx1, ctx2) to share from one
-                context to another. Context ctx1 is used in the same
-                manner as OSX sharing. If ctx2 has any objects created
-                before calling this function they are destroyed.
-
-           <rj> yes, we should make this the default. We should have a
-                global context, but allow the factory to create a new
-                context if the programmer wishes. The programmer should
-                also be able to pass in another window which they wish to
-                share the context from.
-
-           <ah> that won't work: one context per drawable.  current
-                implementation  shares the most recently created context
-                by default.  can be overridden with
-                WindowFactory.set_context_share().
-
-           <rj> This could cause programming errors. We will need to store
-                Contexts separately from Windows so that they're only freed
-                when there's no references to them.
-
-           <ah> They are stored in pyglet.window._active_contexts, and
-                are destroyed when their owning window is destroyed.
-
          - all platforms: update GL context when configuration changes
             (e.g. requesting another buffer)
          - poll: which platforms can do borderless/translucent GL windows?
@@ -132,6 +98,7 @@ pyglet
            a context is replaced (for example, toggling fullscreen): in this
            case the app doesn't need to reload objects, but will need to
            reset the state.  yikes.
+         - xlib and carbon: window caption is lost when recreating window.
          - Possible window borders (check that all platforms have reasonable
            support):
 

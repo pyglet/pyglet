@@ -12,7 +12,7 @@ import re
 from ctypes import *
 
 from pyglet.GL.VERSION_1_1 import *
-from pyglet.image.codecs import get_decoders, get_encoders, ImageDecodeException
+from pyglet.image.codecs import *
 
 class Image(object):
     '''Abstract class representing image data.
@@ -320,3 +320,5 @@ class TextureAtlasGrid(object):
         i = row * self.cols + col
         return self.elem_sizes[i], self.uvs[i]
 
+# Initialise default codecs
+add_default_image_codecs()
