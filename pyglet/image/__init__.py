@@ -106,8 +106,8 @@ class RawImage(Image):
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         if tex_width == self.width and tex_height == self.height:
-            glTexImage2D(GL_TEXTURE_2D, 
-                0, 
+            glTexImage2D(GL_TEXTURE_2D,
+                0,
                 internalformat,
                 tex_width, tex_height,
                 0,
@@ -192,7 +192,8 @@ class Texture(object):
 
 
 class AtlasSubTexture(object):
-    def __init__(self, quad_list, width, height, uv):
+    def __init__(self, texture, quad_list, width, height, uv):
+        self.texture = texture
         self.quad_list = quad_list
         self.width, self.height = width, height
         self.uv = uv
@@ -204,15 +205,21 @@ class AtlasSubTexture(object):
         glPopAttrib()
 
 class TextureAtlasRects(object):
-    def __init__(self, id, width, height, uv, rects):
-        self.size = (width, height)
-        self.id = id
+    def __init__(self, texture, rects):
+        self.texture = texture
+
+        # sub-textures
         self.uvs = []
         self.quad_lists = []
         self.elem_sizes = []
-
         n = glGenLists(len(rects))
         self.quad_lists = range(n, n + len(rects))
+
+        # now allocate them
+        id = texture.id
+        width = texture.width
+        height = texture.height
+        uv = texture.uv
         for i, rect in enumerate(rects):
             u = float(rect[0]) / width * uv[0]
             v = float(rect[1]) / height * uv[1]
@@ -222,7 +229,7 @@ class TextureAtlasRects(object):
             elem_size = (rect[2], rect[3])
 
             glNewList(self.quad_lists[i], GL_COMPILE)
-            glBindTexture(GL_TEXTURE_2D, self.id)
+            glBindTexture(GL_TEXTURE_2D, id)
             glBegin(GL_QUADS)
             glTexCoord2f(u, v)
             glVertex2f(0, 0)
@@ -239,15 +246,13 @@ class TextureAtlasRects(object):
             self.elem_sizes.append(elem_size)
 
     @classmethod
-    def from_data(cls, data, width, height, bpp, rects=[]):
-        id, uv = _get_texture(data, width, height, bpp)
-        return cls(id, width, height, uv, rects)
+    def from_data(cls, data, width, height, format, type, rects=[]):
+        texture = RawImage(data, width, height, format, type).get_texture()
+        return cls(texture, rects)
 
     @classmethod
     def from_image(cls, image, rects=[]):
-        id, uv = _get_texture(image.data, image.width, image.height,
-            image.bpp)
-        return cls(id, image.width, image.height, uv, rects)
+        return cls(image.get_texture(), rects)
 
     def draw(self, index):
         glPushAttrib(GL_ENABLE_BIT)
@@ -264,7 +269,8 @@ class TextureAtlasRects(object):
     def get_texture(self, index):
         '''Return something that smells like a Texture instance.'''
         w, h = self.elem_sizes[index]
-        return AtlasSubTexture(self.quad_lists[index], w, h, self.uvs[index])
+        return AtlasSubTexture(self.texture, self.quad_lists[index],
+            w, h, self.uvs[index])
 
 
 class TextureAtlasGrid(object):
@@ -310,15 +316,13 @@ class TextureAtlasGrid(object):
             v += dv
 
     @classmethod
-    def from_data(cls, data, width, height, bpp, rows=1, cols=1):
-        id, uv = _get_texture(data, width, height, bpp)
+    def from_data(cls, data, width, height, format, type, rects=[]):
+        texture = RawImage(data, width, height, format, type).get_texture()
         return cls(id, width, height, uv, rows, cols)
 
     @classmethod
     def from_image(cls, image, rows=1, cols=1):
-        id, uv = _get_texture(image.data, image.width, image.height,
-            image.bpp)
-        return cls(id, image.width, image.height, uv, rows, cols)
+        return cls(image.get_texture(), rows, cols)
 
     def draw(self, row, col):
         glPushAttrib(GL_ENABLE_BIT)

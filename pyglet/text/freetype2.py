@@ -345,7 +345,8 @@ FT_Get_Kerning = _get_function('FT_Get_Kerning',
 
 _library = None
 
-def load_face(file, height):
+
+def load_face(file, size, metrics):
     global _library
     if _library is None:
         # init the library
@@ -375,13 +376,18 @@ def load_face(file, height):
     #print (face.ascender >> 6, face.descender >> 6, face.height >> 6)
     _font_data[addressof(face)] = font_data
 
-    # "height" pixels high
-    #error = FT_Set_Pixel_Sizes(face, 0, height)
-    error = FT_Set_Char_Size(face, 0, height << 6, 0, 0)
+    # "size" pixels high
+    #error = FT_Set_Pixel_Sizes(face, 0, size)
+    error = FT_Set_Char_Size(face, 0, size << 6, 0, 0)
     if error:
         raise Error("couldn't get requested height", error)
 
     return face
+
+
+class FreetypeLocalFontFactory(base.LocalFontFactory):
+    def load_font(self, file, size, metrics):
+        return FreetypeFont(file, size, metrics)
 
 
 class FreetypeGlyph(base.Glyph):
@@ -401,8 +407,8 @@ class FreetypeGlyph(base.Glyph):
 
 
 class FreetypeFont(base.Font):
-    def load_font(self, file, size):
-        return load_face(file, size)
+    def load_font(self, file, size, metrics):
+        return load_face(file, size, metrics)
 
     def render_glyph(self, c):
         return render_char(self.face, c)
