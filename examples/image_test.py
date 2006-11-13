@@ -16,7 +16,7 @@ if len(sys.argv) != 2:
 
 window = pyglet.window.create(width=200, height=200)
 
-tex = Image.load(sys.argv[1]).as_texture()
+tex = Image.load(sys.argv[1]).get_texture()
 
 exit_handler = ExitHandler()
 window.push_handlers(exit_handler)

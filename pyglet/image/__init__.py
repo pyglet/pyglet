@@ -1,29 +1,6 @@
 #!/usr/bin/env python
 
 '''
-
-Image loading is performed by OS components we believe we can rely on.
-
-We ONLY support PNG and JPEG formats, thus enforcing that we only load the
-formats we have base support for.
-
-Linux (in order of preference):
-
-   PNG:   libpng           (will ABORT program if PNG is corrupted)
-   PNG:   libjpeg
-
-   Fallbacks: GTK? Qt? SDL?
-
-Windows:
-
-   PNG:    ??
-   JPEG:   ??
-
-OS X:
-
-   PNG:    libpng
-   JPEG:   ??
-
 '''
 
 __docformat__ = 'restructuredtext'
@@ -35,42 +12,117 @@ import re
 from ctypes import *
 
 from pyglet.GL.VERSION_1_1 import *
+from pyglet.image.codecs import get_decoders, get_encoders, ImageDecodeException
 
-if sys.platform == 'win32':
-    png = jpeg = None
-elif sys.platform == 'darwin':
-    from pyglet.image import png
-    jpeg = None
-else:
-    from pyglet.image import png
-    from pyglet.image import jpeg
-
-# XXX include the image filename in the args? might help debugging?
 class Image(object):
-    def __init__(self, data, width, height, bpp):
-        self.data = data
+    '''Abstract class representing image data.
+    '''
+
+    def __init__(self, width, height):
         self.width = width
         self.height = height
-        self.bpp = bpp
 
-    @classmethod
-    def load(cls, filename):
-        if re.match(r'.*?\.png$', filename, re.I):
-            if png is None:
-                raise ValueError, "Can't load PNG images"
-            return png.read(filename)
-        if re.match(r'.*?\.jpe?g$', filename, re.I):
-            if jpeg is None:
-                raise ValueError, "Can't load JPEG images"
-            return jpeg.read(filename)
-        if png is not None and png.is_png(filename):
-            return png.read(filename)
-        if jpeg is not None and jpeg.is_jpeg(filename):
-            return jpeg.read(filename)
-        raise ValueError, 'File is not a PNG or JPEG'
+    def get_texture(self, internalformat=None):
+        '''Return a Texture of this image.  This method does not cache
+        textures, it will create a new one each time it is called.
+        internalformat can be a valid argument to glTexImage2D to specify
+        how the image is stored internally, or to specify internal
+        compression.
+        '''
+        raise NotImplementedError()
 
-    def as_texture(self):
-        return Texture.from_image(self)
+    def texture_subimage(self, x, y):
+        '''Copy the image into the current texture at the given coordinates.
+        '''
+        raise NotImplementedError()
+
+    @staticmethod
+    def load(filename=None, file=None):
+        if not file:
+            file = open(filename, 'rb')
+
+        for decoder in get_decoders(filename):
+            try:
+                image = decoder.decode(file, filename)
+                return image
+            except ImageDecodeException:
+                file.seek(0)
+
+        if filename:
+            raise ImageDecodeException('No decoder could load %r' % filename)
+        else:
+            raise ImageDecodeException('No decoder could load %r' % file)
+
+class RawImage(Image):
+    '''Encapsulate image data stored in an OpenGL pixel format.
+    '''
+
+    def __init__(self, data, width, height, format, type):
+        '''Initialise image data.
+
+        data
+            String or array/list of bytes giving the decoded data.
+        width, height
+            Width and height of the image, in pixels
+        format
+            A valid format argument to glTexImage2D, for example
+            GL_RGB, GL_LUMINANCE_ALPHA, etc.
+        type
+            A valid type argument to glTexImage2D, for example
+            GL_UNSIGNED_BYTE, etc.
+
+        '''
+        super(RawImage, self).__init__(width, height)
+        self.data = data
+        self.format = format
+        self.type = type
+
+    def get_texture(self, internalformat=None):
+        tex_width, tex_height, u, v = \
+            Texture.get_texture_size(self.width, self.height)
+        if not internalformat:
+            if self.format in (GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA):
+                internalformat = self.format
+            elif self.format in (GL_RGBA, GL_BGRA):
+                internalformat = GL_RGBA
+            else:
+                internalformat = GL_RGB
+
+        id = c_uint()
+        glGenTextures(1, byref(id))
+        glBindTexture(GL_TEXTURE_2D, id.value)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        if tex_width == self.width and tex_height == self.height:
+            glTexImage2D(GL_TEXTURE_2D, 
+                0, 
+                internalformat,
+                tex_width, tex_height,
+                0,
+                self.format, self.type,
+                self.data)
+        else:
+            blank = (c_byte * tex_width * tex_height)()
+            glTexImage2D(GL_TEXTURE_2D,
+                0,
+                internalformat,
+                tex_width,
+                tex_height,
+                0,
+                GL_RED,
+                GL_UNSIGNED_BYTE,
+                blank)
+            self.texture_subimage(0, 0)
+        return Texture(id, tex_width, tex_height, u, v)
+
+    def texture_subimage(self, x, y):
+        glTexSubImage2D(GL_TEXTURE_2D,
+            0,
+            x, y,
+            self.width, self.height,
+            self.format, self.type,
+            self.data)
+
 
 def _nearest_pow2(n):
     i = 1
@@ -78,48 +130,11 @@ def _nearest_pow2(n):
         i <<= 1
     return i
 
-def _get_texture_from_surface(surface):
-    if surface.format.BitsPerPixel != 24 and \
-       surface.format.BitsPerPixel != 32:
-        raise AttributeError('Unsupported surface format')
-    return _get_texture(surface.pixels.to_string(), surface.w, surface.h,
-        surface.format.BytesPerPixel)
-
-def _get_texture(data, width, height, bpp):
-    # XXX get from config...
-    # XXX determine max texture size
-    # XXX test whether the hardware can cope with non-^2 texture sizes
-    # XXX test whether the hardware can cope with non-square textures
-    tex_width = tex_height = max(_nearest_pow2(width), _nearest_pow2(height))
-    uv = (float(width) / tex_width, float(height) / tex_height)
-
-    if bpp == 2: iformat = format = GL_LUMINANCE_ALPHA
-    elif bpp == 3: iformat = format = GL_RGB
-    else: iformat = format = GL_RGBA
-
-    id = c_uint()
-    glGenTextures(1, byref(id))
-    id = id.value
-    glBindTexture(GL_TEXTURE_2D, id)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    if tex_width == width and tex_height == height:
-        glTexImage2D(GL_TEXTURE_2D, 0, iformat, tex_width, tex_height, 0,
-            format, GL_UNSIGNED_BYTE, data)
-    else:
-        blank = '\0' * tex_width * tex_height * bpp
-        glTexImage2D(GL_TEXTURE_2D, 0, iformat, tex_width, tex_height, 0,
-            format, GL_UNSIGNED_BYTE, blank)
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format,
-            GL_UNSIGNED_BYTE, data)
-
-    return id, uv
-
 class Texture(object):
-    def __init__(self, id, width, height, uv):
+    def __init__(self, id, width, height, u, v):
         self.id = id
         self.width, self.height = width, height
-        self.uv = uv
+        self.uv = u, v
 
         # Make quad display list
         self.quad_list = glGenLists(1)
@@ -138,27 +153,29 @@ class Texture(object):
         glEnd()
         glEndList()
 
+    # TODO: <ah> I think this should be a sprite function only: 3D games
+    #       will have no need for this DL.
     def draw(self):
         glPushAttrib(GL_ENABLE_BIT)
         glEnable(GL_TEXTURE_2D)
         glCallList(self.quad_list)
         glPopAttrib()
 
-    @classmethod
-    def from_data(cls, data, width, height, bpp):
-        id, uv = _get_texture(data, width, height, bpp)
-        return Texture(id, width, height, uv)
+    @staticmethod
+    def get_texture_size(width, height):
+        '''Return the texture size that should be used to hold an image
+        of the given size.  On older cards this should be rounded up to
+        2^n dimensions.  On newer cards this is not necessary.
 
-    @classmethod
-    def from_image(cls, image):
-        id, uv = _get_texture(image.data, image.width, image.height,
-            image.bpp)
-        return Texture(id, image.width, image.height, uv)
-
-    @classmethod
-    def from_surface(cls, surface):
-        id, uv = _get_texture_from_surface(surface)
-        return Texture(id, surface.w, surface.h, uv)
+        Returns (width, height, u, v)
+        '''
+        # TODO detect when non-power2 textures are permitted.
+        # TODO square textures required by some cards?
+        tex_width = _nearest_pow2(width)
+        tex_height = _nearest_pow2(height)
+        u = float(width) / tex_width
+        v = float(height) / tex_height
+        return tex_width, tex_height, u, v
 
 
 class AtlasSubTexture(object):
@@ -218,11 +235,6 @@ class TextureAtlasRects(object):
         id, uv = _get_texture(image.data, image.width, image.height,
             image.bpp)
         return cls(id, image.width, image.height, uv, rects)
-
-    @classmethod
-    def from_surface(cls, surface, rects=[]):
-        id, uv = _get_texture_from_surface(surface)
-        return cls(id, surface.w, surface.h, uv, rects)
 
     def draw(self, index):
         glPushAttrib(GL_ENABLE_BIT)
@@ -294,11 +306,6 @@ class TextureAtlasGrid(object):
         id, uv = _get_texture(image.data, image.width, image.height,
             image.bpp)
         return cls(id, image.width, image.height, uv, rows, cols)
-
-    @classmethod
-    def from_surface(cls, surface, rows=1, cols=1):
-        id, uv = _get_texture_from_surface(surface)
-        return cls(id, surface.w, surface.h, uv, rows, cols)
 
     def draw(self, row, col):
         glPushAttrib(GL_ENABLE_BIT)

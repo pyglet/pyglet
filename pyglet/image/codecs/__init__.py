@@ -1,0 +1,123 @@
+#!/usr/bin/env python
+
+'''Collection of image encoders and decoders.
+
+Modules must subclass ImageDecoder and ImageEncoder for each method of
+decoding/encoding they support.
+
+Modules must also implement the two functions::
+    
+    def get_decoders():
+        # Return a list of ImageDecoder instances or []
+        return []
+
+    def get_encoders():
+        # Return a list of ImageEncoder instances or []
+        return []
+    
+'''
+
+__docformat__ = 'restructuredtext'
+__version__ = '$Id: $'
+
+import os.path
+
+_decoders = []              # List of registered ImageDecoders
+_decoder_extensions = {}    # Map str -> list of matching ImageDecoders
+_encoders = []              # List of registered ImageEncoders
+_encoder_extensions = {}    # Map str -> list of matching ImageEncoders
+
+class ImageDecodeException(Exception):
+    pass
+
+class ImageDecoder(object):
+    def get_file_extensions(self):
+        '''Return a list of accepted file extensions, without the "."
+        Lower-case only.
+        '''
+        return []
+
+    def decode(self, file, filename):
+        '''Decode the given file object and return an instance of Image.
+        Throws ImageDecodeException if there is an error.  filename
+        can be a file type hint.
+        '''
+        raise NotImplementedError()
+
+class ImageEncoder(object):
+    def get_file_extensions(self):
+        '''Return a list of accepted file extensions, without the ".".
+        Lower-case only.
+        '''
+        return []
+
+    def encode_texture(self, texture, file, filename, options={}):
+        '''Encode the given texture to the given file.  filename
+        provides a hint to the file format desired.  options are
+        encoder-specific, and unknown options should be ignored or
+        issue warnings.
+        '''
+        raise NotImplementedError()
+
+    def encode_buffer(self, file, filename, options={}):
+        '''Encode the current buffer set by glReadBuffer() to the 
+        given file.  Other options are as for `encode_texture`.
+        '''
+        raise NotImplementedError()
+
+def get_encoders(filename=None):
+    '''Get an ordered list of encoders to attempt.  filename can be used
+    as a hint for the filetype.
+    '''
+    encoders = []
+    if filename:
+        extension = os.path.splitext(filename)[1].lower()
+        encoders += _encoder_extensions.get(extension, [])
+    encoders += [e for e in _encoders if e not in encoders]
+    return encoders
+
+def get_decoders(filename=None):
+    '''Get an ordered list of decoders to attempt.  filename can be used
+     as a hint for the filetype.
+    '''
+    decoders = []
+    if filename:
+        extension = os.path.splitext(filename)[1].lower()
+        decoders += _decoder_extensions.get(extension, [])
+    decoders += [e for e in _decoders if e not in decoders]
+    return decoders
+
+def add_codec(module):
+    '''Add a codec module.  The module must define the functions 
+    `get_encoders` and `get_decoders`.  Once added, the appropriate
+    encoders and decoders defined in the codec will be returned by
+    pyglet.image.codecs.get_encoders/decoders.
+    '''
+    for decoder in module.get_decoders():
+        _decoders.append(decoder)
+        for extension in decoder.get_file_extensions():
+            if extension not in _decoder_extensions:
+                _decoder_extensions[extension] = []
+            _decoder_extensions[extension].append(decoder)
+    for encoder in module.get_encoders():
+        _encoders.append(encoder)
+        for extension in encoder.get_file_extensions():
+            if extension not in _encoder_extensions:
+                _encoder_extensions[extension] = []
+            _encoder_extensions[extension].append(encoder)
+ 
+# Add the codecs we know about
+
+try:
+    import pyglet.image.codecs.png
+    add_codec(png)
+except ImportError:
+    pass
+
+try:
+    import pyglet.image.codecs.pil
+    add_codec(pil)
+except ImportError:
+    pass
+
+
