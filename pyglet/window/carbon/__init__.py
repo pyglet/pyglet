@@ -478,8 +478,10 @@ class CarbonWindow(BaseWindow):
 
     def set_visible(self, visible=True):
         if visible:
+            width, height = self.get_size()
+            self.dispatch_event(EVENT_RESIZE, width, height)
+
             carbon.ShowWindow(self._window)
-            self.dispatch_event(EVENT_EXPOSE)
         else:
             carbon.HideWindow(self._window)
 
@@ -807,6 +809,7 @@ class CarbonWindow(BaseWindow):
         self.switch_to()
         glViewport(0, 0, width, height)
         self.dispatch_event(EVENT_RESIZE, width, height)
+        self.dispatch_event(EVENT_EXPOSE)
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr

@@ -177,21 +177,33 @@ pyglet
     image
         :description: Image file load and save.
         :implementation:
-            ============================== === === ===
-            Component                      X11 WIN OSX
-            ============================== === === ===
-            PNG_LOAD                        X       X
-            PNG_SAVE
-            JPEG_LOAD                       X
-            JPEG_SAVE
-            DDS_LOAD                        /   /   /
-            DDS_SAVE
-            ============================== === === ===
+            ============================== =======
+            Component                      GENERIC
+            ============================== =======
+            CHECKERBOARD                      X
+            PNG_RGBA_LOAD                     X
+            PNG_RGBA_SAVE
+            PNG_RGB_LOAD
+            PNG_RGB_SAVE
+            PNG_LA_LOAD
+            PNG_LA_SAVE
+            PNG_L_LOAD
+            PNG_L_SAVE
+            JPEG_RGB_LOAD                     X
+            JPEG_RGB_SAVE
+            DDS_DXT1_LOAD                        
+            DDS_DXT3_LOAD                        
+            DDS_DXT5_LOAD                        
+            DDS_DXT1_SAVE                        
+            DDS_DXT3_SAVE                        
+            DDS_DXT5_SAVE                        
+            ============================== =======
 
         TBD:
-         - libpng and libjpeg require setjmp support; we should work
-           around this or use another library.
          - DDS stuff, see pyglet.dds.
+         - Currently Windows and Linx require PIL; look for other
+           alternatives (WMP, IE?).
+         - QuickTime decoder assumes RGBA atm.
 
         sdl
             :description: SDL_Image support.

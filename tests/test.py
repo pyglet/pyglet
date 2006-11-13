@@ -335,7 +335,7 @@ def main(args):
     log_file = None
     interactive = True
 
-    capabilities = []
+    capabilities = ['GENERIC']
     platform_capabilities = {
         'linux2': 'X11',
         'win32': 'WIN',

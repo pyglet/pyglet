@@ -53,6 +53,18 @@ class Image(object):
         else:
             raise ImageDecodeException('No decoder could load %r' % file)
 
+    @staticmethod
+    def create_checkerboard(size, 
+                          colour1=(150, 150, 150, 255), 
+                          colour2=(200, 200, 200, 255)):
+        half = size/2
+        colour1 = '%c%c%c%c' % colour1
+        colour2 = '%c%c%c%c' % colour2
+        row1 = colour1 * half + colour2 * half
+        row2 = colour2 * half + colour1 * half
+        data = row1 * half + row2 * half
+        return RawImage(data, size, size, GL_RGBA, GL_UNSIGNED_BYTE)
+
 class RawImage(Image):
     '''Encapsulate image data stored in an OpenGL pixel format.
     '''
@@ -113,7 +125,7 @@ class RawImage(Image):
                 GL_UNSIGNED_BYTE,
                 blank)
             self.texture_subimage(0, 0)
-        return Texture(id, tex_width, tex_height, u, v)
+        return Texture(id, self.width, self.height, u, v)
 
     def texture_subimage(self, x, y):
         glTexSubImage2D(GL_TEXTURE_2D,
@@ -140,6 +152,9 @@ class Texture(object):
         self.quad_list = glGenLists(1)
         glNewList(self.quad_list, GL_COMPILE)
         glBindTexture(GL_TEXTURE_2D, self.id)
+        glPushAttrib(GL_ENABLE_BIT)
+        glEnable(GL_TEXTURE_2D)
+
         glBegin(GL_QUADS)
         glTexCoord2f(0, 0)
         glVertex2f(0, 0)
@@ -149,17 +164,15 @@ class Texture(object):
         glVertex2f(self.width, self.height)
         glTexCoord2f(self.uv[0], 0)
         glVertex2f(self.width, 0)
-
         glEnd()
+
+        glPopAttrib()
         glEndList()
 
     # TODO: <ah> I think this should be a sprite function only: 3D games
     #       will have no need for this DL.
     def draw(self):
-        glPushAttrib(GL_ENABLE_BIT)
-        glEnable(GL_TEXTURE_2D)
         glCallList(self.quad_list)
-        glPopAttrib()
 
     @staticmethod
     def get_texture_size(width, height):
