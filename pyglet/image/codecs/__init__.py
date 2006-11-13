@@ -111,6 +111,12 @@ def add_default_image_codecs():
     # preference.  This is called automatically by pyglet.image.
 
     try:
+        import pyglet.image.codecs.quicktime
+        add_codec(quicktime)
+    except ImportError:
+        pass
+
+    try:
         import pyglet.image.codecs.pil
         add_codec(pil)
     except ImportError:
