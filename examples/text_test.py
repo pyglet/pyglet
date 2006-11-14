@@ -19,7 +19,10 @@ else:
     filename = os.path.join(os.path.split(__file__)[0], 'Vera.ttf')
 factory = text.LocalFontFactory(os.path.split(__file__)[0])
 font = factory.get_font('bitstream vera sans', 26)
-sample = text.layout_text('Hello, World. gVAWAVA. Mr. T.', font=font)
+#sample = text.layout_text('Hello, World. gVAWAVA. Mr. T.', font=font)
+sample = text.layout_html('''<font size="26"><i>Hello</i>,
+    <b>World</b>.<br>gVAWAVA. <b><i>Mr.</i></b> T.</font>''',
+    font_factory=factory)
 
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)

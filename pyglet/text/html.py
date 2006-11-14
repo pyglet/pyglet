@@ -130,7 +130,7 @@ class StylePrototype:
             self._attrs[Attribute.Bold] = False
             self._attrs[Attribute.Italic] = False
             self._attrs[Attribute.FontSize] = 12
-            self._attrs[Attribute.FontName] = 'bitstream vera serif'
+            self._attrs[Attribute.FontName] = 'bitstream vera sans'
             self._attrs[Attribute.Color] = (0, 0, 0, 1)
     
     def set_attribute(self, attribute, value):
@@ -159,7 +159,7 @@ class ParagraphPrototype:
                 self._attrs[attr] = value
         else:
             # Default attributes
-            self._attrs[ParagraphAttribute.Justification] = Align.left
+            self._attrs[ParagraphAttribute.Justification] = layout.Align.left
 
     def set_attribute(self, attribute, value):
         self._attrs[attribute] = value

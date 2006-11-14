@@ -163,10 +163,53 @@ class LocalFontFactory(BaseFontFactory):
         fake_bold = bold and not b
         fake_italic = italic and not i
 
-        return self.load_font(filename, size, metrics)
-        # XXX    fake_bold=fake_bold, fake_italic=fake_italic)
-        # XXX return a wrapper around the font which does the faking
+        font = self.load_font(filename, size, metrics)
+        if fake_bold:
+            font = FakeBold(font)
+        if fake_italic:
+            return FakeItalic(font)
+        return font
+
+class FakeBold(object):
+    def __init__(self, font):
+        self.__font = font
  
+    def __getattr__(self, attr):
+        return getattr(self.__font, attr)
+
+    def get_boxes(self, text):
+        boxes, advance = self.__font.get_boxes(text)
+        # XXX why can't I increase the advance here?
+        return boxes, advance + 5
+
+    def draw_boxes(self, boxes):
+        self.__font.draw_boxes(boxes)
+        glPushMatrix()
+        glTranslatef(1, 0, 0)
+        self.__font.draw_boxes(boxes)
+        glPopMatrix()
+
+sixteen = ctypes.c_float * 16
+
+class FakeItalic(object):
+    def __init__(self, font):
+        self.__font = font
+ 
+    def __getattr__(self, attr):
+        return getattr(self.__font, attr)
+
+    def draw_boxes(self, boxes):
+        glPushMatrix()
+        matrix = sixteen(*[0]*16)
+        matrix[0] = 1
+        matrix[4] = .3      # XXX good value?
+        matrix[12] = 15     # XXX fix this
+        matrix[5] = 1
+        matrix[10] = 1
+        matrix[15] = 1
+        glMultMatrixf(matrix)
+        self.__font.draw_boxes(boxes)
+        glPopMatrix()
 
 class Glyph(object):
     def __init__(self, face, c, width, height, advance_x, baseline):
@@ -277,7 +320,6 @@ class Font(object):
 
         rects = []
         tw2 = tw * 2
-        self.tex_boxmap = {}
         self.ascent = self.descent = 0
         for data, glyph in glyphs:
             x, y = location[glyph.c]
@@ -368,7 +410,8 @@ class Font(object):
         x, y = 0, self.descent
         for glyph, kern in kerned_text:
             advance = glyph.advance_x + kern
-            renderbox = (x, y, x + glyph.width, y + glyph.height)
+            renderbox = (x, y - glyph.baseline,
+                x + glyph.width, y + glyph.height - glyph.baseline)
             boxes.append((renderbox, glyph))
             total_advance += advance
             x += advance

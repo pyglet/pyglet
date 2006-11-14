@@ -61,9 +61,9 @@ def layout_html(text, width=-1, font_factory=None):
             _default_font_factory = LocalFontFactory()
         font_factory = _default_font_factory
     runs = html.parse(text, font_factory)
-    layout = layout.OpenGLTextLayout(width)
-    layout.layout(runs)
-    return layout
+    text = layout.OpenGLTextLayout(width)
+    text.layout(runs)
+    return text
 
 _default_font = None
 def layout_text(text, width=-1, font=None, color=(0,0,0,1)):
