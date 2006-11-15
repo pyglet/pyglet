@@ -117,6 +117,12 @@ def add_default_image_codecs():
         pass
 
     try:
+        import pyglet.image.codecs.gdiplus
+        add_codec(gdiplus)
+    except ImportError:
+        pass
+
+    try:
         import pyglet.image.codecs.pil
         add_codec(pil)
     except ImportError:
