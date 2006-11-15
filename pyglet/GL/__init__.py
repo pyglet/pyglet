@@ -11,7 +11,7 @@ import ctypes.util
 import sys
 
 if sys.platform == 'win32':
-    import pyglet.window.win32.WGL as _WGL
+    import WGL as _WGL
     _gl = ctypes.windll.opengl32
     def get_function(name, argtypes, rtype):
         if hasattr(_gl, name):

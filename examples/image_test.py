@@ -32,6 +32,9 @@ glMatrixMode(GL_MODELVIEW)
 glClearColor(0, 0, 0, 0)
 glColor4f(1, 1, 1, 1)
 
+glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+glEnable(GL_BLEND)
+
 r = 0
 while not exit_handler.exit:
     c.set_fps(60)

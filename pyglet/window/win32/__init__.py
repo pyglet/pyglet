@@ -9,13 +9,14 @@ __version__ = '$Id: $'
 from ctypes import *
 import unicodedata
 
+from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.WGL import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
 from pyglet.window.win32.constants import *
 from pyglet.window.win32.key import *
 from pyglet.window.win32.types import *
-from pyglet.window.win32.WGL import *
 
 _gdi32 = windll.gdi32
 _kernel32 = windll.kernel32
@@ -630,6 +631,8 @@ class Win32Window(BaseWindow):
             self._hidden = False
             self.dispatch_event(EVENT_SHOW)
         w, h = self._get_location(lParam)
+        self.switch_to()
+        glViewport(0, 0, w, h)
         self.dispatch_event(EVENT_RESIZE, w, h)
         return 0
 

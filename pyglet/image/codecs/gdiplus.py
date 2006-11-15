@@ -79,7 +79,8 @@ kernel32.GlobalLock.restype = c_void_p
 
 class GDIPlusDecoder(ImageDecoder):
     def get_file_extensions(self):
-        return ['bmp', 'gif', 'jpg', 'jpeg', 'exif', 'png', 'tif', 'tiff']
+        return ['.bmp', '.gif', '.jpg', '.jpeg', '.exif', '.png', '.tif', 
+                '.tiff']
 
     def decode(self, file, filename):
         data = file.read()
@@ -109,33 +110,24 @@ class GDIPlusDecoder(ImageDecoder):
         pf = c_int()
         gdiplus.GdipGetImagePixelFormat(bitmap, byref(pf))
         pf = pf.value
+
+        format = GL_BGRA
+        components = 4
+        type = GL_UNSIGNED_BYTE
         if pf == PixelFormat24bppRGB:
-            # RGB is reversed, use RGBA instead
-            format = GL_BGRA
-            pf = PixelFormat32bppARGB
+            components = 3
+            format = GL_RGB
         elif pf == PixelFormat32bppRGB:
-            format = GL_RGBA
+            pass
         elif pf == PixelFormat32bppARGB:
-            format = GL_BGRA
+            pass
         elif pf in (PixelFormat16bppARGB1555, PixelFormat32bppPARGB,
                     PixelFormat64bppARGB, PixelFormat64bppPARGB):
-            format = GL_BGRA
             pf = PixelFormat32bppARGB
         else:
+            components = 3
             format = GL_RGB
             pf = PixelFormat24bppRGB
-
-        if format == GL_RGB:
-            components = 3
-            type = GL_UNSIGNED_BYTE
-        elif format == GL_BGRA:
-            components = 4
-            type = GL_UNSIGNED_INT_8_8_8_8_REV
-        elif format == GL_RGBA:
-            components = 4
-            type = GL_UNSIGNED_BYTE
-        else:
-            assert False
 
         # Lock pixel data in best format
         rect = Rect()
@@ -148,7 +140,7 @@ class GDIPlusDecoder(ImageDecoder):
             byref(rect), ImageLockModeRead, pf, byref(bitmap_data))
         
         # Create buffer for RawImage
-        buffer = (c_ubyte * (width * height * components))()
+        buffer = create_string_buffer(width * height * components)
         memmove(buffer, bitmap_data.Scan0, len(buffer))
 
         # Unlock data
@@ -157,8 +149,20 @@ class GDIPlusDecoder(ImageDecoder):
         # Release image and stream
         gdiplus.GdipDisposeImage(bitmap)
         # TODO: How to call IUnknown::Release on stream?
+
+        # XXX TODO
+        _have_BGRA = False
+        if not _have_BGRA:
+            import re
+            if components == 4:
+                swap_components = re.compile('(.)(.)(.)(.)', re.DOTALL)
+                buffer = swap_components.sub(r'\3\2\1\4', buffer.raw)
+            elif components == 3:
+                swap_components = re.compile('(.)(.)(.)', re.DOTALL)
+                buffer = swap_components.sub(r'\3\2\1', buffer.raw)
  
-        return RawImage(buffer, width, height, format, type)
+        return RawImage(buffer, width, height, format, type,
+            swap_components=True)
 
 def get_decoders():
     return [GDIPlusDecoder()]

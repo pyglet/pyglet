@@ -12,6 +12,7 @@ import re
 from ctypes import *
 
 from pyglet.GL.VERSION_1_1 import *
+from pyglet.GLU.VERSION_1_1 import *
 from pyglet.image.codecs import *
 
 class Image(object):
@@ -42,6 +43,7 @@ class Image(object):
             file = open(filename, 'rb')
 
         for decoder in get_decoders(filename):
+            print 'Trying decoder', decoder
             try:
                 image = decoder.decode(file, filename)
                 return image
@@ -69,7 +71,8 @@ class RawImage(Image):
     '''Encapsulate image data stored in an OpenGL pixel format.
     '''
 
-    def __init__(self, data, width, height, format, type):
+    def __init__(self, data, width, height, format, type,
+                 swap_components=False, swap_rows=False):
         '''Initialise image data.
 
         data
@@ -88,6 +91,8 @@ class RawImage(Image):
         self.data = data
         self.format = format
         self.type = type
+        self.swap_components = swap_components
+        self.swap_rows = swap_rows
 
     def get_texture(self, internalformat=None):
         tex_width, tex_height, u, v = \
@@ -125,6 +130,7 @@ class RawImage(Image):
                 GL_UNSIGNED_BYTE,
                 blank)
             self.texture_subimage(0, 0)
+
         return Texture(id, self.width, self.height, u, v)
 
     def texture_subimage(self, x, y):
