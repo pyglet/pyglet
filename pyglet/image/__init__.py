@@ -44,7 +44,6 @@ class Image(object):
             file = open(filename, 'rb')
 
         for decoder in get_decoders(filename):
-            print 'Trying decoder', decoder
             try:
                 image = decoder.decode(file, filename)
                 return image
@@ -77,7 +76,7 @@ class RawImage(Image):
     _swap_la_pattern = re.compile('(.)(.)', re.DOTALL)
 
     def __init__(self, data, width, height, format, type,
-                 swap_argb=False, swap_rows=False, swap_components=False):
+                 swap_argb=False, swap_rows=False, swap_abgr=False):
         '''Initialise image data.
 
         data
@@ -92,6 +91,9 @@ class RawImage(Image):
             GL_UNSIGNED_BYTE, etc.
         swap_argb
             If True, the samples are in ARGB format and need to be
+            rearranged to RGBA.
+        swap_abgr
+            If True, the samples are in ABGR format and need to be
             rearranged to RGBA.
         swap_rows
             If True, the rows of the image will be reversed to compensate
@@ -117,11 +119,11 @@ class RawImage(Image):
         if swap_rows:
             self._swap_rows()
 
+        if swap_abgr:
+            self._swap_abgr()
+
         if swap_argb:
             self._swap_argb()
-
-        if swap_components:
-            self._swap_components()
 
     def _ensure_string_data(self):
         if type(self.data) is not str:
@@ -137,8 +139,8 @@ class RawImage(Image):
         self.data = ''.join(rows)
 
     def _swap_argb(self):
-        assert self.components == 4
-        if have_extension('GL_EXT_bgra'):
+        if (have_extension('GL_EXT_bgra') and
+            have_extension('GL_APPLE_packed_pixel')):
             # Reversing BGRA gives ARGB, which is what we want.  Not supported
             # on older cards.
             self.format = GL_BGRA
@@ -150,13 +152,18 @@ class RawImage(Image):
             self.data = self._swap_rgba_pattern.sub(r'\2\3\4\1', self.data)
         elif self.components == 3:
             self.data = self._swap_rgb_pattern.sub(r'\3\2\1', self.data)
-        self.format = GL_ARGB
-        self.type = GL_UNSIGNED_BYTE
 
-    def _swap_components(self):
+    def _swap_abgr(self):
+        if have_extension('GL_EXT_bgra'):
+            if self.components == 4:
+                self.format = GL_BGRA
+            elif self.components == 3:
+                self.format = GL_BGR
+            return
+
         self._ensure_string_data()
         if self.components == 4:
-            self.data = self._swap_rgba_pattern.sub(r'\4\3\2\1', self.data)
+            self.data = self._swap_rgba_pattern.sub(r'\3\2\1\4', self.data)
         elif self.components == 3:
             self.data = self._swap_rgb_pattern.sub(r'\3\2\1', self.data)
         elif self.components == 2:

@@ -151,7 +151,7 @@ class GDIPlusDecoder(ImageDecoder):
         # TODO: How to call IUnknown::Release on stream?
 
         return RawImage(buffer, width, height, format, type,
-            swap_argb=True, swap_rows=True)
+            swap_abgr=True, swap_rows=True)
 
 def get_decoders():
     return [GDIPlusDecoder()]

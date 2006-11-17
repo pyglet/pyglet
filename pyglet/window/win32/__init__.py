@@ -10,6 +10,7 @@ from ctypes import *
 import unicodedata
 
 from pyglet.GL.VERSION_1_1 import *
+import pyglet.GL.info
 from pyglet.GL.WGL import *
 from pyglet.window import *
 from pyglet.window.event import *
@@ -305,6 +306,7 @@ class Win32Window(BaseWindow):
 
     def switch_to(self):
         wglMakeCurrent(self._dc, self._wgl_context)
+        pyglet.GL.info.set_context()
 
     def flip(self):
         wglSwapLayerBuffers(self._dc, WGL_SWAP_MAIN_PLANE)

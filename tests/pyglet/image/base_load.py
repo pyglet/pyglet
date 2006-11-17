@@ -66,7 +66,6 @@ class TestLoad(unittest.TestCase):
         self.checkerboard = \
             pyglet.image.Image.create_checkerboard(32).get_texture()
 
-        print __file__
         if self.texture_file:
             self.texture_file = join(dirname(__file__), self.texture_file)
             self.texture = \
