@@ -30,6 +30,9 @@ _encoder_extensions = {}    # Map str -> list of matching ImageEncoders
 class ImageDecodeException(Exception):
     pass
 
+class ImageEncodeException(Exception):
+    pass
+
 class ImageDecoder(object):
     def get_file_extensions(self):
         '''Return a list of accepted file extensions, e.g. ['.png', '.bmp']
@@ -51,17 +54,11 @@ class ImageEncoder(object):
         '''
         return []
 
-    def encode_texture(self, texture, file, filename, options={}):
-        '''Encode the given texture to the given file.  filename
+    def encode(self, image, file, filename, options={}):
+        '''Encode the given image to the given file.  filename
         provides a hint to the file format desired.  options are
         encoder-specific, and unknown options should be ignored or
         issue warnings.
-        '''
-        raise NotImplementedError()
-
-    def encode_buffer(self, file, filename, options={}):
-        '''Encode the current buffer set by glReadBuffer() to the 
-        given file.  Other options are as for `encode_texture`.
         '''
         raise NotImplementedError()
 

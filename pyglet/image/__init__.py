@@ -20,11 +20,12 @@ class Image(object):
     '''Abstract class representing image data.
     '''
 
-    def __init__(self, width, height):
+    def __init__(self, width, height, format):
         self.width = width
         self.height = height
+        self.format = format
 
-    def get_texture(self, internalformat=None):
+    def texture(self, internalformat=None):
         '''Return a Texture of this image.  This method does not cache
         textures, it will create a new one each time it is called.
         internalformat can be a valid argument to glTexImage2D to specify
@@ -37,6 +38,39 @@ class Image(object):
         '''Copy the image into the current texture at the given coordinates.
         '''
         raise NotImplementedError()
+
+    def read(self, format, type):
+        '''Read the image and return a RawImage for pixel access.  The width
+        and height of the returned image may not match the dimensions of
+        this image (for example, with a non-squared-power Texture).  The
+        format and type of data may not match those requested (for
+        example, requesting RGB for a stencil buffer).
+
+        format
+            GL format (GL_RGBA, etc) to write.  For specialised buffers
+            such as DEPTH and STENCIL this will throw an exception if
+            it doesn't match self.format.
+        type
+            GL type (GL_UNSIGNED_BYTE, etc) to write.
+
+        '''
+        raise NotImplementedError()
+
+    def save(self, filename=None, file=None, options={}):
+        if not file:
+            file = open(filename, 'wb')
+
+        for encoder in get_encoders(filename):
+            try:
+                encoder.encode(self, file, filename, options)
+                return
+            except ImageDecodeException:
+                file.seek(0)
+
+        if filename:
+            raise ImageEncodeException('No encoder could write %r' % filename)
+        else:
+            raise ImageEncodeException('No encoder could write %r' % file)
 
     @staticmethod
     def load(filename=None, file=None):
@@ -66,6 +100,24 @@ class Image(object):
         row2 = colour2 * half + colour1 * half
         data = row1 * half + row2 * half
         return RawImage(data, size, size, GL_RGBA, GL_UNSIGNED_BYTE)
+
+    _format_components = {
+        GL_RGBA: 4,
+        GL_BGRA: 4,
+        GL_RGB: 3,
+        GL_BGR: 3,
+        GL_LUMINANCE_ALPHA: 2,
+    }
+
+    @staticmethod
+    def get_format_components(format):
+        return Image._format_components.get(format, 1)
+
+    @staticmethod
+    def get_type_ctype(type):
+        if type == GL_UNSIGNED_BYTE:
+            return c_ubyte
+        assert False
 
 class RawImage(Image):
     '''Encapsulate image data stored in an OpenGL pixel format.
@@ -100,18 +152,9 @@ class RawImage(Image):
             for top-to-bottom frameworks.
 
         '''
-        super(RawImage, self).__init__(width, height)
+        super(RawImage, self).__init__(width, height, format)
 
-        if format in (GL_RGBA, GL_BGRA):
-            components = 4
-        elif format in (GL_RGB, GL_BGR):
-            components = 3
-        elif format == GL_LUMINANCE_ALPHA:
-            components = 2
-        else:
-            components = 1
-
-        self.components = components
+        self.components = self.get_format_components(format)
         self.data = data
         self.format = format
         self.type = type
@@ -169,7 +212,7 @@ class RawImage(Image):
         elif self.components == 2:
             self.data = self._swap_la_pattern.sub(r'\2\1', self.data)
 
-    def get_texture(self, internalformat=None):
+    def texture(self, internalformat=None):
         tex_width, tex_height, u, v = \
             Texture.get_texture_size(self.width, self.height)
         if not internalformat:
@@ -194,7 +237,7 @@ class RawImage(Image):
                 self.format, self.type,
                 self.data)
         else:
-            blank = (c_byte * tex_width * tex_height)()
+            blank = (c_ubyte * tex_width * tex_height)()
             glTexImage2D(GL_TEXTURE_2D,
                 0,
                 internalformat,
@@ -206,7 +249,7 @@ class RawImage(Image):
                 blank)
             self.texture_subimage(0, 0)
 
-        return Texture(id, self.width, self.height, u, v)
+        return Texture(self.width, self.height, internalformat, id, u, v)
 
     def texture_subimage(self, x, y):
         glTexSubImage2D(GL_TEXTURE_2D,
@@ -223,10 +266,10 @@ def _nearest_pow2(n):
         i <<= 1
     return i
 
-class Texture(object):
-    def __init__(self, id, width, height, u, v):
+class Texture(Image):
+    def __init__(self, width, height, format, id, u, v):
+        super(Texture, self).__init__(width, height, format)
         self.id = id
-        self.width, self.height = width, height
         self.uv = u, v
 
         # Make quad display list
@@ -254,6 +297,29 @@ class Texture(object):
     #       will have no need for this DL.
     def draw(self):
         glCallList(self.quad_list)
+
+    def read(self, format, type):
+        glBindTexture(GL_TEXTURE_2D, self.id)
+
+        width = c_int()
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 
+            0, GL_TEXTURE_WIDTH, byref(width))
+        width = width.value
+
+        height = c_int()
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 
+            0, GL_TEXTURE_HEIGHT, byref(height))
+        height = height.value
+
+        components = self.get_format_components(format)
+        buffer = (self.get_type_ctype(type) * (width * height * components))()
+        glGetTexImage(GL_TEXTURE_2D, 0, format, type, buffer)
+
+        return RawImage(buffer, width, height, format, type)
+
+    @staticmethod
+    def load(filename=None, file=None, internalformat=None):
+        return Image.load(filename, file).texture(internalformat)
 
     @staticmethod
     def get_texture_size(width, height):
@@ -328,12 +394,12 @@ class TextureAtlasRects(object):
 
     @classmethod
     def from_data(cls, data, width, height, format, type, rects=[]):
-        texture = RawImage(data, width, height, format, type).get_texture()
+        texture = RawImage(data, width, height, format, type).texture()
         return cls(texture, rects)
 
     @classmethod
     def from_image(cls, image, rects=[]):
-        return cls(image.get_texture(), rects)
+        return cls(image.texture(), rects)
 
     def draw(self, index):
         glPushAttrib(GL_ENABLE_BIT)
@@ -398,12 +464,12 @@ class TextureAtlasGrid(object):
 
     @classmethod
     def from_data(cls, data, width, height, format, type, rects=[]):
-        texture = RawImage(data, width, height, format, type).get_texture()
+        texture = RawImage(data, width, height, format, type).texture()
         return cls(id, width, height, uv, rows, cols)
 
     @classmethod
     def from_image(cls, image, rows=1, cols=1):
-        return cls(image.get_texture(), rows, cols)
+        return cls(image.texture(), rows, cols)
 
     def draw(self, row, col):
         glPushAttrib(GL_ENABLE_BIT)

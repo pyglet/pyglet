@@ -7,6 +7,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import unittest
+import StringIO
 from os.path import dirname, join
 
 from pyglet.GL.VERSION_1_1 import *
@@ -14,9 +15,10 @@ import pyglet.image
 import pyglet.window
 import pyglet.window.event
 
-class TestLoad(unittest.TestCase):
+class TestSave(unittest.TestCase):
     texture_file = None
-    texture = None
+    original_texture = None
+    saved_texture = None
     show_checkerboard = True
     alpha = True
 
@@ -47,16 +49,25 @@ class TestLoad(unittest.TestCase):
             glMatrixMode(GL_MODELVIEW)
             glPopMatrix()
 
-        if self.texture:
+        if self.original_texture:
             glPushMatrix()
-            glTranslatef((self.window.width - self.texture.width) / 2,
-                         (self.window.height - self.texture.height) / 2,
-                         0)
-            self.texture.draw()
+            glTranslatef(
+                self.window.width / 4 - self.original_texture.width / 2,
+                (self.window.height - self.original_texture.height) / 2, 0)
+            self.original_texture.draw()
             glPopMatrix()
+
+        if self.saved_texture:
+            glPushMatrix()
+            glTranslatef(
+                self.window.width * 3 / 4 - self.saved_texture.width / 2,
+                (self.window.height - self.saved_texture.height) / 2, 0)
+            self.saved_texture.draw()
+            glPopMatrix()
+            
         self.window.flip()
 
-    def test_load(self):
+    def test_save(self):
         width, height = 400, 400
         self.window = w = pyglet.window.create(width, height, visible=False)
         exit_handler = pyglet.window.event.ExitHandler()
@@ -68,8 +79,14 @@ class TestLoad(unittest.TestCase):
 
         if self.texture_file:
             self.texture_file = join(dirname(__file__), self.texture_file)
-            self.texture = \
+            self.original_texture = \
                 pyglet.image.Texture.load(self.texture_file)
+
+            file = StringIO.StringIO()
+            self.original_texture.save(self.texture_file, file)
+            file.seek(0)
+            self.saved_texture = \
+                pyglet.image.Texture.load(self.texture_file, file)
 
         if self.alpha:
             glEnable(GL_BLEND)
