@@ -30,7 +30,8 @@ class PNGImageDecoder(ImageDecoder):
             else:
                 format = GL_RGB
         type = GL_UNSIGNED_BYTE
-        return RawImage(pixels.tostring(), width, height, format, type)
+        return RawImage(pixels.tostring(), width, height, format, type,
+            swap_rows=True)
 
 def get_decoders():
     return [PNGImageDecoder()]

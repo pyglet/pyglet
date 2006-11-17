@@ -71,7 +71,7 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
 
         type = GL_UNSIGNED_BYTE
 
-        return RawImage(buffer, width, height, format, type)
+        return RawImage(buffer, width, height, format, type, swap_rows=True)
 
 def get_decoders():
     return [GdkPixbuf2ImageDecoder()]

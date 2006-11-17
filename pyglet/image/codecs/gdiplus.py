@@ -111,7 +111,7 @@ class GDIPlusDecoder(ImageDecoder):
         gdiplus.GdipGetImagePixelFormat(bitmap, byref(pf))
         pf = pf.value
 
-        format = GL_BGRA
+        format = GL_RGBA
         components = 4
         type = GL_UNSIGNED_BYTE
         if pf == PixelFormat24bppRGB:
@@ -150,19 +150,8 @@ class GDIPlusDecoder(ImageDecoder):
         gdiplus.GdipDisposeImage(bitmap)
         # TODO: How to call IUnknown::Release on stream?
 
-        # XXX TODO
-        _have_BGRA = False
-        if not _have_BGRA:
-            import re
-            if components == 4:
-                swap_components = re.compile('(.)(.)(.)(.)', re.DOTALL)
-                buffer = swap_components.sub(r'\3\2\1\4', buffer.raw)
-            elif components == 3:
-                swap_components = re.compile('(.)(.)(.)', re.DOTALL)
-                buffer = swap_components.sub(r'\3\2\1', buffer.raw)
- 
         return RawImage(buffer, width, height, format, type,
-            swap_components=True)
+            swap_argb=True, swap_rows=True)
 
 def get_decoders():
     return [GDIPlusDecoder()]

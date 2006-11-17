@@ -11,6 +11,7 @@ import re
 
 from ctypes import *
 
+from pyglet.GL.info import have_extension
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.GLU.VERSION_1_1 import *
 from pyglet.image.codecs import *
@@ -71,8 +72,12 @@ class RawImage(Image):
     '''Encapsulate image data stored in an OpenGL pixel format.
     '''
 
+    _swap_rgba_pattern = re.compile('(.)(.)(.)(.)', re.DOTALL)
+    _swap_rgb_pattern = re.compile('(.)(.)(.)', re.DOTALL)
+    _swap_la_pattern = re.compile('(.)(.)', re.DOTALL)
+
     def __init__(self, data, width, height, format, type,
-                 swap_components=False, swap_rows=False):
+                 swap_argb=False, swap_rows=False, swap_components=False):
         '''Initialise image data.
 
         data
@@ -85,14 +90,77 @@ class RawImage(Image):
         type
             A valid type argument to glTexImage2D, for example
             GL_UNSIGNED_BYTE, etc.
+        swap_argb
+            If True, the samples are in ARGB format and need to be
+            rearranged to RGBA.
+        swap_rows
+            If True, the rows of the image will be reversed to compensate
+            for top-to-bottom frameworks.
 
         '''
         super(RawImage, self).__init__(width, height)
+
+        if format in (GL_RGBA, GL_BGRA):
+            components = 4
+        elif format in (GL_RGB, GL_BGR):
+            components = 3
+        elif format == GL_LUMINANCE_ALPHA:
+            components = 2
+        else:
+            components = 1
+
+        self.components = components
         self.data = data
         self.format = format
         self.type = type
-        self.swap_components = swap_components
-        self.swap_rows = swap_rows
+
+        if swap_rows:
+            self._swap_rows()
+
+        if swap_argb:
+            self._swap_argb()
+
+        if swap_components:
+            self._swap_components()
+
+    def _ensure_string_data(self):
+        if type(self.data) is not str:
+            buf = create_string_buffer(len(self.data))
+            memmove(buf, self.data, len(self.data))
+            self.data = buf
+
+    def _swap_rows(self):
+        self._ensure_string_data()
+        pitch = self.components * self.width
+        rows = re.findall('.' * pitch, self.data, re.DOTALL)
+        rows.reverse()
+        self.data = ''.join(rows)
+
+    def _swap_argb(self):
+        assert self.components == 4
+        if have_extension('GL_EXT_bgra'):
+            # Reversing BGRA gives ARGB, which is what we want.  Not supported
+            # on older cards.
+            self.format = GL_BGRA
+            self.type = GL_UNSIGNED_INT_8_8_8_8_REV
+            return
+        
+        self._ensure_string_data()
+        if self.components == 4:
+            self.data = self._swap_rgba_pattern.sub(r'\2\3\4\1', self.data)
+        elif self.components == 3:
+            self.data = self._swap_rgb_pattern.sub(r'\3\2\1', self.data)
+        self.format = GL_ARGB
+        self.type = GL_UNSIGNED_BYTE
+
+    def _swap_components(self):
+        self._ensure_string_data()
+        if self.components == 4:
+            self.data = self._swap_rgba_pattern.sub(r'\4\3\2\1', self.data)
+        elif self.components == 3:
+            self.data = self._swap_rgb_pattern.sub(r'\3\2\1', self.data)
+        elif self.components == 2:
+            self.data = self._swap_la_pattern.sub(r'\2\1', self.data)
 
     def get_texture(self, internalformat=None):
         tex_width, tex_height, u, v = \

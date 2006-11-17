@@ -186,6 +186,7 @@ import sys
 
 from pyglet.window.event import WindowEventHandler
 import pyglet.window.key
+import pyglet.GL.info
 
 # List of contexts currently in use, so we can create new contexts that
 # share objects with.  Remember to remove from this list when context is
@@ -334,6 +335,9 @@ class BaseWindow(WindowEventHandler):
         self._context.destroy()
         self._config = None
         self._context = None
+
+    def switch_to(self):
+        raise NotImplementedError()
 
     def get_context(self):
         return self._context

@@ -33,6 +33,7 @@ k1IndexedGrayPixelFormat      = 0x00000021
 k2IndexedGrayPixelFormat      = 0x00000022
 k4IndexedGrayPixelFormat      = 0x00000024
 k8IndexedGrayPixelFormat      = 0x00000028
+kNativeEndianPixMap           = 1 << 8
 
 class QuickTimeImageDecoder(ImageDecoder):
     def get_file_extensions(self):
@@ -54,23 +55,26 @@ class QuickTimeImageDecoder(ImageDecoder):
         quicktime.GraphicsImportGetNaturalBounds(importer, byref(rect))
         width = rect.right
         height = rect.bottom
-        components = 4 # TODO
 
-        buffer = (c_byte * width * height * components)()
+        # TODO this could be more efficient
+        components = 4 
+        qtformat = k32ARGBPixelFormat
+
+        buffer = (c_byte * (width * height * components))()
         world = GWorldPtr()
-        quicktime.QTNewGWorldFromPtr(byref(world), k32ARGBPixelFormat,
-            byref(rect), c_void_p(), c_void_p(), 0, buffer,
+        quicktime.QTNewGWorldFromPtr(byref(world), qtformat,
+            byref(rect), c_void_p(), c_void_p(), kNativeEndianPixMap, buffer,
             components * width)
 
         quicktime.GraphicsImportSetGWorld(importer, world, c_void_p())
         quicktime.GraphicsImportDraw(importer)
         quicktime.DisposeGWorld(world)
 
-        # This is equivalent to ARGB with UNSIGNED_BYTE.  
-        format = GL_BGRA
-        type = GL_UNSIGNED_INT_8_8_8_8_REV
+        format = GL_RGBA
+        type = GL_UNSIGNED_BYTE
 
-        return RawImage(buffer, width, height, format, type)
+        return RawImage(buffer, width, height, format, type, 
+            swap_argb=True, swap_rows=True)
 
 def get_decoders():
     return [QuickTimeImageDecoder()]
