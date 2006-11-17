@@ -110,28 +110,38 @@ def add_default_image_codecs():
     # Add the codecs we know about.  These should be listed in order of
     # preference.  This is called automatically by pyglet.image.
 
+    # Mac OS X default: QuickTime
     try:
         import pyglet.image.codecs.quicktime
         add_codec(quicktime)
     except ImportError:
         pass
 
+    # Windows XP default: GDI+
     try:
         import pyglet.image.codecs.gdiplus
         add_codec(gdiplus)
     except ImportError:
         pass
 
+    # Linux default: GdkPixbuf 2.0
+    try:
+        import pyglet.image.codecs.gdkpixbuf2
+        add_codec(gdkpixbuf2)
+    except ImportError:
+        pass
+
+    # Fallback: PIL
     try:
         import pyglet.image.codecs.pil
         add_codec(pil)
     except ImportError:
         pass
 
+    # Fallback: PNG loader (slow)
     try:
         import pyglet.image.codecs.png
         add_codec(png)
     except ImportError:
         pass
-
 

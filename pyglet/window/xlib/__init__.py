@@ -387,6 +387,7 @@ class XlibWindow(BaseWindow):
         if self._fullscreen:
             self.activate()
 
+        self.dispatch_event(EVENT_RESIZE, *self.get_size())
         self.dispatch_event(EVENT_EXPOSE)
 
     def _unmap(self):

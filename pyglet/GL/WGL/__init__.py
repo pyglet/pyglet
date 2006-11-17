@@ -8,7 +8,10 @@ __version__ = '$Id: $'
 
 import ctypes as _ctypes
 
-_wgl = _ctypes.windll.opengl32
+try:
+    _wgl = _ctypes.windll.opengl32
+except AttributeError, e:
+    raise ImportError(e)
 
 def _get_function(name, argtypes, rtype):
     try:
