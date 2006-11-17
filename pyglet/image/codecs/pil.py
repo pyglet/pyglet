@@ -20,6 +20,7 @@ class PILImageDecoder(ImageDecoder):
 
     def decode(self, file, filename):
         image = Image.open(file)
+        image = image.transpose(Image.FLIP_TOP_BOTTOM)
 
         # Convert bitmap and palette images to component
         if image.mode in ('1', 'P'):
