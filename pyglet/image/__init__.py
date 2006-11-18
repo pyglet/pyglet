@@ -298,15 +298,15 @@ class Texture(Image):
         glCallList(self.quad_list)
 
     _gl_formats = {
-        'L': GL_LUMINANCE,
-        'A': GL_ALPHA,
-        'LA': GL_LUMINANCE_ALPHA,
-        'RGB': GL_RGB,
-        'BGR': GL_BGR,
-        'RGBA': GL_RGBA,
-        'ABGR': GL_ABGR_EXT,
-        'BGRA': GL_BGRA,
-        'ARGB': GL_RGBA     # can't use _REV, so convert
+        'L': (GL_LUMINANCE, 'L'),
+        'A': (GL_ALPHA, 'A'),
+        'LA': (GL_LUMINANCE_ALPHA, 'LA'),
+        'RGB': (GL_RGB, 'RGB'),
+        'BGR': (GL_RGB, 'RGB'),
+        'RGBA': (GL_RGBA, 'RGBA'),
+        'ABGR': (GL_RGBA, 'RGBA'),
+        'BGRA': (GL_RGBA, 'RGBA'),
+        'ARGB': (GL_RGBA, 'RGBA'),
     }
 
     def get_raw_image(self, type=GL_UNSIGNED_BYTE):
@@ -322,13 +322,13 @@ class Texture(Image):
             0, GL_TEXTURE_HEIGHT, byref(height))
         height = height.value
 
-        gl_format = self._gl_formats[self.format]
+        gl_format, format = self._gl_formats[self.format]
 
         buffer = (self.get_type_ctype(type) * 
-                  (width * height * len(self.format)))()
+                  (width * height * len(format)))()
         glGetTexImage(GL_TEXTURE_2D, 0, gl_format, type, buffer)
 
-        return RawImage(buffer, width, height, self.format, type)
+        return RawImage(buffer, width, height, format, type)
 
     @staticmethod
     def load(filename=None, file=None, internalformat=None):

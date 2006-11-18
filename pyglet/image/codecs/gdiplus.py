@@ -111,10 +111,11 @@ class GDIPlusDecoder(ImageDecoder):
         gdiplus.GdipGetImagePixelFormat(bitmap, byref(pf))
         pf = pf.value
 
-        format = 'ARGB'
+        # Reverse from what's documented because of Intel little-endianness.
+        format = 'BGRA'
         type = GL_UNSIGNED_BYTE
         if pf == PixelFormat24bppRGB:
-            format = 'RGB'
+            format = 'BGR'
         elif pf == PixelFormat32bppRGB:
             pass
         elif pf == PixelFormat32bppARGB:
@@ -123,7 +124,7 @@ class GDIPlusDecoder(ImageDecoder):
                     PixelFormat64bppARGB, PixelFormat64bppPARGB):
             pf = PixelFormat32bppARGB
         else:
-            format = 'RGB'
+            format = 'BGR'
             pf = PixelFormat24bppRGB
 
         # Lock pixel data in best format
