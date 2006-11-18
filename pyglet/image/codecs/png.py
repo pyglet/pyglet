@@ -40,14 +40,22 @@ class PNGImageEncoder(ImageEncoder):
         return ['.png']
 
     def encode(self, image, file, filename, options):
+        image = image.get_raw_image()
         if image.type != GL_UNSIGNED_BYTE:
             raise ImageEncodeException('Unsupported sample type')
 
         has_alpha = 'A' in image.format
-        if len(image.format) == 3:
-            image.set_format('RGB')
-        elif len(image.format) == 4:
-            image.set_format('RGBA')
+        greyscale = len(image.format) < 3
+        if has_alpha:
+            if greyscale:
+                image.set_format('LA')
+            else:
+                image.set_format('RGBA')
+        else:
+            if greyscale:
+                image.set_format('L')
+            else:
+                image.set_format('RGB')
 
         if not image.top_to_bottom:
             image.swap_rows()
@@ -55,6 +63,7 @@ class PNGImageEncoder(ImageEncoder):
         writer = pyglet.image.codecs.pypng.Writer(
             image.width, image.height,
             bytes_per_sample=1,
+            greyscale=greyscale,
             has_alpha=has_alpha)
 
         data = array.array('B')

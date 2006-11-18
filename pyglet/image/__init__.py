@@ -52,7 +52,7 @@ class Image(object):
 
         for encoder in get_encoders(filename):
             try:
-                encoder.encode(self.get_raw_image(), file, filename, options)
+                encoder.encode(self, file, filename, options)
                 return
             except ImageDecodeException:
                 file.seek(0)
@@ -97,12 +97,33 @@ class Image(object):
             return c_ubyte
         assert False
 
+    _gl_formats = {
+        GL_STENCIL_INDEX: 'L',
+        GL_DEPTH_COMPONENT: 'L',
+        GL_RED: 'L',
+        GL_GREEN: 'L',
+        GL_BLUE: 'L',
+        GL_ALPHA: 'A',
+        GL_RGB: 'RGB',
+        GL_BGR: 'BGR',
+        GL_RGBA: 'RGBA',
+        GL_BGRA: 'BGRA',
+        GL_LUMINANCE: 'L',
+        GL_LUMINANCE_ALPHA: 'LA',
+    }
+
+    @staticmethod
+    def get_glformat_format(format):
+        return Image._gl_formats[format]
+
 class RawImage(Image):
     '''Encapsulate image data stored in an OpenGL pixel format.
     '''
 
-    _swap4_pattern = re.compile('(.)(.)(.)(.)', re.DOTALL)
+    _swap1_pattern = re.compile('(.)', re.DOTALL)
+    _swap2_pattern = re.compile('(.)(.)', re.DOTALL)
     _swap3_pattern = re.compile('(.)(.)(.)', re.DOTALL)
+    _swap4_pattern = re.compile('(.)(.)(.)(.)', re.DOTALL)
 
     def __init__(self, data, width, height, format, type, top_to_bottom=False):
         '''Initialise image data.
@@ -143,9 +164,6 @@ class RawImage(Image):
         self.top_to_bottom = not self.top_to_bottom
 
     def set_format(self, new_format):
-        assert len(new_format) in (3, 4)
-        assert len(self.format) in (3, 4)
-
         if self.format == new_format:
             return
 
@@ -154,9 +172,17 @@ class RawImage(Image):
         # Create replacement string, e.g. r'\4\1\2\3' to convert RGBA to ARGB
         repl = ''
         for c in new_format:
-            repl += r'\%d' % (self.format.index(c) + 1)
+            try:
+                idx = self.format.index(c) + 1
+            except ValueError:
+                idx = 1
+            repl += r'\%d' % idx
 
-        if len(self.format) == 3:
+        if len(self.format) == 1:
+            self.data = self._swap1_pattern.sub(repl, self.data)
+        elif len(self.format) == 2:
+            self.data = self._swap2_pattern.sub(repl, self.data)
+        elif len(self.format) == 3:
             self.data = self._swap3_pattern.sub(repl, self.data)
         elif len(self.format) == 4:
             self.data = self._swap4_pattern.sub(repl, self.data)
@@ -257,6 +283,56 @@ class RawImage(Image):
 
     def get_raw_image(self, type=GL_UNSIGNED_BYTE):
         return self
+
+class BufferImage(Image):
+    def __init__(self, gl_format=GL_RGBA, buffer=GL_BACK, 
+                 x=None, y=None, width=None, height=None):
+        self.gl_format = gl_format
+        self.buffer = buffer
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+
+    def get_raw_image(self, type=GL_UNSIGNED_BYTE):
+        x = self.x
+        y = self.y
+        width = self.width
+        height = self.height
+        viewport = (c_int * 4)()
+        glGetIntegerv(GL_VIEWPORT, viewport)
+        if x is None:
+            x = viewport[0]
+        if y is None:
+            y = viewport[1]
+        if width is None:
+            width = viewport[2]
+        if height is None:
+            height = viewport[3]
+
+        format = self.get_glformat_format(self.gl_format)
+        pixels = (self.get_type_ctype(type) * (len(format) * width * height))()
+
+        glReadBuffer(self.buffer)
+        glReadPixels(x, y, width, height, self.gl_format, type, pixels)
+
+        return RawImage(pixels, width, height, format, type)
+
+    def texture(self, internalformat=None):
+        raise NotImplementedError('TODO')
+
+    def texture_subimage(self, x, y):
+        raise NotImplementedError('TODO')
+
+class StencilImage(BufferImage):
+    def __init__(self, x=None, y=None, width=None, height=None):
+        super(StencilImage, self).__init__(GL_STENCIL_INDEX, GL_BACK,
+            x, y, width, height)
+
+class DepthImage(BufferImage):
+    def __init__(self, x=None, y=None, width=None, height=None):
+        super(DepthImage, self).__init__(GL_DEPTH_COMPONENT, GL_BACK,
+            x, y, width, height)
 
 def _nearest_pow2(n):
     i = 1

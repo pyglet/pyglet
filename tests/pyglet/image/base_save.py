@@ -49,6 +49,12 @@ class TestSave(unittest.TestCase):
             glMatrixMode(GL_MODELVIEW)
             glPopMatrix()
 
+        self.draw_original()
+        self.draw_saved()
+            
+        self.window.flip()
+
+    def draw_original(self):
         if self.original_texture:
             glPushMatrix()
             glTranslatef(
@@ -57,6 +63,7 @@ class TestSave(unittest.TestCase):
             self.original_texture.draw()
             glPopMatrix()
 
+    def draw_saved(self):
         if self.saved_texture:
             glPushMatrix()
             glTranslatef(
@@ -64,19 +71,8 @@ class TestSave(unittest.TestCase):
                 (self.window.height - self.saved_texture.height) / 2, 0)
             self.saved_texture.draw()
             glPopMatrix()
-            
-        self.window.flip()
 
-    def test_save(self):
-        width, height = 400, 400
-        self.window = w = pyglet.window.create(width, height, visible=False)
-        exit_handler = pyglet.window.event.ExitHandler()
-        w.push_handlers(exit_handler)
-        w.push_handlers(self)
-
-        self.checkerboard = \
-            pyglet.image.Image.create_checkerboard(32).texture()
-
+    def load_texture(self):
         if self.texture_file:
             self.texture_file = join(dirname(__file__), self.texture_file)
             self.original_texture = \
@@ -87,6 +83,21 @@ class TestSave(unittest.TestCase):
             file.seek(0)
             self.saved_texture = \
                 pyglet.image.Texture.load(self.texture_file, file)
+
+    def create_window(self):
+        width, height = 400, 400
+        return pyglet.window.create(width, height, visible=False)
+
+    def test_save(self):
+        self.window = w = self.create_window()
+        exit_handler = pyglet.window.event.ExitHandler()
+        w.push_handlers(exit_handler)
+        w.push_handlers(self)
+
+        self.checkerboard = \
+            pyglet.image.Image.create_checkerboard(32).texture()
+
+        self.load_texture()
 
         if self.alpha:
             glEnable(GL_BLEND)
