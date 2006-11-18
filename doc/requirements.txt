@@ -135,14 +135,6 @@ pyglet
         TBD:
          - remove SDL dependency
          - move to pyglet.gui
-   
-    dds
-        :description: Compressed texture support.
-
-        TBD:
-         - move to pyglet.image
-         - support all formats
-         - software fallback
 
     sprite
         TBD:
@@ -182,28 +174,31 @@ pyglet
             ============================== =======
             CHECKERBOARD                      X
             PNG_RGBA_LOAD                     X
-            PNG_RGBA_SAVE
-            PNG_RGB_LOAD
-            PNG_RGB_SAVE
+            PNG_RGBA_SAVE                     X
+            PNG_RGB_LOAD                      X
+            PNG_RGB_SAVE                      X
             PNG_LA_LOAD
             PNG_LA_SAVE
             PNG_L_LOAD
             PNG_L_SAVE
-            JPEG_RGB_LOAD                     X
+            JPEG_RGB_LOAD                      
             JPEG_RGB_SAVE
             DDS_DXT1_LOAD                        
             DDS_DXT3_LOAD                        
-            DDS_DXT5_LOAD                        
+            DDS_DXT5_LOAD                     X
             DDS_DXT1_SAVE                        
             DDS_DXT3_SAVE                        
             DDS_DXT5_SAVE                        
+            BUFFER_SAVE                       X
+            DEPTH_SAVE                        X
+            STENCIL_SAVE                      X
             ============================== =======
 
         TBD:
-         - DDS stuff, see pyglet.dds.
-         - Currently Windows and Linx require PIL; look for other
-           alternatives (WMP, IE?).
          - QuickTime decoder assumes RGBA atm.
+         - Windows 2000?
+         - WinXP: RGB save is screwy.
+         - Non-Gdk soln for Linux (i.e., KDE?)
 
         sdl
             :description: SDL_Image support.
