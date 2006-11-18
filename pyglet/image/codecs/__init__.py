@@ -107,6 +107,13 @@ def add_default_image_codecs():
     # Add the codecs we know about.  These should be listed in order of
     # preference.  This is called automatically by pyglet.image.
 
+    # Compressed texture in DDS format
+    try:
+        import pyglet.image.codecs.dds
+        add_codec(dds)
+    except ImportError:
+        pass
+
     # Mac OS X default: QuickTime
     try:
         import pyglet.image.codecs.quicktime

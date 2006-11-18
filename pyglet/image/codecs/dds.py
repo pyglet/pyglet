@@ -12,13 +12,18 @@ from ctypes import *
 import struct
 
 from pyglet.GL.VERSION_1_3 import *
-import pyglet.image
+from pyglet.GL.info import have_extension
+from pyglet.image import *
+from pyglet.image.codecs import *
 
 try:
     from pyglet.GL.EXT_texture_compression_s3tc import *
     _have_s3tc = True
 except ImportError:
-    _have_s3tc = False
+    raise ImportError('Driver does not support S3TC extension')
+
+class DDSException(ImageDecodeException):
+    pass
 
 # dwFlags of DDSURFACEDESC2
 DDSD_CAPS           = 0x00000001
@@ -71,8 +76,6 @@ class _filestruct(object):
     def get_size(cls):
         return struct.calcsize(cls.get_format())
         
-
-
 class DDSURFACEDESC2(_filestruct):
     _fields = [
         ('dwMagic', '4s'),
@@ -107,9 +110,6 @@ class DDPIXELFORMAT(_filestruct):
         ('dwRGBAlphaBitMask', 'I')
     ]
 
-class DDSException(Exception):
-    pass
-
 if _have_s3tc:
     _compression_formats = {
         'DXT1': GL_COMPRESSED_RGB_S3TC_DXT1_EXT,
@@ -122,42 +122,49 @@ def _check_error():
     if e != 0:
         print 'GL error %d' % e
 
-def load_dds(file):
-    if not hasattr(file, 'read'):
-        file = open(file, 'rb')
+class DDSImageDecoder(ImageDecoder):
+    def get_file_extensions(self):
+        return ['.dds']
 
-    header = file.read(DDSURFACEDESC2.get_size())
-    desc = DDSURFACEDESC2(header)
-    if desc.dwMagic != 'DDS ' or desc.dwSize != 124:
-        raise DDSException('Invalid DDS file (incorrect header).')
+    def decode(self, file, filename):
+        # TODO: Write a software decoding fallback.
+        if not have_extension('GL_EXT_texture_compression_s3tc'):
+            raise DDSException('S3TC extension not supported by device.')
 
-    width = desc.dwWidth
-    height = desc.dwHeight
-    compressed = False
-    volume = False
-    mipmaps = 1
+        header = file.read(DDSURFACEDESC2.get_size())
+        desc = DDSURFACEDESC2(header)
+        if desc.dwMagic != 'DDS ' or desc.dwSize != 124:
+            raise DDSException('Invalid DDS file (incorrect header).')
 
-    if desc.dwFlags & DDSD_PITCH:
-        pitch = desc.dwPitchOrLinearSize
-    elif desc.dwFlags & DDSD_LINEARSIZE:
-        image_size = desc.dwPitchOrLinearSize
-        compressed = True
+        width = desc.dwWidth
+        height = desc.dwHeight
+        compressed = False
+        volume = False
+        mipmaps = 1
 
-    if desc.dwFlags & DDSD_DEPTH:
-        raise DDSException('Volume DDS files unsupported')
-        volume = True
-        depth = desc.dwDepth
+        if desc.dwFlags & DDSD_PITCH:
+            pitch = desc.dwPitchOrLinearSize
+        elif desc.dwFlags & DDSD_LINEARSIZE:
+            image_size = desc.dwPitchOrLinearSize
+            compressed = True
 
-    if desc.dwFlags & DDSD_MIPMAPCOUNT:
-        mipmaps = desc.dwMipMapCount
+        if desc.dwFlags & DDSD_DEPTH:
+            raise DDSException('Volume DDS files unsupported')
+            volume = True
+            depth = desc.dwDepth
 
-    if desc.ddpfPixelFormat.dwSize != 32:
-        raise DDSException('Invalid DDS file (incorrect pixel format).')
+        if desc.dwFlags & DDSD_MIPMAPCOUNT:
+            mipmaps = desc.dwMipMapCount
 
-    if desc.dwCaps2 & DDSCAPS2_CUBEMAP:
-        raise DDSException('Cubemap DDS files unsupported')
+        if desc.ddpfPixelFormat.dwSize != 32:
+            raise DDSException('Invalid DDS file (incorrect pixel format).')
 
-    if desc.ddpfPixelFormat.dwFlags & DDPF_FOURCC:
+        if desc.dwCaps2 & DDSCAPS2_CUBEMAP:
+            raise DDSException('Cubemap DDS files unsupported')
+
+        if not desc.ddpfPixelFormat.dwFlags & DDPF_FOURCC:
+            raise DDSException('Uncompressed DDS textures not supported.')
+
         format = None
         if _have_s3tc:
             format = _compression_formats.get(desc.ddpfPixelFormat.dwFourCC,
@@ -170,11 +177,8 @@ def load_dds(file):
             block_size = 8
         else:
             block_size = 16
-        
-        tex = c_uint()
-        glGenTextures(1, byref(tex))
-        tex = tex.value
-        glBindTexture(GL_TEXTURE_2D, tex)
+
+        mipmap_images = []
         w, h = width, height
         for i in range(mipmaps):
             if not w and not h:
@@ -184,14 +188,58 @@ def load_dds(file):
             if not h:
                 h = 1
             size = ((w + 3) / 4) * ((h + 3) / 4) * block_size
-            glCompressedTexImage2D(GL_TEXTURE_2D, i, format, w, h, 0,
-                                   size, file.read(size))
+            mipmap_images.append(DDSMipmap(i, w, h, file.read(size)))
             w >>= 1
             h >>= 1
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
-                        GL_LINEAR_MIPMAP_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        return pyglet.image.Texture(tex, width, height, (1., 1.))
-    else:
-        raise DDSException('Uncompressed texture not supported')
 
+        return DDSCompressedImage(width, height, format, mipmap_images)
+   
+class DDSMipmap(object):
+    def __init__(self, level, width, height, data):
+        self.level = level
+        self.width = width
+        self.height = height
+        self.data = data
+
+class DDSCompressedImage(Image):
+    def __init__(self, width, height, format, mipmaps):
+        super(DDSCompressedImage, self).__init__(width, height)
+        self.format = format
+        self.mipmaps = mipmaps
+
+    def texture(self, internalformat=None):
+        id = c_uint()
+        glGenTextures(1, byref(id))
+        glBindTexture(GL_TEXTURE_2D, id.value)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+            GL_LINEAR_MIPMAP_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+        for mipmap in self.mipmaps:
+            glCompressedTexImage2D(GL_TEXTURE_2D, 
+                mipmap.level, self.format, 
+                mipmap.width, mipmap.height, 0, 
+                len(mipmap.data), mipmap.data)
+
+        return Texture(self.width, self.height, 'RGBA', id, 1., 1.)
+
+    def texture_subimage(self, x, y):
+        for mipmap in self.mipmaps:
+            glCompressedTexSubImage2D(GL_TEXTURE_2D,
+                mipmap.level,
+                x, y, 
+                mipmap.width,
+                mipmap.height,
+                self.format,
+                len(mipmap.data),
+                mipmap.data)
+
+    def get_raw_image(self, type=GL_UNSIGNED_BYTE):
+        raise NotImplementedError('No software decoder for DDSCompressedImage')
+        
+
+def get_decoders():
+    return [DDSImageDecoder()]
+
+def get_encoders():
+    return []
