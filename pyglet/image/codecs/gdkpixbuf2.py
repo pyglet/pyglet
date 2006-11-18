@@ -65,13 +65,14 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
 
         # Determine appropriate GL type
         if channels == 3:
-            format = GL_RGB
+            format = 'RGB'
         else:
-            format = GL_RGBA
+            format = 'RGBA'
 
         type = GL_UNSIGNED_BYTE
 
-        return RawImage(buffer, width, height, format, type, swap_rows=True)
+        return RawImage(buffer, width, height, format, type, 
+            top_to_bottom=True)
 
 def get_decoders():
     return [GdkPixbuf2ImageDecoder()]

@@ -6,6 +6,8 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
+import array
+
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.image import *
 from pyglet.image.codecs import *
@@ -21,37 +23,43 @@ class PNGImageDecoder(ImageDecoder):
         width, height, pixels, metadata = reader.read()
         if metadata['greyscale']:
             if metadata['has_alpha']:
-                format = GL_LUMINANCE_ALPHA
+                format = 'LA'
             else:
-                format = GL_LUMINANCE
+                format = 'L'
         else:
             if metadata['has_alpha']:
-                format = GL_RGBA
+                format = 'RGBA'
             else:
-                format = GL_RGB
+                format = 'RGB'
         type = GL_UNSIGNED_BYTE
         return RawImage(pixels.tostring(), width, height, format, type,
-            swap_rows=True)
+            top_to_bottom=True)
 
 class PNGImageEncoder(ImageEncoder):
     def get_file_extensions(self):
         return ['.png']
 
     def encode(self, image, file, filename, options):
-        format = image.format
-        type = GL_UNSIGNED_BYTE
+        if image.type != GL_UNSIGNED_BYTE:
+            raise ImageEncodeException('Unsupported sample type')
 
-        image = image.read(format, type)
-        components = image.get_format_components(image.format)
-        bytes_per_sample = 1
-        has_alpha = image.format in (GL_RGBA, GL_LUMINANCE_ALPHA)
+        has_alpha = 'A' in image.format
+        if len(image.format) == 3:
+            image.set_format('RGB')
+        elif len(image.format) == 4:
+            image.set_format('RGBA')
+
+        if not image.top_to_bottom:
+            image.swap_rows()
 
         writer = pyglet.image.codecs.pypng.Writer(
             image.width, image.height,
-            bytes_per_sample=bytes_per_sample,
+            bytes_per_sample=1,
             has_alpha=has_alpha)
-        print image.data
-        writer.write_array(file, list(image.data))
+
+        data = array.array('B')
+        data.fromstring(image.data)
+        writer.write_array(file, data)
 
 def get_decoders():
     return [PNGImageDecoder()]

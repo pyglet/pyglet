@@ -26,18 +26,12 @@ class PILImageDecoder(ImageDecoder):
         if image.mode in ('1', 'P'):
             image = image.convert()
 
-        if image.mode == 'L':
-            format = GL_LUMINANCE
-        elif image.mode == 'RGB':
-            format = GL_RGB
-        elif image.mode == 'RGBA':
-            format = GL_RGBA
-        else:
-            assert False, 'Unknown image mode %s' % image.mode
+        if image.mode not in ('L', 'RGB', 'RGBA'):
+            raise ImageDecodeException('Unsupported mode "%s"' % image.mode)
         type = GL_UNSIGNED_BYTE
-
         width, height = image.size
-        return RawImage(image.tostring(), width, height, format, type)
+
+        return RawImage(image.tostring(), width, height, image.mode, type)
 
 def get_decoders():
     return [PILImageDecoder()]

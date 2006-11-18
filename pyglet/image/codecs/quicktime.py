@@ -56,25 +56,24 @@ class QuickTimeImageDecoder(ImageDecoder):
         width = rect.right
         height = rect.bottom
 
-        # TODO this could be more efficient
-        components = 4 
+        # TODO choose 24 bit where appropriate.
+        format = 'ARGB'
         qtformat = k32ARGBPixelFormat
 
-        buffer = (c_byte * (width * height * components))()
+        buffer = (c_byte * (width * height * len(format)))()
         world = GWorldPtr()
         quicktime.QTNewGWorldFromPtr(byref(world), qtformat,
             byref(rect), c_void_p(), c_void_p(), kNativeEndianPixMap, buffer,
-            components * width)
+            len(format) * width)
 
         quicktime.GraphicsImportSetGWorld(importer, world, c_void_p())
         quicktime.GraphicsImportDraw(importer)
         quicktime.DisposeGWorld(world)
 
-        format = GL_RGBA
         type = GL_UNSIGNED_BYTE
 
         return RawImage(buffer, width, height, format, type, 
-            swap_argb=True, swap_rows=True)
+            top_to_bottom=True)
 
 def get_decoders():
     return [QuickTimeImageDecoder()]

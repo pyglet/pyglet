@@ -111,12 +111,10 @@ class GDIPlusDecoder(ImageDecoder):
         gdiplus.GdipGetImagePixelFormat(bitmap, byref(pf))
         pf = pf.value
 
-        format = GL_RGBA
-        components = 4
+        format = 'ARGB'
         type = GL_UNSIGNED_BYTE
         if pf == PixelFormat24bppRGB:
-            components = 3
-            format = GL_RGB
+            format = 'RGB'
         elif pf == PixelFormat32bppRGB:
             pass
         elif pf == PixelFormat32bppARGB:
@@ -125,8 +123,7 @@ class GDIPlusDecoder(ImageDecoder):
                     PixelFormat64bppARGB, PixelFormat64bppPARGB):
             pf = PixelFormat32bppARGB
         else:
-            components = 3
-            format = GL_RGB
+            format = 'RGB'
             pf = PixelFormat24bppRGB
 
         # Lock pixel data in best format
@@ -140,7 +137,7 @@ class GDIPlusDecoder(ImageDecoder):
             byref(rect), ImageLockModeRead, pf, byref(bitmap_data))
         
         # Create buffer for RawImage
-        buffer = create_string_buffer(width * height * components)
+        buffer = create_string_buffer(width * height * len(format))
         memmove(buffer, bitmap_data.Scan0, len(buffer))
 
         # Unlock data
@@ -150,8 +147,7 @@ class GDIPlusDecoder(ImageDecoder):
         gdiplus.GdipDisposeImage(bitmap)
         # TODO: How to call IUnknown::Release on stream?
 
-        return RawImage(buffer, width, height, format, type,
-            swap_abgr=True, swap_rows=True)
+        return RawImage(buffer, width, height, format, type, top_to_bottom=True)
 
 def get_decoders():
     return [GDIPlusDecoder()]

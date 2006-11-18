@@ -16,14 +16,16 @@ from pyglet.GL.VERSION_1_1 import *
 from pyglet.GLU.VERSION_1_1 import *
 from pyglet.image.codecs import *
 
+class ImageException(Exception):
+    pass
+
 class Image(object):
-    '''Abstract class representing image data.
+    '''Abstract class representing an image.
     '''
 
-    def __init__(self, width, height, format):
+    def __init__(self, width, height):
         self.width = width
         self.height = height
-        self.format = format
 
     def texture(self, internalformat=None):
         '''Return a Texture of this image.  This method does not cache
@@ -39,20 +41,8 @@ class Image(object):
         '''
         raise NotImplementedError()
 
-    def read(self, format, type):
-        '''Read the image and return a RawImage for pixel access.  The width
-        and height of the returned image may not match the dimensions of
-        this image (for example, with a non-squared-power Texture).  The
-        format and type of data may not match those requested (for
-        example, requesting RGB for a stencil buffer).
-
-        format
-            GL format (GL_RGBA, etc) to write.  For specialised buffers
-            such as DEPTH and STENCIL this will throw an exception if
-            it doesn't match self.format.
-        type
-            GL type (GL_UNSIGNED_BYTE, etc) to write.
-
+    def get_raw_image(self, type=GL_UNSIGNED_BYTE):
+        '''Read the image and return a RawImage for pixel access.  
         '''
         raise NotImplementedError()
 
@@ -62,7 +52,7 @@ class Image(object):
 
         for encoder in get_encoders(filename):
             try:
-                encoder.encode(self, file, filename, options)
+                encoder.encode(self.get_raw_image(), file, filename, options)
                 return
             except ImageDecodeException:
                 file.seek(0)
@@ -99,19 +89,7 @@ class Image(object):
         row1 = colour1 * half + colour2 * half
         row2 = colour2 * half + colour1 * half
         data = row1 * half + row2 * half
-        return RawImage(data, size, size, GL_RGBA, GL_UNSIGNED_BYTE)
-
-    _format_components = {
-        GL_RGBA: 4,
-        GL_BGRA: 4,
-        GL_RGB: 3,
-        GL_BGR: 3,
-        GL_LUMINANCE_ALPHA: 2,
-    }
-
-    @staticmethod
-    def get_format_components(format):
-        return Image._format_components.get(format, 1)
+        return RawImage(data, size, size, 'RGBA', GL_UNSIGNED_BYTE)
 
     @staticmethod
     def get_type_ctype(type):
@@ -123,12 +101,10 @@ class RawImage(Image):
     '''Encapsulate image data stored in an OpenGL pixel format.
     '''
 
-    _swap_rgba_pattern = re.compile('(.)(.)(.)(.)', re.DOTALL)
-    _swap_rgb_pattern = re.compile('(.)(.)(.)', re.DOTALL)
-    _swap_la_pattern = re.compile('(.)(.)', re.DOTALL)
+    _swap4_pattern = re.compile('(.)(.)(.)(.)', re.DOTALL)
+    _swap3_pattern = re.compile('(.)(.)(.)', re.DOTALL)
 
-    def __init__(self, data, width, height, format, type,
-                 swap_argb=False, swap_rows=False, swap_abgr=False):
+    def __init__(self, data, width, height, format, type, top_to_bottom=False):
         '''Initialise image data.
 
         data
@@ -136,37 +112,21 @@ class RawImage(Image):
         width, height
             Width and height of the image, in pixels
         format
-            A valid format argument to glTexImage2D, for example
-            GL_RGB, GL_LUMINANCE_ALPHA, etc.
+            A valid format string, such as 'RGB', 'RGBA', 'ARGB', etc.
         type
             A valid type argument to glTexImage2D, for example
             GL_UNSIGNED_BYTE, etc.
-        swap_argb
-            If True, the samples are in ARGB format and need to be
-            rearranged to RGBA.
-        swap_abgr
-            If True, the samples are in ABGR format and need to be
-            rearranged to RGBA.
-        swap_rows
-            If True, the rows of the image will be reversed to compensate
-            for top-to-bottom frameworks.
-
+        top_to_bottom
+            If True, rows begin at the top of the image and increase
+            downwards; otherwise they begin at the bottom and increase
+            upwards.
         '''
-        super(RawImage, self).__init__(width, height, format)
+        super(RawImage, self).__init__(width, height)
 
-        self.components = self.get_format_components(format)
         self.data = data
         self.format = format
         self.type = type
-
-        if swap_rows:
-            self._swap_rows()
-
-        if swap_abgr:
-            self._swap_abgr()
-
-        if swap_argb:
-            self._swap_argb()
+        self.top_to_bottom = top_to_bottom
 
     def _ensure_string_data(self):
         if type(self.data) is not str:
@@ -174,51 +134,83 @@ class RawImage(Image):
             memmove(buf, self.data, len(self.data))
             self.data = buf
 
-    def _swap_rows(self):
+    def swap_rows(self):
         self._ensure_string_data()
-        pitch = self.components * self.width
+        pitch = len(self.format) * self.width
         rows = re.findall('.' * pitch, self.data, re.DOTALL)
         rows.reverse()
         self.data = ''.join(rows)
+        self.top_to_bottom = not self.top_to_bottom
 
-    def _swap_argb(self):
-        if (have_extension('GL_EXT_bgra') and
-            have_extension('GL_APPLE_packed_pixel')):
-            # Reversing BGRA gives ARGB, which is what we want.  Not supported
-            # on older cards.
-            self.format = GL_BGRA
-            self.type = GL_UNSIGNED_INT_8_8_8_8_REV
+    def set_format(self, new_format):
+        assert len(new_format) in (3, 4)
+        assert len(self.format) in (3, 4)
+
+        if self.format == new_format:
             return
+
+        self._ensure_string_data()
+
+        # Create replacement string, e.g. r'\4\1\2\3' to convert RGBA to ARGB
+        repl = ''
+        for c in new_format:
+            repl += r'\%d' % (self.format.index(c) + 1)
+
+        if len(self.format) == 3:
+            self.data = self._swap3_pattern.sub(repl, self.data)
+        elif len(self.format) == 4:
+            self.data = self._swap4_pattern.sub(repl, self.data)
+
+        self.format = new_format
+
+    def _get_gl_format_and_type(self):
+        if self.format == 'L':
+            return GL_LUMINANCE, self.type
+        elif self.format == 'LA':
+            return GL_LUMINANCE_ALPHA, self.type
+        elif self.format == 'RGB':
+            return GL_RGB, self.type
+        elif self.format == 'RGBA':
+            return GL_RGBA, self.type
+        elif self.format == 'ARGB':
+            if (self.type == GL_UNSIGNED_BYTE and
+                have_extension('GL_EXT_bgra') and
+                have_extension('GL_APPLE_packed_pixel')):
+                return GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV
+        elif self.format == 'ABGR':
+            if have_extension('GL_EXT_abgr'):
+                return GL_ABGR_EXT, self.type
+        elif self.format == 'BGR':
+            if have_extension('GL_EXT_bgra'):
+                return GL_BGR, self.type
+
+        # No luck so far, probably in a format like ABGR but we don't
+        # have the required extension, so reorder components manually.
+        if self.type == GL_UNSIGNED_BYTE:
+            if len(self.format) == 2:
+                self.set_format('LA')
+                return GL_LUMINANCE, GL_UNSIGNED_BYTE
+            elif len(self.format) == 3:
+                self.set_format('RGB')
+                return GL_RGB, GL_UNSIGNED_BYTE
+            elif len(self.format) == 4:
+                self.set_format('RGBA')
+                return GL_RGBA, GL_UNSIGNED_BYTE
         
-        self._ensure_string_data()
-        if self.components == 4:
-            self.data = self._swap_rgba_pattern.sub(r'\2\3\4\1', self.data)
-        elif self.components == 3:
-            self.data = self._swap_rgb_pattern.sub(r'\3\2\1', self.data)
-
-    def _swap_abgr(self):
-        if have_extension('GL_EXT_bgra'):
-            if self.components == 4:
-                self.format = GL_BGRA
-            elif self.components == 3:
-                self.format = GL_BGR
-            return
-
-        self._ensure_string_data()
-        if self.components == 4:
-            self.data = self._swap_rgba_pattern.sub(r'\3\2\1\4', self.data)
-        elif self.components == 3:
-            self.data = self._swap_rgb_pattern.sub(r'\3\2\1', self.data)
-        elif self.components == 2:
-            self.data = self._swap_la_pattern.sub(r'\2\1', self.data)
+        raise ImageException('Cannot use format "%s" with GL.' % self.format)
 
     def texture(self, internalformat=None):
         tex_width, tex_height, u, v = \
             Texture.get_texture_size(self.width, self.height)
+
+        format, type = self._get_gl_format_and_type()
+        if self.top_to_bottom:
+            self.swap_rows()
+
         if not internalformat:
-            if self.format in (GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA):
-                internalformat = self.format
-            elif self.format in (GL_RGBA, GL_BGRA):
+            if format in (GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA):
+                internalformat = format
+            elif format in (GL_RGBA, GL_BGRA):
                 internalformat = GL_RGBA
             else:
                 internalformat = GL_RGB
@@ -234,7 +226,7 @@ class RawImage(Image):
                 internalformat,
                 tex_width, tex_height,
                 0,
-                self.format, self.type,
+                format, type,
                 self.data)
         else:
             blank = (c_ubyte * tex_width * tex_height)()
@@ -249,16 +241,22 @@ class RawImage(Image):
                 blank)
             self.texture_subimage(0, 0)
 
-        return Texture(self.width, self.height, internalformat, id, u, v)
+        return Texture(self.width, self.height, self.format, id, u, v)
 
     def texture_subimage(self, x, y):
+        format, type = self._get_gl_format_and_type()
+        if self.top_to_bottom:
+            self.swap_rows()
+
         glTexSubImage2D(GL_TEXTURE_2D,
             0,
             x, y,
             self.width, self.height,
-            self.format, self.type,
+            format, type,
             self.data)
 
+    def get_raw_image(self, type=GL_UNSIGNED_BYTE):
+        return self
 
 def _nearest_pow2(n):
     i = 1
@@ -268,7 +266,8 @@ def _nearest_pow2(n):
 
 class Texture(Image):
     def __init__(self, width, height, format, id, u, v):
-        super(Texture, self).__init__(width, height, format)
+        super(Texture, self).__init__(width, height)
+        self.format = format
         self.id = id
         self.uv = u, v
 
@@ -298,7 +297,19 @@ class Texture(Image):
     def draw(self):
         glCallList(self.quad_list)
 
-    def read(self, format, type):
+    _gl_formats = {
+        'L': GL_LUMINANCE,
+        'A': GL_ALPHA,
+        'LA': GL_LUMINANCE_ALPHA,
+        'RGB': GL_RGB,
+        'BGR': GL_BGR,
+        'RGBA': GL_RGBA,
+        'ABGR': GL_ABGR_EXT,
+        'BGRA': GL_BGRA,
+        'ARGB': GL_RGBA     # can't use _REV, so convert
+    }
+
+    def get_raw_image(self, type=GL_UNSIGNED_BYTE):
         glBindTexture(GL_TEXTURE_2D, self.id)
 
         width = c_int()
@@ -311,11 +322,13 @@ class Texture(Image):
             0, GL_TEXTURE_HEIGHT, byref(height))
         height = height.value
 
-        components = self.get_format_components(format)
-        buffer = (self.get_type_ctype(type) * (width * height * components))()
-        glGetTexImage(GL_TEXTURE_2D, 0, format, type, buffer)
+        gl_format = self._gl_formats[self.format]
 
-        return RawImage(buffer, width, height, format, type)
+        buffer = (self.get_type_ctype(type) * 
+                  (width * height * len(self.format)))()
+        glGetTexImage(GL_TEXTURE_2D, 0, gl_format, type, buffer)
+
+        return RawImage(buffer, width, height, self.format, type)
 
     @staticmethod
     def load(filename=None, file=None, internalformat=None):
