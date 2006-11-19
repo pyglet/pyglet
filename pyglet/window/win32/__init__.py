@@ -158,12 +158,12 @@ class Win32Context(BaseGLContext):
     def destroy(self):
         wglDeleteContext(self._context)
 
-_win32_event_handler_types = []
+_win32_event_handler_names = []
 
 def Win32EventHandler(message):
     def handler_wrapper(f):
-        handler = (message, f.__name__)
-        _win32_event_handler_types.append(handler)
+        _win32_event_handler_names.append(f.__name__)
+        f._win32_handler = message
         return f
     return handler_wrapper
 
@@ -194,9 +194,11 @@ class Win32Window(BaseWindow):
 
         # Bind event handlers
         self._event_handlers = {}
-        for message, func_name in _win32_event_handler_types:
+        for func_name in _win32_event_handler_names:
+            if not hasattr(self, func_name):
+                continue
             func = getattr(self, func_name)
-            self._event_handlers[message] = func
+            self._event_handlers[func._win32_handler] = func
 
         self._mouse = Win32Mouse()
 

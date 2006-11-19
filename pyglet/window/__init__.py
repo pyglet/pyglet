@@ -20,10 +20,10 @@ This module depends on `pyglet.GL`, `pyglet.event` and `pyglet.image`.
 Getting Started
 ---------------
 
-Use the `create` function to create a window::
+Call the Window constructor to create a new window:
 
-    >>> import pyglet.window
-    >>> win = pyglet.window.create(width=640, height=480, fullscreen=False)
+    >>> from pyglet.window import *
+    >>> win = Window(width=640, height=480, fullscreen=False)
     >>> 
 
 Windows are subclasses of EventHandler, so you can push event handlers
@@ -79,7 +79,7 @@ which context to send OpenGL commands to using the `switch_to` method::
 Creating Windows
 ----------------
 
-The `create` function simplifies the multi-step process involved in
+The Window constructor simplifies the multi-step process involved in
 creating a window.  It accepts the following optional keyword arguments:
 
 width, height
@@ -158,6 +158,9 @@ set::
 
     >>> window = factory.create_window()
     >>>
+
+The `create_window` method can optionally take the base class for the window,
+which defaults to `get_platform().get_window_class()`.
 
 You can create multiple windows with the same configuration but different
 contexts by repeatedly calling `create_window`.
