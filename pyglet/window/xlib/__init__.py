@@ -250,12 +250,12 @@ class XlibGLContext(BaseGLContext):
         super(XlibGLContext, self).destroy()
         glXDestroyContext(self._display, self._context)
 
-_xlib_event_handler_types = []
+_xlib_event_handler_names = []
 
 def XlibEventHandler(event):
     def handler_wrapper(f):
-        handler = (event, f.__name__)
-        _xlib_event_handler_types.append(handler)
+        _xlib_event_handler_names.append(f.__name__)
+        f._xlib_handler = event
         return f
     return handler_wrapper
 
@@ -294,9 +294,11 @@ class XlibWindow(BaseWindow):
 
         # Bind event handlers
         self._event_handlers = {}
-        for event, func_name in _xlib_event_handler_types:
+        for func_name in _xlib_event_handler_names:
+            if not hasattr(self, func_name):
+                continue
             func = getattr(self, func_name)
-            self._event_handlers[event] = func
+            self._event_handlers[func._xlib_handler] = func
 
     def create(self, factory):
         # Unmap existing window if necessary while we fiddle with it.
@@ -429,6 +431,7 @@ class XlibWindow(BaseWindow):
 
         glXMakeContextCurrent(self._display,
             self._glx_window, self._glx_window, self._glx_context)
+        pyglet.GL.info.set_context()
 
     def flip(self):
         if not self._glx_window:
@@ -471,7 +474,7 @@ class XlibWindow(BaseWindow):
         xlib.XMoveWindow(self._display, self._window, x, y)
 
     def get_location(self):
-        child = Window()
+        child = WindowRef()
         x = c_int()
         y = c_int()
         xlib.XTranslateCoordinates(self._display,

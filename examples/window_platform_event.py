@@ -7,7 +7,7 @@ A message will be printed to stdout when the following events are caught:
 
  - On Mac OS X, the window resize region is clicked.
  - On Windows, the display resolution is changed.
- - On Linux, ...
+ - On Linux, the window properties are changed.
 
 '''
 
@@ -33,6 +33,15 @@ try:
 except ImportError:
     _have_win32 = False
 
+# Check for Xlib (Linux)
+try:
+    from pyglet.window.xlib import *
+    from pyglet.window.xlib.constants import *
+    _have_xlib = True
+except ImportError:
+    _have_xlib = False
+
+# Subclass Window
 class MyWindow(Window):
     def __init__(self):
         super(MyWindow, self).__init__()
@@ -55,6 +64,11 @@ class MyWindow(Window):
         def _on_window_display_change(self, msg, lParam, wParam):
             print 'Display resolution changed.'
             return 0
+
+    if _have_xlib:
+        @XlibEventHandler(PropertyNotify)
+        def _on_window_property_notify(self, event):
+            print 'Property notify.'
 
 if __name__ == '__main__':
     MyWindow().run()
