@@ -129,8 +129,8 @@ class CarbonPlatform(BasePlatform):
         _aglcheck()
         return CarbonGLContext(context)
 
-    def create_window(self):
-        return CarbonWindow()
+    def get_window_class(self):
+        return CarbonWindow
 
     def _get_version(self):
         '''Get the version of OS X running.
@@ -231,12 +231,12 @@ class CarbonGLContext(BaseGLContext):
         super(CarbonGLContext, self).destroy()
         aglDestroyContext(self._context)
 
-_carbon_event_handler_types = []
+_carbon_event_handler_names = []
 
 def CarbonEventHandler(event_class, event_kind):
     def handler_wrapper(f):
-        handler = (event_class, event_kind, f.__name__)
-        _carbon_event_handler_types.append(handler)
+        _carbon_event_handler_names.append(f.__name__)
+        f._carbon_handler = (event_class, event_kind)
         return f
     return handler_wrapper
 
@@ -557,8 +557,12 @@ class CarbonWindow(BaseWindow):
         self._carbon_event_handlers = []
         self._carbon_event_handler_refs = []
 
-        for event_class, event_kind, func_name in _carbon_event_handler_types:
+        for func_name in _carbon_event_handler_names:
+            if not hasattr(self, func_name):
+                continue  # Was added by another class
+
             func = getattr(self, func_name)
+            event_class, event_kind = func._carbon_handler
             proc = EventHandlerProcPtr(func)
             self._carbon_event_handlers.append(proc)
             upp = carbon.NewEventHandlerUPP(proc)
@@ -801,6 +805,7 @@ class CarbonWindow(BaseWindow):
         #carbon.CallNextEventHandler(next_handler, event)
         return noErr
 
+    @CarbonEventHandler(kEventClassWindow, kEventWindowBoundsChanging)
     @CarbonEventHandler(kEventClassWindow, kEventWindowResizeCompleted)
     def _on_window_resize_completed(self, next_handler, event, data):
         rect = Rect()

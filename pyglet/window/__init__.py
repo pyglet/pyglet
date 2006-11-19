@@ -451,8 +451,9 @@ class BasePlatform(object):
         '''
         raise NotImplementedError()
 
-    def create_window(self, factory):
-        '''Subclasses must override to create and return a BaseWindow.
+    def get_window_class(self):
+        '''Subclasses must override to create and return a subclass of 
+        BaseWindow.
         '''
         raise NotImplementedError()
 
@@ -669,9 +670,11 @@ class WindowFactory(object):
             self.create_context()
         return self._context
 
-    def create_window(self):
+    def create_window(self, window_class=None):
         # Create a window based on factory attributes.
-        window = self._platform.create_window()
+        if not window_class:
+            window_class = self._platform.get_window_class()
+        window = window_class()
         window.create(self)
         window.switch_to()
 
@@ -699,6 +702,7 @@ def create(width=None,
            visible=True,
            doublebuffer=True,
            depth_size=24,
+           window_class=None,
            **kwargs):
     '''Create a new window.
 
@@ -706,6 +710,8 @@ def create(width=None,
     visible and double-buffered.  You can specify additional GL attributes
     as keyword arguments.
     '''
+    import warnings
+    warnings.warn('pyglet.window.create is deprecated in favour of Window()')
     factory = get_factory()
     if width and height:
         factory.set_size(width, height)
@@ -720,7 +726,7 @@ def create(width=None,
         screen = factory.get_screen()
         factory.set_size(screen.width, screen.height)
 
-    window = factory.create_window()
+    window = factory.create_window(window_class)
     window.set_caption(sys.argv[0])
     if visible:
         window.set_visible(True)
@@ -738,3 +744,37 @@ else:
     from pyglet.window.xlib import XlibPlatform
     _platform = XlibPlatform()
    
+class Window(_platform.get_window_class()):
+    def __init__(self, 
+                 width=None,
+                 height=None,
+                 fullscreen=False,
+                 visible=True,
+                 doublebuffer=True,
+                 depth_size=24,
+                 **kwargs):
+
+        super(Window, self).__init__()
+
+        factory = get_factory()
+        if width and height:
+            factory.set_size(width, height)
+        factory.set_fullscreen(fullscreen)
+        factory.set_gl_attribute('doublebuffer', doublebuffer)
+        factory.set_gl_attribute('depth_size', depth_size)
+        for key, value in kwargs.items():
+            factory.set_gl_attribute(key, value)
+        sys.argv = factory.set_arguments(sys.argv)
+
+        if fullscreen:
+            screen = factory.get_screen()
+            factory.set_size(screen.width, screen.height)
+
+        self.create(factory)
+        self.switch_to()
+        self.set_caption(sys.argv[0])
+        if visible:
+            self.set_visible(True)
+            self.activate()
+
+

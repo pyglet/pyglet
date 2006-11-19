@@ -103,8 +103,8 @@ class Win32Platform(BasePlatform):
         share = factory.get_context_share()
         return Win32Context(config, share)
 
-    def create_window(self):
-        return Win32Window()
+    def get_window_class(self):
+        return Win32Window
 
 class Win32Screen(BaseScreen):
     def __init__(self, handle, x, y, width, height):

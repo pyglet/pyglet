@@ -170,8 +170,8 @@ class XlibPlatform(BasePlatform):
 
         return XlibGLContext(config._display, context)
 
-    def create_window(self):
-        return XlibWindow()
+    def get_window_class(self):
+        return XlibWindow
 
     def _get_display(self, factory):
         # Get the X display, and resolve name if necessary
