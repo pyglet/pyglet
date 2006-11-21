@@ -19,8 +19,13 @@ class PNGImageDecoder(ImageDecoder):
         return ['.png']
 
     def decode(self, file, filename):
-        reader = pyglet.image.codecs.pypng.Reader(file=file)
-        width, height, pixels, metadata = reader.read()
+        try:
+            reader = pyglet.image.codecs.pypng.Reader(file=file)
+            width, height, pixels, metadata = reader.read()
+        except Exception, e:
+            raise ImageDecodeException(
+                'PyPNG cannot read %r: %s' % (filename or file, e))
+
         if metadata['greyscale']:
             if metadata['has_alpha']:
                 format = 'LA'

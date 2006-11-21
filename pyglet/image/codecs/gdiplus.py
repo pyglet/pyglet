@@ -97,7 +97,11 @@ class GDIPlusDecoder(ImageDecoder):
 
         # Load image from stream
         bitmap = c_void_p()
-        gdiplus.GdipCreateBitmapFromStream(stream, byref(bitmap))
+        status = gdiplus.GdipCreateBitmapFromStream(stream, byref(bitmap))
+        if status != 0:
+            # TODO release stream
+            raise ImageDecodeException(
+                'GDI+ cannot load %r' % (filename or file))
 
         # Get size of image (Bitmap subclasses Image)
         width = REAL()

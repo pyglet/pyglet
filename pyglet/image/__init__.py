@@ -50,34 +50,36 @@ class Image(object):
         if not file:
             file = open(filename, 'wb')
 
+        first_exception = None
         for encoder in get_encoders(filename):
             try:
                 encoder.encode(self, file, filename, options)
                 return
-            except ImageDecodeException:
+            except ImageDecodeException, e:
+                first_exception = first_exception or e
                 file.seek(0)
 
-        if filename:
-            raise ImageEncodeException('No encoder could write %r' % filename)
-        else:
-            raise ImageEncodeException('No encoder could write %r' % file)
+        if not first_exception:
+            raise ImageEncodeException('No image encoders are available')
+        raise first_exception
 
     @staticmethod
     def load(filename=None, file=None):
         if not file:
             file = open(filename, 'rb')
 
+        first_exception = None
         for decoder in get_decoders(filename):
             try:
                 image = decoder.decode(file, filename)
                 return image
-            except ImageDecodeException:
+            except ImageDecodeException, e:
+                first_exception = first_exception or e
                 file.seek(0)
 
-        if filename:
-            raise ImageDecodeException('No decoder could load %r' % filename)
-        else:
-            raise ImageDecodeException('No decoder could load %r' % file)
+        if not first_exception:
+            raise ImageDecodeException('No image decoders are available')
+        raise first_exception
 
     @staticmethod
     def create_checkerboard(size, 

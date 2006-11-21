@@ -19,7 +19,12 @@ class PILImageDecoder(ImageDecoder):
                 '.tga', '.tif', '.tiff', '.xbm', '.xpm']
 
     def decode(self, file, filename):
-        image = Image.open(file)
+        try:
+            image = Image.open(file)
+        except Exception, e:
+            raise ImageDecodeException(
+                'PIL cannot read %r: %s' % (filename or file, e))
+
         image = image.transpose(Image.FLIP_TOP_BOTTOM)
 
         # Convert bitmap and palette images to component
