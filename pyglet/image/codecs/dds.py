@@ -11,12 +11,13 @@ __version__ = '$Id$'
 from ctypes import *
 import struct
 
-from pyglet.GL.VERSION_1_3 import *
+from pyglet.GL.VERSION_1_1 import *
 from pyglet.GL.info import have_extension
 from pyglet.image import *
 from pyglet.image.codecs import *
 
 try:
+    from pyglet.GL.ARB_texture_compression import *
     from pyglet.GL.EXT_texture_compression_s3tc import *
     _have_s3tc = True
 except ImportError:
@@ -216,7 +217,7 @@ class DDSCompressedImage(Image):
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
         for mipmap in self.mipmaps:
-            glCompressedTexImage2D(GL_TEXTURE_2D, 
+            glCompressedTexImage2DARB(GL_TEXTURE_2D, 
                 mipmap.level, self.format, 
                 mipmap.width, mipmap.height, 0, 
                 len(mipmap.data), mipmap.data)
@@ -225,7 +226,7 @@ class DDSCompressedImage(Image):
 
     def texture_subimage(self, x, y):
         for mipmap in self.mipmaps:
-            glCompressedTexSubImage2D(GL_TEXTURE_2D,
+            glCompressedTexSubImage2DARB(GL_TEXTURE_2D,
                 mipmap.level,
                 x, y, 
                 mipmap.width,

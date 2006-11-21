@@ -10,7 +10,30 @@ import ctypes
 import ctypes.util
 import sys
 
+from pyglet.GL.info import have_context
+
 if sys.platform == 'win32':
+    class WGLExtensionProxy(object):
+        __slots__ = ['name', 'ftype', 'func']
+        def __init__(self, name, ftype):
+            self.name = name
+            self.ftype = ftype
+            self.func = None
+
+        def __call__(self, *args, **kwargs):
+            if self.func:
+                return self.func(*args, **kwargs)
+
+            if not have_context:
+                raise Exception('Cannot call extension function before GL ' +
+                    'context is created.')
+            address = _WGL.wglGetProcAddress(self.name)
+            print '%d' % address
+            if not address:
+                raise Exception('Extension function "%s" not found' % self.name)
+            self.func = self.ftype(address)
+            return self.func(*args, **kwargs)
+    
     import WGL as _WGL
     _gl = ctypes.windll.opengl32
     def get_function(name, argtypes, rtype):
@@ -20,12 +43,18 @@ if sys.platform == 'win32':
             func.restype = rtype
             return func
 
-        # Not in opengl32.dll, ask WGL for a pointer (requires context first)
+        # Not in opengl32.dll.  Maybe can't get pointer from WGL yet, have to
+        # wait until we have a context.
         try:
             fargs = (rtype,) + tuple(argtypes)
-            ftype = ctypes.CFUNCTYPE(*fargs)
-            address = _WGL.wglGetProcAddress(name)
-            return ftype.from_address(address)
+            ftype = ctypes.WINFUNCTYPE(*fargs)
+            if have_context():
+                address = _WGL.wglGetProcAddress(name)
+                if not address:
+                    raise AttributeError, name
+                return ftype.from_address(address)
+            else:
+                return WGLExtensionProxy(name, ftype)
         except AttributeError, e:
             raise ImportError(e)
 

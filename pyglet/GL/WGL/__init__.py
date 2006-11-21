@@ -24,7 +24,7 @@ def _get_function(name, argtypes, rtype):
 
 WGL_SWAP_MAIN_PLANE = 1
 
-wglGetProcAddress = _get_function('wglGetProcAddress', [_ctypes.c_char_p], _ctypes.c_long)
+wglGetProcAddress = _get_function('wglGetProcAddress', [_ctypes.c_char_p], _ctypes.c_void_p)
 wglCreateContext = _get_function('wglCreateContext', [_ctypes.c_long], _ctypes.c_long)
 wglMakeCurrent = _get_function('wglMakeCurrent', [_ctypes.c_long, _ctypes.c_long], _ctypes.c_int)
 wglSwapLayerBuffers = _get_function('wglSwapLayerBuffers', [_ctypes.c_long, _ctypes.c_uint], _ctypes.c_int)
