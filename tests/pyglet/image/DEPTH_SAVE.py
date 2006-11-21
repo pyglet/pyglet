@@ -31,6 +31,7 @@ class TEST_DEPTH_SAVE(base_save.TestSave):
 
     def load_texture(self):
         self.window.set_visible()
+        self.draw()
 
         image = DepthImage()
         file = StringIO.StringIO()

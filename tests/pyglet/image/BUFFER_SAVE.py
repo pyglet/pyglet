@@ -27,6 +27,7 @@ class TEST_BUFFER_SAVE(base_save.TestSave):
 
     def load_texture(self):
         self.window.set_visible()
+        self.draw()
 
         image = BufferImage()
         file = StringIO.StringIO()

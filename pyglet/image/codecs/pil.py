@@ -53,6 +53,9 @@ class PILImageEncoder(ImageEncoder):
         format = options.get('format', 
             filename and os.path.splitext(filename)[1][1:]) or 'png'
 
+        if format.lower() == 'jpg':
+            format = 'JPEG'
+
         image = image.get_raw_image()
         if image.type != GL_UNSIGNED_BYTE:
             raise ImageEncodeException('Unsupported sample type')
@@ -64,12 +67,13 @@ class PILImageEncoder(ImageEncoder):
         elif len(image.format) == 4:
             image.set_format('RGBA')
 
-        if hasattr(Image, 'frombuffer'):
-            pil_image = Image.frombuffer(
-                image.format, (image.width, image.height), image.data)
-        else:
-            pil_image = Image.fromstring(
-                image.format, (image.width, image.height), image.data)
+        # Note: Don't try and use frombuffer(..); different versions of
+        # PIL will orient the image differently.
+        pil_image = Image.fromstring(
+            image.format, (image.width, image.height), image.data)
+
+        if not image.top_to_bottom:
+            pil_image = pil_image.transpose(Image.FLIP_TOP_BOTTOM)
 
         try:
             pil_image.save(file, format, **options)

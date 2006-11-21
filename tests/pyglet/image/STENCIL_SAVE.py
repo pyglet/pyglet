@@ -42,6 +42,7 @@ class TEST_STENCIL_SAVE(base_save.TestSave):
 
     def load_texture(self):
         self.window.set_visible()
+        self.draw()
 
         glPixelTransferi(GL_INDEX_SHIFT, 7)
         image = StencilImage()

@@ -29,6 +29,10 @@ class TestSave(unittest.TestCase):
         glMatrixMode(GL_MODELVIEW)
 
     def on_expose(self):
+        self.draw()
+        self.window.flip()
+
+    def draw(self):
         glClearColor(1, 1, 1, 1)
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
@@ -52,8 +56,6 @@ class TestSave(unittest.TestCase):
         self.draw_original()
         self.draw_saved()
             
-        self.window.flip()
-
     def draw_original(self):
         if self.original_texture:
             glPushMatrix()
