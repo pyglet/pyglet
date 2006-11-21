@@ -285,7 +285,11 @@ class Win32Window(BaseWindow):
             hwnd_after = HWND_NOTOPMOST
 
         # Position and size window
-        if factory.get_location() != LOCATION_DEFAULT:
+        if fullscreen:
+            screen = factory.get_screen()
+            _user32.SetWindowPos(self._hwnd, hwnd_after,
+                screen.x, screen.y, width, height, SWP_FRAMECHANGED)
+        elif factory.get_location() != LOCATION_DEFAULT:
             x, y = self._client_to_window_pos(*factory.get_location())
             _user32.SetWindowPos(self._hwnd, hwnd_after,
                 x, y, width, height, SWP_FRAMECHANGED)
