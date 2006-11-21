@@ -18,7 +18,7 @@ class TEST_STENCIL_SAVE(base_save.TestSave):
         glClear(GL_STENCIL_BUFFER_BIT)
 
         glEnable(GL_STENCIL_TEST)
-        glStencilFunc(GL_ALWAYS, 1, 0xffffff)
+        glStencilFunc(GL_ALWAYS, 0xffffff, 0xffffff)
         glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE)
 
         glBegin(GL_TRIANGLES)
@@ -40,6 +40,8 @@ class TEST_STENCIL_SAVE(base_save.TestSave):
         return Window(width, height, visible=False, stencil_size=1)
 
     def load_texture(self):
+        if self.window.get_config().get_gl_attributes()['stencil_size'] < 1:
+            raise Exception('No stencil buffer')
         self.window.set_visible()
         self.draw()
 
