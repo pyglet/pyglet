@@ -221,7 +221,7 @@ class Win32Window(BaseWindow):
         # Ensure style is set before determining width/height.
         if fullscreen:
             self._style = WS_POPUP
-            self._ex_style = WS_EX_TOPMOST
+            self._ex_style = 0 # WS_EX_TOPMOST
         else:
             self._style = WS_OVERLAPPEDWINDOW
             self._ex_style = 0
@@ -302,6 +302,7 @@ class Win32Window(BaseWindow):
     def close(self):
         super(Win32Window, self).close()
         _user32.DestroyWindow(self._hwnd)
+        _user32.UnregisterClassA(self._window_class.lpszClassName, 0)
         self._hwnd = None
         self._dc = None
         self._wgl_context = None
@@ -349,9 +350,12 @@ class Win32Window(BaseWindow):
 
     def set_visible(self, visible=True):
         if visible:
-            _user32.ShowWindow(self._hwnd, SW_SHOW)
             if self._fullscreen:
+                _user32.SetWindowPos(self._hwnd, HWND_TOPMOST, 0, 0, 0, 0,
+                    SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
                 self.activate()
+            else:
+                _user32.ShowWindow(self._hwnd, SW_SHOW)
         else:
             _user32.ShowWindow(self._hwnd, SW_HIDE)
 
@@ -568,8 +572,7 @@ class Win32Window(BaseWindow):
         if event == EVENT_MOUSE_PRESS:
             _user32.SetCapture(self._hwnd)
         else:
-            #_user32.ReleaseCapture()
-            pass
+            _user32.ReleaseCapture()
         x, y = self._get_location(lParam)
         self.dispatch_event(event, button, x, y, self._get_modifiers())
         return 0
@@ -625,6 +628,11 @@ class Win32Window(BaseWindow):
 
     @Win32EventHandler(WM_SIZE)
     def _event_size(self, msg, wParam, lParam):
+        if not self._dc:
+            # Ignore window creation size event (appears for fullscreen
+            # only) -- we haven't got DC or HWND yet.
+            return None
+
         if wParam == SIZE_MINIMIZED:
             # Minimized, not resized.
             self._hidden = True
