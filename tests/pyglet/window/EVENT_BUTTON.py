@@ -5,7 +5,7 @@
 Expected behaviour:
     One window will be opened.  Click within this window and check the console
     output for mouse events.  
-     - Buttons 1, 2, 3 correspond to left, right middle
+     - Buttons 1, 2, 4 correspond to left, middle, right, respectively.
      - No events for scroll wheel
      - Modifiers are correct
 

@@ -255,7 +255,9 @@ _xlib_event_handler_names = []
 def XlibEventHandler(event):
     def handler_wrapper(f):
         _xlib_event_handler_names.append(f.__name__)
-        f._xlib_handler = event
+        if not hasattr(f, '_xlib_handler'):
+            f._xlib_handler = []
+        f._xlib_handler.append(event)
         return f
     return handler_wrapper
 
@@ -298,7 +300,8 @@ class XlibWindow(BaseWindow):
             if not hasattr(self, func_name):
                 continue
             func = getattr(self, func_name)
-            self._event_handlers[func._xlib_handler] = func
+            for message in func._xlib_handler:
+                self._event_handlers[message] = func
 
     def create(self, factory):
         # Unmap existing window if necessary while we fiddle with it.

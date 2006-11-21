@@ -13,9 +13,8 @@ Expected behaviour:
           if desired, see source).
         - On OS X, the menu bar and dock will disappear during keyboard
           exclusive mode.
-        - On Windows, only Alt+Tab and Alt-F4 are disabled.  A
-          user can still switch away using Ctrl+Escape, Alt+Escape, the
-          Windows key or Ctrl+Alt+Del.
+        - On Windows, only Alt+Tab is disabled.  A user can still switch away
+          using Ctrl+Escape, Alt+Escape, the Windows key or Ctrl+Alt+Del.
      - Switching to another application (i.e., with the mouse) should make
        these keys work normally again until this application regains focus.
 

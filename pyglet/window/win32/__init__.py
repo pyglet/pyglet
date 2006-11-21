@@ -163,7 +163,9 @@ _win32_event_handler_names = []
 def Win32EventHandler(message):
     def handler_wrapper(f):
         _win32_event_handler_names.append(f.__name__)
-        f._win32_handler = message
+        if not hasattr(f, '_win32_handler'):
+            f._win32_handler = []
+        f._win32_handler.append(message)
         return f
     return handler_wrapper
 
@@ -198,7 +200,8 @@ class Win32Window(BaseWindow):
             if not hasattr(self, func_name):
                 continue
             func = getattr(self, func_name)
-            self._event_handlers[func._win32_handler] = func
+            for message in func._win32_handler:
+                self._event_handlers[message] = func
 
         self._mouse = Win32Mouse()
 
@@ -320,7 +323,7 @@ class Win32Window(BaseWindow):
 
     def set_location(self, x, y):
         x, y = self._client_to_window_pos(x, y)
-        _user32.SetWindowPos(self._hwnd, 0, rect.left, rect.top, 0, 0, 
+        _user32.SetWindowPos(self._hwnd, 0, x, y, 0, 0, 
             (SWP_NOZORDER |
              SWP_NOSIZE |
              SWP_NOOWNERZORDER))
@@ -357,9 +360,9 @@ class Win32Window(BaseWindow):
             if self._fullscreen:
                 _user32.SetWindowPos(self._hwnd, HWND_TOPMOST, 0, 0, 0, 0,
                     SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
-                self.activate()
             else:
                 _user32.ShowWindow(self._hwnd, SW_SHOW)
+            self.activate()
         else:
             _user32.ShowWindow(self._hwnd, SW_HIDE)
 

@@ -236,7 +236,9 @@ _carbon_event_handler_names = []
 def CarbonEventHandler(event_class, event_kind):
     def handler_wrapper(f):
         _carbon_event_handler_names.append(f.__name__)
-        f._carbon_handler = (event_class, event_kind)
+        if not hasattr(f, '_carbon_handler'):
+            f._carbon_handler = []
+        f._carbon_handler.append((event_class, event_kind))
         return f
     return handler_wrapper
 
@@ -562,22 +564,23 @@ class CarbonWindow(BaseWindow):
                 continue  # Was added by another class
 
             func = getattr(self, func_name)
-            event_class, event_kind = func._carbon_handler
-            proc = EventHandlerProcPtr(func)
-            self._carbon_event_handlers.append(proc)
-            upp = carbon.NewEventHandlerUPP(proc)
-            types = EventTypeSpec()
-            types.eventClass = event_class
-            types.eventKind = event_kind
-            handler_ref = EventHandlerRef()
-            carbon.InstallEventHandler(
-                target,
-                upp,
-                1,
-                byref(types),
-                c_void_p(),
-                byref(handler_ref))
-            self._carbon_event_handler_refs.append(handler_ref)
+            for event_class, event_kind in func._carbon_handler:
+                # TODO: could just build up array of class/kind
+                proc = EventHandlerProcPtr(func)
+                self._carbon_event_handlers.append(proc)
+                upp = carbon.NewEventHandlerUPP(proc)
+                types = EventTypeSpec()
+                types.eventClass = event_class
+                types.eventKind = event_kind
+                handler_ref = EventHandlerRef()
+                carbon.InstallEventHandler(
+                    target,
+                    upp,
+                    1,
+                    byref(types),
+                    c_void_p(),
+                    byref(handler_ref))
+                self._carbon_event_handler_refs.append(handler_ref)
 
     def _remove_event_handlers(self):
         for ref in self._carbon_event_handler_refs:
