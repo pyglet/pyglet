@@ -17,7 +17,7 @@ __version__ = '$Id: $'
 
 import unittest
 
-import pyglet.window
+from pyglet.window import *
 from pyglet.window.event import *
 
 class EVENT_BUTTON(unittest.TestCase):
@@ -30,7 +30,7 @@ class EVENT_BUTTON(unittest.TestCase):
             (button, x, y, pyglet.window.event._modifiers_to_string(modifiers))
 
     def test_button(self):
-        w = pyglet.window.create(200, 200)
+        w = Window(200, 200)
         exit_handler = ExitHandler()
         w.push_handlers(self)
         w.push_handlers(exit_handler)

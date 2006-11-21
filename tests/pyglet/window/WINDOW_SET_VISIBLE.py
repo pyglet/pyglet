@@ -14,11 +14,13 @@ __version__ = '$Id: $'
 
 import time
 import unittest
+
+from pyglet.window import *
 from pyglet.window.event import *
 
 class WINDOW_SET_VISIBLE(unittest.TestCase):
     def test_set_visible(self):
-        w = pyglet.window.create(200, 200)
+        w = Window(200, 200)
         exit_handler = ExitHandler()
         w.push_handlers(exit_handler)
         w.push_handlers(DebugEventHandler())

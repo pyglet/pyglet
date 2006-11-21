@@ -17,7 +17,7 @@ __version__ = '$Id: $'
 
 import unittest
 
-import pyglet.window
+from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
 from pyglet.GL.VERSION_1_1 import *
@@ -39,7 +39,7 @@ class WINDOW_INITIAL_FULLSCREEN(unittest.TestCase):
     def test_initial_fullscreen(self):
         self.exit_handler = ExitHandler()
         screen = pyglet.window.get_factory().get_screens()[0]
-        self.w = pyglet.window.create(screen.width, screen.height, True)
+        self.w = Window(screen.width, screen.height, True)
         self.w.push_handlers(self)
         self.w.push_handlers(self.exit_handler)
         self.w.push_handlers(DebugEventHandler())

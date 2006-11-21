@@ -11,14 +11,14 @@ __version__ = '$Id: $'
 import unittest
 from ctypes import *
 
-import pyglet.window
+from pyglet.window import *
 from pyglet.GL.VERSION_1_1 import *
 
 __noninteractive = True
 
 class CONTEXT_SHARE(unittest.TestCase):
     def test_context_share_list(self):
-        w1 = pyglet.window.create(200, 200)
+        w1 = Window(200, 200)
         w1.switch_to()
         list = glGenLists(1)
         glNewList(list, GL_COMPILE)
@@ -26,7 +26,7 @@ class CONTEXT_SHARE(unittest.TestCase):
         glEndList()
         self.assertTrue(glIsList(list))
 
-        w2 = pyglet.window.create(200, 200)
+        w2 = Window(200, 200)
         w2.switch_to()
         self.assertTrue(glIsList(list))
 
@@ -34,7 +34,7 @@ class CONTEXT_SHARE(unittest.TestCase):
         w2.close()
 
     def test_context_noshare_list(self):
-        w1 = pyglet.window.create(200, 200)
+        w1 = Window(200, 200)
         w1.switch_to()
         list = glGenLists(1)
         glNewList(list, GL_COMPILE)
@@ -42,10 +42,11 @@ class CONTEXT_SHARE(unittest.TestCase):
         glEndList()
         self.assertTrue(glIsList(list))
 
-        factory = pyglet.window.get_factory()
-        factory.set_context_share(pyglet.window.CONTEXT_SHARE_NONE)
+        factory = get_factory()
+        factory.set_context_share(CONTEXT_SHARE_NONE)
         factory.set_size(200, 200)
         w2 = factory.create_window()
+        w2.set_visible(True)
         w2.switch_to()
         self.assertTrue(not glIsList(list))
 
@@ -53,7 +54,7 @@ class CONTEXT_SHARE(unittest.TestCase):
         w2.close()
 
     def test_context_share_texture(self):
-        w1 = pyglet.window.create(200, 200)
+        w1 = Window(200, 200)
         w1.switch_to()
         textures = c_uint()
         glGenTextures(1, byref(textures))
@@ -65,7 +66,7 @@ class CONTEXT_SHARE(unittest.TestCase):
                      GL_UNSIGNED_BYTE, data)
         self.assertTrue(glIsTexture(texture))
 
-        w2 = pyglet.window.create(200, 200)
+        w2 = Window(200, 200)
         w2.switch_to()
         self.assertTrue(glIsTexture(texture))
 

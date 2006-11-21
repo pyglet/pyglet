@@ -147,6 +147,10 @@ import sys
 import time
 import unittest
 
+# XXX dodginess: fiddle sys.path to move pyglet dir to front rather than
+# tests dir.
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), os.path.pardir))
+
 class RequirementsComponent(object):
     FULL = 50
     PARTIAL = 25
@@ -183,11 +187,11 @@ class RequirementsComponent(object):
         return '%s.py' % os.path.join(root, path)
 
     def get_module(self, root=''):
-        module_name = self.get_absname().replace('.', '_')
-        suffixes = ('.py', 'r', imp.PY_SOURCE)
-        filename = self.get_module_filename(root)
-        file = open(filename, 'r')
-        return imp.load_module(module_name, file, filename, suffixes)
+        name = 'tests.%s' % self.get_absname()
+        module = __import__(name)
+        for c in name.split('.')[1:]:
+            module = getattr(module, c)
+        return module
 
     def __repr__(self):
         return 'RequirementsComponent(%s)' % self.get_absname()

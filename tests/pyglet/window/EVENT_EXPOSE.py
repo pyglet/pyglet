@@ -17,7 +17,7 @@ __version__ = '$Id: $'
 
 import unittest
 
-import pyglet.window
+from pyglet.window import *
 from pyglet.window.event import *
 
 class EVENT_EXPOSE(unittest.TestCase):

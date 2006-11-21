@@ -15,8 +15,9 @@ __version__ = '$Id: $'
 
 import unittest
 
-import pyglet.window
+from pyglet.window import *
 from pyglet.window.event import *
+from pyglet.window.event import _symbol_to_string, _modifiers_to_string
 
 class EVENT_KEYPRESS(unittest.TestCase):
     def on_key_press(self, symbol, modifiers):
@@ -30,7 +31,7 @@ class EVENT_KEYPRESS(unittest.TestCase):
              pyglet.window.event._modifiers_to_string(modifiers))
 
     def test_keypress(self):
-        w = pyglet.window.create(200, 200)
+        w = Window(200, 200)
         exit_handler = ExitHandler()
         w.push_handlers(self)
         w.push_handlers(exit_handler)

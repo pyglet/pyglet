@@ -15,12 +15,12 @@ __version__ = '$Id$'
 
 import unittest
 
-import pyglet.window
+from pyglet.window import *
 from pyglet.window.event import *
 
 class EVENT_MOUSE_DRAG(unittest.TestCase):
     def test_mouse_drag(self):
-        w = pyglet.window.create(200, 200)
+        w = Window(200, 200)
         exit_handler = ExitHandler()
         w.push_handlers(DebugEventHandler())
         w.push_handlers(exit_handler)

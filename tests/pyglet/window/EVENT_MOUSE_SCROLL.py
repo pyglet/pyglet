@@ -21,7 +21,7 @@ __version__ = '$Id: $'
 
 import unittest
 
-import pyglet.window
+from pyglet.window import *
 from pyglet.window.event import *
 
 class EVENT_MOUSE_SCROLL(unittest.TestCase):
@@ -29,7 +29,7 @@ class EVENT_MOUSE_SCROLL(unittest.TestCase):
         print 'Mouse scrolled (%f, %f)' % (dx, dy)
 
     def test_mouse_scroll(self):
-        w = pyglet.window.create(200, 200)
+        w = Window(200, 200)
         exit_handler = ExitHandler()
         w.push_handlers(self)
         w.push_handlers(exit_handler)

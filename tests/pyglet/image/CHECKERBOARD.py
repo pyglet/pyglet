@@ -12,9 +12,9 @@ __version__ = '$Id: $'
 import unittest
 
 from pyglet.GL.VERSION_1_1 import *
-import pyglet.image
-import pyglet.window
-import pyglet.window.event
+from pyglet.image import *
+from pyglet.window import *
+from pyglet.window.event import *
 
 class TEST_CHECKERBOARD(unittest.TestCase):
     def on_resize(self, width, height):
@@ -32,13 +32,12 @@ class TEST_CHECKERBOARD(unittest.TestCase):
 
     def test_main(self):
         width, height = 200, 200
-        self.window = w = pyglet.window.create(width, height, visible=False)
-        exit_handler = pyglet.window.event.ExitHandler()
+        self.window = w = Window(width, height, visible=False)
+        exit_handler = ExitHandler()
         w.push_handlers(exit_handler)
         w.push_handlers(self)
 
-        self.texture = \
-            pyglet.image.Image.create_checkerboard(width).get_texture()
+        self.texture = Image.create_checkerboard(width).texture()
 
         w.set_visible()
         while not exit_handler.exit:

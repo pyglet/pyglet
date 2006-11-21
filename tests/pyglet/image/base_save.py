@@ -11,9 +11,9 @@ import StringIO
 from os.path import dirname, join
 
 from pyglet.GL.VERSION_1_1 import *
-import pyglet.image
-import pyglet.window
-import pyglet.window.event
+from pyglet.image import *
+from pyglet.window import *
+from pyglet.window.event import *
 
 class TestSave(unittest.TestCase):
     texture_file = None
@@ -78,26 +78,26 @@ class TestSave(unittest.TestCase):
         if self.texture_file:
             self.texture_file = join(dirname(__file__), self.texture_file)
             self.original_texture = \
-                pyglet.image.Texture.load(self.texture_file)
+                Texture.load(self.texture_file)
 
             file = StringIO.StringIO()
             self.original_texture.save(self.texture_file, file)
             file.seek(0)
             self.saved_texture = \
-                pyglet.image.Texture.load(self.texture_file, file)
+                Texture.load(self.texture_file, file)
 
     def create_window(self):
         width, height = 400, 400
-        return pyglet.window.create(width, height, visible=False)
+        return Window(width, height, visible=False)
 
     def test_save(self):
         self.window = w = self.create_window()
-        exit_handler = pyglet.window.event.ExitHandler()
+        exit_handler = ExitHandler()
         w.push_handlers(exit_handler)
         w.push_handlers(self)
 
         self.checkerboard = \
-            pyglet.image.Image.create_checkerboard(32).texture()
+            Image.create_checkerboard(32).texture()
 
         self.load_texture()
 

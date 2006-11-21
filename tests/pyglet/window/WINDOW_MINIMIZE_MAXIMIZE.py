@@ -16,7 +16,7 @@ __version__ = '$Id: $'
 
 import unittest
 
-import pyglet.window
+from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
 
@@ -31,7 +31,7 @@ class WINDOW_MINIMIZE_MAXIMIZE(unittest.TestCase):
 
     def test_minimize_maximize(self):
         self.width, self.height = 200, 200
-        self.w = w = pyglet.window.create(self.width, self.height)
+        self.w = w = Window(self.width, self.height)
         exit_handler = ExitHandler()
         w.push_handlers(self)
         w.push_handlers(exit_handler)

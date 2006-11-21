@@ -13,13 +13,13 @@ __version__ = '$Id: $'
 
 import unittest
 
-import pyglet.window
+from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.GL.VERSION_1_1 import *
 
 class MULTIPLE_WINDOW_OPEN(unittest.TestCase):
     def open_window(self):
-        w = pyglet.window.create(200, 200)
+        w = Window(200, 200)
         w.push_handlers(self.exit_handler)
         return w
 

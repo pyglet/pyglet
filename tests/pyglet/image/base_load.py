@@ -10,9 +10,9 @@ import unittest
 from os.path import dirname, join
 
 from pyglet.GL.VERSION_1_1 import *
-import pyglet.image
-import pyglet.window
-import pyglet.window.event
+from pyglet.image import *
+from pyglet.window import *
+from pyglet.window.event import *
 
 class TestLoad(unittest.TestCase):
     texture_file = None
@@ -58,18 +58,18 @@ class TestLoad(unittest.TestCase):
 
     def test_load(self):
         width, height = 400, 400
-        self.window = w = pyglet.window.create(width, height, visible=False)
-        exit_handler = pyglet.window.event.ExitHandler()
+        self.window = w = Window(width, height, visible=False)
+        exit_handler = ExitHandler()
         w.push_handlers(exit_handler)
         w.push_handlers(self)
 
         self.checkerboard = \
-            pyglet.image.Image.create_checkerboard(32).texture()
+            Image.create_checkerboard(32).texture()
 
         if self.texture_file:
             self.texture_file = join(dirname(__file__), self.texture_file)
             self.texture = \
-                pyglet.image.Texture.load(self.texture_file)
+                Texture.load(self.texture_file)
 
         if self.alpha:
             glEnable(GL_BLEND)

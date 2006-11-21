@@ -11,7 +11,7 @@ import unittest
 import base_save
 
 from pyglet.image import *
-import pyglet.window
+from pyglet.window import *
 
 class TEST_STENCIL_SAVE(base_save.TestSave):
     def draw_original(self):
@@ -37,8 +37,7 @@ class TEST_STENCIL_SAVE(base_save.TestSave):
 
     def create_window(self):
         width, height = 400, 400
-        return pyglet.window.create(width, height, visible=False, 
-            stencil_size=1)
+        return Window(width, height, visible=False, stencil_size=1)
 
     def load_texture(self):
         self.window.set_visible()

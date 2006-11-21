@@ -19,7 +19,7 @@ __version__ = '$Id: $'
 
 import unittest
 
-import pyglet.window
+from pyglet.window import *
 from pyglet.window.event import *
 
 class EVENT_KEYPRESS(unittest.TestCase):
@@ -27,7 +27,7 @@ class EVENT_KEYPRESS(unittest.TestCase):
         print 'Typed %r' % text
 
     def test_text(self):
-        w = pyglet.window.create(200, 200)
+        w = Window(200, 200)
         exit_handler = ExitHandler()
         w.push_handlers(self)
         w.push_handlers(exit_handler)

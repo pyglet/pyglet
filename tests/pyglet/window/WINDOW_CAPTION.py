@@ -15,12 +15,13 @@ __version__ = '$Id: $'
 
 import time
 import unittest
+from pyglet.window import *
 from pyglet.window.event import *
 
 class WINDOW_CAPTION(unittest.TestCase):
     def test_caption(self):
-        w1 = pyglet.window.create(200, 200)
-        w2 = pyglet.window.create(200, 200)
+        w1 = Window(200, 200)
+        w2 = Window(200, 200)
         exit_handler = ExitHandler()
         w1.push_handlers(exit_handler)
         w2.push_handlers(exit_handler)
