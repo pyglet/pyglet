@@ -1,8 +1,15 @@
 #!/usr/bin/env python
 
-'''Test stencil save.
-'''
+'''Test stencil buffer save.  
 
+A scene consisting of a single coloured triangle will be rendered.  The
+stencil buffer will then be saved to a stream and loaded as a texture.
+
+You will see the original scene first for up to several seconds before the
+stencil buffer image appears (because retrieving and saving the image is
+a slow operation).  Messages will be printed to stdout indicating
+what stage is occuring.
+'''
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
@@ -42,16 +49,22 @@ class TEST_STENCIL_SAVE(base_save.TestSave):
     def load_texture(self):
         if self.window.get_config().get_gl_attributes()['stencil_size'] < 1:
             raise Exception('No stencil buffer')
+
+        print 'Drawing scene...'
         self.window.set_visible()
         self.draw()
 
+        print 'Saving stencil image...'
         glPixelTransferi(GL_INDEX_SHIFT, 7)
         image = StencilImage()
         file = StringIO.StringIO()
         image.save('buffer.png', file)
+
+        print 'Loading stencil image as texture...'
         file.seek(0)
         self.saved_texture = Texture.load('buffer.png', file)
 
+        print 'Done.'
         self.window.set_visible(False)
 
 if __name__ == '__main__':

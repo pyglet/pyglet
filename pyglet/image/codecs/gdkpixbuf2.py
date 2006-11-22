@@ -54,7 +54,6 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
         rowstride = gdkpixbuf.gdk_pixbuf_get_rowstride(pixbuf)
         has_alpha = gdkpixbuf.gdk_pixbuf_get_has_alpha(pixbuf)
         pixels = gdkpixbuf.gdk_pixbuf_get_pixels(pixbuf)
-        print pixels
 
         # Copy pixel data.
         buffer = (c_ubyte * (rowstride * height))()

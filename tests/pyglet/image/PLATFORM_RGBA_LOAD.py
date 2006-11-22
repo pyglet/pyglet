@@ -14,7 +14,7 @@ import sys
 from pyglet.image.codecs import *
 
 if sys.platform == 'linux2':
-    from pyglet.image.codecs import gdkpixbuf as platform_decoder
+    from pyglet.image.codecs import gdkpixbuf2 as platform_decoder
 elif sys.platform == 'win32':
     from pyglet.image.codecs import gdiplus as platform_decoder
 elif sys.platform == 'darwin':

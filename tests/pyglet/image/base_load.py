@@ -11,6 +11,7 @@ from os.path import dirname, join
 
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.image import *
+from pyglet.image.codecs import *
 from pyglet.window import *
 from pyglet.window.event import *
 
@@ -57,7 +58,9 @@ class TestLoad(unittest.TestCase):
         self.window.flip()
 
     def choose_codecs(self):
-        pass
+        clear_encoders()
+        clear_decoders()
+        add_default_image_codecs()
 
     def test_load(self):
         width, height = 400, 400
