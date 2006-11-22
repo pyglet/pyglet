@@ -10,6 +10,7 @@ import sys
 import re
 
 from ctypes import *
+from math import ceil
 
 from pyglet.GL.info import have_extension
 from pyglet.GL.VERSION_1_1 import *
@@ -127,7 +128,8 @@ class RawImage(Image):
     _swap3_pattern = re.compile('(.)(.)(.)', re.DOTALL)
     _swap4_pattern = re.compile('(.)(.)(.)(.)', re.DOTALL)
 
-    def __init__(self, data, width, height, format, type, top_to_bottom=False):
+    def __init__(self, data, width, height, format, type, 
+                 top_to_bottom=False, alignment=1, row_length=0):
         '''Initialise image data.
 
         data
@@ -143,6 +145,10 @@ class RawImage(Image):
             If True, rows begin at the top of the image and increase
             downwards; otherwise they begin at the bottom and increase
             upwards.
+        alignment
+            Alignment of pixels within data: 1 for no alignment, 4 for
+            word alignment.
+
         '''
         super(RawImage, self).__init__(width, height)
 
@@ -150,6 +156,8 @@ class RawImage(Image):
         self.format = format
         self.type = type
         self.top_to_bottom = top_to_bottom
+        self.alignment = alignment
+        self.row_length = row_length
 
     def _ensure_string_data(self):
         if type(self.data) is not str:
@@ -157,9 +165,23 @@ class RawImage(Image):
             memmove(buf, self.data, len(self.data))
             self.data = buf
 
+    def _pack_rows(self):
+        '''Reduce alignment to 1 to simplify format changes.'''
+        if self.alignment == 1:
+            return
+
+        self._ensure_string_data()
+        pitch = len(self.format) * self.width
+        old_pitch = int(ceil(float(pitch) / self.alignment)) * self.alignment 
+        diff = old_pitch - pitch
+        pattern = re.compile('(%s)%s' % ('.' * pitch, '.' * diff), re.DOTALL)
+        self.data = pattern.sub(r'\1', self.data)
+        self.alignment = 1
+
     def swap_rows(self):
         self._ensure_string_data()
         pitch = len(self.format) * self.width
+        pitch = int(ceil(float(pitch) / self.alignment)) * self.alignment 
         rows = re.findall('.' * pitch, self.data, re.DOTALL)
         rows.reverse()
         self.data = ''.join(rows)
@@ -170,6 +192,7 @@ class RawImage(Image):
             return
 
         self._ensure_string_data()
+        self._pack_rows()
 
         # Create replacement string, e.g. r'\4\1\2\3' to convert RGBA to ARGB
         repl = ''
@@ -248,6 +271,7 @@ class RawImage(Image):
         glBindTexture(GL_TEXTURE_2D, id.value)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, self.alignment)
         if tex_width == self.width and tex_height == self.height:
             glTexImage2D(GL_TEXTURE_2D,
                 0,
@@ -276,6 +300,7 @@ class RawImage(Image):
         if self.top_to_bottom:
             self.swap_rows()
 
+        glPixelStorei(GL_UNPACK_ALIGNMENT, self.alignment)
         glTexSubImage2D(GL_TEXTURE_2D,
             0,
             x, y,
@@ -404,6 +429,7 @@ class Texture(Image):
 
         buffer = (self.get_type_ctype(type) * 
                   (width * height * len(format)))()
+        glPixelStorei(GL_PACK_ALIGNMENT, 1)
         glGetTexImage(GL_TEXTURE_2D, 0, gl_format, type, buffer)
 
         return RawImage(buffer, width, height, format, type)

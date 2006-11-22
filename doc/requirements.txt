@@ -177,18 +177,18 @@ pyglet
             PYPNG_RGBA_SAVE                 X   X   X
             PYPNG_RGB_LOAD                  X   X   X
             PYPNG_RGB_SAVE                  X   X   X
-            PYPNG_LA_LOAD
-            PYPNG_LA_SAVE
-            PYPNG_L_LOAD
-            PYPNG_L_SAVE
+            PYPNG_LA_LOAD                   X   X   X
+            PYPNG_LA_SAVE                   X   X   X
+            PYPNG_L_LOAD                    X   X   X
+            PYPNG_L_SAVE                    X   X   X
             PIL_RGBA_LOAD                   X   X   X
             PIL_RGBA_SAVE                   X   X   X
             PIL_RGB_LOAD                    X   X   X
             PIL_RGB_SAVE                    X   X   X
-            PIL_LA_LOAD
-            PIL_LA_SAVE
-            PIL_L_LOAD
-            PIL_L_SAVE
+            PIL_LA_LOAD                     X   X   X
+            PIL_LA_SAVE                     X   X   X
+            PIL_L_LOAD                      X   X   X
+            PIL_L_SAVE                      X   X   X
             PLATFORM_RGBA_LOAD              X   X   X
             PLATFORM_RGB_LOAD               X   X   X
             PLATFORM_LA_LOAD                X   X   X
@@ -209,8 +209,6 @@ pyglet
          - Windows 2000?  (GDI+ is XP only)
          - Non-Gdk soln for Linux (i.e., KDE?)
          - Get public domain or copyleft test images.
-         - Current rgb.png is actually indexed colour, not RGB.
-         - Find or generate LA and L test files.
          - Tests for formats all platforms should support.  Probably
            PNG, JPEG, GIF, TIFF, BMP.
          - DDS saving
