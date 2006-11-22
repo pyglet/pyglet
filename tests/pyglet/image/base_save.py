@@ -90,11 +90,15 @@ class TestSave(unittest.TestCase):
         width, height = 400, 400
         return Window(width, height, visible=False)
 
+    def choose_codecs(self):
+        pass
+
     def test_save(self):
         self.window = w = self.create_window()
         exit_handler = ExitHandler()
         w.push_handlers(exit_handler)
         w.push_handlers(self)
+        self.choose_codecs()
 
         self.checkerboard = \
             Image.create_checkerboard(32).texture()

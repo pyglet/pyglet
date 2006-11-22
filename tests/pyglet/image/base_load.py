@@ -56,9 +56,13 @@ class TestLoad(unittest.TestCase):
             glPopMatrix()
         self.window.flip()
 
+    def choose_codecs(self):
+        pass
+
     def test_load(self):
         width, height = 400, 400
         self.window = w = Window(width, height, visible=False)
+        self.choose_codecs()
         exit_handler = ExitHandler()
         w.push_handlers(exit_handler)
         w.push_handlers(self)

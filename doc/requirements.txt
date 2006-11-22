@@ -169,42 +169,53 @@ pyglet
     image
         :description: Image file load and save.
         :implementation:
-            ============================== =======
-            Component                      GENERIC
-            ============================== =======
-            CHECKERBOARD                      X
-            PNG_RGBA_LOAD                     X
-            PNG_RGBA_SAVE                     X
-            PNG_RGB_LOAD                      X
-            PNG_RGB_SAVE                      X
-            PNG_LA_LOAD
-            PNG_LA_SAVE
-            PNG_L_LOAD
-            PNG_L_SAVE
-            JPEG_RGB_LOAD                      
-            JPEG_RGB_SAVE
+            ============================== === === ===
+            Component                      X11 WIN OSX
+            ============================== === === ===
+            CHECKERBOARD                    X   X   X
+            PYPNG_RGBA_LOAD                 X   X   X
+            PYPNG_RGBA_SAVE                 X   X   X
+            PYPNG_RGB_LOAD                  X   X   X
+            PYPNG_RGB_SAVE                  X   X   X
+            PYPNG_LA_LOAD
+            PYPNG_LA_SAVE
+            PYPNG_L_LOAD
+            PYPNG_L_SAVE
+            PIL_RGBA_LOAD                   X   X   X
+            PIL_RGBA_SAVE                   X   X   X
+            PIL_RGB_LOAD                    X   X   X
+            PIL_RGB_SAVE                    X   X   X
+            PIL_LA_LOAD
+            PIL_LA_SAVE
+            PIL_L_LOAD
+            PIL_L_SAVE
+            PLATFORM_RGBA_LOAD              X   X   X
+            PLATFORM_RGB_LOAD               X   X   X
+            PLATFORM_LA_LOAD                X   X   X
+            PLATFORM_L_LOAD                 X   X   X
             DDS_DXT1_LOAD                        
-            DDS_DXT3_LOAD                        
-            DDS_DXT5_LOAD                     X
             DDS_DXT1_SAVE                        
+            DDS_DXT3_LOAD                        
             DDS_DXT3_SAVE                        
+            DDS_DXT5_LOAD                   X   X   X
             DDS_DXT5_SAVE                        
-            BUFFER_SAVE                       X
-            DEPTH_SAVE                        X
-            STENCIL_SAVE                      X
-            ============================== =======
+            BUFFER_SAVE                     X   X   X
+            DEPTH_SAVE                      X   X   X
+            STENCIL_SAVE                    X   X   X
+            ============================== === === ===
 
         TBD:
-         - QuickTime decoder assumes RGBA atm.
-         - Windows 2000?
-         - WinXP: RGB save is screwy.
+         - QuickTime decoder assumes RGBA; need to accept RGB etc also.
+         - Windows 2000?  (GDI+ is XP only)
          - Non-Gdk soln for Linux (i.e., KDE?)
-
-        sdl
-            :description: SDL_Image support.
-
-            TBD:
-            - remove
+         - Get public domain or copyleft test images.
+         - Current rgb.png is actually indexed colour, not RGB.
+         - Find or generate LA and L test files.
+         - Tests for formats all platforms should support.  Probably
+           PNG, JPEG, GIF, TIFF, BMP.
+         - DDS saving
+         - Software decoder/encoder for compressed texture.
+         - Options for saving: compression level?
 
     shader
         :description: Abstract interface to GLSL.

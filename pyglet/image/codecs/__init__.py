@@ -84,11 +84,10 @@ def get_decoders(filename=None):
     decoders += [e for e in _decoders if e not in decoders]
     return decoders
 
-def add_codec(module):
-    '''Add a codec module.  The module must define the functions 
-    `get_encoders` and `get_decoders`.  Once added, the appropriate
-    encoders and decoders defined in the codec will be returned by
-    pyglet.image.codecs.get_encoders/decoders.
+def add_decoders(module):
+    '''Add a decoder module.  The module must define `get_decoders`.  Once
+    added, the appropriate decoders defined in the codec will be returned by
+    pyglet.image.codecs.get_decoders.
     '''
     for decoder in module.get_decoders():
         _decoders.append(decoder)
@@ -96,12 +95,29 @@ def add_codec(module):
             if extension not in _decoder_extensions:
                 _decoder_extensions[extension] = []
             _decoder_extensions[extension].append(decoder)
+
+def add_encoders(module):
+    '''Add an encoder module.  The module must define `get_encoders`.  Once
+    added, the appropriate encoders defined in the codec will be returned by
+    pyglet.image.codecs.get_encoders.
+    '''
     for encoder in module.get_encoders():
         _encoders.append(encoder)
         for extension in encoder.get_file_extensions():
             if extension not in _encoder_extensions:
                 _encoder_extensions[extension] = []
             _encoder_extensions[extension].append(encoder)
+
+def clear_decoders():
+    global _decoders, _decoder_extensions
+    _decoders = []
+    _decoder_extensions = {}
+
+def clear_encoders():
+    global _encoders, _encoder_extensions
+    _encoders = []
+    _encoder_extensions = {}
+
  
 def add_default_image_codecs():
     # Add the codecs we know about.  These should be listed in order of
@@ -109,43 +125,49 @@ def add_default_image_codecs():
 
     # Compressed texture in DDS format
     try:
-        import pyglet.image.codecs.dds
-        add_codec(dds)
+        from pyglet.image.codecs import dds
+        add_encoders(dds)
+        add_decoders(dds)
     except ImportError:
         pass
 
     # Mac OS X default: QuickTime
     try:
         import pyglet.image.codecs.quicktime
-        add_codec(quicktime)
+        add_encoders(quicktime)
+        add_decoders(quicktime)
     except ImportError:
         pass
 
     # Windows XP default: GDI+
     try:
         import pyglet.image.codecs.gdiplus
-        add_codec(gdiplus)
+        add_encoders(gdiplus)
+        add_decoders(gdiplus)
     except ImportError:
         pass
 
     # Linux default: GdkPixbuf 2.0
     try:
         import pyglet.image.codecs.gdkpixbuf2
-        add_codec(gdkpixbuf2)
+        add_encoders(gdkpixbuf2)
+        add_decoders(gdkpixbuf2)
     except ImportError:
         pass
 
     # Fallback: PIL
     try:
         import pyglet.image.codecs.pil
-        add_codec(pil)
+        add_encoders(pil)
+        add_decoders(pil)
     except ImportError:
         pass
 
     # Fallback: PNG loader (slow)
     try:
         import pyglet.image.codecs.png
-        add_codec(png)
+        add_encoders(png)
+        add_decoders(png)
     except ImportError:
         pass
 
