@@ -7,6 +7,15 @@ http://tronche.com/gui/x/ (specifically xlib/ and icccm/)
 
 http://users.actcom.co.il/~choo/lupg/tutorials/xlib-programming/xlib-programming.html
 
+Resize and move are handled by a bunch of different events:
+
+- ResizeRequest (reports another client's attempts to change the size of a
+  window)
+- ConfigureNotify (reports actual changes to a window's state, such as
+  size, position, border, and stacking order)
+- ConfigureRequest (reports when another client initiates a configure window
+  request on any child of a specified window)
+
 '''
 
 __docformat__ = 'restructuredtext'
@@ -285,6 +294,8 @@ class XlibWindow(BaseWindow):
     _exclusive_mouse_client = None
     _exclusive_keyboard = False
     _mapped = False
+    _lost_context = False
+    _lost_context_state = False
 
     _default_event_mask = (0x1ffffff 
         & ~PointerMotionHintMask
@@ -325,6 +336,11 @@ class XlibWindow(BaseWindow):
         screen = config._screen
         context = factory.get_context()
         fullscreen = factory.get_fullscreen()
+
+        # TODO: detect state loss only by examining context share.
+        if self._glx_context and self._glx_context != context._context:
+            self._lost_context = True
+            self._lost_context_state = True
 
         self._display = config._display
         self._screen_id = config._screen._x_screen_id
@@ -435,6 +451,13 @@ class XlibWindow(BaseWindow):
         glXMakeContextCurrent(self._display,
             self._glx_window, self._glx_window, self._glx_context)
         pyglet.GL.info.set_context()
+
+        if self._lost_context:
+            self._lost_context = False
+            self.dispatch_event(EVENT_CONTEXT_LOST)
+        if self._lost_context_state:
+            self._lost_context_state = False
+            self.dispatch_event(EVENT_CONTEXT_STATE_LOST)
 
     def flip(self):
         if not self._glx_window:

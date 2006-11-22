@@ -1,45 +1,5 @@
 #!/usr/bin/env python
 '''
-
-OPEN QUESTIONS
---------------
-
-1. If there's no handler for EVENT_CLOSE we probably want to have the
-   application just sys.exit() -- otherwise the close button on X11 does
-   nothing.
-
-2. EVENT_MOUSEMOTION could supply the callback with a relative movement
-   amount. I propose that this be reset to (0, 0) on:
-
-   - the very first callback
-   - the first move after an EVENT_ENTER
-
-3. Can we generate EVENT_ENTER / _LEAVE across all platforms?
-
-   X11 gives us mouse motion information with these events.
-
-4. Do we also want to track input focus?
-
-XLIB NOTES
-----------
-
-It'd be nice if we didn't have Xlib handlers set up for these if we're not
-actually listening for them:
- - mouse movement (generates *many* unnecessary events)
-    - <ah> this would invalidate public members window.mouse.x/y -- but
-      there's no reason for these to be public anyway...?
- - WM_DELETE_WINDOW (maybe? if we don't listen for it then the WM will
-   DestroyWindow us -- see point #1 in `OPEN QUESTIONS`_)
-
-Resize and move are handled by a bunch of different events:
-
-- ResizeRequest (reports another client's attempts to change the size of a
-  window)
-- ConfigureNotify (reports actual changes to a window's state, such as
-  size, position, border, and stacking order)
-- ConfigureRequest (reports when another client initiates a configure window
-  request on any child of a specified window)
-
 '''
 
 __docformat__ = 'restructuredtext'
@@ -70,6 +30,9 @@ EVENT_ACTIVATE = WindowEventHandler.register_event_type('on_activate')
 EVENT_DEACTIVATE = WindowEventHandler.register_event_type('on_deactivate')
 EVENT_SHOW = WindowEventHandler.register_event_type('on_show')
 EVENT_HIDE = WindowEventHandler.register_event_type('on_hide')
+EVENT_CONTEXT_LOST = WindowEventHandler.register_event_type('on_context_lost')
+EVENT_CONTEXT_STATE_LOST = \
+    WindowEventHandler.register_event_type('on_context_state_lost')
 
 # symbolic names for the mouse buttons
 MOUSE_LEFT_BUTTON =   1 << 0
@@ -169,6 +132,12 @@ class EventHandler(object):
     def on_hide(self):
         pass
 
+    def on_context_lost(self):
+        pass
+
+    def on_context_state_lost(self):
+        pass
+
 class ExitHandler(object):
     '''Simple handler that detects the window close button or escape key
     press.
@@ -259,4 +228,12 @@ class DebugEventHandler(object):
 
     def on_hide(self):
         print 'on_hide()'
+        return EVENT_UNHANDLED
+
+    def on_context_lost(self):
+        print 'on_context_lost()'
+        return EVENT_UNHANDLED
+
+    def on_context_state_lost(self):
+        print 'on_context_state_lost()'
         return EVENT_UNHANDLED
