@@ -8,11 +8,10 @@ __version__ = '$Id: gl_tree_test.py 114 2006-10-22 09:46:11Z r1chardj0n3s $'
 
 import math
 import random
-import pyglet.window
+from pyglet.window import *
 import pyglet.clock
 from ctypes import *
 from pyglet.window.event import *
-from pyglet.gui import fps
 from pyglet.model.geometric import tree_list
 
 from pyglet.GL.VERSION_1_1 import *
@@ -28,20 +27,16 @@ def setup_scene():
     glMatrixMode(GL_MODELVIEW)
     glClearColor(1, 1, 1, 1)
 
-# handle exit
-exit_handler = ExitHandler()
-
-w1 = pyglet.window.create(300, 300)
-w1.push_handlers(exit_handler)
-w1.switch_to()
-setup_scene()
-
-w2 = pyglet.window.create(300, 300)
-w2.push_handlers(exit_handler)
-w2.switch_to()
-setup_scene()
-
-c = pyglet.clock.Clock()
+# simple class that manages our main loop
+class running(ExitHandler):
+    def __init__(self, fps=60):
+        self.clock = pyglet.clock.Clock()
+        self.fps = fps
+    def __nonzero__(self):
+        if self.exit: return False
+        self.clock.set_fps(self.fps)
+        return True
+running = running()
 
 class Tree(object):
     def __init__(self, n=2, r=False):
@@ -73,26 +68,27 @@ class Tree(object):
         glPopMatrix()
 
 # need one display list per window
+w1 = Window(width=300, height=300)
 w1.switch_to()
+setup_scene()
 tree1 = Tree(n=10, r=True)
-w1.push_handlers(tree1)
-fps = fps.FPS()
+w1.push_handlers(running, tree1)
 
+w2 = Window(width=300, height=300)
 w2.switch_to()
+setup_scene()
 tree2 = Tree(n=10, r=False)
-w2.push_handlers(tree2)
+w2.push_handlers(running, tree2)
 
 n = 0
-while not exit_handler.exit:
+while running:
     n += 1
-    c.set_fps(50)
 
     # render
     w1.switch_to()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     w1.dispatch_events()
     tree1.render()
-    fps.draw(w1, c)
     w1.flip()
 
     w2.switch_to()
