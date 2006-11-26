@@ -340,7 +340,7 @@ class Font(object):
 
         data = ''.join(texdata)
         self.texture = pyglet.image.TextureAtlasRects.from_data(data,
-            tw, th, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, rects=rects)
+            tw, th, 'LA', GL_UNSIGNED_BYTE, rects=rects)
 
         for index, (data, glyph) in enumerate(glyphs):
             glyph.texture = self.texture.get_texture(index)
