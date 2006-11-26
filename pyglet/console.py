@@ -35,7 +35,7 @@ class Console(object):
         self.write('Version %s\n' % __version__)
 
     def on_key_press(self, symbol, modifiers):
-
+        # TODO cursor control / line editing
         if modifiers & key.MOD_CTRL and symbol == key.K_C:
             self.buffer = ''
             self.pre_buffer = ''
@@ -51,8 +51,10 @@ class Console(object):
         return EVENT_UNHANDLED
 
     def on_text(self, text):
-        if text == '\r': return EVENT_UNHANDLED
-        self.buffer += text
+        if ' ' <= text <= '~':
+            self.buffer += text
+        if 0xae <= ord(text) <= 0xff:
+            self.buffer += text
 
     def write(self, text):
         if self.write_pending:
@@ -133,7 +135,7 @@ if __name__ == '__main__':
     glMatrixMode(GL_MODELVIEW)
     glClearColor(1, 1, 1, 1)
     while not exit_handler.exit:
-        c.set_fps(10)
+        c.set_fps(60)
         w1.dispatch_events()
         glClear(GL_COLOR_BUFFER_BIT)
         console.draw()
