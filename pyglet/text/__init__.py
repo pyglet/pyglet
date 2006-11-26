@@ -22,6 +22,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import sys
+import os
 
 if sys.platform == 'win32':
     raise NotImplemented('No font implementation')
@@ -41,7 +42,9 @@ from pyglet.text import html, layout
 
 Align = layout.Align
 
-_default_font_factory = None
+_path = os.path.join(os.path.split(__file__)[0], 'data')
+_default_font_factory = LocalFontFactory(_path)
+
 def layout_html(text, width=-1, font_factory=None):
     """Layout HTML markup ready for drawing in OpenGL.
 
@@ -56,9 +59,6 @@ def layout_html(text, width=-1, font_factory=None):
             search the current directory for Truetype files.
     """
     if not font_factory:
-        global _default_font_factory
-        if not _default_font_factory:
-            _default_font_factory = LocalFontFactory()
         font_factory = _default_font_factory
     runs = html.parse(text, font_factory)
     text = layout.OpenGLTextLayout(width)
@@ -77,14 +77,15 @@ def layout_text(text, width=-1, font=None, color=(0,0,0,1)):
             wrapping.
         `font` : pyglyph.text.Font
             FontInstance to render the text with.  If unspecified,
-            the pygame default font is used at size 16pt.
+            the default font is used at size 16pt.
         `color` : tuple of size 3 or 4
             Color to render the text in (passed to glColor).
     """
     if not font:
         global _default_font
         if not _default_font:
-            _default_font = Font(None, 16)
+            _default_font = _default_font_factory.get_font(
+                'bitstream vera sans', 16)
         font = _default_font
     style = layout.Style(font, color)
     run = layout.StyledRun(text, style)

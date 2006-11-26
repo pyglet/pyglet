@@ -2,7 +2,7 @@ import sys
 import os
 import time
 
-import pyglet.window
+from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.GLU.VERSION_1_1 import *
@@ -11,18 +11,10 @@ from pyglet import text
 
 from ctypes import *
 
-w1 = pyglet.window.create(400, 200)
+w1 = Window(width=400, height=200)
 
-if len(sys.argv) == 2:
-    filename = sys.argv[1]
-else:
-    filename = os.path.join(os.path.split(__file__)[0], 'Vera.ttf')
-factory = text.LocalFontFactory(os.path.split(__file__)[0])
-font = factory.get_font('bitstream vera sans', 26)
-#sample = text.layout_text('Hello, World. gVAWAVA. Mr. T.', font=font)
 sample = text.layout_html('''<font size="26"><i>Hello</i>,
-    <b>World</b>.<br>gVAWAVA. <b><i>Mr.</i></b> T.</font>''',
-    font_factory=factory)
+    <b>World</b>.<br>gVAWAVA. <b><i>Mr.</i></b> T.</font>''')
 
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)
