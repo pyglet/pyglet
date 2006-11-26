@@ -43,7 +43,7 @@ from pyglet.text import html, layout
 Align = layout.Align
 
 _path = os.path.join(os.path.split(__file__)[0], 'data')
-_default_font_factory = LocalFontFactory(_path)
+default_font_factory = LocalFontFactory(_path)
 
 def layout_html(text, width=-1, font_factory=None):
     """Layout HTML markup ready for drawing in OpenGL.
@@ -59,7 +59,7 @@ def layout_html(text, width=-1, font_factory=None):
             search the current directory for Truetype files.
     """
     if not font_factory:
-        font_factory = _default_font_factory
+        font_factory = default_font_factory
     runs = html.parse(text, font_factory)
     text = layout.OpenGLTextLayout(width)
     text.layout(runs)
@@ -84,7 +84,7 @@ def layout_text(text, width=-1, font=None, color=(0,0,0,1)):
     if not font:
         global _default_font
         if not _default_font:
-            _default_font = _default_font_factory.get_font(
+            _default_font = default_font_factory.get_font(
                 'bitstream vera sans', 16)
         font = _default_font
     style = layout.Style(font, color)

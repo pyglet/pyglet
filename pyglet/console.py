@@ -10,21 +10,15 @@ import code
 import sys
 import traceback
 
-from OpenGL.GL import *
-from SDL import *
-
 import pyglet.event
-import pyglet.font
-import pyglet.window
+import pyglet.text
+from pyglet.window import key
 
-class Console:
-    def __init__(self, globals=None, locals=None):
-        self.activate_key = SDLK_ESCAPE
-        self.activate_modifiers = 0
-        self.deactivate_key = SDLK_ESCAPE
-        self.deactivate_modifiers = 0
-        self.visible = False
-        self.font = pyglet.font.Font('VeraMono.ttf', 12)
+from pyglet.GL.VERSION_1_1 import *
+
+class Console(object):
+    def __init__(self, width, height, globals=None, locals=None):
+        self.font = pyglet.text.default_font_factory.get_font('bitstream vera sans mono', 12)
         self.lines = []
         self.buffer = ''
         self.pre_buffer = ''
@@ -34,52 +28,33 @@ class Console:
         self.locals = locals
         self.write_pending = ''
 
-        self.width, self.height = pyglet.window.get_size()
-        self.max_lines = \
-            (self.height + self.font.descent) / self.font.line_height - 1
+        self.width, self.height = (width, height)
+        self.max_lines = self.height / self.font.glyph_height #- 1
 
         self.write('pyglet command console\n')
         self.write('Version %s\n' % __version__)
 
-        pyglet.event.on_keydown(self.hidden_keydown)
         sys.stdout = self
         sys.stderr = self
 
-    def hidden_keydown(self, character, symbol, modifiers):
-        if symbol == self.activate_key and \
-           self.activate_modifiers & modifiers == self.activate_modifiers:
-            self.show()
-        else:
-            return True
+    def on_key_press(self, symbol, modifiers):
+        if symbol == key.K_ESCAPE:
+            return EVENT_UNHANDLED
 
-    def keydown(self, character, symbol, modifiers):
-        if symbol == self.deactivate_key and \
-           self.deactivate_modifiers & modifiers == self.deactivate_modifiers:
-            self.hide()
-        elif modifiers & KMOD_CTRL:
-            if symbol == SDLK_c:
-                self.buffer = ''
-                self.pre_buffer = ''
+        if modifiers & key.MOD_CTRL and symbol == key.K_C:
+            self.buffer = ''
+            self.pre_buffer = ''
         else:
-            if symbol == SDLK_RETURN:
+            if symbol == key.K_ENTER:
                 self.write('%s%s\n' % (self.get_prompt(), self.buffer))
                 self.execute(self.pre_buffer + self.buffer)
                 self.buffer = ''
-            elif symbol == SDLK_BACKSPACE:
+            elif symbol == key.K_BACKSPACE:
                 self.buffer = self.buffer[:-1]
-            elif character != '\0':
+            elif key.K_SPACE <= symbol <= K_ASCIITILDE:
                 self.buffer += character
-
-    def show(self):
-        if not self.visible:
-            pyglet.event.push()
-            pyglet.event.on_keydown(self.keydown)
-            self.visible = True
-
-    def hide(self):
-        if self.visible:
-            pyglet.event.pop()
-            self.visible = False
+            elif key.K_NOBREAKSPACE <= symbol <= K_YDIAERESIS:
+                self.buffer += character
 
     def write(self, text):
         if self.write_pending:
@@ -93,8 +68,8 @@ class Console:
             self.write_pending = text[-1]
         del text[-1]
 
-        self.lines = [pyglet.font.TextSprite(self.font, line) \
-                      for line in text] + self.lines
+        self.lines = [pyglet.text.layout_text(line, font)
+             for line in text] + self.lines
 
         if len(self.lines) > self.max_lines:
             del self.lines[-1]
@@ -123,9 +98,7 @@ class Console:
         return self.prompt
 
     def draw(self):
-        if not self.visible:
-            return
-
+        pyglet.text.begin()
         glPushMatrix()
         glTranslate(10, self.height + self.font.descent - 10, 0)
         self.font.draw(self.get_prompt() + self.buffer)
@@ -133,3 +106,32 @@ class Console:
             glTranslate(0, -self.font.line_height, 0)
             line.draw()
         glPopMatrix()
+
+        pyglet.text.end()
+
+if __name__ == '__main__':
+    from pyglet.window import *
+    from pyglet.window.event import *
+    from pyglet import clock
+    w1 = Window(width=400, height=200)
+    console = Console(w1.width, w1.height)
+
+    exit_handler = ExitHandler()
+    w1.push_handlers(exit_handler)
+
+    c = clock.Clock()
+
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    glOrtho(0, w1.width, 0, w1.height, -1, 1)
+    glEnable(GL_COLOR_MATERIAL)
+
+    glMatrixMode(GL_MODELVIEW)
+    glClearColor(1, 1, 1, 1)
+    while not exit_handler.exit:
+        c.set_fps(10)
+        w1.dispatch_events()
+        glClear(GL_COLOR_BUFFER_BIT)
+        console.draw()
+        w1.flip()
+
