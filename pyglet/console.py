@@ -34,27 +34,25 @@ class Console(object):
         self.write('pyglet command console\n')
         self.write('Version %s\n' % __version__)
 
-        sys.stdout = self
-        sys.stderr = self
-
     def on_key_press(self, symbol, modifiers):
-        if symbol == key.K_ESCAPE:
-            return EVENT_UNHANDLED
 
         if modifiers & key.MOD_CTRL and symbol == key.K_C:
             self.buffer = ''
             self.pre_buffer = ''
-        else:
-            if symbol == key.K_ENTER:
-                self.write('%s%s\n' % (self.get_prompt(), self.buffer))
-                self.execute(self.pre_buffer + self.buffer)
-                self.buffer = ''
-            elif symbol == key.K_BACKSPACE:
-                self.buffer = self.buffer[:-1]
-            elif key.K_SPACE <= symbol <= K_ASCIITILDE:
-                self.buffer += character
-            elif key.K_NOBREAKSPACE <= symbol <= K_YDIAERESIS:
-                self.buffer += character
+            return
+        if symbol == key.K_ENTER:
+            self.write('%s%s\n' % (self.get_prompt(), self.buffer))
+            self.execute(self.pre_buffer + self.buffer)
+            self.buffer = ''
+            return
+        if symbol == key.K_BACKSPACE:
+            self.buffer = self.buffer[:-1]
+            return
+        return EVENT_UNHANDLED
+
+    def on_text(self, text):
+        if text == '\r': return EVENT_UNHANDLED
+        self.buffer += text
 
     def write(self, text):
         if self.write_pending:
@@ -68,7 +66,7 @@ class Console(object):
             self.write_pending = text[-1]
         del text[-1]
 
-        self.lines = [pyglet.text.layout_text(line, font)
+        self.lines = [pyglet.text.layout_text(line.strip(), font=self.font)
              for line in text] + self.lines
 
         if len(self.lines) > self.max_lines:
@@ -97,14 +95,19 @@ class Console(object):
             return self.prompt2
         return self.prompt
 
+    __last = None
     def draw(self):
         pyglet.text.begin()
         glPushMatrix()
-        glTranslate(10, self.height + self.font.descent - 10, 0)
-        self.font.draw(self.get_prompt() + self.buffer)
-        for line in self.lines:
-            glTranslate(0, -self.font.line_height, 0)
+        glTranslatef(0, self.height, 0)
+        for line in self.lines[::-1]:
             line.draw()
+            glTranslatef(0, -self.font.glyph_height, 0)
+        line = self.get_prompt() + self.buffer
+        if self.__last is None or line != self.__last[0]:
+            self.__last = (line, pyglet.text.layout_text(line.strip(),
+                font=self.font))
+        self.__last[1].draw()
         glPopMatrix()
 
         pyglet.text.end()
@@ -113,11 +116,12 @@ if __name__ == '__main__':
     from pyglet.window import *
     from pyglet.window.event import *
     from pyglet import clock
-    w1 = Window(width=400, height=200)
+    w1 = Window(width=600, height=400)
     console = Console(w1.width, w1.height)
 
     exit_handler = ExitHandler()
     w1.push_handlers(exit_handler)
+    w1.push_handlers(console)
 
     c = clock.Clock()
 
