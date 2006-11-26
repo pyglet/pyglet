@@ -29,7 +29,7 @@ class Console(object):
         self.write_pending = ''
 
         self.width, self.height = (width, height)
-        self.max_lines = self.height / self.font.glyph_height #- 1
+        self.max_lines = self.height / self.font.glyph_height - 1
 
         self.write('pyglet command console\n')
         self.write('Version %s\n' % __version__)
