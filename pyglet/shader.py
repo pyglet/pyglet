@@ -162,9 +162,9 @@ class FragmentShader(Shader):
 
 
 class ShaderProgram(object):
-    def __init__(self):
-        self.vertex_shader = None
-        self.fragment_shader = None
+    def __init__(self, vertex_shader=None, fragment_shader=None):
+        self.vertex_shader = vertex_shader
+        self.fragment_shader = fragment_shader
         self.program = 0
 
     def __del__(self):
