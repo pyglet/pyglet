@@ -711,15 +711,19 @@ class CarbonWindow(BaseWindow):
         # kEventMouseButtonPrimary == MOUSE_LEFT_BUTTON == 1
         # kEventMouseButtonSecondary == MOUSE_MIDDLE_BUTTON == 2
         # kEventMouseButtonTertiary == 3 != MOUSE_RIGHT_BUTTON == 4
-        if button == 3:
-            button = MOUSE_RIGHT_BUTTON
+        #if button == 3:
+        #    button = MOUSE_RIGHT_BUTTON
+        # <rj> not on my mouse they're not!
+        if button.value == 1: button = MOUSE_LEFT_BUTTON
+        if button.value == 2: button = MOUSE_RIGHT_BUTTON
+        if button.value == 3: button = MOUSE_MIDDLE_BUTTON
 
         modifiers = c_uint32()
         carbon.GetEventParameter(event, kEventParamKeyModifiers,
             typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
-            byref(modifiers)) 
+            byref(modifiers))
 
-        return button.value, CarbonWindow._map_modifiers(modifiers.value)
+        return button, CarbonWindow._map_modifiers(modifiers.value)
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseDown)
     def _on_mouse_down(self, next_handler, event, data):
