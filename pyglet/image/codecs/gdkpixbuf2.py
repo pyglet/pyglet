@@ -42,7 +42,7 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
         # Load into pixbuf
         err = c_int()
         loader = gdkpixbuf.gdk_pixbuf_loader_new()
-        gdkpixbuf.gdk_pixbuf_loader_write(loader, data, len(data))
+        gdkpixbuf.gdk_pixbuf_loader_write(loader, data, len(data), byref(err))
         pixbuf = gdkpixbuf.gdk_pixbuf_loader_get_pixbuf(loader)
         if not gdkpixbuf.gdk_pixbuf_loader_close(loader, byref(err)):
             raise ImageDecodeException(filename)
