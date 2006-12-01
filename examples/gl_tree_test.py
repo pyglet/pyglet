@@ -40,7 +40,7 @@ running = running()
 
 class Tree(object):
     def __init__(self, n=2, r=False):
-        self.dl = tree_list(n, r)
+        self.tree = tree_list(n, r)
         self.x = self.y = 0
         self.rx = self.ry = 0
         self.zpos = -10
@@ -58,13 +58,13 @@ class Tree(object):
     def on_mouse_scroll(self, dx, dy):
         self.zpos = max(-10, self.zpos + dy)
 
-    def render(self):
+    def draw(self):
         glPushMatrix()
         glLoadIdentity()
         glTranslatef(self.x/10., -self.y/10., self.zpos)
         glRotatef(self.ry, 1., 0., 0.)
         glRotatef(self.rx, 0., 1., 0.)
-        glCallList(self.dl)
+        self.tree.draw()
         glPopMatrix()
 
 # need one display list per window
@@ -84,16 +84,16 @@ n = 0
 while running:
     n += 1
 
-    # render
+    # draw
     w1.switch_to()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     w1.dispatch_events()
-    tree1.render()
+    tree1.draw()
     w1.flip()
 
     w2.switch_to()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     w2.dispatch_events()
-    tree2.render()
+    tree2.draw()
     w2.flip()
 
