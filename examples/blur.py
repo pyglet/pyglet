@@ -9,7 +9,7 @@ import pyglet.clock
 from pyglet.shader import *
 from pyglet.window.event import *
 from pyglet.model.geometric import *
-from pyglet.gui import fps
+#from pyglet.gui import fps
 
 from pyglet.GL.VERSION_2_0 import *
 from pyglet.GL.EXT_framebuffer_object import *
@@ -643,7 +643,7 @@ def renderScene():
     glColor4f(0.4, 0.5, 1.0, 1.0)
     glEnable(GL_LIGHTING)
     glEnable(GL_LIGHT0)
-    glCallList(object_dl)
+    object.draw()
 
     glPopMatrix()
 
@@ -828,7 +828,7 @@ exit_handler = ExitHandler()
 window.push_handlers(exit_handler)
 
 clk = pyglet.clock.Clock()
-fps = fps.FPS()
+#fps = fps.FPS()
 
 
 r = 0
@@ -864,7 +864,7 @@ buf_subsampled2.init()
 buf_subsampled2.attach()
 buf_subsampled2.unbind()
 
-object_dl = cube_array_list()
+object = cube_array_list()
 
 while not exit_handler.exit:
     clk.set_fps(60)
@@ -888,7 +888,7 @@ while not exit_handler.exit:
 
     renderDOF(buf, alpha_buf, buf_subsampled)
 
-    fps.draw(window, clk)
+    #fps.draw(window, clk)
 
     window.flip()
 

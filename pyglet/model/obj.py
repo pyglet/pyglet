@@ -127,3 +127,11 @@ class OBJ:
     def __repr__(self):
         return '<OBJ %r>'%self.filename
 
+    def draw(self):
+        glPushAttrib(GL_ENABLE_BIT)
+        glEnable(GL_COLOR_MATERIAL)
+        glEnable(GL_CULL_FACE)
+        glCullFace(GL_BACK)
+        glCallList(self.gl_list)
+        glPopAttrib()
+

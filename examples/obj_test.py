@@ -33,14 +33,7 @@ glLightfv(GL_LIGHT0, GL_DIFFUSE,
     ctypes.cast(fourfv(0.5, 0.5, 0.5, 1.0), c_float_p))
 glEnable(GL_LIGHT0)
 glEnable(GL_LIGHTING)
-glEnable(GL_COLOR_MATERIAL)
 glEnable(GL_DEPTH_TEST)
-glShadeModel(GL_SMOOTH)
-
-glPolygonMode(GL_FRONT, GL_FILL)
-glDepthFunc(GL_LESS)
-glEnable(GL_CULL_FACE)
-glCullFace(GL_BACK)
 
 def resize(width, height):
     glMatrixMode(GL_PROJECTION)
@@ -66,7 +59,7 @@ while not exit_handler.exit:
     r += 1
     if r > 360: r = 0
     glRotatef(r, 0, 1, 0)
-    glCallList(bunny.gl_list)
+    bunny.draw()
 
     w1.flip()
 

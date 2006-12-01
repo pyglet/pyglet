@@ -7,6 +7,10 @@ from pyglet.GL.VERSION_2_0 import *
 
 M_2PI = math.pi * 2.0
 
+class DisplayList(int):
+    def draw(self):
+        glCallList(self)
+
 def _TRI((v1, n1, t1, b1), (v2, n2, t2, b2), (v3, n3, t3, b3)):
     glNormal3f(n1[0], n1[1], n1[2]); glVertex3f(v1[0], v1[1], v1[2])
     glNormal3f(n2[0], n2[1], n2[2]); glVertex3f(v2[0], v2[1], v2[2])
@@ -49,7 +53,7 @@ def torus_list():
     glNewList(torus_dl, GL_COMPILE)
     render_torus()
     glEndList()
-    return torus_dl
+    return DisplayList(torus_dl)
 
 def render_cube():
     glBegin(GL_TRIANGLES)
@@ -83,7 +87,7 @@ def cube_list():
     glNewList(cube_dl, GL_COMPILE)
     render_cube()
     glEndList()
-    return cube_dl
+    return DisplayList(cube_dl)
 
 def cube_array_list():
     cubes_dl = glGenLists(1)
@@ -106,7 +110,7 @@ def cube_array_list():
     glPopMatrix()
     glDisable(GL_COLOR_MATERIAL)
     glEndList()
-    return cubes_dl
+    return DisplayList(cubes_dl)
 
 
 _ROT_30_X = euclid.Matrix4.new_rotatex(math.pi / 12)
@@ -146,5 +150,5 @@ def tree_list(n=10, r=False):
     glNewList(dl, GL_COMPILE)
     render_tree(n, r)
     glEndList()
-    return dl
+    return DisplayList(dl)
 
