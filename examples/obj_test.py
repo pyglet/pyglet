@@ -16,7 +16,7 @@ from pyglet.GLU.VERSION_1_1 import *
 from pyglet import clock
 from pyglet.model import obj
 
-w1 = pyglet.window.create(200, 200)
+w1 = pyglet.window.Window(width=300, height=300)
 
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)
@@ -24,13 +24,9 @@ w1.push_handlers(exit_handler)
 c = clock.Clock()
 
 fourfv = ctypes.c_float * 4
-c_float_p = ctypes.POINTER(ctypes.c_float)
-glLightfv(GL_LIGHT0, GL_POSITION,
-    ctypes.cast(fourfv(100, 200, 100, 0), c_float_p))
-glLightfv(GL_LIGHT0, GL_AMBIENT,
-    ctypes.cast(fourfv(0.2, 0.2, 0.2, 1.0), c_float_p))
-glLightfv(GL_LIGHT0, GL_DIFFUSE,
-    ctypes.cast(fourfv(0.5, 0.5, 0.5, 1.0), c_float_p))
+glLightfv(GL_LIGHT0, GL_POSITION, fourfv(100, 200, 100, 0))
+glLightfv(GL_LIGHT0, GL_AMBIENT, fourfv(0.2, 0.2, 0.2, 1.0))
+glLightfv(GL_LIGHT0, GL_DIFFUSE, fourfv(0.5, 0.5, 0.5, 1.0))
 glEnable(GL_LIGHT0)
 glEnable(GL_LIGHTING)
 glEnable(GL_DEPTH_TEST)
@@ -41,7 +37,7 @@ def resize(width, height):
     gluPerspective(60., float(width)/height, 1., 100.)
     glMatrixMode(GL_MODELVIEW)
 w1.push_handlers(on_resize=resize)
-resize(200, 200)
+resize(w1.width, w1.height)
 
 glClearColor(0, 0, 0, 0)
 

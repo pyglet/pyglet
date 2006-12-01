@@ -97,7 +97,6 @@ class OBJ:
         self.gl_list = glGenLists(1)
         glNewList(self.gl_list, GL_COMPILE)
         if use_texture: glEnable(GL_TEXTURE_2D)
-        glFrontFace(GL_CCW)
 
         for face in self.faces:
             vertices, normals, texture_coords, material = face
@@ -129,7 +128,6 @@ class OBJ:
 
     def draw(self):
         glPushAttrib(GL_ENABLE_BIT)
-        glEnable(GL_COLOR_MATERIAL)
         glEnable(GL_CULL_FACE)
         glCullFace(GL_BACK)
         glCallList(self.gl_list)
