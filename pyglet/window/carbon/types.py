@@ -39,6 +39,7 @@ class CGRect(Structure):
         ('origin', CGPoint),
         ('size', CGSize)
     ]
+    __slots__ = ['origin', 'size']
 
 CGDirectDisplayID = c_void_p
 CGDisplayCount = c_uint32

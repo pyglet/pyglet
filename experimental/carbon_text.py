@@ -92,6 +92,13 @@ context = carbon.CGBitmapContextCreate(data, width, height, 8, pitch,
     color_space, kCGImageAlphaPremultipliedLast)
 carbon.CGColorSpaceRelease(color_space)
 
+carbon.CGContextSetRGBStrokeColor(context, c_float(1), c_float(1), c_float(1),
+    c_float(1))
+carbon.CGContextSetRGBFillColor(context, c_float(1), c_float(1), c_float(1),
+    c_float(1))
+carbon.CGContextSetTextDrawingMode(context, kCGTextFill)
+
+
 '''
 Iterate over fonts of a family..
 
@@ -119,33 +126,30 @@ carbon.ATSFontIteratorNext(iterator, byref(ats_font))
 carbon.ATSFontIteratorRelease(byref(iterator))
 '''
 
+
 '''
 # Create font by name and size
 cf_font_name = _create_cfstring('Baskerville')
 carbon.ATSFontFindFromName.restype = POINTER(c_int)
 ats_font = carbon.ATSFontFindFromName(cf_font_name, 0)
-
 carbon.CGFontCreateWithPlatformFont.restype = c_void_p
 font = carbon.CGFontCreateWithPlatformFont(byref(ats_font))
 carbon.CGContextSetFont(context, font)
 carbon.CGContextSetFontSize(context, c_float(24.))
+#carbon.CGContextSelectFont(context, "Lucida Grande", c_float(16.), 1)
+
+#carbon.CGContextShowTextAtPoint(context, c_float(40), c_float(40), "Hello", 5)
+
+glyphs = (CGGlyph * 100)(*range(65,100))
+carbon.CGContextShowGlyphsAtPoint(context, c_float(20.), c_float(20.), 
+    glyphs, len(glyphs))
 '''
-
-carbon.CGContextSetRGBFillColor(context, c_float(1), c_float(1), c_float(1),
-    c_float(1))
-carbon.CGContextSetTextDrawingMode(context, kCGTextFill)
-
-# Not even this works?
-rect = CGRect()
-rect.x = 0
-rect.y = 0
-rect.width = 10000
-rect.height = 10000
-carbon.CGContextFillRect(context, rect)
 
 def fixed(value):
     # This is a guess... could easily be wrong
-    return c_int32(int(value) * (1 << 16))
+    #return c_int32(int(value) * (1 << 16))
+
+    return c_int32(carbon.Long2Fix(c_long(int(value))))
 
 def create_atsu_style(attributes):
     # attributes is a dict of ATSUAttributeTag => ctypes value
@@ -161,16 +165,18 @@ def create_atsu_style(attributes):
     return style
 
 def create_atsu_layout(attributes):
-    # attributes is a dict of ATSUAttributeTag => ctypes value
-    tags, values = zip(*attributes.items())
-    tags = (c_int * len(tags))(*tags)
-    sizes = (c_uint * len(values))(*[sizeof(v) for v in values])
-    values = (c_void_p * len(values))(*[cast(pointer(v), c_void_p) \
-                                        for v in values])
-
     text_layout = c_void_p()
     carbon.ATSUCreateTextLayout(byref(text_layout))
-    carbon.ATSUSetLayoutControls(text_layout, len(tags), tags, sizes, values)
+
+    if attributes:
+        # attributes is a dict of ATSUAttributeTag => ctypes value
+        tags, values = zip(*attributes.items())
+        tags = (c_int * len(tags))(*tags)
+        sizes = (c_uint * len(values))(*[sizeof(v) for v in values])
+        values = (c_void_p * len(values))(*[cast(pointer(v), c_void_p) \
+                                            for v in values])
+
+        carbon.ATSUSetLayoutControls(text_layout, len(tags), tags, sizes, values)
     return text_layout
 
 def str_ucs2(text):
@@ -194,7 +200,6 @@ carbon.ATSUFindFontFromName(
 
 # Create style for font, including output context
 attributes = {
-    kATSUCGContextTag: context,
     kATSUSizeTag: fixed(24.),
     kATSUFontTag: font_id,
     kATSURGBAlphaColorTag: ATSURGBAlphaColor(1, 1, 1, 1)
@@ -209,7 +214,7 @@ text = str_ucs2(text)
 
 # Create layout
 attributes = {
-    kATSULineWidthTag: fixed(1000),
+    kATSUCGContextTag: context,
 }
 text_layout = create_atsu_layout(attributes)
 carbon.ATSUSetTextPointerLocation(text_layout,
@@ -223,7 +228,7 @@ carbon.ATSUSetTransientFontMatching(text_layout, True)
 
 # Draw
 carbon.ATSUDrawText(text_layout,
-    kATSUFromTextBeginning,
+    0,
     kATSUToTextEnd,
     fixed(5), fixed(5))
 
@@ -236,7 +241,7 @@ carbon.CGContextShowGlyphsAtPoint(context, c_float(20.), c_float(20.),
 carbon.CGFontRelease(font)
 '''
 
-carbon.CGContextFlush(context)
+#carbon.CGContextFlush(context)
 image = RawImage(data, width, height, 'RGBA', GL_UNSIGNED_BYTE,
 top_to_bottom=True)
 carbon.CGContextRelease(context)
