@@ -434,6 +434,24 @@ class Texture(Image):
 
         return RawImage(buffer, width, height, format, type)
 
+    @classmethod
+    def create(cls, width, height, internalformat):
+        id = c_uint()
+        glGenTextures(1, byref(id))
+        glBindTexture(GL_TEXTURE_2D, id.value)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        blank = (c_ubyte * width * height)()
+        glTexImage2D(GL_TEXTURE_2D, 0,
+            internalformat,
+            width,
+            height,
+            0,
+            GL_ALPHA,
+            GL_UNSIGNED_BYTE,
+            blank)
+        return cls(width, height, 'RGBA', id.value, 1., 1.)
+
     @staticmethod
     def load(filename=None, file=None, internalformat=None):
         return Image.load(filename, file).texture(internalformat)
