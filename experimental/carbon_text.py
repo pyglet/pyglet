@@ -17,22 +17,6 @@ from pyglet.window.carbon import carbon
 from pyglet.window.carbon import _create_cfstring
 from pyglet.window.carbon.types import Rect, CGRect
 
-class ATSFontFilterUnion(Union):
-    # Types not correct
-    _fields_ = [
-        ('generationFilter', c_void_p),
-        ('fontFamilyFilter', c_void_p),
-        ('fontFamilyApplierFunctionFilter', c_void_p),
-        ('fontApplierFunctionFilter', c_void_p)
-    ]
-
-class ATSFontFilter(Structure):
-    _fields_ = [
-        ('version', c_uint32),
-        ('filterSelector', c_int),
-        ('filter', ATSFontFilterUnion)
-    ]
-
 Fixed = c_int32
 
 class FixedPoint(Structure):
@@ -48,6 +32,8 @@ class ATSTrapezoid(Structure):
         ('lowerRight', FixedPoint),
         ('lowerLeft', FixedPoint)
     ]
+
+# TODO: most of the ATS and CG here not used any more.
 
 CGGlyph = c_ushort
 ATSUFontID = c_uint32
@@ -78,6 +64,8 @@ kATSOptionFlagsProcessSubdirectories = 0x00000001 << 6
 kATSUFromTextBeginning = c_ulong(0xFFFFFFFF)
 kATSUToTextEnd = c_ulong(0xFFFFFFFF)
 
+kATSUQDBoldfaceTag            = 256
+kATSUQDItalicTag              = 257
 kATSUFontTag                  = 261
 kATSUSizeTag                  = 262
 kATSUCGContextTag             = 32767
@@ -103,51 +91,6 @@ width = 256
 
 window = Window(width, height)
 
-'''
-Iterate over fonts of a family..
-
-family_name = _create_cfstring('Lucinda Grande')
-family_ref = carbon.ATSFontFamilyFindFromName(family_name, 0)
-# release family_name
-
-filter = ATSFontFilter()
-filter.version = 0
-filter.filterSelector = kATSFontFilterSelectorFontFamily
-iterator = c_void_p()
-
-carbon.ATSFontIteratorCreate(
-    kATSFontContextUnspecified, # Future: use local when not system font
-    filter,
-    c_void_p,
-    kATSOptionFlagsRestrictedScope,
-    byref(iterator))
-
-
-ats_font = c_void_p()
-carbon.ATSFontIteratorNext(iterator, byref(ats_font))
-# XXX unfinished
-
-carbon.ATSFontIteratorRelease(byref(iterator))
-'''
-
-
-'''
-# Create font by name and size
-cf_font_name = _create_cfstring('Baskerville')
-carbon.ATSFontFindFromName.restype = POINTER(c_int)
-ats_font = carbon.ATSFontFindFromName(cf_font_name, 0)
-carbon.CGFontCreateWithPlatformFont.restype = c_void_p
-font = carbon.CGFontCreateWithPlatformFont(byref(ats_font))
-carbon.CGContextSetFont(context, font)
-carbon.CGContextSetFontSize(context, c_float(24.))
-#carbon.CGContextSelectFont(context, "Lucida Grande", c_float(16.), 1)
-
-#carbon.CGContextShowTextAtPoint(context, c_float(40), c_float(40), "Hello", 5)
-
-glyphs = (CGGlyph * 100)(*range(65,100))
-carbon.CGContextShowGlyphsAtPoint(context, c_float(20.), c_float(20.), 
-    glyphs, len(glyphs))
-'''
 
 def fixed(value):
     # This is a guess... could easily be wrong
@@ -172,10 +115,7 @@ def create_atsu_style(attributes):
     carbon.ATSUSetAttributes(style, len(tags), tags, sizes, values)
     return style
 
-def create_atsu_layout(attributes):
-    text_layout = c_void_p()
-    carbon.ATSUCreateTextLayout(byref(text_layout))
-
+def set_layout_attributes(layout, attributes):
     if attributes:
         # attributes is a dict of ATSUAttributeTag => ctypes value
         tags, values = zip(*attributes.items())
@@ -184,8 +124,7 @@ def create_atsu_layout(attributes):
         values = (c_void_p * len(values))(*[cast(pointer(v), c_void_p) \
                                             for v in values])
 
-        carbon.ATSUSetLayoutControls(text_layout, len(tags), tags, sizes, values)
-    return text_layout
+        carbon.ATSUSetLayoutControls(layout, len(tags), tags, sizes, values)
 
 def str_ucs2(text):
     if byteorder == 'big':
@@ -194,43 +133,70 @@ def str_ucs2(text):
         text = text.encode('utf_16_le')   # explicit endian avoids BOM
     return create_string_buffer(text + '\0')
 
-class Font(object):
-    def __init__(self, name, size):
-        font_id = ATSUFontID()
-        carbon.ATSUFindFontFromName(
-            name,
-            len(name),
-            kFontFullName,
-            kFontNoPlatformCode,
-            kFontNoScriptCode,
-            kFontNoLanguageCode,
-            byref(font_id))
+# XXX NewTextureAtlas to become AllocatingTextureAtlas(TextureAtlas)
+#     NewTextureSubImage to become TextureSubImage.
 
-        attributes = {
-            kATSUSizeTag: fixed(size),
-            kATSUFontTag: font_id,
-            kATSURGBAlphaColorTag: ATSURGBAlphaColor(1, 1, 1, 1)
-        }
-        self.atsu_style = create_atsu_style(attributes)
+class NewTextureAtlasOutOfSpaceException(ImageException):
+    pass
 
-class Glyph(object):
-    def __init__(self, tex_id, vertices, tex_coords, advance):
-        '''
-            tex_id: GL texture to bind
-            vertices: (x1, y1, x2, y2) relative to baseline before
-                left-side bearing.  x1y1 is lower left, x2y2 is upper right.
-            tex_coords: (u1, v1, u2, v2) texture coordinates for vertices.
-            advance: right-side bearing relative to LSB.
-        '''
-        self.tex_id = tex_id
-        self.vertices = vertices
-        self.tex_coords = tex_coords
+class NewTextureSubImage(object):
+    def __init__(self, texture, x, y, width, height):
+        self.texture_id = texture.id
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+
+        self.tex_coords = (
+            float(x) / texture.width,
+            float(y) / texture.height,
+            float(x + width) / texture.width,
+            float(y + height) / texture.height)
+
+    def flip_vertical(self):
+        self.tex_coords = (
+            self.tex_coords[0], 
+            self.tex_coords[3], 
+            self.tex_coords[2],
+            self.tex_coords[1])
+
+class NewTextureAtlas(Texture):
+    x = 0
+    y = 0
+    line_height = 0
+    subimage_class = NewTextureSubImage
+
+    def allocate(self, width, height):
+        '''Returns (x, y) position for a new glyph, and reserves that
+        space.'''
+        if self.x + width > self.width:
+            self.x = 0
+            self.y += self.line_height
+            self.line_height = 0
+        if self.y + height > self.height:
+            raise NewTextureAtlasOutOfSpaceException()
+
+        self.line_height = max(self.line_height, height)
+        x = self.x
+        self.x += width
+        return self.subimage_class(self, x, self.y, width, height)
+
+class Glyph(NewTextureSubImage):
+    advance = 0
+    vertices = (0, 0, 0, 0)
+
+    def set_bearings(self, baseline, left_side_bearing, advance):
         self.advance = advance
+        self.vertices = (
+            left_side_bearing,
+            -baseline,
+            left_side_bearing + self.width,
+            -baseline + self.height)
 
     def draw(self):
         '''Debug method: use the higher level APIs for performance and
         kerning.'''
-        glBindTexture(GL_TEXTURE_2D, self.tex_id)
+        glBindTexture(GL_TEXTURE_2D, self.texture_id)
         glBegin(GL_QUADS)
         glTexCoord2f(self.tex_coords[0], self.tex_coords[1])
         glVertex2f(self.vertices[0], self.vertices[1])
@@ -245,27 +211,128 @@ class Glyph(object):
     def get_kerning_pair(self, right_glyph):
         return 0
 
-class GlyphTexture(Texture):
-    x = 0
-    y = 0
-    line_height = 0
+class GlyphTextureAtlas(NewTextureAtlas):
+    subimage_class = Glyph
 
-    def allocate(self, width, height):
-        '''Returns (x, y) position for a new glyph, and reserves that
-        space.'''
-        if self.x + width > self.width:
-            self.x = 0
-            self.y += self.line_height
-            self.line_height = 0
-        if self.y + height > self.height:
-            raise Error('No more room in this GlyphTexture')
+class StyledText(object):
+    '''One contiguous sequence of characters sharing the same
+    GL state.'''
+    # TODO Not there yet: must be split on texture atlas changes.
+    def __init__(self, text, font):
+        self.text = text
+        self.font = font
+        self.glyphs = font.get_glyphs(text)
 
-        self.line_height = max(self.line_height, height)
-        x = self.x
-        self.x += width
-        return x, self.y
+class TextLayout(object):
+    '''Will eventually handle all complex layout, line breaking,
+    justification and state sorting/coalescing.'''
+    def __init__(self, styled_texts):
+        self.styled_texts = styled_texts
+
+    def draw(self):
+        glPushMatrix()
+        for styled_text in self.styled_texts:
+            styled_text.font.apply_blend_state()
+            for glyph in styled_text.glyphs:
+                glyph.draw()
+                glTranslatef(glyph.advance, 0, 0)
+        glPopMatrix()
+
+class Font(object):
+    texture_width = 256
+    texture_height = 256
+
+    # TODO: a __new__ method to instantiate correct Font for platform
+
+    def __init__(self):
+        self.textures = []
+        self.glyphs = {}
+
+    # TODO: static add_font(file) and add_font_directory(dir) methods.
+
+    def create_glyph_texture(self):
+        texture = GlyphTextureAtlas.create(
+            self.texture_width,
+            self.texture_height,
+            GL_LUMINANCE_ALPHA)
+        return texture
+
+    def apply_blend_state(self):
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_BLEND)
+
+    def allocate_glyph(self, width, height):
+        # Search atlases for a free spot
+        for texture in self.textures:
+            try:
+                return texture.allocate(width, height)
+            except NewTextureAtlasOutOfSpaceException:
+                pass
+
+        # If requested glyph size is bigger than atlas size, increase
+        # next atlas size.  A better heuristic could be applied earlier
+        # (say, if width is > 1/4 texture_width).
+        if width > self.texture_width or height > self.texture_height:
+            self.texture_width, self.texture_height, u, v= \
+                Texture.get_texture_size(width * 2, height * 2)
+
+        texture = self.create_glyph_texture()
+        self.textures.insert(0, texture)
+
+        # This can't fail.
+        return texture.allocate(width, height)
+
+    def get_glyph_renderer(self):
+        raise NotImplementedError('Subclass must override')
+
+    def get_glyphs(self, text):
+        glyph_renderer = None
+        for c in text:
+            if c not in self.glyphs:
+                if not glyph_renderer:
+                    glyph_renderer = self.get_glyph_renderer()
+                self.glyphs[c] = glyph_renderer.render(c)
+        return [self.glyphs[c] for c in text] 
+
+    def render(self, text):
+        return TextLayout([StyledText(text, self)])
 
 class GlyphRenderer(object):
+    def render(self, text):
+        pass
+
+class CarbonFont(Font):
+    def __init__(self, name, size, bold=False, italic=False):
+        super(CarbonFont, self).__init__()
+
+        font_id = ATSUFontID()
+        carbon.ATSUFindFontFromName(
+            name,
+            len(name),
+            kFontFullName,
+            kFontNoPlatformCode,
+            kFontNoScriptCode,
+            kFontNoLanguageCode,
+            byref(font_id))
+
+        attributes = {
+            kATSUSizeTag: fixed(size),
+            kATSUFontTag: font_id,
+            kATSURGBAlphaColorTag: ATSURGBAlphaColor(1, 1, 1, 1),
+            kATSUQDBoldfaceTag: c_byte(bold),
+            kATSUQDItalicTag: c_byte(italic)
+        }
+        self.atsu_style = create_atsu_style(attributes)
+
+    def apply_blend_state(self):
+        # Textures have premultiplied alpha
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_BLEND)
+
+    def get_glyph_renderer(self):
+        return CarbonGlyphRenderer(self)
+
+class CarbonGlyphRenderer(object):
     _bitmap = None
     _bitmap_context = None
     _bitmap_rect = None
@@ -278,16 +345,16 @@ class GlyphRenderer(object):
         if self._bitmap_context:
             carbon.CGContextRelease(self._bitmap_context)
 
-    def render(self, text, glyph_texture):
+    def render(self, text):
         # Convert text to UCS2
         text_len = len(text)
         text = str_ucs2(text)
 
         # Create ATSU text layout for this text and font
-        attributes = {
-            kATSUCGContextTag: self._bitmap_context,
-        }
-        layout = create_atsu_layout(attributes)
+        layout = c_void_p()
+        carbon.ATSUCreateTextLayout(byref(layout))
+        set_layout_attributes(layout, {
+            kATSUCGContextTag: self._bitmap_context})
         carbon.ATSUSetTextPointerLocation(layout,
             text,
             kATSUFromTextBeginning,
@@ -305,21 +372,19 @@ class GlyphRenderer(object):
             0, 0,
             byref(rect))
         image_width = rect.right - rect.left + 1
-        image_height = rect.bottom - rect.top + 1
-        baseline = rect.bottom
+        image_height = rect.bottom - rect.top + 2
+        baseline = rect.bottom + 1
         lsb = rect.left
-        vertices = (
-            float(rect.left), 
-            -float(rect.bottom), 
-            float(rect.right)+1, 
-            -float(rect.top)+1)  # +1 looks wrong but works.
-
+        
         # Resize Quartz context if necessary
         if (image_width > self._bitmap_rect.size.width or
             image_height > self._bitmap_rect.size.height):
             self._create_bitmap_context(
-                max(image_width, self._bitmap_rect.size.width),
-                max(image_height, self._bitmap_rect.size.height))
+                int(max(image_width, self._bitmap_rect.size.width)),
+                int(max(image_height, self._bitmap_rect.size.height)))
+            
+            set_layout_attributes(layout, {
+                kATSUCGContextTag: self._bitmap_context})
 
         # Get typographic box, which gives advance.
         bounds_actual = c_uint32()
@@ -333,7 +398,7 @@ class GlyphRenderer(object):
             1,
             byref(bounds),
             byref(bounds_actual))
-        advance = fix2float(bounds.upperRight.x) - fix2float(bounds.lowerLeft.x)
+        advance = fix2float(bounds.lowerRight.x) - fix2float(bounds.lowerLeft.x)
 
         # Draw to the bitmap
         carbon.CGContextClearRect(self._bitmap_context, self._bitmap_rect)
@@ -342,17 +407,19 @@ class GlyphRenderer(object):
             kATSUToTextEnd,
             fixed(-lsb), fixed(baseline)) 
 
-        # Find out where to place it within the texture
-        x, y = glyph_texture.allocate(image_width, image_height)
-        
+        # Allocate space within an atlas
+        glyph = self.font.allocate_glyph(image_width, image_height)
+        glyph.flip_vertical()
+        glyph.set_bearings(baseline, lsb, advance)
+       
         # Copy bitmap into the texture.
         glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
-        glBindTexture(GL_TEXTURE_2D, glyph_texture.id)
+        glBindTexture(GL_TEXTURE_2D, glyph.texture_id)
         glPixelStorei(GL_UNPACK_ROW_LENGTH, int(self._bitmap_rect.size.width))
         glPixelStorei(GL_UNPACK_SKIP_ROWS, 
             int(self._bitmap_rect.size.height - image_height))
         glTexSubImage2D(GL_TEXTURE_2D, 0,
-            x, y,
+            glyph.x, glyph.y,
             image_width,
             image_height,
             GL_RGBA,
@@ -360,31 +427,20 @@ class GlyphRenderer(object):
             self._bitmap)
         glPopClientAttrib()
 
-        tex_coords = (
-            float(x) / glyph_texture.width,
-            float(y + image_height) / glyph_texture.height,
-            float(x + image_width) / glyph_texture.width,
-            float(y) / glyph_texture.height)
-
-        return Glyph(glyph_texture.id, vertices, tex_coords, advance)
+        return glyph
 
     def _create_bitmap_context(self, width, height):
         '''Create or recreate bitmap and Quartz context.'''
         if self._bitmap_context:
-            carbon.ReleaseContext(self._bitmap_context)
+            carbon.CGContextRelease(self._bitmap_context)
         components = 4
         pitch = width * components
-        self._bitmap = (c_ubyte * (width * height * components))()
+        self._bitmap = (c_ubyte * (pitch * height))()
         color_space = carbon.CGColorSpaceCreateDeviceRGB()
         context = carbon.CGBitmapContextCreate(self._bitmap, 
             width, height, 8, pitch, 
             color_space, kCGImageAlphaPremultipliedLast)
         carbon.CGColorSpaceRelease(color_space)
-
-        # XXX need this?
-        carbon.CGContextSetRGBFillColor(context, 
-            c_float(1), c_float(1), c_float(1), c_float(1))
-        carbon.CGContextSetTextDrawingMode(context, kCGTextFill)
 
         # Disable RGB decimated antialiasing, use standard
         # antialiasing which won't break alpha.
@@ -398,23 +454,7 @@ class GlyphRenderer(object):
         self._bitmap_rect.size.width = width
         self._bitmap_rect.size.height = height
         
-# Create layout
-# Draw
-'''
-glyphs = (CGGlyph * 100)(*range(65,100))
-carbon.CGContextShowGlyphsAtPoint(context, c_float(20.), c_float(20.), 
-    glyphs, len(glyphs))
-#carbon.CGContextShowTextAtPoint(context, c_float(40), c_float(40), "Hello", 5)
 
-carbon.CGFontRelease(font)
-'''
-
-#carbon.CGContextFlush(context)
-'''
-image = RawImage(data, width, height, 'RGBA', GL_UNSIGNED_BYTE,
-top_to_bottom=True)
-carbon.CGContextRelease(context)
-'''
 
 glClearColor(.5, 0, 0, 1)
 glClear(GL_COLOR_BUFFER_BIT)
@@ -422,18 +462,10 @@ glMatrixMode(GL_PROJECTION)
 glOrtho(0, window.width, 0, window.height, -1, 1)
 glMatrixMode(GL_MODELVIEW)
 
-texture = GlyphTexture.create(256, 256, GL_LUMINANCE_ALPHA)
-font = Font('Baskerville', 12)
-renderer = GlyphRenderer(font)
-glyphs = {}
-for c in 'Mabcdefghijklmnopqrstuvwxyz.T. ':
-    glyphs[c] = renderer.render(c, texture)
-del renderer
-
-texture.draw()
-glEnable(GL_BLEND)
-glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA) # this is premultiplied alpha!
+glEnable(GL_TEXTURE_2D)
+font = CarbonFont('Zapfino', 36)
 glTranslatef(0, 20, 0)
+font.render('Hello, world!').draw()
 
 '''
 # Draw baseline
@@ -443,12 +475,6 @@ glVertex2f(0,0)
 glVertex2f(1000,0)
 glEnd()
 '''
-
-
-glEnable(GL_TEXTURE_2D)
-for c in 'Mr. T.g':
-    glyphs[c].draw()
-    glTranslatef(glyphs[c].advance, 0, 0)
 
 window.flip()
 
