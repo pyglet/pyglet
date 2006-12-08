@@ -158,6 +158,7 @@ class XlibPlatform(BasePlatform):
         if configs:
             result = []
             for i in range(elements.value):
+                print glXGetVisualFromFBConfig(display, configs[i])
                 result.append(XlibGLConfig(display, screen, configs[i]))
             xlib.XFree(configs)
             return result
