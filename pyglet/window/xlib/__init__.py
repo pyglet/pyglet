@@ -89,6 +89,7 @@ _attribute_ids = {
     'transparent_green_value': GLX_TRANSPARENT_GREEN_VALUE,
     'transparent_blue_value': GLX_TRANSPARENT_BLUE_VALUE,
     'transparent_alpha_value': GLX_TRANSPARENT_ALPHA_VALUE,
+    'x_renderable': GLX_X_RENDERABLE,
 }
 
 class XlibException(WindowException):
@@ -134,6 +135,8 @@ class XlibPlatform(BasePlatform):
     def create_configs(self, factory):
         display = self._get_display(factory)
         screen = factory.get_screen()
+
+        factory.set_gl_attribute('x_renderable', True)
 
         # Construct array of attributes for glXChooseFBConfig
         attrs = []
