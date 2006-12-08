@@ -59,6 +59,9 @@ xlib.XNextEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
 xlib.XCheckTypedWindowEvent.argtypes = [POINTER(Display),
     c_ulong, c_int, POINTER(XEvent)]
 xlib.XPutBackEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
+xlib.XCreateWindow.argtypes = [POINTER(Display), WindowRef,
+    c_int, c_int, c_uint, c_uint, c_uint, c_int, c_uint, 
+    POINTER(Visual), c_ulong, POINTER(XSetWindowAttributes)]
 
 # Do we have the November 2000 UTF8 extension?
 _have_utf8 = hasattr(xlib, 'Xutf8TextListToTextProperty')
@@ -158,7 +161,6 @@ class XlibPlatform(BasePlatform):
         if configs:
             result = []
             for i in range(elements.value):
-                print glXGetVisualFromFBConfig(display, configs[i])
                 result.append(XlibGLConfig(display, screen, configs[i]))
             xlib.XFree(configs)
             return result
@@ -354,10 +356,23 @@ class XlibWindow(BaseWindow):
         # Create X window if not already existing.
         if not self._window:
             root = xlib.XRootWindow(self._display, self._screen_id)
-            black = xlib.XBlackPixel(self._display, self._screen_id)
 
-            self._window = xlib.XCreateSimpleWindow(self._display, root,
-                0, 0, self._width, self._height, 0, black, black)
+            visual_info = glXGetVisualFromFBConfig(self._display,
+                config._fbconfig).contents
+            visual = visual_info.visual
+            visual_id = xlib.XVisualIDFromVisual(visual)
+            default_visual = xlib.XDefaultVisual(self._display, self._screen_id)
+            default_visual_id = xlib.XVisualIDFromVisual(default_visual)
+            window_attributes = XSetWindowAttributes()
+            if visual_id != default_visual_id:
+                window_attributes.colormap = xlib.XCreateColormap(
+                    self._display, root, visual, AllocNone)
+            else:
+                window_attributes.colormap = xlib.XDefaultColormap(
+                    self._display, self._screen_id)
+            self._window = xlib.XCreateWindow(self._display, root,
+                0, 0, self._width, self._height, 0, visual_info.depth, 
+                InputOutput, visual, CWColormap, byref(window_attributes))
 
             # Setting null background pixmap disables drawing the background,
             # preventing flicker while resizing.

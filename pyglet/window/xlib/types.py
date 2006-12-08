@@ -11,7 +11,7 @@ from ctypes import *
 from pyglet.window.xlib.constants import *
 
 # from X.h
-XID = Atom = Time = c_ulong
+VisualID = XID = Atom = Time = c_ulong
 WindowRef = XID     # Avoid name collision with pyglet.window.Window
 Pixmap = XID
 Cursor = XID
@@ -530,9 +530,31 @@ XTextStyle = 2
 XStdICCTextStyle = 3
 XUTF8StringStyle = 4
 
+# XXX This is workaround for c_void_p
+class OpaqueStruct(Structure):
+    _fields_ = [
+        ('_', c_int)
+    ]
+
+    @classmethod
+    def __new__(cls):
+        raise Error('OpaqueStruct cannot be dereferenced.')
+
+class Visual(Structure):
+    _fields_ = [
+        ('ext_data', POINTER(OpaqueStruct)),
+        ('visualid', VisualID),
+        ('c_class', c_int),
+        ('red_mask', c_ulong),
+        ('green_mask', c_ulong),
+        ('blue_mask', c_ulong),
+        ('bits_per_rgb', c_int),
+        ('map_entries', c_int),
+    ]
+
 class XVisualInfo(Structure):
     _fields_ = [
-        ('visual', c_void_p),
+        ('visual', POINTER(Visual)),
         ('visualid', c_ulong),
         ('screen', c_int),
         ('depth', c_int),
