@@ -163,7 +163,7 @@ class RawImage(Image):
         if type(self.data) is not str:
             buf = create_string_buffer(len(self.data))
             memmove(buf, self.data, len(self.data))
-            self.data = buf
+            self.data = buf.raw
 
     def _pack_rows(self):
         '''Reduce alignment to 1 to simplify format changes.'''
@@ -177,6 +177,10 @@ class RawImage(Image):
         pattern = re.compile('(%s)%s' % ('.' * pitch, '.' * diff), re.DOTALL)
         self.data = pattern.sub(r'\1', self.data)
         self.alignment = 1
+
+    def tostring(self):
+        self._ensure_string_data()
+        return self.data
 
     def swap_rows(self):
         self._ensure_string_data()

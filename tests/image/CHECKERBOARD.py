@@ -16,7 +16,9 @@ from pyglet.image import *
 from pyglet.window import *
 from pyglet.window.event import *
 
-class TEST_CHECKERBOARD(unittest.TestCase):
+from tests.regression import ImageRegressionTestCase
+
+class TEST_CHECKERBOARD(ImageRegressionTestCase):
     def on_resize(self, width, height):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
@@ -30,17 +32,20 @@ class TEST_CHECKERBOARD(unittest.TestCase):
         self.texture.draw()
         self.window.flip()
 
+        if self.capture_regression_image():
+            self.exit_handler.exit = True
+
     def test_main(self):
         width, height = 200, 200
         self.window = w = Window(width, height, visible=False)
-        exit_handler = ExitHandler()
-        w.push_handlers(exit_handler)
+        self.exit_handler = ExitHandler()
+        w.push_handlers(self.exit_handler)
         w.push_handlers(self)
 
         self.texture = Image.create_checkerboard(width).texture()
 
         w.set_visible()
-        while not exit_handler.exit:
+        while not self.exit_handler.exit:
             w.dispatch_events()
         w.close()
 

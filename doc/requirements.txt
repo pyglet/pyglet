@@ -27,250 +27,242 @@ Outside of these boundaries, add any valid reStructured text within
 or outside of sections to describe higher-level concerns; this will
 be conveniently ignored by test.py.
 
-pyglet
-    window
-        :description: Platform windowing and events.
+window
+    :description: Platform windowing and events.
+    :implementation:
+        ============================== === === ===
+        Component                      X11 WIN OSX
+        ============================== === === ===
+        MULTIPLE_WINDOW_OPEN            X   X   X
+        EVENT_KEY                       X   X   X
+        EVENT_TEXT                      X   X   X
+        EVENT_BUTTON                    X   X   X
+        EVENT_MOUSE_MOTION              X   X   X
+        EVENT_MOUSE_DRAG                X   X   X
+        EVENT_MOUSE_ENTER_LEAVE         X   X   X
+        EVENT_MOUSE_SCROLL              X   X   X
+        EVENT_CLOSE                     X   X   X
+        EVENT_EXPOSE                    X   X   X
+        EVENT_RESIZE                    X   X   X
+        EVENT_MOVE                      X   X   X
+        EVENT_ACTIVATE_DEACTIVATE       X   X   X
+        EVENT_SHOW_HIDE                 X   X   X
+        WINDOW_SET_LOCATION             X   X   X
+        WINDOW_SET_SIZE                 X   X   X
+        WINDOW_SET_MIN_MAX_SIZE         X   X   X
+        WINDOW_ACTIVATE                 X   X   X
+        WINDOW_SET_VISIBLE              X   X   X
+        WINDOW_MINIMIZE_MAXIMIZE        X   X   X
+        WINDOW_SET_EXCLUSIVE_MOUSE      X   X   X
+        WINDOW_SET_EXCLUSIVE_KEYBOARD   X   X   X
+        WINDOW_SET_FULLSCREEN           X   X   X
+        WINDOW_INITIAL_FULLSCREEN       X   X   X
+        WINDOW_CAPTION                  X   X   X
+        WINDOW_BORDERS                  
+        WINDOW_ICON
+        WINDOW_CURSOR
+        MULTIPLE_SCREEN                 X   X   X
+        CONTEXT_SHARE                   X   X   X
+        ============================== === === ===
+
+    TBD:
+     - better failure handling when eg. GLX is not available
+     - all platforms: update GL context when configuration changes
+        (e.g. requesting another buffer)
+     - poll: which platforms can do borderless/translucent GL windows?
+
+       OS X: http://developer.apple.com/samplecode/BoingX/index.html
+
+       xlib: http://www.faqs.org/faqs/graphics/opengl-faq/part3/
+             (borderless window, not translucent)
+     - OS X does not receive motion events when window doesn't have
+       focus; ensure this is also the case for other platforms (or
+       find workaround for Carbon).
+     - event for context-menu invocation (right-mouse button, ctrl+click
+       on mac, menu key on some keyboards).
+     - OS X apps require a unique 4 character creator code.  I have
+       registered "PYGL" with Apple, which can be the default; there
+       should probably also be a mechanism for people to use their own
+       creator codes instead.
+     - X11 apps have a WM_CLASS - we should allow programmers to supply
+       a class name. Should we default it?
+     - events for system sleep/shutdown and display change?
+     - method to disable screensaver?
+     - windows appearing on different devices cannot share context.
+       there should be a mechanism for dealing with this (besides
+       crashing).  moving a window from one device to another should
+       recreate the context automatically, and fire an event
+       (on_context_lost) to instruct the application to reload everything.
+       a similar event (on_context_state_lost) should be fired when
+       a context is replaced (for example, toggling fullscreen): in this
+       case the app doesn't need to reload objects, but will need to
+       reset the state.  yikes.
+     - xlib and carbon: window caption is lost when recreating window.
+     - Possible window borders (check that all platforms have reasonable
+       support):
+
+        - None
+        - Resizable (default)
+        - Fixed
+        - Palette (smaller footprint)
+
+       With these options:
+        - Maximize button
+        - Minimize button
+        - Close button / system menu
+        - Modal (specify parent)
+
+event
+    :description: Platform-independent events.
+    :implementation:
+        ============================== === === ===
+        Component                      X11 WIN OSX
+        ============================== === === ===
+        ============================== === === ===
+
+clock
+    :description: High-resolution timing and FPS measurement.
+    :implementation:
+        ============================== === === ===
+        Component                      X11 WIN OSX
+        ============================== === === ===
+        ============================== === === ===
+
+console
+    :description: Interactive debug "widget".
+
+    TBD:
+     - remove SDL dependency
+     - move to pyglet.gui
+
+sprite
+    TBD:
+     - OBB or AABB collision before occlusion query
+     - animated sprites, or animated textures
+     - according to DESIGN, this should be in scene2d
+
+model
+    :description: Abstract interface for 3D modelling.
+
+    TBD:
+     - support for the DirectX model format would be good as it has
+       animations and skellingtons.
+     - according to DESIGN, this should be in scene3d
+
+    obj
+        :description: Wavefront OBJ support.
         :implementation:
-            ============================== === === ===
-            Component                      X11 WIN OSX
-            ============================== === === ===
-            MULTIPLE_WINDOW_OPEN            X   X   X
-            EVENT_KEY                       X   X   X
-            EVENT_TEXT                      X   X   X
-            EVENT_BUTTON                    X   X   X
-            EVENT_MOUSE_MOTION              X   X   X
-            EVENT_MOUSE_DRAG                X   X   X
-            EVENT_MOUSE_ENTER_LEAVE         X   X   X
-            EVENT_MOUSE_SCROLL              X   X   X
-            EVENT_CLOSE                     X   X   X
-            EVENT_EXPOSE                    X   X   X
-            EVENT_RESIZE                    X   X   X
-            EVENT_MOVE                      X   X   X
-            EVENT_ACTIVATE_DEACTIVATE       X   X   X
-            EVENT_SHOW_HIDE                 X   X   X
-            WINDOW_SET_LOCATION             X   X   X
-            WINDOW_SET_SIZE                 X   X   X
-            WINDOW_SET_MIN_MAX_SIZE         X   X   X
-            WINDOW_ACTIVATE                 X   X   X
-            WINDOW_SET_VISIBLE              X   X   X
-            WINDOW_MINIMIZE_MAXIMIZE        X   X   X
-            WINDOW_SET_EXCLUSIVE_MOUSE      X   X   X
-            WINDOW_SET_EXCLUSIVE_KEYBOARD   X   X   X
-            WINDOW_SET_FULLSCREEN           X   X   X
-            WINDOW_INITIAL_FULLSCREEN       X   X   X
-            WINDOW_CAPTION                  X   X   X
-            WINDOW_BORDERS                  
-            WINDOW_ICON
-            WINDOW_CURSOR
-            MULTIPLE_SCREEN                 X   X   X
-            CONTEXT_SHARE                   X   X   X
-            ============================== === === ===
+            ============================== =======
+            Component                      GENERIC
+            ============================== =======
+            OBJ_LOAD                          X
+            ============================== =======
+        
+    geometric
+        :description: Parametric 3D geometry support.
 
         TBD:
-         - better failure handling when eg. GLX is not available
-         - all platforms: update GL context when configuration changes
-            (e.g. requesting another buffer)
-         - poll: which platforms can do borderless/translucent GL windows?
+         - integrate with euclid.  Consistent draw/collide/response
+           interface
+        
+image
+    :description: Image file load and save.
+    :implementation:
+        ============================== === === ===
+        Component                      X11 WIN OSX
+        ============================== === === ===
+        CHECKERBOARD                    X   X   X
+        PYPNG_RGBA_LOAD                 X   X   X
+        PYPNG_RGBA_SAVE                 X   X   X
+        PYPNG_RGB_LOAD                  X   X   X
+        PYPNG_RGB_SAVE                  X   X   X
+        PYPNG_LA_LOAD                   X   X   X
+        PYPNG_LA_SAVE                   X   X   X
+        PYPNG_L_LOAD                    X   X   X
+        PYPNG_L_SAVE                    X   X   X
+        PIL_RGBA_LOAD                   X   X   X
+        PIL_RGBA_SAVE                   X   X   X
+        PIL_RGB_LOAD                    X   X   X
+        PIL_RGB_SAVE                    X   X   X
+        PIL_LA_LOAD                     X   X   X
+        PIL_LA_SAVE                     X   X   X
+        PIL_L_LOAD                      X   X   X
+        PIL_L_SAVE                      X   X   X
+        PLATFORM_RGBA_LOAD              X   X   X
+        PLATFORM_RGB_LOAD               X   X   X
+        PLATFORM_LA_LOAD                X   X   X
+        PLATFORM_L_LOAD                 X   X   X
+        DDS_DXT1_LOAD                        
+        DDS_DXT1_SAVE                        
+        DDS_DXT3_LOAD                        
+        DDS_DXT3_SAVE                        
+        DDS_DXT5_LOAD                   X   X   X
+        DDS_DXT5_SAVE                        
+        BUFFER_SAVE                     X   X   X
+        DEPTH_SAVE                      X   X   X
+        STENCIL_SAVE                    X   X   X
+        ============================== === === ===
 
-           OS X: http://developer.apple.com/samplecode/BoingX/index.html
+    TBD:
+     - QuickTime decoder assumes RGBA; need to accept RGB etc also.
+     - Windows 2000?  (GDI+ is XP only)
+     - Non-Gdk soln for Linux (i.e., KDE?)
+     - Get public domain or copyleft test images.
+     - Tests for formats all platforms should support.  Probably
+       PNG, JPEG, GIF, TIFF, BMP.
+     - DDS saving
+     - Software decoder/encoder for compressed texture.
+     - Options for saving: compression level?
 
-           xlib: http://www.faqs.org/faqs/graphics/opengl-faq/part3/
-                 (borderless window, not translucent)
-         - OS X does not receive motion events when window doesn't have
-           focus; ensure this is also the case for other platforms (or
-           find workaround for Carbon).
-         - event for context-menu invocation (right-mouse button, ctrl+click
-           on mac, menu key on some keyboards).
-         - OS X apps require a unique 4 character creator code.  I have
-           registered "PYGL" with Apple, which can be the default; there
-           should probably also be a mechanism for people to use their own
-           creator codes instead.
-         - X11 apps have a WM_CLASS - we should allow programmers to supply
-           a class name. Should we default it?
-         - events for system sleep/shutdown and display change?
-         - method to disable screensaver?
-         - windows appearing on different devices cannot share context.
-           there should be a mechanism for dealing with this (besides
-           crashing).  moving a window from one device to another should
-           recreate the context automatically, and fire an event
-           (on_context_lost) to instruct the application to reload everything.
-           a similar event (on_context_state_lost) should be fired when
-           a context is replaced (for example, toggling fullscreen): in this
-           case the app doesn't need to reload objects, but will need to
-           reset the state.  yikes.
-         - xlib and carbon: window caption is lost when recreating window.
-         - Possible window borders (check that all platforms have reasonable
-           support):
-
-            - None
-            - Resizable (default)
-            - Fixed
-            - Palette (smaller footprint)
-
-           With these options:
-            - Maximize button
-            - Minimize button
-            - Close button / system menu
-            - Modal (specify parent)
-
-    event
-        :description: Platform-independent events.
-        :implementation:
-            ============================== === === ===
-            Component                      X11 WIN OSX
-            ============================== === === ===
-            ============================== === === ===
-
-    clock
-        :description: High-resolution timing and FPS measurement.
-        :implementation:
-            ============================== === === ===
-            Component                      X11 WIN OSX
-            ============================== === === ===
-            ============================== === === ===
-
-    console
-        :description: Interactive debug "widget".
-
-        TBD:
-         - remove SDL dependency
-         - move to pyglet.gui
-
-    sprite
-        TBD:
-         - OBB or AABB collision before occlusion query
-         - animated sprites, or animated textures
-         - according to DESIGN, this should be in scene2d
-
-    model
-        :description: Abstract interface for 3D modelling.
-
-        TBD:
-         - support for the DirectX model format would be good as it has
-           animations and skellingtons.
-         - according to DESIGN, this should be in scene3d
+shader
+    :description: Abstract interface to GLSL.
     
-        obj
-            :description: Wavefront OBJ support.
-            :implementation:
-                ============================== =======
-                Component                      GENERIC
-                ============================== =======
-                OBJ_LOAD                          X
-                ============================== =======
-            
-        geometric
-            :description: Parametric 3D geometry support.
+    TBD:
+     - documentation (this is actually no worse documented than anything
+       else...)
+     - sample shaders
+     - what about creating shader trees?
+     - what is the value of the usexx methods on ShaderProgram?  do
+       we like wrapping objects around GL?
 
-            TBD:
-             - integrate with euclid.  Consistent draw/collide/response
-               interface
-            
-    image
-        :description: Image file load and save.
+text
+    :description: Text rendering.
+    :implementation:
+        ============================== === === ===
+        Component                      X11 WIN OSX
+        ============================== === === ===
+        TTF_LOAD                        X 
+        TEXT_RENDERING                  X
+        ============================== === === ===
+
+    TBD:
+     - render to multiple textures when glyphs don't fit
+     - line breaks
+     - attributed character strings (styling)
+     - bidi
+     - vertical text
+     - find system fonts (and identify variants)
+     - support surrogate pairs (impossible with truetype?)
+     - pre-rendering of latin-1 (or is ASCII enough?)
+     - multiline rendering (pyglyph)
+
+gui
+    :description: 2D graphical user interface.
+
+    TBD:
+     - more widgets
+    
+    layout
+        :description: Automatic layout of GUI widgets.
+
+        TBD:
+         - finish, refactor out button and interpolators
+
+    fps
+        :description: Render an FPS counter to the screen
         :implementation:
-            ============================== === === ===
-            Component                      X11 WIN OSX
-            ============================== === === ===
-            CHECKERBOARD                    X   X   X
-            PYPNG_RGBA_LOAD                 X   X   X
-            PYPNG_RGBA_SAVE                 X   X   X
-            PYPNG_RGB_LOAD                  X   X   X
-            PYPNG_RGB_SAVE                  X   X   X
-            PYPNG_LA_LOAD                   X   X   X
-            PYPNG_LA_SAVE                   X   X   X
-            PYPNG_L_LOAD                    X   X   X
-            PYPNG_L_SAVE                    X   X   X
-            PIL_RGBA_LOAD                   X   X   X
-            PIL_RGBA_SAVE                   X   X   X
-            PIL_RGB_LOAD                    X   X   X
-            PIL_RGB_SAVE                    X   X   X
-            PIL_LA_LOAD                     X   X   X
-            PIL_LA_SAVE                     X   X   X
-            PIL_L_LOAD                      X   X   X
-            PIL_L_SAVE                      X   X   X
-            PLATFORM_RGBA_LOAD              X   X   X
-            PLATFORM_RGB_LOAD               X   X   X
-            PLATFORM_LA_LOAD                X   X   X
-            PLATFORM_L_LOAD                 X   X   X
-            DDS_DXT1_LOAD                        
-            DDS_DXT1_SAVE                        
-            DDS_DXT3_LOAD                        
-            DDS_DXT3_SAVE                        
-            DDS_DXT5_LOAD                   X   X   X
-            DDS_DXT5_SAVE                        
-            BUFFER_SAVE                     X   X   X
-            DEPTH_SAVE                      X   X   X
-            STENCIL_SAVE                    X   X   X
-            ============================== === === ===
-
-        TBD:
-         - QuickTime decoder assumes RGBA; need to accept RGB etc also.
-         - Windows 2000?  (GDI+ is XP only)
-         - Non-Gdk soln for Linux (i.e., KDE?)
-         - Get public domain or copyleft test images.
-         - Tests for formats all platforms should support.  Probably
-           PNG, JPEG, GIF, TIFF, BMP.
-         - DDS saving
-         - Software decoder/encoder for compressed texture.
-         - Options for saving: compression level?
-
-    shader
-        :description: Abstract interface to GLSL.
-        
-        TBD:
-         - documentation (this is actually no worse documented than anything
-           else...)
-         - sample shaders
-         - what about creating shader trees?
-         - what is the value of the usexx methods on ShaderProgram?  do
-           we like wrapping objects around GL?
-
-    text
-        :description: Text rendering.
-        :implementation:
-            ============================== === === ===
-            Component                      X11 WIN OSX
-            ============================== === === ===
-            TTF_LOAD                        X 
-            TEXT_RENDERING                  X
-            ============================== === === ===
-
-        TBD:
-         - render to multiple textures when glyphs don't fit
-         - line breaks
-         - attributed character strings (styling)
-         - bidi
-         - vertical text
-         - find system fonts (and identify variants)
-         - support surrogate pairs (impossible with truetype?)
-         - pre-rendering of latin-1 (or is ASCII enough?)
-         - multiline rendering (pyglyph)
-
-    gui
-        :description: 2D graphical user interface.
-
-        TBD:
-         - more widgets
-        
-        layout
-            :description: Automatic layout of GUI widgets.
-
-            TBD:
-             - finish, refactor out button and interpolators
-
-        fps
-            :description: Render an FPS counter to the screen
-            :implementation:
-                ============================== =======
-                Component                      GENERIC
-                ============================== =======
-                RENDER_FPS                        X 
-                ============================== =======
-        
-process
-    :description: Issues with development and test process.
-
-     - should DESIGN be rolled into this document?
-     - can/should we integrate an issue tracker into requirements/test?
-
+            ============================== =======
+            Component                      GENERIC
+            ============================== =======
+            RENDER_FPS                        X 
+            ============================== =======
