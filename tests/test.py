@@ -185,6 +185,7 @@ Open questions
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
+import array
 import docutils.nodes
 import docutils.parsers.rst
 import getopt
@@ -416,11 +417,26 @@ class RegressionCaptureTestResult(unittest.TestResult):
 class Regression(Exception):
     pass
 
+def buffer_equal(a, b, tolerance=0):
+    if tolerance == 0:
+        return a == b
+
+    if len(a) != len(b):
+        return False
+
+    a = array.array('B', a)
+    b = array.array('B', b)
+    for i in range(len(a)):
+        if abs(a[i] - b[i]) > tolerance:
+            return False
+    return True
+
 class RegressionCheckTestResult(unittest.TestResult):
-    def __init__(self, component):
+    def __init__(self, component, tolerance):
         super(RegressionCheckTestResult, self).__init__()
         self.filename = component.get_regression_image_filename()
         self.regression_image = pyglet.image.Image.load(self.filename)
+        self.tolerance = tolerance
 
     def startTest(self, test):
         super(RegressionCheckTestResult, self).startTest(test)
@@ -443,7 +459,8 @@ class RegressionCheckTestResult(unittest.TestResult):
         elif this_image.height != ref_image.height:
             self.addFailure(test, 
                 'Buffer height does not match regression image')
-        elif this_image.tostring() != ref_image.tostring():
+        elif not buffer_equal(this_image.tostring(), ref_image.tostring(),
+                              self.tolerance):
             self.addFailure(test,
                 'Buffer does not match regression image')
         else:
@@ -463,6 +480,7 @@ def main(args):
     log_file = None
     enable_regression_capture = True
     enable_regression_check = True
+    regression_tolerance = 1
     interactive = True
 
     capabilities = ['GENERIC']
@@ -481,6 +499,7 @@ def main(args):
          'log-level=',
          'log-file=',
          'regression-path=',
+         'regression-tolerance='
          'no-regression-capture',
          'no-regression-check',
          'no-interactive'])
@@ -499,6 +518,8 @@ def main(args):
         elif key == '--regression-path':
             global regressions_path
             regressions_path = value
+        elif key == '--regression-tolerance':
+            regression_tolerance = int(value)
         elif key == '--no-regression-capture':
             enable_regression_capture = False
         elif key == '--no-regression-check':
@@ -567,7 +588,7 @@ def main(args):
 
         if enable_regression_check and \
            os.path.exists(component.get_regression_image_filename()):
-            result = RegressionCheckTestResult(component)
+            result = RegressionCheckTestResult(component, regression_tolerance)
             module_interactive = False
         elif enable_regression_capture:
             result = RegressionCaptureTestResult(component)
