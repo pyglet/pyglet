@@ -480,7 +480,7 @@ def main(args):
     log_file = None
     enable_regression_capture = True
     enable_regression_check = True
-    regression_tolerance = 1
+    regression_tolerance = 2
     interactive = True
 
     capabilities = ['GENERIC']
