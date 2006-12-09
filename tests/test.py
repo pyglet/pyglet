@@ -413,6 +413,9 @@ class RegressionCaptureTestResult(unittest.TestResult):
             self.captured_image.save(filename)
             logging.getLogger().info('Wrote regression image %s' % filename)
 
+class Regression(Exception):
+    pass
+
 class RegressionCheckTestResult(unittest.TestResult):
     def __init__(self, component):
         super(RegressionCheckTestResult, self).__init__()
@@ -444,6 +447,11 @@ class RegressionCheckTestResult(unittest.TestResult):
                 'Buffer does not match regression image')
         else:
             super(RegressionCheckTestResult, self).addSuccess(test)
+
+    def addFailure(self, test, err):
+        err = Regression(err)
+        super(RegressionCheckTestResult, self).addFailure(test, (Regression,
+            err, []))
 
 def main(args):
     script_root = os.path.dirname(args[0]) or os.path.curdir
