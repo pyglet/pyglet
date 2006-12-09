@@ -426,6 +426,7 @@ class RegressionCheckTestResult(unittest.TestResult):
         super(RegressionCheckTestResult, self).startTest(test)
         if isinstance(test, tests.regression.ImageRegressionTestCase):
             test._enable_regression_image = True
+            test._enable_interactive = False
             logging.getLogger().info('Using regression %s' % self.filename)
 
     def addSuccess(self, test):

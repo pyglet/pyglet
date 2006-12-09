@@ -12,6 +12,7 @@ from pyglet.image import BufferImage
 
 class ImageRegressionTestCase(unittest.TestCase):
     _enable_regression_image = False
+    _enable_interactive = True
     _captured_image = None
 
     def capture_regression_image(self):
@@ -19,4 +20,4 @@ class ImageRegressionTestCase(unittest.TestCase):
             return False
 
         self._captured_image = BufferImage().get_raw_image()
-        return True
+        return not self._enable_interactive
