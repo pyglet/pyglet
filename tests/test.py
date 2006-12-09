@@ -590,7 +590,7 @@ def main(args):
         components = requirements.get_all_components()
 
     # Now test each component
-    for component in components:
+    for component in set(components):
         if not component.is_implemented(capabilities):
             log.info('%s is marked not implemented, skipping.', component)
             continue
