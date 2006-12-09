@@ -504,8 +504,8 @@ class RegressionCheckTestResult(unittest.TestResult):
 
 def main(args):
     script_root = os.path.dirname(args[0]) or os.path.curdir
-    requirements_filename = os.path.sep.join(
-        [script_root, os.path.pardir, 'doc', 'requirements.txt'])
+    requirements_filename = os.path.normpath(os.path.join(script_root,
+        os.path.pardir, 'doc', 'requirements.txt'))
     test_root = script_root
     log_level = 10
     log_file = None
@@ -523,8 +523,7 @@ def main(args):
     if sys.platform in platform_capabilities:
         capabilities.append(platform_capabilities[sys.platform])
 
-    opts, arguments = getopt.getopt(args[1:], '',
-        ['requirements=',
+    arguments = ['requirements=',
          'test-root=',
          'capabilities=',
          'log-level=',
@@ -533,7 +532,36 @@ def main(args):
          'regression-tolerance=',
          'no-regression-capture',
          'no-regression-check',
-         'no-interactive'])
+         'no-interactive',
+         'help']
+
+    def usage():
+        print '''Usage: %s [args] [tests]
+Runs tests, optionally limited to just those specified as "tests" which may
+be a regular expression (e.g. "image" to just run image tests).
+
+OPTIONS (with default values):
+  --requirements=%s
+  --test-root=%s
+  --capabilities=%s
+  --log-level=%s
+  --log-file=%s
+  --regression-path=%s
+  --regression-tolerance=%s
+  --no-regression-capture
+  --no-regression-check
+  --no-interactive
+  --help'''%(sys.argv[0], requirements_filename, test_root,
+            ','.join(capabilities), log_level, log_file or '<stdout>',
+            regressions_path, regression_tolerance)
+
+    try:
+        opts, arguments = getopt.getopt(args[1:], '', arguments)
+    except getopt.GetoptError, error:
+        print '\nERROR:', error
+        print
+        usage()
+        return
 
     for key, value in opts:
         if key == '--requirements':
@@ -558,6 +586,9 @@ def main(args):
         elif key == '--no-interactive':
             interactive = False
             enable_regression_capture = False
+        elif key == '--help':
+            usage()
+            return
 
     if enable_regression_capture:
         try:

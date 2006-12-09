@@ -62,10 +62,18 @@ class TestLoad(ImageRegressionTestCase):
         if self.capture_regression_image():
             self.exit_handler.exit = True
 
+    def setUp(self):
+        self.__encoder_state = get_encoders_state()
+        self.__decoder_state = get_decoders_state()
+
     def choose_codecs(self):
         clear_encoders()
         clear_decoders()
         add_default_image_codecs()
+
+    def tearDown(self):
+        set_encoders_state(self.__encoder_state)
+        set_decoders_state(self.__decoder_state)
 
     def test_load(self):
         width, height = 800, 600

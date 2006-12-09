@@ -132,7 +132,6 @@ console
     :description: Interactive debug "widget".
 
     TBD:
-     - remove SDL dependency
      - move to pyglet.gui
 
 sprite
