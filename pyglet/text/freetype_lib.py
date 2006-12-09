@@ -1,23 +1,20 @@
-import sys
-import os
-import itertools
+#!/usr/bin/env python
+
+'''
+'''
+
+__docformat__ = 'restructuredtext'
+__version__ = '$Id$'
 
 from ctypes import *
 from ctypes import util
 
-from pyglet.image import Texture
-from pyglet.text import base
-
-if sys.platform == 'darwin':
-    path = '/usr/X11R6/lib/libfreetype.dylib'
-    if not os.path.exists(path):
-        raise ImportError('Freetype support on Darwin requires X11 install')
-else:
-    path = util.find_library('freetype')
-    if not path:
-        raise ImportError('Cannot locate freetype library')
-_libfreetype = cdll.LoadLibrary(path)
 _font_data = {}
+
+path = util.find_library('freetype')
+if not path:
+    raise ImportError('Cannot locate freetype library')
+_libfreetype = cdll.LoadLibrary(path)
 
 def _get_function(name, argtypes, rtype):
     try:
@@ -330,6 +327,8 @@ FT_Init_FreeType = _get_function('FT_Init_FreeType',
     [POINTER(FT_Library)], c_int)
 FT_New_Memory_Face = _get_function('FT_New_Memory_Face',
     [FT_Library, c_char_p, c_long, c_long, POINTER(FT_Face)], c_int)
+FT_New_Face = _get_function('FT_New_Face',
+    [FT_Library, c_char_p, c_long, POINTER(FT_Face)], c_int)
 FT_Set_Pixel_Sizes = _get_function('FT_Set_Pixel_Sizes',
     [FT_Face, c_uint, c_uint], c_int)
 FT_Set_Char_Size = _get_function('FT_Set_Char_Size',
@@ -343,161 +342,14 @@ FT_Load_Char = _get_function('FT_Load_Char',
 FT_Get_Kerning = _get_function('FT_Get_Kerning',
     [FT_Face, c_uint, c_uint, c_uint, POINTER(FT_Vector)], c_int)
 
+
 _library = None
-
-
-def load_face(file, size, metrics):
+def ft_get_library():
     global _library
-    if _library is None:
-        # init the library
+    if not _library:
         _library = FT_Library()
         error = FT_Init_FreeType(byref(_library))
         if error:
-            raise Error('an error occurred during library initialization',
-                error)
-
-    face = FT_Face()
-
-    # read the file data
-    if hasattr(file, 'read'):
-        font_data = create_string_buffer(file.read())
-    else:
-        fp = open(file, 'rb')
-        font_data = create_string_buffer(fp.read())
-        fp.close()
-
-    error = FT_New_Memory_Face(_library, font_data, len(font_data),
-        0, byref(face));
-    if error:
-        raise Error('an error occurred during face loading', error)
-
-    # Don't lose this ref.
-    face = face.contents
-    #print (face.ascender >> 6, face.descender >> 6, face.height >> 6)
-    _font_data[addressof(face)] = font_data
-
-    # "size" pixels high
-    #error = FT_Set_Pixel_Sizes(face, 0, size)
-    error = FT_Set_Char_Size(face, 0, size << 6, 0, 0)
-    if error:
-        raise Error("couldn't get requested height", error)
-
-    return face
-
-
-class FreetypeLocalFontFactory(base.LocalFontFactory):
-    def load_font(self, file, size, metrics):
-        return FreetypeFont(file, size, metrics)
-
-
-class FreetypeGlyph(base.Glyph):
-    def has_kerning(self):
-        return self.face.has_kerning()
-
-    def get_kerning_right(self, right):
-        '''This glyph is left and the other glyph is right.'''
-        kern = FT_Vector()
-        left = FT_Get_Char_Index(byref(self.face), ord(self.c))
-        right = FT_Get_Char_Index(byref(self.face), ord(right.c))
-        if FT_Get_Kerning(self.face, left, right, 0, byref(kern)):
-            return 0, 0
-        else:
-            #print 'KERNED', (kern.x/64, kern.y/64)
-            return kern.x/64, kern.y/64
-
-
-class FreetypeFont(base.Font):
-    def load_font(self, file, size, metrics):
-        return load_face(file, size, metrics)
-
-    def render_glyph(self, c):
-        return render_char(self.face, c)
-
-
-def render_char(face, c):
-    error = FT_Load_Char(face, ord(c), FT_LOAD_RENDER)
-    if error: raise Error('an error occurred drawing the glyph %r'%c, error)
-
-    # set image as alhpa channel on a LUMINANCE_ALPHA texture
-    g = face.glyph.contents
-    b = g.bitmap
-
-    bpp = 2
-    w = b.width
-
-    # Set up a luminance channel and an alpha channel.
-    # We need to pack out the rows so each row starts on a 32-bit boundary.
-    # No idea why we need to do this. It's probably mentioned in some
-    # obscure corner of the manual, or it might be an OSX OpenGL bug.
-    if w%2: width = w + 1
-    else: width = w
-    ew2 = width*2
-    w2 = w*2
-    s = [255,0] * (width * b.rows)
-    for i,j in enumerate(xrange(b.rows - 1, -1, -1)):
-        i = i * w
-        j = j*ew2 + 1
-        s[j:j+w2:2] = b.buffer[i:i+w]
-
-    s = ''.join(map(chr, s))
-
-    advance = g.advance.x >> 6
-    metrics = g.metrics
-    baseline = (metrics.height - metrics.horiBearingY) >> 6
-    return s, FreetypeGlyph(face, c, width, b.rows, advance, baseline)
-
-if __name__ == '__main__':
-    import sys
-    if len(sys.argv) == 2:
-        filename = sys.argv[1]
-    else:
-        filename = os.path.join(os.path.split(__file__)[0],
-            '../../tests/Vera.ttf')
-    f = load_face(filename, 16)
-
-    """
-    text = 'To WAVA'
-    kern = FT_Vector(0,0)
-    for i, c in enumerate(text):
-        if i > 0:
-            last = text[i-1]
-            if FT_Get_Kerning(f, ord(last), ord(c), 0, byref(kern)):
-                print 'error'
-            print 'kern "%s%s" = (%s, %s)'%(last, c, kern.x, kern.y)
-    """
-
-    for c in 'WAwa':
-        s, glyph = render_char(f, c)
-        print "RENDERED", c
-        for i in range(glyph.height):
-            l = []
-            for j in range(glyph.width):
-                v = ord(s[i*glyph.width*2 + j*2 + 1])
-                if v == 0: l.append('.')
-                elif v < 128: l.append('+')
-                else: l.append('*')
-            print ''.join(l)
-
-
-    '''
-    render_char(f, 'A')
-    FT_Load_Glyph(f, 0, FT_LOAD_RENDER)
-    f = f.contents
-    print '='*75
-    print 'f =', f
-    for name, type in f._fields_:
-        print 'FACE', name, getattr(f, name)
-
-    print '-'*75
-    g = f.glyph.contents
-    print 'g =', g
-    for name, type in g._fields_:
-        print 'GLYPH', name, getattr(g, name)
-
-    b = g.bitmap
-    print '-'*75
-    print 'b =', b
-    for name, type in b._fields_:
-        print 'BITMAP', name, type, getattr(b, name)
-    '''
-
+            raise FontException(
+                'an error occurred during library initialization', error)
+    return _library

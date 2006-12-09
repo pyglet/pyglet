@@ -476,152 +476,52 @@ class Texture(Image):
         v = float(height) / tex_height
         return tex_width, tex_height, u, v
 
-
-class AtlasSubTexture(object):
-    def __init__(self, texture, quad_list, width, height, uv):
+# TODO derive from image and implement blits
+class TextureSubImage(object):
+    def __init__(self, texture, x, y, width, height):
         self.texture = texture
-        self.quad_list = quad_list
-        self.width, self.height = width, height
-        self.uv = uv
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
 
-    def draw(self):
-        glPushAttrib(GL_ENABLE_BIT)
-        glEnable(GL_TEXTURE_2D)
-        glCallList(self.quad_list)
-        glPopAttrib()
+        self.tex_coords = (
+            float(x) / texture.width,
+            float(y) / texture.height,
+            float(x + width) / texture.width,
+            float(y + height) / texture.height)
 
-class TextureAtlasRects(object):
-    def __init__(self, texture, rects):
-        self.texture = texture
+    def flip_vertical(self):
+        self.tex_coords = (
+            self.tex_coords[0], 
+            self.tex_coords[3], 
+            self.tex_coords[2],
+            self.tex_coords[1])
 
-        # sub-textures
-        self.uvs = []
-        self.quad_lists = []
-        self.elem_sizes = []
-        n = glGenLists(len(rects))
-        self.quad_lists = range(n, n + len(rects))
+class AllocatingTextureAtlasOutOfSpaceException(ImageException):
+    pass
 
-        # now allocate them
-        id = texture.id
-        width = texture.width
-        height = texture.height
-        uv = texture.uv
-        for i, rect in enumerate(rects):
-            u = float(rect[0]) / width * uv[0]
-            v = float(rect[1]) / height * uv[1]
-            du = float(rect[2]) / width * uv[0]
-            dv = float(rect[3]) / height * uv[1]
-            elem_uv = (u, v, u + du, v + dv)
-            elem_size = (rect[2], rect[3])
+class AllocatingTextureAtlas(Texture):
+    x = 0
+    y = 0
+    line_height = 0
+    subimage_class = TextureSubImage
 
-            glNewList(self.quad_lists[i], GL_COMPILE)
-            glBindTexture(GL_TEXTURE_2D, id)
-            glBegin(GL_QUADS)
-            glTexCoord2f(u, v)
-            glVertex2f(0, 0)
-            glTexCoord2f(u + du, v)
-            glVertex2f(elem_size[0], 0)
-            glTexCoord2f(u + du, v + dv)
-            glVertex2f(elem_size[0], elem_size[1])
-            glTexCoord2f(u, v + dv)
-            glVertex2f(0, elem_size[1])
-            glEnd()
-            glEndList()
+    def allocate(self, width, height):
+        '''Returns (x, y) position for a new glyph, and reserves that
+        space.'''
+        if self.x + width > self.width:
+            self.x = 0
+            self.y += self.line_height
+            self.line_height = 0
+        if self.y + height > self.height:
+            raise AllocatingTextureAtlasOutOfSpaceException()
 
-            self.uvs.append(elem_uv)
-            self.elem_sizes.append(elem_size)
+        self.line_height = max(self.line_height, height)
+        x = self.x
+        self.x += width
+        return self.subimage_class(self, x, self.y, width, height)
 
-    @classmethod
-    def from_data(cls, data, width, height, format, type, rects=[]):
-        texture = RawImage(data, width, height, format, type).texture()
-        return cls(texture, rects)
-
-    @classmethod
-    def from_image(cls, image, rects=[]):
-        return cls(image.texture(), rects)
-
-    def draw(self, index):
-        glPushAttrib(GL_ENABLE_BIT)
-        glEnable(GL_TEXTURE_2D)
-        glCallList(self.quad_lists[index])
-        glPopAttrib()
-
-    def get_size(self, index):
-        return self.elem_sizes[index]
-
-    def get_quad(self, index):
-        return self.elem_sizes[index], self.uvs[index]
-
-    def get_texture(self, index):
-        '''Return something that smells like a Texture instance.'''
-        w, h = self.elem_sizes[index]
-        return AtlasSubTexture(self.texture, self.quad_lists[index],
-            w, h, self.uvs[index])
-
-
-class TextureAtlasGrid(object):
-    def __init__(self, id, width, height, uv, rows=1, cols=1):
-        assert rects or (rows >= 1 and cols >= 1)
-        self.size = (width, height)
-        self.id = id
-        self.uvs = []
-        self.quad_lists = []
-        self.elem_sizes = []
-
-        self.rows = rows
-        self.cols = cols
-
-        elem_size = width / cols, height / rows
-        n = glGenLists(rows * cols)
-        self.quad_lists = range(n, n + rows * cols)
-        du = uv[0] / cols
-        dv = uv[1] / rows
-        i = v = 0
-        for row in range(rows):
-            u = 0
-            for col in range(cols):
-                glNewList(self.quad_lists[i], GL_COMPILE)
-                glBindTexture(GL_TEXTURE_2D, self.id)
-                glBegin(GL_QUADS)
-                glTexCoord2f(u, v)
-                glVertex2f(0, 0)
-                glTexCoord2f(u + du, v)
-                glVertex2f(elem_size[0], 0)
-                glTexCoord2f(u + du, v + dv)
-                glVertex2f(elem_size[0], elem_size[1])
-                glTexCoord2f(u, v + dv)
-                glVertex2f(0, elem_size[1])
-                glEnd()
-                glEndList()
-
-                elem_uv = (u, v, u + du, v + dv)
-                self.uvs.append(elem_uv)
-                self.elem_sizes.append(elem_size)
-                u += du
-                i += 1
-            v += dv
-
-    @classmethod
-    def from_data(cls, data, width, height, format, type, rects=[]):
-        texture = RawImage(data, width, height, format, type).texture()
-        return cls(id, width, height, uv, rows, cols)
-
-    @classmethod
-    def from_image(cls, image, rows=1, cols=1):
-        return cls(image.texture(), rows, cols)
-
-    def draw(self, row, col):
-        glPushAttrib(GL_ENABLE_BIT)
-        glEnable(GL_TEXTURE_2D)
-        glCallList(self.quad_lists[row * self.cols + col])
-        glPopAttrib()
-
-    def get_size(self, row, col):
-        return self.elem_sizes[row * self.cols + col]
-
-    def get_quad(self, row, col):
-        i = row * self.cols + col
-        return self.elem_sizes[i], self.uvs[i]
 
 # Initialise default codecs
 add_default_image_codecs()

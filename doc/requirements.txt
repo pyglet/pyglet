@@ -231,19 +231,23 @@ text
         ============================== === === ===
         Component                      X11 WIN OSX
         ============================== === === ===
-        TTF_LOAD                        X 
-        TEXT_RENDERING                  X
+        DEFAULT                         X   X   X
+        SYSTEM                          X   X   X
+        FILE
+        ASIAN_FILE
+        ANTIALIAS                           X   X
+        COLOR                           X   X   X
+        COLOR_BLEND                     X   X   X
+        KERNING
+        ITALIC_CORRECTION
+        VERTICAL
+        BIDI
         ============================== === === ===
 
     TBD:
-     - render to multiple textures when glyphs don't fit
      - line breaks
-     - attributed character strings (styling)
      - bidi
      - vertical text
-     - find system fonts (and identify variants)
-     - support surrogate pairs (impossible with truetype?)
-     - pre-rendering of latin-1 (or is ASCII enough?)
      - multiline rendering (pyglyph)
 
 gui
@@ -251,13 +255,11 @@ gui
 
     TBD:
      - more widgets
+     - finish, refactor out button and interpolators
     
     layout
         :description: Automatic layout of GUI widgets.
-
-        TBD:
-         - finish, refactor out button and interpolators
-
+    
     fps
         :description: Render an FPS counter to the screen
         :implementation:
