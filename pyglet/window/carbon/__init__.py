@@ -60,7 +60,8 @@ EventHandlerProcPtr = CFUNCTYPE(c_int, c_int, c_void_p, c_void_p)
 carbon.NewEventHandlerUPP.restype = c_void_p
 carbon.GetCurrentKeyModifiers = c_uint32
 carbon.NewRgn.restype = RgnHandle
-carbon.CGDisplayBounds.restype = Rect
+carbon.CGDisplayBounds.argtypes = [c_void_p]
+carbon.CGDisplayBounds.restype = CGRect
 
 class CarbonPlatform(BasePlatform):
     def get_screens(self, factory):
@@ -148,9 +149,9 @@ class CarbonPlatform(BasePlatform):
 class CarbonScreen(BaseScreen):
     def __init__(self, id):
         rect = carbon.CGDisplayBounds(id)
-        width = rect.right - rect.left
-        height = rect.bottom - rect.top
-        super(CarbonScreen, self).__init__(rect.left, rect.top, width, height)
+        super(CarbonScreen, self).__init__(
+            int(rect.origin.x), int(rect.origin.y),
+            int(rect.size.width), int(rect.size.height))
         self.id = id
 
     def get_gdevice(self):
@@ -430,7 +431,6 @@ class CarbonWindow(BaseWindow):
         return rect.left, rect.top
 
     def set_size(self, width, height):
-        self.height = height
         rect = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
         rect.right = rect.left + width

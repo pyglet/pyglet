@@ -43,8 +43,7 @@ while not exit_handler.exit:
     glClear(GL_COLOR_BUFFER_BIT)
     glLoadIdentity()
 
-    r += 1
-    if r > 360: r = 0
+    r = (r + 1) % 360
     glRotatef(r, 0, 0, 1)
     s = max(tex.width, tex.height)
     glScalef(1./s, 1./s, 1.)
