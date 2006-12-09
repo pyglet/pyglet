@@ -97,6 +97,12 @@ Command-line options:
 --no-regression-check
     Don't look for a regression image on disk; assume none exists (good
     for rebuilding out of date regression images).
+--regression-tolerance=
+    Specify the tolerance when comparing a regression image.  A value of
+    2, for example, means each sample component must be +/- 2 units
+    of the regression image.  Tolerance of 0 means images must be identical,
+    tolerance of 256 means images will always match (if correct dimensions).
+    Defaults to 2.
 --regression-path=
     Specify the directory to store and look for regression images.
     Defaults to tests/regression/images/
@@ -104,9 +110,9 @@ Command-line options:
     Don't write descriptions or prompt for confirmation; just run each
     test in succcession.
 
-After the command line options, you can specify the names of any
-sections or capabilities you wish to test.  If none are specified, all
-tests are run.
+After the command line options, you can specify the all or part or a regular
+expression of any components or sections you wish to test.  If none are
+specified, all tests are run.
 
 Examples
 --------
@@ -192,6 +198,7 @@ import getopt
 import imp
 import logging
 import os
+import re
 import sys
 import time
 import unittest
@@ -260,6 +267,8 @@ class RequirementsSection(object):
         self.description = ''
         self.sections = {}
         self.components = {}
+        self.all_components = []
+        self.all_sections = []
 
     def add_section(self, section):
         self.sections[section.name] = section
@@ -284,10 +293,31 @@ class RequirementsSection(object):
             return section.components.get(component, None)
 
     def get_all_components(self):
-        components = self.components.values()
-        for section in self.sections.values():
-            components += section.get_all_components()
-        return components
+        if not self.all_components:
+            self.all_components = self.components.values()
+            for section in self.sections.values():
+                self.all_components += section.get_all_components()
+        return self.all_components
+
+    def get_all_sections(self): 
+        if not self.all_sections:
+            self.all_sections = self.sections.values()
+            for section in self.sections.values():
+                self.all_sections += section.get_all_sections()
+        return self.all_sections
+
+    def search(self, query):
+        pattern = re.compile(query)
+        results = []
+        for component in self.get_all_components():
+            if pattern.search(component.get_absname()):
+                results.append(component)
+
+        for section in self.get_all_sections():
+            if pattern.search(section.get_absname()):
+                results += section.get_all_components()
+
+        return results
     
     def get_absname(self):
         names = []
@@ -316,6 +346,7 @@ class Requirements(RequirementsSection):
         parser.parse(rst, document)
         document.walkabout(RequirementsParser(document, requirements))
         return requirements
+
 
 class RequirementsParser(docutils.nodes.GenericNodeVisitor):
     def __init__(self, document, requirements):
@@ -551,21 +582,12 @@ def main(args):
         sections = []
         components = []
         for arg in arguments:
-            section = requirements.get_section(arg)
-            if section:
-                sections.append(requirements.get_section(arg))
-            else:
-                component = requirements.get_component(arg)
-                if component:
-                    components.append(requirements.get_component(arg))
-                else:
-                    log.error('No section or component named %s' % arg)
+            matches = requirements.search(arg)
+            if not matches:
+                log.error('No components or sections match "%s"', arg)
+            components += matches
     else:
-        sections = [requirements]
-        components = []
-
-    for section in sections:
-        components += section.get_all_components()
+        components = requirements.get_all_components()
 
     # Now test each component
     for component in components:
