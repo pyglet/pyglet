@@ -499,7 +499,7 @@ def main(args):
          'log-level=',
          'log-file=',
          'regression-path=',
-         'regression-tolerance='
+         'regression-tolerance=',
          'no-regression-capture',
          'no-regression-check',
          'no-interactive'])

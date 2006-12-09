@@ -33,7 +33,7 @@ class PILImageDecoder(ImageDecoder):
         if image.mode in ('1', 'P'):
             image = image.convert()
 
-        if image.mode not in ('L', 'RGB', 'RGBA'):
+        if image.mode not in ('L', 'LA', 'RGB', 'RGBA'):
             raise ImageDecodeException('Unsupported mode "%s"' % image.mode)
         type = GL_UNSIGNED_BYTE
         width, height = image.size
