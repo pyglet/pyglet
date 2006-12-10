@@ -206,4 +206,5 @@ class FreeTypeFont(BaseFont):
         self.face = f.contents
 
         FT_Set_Char_Size(self.face, 0, frac(size), 0, 0)
-
+        self.ascent = self.face.ascender * size / self.face.units_per_EM
+        self.descent = self.face.descender * size / self.face.units_per_EM

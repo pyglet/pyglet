@@ -22,9 +22,9 @@ commander = font.render('COMMANDER', color=(1, 1, 1, 0.5))
 keen = font.render('KEEN', color=(1, 1, 1, 0.5))
 
 commander.x = width
-keen.x = -1600 # need layout width
-commander.dx = -250
-keen.dx = 136
+keen.x = -keen.width
+commander.dx = -(commander.width + width) / 10
+keen.dx = (keen.width + width) / 10 
 
 glMatrixMode(GL_PROJECTION)
 glOrtho(0, width, 0, height, -1, 1)
