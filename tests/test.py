@@ -307,7 +307,7 @@ class RequirementsSection(object):
         return self.all_sections
 
     def search(self, query):
-        pattern = re.compile(query)
+        pattern = re.compile(query, re.I)
         results = []
         for component in self.get_all_components():
             if pattern.search(component.get_absname()):

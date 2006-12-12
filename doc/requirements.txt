@@ -33,6 +33,7 @@ window
         ============================== === === ===
         Component                      X11 WIN OSX
         ============================== === === ===
+        WINDOW_OPEN                     X   X   X
         MULTIPLE_WINDOW_OPEN            X   X   X
         EVENT_KEY                       X   X   X
         EVENT_TEXT                      X   X   X
