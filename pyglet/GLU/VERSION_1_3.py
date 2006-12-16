@@ -18,4 +18,6 @@ gluBuild3DMipmaps = _get_function('gluBuild3DMipmaps', [_ctypes.c_uint, _ctypes.
 gluBuild3DMipmapLevels = _get_function('gluBuild3DMipmapLevels', [_ctypes.c_uint, _ctypes.c_int, _ctypes.c_int, _ctypes.c_int, _ctypes.c_int, _ctypes.c_uint, _ctypes.c_uint, _ctypes.c_int, _ctypes.c_int, _ctypes.c_int, _ctypes.c_void_p], _ctypes.c_int)
 gluUnProject4 = _get_function('gluUnProject4', [_ctypes.c_double, _ctypes.c_double, _ctypes.c_double, _ctypes.c_double, _ctypes.POINTER(_ctypes.c_double), _ctypes.POINTER(_ctypes.c_double), _ctypes.POINTER(_ctypes.c_int), _ctypes.c_double, _ctypes.c_double, _ctypes.POINTER(_ctypes.c_double), _ctypes.POINTER(_ctypes.c_double), _ctypes.POINTER(_ctypes.c_double), _ctypes.POINTER(_ctypes.c_double)], _ctypes.c_int)
 
+gluNurbsCallback = _get_function('gluNurbsCallback', [_ctypes.c_void_p, _ctypes.c_uint, GLUfuncptr], None)
+gluNurbsCallbackData = _get_function('gluNurbsCallbackData', [_ctypes.c_void_p, _ctypes.c_void_p], None)
 #gluNurbsCallbackDataEXT = _get_function('gluNurbsCallbackDataEXT', [_ctypes.c_void_p, _ctypes.c_void_p], None)
