@@ -115,7 +115,6 @@ For example::
 
     >>> factory.set_fullscreen(False)
     >>> factory.set_size(640, 480)
-    >>> factory.set_caption('Hello, world!')
     >>>
 
 You can get a list of the available screens (for example, on a multi-monitor
