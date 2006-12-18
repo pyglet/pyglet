@@ -3,6 +3,10 @@
   <head>
     <title><?php echo $title; ?></title>
     <link rel="stylesheet" type="text/css" href="pyglet.css">
+     <link rel="alternate" type="application/atom+xml"
+           title="Weblog ATOM feed"
+           href="http://www.pyglet.org/news.xml">
+
   </head>
   <body>
   <div id="content">

@@ -1,0 +1,5 @@
+title=pyglet demonstrated as part of OSDC
+date=2006-12-7
+author=Richard
+
+Window opening broke when plugged into a projector. Fixed by the next day, demonstrated to applause from audience. Mesa compatibility also fixed during conference.
