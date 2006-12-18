@@ -1,5 +1,6 @@
-body { text-align: center; }
-div#content { width: 700px; margin 0 auto; text-align: left;}
+body { text-align: center; background-image: url(cube.png); background-repeat:
+no-repeat;}
+div#content { margin-left: 150px;width: 700px; text-align: left;}
 h1 { text-align: center; }
 table#news { width: 40em; margin-top: 2em}
 table#news td { vertical-align: top; width: 75%; text-align: left}
