@@ -6,5 +6,6 @@ table#news { width: 40em; margin-top: 2em}
 table#news td { vertical-align: top; width: 75%; text-align: left}
 table#news td.first { width: 25%; text-align: right}
 table#overview {border-collapse: separate; border-spacing: 0px 0px;}
-table#overview td {padding: 5px 1em 5px 1em; text-align: center; font-weight: bold; border: 1px solid #666}
+table#overview td {background: #eee; padding: 5px 1em 5px 1em; text-align: center; font-weight: bold; border: 1px solid #666}
+table#overview tr.pyglet td {background: #FFBF54;}
 
