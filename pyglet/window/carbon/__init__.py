@@ -333,8 +333,7 @@ class CarbonWindow(BaseWindow):
             rect.bottom = rect.top + height
 
             window_class = kDocumentWindowClass
-            window_attributes = (kWindowStandardDocumentAttributes | 
-                                 kWindowLiveResizeAttribute)
+            window_attributes = kWindowStandardDocumentAttributes
 
             carbon.CreateNewWindow(window_class,
                                    window_attributes,
@@ -812,7 +811,6 @@ class CarbonWindow(BaseWindow):
         #carbon.CallNextEventHandler(next_handler, event)
         return noErr
 
-    @CarbonEventHandler(kEventClassWindow, kEventWindowBoundsChanging)
     @CarbonEventHandler(kEventClassWindow, kEventWindowResizeCompleted)
     def _on_window_resize_completed(self, next_handler, event, data):
         rect = Rect()
