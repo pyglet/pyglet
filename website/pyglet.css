@@ -8,4 +8,9 @@ table#news td.first { width: 25%; text-align: right}
 table#overview {border-collapse: separate; border-spacing: 0px 0px;}
 table#overview td {background: #eee; padding: 5px 1em 5px 1em; text-align: center; font-weight: bold; border: 1px solid #666}
 table#overview tr.pyglet td {background: #FFBF54;}
+table#status {border-collapse: separate; border-spacing: 0px 0px;}
+table#status th {background: #FFBF54; padding: 2px .5em 2px .5em;}
+table#status td {padding: 2px .5em 2px .5em; text-align: center; border-left: 1px solid #666; border-bottom: 1px solid #666;}
+table#status td:first-child {text-align: right; border:none}
+table#status td:last-child {border-right: 1px solid #666;}
 

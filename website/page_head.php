@@ -14,9 +14,13 @@
 <table align="center">
 <tbody>
 <tr>
-  <td><A href="/"><IMG src="about.png" alt="About" width="138" height="42" align="left" border="0"></A></td>
-  <td><A href="/download.php"><IMG src="download.png" alt="Download" width="138" height="42" align="left" border="0"></A></td>
-  <td><A href="/get_involved.php"><IMG src="get_involved.png" alt="Get Involved" width="138" height="42" align="left" border="0"></A></td>
+  <td><A href="/">Home</A></td>
+  <td>&mdash;</td>
+  <td><A href="/about.php">Learn More</A></td>
+  <td>&mdash;</td>
+  <td><A href="/download.php">Download</A></td>
+  <td>&mdash;</td>
+  <td><A href="/get_involved.php">Get Involved</A></td>
 </tr>
 </tbody>
 </table>
