@@ -87,6 +87,11 @@ else:
             raise ImportError(e)
  
 # No ptrdiff_t in ctypes, discover it
-for t in (ctypes.c_int16, ctypes.c_int32, ctypes.c_int64):
+_int_types = (ctypes.c_int16, ctypes.c_int32)
+if hasattr(ctypes, 'c_int64'):
+    # Some builds of ctypes apparently do not have c_int64 defined; it's
+    # a pretty good bet that these builds do not have 64-bit pointers.
+    _int_types += (ctypes.c_int64,)
+for t in _int_types:
     if ctypes.sizeof(t) == ctypes.sizeof(ctypes.c_size_t):
         c_ptrdiff_t = t
