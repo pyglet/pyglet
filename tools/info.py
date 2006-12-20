@@ -13,8 +13,6 @@ from pyglet.GL.VERSION_1_1 import *
 from pyglet.GLU.VERSION_1_1 import *
 import pyglet.GL.info
 import pyglet.GLU.info
-from pyglet.window.xlib.glx.VERSION_1_3 import *
-from pyglet import clock
 
 w = pyglet.window.Window(1, 1, visible=False)
 
@@ -22,7 +20,6 @@ print 'GL attributes:'
 configs = [
     ('bufferSize=%d', 'buffer_size'),
     ('level=%d', 'level'),
-    ('renderType=%s', 'render_type'),
     ('doubleBuffer=%d', 'doublebuffer'),
     ('stereo=%d\n', 'stereo'),
     ('    rgba: redSize=%d', 'red_size'),
@@ -39,8 +36,7 @@ configs = [
 ]
 attrs = w.get_config().get_gl_attributes()
 for s, attr in configs:
-    if attr == 'render_type': print s%(attrs[attr] and 'rgba' or 'ci'),
-    else: print s%attrs[attr],
+    print s%attrs[attr],
 
 print 'GL version:', pyglet.GL.info.get_version()
 print 'GL vendor:', pyglet.GL.info.get_vendor()
@@ -56,20 +52,22 @@ print ' ', '\n  '.join(textwrap.wrap(exts))
 
 print
 
-# XXX UGH XXX
-print 'Context is', w._context
-print 'GLX %s direct'%(w._context.is_direct() and 'is' or 'is not')
-print 'GLX server vendor:', w._context.get_server_vendor()
-print 'GLX server version:', w._context.get_server_version()
-print 'GLX server extensions:'
-exts = ' '.join(w._context.get_server_extensions())
-print ' ', '\n  '.join(textwrap.wrap(exts))
-print 'GLX client vendor:', w._context.get_client_vendor()
-print 'GLX client version:', w._context.get_client_version()
-print 'GLX client extensions:'
-exts = ' '.join(w._context.get_client_extensions())
-print ' ', '\n  '.join(textwrap.wrap(exts))
-print 'GLX extensions:'
-exts = ' '.join(w._context.get_extensions())
-print ' ', '\n  '.join(textwrap.wrap(exts))
+context = w.get_context()
+print 'Context is', context
+
+if context.__class__.__name__ == 'XlibGLContext':
+    print 'GLX %s direct'%(context.is_direct() and 'is' or 'is not')
+    print 'GLX server vendor:', context.get_server_vendor()
+    print 'GLX server version:', context.get_server_version()
+    print 'GLX server extensions:'
+    exts = ' '.join(context.get_server_extensions())
+    print ' ', '\n  '.join(textwrap.wrap(exts))
+    print 'GLX client vendor:', context.get_client_vendor()
+    print 'GLX client version:', context.get_client_version()
+    print 'GLX client extensions:'
+    exts = ' '.join(context.get_client_extensions())
+    print ' ', '\n  '.join(textwrap.wrap(exts))
+    print 'GLX extensions:'
+    exts = ' '.join(context.get_extensions())
+    print ' ', '\n  '.join(textwrap.wrap(exts))
 
