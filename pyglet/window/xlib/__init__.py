@@ -27,6 +27,8 @@ import unicodedata
 import warnings
 
 from pyglet.GL.VERSION_1_1 import *
+import pyglet.GL.info
+import pyglet.GLU.info
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
@@ -35,7 +37,6 @@ from pyglet.window.xlib.types import *
 from pyglet.window.xlib.glx.VERSION_1_4 import *
 
 # Load X11 library, specify argtypes and restype only when necessary.
-Display = c_void_p
 Atom = c_ulong
 
 path = util.find_library('X11')
@@ -265,6 +266,23 @@ class XlibGLContext(BaseGLContext):
         super(XlibGLContext, self).destroy()
         glXDestroyContext(self._display, self._context)
 
+    def is_direct(self):
+        return glXIsDirect(self._display, self._context)
+    def get_server_vendor(self):
+        return glXQueryServerString(self._display, 0, GLX_VENDOR)
+    def get_server_version(self):
+        return glXQueryServerString(self._display, 0, GLX_VERSION)
+    def get_server_extensions(self):
+        return glXQueryServerString(self._display, 0, GLX_EXTENSIONS).split()
+    def get_client_vendor(self):
+        return glXGetClientString(self._display, GLX_VENDOR)
+    def get_client_version(self):
+        return glXGetClientString(self._display, GLX_VERSION)
+    def get_client_extensions(self):
+        return glXGetClientString(self._display, GLX_EXTENSIONS).split()
+    def get_extensions(self):
+        return glXQueryExtensionsString(self._display, 0).split()
+
 _xlib_event_handler_names = []
 
 def XlibEventHandler(event):
@@ -470,6 +488,7 @@ class XlibWindow(BaseWindow):
         glXMakeContextCurrent(self._display,
             self._glx_window, self._glx_window, self._glx_context)
         pyglet.GL.info.set_context()
+        pyglet.GLU.info.set_context()
 
         if self._lost_context:
             self._lost_context = False

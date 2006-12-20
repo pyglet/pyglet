@@ -11,8 +11,8 @@ Pyglet is the top layer in the following diagram:</p>
 <table align="center" id="overview">
 <tbody>
 <TR class="pyglet">
-    <TD title="Window opening and management"> Windows</TD>
-    <TD title="Event management and handlers (incl. input devices)">Events</TD>
+    <TD title="Window opening and management including input devices"> Windows</TD>
+    <TD title="Event management">Events</TD>
     <TD title="Image loading and saving (PNG, JPEG and others)">Images</TD>
     <TD title="Truetype text rendering with styles and layout">Text</TD>
     <TD title="High-level API for OpenGL graphics">2D &amp; 3D Graphics</TD>
@@ -38,20 +38,24 @@ Pyglet is the top layer in the following diagram:</p>
 
 <table id="status">
 <tr><th>Component</th><th>Linux</th><th>Mac</th><th>Win</th><th>API</th></tr>
-<tr><td>Windowing</td><td>Y*</td><td>Y</td><td>Y</td><td>beta</td></tr>
-<tr><td>Events</td><td>Y</td><td>Y</td><td>Y</td><td>beta</td></tr>
+<tr><td>Windowing</td><td>Y*</td><td>Y</td><td>Y</td><td>alpha</td></tr>
+<tr><td>Events</td><td colspan="3">Y</td><td>beta</td></tr>
 <tr><td>Images</td><td>Y</td><td>Y</td><td>Y</td><td>alpha</td></tr>
 <tr><td>Text</td><td>P</td><td>P</td><td>P</td><td>alpha</td></tr>
 <tr><td>OpenGL</td><td>Y</td><td>Y</td><td>Y</td><td>solid</td></tr>
-<tr><td>2D/3D API</td><td colspan="3">N</td><td>-</td></tr>
-<tr><td>GUI</td><td colspan="3">N</td><td>-</td></tr>
+<tr><td>2D/3D API</td><td colspan="3">P</td><td>pre-alpha</td></tr>
+<tr><td>GUI</td><td colspan="3">P</td><td>pre-alpha</td></tr>
 <tr><td>Documentation</td><td colspan="3">N</td><td>-</td></tr>
 </table>
-
+<p>Notes:</p>
 <ul>
 <li>Y=Yes, N=No, P=Partial, "alpha" means it'll probably change, "beta"
 means it probably won't change, "solid" means it's really not likely to
 change at all. Probably.</li>
+<li>A "Y" indicates that the implementation meets the current spec defined
+in the requirements doc. We have some additional features we'd like to
+implement (for example, changing screen modes, scroll event needs x,y of
+mouse).</li>
 <li>Linux windowing: needs support for GLX &lt; 1.2</li>
 </ul>
 

@@ -188,7 +188,6 @@ import sys
 
 from pyglet.window.event import WindowEventHandler
 import pyglet.window.key
-import pyglet.GL.info
 
 # List of contexts currently in use, so we can create new contexts that
 # share objects with.  Remember to remove from this list when context is
