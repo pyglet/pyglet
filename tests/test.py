@@ -544,7 +544,9 @@ def main(args):
          'no-regression-check',
          'no-interactive',
          'developer',
-         'help']
+         'help',
+         'full-help'
+    ]
 
     def usage():
         print '''Usage: %s [args] [tests]
@@ -563,7 +565,8 @@ OPTIONS (with default values):
   --no-regression-check
   --no-interactive
   --developer
-  --help'''%(sys.argv[0], requirements_filename, test_root,
+  --help
+  --full-help'''%(sys.argv[0], requirements_filename, test_root,
             ','.join(capabilities), log_level, log_file or '<stdout>',
             regressions_path, regression_tolerance)
 
@@ -602,6 +605,9 @@ OPTIONS (with default values):
             developer = True
         elif key == '--help':
             usage()
+            return
+        elif key == '--full-help':
+            print __doc__
             return
 
     if developer:

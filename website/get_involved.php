@@ -12,12 +12,17 @@ you're interested in pyglet, want to contribute or give us feedback.</p>
 
 <h2>Prerequisites</h2>
 
-<p>Python 2.4 with ctypes 1.0 <strong>or</strong> Python 2.5.</p>
-<p>A video card capable of creating 24-bit or 32-bit OpenGL 1.1 contexts, or
-better.</p>
+<p>You may confirm your system capabilities by running the script
+"tools/info.py".</p>
 
 <dl>
-  <dt>Linux</dt>
+  <dt><strong>All Operating Systems</strong></dt>
+    <ul>
+      <li>Python 2.4 with ctypes 1.0 <strong>or</strong> Python 2.5.</li>
+      <li>A video card capable of creating 24-bit or
+      32-bit OpenGL 1.1 contexts, or better.</li>
+    </ul>
+  <dt><strong>Linux</strong></dt>
   <dd>
     <ul>
       <li>Xlib <em>(what version?)</em></li>
@@ -26,13 +31,13 @@ better.</p>
       <li>libgdk_pixbuf-2.0</li>
     </ul>
   </dd>
-  <dt>Mac OS X</dt>
+  <dt><strong>Mac OS X</strong></dt>
   <dd>
     <ul>
       <li>10.3 or later.</li>
     </ul>
   </dd>
-  <dt>Windows</dt>
+  <dt><strong>Windows</strong></dt>
   <dd>
     <ul>
       <li>XP or later (2000 and server editions are <em>not</em>
@@ -64,6 +69,9 @@ checkout where the "LICENSE" file resides and typing:</p>
 windows, image loading and saving, text rendering, events, etc. Please sign
 up to the mailing list above to give us feedback on your success running
 the tests.</p>
+
+<p>If you want more information on how the test runner works, or docs on
+its usage, pass it the "--full-help" command-line argument.</p>
 
 </body>
 </html>
