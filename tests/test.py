@@ -106,6 +106,10 @@ Command-line options:
 --regression-path=
     Specify the directory to store and look for regression images.
     Defaults to tests/regression/images/
+--developer
+    Run tests with capability progress marked 'D' (developer-only).  Enable
+    this only if you are the developer of the feature; otherwise expect
+    it to fail.
 --no-interactive=
     Don't write descriptions or prompt for confirmation; just run each
     test in succcession.
@@ -211,6 +215,7 @@ regressions_path = os.path.join(os.path.dirname(__file__),
 
 class RequirementsComponent(object):
     FULL = 50
+    DEVELOPER = 40
     PARTIAL = 25
     NONE = 0
     UNKNOWN = -1
@@ -238,7 +243,10 @@ class RequirementsComponent(object):
         return max(self.progress.values())
 
     def is_implemented(self, capabilities):
-        return self.get_progress(capabilities) >= self.FULL
+        if 'DEVELOPER' in capabilities:
+            return self.get_progress(capabilities) >= self.DEVELOPER
+        else:
+            return self.get_progress(capabilities) >= self.FULL
 
     def get_module_filename(self, root=''):
         path = os.path.join(*self.get_absname().split('.'))
@@ -386,6 +394,7 @@ class RequirementsParser(docutils.nodes.GenericNodeVisitor):
 class ImplementationParser(docutils.nodes.GenericNodeVisitor):
     progress_lookup = {
         'X': RequirementsComponent.FULL,
+        'D': RequirementsComponent.DEVELOPER,
         '/': RequirementsComponent.PARTIAL,
         '': RequirementsComponent.NONE,
     }
@@ -513,6 +522,7 @@ def main(args):
     enable_regression_check = True
     regression_tolerance = 2
     interactive = True
+    developer = False
 
     capabilities = ['GENERIC']
     platform_capabilities = {
@@ -533,6 +543,7 @@ def main(args):
          'no-regression-capture',
          'no-regression-check',
          'no-interactive',
+         'developer',
          'help']
 
     def usage():
@@ -551,6 +562,7 @@ OPTIONS (with default values):
   --no-regression-capture
   --no-regression-check
   --no-interactive
+  --developer
   --help'''%(sys.argv[0], requirements_filename, test_root,
             ','.join(capabilities), log_level, log_file or '<stdout>',
             regressions_path, regression_tolerance)
@@ -586,9 +598,14 @@ OPTIONS (with default values):
         elif key == '--no-interactive':
             interactive = False
             enable_regression_capture = False
+        elif key == '--developer':
+            developer = True
         elif key == '--help':
             usage()
             return
+
+    if developer:
+        capabilities.append('DEVELOPER')
 
     if enable_regression_capture:
         try:

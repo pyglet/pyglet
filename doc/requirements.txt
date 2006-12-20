@@ -18,6 +18,8 @@ Mark off progress for each component/capability pair with:
 +---+--------------------------------------------+
 | X | Implemented                                |
 +---+--------------------------------------------+
+| D | In development (requires --developer)      |
++---+--------------------------------------------+
 | / | Partially implemented (ignored by test.py) |
 +---+--------------------------------------------+
 |   | Not yet implemented.                       |
@@ -231,13 +233,13 @@ text
         ============================== === === ===
         Component                      X11 WIN OSX
         ============================== === === ===
-        DEFAULT                         X   X   X
-        SYSTEM                          X   X   X
+        DEFAULT                         D   D   D
+        SYSTEM                          D   D   D
         FILE
         ASIAN_FILE
-        ANTIALIAS                           X   X
-        COLOR                           X   X   X
-        COLOR_BLEND                     X   X   X
+        ANTIALIAS                           D   D
+        COLOR                           D   D   D
+        COLOR_BLEND                     D   D   D
         KERNING
         ITALIC_CORRECTION
         VERTICAL
