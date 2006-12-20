@@ -19,7 +19,6 @@ w = pyglet.window.Window(1, 1, visible=False)
 print 'GL attributes:'
 configs = [
     ('bufferSize=%d', 'buffer_size'),
-    ('level=%d', 'level'),
     ('doubleBuffer=%d', 'doublebuffer'),
     ('stereo=%d\n', 'stereo'),
     ('    rgba: redSize=%d', 'red_size'),
