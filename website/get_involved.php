@@ -10,6 +10,43 @@ include("page_head.php");
 href="http://groups.google.com/group/pyglet-users">mailing list</a> if
 you're interested in pyglet, want to contribute or give us feedback.</p>
 
+<h2>Prerequisites</h2>
+
+<p>Python 2.4 with ctypes 1.0 <strong>or</strong> Python 2.5.</p>
+<p>A video card capable of creating 24-bit or 32-bit OpenGL 1.1 contexts, or
+better.</p>
+
+<dl>
+  <dt>Linux</dt>
+  <dd>
+    <ul>
+      <li>Xlib <em>(what version?)</em></li>
+      <li>GLX 1.3 or above (support for 1.2 is coming...)</li>
+      <li>libgdk-x11-2.0</li>
+      <li>libgdk_pixbuf-2.0</li>
+    </ul>
+  </dd>
+  <dt>Mac OS X</dt>
+  <dd>
+    <ul>
+      <li>10.3 or later.</li>
+    </ul>
+  </dd>
+  <dt>Windows</dt>
+  <dd>
+    <ul>
+      <li>XP or later (2000 and server editions are <em>not</em>
+      supported).</li>
+    </ul>
+  </dd>
+</dl>
+
+<p>pyglet will use <a href="http://www.pythonware.com/products/pil/">PIL</a>
+if it is installed, and is required only for saving images in formats other
+than PNG and DDS.</p>
+
+<p><a href="http://docutils.sourceforge.net/">docutils</a> is required to run the test suite.</p>
+
 <h2>Try</h2>
 <p>If you keen to try out pyglet then you may get the source from the <a
 href="http://code.google.com/p/pyglet">subversion repository</a> at the
