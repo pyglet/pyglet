@@ -17,11 +17,13 @@ you're interested in pyglet, want to contribute or give us feedback.</p>
 
 <dl>
   <dt><strong>All Operating Systems</strong></dt>
+  <dd>
     <ul>
       <li>Python 2.4 with ctypes 1.0 <strong>or</strong> Python 2.5.</li>
       <li>A video card capable of creating 24-bit or
       32-bit OpenGL 1.1 contexts, or better.</li>
     </ul>
+  </dd>
   <dt><strong>Linux</strong></dt>
   <dd>
     <ul>
