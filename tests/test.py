@@ -528,6 +528,7 @@ def main(args):
     platform_capabilities = {
         'linux2': 'X11',
         'win32': 'WIN',
+        'cygwin': 'WIN',
         'darwin': 'OSX'
     }
     if sys.platform in platform_capabilities:

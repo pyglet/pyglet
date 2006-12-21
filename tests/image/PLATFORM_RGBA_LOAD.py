@@ -15,7 +15,7 @@ from pyglet.image.codecs import *
 
 if sys.platform == 'linux2':
     from pyglet.image.codecs import gdkpixbuf2 as platform_decoder
-elif sys.platform == 'win32':
+elif sys.platform in ('win32', 'cygwin'):
     from pyglet.image.codecs import gdiplus as platform_decoder
 elif sys.platform == 'darwin':
     from pyglet.image.codecs import quicktime as platform_decoder

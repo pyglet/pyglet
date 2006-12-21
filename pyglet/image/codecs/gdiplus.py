@@ -142,8 +142,16 @@ class GDIPlusDecoder(ImageDecoder):
             byref(rect), ImageLockModeRead, pf, byref(bitmap_data))
         
         # Create buffer for RawImage
-        buffer = create_string_buffer(width * height * len(format))
+        buffer = create_string_buffer(bitmap_data.Stride * height * len(format))
         memmove(buffer, bitmap_data.Scan0, len(buffer))
+        
+        # Guess alignment from low stride bits.
+        if bitmap_data.Stride & 1:
+            alignment = 1
+        elif bitmap_data.Stride & 2:
+            alignment = 2
+        else:
+            alignment = 4
 
         # Unlock data
         gdiplus.GdipBitmapUnlockBits(bitmap, byref(bitmap_data))
@@ -152,7 +160,8 @@ class GDIPlusDecoder(ImageDecoder):
         gdiplus.GdipDisposeImage(bitmap)
         # TODO: How to call IUnknown::Release on stream?
 
-        return RawImage(buffer, width, height, format, type, top_to_bottom=True)
+        return RawImage(buffer, width, height, format, type, 
+                        top_to_bottom=True, alignment=alignment)
 
 def get_decoders():
     return [GDIPlusDecoder()]

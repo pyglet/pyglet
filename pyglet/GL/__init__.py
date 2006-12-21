@@ -12,7 +12,7 @@ import sys
 
 from pyglet.GL.info import have_context
 
-if sys.platform == 'win32':
+if sys.platform in ('win32', 'cygwin'):
     class WGLExtensionProxy(object):
         __slots__ = ['name', 'ftype', 'func']
         def __init__(self, name, ftype):

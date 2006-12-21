@@ -19,7 +19,7 @@ import base_text
 
 if sys.platform == 'darwin':
     font_name = 'Helvetica'
-elif sys.platform == 'win32':
+elif sys.platform in ('win32', 'cygwin'):
     font_name = 'Arial'
 else:
     font_name = 'Arial'

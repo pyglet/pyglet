@@ -12,7 +12,7 @@ import operator
 import ctypes
 import ctypes.util
 
-if sys.platform == 'win32':
+if sys.platform in ('win32', 'cygwin'):
     # Win32 Sleep function is only 10-millisecond resolution, so instead
     # use a waitable timer object, which has up to 100-nanosecond resolution
     # (hardware and implementation dependent, of course).

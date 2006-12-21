@@ -738,7 +738,7 @@ def create(width=None,
 if sys.platform == 'darwin':
     from pyglet.window.carbon import CarbonPlatform
     _platform = CarbonPlatform()
-elif sys.platform == 'win32':
+elif sys.platform in ('win32', 'cygwin'):
     from pyglet.window.win32 import Win32Platform
     _platform = Win32Platform()
 else:

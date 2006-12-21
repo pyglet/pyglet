@@ -10,7 +10,7 @@ import ctypes
 import ctypes.util
 import sys
 
-if sys.platform == 'win32':
+if sys.platform in ('win32', 'cygwin'):
     _glu = ctypes.windll.glu32
     def get_function(name, argtypes, rtype):
         try:
