@@ -217,6 +217,10 @@ class XlibPlatform(BasePlatform):
         return display
 
 def have_glx_version(display, major, minor=0):
+    # see whether we can get GLX at all
+    if not glXQueryExtension(display, None, None):
+        raise XlibException('pyglet requires an X server with GLX')
+
     # glXQueryServerString was introduced in GLX 1.1, so we need to use the
     # 1.0 function here which queries the server implementation for its
     # version.
@@ -333,6 +337,12 @@ class XlibGLContext(BaseGLContext):
         # not already active (as it would be in most single-window apps).
 
         super(XlibGLContext, self).destroy()
+
+        if (self.get_server_version() == '1.0' and 
+                pyglet.GL.info.get_vendor() == 'ATI Technologies Inc.'):
+            # ATI's 1.0 implementation of glXDestroyContext is broken
+            return
+
         glXDestroyContext(self._display, self._context)
 
     def is_direct(self):
@@ -340,7 +350,14 @@ class XlibGLContext(BaseGLContext):
     def get_server_vendor(self):
         return glXQueryServerString(self._display, 0, GLX_VENDOR)
     def get_server_version(self):
-        return glXQueryServerString(self._display, 0, GLX_VERSION)
+        # glXQueryServerString was introduced in GLX 1.1, so we need to use the
+        # 1.0 function here which queries the server implementation for its
+        # version.
+        major = c_int()
+        minor = c_int()
+        if not glXQueryVersion(display, byref(major), byref(minor)):
+            raise XlibException('Could not determine GLX version')
+        return '%s.%s'%(major, minor)
     def get_server_extensions(self):
         return glXQueryServerString(self._display, 0, GLX_EXTENSIONS).split()
     def get_client_vendor(self):
