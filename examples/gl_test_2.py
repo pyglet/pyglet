@@ -39,14 +39,14 @@ def draw():
     glVertex3f(1., -1., -5.)
     glEnd()
 
-w1 = pyglet.window.create(200, 200)
+w1 = pyglet.window.Window(200, 200)
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)
 w1.switch_to()
 setup()
 
 c = clock.Clock()
-w2 = pyglet.window.create(400, 400)
+w2 = pyglet.window.Window(400, 400)
 w2.push_handlers(exit_handler)
 w2.switch_to()
 setup()

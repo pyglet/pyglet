@@ -21,6 +21,7 @@ Resize and move are handled by a bunch of different events:
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import sets
 from ctypes import *
 from ctypes import util
 import unicodedata
@@ -61,7 +62,7 @@ xlib.XCheckTypedWindowEvent.argtypes = [POINTER(Display),
     c_ulong, c_int, POINTER(XEvent)]
 xlib.XPutBackEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
 xlib.XCreateWindow.argtypes = [POINTER(Display), WindowRef,
-    c_int, c_int, c_uint, c_uint, c_uint, c_int, c_uint, 
+    c_int, c_int, c_uint, c_uint, c_uint, c_int, c_uint,
     POINTER(Visual), c_ulong, POINTER(XSetWindowAttributes)]
 
 # Do we have the November 2000 UTF8 extension?
@@ -95,6 +96,11 @@ _attribute_ids = {
     'transparent_alpha_value': GLX_TRANSPARENT_ALPHA_VALUE,
     'x_renderable': GLX_X_RENDERABLE,
 }
+
+only_in_13 = sets.Set(['sample_buffers', 'samples', 'render_type',
+    'config_caveat', 'transparent_type', 'transparent_index_value',
+    'transparent_red_value', 'transparent_green_value',
+    'transparent_blue_value', 'transparent_alpha_value', 'x_renderable'])
 
 class XlibException(WindowException):
     pass
@@ -142,31 +148,41 @@ class XlibPlatform(BasePlatform):
 
         factory.set_gl_attribute('x_renderable', True)
 
-        # Construct array of attributes for glXChooseFBConfig
+        have_13 = have_glx_version(display, 1, 3)
+
+        # Construct array of attributes
         attrs = []
         for name, value in factory.get_gl_attributes().items():
+            if not have_13 and name in only_in_13:
+                continue
+
             attr = _attribute_ids.get(name, None)
             if not attr:
                 warnings.warn('Unknown GLX attribute "%s"' % name)
-            attrs.append(attr)
-            attrs.append(int(value))
+            attrs.extend([attr, int(value)])
+
+        if not have_13:
+            attrs.extend([GLX_RGBA, True])
+
         if len(attrs):
-            attrs.append(0)
-            attrs.append(0)
+            attrs.extend([0, 0])
             attrib_list = (c_int * len(attrs))(*attrs)
         else:
             attrib_list = None
-        elements = c_int()
-        configs = glXChooseFBConfig(display, 
-            screen._x_screen_id, attrib_list, byref(elements))
-        if configs:
+
+        if have_13:
+            elements = c_int()
+            configs = glXChooseFBConfig(display, screen._x_screen_id,
+                attrib_list, byref(elements))
+            if not configs:
+                return []
             result = []
             for i in range(elements.value):
-                result.append(XlibGLConfig(display, screen, configs[i]))
+                result.append(XlibGLConfig13(display, screen, configs[i]))
             xlib.XFree(configs)
             return result
         else:
-            return []
+            return [XlibGLConfig10(display, screen, attrib_list)]
 
     def create_context(self, factory):
         config = factory.get_config()
@@ -174,8 +190,7 @@ class XlibPlatform(BasePlatform):
         if context_share:
             context_share = context_share._context
 
-        context = glXCreateNewContext(config._display, config._fbconfig, 
-            GLX_RGBA_TYPE, context_share, True)
+        context = config.create_context(context_share)
 
         if context == GLXBadContext:
             raise XlibException('Invalid context share')
@@ -201,6 +216,24 @@ class XlibPlatform(BasePlatform):
             factory.set_x_display(display)
         return display
 
+def have_glx_version(display, major, minor=0):
+    # glXQueryServerString was introduced in GLX 1.1, so we need to use the
+    # 1.0 function here which queries the server implementation for its
+    # version.
+    smajor = c_int()
+    sminor = c_int()
+    if not glXQueryVersion(display, byref(smajor), byref(sminor)):
+        raise XlibException('Could not determine GLX version')
+    if (smajor, sminor) < (major, minor):
+        return False
+
+    # ok, server passed, sanity check that the client passes too -- of
+    # course if the client is somehow < v1.1 this can't work as this
+    # function was also introduced in 1.1...
+    version = glXGetClientString(display, GLX_VERSION)
+    version = [int(v) for v in version.split('.')]
+    return version >= [major, minor]
+
 class XlibScreen(BaseScreen):
     def __init__(self, display, x_screen_id, x, y, width, height, xinerama):
         super(XlibScreen, self).__init__(x, y, width, height)
@@ -214,9 +247,38 @@ class XlibScreen(BaseScreen):
             (self._x_screen_id, self.x, self.y, self.width, self.height,
              self._xinerama)
 
-class XlibGLConfig(BaseGLConfig):
+class XlibGLConfig10(BaseGLConfig):
+    def __init__(self, display, screen, attrib_list):
+        super(XlibGLConfig10, self).__init__()
+        self._display = display
+        self._screen = screen
+        self._attrib_list = attrib_list
+        self._visual_info = glXChooseVisual(self._display,
+            screen._x_screen_id, self._attrib_list)
+        if not self._visual_info:
+            raise XlibException('No conforming visual exists')
+
+        self._attributes = {}
+        for name, attr in _attribute_ids.items():
+            value = c_int()
+            result = glXGetConfig(self._display,
+                self._visual_info, attr, byref(value))
+            if result >= 0:
+                self._attributes[name] = value.value
+
+    def get_visual_info(self):
+        return self._visual_info.contents
+
+    def get_gl_attributes(self):
+        return self._attributes
+
+    def create_context(self, context_share):
+        return glXCreateContext(self._display, self._visual_info,
+            context_share, True)
+
+class XlibGLConfig13(BaseGLConfig):
     def __init__(self, display, screen, fbconfig):
-        super(XlibGLConfig, self).__init__()
+        super(XlibGLConfig13, self).__init__()
         self._display = display
         self._screen = screen
         self._fbconfig = fbconfig
@@ -228,8 +290,15 @@ class XlibGLConfig(BaseGLConfig):
             if result >= 0:
                 self._attributes[name] = value.value
 
+    def get_visual_info(self):
+        return glXGetVisualFromFBConfig(self._display, self._fbconfig).contents
+
     def get_gl_attributes(self):
         return self._attributes
+
+    def create_context(self, context_share):
+        return glXCreateNewContext(self._display, self._fbconfig,
+            GLX_RGBA_TYPE, context_share, True)
 
 class XlibGLContext(BaseGLContext):
     def __init__(self, display, context):
@@ -350,7 +419,8 @@ class XlibWindow(BaseWindow):
         # This would prevent the floating window from being moved by the
         # WM.
         if self._window and factory.get_fullscreen() != self._fullscreen:
-            glXDestroyWindow(self._display, self._glx_window)
+            if self._glx_window:
+                glXDestroyWindow(self._display, self._glx_window)
             xlib.XDestroyWindow(self._display, self._window)
             self._glx_window = None
             self._window = None
@@ -375,8 +445,8 @@ class XlibWindow(BaseWindow):
         if not self._window:
             root = xlib.XRootWindow(self._display, self._screen_id)
 
-            visual_info = glXGetVisualFromFBConfig(self._display,
-                config._fbconfig).contents
+            visual_info = config.get_visual_info()
+
             visual = visual_info.visual
             visual_id = xlib.XVisualIDFromVisual(visual)
             default_visual = xlib.XDefaultVisual(self._display, self._screen_id)
@@ -389,7 +459,7 @@ class XlibWindow(BaseWindow):
                 window_attributes.colormap = xlib.XDefaultColormap(
                     self._display, self._screen_id)
             self._window = xlib.XCreateWindow(self._display, root,
-                0, 0, self._width, self._height, 0, visual_info.depth, 
+                0, 0, self._width, self._height, 0, visual_info.depth,
                 InputOutput, visual, CWColormap, byref(window_attributes))
 
             # Setting null background pixmap disables drawing the background,
@@ -481,12 +551,15 @@ class XlibWindow(BaseWindow):
         self._glx_window = None
 
     def switch_to(self):
-        if not self._glx_window:
-            self._glx_window = glXCreateWindow(self._display,
-                self._config._fbconfig, self._window, None)
+        if have_glx_version(self._display, 1, 3):
+            if not self._glx_window:
+                self._glx_window = glXCreateWindow(self._display,
+                    self._config._fbconfig, self._window, None)
+            glXMakeContextCurrent(self._display,
+                self._glx_window, self._glx_window, self._glx_context)
+        else:
+            glXMakeCurrent(self._display, self._window, self._glx_context)
 
-        glXMakeContextCurrent(self._display,
-            self._glx_window, self._glx_window, self._glx_context)
         pyglet.GL.info.set_context()
         pyglet.GLU.info.set_context()
 
@@ -498,11 +571,13 @@ class XlibWindow(BaseWindow):
             self.dispatch_event(EVENT_CONTEXT_STATE_LOST)
 
     def flip(self):
-        if not self._glx_window:
-            self._glx_window = glXCreateWindow(self._display,
-                self._config._fbconfig, self._window, None)
-
-        glXSwapBuffers(self._display, self._glx_window)
+        if have_glx_version(self._display, 1, 3):
+            if not self._glx_window:
+                self._glx_window = glXCreateWindow(self._display,
+                    self._config._fbconfig, self._window, None)
+            glXSwapBuffers(self._display, self._glx_window)
+        else:
+            glXSwapBuffers(self._display, self._window)
 
     def set_caption(self, caption):
         self._caption = caption
@@ -583,7 +658,7 @@ class XlibWindow(BaseWindow):
             # Hide pointer by creating an empty cursor
             black = xlib.XBlackPixel(self._display, self._screen_id)
             black = c_int(black)
-            bmp = xlib.XCreateBitmapFromData(self._display, self._window, 
+            bmp = xlib.XCreateBitmapFromData(self._display, self._window,
                 (c_byte * 8)(), 8, 8)
             cursor = xlib.XCreatePixmapCursor(self._display, bmp, bmp,
                 byref(black), byref(black), 0, 0)
@@ -592,7 +667,7 @@ class XlibWindow(BaseWindow):
             xlib.XFreePixmap(self._display, bmp)
 
             # Restrict to client area
-            xlib.XGrabPointer(self._display, self._window, 
+            xlib.XGrabPointer(self._display, self._window,
                 True,
                 0,
                 GrabModeAsync,
@@ -666,7 +741,7 @@ class XlibWindow(BaseWindow):
                     1, byref(property))
                 if result < 0:
                     raise XlibException('Could not create text property')
-            xlib.XSetTextProperty(self._display, 
+            xlib.XSetTextProperty(self._display,
                 self._window, byref(property), atom)
             # XXX <rj> Xlib doesn't like us freeing this
             #xlib.XFree(property.value)
@@ -681,7 +756,7 @@ class XlibWindow(BaseWindow):
         if len(atoms):
             atoms_ar = (Atom * len(atoms))(*atoms)
             xlib.XChangeProperty(self._display, self._window,
-                net_wm_state, atom_type, 32, PropModePrepend, 
+                net_wm_state, atom_type, 32, PropModePrepend,
                 atoms_ar, len(atoms))
         else:
             xlib.XDeleteProperty(self._display, self._window, net_wm_state)
@@ -731,7 +806,7 @@ class XlibWindow(BaseWindow):
     def _translate_modifiers(state):
         modifiers = 0
         if state & ShiftMask:
-            modifiers |= MOD_SHIFT  
+            modifiers |= MOD_SHIFT
         if state & ControlMask:
             modifiers |= MOD_CTRL
         if state & LockMask:
@@ -757,9 +832,9 @@ class XlibWindow(BaseWindow):
                 self._window, KeyPress, byref(auto_event))
             if result and event.xkey.time == auto_event.xkey.time:
                 buffer = create_string_buffer(16)
-                count = xlib.XLookupString(byref(auto_event), 
-                                           byref(buffer), 
-                                           len(buffer), 
+                count = xlib.XLookupString(byref(auto_event),
+                                           byref(buffer),
+                                           len(buffer),
                                            c_void_p(),
                                            c_void_p())
                 if count:
@@ -776,9 +851,9 @@ class XlibWindow(BaseWindow):
         if event.type == KeyPress:
             buffer = create_string_buffer(16)
             # TODO lookup UTF8
-            count = xlib.XLookupString(byref(event), 
-                                       byref(buffer), 
-                                       len(buffer), 
+            count = xlib.XLookupString(byref(event),
+                                       byref(buffer),
+                                       len(buffer),
                                        c_void_p(),
                                        c_void_p())
             if count:
@@ -835,7 +910,7 @@ class XlibWindow(BaseWindow):
         if buttons:
             # Drag event
             modifiers = self._translate_modifiers(event.xmotion.state)
-            self.dispatch_event(EVENT_MOUSE_DRAG, 
+            self.dispatch_event(EVENT_MOUSE_DRAG,
                 x, y, dx, dy, buttons, modifiers)
         else:
             # Motion event

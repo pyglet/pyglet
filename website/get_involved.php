@@ -28,7 +28,7 @@ you're interested in pyglet, want to contribute or give us feedback.</p>
   <dd>
     <ul>
       <li>Xlib <em>(what version?)</em></li>
-      <li>GLX 1.3 or above (support for 1.2 is coming...)</li>
+      <li>GLX</li>
       <li>libgdk-x11-2.0</li>
       <li>libgdk_pixbuf-2.0</li>
     </ul>

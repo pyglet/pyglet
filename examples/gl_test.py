@@ -14,7 +14,7 @@ from pyglet.GL.VERSION_1_1 import *
 from pyglet.GLU.VERSION_1_1 import *
 from pyglet import clock
 
-w1 = pyglet.window.create(200, 200)
+w1 = pyglet.window.Window(200, 200)
 
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)

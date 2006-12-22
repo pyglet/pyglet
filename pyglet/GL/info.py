@@ -31,7 +31,17 @@ def set_context():
     _have_context = True
     _vendor = glGetString(GL_VENDOR)
     _renderer = glGetString(GL_RENDERER)
-    _extensions = glGetString(GL_EXTENSIONS).split()
+    _extensions = glGetString(GL_EXTENSIONS)
+    if _extensions:
+        _extensions = _extensions.split()
+    else:
+        error = glGetError()
+        if error == GL_INVALID_ENUM:
+            _extensions = ['[unknown - GL_EXTENSIONS not supported]']
+        elif error == GL_INVALID_OPERATION:
+            raise ValueError('glGetString incorrectly called between '
+                'glBegin and glEnd')
+        _extensions = []
     _version = glGetString(GL_VERSION)
 
 def have_context():
