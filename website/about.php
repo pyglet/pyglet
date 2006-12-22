@@ -56,7 +56,8 @@ change at all. Probably.</li>
 in the requirements doc. We have some additional features we'd like to
 implement (for example, changing screen modes, scroll event needs x,y of
 mouse).</li>
-<li>Linux windowing: needs support for GLX &lt; 1.2</li>
+<li>Linux windowing: older ATI drivers are buggy and work-arounds are not
+yet written.</li>
 </ul>
 
   </div>
