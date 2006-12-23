@@ -55,9 +55,7 @@ pyglet.image
 
 Optional modules, in approximate increasing pieness of sky:
 
-pyglet.font  
-  <ah>: isn't this pyglet.text now?
-
+pyglet.text  
   Rendering and layout of fonts, using Freetype, Windows and OS X for
   rasterisation.  Includes the Bitstream family of fonts.  
 
@@ -72,7 +70,7 @@ pyglet.font
   glyph into a texture. Possibly pre-render the ASCII or latin-1 characters
   when the font is loaded? Possibly just use PackedTexture?
   
-pyglet.gui (requires pyglet.font)
+pyglet.gui (requires pyglet.text)
   Buttons, sliders, text entry, scrollable text, menus and lists.  Widgets
   can be decorated with a pluggable look-and-feel (useful for quick mockups,
   level-editors, graphics applications), or with customized images for
