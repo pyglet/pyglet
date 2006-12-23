@@ -334,7 +334,7 @@ class Win32Window(BaseWindow):
     def get_vsync(self):
         try:
             if _have_EXT_swap_control and \
-                'EXT_swap_control' in wglGetExtensionsStringEXT().split():
+                'WGL_EXT_swap_control' in wglGetExtensionsStringEXT().split():
                 return bool(wglGetSwapIntervalEXT())
         except:
             pass
@@ -343,7 +343,7 @@ class Win32Window(BaseWindow):
         # XXX TODO try/catch catches missing wglGetExtensionsStringEXT.
         try:
             if _have_EXT_swap_control and \
-                'EXT_swap_control' in wglGetExtensionsStringEXT().split():
+                'WGL_EXT_swap_control' in wglGetExtensionsStringEXT().split():
                 wglSwapIntervalEXT(int(vsync))
         except:
             warnings.warn('Could not set vsync; unsupported extension.')

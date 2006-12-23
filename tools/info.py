@@ -73,7 +73,7 @@ elif context.__class__.__name__ == 'Win32Context':
             wglGetExtensionsStringEXT
         wgl_extensions = wglGetExtensionsStringEXT()
         print 'WGL extensions:'
-        print ' ', '\n '.join(textwrap.wrap(wgl_extensions))
+        print '', '\n '.join(textwrap.wrap(wgl_extensions))
     except ImportError:
         print 'WGL_EXT_extensions_string is not implemented.'
 
