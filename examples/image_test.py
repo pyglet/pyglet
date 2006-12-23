@@ -14,7 +14,7 @@ if len(sys.argv) != 2:
     print 'Usage: %s <PNG/JPEG filename>'%sys.argv[0]
     sys.exit()
 
-window = pyglet.window.Window(width=200, height=200)
+window = pyglet.window.Window(width=800, height=800)
 
 tex = Texture.load(sys.argv[1])
 

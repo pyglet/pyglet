@@ -95,6 +95,9 @@ visible
 doublebuffer
     Use double-buffering to eliminate flicker and tearing.  Enabled by
     default.
+vsync
+    Enables syncing double-buffered display swaps to the monitor's
+    video frame.
 
 You can also specify any other OpenGL attributes supported by the platform;
 these are listed elsewhere.  (TODO: where?)
@@ -485,6 +488,7 @@ class WindowFactory(object):
 
     _screen = None
     _fullscreen = False
+    _vsync = True
     _width = 640
     _height = 480 # Reasonable default size.
     _location = LOCATION_DEFAULT
@@ -512,6 +516,12 @@ class WindowFactory(object):
 
     def get_fullscreen(self):
         return self._fullscreen
+
+    def set_vsync(self, vsync):
+        raise NotImplementedError()
+
+    def get_vsync(self):
+        return self._vsync
 
     def set_gl_attribute(self, name, value):
         '''Set the minimum value of a GL attribute for creating a context.
@@ -702,6 +712,7 @@ def create(width=None,
            fullscreen=False,
            visible=True,
            doublebuffer=True,
+           vsync=True,
            depth_size=24,
            window_class=None,
            **kwargs):
@@ -719,6 +730,7 @@ def create(width=None,
     factory.set_fullscreen(fullscreen)
     factory.set_gl_attribute('doublebuffer', doublebuffer)
     factory.set_gl_attribute('depth_size', depth_size)
+    factory.set_vsync(vsync)
     for key, value in kwargs.items():
         factory.set_gl_attribute(key, value)
     sys.argv = factory.set_arguments(sys.argv)
@@ -752,6 +764,7 @@ class Window(_platform.get_window_class()):
                  fullscreen=False,
                  visible=True,
                  doublebuffer=True,
+                 vsync=True,
                  depth_size=24,
                  **kwargs):
 
@@ -773,6 +786,9 @@ class Window(_platform.get_window_class()):
 
         self.create(factory)
         self.switch_to()
+        if vsync is None:
+            vsync = factory.get_vsync()
+        self.set_vsync(vsync)
         self.set_caption(sys.argv[0])
         if visible:
             self.set_visible(True)

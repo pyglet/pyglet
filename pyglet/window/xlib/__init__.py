@@ -362,6 +362,7 @@ class XlibWindow(BaseWindow):
     _window = None          # Xlib window handle
     _minimum_size = None
     _maximum_size = None
+    _vsync = None
 
     _x = 0
     _y = 0                  # Last known window position
@@ -568,6 +569,24 @@ class XlibWindow(BaseWindow):
             glXSwapBuffers(self._display, self._glx_window)
         else:
             glXSwapBuffers(self._display, self._window)
+
+    def set_vsync(self, vsync):
+        if self._vsync == vsync:
+            return True
+
+        # handle setting vsync
+        exts = glXQueryExtensionsString(self._display, 0).split()
+        if 'GLX_SGI_swap_control' not in exts:
+            return False
+
+        from pyglet.window.xlib.glx.SGI_swap_control import glXSwapIntervalSGI
+        ret = glXSwapIntervalSGI(vsync)
+        if ret:
+            # XXX warning
+            print "couldn't enable vertical sync (err=%d)"%ret
+            return False
+        self._vsync = vsync
+        return True
 
     def set_caption(self, caption):
         self._caption = caption
