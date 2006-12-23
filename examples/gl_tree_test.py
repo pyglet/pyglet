@@ -30,11 +30,10 @@ def setup_scene():
 # simple class that manages our main loop
 class running(ExitHandler):
     def __init__(self, fps=60):
-        self.clock = pyglet.clock.Clock()
-        self.fps = fps
+        self.clock = pyglet.clock.Clock(fps)
     def __nonzero__(self):
         if self.exit: return False
-        self.clock.set_fps(self.fps)
+        self.clock.tick()
         return True
 running = running()
 

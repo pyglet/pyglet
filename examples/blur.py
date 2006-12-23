@@ -827,8 +827,7 @@ window = pyglet.window.create(screen_width, screen_height)
 exit_handler = ExitHandler()
 window.push_handlers(exit_handler)
 
-clk = pyglet.clock.Clock()
-#fps = fps.FPS()
+clk = pyglet.clock.Clock(60)
 
 
 r = 0
@@ -867,7 +866,7 @@ buf_subsampled2.unbind()
 object = cube_array_list()
 
 while not exit_handler.exit:
-    clk.set_fps(60)
+    clk.tick()
 
     window.dispatch_events()
 

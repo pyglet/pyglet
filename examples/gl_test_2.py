@@ -45,7 +45,7 @@ w1.push_handlers(exit_handler)
 w1.switch_to()
 setup()
 
-c = clock.Clock()
+c = clock.Clock(60)
 w2 = pyglet.window.Window(400, 400)
 w2.push_handlers(exit_handler)
 w2.switch_to()
@@ -54,7 +54,7 @@ setup()
 
 r = 0
 while not exit_handler.exit:
-    c.set_fps(60)
+    c.tick()
 
     w1.switch_to()
     w1.dispatch_events()

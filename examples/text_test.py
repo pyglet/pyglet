@@ -19,7 +19,7 @@ sample = text.layout_html('''<font size="26"><i>Hello</i>,
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)
 
-c = clock.Clock()
+c = clock.Clock(10)
 
 glMatrixMode(GL_PROJECTION)
 glLoadIdentity()
@@ -31,7 +31,7 @@ glClearColor(1, 1, 1, 1)
 r = 0
 
 while not exit_handler.exit:
-    c.set_fps(10)
+    c.tick()
     w1.dispatch_events()
 
     glClear(GL_COLOR_BUFFER_BIT)

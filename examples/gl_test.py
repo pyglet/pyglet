@@ -19,7 +19,7 @@ w1 = pyglet.window.Window(200, 200)
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)
 
-c = clock.Clock()
+c = clock.Clock(60)
 
 glMatrixMode(GL_PROJECTION)
 glLoadIdentity()
@@ -30,7 +30,7 @@ glClearColor(1, 1, 1, 1)
 glColor4f(.5, .5, .5, .5)
 r = 0
 while not exit_handler.exit:
-    c.set_fps(60)
+    c.tick()
     w1.dispatch_events()
 
     glClear(GL_COLOR_BUFFER_BIT)

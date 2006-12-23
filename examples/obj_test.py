@@ -21,7 +21,7 @@ w1 = pyglet.window.Window(width=300, height=300)
 exit_handler = ExitHandler()
 w1.push_handlers(exit_handler)
 
-c = clock.Clock()
+c = clock.Clock(60)
 
 fourfv = ctypes.c_float * 4
 glLightfv(GL_LIGHT0, GL_POSITION, fourfv(100, 200, 100, 0))
@@ -45,7 +45,7 @@ bunny = obj.OBJ(os.path.join(os.path.split(__file__)[0], 'rabbit.obj'))
 
 r = 0
 while not exit_handler.exit:
-    c.set_fps(60)
+    c.tick()
     w1.dispatch_events()
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

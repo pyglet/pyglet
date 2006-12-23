@@ -1,6 +1,30 @@
 #!/usr/bin/env python
 
-'''
+'''Precise framerate calculation and framerate limiting.
+
+General use::
+
+    >>> clock = Clock()
+    >>> while True:
+    ...     dt = clock.tick()
+    ...     # (update, render)
+    ...     print 'FPS is %f' % clock.get_fps()
+    >>>
+
+The `dt` value returned gives the number of seconds (as a float) since the
+last "tick".  You can also limit the framerate::
+
+    >>> clock = Clock(20)       # limits to 20 FPS
+    >>>
+
+The implementation uses platform-dependent high-resolution sleep functions
+to achieve better accuracy with busy-waiting than would be possible using
+just the `time` module.  
+
+The `get_fps` function averages the framerate over a sliding window of
+approximately 1 second.  (You can calculate the absolute framerate by taking
+the reciprocal of `dt`).
+
 '''
 
 __docformat__ = 'restructuredtext'
@@ -40,6 +64,10 @@ else:
             _c.usleep(int(microseconds))
 
 class Clock(_ClockBase):
+    '''Class for calculating and limiting framerate.  See the module
+    docstring for usage.
+    '''
+
     # No attempt to sleep will be made for less than this time.  Setting
     # high will increase accuracy and CPU burn.  Setting low reduces accuracy
     # but ensures more sleeping takes place rather than busy-loop.
@@ -49,20 +77,64 @@ class Clock(_ClockBase):
     # for operating systems being a bit lazy in returning control.
     SLEEP_UNDERSHOOT = MIN_SLEEP - 0.001
 
-    def __init__(self, time_function=time.time):
+    def __init__(self, fps_limit=None, time_function=time.time):
+        '''Initialise a Clock, with optional framerate limit and custom
+        time function.
+
+        :Parameters:
+            `fps_limit` : float
+                If not None, the maximum allowable framerate.  Defaults
+                to None.
+            `time_function` : function
+                Function to return the elapsed time of the application, 
+                in seconds.  Defaults to time.time, but can be replaced
+                to allow for easy time dilation effects or game pausing.
+
+        '''
+
         super(Clock, self).__init__()
         self.time = time_function
         self.next_ts = self.time()
         self.last_ts = None
         self.times = []
 
-    def set_fps(self, fps):
-        ts = self.time()
+        self.set_fps_limit(fps_limit)
+        self.cumulative_time = 0
 
+    def tick(self):
+        '''Signify that one frame has passed.
+
+        :return: The number of seconds (as a float) since the last `tick`,
+            or 0 if this was the first frame.
+
+        '''
+        if self.period_limit:
+            self.limit()
+
+        ts = self.time()
+        if self.last_ts is None: 
+            delta_t = 0
+        else:
+            delta_t = ts - self.last_ts
+            self.times.insert(0, delta_t)
+            if len(self.times) > self.window_size:
+                self.cumulative_time -= self.times.pop()
+        self.cumulative_time += delta_t
+        self.last_ts = ts
+
+        return delta_t
+
+    def limit(self):
+        '''Sleep until the next frame is due.  Called automatically by
+        `tick` if a framerate limit has been set.
+
+        This method uses several heuristics to determine whether to
+        sleep or busy-wait (or both).
+        '''
+        ts = self.time()
         # Sleep to just before the desired time
         sleeptime = self.next_ts - self.time()
         while sleeptime - self.SLEEP_UNDERSHOOT > self.MIN_SLEEP:
-            # print >> sys.stderr, 'Sleep %f' % (sleeptime - SLEEP_UNDERSHOOT)
             self.sleep(1000000 * (sleeptime - self.SLEEP_UNDERSHOOT))
             sleeptime = self.next_ts - self.time()
 
@@ -71,32 +143,51 @@ class Clock(_ClockBase):
         while sleeptime > 0:
             sleeptime = self.next_ts - self.time()
 
-        if sleeptime < -2. / fps:
+        if sleeptime < -2 * self.period_limit:
             # Missed the time by a long shot, let's reset the clock
             # print >> sys.stderr, 'Step %f' % -sleeptime
-            self.next_ts = ts + 2. / fps
+            self.next_ts = ts + 2 * self.period_limit
         else:
             # Otherwise keep the clock steady
-            self.next_ts = self.next_ts + 1. / fps
+            self.next_ts = self.next_ts + self.period_limit
 
-        # XXX this is obviously going to incur additional delay - worth
-        # worrying about?
-        ts = self.time()
-        if self.last_ts is None: delta_t = 0
+    def set_fps_limit(self, fps_limit):
+        '''Set the framerate limit.
+
+        :Parameters:
+            `fps_limit` : float
+                Maximum frames per second allowed, or None to disable
+                limiting.
+
+        '''
+        if not fps_limit:
+            self.period_limit = None
         else:
-            delta_t = ts - self.last_ts
-            self.times.insert(0, delta_t)
-            if len(self.times) > fps:
-                self.times.pop()
-        self.last_ts = ts
+            self.period_limit = 1. / fps_limit
+        self.window_size = fps_limit or 60
 
-        return ts
+    def get_fps_limit(self):
+        '''Get the framerate limit.
+
+        :return: The framerate limit previously set in the constructor or
+            `set_fps_limit`, or None if no limit was set.
+
+        '''
+        if self.period_limit:
+            return 1. / self.period_limit
+        else:
+            return 0
 
     def get_fps(self):
-        if not self.times: return 0
-        t = reduce(operator.add, self.times, 0.) / len(self.times)
-        if not t: return 0
-        return 1/t
+        '''Get the average FPS of recent history, as a float.  The result
+        is the average of a sliding window of the last `n` frames, where
+        `n` is some number designed to cover approximately 1 second.
+
+        :return: The measured frames per second.
+        '''
+        if not self.times: 
+            return 0
+        return len(self.times) / self.cumulative_time
 
 if __name__ == '__main__':
     import sys
@@ -124,7 +215,7 @@ if __name__ == '__main__':
                    'get to the desired FPS by sleeping and busy-waiting.')
             sys.exit(0) 
 
-    c = Clock()
+    c = Clock(test_fps)
     start = time.time()
 
     # Add one because first frame has no update interval.
@@ -132,7 +223,7 @@ if __name__ == '__main__':
 
     print 'Testing %f FPS for %f seconds...' % (test_fps, test_seconds)
     for i in xrange(n_frames):
-        c.set_fps(test_fps)
+        c.tick()
         if show_fps:
             print c.get_fps()
     total_time = time.time() - start

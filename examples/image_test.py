@@ -21,7 +21,7 @@ tex = Texture.load(sys.argv[1])
 exit_handler = ExitHandler()
 window.push_handlers(exit_handler)
 
-c = clock.Clock()
+c = clock.Clock(60)
 
 glMatrixMode(GL_PROJECTION)
 glLoadIdentity()
@@ -37,7 +37,7 @@ glEnable(GL_BLEND)
 
 r = 0
 while not exit_handler.exit:
-    c.set_fps(60)
+    c.tick()
     window.dispatch_events()
 
     glClear(GL_COLOR_BUFFER_BIT)

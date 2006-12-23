@@ -34,9 +34,7 @@ clock = Clock()
 
 while not exit_handler.exit:
     window.dispatch_events()
-    time = clock.set_fps(60)
-    # time is wrong!
-    time = 1./60
+    time = clock.tick()
     glClear(GL_COLOR_BUFFER_BIT)
     for text in (commander, keen):
         glLoadIdentity()

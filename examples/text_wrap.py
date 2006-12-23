@@ -26,7 +26,7 @@ exit_handler = ExitHandler()
 window.push_handlers(exit_handler)
 window.push_handlers(on_resize=on_resize)
 
-font = Font('Bitstream Vera Serif', 12)
+font = Font('Georgia', 12)
 layout = font.render(
 '''In olden times when wishing still helped one, there lived a king whose
 daughters were all beautiful, but the youngest was so beautiful that the sun
@@ -44,9 +44,7 @@ on_resize(width, height)
 glClearColor(1, 1, 1, 1)
 while not exit_handler.exit:
     window.dispatch_events()
-    time = clock.set_fps(60)
-    # time is wrong!
-    time = 1./60
+    time = clock.tick()
     glClear(GL_COLOR_BUFFER_BIT)
     glLoadIdentity()
     glTranslatef(0, window.height - font.ascent, 0)
