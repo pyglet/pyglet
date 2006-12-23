@@ -736,7 +736,6 @@ def create(width=None,
     factory.set_fullscreen(fullscreen)
     factory.set_gl_attribute('doublebuffer', doublebuffer)
     factory.set_gl_attribute('depth_size', depth_size)
-    factory.set_vsync(vsync)
     for key, value in kwargs.items():
         factory.set_gl_attribute(key, value)
     sys.argv = factory.set_arguments(sys.argv)
@@ -782,6 +781,7 @@ class Window(_platform.get_window_class()):
         factory.set_fullscreen(fullscreen)
         factory.set_gl_attribute('doublebuffer', doublebuffer)
         factory.set_gl_attribute('depth_size', depth_size)
+        factory.set_vsync(vsync)
         for key, value in kwargs.items():
             factory.set_gl_attribute(key, value)
         sys.argv = factory.set_arguments(sys.argv)
