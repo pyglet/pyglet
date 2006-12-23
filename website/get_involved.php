@@ -13,7 +13,9 @@ you're interested in pyglet, want to contribute or give us feedback.</p>
 <h2>Prerequisites</h2>
 
 <p>You may confirm your system capabilities by running the script
-"tools/info.py".</p>
+"tools/info.py". See a
+<a href="http://www.pyglet.org/richard-info.txt">sample from Richard's
+system</a>.</p>
 
 <dl>
   <dt><strong>All Operating Systems</strong></dt>
