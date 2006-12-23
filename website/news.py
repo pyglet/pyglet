@@ -4,6 +4,7 @@ import cElementTree as ElementTree
 # gather
 entries = []
 for name in os.listdir('news-items'):
+    if not name.endswith('.txt'): continue
     info = {'id': os.path.splitext(name)[0], 'content': ''}
     entries.append(info)
     for line in open(os.path.join('news-items', name)):
