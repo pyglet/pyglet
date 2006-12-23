@@ -338,9 +338,9 @@ class XlibGLContext(BaseGLContext):
 
         super(XlibGLContext, self).destroy()
 
-        if (self.get_server_version() == '1.0' and 
+        if (self.get_server_version() == '1.2' and 
                 pyglet.GL.info.get_vendor() == 'ATI Technologies Inc.'):
-            # ATI's 1.0 implementation of glXDestroyContext is broken
+            # ATI's 1.2 implementation of glXDestroyContext is broken
             return
 
         glXDestroyContext(self._display, self._context)
@@ -355,9 +355,9 @@ class XlibGLContext(BaseGLContext):
         # version.
         major = c_int()
         minor = c_int()
-        if not glXQueryVersion(display, byref(major), byref(minor)):
+        if not glXQueryVersion(self._display, byref(major), byref(minor)):
             raise XlibException('Could not determine GLX version')
-        return '%s.%s'%(major, minor)
+        return '%s.%s'%(major.value, minor.value)
     def get_server_extensions(self):
         return glXQueryServerString(self._display, 0, GLX_EXTENSIONS).split()
     def get_client_vendor(self):
