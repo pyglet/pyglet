@@ -21,9 +21,10 @@ _extensions = []
 
 # Called by GLContext when created and made current.
 def set_context():
-    from pyglet.GL.VERSION_1_1 import glGetString
+    from pyglet.GL.VERSION_1_1 import glGetString, glGetError
     from pyglet.GL.VERSION_1_1 import GL_VENDOR, GL_RENDERER, \
-                                      GL_EXTENSIONS, GL_VERSION
+        GL_EXTENSIONS, GL_VERSION, GL_INVALID_ENUM, GL_INVALID_OPERATION
+
     global _have_context, _vendor, _renderer, _extensions, _version
     if _have_context:
         return
