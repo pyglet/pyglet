@@ -268,6 +268,9 @@ class RequirementsComponent(object):
     def __str__(self):
         return self.get_absname()
 
+    def __cmp__(self, other):
+        return cmp(str(self), str(other))
+
 class RequirementsSection(object):
     def __init__(self, parent, name):
         self.parent = parent
@@ -644,8 +647,11 @@ OPTIONS (with default values):
     else:
         components = requirements.get_all_components()
 
+    components = list(set(components))
+    components.sort()
+
     # Now test each component
-    for component in set(components):
+    for component in components:
         if not component.is_implemented(capabilities):
             log.info('%s is marked not implemented, skipping.', component)
             continue
