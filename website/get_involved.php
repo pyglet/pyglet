@@ -77,5 +77,11 @@ the tests.</p>
 <p>If you want more information on how the test runner works, or docs on
 its usage, pass it the "--full-help" command-line argument.</p>
 
+
+<h2>Report Bugs</h2>
+
+<p>Bugs may be reported using the <a href="http://code.google.com/p/pyglet/issues/list">Google Code tracker</a>.</p>
+
+
 </body>
 </html>
