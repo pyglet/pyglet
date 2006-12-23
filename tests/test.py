@@ -676,7 +676,7 @@ OPTIONS (with default values):
             print '-' * 78
             if module.__doc__:
                 print module.__doc__
-            raw_input('Press a key to begin test...')
+            raw_input('Press return to begin test...')
         suite = unittest.TestLoader().loadTestsFromModule(module)
 
         log.info('Begin unit tests for %s', component)
