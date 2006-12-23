@@ -359,6 +359,10 @@ class CarbonWindow(BaseWindow):
 
         self._create_track_region()
 
+        vsync = factory.get_vsync()
+        if vsync is not None:
+            self.set_vsync(factory.get_vsync())
+
     def _create_track_region(self):
         self._remove_track_region()
 
@@ -401,6 +405,15 @@ class CarbonWindow(BaseWindow):
     def flip(self):
         aglSwapBuffers(self._agl_context)
         _aglcheck()
+
+    def get_vsync(self):
+        swap = c_long()
+        aglGetInteger(self._agl_context, AGL_SWAP_INTERVAL, byref(swap))
+        return bool(swap.value)
+
+    def set_vsync(self, vsync):
+        swap = c_long(int(vsync))
+        aglSetInteger(self._agl_context, AGL_SWAP_INTERVAL, byref(swap))
 
     def dispatch_events(self):
         e = EventRef()
