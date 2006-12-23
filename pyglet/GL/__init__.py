@@ -28,7 +28,6 @@ if sys.platform in ('win32', 'cygwin'):
                 raise Exception('Cannot call extension function before GL ' +
                     'context is created.')
             address = _WGL.wglGetProcAddress(self.name)
-            print '%d' % address
             if not address:
                 raise Exception('Extension function "%s" not found' % self.name)
             self.func = self.ftype(address)

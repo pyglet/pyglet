@@ -67,4 +67,13 @@ if context.__class__.__name__ == 'XlibGLContext':
         print 'GLX extensions:'
         exts = glXQueryExtensionsString(w._display, 0)
         print ' ', '\n '.join(textwrap.wrap(exts))
+elif context.__class__.__name__ == 'Win32Context':
+    try:
+        from pyglet.GL.WGL.EXT_extensions_string import \
+            wglGetExtensionsStringEXT
+        wgl_extensions = wglGetExtensionsStringEXT()
+        print 'WGL extensions:'
+        print ' ', '\n '.join(textwrap.wrap(wgl_extensions))
+    except ImportError:
+        print 'WGL_EXT_extensions_string is not implemented.'
 

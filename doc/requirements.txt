@@ -59,7 +59,7 @@ window
         WINDOW_SET_EXCLUSIVE_MOUSE      X   X   X
         WINDOW_SET_EXCLUSIVE_KEYBOARD   X   X   X
         WINDOW_SET_FULLSCREEN           X   X   X
-        WINDOW_SET_VSYNC                X       X
+        WINDOW_SET_VSYNC                X   X   X
         WINDOW_INITIAL_FULLSCREEN       X   X   X
         WINDOW_CAPTION                  X   X   X
         WINDOW_BORDERS                  
