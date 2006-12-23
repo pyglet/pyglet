@@ -228,7 +228,7 @@ def have_glx_version(display, major, minor=0):
     sminor = c_int()
     if not glXQueryVersion(display, byref(smajor), byref(sminor)):
         raise XlibException('Could not determine GLX version')
-    if (smajor, sminor) < (major, minor):
+    if (smajor.value, sminor.value) < (major, minor):
         return False
 
     # ok, server passed, sanity check that the client passes too -- of
