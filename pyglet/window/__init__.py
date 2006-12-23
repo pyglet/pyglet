@@ -488,7 +488,7 @@ class WindowFactory(object):
 
     _screen = None
     _fullscreen = False
-    _vsync = True
+    _vsync = None
     _width = 640
     _height = 480 # Reasonable default size.
     _location = LOCATION_DEFAULT
@@ -518,7 +518,7 @@ class WindowFactory(object):
         return self._fullscreen
 
     def set_vsync(self, vsync):
-        raise NotImplementedError()
+        self._vsync = vsync
 
     def get_vsync(self):
         return self._vsync
@@ -786,9 +786,6 @@ class Window(_platform.get_window_class()):
 
         self.create(factory)
         self.switch_to()
-        if vsync is None:
-            vsync = factory.get_vsync()
-        self.set_vsync(vsync)
         self.set_caption(sys.argv[0])
         if visible:
             self.set_visible(True)

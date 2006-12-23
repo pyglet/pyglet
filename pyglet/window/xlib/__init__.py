@@ -37,6 +37,12 @@ from pyglet.window.xlib.constants import *
 from pyglet.window.xlib.types import *
 from pyglet.window.xlib.glx.VERSION_1_4 import *
 
+try:
+    from pyglet.window.xlib.glx.SGI_video_sync import *
+    _have_SGI_video_sync = True
+except ImportError:
+    _have_SGI_video_sync = False
+
 # Load X11 library, specify argtypes and restype only when necessary.
 Atom = c_ulong
 
@@ -483,6 +489,11 @@ class XlibWindow(BaseWindow):
         xlib.XChangeWindowAttributes(self._display, self._window, 
             attributes_mask, byref(attributes))
 
+        # Set vsync if requested
+        vsync = factory.get_vsync()
+        if vsync is not None:
+            self.set_vsync(vsync)
+
     def _map(self):
         if self._mapped:
             return
@@ -562,6 +573,11 @@ class XlibWindow(BaseWindow):
             self.dispatch_event(EVENT_CONTEXT_STATE_LOST)
 
     def flip(self):
+        if self._vsync and _have_SGI_video_sync:
+            count = c_uint()
+            glXGetVideoSyncSGI(byref(count))
+            glXWaitVideoSyncSGI(2, (count.value + 1) % 2, byref(count))
+
         if have_glx_version(self._display, 1, 3):
             if not self._glx_window:
                 self._glx_window = glXCreateWindow(self._display,
@@ -570,23 +586,11 @@ class XlibWindow(BaseWindow):
         else:
             glXSwapBuffers(self._display, self._window)
 
+    def get_vsync(self):
+        return self._vsync
+
     def set_vsync(self, vsync):
-        if self._vsync == vsync:
-            return True
-
-        # handle setting vsync
-        exts = glXQueryExtensionsString(self._display, 0).split()
-        if 'GLX_SGI_swap_control' not in exts:
-            return False
-
-        from pyglet.window.xlib.glx.SGI_swap_control import glXSwapIntervalSGI
-        ret = glXSwapIntervalSGI(vsync)
-        if ret:
-            # XXX warning
-            print "couldn't enable vertical sync (err=%d)"%ret
-            return False
         self._vsync = vsync
-        return True
 
     def set_caption(self, caption):
         self._caption = caption
