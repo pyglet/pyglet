@@ -526,6 +526,7 @@ def main(args):
     regression_tolerance = 2
     interactive = True
     developer = False
+    start_with = None
 
     capabilities = ['GENERIC']
     platform_capabilities = {
@@ -548,6 +549,7 @@ def main(args):
          'no-regression-check',
          'no-interactive',
          'developer',
+         'start-with=',
          'help',
          'full-help'
     ]
@@ -568,6 +570,7 @@ OPTIONS (with default values):
   --no-regression-capture
   --no-regression-check
   --no-interactive
+  --start-with=
   --developer
   --help
   --full-help'''%(sys.argv[0], requirements_filename, test_root,
@@ -607,6 +610,8 @@ OPTIONS (with default values):
             enable_regression_capture = False
         elif key == '--developer':
             developer = True
+        elif key == '--start-with':
+            start_with = value
         elif key == '--help':
             usage()
             return
@@ -650,8 +655,17 @@ OPTIONS (with default values):
     components = list(set(components))
     components.sort()
 
+    if start_with:
+        skipping = True
+    else:
+        skipping = False
     # Now test each component
     for component in components:
+        if skipping:
+            if component.get_absname() == start_with:
+                skipping = False
+            else:
+                continue
         if not component.is_implemented(capabilities):
             log.info('%s is marked not implemented, skipping.', component)
             continue
