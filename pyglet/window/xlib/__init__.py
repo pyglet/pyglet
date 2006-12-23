@@ -311,38 +311,7 @@ class XlibGLContext(BaseGLContext):
         self._context = context
 
     def destroy(self):
-        # XXX <rj> I don't think this is a good approach. I think we should
-        # let GC handle destroying contexts, especially given that they may
-        # be shared... Windows should have a reference to XlibGLContext
-        # instances. When those instances are not referenced *then* we're
-        # safe to destroy the context.
-        # We need to make sure we don't delete any OGL objects
-        # (textures, lists, ...) *after* this call is made.
-        # Perhaps we need to manually maintain a reference count to
-        # XlibGLContext and only when a window is manually close()d will we
-        # de-reference and possibly destroy the context. We would still
-        # possibly need to make sure we don't subsequently free anything
-        # belonging to that context.
-        # Hell, we have the problem now if there's multiple contexts and
-        # python's GC cleans up textures which are allocated to various
-        # contexts...
-
-        # <ah> Contexts are _never_ shared.  We need to control deletion of
-        # contexts w.r.t. deletion of windows, so I think GC won't work.
-        # I also think tying textures to GC is a bad idea... these are
-        # external resources, not memory blocks.  A bit of manual memory
-        # management never hurt anybody.
-        # Alternatively, we can defer freeing of textures and lists etc
-        # by queuing them up until the next switch_to, if the context is
-        # not already active (as it would be in most single-window apps).
-
         super(XlibGLContext, self).destroy()
-
-        if (self.get_server_version() == '1.2' and 
-                pyglet.GL.info.get_vendor() == 'ATI Technologies Inc.'):
-            # ATI's 1.2 implementation of glXDestroyContext is broken
-            return
-
         glXDestroyContext(self._display, self._context)
 
     def is_direct(self):
@@ -557,6 +526,10 @@ class XlibWindow(BaseWindow):
         return attributes.root
 
     def close(self):
+        # clear out the GLX context
+        glFlush()
+        glXMakeCurrent(self._display, 0, 0)
+
         self._unmap()
         if self._glx_window:
             glXDestroyWindow(self._display, self._glx_window)
