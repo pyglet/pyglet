@@ -412,6 +412,9 @@ class XlibWindow(BaseWindow):
         # This would prevent the floating window from being moved by the
         # WM.
         if self._window and factory.get_fullscreen() != self._fullscreen:
+            # clear out the GLX context
+            glFlush()
+            glXMakeCurrent(self._display, 0, 0)
             if self._glx_window:
                 glXDestroyWindow(self._display, self._glx_window)
             xlib.XDestroyWindow(self._display, self._window)
