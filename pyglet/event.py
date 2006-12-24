@@ -27,6 +27,7 @@ class EventHandler(object):
         self.set_handlers(*args, **kwargs)
 
     def set_handlers(self, *args, **kwargs):
+        from pyglet.window import WindowException
         for object in args:
             if inspect.isroutine(object):
                 # Single magically named function
