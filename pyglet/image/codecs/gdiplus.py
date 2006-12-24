@@ -62,7 +62,7 @@ class BitmapData(Structure):
         ('Height', c_uint),
         ('Stride', c_int),
         ('PixelFormat', c_int),
-        ('Scan0', c_void_p),
+        ('Scan0', POINTER(c_byte)),
         ('Reserved', POINTER(c_uint))
     ]
 
@@ -142,7 +142,7 @@ class GDIPlusDecoder(ImageDecoder):
             byref(rect), ImageLockModeRead, pf, byref(bitmap_data))
         
         # Create buffer for RawImage
-        buffer = create_string_buffer(bitmap_data.Stride * height * len(format))
+        buffer = create_string_buffer(bitmap_data.Stride * height)
         memmove(buffer, bitmap_data.Scan0, len(buffer))
         
         # Guess alignment from low stride bits.
