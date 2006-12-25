@@ -10,7 +10,7 @@ __version__ = '$Id$'
 import ctypes as _ctypes
 from pyglet.GL import get_function as _get_function
 from pyglet.GL import c_ptrdiff_t as _c_ptrdiff_t
-from pyglet.window.xlib.types import XVisualInfo
+from pyglet.window.xlib.types import XVisualInfo, Display
 
 GLXBadContext = 0
 GLXBadContextState = 1
@@ -118,7 +118,6 @@ GLXWindow = _ctypes.c_ulong
 GLXFBConfigID = _ctypes.c_ulong
 GLXContext = _ctypes.c_void_p
 GLXFBConfig = _ctypes.c_void_p
-Display = _ctypes.c_void_p
 
 glXChooseVisual = _get_function('glXChooseVisual', [_ctypes.POINTER(Display), _ctypes.c_int, _ctypes.POINTER(_ctypes.c_int)], _ctypes.POINTER(XVisualInfo))
 glXCopyContext = _get_function('glXCopyContext', [_ctypes.POINTER(Display), GLXContext, GLXContext, _ctypes.c_uint], None)

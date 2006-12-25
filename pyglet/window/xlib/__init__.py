@@ -33,9 +33,9 @@ import pyglet.GLU.info
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
+from pyglet.window.xlib.glx.VERSION_1_4 import *
 from pyglet.window.xlib.constants import *
 from pyglet.window.xlib.types import *
-from pyglet.window.xlib.glx.VERSION_1_4 import *
 
 try:
     from pyglet.window.xlib.glx.SGI_video_sync import *
@@ -60,7 +60,6 @@ else:
     _have_xinerama = False
 
 xlib.XOpenDisplay.argtypes = [c_char_p]
-xlib.XOpenDisplay.restype = POINTER(Display)
 xlib.XScreenOfDisplay.restype = POINTER(Screen)
 xlib.XInternAtom.restype = Atom
 xlib.XNextEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
@@ -74,40 +73,6 @@ xlib.XCreateWindow.argtypes = [POINTER(Display), WindowRef,
 # Do we have the November 2000 UTF8 extension?
 _have_utf8 = hasattr(xlib, 'Xutf8TextListToTextProperty')
 
-_attribute_ids = {
-    'buffer_size': GLX_BUFFER_SIZE,
-    'level': GLX_LEVEL,
-    'doublebuffer': GLX_DOUBLEBUFFER,
-    'stereo': GLX_STEREO,
-    'aux_buffers': GLX_AUX_BUFFERS,
-    'red_size': GLX_RED_SIZE,
-    'green_size': GLX_GREEN_SIZE,
-    'blue_size': GLX_BLUE_SIZE,
-    'alpha_size': GLX_ALPHA_SIZE,
-    'depth_size': GLX_DEPTH_SIZE,
-    'stencil_size': GLX_STENCIL_SIZE,
-    'accum_red_size': GLX_ACCUM_RED_SIZE,
-    'accum_green_size': GLX_ACCUM_GREEN_SIZE,
-    'accum_blue_size': GLX_ACCUM_BLUE_SIZE,
-    'accum_alpha_size': GLX_ACCUM_ALPHA_SIZE,
-    'sample_buffers': GLX_SAMPLE_BUFFERS,
-    'samples': GLX_SAMPLES,
-    'render_type': GLX_RENDER_TYPE,
-    'config_caveat': GLX_CONFIG_CAVEAT,
-    'transparent_type': GLX_TRANSPARENT_TYPE,
-    'transparent_index_value': GLX_TRANSPARENT_INDEX_VALUE,
-    'transparent_red_value': GLX_TRANSPARENT_RED_VALUE,
-    'transparent_green_value': GLX_TRANSPARENT_GREEN_VALUE,
-    'transparent_blue_value': GLX_TRANSPARENT_BLUE_VALUE,
-    'transparent_alpha_value': GLX_TRANSPARENT_ALPHA_VALUE,
-    'x_renderable': GLX_X_RENDERABLE,
-}
-
-only_in_13 = sets.Set(['sample_buffers', 'samples', 'render_type',
-    'config_caveat', 'transparent_type', 'transparent_index_value',
-    'transparent_red_value', 'transparent_green_value',
-    'transparent_blue_value', 'transparent_alpha_value', 'x_renderable'])
-
 class XlibException(WindowException):
     pass
 
@@ -117,7 +82,8 @@ class XlibPlatform(BasePlatform):
         x_screen = xlib.XDefaultScreen(display)
         if _have_xinerama and xinerama.XineramaIsActive(display):
             number = c_int()
-            infos = xinerama.XineramaQueryScreens(display, byref(number))
+            infos = xinerama.XineramaQueryScreens(display, 
+                                                  byref(number))
             infos = cast(infos, 
                          POINTER(XineramaScreenInfo * number.value)).contents
             result = []
@@ -152,20 +118,24 @@ class XlibPlatform(BasePlatform):
         display = self._get_display(factory)
         screen = factory.get_screen()
 
-        factory.set_gl_attribute('x_renderable', True)
-
-        have_13 = have_glx_version(display, 1, 3)
-
+        have_13 = display.contents.have_glx_version(1, 3)
+        if have_13:
+            config_class = XlibGLConfig13
+            factory.set_gl_attribute('x_renderable', True)
+        else:
+            if 'ATI' in display.contents.get_glx_server_vendor():
+                config_class = XlibGLConfig10ATI
+            else:
+                config_class = XlibGLConfig10
+        
         # Construct array of attributes
         attrs = []
         for name, value in factory.get_gl_attributes().items():
-            if not have_13 and name in only_in_13:
-                continue
-
-            attr = _attribute_ids.get(name, None)
+            attr = config_class.attribute_ids.get(name, None)
             if not attr:
                 warnings.warn('Unknown GLX attribute "%s"' % name)
-            attrs.extend([attr, int(value)])
+            else:
+                attrs.extend([attr, int(value)])
 
         if not have_13:
             attrs.extend([GLX_RGBA, True])
@@ -222,27 +192,45 @@ class XlibPlatform(BasePlatform):
             factory.set_x_display(display)
         return display
 
-def have_glx_version(display, major, minor=0):
-    # see whether we can get GLX at all
-    if not glXQueryExtension(display, None, None):
-        raise XlibException('pyglet requires an X server with GLX')
+class XlibDisplay(Display):
+    def __repr__(self):
+        return 'XlibDisplay(%d)' % self
 
-    # glXQueryServerString was introduced in GLX 1.1, so we need to use the
-    # 1.0 function here which queries the server implementation for its
-    # version.
-    smajor = c_int()
-    sminor = c_int()
-    if not glXQueryVersion(display, byref(smajor), byref(sminor)):
-        raise XlibException('Could not determine GLX version')
-    if (smajor.value, sminor.value) < (major, minor):
-        return False
+    def have_glx_version(self, major, minor):
+        if not glXQueryExtension(self, None, None):
+            raise XlibException('pyglet requires an X server with GLX')
 
-    # ok, server passed, sanity check that the client passes too -- of
-    # course if the client is somehow < v1.1 this can't work as this
-    # function was also introduced in 1.1...
-    version = glXGetClientString(display, GLX_VERSION)
-    version = [int(v) for v in version.split('.')]
-    return version >= [major, minor]
+        server = [int(i) for i in self.get_glx_server_version().split('.')]
+        client = [int(i) for i in self.get_glx_client_version().split('.')]
+        return tuple(server) >= major, minor and tuple(client) > major, minor
+
+    def get_glx_server_vendor(self):
+        return glXQueryServerString(self, 0, GLX_VENDOR)
+
+    def get_glx_server_version(self):
+        # glXQueryServerString was introduced in GLX 1.1, so we need to use the
+        # 1.0 function here which queries the server implementation for its
+        # version.
+        major = c_int()
+        minor = c_int()
+        if not glXQueryVersion(self, byref(major), byref(minor)):
+            raise XlibException('Could not determine GLX server version')
+        return '%s.%s'%(major.value, minor.value)
+
+    def get_glx_server_extensions(self):
+        return glXQueryServerString(self, 0, GLX_EXTENSIONS).split()
+
+    def get_glx_client_vendor(self):
+        return glXGetClientString(self, GLX_VENDOR)
+
+    def get_glx_client_version(self):
+        return glXGetClientString(self, GLX_VERSION)
+
+    def get_glx_client_extensions(self):
+        return glXGetClientString(self, GLX_EXTENSIONS).split()
+
+    def get_glx_extensions(self):
+        return glXQueryExtensionsString(self, 0).split()
 
 class XlibScreen(BaseScreen):
     def __init__(self, display, x_screen_id, x, y, width, height, xinerama):
@@ -257,7 +245,35 @@ class XlibScreen(BaseScreen):
             (self._x_screen_id, self.x, self.y, self.width, self.height,
              self._xinerama)
 
-class XlibGLConfig10(BaseGLConfig):
+class XlibGLConfig(BaseGLConfig):
+    attribute_ids = {
+        'buffer_size': GLX_BUFFER_SIZE,
+        'level': GLX_LEVEL,
+        'doublebuffer': GLX_DOUBLEBUFFER,
+        'stereo': GLX_STEREO,
+        'aux_buffers': GLX_AUX_BUFFERS,
+        'red_size': GLX_RED_SIZE,
+        'green_size': GLX_GREEN_SIZE,
+        'blue_size': GLX_BLUE_SIZE,
+        'alpha_size': GLX_ALPHA_SIZE,
+        'depth_size': GLX_DEPTH_SIZE,
+        'stencil_size': GLX_STENCIL_SIZE,
+        'accum_red_size': GLX_ACCUM_RED_SIZE,
+        'accum_green_size': GLX_ACCUM_GREEN_SIZE,
+        'accum_blue_size': GLX_ACCUM_BLUE_SIZE,
+        'accum_alpha_size': GLX_ACCUM_ALPHA_SIZE,
+    }
+
+    def get_gl_attributes(self):
+        return self._attributes
+
+    def get_visual_info(self):
+        raise NotImplementedError('abstract')
+
+    def create_context(self, context_share):
+        raise NotImplementedError('abstract')
+
+class XlibGLConfig10(XlibGLConfig):
     def __init__(self, display, screen, attrib_list):
         super(XlibGLConfig10, self).__init__()
         self._display = display
@@ -269,7 +285,7 @@ class XlibGLConfig10(BaseGLConfig):
             raise XlibException('No conforming visual exists')
 
         self._attributes = {}
-        for name, attr in _attribute_ids.items():
+        for name, attr in self.attribute_ids.items():
             value = c_int()
             result = glXGetConfig(self._display,
                 self._visual_info, attr, byref(value))
@@ -279,21 +295,37 @@ class XlibGLConfig10(BaseGLConfig):
     def get_visual_info(self):
         return self._visual_info.contents
 
-    def get_gl_attributes(self):
-        return self._attributes
-
     def create_context(self, context_share):
         return glXCreateContext(self._display, self._visual_info,
             context_share, True)
 
-class XlibGLConfig13(BaseGLConfig):
+class XlibGLConfig10ATI(XlibGLConfig10):
+    attribute_ids = XlibGLConfig.attribute_ids.copy()
+    del attribute_ids['stereo']
+
+class XlibGLConfig13(XlibGLConfig):
+    attribute_ids = XlibGLConfig.attribute_ids.copy()
+    attribute_ids.update({
+        'sample_buffers': GLX_SAMPLE_BUFFERS,
+        'samples': GLX_SAMPLES,
+        'render_type': GLX_RENDER_TYPE,
+        'config_caveat': GLX_CONFIG_CAVEAT,
+        'transparent_type': GLX_TRANSPARENT_TYPE,
+        'transparent_index_value': GLX_TRANSPARENT_INDEX_VALUE,
+        'transparent_red_value': GLX_TRANSPARENT_RED_VALUE,
+        'transparent_green_value': GLX_TRANSPARENT_GREEN_VALUE,
+        'transparent_blue_value': GLX_TRANSPARENT_BLUE_VALUE,
+        'transparent_alpha_value': GLX_TRANSPARENT_ALPHA_VALUE,
+        'x_renderable': GLX_X_RENDERABLE,
+    })
+
     def __init__(self, display, screen, fbconfig):
         super(XlibGLConfig13, self).__init__()
         self._display = display
         self._screen = screen
         self._fbconfig = fbconfig
         self._attributes = {}
-        for name, attr in _attribute_ids.items():
+        for name, attr in self.attribute_ids.items():
             value = c_int()
             result = glXGetFBConfigAttrib(self._display, 
                 self._fbconfig, attr, byref(value))
@@ -302,9 +334,6 @@ class XlibGLConfig13(BaseGLConfig):
 
     def get_visual_info(self):
         return glXGetVisualFromFBConfig(self._display, self._fbconfig).contents
-
-    def get_gl_attributes(self):
-        return self._attributes
 
     def create_context(self, context_share):
         return glXCreateNewContext(self._display, self._fbconfig,
@@ -322,27 +351,7 @@ class XlibGLContext(BaseGLContext):
 
     def is_direct(self):
         return glXIsDirect(self._display, self._context)
-    def get_server_vendor(self):
-        return glXQueryServerString(self._display, 0, GLX_VENDOR)
-    def get_server_version(self):
-        # glXQueryServerString was introduced in GLX 1.1, so we need to use the
-        # 1.0 function here which queries the server implementation for its
-        # version.
-        major = c_int()
-        minor = c_int()
-        if not glXQueryVersion(self._display, byref(major), byref(minor)):
-            raise XlibException('Could not determine GLX version')
-        return '%s.%s'%(major.value, minor.value)
-    def get_server_extensions(self):
-        return glXQueryServerString(self._display, 0, GLX_EXTENSIONS).split()
-    def get_client_vendor(self):
-        return glXGetClientString(self._display, GLX_VENDOR)
-    def get_client_version(self):
-        return glXGetClientString(self._display, GLX_VERSION)
-    def get_client_extensions(self):
-        return glXGetClientString(self._display, GLX_EXTENSIONS).split()
-    def get_extensions(self):
-        return glXQueryExtensionsString(self._display, 0).split()
+
 
 _xlib_event_handler_names = []
 
@@ -436,6 +445,8 @@ class XlibWindow(BaseWindow):
         self._screen_id = config._screen._x_screen_id
         self._glx_context = context._context
         self._width, self._height = factory.get_size()
+
+        self._glx_1_3 = self._display.contents.have_glx_version(1, 3)
 
         # Create X window if not already existing.
         if not self._window:
@@ -556,7 +567,7 @@ class XlibWindow(BaseWindow):
         self._glx_window = None
 
     def switch_to(self):
-        if have_glx_version(self._display, 1, 3):
+        if self._glx_1_3:
             if not self._glx_window:
                 self._glx_window = glXCreateWindow(self._display,
                     self._config._fbconfig, self._window, None)
@@ -581,7 +592,7 @@ class XlibWindow(BaseWindow):
             glXGetVideoSyncSGI(byref(count))
             glXWaitVideoSyncSGI(2, (count.value + 1) % 2, byref(count))
 
-        if have_glx_version(self._display, 1, 3):
+        if self._glx_1_3:
             if not self._glx_window:
                 self._glx_window = glXCreateWindow(self._display,
                     self._config._fbconfig, self._window, None)
@@ -1025,3 +1036,5 @@ class XlibWindow(BaseWindow):
     def _event_unmapnotify(self, event):
         self._mapped = False
         self.dispatch_event(EVENT_HIDE)
+
+xlib.XOpenDisplay.restype = POINTER(XlibDisplay)

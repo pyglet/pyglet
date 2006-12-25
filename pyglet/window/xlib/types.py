@@ -15,16 +15,20 @@ VisualID = XID = Atom = Time = c_ulong
 WindowRef = XID     # Avoid name collision with pyglet.window.Window
 Pixmap = XID
 Cursor = XID
-Display = c_void_p
 Bool = c_int
 Colormap = c_uint32
 
 # From Xlib.h
 
+class Display(Structure):
+    _fields_ = [
+        ('dummy', c_int)        # Don't care about real contents.
+    ]
+
 class Screen(Structure):
     _fields_ = [
         ('ext_data', c_void_p),
-        ('display', Display),
+        ('display', POINTER(Display)),
         ('root', WindowRef),
         ('width', c_int),
         ('height', c_int)
