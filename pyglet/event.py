@@ -11,6 +11,9 @@ import inspect
 EVENT_HANDLED = None 
 EVENT_UNHANDLED = 1 
 
+class EventException(Exception):
+    pass
+
 class EventHandler(object):
     def __init__(self):
         self._event_stack = [{}]
@@ -27,13 +30,12 @@ class EventHandler(object):
         self.set_handlers(*args, **kwargs)
 
     def set_handlers(self, *args, **kwargs):
-        from pyglet.window import WindowException
         for object in args:
             if inspect.isroutine(object):
                 # Single magically named function
                 name = object.__name__
                 if name not in self.event_types:
-                    raise WindowException('Unknown event "%s"' % name)
+                    raise EventException('Unknown event "%s"' % name)
                 self._event_stack[0][name] = object
             else:
                 # Single instance with magically named methods
@@ -43,7 +45,7 @@ class EventHandler(object):
         for name, handler in kwargs.items():
             # Function for handling given event (no magic)
             if name not in self.event_types:
-                raise WindowException('Unknown event "%s"' % name)
+                raise EventException('Unknown event "%s"' % name)
             self._event_stack[0][name] = handler
 
     def pop_handlers(self):
