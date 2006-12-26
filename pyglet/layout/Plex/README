@@ -1,0 +1,37 @@
+This is version 1.1.4 of Plex, a Python module for building lexical
+analysers.  See the doc directory for instructions on using it.
+
+Plex is free of any restrictions. You can use it, redistribute it,
+sell it, whatever you want.  All I ask is that you give me credit if
+you distribute any code derived from it.
+
+
+Greg Ewing,
+Computer Science Department,
+University of Canterbury,
+Christchurch,
+New Zealand
+
+greg@cosc.canterbury.ac.nz
+
+Version History
+---------------
+
+1.1.4    Fixed bug causing argument of Rep or Rep1 to
+         fail to match following a newline.
+
+1.1.3    Fixed bug causing Eol to fail to match at the
+         beginning of a line in some circumstances.
+
+1.1.2    Changed Scanner.yield() to Scanner.produce() to
+         accommodate Python 2.3, where yield is a keyword.
+
+         Changed test10 to not rely so much on details of
+         string repr.
+
+1.1.1    Fixed two minor bugs: uncommented Scanner.next_char() and
+         added import of types to Regexps.py.
+
+1.1      Added support for case-insensitive matches.
+
+1.0      First official release.

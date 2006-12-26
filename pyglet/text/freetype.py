@@ -7,11 +7,6 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from pyglet.GL.VERSION_1_1 import *
-try:
-    from pyglet.GL.ARB_imaging import *
-    _have_imaging = True
-except ImportError:
-    _have_imaging = False
 
 from ctypes import *
 from ctypes import util
@@ -91,10 +86,7 @@ def unfrac(value):
     return value >> 6
 
 class FreeTypeGlyphTextureAtlas(GlyphTextureAtlas):
-    def apply_blend_state(self):
-        # There is no alpha component, use luminance.
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_BLEND)
+    pass
 
 class FreeTypeGlyphRenderer(GlyphRenderer):
     def __init__(self, font):
@@ -120,20 +112,6 @@ class FreeTypeGlyphRenderer(GlyphRenderer):
         glyph.set_bearings(baseline, lsb, advance)
         glyph.flip_vertical()
 
-        # Copy bitmap into texture
-        if _have_imaging:
-            glMatrixMode(GL_COLOR)
-            matrix = (c_float * 16)(
-                1, 0, 0, 1,
-                0, 1, 0, 0,
-                0, 0, 1, 0, 
-                0, 0, 0, 0)
-            glLoadMatrixf(matrix)
-        else:
-            import warnings
-            warnings.warn('No ARB_imaging: font colour/blend will be incorrect')
-            # TODO
-
         glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
         glBindTexture(GL_TEXTURE_2D, glyph.texture.id)
         glPixelStorei(GL_UNPACK_ROW_LENGTH, pitch)
@@ -141,14 +119,10 @@ class FreeTypeGlyphRenderer(GlyphRenderer):
         glTexSubImage2D(GL_TEXTURE_2D, 0,
             glyph.x, glyph.y,
             width, height,
-            GL_LUMINANCE,
+            GL_ALPHA,
             GL_UNSIGNED_BYTE,
             glyph_slot.bitmap.buffer)
         glPopClientAttrib()
-
-        if _have_imaging:
-            glLoadIdentity()
-            glMatrixMode(GL_MODELVIEW)
 
         return glyph
 
@@ -160,6 +134,30 @@ class FreeTypeFont(BaseFont):
         super(FreeTypeFont, self).__init__()
         ft_library = ft_get_library()
 
+        match = self.get_fontconfig_match(name, size, bold, italic)
+        if not match:
+            raise FontException('Could not match font "%s"' % name)
+
+        f = FT_Face()
+        if fontconfig.FcPatternGetFTFace(match, FC_FT_FACE, 0, byref(f)) != 0:
+            value = FcValue()
+            result = fontconfig.FcPatternGet(match, FC_FILE, 0, byref(value))
+            if result != 0:
+                raise FontException('No filename or FT face for "%s"' % name)
+            result = FT_New_Face(ft_library, value.u.s, 0, byref(f))
+            if result:
+                raise FontException('Could not load "%s": %d' % (name, result))
+
+        fontconfig.FcPatternDestroy(match)
+
+        self.face = f.contents
+
+        FT_Set_Char_Size(self.face, 0, frac(size), 0, 0)
+        self.ascent = self.face.ascender * size / self.face.units_per_EM
+        self.descent = self.face.descender * size / self.face.units_per_EM
+
+    @staticmethod
+    def get_fontconfig_match(name, size, bold, italic):
         if bold:
             bold = FC_WEIGHT_BOLD
         else:
@@ -185,26 +183,11 @@ class FreeTypeFont(BaseFont):
         match = fontconfig.FcFontMatch(0, pattern, byref(result))
         fontconfig.FcPatternDestroy(pattern)
         
+        return match
+
+    @classmethod
+    def have_font(cls, name):
         value = FcValue()
+        match = cls.get_fontconfig_match(name, 12, False, False)
         result = fontconfig.FcPatternGet(match, FC_FAMILY, 0, byref(value))
-        if result != 0:
-            raise FontException('Could not match font "%s"' % name)
-        if value.u.s != name:
-            warn('Using font "%s" in place of "%s"' % (value.u.s, name))
-
-        f = FT_Face()
-        if fontconfig.FcPatternGetFTFace(match, FC_FT_FACE, 0, byref(f)) != 0:
-            result = fontconfig.FcPatternGet(match, FC_FILE, 0, byref(value))
-            if result != 0:
-                raise FontException('No filename or FT face for "%s"' % name)
-            result = FT_New_Face(ft_library, value.u.s, 0, byref(f))
-            if result:
-                raise FontException('Could not load "%s": %d' % (name, result))
-
-        fontconfig.FcPatternDestroy(match)
-
-        self.face = f.contents
-
-        FT_Set_Char_Size(self.face, 0, frac(size), 0, 0)
-        self.ascent = self.face.ascender * size / self.face.units_per_EM
-        self.descent = self.face.descender * size / self.face.units_per_EM
+        return value.u.s == name

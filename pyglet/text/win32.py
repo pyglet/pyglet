@@ -100,10 +100,16 @@ class RGBQUAD(Structure):
         ('rgbReserved', c_byte)
     ]
 
+    def __init__(self, r, g, b):
+        self.rgbRed = r
+        self.rgbGreen = g
+        self.rgbBlue = b
+
+
 class BITMAPINFO(Structure):
     _fields_ = [
         ('bmiHeader', BITMAPINFOHEADER),
-        ('bmiColors', RGBQUAD * 1)
+        ('bmiColors', RGBQUAD * 256)
     ]
 
 def str_ucs2(text):
@@ -114,11 +120,7 @@ def str_ucs2(text):
     return create_string_buffer(text + '\0')
 
 class Win32GlyphTextureAtlas(GlyphTextureAtlas):
-    def apply_blend_state(self):
-        # There is no alpha component, use luminance.
-        # TODO: Use ARB_imaging as in FreeType impl.
-        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR)
-        glEnable(GL_BLEND)
+    pass
 
 class Win32GlyphRenderer(GlyphRenderer):
     _bitmap = None
@@ -128,7 +130,7 @@ class Win32GlyphRenderer(GlyphRenderer):
     def __init__(self, font):
         super(Win32GlyphRenderer, self).__init__(font)
         self.font = font
-        self._create_bitmap_dc(font.max_glyph_width, font.ascent + font.descent) 
+        self._create_bitmap_dc(font.max_glyph_width, font.ascent - font.descent) 
         self._black = gdi32.GetStockObject(BLACK_BRUSH)
         self._white = gdi32.GetStockObject(WHITE_BRUSH)
 
@@ -165,7 +167,7 @@ class Win32GlyphRenderer(GlyphRenderer):
 
         # Create glyph object and copy bitmap data to texture
         glyph = self.font.allocate_glyph(width, height)
-        glyph.set_bearings(self.font.descent, lsb, advance)
+        glyph.set_bearings(-self.font.descent, lsb, advance)
 
         # Bizareness: GL_TEXTURE must be enabled for TexImage...?
         # --> This seems to be a Win32 issue only.  Move into pyglet.image?
@@ -177,7 +179,7 @@ class Win32GlyphRenderer(GlyphRenderer):
         glTexSubImage2D(GL_TEXTURE_2D, 0,
             glyph.x, glyph.y,
             glyph.width, glyph.height,
-            GL_RGBA,
+            GL_ALPHA,
             GL_UNSIGNED_BYTE,
             self._bitmap_data)
         glPopClientAttrib()
@@ -191,15 +193,16 @@ class Win32GlyphRenderer(GlyphRenderer):
         if self._bitmap:
             gdi32.DeleteObject(self._bitmap)
 
-        pitch = width * 4
+        pitch = width
         data = POINTER(c_byte * (height * pitch))()
         info = BITMAPINFO()
         info.bmiHeader.biSize = sizeof(info.bmiHeader)
         info.bmiHeader.biWidth = width
         info.bmiHeader.biHeight = height
         info.bmiHeader.biPlanes = 1
-        info.bmiHeader.biBitCount = 32
+        info.bmiHeader.biBitCount = 8
         info.bmiHeader.biCompression = BI_RGB
+        info.bmiColors[:] = [RGBQUAD(i, i, i) for i in range(256)]
 
         self._bitmap_dc = gdi32.CreateCompatibleDC(c_void_p())
         self._bitmap = gdi32.CreateDIBSection(c_void_p(),
@@ -229,13 +232,28 @@ class Win32Font(BaseFont):
     def __init__(self, name, size, bold=False, italic=False):
         super(Win32Font, self).__init__()
 
+        self.hfont = self.get_hfont(name, size, bold, italic)
+
+        # Create a dummy DC for coordinate mapping
+        dc = user32.GetDC(0)
+        logpixelsy = gdi32.GetDeviceCaps(dc, LOGPIXELSY)
+
+        metrics = TEXTMETRIC()
+        gdi32.SelectObject(dc, self.hfont)
+        gdi32.GetTextMetricsA(dc, byref(metrics))
+        self.ascent = metrics.tmAscent
+        self.descent = -metrics.tmDescent
+        self.max_glyph_width = metrics.tmMaxCharWidth
+
+    @staticmethod
+    def get_hfont(name, size, bold, italic):
         # Create a dummy DC for coordinate mapping
         dc = user32.GetDC(0)
         logpixelsy = gdi32.GetDeviceCaps(dc, LOGPIXELSY)
 
         logfont = LOGFONT()
         # Conversion of point size to device pixels
-        logfont.lfHeight = -size * logpixelsy / 72
+        logfont.lfHeight = int(-size * logpixelsy / 72)
         if bold:
             logfont.lfWeight = FW_BOLD
         else:
@@ -243,11 +261,11 @@ class Win32Font(BaseFont):
         logfont.lfItalic = italic
         logfont.lfFaceName = name
         logfont.lfQuality = ANTIALIASED_QUALITY
-        self.hfont = gdi32.CreateFontIndirectA(byref(logfont))
+        hfont = gdi32.CreateFontIndirectA(byref(logfont))
+        return hfont
 
-        metrics = TEXTMETRIC()
-        gdi32.SelectObject(dc, self.hfont)
-        gdi32.GetTextMetricsA(dc, byref(metrics))
-        self.ascent = metrics.tmAscent
-        self.descent = metrics.tmDescent
-        self.max_glyph_width = metrics.tmMaxCharWidth
+    @classmethod
+    def have_font(cls, name):
+        # CreateFontIndirect always returns a font... have to work out
+        # something with EnumFontFamily... TODO
+        return True

@@ -28,4 +28,20 @@ Contributors (alphabetical):
 Nicko van Someren <nicko@nicko.org>
 ------------------------------------------------------------------------------
 
+------------------------------------------------------------------------------
+pyglet includes Plex 1.1.4 at pyglet/layout/Plex.  
 
+License from README follows:
+
+Plex is free of any restrictions. You can use it, redistribute it,
+sell it, whatever you want.  All I ask is that you give me credit if
+you distribute any code derived from it.
+
+Greg Ewing,
+Computer Science Department,
+University of Canterbury,
+Christchurch,
+New Zealand
+
+greg@cosc.canterbury.ac.nz
+------------------------------------------------------------------------------

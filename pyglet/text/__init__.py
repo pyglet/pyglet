@@ -3,9 +3,6 @@
 '''
 
 TODO in near future:
- - Layout (wrapping)
-     - StyledText needs width,height,advance,ascent,descent
-     - StyledText needs word breaks
  - Kerning
  - Tracking
  - Character spacing
@@ -24,18 +21,11 @@ import os
 
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.image import *
-
-# Source: http://www.cs.tut.fi/~jkorpela/chars/spaces.html
-_word_spaces = (u'\u0020\u00a0\u2000\u2001\u2002\u2003\u2004\u2005\u2006' +
-                u'\u2007\u2008\u2009\u200a\u200b\u202f\u205f\u205f\u3000' +
-                u'\ufeff')
+import pyglet.layout.base
 
 class Glyph(TextureSubImage):
     advance = 0
     vertices = (0, 0, 0, 0)
-
-    # possibility for future: is_kashida
-    is_word_space = False
 
     def set_bearings(self, baseline, left_side_bearing, advance):
         self.advance = advance
@@ -72,31 +62,36 @@ class GlyphTextureAtlas(AllocatingTextureAtlas):
     subimage_class = Glyph
 
     def apply_blend_state(self):
-        # Subclasses should override
-        pass
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_BLEND)
 
-class StyledText(object):
+class TextBox(pyglet.layout.base.Box):
     '''One contiguous sequence of characters sharing the same
     GL state.  It is up to the caller to ensure all glyphs share
     the same owning texture (Font.get_styled_text_list does this).
     
-    This is slightly low-level, used only by TextLayout, not directly
-    by applications.
+    This is slightly low-level, used only by TextLayout and pyglet.layout, 
+    not directly by applications.
     '''
     array = None
     glyph_positions = None
 
-    def __init__(self, glyphs, font, texture, color=(1, 1, 1, 1)):
-        assert len(color) == 4
+    # CSS properties
+    is_text = True
+
+    def __init__(self, text, glyphs, font, texture):
+        # GlyphTextureAtlas defines apply_blend_state function.
         assert isinstance(texture, GlyphTextureAtlas)
+
+        # We currently make this assumption in draw and measure methods.
+        # It is not required by the interface, but is currently implemented
+        # as such.
+        assert len(text) == len(glyphs)
+
+        self.text = text
         self.glyphs = glyphs
         self.font = font
         self.texture = texture
-        self.color = color
-
-    def create_array(self):
-        if self.array:
-            return
 
         # Create an interleaved array in GL_T2F_V3F format
         self.glyph_positions = []
@@ -114,96 +109,101 @@ class StyledText(object):
                     x + glyph.vertices[0], glyph.vertices[3], 0.]
             x += glyph.advance
         self.array = (c_float * (5 * 4 * len(self.glyphs)))(*lst)
-        self.advance = x
 
-    def draw(self, begin=0, end=None):
-        if end is None:
-            end = len(self.glyphs)
+        # CSS properties
+        self.intrinsic_width = x
+        self.intrinsic_height = font.ascent - font.descent
+        self.intrinsic_baseline = -font.descent
 
+    def __repr__(self):
+        d = self.__dict__.copy()
+        del d['array']
+        del d['glyphs']
+        del d['glyph_positions']
+        del d['texture']
+        del d['text']
+        #return '%s(%r, %r)' % (self.__class__.__name__, self.text, d)
+        return '%s(%r)' % (self.__class__.__name__, self.text)
+
+    def get_text(self):
+        return self.text
+
+    def get_breakpoint(self, from_breakpoint, break_characters, width):
+        width += self.glyph_positions[from_breakpoint]
+
+        breakpoint = None
+        for i, glyph in enumerate(self.glyphs[from_breakpoint:]):
+            if (self.glyph_positions[from_breakpoint + i] > width and 
+                breakpoint is not None):
+                break
+            if self.text[from_breakpoint + i] in break_characters:
+                breakpoint = from_breakpoint + i
+        return breakpoint
+
+    def get_region_width(self, from_breakpoint, to_breakpoint):
+        if not to_breakpoint or to_breakpoint >= len(self.glyphs):
+            return self.intrinsic_width - self.glyph_positions[from_breakpoint]
+        return self.glyph_positions[to_breakpoint] - \
+               self.glyph_positions[from_breakpoint]
+
+    def draw(self, render_context, left, top, right, bottom):
+        self.draw_region(left, top, right, bottom, None, None)
+
+    def draw_region(self, render_context, left, top, right, bottom, 
+                    from_breakpoint, to_breakpoint):
+        if from_breakpoint is None:
+            from_breakpoint = 0
+        if to_breakpoint is None:
+            to_breakpoint = len(self.glyphs)
+
+        glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT)
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, self.texture.id)
+        self.texture.apply_blend_state()
+        glColor4f(*self.color)
         glPushMatrix()
-        glTranslatef(-self.glyph_positions[begin], 0, 0)
-        if not self.array:
-            self.create_array()
+        glTranslatef(-self.glyph_positions[from_breakpoint] + left, top, 0)
         glInterleavedArrays(GL_T2F_V3F, 0, self.array)
         # Number of quads, not glyphs
-        glDrawArrays(GL_QUADS, begin * 4, (end - begin) * 4)
+        glDrawArrays(GL_QUADS, from_breakpoint * 4, 
+                     (to_breakpoint - from_breakpoint) * 4)
         glPopMatrix()
+        glPopAttrib()
 
-    def get_width(self):
-        self.create_array()
-        return self.advance
-    width = property(get_width)
-
-    def get_ascent(self):
-        return self.font.ascent
-    ascent = property(get_ascent)
-    
-    def get_descent(self):
-        return self.font.descent
-    descent = property(get_descent)
-
-    def get_break_index(self, begin, width):
-        '''Return `index`, `hard_index` >= `begin` and such that all glyphs in
-        range [begin:index] can be rendered into `width` pixels without
-        clipping.  Similarly for hard_index, except spaces are ignored.
-        Return None if there are no breakpoints in range.'''
-        self.create_array()
-
-        width += self.glyph_positions[begin]
-
-        break_index = None
-        for i, glyph in enumerate(self.glyphs[begin:]):
-            if self.glyph_positions[begin + i] > width:
-                break
-            if glyph.is_word_space:
-                break_index = begin + i
-        return break_index, begin + i - 1
-
-    def get_range_width(self, begin, end):
-        '''Return width of glyphs between `begin` and `end`.'''
-        if not end or end == len(self.glyphs) - 1:
-            return self.width - self.glyph_positions[begin]
-        return self.glyph_positions[end + 1] - self.glyph_positions[begin]
 
 
 class TextLayoutLine(object):
-    def __init__(self, styled_texts, begin=0, end=None):
-        self.styled_texts = styled_texts
+    def __init__(self, text_boxes, begin=0, end=None):
+        self.text_boxes = text_boxes
         self.begin = begin
         self.end = end
-        self.ascent = max([t.ascent for t in styled_texts])
-        self.descent = min([t.descent for t in styled_texts])
+        self.ascent = max([t.font.ascent for t in text_boxes])
+        self.descent = min([t.font.descent for t in text_boxes])
 
     def __repr__(self):
         # DEBUG
         s = ''
         begin = self.begin
         end = None
-        last = len(self.styled_texts) - 1
-        for i, styled_text in enumerate(self.styled_texts):
+        last = len(self.text_boxes) - 1
+        for i, text_box in enumerate(self.text_boxes):
             if i == last:
                 end = self.end
-
-            s += ''.join([g.character for g in styled_text.glyphs[begin:end]])
+            s += text_box.text[begin:end]
             begin = 0
         return s
 
     def draw(self):
         begin = self.begin
         end = None
-        last = len(self.styled_texts) - 1
-        for i, styled_text in enumerate(self.styled_texts):
+        last = len(self.text_boxes) - 1
+        for i, text_box in enumerate(self.text_boxes):
             if i == last:
                 end = self.end
 
-            # Complete GL state for this style run
-            glBindTexture(GL_TEXTURE_2D, styled_text.texture.id)
-            styled_text.texture.apply_blend_state()
-            glColor4f(*styled_text.color)
-
             # Draw and move cursor
-            styled_text.draw(begin, end)
-            glTranslatef(styled_text.advance, 0, 0) 
+            text_box.draw_region(None, 0, 0, 0, 0, begin, end)
+            glTranslatef(text_box.get_region_width(begin, end), 0, 0) 
             begin = 0 
 
 class TextLayout(object):
@@ -213,46 +213,47 @@ class TextLayout(object):
     # Cached layout lines
     _lines = None
 
-    def __init__(self, styled_texts):
-        self.styled_texts = styled_texts
+    def __init__(self, text_boxes):
+        self.text_boxes = text_boxes
 
     def layout(self):
         # Simple case of no wrapping
         if not self._wrap_width:
-            self._lines = [TextLayoutLine(self.styled_texts)]
+            self._lines = [TextLayoutLine(self.text_boxes)]
             return
 
         # Completed typeset TextLayoutLine's
         self._lines = []
 
-        # StyledTexts that fit within the current line.  The first one
+        # TextBox's that fit within the current line.  The first one
         # contains `begin` index.  The last one contains `break_index`.
         line_runs = []
 
-        # Glyph index within first StyledText in `line_runs` 
+        # Glyph index within first TextBox in `line_runs` 
         # that starts the line.
         begin = 0
 
         # Glyph index within current `run`, == begin if this
-        # is first StyledText in `line_runs`, otherwise == 0.
+        # is first TextBox in `line_runs`, otherwise == 0.
         local_begin = 0
 
-        # Glyph index within last StyledText in `line_runs`
+        # Glyph index within last TextBox in `line_runs`
         # that breaks the line validly.
         break_index = None
 
-        # StyledTexts that fit within the current line after
+        # TextBox's that fit within the current line after
         # `line_runs`, only if a valid break will be encountered later.
         pending = []
 
         # Width, in pixels, of current line remaining to be typeset.
         remaining_width = self._wrap_width
 
-        runs = self.styled_texts[:]
+        runs = self.text_boxes[:]
         while len(runs):
             run = runs.pop(0)
 
-            bp, hbp = run.get_break_index(local_begin, remaining_width)
+            bp = run.get_breakpoint(local_begin, ' ', remaining_width)
+            hbp = run.get_breakpoint(local_begin, '\n', remaining_width)
             if bp:
                 # Found a valid breakpoint.  Everything before
                 # this breakpoint, in pending, can be committed to the
@@ -262,14 +263,14 @@ class TextLayout(object):
                 line_runs.append(run)
                 pending = []
 
-            if (run.get_range_width(local_begin, None) < remaining_width):
+            if (run.get_region_width(local_begin, None) < remaining_width):
                 # The entire `run[local_begin:]` fits on
                 # the line, add it to `pending` if it is not yet committed.
                 if run not in line_runs:
                     pending.append(run)
 
                 # Subtract its width from remaining line width.
-                remaining_width -= run.get_range_width(local_begin, None)
+                remaining_width -= run.get_region_width(local_begin, None)
 
                 # Grab the next StyledText.
                 local_begin = 0
@@ -345,7 +346,7 @@ class TextLayout(object):
         if self._wrap_width:
             return self._wrap_width
         else:
-            return sum([t.width for t in self.styled_texts])
+            return sum([t.intrinsic_width for t in self.text_boxes])
     def set_width(self, width):
         self._wrap_width = width
         self._lines = None
@@ -370,7 +371,7 @@ class FontException(Exception):
 class BaseFont(object):
     texture_width = 256
     texture_height = 256
-    texture_internalformat = GL_LUMINANCE_ALPHA
+    texture_internalformat = GL_ALPHA
 
     # These two need overriding by subclasses
     glyph_texture_atlas_class = GlyphTextureAtlas
@@ -388,6 +389,11 @@ class BaseFont(object):
     def add_font_data(cls, data):
         # Ignored unless overridden
         pass
+
+    @classmethod
+    def have_font(cls, name):
+        # Subclasses override
+        return True
 
     def allocate_glyph(self, width, height):
         # Search atlases for a free spot
@@ -420,29 +426,35 @@ class BaseFont(object):
                 if not glyph_renderer:
                     glyph_renderer = self.glyph_renderer_class(self)
                 self.glyphs[c] = glyph_renderer.render(c)
-                if c in _word_spaces:
-                    self.glyphs[c].is_word_space = True
                 
                 # DEBUG
                 self.glyphs[c].character = c
         return [self.glyphs[c] for c in text] 
 
-    def get_styled_text_list(self, text, color):
+    def get_inline_boxes(self, text):
         texture = None
         result = []
         glyph_list = []
+        begin = 0
+        end = 0
         for glyph in self.get_glyphs(text):
             if glyph.texture != texture:
                 if glyph_list:
-                    result.append(StyledText(glyph_list, self, texture, color))
+                    result.append(
+                        TextBox(text[begin:end], glyph_list, self, texture))
+                    begin = end 
                 glyph_list = []
                 texture = glyph.texture
             glyph_list.append(glyph)
-        result.append(StyledText(glyph_list, self, texture, color))
+            end += 1
+        result.append(TextBox(text[begin:end], glyph_list, self, texture))
         return result
 
     def render(self, text, color=(1, 1, 1, 1)):
-        return TextLayout(self.get_styled_text_list(text, color))
+        boxes = self.get_inline_boxes(text)
+        for box in boxes:
+            box.color = color
+        return TextLayout(boxes)
 
 # Load platform dependent module
 if sys.platform == 'darwin':
@@ -455,10 +467,24 @@ else:
     from pyglet.text.freetype import FreeTypeFont
     _font_class = FreeTypeFont
 
+_font_cache = {}
+
 class Font(object):
     def __new__(cls, name, size, bold=False, italic=False):
-        # TODO: Cache fonts, lookup bitmap fonts.
-        return _font_class(name, size, bold=bold, italic=italic)
+        if type(name) in (tuple, list):
+            for n in name:
+                if _font_class.have_font(n):
+                    name = n
+                    break
+            else:
+                name = None
+
+        descriptor = (name, size, bold, italic)
+        if descriptor in _font_cache:
+            return _font_cache[descriptor]
+        font = _font_class(name, size, bold=bold, italic=italic)
+        _font_cache[descriptor] = font
+        return font
 
     @staticmethod
     def add_font(font):

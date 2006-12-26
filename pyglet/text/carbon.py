@@ -42,6 +42,8 @@ kCGImageAlphaNone = 0
 kCGImageAlphaPremultipliedLast = 1
 kCGTextFill = 0
 
+kATSUInvalidFontErr = -8796
+
 kATSFontContextUnspecified = 0
 kATSFontContextGlobal = 1
 kATSFontContextLocal = 2
@@ -126,10 +128,12 @@ def str_ucs2(text):
     return create_string_buffer(text + '\0')
 
 class CarbonGlyphTextureAtlas(GlyphTextureAtlas):
+    '''
     def apply_blend_state(self):
         # Textures have premultiplied alpha
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_BLEND)
+    '''
 
 class CarbonGlyphRenderer(GlyphRenderer):
     _bitmap = None
@@ -171,7 +175,7 @@ class CarbonGlyphRenderer(GlyphRenderer):
             kATSUToTextEnd,
             0, 0,
             byref(rect))
-        image_width = rect.right - rect.left + 1
+        image_width = rect.right - rect.left + 2
         image_height = rect.bottom - rect.top + 2
         baseline = rect.bottom + 1
         lsb = rect.left
@@ -205,7 +209,7 @@ class CarbonGlyphRenderer(GlyphRenderer):
         carbon.ATSUDrawText(layout,
             0,
             kATSUToTextEnd,
-            fixed(-lsb), fixed(baseline)) 
+            fixed(-lsb + 1), fixed(baseline)) 
 
         # Allocate space within an atlas
         glyph = self.font.allocate_glyph(image_width, image_height)
@@ -262,6 +266,9 @@ class CarbonFont(BaseFont):
     def __init__(self, name, size, bold=False, italic=False):
         super(CarbonFont, self).__init__()
 
+        if not name:
+            name = 'Helvetica'
+
         font_id = ATSUFontID()
         carbon.ATSUFindFontFromName(
             name,
@@ -280,5 +287,53 @@ class CarbonFont(BaseFont):
             kATSUQDItalicTag: c_byte(italic)
         }
         self.atsu_style = create_atsu_style(attributes)
+
+        self.calculate_metrics()
+
+    @classmethod
+    def have_font(cls, name):
+        font_id = ATSUFontID()
+        r = carbon.ATSUFindFontFromName(
+            name,
+            len(name),
+            kFontFullName,
+            kFontNoPlatformCode,
+            kFontNoScriptCode,
+            kFontNoLanguageCode,
+            byref(font_id)) 
+        return r != kATSUInvalidFontErr
+
+    def calculate_metrics(self):
+        # It seems the only way to get the font's ascent and descent is to lay
+        # out some glyphs and measure them.
+
+        # This is a (pretend) UCS2 string
+        text = '\0a'
+
+        layout = c_void_p()
+        carbon.ATSUCreateTextLayout(byref(layout))
+        carbon.ATSUSetTextPointerLocation(layout,
+            text,
+            kATSUFromTextBeginning,
+            kATSUToTextEnd,
+            1)
+        carbon.ATSUSetRunStyle(layout, self.atsu_style, 
+            kATSUFromTextBeginning, kATSUToTextEnd)
+        carbon.ATSUSetTransientFontMatching(layout, True)
+
+        bounds_actual = c_uint32()
+        bounds = ATSTrapezoid()
+        carbon.ATSUGetGlyphBounds(
+            layout,
+            0, 0,
+            kATSUFromTextBeginning,
+            kATSUToTextEnd,
+            kATSUseDeviceOrigins,
+            1,
+            byref(bounds),
+            byref(bounds_actual))
+        self.ascent = -fix2float(bounds.upperLeft.y)
+        self.descent = -fix2float(bounds.lowerLeft.y)
+        print self.ascent, self.descent
 
 
