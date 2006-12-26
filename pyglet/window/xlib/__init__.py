@@ -202,7 +202,8 @@ class XlibDisplay(Display):
 
         server = [int(i) for i in self.get_glx_server_version().split('.')]
         client = [int(i) for i in self.get_glx_client_version().split('.')]
-        return tuple(server) >= major, minor and tuple(client) > major, minor
+        return (tuple(server) >= (major, minor) and 
+                tuple(client) >= (major, minor))
 
     def get_glx_server_vendor(self):
         return glXQueryServerString(self, 0, GLX_VENDOR)
