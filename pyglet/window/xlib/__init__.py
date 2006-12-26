@@ -123,7 +123,7 @@ class XlibPlatform(BasePlatform):
             config_class = XlibGLConfig13
             factory.set_gl_attribute('x_renderable', True)
         else:
-            if 'ATI' in display.contents.get_glx_server_vendor():
+            if 'ATI' in display.contents.get_glx_client_vendor():
                 config_class = XlibGLConfig10ATI
             else:
                 config_class = XlibGLConfig10
