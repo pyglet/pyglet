@@ -1,0 +1,8 @@
+title=pyglet gets CSS
+date=2006-12-28
+author=Richard
+
+Alex has checked in an initial implementation of XML/XHTML + CSS
+2.1. Try out "examples/xml_css.py" to see it in action (hint: the window is
+resizable and your mouse scroll wheel is active).
+More info over at <a href="http://www.partiallydisassembled.net/blog/">Alex's blog</a>.
