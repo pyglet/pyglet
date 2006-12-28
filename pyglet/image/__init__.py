@@ -400,7 +400,7 @@ class Texture(Image):
         glEndList()
 
     # TODO: <ah> I think this should be a sprite function only: 3D games
-    #       will have no need for this DL.
+    #       and pyglet.layout will have no need for this DL.
     def draw(self):
         glCallList(self.quad_list)
 

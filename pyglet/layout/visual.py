@@ -86,10 +86,7 @@ class RenderDevice(object):
     def create_inline_text_boxes(self, font, text):
         raise NotImplementedError()
 
-class Formatter(object):
-    def __init__(self, render_device):
-        self.root_box = None
-        self.render_device = render_device
+
 
 # Visual formatting model
 # ----------------------------------------------------------------------------
@@ -193,35 +190,37 @@ class Frame(object):
     def add(self, frame):
         self.children.append(frame)
 
-    def draw(self, render_device, x, y):
-        lx = x + self.border_left
-        ly = y - self.border_top
+    def draw_border_and_background(self, render_device, x1, y1, x2, y2):
         if self.box:
             if self.box.background_color != 'transparent':
-                render_device.draw_background(lx, ly, 
-                    x + self.border_right, y - self.border_bottom, self.box)
+                render_device.draw_background(x1, y1, x2, y2, self.box)
 
             if self.box.border_top_width:
-                render_device.draw_horizontal_border(lx, ly,
-                    x + self.border_right, ly - self.box.border_top_width,
+                render_device.draw_horizontal_border(
+                    x1, y1, x2, y1 - self.box.border_top_width,
                     self.box.border_top_color, self.box.border_top_style)
             if self.box.border_right_width and self.border_close:
                 render_device.draw_vertical_border(
-                    x + self.border_right, ly,
-                    x + self.border_right - self.box.border_right_width, 
-                    y - self.border_bottom,
+                    x2, y1, x2 - self.box.border_right_width, y2,
                     self.box.border_right_color, self.box.border_right_style)
             if self.box.border_bottom_width:
                 render_device.draw_horizontal_border(
-                    lx, y - self.border_bottom + self.box.border_bottom_width,
-                    x + self.border_right, y - self.border_bottom,
+                    x1, y2 + self.box.border_bottom_width, x2, y2,
                     self.box.border_bottom_color, self.box.border_bottom_style)
             if self.box.border_left_width and self.border_open:
-                render_device.draw_vertical_border(lx, ly,
-                    lx + self.box.border_left_width, y - self.border_bottom,
+                render_device.draw_vertical_border(
+                    x1, y1, x1 + self.box.border_left_width, y2,
                     self.box.border_left_color, self.box.border_left_style)
+
+    def draw(self, render_device, x, y):
+        x1 = x + self.border_left
+        y1 = y - self.border_top
+        x2 = x + self.border_right
+        y2 = y - self.border_bottom
+
+        self.draw_border_and_background(render_device, x1, y1, x2, y2)
         for child in self.children:
-            child.draw(render_device, lx, ly)
+            child.draw(render_device, x1, y1)
 
     def add(self, frame):
         assert frame not in self.children
@@ -427,12 +426,69 @@ class InlineFrame(Frame):
         for child in self.children:
             child.pprint(indent + '  ')
 
+class InlineReplacedFrame(InlineFrame):
+    def __init__(self, box, parent, containing_block):
+        assert not box.is_text and not box.children
+        super(InlineReplacedFrame, self).__init__(box, parent, containing_block)
+
+        # 10.3.2 Calculating widths and margins for inline replaced elements
+        # TODO
+        width = box.intrinsic_width
+        height = box.intrinsic_height
+
+        self.content_width = width
+    
+        self.outer_width = \
+            box.used_margin_left + \
+            box.border_left_width + \
+            box.used_padding_left + \
+            width + \
+            box.used_padding_right + \
+            box.border_right_width + \
+            box.used_margin_right
+        
+        content_height = \
+            box.used_margin_top + \
+            box.border_top_width + \
+            box.used_padding_top + \
+            height + \
+            box.used_padding_bottom + \
+            box.border_bottom_width + \
+            box.used_margin_bottom
+
+        self.set_ascent_descent(content_height, 0, content_height, 0)
+
+    def close(self):
+        pass
+
+    def set_border_top(self, border_top):
+        self.border_top = border_top + self.box.used_margin_top
+        self.border_bottom = border_top + \
+            self.box.used_margin_top + \
+            self.box.border_top_width + \
+            self.box.used_padding_top + \
+            self.box.intrinsic_height + \
+            self.box.used_padding_bottom + \
+            self.box.border_bottom_width
+
+    def draw(self, render_device, x, y):
+        x1 = x + self.border_left
+        y1 = y - self.border_top
+        x2 = x + self.border_right
+        y2 = y - self.border_bottom
+
+        self.draw_border_and_background(render_device, x1, y1, x2, y2)
+        x1 += self.box.border_left_width + self.box.used_padding_left
+        y1 -= self.box.border_top_width + self.box.used_padding_top
+        x2 -= self.box.border_right_width + self.box.used_padding_right
+        y2 += self.box.border_bottom_width + self.box.used_padding_bottom
+        self.box.draw(render_device, x1, y1, x2, y2)
+
 class TextFrame(InlineFrame):
     def __init__(self, box, parent, containing_block, 
                  from_breakpoint, to_breakpoint):
         assert box.is_text
         super(TextFrame, self).__init__(box, parent, containing_block)
-        self.box = box
         self.from_breakpoint = from_breakpoint
         self.to_breakpoint = to_breakpoint
         if from_breakpoint:
@@ -513,8 +569,8 @@ class LineBoxFrame(InlineFrame):
         y -= self.border_top
 
         # XXX HACK: text looks fuzzy if not pixel-aligned.
-        #baseline = y - self.ascent
-        #y -= baseline - int(baseline)
+        baseline = y - self.content_ascent
+        y -= baseline - int(baseline)
 
         for child in self.children:
             child.draw(render_device, x, y)
@@ -561,6 +617,8 @@ class LineBoxFrame(InlineFrame):
             descent -= half_leading
         else:
             self.content_height = ascent - descent
+
+        self.content_ascent = ascent     # used for pixel align hack XXX
 
         for frame in self.children:
             frame.vertical_align(0, ascent, self.content_height)
@@ -777,17 +835,17 @@ class InlineFormattingContext(FormattingContext):
                 self.break_at_end = True
                 from_breakpoint = to_breakpoint
         else:
-            '''
             # Not text (replaced element), cannot be broken.  Assume we can
             # break around it though (CSS doesn't specify).
-            cbox = InlineFrame(box, self.frame_stack[0])
-            if not self.line_box.can_add(cbox + space_left + space_right):
-                self.new_line()
-            self.frame_stack[0].add(cbox)
-            self.line_box.remaining_width -= cbox.width
-            self.break_frame = cbox
-            '''
-            pass
+            frame = InlineReplacedFrame(box, self.frame_stack[0],
+                self.containing_block)
+            # TODO left/right bearings
+            if not self.line_box.can_add(frame) and \
+                    (self.break_at_end or self.break_frame):
+                self.line_break()
+            self.frame_stack[0].add(frame)
+            self.line_box.add_descendent(frame)
+            self.break_at_end = True
 
     def line_break(self):
         assert not self.line_box.continuation

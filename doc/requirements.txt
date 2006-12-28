@@ -260,6 +260,7 @@ layout
         Component                              GENERIC
         ====================================== =======
         INLINE_FORMATTING                         D
+        INLINE_REPLACED                           D
         ====================================== =======
 
 gui

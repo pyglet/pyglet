@@ -31,14 +31,22 @@ def render_xml(stylesheet, data):
 
 def render_xhtml(data):
     from xml.sax import parseString
+    from pyglet.layout.base import LocalFileLocator
     from pyglet.layout.visual import VisualLayout
     from pyglet.layout.formatters.xhtml import XHTMLFormatter
     from pyglet.text.layout import GLRenderDevice
+    from pyglet.image.layout import ImageBoxGenerator
+
+    locator = LocalFileLocator()
 
     render_device = GLRenderDevice()
     render_device.width = 640
     render_device.height = 480
+
     formatter = XHTMLFormatter(render_device)
+    image_box_generator = ImageBoxGenerator(locator)
+    image_box_generator.add_to_formatter(formatter)
+
     parseString(data, formatter)
 
     layout = VisualLayout(render_device)

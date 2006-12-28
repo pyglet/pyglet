@@ -118,7 +118,33 @@ Color.names = {
     'gray':     Color.from_hex('808080'),
 }
 
+# Interfaces
 #-----------------------------------------------------------------------------
+
+class Formatter(object):
+    def __init__(self, render_device):
+        self.root_box = None
+        self.render_device = render_device
+
+class BoxGenerator(object):
+    def add_to_formatter(self, formatter):
+        raise NotImplementedError()
+
+    def create_box(self, name, attrs):
+        raise NotImplementedError()
+
+class Locator(object):
+    def get_stream(self, uri):
+        return None
+
+class LocalFileLocator(object):
+    def get_stream(self, uri):
+        try:
+            return open(uri, 'rb')
+        except IOError:
+            return None
+
+# TODO locators for net and resource.
 
 
 class Box(object):
@@ -178,6 +204,10 @@ class Box(object):
     # If true, this box is an anonymous block box (see 9.2.1) and can
     # accept additional inline boxes.
     anonymous = False
+
+    # For replaced elements only.
+    def draw(self, render_context, left, top, right, bottom):
+        pass
 
     # Text-wrapping functionality
     # ---------------------------

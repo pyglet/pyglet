@@ -46,6 +46,8 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
         pixbuf = gdkpixbuf.gdk_pixbuf_loader_get_pixbuf(loader)
         if not gdkpixbuf.gdk_pixbuf_loader_close(loader, byref(err)):
             raise ImageDecodeException(filename)
+        if not pixbuf:
+            raise ImageDecodeException(filename)
         
         # Get format and dimensions
         width = gdkpixbuf.gdk_pixbuf_get_width(pixbuf)

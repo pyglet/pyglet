@@ -23,10 +23,11 @@ class XMLElement(pyglet.layout.css.SelectableElement):
         self.parent = parent
         self.previous_sibling = previous_sibling
 
+
 class XMLFormatter(pyglet.layout.visual.Formatter):
     def __init__(self, render_device):
         super(XMLFormatter, self).__init__(render_device)
-        self.element_generators = {}
+        self.box_generators = {}
 
         self.box_stack = []
         self.element_stack = []
@@ -36,11 +37,14 @@ class XMLFormatter(pyglet.layout.visual.Formatter):
     def add_stylesheet(self, stylesheet):
         self.stylesheets.append(stylesheet)
 
-    def create_box(self, name, attrs):
-        if name in self.element_generators:
-            return self.element_generators[name].create_box(name, attrs)
-        return Box()
+    def add_box_generator(self, name, generator):
+        assert name not in self.box_generators
+        self.box_generators[name] = generator
 
+    def create_box(self, name, attrs):
+        if name in self.box_generators:
+            return self.box_generators[name].create_box(name, attrs)
+        return Box()
 
     def apply_style(self,  box, elem):
         apply_inherited_style(box)
