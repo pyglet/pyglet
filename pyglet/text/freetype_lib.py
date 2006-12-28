@@ -220,8 +220,6 @@ class FT_FaceRec(Structure):
         # FT_Done_FreeType doc says it will free up faces...
         if _library is not None:
             FT_Done_Face(byref(self))
-        if addressof(self) in _font_data:
-            del _font_data[addressof(self)]
 
 FT_Face = POINTER(FT_FaceRec)
 
