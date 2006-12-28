@@ -76,6 +76,7 @@ class XMLFormatter(pyglet.layout.visual.Formatter):
         if box.border_left_color is None:
             box.border_left_color = box.color
 
+    # Attributes with computed length  
     _length_attribute_names = set(
        ['margin_top', 'margin_right', 'margin_bottom', 'margin_left',
        'padding_top', 'padding_right', 'padding_bottom', 'padding_left',
@@ -101,6 +102,8 @@ class XMLFormatter(pyglet.layout.visual.Formatter):
         elif isinstance(font_size, Ident):
             font_size = self.render_device.get_named_font_size(font_size)
         box.font_size = font_size
+        font_size_device = \
+            self.render_device.dimension_to_device(font_size, font_size)
 
         for attrname in set(box.__dict__.keys()) & self._length_attribute_names:
             value = getattr(box, attrname)
@@ -108,10 +111,17 @@ class XMLFormatter(pyglet.layout.visual.Formatter):
                 value = self.render_device.dimension_to_device(value, font_size)
                 setattr(box, attrname, value)
 
-    def anonymous_block_box(self, boxes):
+        # line-height percentage of font-size
+        if type(box.line_height) in (Percentage, Number):
+            box.line_height = font_size_device * box.line_height
+
+    def anonymous_block_box(self, boxes, parent):
         '''Create an anonymous block box for 'boxes' and return it.'''
         anon = Box()
+        anon.parent = parent
+        apply_inherited_style(anon)
         self.resolve_style_defaults(anon)
+        self.resolve_computed_values(anon)
         anon.display = Ident('block')
         anon.children = boxes
         for box in boxes:
@@ -133,7 +143,7 @@ class XMLFormatter(pyglet.layout.visual.Formatter):
                 parent = parent.children[-1]
             else:
                 # Create anonymous block box around inline box.
-                box = self.anonymous_block_box([box])
+                box = self.anonymous_block_box([box], parent)
                 box.anonymous = 'True' 
 
         elif (box.display == 'block' and 
@@ -184,7 +194,6 @@ class XMLFormatter(pyglet.layout.visual.Formatter):
         self.box_stack.append(box)
         self.element_stack.append(elem)
         self.element_sibling_stack.append(None)
-        print elem
 
     def endElement(self, name):
         self.process_content_buffer()
@@ -270,9 +279,12 @@ class XMLFormatter(pyglet.layout.visual.Formatter):
             return
 
         if content:
-            for box in self.render_device.create_inline_text_boxes(font, content):
+            boxes = self.render_device.create_inline_text_boxes(font, content)
+            for box in boxes:
+                box.parent = parent
+                apply_inherited_style(box)
                 self.resolve_style_defaults(box)
-                box.color = parent.color
+                self.resolve_computed_values(box)
                 self.add_child(box, parent)
 
     def ignorableWhitespace(self, whitespace):

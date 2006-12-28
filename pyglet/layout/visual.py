@@ -349,37 +349,68 @@ class InlineFrame(Frame):
             lsb = self.box.used_padding_left + self.box.border_left_width 
 
         x = 0
-        self.ascent = 0
-        self.descent = 0
+        content_ascent = 0
+        content_descent = 0
+        inline_ascent = inline_descent = 0
         for frame in self.children:
             frame.close()
             lx = lsb + x
             if frame.border_open:
                 lx += frame.box.used_margin_left
             frame.set_border_left(lx)
-            if frame.box.vertical_align == 'baseline':
-                self.ascent = max(self.ascent, frame.ascent)
-                self.descent = min(self.descent, frame.descent)
-            else:
-                raise NotImplementedError
             x += frame.outer_width
-        self.content_height = self.ascent - self.descent
-        self.ascent += self.box.border_top_width + \
-            self.box.used_padding_top
-        self.descent -= self.box.border_bottom_width + \
-            self.box.used_padding_bottom
+
+            content_ascent = max(content_ascent, frame.content_ascent)
+            content_descent = min(content_descent, frame.content_descent)
+            inline_ascent = max(inline_ascent, frame.inline_ascent)
+            inline_descent = min(inline_descent, frame.inline_descent)
         self.content_width = x
         self.calculate_outer_width()
 
-    def vertical_align(self, line_box):
-        # TODO top/bottom margin DO apply for replaced inline elements.
+        content_ascent += self.box.used_padding_top + self.box.border_top_width
+        content_descent -= self.box.used_padding_bottom + \
+                           self.box.border_bottom_width
+        
+        self.set_ascent_descent(content_ascent, content_descent, 
+                                inline_ascent, inline_descent)
+
+    def set_ascent_descent(self, content_ascent, content_descent, 
+                           inline_ascent, inline_descent):
+        # content_ascent and content_descent refer to content-area
+        # inline_ascent and inline_descent refer to inline box (leading
+        # applied)
+        # See http://meyerweb.com/eric/css/inline-format.html for good
+        # explanation. 
+        self.content_ascent = content_ascent
+        self.content_descent = content_descent
+        self.content_height = content_ascent - content_descent
+
+        if self.box.vertical_align in ('baseline', 'bottom', 'text-bottom'):
+            self.inline_ascent = inline_ascent
+            self.inline_descent = inline_descent
+        elif self.box.vertical_align in ('top', 'text-top'):
+            self.inline_ascent = inline_ascent - inline_descent
+            self.inline_descent = 0
+        elif self.box.vertical_align == 'middle':
+            parent_middle = self.parent.box.font_size / 2.
+            height = inline_ascent - inline_descent
+            self.inline_ascent = parent_middle + height / 2
+            self.inline_descent = parent_middle - height / 2
+
+    def vertical_align(self, line_box_top, parent_baseline, line_box_bottom):
         if self.box.vertical_align == 'baseline':
-            self.set_border_top(-self.ascent + self.parent.ascent)
+            self.set_border_top(parent_baseline - self.content_ascent)
+        elif self.box.vertical_align == 'top':
+            self.set_border_top(line_box_top)
         else:
             raise NotImplementedError()
+
+        line_box_top -= self.border_top
+        line_box_bottom -= self.border_top
+        baseline = self.content_ascent
         if self.children:
             for frame in self.children:
-                frame.vertical_align(line_box)
+                frame.vertical_align(line_box_top, baseline, line_box_bottom)
 
     def calculate_outer_width(self):
         self.outer_width = self.content_width
@@ -410,6 +441,7 @@ class TextFrame(InlineFrame):
             self.border_close = False
         self.calculate_size()
 
+
     def calculate_size(self):
         if self.from_breakpoint == self.to_breakpoint:
             self.content_width = 0
@@ -418,12 +450,16 @@ class TextFrame(InlineFrame):
                 self.from_breakpoint, self.to_breakpoint)
         self.calculate_outer_width()
         
-        self.ascent = self.box.intrinsic_height - \
-            self.box.intrinsic_baseline + self.box.used_padding_top + \
-            self.box.border_top_width
-        self.descent = -self.box.intrinsic_baseline - \
-            self.box.used_padding_bottom - self.box.border_bottom_width
-        self.content_height = self.ascent - self.descent
+        ascent = self.box.intrinsic_ascent
+        descent = self.box.intrinsic_descent
+        if self.box.line_height != 'normal':
+            half_leading = (self.box.line_height - (ascent - descent)) / 2
+            inline_ascent = ascent + half_leading
+            inline_descent = descent - half_leading
+        else:
+            inline_ascent = ascent
+            inline_descent = descent
+        self.set_ascent_descent(ascent, descent, inline_ascent, inline_descent)
 
     def close(self):
         pass
@@ -439,7 +475,7 @@ class TextFrame(InlineFrame):
         x += self.border_left
         y -= self.border_top
         self.box.draw_region(render_device, 
-                             x, y - self.ascent, 0, 0,
+                             x, y - self.content_ascent, 0, 0,
                              self.from_breakpoint, self.to_breakpoint)
 
     def __repr__(self):
@@ -460,23 +496,26 @@ class LineBoxFrame(InlineFrame):
     # construction) and aligning elements both horizontally (text-align) and
     # vertically (vertical-align, baseline alignment).
 
-    def __init__(self, containing_block, text_align):
+    def __init__(self, containing_block, line_height, text_align):
         super(LineBoxFrame, self).__init__(None, None, containing_block)
         self.containing_block = containing_block
+        self.line_height = line_height
         self.content_left = containing_block.left
         self.width = containing_block.width
         self.remaining_width = containing_block.width
         self.frame_width = 0
 
         self.text_align = text_align
-        self.descent = 0
-        self.ascent = 0
         self.children = []
 
     def draw(self, render_device, x, y):
         x += self.content_left
         y -= self.border_top
-        y = int(y)  # XXX HACK: text looks bad if not pixel-aligned.
+
+        # XXX HACK: text looks fuzzy if not pixel-aligned.
+        #baseline = y - self.ascent
+        #y -= baseline - int(baseline)
+
         for child in self.children:
             child.draw(render_device, x, y)
 
@@ -499,9 +538,8 @@ class LineBoxFrame(InlineFrame):
 
     def close(self):
         x = 0
-        self.ascent = 0
-        self.descent = 0
-        
+        ascent = 0
+        descent = 0
         for frame in self.children:
             frame.close()
             lx = x
@@ -511,12 +549,21 @@ class LineBoxFrame(InlineFrame):
 
             x += frame.outer_width
 
-            self.ascent = max(frame.ascent, self.ascent)
-            self.descent = min(frame.descent, self.descent)
+            ascent = max(frame.inline_ascent, ascent)
+            descent = min(frame.inline_descent, descent)
 
-        self.content_height = self.ascent - self.descent
+        # line-height on containing box gives minimum content height
+        # of this line box.
+        if self.line_height != 'normal':
+            self.content_height = max(ascent - descent, self.line_height)
+            half_leading = (self.content_height - (ascent - descent)) / 2
+            ascent += half_leading
+            descent -= half_leading
+        else:
+            self.content_height = ascent - descent
+
         for frame in self.children:
-            frame.vertical_align(self)
+            frame.vertical_align(0, ascent, self.content_height)
 
     def set_border_top(self, border_top):
         self.border_top = border_top
@@ -532,7 +579,8 @@ class LineBoxFrame(InlineFrame):
 
     def create_continuation(self):
         assert not self.continuation
-        self.continuation = LineBoxFrame(self.containing_block, self.text_align)
+        self.continuation = LineBoxFrame(self.containing_block,
+            self.line_height, self.text_align)
 
     def split(self, break_frame=None):
         super(LineBoxFrame, self).split(break_frame)
@@ -574,7 +622,8 @@ class BlockFormattingContext(FormattingContext):
 
         if box.inline_formatting_context:
             context = InlineFormattingContext(self, 
-                self.containing_block_stack[0])
+                self.containing_block_stack[0],
+                box.line_height)
             for child in box.children:
                 context.add(child)
             context.close()
@@ -625,10 +674,10 @@ class InlineFormattingContext(FormattingContext):
     # It is up to the formatter to generate boxes with these contents.
     # The formatter can do this by implementing CSS 16.6.1.
 
-    def __init__(self, block_context, containing_block):
+    def __init__(self, block_context, containing_block, line_height):
         self.block_context = block_context
         self.containing_block = containing_block
-        self.line_box = LineBoxFrame(containing_block, 'normal')
+        self.line_box = LineBoxFrame(containing_block, line_height, 'normal')
         self.frame_stack = [self.line_box]
         self.break_frame = None
         self.break_at_end = False

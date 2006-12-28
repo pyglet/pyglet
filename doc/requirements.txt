@@ -247,30 +247,23 @@ text
         KERNING
         ITALIC_CORRECTION
         VERTICAL
-        BIDI
         ============================== === === ===
 
-    TBD:
-     - line breaks
-     - bidi
-     - vertical text
-     - multiline rendering (pyglyph)
+    Complex line-breaking and bidi is handled by layout.
+
+      - Currently broken on Win32/ATI (buggy alpha blending).
+
+layout
+    :description: XML/XHTML/CSS layout.
+    :implementation:
+        ====================================== =======
+        Component                              GENERIC
+        ====================================== =======
+        INLINE_FORMATTING                         D
+        ====================================== =======
 
 gui
     :description: 2D graphical user interface.
 
-    TBD:
-     - more widgets
-     - finish, refactor out button and interpolators
-    
-    layout
-        :description: Automatic layout of GUI widgets.
-    
-    fps
-        :description: Render an FPS counter to the screen
-        :implementation:
-            ============================== =======
-            Component                      GENERIC
-            ============================== =======
-            RENDER_FPS                        
-            ============================== =======
+    No implementation yet (current gui.py will be dropped in place of new
+    layout and event APIs)

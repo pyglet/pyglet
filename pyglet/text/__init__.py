@@ -112,8 +112,8 @@ class TextBox(pyglet.layout.base.Box):
 
         # CSS properties
         self.intrinsic_width = x
-        self.intrinsic_height = font.ascent - font.descent
-        self.intrinsic_baseline = -font.descent
+        self.intrinsic_ascent = font.ascent
+        self.intrinsic_descent = font.descent
 
     def __repr__(self):
         d = self.__dict__.copy()

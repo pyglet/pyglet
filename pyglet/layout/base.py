@@ -145,19 +145,19 @@ class Box(object):
     # properties below.
     is_replaced = False
 
-    # These need to be set for text and replaced elements (for example,
-    # text).  A replaced element such as an image would give the dimensions
-    # of the image here, even though it could be stretched by the width/height
-    # attributes.  The intrinsic ratio (see 10.4) is calculated from
-    # these values when needed.
+    # intrinsic_width must be set for replaced and non-replaced (text)
+    # elements.  intrinsic_height is set only for replaced elements.      
+    # A replaced element such as an image would give the dimensions of the
+    # image here, even though it could be stretched by the width/height
+    # attributes.  The intrinsic ratio (see 10.4) is calculated from these
+    # values when needed.
     intrinsic_width = 0
     intrinsic_height = 0
 
-    # This is required for the layout engine to align boxes vertically,
-    # it should be set if the box has an intrinsic baseline.  Positive
-    # values indicate the number of pixels above the bottom edge that the
-    # baseline runs.
-    intrinsic_baseline = 0
+    # For replaced elements (text) only, in place of intrinsic_height.
+    # intrinsic_descent is typically negative (below the baseline).
+    intrinsic_ascent = 0
+    intrinsic_descent = 0
 
     # This references a box which implements a box's :first-line
     # pseudo-element.  Note that pseudo-classes are resolved

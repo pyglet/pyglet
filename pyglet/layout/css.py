@@ -852,6 +852,28 @@ def _parse_font_size(value, render_device):
 def _parse_font_family(value, render_device):
     return value[::2]
 
+def _parse_line_height(value, render_device):
+    if isinstance(value, Number):
+        return value
+    elif isinstance(value, Dimension):
+        return value
+    elif isinstance(value, Percentage):
+        return value
+    else:
+        raise ValidationException()
+
+_parse_vertical_align_named = _parse_ident(
+    'baseline', 'sub', 'super', 'top', 'text-top', 'middle', 'bottom',
+    'text-bottom')
+
+def _parse_vertical_align(value, render_device):
+    if isinstance(value, Ident):
+        return _parse_vertical_align_named(value, render_device)
+    elif isinstance(value, Percentage):
+        return value
+    elif isinstance(value, Dimension):
+        return value
+
 _parse_border_style = _parse_ident(
     'none', 'hidden', 'dotted', 'dashed', 'solid', 'double', 'groove',
     'ridge', 'inset', 'outset') 
@@ -927,6 +949,8 @@ _properties = {
         True,   True,   _parse_font_family),
     'font-size':            ('font_size',           
         True,   False,  _parse_font_size),
+    'line-height':          ('line_height',
+        True,   False,  _parse_line_height),
     'margin':               (
         ['margin_top', 'margin_right', 'margin_bottom', 'margin_left'],
         True,   True,   _parse_shortcut(_parse_margin)),
@@ -952,6 +976,8 @@ _properties = {
     'position':             ('position',            
         True,   False,  _parse_ident(
             'static', 'relative', 'absolute', 'fixed')),
+    'vertical-align':       ('vertical_align',
+        True,   False,  _parse_vertical_align),
 }
 
 def apply_style_declarations(declarations, box, render_device):

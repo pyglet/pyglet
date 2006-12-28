@@ -97,7 +97,9 @@ class XHTMLFormatter(XMLFormatter):
         if name == 'head':
             self.process_content_buffer()
             self.in_head = True
-
+        elif self.in_head and name == 'style':
+            self._content_buffer = ''
+        
         if not self.in_head:
             super(XHTMLFormatter, self).startElement(name, attrs)
 
@@ -109,5 +111,5 @@ class XHTMLFormatter(XMLFormatter):
             stylesheet = Stylesheet(self._content_buffer)
             self.add_stylesheet(stylesheet)
             self._content_buffer = ''
-        else:
+        elif not self.in_head:
             super(XHTMLFormatter, self).endElement(name)
