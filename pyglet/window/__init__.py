@@ -196,6 +196,7 @@ import pyglet.window.key
 # share objects with.  Remember to remove from this list when context is
 # destroyed.
 _active_contexts = []
+_current_context = None
 
 # Constants for WindowFactory.set_context_share
 CONTEXT_SHARE_NONE = None           # Do not share the created context.
@@ -204,6 +205,9 @@ CONTEXT_SHARE_EXISTING = 1          # Share the context with any other
 
 # Constants for WindowFactory.set_location
 LOCATION_DEFAULT = None             # No preference for window location.
+
+def get_current_context():
+    return _current_context
 
 class WindowException(Exception):
     pass
@@ -277,6 +281,9 @@ class BaseGLConfig(object):
                           pprint.pformat(self.get_gl_attributes(),
                                          indent=len(prefix)))
 
+class GLSharedObjectSpace(object):
+    pass
+
 class BaseGLContext(object):
     '''OpenGL context for drawing.
 
@@ -284,8 +291,19 @@ class BaseGLContext(object):
     the context in a platform-independent manner.  Applications will have
     no need to deal with contexts directly.
     '''
+    def __init__(self, context_share=None):
+        if context_share:
+            self._shared_object_space = context_share.get_shared_object_space()
+        else:
+            self._shared_object_space = GLSharedObjectSpace()
+
+    
     def __repr__(self):
         return '%s()' % self.__class__.__name__
+
+    def set_current(self):
+        global _current_context
+        _current_context = self
 
     def destroy(self):
         '''Release the context.
@@ -295,7 +313,12 @@ class BaseGLContext(object):
         that depend on it in the correct order; this should never be called
         by an application.
         '''
+        global _current_context
         _active_contexts.remove(self)
+        _current_context = None
+
+    def get_shared_object_space(self):
+        return self._shared_object_space
 
 class BaseWindow(WindowEventHandler):
     '''Platform-independent application window.

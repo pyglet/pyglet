@@ -129,7 +129,7 @@ class CarbonPlatform(BasePlatform):
         else:
             context = aglCreateContext(config._pformat, c_void_p())
         _aglcheck()
-        return CarbonGLContext(context)
+        return CarbonGLContext(context, context_share)
 
     def get_window_class(self):
         return CarbonWindow
@@ -226,7 +226,8 @@ class CarbonGLConfig(BaseGLConfig):
          AGL_SAMPLE_ALPHA)
 
 class CarbonGLContext(BaseGLContext):
-    def __init__(self, context):
+    def __init__(self, context, share):
+        super(CarbonGLContext, self).__init__(share)
         self._context = context
 
     def destroy(self):
@@ -397,6 +398,7 @@ class CarbonWindow(BaseWindow):
         self._window = None
 
     def switch_to(self):
+        self._context.set_current()
         aglSetCurrentContext(self._agl_context)
         _aglcheck()
         pyglet.GL.info.set_context()

@@ -156,7 +156,7 @@ class Win32Config(BaseGLConfig):
 class Win32Context(BaseGLContext):
     _context = None
     def __init__(self, config, share):
-        super(Win32Context, self).__init__()
+        super(Win32Context, self).__init__(share)
         self._config = config
         self._share = share
 
@@ -170,6 +170,7 @@ class Win32Context(BaseGLContext):
             wglShareLists(self._share._context, self._context)
 
     def destroy(self):
+        super(Win32Context, self).destroy()
         wglDeleteContext(self._context)
 
 _win32_event_handler_names = []
@@ -349,6 +350,7 @@ class Win32Window(BaseWindow):
             warnings.warn('Could not set vsync; unsupported extension.')
 
     def switch_to(self):
+        self._context.set_current()
         wglMakeCurrent(self._dc, self._wgl_context)
         pyglet.GL.info.set_context()
         pyglet.GLU.info.set_context()

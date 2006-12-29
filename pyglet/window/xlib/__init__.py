@@ -163,8 +163,6 @@ class XlibPlatform(BasePlatform):
     def create_context(self, factory):
         config = factory.get_config()
         context_share = factory.get_context_share()
-        if context_share:
-            context_share = context_share._context
 
         context = config.create_context(context_share)
 
@@ -175,7 +173,7 @@ class XlibPlatform(BasePlatform):
         elif context < 0:
             raise XlibException('Could not create GL context') 
 
-        return XlibGLContext(config._display, context)
+        return XlibGLContext(config._display, context, context_share)
 
     def get_window_class(self):
         return XlibWindow
@@ -297,8 +295,12 @@ class XlibGLConfig10(XlibGLConfig):
         return self._visual_info.contents
 
     def create_context(self, context_share):
-        return glXCreateContext(self._display, self._visual_info,
-            context_share, True)
+        if context_share:
+            return glXCreateContext(self._display, self._visual_info,
+                context_share._context, True)
+        else:
+            return glXCreateContext(self._display, self._visual_info,
+                None, True)
 
 class XlibGLConfig10ATI(XlibGLConfig10):
     attribute_ids = XlibGLConfig.attribute_ids.copy()
@@ -337,12 +339,16 @@ class XlibGLConfig13(XlibGLConfig):
         return glXGetVisualFromFBConfig(self._display, self._fbconfig).contents
 
     def create_context(self, context_share):
-        return glXCreateNewContext(self._display, self._fbconfig,
-            GLX_RGBA_TYPE, context_share, True)
+        if context_share:
+            return glXCreateNewContext(self._display, self._fbconfig,
+                GLX_RGBA_TYPE, context_share._context, True)
+        else:
+            return glXCreateNewContext(self._display, self._fbconfig,
+                GLX_RGBA_TYPE, None, True)
 
 class XlibGLContext(BaseGLContext):
-    def __init__(self, display, context):
-        super(XlibGLContext, self).__init__()
+    def __init__(self, display, context, share):
+        super(XlibGLContext, self).__init__(share)
         self._display = display
         self._context = context
 
@@ -577,6 +583,7 @@ class XlibWindow(BaseWindow):
         else:
             glXMakeCurrent(self._display, self._window, self._glx_context)
 
+        self._context.set_current()
         pyglet.GL.info.set_context()
         pyglet.GLU.info.set_context()
 

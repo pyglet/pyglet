@@ -20,6 +20,7 @@ import sys
 import os
 
 from pyglet.GL.VERSION_1_1 import *
+from pyglet.window import *
 from pyglet.image import *
 import pyglet.layout.base
 
@@ -467,10 +468,9 @@ else:
     from pyglet.text.freetype import FreeTypeFont
     _font_class = FreeTypeFont
 
-_font_cache = {}
-
 class Font(object):
     def __new__(cls, name, size, bold=False, italic=False):
+        # Find first matching name
         if type(name) in (tuple, list):
             for n in name:
                 if _font_class.have_font(n):
@@ -478,12 +478,21 @@ class Font(object):
                     break
             else:
                 name = None
+    
+        # Locate or create font cache   
+        shared_object_space = get_current_context().get_shared_object_space()
+        if not hasattr(shared_object_space, 'pyglet_text_font_cache'):
+            shared_object_space.pyglet_text_font_cache = {}
+        font_cache = shared_object_space.pyglet_text_font_cache
 
+        # Look for font name in font cache
         descriptor = (name, size, bold, italic)
-        if descriptor in _font_cache:
-            return _font_cache[descriptor]
+        if descriptor in font_cache:
+            return font_cache[descriptor]
+
+        # Not in cache, create from scratch
         font = _font_class(name, size, bold=bold, italic=italic)
-        _font_cache[descriptor] = font
+        font_cache[descriptor] = font
         return font
 
     @staticmethod
