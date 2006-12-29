@@ -35,6 +35,14 @@ class InlineReplacedTest(base_layout.LayoutTestBase):
             style="border: 1px solid; padding: 10px" /></p>
         <p>With a 1px solid black border and 10px margin: <img src="$IMGSRC" 
             style="border: 1px solid; margin: 10px" /></p>
+        <p>With width=32px: <img src="$IMGSRC" 
+            style="width:32px" /></p>
+        <p>With height=32px: <img src="$IMGSRC" 
+            style="height:32px" /></p>
+        <p>With width=16px; height=32px: <img src="$IMGSRC" 
+            style="width:16px; height:32px" /></p>
+        <p>With width=10%: <img src="$IMGSRC" 
+            style="width:10%" /></p>
       </body>
     </html>'''.replace('$IMGSRC', filename)
 

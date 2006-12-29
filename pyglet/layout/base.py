@@ -39,7 +39,7 @@ class Number(float):
 
 class Percentage(float):
     def __new__(cls, text):
-        return float.__new__(cls, text[:-1])
+        return float.__new__(cls, float(text[:-1]) / 100.)
 
     def __neg__(self):
         n = float.__new__(self.__class__, -float(self))
@@ -171,14 +171,14 @@ class Box(object):
     # properties below.
     is_replaced = False
 
-    # intrinsic_width must be set for replaced and non-replaced (text)
-    # elements.  intrinsic_height is set only for replaced elements.      
-    # A replaced element such as an image would give the dimensions of the
-    # image here, even though it could be stretched by the width/height
-    # attributes.  The intrinsic ratio (see 10.4) is calculated from these
-    # values when needed.
-    intrinsic_width = 0
-    intrinsic_height = 0
+    # intrinsic_width must be set for non-replaced (text) elements, and may be
+    # set for replaced elements.  intrinsic_height is set only for replaced
+    # elements.      A replaced element such as an image would give the
+    # dimensions of the image here, even though it could be stretched by the
+    # width/height properties.  The intrinsic ratio can also be set.
+    intrinsic_width = None
+    intrinsic_height = None 
+    intrinsic_ratio = None
 
     # For replaced elements (text) only, in place of intrinsic_height.
     # intrinsic_descent is typically negative (below the baseline).

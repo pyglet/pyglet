@@ -49,6 +49,7 @@ class ImageBox(Box):
 
         self.intrinsic_width = image.width
         self.intrinsic_height = image.height
+        self.intrinsic_ratio = image.width / float(image.height)
 
     def draw(self, render_device, left, top, right, bottom):
         glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)

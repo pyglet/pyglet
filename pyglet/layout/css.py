@@ -924,6 +924,8 @@ _properties = {
         True,   True,   _parse_font_family),
     'font-size':            ('font_size',           
         True,   False,  _parse_font_size),
+    'height':               ('height',
+        True,   False,  _parse_generic(Dimension, Percentage, 0, 'auto')),
     'line-height':          ('line_height',
         True,   False,  _parse_line_height),
     'margin':               (
@@ -937,6 +939,14 @@ _properties = {
         True,   False,  _parse_margin),
     'margin-left':          ('margin_left',
         True,   False,  _parse_margin),
+    'max-height':           ('max_height',
+        True,   False,  _parse_generic(Dimension, Percentage, 0, 'none')),
+    'max-width':            ('max_width',
+        True,   False,  _parse_generic(Dimension, Percentage, 0, 'none')),
+    'min-height':            ('min_height',
+        True,   False,  _parse_generic(Dimension, Percentage, 0)),
+    'min-width':            ('min_width',
+        True,   False,  _parse_generic(Dimension, Percentage, 0)),
     'padding':              (
         ['padding_top', 'padding_right', 'padding_bottom', 'padding_left'],
         True,   True,   _parse_shortcut(_parse_padding)),
@@ -953,6 +963,8 @@ _properties = {
             'static', 'relative', 'absolute', 'fixed')),
     'vertical-align':       ('vertical_align',
         True,   False,  _parse_vertical_align),
+    'width':                ('width',
+        True,   False,  _parse_generic(Dimension, Percentage, 0, 'auto'))
 }
 
 def apply_style_declarations(declarations, box, render_device):

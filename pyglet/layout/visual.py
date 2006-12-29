@@ -151,41 +151,62 @@ class Frame(object):
         if box:
             self.calculate_used_sizes(containing_block)
 
+    _percentage_containing_block_width_attributes = [
+        'margin_top', 'margin_right', 'margin_bottom', 'margin_left',
+        'padding_top', 'padding_right', 'padding_bottom', 'padding_left',
+        'width', 'min_width', 'max_width'
+    ]
     def calculate_used_sizes(self, containing_block):
+        # XXX why aren't used values set on the frame instead of box?
         w = containing_block.width
-        if isinstance(self.box.margin_left, Percentage):
-            self.box.used_margin_left = self.box.margin_left * w
-        elif self.box.margin_left:
-            self.box.used_margin_left = self.box.margin_left
-        if isinstance(self.box.margin_top, Percentage):
-            self.box.used_margin_top = self.box.margin_top * w
-        elif self.box.margin_top:
-            self.box.used_margin_top = self.box.margin_top
-        if isinstance(self.box.margin_right, Percentage):
-            self.box.used_margin_right = self.box.margin_right * w
-        elif self.box.margin_right:
-            self.box.used_margin_right = self.box.margin_right
-        if isinstance(self.box.margin_bottom, Percentage):
-            self.box.used_margin_bottom = self.box.margin_bottom * w
-        elif self.box.margin_bottom:
-            self.box.used_margin_bottom = self.box.margin_bottom
+        for attr in self._percentage_containing_block_width_attributes:
+            value = getattr(self.box, attr)
+            if isinstance(value, Percentage):
+                value = value * w
+            setattr(self.box, 'used_%s' % attr, value)
 
-        if isinstance(self.box.padding_left, Percentage):
-            self.box.used_padding_left = self.box.padding_left * w
-        elif self.box.padding_left:
-            self.box.used_padding_left = self.box.padding_left
-        if isinstance(self.box.padding_top, Percentage):
-            self.box.used_padding_top = self.box.padding_top * w
-        elif self.box.padding_top:
-            self.box.used_padding_top = self.box.padding_top
-        if isinstance(self.box.padding_right, Percentage):
-            self.box.used_padding_right = self.box.padding_right * w
-        elif self.box.padding_right:
-            self.box.used_padding_right = self.box.padding_right
-        if isinstance(self.box.padding_bottom, Percentage):
-            self.box.used_padding_bottom = self.box.padding_bottom * w
-        elif self.box.padding_bottom:
-            self.box.used_padding_bottom = self.box.padding_bottom
+        if isinstance(self.box.height, Percentage):
+            if containing_block.height:
+                self.box.used_height = self.box.height * \
+                                       containing_block.height
+            else: 
+                self.box.used_height = Ident('auto')
+        else:
+            self.box.used_height = self.box.height
+
+        # 10.3.2 Calculating widths and margins for inline replaced elements
+        if self.box.display == 'inline' and not self.box.is_text:
+            width = self.box.used_width
+            height = self.box.used_height
+
+            if width == 'auto':
+                if height == 'auto':
+                    if self.box.intrinsic_width is not None:
+                        width = self.box.intrinsic_width
+                    elif self.box.intrinsic_height is not None and \
+                         self.box.intrinsic_ratio is not None:
+                        width = self.box.intrinsic_height * \
+                                self.box.intrinsic_ratio
+                    else:
+                        # XXX: error: should be 300px
+                        width = 300
+                elif self.box.intrinsic_ratio is not None: 
+                    width = height * self.box.intrinsic_ratio
+                else:
+                    # XXX: error: should be 300px
+                    width = 300
+
+            # 10.6.2 Height for inline replaced elements
+            if height == 'auto':
+                if self.box.intrinsic_ratio is not None:
+                    height = width / self.box.intrinsic_ratio
+                else:
+                    # XXX: error: should be 150px
+                    height = min(width / 2, 150)
+
+            self.box.used_width = width
+            self.box.used_height = height
+
 
     def add(self, frame):
         self.children.append(frame)
@@ -431,10 +452,8 @@ class InlineReplacedFrame(InlineFrame):
         assert not box.is_text and not box.children
         super(InlineReplacedFrame, self).__init__(box, parent, containing_block)
 
-        # 10.3.2 Calculating widths and margins for inline replaced elements
-        # TODO
-        width = box.intrinsic_width
-        height = box.intrinsic_height
+        width = self.box.used_width
+        height = self.box.used_height
 
         self.content_width = width
     
@@ -467,7 +486,7 @@ class InlineReplacedFrame(InlineFrame):
             self.box.used_margin_top + \
             self.box.border_top_width + \
             self.box.used_padding_top + \
-            self.box.intrinsic_height + \
+            self.box.used_height + \
             self.box.used_padding_bottom + \
             self.box.border_bottom_width
 
