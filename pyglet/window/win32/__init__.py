@@ -14,24 +14,14 @@ from pyglet.GL.VERSION_1_1 import *
 import pyglet.GL.info
 import pyglet.GLU.info
 from pyglet.GL.WGL import *
+from pyglet.GL.WGL.info import *
+from pyglet.GL.WGL.EXT_swap_control import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
 from pyglet.window.win32.constants import *
 from pyglet.window.win32.key import *
 from pyglet.window.win32.types import *
-
-# TODO move to a WGL.info module
-try:
-    from pyglet.GL.WGL.EXT_extensions_string import *
-except ImportError:
-    wglGetExtensionsStringEXT = lambda: ''
-
-try:
-    from pyglet.GL.WGL.EXT_swap_control import *
-    _have_EXT_swap_control = True
-except ImportError:
-    _have_EXT_swap_control = False
 
 _gdi32 = windll.gdi32
 _kernel32 = windll.kernel32
@@ -322,6 +312,7 @@ class Win32Window(BaseWindow):
 
         vsync = factory.get_vsync()
         if vsync is not None:
+            self.switch_to()
             self.set_vsync(vsync)
 
     def close(self):
@@ -333,20 +324,13 @@ class Win32Window(BaseWindow):
         self._wgl_context = None
 
     def get_vsync(self):
-        try:
-            if _have_EXT_swap_control and \
-                'WGL_EXT_swap_control' in wglGetExtensionsStringEXT().split():
-                return bool(wglGetSwapIntervalEXT())
-        except:
-            pass
+        if have_wgl_extension('WGL_EXT_swap_control'):
+            return bool(wglGetSwapIntervalEXT())
 
     def set_vsync(self, vsync):
-        # XXX TODO try/catch catches missing wglGetExtensionsStringEXT.
-        try:
-            if _have_EXT_swap_control and \
-                'WGL_EXT_swap_control' in wglGetExtensionsStringEXT().split():
-                wglSwapIntervalEXT(int(vsync))
-        except:
+        if have_wgl_extension('WGL_EXT_swap_control'):
+            wglSwapIntervalEXT(int(vsync))
+        else:
             warnings.warn('Could not set vsync; unsupported extension.')
 
     def switch_to(self):

@@ -12,6 +12,9 @@ import sys
 
 from pyglet.GL.info import have_context
 
+class GLUnsupportedExtensionException(Exception):
+    pass
+
 if sys.platform in ('win32', 'cygwin'):
     class WGLExtensionProxy(object):
         __slots__ = ['name', 'ftype', 'func']
@@ -25,11 +28,12 @@ if sys.platform in ('win32', 'cygwin'):
                 return self.func(*args, **kwargs)
 
             if not have_context:
-                raise Exception('Cannot call extension function before GL ' +
-                    'context is created.')
+                raise GLUnsupportedExtensionException(
+                    'Cannot call extension function before context is created.')
             address = _WGL.wglGetProcAddress(self.name)
             if not address:
-                raise Exception('Extension function "%s" not found' % self.name)
+                raise GLUnsupportedExtensionException(
+                    'Extension function "%s" not found' % self.name)
             self.func = self.ftype(address)
             return self.func(*args, **kwargs)
     

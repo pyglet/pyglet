@@ -67,5 +67,5 @@ class ImageBox(Box):
         glTexCoord2f(self.texture.uv[0], self.texture.uv[1])
         glVertex2f(right, top)
 
-        glEnd(GL_QUADS)
+        glEnd()
         glPopAttrib()
