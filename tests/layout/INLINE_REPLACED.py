@@ -41,8 +41,14 @@ class InlineReplacedTest(base_layout.LayoutTestBase):
             style="height:32px" /></p>
         <p>With width=16px; height=32px: <img src="$IMGSRC" 
             style="width:16px; height:32px" /></p>
-        <p>With width=10%: <img src="$IMGSRC" 
-            style="width:10%" /></p>
+        <p>With width=20%: <img src="$IMGSRC" 
+            style="width:20%" /></p>
+        <p>With width=20%, min-width=50px, max-width=100px: <img src="$IMGSRC"
+            style="width:20%; min-width:50px; max-width:100px" /></p>
+        <p>With width=20%, min-height=50px, max-height=100px: 
+            <img src="$IMGSRC" 
+            style="width:20%; min-width:50px; max-width:100px" /></p>
+
       </body>
     </html>'''.replace('$IMGSRC', filename)
 

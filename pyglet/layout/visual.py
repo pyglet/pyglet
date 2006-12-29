@@ -174,11 +174,31 @@ class Frame(object):
         else:
             self.box.used_height = self.box.height
 
+        # TODO: special constriant resolution for min/max width and height
+        # when width and height are both auto (that's a pretty unlikely
+        # scenario, IMO).
+
+        width = self.box.used_width
+        height = self.box.used_height
+
+        width = self.used_width(width, height)
+        if self.box.max_width != 'none' and width > self.box.max_width:
+            width = self.used_width(self.box.max_width, height)
+        if width < self.box.min_width:
+            width = self.used_width(self.box.min_width, height)
+
+        height = self.used_height(width, height)
+        if self.box.max_height != 'none' and height > self.box.max_height:
+            height = self.used_height(width, self.box.max_height)
+        if height < self.box.min_height:
+            height = self.used_height(width, self.box.min_height)
+
+        self.box.used_width = width
+        self.box.used_height = height
+
+    def used_width(self, width, height):
         # 10.3.2 Calculating widths and margins for inline replaced elements
         if self.box.display == 'inline' and not self.box.is_text:
-            width = self.box.used_width
-            height = self.box.used_height
-
             if width == 'auto':
                 if height == 'auto':
                     if self.box.intrinsic_width is not None:
@@ -195,17 +215,18 @@ class Frame(object):
                 else:
                     # XXX: error: should be 300px
                     width = 300
+        return width
 
-            # 10.6.2 Height for inline replaced elements
+    def used_height(self, width, height):
+        # 10.6.2 Height for inline replaced elements
+        if self.box.display == 'inline' and not self.box.is_text:
             if height == 'auto':
                 if self.box.intrinsic_ratio is not None:
                     height = width / self.box.intrinsic_ratio
                 else:
                     # XXX: error: should be 150px
                     height = min(width / 2, 150)
-
-            self.box.used_width = width
-            self.box.used_height = height
+        return height
 
 
     def add(self, frame):
