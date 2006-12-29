@@ -750,6 +750,36 @@ class Parser(object):
 class ValidationException(Exception):
     pass
 
+def _parse_generic(*args):
+    # Accept any given type or ident.
+    def f(value, render_device):
+        if type(value) in args or \
+           (type(value) in (Ident, Number) and value in args):
+            return value
+        else:
+            raise ValidationException()
+    return f
+
+def _parse_shortcut(value_parser):
+    # Parse shortcut properties that depend on the number of arguments:
+    # 1: top/right/bottom/left
+    # 2: top/bottom left/right
+    # 3: top, left/right, bottom
+    # 4: top, right, bottom, left
+    def f(value, render_device):
+        value = [value_parser(v, render_device) for v in value]
+        if len(value) == 1:
+            return value[0], value[0], value[0], value[0]
+        elif len(value) == 2:
+            return value[0], value[1], value[0], value[1]
+        elif len(value) == 3:
+            return value[0], value[1], value[2], value[1]
+        elif len(value) == 4:
+            return value
+        else:
+            raise ValidationException()
+    return f
+
 def _parse_color(value, render_device):
     if isinstance(value, Ident):
         if value in Color.names:
@@ -761,20 +791,11 @@ def _parse_color(value, render_device):
     else:
         raise ValidationException()
 
-def _parse_background_color(value, render_device):
+def _parse_transparent_color(value, render_device):
     if isinstance(value, Ident) and value == 'transparent':
         return value
     else:
         return _parse_color(value, render_device)
-
-def _parse_ident(*valid_list):
-    def f(value, render_device):
-        if not isinstance(value, Ident):
-            raise ValidationException()
-        if not value in valid_list:
-            raise ValidationException()
-        return value
-    return f
 
 def _parse_border_shortcut(count):
     def f(value, render_device):
@@ -788,7 +809,7 @@ def _parse_border_shortcut(count):
                        'double', 'groove', 'ridge', 'inset', 'outset']:
                 style = _parse_border_style(v, render_device)
             else:
-                color = _parse_background_color(v, render_device)
+                color = _parse_transparent_color(v, render_device)
 
         return [width, style, color] * count
     return f
@@ -810,71 +831,25 @@ def _parse_border_width(value, render_device):
     else:
         raise ValidationException()
 
-def _parse_padding(value, render_device):
-    if isinstance(value, Dimension):
-        return value
-    elif isinstance(value, Percentage):
-        return value
-    elif value == 0:
-        return 0
-    raise ValidationException()
-
-def _parse_margin(value, render_device):
-    if isinstance(value, Dimension):
-        return value
-    elif isinstance(value, Percentage):
-        return value
-    elif isinstance(value, Ident) and value == 'auto':
-        return value
-    elif value == 0:
-        return 0
-    raise ValidationException()
-
-def _parse_shortcut(value_parser):
-    def f(value, render_device):
-        value = [value_parser(v, render_device) for v in value]
-        if len(value) == 1:
-            return value[0], value[0], value[0], value[0]
-        elif len(value) == 2:
-            return value[0], value[1], value[0], value[1]
-        elif len(value) == 3:
-            return value[0], value[1], value[2], value[1]
-        elif len(value) == 4:
-            return value
-        else:
-            raise ValidationException()
-    return f
-
-def _parse_font_size(value, render_device):
-    # TODO
-    return value
-
 def _parse_font_family(value, render_device):
+    # Remove commas from list
+    for v in value[1::2]:
+        if v != ',':
+            raise ValidationException()
     return value[::2]
 
-def _parse_line_height(value, render_device):
-    if isinstance(value, Number):
-        return value
-    elif isinstance(value, Dimension):
-        return value
-    elif isinstance(value, Percentage):
-        return value
-    else:
-        raise ValidationException()
+_parse_margin = _parse_generic(Dimension, Percentage, 'auto', 0)
+_parse_padding = _parse_generic(Dimension, Percentage, 'auto', 0)
+_parse_line_height = _parse_generic(Number, Dimension, Percentage, 'normal')
+_parse_font_size = _parse_generic(Dimension, Number, Percentage,
+    'xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large')
 
-_parse_vertical_align_named = _parse_ident(
+_parse_vertical_align = _parse_generic(
+    Percentage, Dimension, 
     'baseline', 'sub', 'super', 'top', 'text-top', 'middle', 'bottom',
     'text-bottom')
-
-def _parse_vertical_align(value, render_device):
-    if isinstance(value, Ident):
-        return _parse_vertical_align_named(value, render_device)
-    elif isinstance(value, Percentage):
-        return value
-    elif isinstance(value, Dimension):
-        return value
-
-_parse_border_style = _parse_ident(
+    
+_parse_border_style = _parse_generic(
     'none', 'hidden', 'dotted', 'dashed', 'solid', 'double', 'groove',
     'ridge', 'inset', 'outset') 
 
@@ -882,7 +857,7 @@ _properties = {
 #    CSS name,              Box attr,        
 #       inhrtble, multivalue, parse function
     'background-color':     ('background_color',    
-        True,   False,  _parse_background_color),
+        True,   False,  _parse_transparent_color),
     'border':               (
         ['border_top_width', 'border_top_style', 'border_top_color',
          'border_right_width', 'border_right_style', 'border_right_color',
@@ -904,15 +879,15 @@ _properties = {
     'border-color':         (
         ['border_top_color', 'border_right_color', 'border_bottom_color',
          'border_left_color'],
-        True,   True,   _parse_shortcut(_parse_background_color)),
+        True,   True,   _parse_shortcut(_parse_transparent_color)),
     'border-top-color':     ('border_top_color',
-        True,   False,  _parse_background_color),
+        True,   False,  _parse_transparent_color),
     'border-right-color':   ('border_right_color',
-        True,   False,  _parse_background_color),
+        True,   False,  _parse_transparent_color),
     'border-bottom-color':  ('border_bottom_color',
-        True,   False,  _parse_background_color),
+        True,   False,  _parse_transparent_color),
     'border-left-color':    ('border_left_color',
-        True,   False,  _parse_background_color),
+        True,   False,  _parse_transparent_color),
     'border-style':         (
         ['border_top_style', 'border_right_style', 'border_bottom_style',
          'border_left_style'],
@@ -940,7 +915,7 @@ _properties = {
     'color':                ('color',               
         True,   False,  _parse_color),
     'display':              ('display',             
-        True,   False,  _parse_ident(
+        True,   False,  _parse_generic(
             'inline', 'block', 'list-item', 'run-in', 'inline-block',
             'table', 'inline-table', 'table-row-group', 'table-header-group',
             'table-footer-group', 'table-row', 'table-column-group',
@@ -974,7 +949,7 @@ _properties = {
     'padding-left':         ('padding_left',
         True,   False,  _parse_padding),
     'position':             ('position',            
-        True,   False,  _parse_ident(
+        True,   False,  _parse_generic(
             'static', 'relative', 'absolute', 'fixed')),
     'vertical-align':       ('vertical_align',
         True,   False,  _parse_vertical_align),
