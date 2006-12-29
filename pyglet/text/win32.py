@@ -87,7 +87,7 @@ class BITMAPINFOHEADER(Structure):
         ('biSizeImage', c_uint32),
         ('biXPelsPerMeter', c_long),
         ('biYPelsPerMeter', c_long),
-        ('biClrUser', c_uint32),
+        ('biClrUsed', c_uint32),
         ('biClrImportant', c_uint32)
     ]
     __slots__ = [f[0] for f in _fields_]
@@ -109,7 +109,7 @@ class RGBQUAD(Structure):
 class BITMAPINFO(Structure):
     _fields_ = [
         ('bmiHeader', BITMAPINFOHEADER),
-        ('bmiColors', RGBQUAD * 256)
+        ('bmiColors', c_ulong * 3)
     ]
 
 def str_ucs2(text):
@@ -141,6 +141,13 @@ class Win32GlyphRenderer(GlyphRenderer):
             gdi32.DeleteObject(self._bitmap)
 
     def render(self, text):
+        # There's no such thing as a greyscale bitmap format in GDI.  We can
+        # create an 8-bit palette bitmap with 256 shades of grey, but
+        # unfortunately antialiasing will not work on such a bitmap.  So, we
+        # use a 32-bit bitmap with a custom bit-mask (ABGR) to push the red
+        # channel into where GL expects the alpha channel to be (using RGBA).  
+        # GL ignores the remaining color components.
+    
         gdi32.SelectObject(self._bitmap_dc, self._bitmap)
         gdi32.SelectObject(self._bitmap_dc, self.font.hfont)
         gdi32.SetBkColor(self._bitmap_dc, 0)
@@ -184,7 +191,7 @@ class Win32GlyphRenderer(GlyphRenderer):
         glTexSubImage2D(GL_TEXTURE_2D, 0,
             glyph.x, glyph.y,
             glyph.width, glyph.height,
-            GL_ALPHA,
+            GL_RGBA,
             GL_UNSIGNED_BYTE,
             self._bitmap_data)
         glPopClientAttrib()
@@ -198,16 +205,16 @@ class Win32GlyphRenderer(GlyphRenderer):
         if self._bitmap:
             gdi32.DeleteObject(self._bitmap)
 
-        pitch = width
+        pitch = width * 4
         data = POINTER(c_byte * (height * pitch))()
         info = BITMAPINFO()
         info.bmiHeader.biSize = sizeof(info.bmiHeader)
         info.bmiHeader.biWidth = width
         info.bmiHeader.biHeight = height
         info.bmiHeader.biPlanes = 1
-        info.bmiHeader.biBitCount = 8
-        info.bmiHeader.biCompression = BI_RGB
-        info.bmiColors[:] = [RGBQUAD(i, i, i) for i in range(256)]
+        info.bmiHeader.biBitCount = 32 
+        info.bmiHeader.biCompression = BI_BITFIELDS
+        info.bmiColors[:] = [0xff000000, 0x00ff0000, 0x0000ff00]
 
         self._bitmap_dc = gdi32.CreateCompatibleDC(c_void_p())
         self._bitmap = gdi32.CreateDIBSection(c_void_p(),
