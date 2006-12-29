@@ -185,7 +185,7 @@ class Clock(_ClockBase):
 
         :return: The measured frames per second.
         '''
-        if not self.times: 
+        if not self.cumulative_time: 
             return 0
         return len(self.times) / self.cumulative_time
 
