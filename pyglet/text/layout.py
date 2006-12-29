@@ -29,7 +29,7 @@ class GLRenderDevice(pyglet.layout.visual.RenderDevice):
 
         size = box.font_size
         italic = box.font_style == 'italic'
-        bold = box.font_weight == 'bold'
+        bold = box.font_weight >= 700
 
         if isinstance(size, Dimension):
             if size.unit == 'pt':

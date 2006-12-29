@@ -18,6 +18,9 @@ class XMLElement(pyglet.layout.css.SelectableElement):
         # TODO Gross assumption; should check DTD for id attr
         if attrs.has_key('id'):
             self.id = attrs['id']
+        # TODO move to XHTML
+        if attrs.has_key('class'):
+            self.classes = attrs['class'].split()
         self.attributes = {}
         self.attributes.update(attrs)
         self.parent = parent
@@ -109,6 +112,7 @@ class XMLFormatter(pyglet.layout.visual.Formatter):
         font_size_device = \
             self.render_device.dimension_to_device(font_size, font_size)
 
+        # other values that are relative to font-size
         for attrname in set(box.__dict__.keys()) & self._length_attribute_names:
             value = getattr(box, attrname)
             if isinstance(value, Dimension):
@@ -118,6 +122,16 @@ class XMLFormatter(pyglet.layout.visual.Formatter):
         # line-height percentage of font-size
         if type(box.line_height) in (Percentage, Number):
             box.line_height = font_size_device * box.line_height
+
+        # font-weight names and relative values
+        if box.font_weight == 'normal':
+            box.font_weight = 400
+        elif box.font_weight == 'bold':
+            box.font_weight = 700
+        elif box.font_weight == 'bolder':
+            box.font_weight = box.parent.font_weight + 300
+        elif box.font_weight == 'lighter':
+            box.font_weight = box.parent.font_weight - 300
 
     def anonymous_block_box(self, boxes, parent):
         '''Create an anonymous block box for 'boxes' and return it.'''

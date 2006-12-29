@@ -371,7 +371,7 @@ class Box(object):
     # 15.5 Small-caps
     font_variant = Ident('normal')
     # 15.6 Font boldness
-    font_weight = Ident('normal')
+    font_weight = 400
     # 15.7 Font size
     font_size = Ident('medium')
 
