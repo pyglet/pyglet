@@ -141,6 +141,11 @@ class Win32GlyphRenderer(GlyphRenderer):
             gdi32.DeleteObject(self._bitmap)
 
     def render(self, text):
+        gdi32.SelectObject(self._bitmap_dc, self._bitmap)
+        gdi32.SelectObject(self._bitmap_dc, self.font.hfont)
+        gdi32.SetBkColor(self._bitmap_dc, 0)
+        gdi32.SetTextColor(self._bitmap_dc, 0x00ffffff)
+
         # Attempt to get ABC widths (only for TrueType)
         abc = ABC()
         if gdi32.GetCharABCWidthsW(self._bitmap_dc, 
@@ -212,13 +217,8 @@ class Win32GlyphRenderer(GlyphRenderer):
         # even though that error cannot be generated according to docs,
         # and everything works fine anyway.  Call SetLastError to clear it.
         kernel32.SetLastError(0)
-        gdi32.SelectObject(self._bitmap_dc, self._bitmap)
-        gdi32.SelectObject(self._bitmap_dc, self.font.hfont)
 
         self._bitmap_data = data.contents
-        gdi32.SetBkColor(self._bitmap_dc, 0)
-        gdi32.SetTextColor(self._bitmap_dc, 0x00ffffff)
-
         self._bitmap_rect = RECT()
         self._bitmap_rect.left = 0
         self._bitmap_rect.right = width
