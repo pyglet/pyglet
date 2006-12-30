@@ -259,6 +259,7 @@ layout
         ====================================== =======
         Component                              GENERIC
         ====================================== =======
+        HTML                                      D
         INLINE_FORMATTING                         D
         INLINE_REPLACED                           D
         FONTS                                     D

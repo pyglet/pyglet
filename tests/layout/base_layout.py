@@ -16,13 +16,9 @@ from pyglet.window import *
 from pyglet.window.event import *
 
 class LayoutTestBase(unittest.TestCase):
-    xhtml = '''<?xml version="1.0"?>
-    <html>
-      <body>
-        <p>Test base.</p>
-      </body>
-    </html>
-    '''
+    # Supply either XHTML or HTML.
+    xhtml = None
+    html = None
 
     offset_top = 0
 
@@ -60,7 +56,10 @@ class LayoutTestBase(unittest.TestCase):
         w.push_handlers(self.exit_handler)
         w.push_handlers(self)
 
-        self.layout = render_xhtml(self.xhtml)
+        if self.xhtml:
+            self.layout = render_xhtml(self.xhtml)
+        else:
+            self.layout = render_html(self.html)
 
         w.set_visible()
         while not self.exit_handler.exit:

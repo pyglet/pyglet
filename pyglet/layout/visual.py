@@ -718,16 +718,17 @@ class BlockFormattingContext(FormattingContext):
         self.frame_stack.insert(0, frame)
         self.containing_block_stack.insert(0, frame.generated_containing_block)
 
-        if box.inline_formatting_context:
-            context = InlineFormattingContext(self, 
-                self.containing_block_stack[0],
-                box.line_height)
-            for child in box.children:
-                context.add(child)
-            context.close()
-        else:
-            for child in box.children:
-                self.add(child)
+        if box.children:
+            if box.inline_formatting_context:
+                context = InlineFormattingContext(self, 
+                    self.containing_block_stack[0],
+                    box.line_height)
+                for child in box.children:
+                    context.add(child)
+                context.close()
+            else:
+                for child in box.children:
+                    self.add(child)
 
         frame.close() # fixes border_bottom
         
