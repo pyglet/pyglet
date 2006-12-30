@@ -11,7 +11,8 @@ import xml.sax
 
 from pyglet.layout.base import *
 import pyglet.layout.visual
-from pyglet.layout.css import apply_style_string, apply_inherited_style, apply_stylesheet
+from pyglet.layout.properties import apply_style_declarations, \
+    apply_inherited_style, apply_style_string, apply_stylesheet
 
 class XMLElement(pyglet.layout.css.SelectableElement):
     def __init__(self, name, attrs, parent, previous_sibling):

@@ -1,6 +1,22 @@
 #!/usr/bin/env python
 
-'''
+'''CSS 2.1 parsing and rule matching.
+
+This module is distinct from the CSS 2.1 properties, which are contained
+in properties.py; allowing users to use the CSS syntax and rule matching for
+custom properties and applications if desired.
+
+The Stylesheet class is the top-level interface to rules and declarations.
+It contains methods for quickly retrieving matching declarations for a given
+element.
+
+Implement the SelectableElement interface on your objects to allow rule
+matching based on attributes, ancestors and siblings.
+
+Currently several features of CSS are unimplemented, such as media
+declarations and the stylesheet priority in the cascade (this can be faked
+by applying stylesheets in increasing order of priority, with only !important
+declarations being sorted incorrectly).
 '''
 
 __docformat__ = 'restructuredtext'
@@ -14,17 +30,21 @@ from Plex.Traditional import re
 
 from pyglet.layout.base import *
 
+# Interfaces
+# ---------------------------------------------------------------------------
+
 class SelectableElement(object):
     '''Elements must implement this interface to allow CSS selectors to
     traverse them.
     '''
     parent = None               # SelectableElement
     previous_sibling = None     # SelectableElement
-    attributes = None           # dict
+    attributes = None           # dict of str: str
     id = None                   # str
-    classes = None              # list
+    classes = None              # list of str
     name = None                 # str
 
+    # Debug methods only
     def short_repr(self):
         s = self.name
         if self.id:
@@ -44,8 +64,22 @@ class SelectableElement(object):
             s += '(previous_sibling=%s)' % self.previous_sibling.short_repr()
         return s
 
+# Stylesheet objects
+# ---------------------------------------------------------------------------
+
 class Stylesheet(object):
+    '''Top-level container for rules and declarations.  Typically initialised
+    from a CSS stylesheet file.  Elements can then be searched for matching
+    declarations.
+    '''
+
     def __init__(self, data):
+        '''Initialise the stylesheet with the given data, which can be
+        a string or file-like object.
+
+        Most parse errors are ignored as defined in the CSS specification.
+        Any that slip through as exceptions are bugs.
+        '''
         if not hasattr(data, 'read'):
             data = StringIO(data)
         scanner = Scanner(lexicon, data)
@@ -77,6 +111,14 @@ class Stylesheet(object):
                 self.universals.append(rule)
 
     def get_declarations(self, elem):
+        '''Return a list of declarations that should be applied to the
+        given element.
+
+        The element must implement the SelectableElement interface.  The
+        declarations are returned in the order that they should be applied
+        (sorted in increasing specifity).  Redundant declarations are
+        currently not filtered out.
+        '''
         # Quickly get some starting points.
         primaries = []
         primaries += self.names.get(elem.name, [])
@@ -98,6 +140,9 @@ class Stylesheet(object):
         return declarations
 
     def matches(self, rule, elem):
+        '''Determine if the given rule applies to the given element.  Returns
+        True if so, False otherwise.
+        '''
         if not rule.selector.primary.matches(elem):
             return False
 
@@ -127,6 +172,8 @@ class Stylesheet(object):
             rule.pprint()
 
 class Import(object):
+    '''An @import declaration.  Currently ignored.
+    '''
     def __init__(self, location, media):
         self.location = location
         self.media = media
@@ -135,11 +182,17 @@ class Import(object):
         print '@import', self.location, ','.join(self.media)
 
 class Page(object):
+    '''An @page declaration.  Currently ignored.
+    '''
     def __init__(self, pseudo, declarations):
         self.pseudo = pseudo
         self.declarations = declarations
 
 class Rule(object):
+    '''A rule, consisting of a single selector and one or more declarations.
+    The rule may also contain one or more media strings, but these are
+    currently ignored.
+    '''
     media = None
 
     def __init__(self, selector, declarations):
@@ -158,6 +211,7 @@ class Rule(object):
         self.specifity = specifity
 
     def is_media(self, media):
+        '''Return True if this rule applies to the given media string.'''
         return (self.media is None or
                 'all' in self.media or 
                 media in self.media)
@@ -172,6 +226,14 @@ class Rule(object):
         print '}'
 
 class Selector(object):
+    '''A single selector, consisting of a primary SimpleSelector and zero or
+    more combining selectors.  
+    
+    The primary selector is the final selector in a sequence of descendent and
+    sibling operators, and is the starting point for searches.  The combiners
+    list is "backwards", running from closest descendent/sibling to most
+    distant (opposite order to that listed in the CSS file.
+    '''
     def __init__(self, primary, combiners):
         self.primary = primary
         self.combiners = combiners
@@ -181,6 +243,10 @@ class Selector(object):
             (self.primary, self.combiners),
 
 class SimpleSelector(object):
+    '''A single selector consisting of an optional name, id, class list,
+    attribute value list and pseudo-class/element appliers.  If none of these
+    are present, the selector is a universal selector.
+    '''
     def __init__(self, name, id, classes, attribs, pseudos):
         self.name = name
         self.id = id
@@ -201,6 +267,9 @@ class SimpleSelector(object):
         return s
 
     def matches(self, elem):
+        '''Determines if the selector matches the given element.  Returns True
+        if so, False otherwise.
+        '''
         if self.name is not None and elem.name != self.name:
             return False
         if self.id is not None and elem.id != self.id:
@@ -223,6 +292,13 @@ class SimpleSelector(object):
         return True
         
 class CombiningSelector(object):
+    '''A selector and the combinator required to reach the element this selector
+    should be applied to.  
+     
+    The combinator can be one of '' (ancestor), '>' (parent) or '+' (previous
+    sibling).
+    '''
+
     def __init__(self, combinator, simple):
         self.combinator = combinator
         self.simple = simple
@@ -231,6 +307,11 @@ class CombiningSelector(object):
         return '%s%r' % (self.combinator or '', self.simple)
 
 class Attrib(object):
+    '''An attribute name, and optional value and comparison operator.  
+    
+    If no operator is given, the attribute is merely checked for existence.
+    The operator can be one of '=', '|=', '~='.  Values must be strings.
+    '''
     def __init__(self, name, op, value):
         self.name = name
         self.op = op
@@ -243,6 +324,10 @@ class Attrib(object):
             return '[%s]'
 
 class Pseudo(object):
+    '''A pseudo-class or pseudo-element declaration.
+    
+    The 'name' value does not include the ':' symbol.
+    '''
     def __init__(self, name):
         self.name = name
 
@@ -250,6 +335,9 @@ class Pseudo(object):
         return ':%s' % self.name
 
 class PseudoFunction(Pseudo):
+    '''A function applied as a pseudo-element or pseudo-class.  Currently
+    unused.
+    '''
     def __init__(self, name, param):
         super(PseudoFunction, self).__init__(name)
         self.param = param
@@ -258,6 +346,15 @@ class PseudoFunction(Pseudo):
         return ':%s(%s)' % (self.name, self.param)
 
 class Declaration(object):
+    '''A single declaration, consisting of a property name, a list of values,
+    and optional priority.
+
+    The property name must be a string, the list of values is typically one in
+    length, but may have several values (for example, a shortcut property).
+    If the property has several values separated by commas, these commas
+    appear as separate items in the value list.  If specified, the priority is
+    the string '!important', otherwise empty.
+    '''
     def __init__(self, property, values, priority):
         self.property = property
         self.values = values
@@ -307,7 +404,9 @@ class Delim(str):
     '''Any other punctuation, such as comma, period, operator.'''
     pass
 
-# Macros
+# Scanner macros
+# ----------------------------------------------------------------------------
+
 nonascii = re('[^\0-\177]')
 _h = NoCase(re('[0-9a-f]'))
 _unicode_num = _h + Opt(_h + Opt(_h + Opt(_h + Opt(_h + Opt(_h)))))
@@ -334,7 +433,9 @@ invalid2 = (Str("'") +
 invalid = invalid1 | invalid2
 w = Rep(Any(' \t\r\n\f'))
 
-# Tokens
+# Scanner tokens
+# ----------------------------------------------------------------------------
+
 IDENT = ident
 ATKEYWORD = Str('@') + ident
 STRING = string
@@ -377,6 +478,8 @@ lexicon = Lexicon([
     (IMPORTANT, lambda s,t: Important())
 ])
 
+# Parser
+# ----------------------------------------------------------------------------
 
 class ParserException(Exception):
     def __init__(self,  file, line, col):
@@ -392,6 +495,18 @@ class UnexpectedToken(ParserException):
     pass
 
 class Parser(object):
+    '''Grammar parser for CSS 2.1.
+
+    This is a hand-coded LL(1) parser.  There are convenience functions for
+    peeking at the next token and checking if the next token is of a given type
+    or delimiter.  Otherwise, it is a straightforward recursive implementation
+    of the production rules given in Appendix G.1.
+
+    Some attention is paid to ignoring errors according to the specification,
+    but this is not perfect yet.  In particular, some parse errors will result
+    in an exception, which halts parsing.
+    '''
+
     def __init__(self, scanner):
         self._scanner = scanner
         self._lookahead = None
@@ -784,308 +899,3 @@ class Parser(object):
         self._eat_whitespace()
         return Color.from_hex(hash)
 
-class ValidationException(Exception):
-    pass
-
-def _parse_generic(*args):
-    # Accept any given type or ident.
-    def f(value, render_device):
-        if type(value) in args or \
-           (type(value) in (Ident, Number) and value in args):
-            return value
-        else:
-            raise ValidationException()
-    return f
-
-def _parse_shortcut(value_parser):
-    # Parse shortcut properties that depend on the number of arguments:
-    # 1: top/right/bottom/left
-    # 2: top/bottom left/right
-    # 3: top, left/right, bottom
-    # 4: top, right, bottom, left
-    def f(value, render_device):
-        value = [value_parser(v, render_device) for v in value]
-        if len(value) == 1:
-            return value[0], value[0], value[0], value[0]
-        elif len(value) == 2:
-            return value[0], value[1], value[0], value[1]
-        elif len(value) == 3:
-            return value[0], value[1], value[2], value[1]
-        elif len(value) == 4:
-            return value
-        else:
-            raise ValidationException()
-    return f
-
-def _parse_color(value, render_device):
-    if isinstance(value, Ident):
-        if value in Color.names:
-            return Color.names[value]
-        else:
-            raise ValidationException()
-    elif isinstance(value, Color):
-        return value
-    else:
-        raise ValidationException()
-
-def _parse_transparent_color(value, render_device):
-    if isinstance(value, Ident) and value == 'transparent':
-        return value
-    else:
-        return _parse_color(value, render_device)
-
-def _parse_border_shortcut(count):
-    def f(value, render_device):
-        width = 2
-        style = Ident('none')
-        color = None
-        for v in value:
-            if isinstance(v, Dimension):
-                width = _parse_border_width(v, render_device)
-            elif v in ['none', 'hidden', 'dotted', 'dashed', 'solid',
-                       'double', 'groove', 'ridge', 'inset', 'outset']:
-                style = _parse_border_style(v, render_device)
-            else:
-                color = _parse_transparent_color(v, render_device)
-
-        return [width, style, color] * count
-    return f
-
-def _parse_border_width(value, render_device):
-    if isinstance(value, Ident):
-        if value == 'thin':
-            return Dimension('1px')
-        elif value == 'medium':
-            return Dimension('2px')
-        elif value == 'thick':
-            return Dimension('4px')
-        else:
-            raise ValidationException()
-    elif isinstance(value, Dimension):
-        return value
-    elif value == 0:
-        return 0
-    else:
-        raise ValidationException()
-
-def _parse_font_family(value, render_device):
-    # Remove commas from list
-    for v in value[1::2]:
-        if v != ',':
-            raise ValidationException()
-    return value[::2]
-
-_parse_margin = _parse_generic(Dimension, Percentage, 'auto', 0)
-_parse_padding = _parse_generic(Dimension, Percentage, 'auto', 0)
-_parse_line_height = _parse_generic(Number, Dimension, Percentage, 'normal')
-_parse_font_size = _parse_generic(Dimension, Number, Percentage,
-    'xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large')
-
-_parse_vertical_align = _parse_generic(
-    Percentage, Dimension, 
-    'baseline', 'sub', 'super', 'top', 'text-top', 'middle', 'bottom',
-    'text-bottom')
-    
-_parse_border_style = _parse_generic(
-    'none', 'hidden', 'dotted', 'dashed', 'solid', 'double', 'groove',
-    'ridge', 'inset', 'outset') 
-
-_properties = {
-#    CSS name,              Box attr,        
-#       inhrtble, multivalue, parse function
-    'background-color':     ('background_color',    
-        True,   False,  _parse_transparent_color),
-    'border':               (
-        ['border_top_width', 'border_top_style', 'border_top_color',
-         'border_right_width', 'border_right_style', 'border_right_color',
-         'border_bottom_width', 'border_bottom_style', 'border_bottom_color',
-         'border_left_width', 'border_left_style', 'border_left_color'],
-        True,   True,   _parse_border_shortcut(4)),
-    'border-top':           (
-        ['border_top_width', 'border_top_style', 'border_top_color'],
-        True,   True,   _parse_border_shortcut(1)),
-    'border-right':           (
-        ['border_right_width', 'border_right_style', 'border_right_color'],
-        True,   True,   _parse_border_shortcut(1)),
-    'border-bottom':           (
-        ['border_bottom_width', 'border_bottom_style', 'border_bottom_color'],
-        True,   True,   _parse_border_shortcut(1)),
-    'border-left':           (
-        ['border_left_width', 'border_left_style', 'border_left_color'],
-        True,   True,   _parse_border_shortcut(1)),
-    'border-color':         (
-        ['border_top_color', 'border_right_color', 'border_bottom_color',
-         'border_left_color'],
-        True,   True,   _parse_shortcut(_parse_transparent_color)),
-    'border-top-color':     ('border_top_color',
-        True,   False,  _parse_transparent_color),
-    'border-right-color':   ('border_right_color',
-        True,   False,  _parse_transparent_color),
-    'border-bottom-color':  ('border_bottom_color',
-        True,   False,  _parse_transparent_color),
-    'border-left-color':    ('border_left_color',
-        True,   False,  _parse_transparent_color),
-    'border-style':         (
-        ['border_top_style', 'border_right_style', 'border_bottom_style',
-         'border_left_style'],
-        True,   True,   _parse_shortcut(_parse_border_style)),
-    'border-top-style':     ('border_top_style',    
-        True,   False,  _parse_border_style),
-    'border-right-style':   ('border_right_style',  
-        True,   False,  _parse_border_style),
-    'border-bottom-style':  ('border_bottom_style', 
-        True,   False,  _parse_border_style),
-    'border-left-style':    ('border_left_style',   
-        True,   False,  _parse_border_style),
-    'border-width':         (
-        ['border_top_width', 'border_right_width', 'border_bottom_width',
-         'border_left_width'],
-        True,   True,   _parse_shortcut(_parse_border_width)),
-    'border-top-width':     ('border_top_width',    
-        True,   False,  _parse_border_width),
-    'border-right-width':   ('border_right_width',  
-        True,   False,  _parse_border_width),
-    'border-bottom-width':  ('border_bottom_width', 
-        True,   False,  _parse_border_width),
-    'border-left-width':    ('border_left_width',   
-        True,   False,  _parse_border_width),
-    'color':                ('color',               
-        True,   False,  _parse_color),
-    'display':              ('display',             
-        True,   False,  _parse_generic(
-            'inline', 'block', 'list-item', 'run-in', 'inline-block',
-            'table', 'inline-table', 'table-row-group', 'table-header-group',
-            'table-footer-group', 'table-row', 'table-column-group',
-            'table-cell', 'table-caption', 'none')),
-    'font-family':          ('font_family',         
-        True,   True,   _parse_font_family),
-    'font-size':            ('font_size',           
-        True,   False,  _parse_font_size),
-    'font-style':           ('font_style',
-        True,   False,  _parse_generic('normal', 'italic', 'oblique')),
-    'font-weight':          ('font_weight',
-        True,   False,  _parse_generic(Number, 
-            'normal', 'bold', 'bolder', 'lighter')),
-    'height':               ('height',
-        True,   False,  _parse_generic(Dimension, Percentage, 0, 'auto')),
-    'line-height':          ('line_height',
-        True,   False,  _parse_line_height),
-    'margin':               (
-        ['margin_top', 'margin_right', 'margin_bottom', 'margin_left'],
-        True,   True,   _parse_shortcut(_parse_margin)),
-    'margin-top':           ('margin_top',          
-        True,   False,  _parse_margin),
-    'margin-right':         ('margin_right',
-        True,   False,  _parse_margin),
-    'margin-bottom':        ('margin_bottom',
-        True,   False,  _parse_margin),
-    'margin-left':          ('margin_left',
-        True,   False,  _parse_margin),
-    'max-height':           ('max_height',
-        True,   False,  _parse_generic(Dimension, Percentage, 0, 'none')),
-    'max-width':            ('max_width',
-        True,   False,  _parse_generic(Dimension, Percentage, 0, 'none')),
-    'min-height':            ('min_height',
-        True,   False,  _parse_generic(Dimension, Percentage, 0)),
-    'min-width':            ('min_width',
-        True,   False,  _parse_generic(Dimension, Percentage, 0)),
-    'padding':              (
-        ['padding_top', 'padding_right', 'padding_bottom', 'padding_left'],
-        True,   True,   _parse_shortcut(_parse_padding)),
-    'padding-top':          ('padding_top',
-        True,   False,  _parse_padding),
-    'padding-right':        ('padding_right',
-        True,   False,  _parse_padding),
-    'padding-bottom':       ('padding_bottom',
-        True,   False,  _parse_padding),
-    'padding-left':         ('padding_left',
-        True,   False,  _parse_padding),
-    'position':             ('position',            
-        True,   False,  _parse_generic(
-            'static', 'relative', 'absolute', 'fixed')),
-    'vertical-align':       ('vertical_align',
-        True,   False,  _parse_vertical_align),
-    'width':                ('width',
-        True,   False,  _parse_generic(Dimension, Percentage, 0, 'auto'))
-}
-
-def apply_style_declarations(declarations, box, render_device):
-    for declaration in declarations:
-        if declaration.property in _properties:
-            attr, inheritable, multivalue, parse_func = \
-                _properties[declaration.property]
-            if not multivalue:
-                if len(declaration.values) != 1:
-                    continue
-                value = declaration.values[0]
-            else:
-                value = declaration.values
-
-            if (inheritable and 
-                isinstance(value, Ident) and
-                value == 'inherit' and
-                box.parent):
-                if type(attr) in (list, tuple):
-                    for a in attr:
-                        setattr(box, a, getattr(box.parent, a))
-                else:
-                    setattr(box, attr, getattr(box.parent, attr))
-            else:
-                try:
-                    value = parse_func(value, render_device)
-                    if type(attr) in (list, tuple):
-                        for a, v in zip(attr, value):
-                            setattr(box, a, v)
-                    else:
-                        setattr(box, attr, value)
-                except ValidationException:
-                    warnings.warn(
-                        'CSS validation error in %s' % declaration.property)
-
-# Properties that are inherited by default, as listed in Appendix F (visual,
-# non-page only).
-_inherited_properties = [
-    'border_collapse',
-    'border_spacing',
-    'caption_side',
-    'color',
-    'cursor',
-    'direction',
-    'empty_cells',
-    'font_family',
-    'font_size',
-    'font_style',
-    'font_variant',
-    'font_weight',
-    'letter_spacing',
-    'line_height',
-    'list_style_image',
-    'list_style_position',
-    'list_style_type',
-    'quotes',
-    'text_align',
-    'text_indent',
-    'text_transform',
-    'visibility',
-    'white_space',
-    'word_spacing',
-]
-
-
-def apply_inherited_style(box):
-    if not box.parent:
-        return
-    d = box.parent.__dict__
-    for attr in _inherited_properties:
-        if attr in d:
-            setattr(box, attr, d[attr])
-
-def apply_style_string(style, box, render_device):
-    scanner = Scanner(lexicon, StringIO(style))
-    parser = Parser(scanner)
-    declarations = parser.declaration_list()
-    apply_style_declarations(declarations, box, render_device)
-
-def apply_stylesheet(stylesheet, elem, box, render_device):
-    declarations = stylesheet.get_declarations(elem)
-    apply_style_declarations(declarations, box, render_device)
