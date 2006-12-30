@@ -8,86 +8,6 @@ __version__ = '$Id$'
 
 from pyglet.layout.base import *
 
-# Interfaces
-# ----------------------------------------------------------------------------
-
-class RenderDevice(object):
-    width = 0
-    height = 0
-    dpi = 96            # device units per in
-    ppd = 1             # px per device unit
-    ppi = ppd * dpi     # calculated px per in
-
-    font_sizes = {
-        'xx-small': Dimension('6pt'),
-        'x-small':  Dimension('8pt'),
-        'small': Dimension('10pt'),
-        'medium': Dimension('12pt'),
-        'large': Dimension('14pt'),
-        'x-large': Dimension('16pt'),
-        'xx-large': Dimension('24pt')
-    }
-
-    def get_named_font_size(self, name):
-        return self.font_sizes[name]
-
-    def dimension_to_pt(self, dimension):
-        if dimension.unit == 'pt':
-            return dimension
-        elif dimension.unit == 'pc':
-            return Dimension('%fpt' % (dimension / 12.))
-        elif dimension.unit == 'in':
-            return Dimension('%fpt' % (dimension * 72.))
-        elif dimension.unit == 'cm':
-            return Dimension('%fpt' % (dimension / 2.54 * 72.))
-        elif dimension.unit == 'mm':
-            return Dimension('%fpt' % (dimension / 10. / 2.54 * 72.))
-        elif dimension.unit == 'px':
-            return Dimension('%fpt' % (dimension / self.ppi * 72.))
-        else:
-            raise NotImplementedError
-
-    def dimension_to_device(self, dimension, font_size):
-        assert font_size.unit == 'pt'
-        if dimension.unit == 'px':
-            return dimension / self.ppd
-        elif dimension.unit == 'in':
-            return dimension * self.dpi
-        elif dimension.unit == 'pt':
-            return dimension / 72. * self.dpi
-        elif dimension.unit == 'pc':
-            return dimension / 12. / 72. * self.dpi
-        elif dimension.unit == 'em':
-            return dimension * font_size / 72. * self.dpi
-        elif dimension.unit == 'ex':
-            return dimension * font_size / 2 / 72. * self.dpi # guess only
-        elif dimension.unit == 'cm':
-            return dimension / 2.54 * self.dpi
-        elif dimension.unit == 'mm':
-            return dimension / 10. / 2.54 * self.dpi
-        else:
-            raise NotImplementedError
-
-    def draw_vertical_border(self, x1, y1, x2, y2, color, style):
-        pass
-
-    def draw_horizontal_border(self, x1, y1, x2, y2, color, style):
-        pass
-
-    def draw_background(self, x1, y1, x2, y2, box):
-        pass
-
-    def set_clip(self, left, top, right, bottom):
-        pass
-
-    def get_font(self, box):
-        raise NotImplementedError()
-
-    def create_inline_text_boxes(self, font, text):
-        raise NotImplementedError()
-
-
-
 # Visual formatting model
 # ----------------------------------------------------------------------------
 
@@ -129,6 +49,17 @@ class Frame(object):
     # Box model properties (see diagram in 8.1)
     # ------------------------------------------------------------------------
 
+    used_width = 0
+    used_height = 0
+    used_margin_top = 0
+    used_margin_right = 0
+    used_margin_bottom = 0
+    used_margin_left = 0
+    used_padding_top = 0
+    used_padding_right = 0
+    used_padding_bottom = 0
+    used_padding_left = 0
+
     # Border edge, relative to parent frame
     border_left = 0
     border_top = 0
@@ -163,40 +94,40 @@ class Frame(object):
             value = getattr(self.box, attr)
             if isinstance(value, Percentage):
                 value = value * w
-            setattr(self.box, 'used_%s' % attr, value)
+            setattr(self, 'used_%s' % attr, value)
 
         if isinstance(self.box.height, Percentage):
             if containing_block.height:
-                self.box.used_height = self.box.height * \
+                self.used_height = self.box.height * \
                                        containing_block.height
             else: 
-                self.box.used_height = Ident('auto')
+                self.used_height = Ident('auto')
         else:
-            self.box.used_height = self.box.height
+            self.used_height = self.box.height
 
         # TODO: special constriant resolution for min/max width and height
         # when width and height are both auto (that's a pretty unlikely
         # scenario, IMO).
 
-        width = self.box.used_width
-        height = self.box.used_height
+        width = self.used_width
+        height = self.used_height
 
-        width = self.used_width(width, height)
+        width = self.get_used_width(width, height)
         if self.box.max_width != 'none' and width > self.box.max_width:
-            width = self.used_width(self.box.max_width, height)
+            width = self.get_used_width(self.box.max_width, height)
         if width < self.box.min_width:
-            width = self.used_width(self.box.min_width, height)
+            width = self.get_used_width(self.box.min_width, height)
 
-        height = self.used_height(width, height)
+        height = self.get_used_height(width, height)
         if self.box.max_height != 'none' and height > self.box.max_height:
-            height = self.used_height(width, self.box.max_height)
+            height = self.get_used_height(width, self.box.max_height)
         if height < self.box.min_height:
-            height = self.used_height(width, self.box.min_height)
+            height = self.get_used_height(width, self.box.min_height)
 
-        self.box.used_width = width
-        self.box.used_height = height
+        self.used_width = width
+        self.used_height = height
 
-    def used_width(self, width, height):
+    def get_used_width(self, width, height):
         # 10.3.2 Calculating widths and margins for inline replaced elements
         if self.box.display == 'inline' and not self.box.is_text:
             if width == 'auto':
@@ -217,7 +148,7 @@ class Frame(object):
                     width = 300
         return width
 
-    def used_height(self, width, height):
+    def get_used_height(self, width, height):
         # 10.6.2 Height for inline replaced elements
         if self.box.display == 'inline' and not self.box.is_text:
             if height == 'auto':
@@ -307,9 +238,9 @@ class Frame(object):
         self.border_right = border_left + self.content_width
         if self.border_open:
             self.border_right += self.box.border_left_width + \
-                self.box.used_padding_left
+                self.used_padding_left
         if self.border_close:
-            self.border_right += self.box.used_padding_right + \
+            self.border_right += self.used_padding_right + \
                 self.box.border_right_width
 
     def set_border_top(self, border_top):
@@ -317,9 +248,9 @@ class Frame(object):
         self.border_bottom = (
             border_top +
             self.box.border_top_width +
-            self.box.used_padding_top +
+            self.used_padding_top +
             self.content_height +
-            self.box.used_padding_bottom +
+            self.used_padding_bottom +
             self.box.border_bottom_width)
 
     def __repr__(self):
@@ -338,22 +269,22 @@ class ViewportFrame(Frame):
 class BlockFrame(Frame):
     def __init__(self, box, parent, containing_block):
         super(BlockFrame, self).__init__(box, parent, containing_block)
-        self.border_left = containing_block.left + box.used_margin_left
-        self.border_right = containing_block.right - box.used_margin_right
+        self.border_left = containing_block.left + self.used_margin_left
+        self.border_right = containing_block.right - self.used_margin_right
         self.generated_containing_block = ContainingBlock(
-            box.border_left_width + box.used_padding_left,
-            box.border_top_width + box.used_padding_top,
-            (self.containing_block.width - box.used_margin_left -
-            box.used_margin_right
-            - box.border_right_width - box.used_padding_right) ,
+            box.border_left_width + self.used_padding_left,
+            box.border_top_width + self.used_padding_top,
+            (self.containing_block.width - self.used_margin_left -
+            self.used_margin_right
+            - box.border_right_width - self.used_padding_right) ,
             0) # bottom ignored
 
     def close(self):
         self.border_bottom = self.border_top + \
             self.box.border_top_width + \
-            self.box.used_padding_top + \
+            self.used_padding_top + \
             self.generated_containing_block.content_height + \
-            self.box.used_padding_bottom + \
+            self.used_padding_bottom + \
             self.box.border_bottom_width
 
     def pprint(self, indent=''):
@@ -387,7 +318,7 @@ class InlineFrame(Frame):
         # Calculate positions of children wrt. this frame's border edge.
         lsb = 0
         if self.border_open:
-            lsb = self.box.used_padding_left + self.box.border_left_width 
+            lsb = self.used_padding_left + self.box.border_left_width 
 
         x = 0
         content_ascent = 0
@@ -397,7 +328,7 @@ class InlineFrame(Frame):
             frame.close()
             lx = lsb + x
             if frame.border_open:
-                lx += frame.box.used_margin_left
+                lx += frame.used_margin_left
             frame.set_border_left(lx)
             x += frame.outer_width
 
@@ -408,8 +339,8 @@ class InlineFrame(Frame):
         self.content_width = x
         self.calculate_outer_width()
 
-        content_ascent += self.box.used_padding_top + self.box.border_top_width
-        content_descent -= self.box.used_padding_bottom + \
+        content_ascent += self.used_padding_top + self.box.border_top_width
+        content_descent -= self.used_padding_bottom + \
                            self.box.border_bottom_width
         
         self.set_ascent_descent(content_ascent, content_descent, 
@@ -456,11 +387,11 @@ class InlineFrame(Frame):
     def calculate_outer_width(self):
         self.outer_width = self.content_width
         if self.border_open:
-            self.outer_width += self.box.used_margin_left + \
-                self.box.border_left_width + self.box.used_padding_left
+            self.outer_width += self.used_margin_left + \
+                self.box.border_left_width + self.used_padding_left
         if self.border_close:
-            self.outer_width += self.box.used_margin_right + \
-                self.box.border_right_width + self.box.used_padding_right
+            self.outer_width += self.used_margin_right + \
+                self.box.border_right_width + self.used_padding_right
 
     def pprint(self, indent=''):
         print '%s%s(' % (indent, self.__class__.__name__)
@@ -473,28 +404,28 @@ class InlineReplacedFrame(InlineFrame):
         assert not box.is_text and not box.children
         super(InlineReplacedFrame, self).__init__(box, parent, containing_block)
 
-        width = self.box.used_width
-        height = self.box.used_height
+        width = self.used_width
+        height = self.used_height
 
         self.content_width = width
     
         self.outer_width = \
-            box.used_margin_left + \
+            self.used_margin_left + \
             box.border_left_width + \
-            box.used_padding_left + \
+            self.used_padding_left + \
             width + \
-            box.used_padding_right + \
+            self.used_padding_right + \
             box.border_right_width + \
-            box.used_margin_right
+            self.used_margin_right
         
         content_height = \
-            box.used_margin_top + \
+            self.used_margin_top + \
             box.border_top_width + \
-            box.used_padding_top + \
+            self.used_padding_top + \
             height + \
-            box.used_padding_bottom + \
+            self.used_padding_bottom + \
             box.border_bottom_width + \
-            box.used_margin_bottom
+            self.used_margin_bottom
 
         self.set_ascent_descent(content_height, 0, content_height, 0)
 
@@ -502,13 +433,13 @@ class InlineReplacedFrame(InlineFrame):
         pass
 
     def set_border_top(self, border_top):
-        self.border_top = border_top + self.box.used_margin_top
+        self.border_top = border_top + self.used_margin_top
         self.border_bottom = border_top + \
-            self.box.used_margin_top + \
+            self.used_margin_top + \
             self.box.border_top_width + \
-            self.box.used_padding_top + \
-            self.box.used_height + \
-            self.box.used_padding_bottom + \
+            self.used_padding_top + \
+            self.used_height + \
+            self.used_padding_bottom + \
             self.box.border_bottom_width
 
     def draw(self, render_device, x, y):
@@ -518,10 +449,10 @@ class InlineReplacedFrame(InlineFrame):
         y2 = y - self.border_bottom
 
         self.draw_border_and_background(render_device, x1, y1, x2, y2)
-        x1 += self.box.border_left_width + self.box.used_padding_left
-        y1 -= self.box.border_top_width + self.box.used_padding_top
-        x2 -= self.box.border_right_width + self.box.used_padding_right
-        y2 += self.box.border_bottom_width + self.box.used_padding_bottom
+        x1 += self.box.border_left_width + self.used_padding_left
+        y1 -= self.box.border_top_width + self.used_padding_top
+        x2 -= self.box.border_right_width + self.used_padding_right
+        y2 += self.box.border_bottom_width + self.used_padding_bottom
         self.box.draw(render_device, x1, y1, x2, y2)
 
 class TextFrame(InlineFrame):
@@ -640,7 +571,7 @@ class LineBoxFrame(InlineFrame):
             frame.close()
             lx = x
             if frame.border_open:
-                lx += frame.box.used_margin_left 
+                lx += frame.used_margin_left 
             frame.set_border_left(lx)
 
             x += frame.outer_width
@@ -707,8 +638,8 @@ class BlockFormattingContext(FormattingContext):
         
         # Collapse top margin
         top = self.containing_block_stack[0].content_bottom + \
-              frame.box.used_margin_top
-        margin = max(frame.box.used_margin_top, self.current_margin)
+              frame.used_margin_top
+        margin = max(frame.used_margin_top, self.current_margin)
         top -= margin - self.current_margin
 
         self.frame_stack[0].add(frame)
@@ -736,8 +667,8 @@ class BlockFormattingContext(FormattingContext):
         self.containing_block_stack.pop(0)
 
         # Collapse bottom margin
-        bottom = frame.border_bottom + frame.box.used_margin_bottom
-        margin = max(self.current_margin, frame.box.used_margin_bottom)
+        bottom = frame.border_bottom + frame.used_margin_bottom
+        margin = max(self.current_margin, frame.used_margin_bottom)
         bottom -= margin - self.current_margin
         self.containing_block_stack[0].content_bottom = bottom
         self.current_margin = margin
@@ -789,12 +720,12 @@ class InlineFormattingContext(FormattingContext):
 
             # Make room for this (parent) frame's border, padding and margin
             space_left += (
-                frame.box.used_margin_left +
-                frame.box.used_padding_left +
+                frame.used_margin_left +
+                frame.used_padding_left +
                 frame.box.border_left_width)
             space_right += (
-                frame.box.used_margin_right +
-                frame.box.used_padding_right +
+                frame.used_margin_right +
+                frame.used_padding_right +
                 frame.box.border_right_width)
 
             self.frame_stack[0].add(frame)

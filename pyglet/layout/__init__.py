@@ -6,74 +6,52 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-def render_xml_file(file):
-    if type(file) in (str, unicode):
-        file = open(file, 'r')
-    return render_xml(file.read())
-
-def render_xml(stylesheet, data):
-    from xml.sax import parseString
-    from pyglet.layout.css import Stylesheet
-    from pyglet.layout.visual import VisualLayout
-    from pyglet.layout.formatters.xml import XMLFormatter
+def create_render_device():
     from pyglet.text.layout import GLRenderDevice
-
     render_device = GLRenderDevice()
     render_device.width = 640
     render_device.height = 480
-    formatter = XMLFormatter(render_device)
-    formatter.add_stylesheet(stylesheet)
-    parseString(data, formatter)
+    return render_device
 
-    layout = VisualLayout(render_device)
-    layout.set_root(formatter.root_box)
+def render(data, formatter):
+    from pyglet.layout.visual import VisualLayout
+    box = formatter.format(data)
+    layout = VisualLayout(formatter.render_device)
+    layout.set_root(box)
     return layout
 
+def render_xml(stylesheet, data):
+    from pyglet.layout.css import Stylesheet
+    from pyglet.layout.formatters.xmlformatter import XMLFormatter
+
+    render_device = create_render_device()
+    formatter = XMLFormatter(render_device)
+    formatter.add_stylesheet(stylesheet)
+    return render(data, formatter)
+
 def render_xhtml(data):
-    from xml.sax import parseString
-    from pyglet.layout.base import LocalFileLocator
-    from pyglet.layout.visual import VisualLayout
-    from pyglet.layout.formatters.xhtml import XHTMLFormatter
-    from pyglet.text.layout import GLRenderDevice
+    from pyglet.layout.locator import LocalFileLocator
+    from pyglet.layout.formatters.xhtmlformatter import XHTMLFormatter
     from pyglet.image.layout import ImageBoxGenerator
 
     locator = LocalFileLocator()
-
-    render_device = GLRenderDevice()
-    render_device.width = 640
-    render_device.height = 480
+    render_device = create_render_device()
 
     formatter = XHTMLFormatter(render_device)
     image_box_generator = ImageBoxGenerator(locator)
-    image_box_generator.add_to_formatter(formatter)
-
-    parseString(data, formatter)
-
-    layout = VisualLayout(render_device)
-    layout.set_root(formatter.root_box)
-    return layout
+    formatter.add_generator(image_box_generator)
+    return render(data, formatter)
 
 def render_html(data):
-    from pyglet.layout.base import LocalFileLocator
-    from pyglet.layout.visual import VisualLayout
-    from pyglet.layout.formatters.html import HTMLFormatter
-    from pyglet.text.layout import GLRenderDevice
-    from pyglet.image.layout import ImageBoxGenerator 
+    from pyglet.layout.locator import LocalFileLocator
+    from pyglet.layout.formatters.htmlformatter import HTMLFormatter
+    from pyglet.image.layout import ImageBoxGenerator
 
     locator = LocalFileLocator()
-
-    render_device = GLRenderDevice()
-    render_device.width = 640
-    render_device.height = 480
+    render_device = create_render_device()
 
     formatter = HTMLFormatter(render_device)
     image_box_generator = ImageBoxGenerator(locator)
-    image_box_generator.add_to_formatter(formatter)
-
-    formatter.feed(data)
-
-    layout = VisualLayout(render_device)
-    layout.set_root(formatter.root_box)
-    return layout
-
+    formatter.add_generator(image_box_generator)
+    return render(data, formatter)
 

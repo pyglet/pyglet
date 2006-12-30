@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-'''
+'''Base layout types and interfaces.
+
+Section numbers refer to the CSS 2.1 specification at 
+http://www.w3.org/TR/CSS21/
 '''
 
 __docformat__ = 'restructuredtext'
@@ -8,36 +11,34 @@ __version__ = '$Id$'
 
 
 #-----------------------------------------------------------------------------
-# Basic types.  Some (AtKeyword, Hash, CDO, CDC, Whitespace, Function,
-# Delim) are used only by the CSS parser.  The rest are used both by
-# the parser and within Box objects to represent values.  Some values
-# are converted during parsing (specified values, e.g., Hash to Color), some
-# are converted during formatting (computed values, e.g., Ident('inherit'),
-# length unit reduction), and some during layout (used values, e.g., used
-# Percentage).
+# Basic types.  These are used both by the scanner/parser and within the
+# Box and Frame types to represent CSS property values.
 
 class Ident(str):
+    '''An unquoted string, such as a colour name or XML element name.'''
     def __new__(cls, text):
+        # XXX: This should not generally be lowercased, as it applies to
+        #      XML element names.  However, property values like colour names
+        #      must be compared case insensitively.  TODO: lowercase at the
+        #      at the appropriate comparison point instead of here.
         return str.__new__(cls, text.lower())
 
-class AtKeyword(str):
-    def __new__(cls, text):
-        return str.__new__(cls, text.lower())
 
 class String(str):
+    '''A quoted string, without the quotes.  Escapes should have already been
+    processed.'''
     def __new__(cls, text):
         return str.__new__(cls, text[1:-1])
 
-class Hash(str):
-    def __new__(cls, text):
-        return str.__new__(cls, text[1:])
 
 class Number(float):
+    '''A floating-point number without dimension.'''
     def __neg__(self):
         n = float.__new__(self.__class__, -float(self))
         return n
 
 class Percentage(float):
+    '''A percentage, expressed as float in range [0,1].'''
     def __new__(cls, text):
         return float.__new__(cls, float(text[:-1]) / 100.)
 
@@ -46,6 +47,13 @@ class Percentage(float):
         return n
 
 class Dimension(float):
+    '''A dimension with unit, such as 'px', 'em' or 'in'. 
+    
+    Units are not checked by the parser for correctness.  Units are always
+    lowercase.  This value is a float with a 'unit' attribute, which is a
+    string.  All numeric operations except for unary negate will return floats
+    instead of Dimension instances.
+    '''
     def __new__(cls, text):
         unit = text.lstrip('0123456789.')
         num = text[:-len(unit)]
@@ -59,30 +67,18 @@ class Dimension(float):
         return n
 
 class URI(str):
+    '''A URI, such as http://pyglet.org.  Does not include formatting
+    tokens such as uri(...).'''
     pass
 
 class UnicodeRange(str):
-    pass
-
-class CDO(object):
-    pass
-
-class CDC(object):
-    pass
-
-class Whitespace(object):
-    pass
-
-class Function(str):
-    pass
-
-class Delim(str):
-    pass
-
-class Important(object):
+    '''A Unicode range, such as U+1000-1500, expressed as a complete string.
+    '''
     pass
 
 class Color(tuple):
+    '''An RGBA tuple, with each component in range [0,1].  CSS 2.1 has no
+    alpha support, so the alpha channel is typically 1.0.'''
     def __new__(cls, r, g, b, a=1):
         return tuple.__new__(cls, (r, g, b, a))
 
@@ -119,35 +115,256 @@ Color.names = {
 }
 
 # Interfaces
-#-----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+
+class RenderDevice(object):
+    '''Interface for device to render layout to.
+
+    The render device defines properties such as the media width and height
+    (which may be a scrollable viewport), the DPI and related metrics, and
+    conversions between named font sizes and their point size (which may be
+    altered at run-time by the user agent).
+
+    The render device also contains methods which the layout uses to
+    draw the rendered image.  A render device need only implement the methods
+    it wants to support; for example, not implementing the border methods
+    means borders will not be drawn (but will still be accounted for in
+    layout).  The text and font retrieval methods must be implemented.
+    '''
+
+    # Width and height of the viewable area.  Content may be rendered outside
+    # of this area, but this viewport forms the initial containing block, and
+    # the layout engine will attempt to keep within the given bounds.
+    width = 0
+    height = 0
+
+    # Physical resolution of the device.  The default units are recommended
+    # for standard computer displays (a printer would have a much higer DPI
+    # and PPD, though).
+    dpi = 96            # device units per in
+    ppd = 1             # px per device unit
+    ppi = ppd * dpi     # calculated px per in
+
+    # Lookup dictionary for named font sizes.  By default text is rendered at
+    # 'medium' size.
+    font_sizes = {
+        'xx-small': Dimension('6pt'),
+        'x-small':  Dimension('8pt'),
+        'small': Dimension('10pt'),
+        'medium': Dimension('12pt'),
+        'large': Dimension('14pt'),
+        'x-large': Dimension('16pt'),
+        'xx-large': Dimension('24pt')
+    }
+
+    def get_named_font_size(self, name):
+        '''Return a dimension for the given named font size (for example,
+        'medium').  This can be overridden by user agents to allow the text
+        size to be increased or decreased.'''
+        return self.font_sizes[name]
+
+    def dimension_to_pt(self, dimension):
+        '''Convert the given dimension to a dimension in points.  
+        
+        The default implementation uses the 'dpi' and 'ppi' constants on the
+        class.'''
+        if dimension.unit == 'pt':
+            return dimension
+        elif dimension.unit == 'pc':
+            return Dimension('%fpt' % (dimension / 12.))
+        elif dimension.unit == 'in':
+            return Dimension('%fpt' % (dimension * 72.))
+        elif dimension.unit == 'cm':
+            return Dimension('%fpt' % (dimension / 2.54 * 72.))
+        elif dimension.unit == 'mm':
+            return Dimension('%fpt' % (dimension / 10. / 2.54 * 72.))
+        elif dimension.unit == 'px':
+            return Dimension('%fpt' % (dimension / self.ppi * 72.))
+        else:
+            raise NotImplementedError
+
+    def dimension_to_device(self, dimension, font_size):
+        '''Convert the given dimension to device units.  
+        
+        Device units are the same as pixels on a computer monitor, but on a
+        printer more device units are typically used in order to keep the
+        physical size reasonable for pixel-based layouts.  The default
+        implementation uses the 'dpi' and p'pi' constants on the class.  
+        
+        The font-size argument must be the relevant box's font size, as a
+        dimension in points.  This is used to calculate the relative sizes
+        "em" and "ex" correctly.  The "relevant" box is typically the one
+        which contains the property which is currently being evaluated, or its
+        parent if the property is the font-size.
+        '''
+        assert font_size.unit == 'pt'
+        if dimension.unit == 'px':
+            return dimension / self.ppd
+        elif dimension.unit == 'in':
+            return dimension * self.dpi
+        elif dimension.unit == 'pt':
+            return dimension / 72. * self.dpi
+        elif dimension.unit == 'pc':
+            return dimension / 12. / 72. * self.dpi
+        elif dimension.unit == 'em':
+            return dimension * font_size / 72. * self.dpi
+        elif dimension.unit == 'ex':
+            return dimension * font_size / 2 / 72. * self.dpi # guess only
+        elif dimension.unit == 'cm':
+            return dimension / 2.54 * self.dpi
+        elif dimension.unit == 'mm':
+            return dimension / 10. / 2.54 * self.dpi
+        else:
+            raise NotImplementedError
+
+    def draw_vertical_border(self, x1, y1, x2, y2, color, style):
+        '''Draw a vertical border within the given bounds.  'color' is
+        an RGB tuple and 'style' is the CSS border-style property, which will
+        not be 'none'.
+        '''
+        pass
+
+    def draw_horizontal_border(self, x1, y1, x2, y2, color, style):
+        '''Draw a horizontal border within the given bounds.  'color' is
+        an RGB tuple and 'style' is the CSS border-style property, which will
+        not be 'none'.
+        '''
+        pass
+
+    def draw_background(self, x1, y1, x2, y2, box):
+        '''Fill the given region with the box background, which may be
+        the background-color or background-image as appropriate.
+        '''
+        pass
+
+    def set_clip(self, left, top, right, bottom):
+        '''Currently unused, but in future will be used to set clipping
+        regions on the render device in order to implement the overflow
+        property.'''
+        pass
+
+    def get_font(self, box):
+        '''Return a font object for the given box.  
+        
+        The font object must encapsulate all information about the font-face,
+        font-size and font-style of the box, but not color, text-decoration,
+        text-transform, word or character spacing.  Any object may be
+        returned, it is used only in the 'create_inline_text_boxes' method.
+
+        Fonts are not cached by layout, it is recommended that the render
+        device does this.
+        '''
+        raise NotImplementedError('abstract')
+
+    def create_inline_text_boxes(self, font, text):
+        '''Return one or more inline non-replaced boxes for the given text.
+
+        The return value must be a list even if only one box is returned.
+        Several boxes might need to be returned if the glyphs are contained in
+        several fonts or for other performance reasons.  Breakpoints are
+        assumed to be not permitted between these boxes (unless a space
+        character preceeds or begins one of them).
+
+        The font paramter is a return value from 'get_font'.
+        '''
+        raise NotImplementedError('abstract')
 
 class Formatter(object):
+    '''Interface for formatters: objects that create CSS boxes from some data
+    (e.g. XHTML).'''
     def __init__(self, render_device):
-        self.root_box = None
         self.render_device = render_device
+        self.generators = {}
+
+    def format(self, data):
+        '''Format the given data, which may be a string or file-like object,
+        and return the root Box element.'''
+        raise NotImplementedError('abstract')
+
+    def add_generator(self, generator):
+        '''Add a custom box generator to this formatter.  Only one generator
+        can be associated with a given element name (an assertion will be
+        raised if not).
+        '''
+        for name in generator.accept_names:
+            assert name not in self.generators
+            self.generators[name] = generator
 
 class BoxGenerator(object):
-    def add_to_formatter(self, formatter):
-        raise NotImplementedError()
+    '''Interface for box generators: objects that boxes for data, controlled
+    by a formatter.  
+    
+    For example, a BoxGenerator is defined to create replaced element boxes
+    for images in an XHTML formatter.'''
+
+    # List of element names this generator will generate boxes for.  For
+    # example, ['img'] for image elements in XHTML. 
+    accept_names = []
 
     def create_box(self, name, attrs):
-        raise NotImplementedError()
-
-class Locator(object):
-    def get_stream(self, uri):
-        return None
-
-class LocalFileLocator(object):
-    def get_stream(self, uri):
-        try:
-            return open(uri, 'rb')
-        except IOError:
-            return None
-
-# TODO locators for net and resource.
+        '''Create a box for the given element name and attributes.  
+        
+        The exact meaning of name and attrs are defined by the formatter, but
+        name must be a string from the 'accept_names' list, and 'attrs' a
+        dictionary-like object.
+        
+        Must return a single Box object.
+        ''' 
+        raise NotImplementedError('abstract')
 
 
 class Box(object):
+    '''A CSS box.
+
+    Non-replaced elements besides non-replaced inline elements use this
+    class directly.  All other elements (non-replaced inline elements and
+    replaced elements) subclass.
+
+    Every CSS property is defined on every box.  This is necessary to 
+    ensure properties are inherited correctly.  To save on memory usage,
+    the intial values are stored on the class where possible.  
+    
+    The values applied on a Box object are the "specified" or "computed"
+    values (depending on the stage of processing), never the "used" or
+    "actual" values (though those values may be implicitly identical).
+
+    In addition to the CSS properties there are several "layout engine
+    properties" which exist for the convenience of the formatter and
+    are not specified explicitly in CSS declarations, and "replaced element
+    properties", which must be supplied by the box generator.
+
+    There are draw methods that correspond to replaced and non-replaced
+    inline element boxes (non-replaced non-inline boxes are never drawn --
+    only their borders/backgrounds are, handled by the frame).
+
+    To implement a custom replaced element, subclass Box and set the
+    appropriate replaced element properties.  Then override the simple
+    'draw' method (not the text draw method).
+    '''
+
+    # Replaced element properties
+    # ---------------------------
+
+    # Subclasses which are not text _must_ override this with True;
+    # it enables replaced-element processing, including the intrinsic
+    # properties below.
+    is_replaced = False
+
+    # intrinsic_width must be set for non-replaced (text) elements, and may be
+    # set for replaced elements.  intrinsic_height is set only for replaced
+    # elements.  A replaced element such as an image would give the
+    # dimensions of the image here, even though it could be stretched by the
+    # width/height properties.  The intrinsic ratio can also be set.
+    intrinsic_width = None
+    intrinsic_height = None 
+    intrinsic_ratio = None
+
+    def draw(self, render_device, left, top, right, bottom):
+        '''Draw a replaced element at the given position.  Note that
+        the default visual layout has vertical coordinates increasing towards
+        the top of the screen.'''
+        pass
+
     # Layout engine properties
     # ------------------------
 
@@ -166,48 +383,9 @@ class Box(object):
     # See 9.2.
     inline_formatting_context = True
 
-    # Subclasses which are not text _must_ override this with True;
-    # it enables replaced-element processing, including the intrinsic
-    # properties below.
-    is_replaced = False
-
-    # intrinsic_width must be set for non-replaced (text) elements, and may be
-    # set for replaced elements.  intrinsic_height is set only for replaced
-    # elements.      A replaced element such as an image would give the
-    # dimensions of the image here, even though it could be stretched by the
-    # width/height properties.  The intrinsic ratio can also be set.
-    intrinsic_width = None
-    intrinsic_height = None 
-    intrinsic_ratio = None
-
-    # For replaced elements (text) only, in place of intrinsic_height.
-    # intrinsic_descent is typically negative (below the baseline).
-    intrinsic_ascent = 0
-    intrinsic_descent = 0
-
-    # This references a box which implements a box's :first-line
-    # pseudo-element.  Note that pseudo-classes are resolved
-    # at box creation time, as are the :first-letter, :before and :after
-    # pseudo-elements.
-    pseudo_first_line = None
-
-    # These give the box's layout position, ready for rendering.  They
-    # refer to the content edge.
-    content_left = 0
-    content_top = 0
-    content_right = 0   # right, bottom not always calculated.
-    content_bottom = 0
-
-    # Box-specific functionality
-    # --------------------------
-
     # If true, this box is an anonymous block box (see 9.2.1) and can
     # accept additional inline boxes.
     anonymous = False
-
-    # For replaced elements only.
-    def draw(self, render_context, left, top, right, bottom):
-        pass
 
     # Text-wrapping functionality
     # ---------------------------
@@ -219,7 +397,14 @@ class Box(object):
     # breakpoints within the box, and the box is not wrapped by default.
     is_text = False
 
+    # For non-replaced elements (text) only, in place of intrinsic_height.
+    # intrinsic_descent is typically negative (below the baseline).
+    intrinsic_ascent = 0
+    intrinsic_descent = 0
+
     def get_text(self):
+        '''Return the text described in this box, if the box is a non-replaced
+        inline element.  Otherwise return None.'''
         return None
 
     def get_breakpoint(self, from_breakpoint, break_characters, width):
@@ -258,21 +443,11 @@ class Box(object):
     margin_bottom = 0
     margin_right = 0
     margin_left = 0
-    # Used values for margin properties (calculated during layout)
-    used_margin_top = 0
-    used_margin_bottom = 0
-    used_margin_right = 0
-    used_margin_left = 0
     # 8.4 Padding properties
     padding_top = 0
     padding_bottom = 0
     padding_right = 0
     padding_left = 0
-    # Used values for margin properties (calculated during layout)
-    used_padding_top = 0
-    used_padding_bottom = 0
-    used_padding_right = 0
-    used_padding_left = 0
     # 8.5.1 Border width
     border_top_width = 2       # default to 'medium' if style != 'none'
     border_right_width = 2     # default to 'medium' if style != 'none'

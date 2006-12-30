@@ -9,9 +9,8 @@ __version__ = '$Id$'
 from pyglet.GL.VERSION_1_1 import *
 import pyglet.text
 from pyglet.layout.base import *
-import pyglet.layout.visual
 
-class GLRenderDevice(pyglet.layout.visual.RenderDevice):
+class GLRenderDevice(RenderDevice):
     _stock_font_names = {
         'serif':        'Bitstream Vera Serif',
         'sans-serif':   'Bitstream Vera Sans',

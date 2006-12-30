@@ -269,6 +269,43 @@ class Declaration(object):
             s += ' ! important'
         return '%s(%s)' % (self.__class__.__name__, s)
 
+# Scanner tokens (in addition to the basic types given in base.py)
+# ----------------------------------------------------------------
+class Hash(str):
+    '''A keyword beginning with a hash, or a colour hash.   Value does not
+    include the '#" symbol.'''
+    def __new__(cls, text):
+        return str.__new__(cls, text[1:])
+
+class AtKeyword(str):
+    '''An keyword such as @media, @import, etc.  Includes the '@' symbol.'''
+    def __new__(cls, text):
+        return str.__new__(cls, text.lower())
+
+class CDO(object):
+    '''Comment delimiter open token '<!--'.'''
+    pass
+
+class CDC(object):
+    '''Comment delimiter close token '-->'.'''
+    pass
+
+class Whitespace(object):
+    pass
+
+class Function(str):
+    '''A function name, including the '(' at the end signifying the beginning
+    of a function call.
+    '''
+    pass
+
+class Important(object):
+    '''The '!important' token.'''
+    pass
+
+class Delim(str):
+    '''Any other punctuation, such as comma, period, operator.'''
+    pass
 
 # Macros
 nonascii = re('[^\0-\177]')

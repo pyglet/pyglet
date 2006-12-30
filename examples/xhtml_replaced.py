@@ -7,7 +7,6 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: xml_css.py 322 2006-12-26 12:53:18Z Alex.Holkner $'
 
 from ctypes import *
-from xml.sax import parseString
 
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.GLU.VERSION_1_1 import *
@@ -16,10 +15,9 @@ from pyglet.window.event import *
 from pyglet.clock import *
 
 from pyglet.text import *
+from pyglet.layout import *
 from pyglet.layout.base import *
-from pyglet.layout.visual import VisualLayout
-from pyglet.layout.formatters.xhtml import XHTMLFormatter
-from pyglet.text.layout import GLRenderDevice
+from pyglet.layout.formatters.xhtmlformatter import XHTMLFormatter
 
 data = '''<?xml version="1.0"?>
 <html>  
@@ -108,8 +106,7 @@ class CubeBox(Box):
         glPopAttrib()
 
 class CubeGenerator(BoxGenerator):
-    def add_to_formatter(self, formatter):
-        formatter.add_box_generator('cube', self)
+    accept_names = ['cube']
 
     def create_box(self, name, attrs):
         return CubeBox()
@@ -117,19 +114,11 @@ class CubeGenerator(BoxGenerator):
 def render_custom_xhtml(data):
     '''Create a layout for data similar to `render_xhtml`, but attach our
     custom box generator.'''
-    render_device = GLRenderDevice()
-    render_device.width = 640
-    render_device.height = 480
-
+    render_device = create_render_device()
     formatter = XHTMLFormatter(render_device)
     cube_generator = CubeGenerator()
-    cube_generator.add_to_formatter(formatter)
-
-    parseString(data, formatter)
-
-    layout = VisualLayout(render_device)
-    layout.set_root(formatter.root_box)
-    return layout
+    formatter.add_generator(cube_generator)
+    return render(data, formatter)
 
 def on_resize(width, height):
     glMatrixMode(GL_PROJECTION)

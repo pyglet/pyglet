@@ -7,6 +7,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import re
+import xml.sax
 
 from pyglet.layout.base import *
 import pyglet.layout.visual
@@ -30,23 +31,22 @@ class XMLElement(pyglet.layout.css.SelectableElement):
 class XMLFormatter(pyglet.layout.visual.Formatter):
     def __init__(self, render_device):
         super(XMLFormatter, self).__init__(render_device)
-        self.box_generators = {}
 
-        self.box_stack = []
-        self.element_stack = []
-        self.element_sibling_stack = [None]
         self.stylesheets = []
+
+    def format(self, data):
+        if hasattr(data, 'read'):
+            xml.sax.parse(data, self)
+        else:
+            xml.sax.parseString(data, self)
+        return self.root_box
 
     def add_stylesheet(self, stylesheet):
         self.stylesheets.append(stylesheet)
 
-    def add_box_generator(self, name, generator):
-        assert name not in self.box_generators
-        self.box_generators[name] = generator
-
     def create_box(self, name, attrs):
-        if name in self.box_generators:
-            return self.box_generators[name].create_box(name, attrs)
+        if name in self.generators:
+            return self.generators[name].create_box(name, attrs)
         return Box()
 
     def apply_style(self,  box, elem):
@@ -182,6 +182,9 @@ class XMLFormatter(pyglet.layout.visual.Formatter):
         self.locator = locator
 
     def startDocument(self):
+        self.box_stack = []
+        self.element_stack = []
+        self.element_sibling_stack = [None]
         self.root_box = None
 
     def endDocument(self):

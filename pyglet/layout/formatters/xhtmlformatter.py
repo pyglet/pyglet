@@ -6,7 +6,7 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.layout.formatters.xml import XMLFormatter
+from pyglet.layout.formatters.xmlformatter import XMLFormatter
 from pyglet.layout.css import Stylesheet
 
 # Default stylesheet for HTML 4 

@@ -13,12 +13,11 @@ from pyglet.image import *
 from pyglet.layout.base import *
 
 class ImageBoxGenerator(BoxGenerator):
+    accept_names = ['img']
+
     def __init__(self, locator):
         self.locator = locator
         self.cache = {}
-
-    def add_to_formatter(self, formatter):
-        formatter.add_box_generator('img', self)
 
     def create_box(self, name, attrs):
         file = None

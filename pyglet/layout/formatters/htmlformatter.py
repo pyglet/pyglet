@@ -9,7 +9,7 @@ __version__ = '$Id$'
 from HTMLParser import HTMLParser
 from htmlentitydefs import entitydefs
 
-from pyglet.layout.formatters.xhtml import XHTMLFormatter
+from pyglet.layout.formatters.xhtmlformatter import XHTMLFormatter
 
 class HTMLFormatter(HTMLParser, XHTMLFormatter):
     # HTML -> CSS font size mapping, based on 15.7 <absolute-size> table.
@@ -29,6 +29,15 @@ class HTMLFormatter(HTMLParser, XHTMLFormatter):
         HTMLParser.__init__(self)
         XHTMLFormatter.__init__(self, render_device)
         self._in_p = False
+
+    def format(self, data):
+        if hasattr(data, 'read'):
+            data = data.read()
+        self.startDocument()
+        self.feed(data)
+        self.close()
+        self.endDocument()
+        return self.root_box
 
     def handle_starttag(self, tag, attrs):
         attr_dict = {}
