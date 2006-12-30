@@ -320,9 +320,9 @@ class HexTile(TileBase):
 if __name__ == '__main__':
     # test rectangular tile map
     #    +---+---+---+
-    #    | a | b | c |
-    #    +---+---+---+
     #    | d | e | f |
+    #    +---+---+---+
+    #    | a | b | c |
     #    +---+---+---+
     m = Map(10, 16, meta=[['a', 'd'], ['b', 'e'], ['c', 'f']])
     t = m.get((0,0))
@@ -372,9 +372,9 @@ if __name__ == '__main__':
     assert t.midbottom == (5, 16)
 
     # test hexagonal tile map
-    #   /a\_/b\_/c\
-    #   \_/d\_/e\_/
     #   /f\_/g\_/h\
+    #   \_/d\_/e\_/
+    #   /a\_/b\_/c\
     #   \_/ \_/ \_/
     m = HexMap(32, meta=[['a', 'd', 'f'], ['b', 'e', 'g'], ['c', None, 'h']])
     t = m.get((0,0))
