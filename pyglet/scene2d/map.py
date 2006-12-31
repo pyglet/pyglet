@@ -28,7 +28,7 @@ class Map(MapBase):
     Thus tiles = [['a', 'd'], ['b', 'e'], ['c', 'f']]
     and tiles[0][1] = 'd'
     '''
-    __slots__ = 'w h tw th x y z meta images'.split()
+    __slots__ = 'pxw pxh tw th x y z meta images'.split()
     def __init__(self, tw, th, origin=(0, 0, 0), meta=None, images=None):
         if meta is None and images is None:
             raise ValueError, 'Either meta or images must be supplied'
@@ -37,8 +37,8 @@ class Map(MapBase):
         self.meta = meta
         self.images = images
         l = meta or images
-        self.w = len(l)
-        self.h = len(l[1])
+        self.pxw = len(l) * tw
+        self.pxh = len(l[1]) * th
  
     def get(self, pos=None, px=None):
         ''' Return Tile at tile pos=(x,y) or pixel px=(x,y).
@@ -61,7 +61,6 @@ class Map(MapBase):
             return None
 
 class TileBase(object):
-    __slots__ = 'map x y w h meta image'.split()
     def __init__(self, map, x, y, meta, image):
         self.map = map
         self.w, self.h = map.tw, map.th
@@ -69,14 +68,22 @@ class TileBase(object):
         self.meta = meta
         self.image = image
 
+    def __repr__(self):
+        return '<%s object at 0x%x (%g, %g) meta=%r image=%r>'%(
+            self.__class__.__name__, id(self), self.x, self.y, self.meta,
+                self.image)
+
+class Tile(TileBase):
+    __slots__ = 'map x y w h meta image'.split()
+
     # ro, side in pixels, y extent
     def get_top(self):
-        return self.y * self.h
+        return (self.y + 1) * self.h
     top = property(get_top)
 
     # ro, side in pixels, y extent
     def get_bottom(self):
-        return (self.y + 1) * self.h
+        return self.y * self.h
     bottom = property(get_bottom)
 
     # ro, in pixels, (x, y)
@@ -93,14 +100,6 @@ class TileBase(object):
     def get_midbottom(self):
         return (self.x * self.w + self.w/2, (self.y + 1) * self.h)
     midbottom = property(get_midbottom)
-
-    def __repr__(self):
-        return '<%s object at 0x%x (%g, %g) meta=%r image=%r>'%(
-            self.__class__.__name__, id(self), self.x, self.y, self.meta,
-                self.image)
-
-class Tile(TileBase):
-    __slots__ = 'map x y w h meta image'.split()
 
     # ro, side in pixels, x extent
     def get_left(self):
@@ -195,10 +194,12 @@ class HexMap(MapBase):
 
         # now figure map dimensions
         l = meta or images
-        self.pxw = (len(l) * 3 - 1) * self.edge_length
-        h = len(l[1])
-        if h % 2: self.pxh = h * th
-        else: self.pxh = h * th + th/2
+        w = len(l); h = len(l[0])
+        if h > 1:
+            self.pxw = HexTile(self, w-1, 1, None, None).right[0]
+        else:
+            self.pxw = HexTile(self, w-1, 0, None, None).right[0]
+        self.pxh = HexTile(self, w-1, h-1, None, None).top
  
     def get(self, pos=None, px=None):
         ''' Return Tile at tile pos=(x,y) or pixel px=(x,y).
@@ -223,65 +224,110 @@ class HexMap(MapBase):
         except IndexError:
             return None
  
+# Note that we always add below (not subtract) so that we can try to
+# avoid accumulation errors due to rounding ints. We do this so
+# we can each point at the same position as a neighbor's corresponding
+# point.
 class HexTile(TileBase):
     __slots__ = 'map x y w h meta image'.split()
 
+    def get_origin(self):
+        x = self.x * (self.w + self.w / 2)
+        y = (self.y / 2) * self.h
+        if self.y % 2:
+            y += self.h / 2
+            x += self.w / 2 + self.w / 4
+        return (x, y)
+
+    # ro, side in pixels, y extent
+    def get_top(self):
+        y = self.get_origin()[1]
+        return y + self.h
+    top = property(get_top)
+
+    # ro, side in pixels, y extent
+    def get_bottom(self):
+        return self.get_origin()[1]
+    bottom = property(get_bottom)
+
+    # ro, in pixels, (x, y)
+    def get_center(self):
+        x, y = self.get_origin()
+        return (x + self.w / 2, y + self.h / 2)
+    center = property(get_center)
+
+    # ro, mid-point in pixels, (x, y)
+    def get_midtop(self):
+        x, y = self.get_origin()
+        return (x + self.w/2, y + self.h)
+    midtop = property(get_midtop)
+
+    # ro, mid-point in pixels, (x, y)
+    def get_midbottom(self):
+        x, y = self.get_origin()
+        return (x + self.w/2, y)
+    midbottom = property(get_midbottom)
+
     # ro, side in pixels, x extent
     def get_left(self):
-        return (self.x * self.w, self.y * self.h + self.h/2)
+        x, y = self.get_origin()
+        return (x, y + self.h/2)
     left = property(get_left)
 
     # ro, side in pixels, x extent
     def get_right(self):
-        return ((self.x + 1) * self.w, self.y * self.h + self.h/2)
+        x, y = self.get_origin()
+        return (x + self.w, y + self.h/2)
     right = property(get_right)
 
     # ro, corner in pixels, (x, y)
     def get_topleft(self):
-        return (self.x * self.w + self.map.edge_length/2,
-            self.y * self.h)
+        x, y = self.get_origin()
+        return (x + self.w / 4, y + self.h)
     topleft = property(get_topleft)
 
     # ro, corner in pixels, (x, y)
     def get_topright(self):
-        return ((self.x + 1) * self.w - self.map.edge_length/2,
-            self.y * self.h)
+        x, y = self.get_origin()
+        return (x + self.w/2 + self.w / 4, y + self.h)
     topright = property(get_topright)
 
     # ro, corner in pixels, (x, y)
     def get_bottomleft(self):
-        return (self.x * self.w + self.map.edge_length/2,
-            (self.y + 1) * self.h)
+        x, y = self.get_origin()
+        return (x + self.w / 4, y)
     bottomleft = property(get_bottomleft)
 
     # ro, corner in pixels, (x, y)
     def get_bottomright(self):
-        return ((self.x + 1) * self.w - self.map.edge_length/2,
-            (self.y + 1) * self.h)
+        x, y = self.get_origin()
+        return (x + self.w/2 + self.w / 4, y)
     bottomright = property(get_bottomright)
 
     # ro, middle of side in pixels, (x, y)
     def get_midtopleft(self):
-        return (self.x * self.w + self.map.edge_length/4,
-            self.y * self.h + self.h/4)
+        x, y = self.get_origin()
+        return (x + self.w / 8, y + self.h/2 + self.h/4)
     midtopleft = property(get_midtopleft)
 
     # ro, middle of side in pixels, (x, y)
     def get_midtopright(self):
-        return ((self.x + 1) * self.w - self.map.edge_length/4,
-            self.y * self.h + self.h/4)
+        x, y = self.get_origin()
+        return (x + self.w / 2 + self.w / 4 + self.w / 8,
+            y + self.h/2 + self.h/4)
     midtopright = property(get_midtopright)
 
     # ro, middle of side in pixels, (x, y)
     def get_midbottomleft(self):
-        return (self.x * self.w + self.map.edge_length/4,
-            (self.y + 1) * self.h - self.h/4)
+        x, y = self.get_origin()
+        return (x + self.w / 8, y + self.h/4)
     midbottomleft = property(get_midbottomleft)
 
     # ro, middle of side in pixels, (x, y)
     def get_midbottomright(self):
-        return ((self.x + 1) * self.w - self.map.edge_length/4,
-            (self.y + 1) * self.h - self.h/4)
+        x, y = self.get_origin()
+        return (x + self.w / 2 + self.w / 4 + self.w / 8,
+            y + self.h/4)
     midbottomright = property(get_midbottomright)
 
     UP = 'up'
@@ -358,10 +404,10 @@ if __name__ == '__main__':
 
     # test tile sides / corners
     t = m.get((0,0))
-    assert t.top == 0
+    assert t.top == 16
+    assert t.bottom == 0
     assert t.left == 0
     assert t.right == 10
-    assert t.bottom == 16
     assert t.topleft == (0, 0)
     assert t.topright == (10, 0)
     assert t.bottomleft == (0, 16)
@@ -428,20 +474,45 @@ if __name__ == '__main__':
     assert t.get_neighbor(t.UP_RIGHT) is None
 
     # test tile sides / corners
-    t = m.get((1,1))
-    assert t.top == 32
-    assert t.left == (36, 48)
-    assert t.right == (72, 48)
-    assert t.bottom == 64
-    assert t.center == (54, 48)
-    assert t.topleft == (45, 32)
-    assert t.topright == (63, 32)
-    assert t.bottomleft == (45, 64)
-    assert t.bottomright == (63, 64)
-    assert t.midtop == (54, 32)
-    assert t.midbottom == (54, 64)
-    assert t.midtopleft == (40, 40)
-    assert t.midtopright == (68, 40)
-    assert t.midbottomleft == (40, 56)
-    assert t.midbottomright == (68, 56)
+    t00 = m.get((0, 0))
+    assert t00.top == 32
+    assert t00.bottom == 0
+    assert t00.left == (0, 16)
+    assert t00.right == (36, 16)
+    assert t00.center == (18, 16)
+    assert t00.topleft == (9, 32)
+    assert t00.topright == (27, 32)
+    assert t00.bottomleft == (9, 0)
+    assert t00.bottomright == (27, 0)
+    assert t00.midtop == (18, 32)
+    assert t00.midbottom == (18, 0)
+    assert t00.midtopleft == (4, 24)
+    assert t00.midtopright == (31, 24)
+    assert t00.midbottomleft == (4, 8)
+    assert t00.midbottomright == (31, 8)
 
+    t01 = m.get((0, 1))
+    assert t01.top == 48
+    assert t01.bottom == 16
+    assert t01.left == t00.topright
+    assert t01.right == (63, 32)
+    assert t01.center == (45, 32)
+    assert t01.topleft == (36, 48)
+    assert t01.topright == (54, 48)
+    assert t01.bottomleft == t00.right
+    assert t01.bottomright == (54, 16)
+    assert t01.midtop == (45, 48)
+    assert t01.midbottom == (45, 16)
+    assert t01.midtopleft == (31, 40)
+    assert t01.midtopright == (58, 40)
+    assert t01.midbottomleft == t00.midtopright
+    assert t01.midbottomright == (58, 24)
+
+    t = m.get((1, 0))
+    assert t.top == 32
+    assert t.bottom == 0
+    assert t.left == t01.bottomright
+    assert t.right == (90, 16)
+    assert t.center == (72, 16)
+    assert t.topleft == t01.right
+    assert t.midtopleft == t01.midbottomright
