@@ -141,11 +141,20 @@ console
     TBD:
      - move to pyglet.gui
 
-sprite
+scene2d
+    :description: 2D scenes with tile maps and sprites.
+    :implementation:
+        ============================== =======
+        Component                      GENERIC
+        ============================== =======
+        MAP_STRUCTURE                     X
+        RECT_FLAT_DEBUG                   X
+        HEX_FLAT_DEBUG                    X
+        ============================== =======
+
     TBD:
      - OBB or AABB collision before occlusion query
      - animated sprites, or animated textures
-     - according to DESIGN, this should be in scene2d
 
 model
     :description: Abstract interface for 3D modelling.
