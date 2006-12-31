@@ -17,7 +17,7 @@ class RenderBase(unittest.TestCase):
     def run_test(self, m):
         w = pyglet.window.Window(width=m.pxw, height=m.pxh)
         s = pyglet.scene2d.Scene(maps=[m])
-        r = pyglet.scene2d.FlatRenderer(s, 0, 0, m.pxw, m.pxh)
+        r = pyglet.scene2d.FlatView(s, 0, 0, m.pxw, m.pxh)
 
         class running(pyglet.window.event.ExitHandler):
             def __init__(self, fps=5):

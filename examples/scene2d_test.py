@@ -41,7 +41,7 @@ except getopt.GetoptError, error:
 klass = None
 size = (5, 5)
 style = 'lines'
-renderer = pyglet.scene2d.FlatRenderer
+renderer = pyglet.scene2d.FlatView
 filename = { 's': 'lines', 'r': 'flat' }
 for opt, value in optlist:
     if opt == '-x':
@@ -62,18 +62,18 @@ for opt, value in optlist:
         size = map(int, value.split(','))
         filename['e'] = '%dx%d'%tuple(size)
     elif opt == '-f':
-        renderer = pyglet.scene2d.FlatRenderer
+        renderer = pyglet.scene2d.FlatView
         filename['r'] = 'flat'
     elif opt == '-o':
-        renderer = pyglet.scene2d.AxiometricRenderer
+        renderer = pyglet.scene2d.AxiometricView
         scale = (1, 1, 1)
         filename['r'] = 'iso'
     elif opt == '-a':
-        renderer = pyglet.scene2d.AxiometricRenderer
+        renderer = pyglet.scene2d.AxiometricView
         scale = map(float, value.split(','))
         filename['r'] = 'axio(%g,%g,%g)'%scale
     elif opt == '-p':
-        renderer = pyglet.scene2d.PerspectiveRenderer
+        renderer = pyglet.scene2d.PerspectiveView
         eye = map(int, value.split(','))
         filename['r'] = 'persp(%g,%g,%g)'%eye
     elif opt == '-h':
@@ -97,7 +97,7 @@ kw = dict(images=[[d]*mh]*mw)
 m = klass(*args, **kw)
 w = pyglet.window.Window(width=m.pxw, height=m.pxh)
 s = pyglet.scene2d.Scene(maps=[m])
-r = pyglet.scene2d.FlatRenderer(s, 0, 0, m.pxw, m.pxh)
+r = pyglet.scene2d.FlatView(s, 0, 0, m.pxw, m.pxh)
 
 class running(pyglet.window.event.ExitHandler):
     def __init__(self, fps=5):
