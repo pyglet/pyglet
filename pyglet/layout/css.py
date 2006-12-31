@@ -43,6 +43,7 @@ class SelectableElement(object):
     id = None                   # str
     classes = None              # list of str
     name = None                 # str
+    style = None                # str
 
     # Debug methods only
     def short_repr(self):
@@ -137,6 +138,13 @@ class Stylesheet(object):
         declarations = []
         for rule in matches:
             declarations += rule.declarations
+
+        # Parse and add declarations from element style
+        if elem.style:
+            scanner = Scanner(lexicon, StringIO(elem.style))
+            parser = Parser(scanner)
+            declarations += parser.declaration_list()
+
         return declarations
 
     def matches(self, rule, elem):

@@ -432,7 +432,11 @@ class Box(object):
     # -----
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.__dict__)
+        d = self.__dict__.copy()
+        d['children'] = self.children and len(self.children)
+        if 'parent' in d:
+            del d['parent']
+        return '%s(%r)' % (self.__class__.__name__, d)
 
     # CSS 2.1 properties
     # ------------------

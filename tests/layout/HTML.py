@@ -29,7 +29,7 @@ class HTMLTest(base_layout.LayoutTestBase):
         <p>This is <strong>strong</strong> and <em>emphasised</em> text.</p> 
         <p>This paragraph <b>has <i>mismatched</b> end</i> tags (any
           behaviour that doesn't crash is acceptable.</p>
-        <HR/>
+        <HR>
         <p>There is an &lt;HR&gt; before this paragraph.</p>
         <p><font face="Courier New" size=7 color=blue>
           This has an HTML font tag, setting the face to courier, the size

@@ -64,15 +64,6 @@ def apply_inherited_style(box):
         if attr in d:
             setattr(box, attr, d[attr])
 
-def apply_style_string(style, box, render_device):
-    '''Apply the given style string (for example, the 'style' attribute from
-    XHTML) to the given box.
-    '''
-    scanner = Scanner(lexicon, StringIO(style))
-    parser = Parser(scanner)
-    declarations = parser.declaration_list()
-    apply_style_declarations(declarations, box, render_device)
-
 def apply_stylesheet(stylesheet, elem, box, render_device):
     '''Apply the given Stylesheet object to the given box.
 
