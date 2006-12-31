@@ -91,11 +91,12 @@ class FlatRenderer:
                             image.draw()
                             glPopMatrix()
                         elif style == 'checkered':
-                            if n % 3 == 0:
+                            if not m % 2:  n = n + 1
+                            if n%3 == 0:
                                 glColor4f(.7, .7, .7, 1)
-                            if n % 3 == 1:
+                            if n%3 == 1:
                                 glColor4f(.9, .9, .9, 1)
-                            elif n % 3 == 2:
+                            elif n%3 == 2:
                                 glColor4f(1, 1, 1, 1)
                             glBegin(GL_POLYGON)
                             glVertex2f(*tile.topleft)

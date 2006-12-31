@@ -169,13 +169,12 @@ class HexMap(MapBase):
 
     Hexmaps store their tiles in an offset array, column-major with y
     increasing up, such that a map:
-        /f\_/g\_/h\
-        \_/d\_/e\_/
-        /a\_/b\_/c\
-        \_/ \_/ \_/
-    has tiles = [['a', 'd', 'f'], ['b', 'e', 'g'], ['c', None, 'h']]
-
-    BTW, hex interior angle = 120 degrees.
+          /d\ /h\
+        /b\_/f\_/
+        \_/c\_/g\
+        /a\_/e\_/
+        \_/ \_/ 
+    has tiles = [['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h']]
     '''
     __slots__ = 'tw th edge_length left right pxw pxh x y z meta images'.split()
     def __init__(self, th, origin=(0, 0, 0), meta=None, images=None):
@@ -195,11 +194,11 @@ class HexMap(MapBase):
         # now figure map dimensions
         l = meta or images
         w = len(l); h = len(l[0])
-        if h > 1:
-            self.pxw = HexTile(self, w-1, 1, None, None).right[0]
+        self.pxw = HexTile(self, w-1, 0, None, None).right[0]
+        if w > 1:
+            self.pxh = HexTile(self, 1, h-1, None, None).top
         else:
-            self.pxw = HexTile(self, w-1, 0, None, None).right[0]
-        self.pxh = HexTile(self, w-1, h-1, None, None).top
+            self.pxh = HexTile(self, 0, h-1, None, None).top
  
     def get(self, pos=None, px=None):
         ''' Return Tile at tile pos=(x,y) or pixel px=(x,y).
@@ -232,11 +231,10 @@ class HexTile(TileBase):
     __slots__ = 'map x y w h meta image'.split()
 
     def get_origin(self):
-        x = self.x * (self.w + self.w / 2)
-        y = (self.y / 2) * self.h
-        if self.y % 2:
+        x = self.x * (self.w / 2 + self.w / 4)
+        y = self.y * self.h
+        if self.x % 2:
             y += self.h / 2
-            x += self.w / 2 + self.w / 4
         return (x, y)
 
     # ro, side in pixels, y extent
@@ -343,24 +341,32 @@ class HexTile(TileBase):
 
         Return None if out of bounds.
         '''
-        dx = dy = 0
         if direction is self.UP:
-            dy = 2
+            return self.map.get((self.x, self.y + 1))
         elif direction is self.DOWN:
-            dy = -2
+            return self.map.get((self.x, self.y - 1))
         elif direction is self.UP_LEFT:
-            dy = 1
-            if not self.y % 2: dx = -1
+            if self.x % 2:
+                return self.map.get((self.x - 1, self.y + 1))
+            else:
+                return self.map.get((self.x - 1, self.y))
         elif direction is self.UP_RIGHT:
-            dy = 1
-            if self.y % 2: dx = 1
+            if self.x % 2:
+                return self.map.get((self.x + 1, self.y + 1))
+            else:
+                return self.map.get((self.x + 1, self.y))
         elif direction is self.DOWN_LEFT:
-            dy = -1
-            if not self.y % 2: dx = -1
+            if self.x % 2:
+                return self.map.get((self.x - 1, self.y))
+            else:
+                return self.map.get((self.x - 1, self.y - 1))
         elif direction is self.DOWN_RIGHT:
-            dy = -1
-            if self.y % 2: dx = 1
-        return self.map.get((self.x + dx, self.y + dy))
+            if self.x % 2:
+                return self.map.get((self.x + 1, self.y))
+            else:
+                return self.map.get((self.x + 1, self.y - 1))
+        else:
+            raise ValueError, 'Unknown direction %r'%direction
 
 
 if __name__ == '__main__':
@@ -418,57 +424,58 @@ if __name__ == '__main__':
     assert t.midbottom == (5, 16)
 
     # test hexagonal tile map
-    #   /f\_/g\_/h\
-    #   \_/d\_/e\_/
-    #   /a\_/b\_/c\
-    #   \_/ \_/ \_/
-    m = HexMap(32, meta=[['a', 'd', 'f'], ['b', 'e', 'g'], ['c', None, 'h']])
+    # tiles = [['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h']]
+    #   /d\ /h\
+    # /b\_/f\_/
+    # \_/c\_/g\
+    # /a\_/e\_/
+    # \_/ \_/ 
+    m = HexMap(32, meta=[['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h']])
     t = m.get((0,0))
     assert (t.x, t.y) == (0, 0) and t.meta == 'a'
     assert t.get_neighbor(t.DOWN) is None
-    assert t.get_neighbor(t.UP).meta == 'f'
+    assert t.get_neighbor(t.UP).meta == 'b'
     assert t.get_neighbor(t.DOWN_LEFT) is None
     assert t.get_neighbor(t.DOWN_RIGHT) is None
     assert t.get_neighbor(t.UP_LEFT) is None
-    assert t.get_neighbor(t.UP_RIGHT).meta == 'd'
+    assert t.get_neighbor(t.UP_RIGHT).meta == 'c'
     t = t.get_neighbor(t.UP)
-    assert (t.x, t.y) == (0, 2) and t.meta == 'f'
+    assert (t.x, t.y) == (0, 1) and t.meta == 'b'
     assert t.get_neighbor(t.DOWN).meta == 'a'
     assert t.get_neighbor(t.UP) is None
     assert t.get_neighbor(t.DOWN_LEFT) is None
-    assert t.get_neighbor(t.DOWN_RIGHT).meta == 'd'
+    assert t.get_neighbor(t.DOWN_RIGHT).meta == 'c'
     assert t.get_neighbor(t.UP_LEFT) is None
-    assert t.get_neighbor(t.UP_RIGHT) is None
+    assert t.get_neighbor(t.UP_RIGHT).meta == 'd'
     t = t.get_neighbor(t.DOWN_RIGHT)
-    assert (t.x, t.y) == (0, 1) and t.meta == 'd'
+    assert (t.x, t.y) == (1, 0) and t.meta == 'c'
     assert t.get_neighbor(t.DOWN) is None
-    assert t.get_neighbor(t.UP) is None
+    assert t.get_neighbor(t.UP).meta == 'd'
     assert t.get_neighbor(t.DOWN_LEFT).meta == 'a'
-    assert t.get_neighbor(t.DOWN_RIGHT).meta == 'b'
-    assert t.get_neighbor(t.UP_LEFT).meta == 'f'
-    assert t.get_neighbor(t.UP_RIGHT).meta == 'g'
-    t = t.get_neighbor(t.UP_RIGHT)
-    assert (t.x, t.y) == (1, 2) and t.meta == 'g'
-    assert t.get_neighbor(t.DOWN).meta == 'b'
-    assert t.get_neighbor(t.UP) is None
-    assert t.get_neighbor(t.DOWN_LEFT).meta == 'd'
     assert t.get_neighbor(t.DOWN_RIGHT).meta == 'e'
-    assert t.get_neighbor(t.UP_LEFT) is None
-    assert t.get_neighbor(t.UP_RIGHT) is None
+    assert t.get_neighbor(t.UP_LEFT).meta == 'b'
+    assert t.get_neighbor(t.UP_RIGHT).meta == 'f'
+    t = t.get_neighbor(t.UP_RIGHT)
+    assert (t.x, t.y) == (2, 1) and t.meta == 'f'
+    assert t.get_neighbor(t.DOWN).meta == 'e'
+    assert t.get_neighbor(t.UP) is None
+    assert t.get_neighbor(t.DOWN_LEFT).meta == 'c'
+    assert t.get_neighbor(t.DOWN_RIGHT).meta == 'g'
+    assert t.get_neighbor(t.UP_LEFT).meta == 'd'
+    assert t.get_neighbor(t.UP_RIGHT).meta == 'h'
     t = t.get_neighbor(t.DOWN_RIGHT)
-    t = t.get_neighbor(t.DOWN_RIGHT)
-    assert (t.x, t.y) == (2, 0) and t.meta == 'c'
+    assert (t.x, t.y) == (3, 0) and t.meta == 'g'
     assert t.get_neighbor(t.DOWN) is None
     assert t.get_neighbor(t.UP).meta == 'h'
-    assert t.get_neighbor(t.DOWN_LEFT) is None
+    assert t.get_neighbor(t.DOWN_LEFT).meta == 'e'
     assert t.get_neighbor(t.DOWN_RIGHT) is None
-    assert t.get_neighbor(t.UP_LEFT).meta == 'e'
+    assert t.get_neighbor(t.UP_LEFT).meta == 'f'
     assert t.get_neighbor(t.UP_RIGHT) is None
     t = t.get_neighbor(t.UP)
-    assert (t.x, t.y) == (2, 2) and t.meta == 'h'
-    assert t.get_neighbor(t.DOWN).meta == 'c'
+    assert (t.x, t.y) == (3, 1) and t.meta == 'h'
+    assert t.get_neighbor(t.DOWN).meta == 'g'
     assert t.get_neighbor(t.UP) is None
-    assert t.get_neighbor(t.DOWN_LEFT).meta == 'e'
+    assert t.get_neighbor(t.DOWN_LEFT).meta == 'f'
     assert t.get_neighbor(t.DOWN_RIGHT) is None
     assert t.get_neighbor(t.UP_LEFT) is None
     assert t.get_neighbor(t.UP_RIGHT) is None
@@ -491,28 +498,29 @@ if __name__ == '__main__':
     assert t00.midbottomleft == (4, 8)
     assert t00.midbottomright == (31, 8)
 
-    t01 = m.get((0, 1))
-    assert t01.top == 48
-    assert t01.bottom == 16
-    assert t01.left == t00.topright
-    assert t01.right == (63, 32)
-    assert t01.center == (45, 32)
-    assert t01.topleft == (36, 48)
-    assert t01.topright == (54, 48)
-    assert t01.bottomleft == t00.right
-    assert t01.bottomright == (54, 16)
-    assert t01.midtop == (45, 48)
-    assert t01.midbottom == (45, 16)
-    assert t01.midtopleft == (31, 40)
-    assert t01.midtopright == (58, 40)
-    assert t01.midbottomleft == t00.midtopright
-    assert t01.midbottomright == (58, 24)
+    t10 = m.get((1, 0))
+    assert t10.top == 48
+    assert t10.bottom == 16
+    assert t10.left == t00.topright
+    assert t10.right == (63, 32)
+    assert t10.center == (45, 32)
+    assert t10.topleft == (36, 48)
+    assert t10.topright == (54, 48)
+    assert t10.bottomleft == t00.right
+    assert t10.bottomright == (54, 16)
+    assert t10.midtop == (45, 48)
+    assert t10.midbottom == (45, 16)
+    assert t10.midtopleft == (31, 40)
+    assert t10.midtopright == (58, 40)
+    assert t10.midbottomleft == t00.midtopright
+    assert t10.midbottomright == (58, 24)
 
-    t = m.get((1, 0))
+    t = m.get((2, 0))
     assert t.top == 32
     assert t.bottom == 0
-    assert t.left == t01.bottomright
+    assert t.left == t10.bottomright
     assert t.right == (90, 16)
     assert t.center == (72, 16)
-    assert t.topleft == t01.right
-    assert t.midtopleft == t01.midbottomright
+    assert t.topleft == t10.right
+    assert t.midtopleft == t10.midbottomright
+

@@ -12,11 +12,11 @@
  -h             this help
 
 Samples:
---hex=32
-      draw a hex grid, cell height 32
---rect=32
+-x=32 -s5,15 -c
+      draw a hex grid, cell height 32, checkerboarded
+-x=32
       draw a rect grid, width and height 32
---rect=16,32 --size=10,10
+-r=16,32 -s=10,10
       draw a 10x10 rect grid, width and height 32
 
 Press "s" to save the grid off a file. 
@@ -28,7 +28,6 @@ from pyglet.GL.VERSION_1_1 import *
 import pyglet.scene2d
 import pyglet.window
 import pyglet.window.event
-import pyglet.text
 import pyglet.clock
 import pyglet.image
 
@@ -89,21 +88,14 @@ if klass is None:
     print __doc__%sys.argv[0]
     sys.exit()
 
+class DummyImage:
+    def draw(self):
+        pass
+d = DummyImage()
 mw, mh = size
-kw = dict(images=[[None]*mh]*mw)
+kw = dict(images=[[d]*mh]*mw)
 m = klass(*args, **kw)
-
 w = pyglet.window.Window(width=m.pxw, height=m.pxh)
-
-f = pyglet.text.Font('Bitstream Vera Sans Mono', 26)
-r = f.render
-
-mw, mh = size
-kw = dict(images=[
-    [r(chr(65 + i + mw * j)) for i in range(mh)]
-        for j in range(mw)])
-m = klass(*args, **kw)
-
 s = pyglet.scene2d.Scene(maps=[m])
 r = pyglet.scene2d.FlatRenderer(s, 0, 0, m.pxw, m.pxh)
 
