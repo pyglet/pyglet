@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''Testing map structures.
+'''Testing the map model.
 
 This test should just run without failing.
 '''
@@ -12,7 +12,7 @@ import unittest
 
 from pyglet.scene2d import Map, HexMap
 
-class MapStructureTest(unittest.TestCase):
+class MapModelTest(unittest.TestCase):
 
     def test_rect_neighbor(self):
         # test rectangular tile map
