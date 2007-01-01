@@ -148,12 +148,12 @@ scene2d
         Component                      GENERIC
         ============================== =======
         MAP_STRUCTURE                     X
-        MAP_LOAD                          
+        MAP_LOAD                           
+        MAP_SAVE                           
         RECT_FLAT_DEBUG                   X
         HEX_FLAT_DEBUG                    X
-        FLAT_OOB                           
-        RECT_FLAT_SCROLLING                
-        HEX_FLAT_SCROLLING                 
+        FLAT_SCROLLING                    X
+        FLAT_OOB                          X
         RECT_FLAT_PICKING                  
         HEX_FLAT_PICKING                   
         ============================== =======

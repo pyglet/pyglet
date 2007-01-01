@@ -47,21 +47,66 @@ class FlatView:
                            False then the map will not scroll to attempt
                            to display oob tiles.
         scale, rotation -- scale to apply to the map (rotation in degrees)
-        focus           -- pixel point to center in the viewport, subject
+        fx, fy          -- pixel point to center in the viewport, subject
                            to OOB checks
     '''
     def __init__(self, scene, x, y, w, h, allow_oob=True, scale=1,
-            rotation=0, focus=(0, 0)):
+            rotation=0, fx=0, fy=0):
         self.scene = scene
         self.x, self.y = x, y
         self.w, self.h = w, h
         self.allow_oob = allow_oob
         self.scale = scale
         self.rotation = rotation
-        self.focus = focus
+        self.fx, self.fy = fx, fy
 
     def get(self, x, y):
         ''' Pick whatever is on the top at the position x, y. '''
+        raise NotImplemented()
+
+    def _determine_focus(self):
+        '''Determine the focal point of the view based on foxus (fx, fy),
+        allow_oob and maps.
+
+        Note that this method does not actually change the focus attributes
+        fx and fy.
+        '''
+        if not self.scene.maps or self.allow_oob: return (self.fx, self.fy)
+
+        # figure the bounds min/max
+        map = self.scene.maps[0]
+        b_min_x = map.x
+        b_min_y = map.y
+        b_max_x = map.x + map.pxw
+        b_max_y = map.y + map.pxh
+        for map in self.scene.maps[1:]:
+            b_min_x = min(b_min_x, map.x)
+            b_min_y = min(b_min_y, map.y)
+            b_max_x = min(b_max_x, map.x + map.pxw)
+            b_max_y = min(b_max_y, map.y + map.pxh)
+
+        # figure the view min/max based on focus
+        w2 = self.w/2
+        h2 = self.h/2
+        fx, fy = self.fx, self.fy
+        v_min_x = fx - w2
+        v_min_y = fy - w2
+        x_moved = y_moved = False
+        if v_min_x < b_min_x:
+            fx += b_min_x - v_min_x
+            x_moved = True
+        if v_min_y < b_min_y:
+            fy += b_min_y - v_min_y
+            y_moved = True
+
+        v_max_x = fx + w2
+        v_max_y = fy + w2
+        if not x_moved and v_max_x > b_max_x:
+            fx -= v_max_x - b_max_x
+        if not y_moved and v_max_y > b_max_y:
+            fy -= v_max_y - b_max_y
+
+        return fx, fy
 
     def draw(self):
         '''Draw the scene centered (or closest, depending on allow_oob)
@@ -76,25 +121,34 @@ class FlatView:
         # sort by depth
         self.scene.maps.sort(key=operator.attrgetter('z'))
 
+        # determine the focus point
+        fx, fy = self._determine_focus()
+
         # now draw
+        glPushMatrix()
+        glTranslatef(self.w/2-fx, self.h/2-fy, 0)
         for map in self.scene.maps:
             glPushMatrix()
             glTranslatef(map.x, map.y, map.z)
-            for column in images:
-                glPushMatrix()
-                for image in column:
-                    image.draw()
-                    glTranslatef(0, map.th, 0)
-                glPopMatrix()
-                glTranslatef(map.tw, 0, 0)
+            if hasattr(map, 'edge_length'):
+                raise NotImplemented()
+            else:
+                for column in images:
+                    glPushMatrix()
+                    for image in column:
+                        image.draw()
+                        glTranslatef(0, map.th, 0)
+                    glPopMatrix()
+                    glTranslatef(map.tw, 0, 0)
             glPopMatrix()
+        glPopMatrix()
 
         glMatrixMode(GL_PROJECTION)
         glPopMatrix()
 
     CHECKERED = 'checkered'
     LINES = 'lines'
-    def debug(self, style=CHECKERED):
+    def debug(self, style=CHECKERED, show_focus=False):
         '''Draw the scene centered (or closest, depending on allow_oob)
         on position which is (x, y). '''
         glMatrixMode(GL_PROJECTION)
@@ -107,7 +161,12 @@ class FlatView:
         # sort by depth
         self.scene.maps.sort(key=operator.attrgetter('z'))
 
+        # determine the focus point
+        fx, fy = self._determine_focus()
+
         # now draw
+        glPushMatrix()
+        glTranslatef(self.w/2-fx, self.h/2-fy, 0)
         for map in self.scene.maps:
             glPushMatrix()
             glTranslatef(map.x, map.y, map.z)
@@ -182,7 +241,15 @@ class FlatView:
                                 glEnd()
                         else:
                             raise ValueError, "style not 'lines' or 'checkered'"
+
+            if show_focus:
+                glColor4f(1, 0, 0, 1)
+                glPointSize(5)
+                glBegin(GL_POINTS)
+                glVertex3f(self.fx, self.fy, 10)
+                glEnd()
             glPopMatrix()
+        glPopMatrix()
 
         glMatrixMode(GL_PROJECTION)
         glPopMatrix()
