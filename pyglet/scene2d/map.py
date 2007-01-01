@@ -1,6 +1,60 @@
+#!/usr/bin/env python
+
+'''
+Model code for managing rectangular and hexagonal maps
+======================================================
+
+This module provides classes for managing rectangular and hexagonal maps.
+
+---------------
+Getting Started
+---------------
+
+You may create a map interactively and query it:
+
+    >>> from pyglet.scene2d import *
+    >>> m = Map(32, 32, meta=[['a', 'd'], ['b', 'e'], ['c', 'f']])
+    >>> m.get((0,0))
+    <Tile object at 0x-4828d82c (0, 0) meta='a' image=None>
+    >>> _.get_neighbor(_.RIGHT)
+    <Tile object at 0x-483c80bc (1, 0) meta='b' image=None>
+    >>> _.get_neighbor(_.UP)
+    <Tile object at 0x-4828d82c (1, 1) meta='e' image=None>
+    >>> print _.get_neighbor(_.UP)
+    None
+
+Similarly:
+
+    >>> m = HexMap(32, meta=[['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h']])
+    >>> m.get((0,0))
+    <HexTile object at 0x-482f682c (0, 0) meta='a' image=None>
+    >>> _.get_neighbor(_.UP)
+    <HexTile object at 0x-484310bc (0, 1) meta='b' image=None>
+    >>> _.get_neighbor(_.DOWN_RIGHT)
+    <HexTile object at 0x-484310bc (2, 0) meta='e' image=None>
+    >>> print _.get_neighbor(_.DOWN)
+    None
+
+'''
+
+__docformat__ = 'restructuredtext'
+__version__ = '$Id$'
+
 import math
 
 class MapBase(object):
+    '''Base class for Maps.
+
+    Both rect and hex maps have the following attributes:
+
+        (w, h)     -- size of map in tiles
+        (pxw, pxh) -- size of map in pixels
+        (tw, th)   -- size of each tile in pixels
+        (x, y, z)  -- offset of map top left from origin in pixels
+        meta       -- array [x][y] of meta-data (arbitrary data allowed)
+        images     -- array [x][y] of objects with .draw() and
+                      optionally .animate(dt)
+    '''
 
     def get(self, pos=None, px=None):
         ''' Return Tile at tile pos=(x,y) or pixel px=(x,y).
@@ -8,15 +62,7 @@ class MapBase(object):
         raise NotImplemented()
 
 class Map(MapBase):
-    '''
-    Attributes:
-
-        (w, h)    -- size of map in tiles
-        (tw, th)  -- size of each tile in pixels
-        (x, y, z) -- offset of map top left from origin in pixels
-        meta      -- array [x][y] of dicts with meta-data
-        images    -- array [x][y] of objects with .draw() and
-                     optionally .animate(dt)
+    '''Rectangular map.
 
     Tiles are stored in column-major order with y increasing up,
     allowing [x][y] addressing:
@@ -61,6 +107,15 @@ class Map(MapBase):
             return None
 
 class TileBase(object):
+    '''Base class for tiles from rect and hex maps.
+
+    Common attributes:
+        map         -- Map instance this Tile came from
+        x, y        -- top-left coordinate
+        w, h        -- dimensions
+        meta        -- meta-data from the Map's meta
+        image       -- image from the Map's images
+    '''
     def __init__(self, map, x, y, meta, image):
         self.map = map
         self.w, self.h = map.tw, map.th
@@ -74,6 +129,23 @@ class TileBase(object):
                 self.image)
 
 class Tile(TileBase):
+    '''A rectangular tile from a Map.
+
+    Read-only attributes:
+        top         -- y extent
+        bottom      -- y extent
+        left        -- x extent
+        right       -- x extent
+        center      -- (x, y)
+        topleft     -- (x, y) of top-left corner
+        topright    -- (x, y) of top-right corner
+        bottomleft  -- (x, y) of bottom-left corner
+        bottomright -- (x, y) of bottom-right corner
+        midtop      -- (x, y) of middle of top side
+        midbottom   -- (x, y) of middle of bottom side
+        midleft     -- (x, y) of middle of left side
+        midright    -- (x, y) of middle of right side
+    '''
     __slots__ = 'map x y w h meta image'.split()
 
     # ro, side in pixels, y extent
@@ -141,31 +213,26 @@ class Tile(TileBase):
         return ((self.x + 1) * self.w, self.y * self.h + self.h/2)
     midright = property(get_midright)
  
-    UP = (0, -1)
-    DOWN = (0, 1)
+    UP = (0, 1)
+    DOWN = (0, -1)
     LEFT = (-1, 0)
     RIGHT = (1, 0)
     def get_neighbor(self, direction):
-        ''' Return my neighbor Tile in the given direction (dx, dy) which
-        could be one of self.UP, self.DOWN, self.LEFT or self.RIGHT.
+        '''Get my neighbor Tile in the given direction (dx, dy) which
+        is one of self.UP, self.DOWN, self.LEFT or self.RIGHT.
 
-        Return None if out of bounds.
+        Returns None if out of bounds.
         '''
         dx, dy = direction
         return self.map.get((self.x + dx, self.y + dy))
 
  
 class HexMap(MapBase):
-    '''
-    Attributes:
+    '''Map with flat-top, regular hexagonal cells.
 
-        (pxw, pxh)  -- size of map in pixels
-        tw, th      -- size of the hexagons in pixels
+    Additional attributes extending MapBase:
+
         edge_length -- length of an edge in pixels
-        (x, y, z)   -- offset of map top left from origin in pixels
-        meta        -- array [x][y] of dicts with meta-data
-        images      -- array [x][y] of objects with .draw() and
-                       optionally .animate(dt)
 
     Hexmaps store their tiles in an offset array, column-major with y
     increasing up, such that a map:
@@ -201,7 +268,8 @@ class HexMap(MapBase):
             self.pxh = HexTile(self, 0, h-1, None, None).top
  
     def get(self, pos=None, px=None):
-        ''' Return Tile at tile pos=(x,y) or pixel px=(x,y).
+        '''Get the Tile at tile pos=(x,y) or pixel px=(x,y).
+
         Return None if out of bounds.'''
         if pos is not None:
             x, y = pos
@@ -228,6 +296,25 @@ class HexMap(MapBase):
 # we can each point at the same position as a neighbor's corresponding
 # point.
 class HexTile(TileBase):
+    '''A flat-top, regular hexagon tile from a HexMap.
+
+    Read-only attributes:
+        top             -- y extent
+        bottom          -- y extent
+        left            -- (x, y) of left corner
+        right           -- (x, y) of right corner
+        center          -- (x, y)
+        topleft         -- (x, y) of top-left corner
+        topright        -- (x, y) of top-right corner
+        bottomleft      -- (x, y) of bottom-left corner
+        bottomright     -- (x, y) of bottom-right corner
+        midtop          -- (x, y) of middle of top side
+        midbottom       -- (x, y) of middle of bottom side
+        midtopleft      -- (x, y) of middle of left side
+        midtopright     -- (x, y) of middle of right side
+        midbottomleft   -- (x, y) of middle of left side
+        midbottomright  -- (x, y) of middle of right side
+    '''
     __slots__ = 'map x y w h meta image'.split()
 
     def get_origin(self):
@@ -335,7 +422,7 @@ class HexTile(TileBase):
     DOWN_LEFT = 'down left'
     DOWN_RIGHT = 'down right'
     def get_neighbor(self, direction):
-        ''' Return my neighbor HexTile in the given direction which
+        '''Get my neighbor HexTile in the given direction which
         is one of self.UP, self.DOWN, self.UP_LEFT, self.UP_RIGHT,
         self.DOWN_LEFT or self.DOWN_RIGHT.
 
@@ -367,3 +454,4 @@ class HexTile(TileBase):
                 return self.map.get((self.x + 1, self.y - 1))
         else:
             raise ValueError, 'Unknown direction %r'%direction
+

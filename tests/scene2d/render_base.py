@@ -26,7 +26,7 @@ class RenderBase(unittest.TestCase):
                 if self.exit: return False
                 self.clock.tick()
                 return True
-            lines = True
+            lines = False
             def on_text(self, text):
                 if text != 's': return pyglet.window.event.EVENT_UNHANDLED
                 self.lines = not self.lines
@@ -38,7 +38,7 @@ class RenderBase(unittest.TestCase):
             w.switch_to()
             w.dispatch_events()
             glClear(GL_COLOR_BUFFER_BIT)
-            r.debug((0,0), running.lines and 'lines' or 'checkered')
+            r.debug((0,0), running.lines and r.LINES or r.CHECKERED)
             w.flip()
         w.close()
 

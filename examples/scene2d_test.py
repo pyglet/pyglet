@@ -3,8 +3,8 @@
  -x h           draw a hex grid
  -r w[,h]       draw a rect grid
  -s w,h         map size in cells (default=5,5)
- -l             render with lines (default)
- -c             render with checkers (alternating light/dark grey)
+ -c             render with checkers (alternating light/dark grey) (default)
+ -l             render with lines
  -f             render flat (default)
  -o             render orthographic projection
  -a sx,sy,sz    render axiometric projection (scaled in x, y, z)
@@ -42,7 +42,7 @@ klass = None
 size = (5, 5)
 style = 'lines'
 renderer = pyglet.scene2d.FlatView
-filename = { 's': 'lines', 'r': 'flat' }
+filename = { 's': pyglet.scene2d.View.CHECKERED, 'r': 'flat' }
 for opt, value in optlist:
     if opt == '-x':
         klass = pyglet.scene2d.HexMap
@@ -55,9 +55,9 @@ for opt, value in optlist:
             args *= 2
         filename['x'] = 'rect(%dx%d)'%tuple(args)
     elif opt == '-l':
-        style = 'lines'
+        style = pyglet.scene2d.View.LINES
     elif opt == '-c':
-        style = 'checkered'
+        style = pyglet.scene2d.View.CHECKERED
     elif opt == '-s':
         size = map(int, value.split(','))
         filename['e'] = '%dx%d'%tuple(size)

@@ -24,32 +24,32 @@ class MapStructureTest(unittest.TestCase):
         m = Map(10, 16, meta=[['a', 'd'], ['b', 'e'], ['c', 'f']])
         t = m.get((0,0))
         assert (t.x, t.y) == (0, 0) and t.meta == 'a'
-        assert t.get_neighbor(t.UP) is None
-        assert t.get_neighbor(t.DOWN).meta == 'd'
+        assert t.get_neighbor(t.DOWN) is None
+        assert t.get_neighbor(t.UP).meta == 'd'
         assert t.get_neighbor(t.LEFT) is None
         assert t.get_neighbor(t.RIGHT).meta == 'b'
-        t = t.get_neighbor(t.DOWN)
+        t = t.get_neighbor(t.UP)
         assert (t.x, t.y) == (0, 1) and t.meta == 'd'
-        assert t.get_neighbor(t.UP).meta == 'a'
-        assert t.get_neighbor(t.DOWN) is None
+        assert t.get_neighbor(t.DOWN).meta == 'a'
+        assert t.get_neighbor(t.UP) is None
         assert t.get_neighbor(t.LEFT) is None
         assert t.get_neighbor(t.RIGHT).meta == 'e'
         t = t.get_neighbor(t.RIGHT)
         assert (t.x, t.y) == (1, 1) and t.meta == 'e'
-        assert t.get_neighbor(t.UP).meta == 'b'
-        assert t.get_neighbor(t.DOWN) is None
+        assert t.get_neighbor(t.DOWN).meta == 'b'
+        assert t.get_neighbor(t.UP) is None
         assert t.get_neighbor(t.RIGHT).meta == 'f'
         assert t.get_neighbor(t.LEFT).meta == 'd'
         t = t.get_neighbor(t.RIGHT)
         assert (t.x, t.y) == (2, 1) and t.meta == 'f'
-        assert t.get_neighbor(t.UP).meta == 'c'
-        assert t.get_neighbor(t.DOWN) is None
+        assert t.get_neighbor(t.DOWN).meta == 'c'
+        assert t.get_neighbor(t.UP) is None
         assert t.get_neighbor(t.RIGHT) is None
         assert t.get_neighbor(t.LEFT).meta == 'e'
-        t = t.get_neighbor(t.UP)
+        t = t.get_neighbor(t.DOWN)
         assert (t.x, t.y) == (2, 0) and t.meta == 'c'
-        assert t.get_neighbor(t.UP) is None
-        assert t.get_neighbor(t.DOWN).meta == 'f'
+        assert t.get_neighbor(t.DOWN) is None
+        assert t.get_neighbor(t.UP).meta == 'f'
         assert t.get_neighbor(t.RIGHT) is None
         assert t.get_neighbor(t.LEFT).meta == 'b'
 
