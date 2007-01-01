@@ -147,9 +147,11 @@ scene2d
         ============================== =======
         Component                      GENERIC
         ============================== =======
-        MAP_STRUCTURE                     X
+        MAP_MODEL                         X
         MAP_LOAD                           
         MAP_SAVE                           
+        SPRITE_MODEL                       
+        FLAT_SPRITE                        
         RECT_FLAT_DEBUG                   X
         HEX_FLAT_DEBUG                    X
         FLAT_SCROLLING                    X

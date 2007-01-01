@@ -25,7 +25,7 @@ You may create a map interactively and query it:
 
 Similarly:
 
-    >>> m = HexMap(32, meta=[['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h']])
+    >>> m = HexMap(32, meta=[['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'height']])
     >>> m.get((0,0))
     <HexTile object at 0x-482f682c (0, 0) meta='a' image=None>
     >>> _.get_neighbor(_.UP)
@@ -47,7 +47,7 @@ class MapBase(object):
 
     Both rect and hex maps have the following attributes:
 
-        (w, h)     -- size of map in tiles
+        (width, height)     -- size of map in tiles
         (pxw, pxh) -- size of map in pixels
         (tw, th)   -- size of each tile in pixels
         (x, y, z)  -- offset of map top left from origin in pixels
@@ -112,13 +112,13 @@ class TileBase(object):
     Common attributes:
         map         -- Map instance this Tile came from
         x, y        -- top-left coordinate
-        w, h        -- dimensions
+        width, height        -- dimensions
         meta        -- meta-data from the Map's meta
         image       -- image from the Map's images
     '''
     def __init__(self, map, x, y, meta, image):
         self.map = map
-        self.w, self.h = map.tw, map.th
+        self.width, self.height = map.tw, map.th
         self.x, self.y = x, y
         self.meta = meta
         self.image = image
@@ -146,71 +146,71 @@ class Tile(TileBase):
         midleft     -- (x, y) of middle of left side
         midright    -- (x, y) of middle of right side
     '''
-    __slots__ = 'map x y w h meta image'.split()
+    __slots__ = 'map x y width height meta image'.split()
 
     # ro, side in pixels, y extent
     def get_top(self):
-        return (self.y + 1) * self.h
+        return (self.y + 1) * self.height
     top = property(get_top)
 
     # ro, side in pixels, y extent
     def get_bottom(self):
-        return self.y * self.h
+        return self.y * self.height
     bottom = property(get_bottom)
 
     # ro, in pixels, (x, y)
     def get_center(self):
-        return (self.x * self.w + self.w/2, self.y * self.h + self.h/2)
+        return (self.x * self.width + self.width/2, self.y * self.height + self.height/2)
     center = property(get_center)
 
     # ro, mid-point in pixels, (x, y)
     def get_midtop(self):
-        return (self.x * self.w + self.w/2, self.y * self.h)
+        return (self.x * self.width + self.width/2, self.y * self.height)
     midtop = property(get_midtop)
 
     # ro, mid-point in pixels, (x, y)
     def get_midbottom(self):
-        return (self.x * self.w + self.w/2, (self.y + 1) * self.h)
+        return (self.x * self.width + self.width/2, (self.y + 1) * self.height)
     midbottom = property(get_midbottom)
 
     # ro, side in pixels, x extent
     def get_left(self):
-        return self.x * self.w
+        return self.x * self.width
     left = property(get_left)
 
     # ro, side in pixels, x extent
     def get_right(self):
-        return (self.x + 1) * self.w
+        return (self.x + 1) * self.width
     right = property(get_right)
 
     # ro, corner in pixels, (x, y)
     def get_topleft(self):
-        return (self.x * self.w, self.y * self.h)
+        return (self.x * self.width, self.y * self.height)
     topleft = property(get_topleft)
 
     # ro, corner in pixels, (x, y)
     def get_topright(self):
-        return ((self.x + 1) * self.w, self.y * self.h)
+        return ((self.x + 1) * self.width, self.y * self.height)
     topright = property(get_topright)
 
     # ro, corner in pixels, (x, y)
     def get_bottomleft(self):
-        return (self.x * self.h, (self.y + 1) * self.h)
+        return (self.x * self.height, (self.y + 1) * self.height)
     bottomleft = property(get_bottomleft)
 
     # ro, corner in pixels, (x, y)
     def get_bottomright(self):
-        return ((self.x + 1) * self.w, (self.y + 1) * self.h)
+        return ((self.x + 1) * self.width, (self.y + 1) * self.height)
     bottomright = property(get_bottomright)
 
     # ro, mid-point in pixels, (x, y)
     def get_midleft(self):
-        return (self.x * self.w, self.y * self.h + self.h/2)
+        return (self.x * self.width, self.y * self.height + self.height/2)
     midleft = property(get_midleft)
  
     # ro, mid-point in pixels, (x, y)
     def get_midright(self):
-        return ((self.x + 1) * self.w, self.y * self.h + self.h/2)
+        return ((self.x + 1) * self.width, self.y * self.height + self.height/2)
     midright = property(get_midright)
  
     UP = (0, 1)
@@ -236,12 +236,12 @@ class HexMap(MapBase):
 
     Hexmaps store their tiles in an offset array, column-major with y
     increasing up, such that a map:
-          /d\ /h\
+          /d\ /height\
         /b\_/f\_/
         \_/c\_/g\
         /a\_/e\_/
         \_/ \_/ 
-    has tiles = [['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h']]
+    has tiles = [['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'height']]
     '''
     __slots__ = 'tw th edge_length left right pxw pxh x y z meta images'.split()
     def __init__(self, th, origin=(0, 0, 0), meta=None, images=None):
@@ -260,12 +260,12 @@ class HexMap(MapBase):
 
         # now figure map dimensions
         l = meta or images
-        w = len(l); h = len(l[0])
-        self.pxw = HexTile(self, w-1, 0, None, None).right[0]
-        if w > 1:
-            self.pxh = HexTile(self, 1, h-1, None, None).top
+        width = len(l); height = len(l[0])
+        self.pxw = HexTile(self, width-1, 0, None, None).right[0]
+        if width > 1:
+            self.pxh = HexTile(self, 1, height-1, None, None).top
         else:
-            self.pxh = HexTile(self, 0, h-1, None, None).top
+            self.pxh = HexTile(self, 0, height-1, None, None).top
  
     def get(self, pos=None, px=None):
         '''Get the Tile at tile pos=(x,y) or pixel px=(x,y).
@@ -315,19 +315,19 @@ class HexTile(TileBase):
         midbottomleft   -- (x, y) of middle of left side
         midbottomright  -- (x, y) of middle of right side
     '''
-    __slots__ = 'map x y w h meta image'.split()
+    __slots__ = 'map x y width height meta image'.split()
 
     def get_origin(self):
-        x = self.x * (self.w / 2 + self.w / 4)
-        y = self.y * self.h
+        x = self.x * (self.width / 2 + self.width / 4)
+        y = self.y * self.height
         if self.x % 2:
-            y += self.h / 2
+            y += self.height / 2
         return (x, y)
 
     # ro, side in pixels, y extent
     def get_top(self):
         y = self.get_origin()[1]
-        return y + self.h
+        return y + self.height
     top = property(get_top)
 
     # ro, side in pixels, y extent
@@ -338,81 +338,81 @@ class HexTile(TileBase):
     # ro, in pixels, (x, y)
     def get_center(self):
         x, y = self.get_origin()
-        return (x + self.w / 2, y + self.h / 2)
+        return (x + self.width / 2, y + self.height / 2)
     center = property(get_center)
 
     # ro, mid-point in pixels, (x, y)
     def get_midtop(self):
         x, y = self.get_origin()
-        return (x + self.w/2, y + self.h)
+        return (x + self.width/2, y + self.height)
     midtop = property(get_midtop)
 
     # ro, mid-point in pixels, (x, y)
     def get_midbottom(self):
         x, y = self.get_origin()
-        return (x + self.w/2, y)
+        return (x + self.width/2, y)
     midbottom = property(get_midbottom)
 
     # ro, side in pixels, x extent
     def get_left(self):
         x, y = self.get_origin()
-        return (x, y + self.h/2)
+        return (x, y + self.height/2)
     left = property(get_left)
 
     # ro, side in pixels, x extent
     def get_right(self):
         x, y = self.get_origin()
-        return (x + self.w, y + self.h/2)
+        return (x + self.width, y + self.height/2)
     right = property(get_right)
 
     # ro, corner in pixels, (x, y)
     def get_topleft(self):
         x, y = self.get_origin()
-        return (x + self.w / 4, y + self.h)
+        return (x + self.width / 4, y + self.height)
     topleft = property(get_topleft)
 
     # ro, corner in pixels, (x, y)
     def get_topright(self):
         x, y = self.get_origin()
-        return (x + self.w/2 + self.w / 4, y + self.h)
+        return (x + self.width/2 + self.width / 4, y + self.height)
     topright = property(get_topright)
 
     # ro, corner in pixels, (x, y)
     def get_bottomleft(self):
         x, y = self.get_origin()
-        return (x + self.w / 4, y)
+        return (x + self.width / 4, y)
     bottomleft = property(get_bottomleft)
 
     # ro, corner in pixels, (x, y)
     def get_bottomright(self):
         x, y = self.get_origin()
-        return (x + self.w/2 + self.w / 4, y)
+        return (x + self.width/2 + self.width / 4, y)
     bottomright = property(get_bottomright)
 
     # ro, middle of side in pixels, (x, y)
     def get_midtopleft(self):
         x, y = self.get_origin()
-        return (x + self.w / 8, y + self.h/2 + self.h/4)
+        return (x + self.width / 8, y + self.height/2 + self.height/4)
     midtopleft = property(get_midtopleft)
 
     # ro, middle of side in pixels, (x, y)
     def get_midtopright(self):
         x, y = self.get_origin()
-        return (x + self.w / 2 + self.w / 4 + self.w / 8,
-            y + self.h/2 + self.h/4)
+        return (x + self.width / 2 + self.width / 4 + self.width / 8,
+            y + self.height/2 + self.height/4)
     midtopright = property(get_midtopright)
 
     # ro, middle of side in pixels, (x, y)
     def get_midbottomleft(self):
         x, y = self.get_origin()
-        return (x + self.w / 8, y + self.h/4)
+        return (x + self.width / 8, y + self.height/4)
     midbottomleft = property(get_midbottomleft)
 
     # ro, middle of side in pixels, (x, y)
     def get_midbottomright(self):
         x, y = self.get_origin()
-        return (x + self.w / 2 + self.w / 4 + self.w / 8,
-            y + self.h/4)
+        return (x + self.width / 2 + self.width / 4 + self.width / 8,
+            y + self.height/4)
     midbottomright = property(get_midbottomright)
 
     UP = 'up'
