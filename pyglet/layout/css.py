@@ -451,9 +451,12 @@ HASH = Str('#') + name
 NUMBER = num
 PERCENTAGE = num + Str('%')
 DIMENSION = num + ident
-URI = (NoCase(Str('url(')) + w + string + w + Str(')')) | \
-      (NoCase(Str('url(')) + w + 
-       Rep(Any('!#$%&*-~')|nonascii|escape) + w + Str(')'))
+URITOKEN = (NoCase(Str('url(')) + w + string + w + Str(')')) | \
+           (NoCase(Str('url(')) + w + 
+            # XXX Following is in CSS spec (twice!) but clearly wrong
+            #Rep(Any('!#$%&*-~')|nonascii|escape) + w + Str(')'))
+            # Using this instead:
+            Rep(AnyBut(')')) + w + Str(')'))
 UNICODE_RANGE = NoCase(Str('U+')) + _unicode_num + Opt(Str('-') + _unicode_num)
 CDO = Str('<!--')
 CDC = Str('-->')
@@ -473,7 +476,7 @@ lexicon = Lexicon([
     (NUMBER, lambda s,t: Number(t)),
     (PERCENTAGE, lambda s,t: Percentage(t)),
     (DIMENSION, lambda s,t: Dimension(t)),
-    (URI, lambda s,t: URI(t)),
+    (URITOKEN, lambda s,t: URI(t)),
     (UNICODE_RANGE, lambda s,t: UnicodeRange(t)),
     (CDO, lambda s,t: CDO()),
     (CDC, lambda s,t: CDC()),
@@ -500,7 +503,19 @@ class ParserException(Exception):
             (self.file, self.line, self.col)
 
 class UnexpectedToken(ParserException):
-    pass
+    def __init__(self, position, expected_list, got_token):
+        super(UnexpectedToken, self).__init__(*position)
+        if len(expected_list) == 1:
+            self.expected = 'expected %r' % expected_list[0]
+        else:
+            self.expected = 'expected one of %r' % expected_list
+        self.expected_list = expected_list
+        self.got_token = got_token
+
+    def __str__(self):
+        return '%s: %s, got %r' % \
+            (super(UnexpectedToken, self).__str__(), 
+             self.expected, self.got_token)
 
 class Parser(object):
     '''Grammar parser for CSS 2.1.
@@ -526,7 +541,7 @@ class Parser(object):
         else:
             r = self._scanner.read()[0]
         if _types and r.__class__ not in  _types and r not in _types:
-            raise UnexpectedToken(*self._scanner.position())
+            raise UnexpectedToken(self._scanner.position(), _types, r)
         return r
 
     def _peek(self):

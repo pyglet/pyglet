@@ -20,37 +20,42 @@ def render(data, formatter):
     layout.set_root(box)
     return layout
 
-def render_xml(stylesheet, data):
+def render_xml(stylesheet, data, locator=None):
     from pyglet.layout.css import Stylesheet
     from pyglet.layout.formatters.xmlformatter import XMLFormatter
 
+    if not locator:
+        locator = LocalFileLocator()
+
     render_device = create_render_device()
-    formatter = XMLFormatter(render_device)
+    formatter = XMLFormatter(render_device, locator)
     formatter.add_stylesheet(stylesheet)
     return render(data, formatter)
 
-def render_xhtml(data):
+def render_xhtml(data, locator=None):
     from pyglet.layout.locator import LocalFileLocator
     from pyglet.layout.formatters.xhtmlformatter import XHTMLFormatter
     from pyglet.image.layout import ImageBoxGenerator
 
-    locator = LocalFileLocator()
+    if not locator:
+        locator = LocalFileLocator()
     render_device = create_render_device()
 
-    formatter = XHTMLFormatter(render_device)
+    formatter = XHTMLFormatter(render_device, locator)
     image_box_generator = ImageBoxGenerator(locator)
     formatter.add_generator(image_box_generator)
     return render(data, formatter)
 
-def render_html(data):
+def render_html(data, locator):
     from pyglet.layout.locator import LocalFileLocator
     from pyglet.layout.formatters.htmlformatter import HTMLFormatter
     from pyglet.image.layout import ImageBoxGenerator
 
-    locator = LocalFileLocator()
+    if not locator:
+        locator = LocalFileLocator()
     render_device = create_render_device()
 
-    formatter = HTMLFormatter(render_device)
+    formatter = HTMLFormatter(render_device, locator)
     image_box_generator = ImageBoxGenerator(locator)
     formatter.add_generator(image_box_generator)
     return render(data, formatter)

@@ -18,6 +18,7 @@ from pyglet.text import *
 from pyglet.layout import *
 from pyglet.layout.base import *
 from pyglet.layout.formatters.xhtmlformatter import XHTMLFormatter
+from pyglet.layout.locator import create_locator
 
 data = '''<?xml version="1.0"?>
 <html>  
@@ -115,7 +116,8 @@ def render_custom_xhtml(data):
     '''Create a layout for data similar to `render_xhtml`, but attach our
     custom box generator.'''
     render_device = create_render_device()
-    formatter = XHTMLFormatter(render_device)
+    locator = create_locator('')
+    formatter = XHTMLFormatter(render_device, locator)
     cube_generator = CubeGenerator()
     formatter.add_generator(cube_generator)
     return render(data, formatter)

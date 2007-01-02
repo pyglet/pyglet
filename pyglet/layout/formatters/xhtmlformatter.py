@@ -39,8 +39,8 @@ class XHTMLFormatter(XMLFormatter):
     '''
     element_class = XHTMLElement
 
-    def __init__(self, render_device):
-        super(XHTMLFormatter, self).__init__(render_device)
+    def __init__(self, render_device, locator):
+        super(XHTMLFormatter, self).__init__(render_device, locator)
         self.add_stylesheet(html4_default_stylesheet)
         self.in_head = False
 

@@ -30,6 +30,10 @@ class XMLFormatter(DocumentFormatter):
     '''
     element_class = XMLElement
 
+    def __init__(self, render_device, locator):
+        super(XMLFormatter, self).__init__(render_device)
+        self.locator = locator
+
     def format(self, data):
         if hasattr(data, 'read'):
             xml.sax.parse(data, self)

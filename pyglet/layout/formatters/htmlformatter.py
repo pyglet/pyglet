@@ -117,9 +117,10 @@ class HTMLFormatter(HTMLParser, DocumentFormatter):
     # List of tags that are assumed to have no child data or elements.
     _auto_close_tags = ['br', 'hr', 'img']
 
-    def __init__(self, render_device):
+    def __init__(self, render_device, locator):
         HTMLParser.__init__(self)
         DocumentFormatter.__init__(self, render_device)
+        self.locator = locator
         self.add_stylesheet(html4_default_stylesheet)
 
     def format(self, data):
@@ -145,13 +146,6 @@ class HTMLFormatter(HTMLParser, DocumentFormatter):
 
     def handle_starttag(self, tag, attrs):
         self.process_content_buffer()
-        if tag == 'head':
-            self._in_head = True
-        elif self._in_head and tag == 'style':
-            self.content_buffer = ''
-
-        if self._in_head:
-            return
 
         name = tag
         attr_dict = {}
@@ -159,6 +153,21 @@ class HTMLFormatter(HTMLParser, DocumentFormatter):
             if key in ('class', 'id'):
                 value = value.lower()
             attr_dict[key] = value
+
+        if tag == 'head':
+            self._in_head = True
+        elif self._in_head and tag == 'style':
+            self.content_buffer = ''
+
+        if self._in_head:
+            if name == 'link' and attr_dict.get('rel') == 'stylesheet':
+                uri = attr_dict.get('href')
+                if uri:
+                    stream = self.locator.get_stream(uri)
+                    if stream:
+                        self.add_stylesheet(Stylesheet(stream))
+    
+            return
 
         # Fake the HTML formatting names (poorly).
         if name == 'font':
@@ -225,6 +234,7 @@ class HTMLFormatter(HTMLParser, DocumentFormatter):
             self.content_buffer = ''
         elif tag == 'head':
             self._in_head = False
+            self.content_buffer = ''
 
         if self._in_head:
             return
