@@ -89,10 +89,10 @@ class PositionedFrame(object):
             return value
 
         # Resolve border widths.
-        self.used_border_top = self.box.border_top_width
-        self.used_border_right = self.box.border_right_width
-        self.used_border_bottom = self.box.border_bottom_width
-        self.used_border_left = self.box.border_left_width
+        self.used_border_top = max(self.box.border_top_width, 0)
+        self.used_border_right = max(self.box.border_right_width, 0)
+        self.used_border_bottom = max(self.box.border_bottom_width, 0)
+        self.used_border_left = max(self.box.border_left_width, 0)
 
         # Resolve percentage widths.
         width = self.containing_block.width
@@ -100,10 +100,10 @@ class PositionedFrame(object):
         self.used_margin_right = resolve(self.box.margin_right, width)
         self.used_margin_bottom = resolve(self.box.margin_bottom, width)
         self.used_margin_left = resolve(self.box.margin_left, width)
-        self.used_padding_top = resolve(self.box.padding_top, width)
-        self.used_padding_right = resolve(self.box.padding_right, width)
-        self.used_padding_bottom = resolve(self.box.padding_bottom, width)
-        self.used_padding_left = resolve(self.box.padding_left, width)
+        self.used_padding_top = max(resolve(self.box.padding_top, width), 0)
+        self.used_padding_right = max(resolve(self.box.padding_right, width), 0)
+        self.used_padding_bottom = max(resolve(self.box.padding_bottom,width),0)
+        self.used_padding_left = max(resolve(self.box.padding_left, width), 0)
         self.used_width = resolve(self.box.width, width)
         self.used_min_width = resolve(self.box.min_width, width)
         self.used_max_width = resolve(self.box.max_width, width)
@@ -399,6 +399,9 @@ class InlineFrame(InlinePositionedFrame, InlineFrameContainer):
             self.used_border_right
 
     def resolve_auto_heights(self):
+        self.used_margin_top = 0
+        self.used_margin_bottom = 0
+
         self.content_ascent = self.content_descent = 0
         line_ascent = line_descent = 0
         for frame in self.children:
@@ -412,9 +415,7 @@ class InlineFrame(InlinePositionedFrame, InlineFrameContainer):
         self.content_descent -= self.used_padding_bottom + self.used_border_bottom
         self.resolve_line_height(line_ascent, line_descent)
         self.used_height = self.content_ascent - self.content_descent
-        self.border_edge_height = self.used_border_top + \
-            self.used_padding_top + self.used_height + \
-            self.used_padding_bottom + self.used_border_bottom
+        self.border_edge_height = self.used_height
 
     def vertical_align(self, line_box_top, parent_baseline, line_box_bottom):
         super(InlineFrame, self).vertical_align(line_box_top,
@@ -443,6 +444,8 @@ class TextFrame(InlinePositionedFrame):
             self.used_margin_left = 0
         if self.used_margin_right == 'auto':
             self.used_margin_right = 0
+        self.used_margin_top = 0
+        self.used_margin_bottom = 0
         self.resolve_auto_widths()
 
     def resolve_auto_widths(self):
@@ -571,6 +574,7 @@ class LineBoxFrame(BlockPositionedFrame, InlineFrameContainer):
     def __init__(self, box, parent, containing_block):
         BlockPositionedFrame.__init__(self, box, parent, containing_block)
         InlineFrameContainer.__init__(self)
+        self.border_edge_left = containing_block.left
         self.remaining_width = containing_block.width
 
     def can_add(self, frame):
