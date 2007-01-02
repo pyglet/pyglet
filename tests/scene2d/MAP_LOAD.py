@@ -14,13 +14,15 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import unittest
-from render_base import RenderBase, gencells, DummyImage
+from render_base import RenderBase, DummyImage
 import pyglet.scene2d
 
-class HexFlatDebugTest(RenderBase):
+class MapLoadTest(RenderBase):
     def test_main(self):
-        m = pyglet.scene2d.Map(32, 32, gencells(['a'*10]*10, 32, 32,
-            pyglet.scene2d.Cell))
+        map_xml = os.path.join(os.path.dirname(__file__), 'map.xml')
+
+        m = pyglet.scene2d.Map.load(map_xml)
+        (32, 32, images=[[DummyImage()]*10]*10)
         self.run_test(m, (256, 256), show_focus=True)
 
 if __name__ == '__main__':

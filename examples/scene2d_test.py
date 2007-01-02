@@ -40,9 +40,9 @@ except getopt.GetoptError, error:
 
 klass = None
 size = (5, 5)
-style = 'lines'
+style = pyglet.scene2d.FlatView.CHECKERED
 renderer = pyglet.scene2d.FlatView
-filename = { 's': pyglet.scene2d.View.CHECKERED, 'r': 'flat' }
+filename = { 'r': 'flat' }
 for opt, value in optlist:
     if opt == '-x':
         klass = pyglet.scene2d.HexMap
@@ -55,9 +55,9 @@ for opt, value in optlist:
             args *= 2
         filename['x'] = 'rect(%dx%d)'%tuple(args)
     elif opt == '-l':
-        style = pyglet.scene2d.View.LINES
+        style = pyglet.scene2d.FlatView.LINES
     elif opt == '-c':
-        style = pyglet.scene2d.View.CHECKERED
+        style = pyglet.scene2d.FlatView.CHECKERED
     elif opt == '-s':
         size = map(int, value.split(','))
         filename['e'] = '%dx%d'%tuple(size)
@@ -97,7 +97,7 @@ kw = dict(images=[[d]*mh]*mw)
 m = klass(*args, **kw)
 w = pyglet.window.Window(width=m.pxw, height=m.pxh)
 s = pyglet.scene2d.Scene(maps=[m])
-r = pyglet.scene2d.FlatView(s, 0, 0, m.pxw, m.pxh)
+r = pyglet.scene2d.FlatView(s, 0, 0, m.pxw, m.pxh, allow_oob=False)
 
 class running(pyglet.window.event.ExitHandler):
     def __init__(self, fps=5):
@@ -124,6 +124,6 @@ while running:
     w.switch_to()
     w.dispatch_events()
     glClear(GL_COLOR_BUFFER_BIT)
-    r.debug((0,0), style)
+    r.debug(style)
     w.flip()
 

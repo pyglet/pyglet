@@ -13,6 +13,15 @@ import pyglet.window
 import pyglet.window.event
 import pyglet.clock
 
+def gencells(l, w, h, klass):
+    r = []
+    for i, m in enumerate(l):
+        c = []
+        r.append(c)
+        for j, n in enumerate(m):
+            c.append(klass(i, j, w, h, n, None))
+    return r
+
 class RenderBase(unittest.TestCase):
     def run_test(self, m, viewsize=None, show_focus=False):
         if viewsize is None:

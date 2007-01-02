@@ -184,20 +184,19 @@ class FlatView:
 
             if hasattr(map, 'edge_length'):
                 # hexes
-                for m, column in enumerate(map.images):
-                    for n, image in enumerate(column):
-                        tile = map.get((m,n))
+                for m, column in enumerate(map.cells):
+                    for n, cell in enumerate(column):
                         if style is self.LINES:
                             glBegin(GL_LINE_LOOP)
-                            glVertex2f(*tile.topleft)
-                            glVertex2f(*tile.topright)
-                            glVertex2f(*tile.right)
-                            glVertex2f(*tile.bottomright)
-                            glVertex2f(*tile.bottomleft)
-                            glVertex2f(*tile.left)
+                            glVertex2f(*cell.topleft)
+                            glVertex2f(*cell.topright)
+                            glVertex2f(*cell.right)
+                            glVertex2f(*cell.bottomright)
+                            glVertex2f(*cell.bottomleft)
+                            glVertex2f(*cell.left)
                             glEnd()
                             glPushMatrix()
-                            bl = tile.bottomleft
+                            bl = cell.bottomleft
                             glTranslatef(bl[0], bl[1]+2, 0)
                             image.draw()
                             glPopMatrix()
@@ -210,34 +209,33 @@ class FlatView:
                             elif n%3 == 2:
                                 glColor4f(1, 1, 1, 1)
                             glBegin(GL_POLYGON)
-                            glVertex2f(*tile.topleft)
-                            glVertex2f(*tile.topright)
-                            glVertex2f(*tile.right)
-                            glVertex2f(*tile.bottomright)
-                            glVertex2f(*tile.bottomleft)
-                            glVertex2f(*tile.left)
+                            glVertex2f(*cell.topleft)
+                            glVertex2f(*cell.topright)
+                            glVertex2f(*cell.right)
+                            glVertex2f(*cell.bottomright)
+                            glVertex2f(*cell.bottomleft)
+                            glVertex2f(*cell.left)
                             glEnd()
                         else:
                             raise ValueError, "style not 'lines' or 'checkered'"
             else:
                 # rects
-                for m, column in enumerate(map.images):
-                    for n, image in enumerate(column):
-                        tile = map.get((m,n))
+                for m, column in enumerate(map.cells):
+                    for n, cell in enumerate(column):
                         if style is self.LINES:
                             glBegin(GL_LINE_LOOP)
-                            glVertex2f(*tile.topleft)
-                            glVertex2f(*tile.topright)
-                            glVertex2f(*tile.bottomright)
-                            glVertex2f(*tile.bottomleft)
+                            glVertex2f(*cell.topleft)
+                            glVertex2f(*cell.topright)
+                            glVertex2f(*cell.bottomright)
+                            glVertex2f(*cell.bottomleft)
                             glEnd()
                         elif style is self.CHECKERED:
                             if (m + n) % 2:
                                 glBegin(GL_QUADS)
-                                glVertex2f(*tile.topleft)
-                                glVertex2f(*tile.topright)
-                                glVertex2f(*tile.bottomright)
-                                glVertex2f(*tile.bottomleft)
+                                glVertex2f(*cell.topleft)
+                                glVertex2f(*cell.topright)
+                                glVertex2f(*cell.bottomright)
+                                glVertex2f(*cell.bottomleft)
                                 glEnd()
                         else:
                             raise ValueError, "style not 'lines' or 'checkered'"

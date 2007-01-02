@@ -10,7 +10,16 @@ __version__ = '$Id$'
 
 import unittest
 
-from pyglet.scene2d import Map, HexMap
+from pyglet.scene2d import Map, HexMap, Cell, HexCell
+
+def _cells(l, w, h, klass):
+    r = []
+    for i, m in enumerate(l):
+        c = []
+        r.append(c)
+        for j, n in enumerate(m):
+            c.append(klass(i, j, w, h, n, None))
+    return r
 
 class MapModelTest(unittest.TestCase):
 
@@ -21,37 +30,37 @@ class MapModelTest(unittest.TestCase):
         #    +---+---+---+
         #    | a | b | c |
         #    +---+---+---+
-        m = Map(10, 16, meta=[['a', 'd'], ['b', 'e'], ['c', 'f']])
+        m = Map(10, 16, cells=_cells(['ad', 'be', 'cf'], 10, 16, Cell))
         t = m.get((0,0))
         assert (t.x, t.y) == (0, 0) and t.meta == 'a'
-        assert t.get_neighbor(t.DOWN) is None
-        assert t.get_neighbor(t.UP).meta == 'd'
-        assert t.get_neighbor(t.LEFT) is None
-        assert t.get_neighbor(t.RIGHT).meta == 'b'
-        t = t.get_neighbor(t.UP)
+        assert m.get_neighbor(t, m.DOWN) is None
+        assert m.get_neighbor(t, m.UP).meta == 'd'
+        assert m.get_neighbor(t, m.LEFT) is None
+        assert m.get_neighbor(t, m.RIGHT).meta == 'b'
+        t = m.get_neighbor(t, m.UP)
         assert (t.x, t.y) == (0, 1) and t.meta == 'd'
-        assert t.get_neighbor(t.DOWN).meta == 'a'
-        assert t.get_neighbor(t.UP) is None
-        assert t.get_neighbor(t.LEFT) is None
-        assert t.get_neighbor(t.RIGHT).meta == 'e'
-        t = t.get_neighbor(t.RIGHT)
+        assert m.get_neighbor(t, m.DOWN).meta == 'a'
+        assert m.get_neighbor(t, m.UP) is None
+        assert m.get_neighbor(t, m.LEFT) is None
+        assert m.get_neighbor(t, m.RIGHT).meta == 'e'
+        t = m.get_neighbor(t, m.RIGHT)
         assert (t.x, t.y) == (1, 1) and t.meta == 'e'
-        assert t.get_neighbor(t.DOWN).meta == 'b'
-        assert t.get_neighbor(t.UP) is None
-        assert t.get_neighbor(t.RIGHT).meta == 'f'
-        assert t.get_neighbor(t.LEFT).meta == 'd'
-        t = t.get_neighbor(t.RIGHT)
+        assert m.get_neighbor(t, m.DOWN).meta == 'b'
+        assert m.get_neighbor(t, m.UP) is None
+        assert m.get_neighbor(t, m.RIGHT).meta == 'f'
+        assert m.get_neighbor(t, m.LEFT).meta == 'd'
+        t = m.get_neighbor(t, m.RIGHT)
         assert (t.x, t.y) == (2, 1) and t.meta == 'f'
-        assert t.get_neighbor(t.DOWN).meta == 'c'
-        assert t.get_neighbor(t.UP) is None
-        assert t.get_neighbor(t.RIGHT) is None
-        assert t.get_neighbor(t.LEFT).meta == 'e'
-        t = t.get_neighbor(t.DOWN)
+        assert m.get_neighbor(t, m.DOWN).meta == 'c'
+        assert m.get_neighbor(t, m.UP) is None
+        assert m.get_neighbor(t, m.RIGHT) is None
+        assert m.get_neighbor(t, m.LEFT).meta == 'e'
+        t = m.get_neighbor(t, m.DOWN)
         assert (t.x, t.y) == (2, 0) and t.meta == 'c'
-        assert t.get_neighbor(t.DOWN) is None
-        assert t.get_neighbor(t.UP).meta == 'f'
-        assert t.get_neighbor(t.RIGHT) is None
-        assert t.get_neighbor(t.LEFT).meta == 'b'
+        assert m.get_neighbor(t, m.DOWN) is None
+        assert m.get_neighbor(t, m.UP).meta == 'f'
+        assert m.get_neighbor(t, m.RIGHT) is None
+        assert m.get_neighbor(t, m.LEFT).meta == 'b'
 
     def test_rect_coords(self):
         # test rectangular tile map
@@ -60,7 +69,7 @@ class MapModelTest(unittest.TestCase):
         #    +---+---+---+
         #    | a | b | c |
         #    +---+---+---+
-        m = Map(10, 16, meta=[['a', 'd'], ['b', 'e'], ['c', 'f']])
+        m = Map(10, 16, cells=_cells(['ad', 'be', 'cf'], 10, 16, Cell))
 
         # test tile sides / corners
         t = m.get((0,0))
@@ -85,55 +94,55 @@ class MapModelTest(unittest.TestCase):
         # \_/c\_/g\
         # /a\_/e\_/
         # \_/ \_/ 
-        m = HexMap(32, meta=[['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h']])
+        m = HexMap(32, cells=_cells(['ab', 'cd', 'ef', 'gh'], 36, 32, HexCell))
         t = m.get((0,0))
         assert (t.x, t.y) == (0, 0) and t.meta == 'a'
-        assert t.get_neighbor(t.DOWN) is None
-        assert t.get_neighbor(t.UP).meta == 'b'
-        assert t.get_neighbor(t.DOWN_LEFT) is None
-        assert t.get_neighbor(t.DOWN_RIGHT) is None
-        assert t.get_neighbor(t.UP_LEFT) is None
-        assert t.get_neighbor(t.UP_RIGHT).meta == 'c'
-        t = t.get_neighbor(t.UP)
+        assert m.get_neighbor(t, m.DOWN) is None
+        assert m.get_neighbor(t, m.UP).meta == 'b'
+        assert m.get_neighbor(t, m.DOWN_LEFT) is None
+        assert m.get_neighbor(t, m.DOWN_RIGHT) is None
+        assert m.get_neighbor(t, m.UP_LEFT) is None
+        assert m.get_neighbor(t, m.UP_RIGHT).meta == 'c'
+        t = m.get_neighbor(t, m.UP)
         assert (t.x, t.y) == (0, 1) and t.meta == 'b'
-        assert t.get_neighbor(t.DOWN).meta == 'a'
-        assert t.get_neighbor(t.UP) is None
-        assert t.get_neighbor(t.DOWN_LEFT) is None
-        assert t.get_neighbor(t.DOWN_RIGHT).meta == 'c'
-        assert t.get_neighbor(t.UP_LEFT) is None
-        assert t.get_neighbor(t.UP_RIGHT).meta == 'd'
-        t = t.get_neighbor(t.DOWN_RIGHT)
+        assert m.get_neighbor(t, m.DOWN).meta == 'a'
+        assert m.get_neighbor(t, m.UP) is None
+        assert m.get_neighbor(t, m.DOWN_LEFT) is None
+        assert m.get_neighbor(t, m.DOWN_RIGHT).meta == 'c'
+        assert m.get_neighbor(t, m.UP_LEFT) is None
+        assert m.get_neighbor(t, m.UP_RIGHT).meta == 'd'
+        t = m.get_neighbor(t, m.DOWN_RIGHT)
         assert (t.x, t.y) == (1, 0) and t.meta == 'c'
-        assert t.get_neighbor(t.DOWN) is None
-        assert t.get_neighbor(t.UP).meta == 'd'
-        assert t.get_neighbor(t.DOWN_LEFT).meta == 'a'
-        assert t.get_neighbor(t.DOWN_RIGHT).meta == 'e'
-        assert t.get_neighbor(t.UP_LEFT).meta == 'b'
-        assert t.get_neighbor(t.UP_RIGHT).meta == 'f'
-        t = t.get_neighbor(t.UP_RIGHT)
+        assert m.get_neighbor(t, m.DOWN) is None
+        assert m.get_neighbor(t, m.UP).meta == 'd'
+        assert m.get_neighbor(t, m.DOWN_LEFT).meta == 'a'
+        assert m.get_neighbor(t, m.DOWN_RIGHT).meta == 'e'
+        assert m.get_neighbor(t, m.UP_LEFT).meta == 'b'
+        assert m.get_neighbor(t, m.UP_RIGHT).meta == 'f'
+        t = m.get_neighbor(t, m.UP_RIGHT)
         assert (t.x, t.y) == (2, 1) and t.meta == 'f'
-        assert t.get_neighbor(t.DOWN).meta == 'e'
-        assert t.get_neighbor(t.UP) is None
-        assert t.get_neighbor(t.DOWN_LEFT).meta == 'c'
-        assert t.get_neighbor(t.DOWN_RIGHT).meta == 'g'
-        assert t.get_neighbor(t.UP_LEFT).meta == 'd'
-        assert t.get_neighbor(t.UP_RIGHT).meta == 'h'
-        t = t.get_neighbor(t.DOWN_RIGHT)
+        assert m.get_neighbor(t, m.DOWN).meta == 'e'
+        assert m.get_neighbor(t, m.UP) is None
+        assert m.get_neighbor(t, m.DOWN_LEFT).meta == 'c'
+        assert m.get_neighbor(t, m.DOWN_RIGHT).meta == 'g'
+        assert m.get_neighbor(t, m.UP_LEFT).meta == 'd'
+        assert m.get_neighbor(t, m.UP_RIGHT).meta == 'h'
+        t = m.get_neighbor(t, m.DOWN_RIGHT)
         assert (t.x, t.y) == (3, 0) and t.meta == 'g'
-        assert t.get_neighbor(t.DOWN) is None
-        assert t.get_neighbor(t.UP).meta == 'h'
-        assert t.get_neighbor(t.DOWN_LEFT).meta == 'e'
-        assert t.get_neighbor(t.DOWN_RIGHT) is None
-        assert t.get_neighbor(t.UP_LEFT).meta == 'f'
-        assert t.get_neighbor(t.UP_RIGHT) is None
-        t = t.get_neighbor(t.UP)
+        assert m.get_neighbor(t, m.DOWN) is None
+        assert m.get_neighbor(t, m.UP).meta == 'h'
+        assert m.get_neighbor(t, m.DOWN_LEFT).meta == 'e'
+        assert m.get_neighbor(t, m.DOWN_RIGHT) is None
+        assert m.get_neighbor(t, m.UP_LEFT).meta == 'f'
+        assert m.get_neighbor(t, m.UP_RIGHT) is None
+        t = m.get_neighbor(t, m.UP)
         assert (t.x, t.y) == (3, 1) and t.meta == 'h'
-        assert t.get_neighbor(t.DOWN).meta == 'g'
-        assert t.get_neighbor(t.UP) is None
-        assert t.get_neighbor(t.DOWN_LEFT).meta == 'f'
-        assert t.get_neighbor(t.DOWN_RIGHT) is None
-        assert t.get_neighbor(t.UP_LEFT) is None
-        assert t.get_neighbor(t.UP_RIGHT) is None
+        assert m.get_neighbor(t, m.DOWN).meta == 'g'
+        assert m.get_neighbor(t, m.UP) is None
+        assert m.get_neighbor(t, m.DOWN_LEFT).meta == 'f'
+        assert m.get_neighbor(t, m.DOWN_RIGHT) is None
+        assert m.get_neighbor(t, m.UP_LEFT) is None
+        assert m.get_neighbor(t, m.UP_RIGHT) is None
 
     def test_hex_coords(self):
         # test hexagonal tile map
@@ -143,7 +152,7 @@ class MapModelTest(unittest.TestCase):
         # \_/c\_/g\
         # /a\_/e\_/
         # \_/ \_/ 
-        m = HexMap(32, meta=[['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h']])
+        m = HexMap(32, cells=_cells(['ad', 'be', 'cf', 'gh'], 36, 32, HexCell))
 
         # test tile sides / corners
         t00 = m.get((0, 0))
