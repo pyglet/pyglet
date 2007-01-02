@@ -5,41 +5,41 @@ import time
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.GL.VERSION_1_1 import *
-from pyglet.GLU.VERSION_1_1 import *
 from pyglet import clock
-from pyglet import text
+
+from pyglet.text import *
+from pyglet.layout import *
 
 from ctypes import *
 
-w1 = Window(width=400, height=200)
+w = Window(width=400, height=200)
 
-sample = text.layout_html('''<font size="26"><i>Hello</i>,
-    <b>World</b>.<br>gVAWAVA. <b><i>Mr.</i></b> T.</font>''')
+layout = render_html('''<p style="font-size: 26px"><strong>hello</strong>
+    <em>world</em></p>''')
+layout.render_device.width = 400
+layout.render_device.height = 200
+layout.layout()
 
 exit_handler = ExitHandler()
-w1.push_handlers(exit_handler)
+w.push_handlers(exit_handler)
 
 c = clock.Clock(10)
 
 glMatrixMode(GL_PROJECTION)
 glLoadIdentity()
-glOrtho(0, w1.width, 0, w1.height, -1, 1)
-glEnable(GL_COLOR_MATERIAL)
-
+glOrtho(0, w.width, 0, w.height, -1, 1)
 glMatrixMode(GL_MODELVIEW)
 glClearColor(1, 1, 1, 1)
-r = 0
 
 while not exit_handler.exit:
     c.tick()
-    w1.dispatch_events()
+    w.dispatch_events()
 
     glClear(GL_COLOR_BUFFER_BIT)
     glLoadIdentity()
 
-    text.begin()
-    sample.draw((200, 100), (text.Align.center, text.Align.center))
-    text.end()
+    glTranslatef(10, 100, 0)#, (text.Align.center, text.Align.center))
+    layout.draw()
 
-    w1.flip()
+    w.flip()
 
