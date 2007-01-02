@@ -11,15 +11,14 @@ __version__ = '$Id: $'
 import urlparse
 import urllib2
 import os.path
+import warnings
 
 def create_locator(address):
     '''Examines address and returns a locator that has address as the base
     URI.'''
     url = urlparse.urlparse(address)
     if not url[0]:
-        # No scheme, assume it's a local file
-        base = os.path.split(address)[0]
-        return LocalFileLocator(base)
+        return LocalFileLocator(address)
     else:
         return URLLocator(address)
 
@@ -30,17 +29,31 @@ class Locator(object):
         be retrieved.'''
         return None
 
+    def get_default_stream(self):
+        '''Return a file-like object for the URI that was used to construct
+        the locator.
+        '''
+        return None
+
 class LocalFileLocator(Locator):
     '''Locator for reading local file objects.
     '''
-    def __init__(self, base=''):
-        self.base = base
+    def __init__(self, uri=''):
+        self.uri = uri
+        self.base = os.path.split(uri)[0]
         
     def get_stream(self, uri):
-        if not isabs(uri):
+        if not os.path.isabs(uri):
             uri = os.path.join(self.base, uri)
         try:
             return open(uri, 'rb')
+        except IOError:
+            warnings.warn('Could not open "%s"' % uri)
+            return None
+
+    def get_default_stream(self):
+        try:
+            return open(self.uri, 'rb')
         except IOError:
             warnings.warn('Could not open "%s"' % uri)
             return None
@@ -63,3 +76,5 @@ class URLLocator(Locator):
             warnings.warn('Could not open "%s"' % uri)
             return None
 
+    def get_default_stream(self):
+        return self.get_stream(self.base)

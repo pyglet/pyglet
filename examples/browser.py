@@ -27,7 +27,7 @@ if len(sys.argv) < 2:
 url = sys.argv[1]
 
 locator = create_locator(url)
-file = locator.get_stream(url)
+file = locator.get_default_stream()
 
 window = Window()
 exit_handler = ExitHandler()
