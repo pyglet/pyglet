@@ -677,16 +677,21 @@ class BlockFormattingContext(FormattingContext):
             self.containing_block_stack[-1])
         
         # Collapse top margin
+        '''
         top = self.containing_block_stack[-1].bottom + \
               frame.used_margin_top
         margin = max(frame.used_margin_top, self.current_margin)
         top -= margin - self.current_margin
+        '''
+        top = self.containing_block_stack[-1].bottom
+        margin = max(frame.used_margin_top, self.current_margin)
+        top += margin - self.current_margin
+        self.current_margin = margin
 
         # Add frame to layout and update current margin
         self.frame_stack[-1].add(frame)
         frame.border_edge_top = top
         frame.border_edge_left = frame.used_margin_left
-        self.current_margin = margin
 
         # Don't collapse margin through padding or border.
         if frame.used_border_top or frame.used_padding_top:
@@ -725,12 +730,11 @@ class BlockFormattingContext(FormattingContext):
             self.current_margin = 0
 
         # Collapse bottom margin
-        bottom = frame.border_edge_top + frame.border_edge_height + \
-            frame.used_margin_bottom
+        bottom = frame.border_edge_top + frame.border_edge_height
         margin = max(self.current_margin, frame.used_margin_bottom)
-        bottom -= margin - self.current_margin
-        self.containing_block_stack[-1].bottom = bottom
+        bottom += margin - self.current_margin
         self.current_margin = margin
+        self.containing_block_stack[-1].bottom = bottom
 
     def close(self):
         assert len(self.frame_stack) == 1

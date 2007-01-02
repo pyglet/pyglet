@@ -218,7 +218,7 @@ class DocumentFormatter(Formatter):
     ws_step1_pattern = re.compile('[ \r\t]*\n[ \r\t]*')
     ws_step2a_pattern = re.compile('( +)')
     ws_step2_pattern = re.compile(' ')
-    ws_step3_pattern = re.compile('\n')
+    ws_step3_pattern = re.compile('[\n\r]') # XXX spec says \n only (wrong).
     ws_step4a_pattern = re.compile('\t')
     ws_step4b_pattern = re.compile(' +')
     _collapse_leading_space = False

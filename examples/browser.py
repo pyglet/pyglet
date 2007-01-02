@@ -5,6 +5,9 @@
 Usage::
     browser.py http://meyerweb.com/eric/css/tests/css2/sec08-03a.htm
 
+    Press 'b' to dump boxes.
+    Press 'f' to dump frames.
+    Press 's' to dump source (base file only).
 '''
 
 __docformat__ = 'restructuredtext'
@@ -14,13 +17,16 @@ from pyglet.GL.VERSION_1_1 import *
 from pyglet.layout import *
 from pyglet.window import *
 from pyglet.window.event import *
+from pyglet.window.key import *
 from pyglet.clock import *
 
 from pyglet.text import *
 from pyglet.layout.css import Stylesheet
 from pyglet.layout.locator import create_locator
 
+import textwrap
 import sys
+
 if len(sys.argv) < 2:
     print __doc__
     sys.exit(1)
@@ -48,6 +54,29 @@ def on_resize(width, height):
     global layout_height
     layout_height = 1200
 
+def print_box(box, indent=''):
+    print '\n'.join(textwrap.wrap(repr(box), initial_indent=indent,
+            subsequent_indent=indent))
+    if box.children:
+        for child in box.children:
+            print_box(child, '  ' + indent)
+
+def print_frame(frame, indent=''):
+    print '\n'.join(textwrap.wrap(repr(frame), initial_indent=indent,
+            subsequent_indent=indent))
+    if hasattr(frame, 'children'):
+        for child in frame.children:
+            print_frame(child, '  ' + indent)
+
+def on_key_press(symbol, modifiers):
+    if symbol == K_B:
+        print_box(layout.root_frame.children[0].box)
+    if symbol == K_F:
+        print_frame(layout.root_frame)
+    if symbol == K_S:
+        print repr(locator.get_default_stream().read())
+    return True
+
 def on_scroll(dx, dy):
     global offset_top
     offset_top -= dy * 30
@@ -56,6 +85,7 @@ layout = render_html(file, locator=locator)
 
 window.push_handlers(on_resize=on_resize)
 window.push_handlers(on_mouse_scroll=on_scroll)
+window.push_handlers(on_key_press=on_key_press)
 on_resize(window.width, window.height)
 glClearColor(1, 1, 1, 1)
 

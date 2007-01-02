@@ -145,8 +145,6 @@ class HTMLFormatter(HTMLParser, DocumentFormatter):
         return self.root_box
 
     def handle_starttag(self, tag, attrs):
-        self.process_content_buffer()
-
         name = tag
         attr_dict = {}
         for key, value in attrs:
@@ -168,6 +166,8 @@ class HTMLFormatter(HTMLParser, DocumentFormatter):
                         self.add_stylesheet(Stylesheet(stream))
     
             return
+
+        self.process_content_buffer()
 
         # Fake the HTML formatting names (poorly).
         if name == 'font':
@@ -194,7 +194,7 @@ class HTMLFormatter(HTMLParser, DocumentFormatter):
             name = 'div'
             attr_dict['style'] = 'border-bottom:1px solid silver;' + \
                                  'border-top:1px solid gray;' + \
-                                 'margin:1em 0;'
+                                 'margin:.5em 0;'
 
         # Close prior unfinished tags if necessary.
         if self._in_p and tag == 'p':
