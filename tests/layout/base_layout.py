@@ -32,7 +32,8 @@ class LayoutTestBase(unittest.TestCase):
         self.layout.layout()
 
         # XXX HACK
-        self.layout_height = int(self.layout.frame.children[-1].border_bottom)
+        #self.layout_height = int(self.layout.frame.children[-1].border_bottom)
+        self.layout_height = 1000
 
     def on_mouse_scroll(self, dx, dy):
         self.offset_top -= dy * 30

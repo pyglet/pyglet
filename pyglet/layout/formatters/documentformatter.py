@@ -108,7 +108,8 @@ class DocumentFormatter(Formatter):
        'border_left_width', 'top', 'right', 'bottom', 'left', 'width',
        'min_width', 'max_width', 'height', 'min_height', 'max_height',
        'line_height', 'text_indent', 'letter_spacing', 'word_spacing',
-       'border_spacing'])
+       'border_spacing',
+       'intrinsic_width', 'intrinsic_height'])
 
     def resolve_computed_values(self, box):
         '''Resolve box property values to their computed values.  
@@ -157,6 +158,19 @@ class DocumentFormatter(Formatter):
         elif box.font_weight == 'lighter':
             box.font_weight = box.parent.font_weight - 300
 
+        # replaced element with no intrinsic width: 10.3.2
+        if (box.is_replaced and 
+            box.intrinsic_width is None and box.width == 'auto' and
+            (box.intrinsic_ratio is None or 
+             (box.intrinsic_height is None and box.height == 'auto'))):
+            box.width = self.render_device.dimension_to_device('300px', 0)
+        # replaced element with no intrinsic height: 10.6.2
+        if (box.is_replaced and
+            box.intrinsic_height is None and box.height == 'auto' and
+            (box.intrinsic_ratio is None or
+             (box.intrinsic_height is None and box.height == 'auto'))):
+            box.height = self.render_device.dimension_to_device('150px', 0)
+             
     def anonymous_block_box(self, boxes):
         '''Create an anonymous block box to contain 'boxes' and return it.
         

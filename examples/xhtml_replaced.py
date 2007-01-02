@@ -131,7 +131,8 @@ def on_resize(width, height):
 
     # HACK; will have public accessor eventually
     global layout_height
-    layout_height = layout.frame.children[-1].border_bottom
+    #layout_height = layout.frame.children[-1].border_bottom
+    layout_height = 1000
 
 def on_scroll(dx, dy):
     global offset_top
