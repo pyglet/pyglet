@@ -77,10 +77,12 @@ ol ul, ul ol,
 ul ul, ol ol    { margin-top: 0; margin-bottom: 0 }
 u, ins          { text-decoration: underline }
 br:before       { content: "\A" }
-:before, :after { white-space: pre-line }
+/* XXX pseudo elements not supported yet
+   :before, :after { white-space: pre-line } */
 center          { text-align: center }
-:link, :visited { text-decoration: underline }
-:focus          { outline: thin dotted invert }
+/* XXX pseudo elements not supported yet
+    :link, :visited { text-decoration: underline }
+    :focus          { outline: thin dotted invert } */
 
 /* Begin bidirectionality settings (do not change) */
 BDO[dir="ltr"]  { direction: ltr; unicode-bidi: bidi-override }

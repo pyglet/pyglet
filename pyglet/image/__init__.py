@@ -12,6 +12,7 @@ import warnings
 
 from ctypes import *
 from math import ceil
+from StringIO import StringIO
 
 from pyglet.GL.info import have_extension
 from pyglet.GL.VERSION_1_1 import *
@@ -69,6 +70,8 @@ class Image(object):
     def load(filename=None, file=None):
         if not file:
             file = open(filename, 'rb')
+        if not hasattr(file, 'seek'):
+            file = StringIO(file.read())
 
         first_exception = None
         for decoder in get_decoders(filename):

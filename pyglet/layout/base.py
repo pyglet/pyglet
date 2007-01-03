@@ -370,10 +370,9 @@ class Box(object):
     # Layout engine properties
     # ------------------------
 
-    # children can optionally be None to represent the empty list.  This
-    # should be populated by box creation before handing over to the layout
-    # engine.
-    children = None
+    # This should be populated by box creation before handing over to the
+    # layout engine.
+    children = ()
 
     # parent is None only for the root box.
     parent = None

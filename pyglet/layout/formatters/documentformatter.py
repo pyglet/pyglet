@@ -190,7 +190,7 @@ class DocumentFormatter(Formatter):
     def add_child(self, box):
         '''Add box its parent box, creating anonymous boxes as necessary.'''
         parent = box.parent
-        if parent.children is None:
+        if not parent.children:
             parent.children = []
 
         # 9.2.1.1 Anonymous block boxes
@@ -215,10 +215,11 @@ class DocumentFormatter(Formatter):
         parent.children.append(box)
         box.parent = parent
 
+    ws_normalize_pattern = re.compile('\r\n|\n|\r')
     ws_step1_pattern = re.compile('[ \r\t]*\n[ \r\t]*')
     ws_step2a_pattern = re.compile('( +)')
     ws_step2_pattern = re.compile(' ')
-    ws_step3_pattern = re.compile('[\n\r]') # XXX spec says \n only (wrong).
+    ws_step3_pattern = re.compile('\n') 
     ws_step4a_pattern = re.compile('\t')
     ws_step4b_pattern = re.compile(' +')
     _collapse_leading_space = False
@@ -232,6 +233,10 @@ class DocumentFormatter(Formatter):
         current formatters which process elements in pre-order, but the method
         is not usable for document tree modifications.
         '''
+        # Normalize newlines to \n.  This isn't part of CSS, but I think I saw
+        # it somewhere in XML.  Anyway, it's needed.
+        content = self.ws_normalize_pattern.sub('\n', content)
+
         # Collapse white-space according to 16.6.1.
         # Step 1
         if parent.white_space in ('normal', 'nowrap', 'pre-line'):
@@ -242,7 +247,7 @@ class DocumentFormatter(Formatter):
         if parent.white_space in ('pre', 'pre-wrap'):
             if parent.white_space == 'pre-wrap':
                 # Break opportunity after sequence of spaces
-                content = self.ws_step2a_pattern.sub(u'\1\u200b', content)
+                content = self.ws_step2a_pattern.sub(u'\\1\u200b', content)
             # Replace spaces with non-breaking spaces
             content = self.ws_step2_pattern.sub(u'\u00a0', content)
 

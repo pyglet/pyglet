@@ -300,6 +300,9 @@ _properties = {
             'static', 'relative', 'absolute', 'fixed')),
     'vertical-align':       ('vertical_align',
         True,   False,  _parse_vertical_align),
+    'white-space':          ('white_space',
+        True,   False,  _parse_generic(
+            'normal', 'pre', 'nowrap', 'pre-wrap', 'pre-line')),
     'width':                ('width',
         True,   False,  _parse_generic(Dimension, Percentage, 0, 'auto'))
 }

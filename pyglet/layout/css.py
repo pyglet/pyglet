@@ -41,7 +41,7 @@ class SelectableElement(object):
     previous_sibling = None     # SelectableElement
     attributes = None           # dict of str: str
     id = None                   # str
-    classes = None              # list of str
+    classes = ()                # list of str
     name = None                 # str
     style = None                # str
 
@@ -50,7 +50,7 @@ class SelectableElement(object):
         s = self.name
         if self.id:
             s += '#%s' % self.id
-        for c in self.classes or []:
+        for c in self.classes:
             s += '.%s' % c
         return s
 

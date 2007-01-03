@@ -832,19 +832,26 @@ class InlineFormattingContext(FormattingContext):
             from_breakpoint = 0
 
             while from_breakpoint < len(text):
-                '''
-                # Look for a hard line break
+                # Look for a hard line break (these will already have
+                # been removed from non-pre text).   
                 if '\n' in text[from_breakpoint:]:
                     to_breakpoint = text.index('\n', from_breakpoint)
-                    cbox = LineBoxRegionChild(box, from_breakpoint,
-                        to_breakpoint)
-                    if self.line_box.can_add(cbox):
-                        self.line_box.add(cbox)
-                        self.line_box.add_break_opportunity()
-                        self.close_line()
+                    frame = TextFrame(box, self.frame_stack[-1],
+                        self.containing_block, from_breakpoint, to_breakpoint)
+                    frame.left_parent_bearing = space_left
+                    frame.right_parent_bearing = space_right
+                    if (self.line_box.is_empty() and 
+                        box.white_space in ('normal', 'nowrap', 'pre-line')):
+                            frame.lstrip()
+                    if self.line_box.can_add(frame):
+                        # Add this frame to the line
+                        self.frame_stack[-1].add(frame)
+                        self.line_box.use_width(frame)
+                        frame.parent = self.frame_stack[-1]
+                        self.break_at_end = True
+                        self.line_break()
                         from_breakpoint = to_breakpoint + 1
                         continue
-                '''
 
                 # Look  for a soft line break
                 to_breakpoint = box.get_breakpoint(from_breakpoint, 
@@ -870,7 +877,8 @@ class InlineFormattingContext(FormattingContext):
                 # If the frame won't fit on this line, and it's possible to
                 # break the current line, break it.
                 if not self.line_box.can_add(frame) and \
-                        (self.break_at_end or self.break_frame):
+                       (self.break_at_end or self.break_frame) and \
+                       box.white_space != 'nowrap':
                     self.line_break()
                     continue
                 
