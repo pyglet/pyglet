@@ -134,14 +134,12 @@ class FlatView:
             if hasattr(map, 'edge_length'):
                 raise NotImplemented()
             else:
-                #print '-'*50
                 for column in map.cells:
                     for cell in column:
                         if not cell.tile: continue
-                        x, y = cell.topleft
+                        x, y = cell.bottomleft
                         glPushMatrix()
                         glTranslatef(x, y, 0)
-                        #print (x, y), cell.tile.id
                         cell.tile.texture.draw()
                         glPopMatrix()
             glPopMatrix()
