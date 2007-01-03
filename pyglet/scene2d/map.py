@@ -165,7 +165,8 @@ class TileSet(dict):
                         origin.getAttribute('y')))
 
                     # XXX this fiddling with the texture coords is a little
-                    # sub-optimal
+                    # sub-optimal and should be handled by some
+                    # intermediary between tiles (and sprites) and textures
                     subtex = TextureSubImage(tex, x, tex.height-y,
                         obj.width, -obj.height)
                     subtex.flip_vertical()

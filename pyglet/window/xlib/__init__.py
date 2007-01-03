@@ -865,7 +865,7 @@ class XlibWindow(BaseWindow):
             auto_event = XEvent()
             result = xlib.XCheckTypedWindowEvent(self._display,
                 self._window, KeyPress, byref(auto_event))
-            if result and abs(event.xkey.time - auto_event.xkey.time) < 3:
+            if result and abs(event.xkey.time - auto_event.xkey.time) < 4:
                 buffer = create_string_buffer(16)
                 count = xlib.XLookupString(byref(auto_event),
                                            byref(buffer),
