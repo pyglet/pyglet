@@ -5,7 +5,7 @@
 Press arrow keys to move view focal point (red dot) around map.
 Press "o" to turn allow_oob on and off.
 
-You should see no black border with allow_oob=True.
+You should see no black border with allow_oob=False.
 
 Press escape or close the window to finish the test.
 '''

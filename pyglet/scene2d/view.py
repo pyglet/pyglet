@@ -117,6 +117,7 @@ class FlatView:
         glViewport(self.x, self.y, self.w, self.h)
         glOrtho(self.x, self.w, self.y, self.h, -50, 50)
         glMatrixMode(GL_MODELVIEW)
+        glColor4f(1, 1, 0, 1)
 
         # sort by depth
         self.scene.maps.sort(key=operator.attrgetter('z'))
@@ -133,13 +134,16 @@ class FlatView:
             if hasattr(map, 'edge_length'):
                 raise NotImplemented()
             else:
-                for column in images:
-                    glPushMatrix()
-                    for image in column:
-                        image.draw()
-                        glTranslatef(0, map.th, 0)
-                    glPopMatrix()
-                    glTranslatef(map.tw, 0, 0)
+                #print '-'*50
+                for column in map.cells:
+                    for cell in column:
+                        if not cell.tile: continue
+                        x, y = cell.topleft
+                        glPushMatrix()
+                        glTranslatef(x, y, 0)
+                        #print (x, y), cell.tile.id
+                        cell.tile.texture.draw()
+                        glPopMatrix()
             glPopMatrix()
         glPopMatrix()
 
@@ -198,7 +202,8 @@ class FlatView:
                             glPushMatrix()
                             bl = cell.bottomleft
                             glTranslatef(bl[0], bl[1]+2, 0)
-                            image.draw()
+                            if cell.tile:
+                                cell.tile.draw()
                             glPopMatrix()
                         elif style is self.CHECKERED:
                             if not m % 2:  n = n + 1

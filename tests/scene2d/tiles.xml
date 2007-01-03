@@ -1,11 +1,11 @@
 <tileset width="32" height="32">
  <image filename="tiles.png">
-  <tile id="tl"><image x="0" y="0" /></tile>
-  <tile id="h"><image x="32" y="0" /></tile>
-  <tile id="tr"><image x="64" y="0" /></tile>
-  <tile id="v"><image x="0" y="32" /></tile>
-  <tile id="e"><image x="32" y="32" /></tile>
-  <tile id="bl"><image x="0" y="64" /></tile>
-  <tile id="br"><image x="64" y="64" /></tile>
+  <tile id="tl"><origin x="0" y="0" /></tile>
+  <tile id="h"><origin x="32" y="0" /></tile>
+  <tile id="tr"><origin x="64" y="0" /></tile>
+  <tile id="v"><origin x="0" y="32" /></tile>
+  <tile id="e"><origin x="32" y="32" /></tile>
+  <tile id="bl"><origin x="0" y="64" /></tile>
+  <tile id="br"><origin x="64" y="64" /></tile>
  </image>
 </tileset>

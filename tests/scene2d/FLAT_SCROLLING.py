@@ -20,7 +20,7 @@ class HexFlatDebugTest(RenderBase):
     def test_main(self):
         m = pyglet.scene2d.Map(32, 32, gencells(['a'*10]*10, 32, 32,
             pyglet.scene2d.Cell))
-        self.run_test(m, (256, 256), show_focus=True)
+        self.run_test(m, (256, 256), show_focus=True, allow_oob=True)
 
 if __name__ == '__main__':
     unittest.main()

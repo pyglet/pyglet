@@ -1,9 +1,9 @@
 <map tile_width="32" tile_height="32" x="0" y="0" z="0">
- <tileset id="road" filename="tiles.png" />
+ <tileset id="road" filename="tiles.xml" />
  <column>
-  <cell set="road" tile="tl" />
-  <cell set="road" tile="v" />
   <cell set="road" tile="bl" />
+  <cell set="road" tile="v" />
+  <cell set="road" tile="tl" />
  </column>
  <column>
   <cell set="road" tile="h" />
@@ -11,8 +11,8 @@
   <cell set="road" tile="h" />
  </column>
  <column>
-  <cell set="road" tile="tr" />
-  <cell set="road" tile="v" />
   <cell set="road" tile="br" />
+  <cell set="road" tile="v" />
+  <cell set="road" tile="tr" />
  </column>
 </map>

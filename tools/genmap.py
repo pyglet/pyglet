@@ -47,12 +47,14 @@ for opt, value in optlist:
     if opt == '-x':
         klass = pyglet.scene2d.HexMap
         args = [int(value)]
+        cw = ch = args[0]
         filename['x'] = 'hex(%d)'%args[0]
     elif opt == '-r':
         klass = pyglet.scene2d.Map
         args = map(int, value.split(','))
         if len(args) == 1:
             args *= 2
+        cw, ch = args
         filename['x'] = 'rect(%dx%d)'%tuple(args)
     elif opt == '-l':
         style = pyglet.scene2d.FlatView.LINES
@@ -88,12 +90,17 @@ if klass is None:
     print __doc__%sys.argv[0]
     sys.exit()
 
-class DummyImage:
-    def draw(self):
-        pass
-d = DummyImage()
+
+def gencells(l):
+    r = []
+    for i, m in enumerate(l):
+        c = []
+        r.append(c)
+        for j, n in enumerate(m):
+            c.append(pyglet.scene2d.Cell(i, j, cw, ch, n, None))
+    return r
 mw, mh = size
-kw = dict(images=[[d]*mh]*mw)
+kw = dict(cells=gencells(['a'*mh]*mw))
 m = klass(*args, **kw)
 w = pyglet.window.Window(width=m.pxw, height=m.pxh)
 s = pyglet.scene2d.Scene(maps=[m])

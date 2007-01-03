@@ -380,9 +380,14 @@ class Texture(Image):
         self.id = id
         self.uv = u, v
 
+    __quad_list = None
+    def quad_list(self):
+        if self.__quad_list:
+            return self.__quad_list
+
         # Make quad display list
-        self.quad_list = glGenLists(1)
-        glNewList(self.quad_list, GL_COMPILE)
+        self.__quad_list = glGenLists(1)
+        glNewList(self.__quad_list, GL_COMPILE)
         glBindTexture(GL_TEXTURE_2D, self.id)
         glPushAttrib(GL_ENABLE_BIT)
         glEnable(GL_TEXTURE_2D)
@@ -401,8 +406,9 @@ class Texture(Image):
         glPopAttrib()
         glEndList()
 
-    # TODO: <ah> I think this should be a sprite function only: 3D games
-    #       and pyglet.layout will have no need for this DL.
+        return self.__quad_list
+    quad_list = property(quad_list)
+
     def draw(self):
         glCallList(self.quad_list)
 
@@ -480,6 +486,7 @@ class Texture(Image):
 
 # TODO derive from image and implement blits
 class TextureSubImage(object):
+
     def __init__(self, texture, x, y, width, height):
         self.texture = texture
         self.x = x
@@ -499,6 +506,40 @@ class TextureSubImage(object):
             self.tex_coords[3], 
             self.tex_coords[2],
             self.tex_coords[1])
+
+    __quad_list = None
+    def quad_list(self):
+        if self.__quad_list:
+            return self.__quad_list
+
+        # Make quad display list
+        self.__quad_list = glGenLists(1)
+        glNewList(self.__quad_list, GL_COMPILE)
+        glBindTexture(GL_TEXTURE_2D, self.texture.id)
+        glPushAttrib(GL_ENABLE_BIT)
+        glEnable(GL_TEXTURE_2D)
+
+        l, t, r, b = self.tex_coords
+
+        glBegin(GL_QUADS)
+        glTexCoord2f(l, b)
+        glVertex2f(0, 0)
+        glTexCoord2f(l, t)
+        glVertex2f(0, self.height)
+        glTexCoord2f(r, t)
+        glVertex2f(self.width, self.height)
+        glTexCoord2f(r, b)
+        glVertex2f(self.width, 0)
+        glEnd()
+
+        glPopAttrib()
+        glEndList()
+
+        return self.__quad_list
+    quad_list = property(quad_list)
+
+    def draw(self):
+        glCallList(self.quad_list)
 
 class AllocatingTextureAtlasOutOfSpaceException(ImageException):
     pass

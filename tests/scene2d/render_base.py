@@ -23,14 +23,23 @@ def gencells(l, w, h, klass):
     return r
 
 class RenderBase(unittest.TestCase):
-    def run_test(self, m, viewsize=None, show_focus=False):
-        if viewsize is None:
-            vx, vy = m.pxw, m.pxh
+    w = None
+    def init_window(self, vx, vy):
+        self.w = pyglet.window.Window(width=vx, height=vy)
+
+    def run_test(self, m, viewsize=None, show_focus=False, debug=True,
+            allow_oob = False):
+        if self.w is None:
+            if viewsize is None: vx, vy = m.pxw, m.pxh
+            else: vx, vy = viewsize
+            self.init_window(vx, vy)
         else:
-            vx, vy = viewsize
-        w = pyglet.window.Window(width=vx, height=vy)
+            vx = self.w.width
+            vy = self.w.height
+
         s = pyglet.scene2d.Scene(maps=[m])
         r = pyglet.scene2d.FlatView(s, 0, 0, vx, vy)
+        r.allow_oob = allow_oob
 
         class running(pyglet.window.event.ExitHandler):
             def __init__(self, fps=30):
@@ -66,21 +75,24 @@ class RenderBase(unittest.TestCase):
                 return pyglet.window.event.EVENT_UNHANDLED
 
         running = running()
-        w.push_handlers(running)
+        self.w.push_handlers(running)
         input = InputHandler()
-        w.push_handlers(input)
+        self.w.push_handlers(input)
 
         print 'NOTE: allow_oob =', r.allow_oob
 
         while running:
-            w.switch_to()
-            w.dispatch_events()
+            self.w.switch_to()
+            self.w.dispatch_events()
             glClear(GL_COLOR_BUFFER_BIT)
             r.fx += input.left + input.right
             r.fy += input.up + input.down
-            r.debug(input.lines and r.LINES or r.CHECKERED, show_focus)
-            w.flip()
-        w.close()
+            if debug:
+                r.debug(input.lines and r.LINES or r.CHECKERED, show_focus)
+            else:
+                r.draw()
+            self.w.flip()
+        self.w.close()
 
 class DummyImage:
     def draw(self):

@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 
-'''Testing flat map allow_oob enforcement.
+'''Testing loading of a map.
 
-Press arrow keys to move view focal point (red dot) around map.
-Press "o" to turn allow_oob on and off.
-
-You should see no black border with allow_oob=True.
+You should see a simple map with a circular road on it.
+The tiles are not well-designed :)
 
 Press escape or close the window to finish the test.
 '''
@@ -13,17 +11,22 @@ Press escape or close the window to finish the test.
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import os
 import unittest
 from render_base import RenderBase, DummyImage
 import pyglet.scene2d
+from pyglet.GL.VERSION_1_1 import *
 
 class MapLoadTest(RenderBase):
     def test_main(self):
         map_xml = os.path.join(os.path.dirname(__file__), 'map.xml')
 
-        m = pyglet.scene2d.Map.load(map_xml)
-        (32, 32, images=[[DummyImage()]*10]*10)
-        self.run_test(m, (256, 256), show_focus=True)
+        self.init_window(256, 256)
+        m = pyglet.scene2d.Map.load_xml(map_xml)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_BLEND)
+        glEnable(GL_COLOR_MATERIAL)
+        self.run_test(m, show_focus=True, debug=False)
 
 if __name__ == '__main__':
     unittest.main()
