@@ -244,6 +244,8 @@ _properties = {
         True,   False,  _parse_border_width),
     'border-left-width':    ('border_left_width',   
         True,   False,  _parse_border_width),
+    'bottom':               ('bottom',
+        True,   False,  _parse_generic(Dimension, Percentage, 'auto')),
     'color':                ('color',               
         True,   False,  _parse_color),
     'display':              ('display',             
@@ -263,6 +265,8 @@ _properties = {
             'normal', 'bold', 'bolder', 'lighter')),
     'height':               ('height',
         True,   False,  _parse_generic(Dimension, Percentage, 0, 'auto')),
+    'left':                  ('left',
+        True,   False,  _parse_generic(Dimension, Percentage, 'auto')),
     'line-height':          ('line_height',
         True,   False,  _parse_line_height),
     'margin':               (
@@ -298,6 +302,10 @@ _properties = {
     'position':             ('position',            
         True,   False,  _parse_generic(
             'static', 'relative', 'absolute', 'fixed')),
+    'right':                  ('right',
+        True,   False,  _parse_generic(Dimension, Percentage, 'auto')),
+    'top':                  ('top',
+        True,   False,  _parse_generic(Dimension, Percentage, 'auto')),
     'vertical-align':       ('vertical_align',
         True,   False,  _parse_vertical_align),
     'white-space':          ('white_space',

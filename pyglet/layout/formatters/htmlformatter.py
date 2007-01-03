@@ -204,11 +204,11 @@ class HTMLFormatter(HTMLParser, DocumentFormatter):
 
         # Create the element and box 
         if not self.root_box:
-            elem = HTMLElement(name, attr_dict, None, None)
+            elem = HTMLElement(tag, attr_dict, None, None)
             box = self.create_box(elem)
             self.root_box = box
         else:
-            elem = HTMLElement(name, attr_dict,
+            elem = HTMLElement(tag, attr_dict,
                 self.element_stack[-1], self.element_sibling_stack.pop())
             self.element_sibling_stack.append(elem)
             box = self.create_box(elem)

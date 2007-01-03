@@ -108,7 +108,7 @@ class DocumentFormatter(Formatter):
        'border_left_width', 'top', 'right', 'bottom', 'left', 'width',
        'min_width', 'max_width', 'height', 'min_height', 'max_height',
        'line_height', 'text_indent', 'letter_spacing', 'word_spacing',
-       'border_spacing',
+       'border_spacing', 
        'intrinsic_width', 'intrinsic_height'])
 
     def resolve_computed_values(self, box):
@@ -171,6 +171,25 @@ class DocumentFormatter(Formatter):
              (box.intrinsic_height is None and box.height == 'auto'))):
             box.height = self.render_device.dimension_to_device('150px', 0)
              
+        # force zero position for static position
+        if box.position == 'static':
+            box.top = box.right = box.left = box.left = 0
+        # auto value for relative position 9.4.3
+        if box.position == 'relative':
+            print box, box.top, box.bottom
+            if box.top == 'auto' and box.bottom == 'auto':
+                box.top = box.bottom = 0
+            elif box.top == 'auto':
+                box.top = -box.bottom
+            else:
+                box.bottom = -box.top
+            if box.left == 'auto' and box.right == 'auto':
+                box.left = box.right = 0
+            elif box.left == 'auto' or box.direction == 'rtl':
+                box.left = -box.right
+            else:
+                box.right = -box.left
+
     def anonymous_block_box(self, boxes):
         '''Create an anonymous block box to contain 'boxes' and return it.
         

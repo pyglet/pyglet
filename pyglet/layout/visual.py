@@ -63,6 +63,10 @@ class PositionedFrame(object):
     used_height = 0
     used_min_height = 0
     used_max_height = 0
+    used_top = 0
+    used_right = 0
+    used_bottom = 0
+    used_left = 0
 
     # Border edge, relative to parent's content area
     border_edge_left = 0
@@ -113,6 +117,14 @@ class PositionedFrame(object):
         self.used_height = resolve(self.box.height, height)
         self.used_min_height = resolve(self.box.min_height, height)
         self.used_max_height = resolve(self.box.max_height, height)
+
+        # Cannot resolve top/left/bottom/right yet; they require
+        # containing block to be complete.
+        # Note that position:relative only needs top and left.
+        self.used_top = self.box.top
+        self.used_right = self.box.right
+        self.used_bottom = self.box.bottom
+        self.used_left = self.box.left
 
     def resolve_auto_widths(self):
         '''Apply the rules from 10.3 to resolve any 'auto' width-based values
@@ -204,7 +216,17 @@ class PositionedFrame(object):
 
     def draw(self, render_device, x, y):
         '''Draw this frame with the border-edge top-left at the given
-        coordinates.'''
+        coordinates.
+        
+        Also take this opportunity to resolve used values for percentage 
+        left/top/right/bottom.
+        '''
+        if type(self.used_top) == Percentage:
+            self.used_top = self.containing_block.height * self.used_top
+        if type(self.used_left) == Percentage:
+            self.used_left = self.containing_block.height * self.used_left
+        x += self.used_left
+        y -= self.used_top
         self.draw_background(render_device, x, y)
         self.draw_border(render_device, x, y)
 
@@ -296,6 +318,11 @@ class FrameContainer(object):
             self.parent.split(self.continuation)
 
     def draw(self, render_device, x, y):
+        # Depend on PositionFrame.draw() being called first, as this resolves
+        # percentage used_left/top
+        if isinstance(self, PositionedFrame): # yuk
+            x += self.used_left
+            y -= self.used_top
         for child in self.children:
             child.draw(render_device, 
                        x + child.border_edge_left,
@@ -507,6 +534,11 @@ class TextFrame(InlinePositionedFrame):
         self.resolve_auto_widths()
 
     def draw(self, render_device, x, y):
+        super(TextFrame, self).draw(render_device, x, y)
+        if self.from_breakpoint == self.to_breakpoint:
+            return # XXX only needed when lstrip can't remove from parent
+        x += self.used_left
+        y -= self.used_top
         self.box.draw_region(render_device,
             x, y - self.content_ascent, 0, 0,
             self.from_breakpoint, self.to_breakpoint)
@@ -577,9 +609,8 @@ class ReplacedInlineFrame(InlinePositionedFrame):
 
     def draw(self, render_device, x, y):
         super(ReplacedInlineFrame, self).draw(render_device, x, y)
-
-        x += self.used_border_left + self.used_padding_left
-        y -= self.used_border_top + self.used_padding_top
+        x += self.used_border_left + self.used_padding_left + self.used_left
+        y -= self.used_border_top + self.used_padding_top - self.used_top
         x2 = x + self.used_width
         y2 = y - self.used_height
         self.box.draw(render_device, x, y, x2, y2)
@@ -803,7 +834,8 @@ class InlineFormattingContext(FormattingContext):
     def add(self, box, space_left=0, space_right=0):
         assert box.display == 'inline'
         if box.children:
-            frame = InlineFrame(box, self.frame_stack[0], self.containing_block)
+            frame = InlineFrame(box, self.frame_stack[-1], 
+                self.containing_block)
             self.break_at_end = False
 
             # Make room for this (parent) frame's border, padding and margin
@@ -928,6 +960,15 @@ class InlineFormattingContext(FormattingContext):
         self.add_line_box(self.line_box)
 
         self.line_box = self.line_box.continuation
+
+        # lstrip the first text child in line_box, if there is one
+        frame = self.line_box
+        while isinstance(frame, InlineFrameContainer) and frame.children:
+            frame = frame.children[0]
+        if (isinstance(frame, TextFrame) and 
+            frame.box.white_space in ('normal', 'nowrap', 'pre-line')):
+            frame.lstrip() 
+            # TODO: need to recalculate something now?
 
         # Adds after this line break should go into the latest continuation.
         self.frame_stack = [f.continuation or f for f in self.frame_stack]
