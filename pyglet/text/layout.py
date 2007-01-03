@@ -6,9 +6,13 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+from ctypes import *
+
 from pyglet.GL.VERSION_1_1 import *
 import pyglet.text
 from pyglet.layout.base import *
+from pyglet.layout.locator import *
+from pyglet.image import *
 
 class GLRenderDevice(RenderDevice):
     _stock_font_names = {
@@ -18,6 +22,10 @@ class GLRenderDevice(RenderDevice):
         'fantasy':      'Bistream Vera Serif',
         'cursive':      'Bistream Vera Serif',
     }
+
+    def __init__(self, locator=LocalFileLocator):
+        self.locator = locator
+        self.texture_cache = {}
 
     def get_font(self, box):
         names = (box.font_family or [])[:]
@@ -44,29 +52,154 @@ class GLRenderDevice(RenderDevice):
     def create_inline_text_boxes(self, font, text):
         return font.get_inline_boxes(text)
 
-    def draw_vertical_border(self, x1, y1, x2, y2, color, style):
-        if style != 'solid':
-            raise NotImplementedError()
-
+    def draw_solid_border(self, x1, y1, x2, y2, x3, y3, x4, y4, 
+                          color, style):
+        '''Draw one side of a border, which is not 'dotted' or 'dashed'.
+        '''
         glColor4f(*color)
         glBegin(GL_QUADS)
         glVertex2f(x1, y1)
-        glVertex2f(x1, y2)
         glVertex2f(x2, y2)
-        glVertex2f(x2, y1)
+        glVertex2f(x3, y3)
+        glVertex2f(x4, y4)
         glEnd()
 
-    draw_horizontal_border = draw_vertical_border
+
+    def draw_vertical_border(self, x1, y1, x2, y2, x3, y3, x4, y4,
+                             color, style):
+        '''Draw one vertical edge of a border.
+        
+        Order of vertices is inner-top, inner-bottom, outer-bottom, outer-top
+        '''
+        if style in ('dotted', 'dashed'):
+            width = max(abs(x1 - x4), 1)
+            height = y1 - y2
+            if style == 'dotted':
+                period = width
+            else:
+                period = width * 3
+            cycles = int(height / period)
+            padding = (height - cycles * period) / 2
+            vertices = [
+                # Top cap
+                x1, y1, x1, y1 - padding, x4, y1 - padding, x4, y4,
+                # Bottom cap
+                x2, y2, x2, y2 + padding, x3, y2 + padding, x3, y3]
+            y = y1 - padding
+            phase = cycles % 2
+            if phase == 0:
+                y -= period / 2
+            for i in range(cycles):
+                if i % 2 == phase:
+                    vertices += [x1, y, x1, y - period, x3, y - period, x3, y]
+                y -= period
+            self.vertices = (c_float * len(vertices))(*vertices)
+            glColor4f(*color)
+            glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+            glEnableClientState(GL_VERTEX_ARRAY)
+            glVertexPointer(2, GL_FLOAT, 0, self.vertices)
+            glDrawArrays(GL_QUADS, 0, len(self.vertices)/2)
+            glPopClientAttrib()
+        else:
+            self.draw_solid_border(x1, y1, x2, y2, x3, y3, x4, y4, color, style)
+
+    def draw_horizontal_border(self, x1, y1, x2, y2, x3, y3, x4, y4,
+                               color, style):
+        '''Draw one horizontal edge of a border.
+        
+        Order of vertices is inner-left, inner-right, outer-right, outer-left.
+        '''
+        if style in ('dotted', 'dashed'):
+            height = max(abs(y1 - y4), 1)
+            width = x2 - x1
+            if style == 'dotted':
+                period = height 
+            else:
+                period = height * 3
+            cycles = int(width / period)
+            padding = (width - cycles * period) / 2
+            vertices = [
+                # Left cap
+                x1, y1, x1 + padding, y1, x1 + padding, y4, x4, y4,
+                # Right cap
+                x2, y2, x2 - padding, y2, x2 - padding, y3, x3, y3]
+            x = x1 + padding
+            phase = cycles % 2
+            if phase == 0:
+                x += period / 2
+            for i in range(cycles):
+                if i % 2 == phase:
+                    vertices += [x, y1, x + period, y1, x + period, y3, x, y3]
+                x += period
+            self.vertices = (c_float * len(vertices))(*vertices)
+            glColor4f(*color)
+            glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+            glEnableClientState(GL_VERTEX_ARRAY)
+            glVertexPointer(2, GL_FLOAT, 0, self.vertices)
+            glDrawArrays(GL_QUADS, 0, len(self.vertices)/2)
+            glPopClientAttrib()
+        else:
+            self.draw_solid_border(x1, y1, x2, y2, x3, y3, x4, y4, color, style)
 
     def draw_background(self, x1, y1, x2, y2, box):
-        if box.background_color == 'transparent':
-            return
+        if box.background_color != 'transparent':
+            glPushAttrib(GL_CURRENT_BIT)
+            glColor4f(*box.background_color)
+            glBegin(GL_QUADS)
+            glVertex2f(x1, y1)
+            glVertex2f(x1, y2)
+            glVertex2f(x2, y2)
+            glVertex2f(x2, y1)
+            glEnd()
+            glPopAttrib()
 
-        glColor4f(*box.background_color)
-        glBegin(GL_QUADS)
-        glVertex2f(x1, y1)
-        glVertex2f(x1, y2)
-        glVertex2f(x2, y2)
-        glVertex2f(x2, y1)
-        glEnd()
+        if box.background_image != 'none':
+            if box.background_image not in self.texture_cache:
+                self.texture_cache[box.background_image] = None
+                stream = self.locator.get_stream(box.background_image)
+                if stream:
+                    texture = Image.load(file=stream).texture()
+                    if box.background_repeat != 'no-repeat':
+                        texture.stretch()
+                    self.texture_cache[box.background_image] = texture
+            texture = self.texture_cache[box.background_image]
+            if texture:
+                u1, v1 = 0,0
+                u2, v2 = texture.uv
+                width, height = texture.width, texture.height
+                repeat = box.background_repeat
+                if repeat in ('no-repeat', 'repeat-y'):
+                    x2 = x1 + width
+                else:
+                    u2 = (x2 - x1) / width
+
+                if repeat in ('no-repeat', 'repeat-x'):
+                    y2 = y1 - height
+                else:
+                    v2 = (y1 - y2) / height
+                    # Compensate to keep tiling beginning at top, not bottom
+                    v1 = -(v2 - int(v2))
+                    v2 += v1
+
+                      # uv          # xyz
+                ar = [u1, v1,       x1, y2, 0,
+                      u1, v2,       x1, y1, 0,
+                      u2, v2,       x2, y1, 0,
+                      u2, v1,       x2, y2, 0]
+                ar = (c_float * len(ar))(*ar)
+            
+                glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+                glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)
+                glColor3f(1, 1, 1)
+                glEnable(GL_TEXTURE_2D)
+                glEnable(GL_BLEND)
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+                glBindTexture(GL_TEXTURE_2D, texture.id)
+                glInterleavedArrays(GL_T2F_V3F, 0, ar)
+                glDrawArrays(GL_QUADS, 0, 4)
+                glPopAttrib()
+                glPopClientAttrib()
+                    
+                    
+
     

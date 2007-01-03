@@ -185,6 +185,11 @@ _properties = {
 #       inhrtble, multivalue, parse function
     'background-color':     ('background_color',    
         True,   False,  _parse_transparent_color),
+    'background-image':     ('background_image',
+        True,   False,  _parse_generic(URI, 'none')),
+    'background-repeat':    ('background_repeat',
+        True,   False,  _parse_generic(
+            'repeat', 'repeat-x', 'repeat-y', 'no-repeat')),
     'border':               (
         ['border_top_width', 'border_top_style', 'border_top_color',
          'border_right_width', 'border_right_style', 'border_right_color',

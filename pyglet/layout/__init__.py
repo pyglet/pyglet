@@ -6,9 +6,9 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-def create_render_device():
+def create_render_device(locator):
     from pyglet.text.layout import GLRenderDevice
-    render_device = GLRenderDevice()
+    render_device = GLRenderDevice(locator)
     render_device.width = 640
     render_device.height = 480
     return render_device
@@ -27,7 +27,7 @@ def render_xml(stylesheet, data, locator=None):
     if not locator:
         locator = LocalFileLocator()
 
-    render_device = create_render_device()
+    render_device = create_render_device(locator)
     formatter = XMLFormatter(render_device, locator)
     formatter.add_stylesheet(stylesheet)
     return render(data, formatter)
@@ -39,7 +39,7 @@ def render_xhtml(data, locator=None):
 
     if not locator:
         locator = LocalFileLocator()
-    render_device = create_render_device()
+    render_device = create_render_device(locator)
 
     formatter = XHTMLFormatter(render_device, locator)
     image_box_generator = ImageBoxGenerator(locator)
@@ -53,7 +53,7 @@ def render_html(data, locator):
 
     if not locator:
         locator = LocalFileLocator()
-    render_device = create_render_device()
+    render_device = create_render_device(locator)
 
     formatter = HTMLFormatter(render_device, locator)
     image_box_generator = ImageBoxGenerator(locator)

@@ -44,7 +44,10 @@ layout = render_xhtml('''<?xml version="1.0"?>
 <html>  
   <head>
     <style>
-      h1 {border-bottom: 1px solid; }
+      h1 {border-bottom: 1px solid; 
+          background-image: url(examples/stripe.png)}
+      body {background-image: url(examples/paper.jpg); 
+            background-repeat: repeat}
     </style>
   </head>
   <body>

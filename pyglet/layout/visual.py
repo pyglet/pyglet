@@ -154,7 +154,8 @@ class PositionedFrame(object):
     def draw_background(self, render_device, x, y):
         '''Draw the background of this frame with the border-edge top-left at
         the given coordinates.'''
-        if self.box.background_color == 'transparent':
+        if self.box.background_color == 'transparent' and \
+           self.box.background_image == 'none':
             return
         render_device.draw_background(
             x,
@@ -165,24 +166,40 @@ class PositionedFrame(object):
 
     def draw_border(self, render_device, x, y):
         '''Draw the border of this frame with the border-edge top-left at the
-        given coordinates.'''
+        given coordinates.
+        
+        Each border edge is drawn as a trapezoid.  The render device takes
+        care of applying the border style if it is not 'none'.
+        '''
         x2 = x + self.border_edge_width
         y2 = y - self.border_edge_height
         if self.used_border_top:
             render_device.draw_horizontal_border(
-                x, y, x2, y - self.used_border_top,
+                x + self.used_border_left, y - self.used_border_top,
+                x2 - self.used_border_right, y - self.used_border_top,
+                x2, y,
+                x, y, 
                 self.box.border_top_color, self.box.border_top_style)
         if self.used_border_right:
             render_device.draw_vertical_border(
-                x2, y, x2 - self.used_border_right, y2,
+                x2 - self.used_border_left, y - self.used_border_top,
+                x2 - self.used_border_left, y2 + self.used_border_bottom,
+                x2, y2,
+                x2, y,
                 self.box.border_right_color, self.box.border_right_style)
         if self.used_border_bottom:
             render_device.draw_horizontal_border(
-                x, y2 + self.used_border_bottom, x2, y2,
+                x + self.used_border_left, y2 + self.used_border_bottom,
+                x2 - self.used_border_right, y2 + self.used_border_bottom,
+                x2, y2,
+                x, y2,
                 self.box.border_bottom_color, self.box.border_bottom_style)
         if self.used_border_left:
             render_device.draw_vertical_border(
-                x, y, x + self.used_border_left, y2,
+                x + self.used_border_left, y - self.used_border_top,
+                x + self.used_border_left, y2 + self.used_border_bottom,
+                x, y2,
+                x, y,
                 self.box.border_left_color, self.box.border_left_style)
 
     def draw(self, render_device, x, y):
@@ -387,7 +404,7 @@ class InlineFrame(InlinePositionedFrame, InlineFrameContainer):
         self.continuation.used_border_left = 0
 
     def resolve_auto_widths(self):
-        x = 0
+        x = self.used_border_left + self.used_padding_left
         for frame in self.children:
             frame.resolve_auto_widths()
             frame.resolve_min_max_width()
@@ -642,7 +659,14 @@ class LineBoxFrame(BlockPositionedFrame, InlineFrameContainer):
             frame.border_edge_left = x + frame.used_margin_left
             x += frame.margin_edge_width
 
+        # XXX keep this for glyph positioning hack only.
+        self.line_ascent = line_ascent
+
     def draw(self, render_device, x, y):
+        # XXX integer glyph positioning hack.
+        frac = (y - self.line_ascent) - int(y - self.line_ascent) 
+        y -= frac
+
         InlineFrameContainer.draw(self, render_device, x, y)
 
 class ViewportFrame(BlockFrameContainer):

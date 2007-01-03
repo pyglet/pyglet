@@ -8,6 +8,7 @@ __version__ = '$Id$'
 
 import sys
 import re
+import warnings
 
 from ctypes import *
 from math import ceil
@@ -446,6 +447,94 @@ class Texture(Image):
 
         return RawImage(buffer, width, height, format, type)
 
+    def stretch(self):
+        '''Make this image stretch to fill its entire texture dimensions,
+        leaving no border.
+        
+        The width, height of the texture are unchanged. Required for tiling
+        non-power-2 images.
+
+        If the power-2 size of the texture is larger than the window size,
+        part of the texture may be lost as OpenGL silently restricts the
+        viewport size.  If this is a problem, avoid this function and create
+        your images of power-2 size to start with.
+        '''
+        tex_width, tex_height, u, v = \
+            Texture.get_texture_size(self.width, self.height)
+        if tex_width == self.width and tex_height == self.height:
+            return
+
+        # Interleaved array for quad filling normalized device coords.
+            # u v     x y z
+        ar = [0, 0,   -1, -1, 0,
+              u, 0,    1, -1, 0,
+              u, v,    1,  1, 0,
+              0, v,   -1,  1, 0]
+        ar = (c_float * len(ar))(*ar)
+
+        #buffer = allocate_aux_buffer()
+        aux_buffers = c_int()
+        glGetIntegerv(GL_AUX_BUFFERS, byref(aux_buffers))
+        if aux_buffers.value < 1:
+            warnings.warn('No aux buffer available.  Request one in window \
+                creation to avoid destroying the color buffer during \
+                texture operations.')
+            buffer = GL_BACK
+        else:
+            buffer = GL_AUX0
+
+        alpha_bits = c_int()
+        glGetIntegerv(GL_ALPHA_BITS, byref(alpha_bits))
+        if alpha_bits.value == 0:
+            warnings.warn('No alpha channel in color/aux buffer.  Request \
+                alpha_size=8 in window creation to avoid losing the alpha \
+                channel of textures during texture operations.')
+
+        glDrawBuffer(buffer)
+
+        old_clear_color = (c_float * 4)()
+        glGetFloatv(GL_COLOR_CLEAR_VALUE, old_clear_color)
+        glClearColor(0, 0, 0, 0)
+        glClear(GL_COLOR_BUFFER_BIT)
+        old_viewport = (c_int * 4)()
+        glGetIntegerv(GL_VIEWPORT, old_viewport)
+        glViewport(0, 0, tex_width, tex_height)
+        glBindTexture(GL_TEXTURE_2D, self.id)
+
+        # Ya know, this would be indented properly if it wasn't Python ;-)
+        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+        glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT)
+        glEnable(GL_TEXTURE_2D)
+        glDisable(GL_DEPTH_TEST)
+        glColor3f(1, 1, 1)
+        glMatrixMode(GL_PROJECTION)
+        glPushMatrix()
+        glLoadIdentity()
+        glMatrixMode(GL_MODELVIEW)
+        glPushMatrix()
+        glLoadIdentity()
+        glInterleavedArrays(GL_T2F_V3F, 0, ar)
+        glDrawArrays(GL_QUADS, 0, 4)
+        glPopMatrix()
+        glMatrixMode(GL_PROJECTION)
+        glPopMatrix()
+        glMatrixMode(GL_MODELVIEW)
+        glPopAttrib()
+        glPopClientAttrib()
+
+        glReadBuffer(buffer)
+        glCopyTexSubImage2D(GL_TEXTURE_2D,
+            0,
+            0, 0,
+            0, 0,
+            tex_width, tex_height)
+
+        glViewport(*old_viewport)
+        glClearColor(*old_clear_color)
+        self.uv = (1.,1.)
+
+        glDrawBuffer(GL_BACK)
+
     @classmethod
     def create(cls, width, height, internalformat):
         id = c_uint()
@@ -480,8 +569,8 @@ class Texture(Image):
         # TODO square textures required by some cards?
         tex_width = _nearest_pow2(width)
         tex_height = _nearest_pow2(height)
-        u = float(width) / tex_width
-        v = float(height) / tex_height
+        u = float(width - 1) / tex_width
+        v = float(height - 1) / tex_height
         return tex_width, tex_height, u, v
 
 # TODO derive from image and implement blits

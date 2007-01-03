@@ -69,7 +69,9 @@ class Dimension(float):
 class URI(str):
     '''A URI, such as http://pyglet.org.  Does not include formatting
     tokens such as uri(...).'''
-    pass
+    def __new__(cls, text):
+        # TODO wrong wrong wrong
+        return str.__new__(cls, text[4:-1].strip())
 
 class UnicodeRange(str):
     '''A Unicode range, such as U+1000-1500, expressed as a complete string.

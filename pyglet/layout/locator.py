@@ -55,7 +55,7 @@ class LocalFileLocator(Locator):
         try:
             return open(self.uri, 'rb')
         except IOError:
-            warnings.warn('Could not open "%s"' % uri)
+            warnings.warn('Could not open "%s"' % self.uri)
             return None
 
 class URLLocator(Locator):
