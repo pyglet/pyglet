@@ -176,6 +176,7 @@ class DebugEventHandler(object):
               x, y, dx, dy, 
               _buttons_to_string(buttons),
               _modifiers_to_string(modifiers))
+        return EVENT_UNHANDLED
 
     def on_mouse_press(self, button, x, y, modifiers):
         print 'on_mouse_press(button=%r, x=%d, y=%d, modifiers=%s)' % (
@@ -189,6 +190,7 @@ class DebugEventHandler(object):
 
     def on_mouse_scroll(self, dx, dy):
         print 'on_mouse_scroll(dx=%f, dy=%f)' % (dx, dy)
+        return EVENT_UNHANDLED
 
     def on_close(self):
         print 'on_destroy()'
