@@ -76,6 +76,10 @@ class Image2d(object):
         return cls(image.texture(), 0, 0, image.width, image.height)
 
     @classmethod
+    def from_image(cls, image):
+        return cls(image.texture(), 0, 0, image.width, image.height)
+
+    @classmethod
     def from_texture(cls, texture):
         '''Image is the entire textue.'''
         return cls(texture, 0, 0, texture.width, texture.height)
