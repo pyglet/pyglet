@@ -278,7 +278,7 @@ class RawImage(Image):
         glGenTextures(1, byref(id))
         glBindTexture(GL_TEXTURE_2D, id.value)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
         glPixelStorei(GL_UNPACK_ALIGNMENT, self.alignment)
         if tex_width == self.width and tex_height == self.height:
@@ -544,7 +544,7 @@ class Texture(Image):
         glGenTextures(1, byref(id))
         glBindTexture(GL_TEXTURE_2D, id.value)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         blank = (c_ubyte * width * height)()
         glTexImage2D(GL_TEXTURE_2D, 0,
             internalformat,
@@ -572,8 +572,8 @@ class Texture(Image):
         # TODO square textures required by some cards?
         tex_width = _nearest_pow2(width)
         tex_height = _nearest_pow2(height)
-        u = float(width - 1) / tex_width
-        v = float(height - 1) / tex_height
+        u = float(width) / tex_width
+        v = float(height) / tex_height
         return tex_width, tex_height, u, v
 
 # TODO derive from image and implement blits

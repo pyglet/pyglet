@@ -58,6 +58,8 @@ DDSCAPS2_VOLUME 	        = 0x00200000
 
 class _filestruct(object):
     def __init__(self, data):
+        if len(data) < self.get_size():
+            raise DDSException('Not a DDS file')
         items = struct.unpack(self.get_format(), data)
         for field, value in map(None, self._fields, items):
             setattr(self, field[0], value)
