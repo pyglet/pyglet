@@ -158,6 +158,9 @@ class DocumentFormatter(Formatter):
         elif box.font_weight == 'lighter':
             box.font_weight = box.parent.font_weight - 300
 
+        # can now get the actual font object
+        box.font = self.render_device.get_font(box)
+
         # replaced element with no intrinsic width: 10.3.2
         if (box.is_replaced and 
             box.intrinsic_width is None and box.width == 'auto' and
@@ -190,25 +193,45 @@ class DocumentFormatter(Formatter):
             else:
                 box.right = -box.left
 
-    def anonymous_block_box(self, boxes):
+    def anonymous_block_box(self, boxes, parent):
         '''Create an anonymous block box to contain 'boxes' and return it.
         
         Assumes 'boxes' are inline elements.
         '''
         anon = Box()
-        apply_inherited_style(anon)
-        self.resolve_style_defaults(anon)
-        self.resolve_computed_values(anon)
         anon.display = Ident('block')
         anon.children = boxes
+        anon.parent = parent
+        apply_inherited_style(anon)        # needed?
+        self.resolve_style_defaults(anon)  # needed?
+        self.resolve_computed_values(anon) # needed?
+
         for box in boxes:
             assert box.display == 'inline'
             box.parent = anon
         return anon
 
+    def anonymous_inline_box(self, text, parent):
+        '''Create an anonymous inline box to contain 'text' and return it.
+        '''
+        anon = Box()
+        anon.text = text
+        anon.parent = parent
+        apply_inherited_style(anon)        # needed?
+        self.resolve_style_defaults(anon)  # needed?
+        self.resolve_computed_values(anon) # needed?
+        return anon
+
     def add_child(self, box):
         '''Add box its parent box, creating anonymous boxes as necessary.'''
         parent = box.parent
+        if parent.text:
+            # Anonymous inline box the existing text before continuing
+            assert not parent.children
+            anon = self.anonymous_inline_box(parent.text, parent)
+            del parent.text
+            self.add_child(anon)
+
         if not parent.children:
             parent.children = []
 
@@ -220,7 +243,7 @@ class DocumentFormatter(Formatter):
                 parent = parent.children[-1]
             else:
                 # Create anonymous block box around inline box.
-                box = self.anonymous_block_box([box])
+                box = self.anonymous_block_box([box], parent)
                 box.anonymous = 'True' 
 
         elif (box.display == 'block' and 
@@ -229,7 +252,8 @@ class DocumentFormatter(Formatter):
              # an anonymous block box for all existing children
              parent.inline_formatting_context = False
              if parent.children:
-                parent.children = [self.anonymous_block_box(parent.children)]
+                parent.children = \
+                    [self.anonymous_block_box(parent.children, parent)]
 
         parent.children.append(box)
         box.parent = parent
@@ -301,11 +325,8 @@ class DocumentFormatter(Formatter):
             return
 
         if content:
-            font = self.render_device.get_font(parent)
-            boxes = self.render_device.create_inline_text_boxes(font, content)
-            for box in boxes:
-                box.parent = parent
-                apply_inherited_style(box)
-                self.resolve_style_defaults(box)
-                self.resolve_computed_values(box)
-                self.add_child(box) 
+            if parent.children or parent.display != 'inline':  # TODO
+                box = self.anonymous_inline_box(content, parent)
+                self.add_child(box)
+            else:
+                parent.text += content

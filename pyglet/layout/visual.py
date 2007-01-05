@@ -194,8 +194,8 @@ class PositionedFrame(object):
                 self.box.border_top_color, self.box.border_top_style)
         if self.used_border_right:
             render_device.draw_vertical_border(
-                x2 - self.used_border_left, y - self.used_border_top,
-                x2 - self.used_border_left, y2 + self.used_border_bottom,
+                x2 - self.used_border_right, y - self.used_border_top,
+                x2 - self.used_border_right, y2 + self.used_border_bottom,
                 x2, y2,
                 x2, y,
                 self.box.border_right_color, self.box.border_right_style)
@@ -475,13 +475,17 @@ class InlineFrame(InlinePositionedFrame, InlineFrameContainer):
         InlineFrameContainer.draw(self, render_device, x, y)
 
 class TextFrame(InlinePositionedFrame):
-    '''Frame for non-replaced inline elements.
+    '''Frame for non-replaced inline elements containing text.
     '''
-    def __init__(self, box, parent, containing_block, 
-                 from_breakpoint, to_breakpoint):
-        InlinePositionedFrame.__init__(self, box, parent, containing_block)
-        self.from_breakpoint = from_breakpoint
-        self.to_breakpoint = to_breakpoint
+
+    # Subclasses must resolve these before calling this class's __init__.
+    text_width = 0
+    text_ascent = 0
+    text_descent = 0
+
+    def __init__(self, box, parent, containing_block, text):
+        super(TextFrame, self).__init__(box, parent, containing_block)
+        self.text = text
 
         # 10.3.1
         if self.used_margin_left == 'auto':
@@ -490,26 +494,21 @@ class TextFrame(InlinePositionedFrame):
             self.used_margin_right = 0
         self.used_margin_top = 0
         self.used_margin_bottom = 0
-        self.resolve_auto_widths()
+        self.used_width = self.text_width
 
     def resolve_auto_widths(self):
-        if self.from_breakpoint == self.to_breakpoint:
-            self.used_width = 0
-        else:
-            self.used_width = self.box.get_region_width(
-                self.from_breakpoint, self.to_breakpoint)
-
+        self.border_edge_width = self.used_padding_left + \
+            self.used_border_left + self.used_width + \
+            self.used_border_right + self.used_padding_right
         self.margin_edge_width = self.used_margin_left + \
-            self.used_padding_left + self.used_border_left + \
-            self.used_width + self.used_border_right + \
-            self.used_padding_right + self.used_margin_right
+             self.border_edge_width + self.used_margin_right
 
     def resolve_min_max_width(self):
         pass
 
     def resolve_auto_heights(self):
-        self.content_ascent = line_ascent = self.box.intrinsic_ascent
-        self.content_descent = line_descent = self.box.intrinsic_descent
+        self.content_ascent = line_ascent = self.text_ascent
+        self.content_descent = line_descent = self.text_descent
         if self.box.line_height != 'normal':
             half_leading = (self.box.line_height - 
                             (line_ascent - line_descent)) / 2
@@ -525,27 +524,21 @@ class TextFrame(InlinePositionedFrame):
         pass
 
     def lstrip(self):
-        '''Strip spaces from the beginning of this frame.  
-        
-        Conforms to step 1 of 16.6.1 "As each line is laid out...".
-        '''
-        text = self.box.text[self.from_breakpoint:self.to_breakpoint]
-        self.from_breakpoint += len(text) - len(text.lstrip(' '))
-        self.resolve_auto_widths()
+        pass # TODO
 
     def draw(self, render_device, x, y):
         super(TextFrame, self).draw(render_device, x, y)
-        if self.from_breakpoint == self.to_breakpoint:
-            return # XXX only needed when lstrip can't remove from parent
         x += self.used_left
         y -= self.used_top
-        self.box.draw_region(render_device,
-            x, y - self.content_ascent, 0, 0,
-            self.from_breakpoint, self.to_breakpoint)
+        self.draw_text(render_device, x, y - self.content_ascent)
+
+    def draw_text(self, render_device, x, y):
+        '''Subclasses must override to draw glyphs.  x,y give position
+        of baseline.'''
+        raise NotImplementedError('abstract')
 
     def __repr__(self):
-        return 'TextFrame(%r)' % \
-            self.box.text[self.from_breakpoint:self.to_breakpoint]
+        return 'TextFrame(%r)' % self.text
 
 class ReplacedInlineFrame(InlinePositionedFrame):
     '''Frame for replaced inline elements.
@@ -756,7 +749,7 @@ class BlockFormattingContext(FormattingContext):
         if frame.used_border_top or frame.used_padding_top:
             self.current_margin = 0
 
-        if box.children:
+        if box.children or box.text:
             self.frame_stack.append(frame)
             self.containing_block_stack.append(frame.generated_containing_block)
 
@@ -830,9 +823,8 @@ class InlineFormattingContext(FormattingContext):
         self.frame_stack = [self.line_box]
         self.break_frame = None
         self.break_at_end = False
-
+        
     def add(self, box, space_left=0, space_right=0):
-        assert box.display == 'inline'
         if box.children:
             frame = InlineFrame(box, self.frame_stack[-1], 
                 self.containing_block)
@@ -859,53 +851,54 @@ class InlineFormattingContext(FormattingContext):
             self.add(box.children[-1], space_left, space_right)
             self.frame_stack.pop()
 
-        elif box.is_text:
-            text = box.get_text()
+        elif box.text:
+            text = box.text
             from_breakpoint = 0
+            frame_open = True
+            frame_close = False
 
+            # Create a temporary inline frame so we can measure left/right
+            # margin/padding/border requirements.
+            temp = InlineFrame(
+                box, self.frame_stack[-1], self.containing_block)
+            inner_space_left = \
+                temp.used_margin_left + temp.used_border_left + \
+                temp.used_padding_left
+            inner_space_right = \
+                temp.used_margin_right + temp.used_border_right + \
+                temp.used_padding_right
+            del temp
+            
             while from_breakpoint < len(text):
-                # Look for a hard line break (these will already have
-                # been removed from non-pre text).   
-                if '\n' in text[from_breakpoint:]:
-                    to_breakpoint = text.index('\n', from_breakpoint)
-                    frame = TextFrame(box, self.frame_stack[-1],
-                        self.containing_block, from_breakpoint, to_breakpoint)
+                remaining_width = self.line_box.remaining_width - \
+                    (space_right + inner_space_right)
+                if frame_open:
+                    remaining_width -= space_left + inner_space_left
+
+                frame = box.font.create_text_frame(
+                    box, self.frame_stack[-1], self.containing_block,
+                    text[from_breakpoint:], remaining_width)
+
+                if not frame.text:
+                    break
+
+                # Uses the last part of text?
+                frame_close = from_breakpoint + len(frame.text) == len(text)
+                if frame_open:
                     frame.left_parent_bearing = space_left
+                else:
+                    frame.used_margin_left = 0
+                    frame.used_border_left = 0
+                    frame.used_padding_left = 0
+                if frame_close:
                     frame.right_parent_bearing = space_right
-                    if (self.line_box.is_empty() and 
-                        box.white_space in ('normal', 'nowrap', 'pre-line')):
-                            frame.lstrip()
-                    if self.line_box.can_add(frame):
-                        # Add this frame to the line
-                        self.frame_stack[-1].add(frame)
-                        self.line_box.use_width(frame)
-                        frame.parent = self.frame_stack[-1]
-                        self.break_at_end = True
-                        self.line_break()
-                        from_breakpoint = to_breakpoint + 1
-                        continue
+                else:
+                    frame.used_margin_right = 0
+                    frame.used_border_right = 0
+                    frame.used_padding_right = 0
 
-                # Look  for a soft line break
-                to_breakpoint = box.get_breakpoint(from_breakpoint, 
-                    u'\u0020\u200b', 
-                    self.line_box.remaining_width - space_left - space_right)
-                if from_breakpoint == to_breakpoint:
-                    to_breakpoint += 1
-                    self.break_at_end = True
-                frame = TextFrame(box, self.frame_stack[-1], 
-                    self.containing_block, from_breakpoint, to_breakpoint)
-                frame.left_parent_bearing = space_left
-                frame.right_parent_bearing = space_right
-
-                # Step 1 of 16.6.1, "As each line is laid out.."
-                # Remove leading white-space from each line.
-                if (self.line_box.is_empty() and 
-                    box.white_space in ('normal', 'nowrap', 'pre-line')):
-                    frame.lstrip()
-                    if frame.from_breakpoint == frame.to_breakpoint:
-                        from_breakpoint = to_breakpoint
-                        continue
-
+                frame.resolve_auto_widths()
+                
                 # If the frame won't fit on this line, and it's possible to
                 # break the current line, break it.
                 if not self.line_box.can_add(frame) and \
@@ -922,19 +915,23 @@ class InlineFormattingContext(FormattingContext):
                 # Add this frame to the line
                 self.frame_stack[-1].add(frame)
                 self.line_box.use_width(frame)
-                frame.parent = self.frame_stack[-1]
+                frame.parent = self.frame_stack[-1] # necessary?
+                frame_open = False
 
-                # If that was the last frame for the line, make sure we don't
-                # break after it, and exit the loop.
-                if not to_breakpoint:
+                if frame.hard_break:
+                    from_breakpoint += 1
+                    self.break_at_end = True
+                    self.line_break()
+                elif frame.text[-1] not in u'\n\u0020\u200b':
+                    # If that was the last frame for the line, make sure we
+                    # don't break after it.
                     self.break_at_end = False
-                    break
-
-                # Otherwise (more frames coming), allow a break after this
-                # frame, and get ready to go again.
-                self.break_at_end = True
-                from_breakpoint = to_breakpoint
-        else:
+                else:
+                    # Otherwise (more frames coming), allow a break after this
+                    # frame, and get ready to go again.
+                    self.break_at_end = True
+                from_breakpoint += len(frame.text)
+        elif box.is_replaced:
             # Not text (replaced element), cannot be broken.  Assume we can
             # break around it though (CSS doesn't specify).
             frame = ReplacedInlineFrame(box, self.frame_stack[-1],
@@ -948,6 +945,9 @@ class InlineFormattingContext(FormattingContext):
             self.frame_stack[-1].add(frame)
             self.line_box.use_width(frame)
             self.break_at_end = True
+        else:
+            # Empty element not handled yet
+            pass
 
     def line_break(self):
         assert not self.line_box.continuation

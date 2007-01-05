@@ -47,6 +47,7 @@ data = '''<?xml version="1.0"?>
 </html> '''
 
 class CubeBox(Box):
+    is_replaced = True
     intrinsic_width = 32
     intrinsic_height = 32
     intrinsic_ratio = 1.
@@ -115,8 +116,8 @@ class CubeGenerator(BoxGenerator):
 def render_custom_xhtml(data):
     '''Create a layout for data similar to `render_xhtml`, but attach our
     custom box generator.'''
-    render_device = create_render_device()
     locator = create_locator('')
+    render_device = create_render_device(locator)
     formatter = XHTMLFormatter(render_device, locator)
     cube_generator = CubeGenerator()
     formatter.add_generator(cube_generator)

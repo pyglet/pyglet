@@ -250,22 +250,15 @@ class RenderDevice(object):
         
         The font object must encapsulate all information about the font-face,
         font-size and font-style of the box, but not color, text-decoration,
-        text-transform, word or character spacing.  Any object may be
-        returned, it is used only in the 'create_inline_text_boxes' method.
+        text-transform, word or character spacing.
 
         Fonts are not cached by layout, it is recommended that the render
         device does this.
         '''
         raise NotImplementedError('abstract')
 
-    def create_inline_text_boxes(self, font, text):
-        '''Return one or more inline non-replaced boxes for the given text.
-
-        The return value must be a list even if only one box is returned.
-        Several boxes might need to be returned if the glyphs are contained in
-        several fonts or for other performance reasons.  Breakpoints are
-        assumed to be not permitted between these boxes (unless a space
-        character preceeds or begins one of them).
+    def create_text_frames(self, font, text, width, break_characters):
+        '''Return zero or more text frames
 
         The font paramter is a return value from 'get_font'.
         '''
@@ -370,9 +363,11 @@ class Box(object):
     # Layout engine properties
     # ------------------------
 
-    # This should be populated by box creation before handing over to the
-    # layout engine.
-    children = ()
+    # A box can have either children or text, but not both.  Use anonymous
+    # inline boxes to add children to boxes which already have text, or
+    # to add text to boxes that already have children.
+    children = ()       # list of Box
+    text = ''           # str or unicode
 
     # parent is None only for the root box.
     parent = None
@@ -387,47 +382,6 @@ class Box(object):
     # If true, this box is an anonymous block box (see 9.2.1) and can
     # accept additional inline boxes.
     anonymous = False
-
-    # Text-wrapping functionality
-    # ---------------------------
-    # If `is_text` is True, all must be implemented.  Otherwise,
-    # none are implemented (the box will not be split).  
-
-    # If is_text is False, box can wrap onto a new line without splitting.
-    # Otherwise, the following methods are used to determine valid
-    # breakpoints within the box, and the box is not wrapped by default.
-    is_text = False
-
-    # For non-replaced elements (text) only, in place of intrinsic_height.
-    # intrinsic_descent is typically negative (below the baseline).
-    intrinsic_ascent = 0
-    intrinsic_descent = 0
-
-    def get_text(self):
-        '''Return the text described in this box, if the box is a non-replaced
-        inline element.  Otherwise return None.'''
-        return None
-
-    def get_breakpoint(self, from_breakpoint, break_characters, width):
-        '''Return a breakpoint index that occurs after `from_breakpoint`
-        but before `width` pixels, that is greater than all other possible
-        breakpoints that match the same criteria.  The breakpoint 
-        occurs at a character from the set of characters `break_characters`.
-        Return None if no breakpoints are possible.
-        '''
-        return None
-
-    def get_region_width(self, from_breakpoint, to_breakpoint):
-        '''Return the amount of horizontal space, in pixels, required to
-        draw the given region defined by the breakpoints.  Either breakpoint
-        may be None, representing the beginning or end of the box.'''
-        return 0
-
-    def draw_region(self, render_context, x, y, from_breakpoint, to_breakpoint):
-        '''Draw the region of this box defined by the two breakpoints
-        (as returned by `get_breakpoint`).  Either breakpoint may be
-        None, representing the beginning or end of the box.'''
-        pass
 
     # Debug
     # -----
@@ -554,6 +508,9 @@ class Box(object):
     font_weight = 400
     # 15.7 Font size
     font_size = Ident('medium')
+
+    # Above combines to give computed font object, resolved by formatter.
+    font = None
 
     # 16 Text
     # 16.1 Indentation

@@ -46,7 +46,7 @@ def render_xhtml(data, locator=None):
     formatter.add_generator(image_box_generator)
     return render(data, formatter)
 
-def render_html(data, locator):
+def render_html(data, locator=None):
     from pyglet.layout.locator import LocalFileLocator
     from pyglet.layout.formatters.htmlformatter import HTMLFormatter
     from pyglet.image.layout import ImageBoxGenerator

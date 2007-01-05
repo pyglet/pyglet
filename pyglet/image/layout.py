@@ -40,6 +40,8 @@ class ImageBoxGenerator(BoxGenerator):
         return ImageBox(image)
 
 class ImageBox(Box):
+    is_replaced = True
+
     def __init__(self, image):
         if not isinstance(image, Texture):
             self.texture = image.texture()
