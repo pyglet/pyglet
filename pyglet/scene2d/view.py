@@ -113,7 +113,6 @@ class FlatView:
         on position which is (x, y). '''
         self.camera.project()
 
-        glMatrixMode(GL_MODELVIEW)
         glColor4f(1, 1, 0, 1)
 
         # sort by depth
@@ -142,8 +141,6 @@ class FlatView:
             glPopMatrix()
         glPopMatrix()
 
-        glMatrixMode(GL_PROJECTION)
-        glPopMatrix()
 
     CHECKERED = 'checkered'
     LINES = 'lines'

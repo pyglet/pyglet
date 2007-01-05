@@ -19,10 +19,10 @@ class FlatCamera(object):
 
     def project(self):
         glMatrixMode(GL_PROJECTION)
-        glPushMatrix()
         glLoadIdentity()
         glViewport(self.x, self.y, self.width, self.height)
         glOrtho(self.x, self.width, self.y, self.height, self.near, self.far)
+        glMatrixMode(GL_MODELVIEW)
 
     def on_resize(self, width, height):
         self.width, self.height = width, height
