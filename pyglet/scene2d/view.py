@@ -31,6 +31,7 @@ __version__ = '$Id$'
 
 import operator
 
+from pyglet.scene2d.camera import FlatCamera
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.GLU.VERSION_1_1 import *
 
@@ -40,7 +41,7 @@ class FlatView:
     Attributes:
 
         scene           -- a pyglet.scene2d.Scene instance
-        x, y, w, h      -- viewport specification
+        camera          -- a pyglet.scene2d.FlatCamera instance
         allow_oob       -- indicates whether the viewport will allow
                            viewing of out-of-bounds tile positions (ie.
                            for which there is no tile image). If set to
@@ -50,11 +51,10 @@ class FlatView:
         fx, fy          -- pixel point to center in the viewport, subject
                            to OOB checks
     '''
-    def __init__(self, scene, x, y, w, h, allow_oob=True, scale=1,
-            rotation=0, fx=0, fy=0):
+    def __init__(self, scene, x, y, width, height, allow_oob=True,
+            scale=1, rotation=0, fx=0, fy=0):
         self.scene = scene
-        self.x, self.y = x, y
-        self.w, self.h = w, h
+        self.camera = FlatCamera(x, y, width, height)
         self.allow_oob = allow_oob
         self.scale = scale
         self.rotation = rotation
@@ -86,8 +86,8 @@ class FlatView:
             b_max_y = min(b_max_y, map.y + map.pxh)
 
         # figure the view min/max based on focus
-        w2 = self.w/2
-        h2 = self.h/2
+        w2 = self.camera.width/2
+        h2 = self.camera.height/2
         fx, fy = self.fx, self.fy
         v_min_x = fx - w2
         v_min_y = fy - w2
@@ -111,11 +111,8 @@ class FlatView:
     def draw(self):
         '''Draw the scene centered (or closest, depending on allow_oob)
         on position which is (x, y). '''
-        glMatrixMode(GL_PROJECTION)
-        glPushMatrix()
-        glLoadIdentity()
-        glViewport(self.x, self.y, self.w, self.h)
-        glOrtho(self.x, self.w, self.y, self.h, -50, 50)
+        self.camera.project()
+
         glMatrixMode(GL_MODELVIEW)
         glColor4f(1, 1, 0, 1)
 
@@ -127,7 +124,7 @@ class FlatView:
 
         # now draw
         glPushMatrix()
-        glTranslatef(self.w/2-fx, self.h/2-fy, 0)
+        glTranslatef(self.camera.width/2-fx, self.camera.height/2-fy, 0)
         for map in self.scene.maps:
             glPushMatrix()
             glTranslatef(map.x, map.y, map.z)
@@ -153,11 +150,8 @@ class FlatView:
     def debug(self, style=CHECKERED, show_focus=False):
         '''Draw the scene centered (or closest, depending on allow_oob)
         on position which is (x, y). '''
-        glMatrixMode(GL_PROJECTION)
-        glPushMatrix()
-        glLoadIdentity()
-        glViewport(self.x, self.y, self.w, self.h)
-        glOrtho(self.x, self.w, self.y, self.h, -50, 50)
+        self.camera.project()
+
         glMatrixMode(GL_MODELVIEW)
 
         # sort by depth
@@ -168,7 +162,7 @@ class FlatView:
 
         # now draw
         glPushMatrix()
-        glTranslatef(self.w/2-fx, self.h/2-fy, 0)
+        glTranslatef(self.camera.width/2-fx, self.camera.height/2-fy, 0)
         for map in self.scene.maps:
             glPushMatrix()
             glTranslatef(map.x, map.y, map.z)

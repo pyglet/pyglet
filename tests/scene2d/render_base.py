@@ -82,6 +82,7 @@ class RenderBase(unittest.TestCase):
         self.w.push_handlers(running)
         input = InputHandler()
         self.w.push_handlers(input)
+        self.w.push_handlers(r.camera)
 
         print 'NOTE: allow_oob =', r.allow_oob
 
