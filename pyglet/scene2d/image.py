@@ -81,12 +81,12 @@ class Image2d(object):
 
     @classmethod
     def from_texture(cls, texture):
-        '''Image is the entire textue.'''
+        '''Image is the entire texture.'''
         return cls(texture, 0, 0, texture.width, texture.height)
 
     @classmethod
     def from_subtexture(cls, texture, x, y, width, height):
-        '''Image is a section of the textue.'''
+        '''Image is a section of the texture.'''
         return cls(texture, x, y, width, height)
 
     def subimage(self, x, y, width, height):
