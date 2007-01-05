@@ -12,6 +12,7 @@ from os.path import dirname, join
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.image import *
 from pyglet.image.codecs import *
+from pyglet.scene2d.image import *
 from pyglet.window import *
 from pyglet.window.event import *
 
@@ -84,12 +85,13 @@ class TestLoad(ImageRegressionTestCase):
         w.push_handlers(self)
 
         self.checkerboard = \
-            Image.create_checkerboard(32).texture()
+            Image2d.from_image(Image.create_checkerboard(32))
 
         if self.texture_file:
             self.texture_file = join(dirname(__file__), self.texture_file)
             self.texture = \
                 Texture.load(self.texture_file)
+            self.texture = Image2d.from_texture(self.texture)
 
         if self.alpha:
             glEnable(GL_BLEND)

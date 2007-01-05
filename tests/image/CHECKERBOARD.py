@@ -13,6 +13,7 @@ import unittest
 
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.image import *
+from pyglet.scene2d import *
 from pyglet.window import *
 from pyglet.window.event import *
 
@@ -42,7 +43,7 @@ class TEST_CHECKERBOARD(ImageRegressionTestCase):
         w.push_handlers(self.exit_handler)
         w.push_handlers(self)
 
-        self.texture = Image.create_checkerboard(width).texture()
+        self.texture = Image2d.from_image(Image.create_checkerboard(width))
 
         w.set_visible()
         while not self.exit_handler.exit:

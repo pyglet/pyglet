@@ -7,12 +7,13 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import unittest
-import StringIO
+from StringIO import StringIO
 from os.path import dirname, join
 
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.image import *
 from pyglet.image.codecs import *
+from pyglet.scene2d import *
 from pyglet.window import *
 from pyglet.window.event import *
 
@@ -84,13 +85,15 @@ class TestSave(ImageRegressionTestCase):
         if self.texture_file:
             self.texture_file = join(dirname(__file__), self.texture_file)
             self.original_texture = \
-                Texture.load(self.texture_file)
+                Image.load(self.texture_file).texture()
 
-            file = StringIO.StringIO()
+            file = StringIO()
             self.original_texture.save(self.texture_file, file)
             file.seek(0)
             self.saved_texture = \
-                Texture.load(self.texture_file, file)
+                Image2d.load(self.texture_file, file)
+
+            self.original_texture = Image2d.from_texture(self.original_texture)
 
     def create_window(self):
         width, height = 800, 600
@@ -109,7 +112,7 @@ class TestSave(ImageRegressionTestCase):
         self.choose_codecs()
 
         self.checkerboard = \
-            Image.create_checkerboard(32).texture()
+            Image2d.from_image(Image.create_checkerboard(32))
 
         self.load_texture()
 

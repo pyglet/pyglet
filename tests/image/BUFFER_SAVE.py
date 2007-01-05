@@ -14,11 +14,12 @@ occuring.
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-import StringIO
+from StringIO import StringIO
 import unittest
 import base_save
 
 from pyglet.image import *
+from pyglet.scene2d import *
 
 class TEST_BUFFER_SAVE(base_save.TestSave):
     def draw_original(self):
@@ -40,12 +41,12 @@ class TEST_BUFFER_SAVE(base_save.TestSave):
 
         print 'Saving colour image...'
         image = BufferImage()
-        file = StringIO.StringIO()
+        file = StringIO()
         image.save('buffer.png', file)
 
         print 'Loading colour image as texture...'
         file.seek(0)
-        self.saved_texture = Texture.load('buffer.png', file)
+        self.saved_texture = Image2d.load('buffer.png', file)
 
         print 'Done.'
         self.window.set_visible(False)

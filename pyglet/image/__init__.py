@@ -278,7 +278,7 @@ class RawImage(Image):
         glGenTextures(1, byref(id))
         glBindTexture(GL_TEXTURE_2D, id.value)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
         glPixelStorei(GL_UNPACK_ALIGNMENT, self.alignment)
         if tex_width == self.width and tex_height == self.height:
@@ -512,7 +512,7 @@ class Texture(Image):
         glGenTextures(1, byref(id))
         glBindTexture(GL_TEXTURE_2D, id.value)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         blank = (c_ubyte * width * height)()
         glTexImage2D(GL_TEXTURE_2D, 0,
             internalformat,
