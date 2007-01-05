@@ -9,6 +9,7 @@ __version__ = '$Id$'
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.clock import *
+from pyglet.scene2d.textsprite import *
 from pyglet.text import *
 
 width, height = 640, 480
@@ -18,8 +19,8 @@ exit_handler = ExitHandler()
 window.push_handlers(exit_handler)
 
 font = Font('Arial', 500, bold=True)
-commander = font.render('COMMANDER', color=(1, 1, 1, 0.5))
-keen = font.render('KEEN', color=(1, 1, 1, 0.5))
+commander = TextSprite(font, 'COMMANDER', color=(1, 1, 1, 0.5))
+keen = TextSprite(font, 'KEEN', color=(1, 1, 1, 0.5))
 
 commander.x = width
 keen.x = -keen.width
@@ -39,6 +40,5 @@ while not exit_handler.exit:
     for text in (commander, keen):
         glLoadIdentity()
         text.x += text.dx * time
-        glTranslatef(text.x, 0, 0)
         text.draw()
     window.flip()

@@ -127,7 +127,22 @@ class BaseFont(object):
         # This can't fail.
         return texture.allocate(width, height)
 
-    def get_glyphs(self, text, width):
+    def get_glyphs(self, text):
+        '''Create and return a list of Glyphs for 'text'.
+        '''
+        glyph_renderer = None
+        glyphs = []         # glyphs that are committed.
+        for c in text:
+            # Get the glyph for 'c'
+            if c not in self.glyphs:
+                if not glyph_renderer:
+                    glyph_renderer = self.glyph_renderer_class(self)
+                self.glyphs[c] = glyph_renderer.render(c)
+            glyphs.append(self.glyphs[c])
+        return glyphs
+
+
+    def get_glyphs_for_width(self, text, width):
         '''Create and return a list of Glyphs that fit within 'width',
         beginning with the text 'text'.  If the entire text is larger than
         'width', as much as possible will be used while breaking after
@@ -143,6 +158,7 @@ class BaseFont(object):
         glyphs = []         # glyphs that are committed.
         for c in text:
             if c == '\n':
+                glyphs += glyph_buffer
                 break
 
             # Get the glyph for 'c'

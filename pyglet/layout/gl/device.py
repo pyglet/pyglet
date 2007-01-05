@@ -21,7 +21,7 @@ class GLFont(object):
 
     def create_text_frame(self, box, parent, containing_block,
                           text, width):
-        glyphs = self.font.get_glyphs(text, width)
+        glyphs = self.font.get_glyphs_for_width(text, width)
 
         # Find state changes required in glyph list.
         texture = None
@@ -288,7 +288,7 @@ class GLTextFrame(TextFrame):
         glInterleavedArrays(GL_T2F_V3F, 0, self.array)
         for state_from, state_length, texture in self.states:
             glBindTexture(GL_TEXTURE_2D, texture.id)
-            glDrawArrays(GL_QUADS, state_from, state_length * 4)
+            glDrawArrays(GL_QUADS, state_from * 4, state_length * 4)
         glPopMatrix()
         glPopAttrib()
  
