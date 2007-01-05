@@ -6,7 +6,7 @@ from pyglet.window.event import *
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.GLU.VERSION_1_1 import *
 from pyglet import clock
-from pyglet.image import Image, Texture
+from pyglet.scene2d import Image2d
 
 from ctypes import *
 
@@ -14,9 +14,9 @@ if len(sys.argv) != 2:
     print 'Usage: %s <PNG/JPEG filename>'%sys.argv[0]
     sys.exit()
 
-window = pyglet.window.Window(width=800, height=800)
+window = pyglet.window.Window(width=400, height=400)
 
-tex = Texture.load(sys.argv[1])
+image = Image2d.load(sys.argv[1])
 
 exit_handler = ExitHandler()
 window.push_handlers(exit_handler)
@@ -45,10 +45,10 @@ while not exit_handler.exit:
 
     r = (r + 1) % 360
     glRotatef(r, 0, 0, 1)
-    s = max(tex.width, tex.height)
+    s = max(image.width, image.height)
     glScalef(1./s, 1./s, 1.)
-    glTranslatef(-tex.width/2, -tex.height/2, -1.)
-    tex.draw()
+    glTranslatef(-image.width/2, -image.height/2, -1.)
+    image.draw()
 
     window.flip()
 

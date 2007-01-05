@@ -78,7 +78,8 @@ import os
 import math
 import xml.dom
 import xml.dom.minidom
-from pyglet.image import Texture, TextureSubImage
+
+from pyglet.scene2d.image import Image2d
 
 class Tile(object):
     __slots__ = 'id meta texture'.split()
@@ -139,6 +140,7 @@ class TileSet(dict):
              ...
             </tileset>
         '''
+
         if filename in cls.tilesets:
             return cls.tilesets[filename]
         dirname = os.path.dirname(filename)
@@ -155,7 +157,7 @@ class TileSet(dict):
                 filename = child.getAttribute('filename')
                 if not os.path.isabs(filename):
                     filename = os.path.join(dirname, filename)
-                tex = Texture.load(filename)
+                image = Image2d.load(filename)
 
                 for child in child.childNodes:
                     if not hasattr(child, 'tagName'): continue
@@ -164,12 +166,7 @@ class TileSet(dict):
                     x, y = map(int, (origin.getAttribute('x'),
                         origin.getAttribute('y')))
 
-                    # XXX this fiddling with the texture coords is a little
-                    # sub-optimal and should be handled by some
-                    # intermediary between tiles (and sprites) and textures
-                    subtex = TextureSubImage(tex, x, tex.height-y,
-                        obj.width, -obj.height)
-                    subtex.flip_vertical()
+                    subimage = image.subimage(x, y, obj.width, obj.height)
 
                     meta = {}
                     for tag in child.getElementsByTagName('meta'):
@@ -177,7 +174,8 @@ class TileSet(dict):
                         type = tag.getAttribute('type')
                         value = tag.getAttribute('value')
                         meta[name] = xml_to_python[type](value)
-                    obj[id] = Tile(id, meta, subtex)
+                    subimage.quad_list
+                    obj[id] = Tile(id, meta, subimage)
             else:
                 id = child.getAttribute('id')
                 meta = {}
@@ -381,12 +379,12 @@ class Cell(CellBase):
 
     # ro, mid-point in pixels, (x, y)
     def get_midtop(self):
-        return (self.x * self.width + self.width/2, self.y * self.height)
+        return (self.x * self.width + self.width/2, (self.y + 1) * self.height)
     midtop = property(get_midtop)
 
     # ro, mid-point in pixels, (x, y)
     def get_midbottom(self):
-        return (self.x * self.width + self.width/2, (self.y + 1) * self.height)
+        return (self.x * self.width + self.width/2, self.y * self.height)
     midbottom = property(get_midbottom)
 
     # ro, side in pixels, x extent
@@ -401,22 +399,22 @@ class Cell(CellBase):
 
     # ro, corner in pixels, (x, y)
     def get_topleft(self):
-        return (self.x * self.width, self.y * self.height)
+        return (self.x * self.width, (self.y + 1) * self.height)
     topleft = property(get_topleft)
 
     # ro, corner in pixels, (x, y)
     def get_topright(self):
-        return ((self.x + 1) * self.width, self.y * self.height)
+        return ((self.x + 1) * self.width, (self.y + 1) * self.height)
     topright = property(get_topright)
 
     # ro, corner in pixels, (x, y)
     def get_bottomleft(self):
-        return (self.x * self.height, (self.y + 1) * self.height)
+        return (self.x * self.height, self.y * self.height)
     bottomleft = property(get_bottomleft)
 
     # ro, corner in pixels, (x, y)
     def get_bottomright(self):
-        return ((self.x + 1) * self.width, (self.y + 1) * self.height)
+        return ((self.x + 1) * self.width, self.y * self.height)
     bottomright = property(get_bottomright)
 
     # ro, mid-point in pixels, (x, y)

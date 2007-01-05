@@ -64,9 +64,13 @@ class RenderBase(unittest.TestCase):
                 if symbol == pyglet.window.key.K_RIGHT: self.right = 0
                 return pyglet.window.event.EVENT_UNHANDLED
             lines = False
+            show_debug = debug
             def on_text(self, text):
                 if text == 's':
                     self.lines = not self.lines
+                    return
+                if text == 'd':
+                    self.show_debug = not self.show_debug
                     return
                 if text == 'o':
                     r.allow_oob = not r.allow_oob
@@ -87,7 +91,7 @@ class RenderBase(unittest.TestCase):
             glClear(GL_COLOR_BUFFER_BIT)
             r.fx += input.left + input.right
             r.fy += input.up + input.down
-            if debug:
+            if debug or input.show_debug:
                 r.debug(input.lines and r.LINES or r.CHECKERED, show_focus)
             else:
                 r.draw()

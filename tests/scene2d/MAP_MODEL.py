@@ -77,14 +77,14 @@ class MapModelTest(unittest.TestCase):
         assert t.bottom == 0
         assert t.left == 0
         assert t.right == 10
-        assert t.topleft == (0, 0)
-        assert t.topright == (10, 0)
-        assert t.bottomleft == (0, 16)
-        assert t.bottomright == (10, 16)
-        assert t.midtop == (5, 0)
+        assert t.topleft == (0, 16)
+        assert t.topright == (10, 16)
+        assert t.bottomleft == (0, 0)
+        assert t.bottomright == (10, 0)
+        assert t.midtop == (5, 16)
         assert t.midleft == (0, 8)
         assert t.midright == (10, 8)
-        assert t.midbottom == (5, 16)
+        assert t.midbottom == (5, 0)
 
     def test_hex_neighbor(self):
         # test hexagonal tile map
