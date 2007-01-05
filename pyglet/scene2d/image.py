@@ -29,6 +29,26 @@ class Image2d(object):
         self.x, self.y = x, y
         self.width, self.height = width, height
 
+    @classmethod
+    def load(cls, filename=None, file=None):
+        '''Image is loaded from the given file.'''
+        image = RawImage.load(filename=filename, file=file)
+        return cls(image.texture(), 0, 0, image.width, image.height)
+
+    @classmethod
+    def from_image(cls, image):
+        return cls(image.texture(), 0, 0, image.width, image.height)
+
+    @classmethod
+    def from_texture(cls, texture):
+        '''Image is the entire texture.'''
+        return cls(texture, 0, 0, texture.width, texture.height)
+
+    @classmethod
+    def from_subtexture(cls, texture, x, y, width, height):
+        '''Image is a section of the texture.'''
+        return cls(texture, x, y, width, height)
+
     __quad_list = None
     def quad_list(self):
         if self.__quad_list is not None:
@@ -68,26 +88,6 @@ class Image2d(object):
 
     def draw(self):
         glCallList(self.quad_list)
-
-    @classmethod
-    def load(cls, filename=None, file=None):
-        '''Image is loaded from the given file.'''
-        image = RawImage.load(filename=filename, file=file)
-        return cls(image.texture(), 0, 0, image.width, image.height)
-
-    @classmethod
-    def from_image(cls, image):
-        return cls(image.texture(), 0, 0, image.width, image.height)
-
-    @classmethod
-    def from_texture(cls, texture):
-        '''Image is the entire texture.'''
-        return cls(texture, 0, 0, texture.width, texture.height)
-
-    @classmethod
-    def from_subtexture(cls, texture, x, y, width, height):
-        '''Image is a section of the texture.'''
-        return cls(texture, x, y, width, height)
 
     def subimage(self, x, y, width, height):
         # XXX should we care about recursive sub-image calls??
