@@ -133,13 +133,6 @@ class RenderDevice(object):
     means borders will not be drawn (but will still be accounted for in
     layout).  The text and font retrieval methods must be implemented.
     '''
-
-    # Width and height of the viewable area.  Content may be rendered outside
-    # of this area, but this viewport forms the initial containing block, and
-    # the layout engine will attempt to keep within the given bounds.
-    width = 0
-    height = 0
-
     # Physical resolution of the device.  The default units are recommended
     # for standard computer displays (a printer would have a much higer DPI
     # and PPD, though).

@@ -15,35 +15,14 @@ from pyglet.window.event import *
 from pyglet.clock import *
 
 from pyglet.text import *
-from pyglet.layout.css import Stylesheet
-from pyglet.layout.event import *
+from pyglet.layout import *
 
-window = Window()
+window = Window(visible=False)
 exit_handler = ExitHandler()
 window.push_handlers(exit_handler)
-offset_top = 0
-layout_height = 0
 
-def on_resize(width, height):
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    glOrtho(0, width, 0, height, -1, 1)
-    glMatrixMode(GL_MODELVIEW)
-    layout.render_device.width = width
-    layout.render_device.height = height
-    layout.layout()
-
-    # HACK; will have public accessor eventually
-    global layout_height
-    layout_height = 1200
-    layout.hack_offset = - window.height - offset_top
-
-def on_scroll(dx, dy):
-    global offset_top
-    offset_top -= dy * 30
-    layout.hack_offset = - window.height - offset_top
-
-layout = render_xhtml('''<?xml version="1.0"?>
+layout = Layout()
+layout.set_xhtml('''<?xml version="1.0"?>
 <html>  
   <head>
     <style>
@@ -191,13 +170,6 @@ layout = render_xhtml('''<?xml version="1.0"?>
 </body>
 </html> ''')
 
-highlight_frames = []
-
-def on_mouse_motion(x, y, dx, dy):
-    #print layout.get_boxes_for_point(x,y - offset_top - window.height)
-    highlight_frames[:] = \
-        layout.get_frames_for_point(x, y - offset_top - window.height)
-
 @select('body')
 def on_mouse_press(element, button, x, y, modifiers):
     print 'I am the body'
@@ -219,14 +191,12 @@ def on_mouse_press(element, button, x, y, modifiers):
     print 'Granted three wishes!'
 layout.push_handlers(on_mouse_press)
 
-window.push_handlers(on_resize=on_resize)
-window.push_handlers(on_mouse_scroll=on_scroll)
-window.push_handlers(on_mouse_motion)
 window.push_handlers(layout)
-on_resize(window.width, window.height)
-glClearColor(1, 1, 1, 1)
 
+glClearColor(1, 1, 1, 1)
 clock = Clock()
+
+window.set_visible()
 
 while not exit_handler.exit:
     clock.tick()
@@ -234,28 +204,6 @@ while not exit_handler.exit:
 
     window.dispatch_events()
     glClear(GL_COLOR_BUFFER_BIT)
-    glLoadIdentity()
-    offset_top = max(min(offset_top, layout_height - window.height), 0)
-    glTranslatef(0, window.height + offset_top, 0)
     layout.draw()
-
-    colors = [(1, 0, 0, 1),
-              (0, 1, 0, 1),
-              (0, 0, 1, 1),
-              (1, 1, 0, 1),
-              (0, 1, 1, 1),
-              (1, 0, 1, 1)]
-              
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-    glBegin(GL_QUADS)
-    for frame, color in zip(highlight_frames, colors):
-        glColor4f(*color)
-        glVertex2f(frame.bounding_box_left, frame.bounding_box_top)
-        glVertex2f(frame.bounding_box_left, frame.bounding_box_bottom)
-        glVertex2f(frame.bounding_box_right, frame.bounding_box_bottom)
-        glVertex2f(frame.bounding_box_right, frame.bounding_box_top)
-    glEnd()
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-
 
     window.flip()

@@ -99,9 +99,10 @@ class RuleSet(object):
         self.ids[id].append(rule)
 
     def add_classes(self, classes, rule):
-        if tuple(classes) not in self.classes:
-            self.classes[tuple(classes)] = []
-        self.classes[tuple(classes)].append(rule)
+        for klass in classes:
+            if klass not in self.classes:
+                self.classes[klass] = []
+            self.classes[klass].append(rule)
 
     def add_universal(self, rule):
         self.universals.append(rule)
@@ -121,7 +122,7 @@ class RuleSet(object):
         if elem.id:
             primaries += self.ids.get(elem.id, [])
         for c in elem.classes or ():
-            primaries += self.classes.get(tuple(c), [])
+            primaries += self.classes.get(c, [])
         primaries += self.universals
 
         # Filter out non-matching

@@ -15,15 +15,13 @@ __version__ = '$Id: xhtml.py 366 2007-01-02 07:48:00Z Alex.Holkner $'
 
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.layout import *
-from pyglet.layout.event import *
+from pyglet.layout.locator import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
 from pyglet.clock import *
 
 from pyglet.text import *
-from pyglet.layout.css import Stylesheet
-from pyglet.layout.locator import create_locator
 
 import textwrap
 import sys
@@ -36,25 +34,11 @@ url = sys.argv[1]
 locator = create_locator(url)
 file = locator.get_default_stream()
 
-window = Window()
+window = Window(visible=False)
 exit_handler = ExitHandler()
 window.push_handlers(exit_handler)
 offset_top = 0
 layout_height = 0
-
-def on_resize(width, height):
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    glOrtho(0, width, 0, height, -1, 1)
-    glMatrixMode(GL_MODELVIEW)
-    layout.render_device.width = width
-    layout.render_device.height = height
-    layout.layout()
-
-    # HACK; will have public accessor eventually
-    global layout_height
-    layout_height = 1200
-    layout.hack_offset = -window.height - offset_top
 
 def print_box(box, indent=''):
     print '\n'.join(textwrap.wrap(repr(box), initial_indent=indent,
@@ -72,45 +56,31 @@ def print_frame(frame, indent=''):
 
 def on_key_press(symbol, modifiers):
     if symbol == K_B:
-        print_box(layout.root_frame.children[0].box)
+        print_box(layout._visual.root_frame.children[0].box)
     if symbol == K_F:
-        print_frame(layout.root_frame)
+        print_frame(layout._visual.root_frame)
     if symbol == K_S:
-        print repr(locator.get_default_stream().read())
+        print repr(layout.locator.get_default_stream().read())
     return True
 
-def on_scroll(dx, dy):
-    global offset_top
-    offset_top -= dy * 30
-    layout.hack_offset = -window.height - offset_top
-
-layout = render_html(file, locator=locator)
+layout = Layout(locator=locator)
+layout.set_html(locator.get_default_stream().read())
 
 @select('a')
 def on_mouse_press(element, button, x, y, modifiers):
     url = element.attributes['href']
     print 'Going to %s...' % url
     file = locator.get_stream(url)
+    layout.set_html(file.read())
 
-    from pyglet.layout.formatters.htmlformatter import HTMLFormatter
-    from pyglet.layout.gl.image import ImageBoxGenerator
-    render_device = create_render_device(locator)
-    formatter = HTMLFormatter(render_device, locator)
-    image_box_generator = ImageBoxGenerator(locator)
-    formatter.add_generator(image_box_generator)
-    box = formatter.format(file)
-    layout.set_root(box)
-    layout.layout()
 layout.push_handlers(on_mouse_press)
 
 window.push_handlers(layout)
-window.push_handlers(on_resize=on_resize)
-window.push_handlers(on_mouse_scroll=on_scroll)
 window.push_handlers(on_key_press=on_key_press)
-on_resize(window.width, window.height)
-glClearColor(1, 1, 1, 1)
 
+glClearColor(1, 1, 1, 1)
 clock = Clock()
+window.set_visible()
 
 while not exit_handler.exit:
     clock.tick()
@@ -119,7 +89,5 @@ while not exit_handler.exit:
     window.dispatch_events()
     glClear(GL_COLOR_BUFFER_BIT)
     glLoadIdentity()
-    #offset_top = max(min(offset_top, layout_height - window.height), 0)
-    glTranslatef(0, window.height + offset_top, 0)
     layout.draw()
     window.flip()

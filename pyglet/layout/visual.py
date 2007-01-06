@@ -7,7 +7,6 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from pyglet.layout.base import *
-from pyglet.layout.event import *
 
 class ContainingBlock(object):
     '''A rectangular region in which boxes are placed.
@@ -1077,39 +1076,94 @@ class InlineFormattingContext(FormattingContext):
     def close(self):
         self.add_line_box(self.line_box)
 
-class VisualLayout(LayoutEventHandler):
+class VisualLayout(object):
     def __init__(self, render_device):
-        super(VisualLayout, self).__init__()
         self.render_device = render_device
-        self.root_frame = None
+        self._root_box = None
+        self._root_frame = None
+        self._need_reflow = True
+
+        # Position of viewport on canvas (+ve Y is down).  Size of viewport
+        # determines the initial containing block.
+        self.viewport_x = 0
+        self.viewport_y = 0
+        self._viewport_width = 0 
+        self._viewport_height = 0
+
+    def set_root_box(self, box):
+        self._root_box = box
+        self._need_reflow = True
+    root_box = property(lambda self: self._root_box, set_root_box)
+
+    def get_canvas_width(self):
+        if self._need_reflow:
+            self.reflow()
+        # By convention with web browsers, don't allow viewport to show left
+        # of origin.
+        return self._root_frame.bounding_box_right
+    canvas_width = property(get_canvas_width)
+
+    def get_canvas_height(self):
+        if self._need_reflow:
+            self.reflow()
+        # By convention with web browsers, don't allow viewport to show above
+        # of origin.
+        return -self._root_frame.bounding_box_bottom
+    canvas_height = property(get_canvas_height)
+
+    def set_viewport_width(self, width):
+        self._viewport_width = width
+        self._need_reflow = True
+    viewport_width = property(lambda self: self._viewport_width, 
+                              set_viewport_width)
+
+    def set_viewport_height(self, height):
+        self._viewport_height = height
+        self._need_reflow = True
+    viewport_height = property(lambda self: self._viewport_height, 
+                               set_viewport_height)
 
     def draw(self):
-        self.draw_viewport(0, 0, 
-            self.render_device.width, self.render_device.height)
+        if self._need_reflow:
+            self.reflow()
 
-    def draw_viewport(self, 
-                      viewport_left, viewport_top, 
-                      viewport_right, viewport_bottom):
-        self.root_frame.draw(self.render_device, 0, 0)
+        self._root_frame.draw(self.render_device, 
+            self.viewport_x, self.viewport_y)
 
-    def set_root(self, box):
-        self.root_box = box
+    def reflow(self):
+        '''Reflow the entire layout, beginning with the root box.  
+        
+        Typically required after a resize event.  Currently also needed for
+        any content or style change event until incremental reflow is
+        implemented.
 
-    def layout(self):
+        There is usually no need for applications to call this method,
+        it is evaluated automatically when required for drawing or
+        measurement.
+        '''
+        self._need_reflow = False
+        self._root_frame = ViewportFrame(self.initial_containing_block())
+
+        if not self._root_box:
+            return
         # Not specified in CSS spec, we're going to force it.  Shouldn't
         # make any difference block/inline.  Other options don't make much
         # sense.  TODO Could create an anonymous block box if necessary.
-        self.root_box.display = 'block'
+        self._root_box.display = 'block'
 
-        self.root_frame = ViewportFrame(self.initial_containing_block)
+        if self._viewport_width <= 0 or self._viewport_height <= 0: 
+            return
+
         context = BlockFormattingContext(
-            self.root_frame, self.initial_containing_block())
-        context.add(self.root_box)
+            self._root_frame, self.initial_containing_block())
+        context.add(self._root_box)
         context.close()
-        self.root_frame.resolve_bounding_box(0, 0)
+        self._root_frame.resolve_bounding_box(0, 0)
 
     def get_frames_for_point(self, x, y):
-        return self.root_frame.get_frames_for_point(x, y)
+        x += self.viewport_x
+        y -= self.viewport_y
+        return self._root_frame.get_frames_for_point(x, y)
 
     def get_boxes_for_point(self, x, y):
         return [frame.box \
@@ -1132,17 +1186,7 @@ class VisualLayout(LayoutEventHandler):
 
     def initial_containing_block(self):
         return ContainingBlock(0, 0, 
-            self.render_device.width, 0)
-            #self.render_device.height) # XXX HACK
+            self._viewport_width, 0)
+            #self.viewport_height) # XXX HACK
 
-    # Window event handlers.
-    hack_offset = 0
-    def on_mouse_press(self, button, x, y, modifiers):
-        y += self.hack_offset
-        elements = self.get_elements_for_point(x, y)
-        for element in elements[::-1]:
-            handled = self.dispatch_event(element, 'on_mouse_press', 
-                                          button, x, y, modifiers)
-            if handled:
-                break
 

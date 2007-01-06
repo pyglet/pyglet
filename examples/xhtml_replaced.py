@@ -17,8 +17,6 @@ from pyglet.clock import *
 from pyglet.text import *
 from pyglet.layout import *
 from pyglet.layout.base import *
-from pyglet.layout.formatters.xhtmlformatter import XHTMLFormatter
-from pyglet.layout.locator import create_locator
 
 data = '''<?xml version="1.0"?>
 <html>  
@@ -40,9 +38,7 @@ data = '''<?xml version="1.0"?>
 
     <p><cube style="width:100%;border:1px solid;background-color:aqua" /></p>
 
-    <p>This example also demonstrates use of the slightly lower-level layout
-    APIs rather than using the render_xhtml() function.</p>
-    
+    <p>If you click on the cube you might even get an event handled.</p>    
   </body>
 </html> '''
 
@@ -79,7 +75,7 @@ class CubeBox(Box):
         width = right - left
         height = top - bottom
         centerx = left + width / 2
-        centery = bottom + height / 2 + window.height + offset_top
+        centery = bottom + height / 2 + window.height
         glTranslatef(-1, -1, 0)
         glTranslatef(centerx * 2 / window.width, 
                      centery * 2 / window.height, 0)
@@ -113,61 +109,37 @@ class CubeGenerator(BoxGenerator):
     def create_box(self, name, attrs):
         return CubeBox()
 
-def render_custom_xhtml(data):
-    '''Create a layout for data similar to `render_xhtml`, but attach our
-    custom box generator.'''
-    locator = create_locator('')
-    render_device = create_render_device(locator)
-    formatter = XHTMLFormatter(render_device, locator)
-    cube_generator = CubeGenerator()
-    formatter.add_generator(cube_generator)
-    return render(data, formatter)
+# Create a window, attach the usual event handlers
+window = Window(visible=False)
+exit_handler = ExitHandler()
+window.push_handlers(exit_handler)
 
-def on_resize(width, height):
-    glMatrixMode(GL_PROJECTION)
+layout = Layout()
+layout.add_generator(CubeGenerator())
+layout.set_xhtml(data)
+window.push_handlers(layout)
+
+@select('cube')
+def on_mouse_press(element, button, x, y, modifiers):
+    global rate
+    rate = -rate
+layout.push_handlers(on_mouse_press)
+
+glClearColor(1, 1, 1, 1)
+
+clock = Clock()
+window.set_visible()
+
+rate = 50
+
+while not exit_handler.exit:
+    dt = clock.tick()
+    CubeBox.angle += dt * rate
+    print 'FPS = %.2f\r' % clock.get_fps(),
+
+    window.dispatch_events()
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
-    glOrtho(0, width, 0, height, -1, 1)
-    glMatrixMode(GL_MODELVIEW)
-    layout.render_device.width = width
-    layout.render_device.height = height
-    layout.layout()
 
-    # HACK; will have public accessor eventually
-    global layout_height
-    #layout_height = layout.frame.children[-1].border_bottom
-    layout_height = 1000
-
-def on_scroll(dx, dy):
-    global offset_top
-    offset_top -= dy * 30
-
-
-if __name__ == '__main__':
-    # Create a window, attach the usual event handlers
-    window = Window()
-    exit_handler = ExitHandler()
-    window.push_handlers(exit_handler)
-    window.push_handlers(on_resize=on_resize)
-    window.push_handlers(on_mouse_scroll=on_scroll)
-
-    offset_top = 0
-    layout_height = 0
-    layout = render_custom_xhtml(data)
-
-    on_resize(window.width, window.height)
-    glClearColor(1, 1, 1, 1)
-
-    clock = Clock()
-
-    while not exit_handler.exit:
-        dt = clock.tick()
-        CubeBox.angle += dt * 50
-        print 'FPS = %.2f\r' % clock.get_fps(),
-
-        window.dispatch_events()
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glLoadIdentity()
-        offset_top = max(min(offset_top, layout_height - window.height), 0)
-        glTranslatef(0, window.height + offset_top, 0)
-        layout.draw()
-        window.flip()
+    layout.draw()
+    window.flip()
