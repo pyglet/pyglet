@@ -84,7 +84,8 @@ class Map(object):
         raise NotImplemented()
 
 class RegularTesselationMap(Map):
-    pass
+    '''A class of Map that has a regular array of Cells.
+    '''
 
 class RectMap(RegularTesselationMap):
     '''Rectangular map.

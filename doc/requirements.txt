@@ -151,7 +151,7 @@ scene2d
         MAP_LOAD                          X
         MAP_SAVE                           
         SPRITE_MODEL                      X
-        FLAT_SPRITE                        
+        FLAT_SPRITE                       X
         RECT_FLAT_DEBUG                   X
         HEX_FLAT_DEBUG                    X
         FLAT_SCROLLING                    X

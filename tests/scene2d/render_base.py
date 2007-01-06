@@ -95,7 +95,6 @@ class RenderBase(unittest.TestCase):
 
         glColor4f(1, 1, 1, 1)
         while running:
-            self.w.switch_to()
             self.w.dispatch_events()
             glClear(GL_COLOR_BUFFER_BIT)
             r.fx += input.left + input.right

@@ -10,6 +10,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from pyglet.GL.VERSION_1_1 import *
+from pyglet.event import *
 
 class FlatCamera(object):
     def __init__(self, x, y, width, height, near=-50, far=50):
@@ -26,6 +27,7 @@ class FlatCamera(object):
 
     def on_resize(self, width, height):
         self.width, self.height = width, height
+        return EVENT_UNHANDLED
 
     def __repr__(self):
         return '<%s object at 0x%x pos=(%d,%d) size=(%d,%d)>'%(
