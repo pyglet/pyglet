@@ -188,8 +188,12 @@ layout = render_xhtml('''<?xml version="1.0"?>
 </body>
 </html> ''')
 
+def on_mouse_press(button, x, y, modifiers):
+    print layout.get_boxes_for_point(x,y - offset_top - window.height)
+
 window.push_handlers(on_resize=on_resize)
 window.push_handlers(on_mouse_scroll=on_scroll)
+window.push_handlers(on_mouse_press)
 on_resize(window.width, window.height)
 glClearColor(1, 1, 1, 1)
 

@@ -31,7 +31,66 @@ class ContainingBlock(object):
         return '%s(%d,%d -- %d,%d)' % (self.__class__.__name__,
             self.left, self.top, self.right, self.bottom)
 
-class PositionedFrame(object):
+class Frame(object):
+    '''Abstract bounded box.
+    '''
+    parent = None
+    children = ()
+
+    # Bounding box, relative to the canvas (or viewport, if fixed).
+    bounding_box_top = 0
+    bounding_box_right = 0
+    bounding_box_bottom = 0
+    bounding_box_left = 0
+
+    # Border edge, relative to parent's content area.  If this is not
+    # a positioned frame (container only), these refer to the content area,
+    # and width/height are probably not used.
+    border_edge_left = 0
+    border_edge_top = 0
+    border_edge_width = 0
+    border_edge_height = 0
+
+    def resolve_bounding_box(self, x, y):
+        '''Determine bounding box of this frame.
+
+        x,y give the top-left corner of the border edge of this frame relative
+        to the canvas.
+
+        The coordinates of the bounding box are relative to the canvas
+        (or the viewport, for a fixed element), not the parent.  Note
+        that bounding boxes therefore have y-up orientation.
+        '''
+
+        self.bounding_box_left = x
+        self.bounding_box_top = y
+        self.bounding_box_right = x + self.border_edge_width
+        self.bounding_box_bottom = y - self.border_edge_height
+        for child in self.children:
+            child.resolve_bounding_box(x + child.border_edge_left, 
+                                       y - child.border_edge_top)
+            self.bounding_box_left = \
+                min(self.bounding_box_left, child.bounding_box_left)
+            self.bounding_box_right = \
+                max(self.bounding_box_right, child.bounding_box_right)
+            self.bounding_box_top = \
+                max(self.bounding_box_top, child.bounding_box_top)
+            self.bounding_box_bottom = \
+                min(self.bounding_box_bottom, child.bounding_box_bottom)
+
+    def get_frames_for_point(self, x, y):
+        if (x >= self.bounding_box_left and
+            x < self.bounding_box_right and
+            y < self.bounding_box_top and
+            y >= self.bounding_box_bottom):
+            frames = [self]
+            for child in self.children:
+                frames += child.get_frames_for_point(x, y)
+            return frames
+        return []
+
+
+class PositionedFrame(Frame):
     '''Abstract positioned, renderable box.
 
     Boxes are sometimes split into several frames (for example, during line
@@ -41,7 +100,6 @@ class PositionedFrame(object):
     All properties assigned to a frame are the "used" values.
     '''
     box = None
-    parent = None
     continuation = None 
 
     # Box model properties
@@ -68,11 +126,7 @@ class PositionedFrame(object):
     used_bottom = 0
     used_left = 0
 
-    # Border edge, relative to parent's content area
-    border_edge_left = 0
-    border_edge_top = 0
-    border_edge_width = 0
-    border_edge_height = 0
+
 
     def __init__(self, box, parent, containing_block):
         assert isinstance(box, Box)
@@ -217,18 +271,29 @@ class PositionedFrame(object):
     def draw(self, render_device, x, y):
         '''Draw this frame with the border-edge top-left at the given
         coordinates.
-        
-        Also take this opportunity to resolve used values for percentage 
-        left/top/right/bottom.
+        '''
+        self.draw_background(render_device, x, y)
+        self.draw_border(render_device, x, y)
+        for child in self.children:
+            child.draw(render_device, 
+                       x + child.border_edge_left,
+                       y - child.border_edge_top)
+
+    def resolve_bounding_box(self, x, y):
+        '''
+        Also take this opportunity (now that containing block is fully
+        resolved) to resolve used values for percentage left/top/right/bottom
+        and to offset border edge for relative and absolute placement.
         '''
         if type(self.used_top) == Percentage:
             self.used_top = self.containing_block.height * self.used_top
         if type(self.used_left) == Percentage:
-            self.used_left = self.containing_block.height * self.used_left
-        x += self.used_left
-        y -= self.used_top
-        self.draw_background(render_device, x, y)
-        self.draw_border(render_device, x, y)
+            self.used_left = self.containing_block.width * self.used_left
+
+        self.border_edge_left += self.used_left
+        self.border_edge_top += self.used_top
+        Frame.resolve_bounding_box(self, x, y)
+
 
 class InlinePositionedFrame(PositionedFrame):
     '''Abstract frame that can be positioned within an InlineFrameContainer.
@@ -268,10 +333,18 @@ class BlockPositionedFrame(PositionedFrame):
     '''Abstract frame that can be positioned within a BlockFrameContainer.
     '''
 
-class FrameContainer(object):
+class FrameContainer(Frame):
     '''Abstract frame that can contain other frames.
     '''
-    children = None
+    children = ()
+
+    # Bounding box, relative to parent's content area (note that these
+    # defaults exist on both FrameContainer and PositionedFrame).  Subclasses
+    # which mix-in both classes need to call both resolution methods.
+    bounding_box_top = 0
+    bounding_box_right = 0
+    bounding_box_bottom = 0
+    bounding_box_left = 0
 
     def __init__(self):
         self.children = []
@@ -318,16 +391,30 @@ class FrameContainer(object):
             self.parent.split(self.continuation)
 
     def draw(self, render_device, x, y):
-        # Depend on PositionFrame.draw() being called first, as this resolves
-        # percentage used_left/top
-        if isinstance(self, PositionedFrame): # yuk
-            x += self.used_left
-            y -= self.used_top
         for child in self.children:
             child.draw(render_device, 
                        x + child.border_edge_left,
                        y - child.border_edge_top)
-        
+
+    def resolve_bounding_box(self, x, y):
+        # Initialise bounding box to some unreasonable value that will
+        # be set to the first child
+        self.bounding_box_left = 1e100
+        self.bounding_box_right = -1e100
+        self.bounding_box_top = -1e100
+        self.bounding_box_bottom = 1e100
+
+        for child in self.children:
+            child.resolve_bounding_box(x + child.border_edge_left, 
+                                       y - child.border_edge_top)
+            self.bounding_box_left = \
+                min(self.bounding_box_left, child.bounding_box_left)
+            self.bounding_box_right = \
+                max(self.bounding_box_right, child.bounding_box_right)
+            self.bounding_box_top = \
+                max(self.bounding_box_top, child.bounding_box_top)
+            self.bounding_box_bottom = \
+                min(self.bounding_box_bottom, child.bounding_box_bottom)
 
 class BlockFrameContainer(FrameContainer):
     '''Abstract frame that can contain block frames.
@@ -407,10 +494,6 @@ class BlockFrame(BlockPositionedFrame, BlockFrameContainer):
             self.used_padding_top + self.used_height + \
             self.used_padding_bottom + self.used_border_bottom
 
-    def draw(self, render_device, x, y):
-        BlockPositionedFrame.draw(self, render_device, x, y)
-        BlockFrameContainer.draw(self, render_device, x, y)
-
 class InlineFrame(InlinePositionedFrame, InlineFrameContainer):
     '''Frame for boxes with display: inline 
     '''
@@ -469,10 +552,6 @@ class InlineFrame(InlinePositionedFrame, InlineFrameContainer):
         baseline = self.content_ascent
         for frame in self.children:
             frame.vertical_align(line_box_top, baseline, line_box_bottom)
-
-    def draw(self, render_device, x, y):
-        InlinePositionedFrame.draw(self, render_device, x, y)
-        InlineFrameContainer.draw(self, render_device, x, y)
 
 class TextFrame(InlinePositionedFrame):
     '''Frame for non-replaced inline elements containing text.
@@ -695,6 +774,10 @@ class LineBoxFrame(BlockPositionedFrame, InlineFrameContainer):
         y -= frac
 
         InlineFrameContainer.draw(self, render_device, x, y)
+
+    def resolve_bounding_box(self, x, y):
+        # Skip BoxPositionedFrame.
+        InlineFrameContainer.resolve_bounding_box(self, x, y)
 
 class ViewportFrame(BlockFrameContainer):
     '''Root frame.
@@ -1021,6 +1104,15 @@ class VisualLayout(object):
             self.root_frame, self.initial_containing_block())
         context.add(self.root_box)
         context.close()
+        self.root_frame.resolve_bounding_box(0, 0)
+
+    def get_frames_for_point(self, x, y):
+        return self.root_frame.get_frames_for_point(x, y)
+
+    def get_boxes_for_point(self, x, y):
+        return [frame.box \
+                for frame in self.get_frames_for_point(x, y) \
+                if hasattr(frame, 'box')]
     
     def initial_containing_block(self):
         return ContainingBlock(0, 0, 
