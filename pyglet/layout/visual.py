@@ -542,6 +542,9 @@ class TextFrame(InlinePositionedFrame):
 
 class ReplacedInlineFrame(InlinePositionedFrame):
     '''Frame for replaced inline elements.
+
+    The constraint resolution for replaced boxes with auto width and height
+    and intrinsic ratio specified in the table in 10.4 is not implemented. 
     '''
     def resolve_auto_widths(self):
         # 10.3.2

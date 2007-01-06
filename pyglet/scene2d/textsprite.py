@@ -10,6 +10,7 @@ from ctypes import *
 
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.scene2d.sprite import Sprite
+from pyglet.text import GlyphString
 
 # TODO: inherit from Sprite
 class TextSprite(object):
@@ -37,7 +38,7 @@ class TextSprite(object):
         # Each 'line' in 'glyph_lines' is a list of Glyph objects.  Do
         # line wrapping now.
         glyph_lines = []
-        if not self._layout_width:
+        if self._layout_width is None:
             for line in self.text.split('\n'):
                 glyph_lines.append(self.font.get_glyphs(self.text))
         else:
@@ -51,39 +52,16 @@ class TextSprite(object):
 
         # Create interleaved array and figure out state changes.
         line_height = self.font.ascent - self.font.descent + self.leading
-        texture = None
-        self._states = []
-        state_from = 0
-        state_length = 0
         y = 0
-        lst = []
         self._text_width = 0
+        self.strings = []
         for glyphs in glyph_lines:
-            x = 0
-            for i, glyph in enumerate(glyphs):
-                if glyph.texture != texture:
-                    if state_length:
-                        self._states.append((state_from, state_length, texture))
-                    texture = glyph.texture
-                    state_from = i
-                    state_length = 0
-                state_length += 1
-
-                lst += [glyph.tex_coords[0], glyph.tex_coords[1],
-                        x + glyph.vertices[0], y + glyph.vertices[1], 0.,
-                        glyph.tex_coords[2], glyph.tex_coords[1],
-                        x + glyph.vertices[2], y + glyph.vertices[1], 0.,
-                        glyph.tex_coords[2], glyph.tex_coords[3],
-                        x + glyph.vertices[2], y + glyph.vertices[3], 0.,
-                        glyph.tex_coords[0], glyph.tex_coords[3],
-                        x + glyph.vertices[0], y + glyph.vertices[3], 0.]
-                x += glyph.advance
-            self._text_width = max(self._text_width, x)
+            string = GlyphString(glyphs, 0, y)
+            self._text_width = max(self._text_width, string.width)
             y -= line_height
+            self.strings.append(string)
 
         self._text_height = -y
-        self._array = (c_float * len(lst))(*lst)
-        self._states.append((state_from, state_length, texture))        
 
         self._dirty = False
         
@@ -94,17 +72,11 @@ class TextSprite(object):
         glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT)
         glEnable(GL_TEXTURE_2D)
 
-        # XXX Safe to assume all required textures will use same blend state I
-        # think.  (otherwise move this into loop)
-        self._states[0][2].apply_blend_state()
-
         glColor4f(*self.color)
         glPushMatrix()
         glTranslatef(self.x, self.y, 0)
-        glInterleavedArrays(GL_T2F_V3F, 0, self._array)
-        for state_from, state_length, texture in self._states:
-            glBindTexture(GL_TEXTURE_2D, texture.id)
-            glDrawArrays(GL_QUADS, state_from * 4, state_length * 4)
+        for string in self.strings:
+            string.draw()
         glPopMatrix()
         glPopAttrib()
 
@@ -119,11 +91,7 @@ class TextSprite(object):
         self._layout_width = width
         self._dirty = True
 
-    def del_width(self):
-        del self._layout_width
-        self._dirty = True
-
-    width = property(get_width, set_width, del_width)
+    width = property(get_width, set_width)
 
     def get_height(self):
         if self._dirty:

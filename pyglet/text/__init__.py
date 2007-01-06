@@ -73,6 +73,59 @@ class GlyphRenderer(object):
     def render(self, text):
         raise NotImplementedError('Subclass must override')
 
+class GlyphString(object):
+    '''An immutable string of glyphs that can be rendererd quickly.
+    '''
+    width = 0       # Set to 
+
+    def __init__(self, glyphs, x=0, y=0):
+        '''Initialise the string with the given sequence of glyphs, and
+        optional offset in x and y.  Note that no attributes of this
+        class are mutable.
+        '''
+        # Create an interleaved array in GL_T2F_V3F format and determine
+        # state changes required.
+        
+        # XXX This is a performance hotspot for layout; any optimisations will
+        # have a big impact.
+        lst = []
+        texture = None
+        self.states = []
+        state_from = 0
+        state_length = 0
+        for i, glyph in enumerate(glyphs):
+            if glyph.texture != texture:
+                if state_length:
+                    self.states.append((state_from, state_length, texture))
+                texture = glyph.texture
+                state_from = i
+                state_length = 0
+            state_length += 1
+            lst += [glyph.tex_coords[0], glyph.tex_coords[1],
+                    x + glyph.vertices[0], y + glyph.vertices[1], 0.,
+                    glyph.tex_coords[2], glyph.tex_coords[1],
+                    x + glyph.vertices[2], y + glyph.vertices[1], 0.,
+                    glyph.tex_coords[2], glyph.tex_coords[3],
+                    x + glyph.vertices[2], y + glyph.vertices[3], 0.,
+                    glyph.tex_coords[0], glyph.tex_coords[3],
+                    x + glyph.vertices[0], y + glyph.vertices[3], 0.]
+            x += glyph.advance
+        self.states.append((state_from, state_length, texture))
+
+        self.array = (c_float * len(lst))(*lst)
+        self.width = x
+
+    def draw(self):
+        '''Draw the glyph string.  Assumes texture state is enabled.
+        '''
+        # XXX Safe to assume all required textures will use same blend state I
+        # think.  (otherwise move this into loop)
+        self.states[0][2].apply_blend_state()
+        glInterleavedArrays(GL_T2F_V3F, 0, self.array)
+        for state_from, state_length, texture in self.states:
+            glBindTexture(GL_TEXTURE_2D, texture.id)
+            glDrawArrays(GL_QUADS, state_from * 4, state_length * 4)
+
 class FontException(Exception):
     pass
 

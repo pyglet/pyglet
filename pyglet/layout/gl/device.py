@@ -23,22 +23,8 @@ class GLFont(object):
                           text, width):
         glyphs = self.font.get_glyphs_for_width(text, width)
 
-        # Find state changes required in glyph list.
-        texture = None
-        states = []
-        state_from = 0
-        state_length = 0
-        for i, glyph in enumerate(glyphs):
-            if glyph.texture != texture:
-                if state_length:
-                    states.append((state_from, state_length, texture))
-                texture = glyph.texture
-                state_from = i
-                state_length = 0
-            state_length += 1
-        states.append((state_from, state_length, texture))
         frame = GLTextFrame(box, parent, containing_block, 
-            self.font, text[:len(glyphs)], glyphs, states)
+            self.font, text[:len(glyphs)], glyphs)
         
         if len(text) > len(glyphs) and text[len(glyphs)] == '\n':
             frame.hard_break = True
@@ -237,39 +223,22 @@ class GLTextFrame(TextFrame):
     hard_break = False
 
     def __init__(self, box, parent, containing_block,
-                 font, text, glyphs, states):
+                 font, text, glyphs):
         # We currently make this assumption in draw and measure methods.
         # It is not required by the interface, but is currently implemented
         # as such.
         assert len(text) == len(glyphs)
 
         self.text = text
-        self.glyphs = glyphs
-        self.states = states
         self.font = font
-
-        # Create an interleaved array in GL_T2F_V3F format
-        lst = []
-        x = 0
-        for glyph in self.glyphs:
-            lst += [glyph.tex_coords[0], glyph.tex_coords[1],
-                    x + glyph.vertices[0], glyph.vertices[1], 0.,
-                    glyph.tex_coords[2], glyph.tex_coords[1],
-                    x + glyph.vertices[2], glyph.vertices[1], 0.,
-                    glyph.tex_coords[2], glyph.tex_coords[3],
-                    x + glyph.vertices[2], glyph.vertices[3], 0.,
-                    glyph.tex_coords[0], glyph.tex_coords[3],
-                    x + glyph.vertices[0], glyph.vertices[3], 0.]
-            x += glyph.advance
-        self.array = (c_float * len(lst))(*lst)
+        self.string = pyglet.text.GlyphString(glyphs)
 
         # CSS properties
-        self.text_width = x
+        self.text_width = self.string.width
         self.text_ascent = font.ascent
         self.text_descent = font.descent
 
         super(GLTextFrame, self).__init__(box, parent, containing_block, text)
-
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.text)
@@ -277,18 +246,10 @@ class GLTextFrame(TextFrame):
     def draw_text(self, render_context, x, y):
         glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT)
         glEnable(GL_TEXTURE_2D)
-
-        # XXX Safe to assume all required textures will use same blend state I
-        # think.  (otherwise move this into loop)
-        self.states[0][2].apply_blend_state()
-
         glColor4f(*self.box.color)
         glPushMatrix()
         glTranslatef(x, y, 0)
-        glInterleavedArrays(GL_T2F_V3F, 0, self.array)
-        for state_from, state_length, texture in self.states:
-            glBindTexture(GL_TEXTURE_2D, texture.id)
-            glDrawArrays(GL_QUADS, state_from * 4, state_length * 4)
+        self.string.draw()
         glPopMatrix()
         glPopAttrib()
  

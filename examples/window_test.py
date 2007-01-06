@@ -29,8 +29,8 @@ def on_text(text):
     print 'ON_TEXT(%r)'%text
 
 # set up our funky strange event handlers on the purple window
-w1.push_handlers(debug_handler, on_keypress=do_nothing,
-    on_keyrelease=do_nothing)
+w1.push_handlers(debug_handler, on_key_press=do_nothing,
+    on_key_release=do_nothing)
 w1.push_handlers(exit_handler)
 w1.push_handlers(on_text)
 
