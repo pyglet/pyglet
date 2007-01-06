@@ -82,11 +82,11 @@ import xml.dom.minidom
 from pyglet.scene2d.image import Image2d
 
 class Tile(object):
-    __slots__ = 'id meta texture'.split()
-    def __init__(self, id, meta, texture):
+    __slots__ = 'id meta image'.split()
+    def __init__(self, id, meta, image):
         self.id = id
         self.meta = meta
-        self.texture = texture
+        self.image = image
 
 xml_to_python = {
     'str': str,

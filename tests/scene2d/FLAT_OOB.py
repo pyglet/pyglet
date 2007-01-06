@@ -14,12 +14,13 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import unittest
-from render_base import RenderBase, gencells, DummyImage
+from render_base import RenderBase
 import pyglet.scene2d
+from pyglet.scene2d.debug import genmap
 
 class HexFlatDebugTest(RenderBase):
     def test_main(self):
-        m = pyglet.scene2d.Map(32, 32, gencells(['a'*10]*10, 32, 32,
+        m = pyglet.scene2d.Map(32, 32, genmap(['a'*10]*10, 32, 32,
             pyglet.scene2d.Cell))
         self.run_test(m, (256, 256), show_focus=True)
 

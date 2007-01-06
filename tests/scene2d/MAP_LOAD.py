@@ -13,7 +13,7 @@ __version__ = '$Id$'
 
 import os
 import unittest
-from render_base import RenderBase, DummyImage
+from render_base import RenderBase
 import pyglet.scene2d
 from pyglet.GL.VERSION_1_1 import *
 

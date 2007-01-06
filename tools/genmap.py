@@ -3,8 +3,6 @@
  -x h           draw a hex grid
  -r w[,h]       draw a rect grid
  -s w,h         map size in cells (default=5,5)
- -c             render with checkers (alternating light/dark grey) (default)
- -l             render with lines
  -f             render flat (default)
  -o             render orthographic projection
  -a sx,sy,sz    render axiometric projection (scaled in x, y, z)
@@ -12,8 +10,8 @@
  -h             this help
 
 Samples:
--x=32 -s5,15 -c
-      draw a hex grid, cell height 32, checkerboarded
+-x=32 -s5,15
+      draw a hex grid, cell height 32
 -x=32
       draw a rect grid, width and height 32
 -r=16,32 -s=10,10
@@ -31,35 +29,34 @@ import pyglet.window.event
 import pyglet.clock
 import pyglet.image
 
+from pyglet.scene2d.debug import genmap
+
 try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'x:r:s:foa:p:hlc')
+    optlist, args = getopt.getopt(sys.argv[1:], 'x:r:s:foa:p:h')
 except getopt.GetoptError, error:
     print error
     print __doc__%sys.argv[0]
     sys.exit()
 
-klass = None
 size = (5, 5)
-style = pyglet.scene2d.FlatView.CHECKERED
 renderer = pyglet.scene2d.FlatView
-filename = { 'r': 'flat' }
+klass = cells = None
+filename = { 'r': 'flat', 'e': '5x5' }
 for opt, value in optlist:
     if opt == '-x':
         klass = pyglet.scene2d.HexMap
+        cells = pyglet.scene2d.HexCell
         args = [int(value)]
         cw = ch = args[0]
         filename['x'] = 'hex(%d)'%args[0]
     elif opt == '-r':
         klass = pyglet.scene2d.Map
+        cells = pyglet.scene2d.Cell
         args = map(int, value.split(','))
         if len(args) == 1:
             args *= 2
         cw, ch = args
         filename['x'] = 'rect(%dx%d)'%tuple(args)
-    elif opt == '-l':
-        style = pyglet.scene2d.FlatView.LINES
-    elif opt == '-c':
-        style = pyglet.scene2d.FlatView.CHECKERED
     elif opt == '-s':
         size = map(int, value.split(','))
         filename['e'] = '%dx%d'%tuple(size)
@@ -82,25 +79,15 @@ for opt, value in optlist:
         print __doc__%sys.argv[0]
         sys.exit()
 
-filename['s'] = style
-filename = '%(x)s-%(e)s-%(s)s-%(r)s'%filename
-
 if klass is None:
     print 'ERROR: -x or -r required'
     print __doc__%sys.argv[0]
     sys.exit()
 
+filename = '%(x)s-%(e)s-%(r)s'%filename
 
-def gencells(l):
-    r = []
-    for i, m in enumerate(l):
-        c = []
-        r.append(c)
-        for j, n in enumerate(m):
-            c.append(pyglet.scene2d.Cell(i, j, cw, ch, n, None))
-    return r
 mw, mh = size
-kw = dict(cells=gencells(['a'*mh]*mw))
+kw = dict(cells=genmap(['a'*mh]*mw, cw, ch, cells))
 m = klass(*args, **kw)
 w = pyglet.window.Window(width=m.pxw, height=m.pxh)
 s = pyglet.scene2d.Scene(maps=[m])
@@ -131,6 +118,6 @@ while running:
     w.switch_to()
     w.dispatch_events()
     glClear(GL_COLOR_BUFFER_BIT)
-    r.debug(style)
+    r.draw()
     w.flip()
 

@@ -12,15 +12,17 @@ from pyglet.GL.VERSION_1_1 import *
 import pyglet.window
 import pyglet.window.event
 import pyglet.clock
+from pyglet.scene2d import *
 
-def gencells(l, w, h, klass):
-    r = []
-    for i, m in enumerate(l):
-        c = []
-        r.append(c)
-        for j, n in enumerate(m):
-            c.append(klass(i, j, w, h, n, None))
-    return r
+
+class Marker:
+    def draw(self):
+        glColor4f(1, 0, 0, 1)
+        glPointSize(5)
+        glBegin(GL_POINTS)
+        glVertex2f(0, 0)
+        glEnd()
+
 
 class RenderBase(unittest.TestCase):
     w = None
@@ -64,13 +66,13 @@ class RenderBase(unittest.TestCase):
                 if symbol == pyglet.window.key.K_RIGHT: self.right = 0
                 return pyglet.window.event.EVENT_UNHANDLED
             lines = False
-            show_debug = debug
             def on_text(self, text):
                 if text == 's':
                     self.lines = not self.lines
                     return
                 if text == 'd':
                     self.show_debug = not self.show_debug
+                    raise NotImplemented()
                     return
                 if text == 'o':
                     r.allow_oob = not r.allow_oob
@@ -85,21 +87,24 @@ class RenderBase(unittest.TestCase):
         self.w.push_handlers(r.camera)
 
         print 'NOTE: allow_oob =', r.allow_oob
+        marker = None
+        if show_focus:
+            # add in a "sprite"
+            marker = Sprite(0, 0, 1, 1, Marker())
+            s.sprites.append(marker)
 
+        glColor4f(1, 1, 1, 1)
         while running:
             self.w.switch_to()
             self.w.dispatch_events()
             glClear(GL_COLOR_BUFFER_BIT)
             r.fx += input.left + input.right
             r.fy += input.up + input.down
-            if debug or input.show_debug:
-                r.debug(input.lines and r.LINES or r.CHECKERED, show_focus)
-            else:
-                r.draw()
+            if marker is not None:
+                marker.x = r.fx
+                marker.y = r.fy
+            r.draw()
             self.w.flip()
         self.w.close()
 
-class DummyImage:
-    def draw(self):
-        pass
 

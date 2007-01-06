@@ -51,6 +51,7 @@ class FlatView:
         fx, fy          -- pixel point to center in the viewport, subject
                            to OOB checks
     '''
+    # XXX nuke scale - belongs in camera
     def __init__(self, scene, x, y, width, height, allow_oob=True,
             scale=1, rotation=0, fx=0, fy=0):
         self.scene = scene
@@ -133,125 +134,25 @@ class FlatView:
         for map in self.scene.maps:
             glPushMatrix()
             glTranslatef(map.x, map.y, map.z)
-            if hasattr(map, 'edge_length'):
-                raise NotImplemented()
-            else:
-                for column in map.cells:
-                    for cell in column:
-                        if not cell.tile: continue
-                        x, y = cell.bottomleft
-                        glPushMatrix()
-                        glTranslatef(x, y, 0)
-                        cell.tile.texture.draw()
-                        glPopMatrix()
+            for column in map.cells:
+                for cell in column:
+                    if not cell.tile: continue
+                    x, y = cell.bottomleft
+                    glPushMatrix()
+                    glTranslatef(x, y, -1)
+                    if cell.tile:
+                        cell.tile.image.draw()
+                    glPopMatrix()
             glPopMatrix()
-        glPopMatrix()
 
-
-    CHECKERED = 'checkered'
-    LINES = 'lines'
-    def debug(self, style=CHECKERED, show_focus=False):
-        '''Draw the scene centered (or closest, depending on allow_oob)
-        on position which is (x, y). '''
-        self.camera.project()
-
-        glMatrixMode(GL_MODELVIEW)
-
-        # sort by depth
-        self.scene.maps.sort(key=operator.attrgetter('z'))
-
-        # determine the focus point
-        fx, fy = self._determine_focus()
-
-        # now draw
-        glPushMatrix()
-        glTranslatef(self.camera.width/2-fx, self.camera.height/2-fy, 0)
-        for map in self.scene.maps:
+        for sprite in self.scene.sprites:
             glPushMatrix()
-            glTranslatef(map.x, map.y, map.z)
-            if style is self.CHECKERED:
-                glColor4f(.5, .5, .5, 1)
-                glBegin(GL_QUADS)
-                glVertex2f(0, 0)
-                glVertex2f(0, map.pxh)
-                glVertex2f(map.pxw, map.pxh)
-                glVertex2f(map.pxw, 0)
-                glColor4f(.7, .7, .7, 1)
-                glEnd()
-            else:
-                glColor4f(1, 1, 1, 1)
-
-            if hasattr(map, 'edge_length'):
-                # hexes
-                for m, column in enumerate(map.cells):
-                    for n, cell in enumerate(column):
-                        if style is self.LINES:
-                            glBegin(GL_LINE_LOOP)
-                            glVertex2f(*cell.topleft)
-                            glVertex2f(*cell.topright)
-                            glVertex2f(*cell.right)
-                            glVertex2f(*cell.bottomright)
-                            glVertex2f(*cell.bottomleft)
-                            glVertex2f(*cell.left)
-                            glEnd()
-                            glPushMatrix()
-                            bl = cell.bottomleft
-                            glTranslatef(bl[0], bl[1]+2, 0)
-                            if cell.tile:
-                                cell.tile.draw()
-                            glPopMatrix()
-                        elif style is self.CHECKERED:
-                            if not m % 2:  n = n + 1
-                            if n%3 == 0:
-                                glColor4f(.7, .7, .7, 1)
-                            if n%3 == 1:
-                                glColor4f(.9, .9, .9, 1)
-                            elif n%3 == 2:
-                                glColor4f(1, 1, 1, 1)
-                            glBegin(GL_POLYGON)
-                            glVertex2f(*cell.topleft)
-                            glVertex2f(*cell.topright)
-                            glVertex2f(*cell.right)
-                            glVertex2f(*cell.bottomright)
-                            glVertex2f(*cell.bottomleft)
-                            glVertex2f(*cell.left)
-                            glEnd()
-                        else:
-                            raise ValueError, "style not 'lines' or 'checkered'"
-            else:
-                # rects
-                for m, column in enumerate(map.cells):
-                    for n, cell in enumerate(column):
-                        if style is self.LINES:
-                            glBegin(GL_LINE_LOOP)
-                            glVertex2f(*cell.topleft)
-                            glVertex2f(*cell.topright)
-                            glVertex2f(*cell.bottomright)
-                            glVertex2f(*cell.bottomleft)
-                            glEnd()
-                        elif style is self.CHECKERED:
-                            if (m + n) % 2:
-                                glBegin(GL_QUADS)
-                                glVertex2f(*cell.topleft)
-                                glVertex2f(*cell.topright)
-                                glVertex2f(*cell.bottomright)
-                                glVertex2f(*cell.bottomleft)
-                                glEnd()
-                        else:
-                            raise ValueError, "style not 'lines' or 'checkered'"
-
-            if show_focus:
-                glColor4f(1, 0, 0, 1)
-                glPointSize(5)
-                glBegin(GL_POINTS)
-                glVertex3f(self.fx, self.fy, 10)
-                glEnd()
+            glTranslatef(sprite.x, sprite.y, sprite.z)
+            sprite.image.draw()
             glPopMatrix()
+
         glPopMatrix()
 
-        glMatrixMode(GL_PROJECTION)
-        glPopMatrix()
- 
     def tile_at(self, (x, y)):
         ' query for tile at given screen pixel position '
         pass
@@ -260,26 +161,3 @@ class FlatView:
         ' query for sprite at given screen pixel position '
         pass
  
-'''
-class AxiometricView:
-    viewport = (x, y, w, h)     # origin, dimensions
-    allow_oob = False
-    scale = (x, y, z, w)        # per-axis scaling
-    scene =                     # Scene instance
-    rotation =
- 
-    def draw(self, position):
- 
-    def sprite_at(self, (x, y)):
-        ' query for sprite at given screen pixel position '
- 
-class PerspectiveView:
-    viewport = (x, y, w, h)     # origin, dimensions
-    allow_oob = False
-    scale = 1
-    eye_offset = (x, y, z)      # offset from render position
-    scene =                     # Scene instance
-    rotation =
- 
-    def draw(self, position):
-'''
