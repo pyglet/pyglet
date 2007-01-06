@@ -16,6 +16,7 @@ from pyglet.clock import *
 
 from pyglet.text import *
 from pyglet.layout.css import Stylesheet
+from pyglet.layout.event import *
 
 window = Window()
 exit_handler = ExitHandler()
@@ -35,10 +36,12 @@ def on_resize(width, height):
     # HACK; will have public accessor eventually
     global layout_height
     layout_height = 1200
+    layout.hack_offset = - window.height - offset_top
 
 def on_scroll(dx, dy):
     global offset_top
     offset_top -= dy * 30
+    layout.hack_offset = - window.height - offset_top
 
 layout = render_xhtml('''<?xml version="1.0"?>
 <html>  
@@ -54,15 +57,15 @@ layout = render_xhtml('''<?xml version="1.0"?>
     <h1>The Frog King</h1>
     <h2>Brothers Grimm</h2>
     <p>
-      In olden times when wishing still helped one, there lived a king whose
-      daughters were all beautiful, but the youngest was so beautiful that the
-      sun itself, which has seen so much, was astonished whenever it shone in
-      her face.  Close by the king's castle lay a great dark forest, and under
-      an old lime-tree in the forest was a well, and when the day was very
-      warm, the king's child went out into the forest and sat down by the side
-      of the cool fountain, and when she was bored she took a golden ball, and
-      threw it up on high and caught it, and this ball was her favorite
-      plaything.
+      In olden times when <span id="wish">wishing</span> still helped one,
+      there lived a king whose daughters were all beautiful, but the youngest
+      was so beautiful that the sun itself, which has seen so much, was
+      astonished whenever it shone in her face.  Close by the king's castle
+      lay a great dark forest, and under an old lime-tree in the forest was a
+      well, and when the day was very warm, the king's child went out into the
+      forest and sat down by the side of the cool fountain, and when she was
+      bored she took a golden ball, and threw it up on high and caught it, and
+      this ball was her favorite plaything.
     </p>
     <p>
       Now it so happened that on one occasion the princess's golden ball
@@ -195,13 +198,31 @@ def on_mouse_motion(x, y, dx, dy):
     highlight_frames[:] = \
         layout.get_frames_for_point(x, y - offset_top - window.height)
 
-def on_mouse_press(button, x, y, modifiers):
-    print layout.get_elements_for_point(x, y - offset_top - window.height) 
+@select('body')
+def on_mouse_press(element, button, x, y, modifiers):
+    print 'I am the body'
+layout.push_handlers(on_mouse_press)
+
+@select('h1')
+def on_mouse_press(element, button, x, y, modifiers):
+    print 'I am the frog!'
+    return EVENT_UNHANDLED
+layout.push_handlers(on_mouse_press)
+
+@select('h2')
+def on_mouse_press(element, button, x, y, modifiers):
+    print 'I am brother Grimm!'
+layout.push_handlers(on_mouse_press)
+
+@select('#wish')
+def on_mouse_press(element, button, x, y, modifiers):
+    print 'Granted three wishes!'
+layout.push_handlers(on_mouse_press)
 
 window.push_handlers(on_resize=on_resize)
 window.push_handlers(on_mouse_scroll=on_scroll)
 window.push_handlers(on_mouse_motion)
-window.push_handlers(on_mouse_press)
+window.push_handlers(layout)
 on_resize(window.width, window.height)
 glClearColor(1, 1, 1, 1)
 

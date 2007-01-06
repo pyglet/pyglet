@@ -7,6 +7,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from pyglet.layout.base import *
+from pyglet.layout.event import *
 
 class ContainingBlock(object):
     '''A rectangular region in which boxes are placed.
@@ -1076,8 +1077,9 @@ class InlineFormattingContext(FormattingContext):
     def close(self):
         self.add_line_box(self.line_box)
 
-class VisualLayout(object):
+class VisualLayout(LayoutEventHandler):
     def __init__(self, render_device):
+        super(VisualLayout, self).__init__()
         self.render_device = render_device
         self.root_frame = None
 
@@ -1128,10 +1130,19 @@ class VisualLayout(object):
                 unique_elements.append(e)
         return unique_elements
 
-    
     def initial_containing_block(self):
         return ContainingBlock(0, 0, 
             self.render_device.width, 0)
             #self.render_device.height) # XXX HACK
 
+    # Window event handlers.
+    hack_offset = 0
+    def on_mouse_press(self, button, x, y, modifiers):
+        y += self.hack_offset
+        elements = self.get_elements_for_point(x, y)
+        for element in elements[::-1]:
+            handled = self.dispatch_event(element, 'on_mouse_press', 
+                                          button, x, y, modifiers)
+            if handled:
+                break
 

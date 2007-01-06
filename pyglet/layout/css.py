@@ -67,51 +67,46 @@ class SelectableElement(object):
 
 # Stylesheet objects
 # ---------------------------------------------------------------------------
-
-class Stylesheet(object):
-    '''Top-level container for rules and declarations.  Typically initialised
-    from a CSS stylesheet file.  Elements can then be searched for matching
-    declarations.
+class RuleSet(object):
+    '''Primary set is a collection of rules, organised for quick matching
+    against an element.
     '''
-
-    def __init__(self, data):
-        '''Initialise the stylesheet with the given data, which can be
-        a string or file-like object.
-
-        Most parse errors are ignored as defined in the CSS specification.
-        Any that slip through as exceptions are bugs.
-        '''
-        if not hasattr(data, 'read'):
-            data = StringIO(data)
-        scanner = Scanner(lexicon, data)
-        parser = Parser(scanner)
-        charset, imports, rules = parser.stylesheet()
-
-        self.rules = rules      # only for debugging
-
+    def __init__(self):
         self.names = {}
         self.ids = {}
         self.classes = {}
         self.universals = []
 
-        for rule in rules:
-            primary = rule.selector.primary
-            if primary.name:
-                if primary.name not in self.names:
-                    self.names[primary.name] = []
-                self.names[primary.name].append(rule)
-            elif primary.id:
-                if primary.id not in self.ids:
-                    self.ids[primary.id] = []
-                self.ids[primary.id].append(rule)
-            elif primary.classes:
-                if primary.classes[0] not in self.classes:
-                    self.classes[primary.classes[0]] = []
-                self.classes[primary.classes[0]].append(rule)
-            else:
-                self.universals.append(rule)
+    def add_rule(self, rule):
+        primary = rule.selector.primary
+        if primary.name:
+            self.add_name(primary.name, rule)
+        elif primary.id:
+            self.add_id(primary.id, rule)
+        elif primary.classes:
+            self.add_classes(primary.classes, rule)
+        else:
+            self.add_universal(rule)
+                
+    def add_name(self, name, rule):
+        if name not in self.names:
+            self.names[name] = []
+        self.names[name].append(rule)
 
-    def get_declarations(self, elem):
+    def add_id(self, id, rule):
+        if id not in self.ids:
+            self.ids[id] = []
+        self.ids[id].append(rule)
+
+    def add_classes(self, classes, rule):
+        if classes not in self.classes:
+            self.classes[classes] = []
+        self.classes[classes].append(rule)
+
+    def add_universal(self, rule):
+        self.universals.append(rule)
+
+    def get_matching_rules(self, elem):
         '''Return a list of declarations that should be applied to the
         given element.
 
@@ -135,21 +130,13 @@ class Stylesheet(object):
         # Order by specifity
         matches.sort(lambda a,b: a.specifity - b.specifity)
 
-        declarations = []
-        for rule in matches:
-            declarations += rule.declarations
-
-        # Parse and add declarations from element style
-        if elem.style:
-            scanner = Scanner(lexicon, StringIO(elem.style))
-            parser = Parser(scanner)
-            declarations += parser.declaration_list()
-
-        return declarations
+        return matches
 
     def matches(self, rule, elem):
         '''Determine if the given rule applies to the given element.  Returns
         True if so, False otherwise.
+
+        # XXX why isn't this on Rule?
         '''
         if not rule.selector.primary.matches(elem):
             return False
@@ -174,6 +161,49 @@ class Stylesheet(object):
                 return False
 
         return True
+
+class Stylesheet(object):
+    '''Top-level container for rules and declarations.  Typically initialised
+    from a CSS stylesheet file.  Elements can then be searched for matching
+    declarations.
+    '''
+
+    def __init__(self, data):
+        '''Initialise the stylesheet with the given data, which can be
+        a string or file-like object.
+
+        Most parse errors are ignored as defined in the CSS specification.
+        Any that slip through as exceptions are bugs.
+        '''
+        if not hasattr(data, 'read'):
+            data = StringIO(data)
+        scanner = Scanner(lexicon, data)
+        parser = Parser(scanner)
+        charset, imports, rules = parser.stylesheet()
+
+        self.rules = rules      # only for debugging
+
+        self.ruleset = RuleSet()
+        for rule in rules:
+            self.ruleset.add_rule(rule)
+
+    def get_declarations(self, elem):
+        rules = self.ruleset.get_matching_rules(elem)
+
+        declarations = []
+        for rule in rules:
+            declarations += rule.declarations
+
+        # Parse and add declarations from element style
+        if elem.style:
+            scanner = Scanner(lexicon, StringIO(elem.style))
+            parser = Parser(scanner)
+            declarations += parser.declaration_list()
+
+        return declarations
+
+    def matches(self, rule, elem):
+        return self.ruleset.matches(rule, elem)
 
     def pprint(self):
         for rule in self.rules:
@@ -245,6 +275,12 @@ class Selector(object):
     def __init__(self, primary, combiners):
         self.primary = primary
         self.combiners = combiners
+
+    @staticmethod
+    def from_string(data):
+        scanner = Scanner(lexicon, StringIO(data.strip()))
+        parser = Parser(scanner)
+        return parser.selector()
 
     def pprint(self):
         print 'Selector(primary=%r,combiners=%r)' % \

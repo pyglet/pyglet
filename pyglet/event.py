@@ -36,17 +36,20 @@ class EventHandler(object):
                 name = object.__name__
                 if name not in self.event_types:
                     raise EventException('Unknown event "%s"' % name)
-                self._event_stack[0][name] = object
+                self.set_handler(name, object)
             else:
                 # Single instance with magically named methods
                 for name, handler in inspect.getmembers(object):
                     if name in self.event_types:
-                        self._event_stack[0][name] = handler
+                        self.set_handler(name, handler)
         for name, handler in kwargs.items():
             # Function for handling given event (no magic)
             if name not in self.event_types:
                 raise EventException('Unknown event "%s"' % name)
-            self._event_stack[0][name] = handler
+            self.set_handler(name, handler)
+
+    def set_handler(self, name, handler):
+        self._event_stack[0][name] = handler
 
     def pop_handlers(self):
         del self._event_stack[0]
