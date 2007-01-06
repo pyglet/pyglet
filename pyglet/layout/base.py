@@ -363,6 +363,10 @@ class Box(object):
     # Layout engine properties
     # ------------------------
 
+    # The element (SelectableElement or subclass) that generated this
+    # box
+    element = None
+
     # A box can have either children or text, but not both.  Use anonymous
     # inline boxes to add children to boxes which already have text, or
     # to add text to boxes that already have children.

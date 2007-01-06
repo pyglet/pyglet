@@ -1113,6 +1113,21 @@ class VisualLayout(object):
         return [frame.box \
                 for frame in self.get_frames_for_point(x, y) \
                 if hasattr(frame, 'box')]
+
+    def get_elements_for_point(self, x, y):
+        elements = [frame.box.element \
+                    for frame in self.get_frames_for_point(x, y) \
+                    if hasattr(frame, 'box') and frame.box.element]
+
+        # Remove adjacent duplicates
+        unique_elements = []
+        last_e = None
+        for e in elements:
+            if e is not last_e:
+                last_e = e
+                unique_elements.append(e)
+        return unique_elements
+
     
     def initial_containing_block(self):
         return ContainingBlock(0, 0, 

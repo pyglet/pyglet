@@ -44,21 +44,21 @@ class DocumentFormatter(Formatter):
         '''
         self.stylesheets.append(stylesheet)
 
-    def create_box(self, elem):
+    def create_box(self, element):
         '''Create a box for the given element.
 
         This checks for a matching registered box generator and invokes it,
         otherwise returns a plain Box with initial values.  Do not use this
         method to create text boxes.
         '''
-        if elem.name in self.generators:
-            box = self.generators[elem.name].create_box(
-                elem.name, elem.attributes)
+        if element.name in self.generators:
+            box = self.generators[element.name].create_box(
+                element.name, element.attributes)
         else:
             box = Box()
 
         # Back-reference to elem used for interactive applications
-        box.elem = elem
+        box.element = element
         return box
 
     def apply_style(self,  box):
@@ -73,7 +73,7 @@ class DocumentFormatter(Formatter):
         apply_inherited_style(box)
 
         for stylesheet in self.stylesheets:
-            apply_stylesheet(stylesheet, box.elem, box, self.render_device)
+            apply_stylesheet(stylesheet, box.element, box, self.render_device)
 
     def resolve_style_defaults(self, box):
         '''Apply defaults that couldn't be set with initial values.
