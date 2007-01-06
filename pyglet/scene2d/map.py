@@ -13,13 +13,13 @@ Getting Started
 You may create a map interactively and query it:
 
     >>> from pyglet.scene2d import *
-    >>> m = Map(32, 32, meta=[['a', 'd'], ['b', 'e'], ['c', 'f']])
+    >>> m = RectMap(32, 32, meta=[['a', 'd'], ['b', 'e'], ['c', 'f']])
     >>> m.get((0,0))
-    <Cell object at 0x-4828d82c (0, 0) meta='a' tile=None>
+    <RectCell object at 0x-4828d82c (0, 0) meta='a' tile=None>
     >>> _.get_neighbor(_.RIGHT)
-    <Cell object at 0x-483c80bc (1, 0) meta='b' tile=None>
+    <RectCell object at 0x-483c80bc (1, 0) meta='b' tile=None>
     >>> _.get_neighbor(_.UP)
-    <Cell object at 0x-4828d82c (1, 1) meta='e' tile=None>
+    <RectCell object at 0x-4828d82c (1, 1) meta='e' tile=None>
     >>> print _.get_neighbor(_.UP)
     None
 
@@ -189,7 +189,7 @@ class TileSet(dict):
         cls.tilesets[filename] = obj
         return obj
 
-class MapBase(object):
+class Map(object):
     '''Base class for Maps.
 
     Both rect and hex maps have the following attributes:
@@ -207,7 +207,7 @@ class MapBase(object):
         Return None if out of bounds.'''
         raise NotImplemented()
 
-class Map(MapBase):
+class RectMap(Map):
     '''Rectangular map.
 
     Cells are stored in column-major order with y increasing up,
@@ -316,13 +316,13 @@ class Map(MapBase):
                     type = tag.getAttribute('type')
                     value = tag.getAttribute('value')
                     meta[name] = xml_to_python[type](value)
-                c.append(Cell(i, j, width, height, meta, tile))
+                c.append(RectCell(i, j, width, height, meta, tile))
 
         dom.unlink()
         obj = cls(width, height, cells, origin)
         return obj
 
-class CellBase(object):
+class Cell(object):
     '''Base class for cells from rect and hex maps.
 
     Common attributes:
@@ -342,7 +342,7 @@ class CellBase(object):
             self.__class__.__name__, id(self), self.x, self.y, self.meta,
                 self.tile)
 
-class Cell(CellBase):
+class RectCell(Cell):
     '''A rectangular cell from a Map.
 
     Read-only attributes:
@@ -428,7 +428,7 @@ class Cell(CellBase):
     midright = property(get_midright)
 
  
-class HexMap(MapBase):
+class HexMap(Map):
     '''Map with flat-top, regular hexagonal cells.
 
     Additional attributes extending MapBase:
@@ -525,7 +525,7 @@ class HexMap(MapBase):
 # avoid accumulation errors due to rounding ints. We do this so
 # we can each point at the same position as a neighbor's corresponding
 # point.
-class HexCell(CellBase):
+class HexCell(Cell):
     '''A flat-top, regular hexagon cell from a HexMap.
 
     Read-only attributes:

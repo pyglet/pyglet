@@ -22,7 +22,7 @@ class MapLoadTest(RenderBase):
         map_xml = os.path.join(os.path.dirname(__file__), 'map.xml')
 
         self.init_window(256, 256)
-        m = pyglet.scene2d.Map.load_xml(map_xml)
+        m = pyglet.scene2d.RectMap.load_xml(map_xml)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_BLEND)
         glEnable(GL_COLOR_MATERIAL)

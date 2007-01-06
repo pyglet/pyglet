@@ -17,8 +17,8 @@ from pyglet.scene2d.debug import genmap
 
 class RectFlatDebugTest(RenderBase):
     def test_main(self):
-        m = pyglet.scene2d.Map(32, 32, genmap(['a'*10]*10, 32, 32,
-            pyglet.scene2d.Cell))
+        m = pyglet.scene2d.RectMap(32, 32, genmap(['a'*10]*10, 32, 32,
+            pyglet.scene2d.RectCell))
         self.run_test(m)
 
 if __name__ == '__main__':

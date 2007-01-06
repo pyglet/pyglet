@@ -50,8 +50,8 @@ for opt, value in optlist:
         cw = ch = args[0]
         filename['x'] = 'hex(%d)'%args[0]
     elif opt == '-r':
-        klass = pyglet.scene2d.Map
-        cells = pyglet.scene2d.Cell
+        klass = pyglet.scene2d.RectMap
+        cells = pyglet.scene2d.RectCell
         args = map(int, value.split(','))
         if len(args) == 1:
             args *= 2

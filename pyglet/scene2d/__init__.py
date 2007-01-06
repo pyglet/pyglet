@@ -1,7 +1,7 @@
 """
 """
 
-from pyglet.scene2d.map import Map, HexMap, Cell, HexCell
+from pyglet.scene2d.map import RectMap, HexMap, RectCell, HexCell
 from pyglet.scene2d.scene import Scene
 from pyglet.scene2d.camera import FlatCamera
 from pyglet.scene2d.view import FlatView

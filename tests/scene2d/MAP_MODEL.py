@@ -10,7 +10,7 @@ __version__ = '$Id$'
 
 import unittest
 
-from pyglet.scene2d import Map, HexMap, Cell, HexCell
+from pyglet.scene2d import RectMap, HexMap, RectCell, HexCell
 
 def _cells(l, w, h, klass):
     r = []
@@ -30,7 +30,7 @@ class MapModelTest(unittest.TestCase):
         #    +---+---+---+
         #    | a | b | c |
         #    +---+---+---+
-        m = Map(10, 16, cells=_cells(['ad', 'be', 'cf'], 10, 16, Cell))
+        m = RectMap(10, 16, cells=_cells(['ad', 'be', 'cf'], 10, 16, RectCell))
         t = m.get((0,0))
         assert (t.x, t.y) == (0, 0) and t.meta == 'a'
         assert m.get_neighbor(t, m.DOWN) is None
@@ -69,7 +69,7 @@ class MapModelTest(unittest.TestCase):
         #    +---+---+---+
         #    | a | b | c |
         #    +---+---+---+
-        m = Map(10, 16, cells=_cells(['ad', 'be', 'cf'], 10, 16, Cell))
+        m = RectMap(10, 16, cells=_cells(['ad', 'be', 'cf'], 10, 16, RectCell))
 
         # test tile sides / corners
         t = m.get((0,0))
