@@ -188,12 +188,16 @@ layout = render_xhtml('''<?xml version="1.0"?>
 </body>
 </html> ''')
 
-def on_mouse_press(button, x, y, modifiers):
-    print layout.get_boxes_for_point(x,y - offset_top - window.height)
+highlight_frames = []
+
+def on_mouse_motion(x, y, dx, dy):
+    #print layout.get_boxes_for_point(x,y - offset_top - window.height)
+    highlight_frames[:] = \
+        layout.get_frames_for_point(x, y - offset_top - window.height)
 
 window.push_handlers(on_resize=on_resize)
 window.push_handlers(on_mouse_scroll=on_scroll)
-window.push_handlers(on_mouse_press)
+window.push_handlers(on_mouse_motion)
 on_resize(window.width, window.height)
 glClearColor(1, 1, 1, 1)
 
@@ -209,4 +213,24 @@ while not exit_handler.exit:
     offset_top = max(min(offset_top, layout_height - window.height), 0)
     glTranslatef(0, window.height + offset_top, 0)
     layout.draw()
+
+    colors = [(1, 0, 0, 1),
+              (0, 1, 0, 1),
+              (0, 0, 1, 1),
+              (1, 1, 0, 1),
+              (0, 1, 1, 1),
+              (1, 0, 1, 1)]
+              
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+    glBegin(GL_QUADS)
+    for frame, color in zip(highlight_frames, colors):
+        glColor4f(*color)
+        glVertex2f(frame.bounding_box_left, frame.bounding_box_top)
+        glVertex2f(frame.bounding_box_left, frame.bounding_box_bottom)
+        glVertex2f(frame.bounding_box_right, frame.bounding_box_bottom)
+        glVertex2f(frame.bounding_box_right, frame.bounding_box_top)
+    glEnd()
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+
     window.flip()
