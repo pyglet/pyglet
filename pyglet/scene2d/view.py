@@ -60,6 +60,11 @@ class FlatView:
         self.rotation = rotation
         self.fx, self.fy = fx, fy
 
+    def __repr__(self):
+        return '<%s object at 0x%x focus=(%d,%d) oob=%s>'%(
+            self.__class__.__name__, id(self), self.fx, self.fy,
+            self.allow_oob)
+
     def get(self, x, y):
         ''' Pick whatever is on the top at the position x, y. '''
         raise NotImplemented()
@@ -88,9 +93,10 @@ class FlatView:
         # figure the view min/max based on focus
         w2 = self.camera.width/2
         h2 = self.camera.height/2
+
         fx, fy = self.fx, self.fy
         v_min_x = fx - w2
-        v_min_y = fy - w2
+        v_min_y = fy - h2
         x_moved = y_moved = False
         if v_min_x < b_min_x:
             fx += b_min_x - v_min_x

@@ -27,3 +27,7 @@ class FlatCamera(object):
     def on_resize(self, width, height):
         self.width, self.height = width, height
 
+    def __repr__(self):
+        return '<%s object at 0x%x pos=(%d,%d) size=(%d,%d)>'%(
+            self.__class__.__name__, id(self), self.x, self.y, self.width,
+            self.height)
