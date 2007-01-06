@@ -540,6 +540,7 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_MOUSEMOVE)
     def _event_mousemove(self, msg, wParam, lParam):
         x, y = self._get_location(lParam)
+        y = self.height - y
         if self._ignore_mousemove:
             # Ignore the event caused by SetCursorPos
             self._ignore_mousemove = False
@@ -589,11 +590,13 @@ class Win32Window(BaseWindow):
 
     @Win32EventHandler(WM_MOUSELEAVE)
     def _event_mouseleave(self, msg, wParam, lParam):
+        x = point.x
+        y = self.height - point.y
         point = POINT()
         _user32.GetCursorPos(byref(point))
         _user32.ScreenToClient(self._hwnd, byref(point))
         self._tracking = False
-        self.dispatch_event(EVENT_MOUSE_LEAVE, point.x, point.y)
+        self.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
         return 0
 
     def _event_mousebutton(self, event, button, lParam):
@@ -602,6 +605,7 @@ class Win32Window(BaseWindow):
         else:
             _user32.ReleaseCapture()
         x, y = self._get_location(lParam)
+        y = self.height - y
         self.dispatch_event(event, button, x, y, self._get_modifiers())
         return 0
 

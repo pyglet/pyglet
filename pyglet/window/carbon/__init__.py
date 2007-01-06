@@ -745,6 +745,7 @@ class CarbonWindow(BaseWindow):
     def _on_mouse_down(self, next_handler, event, data):
         button, modifiers = self._get_mouse_button_and_modifiers(event)
         x, y = self._get_mouse_position(event)
+        y = self.height - y
         if x >= 0 and y >= 0:
             self.dispatch_event(EVENT_MOUSE_PRESS, button, x, y, modifiers)
 
@@ -755,6 +756,7 @@ class CarbonWindow(BaseWindow):
     def _on_mouse_up(self, next_handler, event, data):
         button, modifiers = self._get_mouse_button_and_modifiers(event)
         x, y = self._get_mouse_position(event)
+        y = self.height - y
         if x >= 0 and y >= 0:
             self.dispatch_event(EVENT_MOUSE_RELEASE, button, x, y, modifiers)
 
@@ -766,6 +768,7 @@ class CarbonWindow(BaseWindow):
     def _on_mouse_moved(self, next_handler, event, data):
         button, modifiers = self._get_mouse_button_and_modifiers(event)
         x, y = self._get_mouse_position(event)
+        y = self.height - y
         if x < 0 or y < 0:
             return noErr
 
@@ -788,6 +791,7 @@ class CarbonWindow(BaseWindow):
     @CarbonEventHandler(kEventClassMouse, kEventMouseEntered)
     def _on_mouse_entered(self, next_handler, event, data):
         x, y = self._get_mouse_position(event)
+        y = self.height - y
         self.dispatch_event(EVENT_MOUSE_ENTER, x, y)
 
         carbon.CallNextEventHandler(next_handler, event)
@@ -796,6 +800,7 @@ class CarbonWindow(BaseWindow):
     @CarbonEventHandler(kEventClassMouse, kEventMouseExited)
     def _on_mouse_exited(self, next_handler, event, data):
         x, y = self._get_mouse_position(event)
+        y = self.height - y
         self.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
 
         carbon.CallNextEventHandler(next_handler, event)

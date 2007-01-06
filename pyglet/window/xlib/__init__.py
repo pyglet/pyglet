@@ -908,7 +908,7 @@ class XlibWindow(BaseWindow):
     @XlibEventHandler(MotionNotify)
     def _event_motionnotify(self, event):
         x = event.xmotion.x
-        y = event.xmotion.y
+        y = self.height - event.xmotion.y
 
         if self._ignore_motion:
             # Ignore events caused by XWarpPointer
@@ -963,6 +963,8 @@ class XlibWindow(BaseWindow):
     @XlibEventHandler(ButtonPress)
     @XlibEventHandler(ButtonRelease)
     def _event_button(self, event):
+        x = event.xbutton.x
+        y = self.height - event.xbutton.y
         modifiers = self._translate_modifiers(event.xbutton.state)
         if event.type == ButtonPress:
             if event.xbutton.button == 4:
@@ -972,12 +974,12 @@ class XlibWindow(BaseWindow):
             else:
                 self._mouse.buttons[event.xbutton.button] = True
                 self.dispatch_event(EVENT_MOUSE_PRESS, event.xbutton.button,
-                    event.xbutton.x, event.xbutton.y, modifiers)
+                    x, y, modifiers)
         else:
             if event.xbutton.button < 4:
                 self._mouse.buttons[event.xbutton.button] = False
                 self.dispatch_event(EVENT_MOUSE_RELEASE, event.xbutton.button,
-                    event.xbutton.x, event.xbutton.y, modifiers)
+                    x, y, modifiers)
 
     @XlibEventHandler(Expose)
     def _event_expose(self, event):
@@ -1008,7 +1010,7 @@ class XlibWindow(BaseWindow):
     @XlibEventHandler(LeaveNotify)
     def _event_leavenotify(self, event):
         x = self._mouse.x = event.xcrossing.x
-        y = self._mouse.y = event.xcrossing.y
+        y = self._mouse.y = self.height - event.xcrossing.y
         self.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
 
     @XlibEventHandler(ConfigureNotify)
