@@ -14,7 +14,7 @@ __version__ = '$Id$'
 import os
 import unittest
 
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.VERSION_1_1 import glClear
 import pyglet.window
 import pyglet.window.event
 import pyglet.clock
@@ -46,11 +46,6 @@ class SpriteModelTest(unittest.TestCase):
 
         dx, dy = (10, 5)
 
-        # XXX this belongs in sprite somewhere
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_BLEND)
-        glEnable(GL_COLOR_MATERIAL)
-
         while running:
             w.dispatch_events()
             glClear(GL_COLOR_BUFFER_BIT)
@@ -62,7 +57,7 @@ class SpriteModelTest(unittest.TestCase):
             if ball.bottom < 0: ball.bottom = 0; dy = -dy
             elif ball.top > w.height: ball.top = w.height; dy = -dy
 
-            # XXX listen for events
+            # keep our focus in the middle of the window
             r.fx = w.width/2
             r.fy = w.height/2
 

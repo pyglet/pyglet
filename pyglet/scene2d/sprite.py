@@ -16,14 +16,22 @@ class Sprite(object):
     Attributes:
         x, y, z         -- position (z is optional and defaults to 0)
         width, height   -- sprite dimensions (may differ from image)
+        angle           -- angle of rotation in degrees
+        cog             -- center of gravity for rotation (x, y)
+                           (defaults to middle of sprite)
         image           -- image for this sprite
         offset          -- offset of image from position (default (0,0))
         animations      -- a queue of SpriteAnimations to run
     '''
-    __slots__ = 'x y z image width height offset animations'.split()
-    def __init__(self, x, y, width, height, image, offset=(0,0), z=0):
+    __slots__ = 'x y z image width height angle cog offset animations'.split()
+    def __init__(self, x, y, width, height, image, angle=0, cog=None,
+            offset=(0,0), z=0):
         self.x, self.y, self.z = x, y, z
         self.width, self.height = width, height
+        self.angle = 0
+        if cog is None:
+            cog = (width/2, height/2)
+        self.cog = cog
         self.image = image
         self.offset = offset
         self.animations = []

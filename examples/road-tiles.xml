@@ -12,6 +12,9 @@
   <tile id="vr"><origin x="384" y="256" /></tile>
   <tile id="empty"><origin x="512" y="256" /></tile>
 
+  <tile id="bli"><origin x="128" y="128" /></tile>
+  <tile id="bri"><origin x="256" y="128" /></tile>
+
   <tile id="bl"><origin x="0" y="0" /></tile>
   <tile id="bh"><origin x="128" y="0" /></tile>
   <tile id="br"><origin x="384" y="0" /></tile>

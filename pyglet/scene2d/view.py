@@ -107,7 +107,7 @@ class FlatView:
             y_moved = True
 
         v_max_x = fx + w2
-        v_max_y = fy + w2
+        v_max_y = fy + h2
         if not x_moved and v_max_x > b_max_x:
             fx -= v_max_x - b_max_x
         if not y_moved and v_max_y > b_max_y:
@@ -120,13 +120,15 @@ class FlatView:
         on position which is (x, y). '''
         self.camera.project()
 
-        glColor4f(1, 1, 0, 1)
-
         # sort by depth
         self.scene.maps.sort(key=operator.attrgetter('z'))
 
         # determine the focus point
         fx, fy = self._determine_focus()
+
+        # XXX push state?
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_BLEND)
 
         # now draw
         glPushMatrix()
@@ -148,6 +150,10 @@ class FlatView:
         for sprite in self.scene.sprites:
             glPushMatrix()
             glTranslatef(sprite.x, sprite.y, sprite.z)
+            if sprite.angle:
+                glTranslatef(sprite.cog[0]/2, sprite.cog[1]/2, 0)
+                glRotatef(sprite.angle, 0, 0, 1)
+                glTranslatef(-sprite.cog[0]/2, -sprite.cog[1]/2, 0)
             sprite.image.draw()
             glPopMatrix()
 
