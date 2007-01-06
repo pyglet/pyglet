@@ -54,7 +54,7 @@ class SpriteModelTest(unittest.TestCase):
         while running:
             w.dispatch_events()
             glClear(GL_COLOR_BUFFER_BIT)
-            
+
             # move, check bounds
             ball.x += dx; ball.y += dy
             if ball.left < 0: ball.left = 0; dx = -dx
@@ -65,8 +65,6 @@ class SpriteModelTest(unittest.TestCase):
             # XXX listen for events
             r.fx = w.width/2
             r.fy = w.height/2
-            r.width = w.width
-            r.height = w.height
 
             r.draw()
             w.flip()
