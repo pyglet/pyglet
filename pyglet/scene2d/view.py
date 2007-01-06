@@ -115,6 +115,30 @@ class FlatView:
 
         return fx, fy
 
+    def clear(self, colour=None, is_window=True):
+        '''Clear the view.
+
+        If colour is None then the current glColor (is_window == False)
+        or glClearColor (is_window == True) is used.
+
+        If the view is not the whole window then you should pass
+        is_window=False otherwise the whole window will be cleared.
+        '''
+        if is_window:
+            if colour is not None:
+                glClearColor(*colour)
+            glClear(GL_COLOR_BUFFER_BIT)
+        else:
+            if colour is not None:
+                glColor(*colour)
+            glBegin(GL_QUADS)
+            glVertex2f(0, 0)
+            glVertex2f(0, self.camera.height)
+            glVertex2f(self.camera.width, self.camera.height)
+            glVertex2f(self.camera.width, 0)
+            glEnd()
+
+
     def draw(self):
         '''Draw the scene centered (or closest, depending on allow_oob)
         on position which is (x, y). '''

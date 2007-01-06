@@ -93,15 +93,14 @@ class RenderBase(unittest.TestCase):
             marker = Sprite(0, 0, 1, 1, Marker())
             s.sprites.append(marker)
 
-        glColor4f(1, 1, 1, 1)
         while running:
             self.w.dispatch_events()
-            glClear(GL_COLOR_BUFFER_BIT)
             r.fx += input.left + input.right
             r.fy += input.up + input.down
             if marker is not None:
                 marker.x = r.fx
                 marker.y = r.fy
+            r.clear()
             r.draw()
             self.w.flip()
         self.w.close()

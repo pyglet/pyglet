@@ -31,7 +31,7 @@ class SpriteModelTest(unittest.TestCase):
         image = Image2d.load(ball_png)
         ball = Sprite(0, 0, 64, 64, image)
         s = Scene(sprites=[ball])
-        r = FlatView(s, 0, 0, 320, 320)
+        view = FlatView(s, 0, 0, 320, 320)
 
         class running(pyglet.window.event.ExitHandler):
             def __init__(self, fps=30):
@@ -42,13 +42,12 @@ class SpriteModelTest(unittest.TestCase):
                 return True
         running = running()
         w.push_handlers(running)
-        w.push_handlers(r.camera)
+        w.push_handlers(view.camera)
 
         dx, dy = (10, 5)
 
         while running:
             w.dispatch_events()
-            glClear(GL_COLOR_BUFFER_BIT)
 
             # move, check bounds
             ball.x += dx; ball.y += dy
@@ -58,10 +57,11 @@ class SpriteModelTest(unittest.TestCase):
             elif ball.top > w.height: ball.top = w.height; dy = -dy
 
             # keep our focus in the middle of the window
-            r.fx = w.width/2
-            r.fy = w.height/2
+            view.fx = w.width/2
+            view.fy = w.height/2
 
-            r.draw()
+            view.clear()
+            view.draw()
             w.flip()
 
         w.close()

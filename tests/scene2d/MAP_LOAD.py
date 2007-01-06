@@ -15,7 +15,6 @@ import os
 import unittest
 from render_base import RenderBase
 import pyglet.scene2d
-from pyglet.GL.VERSION_1_1 import *
 
 class MapLoadTest(RenderBase):
     def test_main(self):
@@ -23,9 +22,6 @@ class MapLoadTest(RenderBase):
 
         self.init_window(256, 256)
         m = pyglet.scene2d.RectMap.load_xml(map_xml)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_BLEND)
-        glEnable(GL_COLOR_MATERIAL)
         self.run_test(m, show_focus=True, debug=False)
 
 if __name__ == '__main__':

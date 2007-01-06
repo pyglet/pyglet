@@ -5,7 +5,6 @@ import pyglet.window
 import pyglet.window.event
 import pyglet.clock
 from pyglet.scene2d import *
-from pyglet.GL.VERSION_1_1 import glClear
 
 dirname = os.path.dirname(__file__)
 
@@ -65,7 +64,6 @@ while running:
     view.fx = car.x
     view.fy = car.y
 
-    glClear(GL_COLOR_BUFFER_BIT)
     view.draw()
     w.flip()
 w.close()
