@@ -1002,7 +1002,7 @@ class XlibWindow(BaseWindow):
 
         # mouse position
         x = self._mouse.x = event.xcrossing.x
-        y = self._mouse.y = event.xcrossing.y
+        y = self._mouse.y = self.height - event.xcrossing.y
 
         # XXX there may be more we could do here
         self.dispatch_event(EVENT_MOUSE_ENTER, x, y)
