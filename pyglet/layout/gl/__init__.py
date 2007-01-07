@@ -20,7 +20,7 @@ from pyglet.layout.gl.image import *
 
 __all__ = ['Layout', 'select']
 
-class GLLayout(LayoutEventHandler):
+class GLLayout(LayoutEventDispatcher):
     # Disable this if you don't want the layout to resize with the window
     # and position itself to cover the entire window automatically.
     size_to_window = True       

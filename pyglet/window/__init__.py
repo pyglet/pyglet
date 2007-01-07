@@ -26,7 +26,7 @@ Call the Window constructor to create a new window:
     >>> win = Window(width=640, height=480, fullscreen=False)
     >>> 
 
-Windows are subclasses of EventHandler, so you can push event handlers
+Windows are subclasses of EventDispatcher, so you can push event handlers
 onto them::
 
     >>> class MyEvents:
@@ -189,7 +189,7 @@ __version__ = '$Id$'
 import pprint
 import sys
 
-from pyglet.window.event import WindowEventHandler
+from pyglet.window.event import WindowEventDispatcher
 import pyglet.window.key
 
 # List of contexts currently in use, so we can create new contexts that
@@ -320,7 +320,7 @@ class BaseGLContext(object):
     def get_shared_object_space(self):
         return self._shared_object_space
 
-class BaseWindow(WindowEventHandler):
+class BaseWindow(WindowEventDispatcher):
     '''Platform-independent application window.
 
     A window is a "heavyweight" object occupying operating system resources.
@@ -351,7 +351,7 @@ class BaseWindow(WindowEventHandler):
     _windowed_location = None
 
     def __init__(self):
-        WindowEventHandler.__init__(self)
+        WindowEventDispatcher.__init__(self)
 
     def create(self, factory):
         self._config = factory.get_config()

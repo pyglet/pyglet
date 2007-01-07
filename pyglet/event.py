@@ -14,7 +14,7 @@ EVENT_UNHANDLED = 1
 class EventException(Exception):
     pass
 
-class EventHandler(object):
+class EventDispatcher(object):
     def __init__(self):
         self._event_stack = [{}]
 

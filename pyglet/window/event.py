@@ -6,33 +6,37 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import pyglet.window.key
-from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED, EventHandler
+from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED, EventDispatcher
 
-class WindowEventHandler(EventHandler):
+class WindowEventDispatcher(EventDispatcher):
     pass
 
 # symbolic names for the window events
-EVENT_KEY_PRESS = WindowEventHandler.register_event_type('on_key_press')
-EVENT_KEY_RELEASE = WindowEventHandler.register_event_type('on_key_release')
-EVENT_TEXT = WindowEventHandler.register_event_type('on_text')
-EVENT_MOUSE_MOTION = WindowEventHandler.register_event_type('on_mouse_motion')
-EVENT_MOUSE_DRAG = WindowEventHandler.register_event_type('on_mouse_drag')
-EVENT_MOUSE_PRESS = WindowEventHandler.register_event_type('on_mouse_press')
-EVENT_MOUSE_RELEASE = WindowEventHandler.register_event_type('on_mouse_release')
-EVENT_MOUSE_SCROLL = WindowEventHandler.register_event_type('on_mouse_scroll')
-EVENT_MOUSE_ENTER = WindowEventHandler.register_event_type('on_mouse_enter')
-EVENT_MOUSE_LEAVE = WindowEventHandler.register_event_type('on_mouse_leave')
-EVENT_CLOSE = WindowEventHandler.register_event_type('on_close')
-EVENT_EXPOSE = WindowEventHandler.register_event_type('on_expose')
-EVENT_RESIZE = WindowEventHandler.register_event_type('on_resize')
-EVENT_MOVE = WindowEventHandler.register_event_type('on_move')
-EVENT_ACTIVATE = WindowEventHandler.register_event_type('on_activate')
-EVENT_DEACTIVATE = WindowEventHandler.register_event_type('on_deactivate')
-EVENT_SHOW = WindowEventHandler.register_event_type('on_show')
-EVENT_HIDE = WindowEventHandler.register_event_type('on_hide')
-EVENT_CONTEXT_LOST = WindowEventHandler.register_event_type('on_context_lost')
+EVENT_KEY_PRESS = WindowEventDispatcher.register_event_type('on_key_press')
+EVENT_KEY_RELEASE = WindowEventDispatcher.register_event_type('on_key_release')
+EVENT_TEXT = WindowEventDispatcher.register_event_type('on_text')
+EVENT_MOUSE_MOTION = \
+    WindowEventDispatcher.register_event_type('on_mouse_motion')
+EVENT_MOUSE_DRAG = WindowEventDispatcher.register_event_type('on_mouse_drag')
+EVENT_MOUSE_PRESS = WindowEventDispatcher.register_event_type('on_mouse_press')
+EVENT_MOUSE_RELEASE = \
+    WindowEventDispatcher.register_event_type('on_mouse_release')
+EVENT_MOUSE_SCROLL = \
+    WindowEventDispatcher.register_event_type('on_mouse_scroll')
+EVENT_MOUSE_ENTER = WindowEventDispatcher.register_event_type('on_mouse_enter')
+EVENT_MOUSE_LEAVE = WindowEventDispatcher.register_event_type('on_mouse_leave')
+EVENT_CLOSE = WindowEventDispatcher.register_event_type('on_close')
+EVENT_EXPOSE = WindowEventDispatcher.register_event_type('on_expose')
+EVENT_RESIZE = WindowEventDispatcher.register_event_type('on_resize')
+EVENT_MOVE = WindowEventDispatcher.register_event_type('on_move')
+EVENT_ACTIVATE = WindowEventDispatcher.register_event_type('on_activate')
+EVENT_DEACTIVATE = WindowEventDispatcher.register_event_type('on_deactivate')
+EVENT_SHOW = WindowEventDispatcher.register_event_type('on_show')
+EVENT_HIDE = WindowEventDispatcher.register_event_type('on_hide')
+EVENT_CONTEXT_LOST = \
+    WindowEventDispatcher.register_event_type('on_context_lost')
 EVENT_CONTEXT_STATE_LOST = \
-    WindowEventHandler.register_event_type('on_context_state_lost')
+    WindowEventDispatcher.register_event_type('on_context_state_lost')
 
 # symbolic names for the mouse buttons
 MOUSE_LEFT_BUTTON =   1 << 0

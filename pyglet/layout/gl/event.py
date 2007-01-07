@@ -6,7 +6,7 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-from pyglet.event import EventHandler, EVENT_UNHANDLED
+from pyglet.event import EventDispatcher, EVENT_UNHANDLED
 from pyglet.layout.css import RuleSet, Selector, SimpleSelector
 
 
@@ -14,9 +14,9 @@ from pyglet.layout.css import RuleSet, Selector, SimpleSelector
 # event-function, each layer is a dictionary mapping event-name to 
 # RuleSet
 
-class LayoutEventHandler(EventHandler):
+class LayoutEventDispatcher(EventDispatcher):
     def __init__(self):
-        super(LayoutEventHandler, self).__init__()
+        super(LayoutEventDispatcher, self).__init__()
 
     def set_handler(self, name, handler):
         '''Inspect handler for a selector and apply to the primary-set.
@@ -40,7 +40,7 @@ class LayoutEventHandler(EventHandler):
                     if ret != EVENT_UNHANDLED:
                         return True
 
-LayoutEventHandler.register_event_type('on_mouse_press')
+LayoutEventDispatcher.register_event_type('on_mouse_press')
         
 def select(rule):
     selector = Selector.from_string(rule)
