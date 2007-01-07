@@ -33,7 +33,6 @@ import operator
 
 from pyglet.scene2d.camera import FlatCamera
 from pyglet.GL.VERSION_1_1 import *
-from pyglet.GLU.VERSION_1_1 import *
 
 class FlatView:
     '''Render a flat view of a pyglet.scene2d.Scene.
@@ -148,7 +147,7 @@ class FlatView:
         self.scene.maps.sort(key=operator.attrgetter('z'))
 
         # determine the focus point
-        fx, fy = self._determine_focus()
+        fx, fy = map(int, self._determine_focus())
 
         # XXX push state?
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -157,10 +156,10 @@ class FlatView:
         # now draw
         glPushMatrix()
         glTranslatef(self.camera.width/2-fx, self.camera.height/2-fy, 0)
-        for map in self.scene.maps:
+        for smap in self.scene.maps:
             glPushMatrix()
-            glTranslatef(map.x, map.y, map.z)
-            for column in map.cells:
+            glTranslatef(smap.x, smap.y, smap.z)
+            for column in smap.cells:
                 for cell in column:
                     if not cell.tile: continue
                     x, y = cell.bottomleft
