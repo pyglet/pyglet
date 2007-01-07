@@ -35,6 +35,12 @@ class Sprite(object):
         self.image = image
         self.offset = offset
         self.animations = []
+
+    @classmethod
+    def from_image(cls, image):
+        '''Set up the sprite from the image - sprite dimensions are the
+        same as the image.'''
+        return cls(0, 0, image.width, image.height, image)
  
     def push_animation(self, animation):
         "Push a SpriteAnimation onto this sprite's animation queue."

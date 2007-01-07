@@ -60,6 +60,12 @@ class FlatView:
         self.rotation = rotation
         self.fx, self.fy = fx, fy
 
+    @classmethod
+    def from_window(cls, scene, window, **kw):
+        '''Create a view which is the same dimensions as the supplied
+        window.'''
+        return cls(scene, 0, 0, window.width, window.height, **kw)
+        
     def __repr__(self):
         return '<%s object at 0x%x focus=(%d,%d) oob=%s>'%(
             self.__class__.__name__, id(self), self.fx, self.fy,
