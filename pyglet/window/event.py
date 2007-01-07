@@ -165,10 +165,10 @@ class KeyboardStateHandler(dict):
     '''
     def on_key_press(self, symbol, modifiers):
         self[symbol] = True
-        return pyglet.window.event.EVENT_UNHANDLED
+        return EVENT_UNHANDLED
     def on_key_release(self, symbol, modifiers):
         self[symbol] = False
-        return pyglet.window.event.EVENT_UNHANDLED
+        return EVENT_UNHANDLED
     def __getitem__(self, key):
         return self.get(key, False)
 
