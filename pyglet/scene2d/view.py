@@ -168,7 +168,7 @@ class FlatView:
             for column in smap.cells:
                 for cell in column:
                     if not cell.tile: continue
-                    x, y = cell.bottomleft
+                    x, y = cell.origin
                     glPushMatrix()
                     glTranslatef(x, y, -1)
                     if cell.tile:

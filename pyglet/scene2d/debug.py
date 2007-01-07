@@ -9,7 +9,7 @@ Simple images etc. to aid debugging
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.scene2d.map import HexCell, Tile
+from pyglet.scene2d.map import RectCell, HexCell, Tile
 from pyglet.GL.VERSION_1_1 import *
 
 class HexCheckImage:
@@ -45,23 +45,31 @@ class RectCheckImage:
         glVertex2f(0, self.h)
         glEnd()
 
-def genmap(meta, w, h, klass):
+def gen_hex_map(meta, h):
     r = []
     cell = None
     for i, m in enumerate(meta):
         c = []
         r.append(c)
         for j, info in enumerate(m):
-            if klass is HexCell:
-                if cell is None:
-                    cell = HexCell(0, 0, w, h, None, None)
-                k = j
-                if not i % 2:  k += 1
-                image = HexCheckImage(HexCheckImage.COLOURS[k%3], cell)
+            if cell is None:
+                cell = HexCell(0, 0, h, None, None)
+            k = j
+            if not i % 2:  k += 1
+            image = HexCheckImage(HexCheckImage.COLOURS[k%3], cell)
+            c.append(HexCell(i, j, h, info, Tile(None, None, image)))
+    return r
+
+def gen_rect_map(meta, w, h):
+    r = []
+    cell = None
+    for i, m in enumerate(meta):
+        c = []
+        r.append(c)
+        for j, info in enumerate(m):
+            if (i + j) % 2:
+                image = RectCheckImage(w, h, (.7, .7, .7, 1))
             else:
-                if (i + j) % 2:
-                    image = RectCheckImage(w, h, (.7, .7, .7, 1))
-                else:
-                    image = RectCheckImage(w, h, (.9, .9, .9, 1))
-            c.append(klass(i, j, w, h, info, Tile(None, None, image)))
+                image = RectCheckImage(w, h, (.9, .9, .9, 1))
+            c.append(RectCell(i, j, w, h, info, Tile(None, None, image)))
     return r

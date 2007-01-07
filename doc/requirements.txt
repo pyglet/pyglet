@@ -151,6 +151,7 @@ scene2d
         MAP_LOAD                          X
         MAP_SAVE                           
         SPRITE_MODEL                      X
+        SPRITE_COLLISION                   
         FLAT_SPRITE                       X
         RECT_FLAT_DEBUG                   X
         HEX_FLAT_DEBUG                    X
@@ -158,7 +159,7 @@ scene2d
         FLAT_OOB                          X
         RECT_FLAT_PICKING                  
         HEX_FLAT_PICKING                   
-        VIEW_SUBWINDOW
+        VIEW_SUBWINDOW                     
         ============================== =======
 
     TBD:

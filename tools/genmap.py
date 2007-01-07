@@ -22,14 +22,13 @@ Press "s" to save the grid off a file.
 
 import sys, getopt, os
 
-from pyglet.GL.VERSION_1_1 import *
 import pyglet.scene2d
 import pyglet.window
 import pyglet.window.event
 import pyglet.clock
 import pyglet.image
 
-from pyglet.scene2d.debug import genmap
+from pyglet.scene2d.debug import gen_hex_map, gen_rect_map
 
 try:
     optlist, args = getopt.getopt(sys.argv[1:], 'x:r:s:foa:p:h')
@@ -40,18 +39,15 @@ except getopt.GetoptError, error:
 
 size = (5, 5)
 renderer = pyglet.scene2d.FlatView
-klass = cells = None
+maptype = None
 filename = { 'r': 'flat', 'e': '5x5' }
 for opt, value in optlist:
     if opt == '-x':
-        klass = pyglet.scene2d.HexMap
-        cells = pyglet.scene2d.HexCell
-        args = [int(value)]
-        cw = ch = args[0]
-        filename['x'] = 'hex(%d)'%args[0]
+        maptype = 'hex'
+        ch = int(value)
+        filename['x'] = 'hex(%d)'%ch
     elif opt == '-r':
-        klass = pyglet.scene2d.RectMap
-        cells = pyglet.scene2d.RectCell
+        maptype = 'rect'
         args = map(int, value.split(','))
         if len(args) == 1:
             args *= 2
@@ -79,7 +75,7 @@ for opt, value in optlist:
         print __doc__%sys.argv[0]
         sys.exit()
 
-if klass is None:
+if maptype is None:
     print 'ERROR: -x or -r required'
     print __doc__%sys.argv[0]
     sys.exit()
@@ -87,8 +83,10 @@ if klass is None:
 filename = '%(x)s-%(e)s-%(r)s'%filename
 
 mw, mh = size
-kw = dict(cells=genmap(['a'*mh]*mw, cw, ch, cells))
-m = klass(*args, **kw)
+if maptype == 'hex':
+    m = pyglet.scene2d.HexMap(ch, cells=gen_hex_map(['a'*mh]*mw, ch))
+else:
+    m = pyglet.scene2d.RectMap(cw, ch, cells=gen_rect_map(['a'*mh]*mw, cw, ch))
 w = pyglet.window.Window(width=m.pxw, height=m.pxh)
 s = pyglet.scene2d.Scene(maps=[m])
 r = pyglet.scene2d.FlatView(s, 0, 0, m.pxw, m.pxh, allow_oob=False)
@@ -117,7 +115,7 @@ w.push_handlers(running)
 while running:
     w.switch_to()
     w.dispatch_events()
-    glClear(GL_COLOR_BUFFER_BIT)
+    r.clear()
     r.draw()
     w.flip()
 
