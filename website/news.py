@@ -37,11 +37,11 @@ def save_file(filename, content):
 # write HTML
 html = ['''<table id="news" align="center">
 <tbody><tr><th colspan="2">NEWS:</th></tr>''']
-row = '<tr><td class="first">%s:</td><td>%s</td></tr>'
+row = '<tr><td class="first">%s:<br><em>%s</em></td><td>%s</td></tr>'
 for entry in entries[:10]:
     content = '<br>'.join(filter(None, ['<strong>%s</strong>'%entry['title'],
         entry['content']]))
-    html.append(row%('%d-%d-%d'%entry['date'], content))
+    html.append(row%('%d-%d-%d'%entry['date'], entry['author'], content))
 html.append('</tbody></table>')
 save_file('news.php', '\n'.join(html))
 
