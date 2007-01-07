@@ -56,9 +56,9 @@ def print_frame(frame, indent=''):
 
 def on_key_press(symbol, modifiers):
     if symbol == K_B:
-        print_box(layout._visual.root_frame.children[0].box)
+        print_box(layout._visual._root_frame.children[0].box)
     if symbol == K_F:
-        print_frame(layout._visual.root_frame)
+        print_frame(layout._visual._root_frame)
     if symbol == K_S:
         print repr(layout.locator.get_default_stream().read())
     return True

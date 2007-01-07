@@ -202,6 +202,26 @@ layout.push_handlers(on_mouse_leave)
 
 window.push_handlers(layout)
 
+
+def print_style(style, indent=''):
+    import textwrap
+    print '\n'.join(textwrap.wrap(repr(style), initial_indent=indent,
+            subsequent_indent=indent))
+    if style.parent:
+        print_style(style.parent, '  ' + indent)
+
+def print_element(element, indent=''):
+    import textwrap
+    print '\n'.join(textwrap.wrap(repr(element), initial_indent=indent,
+            subsequent_indent=indent))
+    if element.style_context:
+        print_style(element.style_context, indent + '  ')
+    for child in element.children:
+        print_element(child, '  ' + indent)
+
+root = layout._visual._root_box.element
+print_element( root)
+
 glClearColor(1, 1, 1, 1)
 clock = Clock()
 

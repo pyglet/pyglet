@@ -44,11 +44,11 @@ class SelectableElement(object):
     classes = ()                # list of str
     name = None                 # str
     style = None                # str
-    pseudo_classes = None       # set of str (without colon)
+    pseudo_classes = ()         # set of str (without colon)
     boxes = ()                  # list of Box (for incremental reflow)
 
     def add_pseudo_class(self, c):
-        if self.pseudo_classes is None:
+        if self.pseudo_classes == ():
             self.pseudo_classes = set()
         self.pseudo_classes.add(c)
 
@@ -199,19 +199,14 @@ class Stylesheet(object):
         for rule in rules:
             self.ruleset.add_rule(rule)
 
-    def get_declarations(self, elem):
-        rules = self.ruleset.get_matching_rules(elem)
+    def get_element_declaration_sets(self, element):
+        return [rule.declaration_set for rule in self.ruleset.get_matching_rules(element)]
 
+    def get_declarations(self, element):
+        # XXX deprecated
         declarations = []
-        for rule in rules:
-            declarations += rule.declarations
-
-        # Parse and add declarations from element style
-        if elem.style:
-            scanner = Scanner(lexicon, StringIO(elem.style))
-            parser = Parser(scanner)
-            declarations += parser.declaration_list()
-
+        for declaration_set in self.get_element_declaration_sets(element):
+            declarations += declaration_set.declarations
         return declarations
 
     def matches(self, rule, elem):
@@ -220,6 +215,12 @@ class Stylesheet(object):
     def pprint(self):
         for rule in self.rules:
             rule.pprint()
+
+def parse_style_declaration_set(self, style):
+    scanner = Scanner(lexicon, StringIO(elem.style))
+    parser = Parser(scanner)
+    declaration_set = parser.declaration_set()
+    return declaration_set
 
 class Import(object):
     '''An @import declaration.  Currently ignored.
@@ -234,9 +235,9 @@ class Import(object):
 class Page(object):
     '''An @page declaration.  Currently ignored.
     '''
-    def __init__(self, pseudo, declarations):
+    def __init__(self, pseudo, declaration_set):
         self.pseudo = pseudo
-        self.declarations = declarations
+        self.declaration_set = declaration_set
 
 class Rule(object):
     '''A rule, consisting of a single selector and one or more declarations.
@@ -245,9 +246,9 @@ class Rule(object):
     '''
     media = None
 
-    def __init__(self, selector, declarations):
+    def __init__(self, selector, declaration_set):
         self.selector = selector
-        self.declarations = declarations
+        self.declaration_set = declaration_set
 
         # Specifity calculated according to 6.4.3 with base 256
         specifity = 0
@@ -271,8 +272,7 @@ class Rule(object):
             print '@media', ','.join(self.media), '{', 
         self.selector.pprint()
         print '{'
-        for declaration in self.declarations:
-            print declaration, ';'
+        self.declaration_set.pprint()
         print '}'
 
 class Selector(object):
@@ -345,8 +345,8 @@ class SimpleSelector(object):
                 pre = attr.value.split('-')
                 if value.split('-')[:len(pre)] != pre:
                     return False
-        for psuedo in self.pseudos:
-            if pseudo not in elem.psuedo_classes:
+        for pseudo in self.pseudos:
+            if pseudo not in elem.pseudo_classes:
                 return False
         return True
         
@@ -403,6 +403,16 @@ class PseudoFunction(Pseudo):
 
     def __repr__(self):
         return ':%s(%s)' % (self.name, self.param)
+
+class DeclarationSet(object):
+    '''Set of declarations, for example within a rule block.
+    '''
+    def __init__(self, declarations):
+        self.declarations = declarations
+
+    def pprint(self):
+        for declaration in self.declarations:
+            print declaration, ';'
 
 class Declaration(object):
     '''A single declaration, consisting of a property name, a list of values,
@@ -698,10 +708,10 @@ class Parser(object):
             pseudo = self._read(Ident)
         self._eat_whitespace()
         self._read('{')
-        declarations = self.declaration_list()
+        declaration_set = self.declaration_set()
         self._read('}')
         self._eat_whitespace()
-        return Page(pseudo, declarations)
+        return Page(pseudo, declaration_set)
 
     def is_media(self):
         t = self._peek()
@@ -772,11 +782,11 @@ class Parser(object):
             selectors.append(self.selector())
         self._read('{')
         self._eat_whitespace()
-        declarations = self.declaration_list()
+        declaration_set = self.declaration_set()
         self._read('}')
         self._eat_whitespace()
 
-        return [Rule(s, declarations) for s in selectors]
+        return [Rule(s, declaration_set) for s in selectors]
 
     def is_selector(self):
         return self._is(Ident, '*', Hash, '.', '[', ':')
@@ -853,7 +863,7 @@ class Parser(object):
             self._read(')')
             return PseudoFunction(name, param)
 
-    def declaration_list(self):
+    def declaration_set(self):
         # declaration_list : S* declaration [';' S* declaration ]*
         # Adapted from bracketed section of ruleset; this is the start
         # production for parsing the style attribute of HTML/XHTML.
@@ -870,7 +880,7 @@ class Parser(object):
                     break
             self._read(';')
             self._eat_whitespace()
-        return declarations
+        return DeclarationSet(declarations)
 
     def is_declaration(self):
         return self.is_property()

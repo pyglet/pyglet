@@ -9,8 +9,9 @@ __version__ = '$Id: $'
 import re
 
 from pyglet.layout.base import *
-from pyglet.layout.css import SelectableElement
+from pyglet.layout.css import SelectableElement, parse_style_declaration_set
 from pyglet.layout.properties import apply_inherited_style, apply_stylesheet 
+from pyglet.layout.properties import StyleTree
 
 class DocumentElement(SelectableElement):
     '''Default element type for element-based markup.  
@@ -25,6 +26,12 @@ class DocumentElement(SelectableElement):
         self.parent = parent
         self.previous_sibling = previous_sibling
         self.boxes = []
+        self.children = []
+        self.computed_properties = {}
+
+    def get_computed_property(self, property, render_device):
+        return self.style_context.get_computed_property(
+            property, self, render_device)
 
 class DocumentFormatter(Formatter):
     '''Formatter for creating CSS boxes from element-based markup.
@@ -37,6 +44,7 @@ class DocumentFormatter(Formatter):
     def __init__(self, render_device):
         super(DocumentFormatter, self).__init__(render_device)
         self.stylesheets = []
+        self.style_tree = StyleTree()
 
     def add_stylesheet(self, stylesheet):
         '''Add the given stylesheet to this formatter.  Stylesheets are
@@ -76,6 +84,18 @@ class DocumentFormatter(Formatter):
 
         for stylesheet in self.stylesheets:
             apply_stylesheet(stylesheet, box.element, box, self.render_device)
+
+        element = box.element
+        if not hasattr(element, 'style_context'):
+            if element.parent:
+                element.parent.children.append(element)
+            
+            declaration_sets = []
+            for stylesheet in self.stylesheets:
+                declaration_sets += stylesheet.get_element_declaration_sets(element)
+            if element.style:
+                declaration_sets += parse_style_declaration_set(element.style)
+            element.style_context = self.style_tree.get_style_node(declaration_sets)
 
     def resolve_style_defaults(self, box):
         '''Apply defaults that couldn't be set with initial values.
@@ -121,6 +141,7 @@ class DocumentFormatter(Formatter):
         values are also converted to numeric values, such as the font-weight
         property.
         '''
+        '''
         # font-size first, since em and ex depend on it
         font_size = box.font_size
         if isinstance(box.font_size, Dimension):
@@ -136,6 +157,9 @@ class DocumentFormatter(Formatter):
         elif isinstance(font_size, Ident):
             font_size = self.render_device.get_named_font_size(font_size)
         box.font_size = font_size
+        '''
+        font_size = box.font_size = box.element.get_computed_property('font-size',
+            self.render_device)
         font_size_device = \
             self.render_device.dimension_to_device(font_size, font_size)
 
@@ -204,6 +228,7 @@ class DocumentFormatter(Formatter):
         anon.display = Ident('block')
         anon.children = boxes
         anon.parent = parent
+        anon.element = parent.element
         apply_inherited_style(anon)        # needed?
         self.resolve_style_defaults(anon)  # needed?
         self.resolve_computed_values(anon) # needed?
@@ -219,6 +244,7 @@ class DocumentFormatter(Formatter):
         anon = Box()
         anon.text = text
         anon.parent = parent
+        anon.element = parent.element
         apply_inherited_style(anon)        # needed?
         self.resolve_style_defaults(anon)  # needed?
         self.resolve_computed_values(anon) # needed?
