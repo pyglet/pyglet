@@ -50,7 +50,7 @@ class FlatView:
         fx, fy          -- pixel point to center in the viewport, subject
                            to OOB checks
     '''
-    # XXX nuke scale - belongs in camera
+    # XXX nuke scale? belongs in camera?
     def __init__(self, scene, x, y, width, height, allow_oob=True,
             scale=1, rotation=0, fx=0, fy=0):
         self.scene = scene
@@ -165,6 +165,8 @@ class FlatView:
         for smap in self.scene.maps:
             glPushMatrix()
             glTranslatef(smap.x, smap.y, smap.z)
+
+            # XXX use smap.get_cells_in_region(bottomleft, topright)
             for column in smap.cells:
                 for cell in column:
                     if not cell.tile: continue

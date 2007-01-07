@@ -61,6 +61,13 @@ class Map(object):
         Return None if out of bounds.'''
         raise NotImplemented()
 
+    def get_cells_in_region(self, bottomleft, topright):
+        '''Return cells (in [column][row]) that are within the pixel bounds
+        specified by the bottom-left and top-right corners.
+        '''
+        raise NotImplemented()
+
+
 class RegularTesselationMap(Map):
     '''A class of Map that has a regular array of Cells.
     '''
