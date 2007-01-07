@@ -150,6 +150,27 @@ class ExitHandler(object):
             self.exit = True
         return EVENT_UNHANDLED
 
+class KeyboardStateHandler(dict):
+    '''Simple handler that tracks the state of keys on the keyboard. If a
+    key is pressed then this handler holds a True value for it.
+
+    For example:
+
+        >>> keyboard = KeyboardStateHandler()
+        >>> # hold down the "up" arrow
+        >>> keyboard[K_UP]
+        True
+        >>> keyboard[K_DOWN]
+        False
+    '''
+    def on_key_press(self, symbol, modifiers):
+        self[symbol] = True
+        return pyglet.window.event.EVENT_UNHANDLED
+    def on_key_release(self, symbol, modifiers):
+        self[symbol] = False
+        return pyglet.window.event.EVENT_UNHANDLED
+    def __getitem__(self, key):
+        return self.get(key, False)
 
 class DebugEventHandler(object):
     def on_key_press(self, symbol, modifiers):
