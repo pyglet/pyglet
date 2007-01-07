@@ -67,6 +67,7 @@ class GLLayout(LayoutEventDispatcher):
         for generator in self.generators:
             formatter.add_generator(generator)
         self._visual.root_box = formatter.format(data)
+        self._mouse_over_elements = set()
 
     def add_generator(self, generator):
         self.generators.append(generator)
@@ -160,6 +161,27 @@ class GLLayout(LayoutEventDispatcher):
             if handled:
                 return EVENT_HANDLED
         return EVENT_UNHANDLED
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        x -= self.x
+        y -= self.y
+        elements = self._visual.get_elements_for_point(x, y)
+        elements_set = set(elements)
+        for element in self._mouse_over_elements - elements_set:
+            self.dispatch_event(element, 'on_mouse_leave', x, y)
+            element.remove_pseudo_class('hover')
+        for element in elements_set - self._mouse_over_elements:
+            self.dispatch_event(element, 'on_mouse_enter', x, y)
+            element.add_pseudo_class('hover')
+        self._mouse_over_elements = elements_set
+
+    def on_mouse_leave(self, x, y):
+        x -= self.x
+        y -= self.y
+        for element in self._mouse_over_elements:
+            self.dispatch_event(element, 'on_mouse_leave', x, y)
+            element.remove_pseudo_class('hover')
+        self._mouse_over_elements = set()
 
 # As long as there's not going to be any other render device around, call
 # this one by a nicer name.

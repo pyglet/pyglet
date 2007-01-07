@@ -41,6 +41,8 @@ class LayoutEventDispatcher(EventDispatcher):
                         return True
 
 LayoutEventDispatcher.register_event_type('on_mouse_press')
+LayoutEventDispatcher.register_event_type('on_mouse_enter')
+LayoutEventDispatcher.register_event_type('on_mouse_leave')
         
 def select(rule):
     selector = Selector.from_string(rule)

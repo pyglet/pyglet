@@ -24,6 +24,7 @@ class DocumentElement(SelectableElement):
         self.attributes.update(attrs)
         self.parent = parent
         self.previous_sibling = previous_sibling
+        self.boxes = []
 
 class DocumentFormatter(Formatter):
     '''Formatter for creating CSS boxes from element-based markup.
@@ -58,6 +59,7 @@ class DocumentFormatter(Formatter):
             box = Box()
 
         # Back-reference to elem used for interactive applications
+        element.boxes.append(box)
         box.element = element
         return box
 

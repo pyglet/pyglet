@@ -30,6 +30,7 @@ layout.set_xhtml('''<?xml version="1.0"?>
           background-image: url(examples/stripe.png)}
       body {background-image: url(examples/paper.jpg); 
             background-repeat: repeat}
+      #wishing:hover {color:red;}
     </style>
   </head>
   <body>
@@ -190,6 +191,14 @@ layout.push_handlers(on_mouse_press)
 def on_mouse_press(element, button, x, y, modifiers):
     print 'Granted three wishes!'
 layout.push_handlers(on_mouse_press)
+
+def on_mouse_enter(element, x, y):
+    print 'on_mouse_enter', element, x, y
+layout.push_handlers(on_mouse_enter)
+
+def on_mouse_leave(element, x, y):
+    print 'on_mouse_leave', element, x, y
+layout.push_handlers(on_mouse_leave)
 
 window.push_handlers(layout)
 

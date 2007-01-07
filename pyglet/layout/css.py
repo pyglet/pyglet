@@ -44,6 +44,17 @@ class SelectableElement(object):
     classes = ()                # list of str
     name = None                 # str
     style = None                # str
+    pseudo_classes = None       # set of str (without colon)
+    boxes = ()                  # list of Box (for incremental reflow)
+
+    def add_pseudo_class(self, c):
+        if self.pseudo_classes is None:
+            self.pseudo_classes = set()
+        self.pseudo_classes.add(c)
+
+    def remove_pseudo_class(self, c):
+        if self.pseudo_classes is not None:
+            self.pseudo_classes.remove(c)
 
     # Debug methods only
     def short_repr(self):
@@ -334,6 +345,9 @@ class SimpleSelector(object):
                 pre = attr.value.split('-')
                 if value.split('-')[:len(pre)] != pre:
                     return False
+        for psuedo in self.pseudos:
+            if pseudo not in elem.psuedo_classes:
+                return False
         return True
         
 class CombiningSelector(object):
