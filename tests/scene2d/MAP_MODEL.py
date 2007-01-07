@@ -11,15 +11,7 @@ __version__ = '$Id$'
 import unittest
 
 from pyglet.scene2d import RectMap, HexMap, RectCell, HexCell
-
-def _cells(l, w, h, klass):
-    r = []
-    for i, m in enumerate(l):
-        c = []
-        r.append(c)
-        for j, n in enumerate(m):
-            c.append(klass(i, j, w, h, n, None))
-    return r
+from pyglet.scene2d.debug import gen_hex_map, gen_rect_map
 
 class MapModelTest(unittest.TestCase):
 
@@ -30,7 +22,7 @@ class MapModelTest(unittest.TestCase):
         #    +---+---+---+
         #    | a | b | c |
         #    +---+---+---+
-        m = RectMap(10, 16, cells=_cells(['ad', 'be', 'cf'], 10, 16, RectCell))
+        m = RectMap(10, 16, cells=gen_rect_map(['ad', 'be', 'cf'], 10, 16))
         t = m.get((0,0))
         assert (t.x, t.y) == (0, 0) and t.meta == 'a'
         assert m.get_neighbor(t, m.DOWN) is None
@@ -69,7 +61,7 @@ class MapModelTest(unittest.TestCase):
         #    +---+---+---+
         #    | a | b | c |
         #    +---+---+---+
-        m = RectMap(10, 16, cells=_cells(['ad', 'be', 'cf'], 10, 16, RectCell))
+        m = RectMap(10, 16, cells=gen_rect_map(['ad', 'be', 'cf'], 10, 16))
 
         # test tile sides / corners
         t = m.get((0,0))
@@ -94,7 +86,7 @@ class MapModelTest(unittest.TestCase):
         # \_/c\_/g\
         # /a\_/e\_/
         # \_/ \_/ 
-        m = HexMap(32, cells=_cells(['ab', 'cd', 'ef', 'gh'], 36, 32, HexCell))
+        m = HexMap(32, cells=gen_hex_map(['ab', 'cd', 'ef', 'gh'], 32))
         t = m.get((0,0))
         assert (t.x, t.y) == (0, 0) and t.meta == 'a'
         assert m.get_neighbor(t, m.DOWN) is None
@@ -152,7 +144,7 @@ class MapModelTest(unittest.TestCase):
         # \_/c\_/g\
         # /a\_/e\_/
         # \_/ \_/ 
-        m = HexMap(32, cells=_cells(['ad', 'be', 'cf', 'gh'], 36, 32, HexCell))
+        m = HexMap(32, cells=gen_hex_map(['ab', 'cd', 'ef', 'gh'], 32))
 
         # test tile sides / corners
         t00 = m.get((0, 0))
@@ -198,6 +190,14 @@ class MapModelTest(unittest.TestCase):
         assert t.topleft == t10.right
         assert t.midtopleft == t10.midbottomright
 
+
+    def test_hex_dimensions(self):
+        m = HexMap(32, cells=gen_hex_map(['a'], 32))
+        assert m.pxw, m.pxh == (36, 32)
+        m = HexMap(32, cells=gen_hex_map(['ab'], 32))
+        assert m.pxw, m.pxh == (36, 64)
+        m = HexMap(32, cells=gen_hex_map(['a', 'b'], 32))
+        assert m.pxw, m.pxh == (63, 48)
 
 if __name__ == '__main__':
     unittest.main()
