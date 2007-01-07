@@ -18,12 +18,14 @@ from pyglet.layout.base import *
 from pyglet.layout.css import *
 
 class StyleTree(object):
-    def __init__(self):
+    def __init__(self, render_device):
         self.children = {}
+        self.render_device = render_device
+        self.default_node = StyleNode(None, DeclarationSet(()), render_device)
 
     def get_style_node(self, declaration_sets):
         if not declaration_sets:
-            return default_style_node
+            return self.default_node
         nodes = self.children
         node = None
         for declaration_set in declaration_sets:
@@ -31,15 +33,24 @@ class StyleTree(object):
                 node = nodes[declaration_set]
                 nodes = node.children
             else:
-                node = StyleNode(node, declaration_set)
+                node = StyleNode(node, declaration_set, self.render_device)
                 nodes[declaration_set] = node
                 nodes = node.children
         return node
 
+_compute_functions = {}
+def css(*properties):
+    def f(func):
+        for property in properties:
+            _compute_functions[property] = func
+        return func
+    return f
+
 class StyleNode(object):
-    def __init__(self, parent, declaration_set):
+    def __init__(self, parent, declaration_set, render_device):
         self.parent = parent
         self.children = {}
+        self.render_device = render_device
 
         self.specified_properties = {}
         for declaration in declaration_set.declarations:
@@ -62,7 +73,7 @@ class StyleNode(object):
         else:
             return _initial_values[property]
 
-    def get_computed_property(self, property, element, render_device):
+    def get_computed_property(self, property, element):
         # Check node cache for element invariant result
         if property in self.computed_properties:
             return self.computed_properties[property]
@@ -73,9 +84,12 @@ class StyleNode(object):
 
         # Nothing cached, work it out.
         specified = self.get_specified_property(property)
-        func = StyleNode._property_computers[property]
-        result, node_cacheable = func(
-            self, property, specified, element, render_device)
+        if type(specified) == Ident and specified == 'inherit':
+            result = self.get_inherited_property(property, element)
+            node_cacheable = False
+        else:
+            func = StyleNode._compute_functions[property]
+            result, node_cacheable = func(self, property, specified, element)
 
         if node_cacheable:
             self.computed_properties[property] = result
@@ -84,53 +98,78 @@ class StyleNode(object):
 
         return result
 
-    def get_inherited_property(self, property, element, render_device):
+    def get_inherited_property(self, property, element):
         if element.parent:
-            return element.parent.get_computed_property(
-                property, render_device)
+            return element.parent.get_computed_property(property)
         else:
             func = self._property_computers(property)
             specified = _initial_values[property]
-            result, _ = func(self, property, specified, element, render_device)
+            result, _ = func(self, property, specified, element)
             return result
 
-    def _compute_font_size(self, property, specified, element, render_device):
+    @css('font-size')
+    def _compute_font_size(self, property, specified, element):
         factor = None
         size = specified
-        if isinstance(size, Dimension):
+        if type(size) == Dimension:
             if size.unit == 'em':
                 factor = size
             elif size.unit == 'ex':
                 factor = .5 * size
             else:
-                size = render_device.dimension_to_pt(size)
-        elif isinstance(size, Percentage):
+                size = self.render_device.dimension_to_pt(size)
+        elif type(size) == Percentage:
             factor = size
-        elif isinstance(size, Ident):
+        elif type(size) == Ident:
             if size == 'larger':
                 factor = 1.1 # XXX wrong, should move to next size.
             elif size == 'smaller':
                 factor = 0.9 # wrong again
             else:
-                size = render_device.get_named_font_size(size)
+                size = self.render_device.get_named_font_size(size)
         else:
             assert False
 
         if factor is not None:
-            size = factor * self.get_inherited_property(
-                property, element, render_device)
+            size = factor * self.get_inherited_property(property, element)
             size = Dimension('%fpt' % size)
             return size, False
         return size, True
-       
-    _property_computers = {
-        'font-size': _compute_font_size,
-    }
 
+    @css('--font-size-device')
+    def _compute_font_size_device(self, property, specified, element):
+        # A convenience property required by many others so good idea to cache
+        font_size = element.get_computed_property('font-size')
+        result = self.render_device.dimension_to_device(font_size, font_size)
+        return result, False
+
+    @css('margin-top', 'margin-right', 'margin-bottom', 'margin-left',
+         'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
+         'border-top-width', 'border-right-width', 'border-bottom-width',
+         'border-left-width', 
+         'top', 'right', 'bottom', 'left', 
+         'width', 'min-width', 'max-width', 
+         'height', 'min-height', 'max-height',
+         )
+    def _compute_font_relative_size(self, property, specified, element):
+        if type(specified) == Dimension:
+            if specified.unit in ('em', 'ex'):
+                font_size = element.get_computed_property('font-size')
+                result = self.render_device.dimension_to_device(
+                    specified, font_size)
+                return result, False
+            else:
+                result = self.render_device.dimension_to_device(
+                    specified, 0)
+                return result, True
+        return specified, True
+       
     def __repr__(self):
         return '<%s@0x%x %r>' % (self.__class__.__name__, id(self), self.specified_properties)
 
-default_style_node = StyleNode(None, DeclarationSet(()))
+StyleNode._compute_functions = _compute_functions
+del _compute_functions
+
 
 def validate_declaration(declaration):
     if declaration.property in _properties:
@@ -319,8 +358,9 @@ def _parse_font_family(value, render_device):
 _parse_margin = _parse_generic(Dimension, Percentage, 'auto', 0)
 _parse_padding = _parse_generic(Dimension, Percentage, 'auto', 0)
 _parse_line_height = _parse_generic(Number, Dimension, Percentage, 'normal')
-_parse_font_size = _parse_generic(Dimension, Number, Percentage,
-    'xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large')
+_parse_font_size = _parse_generic(Dimension, Percentage,
+    'xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large',
+    'larger', 'smaller')
 
 _parse_vertical_align = _parse_generic(
     Percentage, Dimension, 

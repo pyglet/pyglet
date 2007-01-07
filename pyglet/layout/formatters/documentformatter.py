@@ -29,9 +29,8 @@ class DocumentElement(SelectableElement):
         self.children = []
         self.computed_properties = {}
 
-    def get_computed_property(self, property, render_device):
-        return self.style_context.get_computed_property(
-            property, self, render_device)
+    def get_computed_property(self, property):
+        return self.style_context.get_computed_property(property, self)
 
 class DocumentFormatter(Formatter):
     '''Formatter for creating CSS boxes from element-based markup.
@@ -44,7 +43,7 @@ class DocumentFormatter(Formatter):
     def __init__(self, render_device):
         super(DocumentFormatter, self).__init__(render_device)
         self.stylesheets = []
-        self.style_tree = StyleTree()
+        self.style_tree = StyleTree(render_device)
 
     def add_stylesheet(self, stylesheet):
         '''Add the given stylesheet to this formatter.  Stylesheets are
@@ -124,14 +123,16 @@ class DocumentFormatter(Formatter):
 
     # Attributes with computed length.  This list may not yet be complete.  
     _length_attribute_names = set(
-       ['margin_top', 'margin_right', 'margin_bottom', 'margin_left',
-       'padding_top', 'padding_right', 'padding_bottom', 'padding_left',
-       'border_top_width', 'border_right_width', 'border_bottom_width',
-       'border_left_width', 'top', 'right', 'bottom', 'left', 'width',
-       'min_width', 'max_width', 'height', 'min_height', 'max_height',
-       'line_height', 'text_indent', 'letter_spacing', 'word_spacing',
-       'border_spacing', 
-       'intrinsic_width', 'intrinsic_height'])
+       [
+        #'margin_top', 'margin_right', 'margin_bottom', 'margin_left',
+       #'padding_top', 'padding_right', 'padding_bottom', 'padding_left',
+       #'border_top_width', 'border_right_width', 'border_bottom_width',
+       #'border_left_width', 'top', 'right', 'bottom', 'left', 'width',
+       #'min_width', 'max_width', 'height', 'min_height', 'max_height',
+       'line_height', #'text_indent', 'letter_spacing', 'word_spacing',
+       #'border_spacing', 
+       #'intrinsic_width', 'intrinsic_height'])
+    ])
 
     def resolve_computed_values(self, box):
         '''Resolve box property values to their computed values.  
@@ -158,10 +159,36 @@ class DocumentFormatter(Formatter):
             font_size = self.render_device.get_named_font_size(font_size)
         box.font_size = font_size
         '''
-        font_size = box.font_size = box.element.get_computed_property('font-size',
-            self.render_device)
+        font_size = box.font_size = box.element.get_computed_property('font-size')
         font_size_device = \
             self.render_device.dimension_to_device(font_size, font_size)
+
+        box.margin_top = box.element.get_computed_property('margin-top')
+        box.margin_right = box.element.get_computed_property('margin-right')
+        box.margin_bottom = box.element.get_computed_property('margin-bottom')
+        box.margin_left = box.element.get_computed_property('margin-left')
+        box.padding_top = box.element.get_computed_property('padding-top')
+        box.padding_right = box.element.get_computed_property('padding-right')
+        box.padding_bottom = box.element.get_computed_property('padding-bottom')
+        box.padding_left = box.element.get_computed_property('padding-left')
+        box.border_top_width = \
+            box.element.get_computed_property('border-top-width')
+        box.border_right_width = \
+            box.element.get_computed_property('border-right-width')
+        box.border_bottom_width = \
+            box.element.get_computed_property('border-bottom-width')
+        box.border_left_width = \
+            box.element.get_computed_property('border-left-width')
+        box.top = box.element.get_computed_property('top')
+        box.right = box.element.get_computed_property('right')
+        box.bottom = box.element.get_computed_property('bottom')
+        box.left = box.element.get_computed_property('left')
+        box.width = box.element.get_computed_property('width')
+        box.min_width = box.element.get_computed_property('min-width')
+        box.max_width = box.element.get_computed_property('max-width')
+        box.height = box.element.get_computed_property('height')
+        box.min_height = box.element.get_computed_property('min-height')
+        box.max_height = box.element.get_computed_property('max-height')
 
         # other values that are relative to font-size
         for attrname in set(box.__dict__.keys()) & self._length_attribute_names:
@@ -218,6 +245,7 @@ class DocumentFormatter(Formatter):
                 box.left = -box.right
             else:
                 box.right = -box.left
+        self.resolve_style_defaults(box)
 
     def anonymous_block_box(self, boxes, parent):
         '''Create an anonymous block box to contain 'boxes' and return it.

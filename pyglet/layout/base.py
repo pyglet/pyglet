@@ -192,7 +192,6 @@ class RenderDevice(object):
         which contains the property which is currently being evaluated, or its
         parent if the property is the font-size.
         '''
-        assert font_size.unit == 'pt'
         if dimension.unit == 'px':
             return dimension / self.ppd
         elif dimension.unit == 'in':
@@ -202,8 +201,10 @@ class RenderDevice(object):
         elif dimension.unit == 'pc':
             return dimension / 12. / 72. * self.dpi
         elif dimension.unit == 'em':
+            assert font_size.unit == 'pt'
             return dimension * font_size / 72. * self.dpi
         elif dimension.unit == 'ex':
+            assert font_size.unit == 'pt'
             return dimension * font_size / 2 / 72. * self.dpi # guess only
         elif dimension.unit == 'cm':
             return dimension / 2.54 * self.dpi
