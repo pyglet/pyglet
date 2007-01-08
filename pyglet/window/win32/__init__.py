@@ -590,11 +590,11 @@ class Win32Window(BaseWindow):
 
     @Win32EventHandler(WM_MOUSELEAVE)
     def _event_mouseleave(self, msg, wParam, lParam):
-        x = point.x
-        y = self.height - point.y
         point = POINT()
         _user32.GetCursorPos(byref(point))
         _user32.ScreenToClient(self._hwnd, byref(point))
+        x = point.x
+        y = self.height - point.y
         self._tracking = False
         self.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
         return 0
