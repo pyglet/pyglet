@@ -12,11 +12,11 @@ Creating a simple scene and displaying it:
 
     >>> import pyglet.window
     >>> import pyglet.scene2d
-    >>> m = pyglet.scene2d.Map(32, 32, images=[[0]*4]*4)
+    >>> m = pyglet.scene2d.RectMap(32, 32, cells=gen_rect_map([[0]*4]*4, 32, 32)
     >>> w = pyglet.window.Window(width=m.pxw, height=m.pxh)
     >>> s = pyglet.scene2d.Scene(maps=[m])
-    >>> r = pyglet.scene2d.FlatView(s, 0, 0, m.pxw, m.pxh)
-    >>> r.debug((0,0))
+    >>> v = pyglet.scene2d.FlatView.from_window(s, w)
+    >>> v.debug((0,0))
     >>> w.flip()
 
 ------------------
@@ -34,7 +34,22 @@ import operator
 from pyglet.scene2d.camera import FlatCamera
 from pyglet.GL.VERSION_1_1 import *
 
-class FlatView:
+class View(object):
+
+    def get(self, x, y):
+        ''' Pick whatever is on the top at the pixel position x, y. '''
+        raise NotImplemented()
+
+    def tile_at(self, (x, y)):
+        ' query for tile at given screen pixel position '
+        raise NotImplemented()
+ 
+    def sprite_at(self, (x, y)):
+        ' query for sprite at given screen pixel position '
+        raise NotImplemented()
+
+
+class FlatView(View):
     '''Render a flat view of a pyglet.scene2d.Scene.
 
     Attributes:
@@ -53,6 +68,7 @@ class FlatView:
     # XXX nuke scale? belongs in camera?
     def __init__(self, scene, x, y, width, height, allow_oob=True,
             scale=1, rotation=0, fx=0, fy=0):
+        super(View, self).__init__()
         self.scene = scene
         self.camera = FlatCamera(x, y, width, height)
         self.allow_oob = allow_oob
@@ -65,14 +81,29 @@ class FlatView:
         '''Create a view which is the same dimensions as the supplied
         window.'''
         return cls(scene, 0, 0, window.width, window.height, **kw)
-        
+
     def __repr__(self):
         return '<%s object at 0x%x focus=(%d,%d) oob=%s>'%(
             self.__class__.__name__, id(self), self.fx, self.fy,
             self.allow_oob)
 
+    def translate_position(self, x, y):
+        '''Translate the on-screen pixel position to a Scene pixel
+        position.'''
+        fx, fy = self._determine_focus()
+        ox, oy = self.camera.width/2-fx, self.camera.height/2-fy
+        return (x - ox, y - oy)
+
     def get(self, x, y):
         ''' Pick whatever is on the top at the position x, y. '''
+        raise NotImplemented()
+
+    def tile_at(self, (x, y)):
+        ' query for tile at given screen pixel position '
+        raise NotImplemented()
+ 
+    def sprite_at(self, (x, y)):
+        ' query for sprite at given screen pixel position '
         raise NotImplemented()
 
     def _determine_focus(self):
@@ -85,16 +116,16 @@ class FlatView:
         if not self.scene.maps or self.allow_oob: return (self.fx, self.fy)
 
         # figure the bounds min/max
-        map = self.scene.maps[0]
-        b_min_x = map.x
-        b_min_y = map.y
-        b_max_x = map.x + map.pxw
-        b_max_y = map.y + map.pxh
-        for map in self.scene.maps[1:]:
-            b_min_x = min(b_min_x, map.x)
-            b_min_y = min(b_min_y, map.y)
-            b_max_x = min(b_max_x, map.x + map.pxw)
-            b_max_y = min(b_max_y, map.y + map.pxh)
+        m = self.scene.maps[0]
+        b_min_x = m.x
+        b_min_y = m.y
+        b_max_x = m.x + m.pxw
+        b_max_y = m.y + m.pxh
+        for m in self.scene.maps[1:]:
+            b_min_x = min(b_min_x, m.x)
+            b_min_y = min(b_min_y, m.y)
+            b_max_x = min(b_max_x, m.x + m.pxw)
+            b_max_y = min(b_max_y, m.y + m.pxh)
 
         # figure the view min/max based on focus
         w2 = self.camera.width/2
@@ -118,7 +149,7 @@ class FlatView:
         if not y_moved and v_max_y > b_max_y:
             fy -= v_max_y - b_max_y
 
-        return fx, fy
+        return map(int, (fx, fy))
 
     def clear(self, colour=None, is_window=True):
         '''Clear the view.
@@ -153,7 +184,7 @@ class FlatView:
         self.scene.maps.sort(key=operator.attrgetter('z'))
 
         # determine the focus point
-        fx, fy = map(int, self._determine_focus())
+        fx, fy = self._determine_focus()
 
         # XXX push state?
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -182,19 +213,23 @@ class FlatView:
             glPushMatrix()
             glTranslatef(sprite.x, sprite.y, sprite.z)
             if sprite.angle:
-                glTranslatef(sprite.cog[0]/2, sprite.cog[1]/2, 0)
+                glTranslatef(sprite.cog[0], sprite.cog[1], 0)
                 glRotatef(sprite.angle, 0, 0, 1)
-                glTranslatef(-sprite.cog[0]/2, -sprite.cog[1]/2, 0)
+                glTranslatef(-sprite.cog[0], -sprite.cog[1], 0)
             sprite.image.draw()
             glPopMatrix()
 
         glPopMatrix()
+ 
 
-    def tile_at(self, (x, y)):
-        ' query for tile at given screen pixel position '
-        pass
- 
-    def sprite_at(self, (x, y)):
-        ' query for sprite at given screen pixel position '
-        pass
- 
+class ViewScrollHandler(object):
+    '''Scroll the view in response to the mouse scroll wheel.
+    '''
+    def __init__(self, view):
+        self.view = view
+
+    def on_mouse_scroll(self, dx, dy):
+        fx, fy = self.view._determine_focus()
+        self.view.fx = fx + dx * 30
+        self.view.fy = fy + dy * 30
+
