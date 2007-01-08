@@ -8,6 +8,7 @@ Usage::
     Press 'b' to dump boxes.
     Press 'f' to dump frames.
     Press 's' to dump source (base file only).
+    Press 'e' to dump elements and style nodes
 '''
 
 __docformat__ = 'restructuredtext'
@@ -54,13 +55,29 @@ def print_frame(frame, indent=''):
         for child in frame.children:
             print_frame(child, '  ' + indent)
 
+def print_style(style, indent=''):
+    print '\n'.join(textwrap.wrap(repr(style), initial_indent=indent,
+            subsequent_indent=indent))
+    if style.parent:
+        print_style(style.parent, '  ' + indent)
+
+def print_element(element, indent=''):
+    print '\n'.join(textwrap.wrap(repr(element), initial_indent=indent,
+            subsequent_indent=indent))
+    if element.style_context:
+        print_style(element.style_context, indent + '  ')
+    for child in element.children:
+        print_element(child, '  ' + indent)
+
 def on_key_press(symbol, modifiers):
     if symbol == K_B:
-        print_box(layout._visual._root_frame.children[0].box)
+        print_box(layout._visual._root_box)
     if symbol == K_F:
         print_frame(layout._visual._root_frame)
     if symbol == K_S:
         print repr(layout.locator.get_default_stream().read())
+    if symbol == K_E:
+        print_element(layout._visual._root_box.element)
     return True
 
 layout = Layout(locator=locator)

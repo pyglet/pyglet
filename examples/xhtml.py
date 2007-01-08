@@ -29,7 +29,7 @@ layout.set_xhtml('''<?xml version="1.0"?>
       h1 {border-bottom: 1px solid; 
           background-image: url(examples/stripe.png)}
       body {background-image: url(examples/paper.jpg); 
-            background-repeat: repeat}
+            background-repeat: repeat;}
       #wishing:hover {color:red;}
     </style>
   </head>

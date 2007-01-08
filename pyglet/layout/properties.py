@@ -68,7 +68,7 @@ class StyleNode(object):
                 return style.specified_properties[property]
             style = style.parent
 
-        if property in _inherited_properties:
+        if property.replace('-', '_') in _inherited_properties: #HACK XXX
             return Ident('inherit')
         else:
             return _initial_values[property]
@@ -87,9 +87,13 @@ class StyleNode(object):
         if type(specified) == Ident and specified == 'inherit':
             result = self.get_inherited_property(property, element)
             node_cacheable = False
-        else:
+        elif property in StyleNode._compute_functions:
             func = StyleNode._compute_functions[property]
             result, node_cacheable = func(self, property, specified, element)
+        else:
+            # Computed as specified
+            result = specified
+            node_cacheable = True
 
         if node_cacheable:
             self.computed_properties[property] = result
@@ -102,9 +106,13 @@ class StyleNode(object):
         if element.parent:
             return element.parent.get_computed_property(property)
         else:
-            func = self._property_computers(property)
-            specified = _initial_values[property]
-            result, _ = func(self, property, specified, element)
+            if property in StyleNode._compute_functions:
+                func = StyleNode._compute_functions[property]
+                specified = _initial_values[property]
+                result, _ = func(self, property, specified, element)
+            else:
+                # Computed as specified
+                result = _initial_values[property]
             return result
 
     @css('font-size')
@@ -136,18 +144,37 @@ class StyleNode(object):
             return size, False
         return size, True
 
-    @css('--font-size-device')
-    def _compute_font_size_device(self, property, specified, element):
-        # A convenience property required by many others so good idea to cache
-        font_size = element.get_computed_property('font-size')
-        result = self.render_device.dimension_to_device(font_size, font_size)
-        return result, False
+    @css('font-weight')
+    def _compute_font_weight(self, property, specified, element):
+        if specified == 'normal':
+            return 400, True
+        elif specified == 'bold':
+            return 700, True
+        elif specified == 'bolder':
+            rel = self.get_inherited_property(property, element)
+            return rel + 300, False
+        elif specified == 'lighter':
+            rel = self.get_inherited_property(property, element)
+            return rel - 300, False
+        else:
+            assert type(specified) in (Number, int, float)
+            return specified, True
+
+    @css('--font')
+    def _compute_font(self, property, specified, element):
+        # It's *possible* this could be node-cacheable, but very unlikely
+        # (the element would have to have all font properties explicit,
+        # none inherited).  Still worth caching on the element though 
+        # (remember that RenderDevice does its own font caching, so there
+        # won't be duplicated objects).
+        names = element.get_computed_property('font-family')
+        size = element.get_computed_property('font-size')
+        style = element.get_computed_property('font-style')
+        weight = element.get_computed_property('font-weight')
+        return self.render_device.get_font(names, size, style, weight), False
 
     @css('margin-top', 'margin-right', 'margin-bottom', 'margin-left',
          'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
-         'border-top-width', 'border-right-width', 'border-bottom-width',
-         'border-left-width', 
-         'top', 'right', 'bottom', 'left', 
          'width', 'min-width', 'max-width', 
          'height', 'min-height', 'max-height',
          )
@@ -163,9 +190,107 @@ class StyleNode(object):
                     specified, 0)
                 return result, True
         return specified, True
+
+    @css('border-top-width', 'border-right-width', 'border-bottom-width',
+         'border-left-width')
+    def _compute_border_width(self, property, specified, element):
+        style = element.get_computed_property(
+            property.replace('width', 'style'))
+        if style == 'none':
+            return 0, False
+        result, _ = self._compute_font_relative_size(
+            property, specified, element)
+        return result, False
+
+    @css('border-top-color', 'border-right-color', 'border-bottom-color',
+         'border-left-color')
+    def _compute_border_color(self, property, specified, element):
+        if specified is not None:
+            return specified, True
+        return element.get_computed_property('color'), False
+
+    @css('top', 'right', 'bottom', 'left')
+    def _compute_position(self, property, specified, element):
+        position = element.get_computed_property('position')
+        if position == 'static':
+            # Cache all of them now
+            auto = Ident('auto')
+            element.computed_properties['top'] = auto
+            element.computed_properties['right'] = auto
+            element.computed_properties['bottom'] = auto
+            element.computed_properties['left'] = auto
+            return auto, False
+        elif position == 'relative':
+            # Resolve relative positioning and cache
+            # Careful not to recurse computing value, check specified first
+            top = element.style_context.get_specified_property('top')
+            if top == 'inherit':
+                top = self.get_inherited_property('top', element)
+            right = element.style_context.get_specified_property('right')
+            if right == 'inherit':
+                right = self.get_inherited_property('right', element)
+            bottom = element.style_context.get_specified_property('bottom')
+            if bottom == 'inherit':
+                bottom = self.get_inherited_property('bottom', element)
+            left = element.style_context.get_specified_property('left')
+            if left == 'inherit':
+                left = self.get_inherited_property('left', element)
+
+            # Resolve under- and over-specified top/bottom
+            if top == 'auto' and bottom == 'auto':
+                top = bottom = 0
+            elif top == 'auto':
+                top = -bottom
+            else:
+                bottom = -top
+
+            # Resolve under- and over-specified left/right
+            if left == 'auto' and right == 'auto':
+                left = right = 0
+            elif left == 'auto':
+                left = -right
+            elif right == 'auto':
+                right = -left
+            elif element.get_computed_value('direction') == 'rtl':
+                left = -right
+            else:
+                right = -left
+
+            # Convert to device units if possible
+            if type(top) == Dimension:
+                top = self.render_device.dimension_to_device(top)
+            if type(right) == Dimension:
+                right = self.render_device.dimension_to_device(right)
+            if type(bottom) == Dimension:
+                bottom = self.render_device.dimension_to_device(bottom)
+            if type(left) == Dimension:
+                left = self.render_device.dimension_to_device(left)
+
+            # Cache at element
+            element.computed_properties['top'] = top
+            element.computed_properties['right'] = right
+            element.computed_properties['bottom'] = bottom
+            element.computed_properties['left'] = left
+            return element.computed_properties[property], False
+        else:
+            raise NotImplementedError()
+    
+    @css('line-height')
+    def _compute_line_height(self, property, specified, element):
+        if type(specified) == Dimension:
+            return self._compute_font_relative_size(
+                property, specified, element)
+        elif type(specified) in (Percentage, Number):
+            size = element.get_computed_property('font-size')
+            size = self.render_device.dimension_to_device(size, size)
+            return size * specified, False
+        else:
+            assert specified == 'normal'
+            return specified, True
        
     def __repr__(self):
-        return '<%s@0x%x %r>' % (self.__class__.__name__, id(self), self.specified_properties)
+        return '<%s@0x%x %r>' % \
+            (self.__class__.__name__, id(self), self.specified_properties)
 
 StyleNode._compute_functions = _compute_functions
 del _compute_functions
@@ -533,6 +658,7 @@ _inherited_properties = [
     'visibility',
     'white_space',
     'word_spacing',
+    '--font',
 ]
 
 _initial_values = {
@@ -639,7 +765,7 @@ _initial_values = {
 
     # 15 Fonts
     # 15.3 Font family
-    'font-family': None,  # Depends on UA
+    'font-family': (),
     # 15.4 Font styling
     'font-style': Ident('normal'),
     # 15.5 Small-caps
@@ -648,6 +774,9 @@ _initial_values = {
     'font-weight': 400,
     # 15.7 Font size
     'font-size': Ident('medium'),
+
+    # Internal property, gives actual Font object
+    '--font': None,
 
     # 16 Text
     # 16.1 Indentation

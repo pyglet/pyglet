@@ -175,10 +175,14 @@ class PositionedFrame(Frame):
         # Cannot resolve top/left/bottom/right yet; they require
         # containing block to be complete.
         # Note that position:relative only needs top and left.
-        self.used_top = self.box.top
-        self.used_right = self.box.right
-        self.used_bottom = self.box.bottom
-        self.used_left = self.box.left
+        def auto_zero(value):
+            if value == 'auto':
+                return 0
+            return value
+        self.used_top = auto_zero(self.box.top)
+        self.used_right = auto_zero(self.box.right)
+        self.used_bottom = auto_zero(self.box.bottom)
+        self.used_left = auto_zero(self.box.left)
 
     def resolve_auto_widths(self):
         '''Apply the rules from 10.3 to resolve any 'auto' width-based values

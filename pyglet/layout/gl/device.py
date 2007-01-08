@@ -44,26 +44,17 @@ class GLRenderDevice(RenderDevice):
         self.locator = locator
         self.texture_cache = {}
 
-    def get_font(self, box):
-        names = (box.font_family or [])[:]
+    def get_font(self, names, size, style, weight):
+        names = names[:]
 
         for i, name in enumerate(names):
             if isinstance(name, Ident) and name in self._stock_font_names:
                 names[i] = self._stock_font_names[name]
 
-        size = box.font_size
-        italic = box.font_style == 'italic'
-        bold = box.font_weight >= 700
+        italic = style == 'italic'
+        bold = weight >= 700
+        assert type(size) == Dimension and size.unit == 'pt'
 
-        if isinstance(size, Dimension):
-            if size.unit == 'pt':
-                size = size
-            else:
-                raise NotImplementedError()
-        elif size == 'medium':
-            size = 12
-        else:
-            raise NotImplementedError()
         return GLFont(pyglet.text.Font(names, size, italic=italic, bold=bold))
 
 

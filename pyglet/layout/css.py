@@ -216,8 +216,8 @@ class Stylesheet(object):
         for rule in self.rules:
             rule.pprint()
 
-def parse_style_declaration_set(self, style):
-    scanner = Scanner(lexicon, StringIO(elem.style))
+def parse_style_declaration_set(style):
+    scanner = Scanner(lexicon, StringIO(style))
     parser = Parser(scanner)
     declaration_set = parser.declaration_set()
     return declaration_set

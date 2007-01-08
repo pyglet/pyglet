@@ -68,6 +68,7 @@ class DocumentFormatter(Formatter):
         # Back-reference to elem used for interactive applications
         element.boxes.append(box)
         box.element = element
+        self.apply_style(box)
         return box
 
     def apply_style(self,  box):
@@ -79,10 +80,10 @@ class DocumentFormatter(Formatter):
         Assumes box has an 'elem' attribute which is used to apply stylesheet
         rules.
         '''
-        apply_inherited_style(box)
+        #apply_inherited_style(box)
 
-        for stylesheet in self.stylesheets:
-            apply_stylesheet(stylesheet, box.element, box, self.render_device)
+        #for stylesheet in self.stylesheets:
+        #    apply_stylesheet(stylesheet, box.element, box, self.render_device)
 
         element = box.element
         if not hasattr(element, 'style_context'):
@@ -93,189 +94,133 @@ class DocumentFormatter(Formatter):
             for stylesheet in self.stylesheets:
                 declaration_sets += stylesheet.get_element_declaration_sets(element)
             if element.style:
-                declaration_sets += parse_style_declaration_set(element.style)
+                declaration_sets.append(parse_style_declaration_set(element.style))
             element.style_context = self.style_tree.get_style_node(declaration_sets)
 
+
+        e = element
+        box.margin_top = e.get_computed_property('margin_top'.replace('_', '-'))
+        box.margin_bottom = e.get_computed_property('margin_bottom'.replace('_', '-'))
+        box.margin_right = e.get_computed_property('margin_right'.replace('_', '-'))
+        box.margin_left = e.get_computed_property('margin_left'.replace('_', '-'))
+        box.padding_top = e.get_computed_property('padding_top'.replace('_', '-'))
+        box.padding_bottom = e.get_computed_property('padding_bottom'.replace('_', '-'))
+        box.padding_right = e.get_computed_property('padding_right'.replace('_', '-'))
+        box.padding_left = e.get_computed_property('padding_left'.replace('_', '-'))
+        box.border_top_width = e.get_computed_property('border_top_width'.replace('_', '-'))
+        box.border_right_width = e.get_computed_property('border_right_width'.replace('_', '-'))
+        box.border_bottom_width = e.get_computed_property('border_bottom_width'.replace('_', '-'))
+        box.border_left_width = e.get_computed_property('border_left_width'.replace('_', '-'))
+        box.border_top_color = e.get_computed_property('border_top_color'.replace('_', '-'))
+        box.border_right_color = e.get_computed_property('border_right_color'.replace('_', '-'))
+        box.border_bottom_color = e.get_computed_property('border_bottom_color'.replace('_', '-'))
+        box.border_left_color = e.get_computed_property('border_left_color'.replace('_', '-'))
+        box.border_top_style = e.get_computed_property('border_top_style'.replace('_', '-'))
+        box.border_right_style = e.get_computed_property('border_right_style'.replace('_', '-'))
+        box.border_bottom_style = e.get_computed_property('border_bottom_style'.replace('_', '-'))
+        box.border_left_style = e.get_computed_property('border_left_style'.replace('_', '-'))
+        box.display = e.get_computed_property('display'.replace('_', '-'))
+        box.position = e.get_computed_property('position'.replace('_', '-'))
+        box.top = e.get_computed_property('top'.replace('_', '-'))
+        box.right = e.get_computed_property('right'.replace('_', '-'))
+        box.bottom = e.get_computed_property('bottom'.replace('_', '-'))
+        box.left = e.get_computed_property('left'.replace('_', '-'))
+        box.float = e.get_computed_property('float'.replace('_', '-'))
+        box.clear = e.get_computed_property('clear'.replace('_', '-'))
+        box.z_index = e.get_computed_property('z_index'.replace('_', '-'))
+        box.direction = e.get_computed_property('direction'.replace('_', '-'))
+        box.unicode_bidi = e.get_computed_property('unicode_bidi'.replace('_', '-'))
+        box.width = e.get_computed_property('width'.replace('_', '-'))
+        box.min_width = e.get_computed_property('min_width'.replace('_', '-'))
+        box.max_width = e.get_computed_property('max_width'.replace('_', '-'))
+        box.height = e.get_computed_property('height'.replace('_', '-'))
+        box.min_height = e.get_computed_property('min_height'.replace('_', '-'))
+        box.max_height = e.get_computed_property('max_height'.replace('_', '-'))
+        box.line_height = e.get_computed_property('line_height'.replace('_', '-'))
+        box.overflow = e.get_computed_property('overflow'.replace('_', '-'))
+        box.clip = e.get_computed_property('clip'.replace('_', '-'))
+        box.visibility = e.get_computed_property('visibility'.replace('_', '-'))
+        box.vertical_align = e.get_computed_property('vertical_align'.replace('_', '-'))
+
+        box.list_style_image = e.get_computed_property('list_style_image'.replace('_', '-'))
+        box.list_style_position = e.get_computed_property('list_style_position'.replace('_', '-'))
+
+
+        box.color = e.get_computed_property('color'.replace('_', '-'))
+        box.background_color = e.get_computed_property('background_color'.replace('_', '-'))
+        box.background_image = e.get_computed_property('background_image'.replace('_', '-'))
+        box.background_repeat = e.get_computed_property('background_repeat'.replace('_', '-'))
+        box.background_attachment = e.get_computed_property('background_attachment'.replace('_', '-'))
+        box.background_position = e.get_computed_property('background_position'.replace('_', '-'))
+
+        box.font_family = e.get_computed_property('font_family'.replace('_', '-'))
+        box.font_style = e.get_computed_property('font_style'.replace('_', '-'))
+        box.font_variant = e.get_computed_property('font_variant'.replace('_', '-'))
+        box.font_weight = e.get_computed_property('font_weight'.replace('_', '-'))
+        box.font_size = e.get_computed_property('font_size'.replace('_', '-'))
+
+        box.font = e.get_computed_property('--font')
+
+        box.text_indent = e.get_computed_property('text_indent'.replace('_', '-'))
+        box.text_align = e.get_computed_property('text_align'.replace('_', '-'))
+        box.text_decoration = e.get_computed_property('text_decoration'.replace('_', '-'))
+        box.letter_spacing = e.get_computed_property('letter_spacing'.replace('_', '-'))
+        box.word_spacing = e.get_computed_property('word_spacing'.replace('_', '-'))
+        box.text_transform = e.get_computed_property('text_transform'.replace('_', '-'))
+        box.white_space = e.get_computed_property('white_space'.replace('_', '-'))
+
+        box.caption_side = e.get_computed_property('caption_side'.replace('_', '-'))
+        box.table_layout = e.get_computed_property('table_layout'.replace('_', '-'))
+        box.border_collapse = e.get_computed_property('border_collapse'.replace('_', '-'))
+        box.border_spacing = e.get_computed_property('border_spacing'.replace('_', '-'))
+        box.empty_cells = e.get_computed_property('empty_cells'.replace('_', '-'))
+
+
     def resolve_style_defaults(self, box):
-        '''Apply defaults that couldn't be set with initial values.
-
-        Specifically, these are the border width and border color properties,
-        which depend on other values.  This method must be called after all
-        style has been calculated, but before computed values are resolved.
-        '''
-        if box.border_top_style == 'none':
-            box.border_top_width = 0
-        if box.border_right_style == 'none':
-            box.border_right_width = 0
-        if box.border_bottom_style == 'none':
-            box.border_bottom_width = 0
-        if box.border_left_style == 'none':
-            box.border_left_width = 0
-
-        if box.border_top_color is None and box.border_top_width != 0:
-            box.border_top_color = box.color
-        if box.border_right_color is None and box.border_right_width != 0:
-            box.border_right_color = box.color
-        if box.border_bottom_color is None and box.border_bottom_width != 0:
-            box.border_bottom_color = box.color
-        if box.border_left_color is None and box.border_left_width != 0:
-            box.border_left_color = box.color
-
-    # Attributes with computed length.  This list may not yet be complete.  
-    _length_attribute_names = set(
-       [
-        #'margin_top', 'margin_right', 'margin_bottom', 'margin_left',
-       #'padding_top', 'padding_right', 'padding_bottom', 'padding_left',
-       #'border_top_width', 'border_right_width', 'border_bottom_width',
-       #'border_left_width', 'top', 'right', 'bottom', 'left', 'width',
-       #'min_width', 'max_width', 'height', 'min_height', 'max_height',
-       'line_height', #'text_indent', 'letter_spacing', 'word_spacing',
-       #'border_spacing', 
-       #'intrinsic_width', 'intrinsic_height'])
-    ])
+        pass
 
     def resolve_computed_values(self, box):
-        '''Resolve box property values to their computed values.  
+        pass
         
-        This includes resolving lengths that depend on the box's or parent's
-        font-size and converting lengths into device units.  Some named
-        values are also converted to numeric values, such as the font-weight
-        property.
-        '''
-        '''
-        # font-size first, since em and ex depend on it
-        font_size = box.font_size
-        if isinstance(box.font_size, Dimension):
-            if font_size.unit == 'em':
-                size = box.parent.font_size * font_size 
-            elif font_size.unit == 'ex':
-                # This is just a stupid guess, no way to calculate it
-                # properly.
-                size = box.parent.font_size * font_size * 0.5
-            else:
-                size = self.render_device.dimension_to_pt(font_size)
-            font_size = Dimension('%fpt' % size) 
-        elif isinstance(font_size, Ident):
-            font_size = self.render_device.get_named_font_size(font_size)
-        box.font_size = font_size
-        '''
-        font_size = box.font_size = box.element.get_computed_property('font-size')
-        font_size_device = \
-            self.render_device.dimension_to_device(font_size, font_size)
-
-        box.margin_top = box.element.get_computed_property('margin-top')
-        box.margin_right = box.element.get_computed_property('margin-right')
-        box.margin_bottom = box.element.get_computed_property('margin-bottom')
-        box.margin_left = box.element.get_computed_property('margin-left')
-        box.padding_top = box.element.get_computed_property('padding-top')
-        box.padding_right = box.element.get_computed_property('padding-right')
-        box.padding_bottom = box.element.get_computed_property('padding-bottom')
-        box.padding_left = box.element.get_computed_property('padding-left')
-        box.border_top_width = \
-            box.element.get_computed_property('border-top-width')
-        box.border_right_width = \
-            box.element.get_computed_property('border-right-width')
-        box.border_bottom_width = \
-            box.element.get_computed_property('border-bottom-width')
-        box.border_left_width = \
-            box.element.get_computed_property('border-left-width')
-        box.top = box.element.get_computed_property('top')
-        box.right = box.element.get_computed_property('right')
-        box.bottom = box.element.get_computed_property('bottom')
-        box.left = box.element.get_computed_property('left')
-        box.width = box.element.get_computed_property('width')
-        box.min_width = box.element.get_computed_property('min-width')
-        box.max_width = box.element.get_computed_property('max-width')
-        box.height = box.element.get_computed_property('height')
-        box.min_height = box.element.get_computed_property('min-height')
-        box.max_height = box.element.get_computed_property('max-height')
-
-        # other values that are relative to font-size
-        for attrname in set(box.__dict__.keys()) & self._length_attribute_names:
-            value = getattr(box, attrname)
-            if isinstance(value, Dimension):
-                value = self.render_device.dimension_to_device(value, font_size)
-                setattr(box, attrname, value)
-
-        # line-height percentage of font-size
-        if type(box.line_height) in (Percentage, Number):
-            box.line_height = font_size_device * box.line_height
-
-        # font-weight names and relative values
-        if box.font_weight == 'normal':
-            box.font_weight = 400
-        elif box.font_weight == 'bold':
-            box.font_weight = 700
-        elif box.font_weight == 'bolder':
-            box.font_weight = box.parent.font_weight + 300
-        elif box.font_weight == 'lighter':
-            box.font_weight = box.parent.font_weight - 300
-
-        # can now get the actual font object
-        box.font = self.render_device.get_font(box)
-
-        # replaced element with no intrinsic width: 10.3.2
-        if (box.is_replaced and 
-            box.intrinsic_width is None and box.width == 'auto' and
-            (box.intrinsic_ratio is None or 
-             (box.intrinsic_height is None and box.height == 'auto'))):
-            box.width = self.render_device.dimension_to_device('300px', 0)
-        # replaced element with no intrinsic height: 10.6.2
-        if (box.is_replaced and
-            box.intrinsic_height is None and box.height == 'auto' and
-            (box.intrinsic_ratio is None or
-             (box.intrinsic_height is None and box.height == 'auto'))):
-            box.height = self.render_device.dimension_to_device('150px', 0)
-             
-        # force zero position for static position
-        if box.position == 'static':
-            box.top = box.right = box.left = box.left = 0
-        # auto value for relative position 9.4.3
-        if box.position == 'relative':
-            print box, box.top, box.bottom
-            if box.top == 'auto' and box.bottom == 'auto':
-                box.top = box.bottom = 0
-            elif box.top == 'auto':
-                box.top = -box.bottom
-            else:
-                box.bottom = -box.top
-            if box.left == 'auto' and box.right == 'auto':
-                box.left = box.right = 0
-            elif box.left == 'auto' or box.direction == 'rtl':
-                box.left = -box.right
-            else:
-                box.right = -box.left
-        self.resolve_style_defaults(box)
-
     def anonymous_block_box(self, boxes, parent):
         '''Create an anonymous block box to contain 'boxes' and return it.
         
         Assumes 'boxes' are inline elements.
         '''
+        if parent.children:
+            sib = parent.children[-1].element
+        else:
+            sib = None
+        anon_elem = DocumentElement('(anon)', {}, parent.element, sib)
+
         anon = Box()
-        anon.display = Ident('block')
         anon.children = boxes
         anon.parent = parent
-        anon.element = parent.element
-        apply_inherited_style(anon)        # needed?
-        self.resolve_style_defaults(anon)  # needed?
-        self.resolve_computed_values(anon) # needed?
+        anon.element = anon_elem
+        self.apply_style(anon)
+        anon.display = Ident('block') # HACK(ier)
 
         for box in boxes:
             assert box.display == 'inline'
             box.parent = anon
+            box.element.parent = anon_elem
+            box.element.previous_sibling = None
         return anon
 
     def anonymous_inline_box(self, text, parent):
         '''Create an anonymous inline box to contain 'text' and return it.
         '''
+        if parent.children:
+            sib = parent.children[-1].element
+        else:
+            sib = None
+        anon_elem = DocumentElement('(anon)', {}, parent.element, sib)
+
         anon = Box()
         anon.text = text
         anon.parent = parent
-        anon.element = parent.element
-        apply_inherited_style(anon)        # needed?
-        self.resolve_style_defaults(anon)  # needed?
-        self.resolve_computed_values(anon) # needed?
+        anon.element = anon_elem
+        self.apply_style(anon)
         return anon
 
     def add_child(self, box):
