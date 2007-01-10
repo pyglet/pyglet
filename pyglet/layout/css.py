@@ -43,9 +43,7 @@ class SelectableElement(object):
     id = None                   # str
     classes = ()                # list of str
     name = None                 # str
-    style = None                # str
     pseudo_classes = ()         # set of str (without colon)
-    boxes = ()                  # list of Box (for incremental reflow)
 
     def add_pseudo_class(self, c):
         if self.pseudo_classes == ():
@@ -334,7 +332,7 @@ class SimpleSelector(object):
             if c not in elem.classes:
                 return False
         for attr in self.attribs:
-            if attr not in elem.attributes:
+            if not elem.attributes.has_key(attr):
                 return False
             value = elem.attributes[attr]
             if attr.op == '=' and value != attr.value:

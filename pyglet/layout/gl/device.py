@@ -147,8 +147,10 @@ class GLRenderDevice(RenderDevice):
         else:
             self.draw_solid_border(x1, y1, x2, y2, x3, y3, x4, y4, color, style)
 
-    def draw_background(self, x1, y1, x2, y2, box):
-        if box.background_color != 'transparent':
+    def draw_background(self, x1, y1, x2, y2, frame):
+        compute = frame.get_computed_property
+        background_color = compute('background-color')
+        if background_color != 'transparent':
             glPushAttrib(GL_CURRENT_BIT)
             glColor4f(*box.background_color)
             glBegin(GL_QUADS)
@@ -159,21 +161,22 @@ class GLRenderDevice(RenderDevice):
             glEnd()
             glPopAttrib()
 
-        if box.background_image != 'none':
-            if box.background_image not in self.texture_cache:
-                self.texture_cache[box.background_image] = None
-                stream = self.locator.get_stream(box.background_image)
+        background_image = compute('background-image')
+        if background_image != 'none':
+            if background_image not in self.texture_cache:
+                self.texture_cache[background_image] = None
+                stream = self.locator.get_stream(background_image)
                 if stream:
                     texture = Image.load(file=stream).texture()
-                    if box.background_repeat != 'no-repeat':
+                    if background_repeat != 'no-repeat':
                         texture.stretch()
-                    self.texture_cache[box.background_image] = texture
-            texture = self.texture_cache[box.background_image]
+                    self.texture_cache[background_image] = texture
+            texture = self.texture_cache[background_image]
             if texture:
                 u1, v1 = 0,0
                 u2, v2 = texture.uv
                 width, height = texture.width, texture.height
-                repeat = box.background_repeat
+                repeat = compute('background-repeat')
                 if repeat in ('no-repeat', 'repeat-y'):
                     x2 = x1 + width
                 else:

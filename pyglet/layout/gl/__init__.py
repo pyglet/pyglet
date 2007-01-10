@@ -18,6 +18,10 @@ from pyglet.layout.gl.device import *
 from pyglet.layout.gl.event import *
 from pyglet.layout.gl.image import *
 
+from pyglet.layout.content import *
+from pyglet.layout.frame import *
+from pyglet.layout.xmlbuilder import *
+
 __all__ = ['Layout', 'select']
 
 class GLLayout(LayoutEventDispatcher):
@@ -35,6 +39,7 @@ class GLLayout(LayoutEventDispatcher):
         if not render_device:
             render_device = GLRenderDevice(self.locator)
         self._visual = VisualLayout(render_device)
+        self.render_device = render_device
         
         # If the layout is added to a window event stack, the following
         # variables are taken care of automatically (x, y, viewport).
@@ -46,6 +51,17 @@ class GLLayout(LayoutEventDispatcher):
         # Additional box generators to add to formatters
         self.generators = []
 
+    def set_xhtml(self, data):
+        self.document = Document()
+        content_builder = XHTMLBuilder(self.document)
+        content_builder.feed(data)
+        content_builder.close()
+        self.document.root.pprint()
+        frame_builder = FrameBuilder(self.document, self.render_device)
+        root_frame = frame_builder.build_frame(self.document.root)
+        root_frame.pprint_style()
+
+    '''
     def set_xml(self, data, stylesheet):
         formatter = XMLFormatter(self._visual.render_device, self.locator)
         formatter.add_stylesheet(stylesheet)
@@ -71,6 +87,7 @@ class GLLayout(LayoutEventDispatcher):
 
     def add_generator(self, generator):
         self.generators.append(generator)
+    '''
 
     # Duplicate the public properties of VisualLayout here for convenience
 

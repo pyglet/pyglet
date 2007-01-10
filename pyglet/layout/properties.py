@@ -73,23 +73,23 @@ class StyleNode(object):
         else:
             return _initial_values[property]
 
-    def get_computed_property(self, property, element):
-        # Check node cache for element invariant result
+    def get_computed_property(self, property, frame):
+        # Check node cache for frame invariant result
         if property in self.computed_properties:
             return self.computed_properties[property]
 
-        # Check element cache for precomputed result
-        if property in element.computed_properties:
-            return element.computed_properties[property]
+        # Check frame cache for precomputed result
+        if property in frame.computed_properties:
+            return frame.computed_properties[property]
 
         # Nothing cached, work it out.
         specified = self.get_specified_property(property)
         if type(specified) == Ident and specified == 'inherit':
-            result = self.get_inherited_property(property, element)
+            result = self.get_inherited_property(property, frame)
             node_cacheable = False
         elif property in StyleNode._compute_functions:
             func = StyleNode._compute_functions[property]
-            result, node_cacheable = func(self, property, specified, element)
+            result, node_cacheable = func(self, property, specified, frame)
         else:
             # Computed as specified
             result = specified
@@ -98,25 +98,25 @@ class StyleNode(object):
         if node_cacheable:
             self.computed_properties[property] = result
         else:
-            element.computed_properties[property] = result
+            frame.computed_properties[property] = result
 
         return result
 
-    def get_inherited_property(self, property, element):
-        if element.parent:
-            return element.parent.get_computed_property(property)
+    def get_inherited_property(self, property, frame):
+        if frame.parent:
+            return frame.parent.get_computed_property(property)
         else:
             if property in StyleNode._compute_functions:
                 func = StyleNode._compute_functions[property]
                 specified = _initial_values[property]
-                result, _ = func(self, property, specified, element)
+                result, _ = func(self, property, specified, frame)
             else:
                 # Computed as specified
                 result = _initial_values[property]
             return result
 
     @css('font-size')
-    def _compute_font_size(self, property, specified, element):
+    def _compute_font_size(self, property, specified, frame):
         factor = None
         size = specified
         if type(size) == Dimension:
@@ -139,38 +139,38 @@ class StyleNode(object):
             assert False
 
         if factor is not None:
-            size = factor * self.get_inherited_property(property, element)
+            size = factor * self.get_inherited_property(property, frame)
             size = Dimension('%fpt' % size)
             return size, False
         return size, True
 
     @css('font-weight')
-    def _compute_font_weight(self, property, specified, element):
+    def _compute_font_weight(self, property, specified, frame):
         if specified == 'normal':
             return 400, True
         elif specified == 'bold':
             return 700, True
         elif specified == 'bolder':
-            rel = self.get_inherited_property(property, element)
+            rel = self.get_inherited_property(property, frame)
             return rel + 300, False
         elif specified == 'lighter':
-            rel = self.get_inherited_property(property, element)
+            rel = self.get_inherited_property(property, frame)
             return rel - 300, False
         else:
             assert type(specified) in (Number, int, float)
             return specified, True
 
     @css('--font')
-    def _compute_font(self, property, specified, element):
+    def _compute_font(self, property, specified, frame):
         # It's *possible* this could be node-cacheable, but very unlikely
-        # (the element would have to have all font properties explicit,
-        # none inherited).  Still worth caching on the element though 
+        # (the frame would have to have all font properties explicit,
+        # none inherited).  Still worth caching on the frame though 
         # (remember that RenderDevice does its own font caching, so there
         # won't be duplicated objects).
-        names = element.get_computed_property('font-family')
-        size = element.get_computed_property('font-size')
-        style = element.get_computed_property('font-style')
-        weight = element.get_computed_property('font-weight')
+        names = frame.get_computed_property('font-family')
+        size = frame.get_computed_property('font-size')
+        style = frame.get_computed_property('font-style')
+        weight = frame.get_computed_property('font-weight')
         return self.render_device.get_font(names, size, style, weight), False
 
     @css('margin-top', 'margin-right', 'margin-bottom', 'margin-left',
@@ -178,10 +178,10 @@ class StyleNode(object):
          'width', 'min-width', 'max-width', 
          'height', 'min-height', 'max-height',
          )
-    def _compute_font_relative_size(self, property, specified, element):
+    def _compute_font_relative_size(self, property, specified, frame):
         if type(specified) == Dimension:
             if specified.unit in ('em', 'ex'):
-                font_size = element.get_computed_property('font-size')
+                font_size = frame.get_computed_property('font-size')
                 result = self.render_device.dimension_to_device(
                     specified, font_size)
                 return result, False
@@ -193,48 +193,48 @@ class StyleNode(object):
 
     @css('border-top-width', 'border-right-width', 'border-bottom-width',
          'border-left-width')
-    def _compute_border_width(self, property, specified, element):
-        style = element.get_computed_property(
+    def _compute_border_width(self, property, specified, frame):
+        style = frame.get_computed_property(
             property.replace('width', 'style'))
         if style == 'none':
             return 0, False
         result, _ = self._compute_font_relative_size(
-            property, specified, element)
+            property, specified, frame)
         return result, False
 
     @css('border-top-color', 'border-right-color', 'border-bottom-color',
          'border-left-color')
-    def _compute_border_color(self, property, specified, element):
+    def _compute_border_color(self, property, specified, frame):
         if specified is not None:
             return specified, True
-        return element.get_computed_property('color'), False
+        return frame.get_computed_property('color'), False
 
     @css('top', 'right', 'bottom', 'left')
-    def _compute_position(self, property, specified, element):
-        position = element.get_computed_property('position')
+    def _compute_position(self, property, specified, frame):
+        position = frame.get_computed_property('position')
         if position == 'static':
             # Cache all of them now
             auto = Ident('auto')
-            element.computed_properties['top'] = auto
-            element.computed_properties['right'] = auto
-            element.computed_properties['bottom'] = auto
-            element.computed_properties['left'] = auto
+            frame.computed_properties['top'] = auto
+            frame.computed_properties['right'] = auto
+            frame.computed_properties['bottom'] = auto
+            frame.computed_properties['left'] = auto
             return auto, False
         elif position == 'relative':
             # Resolve relative positioning and cache
             # Careful not to recurse computing value, check specified first
-            top = element.style_context.get_specified_property('top')
+            top = frame.style_context.get_specified_property('top')
             if top == 'inherit':
-                top = self.get_inherited_property('top', element)
-            right = element.style_context.get_specified_property('right')
+                top = self.get_inherited_property('top', frame)
+            right = frame.style_context.get_specified_property('right')
             if right == 'inherit':
-                right = self.get_inherited_property('right', element)
-            bottom = element.style_context.get_specified_property('bottom')
+                right = self.get_inherited_property('right', frame)
+            bottom = frame.style_context.get_specified_property('bottom')
             if bottom == 'inherit':
-                bottom = self.get_inherited_property('bottom', element)
-            left = element.style_context.get_specified_property('left')
+                bottom = self.get_inherited_property('bottom', frame)
+            left = frame.style_context.get_specified_property('left')
             if left == 'inherit':
-                left = self.get_inherited_property('left', element)
+                left = self.get_inherited_property('left', frame)
 
             # Resolve under- and over-specified top/bottom
             if top == 'auto' and bottom == 'auto':
@@ -251,7 +251,7 @@ class StyleNode(object):
                 left = -right
             elif right == 'auto':
                 right = -left
-            elif element.get_computed_value('direction') == 'rtl':
+            elif frame.get_computed_value('direction') == 'rtl':
                 left = -right
             else:
                 right = -left
@@ -266,22 +266,22 @@ class StyleNode(object):
             if type(left) == Dimension:
                 left = self.render_device.dimension_to_device(left)
 
-            # Cache at element
-            element.computed_properties['top'] = top
-            element.computed_properties['right'] = right
-            element.computed_properties['bottom'] = bottom
-            element.computed_properties['left'] = left
-            return element.computed_properties[property], False
+            # Cache at frame
+            frame.computed_properties['top'] = top
+            frame.computed_properties['right'] = right
+            frame.computed_properties['bottom'] = bottom
+            frame.computed_properties['left'] = left
+            return frame.computed_properties[property], False
         else:
             raise NotImplementedError()
     
     @css('line-height')
-    def _compute_line_height(self, property, specified, element):
+    def _compute_line_height(self, property, specified, frame):
         if type(specified) == Dimension:
             return self._compute_font_relative_size(
-                property, specified, element)
+                property, specified, frame)
         elif type(specified) in (Percentage, Number):
-            size = element.get_computed_property('font-size')
+            size = frame.get_computed_property('font-size')
             size = self.render_device.dimension_to_device(size, size)
             return size * specified, False
         else:
