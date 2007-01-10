@@ -11,8 +11,8 @@ from ctypes import *
 from pyglet.GL.VERSION_1_1 import *
 import pyglet.text
 from pyglet.layout.base import *
+from pyglet.layout.frame import *
 from pyglet.layout.locator import *
-from pyglet.layout.visual import *
 from pyglet.image import *
 
 class GLFont(object):
@@ -57,6 +57,8 @@ class GLRenderDevice(RenderDevice):
 
         return GLFont(pyglet.text.Font(names, size, italic=italic, bold=bold))
 
+    def create_text_frame(self, style, element, text):
+        return GLTextFrame(style, element, text)
 
     def draw_solid_border(self, x1, y1, x2, y2, x3, y3, x4, y4, 
                           color, style):
@@ -163,12 +165,13 @@ class GLRenderDevice(RenderDevice):
 
         background_image = compute('background-image')
         if background_image != 'none':
+            repeat = compute('background-repeat')
             if background_image not in self.texture_cache:
                 self.texture_cache[background_image] = None
                 stream = self.locator.get_stream(background_image)
                 if stream:
                     texture = Image.load(file=stream).texture()
-                    if background_repeat != 'no-repeat':
+                    if repeat != 'no-repeat':
                         texture.stretch()
                     self.texture_cache[background_image] = texture
             texture = self.texture_cache[background_image]
@@ -176,7 +179,6 @@ class GLRenderDevice(RenderDevice):
                 u1, v1 = 0,0
                 u2, v2 = texture.uv
                 width, height = texture.width, texture.height
-                repeat = compute('background-repeat')
                 if repeat in ('no-repeat', 'repeat-y'):
                     x2 = x1 + width
                 else:
@@ -211,39 +213,88 @@ class GLRenderDevice(RenderDevice):
                     
    
 class GLTextFrame(TextFrame):
-    '''One contiguous sequence of characters.  The characters must belong
-    to the same font, but may have different glyph textures.
-    '''
-    hard_break = False
+    glyph_string = None
+    from_index = 0
+    to_index = 0
+    is_continuation = False
 
-    def __init__(self, box, parent, containing_block,
-                 font, text, glyphs):
-        # We currently make this assumption in draw and measure methods.
-        # It is not required by the interface, but is currently implemented
-        # as such.
-        assert len(text) == len(glyphs)
+    content_ascent = 0
 
-        self.text = text
-        self.font = font
-        self.string = pyglet.text.GlyphString(glyphs)
+    def __init__(self, style, element, text):
+        super(GLTextFrame, self).__init__(style, element, text)
 
-        # CSS properties
-        self.text_width = self.string.width
-        self.text_ascent = font.ascent
-        self.text_descent = font.descent
+    def flow_inline(self, containing_block, remaining_width):
+        # Clear previous flow continuation if any
+        self.continuation = None
 
-        super(GLTextFrame, self).__init__(box, parent, containing_block, text)
+        # Get GL glyph sequence if not already cached
+        font = self.get_computed_property('--font').font
+        if not self.glyph_string:
+            self.glyph_string = pyglet.text.GlyphString(self.text, font.get_glyphs(self.text))
 
-    def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.text)
+        computed = self.get_computed_property
+        def used(property):
+            value = computed(property)
+            if type(value) == Percentage:
+                value = value * containing_block.width
+            return value
+        
+        # Calculate computed and used values of box properties when
+        # relative to containing block width.
+        # margin top/bottom remain at class default 0
+        content_right = computed('border-right-width') + used('padding-right')
+        content_bottom = computed('border-bottom-width') + used('padding-bottom')
+        self.content_top = computed('border-top-width') + used('padding-top')
+        self.margin_right = used('margin-right')
+        if not self.is_continuation:
+            self.margin_left = used('margin-left')
+            self.content_left = computed('border-left-width') + used('padding-left')
 
-    def draw_text(self, render_context, x, y):
+        # Calculate text metrics (actually not dependent on flow, could
+        # optimise out).
+        self.content_ascent = font.ascent + self.content_top
+        self.content_descent = font.descent - content_bottom
+        line_height = self.get_computed_property('line-height') 
+        if line_height != 'normal':
+            half_leading = (line_height - \
+                (self.content_ascent - self.content_descent)) / 2
+        else:
+            half_leading = 0
+        self.line_ascent = self.content_ascent + half_leading
+        self.line_descent = self.content_descent + half_leading
+        self.border_edge_height = self.content_ascent - self.content_descent
+
+        # How much text will fit?
+        remaining_width -= self.margin_left + self.content_left + \
+            content_right + self.margin_right
+
+        # Create continuation if necessary
+        self.to_index = self.glyph_string.get_break_index(self.from_index,
+            remaining_width)
+        if self.to_index < len(self.text) - 1:
+            self.continuation = GLTextFrame(
+                self.style, self.element, self.text)
+            self.continuation.is_continuation = True
+            self.continuation.from_index = self.to_index + 1
+            self.continuation.glyph_string = self.glyph_string
+
+            self.margin_right = 0
+            content_right = 0
+        self.fit_flow = self.from_index != self.to_index
+
+        # Calculate edge size
+        self.border_edge_width = self.content_left + \
+            self.glyph_string.get_subwidth(self.from_index, self.to_index) + \
+            content_right
+        
+
+    def draw_text(self, x, y, render_context):
         glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT)
         glEnable(GL_TEXTURE_2D)
-        glColor4f(*self.box.color)
+        glColor4f(*self.get_computed_property('color'))
         glPushMatrix()
         glTranslatef(x, y, 0)
-        self.string.draw()
+        self.glyph_string.draw(self.from_index, self.to_index)
         glPopMatrix()
         glPopAttrib()
  

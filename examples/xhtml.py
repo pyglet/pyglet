@@ -219,9 +219,6 @@ def print_element(element, indent=''):
     for child in element.children:
         print_element(child, '  ' + indent)
 
-root = layout._visual._root_box.element
-print_element( root)
-
 glClearColor(1, 1, 1, 1)
 clock = Clock()
 

@@ -56,10 +56,7 @@ class GLLayout(LayoutEventDispatcher):
         content_builder = XHTMLBuilder(self.document)
         content_builder.feed(data)
         content_builder.close()
-        self.document.root.pprint()
-        frame_builder = FrameBuilder(self.document, self.render_device)
-        root_frame = frame_builder.build_frame(self.document.root)
-        root_frame.pprint_style()
+        self._visual.document = self.document
 
     '''
     def set_xml(self, data, stylesheet):

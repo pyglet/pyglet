@@ -40,23 +40,23 @@ class TextSprite(object):
         glyph_lines = []
         if self._layout_width is None:
             for line in self.text.split('\n'):
-                glyph_lines.append(self.font.get_glyphs(self.text))
+                glyph_lines.append((line, self.font.get_glyphs(self.text)))
         else:
             text = self.text + ' ' # Need the ' ' to always flush line.
             while text and text != ' ':
                 line = self.font.get_glyphs_for_width(text, self._layout_width)
+                glyph_lines.append((text[:len(line)], line))
                 text = text[len(line):]
                 if text and text[0] == '\n':
                     text = text[1:]
-                glyph_lines.append(line)
 
         # Create interleaved array and figure out state changes.
         line_height = self.font.ascent - self.font.descent + self.leading
         y = 0
         self._text_width = 0
         self.strings = []
-        for glyphs in glyph_lines:
-            string = GlyphString(glyphs, 0, y)
+        for text, glyphs in glyph_lines:
+            string = GlyphString(text, glyphs, 0, y)
             self._text_width = max(self._text_width, string.width)
             y -= line_height
             self.strings.append(string)

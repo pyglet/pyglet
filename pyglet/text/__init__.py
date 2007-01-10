@@ -78,7 +78,7 @@ class GlyphString(object):
     '''
     width = 0       # Set to 
 
-    def __init__(self, glyphs, x=0, y=0):
+    def __init__(self, text, glyphs, x=0, y=0):
         '''Initialise the string with the given sequence of glyphs, and
         optional offset in x and y.  Note that no attributes of this
         class are mutable.
@@ -86,14 +86,15 @@ class GlyphString(object):
         # Create an interleaved array in GL_T2F_V3F format and determine
         # state changes required.
         
-        # XXX This is a performance hotspot for layout; any optimisations will
-        # have a big impact.
         lst = []
         texture = None
+        self.text = text
         self.states = []
+        self.cumulative_advance = [] # for fast post-string breaking
         state_from = 0
         state_length = 0
         for i, glyph in enumerate(glyphs):
+            self.cumulative_advance.append(x)
             if glyph.texture != texture:
                 if state_length:
                     self.states.append((state_from, state_length, texture))
@@ -115,14 +116,47 @@ class GlyphString(object):
         self.array = (c_float * len(lst))(*lst)
         self.width = x
 
-    def draw(self):
+    def get_break_index(self, from_index, width):
+        '''Return valid breakpoint after from_index so that text
+        between from_index and breakpoint fits within width.  Uses
+        precomputed cumulative glyph widths to give quick answer.
+
+        Returns from_index if there is no valid breakpoint in range.
+        '''
+        index = from_index
+        width += self.cumulative_advance[from_index]
+        for i, (c, w) in enumerate(
+                zip(self.text[from_index], 
+                    self.cumulative_advance[from_index:])):
+            if w > width:
+                return index
+            if c == '\n':
+                return i + from_index
+            elif c in u'\u0020\u200b':
+                index = i + from_index
+        return index
+
+    def get_subwidth(self, from_index, to_index):
+        return self.cumulative_advance[to_index] - \
+            self.cumulative_advance[from_index]
+
+    def draw(self, from_index=0, to_index=None):
         '''Draw the glyph string.  Assumes texture state is enabled.
         '''
         # XXX Safe to assume all required textures will use same blend state I
         # think.  (otherwise move this into loop)
         self.states[0][2].apply_blend_state()
+
+        if from_index:
+            glTranslatef(-self.cumulative_advance[from_index], 0, 0)
+        if to_index is None:
+            to_index = len(self.text)
+
         glInterleavedArrays(GL_T2F_V3F, 0, self.array)
         for state_from, state_length, texture in self.states:
+            if state_from + state_length < from_index:
+                continue
+            state_from = max(state_from, from_index)
             glBindTexture(GL_TEXTURE_2D, texture.id)
             glDrawArrays(GL_QUADS, state_from * 4, state_length * 4)
 
