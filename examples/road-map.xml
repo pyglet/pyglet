@@ -1,51 +1,54 @@
-<map tile_width="128" tile_height="128" x="0" y="0" z="0">
- <tileset id="road" filename="road-tiles.xml" />
- <column>
-  <cell set="road" tile="bl" />
-  <cell set="road" tile="vl" />
-  <cell set="road" tile="vl" />
-  <cell set="road" tile="vl" />
-  <cell set="road" tile="vl" />
-  <cell set="road" tile="tl" />
- </column>
- <column>
-  <cell set="road" tile="bh" />
-  <cell set="road" tile="bli" />
-  <cell set="road" tile="vr" />
-  <cell set="road" tile="vr" />
-  <cell set="road" tile="tli" />
-  <cell set="road" tile="th" />
- </column>
- <column>
-  <cell set="road" tile="bh" />
-  <cell set="road" tile="th" />
-  <cell set="road" tile="empty" />
-  <cell set="road" tile="empty" />
-  <cell set="road" tile="bh" />
-  <cell set="road" tile="th" />
- </column>
- <column>
-  <cell set="road" tile="bh" />
-  <cell set="road" tile="th" />
-  <cell set="road" tile="empty" />
-  <cell set="road" tile="empty" />
-  <cell set="road" tile="bh" />
-  <cell set="road" tile="th" />
- </column>
- <column>
-  <cell set="road" tile="bh" />
-  <cell set="road" tile="bri" />
-  <cell set="road" tile="vl" />
-  <cell set="road" tile="vl" />
-  <cell set="road" tile="tri" />
-  <cell set="road" tile="th" />
- </column>
- <column>
-  <cell set="road" tile="br" />
-  <cell set="road" tile="vr" />
-  <cell set="road" tile="vr" />
-  <cell set="road" tile="vr" />
-  <cell set="road" tile="vr" />
-  <cell set="road" tile="tr" />
- </column>
-</map>
+<?xml version="1.0"?>
+<resource>
+ <requires file="road-tiles.xml" />
+ <rectmap id="map0" tile_width="128" tile_height="128" origin="0,0,0">
+  <column>
+    <cell tile="bl" />
+    <cell tile="vl" />
+    <cell tile="vl" />
+    <cell tile="vl" />
+    <cell tile="vl" />
+    <cell tile="tl" />
+  </column>
+  <column>
+    <cell tile="bh" />
+    <cell tile="bli" />
+    <cell tile="vr" />
+    <cell tile="vr" />
+    <cell tile="tli" />
+    <cell tile="th" />
+  </column>
+  <column>
+    <cell tile="bh" />
+    <cell tile="th" />
+    <cell tile="empty" />
+    <cell tile="empty" />
+    <cell tile="bh" />
+    <cell tile="th" />
+  </column>
+  <column>
+    <cell tile="bh" />
+    <cell tile="th" />
+    <cell tile="empty" />
+    <cell tile="empty" />
+    <cell tile="bh" />
+    <cell tile="th" />
+  </column>
+  <column>
+    <cell tile="bh" />
+    <cell tile="bri" />
+    <cell tile="vl" />
+    <cell tile="vl" />
+    <cell tile="tri" />
+    <cell tile="th" />
+  </column>
+  <column>
+    <cell tile="br" />
+    <cell tile="vr" />
+    <cell tile="vr" />
+    <cell tile="vr" />
+    <cell tile="vr" />
+    <cell tile="tr" />
+  </column>
+ </rectmap>
+</resource>

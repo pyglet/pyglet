@@ -5,13 +5,16 @@ import pyglet.window
 from pyglet.window.event import *
 from pyglet.window.key import *
 import pyglet.clock
+from pyglet import resource
 from pyglet.scene2d import *
 
 w = pyglet.window.Window(width=640, height=512)
 
 # load the map and car and set up the scene and view
 dirname = os.path.dirname(__file__)
-m = RectMap.load_xml(os.path.join(dirname, 'road-map.xml'))
+r = resource.ResourceLoader.load(os.path.join(dirname, 'road-map.xml'))
+m = r.resources['map0']
+#m = RectMap.load_xml(os.path.join(dirname, 'road-map.xml'))
 car = Sprite.from_image(Image2d.load(os.path.join(dirname, 'car.png')))
 scene = pyglet.scene2d.Scene(maps=[m], sprites=[car])
 view = pyglet.scene2d.FlatView.from_window(scene, w, allow_oob=False)

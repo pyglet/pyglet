@@ -41,13 +41,42 @@ import math
 import xml.dom
 import xml.dom.minidom
 
-from pyglet.scene2d.tiles import Tile, TileSet
+from pyglet.resource import register_loader
+
+
+@register_loader('rectmap')
+def load_rectmap(loader, tag):
+    width = int(tag.getAttribute('tile_width'))
+    height = int(tag.getAttribute('tile_height'))
+    origin = None
+    if tag.hasAttribute('origin'):
+        origin = map(int, tag.getAttribute('origin').split(','))
+    id = tag.getAttribute('id')
+
+    # now load the columns
+    cells = []
+    for i, column in enumerate(tag.getElementsByTagName('column')):
+        c = []
+        cells.append(c)
+        for j, cell in enumerate(column.getElementsByTagName('cell')):
+            tile = cell.getAttribute('tile')
+            if tile: tile = loader.get_resource(tile)
+            else: tile = None
+            properties = loader.handle_properties(tag)
+            c.append(RectCell(i, j, width, height, properties, tile))
+
+    m = RectMap(id, width, height, cells, origin)
+    loader.add_resource(id, m)
+
+    return m
+
 
 class Map(object):
     '''Base class for Maps.
 
     Both rect and hex maps have the following attributes:
 
+        id              -- identifies the map in XML and Resources
         (width, height) -- size of map in cells
         (pxw, pxh)      -- size of map in pixels
         (tw, th)        -- size of each cell in pixels
@@ -85,8 +114,9 @@ class RectMap(RegularTesselationMap):
     Thus cells = [['a', 'd'], ['b', 'e'], ['c', 'f']]
     and cells[0][1] = 'd'
     '''
-    __slots__ = 'pxw pxh tw th x y z meta cells'.split()
-    def __init__(self, tw, th, cells, origin=(0, 0, 0)):
+    __slots__ = 'id pxw pxh tw th x y z meta cells'.split()
+    def __init__(self, id, tw, th, cells, origin=(0, 0, 0)):
+        self.id = id
         self.tw, self.th = tw, th
         self.x, self.y, self.z = origin
         self.cells = cells
@@ -129,63 +159,10 @@ class RectMap(RegularTesselationMap):
     def load_xml(cls, filename):
         '''Load a map from the indicaed XML file.
 
-        The XML format is:
-
-            <map tile_width="" tile_height="" x="" y="" z="">
-             <tileset id="" filename="" />
-             ...
-             <column>
-              <cell set="" tile="">
-               <meta type="" value="" />
-              </cell>
-              ...
-             </column>
-             ...
-            </map>
-        
         Return a Map instance.'''
 
-        dom = xml.dom.minidom.parse(filename)
-        dirname = os.path.dirname(filename)
-        map = dom.documentElement
-
-        width = int(map.getAttribute('tile_width'))
-        height = int(map.getAttribute('tile_height'))
-        origin = (int(map.getAttribute('x')),
-            int(map.getAttribute('y')), int(map.getAttribute('z')))
-
-        # load all the tilesets
-        tilesets = {}
-        for tileset in map.getElementsByTagName('tileset'):
-            id = tileset.getAttribute('id')
-            filename = tileset.getAttribute('filename')
-            if not os.path.isabs(filename):
-                filename = os.path.join(dirname, filename)
-            tilesets[id] = TileSet.load_xml(filename)
-
-        # now load the columns
-        cells = []
-        for i, column in enumerate(map.getElementsByTagName('column')):
-            c = []
-            cells.append(c)
-            for j, cell in enumerate(column.getElementsByTagName('cell')):
-                if cell.hasAttribute('set'):
-                    tileset = cell.getAttribute('set')
-                    tile = cell.getAttribute('tile')
-                    tile = tilesets[tileset][tile]
-                else:
-                    tile = None
-                meta = {}
-                for tag in cell.getElementsByTagName('meta'):
-                    name = tag.getAttribute('name')
-                    type = tag.getAttribute('type')
-                    value = tag.getAttribute('value')
-                    meta[name] = xml_to_python[type](value)
-                c.append(RectCell(i, j, width, height, meta, tile))
-
-        dom.unlink()
-        obj = cls(width, height, cells, origin)
-        return obj
+        # XXX hook into resource loading and specify XML format
+        raise NotImplemented()
 
 class Cell(object):
     '''Base class for cells from rect and hex maps.

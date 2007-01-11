@@ -20,7 +20,68 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from pyglet.GL.VERSION_1_1 import *
+
 from pyglet.image import RawImage
+
+from pyglet.resource import register_loader
+
+
+@register_loader('imageatlas')
+def load_imageatlas(loader, tag):
+    filename = loader.find_file(tag.getAttribute('file'))
+    atlas = Image2d.load(filename)
+    atlas.properties = loader.handle_properties(tag)
+    atlas.filename = filename
+    if tag.hasAttribute('id'):
+        atlas.id = tag.getAttribute('id')
+        loader.add_resource(atlas.id, atlas)
+
+    # figure default size if specified
+    if tag.hasAttribute('size'):
+        d_width, d_height = map(int, tag.getAttribute('size').split('x'))
+    else:
+        d_width = d_height = None
+
+    for child in tag.childNodes:
+        if not hasattr(child, 'tagName'): continue
+        if child.tagName != 'image':
+            raise ValueError, 'invalid child'
+
+        if child.hasAttribute('size'):
+            width, height = map(int, child.getAttribute('size').split('x'))
+        elif d_width is None:
+            raise ValueError, 'atlas or subimage must specify size'
+        else:
+            width, height = d_width, d_height
+
+        x, y = map(int, child.getAttribute('offset').split(','))
+        image = atlas.subimage(x, y, width, height)
+        id = child.getAttribute('id')
+        loader.add_resource(id, image)
+
+    image.properties = loader.handle_properties(tag)
+
+    if tag.hasAttribute('id'):
+        image.id = tag.getAttribute('id')
+        loader.add_resource(image.id, image)
+        
+    return atlas
+
+
+@register_loader('image')
+def load_image(loader, tag):
+    if tag.hasAttribute('file'):
+        filename = loader.find_file(tag.getAttribute('file'))
+        image = Image2d.load(filename)
+        image.filename = filename
+
+    image.properties = loader.handle_properties(tag)
+
+    if tag.hasAttribute('id'):
+        image.id = tag.getAttribute('id')
+        loader.add_resource(image.id, image)
+
+    return image
 
 # XXX remember file image comes from
 class Image2d(object):
