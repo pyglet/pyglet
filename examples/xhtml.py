@@ -21,8 +21,7 @@ window = Window(visible=False)
 exit_handler = ExitHandler()
 window.push_handlers(exit_handler)
 
-layout = Layout()
-layout.set_xhtml('''<?xml version="1.0"?>
+data = '''<?xml version="1.0"?>
 <html>  
   <head>
     <style>
@@ -37,7 +36,7 @@ layout.set_xhtml('''<?xml version="1.0"?>
     <h1>The Frog King</h1>
     <h2>Brothers Grimm</h2>
     <p>
-      In olden times when wishing still helped one,
+      In <span style="border:10px solid blue">olden <span style="border:10px solid red">times</span> when</span> wishing still helped one,
       there lived a king whose daughters were all beautiful, but the youngest
       was so beautiful that the sun itself, which has seen so much, was
       astonished whenever it shone in her face.  Close by the king's castle
@@ -169,7 +168,20 @@ layout.set_xhtml('''<?xml version="1.0"?>
       heart of Faithful Henry because his master was set free and was happy.  
     </p>
 </body>
-</html> ''')
+</html> '''
+
+data = '''<?xml version="1.0"?>
+<html>
+  <body>
+    <p>
+      One two three four <span>five six seven eight nine <span>ten eleven twelve
+      thirteen fourteen fifteen</span> sixteen seventeen eighteen</span> nineteen twenty
+    </p>
+  </body>
+</html>'''
+
+layout = Layout()
+layout.set_xhtml(data)
 
 @select('body')
 def on_mouse_press(element, button, x, y, modifiers):

@@ -513,7 +513,7 @@ class InlineFrame(Frame):
         if self.flowed_children:
             self.flowed_children[0].lstrip()
 
-    def flow_inline(self, containing_block, width):
+    def flow_inline(self, containing_block, remaining_width):
         self.continuation = None
 
         computed = self.get_computed_property
@@ -524,90 +524,105 @@ class InlineFrame(Frame):
             return value
 
         content_right = computed('border-right-width') + used('padding-right')
-        content_bottom = computed('border-bottom-width') + used('padding-bottom')
+        content_bottom = computed('border-bottom-width') + \
+            used('padding-bottom')
         self.content_top = computed('border-top-width') + used('padding-top')
         self.margin_right = used('margin-right')
-        if not self.is_continuation:
-            self.margin_left = used('margin-left')
-            self.content_left = computed('border-left-width') + used('padding-left') 
+        self.margin_left = used('margin-left')
+        self.content_left = computed('border-left-width') + used('padding-left') 
+        line_height = computed('line-height')
 
-        line_ascent = 0
-        line_descent = 0
-        content_ascent = 0
-        content_descent = 0
+        remaining_width -= self.margin_left + self.content_left
+        self.border_edge_width = self.content_left
 
-        width -= self.margin_left + self.content_left + \
-            content_right + self.margin_right
+        def add(child):
+            frame.flowed_children.append(child)
+            frame.border_edge_width += child.margin_left + \
+                child.border_edge_width + child.margin_right
+            frame.line_ascent = max(frame.line_ascent, child.line_ascent)
+            frame.line_descent = min(frame.line_descent, child.line_descent)
+            frame.content_ascent = max(frame.content_ascent, 
+                                       child.content_ascent)
+            frame.content_descent = min(frame.content_descent, 
+                                        child.content_descent)
 
-        committed = []
+        def init(frame):
+            frame.line_ascent = 0
+            frame.line_descent = 0
+            frame.content_ascent = 0
+            frame.content_descent = 0
+            frame.flowed_children = []
+
+        def finish(frame):
+            frame.content_ascent += self.content_top
+            frame.content_descent -= content_bottom
+            frame.border_edge_height = frame.content_ascent - \
+                frame.content_descent
+            if line_height == 'normal':
+                frame.line_ascent = frame.content_ascent
+                frame.line_descent = frame.content_descent
+
+
+        frame = self
+        init(frame)
         buffer = []
-        for i, child in enumerate(self.children):
-            child.flow_inline(containing_block, width)
-            if child.fit_flow:
-                committed += buffer
-                buffer = []
-                committed.append(child)
-                width -= child.margin_left + \
-                    child.border_edge_width + child.margin_right
+        for child in self.children:
+            remaining_width -= content_right + self.margin_right
+            child.flow_inline(containing_block, remaining_width)
 
-            if child.continuation:
-                child.continuation.flow_inline(containing_block, width)
-                buffer.append(child.continuation)
-                width -= child.continuation.margin_left + \
-                         child.continuation.border_edge_width + \
-                         child.continuation.margin_right
+            while child:
+                c_width = child.margin_left + child.border_edge_width + \
+                    child.margin_right
 
-            if width < 0:
-                buffer += self.children[i+1:]
-                break
-        print committed, buffer
+                if remaining_width - c_width < 0 and frame.flowed_children:
+                    continuation = InlineFrame(self.style, self.element)
+                    continuation.is_continuation = True
+                    continuation.margin_right = self.margin_right
+                    init(continuation)
 
-        if buffer:
-            self.continuation = InlineFrame(self.style, self.element)
-            self.continuation.children = buffer
-            self.continuation.is_continuation = True
-            self.continuation.border_edge_width = 10000
+                    finish(frame)
+                     
+                    frame.margin_right = 0
 
-            self.margin_right = 0
-            content_right = 0
-        self.fit_flow = len(committed) > 0
+                    frame.continuation = continuation
+                    frame = continuation
 
-        content_width = 0
-        for child in committed:
-            line_ascent = max(line_ascent, child.line_ascent)
-            line_descent = min(line_descent, child.line_descent)
-            content_ascent = max(content_ascent, child.content_ascent)
-            content_descent = max(content_descent, child.content_descent)
-            content_width += child.margin_left + child.border_edge_width + \
-                child.margin_right
+                    remaining_width = containing_block.width
+                    for f in buffer:
+                        remaining_width -= f.margin_left + \
+                            f.border_edge_width + f.margin_right
 
-        line_height = self.get_computed_property('line-height')
-        if line_height != 'normal':
-            half_leading = (line_height - 
-                            (content_ascent - content_descent)) / 2
-            line_ascent += half_leading
-            line_descent -= half_leading
+                remaining_width -= c_width
 
-        self.line_ascent = line_ascent
-        self.line_descent = line_descent
-        self.content_ascent = content_ascent
-        self.content_descent = content_descent
+                if child.continuation:
+                    for f in buffer:
+                        add(f)
+                    buffer = []
+                    add(child)
+                else:
+                    buffer.append(child)
 
-        self.border_edge_width = self.content_left + \
-            content_width + content_right
-        self.border_edge_height = self.content_top + \
-            (self.content_ascent - self.content_descent) + \
-            content_bottom
+                child = child.continuation
 
-        self.flowed_children = committed
+        for f in buffer:
+            add(f)
 
+        frame.border_edge_width += content_right
+        finish(frame)
+        
     def position(self, x, y, containing_block):
         super(InlineFrame, self).position(x, y, containing_block)
-        x += self.content_left
+        x = self.content_left
+        baseline = y + self.content_ascent
         for child in self.flowed_children:
-            child.position(x, y, containing_block)
-            x += child.margin_left + child.border_edge_width + \
-                child.margin_right
+            x += child.margin_left
+            valign = child.get_computed_property('vertical-align')
+            if valign == 'baseline':
+                ly = baseline - child.content_ascent + child.margin_top
+            elif valign == 'top':
+                ly = y + child.margin_top
+            child.position(x, ly, containing_block)
+            x += child.border_edge_width + child.margin_right
 
     def draw(self, x, y, render_device):
         c = self.children

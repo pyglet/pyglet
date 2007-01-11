@@ -247,17 +247,13 @@ class GLTextFrame(TextFrame):
         # Calculate computed and used values of box properties when
         # relative to containing block width.
         # margin top/bottom remain at class default 0
-        content_right = computed('border-right-width') + \
-            used('padding-right')
+        content_right = computed('border-right-width') + used('padding-right')
         content_bottom = computed('border-bottom-width') + \
             used('padding-bottom')
-        self.content_top = computed('border-top-width') + \
-            used('padding-top')
+        self.content_top = computed('border-top-width') + used('padding-top')
         self.margin_right = used('margin-right')
-        if not self.is_continuation:
-            self.margin_left = used('margin-left')
-            self.content_left = computed('border-left-width') + \
-                used('padding-left')
+        self.margin_left = used('margin-left')
+        self.content_left = computed('border-left-width') + used('padding-left')
 
         # Calculate text metrics (actually not dependent on flow, could
         # optimise out).
