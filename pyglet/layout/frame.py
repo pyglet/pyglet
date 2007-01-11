@@ -398,42 +398,37 @@ class BlockFrame(Frame):
 
     def flow_inline(self, containing_block):
         width = containing_block.width
-        lines = [LineBox(self)]
-        buffer = []
-        children = self.children[:]
-        y = 0
         strip_lines = self.get_computed_property('white-space') in \
             ('normal', 'nowrap', 'pre-line')
-        while children:
-            child = children.pop(0)
-            if lines[-1].is_empty:
-                child.lstrip()
+        lines = [LineBox(self, strip_lines)]
+        buffer = []
+        y = 0
+        for child in self.children:
             child.flow_inline(containing_block, width)
 
-            # The child goes straight into the line, it fits within width
-            # and has a valid breakpoint.
-            if child.fit_flow:
-                for f in buffer:
-                    lines[-1].add(f)
-                buffer = []
-                lines[-1].add(child)
-                width -= child.margin_left + child.border_edge_width + \
+            while child:
+                c_width = child.margin_left + child.border_edge_width + \
                     child.margin_right
 
-            # Continuation does not fit and/or doesn't have a valid breakpoint
-            if child.continuation:
-                buffer.append(child.continuation)
-                width -= child.continuation.margin_left + \
-                         child.continuation.border_edge_width + \
-                         child.continuation.margin_right
+                if width - c_width < 0 and not lines[-1].is_empty:
+                    # This child will not fit, start a new line
+                    y += lines[-1].line_height
+                    lines.append(LineBox(self, strip_lines))
+                    width = containing_block.width
+                    for f in buffer:
+                        width -= f.margin_left + f.border_edge_width + \
+                            f.margin_right
+                width -= c_width
 
-            if width < 0 and not lines[-1].is_empty:
-                # No more children will fit, close the line
-                y += lines[-1].line_height
-                lines.append(LineBox(self))
-                width = containing_block.width
-                children = buffer + children
-                buffer = []
+                if child.continuation:
+                    for f in buffer:
+                        lines[-1].add(f)
+                    buffer = []
+                    lines[-1].add(child)
+                else:
+                    buffer.append(child)
+
+                child = child.continuation
   
         # Final unfinished line
         for f in buffer:
@@ -456,8 +451,9 @@ class LineBox(object):
     them vertically and horizontally.
     '''
 
-    def __init__(self, parent):
+    def __init__(self, parent, strip_lines):
         self.parent = parent
+        self.strip_lines = strip_lines
         self.line_ascent = 0
         self.line_descent = 0
         self.frames = []
@@ -472,6 +468,8 @@ class LineBox(object):
         self.line_descent = min(self.line_descent, frame.line_descent)
         self.line_height = max(self.line_height, 
                                self.line_ascent - self.line_descent)
+        if self.strip_lines and self.is_empty:
+            frame.lstrip()
         self.is_empty = False
 
     def position(self, x, y, containing_block):
@@ -502,12 +500,18 @@ class InlineFrame(Frame):
 
     fit_flow = True
 
+    line_ascent = 0
+    line_descent = 0
+    content_ascent = 0
+    content_descent = 0
+
     def __init__(self, style, element):
         super(InlineFrame, self).__init__(style, element)
         self.flowed_children = ()
 
     def lstrip(self):
-        self.flowed_children[0].lstrip()
+        if self.flowed_children:
+            self.flowed_children[0].lstrip()
 
     def flow_inline(self, containing_block, width):
         self.continuation = None
@@ -532,13 +536,13 @@ class InlineFrame(Frame):
         content_ascent = 0
         content_descent = 0
 
-        width -= self.margin_left + content_left + \
+        width -= self.margin_left + self.content_left + \
             content_right + self.margin_right
 
         committed = []
         buffer = []
         for i, child in enumerate(self.children):
-            child.flow(containing_block, width)
+            child.flow_inline(containing_block, width)
             if child.fit_flow:
                 committed += buffer
                 buffer = []
@@ -547,6 +551,7 @@ class InlineFrame(Frame):
                     child.border_edge_width + child.margin_right
 
             if child.continuation:
+                child.continuation.flow_inline(containing_block, width)
                 buffer.append(child.continuation)
                 width -= child.continuation.margin_left + \
                          child.continuation.border_edge_width + \
@@ -555,11 +560,14 @@ class InlineFrame(Frame):
             if width < 0:
                 buffer += self.children[i+1:]
                 break
+        print committed, buffer
 
         if buffer:
             self.continuation = InlineFrame(self.style, self.element)
             self.continuation.children = buffer
             self.continuation.is_continuation = True
+            self.continuation.border_edge_width = 10000
+
             self.margin_right = 0
             content_right = 0
         self.fit_flow = len(committed) > 0

@@ -123,21 +123,22 @@ class GlyphString(object):
 
         Returns from_index if there is no valid breakpoint in range.
         '''
-        index = from_index
-        width += self.cumulative_advance[from_index]
+        to_index = from_index
+        if from_index:
+            width += self.cumulative_advance[from_index-1]
         for i, (c, w) in enumerate(
                 zip(self.text[from_index:], 
                     self.cumulative_advance[from_index:])):
             if w > width:
-                return index
+                return to_index
             if c == '\n':
                 return i + from_index
             elif c in u'\u0020\u200b':
-                index = i + from_index
-        return index
+                to_index = i + from_index
+        return to_index
 
     def get_subwidth(self, from_index, to_index):
-        width = self.cumulative_advance[to_index] 
+        width = self.cumulative_advance[to_index-1] 
         if from_index:
             width -= self.cumulative_advance[from_index-1]
         return width

@@ -272,44 +272,51 @@ class GLTextFrame(TextFrame):
         self.line_ascent = self.content_ascent + half_leading
         self.line_descent = self.content_descent + half_leading
         self.border_edge_height = self.content_ascent - self.content_descent
+        self.border_edge_width = self.content_left
 
-        # How much text will fit?
-        remaining_width -= self.margin_left + self.content_left + \
-            content_right + self.margin_right
+        remaining_width -= self.margin_left + self.content_left
 
-        # Create continuation if necessary
-        self.to_index = self.glyph_string.get_break_index(self.from_index,
-            remaining_width)
-        if self.to_index < len(self.text) - 1:
-            self.continuation = GLTextFrame(
-                self.style, self.element, self.text)
-            self.continuation.is_continuation = True
-            self.continuation.from_index = self.to_index 
-            if self.text[self.to_index] == '\n':
-                self.continuation.from_index += 1
-            self.continuation.glyph_string = self.glyph_string
+        # Break into continuations
+        frame = self
+        while True:
+            remaining_width -= content_right + self.margin_right
 
-            # Needed for flow calculation of continuation
-            self.continuation.margin_left = 0
-            self.continuation.border_edge_width = \
-                self.glyph_string.get_subwidth(
-                    self.continuation.from_index, len(self.text)-1) + content_right
-            self.continuation.border_edge_height = self.border_edge_height
-            self.continuation.margin_right = self.margin_right
-            self.continuation.line_ascent = self.line_ascent
-            self.continuation.line_descent = self.line_descent
-            self.continuation.content_ascent = self.content_ascent
-            self.continuation.content_descent = self.content_descent
+            frame.to_index = self.glyph_string.get_break_index(
+                frame.from_index, remaining_width)
+            if frame.to_index == frame.from_index:
+                frame.to_index = len(self.text)
+            frame.border_edge_width += self.glyph_string.get_subwidth(
+                    frame.from_index, frame.to_index)
 
-            self.margin_right = 0
-            content_right = 0
-        self.fit_flow = self.from_index != self.to_index
+            if frame.to_index < len(self.text):
+                continuation = GLTextFrame(
+                    self.style, self.element, self.text)
+                continuation.glyph_string = self.glyph_string
+                continuation.is_continuation = True
+                continuation.from_index = frame.to_index 
+                if self.text[frame.to_index] == '\n':
+                    continuation.from_index += 1
 
-        # Calculate edge size
-        self.border_edge_width = self.content_left + \
-            self.glyph_string.get_subwidth(self.from_index, self.to_index) + \
-            content_right
-        
+                continuation.border_edge_height = self.border_edge_height
+                continuation.margin_right = self.margin_right
+                continuation.line_ascent = self.line_ascent
+                continuation.line_descent = self.line_descent
+                continuation.content_ascent = self.content_ascent
+                continuation.content_descent = self.content_descent
+
+                # Remove right-margin from continued frame
+                frame.margin_right = 0
+
+                # Ready for next iteration
+                frame.continuation = continuation
+                frame = continuation
+                remaining_width = containing_block.width
+            else:
+                break
+
+
+        frame.border_edge_width += content_right
+
 
     def draw_text(self, x, y, render_context):
         glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT)
