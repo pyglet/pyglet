@@ -16,7 +16,6 @@ car = Sprite.from_image(Image2d.load(os.path.join(dirname, 'car.png')))
 scene = pyglet.scene2d.Scene(maps=[m], sprites=[car])
 view = pyglet.scene2d.FlatView.from_window(scene, w, allow_oob=False)
 w.push_handlers(view.camera)
-w.push_handlers(ViewScrollHandler(view))
 
 class running(ExitHandler):
     def __init__(self, fps=30):
