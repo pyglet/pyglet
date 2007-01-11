@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <resource>
  <requires file="road-tiles.xml" />
- <rectmap id="map0" tile_width="128" tile_height="128" origin="0,0,0">
+ <rectmap id="map0" tile_size="128x128" origin="0,0,0">
   <column>
     <cell tile="bl" />
     <cell tile="vl" />

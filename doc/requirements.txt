@@ -141,6 +141,21 @@ console
     TBD:
      - move to pyglet.gui
 
+resource
+    :description: resource XML file loader.
+    :implementation:
+        ============================== =======
+        Component                      GENERIC
+        ============================== =======
+        COMPLIANCE                        X
+        IMAGE                             X
+        IMAGEATLAS                        X
+        TILESET                           X
+        RECTMAP                           X
+        HEXMAP                             
+        REQUIRE                           X
+        ============================== =======
+
 scene2d
     :description: 2D scenes with tile maps and sprites.
     :implementation:

@@ -14,23 +14,6 @@ You may create a map interactively and query it:
 
 TBD
 
-----------------
-Pyglet Map Files
-----------------
-
-XML files with the following structure:
-
-<map tile_width="" tile_height="" x="" y="" z="">
- <tileset id="" filename="" />
- ...
- <column>
-  <cell set="" tile="">
-   <meta type="" value="" />
-  </cell>
-  ...
- </column>
- ...
-</map>
 '''
 
 __docformat__ = 'restructuredtext'
@@ -41,13 +24,11 @@ import math
 import xml.dom
 import xml.dom.minidom
 
-from pyglet.resource import register_loader
+from pyglet.resource import Resource, register_factory
 
-
-@register_loader('rectmap')
-def load_rectmap(loader, tag):
-    width = int(tag.getAttribute('tile_width'))
-    height = int(tag.getAttribute('tile_height'))
+@register_factory('rectmap')
+def rectmap_factory(resource, tag):
+    width, height = map(int, tag.getAttribute('tile_size').split('x'))
     origin = None
     if tag.hasAttribute('origin'):
         origin = map(int, tag.getAttribute('origin').split(','))
@@ -60,13 +41,13 @@ def load_rectmap(loader, tag):
         cells.append(c)
         for j, cell in enumerate(column.getElementsByTagName('cell')):
             tile = cell.getAttribute('tile')
-            if tile: tile = loader.get_resource(tile)
+            if tile: tile = resource.get_resource(tile)
             else: tile = None
-            properties = loader.handle_properties(tag)
+            properties = resource.handle_properties(tag)
             c.append(RectCell(i, j, width, height, properties, tile))
 
     m = RectMap(id, width, height, cells, origin)
-    loader.add_resource(id, m)
+    resource.add_resource(id, m)
 
     return m
 
@@ -81,9 +62,7 @@ class Map(object):
         (pxw, pxh)      -- size of map in pixels
         (tw, th)        -- size of each cell in pixels
         (x, y, z)       -- offset of map top left from origin in pixels
-        meta            -- array [x][y] of meta-data (arbitrary data allowed)
-        cells           -- array [x][y] of objects with .draw() and
-                           optionally .animate(dt)
+        cells           -- array [x][y] of Cell instances
     '''
     def get(self, pos=None, px=None):
         ''' Return Cell at cell pos=(x,y) or pixel px=(x,y).
@@ -114,7 +93,7 @@ class RectMap(RegularTesselationMap):
     Thus cells = [['a', 'd'], ['b', 'e'], ['c', 'f']]
     and cells[0][1] = 'd'
     '''
-    __slots__ = 'id pxw pxh tw th x y z meta cells'.split()
+    __slots__ = 'id pxw pxh tw th x y z cells'.split()
     def __init__(self, id, tw, th, cells, origin=(0, 0, 0)):
         self.id = id
         self.tw, self.th = tw, th
@@ -156,13 +135,11 @@ class RectMap(RegularTesselationMap):
         return self.get((cell.x + dx, cell.y + dy))
 
     @classmethod
-    def load_xml(cls, filename):
-        '''Load a map from the indicaed XML file.
+    def load_xml(cls, filename, id):
+        '''Load a map from the indicated XML file.
 
         Return a Map instance.'''
-
-        # XXX hook into resource loading and specify XML format
-        raise NotImplemented()
+        return Resource.load(filename)[id]
 
 class Cell(object):
     '''Base class for cells from rect and hex maps.
@@ -170,19 +147,19 @@ class Cell(object):
     Common attributes:
         x, y        -- top-left coordinate
         width, height        -- dimensions
-        meta        -- meta-data from the Map's meta
+        properties        -- arbitrary properties
         cell       -- cell from the Map's cells
     '''
-    def __init__(self, x, y, width, height, meta, tile):
+    def __init__(self, x, y, width, height, properties, tile):
         self.width, self.height = width, height
         self.x, self.y = x, y
-        self.meta = meta
+        self.properties = properties
         self.tile = tile
 
     def __repr__(self):
-        return '<%s object at 0x%x (%g, %g) meta=%r tile=%r>'%(
-            self.__class__.__name__, id(self), self.x, self.y, self.meta,
-                self.tile)
+        return '<%s object at 0x%x (%g, %g) properties=%r tile=%r>'%(
+            self.__class__.__name__, id(self), self.x, self.y,
+                self.properties, self.tile)
 
 class RectCell(Cell):
     '''A rectangular cell from a Map.
@@ -203,7 +180,7 @@ class RectCell(Cell):
         midleft     -- (x, y) of middle of left side
         midright    -- (x, y) of middle of right side
     '''
-    __slots__ = 'map x y width height meta tile'.split()
+    __slots__ = 'map x y width height properties tile'.split()
 
     # ro, side in pixels, y extent
     def get_top(self):
@@ -291,7 +268,7 @@ class HexMap(RegularTesselationMap):
         \_/ \_/ 
     has cells = [['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h']]
     '''
-    __slots__ = 'tw th edge_length left right pxw pxh x y z meta cells'.split()
+    __slots__ = 'tw th edge_length left right pxw pxh x y z cells'.split()
     def __init__(self, th, cells, origin=(0, 0, 0)):
         self.th = th
         self.x, self.y, self.z = origin
@@ -390,11 +367,11 @@ class HexCell(Cell):
         midbottomleft   -- (x, y) of middle of left side
         midbottomright  -- (x, y) of middle of right side
     '''
-    __slots__ = 'map x y width height meta tile'.split()
+    __slots__ = 'map x y width height properties tile'.split()
 
-    def __init__(self, x, y, height, meta, tile):
+    def __init__(self, x, y, height, properties, tile):
         width = int(height / math.sqrt(3)) * 2
-        Cell.__init__(self, x, y, width, height, meta, tile)
+        Cell.__init__(self, x, y, width, height, properties, tile)
 
     def get_origin(self):
         x = self.x * (self.width / 2 + self.width // 4)

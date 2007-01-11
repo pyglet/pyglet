@@ -23,18 +23,18 @@ from pyglet.GL.VERSION_1_1 import *
 
 from pyglet.image import RawImage
 
-from pyglet.resource import register_loader
+from pyglet.resource import register_factory
 
 
-@register_loader('imageatlas')
-def load_imageatlas(loader, tag):
-    filename = loader.find_file(tag.getAttribute('file'))
+@register_factory('imageatlas')
+def imageatlas_factory(resource, tag):
+    filename = resource.find_file(tag.getAttribute('file'))
     atlas = Image2d.load(filename)
-    atlas.properties = loader.handle_properties(tag)
+    atlas.properties = resource.handle_properties(tag)
     atlas.filename = filename
     if tag.hasAttribute('id'):
         atlas.id = tag.getAttribute('id')
-        loader.add_resource(atlas.id, atlas)
+        resource.add_resource(atlas.id, atlas)
 
     # figure default size if specified
     if tag.hasAttribute('size'):
@@ -57,31 +57,32 @@ def load_imageatlas(loader, tag):
         x, y = map(int, child.getAttribute('offset').split(','))
         image = atlas.subimage(x, y, width, height)
         id = child.getAttribute('id')
-        loader.add_resource(id, image)
+        resource.add_resource(id, image)
 
-    image.properties = loader.handle_properties(tag)
+    image.properties = resource.handle_properties(tag)
 
     if tag.hasAttribute('id'):
         image.id = tag.getAttribute('id')
-        loader.add_resource(image.id, image)
+        resource.add_resource(image.id, image)
         
     return atlas
 
 
-@register_loader('image')
-def load_image(loader, tag):
+@register_factory('image')
+def image_factory(resource, tag):
     if tag.hasAttribute('file'):
-        filename = loader.find_file(tag.getAttribute('file'))
+        filename = resource.find_file(tag.getAttribute('file'))
         image = Image2d.load(filename)
         image.filename = filename
 
-    image.properties = loader.handle_properties(tag)
+    image.properties = resource.handle_properties(tag)
 
     if tag.hasAttribute('id'):
         image.id = tag.getAttribute('id')
-        loader.add_resource(image.id, image)
+        resource.add_resource(image.id, image)
 
     return image
+
 
 # XXX remember file image comes from
 class Image2d(object):
