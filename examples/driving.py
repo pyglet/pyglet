@@ -43,7 +43,6 @@ while running:
     angle = math.radians(car.angle)
     car.x += -speed * math.sin(angle)
     car.y += speed * math.cos(angle)
-    print car.x, car.y
 
     # re-focus on the car
     if speed:

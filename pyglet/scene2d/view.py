@@ -113,7 +113,11 @@ class FlatView(View):
         Note that this method does not actually change the focus attributes
         fx and fy.
         '''
-        if not self.scene.maps or self.allow_oob: return (self.fx, self.fy)
+        # enforce int-only positioning of focus
+        fx = int(self.fx)
+        fy = int(self.fy)
+
+        if not self.scene.maps or self.allow_oob: return (fx, fy)
 
         # figure the bounds min/max
         m = self.scene.maps[0]
@@ -131,7 +135,6 @@ class FlatView(View):
         w2 = self.camera.width/2
         h2 = self.camera.height/2
 
-        fx, fy = self.fx, self.fy
         v_min_x = fx - w2
         v_min_y = fy - h2
         x_moved = y_moved = False
