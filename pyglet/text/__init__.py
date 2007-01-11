@@ -94,7 +94,6 @@ class GlyphString(object):
         state_from = 0
         state_length = 0
         for i, glyph in enumerate(glyphs):
-            self.cumulative_advance.append(x)
             if glyph.texture != texture:
                 if state_length:
                     self.states.append((state_from, state_length, texture))
@@ -111,6 +110,7 @@ class GlyphString(object):
                     glyph.tex_coords[0], glyph.tex_coords[3],
                     x + glyph.vertices[0], y + glyph.vertices[3], 0.]
             x += glyph.advance
+            self.cumulative_advance.append(x)
         self.states.append((state_from, state_length, texture))
 
         self.array = (c_float * len(lst))(*lst)
@@ -137,8 +137,10 @@ class GlyphString(object):
         return index
 
     def get_subwidth(self, from_index, to_index):
-        return self.cumulative_advance[to_index] - \
-            self.cumulative_advance[from_index]
+        width = self.cumulative_advance[to_index] 
+        if from_index:
+            width -= self.cumulative_advance[from_index-1]
+        return width
 
     def draw(self, from_index=0, to_index=None):
         '''Draw the glyph string.  Assumes texture state is enabled.
@@ -148,7 +150,7 @@ class GlyphString(object):
         self.states[0][2].apply_blend_state()
 
         if from_index:
-            glTranslatef(-self.cumulative_advance[from_index], 0, 0)
+            glTranslatef(-self.cumulative_advance[from_index-1], 0, 0)
         if to_index is None:
             to_index = len(self.text)
 

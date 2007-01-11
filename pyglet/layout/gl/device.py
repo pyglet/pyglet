@@ -154,7 +154,7 @@ class GLRenderDevice(RenderDevice):
         background_color = compute('background-color')
         if background_color != 'transparent':
             glPushAttrib(GL_CURRENT_BIT)
-            glColor4f(*box.background_color)
+            glColor4f(*background_color)
             glBegin(GL_QUADS)
             glVertex2f(x1, y1)
             glVertex2f(x1, y2)
@@ -300,7 +300,6 @@ class GLTextFrame(TextFrame):
             self.continuation.line_descent = self.line_descent
             self.continuation.content_ascent = self.content_ascent
             self.continuation.content_descent = self.content_descent
-
 
             self.margin_right = 0
             content_right = 0

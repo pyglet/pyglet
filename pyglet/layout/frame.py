@@ -41,6 +41,7 @@ class Frame(object):
     style = None
     computed_properties = None
     continuation = None
+    is_continuation = False
 
     # Bounding box, relative to the canvas (or viewport, if fixed).
     bounding_box_top = 0
@@ -161,6 +162,11 @@ class Frame(object):
         bright = compute('border-right-width')
         bbottom = compute('border-bottom-width')
         bleft = compute('border-left-width')
+
+        if self.continuation:
+            bright = 0
+        if self.is_continuation:
+            bleft = 0
 
         if btop:
             render_device.draw_horizontal_border(
@@ -284,6 +290,8 @@ class BlockFrame(Frame):
         content_right = computed('border-right-width') + used('padding-right')
         self.content_left = computed('border-left-width') + used('padding-left')
         self.content_top = computed('border-top-width') + used('padding-top')
+        self.content_bottom = computed('border-bottom-width') + \
+            used('padding-bottom')
         self.margin_top = used('margin-top')
         self.margin_right = used('margin-right')
         self.margin_bottom = used('margin-bottom')
@@ -359,28 +367,34 @@ class BlockFrame(Frame):
                 value = value * containing_block.height
             return value
 
-        content_bottom = computed('border-bottom-width') + \
-            used('padding-bottom')
         self.border_edge_height = self.content_top + \
-            generated_containing_block.height + content_bottom
+            generated_containing_block.height + self.content_bottom
 
     def flow_block(self, containing_block):
         y = 0
+        positions = []
+        margin_collapse = 0
+        if not self.content_top:
+            margin_collapse = self.margin_top
+
         for child in self.children:
             child.flow(containing_block)
-            y += child.margin_top + \
-                child.border_edge_height + child.margin_bottom
-        
-        if containing_block.height is None:
-            containing_block.height = y
+            y += max(child.margin_top - margin_collapse, 0)
+            positions.append(y)
+            y += child.border_edge_height + child.margin_bottom
+            margin_collapse = child.margin_bottom
 
-        y = self.content_top
-        for child in self.children:
-            y += child.margin_top
+        content_height = y
+        if not self.content_bottom:
+            self.margin_bottom = max(self.margin_bottom - margin_collapse, 0)
+
+        if containing_block.height is None:
+            containing_block.height = content_height
+
+        for child, y in zip(self.children, positions):
             child.position(
                 self.content_left + child.margin_left, 
                 self.content_top + y, containing_block)
-            y += child.border_edge_height + child.margin_bottom
 
     def flow_inline(self, containing_block):
         width = containing_block.width
@@ -390,10 +404,10 @@ class BlockFrame(Frame):
         y = 0
         strip_lines = self.get_computed_property('white-space') in \
             ('normal', 'nowrap', 'pre-line')
-        if strip_lines:
-            children[0].lstrip()
         while children:
             child = children.pop(0)
+            if lines[-1].is_empty:
+                child.lstrip()
             child.flow_inline(containing_block, width)
 
             # The child goes straight into the line, it fits within width
@@ -420,8 +434,6 @@ class BlockFrame(Frame):
                 width = containing_block.width
                 children = buffer + children
                 buffer = []
-                if strip_lines:
-                    children[0].lstrip()
   
         # Final unfinished line
         for f in buffer:
@@ -469,12 +481,14 @@ class LineBox(object):
         self.line_ascent += half_leading
         self.line_descent -= half_leading
 
+        baseline = y + self.line_ascent
+
         # Position frames in this line
         for frame in self.frames:
             x += frame.margin_left
             valign = frame.get_computed_property('vertical-align')
             if valign == 'baseline':
-                ly = y + self.line_ascent - frame.content_ascent + frame.margin_top
+                ly = baseline - frame.content_ascent + frame.margin_top
             elif valign == 'top':
                 ly = y + frame.margin_top
             else:
@@ -580,10 +594,12 @@ class InlineFrame(Frame):
         self.flowed_children = committed
 
     def position(self, x, y, containing_block):
-        c = self.children
-        self.children = self.flowed_children
         super(InlineFrame, self).position(x, y, containing_block)
-        self.children = c
+        x += self.content_left
+        for child in self.flowed_children:
+            child.position(x, y, containing_block)
+            x += child.margin_left + child.border_edge_width + \
+                child.margin_right
 
     def draw(self, x, y, render_device):
         c = self.children
@@ -602,10 +618,16 @@ class TextFrame(InlineFrame):
         x += self.border_edge_left
         y -= self.border_edge_top
 
+        # Align baseline to integer
+        rounding = (y - self.content_ascent) - int(y - self.content_ascent)
+        y -= rounding
+
         self.draw_background(x, y, render_device)
         self.draw_border(x, y, render_device)
 
-        self.draw_text(x, y - self.content_ascent, render_device)
+        self.draw_text(x + self.content_left, 
+                       y - self.content_ascent, 
+                       render_device)
 
         if self.continuation:
             self.continuation.draw(orig_x, orig_y, render_device)
