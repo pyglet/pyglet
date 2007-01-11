@@ -388,6 +388,10 @@ class BlockFrame(Frame):
         buffer = []
         children = self.children[:]
         y = 0
+        strip_lines = self.get_computed_property('white-space') in \
+            ('normal', 'nowrap', 'pre-line')
+        if strip_lines:
+            children[0].lstrip()
         while children:
             child = children.pop(0)
             child.flow_inline(containing_block, width)
@@ -396,7 +400,6 @@ class BlockFrame(Frame):
             # and has a valid breakpoint.
             if child.fit_flow:
                 for f in buffer:
-                    f.flow_inline(containing_block, width)
                     lines[-1].add(f)
                 buffer = []
                 lines[-1].add(child)
@@ -417,10 +420,11 @@ class BlockFrame(Frame):
                 width = containing_block.width
                 children = buffer + children
                 buffer = []
+                if strip_lines:
+                    children[0].lstrip()
   
         # Final unfinished line
         for f in buffer:
-            f.flow_inline(containing_block, width)
             lines[-1].add(f)
         if lines[-1].is_empty:
             del lines[-1]
@@ -432,7 +436,7 @@ class BlockFrame(Frame):
 
         y = self.content_top
         for line in lines:
-            line.position(self.content_left, y, self.containing_block)
+            line.position(self.content_left, y, containing_block)
             y += line.line_height
 
 class LineBox(object):
@@ -456,6 +460,7 @@ class LineBox(object):
         self.line_descent = min(self.line_descent, frame.line_descent)
         self.line_height = max(self.line_height, 
                                self.line_ascent - self.line_descent)
+        self.is_empty = False
 
     def position(self, x, y, containing_block):
         # Determine half-leading
@@ -465,17 +470,16 @@ class LineBox(object):
         self.line_descent -= half_leading
 
         # Position frames in this line
-        x = 0
         for frame in self.frames:
             x += frame.margin_left
             valign = frame.get_computed_property('vertical-align')
             if valign == 'baseline':
-                y = self.line_ascent - frame.content_ascent + frame.margin_top
+                ly = y + self.line_ascent - frame.content_ascent + frame.margin_top
             elif valign == 'top':
-                y = frame.margin_top
+                ly = y + frame.margin_top
             else:
                 raise NotImplementedError('Unsupported vertical-align')
-            frame.position(x, y, containing_block)
+            frame.position(x, ly, containing_block)
             x += frame.border_edge_width + frame.margin_right
 
 class InlineFrame(Frame):
@@ -487,6 +491,9 @@ class InlineFrame(Frame):
     def __init__(self, style, element):
         super(InlineFrame, self).__init__(style, element)
         self.flowed_children = ()
+
+    def lstrip(self):
+        self.flowed_children[0].lstrip()
 
     def flow_inline(self, containing_block, width):
         self.continuation = None
@@ -660,6 +667,7 @@ class FrameBuilder(object):
                 AnonymousElement(element),
                 element.text)
             if text_frame:
+                text_frame.parent = frame
                 frame.children = [text_frame]
 
         return frame

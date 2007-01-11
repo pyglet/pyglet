@@ -57,6 +57,7 @@ class GLLayout(LayoutEventDispatcher):
         content_builder.feed(data)
         content_builder.close()
         self._visual.document = self.document
+        self._mouse_over_elements = set()
 
     '''
     def set_xml(self, data, stylesheet):

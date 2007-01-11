@@ -215,13 +215,17 @@ class GLRenderDevice(RenderDevice):
 class GLTextFrame(TextFrame):
     glyph_string = None
     from_index = 0
-    to_index = 0
+    to_index = None
     is_continuation = False
 
     content_ascent = 0
 
     def __init__(self, style, element, text):
         super(GLTextFrame, self).__init__(style, element, text)
+
+    def lstrip(self):
+        text = self.text[self.from_index:self.to_index]
+        self.from_index += len(text) - len(text.lstrip())
 
     def flow_inline(self, containing_block, remaining_width):
         # Clear previous flow continuation if any
@@ -230,7 +234,8 @@ class GLTextFrame(TextFrame):
         # Get GL glyph sequence if not already cached
         font = self.get_computed_property('--font').font
         if not self.glyph_string:
-            self.glyph_string = pyglet.text.GlyphString(self.text, font.get_glyphs(self.text))
+            self.glyph_string = pyglet.text.GlyphString(
+                self.text, font.get_glyphs(self.text))
 
         computed = self.get_computed_property
         def used(property):
@@ -242,13 +247,17 @@ class GLTextFrame(TextFrame):
         # Calculate computed and used values of box properties when
         # relative to containing block width.
         # margin top/bottom remain at class default 0
-        content_right = computed('border-right-width') + used('padding-right')
-        content_bottom = computed('border-bottom-width') + used('padding-bottom')
-        self.content_top = computed('border-top-width') + used('padding-top')
+        content_right = computed('border-right-width') + \
+            used('padding-right')
+        content_bottom = computed('border-bottom-width') + \
+            used('padding-bottom')
+        self.content_top = computed('border-top-width') + \
+            used('padding-top')
         self.margin_right = used('margin-right')
         if not self.is_continuation:
             self.margin_left = used('margin-left')
-            self.content_left = computed('border-left-width') + used('padding-left')
+            self.content_left = computed('border-left-width') + \
+                used('padding-left')
 
         # Calculate text metrics (actually not dependent on flow, could
         # optimise out).
@@ -275,8 +284,23 @@ class GLTextFrame(TextFrame):
             self.continuation = GLTextFrame(
                 self.style, self.element, self.text)
             self.continuation.is_continuation = True
-            self.continuation.from_index = self.to_index + 1
+            self.continuation.from_index = self.to_index 
+            if self.text[self.to_index] == '\n':
+                self.continuation.from_index += 1
             self.continuation.glyph_string = self.glyph_string
+
+            # Needed for flow calculation of continuation
+            self.continuation.margin_left = 0
+            self.continuation.border_edge_width = \
+                self.glyph_string.get_subwidth(
+                    self.continuation.from_index, len(self.text)-1) + content_right
+            self.continuation.border_edge_height = self.border_edge_height
+            self.continuation.margin_right = self.margin_right
+            self.continuation.line_ascent = self.line_ascent
+            self.continuation.line_descent = self.line_descent
+            self.continuation.content_ascent = self.content_ascent
+            self.continuation.content_descent = self.content_descent
+
 
             self.margin_right = 0
             content_right = 0
@@ -298,3 +322,6 @@ class GLTextFrame(TextFrame):
         glPopMatrix()
         glPopAttrib()
  
+    def __repr__(self):
+        return '%s(%r)' % \
+            (self.__class__.__name__, self.text[self.from_index:self.to_index])

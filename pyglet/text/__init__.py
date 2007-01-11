@@ -126,7 +126,7 @@ class GlyphString(object):
         index = from_index
         width += self.cumulative_advance[from_index]
         for i, (c, w) in enumerate(
-                zip(self.text[from_index], 
+                zip(self.text[from_index:], 
                     self.cumulative_advance[from_index:])):
             if w > width:
                 return index
@@ -157,6 +157,9 @@ class GlyphString(object):
             if state_from + state_length < from_index:
                 continue
             state_from = max(state_from, from_index)
+            state_length = min(state_length, to_index - state_from)
+            if state_length <= 0:
+                break
             glBindTexture(GL_TEXTURE_2D, texture.id)
             glDrawArrays(GL_QUADS, state_from * 4, state_length * 4)
 

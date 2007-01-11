@@ -78,8 +78,11 @@ class VisualLayout(object):
     def reflow(self):
         if self._need_reconstruct:
             self.reconstruct()
+        initial_containing_block = self.initial_containing_block()
+        if initial_containing_block.width <= 0:
+            return
         self._need_reflow = False
-        self._root_frame.flow(self.initial_containing_block())
+        self._root_frame.flow(initial_containing_block)
         self._root_frame.resolve_bounding_box(0, 0)
 
     def get_frames_for_point(self, x, y):
