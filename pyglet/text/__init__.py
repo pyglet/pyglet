@@ -130,11 +130,11 @@ class GlyphString(object):
                 zip(self.text[from_index:], 
                     self.cumulative_advance[from_index:])):
             if w > width:
-                return to_index
+                return to_index 
             if c == '\n':
                 return i + from_index
             elif c in u'\u0020\u200b':
-                to_index = i + from_index
+                to_index = i + from_index + 1
         return to_index
 
     def get_subwidth(self, from_index, to_index):

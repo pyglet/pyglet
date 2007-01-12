@@ -37,6 +37,7 @@ class Frame(object):
     element = None
     parent = None
     children = ()
+    flowed_children = ()
     text = None
     style = None
     computed_properties = None
@@ -84,20 +85,6 @@ class Frame(object):
         '''
         raise NotImplementedError('abstract')
 
-        # General form:
-        generated_block = self.create_generated_block(width)
-        for child in children:
-            child.flow(generated_block.width)
-            # update required space based on child size;
-            # check child for continuation and add into flow.
-
-        # update generated block to contain all children
-
-        for child in children:
-            child.position(x, y, generated_block)
-
-        # update size of this frame
-
     def position(self, x, y, containing_block):
         self.border_edge_left = x
         self.border_edge_top = y
@@ -131,10 +118,7 @@ class Frame(object):
         self.draw_background(lx, ly, render_device)
         self.draw_border(lx, ly, render_device)
 
-        if self.continuation:
-            self.continuation.draw(x, y, render_device)
-
-        for child in self.children:
+        for child in self.flowed_children:
             child.draw(lx, ly, render_device)
 
     def draw_background(self, x, y, render_device):
@@ -212,17 +196,8 @@ class Frame(object):
         self.bounding_box_top = ly
         self.bounding_box_right = lx + self.border_edge_width
         self.bounding_box_bottom = ly - self.border_edge_height
-        if self.continuation:
-            self.continuation.resolve_bounding_box(x, y)
-            self.bounding_box_left = \
-                min(self.bounding_box_left, self.continuation.bounding_box_left)
-            self.bounding_box_right = \
-                max(self.bounding_box_right, self.continuation.bounding_box_right)
-            self.bounding_box_top = \
-                max(self.bounding_box_top, self.continuation.bounding_box_top)
-            self.bounding_box_bottom = \
-                min(self.bounding_box_bottom, self.continuation.bounding_box_bottom)
-        for child in self.children:
+
+        for child in self.flowed_children:
             child.resolve_bounding_box(lx, ly)
             self.bounding_box_left = \
                 min(self.bounding_box_left, child.bounding_box_left)
@@ -239,7 +214,7 @@ class Frame(object):
             y < self.bounding_box_top and
             y >= self.bounding_box_bottom):
             frames = [self]
-            for child in self.children:
+            for child in self.flowed_children:
                 frames += child.get_frames_for_point(x, y)
             return frames
         return []
@@ -377,6 +352,7 @@ class BlockFrame(Frame):
         if not self.content_top:
             margin_collapse = self.margin_top
 
+        self.flowed_children = self.children
         for child in self.children:
             child.flow(containing_block)
             y += max(child.margin_top - margin_collapse, 0)
@@ -403,10 +379,14 @@ class BlockFrame(Frame):
         lines = [LineBox(self, strip_lines)]
         buffer = []
         y = 0
+        self.flowed_children = []
         for child in self.children:
             child.flow_inline(containing_block, width)
+            import pdb
+            #pdb.set_trace()
 
             while child:
+                self.flowed_children.append(child)
                 c_width = child.margin_left + child.border_edge_width + \
                     child.margin_right
 
@@ -562,17 +542,23 @@ class InlineFrame(Frame):
                 frame.line_ascent = frame.content_ascent
                 frame.line_descent = frame.content_descent
 
-
         frame = self
         init(frame)
         buffer = []
-        for child in self.children:
-            remaining_width -= content_right + self.margin_right
+        for i, child in enumerate(self.children):
+            import pdb
+            #pdb.set_trace()
+
+            if i == len(self.children) - 1:
+                remaining_width -= content_right - self.margin_right
             child.flow_inline(containing_block, remaining_width)
 
             while child:
                 c_width = child.margin_left + child.border_edge_width + \
                     child.margin_right
+
+                import pdb
+                #pdb.set_trace()
 
                 if remaining_width - c_width < 0 and frame.flowed_children:
                     continuation = InlineFrame(self.style, self.element)
@@ -601,7 +587,6 @@ class InlineFrame(Frame):
                     add(child)
                 else:
                     buffer.append(child)
-
                 child = child.continuation
 
         for f in buffer:
@@ -613,22 +598,16 @@ class InlineFrame(Frame):
     def position(self, x, y, containing_block):
         super(InlineFrame, self).position(x, y, containing_block)
         x = self.content_left
-        baseline = y + self.content_ascent
+        baseline = self.content_ascent
         for child in self.flowed_children:
             x += child.margin_left
             valign = child.get_computed_property('vertical-align')
             if valign == 'baseline':
                 ly = baseline - child.content_ascent + child.margin_top
             elif valign == 'top':
-                ly = y + child.margin_top
+                ly = child.margin_top
             child.position(x, ly, containing_block)
             x += child.border_edge_width + child.margin_right
-
-    def draw(self, x, y, render_device):
-        c = self.children
-        self.children = self.flowed_children
-        super(InlineFrame, self).draw(x, y, render_device)
-        self.children = c
 
 class TextFrame(InlineFrame):
     def __init__(self, style, element, text):
@@ -641,20 +620,18 @@ class TextFrame(InlineFrame):
         x += self.border_edge_left
         y -= self.border_edge_top
 
-        # Align baseline to integer
-        rounding = (y - self.content_ascent) - int(y - self.content_ascent)
-        y -= rounding
-
         self.draw_background(x, y, render_device)
         self.draw_border(x, y, render_device)
+
+        # Align baseline to integer (not background/border, that screws up
+        # touching borders).
+        rounding = (y - self.content_ascent) - int(y - self.content_ascent)
+        y -= rounding
 
         self.draw_text(x + self.content_left, 
                        y - self.content_ascent, 
                        render_device)
 
-        if self.continuation:
-            self.continuation.draw(orig_x, orig_y, render_device)
-        
     def draw_text(self, x, y, render_context):
         '''Draw text with baseline at y.'''
         raise NotImplementedError('abstract')

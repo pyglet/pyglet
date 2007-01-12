@@ -279,21 +279,25 @@ class GLTextFrame(TextFrame):
 
             frame.to_index = self.glyph_string.get_break_index(
                 frame.from_index, remaining_width)
-            if frame.to_index == frame.from_index:
+            # If none of text fits, use all text, only if next frame will
+            # have same space to play with as this one (currently (no floats)
+            # true for non-first line).
+            if frame.to_index == frame.from_index and frame is not self:
                 frame.to_index = len(self.text)
-            frame.border_edge_width += self.glyph_string.get_subwidth(
-                    frame.from_index, frame.to_index)
+            if frame.to_index != frame.from_index:
+                frame.border_edge_width += self.glyph_string.get_subwidth(
+                        frame.from_index, frame.to_index)
 
-            if frame.to_index < len(self.text):
+            if frame.to_index < len(self.text) or \
+               self.text[-1] in u'\u0020\u200b':
                 continuation = GLTextFrame(
                     self.style, self.element, self.text)
                 continuation.glyph_string = self.glyph_string
                 continuation.is_continuation = True
-                continuation.from_index = frame.to_index 
-                if self.text[frame.to_index] == '\n':
-                    continuation.from_index += 1
+                continuation.from_index = continuation.to_index = frame.to_index
 
                 continuation.border_edge_height = self.border_edge_height
+                continuation.border_edge_width = 0
                 continuation.margin_right = self.margin_right
                 continuation.line_ascent = self.line_ascent
                 continuation.line_descent = self.line_descent
@@ -307,7 +311,8 @@ class GLTextFrame(TextFrame):
                 frame.continuation = continuation
                 frame = continuation
                 remaining_width = containing_block.width
-            else:
+
+            if frame.to_index >= len(self.text):
                 break
 
 
