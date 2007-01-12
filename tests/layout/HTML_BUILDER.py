@@ -35,48 +35,48 @@ class HTMLBuilderTest(unittest.TestCase):
         
     def test_sanity(self):
         self.check(
-   '<html><head><title>Goodbye</title></head><body><p>Hello</p></body></html>',
-   '<html><head><title>Goodbye</title></head><body><p>Hello</p></body></html>')
+   '<html><body><p>Hello</p></body></html>',
+   '<html><body><p>Hello</p></body></html>')
 
     def test_noopen_html(self):
         self.check(
    '<head><title>Goodbye</title></head><body><p>Hello</p></body></html>',
-   '<html><head><title>Goodbye</title></head><body><p>Hello</p></body></html>')
+   '<html><body><p>Hello</p></body></html>')
 
     def test_noopen_head(self):
         self.check(
    '<title>Goodbye</title></head><body><p>Hello</p></body></html>',
-   '<html><head><title>Goodbye</title></head><body><p>Hello</p></body></html>')
+   '<html><body><p>Hello</p></body></html>')
 
     def test_noopen_body(self):
         self.check(
    '<title>Goodbye</title></head><p>Hello</p></body></html>',
-   '<html><head><title>Goodbye</title></head><body><p>Hello</p></body></html>')
+   '<html><body><p>Hello</p></body></html>')
 
     def test_noclose_html(self):
         self.check(
    '<html><head><title>Goodbye</title></head><body><p>Hello</p></body>',
-   '<html><head><title>Goodbye</title></head><body><p>Hello</p></body></html>')
+   '<html><body><p>Hello</p></body></html>')
 
     def test_noclose_head(self):
         self.check(
    '<html><head><title>Goodbye</title><body><p>Hello</p></body>',
-   '<html><head><title>Goodbye</title></head><body><p>Hello</p></body></html>')
+   '<html><body><p>Hello</p></body></html>')
 
     def test_noclose_title(self):
         self.check(
    '<html><head><title>Goodbye</head><body><p>Hello</p></body>',
-   '<html><head><title>Goodbye</title></head><body><p>Hello</p></body></html>')
+   '<html><body><p>Hello</p></body></html>')
 
     def test_noclose_any(self):
         self.check(
    '<html><head><title>Goodbye<body><p>Hello',
-   '<html><head><title>Goodbye</title></head><body><p>Hello</p></body></html>')
+   '<html><body><p>Hello</p></body></html>')
 
     def test_minimal(self):
         self.check(
    '<title>Goodbye<p>Hello',
-   '<html><head><title>Goodbye</title></head><body><p>Hello</p></body></html>')
+   '<html><body><p>Hello</p></body></html>')
 
     def test_zen(self):
         self.check(

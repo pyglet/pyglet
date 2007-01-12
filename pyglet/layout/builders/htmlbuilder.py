@@ -13,6 +13,7 @@ from pyglet.layout.content import *
 from pyglet.layout.css import *
 from pyglet.layout.builders import *
 from pyglet.layout.builders.htmlstylesheet import *
+from pyglet.layout.builders.xhtmlbuilder import *
 
 __all__ = ['HTMLElement', 'HTMLBuilder']
 
@@ -206,7 +207,7 @@ class HTMLBuilderParser(HTMLParser):
     def handle_entityref(self, name):
         self.builder.text(entitydefs.get(name, ''))
 
-class HTMLBuilder(ContentBuilder):
+class HTMLBuilder(XHTMLBuilder):
     element_class = HTMLElement
 
     def __init__(self, document):

@@ -60,6 +60,11 @@ class GLLayout(LayoutEventDispatcher):
         self.document = Document()
         self.set_data(data, XHTMLBuilder(self.document))
 
+    def set_html(self, data):
+        self.document = Document()
+        self.set_data(data, HTMLBuilder(self.document))
+
+
     '''
     def set_xml(self, data, stylesheet):
         formatter = XMLFormatter(self._visual.render_device, self.locator)
