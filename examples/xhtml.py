@@ -34,7 +34,7 @@ data = '''<?xml version="1.0"?>
     <h1>The Frog King</h1>
     <h2>Brothers Grimm</h2>
     <p>
-      In <span style="border:10px solid blue">olden <span style="border:10px solid red">times</span> when</span> wishing still helped one,
+      In olden times when wishing still helped one,
       there lived a king whose daughters were all beautiful, but the youngest
       was so beautiful that the sun itself, which has seen so much, was
       astonished whenever it shone in her face.  Close by the king's castle

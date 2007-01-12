@@ -294,6 +294,7 @@ layout
         Component                              GENERIC
         ====================================== =======
         HTML                                      D
+        HTML_BUILDER                              D
         INLINE_FORMATTING                         D
         INLINE_REPLACED                           D
         FONTS                                     D

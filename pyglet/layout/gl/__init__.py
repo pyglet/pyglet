@@ -11,16 +11,15 @@ from pyglet.event import *
 from pyglet.layout.visual import *
 from pyglet.layout.css import *
 from pyglet.layout.locator import *
-from pyglet.layout.formatters.xmlformatter import *
-from pyglet.layout.formatters.xhtmlformatter import *
-from pyglet.layout.formatters.htmlformatter import *
 from pyglet.layout.gl.device import *
 from pyglet.layout.gl.event import *
 from pyglet.layout.gl.image import *
 
 from pyglet.layout.content import *
 from pyglet.layout.frame import *
-from pyglet.layout.xmlbuilder import *
+from pyglet.layout.builders.htmlbuilder import *
+from pyglet.layout.builders.xmlbuilder import *
+from pyglet.layout.builders.xhtmlbuilder import *
 
 __all__ = ['Layout', 'select']
 
@@ -51,13 +50,15 @@ class GLLayout(LayoutEventDispatcher):
         # Additional box generators to add to formatters
         self.generators = []
 
-    def set_xhtml(self, data):
-        self.document = Document()
-        content_builder = XHTMLBuilder(self.document)
-        content_builder.feed(data)
-        content_builder.close()
+    def set_data(self, data, builder):
+        builder.feed(data)
+        builder.close()
         self._visual.document = self.document
         self._mouse_over_elements = set()
+        
+    def set_xhtml(self, data):
+        self.document = Document()
+        self.set_data(data, XHTMLBuilder(self.document))
 
     '''
     def set_xml(self, data, stylesheet):
