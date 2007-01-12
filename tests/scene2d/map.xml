@@ -8,21 +8,30 @@
   <image id="ibl" offset="0,0" />
   <image id="ibr" offset="64,0" />
  </imageatlas>
+ <tileset>
+  <tile id="bl"><image ref="ibl" /></tile>
+  <tile id="v"><image ref="iv" /></tile>
+  <tile id="tl"><image ref="itl" /></tile>
+  <tile id="h"><image ref="ih" /></tile>
+  <tile id="e"><image ref="ie" /></tile>
+  <tile id="br"><image ref="ibr" /></tile>
+  <tile id="tr"><image ref="itr" /></tile>
+ </tileset>
 <rectmap id="test" tile_size="32x32">
  <column>
-  <cell><tile><image ref="ibl" /></tile></cell>
-  <cell><tile><image ref="iv" /></tile></cell>
-  <cell><tile><image ref="itl" /></tile></cell>
+  <cell tile="bl" />
+  <cell tile="v" />
+  <cell tile="tl" />
  </column>
  <column>
-  <cell><tile><image ref="ih" /></tile></cell>
-  <cell><tile><image ref="ie" /></tile></cell>
-  <cell><tile><image ref="ih" /></tile></cell>
+  <cell tile="h" />
+  <cell tile="e" />
+  <cell tile="h" />
  </column>
  <column>
-  <cell><tile><image ref="ibr" /></tile></cell>
-  <cell><tile><image ref="iv" /></tile></cell>
-  <cell><tile><image ref="itr" /></tile></cell>
+  <cell tile="br" />
+  <cell tile="v" />
+  <cell tile="tr" />
  </column>
 </rectmap>
 </resource>

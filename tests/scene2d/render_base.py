@@ -93,6 +93,7 @@ class RenderBase(unittest.TestCase):
                 marker.x = r.fx
                 marker.y = r.fy
             r.clear()
+            glColor4f(1, 1, 1, 1)
             r.draw()
             self.w.flip()
         self.w.close()
