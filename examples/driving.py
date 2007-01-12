@@ -5,6 +5,7 @@ import pyglet.window
 from pyglet.window.event import *
 from pyglet.window.key import *
 import pyglet.clock
+from pyglet.euclid import Vector2, Matrix3
 from pyglet.scene2d import *
 
 w = pyglet.window.Window(width=640, height=512)
@@ -31,9 +32,10 @@ while not w.has_exit:
     speed += (keyboard[K_UP] - keyboard[K_DOWN]) * 2.5
     if speed > 10: speed = 10
     if speed < -5: speed = -5
-    angle = math.radians(car.angle)
-    car.x += -speed * math.sin(angle)
-    car.y += speed * math.cos(angle)
+    r = Matrix3.new_rotate(math.radians(car.angle))
+    v = speed * (r * Vector2(0, 1))
+    car.x += v.x
+    car.y += v.y
 
     # re-focus on the car
     if speed:
