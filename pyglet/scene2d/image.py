@@ -23,12 +23,14 @@ from pyglet.GL.VERSION_1_1 import *
 
 from pyglet.image import RawImage
 
-from pyglet.resource import register_factory
+from pyglet.resource import register_factory, ResourceError
 
 
 @register_factory('imageatlas')
 def imageatlas_factory(resource, tag):
     filename = resource.find_file(tag.getAttribute('file'))
+    if not filename:
+        raise ResourceError, 'No file= on <imageatlas> tag'
     atlas = Image2d.load(filename)
     atlas.properties = resource.handle_properties(tag)
     atlas.filename = filename
@@ -70,10 +72,11 @@ def imageatlas_factory(resource, tag):
 
 @register_factory('image')
 def image_factory(resource, tag):
-    if tag.hasAttribute('file'):
-        filename = resource.find_file(tag.getAttribute('file'))
-        image = Image2d.load(filename)
-        image.filename = filename
+    filename = resource.find_file(tag.getAttribute('file'))
+    if not filename:
+        raise ResourceError, 'No file= on <image> tag'
+    image = Image2d.load(filename)
+    image.filename = filename
 
     image.properties = resource.handle_properties(tag)
 

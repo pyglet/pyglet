@@ -39,12 +39,10 @@ class WINDOW_SET_FULLSCREEN(unittest.TestCase):
 
     def test_set_fullscreen(self):
         self.w = w = Window(200, 200)
-        exit_handler = ExitHandler()
         w.push_handlers(self)
-        w.push_handlers(exit_handler)
         w.push_handlers(DebugEventHandler())
         self.on_expose()
-        while not exit_handler.exit:
+        while not w.has_exit:
             w.dispatch_events()
         w.close()
 

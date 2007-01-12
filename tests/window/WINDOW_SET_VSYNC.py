@@ -25,9 +25,7 @@ class WINDOW_OPEN(unittest.TestCase):
     color_index = 0
 
     def open_window(self):
-        w = Window(200, 200)
-        w.push_handlers(self.exit_handler)
-        return w
+        return Window(200, 200)
 
     def on_key_press(self, key, modifiers):
         if key == K_V:
@@ -43,11 +41,9 @@ class WINDOW_OPEN(unittest.TestCase):
         window.flip()
 
     def test_open_window(self):
-        self.exit_handler = ExitHandler()
         self.w1 = self.open_window()
-        self.w1.push_handlers(self.on_key_press)
         print 'vsync is %r' % self.w1.get_vsync()
-        while not self.exit_handler.exit:
+        while not self.w1.has_exit:
             self.color_index = 1 - self.color_index
             self.draw_window(self.w1, self.colors[self.color_index])
             self.w1.dispatch_events()

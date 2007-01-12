@@ -18,9 +18,6 @@ from pyglet.model import obj
 
 w1 = pyglet.window.Window(width=300, height=300)
 
-exit_handler = ExitHandler()
-w1.push_handlers(exit_handler)
-
 c = clock.Clock(60)
 
 fourfv = ctypes.c_float * 4
@@ -44,7 +41,7 @@ glClearColor(0, 0, 0, 0)
 bunny = obj.OBJ(os.path.join(os.path.split(__file__)[0], 'rabbit.obj'))
 
 r = 0
-while not exit_handler.exit:
+while not w1.has_exit:
     c.tick()
     w1.dispatch_events()
 

@@ -43,14 +43,6 @@ class RenderBase(unittest.TestCase):
         r = pyglet.scene2d.FlatView(s, 0, 0, vx, vy)
         r.allow_oob = allow_oob
 
-        class running(pyglet.window.event.ExitHandler):
-            def __init__(self, fps=30):
-                self.clock = pyglet.clock.Clock(fps)
-            def __nonzero__(self):
-                if self.exit: return False
-                self.clock.tick()
-                return True
-
         class InputHandler(object):
             up = down = left = right = 0
             def on_key_press(self, symbol, modifiers):
@@ -80,8 +72,6 @@ class RenderBase(unittest.TestCase):
                     return
                 return pyglet.window.event.EVENT_UNHANDLED
 
-        running = running()
-        self.w.push_handlers(running)
         input = InputHandler()
         self.w.push_handlers(input)
         self.w.push_handlers(r.camera)
@@ -93,7 +83,9 @@ class RenderBase(unittest.TestCase):
             marker = Sprite(0, 0, 1, 1, Marker())
             s.sprites.append(marker)
 
-        while running:
+        clock = pyglet.clock.Clock(fps_limit=30)
+        while not self.w.has_exit:
+            clock.tick()
             self.w.dispatch_events()
             r.fx += input.left + input.right
             r.fy += input.up + input.down

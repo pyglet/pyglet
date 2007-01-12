@@ -25,6 +25,7 @@ class TestSave(ImageRegressionTestCase):
     saved_texture = None
     show_checkerboard = True
     alpha = True
+    has_exit = False
 
     def on_resize(self, width, height):
         glMatrixMode(GL_PROJECTION)
@@ -37,7 +38,7 @@ class TestSave(ImageRegressionTestCase):
         self.window.flip()
 
         if self.capture_regression_image():
-            self.exit_handler.exit = True
+            self.has_exit = True
 
     def draw(self):
         glClearColor(1, 1, 1, 1)
@@ -106,8 +107,6 @@ class TestSave(ImageRegressionTestCase):
 
     def test_save(self):
         self.window = w = self.create_window()
-        self.exit_handler = ExitHandler()
-        w.push_handlers(self.exit_handler)
         w.push_handlers(self)
         self.choose_codecs()
 
@@ -121,7 +120,7 @@ class TestSave(ImageRegressionTestCase):
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         w.set_visible()
-        while not self.exit_handler.exit:
+        while not (w.has_exit or self.has_exit):
             w.dispatch_events()
         w.close()
 

@@ -1,18 +1,28 @@
-<map tile_width="32" tile_height="32" x="0" y="0" z="0">
- <tileset id="road" filename="tiles.xml" />
+<resource>
+ <imageatlas file="tiles.png" size="32x32" >
+  <image id="itl" offset="0,64" />
+  <image id="ih" offset="32,64" />
+  <image id="itr" offset="64,64" />
+  <image id="iv" offset="0,32" />
+  <image id="ie" offset="32,32" />
+  <image id="ibl" offset="0,0" />
+  <image id="ibr" offset="64,0" />
+ </imageatlas>
+<rectmap id="test" tile_size="32x32">
  <column>
-  <cell set="road" tile="bl" />
-  <cell set="road" tile="v" />
-  <cell set="road" tile="tl" />
+  <cell><tile><image ref="ibl" /></tile></cell>
+  <cell><tile><image ref="iv" /></tile></cell>
+  <cell><tile><image ref="itl" /></tile></cell>
  </column>
  <column>
-  <cell set="road" tile="h" />
-  <cell set="road" tile="e" />
-  <cell set="road" tile="h" />
+  <cell><tile><image ref="ih" /></tile></cell>
+  <cell><tile><image ref="ie" /></tile></cell>
+  <cell><tile><image ref="ih" /></tile></cell>
  </column>
  <column>
-  <cell set="road" tile="br" />
-  <cell set="road" tile="v" />
-  <cell set="road" tile="tr" />
+  <cell><tile><image ref="ibr" /></tile></cell>
+  <cell><tile><image ref="iv" /></tile></cell>
+  <cell><tile><image ref="itr" /></tile></cell>
  </column>
-</map>
+</rectmap>
+</resource>

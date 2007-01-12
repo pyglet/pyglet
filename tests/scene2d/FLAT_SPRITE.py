@@ -33,20 +33,13 @@ class SpriteModelTest(unittest.TestCase):
         s = Scene(sprites=[ball])
         view = FlatView(s, 0, 0, 320, 320)
 
-        class running(pyglet.window.event.ExitHandler):
-            def __init__(self, fps=30):
-                self.clock = pyglet.clock.Clock(fps)
-            def __nonzero__(self):
-                if self.exit: return False
-                self.clock.tick()
-                return True
-        running = running()
-        w.push_handlers(running)
         w.push_handlers(view.camera)
 
         dx, dy = (10, 5)
 
-        while running:
+        clock = pyglet.clock.Clock(fps_limit=30)
+        while not w.has_exit:
+            clock.tick()
             w.dispatch_events()
 
             # move, check bounds

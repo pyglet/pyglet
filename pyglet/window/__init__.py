@@ -36,14 +36,8 @@ onto them::
     >>> win.push_handlers(MyEvents())
     >>>
 
-You will almost always want to push on an instance of ExitHandler, which
-will quit the application when the window is closed or the ESC key is
-pressed.  If you don't push this handler on, you will need to manually
-close the window yourself when the close button is pressed::
-
-    >>> import pyglet.window.event
-    >>> win.push_handler(pyglet.window.event.ExitHandler())
-    >>>
+Windows automatically set an instance of ExitHandler, which sets a flag
+has_exit if the window is closed or the ESC key is pressed.
 
 The easiest way to find out the events that are available and their
 parameters, use the DebugEventHandler, which will print out all events
@@ -189,7 +183,7 @@ __version__ = '$Id$'
 import pprint
 import sys
 
-from pyglet.window.event import WindowEventDispatcher
+from pyglet.window.event import WindowEventDispatcher, ExitHandler
 import pyglet.window.key
 
 # List of contexts currently in use, so we can create new contexts that
@@ -352,6 +346,11 @@ class BaseWindow(WindowEventDispatcher):
 
     def __init__(self):
         WindowEventDispatcher.__init__(self)
+
+        self.exit_handler = ExitHandler()
+        self.set_handlers(self.exit_handler)
+
+    has_exit = property(lambda self: self.exit_handler.has_exit)
 
     def create(self, factory):
         self._config = factory.get_config()
@@ -819,5 +818,4 @@ class Window(_platform.get_window_class()):
         if visible:
             self.set_visible(True)
             self.activate()
-
 

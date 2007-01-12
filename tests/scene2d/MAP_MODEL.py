@@ -22,7 +22,7 @@ class MapModelTest(unittest.TestCase):
         #    +---+---+---+
         #    | a | b | c |
         #    +---+---+---+
-        m = RectMap(10, 16, cells=gen_rect_map(['ad', 'be', 'cf'], 10, 16))
+        m = gen_rect_map(['ad', 'be', 'cf'], 10, 16)
         t = m.get((0,0))
         assert (t.x, t.y) == (0, 0) and t.meta == 'a'
         assert m.get_neighbor(t, m.DOWN) is None
@@ -61,7 +61,7 @@ class MapModelTest(unittest.TestCase):
         #    +---+---+---+
         #    | a | b | c |
         #    +---+---+---+
-        m = RectMap(10, 16, cells=gen_rect_map(['ad', 'be', 'cf'], 10, 16))
+        m = gen_rect_map(['ad', 'be', 'cf'], 10, 16)
 
         # test tile sides / corners
         t = m.get((0,0))
@@ -86,7 +86,7 @@ class MapModelTest(unittest.TestCase):
         # \_/c\_/g\
         # /a\_/e\_/
         # \_/ \_/ 
-        m = HexMap(32, cells=gen_hex_map(['ab', 'cd', 'ef', 'gh'], 32))
+        m = gen_hex_map(['ab', 'cd', 'ef', 'gh'], 32)
         t = m.get((0,0))
         assert (t.x, t.y) == (0, 0) and t.meta == 'a'
         assert m.get_neighbor(t, m.DOWN) is None
@@ -144,7 +144,7 @@ class MapModelTest(unittest.TestCase):
         # \_/c\_/g\
         # /a\_/e\_/
         # \_/ \_/ 
-        m = HexMap(32, cells=gen_hex_map(['ab', 'cd', 'ef', 'gh'], 32))
+        m = gen_hex_map(['ab', 'cd', 'ef', 'gh'], 32)
 
         # test tile sides / corners
         t00 = m.get((0, 0))
@@ -192,11 +192,11 @@ class MapModelTest(unittest.TestCase):
 
 
     def test_hex_dimensions(self):
-        m = HexMap(32, cells=gen_hex_map(['a'], 32))
+        m = gen_hex_map(['a'], 32)
         assert m.pxw, m.pxh == (36, 32)
-        m = HexMap(32, cells=gen_hex_map(['ab'], 32))
+        m = gen_hex_map(['ab'], 32)
         assert m.pxw, m.pxh == (36, 64)
-        m = HexMap(32, cells=gen_hex_map(['a', 'b'], 32))
+        m = gen_hex_map(['a', 'b'], 32)
         assert m.pxw, m.pxh == (63, 48)
 
 if __name__ == '__main__':

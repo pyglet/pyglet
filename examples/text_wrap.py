@@ -35,8 +35,6 @@ def on_key_press(symbol, modifiers):
     else:
         return EVENT_UNHANDLED
 
-exit_handler = ExitHandler()
-window.push_handlers(exit_handler)
 window.push_handlers(on_resize)
 window.push_handlers(on_text)
 window.push_handlers(on_key_press)
@@ -47,7 +45,7 @@ glClearColor(1, 1, 1, 1)
 
 on_resize(window.width, window.height)
 
-while not exit_handler.exit:
+while not window.has_exit:
     window.dispatch_events()
 
     glClear(GL_COLOR_BUFFER_BIT)

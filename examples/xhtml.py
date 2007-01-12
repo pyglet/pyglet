@@ -18,8 +18,6 @@ from pyglet.text import *
 from pyglet.layout import *
 
 window = Window(visible=False)
-exit_handler = ExitHandler()
-window.push_handlers(exit_handler)
 
 data = '''<?xml version="1.0"?>
 <html>  
@@ -236,7 +234,7 @@ clock = Clock()
 
 window.set_visible()
 
-while not exit_handler.exit:
+while not window.has_exit:
     clock.tick()
     print 'FPS = %.2f\r' % clock.get_fps(),
 

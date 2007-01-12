@@ -111,8 +111,6 @@ class CubeGenerator(BoxGenerator):
 
 # Create a window, attach the usual event handlers
 window = Window(visible=False)
-exit_handler = ExitHandler()
-window.push_handlers(exit_handler)
 
 layout = Layout()
 layout.add_generator(CubeGenerator())
@@ -132,7 +130,7 @@ window.set_visible()
 
 rate = 50
 
-while not exit_handler.exit:
+while not window.has_exit:
     dt = clock.tick()
     CubeBox.angle += dt * rate
     print 'FPS = %.2f\r' % clock.get_fps(),

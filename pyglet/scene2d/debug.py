@@ -9,7 +9,8 @@ Simple images etc. to aid debugging
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.scene2d.map import RectCell, HexCell, Tile
+from pyglet.scene2d.map import RectMap, HexMap, RectCell, HexCell
+from pyglet.scene2d.tile import Tile
 from pyglet.GL.VERSION_1_1 import *
 
 class HexCheckImage:
@@ -58,7 +59,7 @@ def gen_hex_map(meta, h):
             if not i % 2:  k += 1
             image = HexCheckImage(HexCheckImage.COLOURS[k%3], cell)
             c.append(HexCell(i, j, h, info, Tile(None, None, image)))
-    return r
+    return HexMap('debug', h, r)
 
 def gen_rect_map(meta, w, h):
     r = []
@@ -72,4 +73,5 @@ def gen_rect_map(meta, w, h):
             else:
                 image = RectCheckImage(w, h, (.9, .9, .9, 1))
             c.append(RectCell(i, j, w, h, info, Tile(None, None, image)))
-    return r
+    return RectMap('debug', w, h, r)
+

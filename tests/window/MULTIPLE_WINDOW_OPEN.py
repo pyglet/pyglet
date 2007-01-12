@@ -19,9 +19,7 @@ from pyglet.GL.VERSION_1_1 import *
 
 class MULTIPLE_WINDOW_OPEN(unittest.TestCase):
     def open_window(self):
-        w = Window(200, 200)
-        w.push_handlers(self.exit_handler)
-        return w
+        return Window(200, 200)
 
     def draw_window(self, window, colour):
         window.switch_to()
@@ -30,10 +28,9 @@ class MULTIPLE_WINDOW_OPEN(unittest.TestCase):
         window.flip()
 
     def test_open_window(self):
-        self.exit_handler = ExitHandler()
         w1 = self.open_window()
         w2 = self.open_window()
-        while not self.exit_handler.exit:
+        while not (w1.has_exit or w2.has_exit):
             self.draw_window(w1, (1, 0, 1, 1))
             self.draw_window(w2, (1, 1, 0, 1))
             w1.dispatch_events()

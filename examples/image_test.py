@@ -18,9 +18,6 @@ window = pyglet.window.Window(width=400, height=400)
 
 image = Image2d.load(sys.argv[1])
 
-exit_handler = ExitHandler()
-window.push_handlers(exit_handler)
-
 c = clock.Clock(60)
 
 glMatrixMode(GL_PROJECTION)
@@ -36,7 +33,7 @@ glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 glEnable(GL_BLEND)
 
 r = 0
-while not exit_handler.exit:
+while not window.has_exit:
     c.tick()
     window.dispatch_events()
 

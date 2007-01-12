@@ -52,12 +52,10 @@ def blend_to_color(r, g, b, s):
         (c_float * 4)(r + (1-s)*(1-r), g + (1-s)*(1-g), b + (1-s)*(1-b), 1))
     glColor3f(s*r, s*g, s*b)
 
-exit_handler = ExitHandler()
 clock = Clock()
 w = Window()
 w.push_handlers(on_resize)
 w.push_handlers(on_key_press)
-w.push_handlers(exit_handler)
 on_resize(w.width, w.height)
 
 tex = Texture.load('tests/image/rgba.png')
@@ -72,7 +70,7 @@ target = [0, 0, 0, 1]
 
 print_target()
 
-while not exit_handler.exit:
+while not w.has_exit:
     dt = clock.tick() / 2
     if current != target:
         # hacky linear vector interpolation

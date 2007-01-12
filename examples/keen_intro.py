@@ -15,9 +15,6 @@ from pyglet.text import *
 width, height = 640, 480
 window = Window(width=width, height=height)
 
-exit_handler = ExitHandler()
-window.push_handlers(exit_handler)
-
 font = Font('Arial', 500, bold=True)
 commander = TextSprite(font, 'COMMANDER', color=(1, 1, 1, 0.5))
 keen = TextSprite(font, 'KEEN', color=(1, 1, 1, 0.5))
@@ -33,7 +30,7 @@ glMatrixMode(GL_MODELVIEW)
 
 clock = Clock()
 
-while not exit_handler.exit:
+while not window.has_exit:
     window.dispatch_events()
     time = clock.tick()
     glClear(GL_COLOR_BUFFER_BIT)

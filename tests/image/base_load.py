@@ -23,6 +23,7 @@ class TestLoad(ImageRegressionTestCase):
     texture = None
     show_checkerboard = True
     alpha = True
+    has_exit = False
 
     def on_resize(self, width, height):
         glMatrixMode(GL_PROJECTION)
@@ -61,7 +62,7 @@ class TestLoad(ImageRegressionTestCase):
         self.window.flip()
 
         if self.capture_regression_image():
-            self.exit_handler.exit = True
+            self.has_exit = True
 
     def setUp(self):
         self.__encoder_state = get_encoders_state()
@@ -80,8 +81,6 @@ class TestLoad(ImageRegressionTestCase):
         width, height = 800, 600
         self.window = w = Window(width, height, visible=False)
         self.choose_codecs()
-        self.exit_handler = ExitHandler()
-        w.push_handlers(self.exit_handler)
         w.push_handlers(self)
 
         self.checkerboard = \
@@ -98,7 +97,7 @@ class TestLoad(ImageRegressionTestCase):
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         w.set_visible()
-        while not self.exit_handler.exit:
+        while not (w.has_exit or self.has_exit):
             w.dispatch_events()
         w.close()
 

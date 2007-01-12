@@ -48,15 +48,13 @@ class TextTestBase(ImageRegressionTestCase):
     def test_main(self):
         width, height = 200, 200
         self.window = w = Window(width, height, visible=False)
-        self.exit_handler = ExitHandler()
-        w.push_handlers(self.exit_handler)
         w.push_handlers(self)
 
         self.create_font()
         self.render()
 
         w.set_visible()
-        while not self.exit_handler.exit:
+        while not w.has_exit:
             w.dispatch_events()
         w.close()
 

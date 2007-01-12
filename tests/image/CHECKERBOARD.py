@@ -34,19 +34,17 @@ class TEST_CHECKERBOARD(ImageRegressionTestCase):
         self.window.flip()
 
         if self.capture_regression_image():
-            self.exit_handler.exit = True
+            self.has_exit = True
 
     def test_main(self):
         width, height = 200, 200
         self.window = w = Window(width, height, visible=False)
-        self.exit_handler = ExitHandler()
-        w.push_handlers(self.exit_handler)
         w.push_handlers(self)
 
         self.texture = Image2d.from_image(Image.create_checkerboard(width))
 
         w.set_visible()
-        while not self.exit_handler.exit:
+        while not (w.has_exit or self.has_exit):
             w.dispatch_events()
         w.close()
 

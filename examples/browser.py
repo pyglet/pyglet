@@ -36,8 +36,6 @@ locator = create_locator(url)
 file = locator.get_default_stream()
 
 window = Window(visible=False)
-exit_handler = ExitHandler()
-window.push_handlers(exit_handler)
 offset_top = 0
 layout_height = 0
 
@@ -99,7 +97,7 @@ glClearColor(1, 1, 1, 1)
 clock = Clock()
 window.set_visible()
 
-while not exit_handler.exit:
+while not window.has_exit:
     clock.tick()
     print 'FPS = %.2f\r' % clock.get_fps(),
 

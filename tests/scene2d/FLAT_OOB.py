@@ -16,12 +16,11 @@ __version__ = '$Id$'
 import unittest
 from render_base import RenderBase
 import pyglet.scene2d
-from pyglet.scene2d.debug import genmap
+from pyglet.scene2d.debug import gen_rect_map
 
 class HexFlatDebugTest(RenderBase):
     def test_main(self):
-        m = pyglet.scene2d.RectMap(32, 32, genmap(['a'*10]*10, 32, 32,
-            pyglet.scene2d.RectCell))
+        m = gen_rect_map(['a'*10]*10, 32, 32)
         self.run_test(m, (256, 256), show_focus=True)
 
 if __name__ == '__main__':

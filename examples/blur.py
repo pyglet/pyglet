@@ -824,8 +824,6 @@ screen_width = 800
 screen_height = 600
 
 window = pyglet.window.create(screen_width, screen_height)
-exit_handler = ExitHandler()
-window.push_handlers(exit_handler)
 
 clk = pyglet.clock.Clock(60)
 
@@ -865,7 +863,7 @@ buf_subsampled2.unbind()
 
 object = cube_array_list()
 
-while not exit_handler.exit:
+while not window.has_exit:
     clk.tick()
 
     window.dispatch_events()

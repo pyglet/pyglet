@@ -7,7 +7,7 @@ from pyglet.scene2d.camera import FlatCamera
 from pyglet.scene2d.view import FlatView, ViewScrollHandler
 from pyglet.scene2d.sprite import Sprite
 from pyglet.scene2d.image import Image2d
-from pyglet.scene2d.tiles import TileSet, Tile
+from pyglet.scene2d.tile import TileSet, Tile
 
 __all__ = [ 'RectMap', 'HexMap', 'RectCell', 'HexCell', 'Scene', 'FlatCamera',
     'FlatView', 'ViewScrollHandler', 'Sprite', 'Image2d', 'TileSet', 'Tile']

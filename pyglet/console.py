@@ -121,8 +121,6 @@ if __name__ == '__main__':
     w1 = Window(width=600, height=400)
     console = Console(w1.width, w1.height)
 
-    exit_handler = ExitHandler()
-    w1.push_handlers(exit_handler)
     w1.push_handlers(console)
 
     c = clock.Clock()
@@ -134,7 +132,7 @@ if __name__ == '__main__':
 
     glMatrixMode(GL_MODELVIEW)
     glClearColor(1, 1, 1, 1)
-    while not exit_handler.exit:
+    while not w1.has_exit:
         c.set_fps(60)
         w1.dispatch_events()
         glClear(GL_COLOR_BUFFER_BIT)

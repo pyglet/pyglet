@@ -37,14 +37,12 @@ class WINDOW_INITIAL_FULLSCREEN(unittest.TestCase):
         self.w.flip()
 
     def test_initial_fullscreen(self):
-        self.exit_handler = ExitHandler()
         screen = pyglet.window.get_factory().get_screens()[0]
         self.w = Window(screen.width, screen.height, True)
         self.w.push_handlers(self)
-        self.w.push_handlers(self.exit_handler)
         self.w.push_handlers(DebugEventHandler())
         self.on_expose()
-        while not self.exit_handler.exit:
+        while not self.w.has_exit:
             self.w.dispatch_events()
         self.w.close()
 

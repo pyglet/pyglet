@@ -39,9 +39,7 @@ class MULTIPLE_SCREEN(unittest.TestCase):
         factory.set_gl_attribute('doublebuffer', True)
         factory.set_screen(screen)
         self.w = factory.create_window()
-        self.exit_handler = ExitHandler()
         self.w.push_handlers(self)
-        self.w.push_handlers(self.exit_handler)
         self.w.set_visible()
 
     def on_expose(self):
@@ -56,7 +54,7 @@ class MULTIPLE_SCREEN(unittest.TestCase):
             self.index = i
             self.open_next_window()
             self.on_expose()
-            while not self.exit_handler.exit:
+            while not self.w.has_exit:
                 self.w.dispatch_events()
             self.w.close()
 

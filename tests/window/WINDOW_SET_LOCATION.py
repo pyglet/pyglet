@@ -36,10 +36,8 @@ class WINDOW_SET_SIZE(unittest.TestCase):
 
     def test_set_size(self):
         self.w = w = Window(200, 200)
-        exit_handler = ExitHandler()
         w.push_handlers(self)
-        w.push_handlers(exit_handler)
-        while not exit_handler.exit:
+        while not w.has_exit:
             w.dispatch_events()
         w.close()
 

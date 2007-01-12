@@ -94,9 +94,11 @@ class RectMap(RegularTesselationMap):
     and cells[0][1] = 'd'
     '''
     __slots__ = 'id pxw pxh tw th x y z cells'.split()
-    def __init__(self, id, tw, th, cells, origin=(0, 0, 0)):
+    def __init__(self, id, tw, th, cells, origin=None):
         self.id = id
         self.tw, self.th = tw, th
+        if origin is None:
+            origin = (0, 0, 0)
         self.x, self.y, self.z = origin
         self.cells = cells
         self.pxw = len(cells) * tw
@@ -268,8 +270,9 @@ class HexMap(RegularTesselationMap):
         \_/ \_/ 
     has cells = [['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h']]
     '''
-    __slots__ = 'tw th edge_length left right pxw pxh x y z cells'.split()
-    def __init__(self, th, cells, origin=(0, 0, 0)):
+    __slots__ = 'id tw th edge_length left right pxw pxh x y z cells'.split()
+    def __init__(self, id, th, cells, origin=(0, 0, 0)):
+        self.id = id
         self.th = th
         self.x, self.y, self.z = origin
         self.cells = cells

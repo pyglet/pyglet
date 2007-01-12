@@ -27,16 +27,6 @@ def setup_scene():
     glMatrixMode(GL_MODELVIEW)
     glClearColor(1, 1, 1, 1)
 
-# simple class that manages our main loop
-class running(ExitHandler):
-    def __init__(self, fps=60):
-        self.clock = pyglet.clock.Clock(fps)
-    def __nonzero__(self):
-        if self.exit: return False
-        self.clock.tick()
-        return True
-running = running()
-
 class Tree(object):
     def __init__(self, n=2, r=False):
         self.tree = tree_list(n, r)
@@ -71,16 +61,18 @@ w1 = Window(width=300, height=300)
 w1.switch_to()
 setup_scene()
 tree1 = Tree(n=10, r=True)
-w1.push_handlers(running, tree1)
+w1.push_handlers(tree1)
 
 w2 = Window(width=300, height=300)
 w2.switch_to()
 setup_scene()
 tree2 = Tree(n=10, r=False)
-w2.push_handlers(running, tree2)
+w2.push_handlers(tree2)
 
 n = 0
-while running:
+clock = pyglet.clock.Clock(fps_limit=30)
+while not (w1.has_exit or w2.has_exit):
+    clock.tick()
     n += 1
 
     # draw

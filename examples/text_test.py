@@ -20,9 +20,6 @@ layout.render_device.width = 400
 layout.render_device.height = 200
 layout.layout()
 
-exit_handler = ExitHandler()
-w.push_handlers(exit_handler)
-
 c = clock.Clock(10)
 
 glMatrixMode(GL_PROJECTION)
@@ -31,7 +28,7 @@ glOrtho(0, w.width, 0, w.height, -1, 1)
 glMatrixMode(GL_MODELVIEW)
 glClearColor(1, 1, 1, 1)
 
-while not exit_handler.exit:
+while not w.has_exit:
     c.tick()
     w.dispatch_events()
 

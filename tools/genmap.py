@@ -91,13 +91,7 @@ w = pyglet.window.Window(width=m.pxw, height=m.pxh)
 s = pyglet.scene2d.Scene(maps=[m])
 r = pyglet.scene2d.FlatView(s, 0, 0, m.pxw, m.pxh, allow_oob=False)
 
-class running(pyglet.window.event.ExitHandler):
-    def __init__(self, fps=5):
-        self.clock = pyglet.clock.Clock(fps)
-    def __nonzero__(self):
-        if self.exit: return False
-        self.clock.tick()
-        return True
+class SaveHandler:
     def on_text(self, text):
         if text != 's': return pyglet.window.event.EVENT_UNHANDLED
         image = pyglet.image.BufferImage().get_raw_image()
@@ -108,11 +102,11 @@ class running(pyglet.window.event.ExitHandler):
             n += 1
         print 'Saving to %s...'%fn
         image.save(fn)
+w.push_handlers(SaveHandler())
 
-running = running()
-w.push_handlers(running)
-
-while running:
+clock = pyglet.clock.Clock(fps_limit=10)
+while not w.has_exit:
+    clock.tick()
     w.switch_to()
     w.dispatch_events()
     r.clear()

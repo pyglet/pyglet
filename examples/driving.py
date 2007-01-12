@@ -17,21 +17,13 @@ scene = pyglet.scene2d.Scene(maps=[m], sprites=[car])
 view = pyglet.scene2d.FlatView.from_window(scene, w, allow_oob=False)
 w.push_handlers(view.camera)
 
-class running(ExitHandler):
-    def __init__(self, fps=30):
-        self.clock = pyglet.clock.Clock(fps)
-    def __nonzero__(self):
-        if self.exit: return False
-        self.clock.tick()
-        return True
-running = running()
-w.push_handlers(running)
-
 keyboard = KeyboardStateHandler()
 w.push_handlers(keyboard)
 
 speed = 0
-while running:
+clock = pyglet.clock.Clock(fps_limit=30)
+while not w.has_exit:
+    clock.tick()
     w.dispatch_events()
 
     # handle input and move the car

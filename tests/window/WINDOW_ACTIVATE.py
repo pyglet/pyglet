@@ -21,11 +21,9 @@ from pyglet.window.event import *
 class WINDOW_ACTVATE(unittest.TestCase):
     def test_activate(self):
         w = Window(200, 200)
-        exit_handler = ExitHandler()
-        w.push_handlers(exit_handler)
         w.push_handlers(DebugEventHandler())
         last_time = time.time()
-        while not exit_handler.exit:
+        while not w.has_exit:
             if time.time() - last_time > 5:
                 w.activate()
                 last_time = time.time()

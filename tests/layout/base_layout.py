@@ -30,8 +30,6 @@ class LayoutTestBase(unittest.TestCase):
     def test_main(self):
         width, height = 800, 600
         self.window = w = Window(width, height, visible=False)
-        self.exit_handler = ExitHandler()
-        w.push_handlers(self.exit_handler)
         w.push_handlers(self)
 
         self.layout = Layout()
@@ -42,7 +40,7 @@ class LayoutTestBase(unittest.TestCase):
             self.layout.set_html(self.html)
 
         w.set_visible()
-        while not self.exit_handler.exit:
+        while not w.has_exit:
             w.dispatch_events()
             self.on_expose()
         w.close()

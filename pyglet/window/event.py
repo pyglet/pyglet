@@ -146,12 +146,12 @@ class ExitHandler(object):
     '''Simple handler that detects the window close button or escape key
     press.
     '''
-    exit = False
+    has_exit = False
     def on_close(self):
-        self.exit = True
+        self.has_exit = True
     def on_key_press(self, symbol, modifiers):
         if symbol == pyglet.window.key.K_ESCAPE:
-            self.exit = True
+            self.has_exit = True
         return EVENT_UNHANDLED
 
 class KeyboardStateHandler(dict):

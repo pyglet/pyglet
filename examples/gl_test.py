@@ -14,10 +14,7 @@ from pyglet.GL.VERSION_1_1 import *
 from pyglet.GLU.VERSION_1_1 import *
 from pyglet import clock
 
-w1 = pyglet.window.Window(200, 200)
-
-exit_handler = ExitHandler()
-w1.push_handlers(exit_handler)
+w = pyglet.window.Window(200, 200)
 
 c = clock.Clock(60)
 
@@ -29,9 +26,9 @@ glMatrixMode(GL_MODELVIEW)
 glClearColor(1, 1, 1, 1)
 glColor4f(.5, .5, .5, .5)
 r = 0
-while not exit_handler.exit:
+while not w.has_exit:
     c.tick()
-    w1.dispatch_events()
+    w.dispatch_events()
 
     glClear(GL_COLOR_BUFFER_BIT)
     glLoadIdentity()
@@ -46,5 +43,5 @@ while not exit_handler.exit:
     glVertex3f(1., -1., -5.)
     glEnd()
 
-    w1.flip()
+    w.flip()
 

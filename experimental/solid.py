@@ -87,8 +87,6 @@ if __name__ == '__main__':
 
     clock = Clock()
     w = Window()
-    exit_handler = ExitHandler()
-    w.push_handlers(exit_handler)
     w.push_handlers(on_resize)
     on_resize(w.width, w.height)
 
@@ -106,7 +104,7 @@ if __name__ == '__main__':
 
     shapes = []
 
-    while not exit_handler.exit:
+    while not w.has_exit:
         dt = clock.tick()
         if len(shapes) < 100:
             shape = choice([Cube, Tetrahedron])()

@@ -40,20 +40,17 @@ def draw():
     glEnd()
 
 w1 = pyglet.window.Window(200, 200)
-exit_handler = ExitHandler()
-w1.push_handlers(exit_handler)
 w1.switch_to()
 setup()
 
 c = clock.Clock(60)
 w2 = pyglet.window.Window(400, 400)
-w2.push_handlers(exit_handler)
 w2.switch_to()
 setup()
 
 
 r = 0
-while not exit_handler.exit:
+while not (w1.has_exit or w2.has_exit):
     c.tick()
 
     w1.switch_to()

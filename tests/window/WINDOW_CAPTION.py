@@ -22,14 +22,11 @@ class WINDOW_CAPTION(unittest.TestCase):
     def test_caption(self):
         w1 = Window(200, 200)
         w2 = Window(200, 200)
-        exit_handler = ExitHandler()
-        w1.push_handlers(exit_handler)
-        w2.push_handlers(exit_handler)
         count = 1
         w1.set_caption('Window caption %d' % count)
         w2.set_caption(u'\u00bfHabla espa\u00f1ol?')
         last_time = time.time()
-        while not exit_handler.exit:
+        while not (w1.has_exit or w2.has_exit):
             if time.time() - last_time > 1:
                 count += 1
                 w1.set_caption('Window caption %d' % count)
