@@ -168,6 +168,8 @@ class Resource(dict):
     def find_file(self, filename):
         if os.path.isabs(filename):
             return filename
+        if os.path.exists(filename):
+            return filename
         for path in self.paths:
             fn = os.path.join(path, filename)
             if os.path.exists(fn):
