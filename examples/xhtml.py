@@ -168,19 +168,6 @@ data = '''<?xml version="1.0"?>
 </body>
 </html> '''
 
-data = '''<?xml version="1.0"?>
-<html>
-  <body>
-    <p>
-      One two three four <span 
-      style="border: 10px solid red">five six seven eight nine 
-      <span style="border: 10px solid blue">ten eleven 
-      <span style="border: 10px solid green">twelve thirteen</span>
-      fourteen fifteen</span> sixteen seventeen eighteen</span> nineteen twenty
-    </p>
-  </body>
-</html>'''
-
 layout = Layout()
 layout.set_xhtml(data)
 
