@@ -15,12 +15,15 @@ __version__ = '$Id$'
 import unittest
 from render_base import RenderBase
 import pyglet.scene2d
-from pyglet.scene2d.debug import genmap
+from pyglet.scene2d.debug import gen_rect_map
 
-class HexFlatDebugTest(RenderBase):
+class FlatScrollingTest(RenderBase):
     def test_main(self):
         m = gen_rect_map(['a'*10]*10, 32, 32)
-        self.run_test(m, (256, 256), show_focus=True, allow_oob=True)
+        self.init_window(256, 256)
+        self.set_map(m)
+        self.show_focus()
+        self.run_test()
 
 if __name__ == '__main__':
     unittest.main()

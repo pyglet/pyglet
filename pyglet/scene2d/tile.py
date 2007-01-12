@@ -45,6 +45,10 @@ class Tile(object):
         self.properties = properties
         self.image = image
 
+    def __repr__(self):
+        return '<%s object at 0x%x id=%r properties=%r>'%(
+            self.__class__.__name__, id(self), self.id,
+                self.properties)
 
 class TileSet(dict):
     '''Contains a tile set loaded from a map file and optionally image(s).

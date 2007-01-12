@@ -59,6 +59,14 @@ class Sprite(object):
         If self.image has a .animate method it will be called.
         '''
         raise NotImplemented()
+
+    def is_inside(self, x, y):
+        '''Return True if the point is inside the sprite.'''
+        if x < self.x: return False
+        if y < self.y: return False
+        if x >= self.x + self.width: return False
+        if y >= self.y + self.height: return False
+        return True
  
     # r/w, in pixels, y extent
     def get_top(self): return self.y + self.height

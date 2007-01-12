@@ -31,10 +31,11 @@ __version__ = '$Id$'
 
 import operator
 
+from pyglet.event import EventDispatcher, EVENT_UNHANDLED
 from pyglet.scene2d.camera import FlatCamera
 from pyglet.GL.VERSION_1_1 import *
 
-class View(object):
+class View(EventDispatcher):
 
     def get(self, x, y):
         ''' Pick whatever is on the top at the pixel position x, y. '''
@@ -48,6 +49,9 @@ class View(object):
         ' query for sprite at given screen pixel position '
         raise NotImplemented()
 
+EVENT_MOUSE_DRAG = View.register_event_type('on_mouse_drag')
+EVENT_MOUSE_PRESS = View.register_event_type('on_mouse_press')
+EVENT_MOUSE_RELEASE = View.register_event_type('on_mouse_release')
 
 class FlatView(View):
     '''Render a flat view of a pyglet.scene2d.Scene.
@@ -87,6 +91,33 @@ class FlatView(View):
             self.__class__.__name__, id(self), self.fx, self.fy,
             self.allow_oob)
 
+    #
+    # EVENT HANDLING
+    #
+    def dispatch_event(self, event_type, objs, *args):
+        ''' if a handler has a limit attached then use that to filter objs
+        '''
+        for frame in self._event_stack:
+            handler = frame.get(event_type, None)
+            if handler:
+                if handler.limit is not None:
+                    l = handler.limit(objs)
+                if not l: continue
+                ret = handler(l, *args)
+                if ret != EVENT_UNHANDLED:
+                    break
+        return None
+
+    def on_mouse_press(self, button, x, y, modifiers):
+        x, y = self.translate_position(x, y)
+        objs = self.get(x, y)
+        self.dispatch_event(EVENT_MOUSE_PRESS, objs, button, x, y,
+            modifiers)
+        return EVENT_UNHANDLED
+
+    #
+    # QUERY INTERFACE
+    #
     def translate_position(self, x, y):
         '''Translate the on-screen pixel position to a Scene pixel
         position.'''
@@ -96,16 +127,32 @@ class FlatView(View):
 
     def get(self, x, y):
         ''' Pick whatever is on the top at the position x, y. '''
-        raise NotImplemented()
+        r = []
 
-    def tile_at(self, (x, y)):
+        # XXX sprite layers
+        for sprite in self.scene.sprites:
+            if sprite.is_inside(x, y):
+                r.append(sprite)
+
+        self.scene.maps.sort(key=operator.attrgetter('z'))
+        for smap in self.scene.maps:
+            cell = smap.get(px=(x, y))
+            if cell:
+                r.append(cell)
+
+        return r
+
+    def tile_at(self, x, y):
         ' query for tile at given screen pixel position '
         raise NotImplemented()
  
-    def sprite_at(self, (x, y)):
+    def sprite_at(self, x, y):
         ' query for sprite at given screen pixel position '
         raise NotImplemented()
 
+    #
+    # FOCUS ADJUSTMENT
+    #
     def _determine_focus(self):
         '''Determine the focal point of the view based on foxus (fx, fy),
         allow_oob and maps.
@@ -154,6 +201,10 @@ class FlatView(View):
 
         return map(int, (fx, fy))
 
+
+    #
+    # RENDERING
+    #
     def clear(self, colour=None, is_window=True):
         '''Clear the view.
 

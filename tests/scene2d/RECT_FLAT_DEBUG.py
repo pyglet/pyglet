@@ -17,7 +17,9 @@ from pyglet.scene2d.debug import gen_rect_map
 
 class RectFlatDebugTest(RenderBase):
     def test_main(self):
-        self.run_test(gen_rect_map(['a'*10]*10, 32, 32))
+        self.set_map(gen_rect_map(['a'*10]*10, 32, 32))
+        self.view.allow_oob = False
+        self.run_test()
 
 if __name__ == '__main__':
     unittest.main()

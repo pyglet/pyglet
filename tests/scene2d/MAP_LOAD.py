@@ -21,8 +21,9 @@ class MapLoadTest(RenderBase):
         map_xml = os.path.join(os.path.dirname(__file__), 'map.xml')
 
         self.init_window(256, 256)
-        m = pyglet.scene2d.RectMap.load_xml(map_xml, 'test')
-        self.run_test(m, show_focus=True, debug=False)
+        self.set_map(pyglet.scene2d.RectMap.load_xml(map_xml, 'test'))
+        self.view.allow_oob = False
+        self.run_test()
 
 if __name__ == '__main__':
     unittest.main()

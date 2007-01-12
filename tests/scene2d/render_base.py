@@ -10,7 +10,8 @@ import unittest
 
 from pyglet.GL.VERSION_1_1 import *
 import pyglet.window
-import pyglet.window.event
+from pyglet.window.event import *
+from pyglet.window.key import *
 import pyglet.clock
 from pyglet.scene2d import *
 
@@ -29,72 +30,41 @@ class RenderBase(unittest.TestCase):
     def init_window(self, vx, vy):
         self.w = pyglet.window.Window(width=vx, height=vy)
 
-    def run_test(self, m, viewsize=None, show_focus=False, debug=True,
-            allow_oob = False):
+    def set_map(self, m):
         if self.w is None:
-            if viewsize is None: vx, vy = m.pxw, m.pxh
-            else: vx, vy = viewsize
+            vx, vy = m.pxw, m.pxh
             self.init_window(vx, vy)
         else:
             vx = self.w.width
             vy = self.w.height
 
-        s = pyglet.scene2d.Scene(maps=[m])
-        r = pyglet.scene2d.FlatView(s, 0, 0, vx, vy)
-        r.allow_oob = allow_oob
+        self.scene = pyglet.scene2d.Scene(maps=[m])
+        self.view = pyglet.scene2d.FlatView(self.scene, 0, 0, vx, vy)
 
-        class InputHandler(object):
-            up = down = left = right = 0
-            def on_key_press(self, symbol, modifiers):
-                if symbol == pyglet.window.key.K_UP: self.up = 5
-                if symbol == pyglet.window.key.K_DOWN: self.down = -5
-                if symbol == pyglet.window.key.K_LEFT: self.left = -5
-                if symbol == pyglet.window.key.K_RIGHT: self.right = 5
-                return pyglet.window.event.EVENT_UNHANDLED
-            def on_key_release(self, symbol, modifiers):
-                if symbol == pyglet.window.key.K_UP: self.up = 0
-                if symbol == pyglet.window.key.K_DOWN: self.down = 0
-                if symbol == pyglet.window.key.K_LEFT: self.left = 0
-                if symbol == pyglet.window.key.K_RIGHT: self.right = 0
-                return pyglet.window.event.EVENT_UNHANDLED
-            lines = False
-            def on_text(self, text):
-                if text == 's':
-                    self.lines = not self.lines
-                    return
-                if text == 'd':
-                    self.show_debug = not self.show_debug
-                    raise NotImplemented()
-                    return
-                if text == 'o':
-                    r.allow_oob = not r.allow_oob
-                    print 'NOTE: allow_oob =', r.allow_oob
-                    return
-                return pyglet.window.event.EVENT_UNHANDLED
+        self.w.push_handlers(self.view.camera)
 
-        input = InputHandler()
-        self.w.push_handlers(input)
-        self.w.push_handlers(r.camera)
+        self.keyboard = KeyboardStateHandler()
+        self.w.push_handlers(self.keyboard)
 
-        print 'NOTE: allow_oob =', r.allow_oob
-        marker = None
-        if show_focus:
-            # add in a "sprite"
-            marker = Sprite(0, 0, 1, 1, Marker())
-            s.sprites.append(marker)
+    marker = None
+    def show_focus(self):
+        # add in a "sprite"
+        self.marker = Sprite(0, 0, 5, 5, Marker())
+        self.scene.sprites.append(self.marker)
 
+    def run_test(self):
         clock = pyglet.clock.Clock(fps_limit=30)
         while not self.w.has_exit:
             clock.tick()
             self.w.dispatch_events()
-            r.fx += input.left + input.right
-            r.fy += input.up + input.down
-            if marker is not None:
-                marker.x = r.fx
-                marker.y = r.fy
-            r.clear()
+            self.view.fx += (self.keyboard[K_RIGHT] - self.keyboard[K_LEFT]) * 5
+            self.view.fy += (self.keyboard[K_UP] - self.keyboard[K_DOWN]) * 5
+            if self.marker is not None:
+                self.marker.x = self.view.fx
+                self.marker.y = self.view.fy
+            self.view.clear()
             glColor4f(1, 1, 1, 1)
-            r.draw()
+            self.view.draw()
             self.w.flip()
         self.w.close()
 
