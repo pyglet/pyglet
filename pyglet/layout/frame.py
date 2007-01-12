@@ -390,7 +390,8 @@ class BlockFrame(Frame):
                 c_width = child.margin_left + child.border_edge_width + \
                     child.margin_right
 
-                if width - c_width < 0 and not lines[-1].is_empty:
+                if child.line_break or \
+                   (width - c_width < 0 and not lines[-1].is_empty):
                     # This child will not fit, start a new line
                     y += lines[-1].line_height
                     lines.append(LineBox(self, strip_lines))
@@ -478,7 +479,7 @@ class InlineFrame(Frame):
     inline_level = True
     inline_context = True
 
-    fit_flow = True
+    line_break = False
 
     line_ascent = 0
     line_descent = 0
@@ -560,7 +561,8 @@ class InlineFrame(Frame):
                 import pdb
                 #pdb.set_trace()
 
-                if remaining_width - c_width < 0 and frame.flowed_children:
+                if child.line_break or \
+                   (remaining_width - c_width < 0 and frame.flowed_children):
                     continuation = InlineFrame(self.style, self.element)
                     continuation.is_continuation = True
                     continuation.margin_right = self.margin_right
@@ -658,7 +660,7 @@ class FrameBuilder(object):
 
         self.replaced_element_builders = {}
 
-    def create_frame(self, element):
+    def create_frame(self, element, parent):
         if element.is_anonymous:
             declaration_sets = []
         else:
@@ -671,7 +673,8 @@ class FrameBuilder(object):
             return
 
         if element.text and display == 'inline':
-            return self.create_text_frame(style_node, element, element.text)
+            return self.create_text_frame(
+                style_node, element, element.text, parent)
 
         if element.name in self.replaced_element_builders:
             builder = self.replaced_element_builders[element.name]
@@ -687,11 +690,12 @@ class FrameBuilder(object):
             text_frame = self.create_text_frame(
                 self.style_tree.get_style_node([]),
                 AnonymousElement(element),
-                element.text)
+                element.text,
+                frame)
             if text_frame:
-                text_frame.parent = frame
                 frame.children = [text_frame]
 
+        frame.parent = parent
         return frame
 
     def get_element_declaration_sets(self, element):
@@ -702,13 +706,13 @@ class FrameBuilder(object):
             declaration_sets.append(element.element_declaration_set)
         return declaration_sets
 
-    def build_frame(self, element):
+    def build_frame(self, element, parent=None):
         '''Recursively build a frame for element and all its children.
 
         Returns the frame, or None if no frames were generated (e.g.
         display = none).
         '''
-        frame = self.create_frame(element)
+        frame = self.create_frame(element, parent)
 
         if not frame:
             return None
@@ -716,7 +720,7 @@ class FrameBuilder(object):
         if element.children:
             frame.children = []
         for element_child in element.children:
-            child = self.build_frame(element_child)
+            child = self.build_frame(element_child, frame)
             if not child: 
                 continue
 
@@ -776,8 +780,9 @@ class FrameBuilder(object):
     ws_step4a_pattern = re.compile('\t')
     ws_step4b_pattern = re.compile(' +')
 
-    def create_text_frame(self, style, element, text):
+    def create_text_frame(self, style, element, text, parent):
         frame = self.render_device.create_text_frame(style, element, text)
+        frame.parent = parent
         white_space = frame.get_computed_property('white-space')
 
         # Normalize newlines to \n.  This isn't part of CSS, but I think I saw

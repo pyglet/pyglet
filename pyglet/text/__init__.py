@@ -132,7 +132,7 @@ class GlyphString(object):
             if w > width:
                 return to_index 
             if c == '\n':
-                return i + from_index
+                return i + from_index + 1
             elif c in u'\u0020\u200b':
                 to_index = i + from_index + 1
         return to_index

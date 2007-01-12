@@ -5,10 +5,10 @@
 Usage::
     browser.py http://meyerweb.com/eric/css/tests/css2/sec08-03a.htm
 
-    Press 'b' to dump boxes.
+    Press 'v' to dump source (base file only).
+    Press 'e' to dump elements.
     Press 'f' to dump frames.
-    Press 's' to dump source (base file only).
-    Press 'e' to dump elements and style nodes
+    Press 's' to dump frames and style nodes.
 '''
 
 __docformat__ = 'restructuredtext'
@@ -68,14 +68,14 @@ def print_element(element, indent=''):
         print_element(child, '  ' + indent)
 
 def on_key_press(symbol, modifiers):
-    if symbol == K_B:
-        print_box(layout._visual._root_box)
-    if symbol == K_F:
-        print_frame(layout._visual._root_frame)
-    if symbol == K_S:
+    if symbol == K_V:
         print repr(layout.locator.get_default_stream().read())
     if symbol == K_E:
-        print_element(layout._visual._root_box.element)
+        layout.document.root.pprint()
+    if symbol == K_F:
+        layout._visual._root_frame.pprint()
+    if symbol == K_S:
+        layout._visual._root_frame.pprint_style()
     return True
 
 layout = Layout(locator=locator)

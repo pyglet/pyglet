@@ -279,6 +279,12 @@ class GLTextFrame(TextFrame):
 
             frame.to_index = self.glyph_string.get_break_index(
                 frame.from_index, remaining_width)
+            # No text fits, but there's a line-break to use
+            if frame.to_index == frame.from_index and \
+                frame is not self and \
+               '\n' in self.text[frame.from_index:]:
+                frame.to_index = self.text.index('\n', frame.from_index + 1)
+
             # If none of text fits, use all text, only if next frame will
             # have same space to play with as this one (currently (no floats)
             # true for non-first line).
@@ -289,7 +295,7 @@ class GLTextFrame(TextFrame):
                         frame.from_index, frame.to_index)
 
             if frame.to_index < len(self.text) or \
-               self.text[-1] in u'\u0020\u200b':
+               self.text[-1] in u'\u0020\u200b\n':
                 continuation = GLTextFrame(
                     self.style, self.element, self.text)
                 continuation.glyph_string = self.glyph_string
@@ -306,6 +312,11 @@ class GLTextFrame(TextFrame):
 
                 # Remove right-margin from continued frame
                 frame.margin_right = 0
+
+                # Force line break
+                if self.text[frame.to_index-1] == '\n':
+                    frame.to_index -= 1
+                    frame.line_break = True
 
                 # Ready for next iteration
                 frame.continuation = continuation
