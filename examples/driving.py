@@ -24,16 +24,16 @@ w.push_handlers(keyboard)
 speed = 0
 clock = pyglet.clock.Clock(fps_limit=30)
 while not w.has_exit:
-    clock.tick()
+    dt = clock.tick()
     w.dispatch_events()
 
     # handle input and move the car
-    car.angle += (keyboard[K_LEFT] - keyboard[K_RIGHT]) * 5
-    speed += (keyboard[K_UP] - keyboard[K_DOWN]) * 2.5
-    if speed > 10: speed = 10
-    if speed < -5: speed = -5
+    car.angle += (keyboard[K_LEFT] - keyboard[K_RIGHT]) * 150 * dt
+    speed += (keyboard[K_UP] - keyboard[K_DOWN]) * 75 
+    if speed > 300: speed = 300
+    if speed < -150: speed = -150
     r = Matrix3.new_rotate(math.radians(car.angle))
-    v = speed * (r * Vector2(0, 1))
+    v = dt * speed * (r * Vector2(0, 1))
     car.x += v.x
     car.y += v.y
 
