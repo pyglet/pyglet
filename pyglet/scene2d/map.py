@@ -25,6 +25,7 @@ import xml.dom
 import xml.dom.minidom
 
 from pyglet.resource import Resource, register_factory
+from pyglet.scene2d.image import Drawable
 
 @register_factory('rectmap')
 def rectmap_factory(resource, tag):
@@ -143,7 +144,7 @@ class RectMap(RegularTesselationMap):
         Return a Map instance.'''
         return Resource.load(filename)[id]
 
-class Cell(object):
+class Cell(Drawable):
     '''Base class for cells from rect and hex maps.
 
     Common attributes:
@@ -153,6 +154,7 @@ class Cell(object):
         cell       -- cell from the Map's cells
     '''
     def __init__(self, x, y, width, height, properties, tile):
+        Drawable.__init__(self)
         self.width, self.height = width, height
         self.x, self.y = x, y
         self.properties = properties
@@ -162,6 +164,13 @@ class Cell(object):
         return '<%s object at 0x%x (%g, %g) properties=%r tile=%r>'%(
             self.__class__.__name__, id(self), self.x, self.y,
                 self.properties, self.tile)
+
+    # XXX belongs in drawable?
+    def should_draw(self):
+        return self.tile is not None
+
+    def impl_draw(self):
+        return self.tile.image.draw()
 
 class RectCell(Cell):
     '''A rectangular cell from a Map.

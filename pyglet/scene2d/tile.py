@@ -13,7 +13,7 @@ import os
 import xml.dom
 import xml.dom.minidom
 
-from pyglet.scene2d.image import Image2d
+from pyglet.scene2d.image import Image2d, Drawable
 from pyglet.resource import Resource, register_factory
 
 

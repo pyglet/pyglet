@@ -9,8 +9,8 @@ Simple images etc. to aid debugging
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.scene2d.map import RectMap, HexMap, RectCell, HexCell
-from pyglet.scene2d.tile import Tile
+from pyglet.scene2d import RectMap, HexMap, RectCell, HexCell, Tile, Image2d
+from pyglet.image import Image
 from pyglet.GL.VERSION_1_1 import *
 
 class HexCheckImage:
@@ -35,16 +35,17 @@ class HexCheckImage:
 
 class RectCheckImage:
     def __init__(self, w, h, colour):
-        self.w, self.h = w, h
+        self.image = Image2d.from_image(Image.create_checkerboard(w))
         self.colour = colour
     def draw(self):
-        glColor4f(*self.colour)
-        glBegin(GL_QUADS)
-        glVertex2f(0, 0)
-        glVertex2f(self.w, 0)
-        glVertex2f(self.w, self.h)
-        glVertex2f(0, self.h)
-        glEnd()
+        self.image.draw()
+        #glColor4f(*self.colour)
+        #glBegin(GL_QUADS)
+        #glVertex2f(0, 0)
+        #glVertex2f(self.w, 0)
+        #glVertex2f(self.w, self.h)
+        #glVertex2f(0, self.h)
+        #glEnd()
 
 def gen_hex_map(meta, h):
     r = []

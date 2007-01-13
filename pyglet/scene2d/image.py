@@ -33,7 +33,6 @@ def imageatlas_factory(resource, tag):
         raise ResourceError, 'No file= on <imageatlas> tag'
     atlas = Image2d.load(filename)
     atlas.properties = resource.handle_properties(tag)
-    atlas.filename = filename
     if tag.hasAttribute('id'):
         atlas.id = tag.getAttribute('id')
         resource.add_resource(atlas.id, atlas)
@@ -76,7 +75,6 @@ def image_factory(resource, tag):
     if not filename:
         raise ResourceError, 'No file= on <image> tag'
     image = Image2d.load(filename)
-    image.filename = filename
 
     image.properties = resource.handle_properties(tag)
 
@@ -87,9 +85,59 @@ def image_factory(resource, tag):
     return image
 
 
-# XXX remember file image comes from
-class Image2d(object):
+class Drawable(object):
+    ''' A draw()'able thing that might have additional (possibly animated)
+    effects attached.
+    '''
+    def __init__(self):
+        self.effects = []
+
+    def set_effect(self, effect):
+        self.effects = [effect]
+    def push_effect(self, effect):
+        self.effects.append(effect)
+    def pop_effect(self):
+        self.effects.pop()
+    def remove_effect(self, effect):
+        self.effects.remove(effect)
+
+    def animate(self, dt):
+        for effect in self.effects:
+            if effect.animate is not None:
+                # XXX detect end of animation
+                effect.animate(dt)
+
+    def draw(self):
+        if self.effects:
+            self.effects[-1].draw(self)
+        else:
+            self.impl_draw()
+
+    def impl_draw(self, colour=None):
+        '''Implementation of drawing by a subclass.
+
+        If "colour" is not None it should be used to tint the drawing.
+        '''
+        raise NotImplemented()
+
+class RectTintEffect(object):
+    '''Draws the *rect* drawable and then draws a quad over the top of
+    the same size using the supplied colour (so make sure tha alpha
+    channel is appropriate).
+    '''
+    animate = None
+    def __init__(self, colour):
+        self.colour = colour
+
+    def draw(self, drawable):
+        glPushAttrib(GL_CURRENT_BIT)
+        glColor4f(*self.colour)
+        drawable.impl_draw()
+        glPopAttrib()
+
+class Image2d(Drawable):
     def __init__(self, texture, x, y, width, height):
+        Drawable.__init__(self)
         self.texture = texture
         self.x, self.y = x, y
         self.width, self.height = width, height
@@ -98,7 +146,9 @@ class Image2d(object):
     def load(cls, filename=None, file=None):
         '''Image is loaded from the given file.'''
         image = RawImage.load(filename=filename, file=file)
-        return cls(image.texture(), 0, 0, image.width, image.height)
+        image = cls(image.texture(), 0, 0, image.width, image.height)
+        image.filename = filename
+        return image
 
     @classmethod
     def from_image(cls, image):
@@ -151,7 +201,7 @@ class Image2d(object):
         return self.__quad_list
     quad_list = property(quad_list)
 
-    def draw(self):
+    def impl_draw(self):
         glCallList(self.quad_list)
 
     def subimage(self, x, y, width, height):

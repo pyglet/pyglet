@@ -36,10 +36,14 @@ def event(dispatcher):
         dispatcher.push_handlers(func)
     return decorate
 
-def for_cells(maps, **limit):
+def for_cells(*maps, **limit):
     def decorate(func):
+        # XXX limits need to stack with the props, maps and sprites args
         func.limit = MapSearch(limit)
-        func.maps = maps
+        if maps:
+            func.maps = maps[0]
+        else:
+            func.maps = None
         if not hasattr(func, 'sprites'):
             func.sprites = []
         return func

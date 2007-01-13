@@ -164,13 +164,13 @@ class FlatView(View):
 
     def on_mouse_release(self, button, x, y, modifiers):
         x, y = self.translate_position(x, y)
-        self.dispatch_event(x, y, EVENT_MOUSE_PRESS, button, x, y, modifiers)
+        self.dispatch_event(x, y, EVENT_MOUSE_RELEASE, button, x, y, modifiers)
         return EVENT_UNHANDLED
 
     def on_mouse_motion(self, x, y, dx, dy):
         x, y = self.translate_position(x, y)
-        self.dispatch_event(x, y, EVENT_MOUSE_ENTER)
         self.dispatch_event(x, y, EVENT_MOUSE_LEAVE)
+        self.dispatch_event(x, y, EVENT_MOUSE_ENTER)
         return EVENT_UNHANDLED
 
     #
@@ -312,12 +312,11 @@ class FlatView(View):
             # XXX use smap.get_cells_in_region(bottomleft, topright)
             for column in smap.cells:
                 for cell in column:
-                    if not cell.tile: continue
+                    if not cell.should_draw(): continue
                     x, y = cell.origin
                     glPushMatrix()
                     glTranslatef(x, y, -1)
-                    if cell.tile:
-                        cell.tile.image.draw()
+                    cell.draw()
                     glPopMatrix()
             glPopMatrix()
 

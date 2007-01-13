@@ -172,8 +172,7 @@ scene2d
         HEX_FLAT_DEBUG                    X
         FLAT_SCROLLING                    X
         FLAT_OOB                          X
-        RECT_FLAT_PICKING                 X
-        RECT_FLAT_MOUSEOVER               X
+        RECT_FLAT_MOUSE                   X
         HEX_FLAT_PICKING                   
         VIEW_SUBWINDOW                     
         ============================== =======
