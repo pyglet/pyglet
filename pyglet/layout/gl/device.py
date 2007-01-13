@@ -16,22 +16,6 @@ from pyglet.layout.frame import *
 from pyglet.layout.locator import *
 from pyglet.image import *
 
-class GLFont(object):
-    def __init__(self, font):
-        self.font = font
-
-    def create_text_frame(self, box, parent, containing_block,
-                          text, width):
-        glyphs = self.font.get_glyphs_for_width(text, width)
-
-        frame = GLTextFrame(box, parent, containing_block, 
-            self.font, text[:len(glyphs)], glyphs)
-        
-        if len(text) > len(glyphs) and text[len(glyphs)] == '\n':
-            frame.hard_break = True
-
-        return frame
-
 class GLRenderDevice(RenderDevice):
     _stock_font_names = {
         'serif':        'Bitstream Vera Serif',
@@ -56,7 +40,7 @@ class GLRenderDevice(RenderDevice):
         bold = weight >= 700
         assert type(size) == Dimension and size.unit == 'pt'
 
-        return GLFont(pyglet.text.Font(names, size, italic=italic, bold=bold))
+        return pyglet.text.Font(names, size, italic=italic, bold=bold)
 
     def create_text_frame(self, style, element, text):
         return GLTextFrame(style, element, text)
@@ -235,7 +219,7 @@ class GLTextFrame(TextFrame):
         self.continuation = None
 
         # Get GL glyph sequence if not already cached
-        font = self.get_computed_property('--font').font
+        font = self.get_computed_property('--font')
         if not self.glyph_string:
             self.glyph_string = pyglet.text.GlyphString(
                 self.text, font.get_glyphs(self.text))

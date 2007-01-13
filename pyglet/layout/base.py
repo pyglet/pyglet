@@ -12,7 +12,7 @@ __version__ = '$Id$'
 
 #-----------------------------------------------------------------------------
 # Basic types.  These are used both by the scanner/parser and within the
-# Box and Frame types to represent CSS property values.
+# style tree.
 
 class Ident(str):
     '''An unquoted string, such as a colour name or XML element name.'''
@@ -213,17 +213,23 @@ class RenderDevice(object):
         else:
             raise NotImplementedError
 
-    def draw_vertical_border(self, x1, y1, x2, y2, color, style):
+    def draw_vertical_border(self, x1, y1, x2, y2, x3, y3, x4, y4, 
+                             color, style):
         '''Draw a vertical border within the given bounds.  'color' is
         an RGB tuple and 'style' is the CSS border-style property, which will
         not be 'none'.
+
+        Order of vertices is inner-top, inner-bottom, outer-bottom, outer-top
         '''
         pass
 
-    def draw_horizontal_border(self, x1, y1, x2, y2, color, style):
+    def draw_horizontal_border(self, x1, y1, x2, y2, x3, y3, x4, y4, 
+                             color, style):
         '''Draw a horizontal border within the given bounds.  'color' is
         an RGB tuple and 'style' is the CSS border-style property, which will
         not be 'none'.
+
+        Order of vertices is inner-left, inner-right, outer-right, outer-left.
         '''
         pass
 
@@ -239,8 +245,8 @@ class RenderDevice(object):
         property.'''
         pass
 
-    def get_font(self, box):
-        '''Return a font object for the given box.  
+    def get_font(self, names, size, style, weight):
+        '''Return a font object for the given attributes.  
         
         The font object must encapsulate all information about the font-face,
         font-size and font-style of the box, but not color, text-decoration,
@@ -251,296 +257,8 @@ class RenderDevice(object):
         '''
         raise NotImplementedError('abstract')
 
-    def create_text_frames(self, font, text, width, break_characters):
-        '''Return zero or more text frames
-
-        The font paramter is a return value from 'get_font'.
+    def create_text_frame(self, style, element, text):
+        '''Return an unstyled text frame.
         '''
         raise NotImplementedError('abstract')
-
-class Formatter(object):
-    '''Interface for formatters: objects that create CSS boxes from some data
-    (e.g. XHTML).'''
-    def __init__(self, render_device):
-        self.render_device = render_device
-        self.generators = {}
-
-    def format(self, data):
-        '''Format the given data, which may be a string or file-like object,
-        and return the root Box element.'''
-        raise NotImplementedError('abstract')
-
-    def add_generator(self, generator):
-        '''Add a custom box generator to this formatter.  Only one generator
-        can be associated with a given element name (an assertion will be
-        raised if not).
-        '''
-        for name in generator.accept_names:
-            assert name not in self.generators
-            self.generators[name] = generator
-
-class BoxGenerator(object):
-    '''Interface for box generators: objects that boxes for data, controlled
-    by a formatter.  
-    
-    For example, a BoxGenerator is defined to create replaced element boxes
-    for images in an XHTML formatter.'''
-
-    # List of element names this generator will generate boxes for.  For
-    # example, ['img'] for image elements in XHTML. 
-    accept_names = []
-
-    def create_box(self, name, attrs):
-        '''Create a box for the given element name and attributes.  
-        
-        The exact meaning of name and attrs are defined by the formatter, but
-        name must be a string from the 'accept_names' list, and 'attrs' a
-        dictionary-like object.
-        
-        Must return a single Box object.
-        ''' 
-        raise NotImplementedError('abstract')
-
-
-class Box(object):
-    '''A CSS box.
-
-    Non-replaced elements besides non-replaced inline elements use this
-    class directly.  All other elements (non-replaced inline elements and
-    replaced elements) subclass.
-
-    Every CSS property is defined on every box.  This is necessary to 
-    ensure properties are inherited correctly.  To save on memory usage,
-    the intial values are stored on the class where possible.  
-    
-    The values applied on a Box object are the "specified" or "computed"
-    values (depending on the stage of processing), never the "used" or
-    "actual" values (though those values may be implicitly identical).
-
-    In addition to the CSS properties there are several "layout engine
-    properties" which exist for the convenience of the formatter and
-    are not specified explicitly in CSS declarations, and "replaced element
-    properties", which must be supplied by the box generator.
-
-    There are draw methods that correspond to replaced and non-replaced
-    inline element boxes (non-replaced non-inline boxes are never drawn --
-    only their borders/backgrounds are, handled by the frame).
-
-    To implement a custom replaced element, subclass Box and set the
-    appropriate replaced element properties.  Then override the simple
-    'draw' method (not the text draw method).
-    '''
-
-    # Replaced element properties
-    # ---------------------------
-
-    # Subclasses which are not text _must_ override this with True;
-    # it enables replaced-element processing, including the intrinsic
-    # properties below.
-    is_replaced = False
-
-    # intrinsic_width must be set for non-replaced (text) elements, and may be
-    # set for replaced elements.  intrinsic_height is set only for replaced
-    # elements.  A replaced element such as an image would give the
-    # dimensions of the image here, even though it could be stretched by the
-    # width/height properties.  The intrinsic ratio can also be set.
-    intrinsic_width = None
-    intrinsic_height = None 
-    intrinsic_ratio = None
-
-    def draw(self, render_device, left, top, right, bottom):
-        '''Draw a replaced element at the given position.  Note that
-        the default visual layout has vertical coordinates increasing towards
-        the top of the screen.'''
-        pass
-
-    # Layout engine properties
-    # ------------------------
-
-    # The element (SelectableElement or subclass) that generated this
-    # box
-    element = None
-
-    # A box can have either children or text, but not both.  Use anonymous
-    # inline boxes to add children to boxes which already have text, or
-    # to add text to boxes that already have children.
-    children = ()       # list of Box
-    text = ''           # str or unicode
-
-    # parent is None only for the root box.
-    parent = None
-
-    # Formatting context can either be inline or block.  Inline context
-    # only contains inline boxes (and floats, absolutes, etc.).  Block
-    # context only contains block boxes (etc).  It is up to the formatter to
-    # ensure this is true, and create anonymous block boxes where necessary.  
-    # See 9.2.
-    inline_formatting_context = True
-
-    # If true, this box is an anonymous block box (see 9.2.1) and can
-    # accept additional inline boxes.
-    anonymous = False
-
-    # Debug
-    # -----
-
-    def __repr__(self):
-        d = self.__dict__.copy()
-        d['children'] = self.children and len(self.children)
-        if 'parent' in d:
-            del d['parent']
-        return '%s(%r)' % (self.__class__.__name__, d)
-
-    # CSS 2.1 properties
-    # ------------------
-
-    # 8 Box model
-    # 8.3 Margin properties
-    margin_top = 0
-    margin_bottom = 0
-    margin_right = 0
-    margin_left = 0
-    # 8.4 Padding properties
-    padding_top = 0
-    padding_bottom = 0
-    padding_right = 0
-    padding_left = 0
-    # 8.5.1 Border width
-    border_top_width = 2       # default to 'medium' if style != 'none'
-    border_right_width = 2     # default to 'medium' if style != 'none'
-    border_bottom_width = 2    # default to 'medium' if style != 'none'
-    border_left_width = 2      # default to 'medium' if style != 'none'
-    # 8.5.2 Border color
-    border_top_color = None     # default to self.color
-    border_right_color = None   # default to self.color
-    border_bottom_color = None  # default to self.color
-    border_left_color = None    # default to self.color
-    # 8.5.3 Border style
-    border_top_style = Ident('none')
-    border_right_style = Ident('none')
-    border_bottom_style = Ident('none')
-    border_left_style = Ident('none')
-
-    # 9 Visual formatting model
-    # 9.2.4 The 'display' property
-    # 'run-in' display must be resolved during box creation; the value
-    # is not permitted in layout.
-    display = Ident('inline')
-    # 9.3.1 Choosing a positioning scheme: 'position' property
-    position = Ident('static')
-    # 9.3.2 Box offsets
-    # Applies only to positioned elements (position != 'static')
-    top = Ident('auto')
-    right = Ident('auto')
-    bottom = Ident('auto')
-    left = Ident('auto')
-    # 9.5.1 Positioning the float
-    float = Ident('none')
-    # 9.5.2 Controlling flow next to floats
-    # Applies only to block-level elements
-    clear = Ident('none')
-    # 9.9.1 Specifying the stack level
-    # Applies only to positioned elements
-    z_index = Ident('auto')
-    # 9.10 Text direction
-    direction = Ident('ltr')
-    unicode_bidi = Ident('normal')
-
-    # 10 Visual formatting model details
-    # 10.2 Content width
-    width = Ident('auto')
-    # 10.4 Minimum and maximum widths
-    min_width = 0
-    max_width = Ident('none')
-    # 10.5 Content height
-    height = Ident('auto')
-    # 10.7 Minimum and maximum heights
-    min_height = 0
-    max_height = Ident('none')
-    # 10.8 Line height calculations
-    line_height = Ident('normal')
-
-    # 11 Visual effects
-    # 11.1.1 Overflow
-    # Applies to non-replaced block-level elements, table cells and
-    # inline-block elements
-    overflow = Ident('visible')
-    # 11.1.2 Clipping
-    clip = Ident('auto')
-    # 11.2 Visibility
-    visibility = Ident('visible')
-    # Applies to inline-level and 'table-cell' elements
-    vertical_align = Ident('baseline')
-
-    # 12 Generated content, automatic numbering, and lists
-    # 12.2 The 'content' property
-    # content, counters and quotes are not implemented here, performed
-    # at box construction level.
-    # 12.5.1 Lists
-    # list-style-type is implemented at box construction level.
-    list_style_image = Ident('none')
-    # Applies to 'list-item' elements
-    list_style_position = Ident('outside')
-
-    # 13 Paged media
-    # Page break properties are ignored by pyglet.layout.
-
-    # 14 Colors and Backgrounds
-    # 14.1 Foreground color
-    color = Color.names['black']     # Initial value is up to UA
-    # 14.2.1 Background properties
-    background_color = Ident('transparent')
-    background_image = Ident('none')
-    background_repeat = Ident('repeat')
-    background_attachment = Ident('scroll')
-    background_position = (0, 0)
-
-    # 15 Fonts
-    # 15.3 Font family
-    font_family = None  # Depends on UA
-    # 15.4 Font styling
-    font_style = Ident('normal')
-    # 15.5 Small-caps
-    font_variant = Ident('normal')
-    # 15.6 Font boldness
-    font_weight = 400
-    # 15.7 Font size
-    font_size = Ident('medium')
-
-    # Above combines to give computed font object, resolved by formatter.
-    font = None
-
-    # 16 Text
-    # 16.1 Indentation
-    # Applies to block-level elements, table cells and inline blocks
-    text_indent = 0
-    # 16.2 Alignment
-    # left if 'direction' is 'ltr', 'right' if 'direction is 'rtl'
-    text_align = None   
-    # 16.3 Decoration
-    text_decoration = Ident('none')
-    # 16.4 Letter and word spacing
-    letter_spacing = Ident('normal')
-    word_spacing = Ident('normal')
-    # 16.5 Capitalization
-    text_transform = Ident('none')
-    # 16.6 Whitespace
-    # Steps 1-4 of 16.6.1 must be executed in formatter; layout engine only
-    # performs steps beginning "As each line is laid out,".
-    white_space = Ident('normal')
-
-    # 17 Tables
-    # 17.4.1 Caption position and alignment
-    # Applies to table-caption elements
-    caption_side = Ident('top')
-    # 17.5.2 Table width algorithms
-    table_layout = Ident('auto')
-    # 17.6 Borders
-    # Applies to 'table' and 'inline-table' elements
-    border_collapse = Ident('separate')
-    # Applies to 'table' and 'inline-table' elements
-    border_spacing = 0
-    # 17.6.1.1 Borders and Backgrounds around empty cells
-    # Applies to 'table-cell' elements
-    empty_cells = Ident('show')
 

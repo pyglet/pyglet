@@ -12,7 +12,7 @@ from pyglet.GL.VERSION_1_1 import *
 from pyglet.image import *
 from pyglet.layout.base import *
 
-class ImageBoxGenerator(BoxGenerator):
+class ImageBoxGenerator(object):
     accept_names = ['img']
 
     def __init__(self, locator):
@@ -39,7 +39,7 @@ class ImageBoxGenerator(BoxGenerator):
         self.cache[src] = image
         return ImageBox(image)
 
-class ImageBox(Box):
+class ImageBox(object):
     is_replaced = True
 
     def __init__(self, image):
