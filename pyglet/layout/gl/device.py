@@ -7,6 +7,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from ctypes import *
+import re
 
 from pyglet.GL.VERSION_1_1 import *
 import pyglet.text
@@ -227,6 +228,8 @@ class GLTextFrame(TextFrame):
         text = self.text[self.from_index:self.to_index]
         self.from_index += len(text) - len(text.lstrip())
 
+    contains_ws = re.compile(u'[\n\u0020\u200b]')
+
     def flow_inline(self, containing_block, remaining_width):
         # Clear previous flow continuation if any
         self.continuation = None
@@ -287,9 +290,13 @@ class GLTextFrame(TextFrame):
 
             # If none of text fits, use all text, only if next frame will
             # have same space to play with as this one (currently (no floats)
-            # true for non-first line).
-            if frame.to_index == frame.from_index and frame is not self:
+            # true for non-first line), of if there is no break oppportunity
+            # within string anyway.
+            if frame.to_index == frame.from_index and \
+               (frame is not self or 
+                not self.contains_ws.search(self.text[frame.from_index])):
                 frame.to_index = len(self.text)
+
             if frame.to_index != frame.from_index:
                 frame.border_edge_width += self.glyph_string.get_subwidth(
                         frame.from_index, frame.to_index)
