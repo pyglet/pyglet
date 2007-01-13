@@ -29,6 +29,8 @@ class VisualLayout(object):
     document = property(lambda self: self._document, set_document)
 
     def get_canvas_width(self):
+        if not self._document:
+            return 0
         if self._need_reflow:
             self.reflow()
         # By convention with web browsers, don't allow viewport to show left
@@ -37,6 +39,8 @@ class VisualLayout(object):
     canvas_width = property(get_canvas_width)
 
     def get_canvas_height(self):
+        if not self._document:
+            return 0
         if self._need_reflow:
             self.reflow()
         # By convention with web browsers, don't allow viewport to show above

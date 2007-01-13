@@ -266,7 +266,7 @@ class GLTextFrame(TextFrame):
         else:
             half_leading = 0
         self.line_ascent = self.content_ascent + half_leading
-        self.line_descent = self.content_descent + half_leading
+        self.line_descent = self.content_descent - half_leading
         self.border_edge_height = self.content_ascent - self.content_descent
         self.border_edge_width = self.content_left
 
