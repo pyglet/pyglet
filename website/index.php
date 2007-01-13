@@ -13,8 +13,8 @@ include("page_head.php");
 </tbody>
 </table>
 
-<p>Pyglet is a cross-platform multimedia library written in pure Python.
-It uses built-in operating system facilities on Linux, Mac OS X
+<p>Pyglet is a cross-platform gaming / multimedia library written in
+pure Python. It uses built-in operating system facilities on Linux, Mac OS X
 and Windows to provide windowing, drawing, event handling and so on.
 Pyglet is the top layer in the following diagram:</p>
 
