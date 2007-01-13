@@ -166,7 +166,7 @@ scene2d
         MAP_LOAD                          X
         MAP_SAVE                           
         SPRITE_MODEL                      X
-        SPRITE_COLLISION                   
+        SPRITE_OVERLAP                    X
         FLAT_SPRITE                       X
         RECT_FLAT_DEBUG                   X
         HEX_FLAT_DEBUG                    X

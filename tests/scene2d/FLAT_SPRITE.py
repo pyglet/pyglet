@@ -23,7 +23,7 @@ from pyglet.scene2d.camera import FlatCamera
 
 ball_png = os.path.join(os.path.dirname(__file__), 'ball.png')
 
-class SpriteModelTest(unittest.TestCase):
+class FlatSpriteTest(unittest.TestCase):
 
     def test_sprite(self):
         w = pyglet.window.Window(width=320, height=320)

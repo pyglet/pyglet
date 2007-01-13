@@ -85,6 +85,18 @@ class Sprite(Drawable):
         if x >= self.x + self.width: return False
         if y >= self.y + self.height: return False
         return True
+
+    def is_overlap(self, rect):
+        '''Return True if this sprite overlaps the other rect.
+
+        A rect is an object that has an origin .x, .y and size .width,
+        .height.
+        '''
+        if self.x > (rect.x + rect.width): return False
+        if (self.x + self.width) < rect.x: return False
+        if self.y > (rect.y + rect.height): return False
+        if (self.y + self.height) < rect.y: return False
+        return True
  
     # r/w, in pixels, y extent
     def get_top(self): return self.y + self.height

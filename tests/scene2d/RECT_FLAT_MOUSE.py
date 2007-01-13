@@ -39,7 +39,7 @@ class RectFlatMouseTest(RenderBase):
         @for_cells()
         def on_mouse_enter(cells):
             for cell in cells:
-                e = RectTintEffect((1, .8, .8, 1))
+                e = RectTintEffect((1, .5, .5, 1))
                 cell.properties['hover'] = e
                 cell.add_effect(e)
 
@@ -58,7 +58,7 @@ class RectFlatMouseTest(RenderBase):
                     obj.remove_effect(obj.properties['clicked'])
                     del obj.properties['clicked']
                 else:
-                    e = RectTintEffect((.8, 1, .8, 1))
+                    e = RectTintEffect((.5, 1, .5, 1))
                     obj.properties['clicked'] = e
                     obj.add_effect(e)
                 return
