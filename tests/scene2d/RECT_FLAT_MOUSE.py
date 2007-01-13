@@ -44,7 +44,7 @@ class RectFlatDebugTest(RenderBase):
             for cell in cells:
                 e = RectTintEffect((1, .8, .8, 1))
                 cell.properties['hover'] = e
-                cell.push_effect(e)
+                cell.add_effect(e)
 
         @event(self.view)
         @for_cells()
@@ -62,7 +62,7 @@ class RectFlatDebugTest(RenderBase):
                 else:
                     e = RectTintEffect((.8, 1, .8, 1))
                     cell.properties['clicked'] = e
-                    cell.push_effect(e)
+                    cell.add_effect(e)
 
         self.show_focus()
         self.run_test()

@@ -94,10 +94,8 @@ class Drawable(object):
 
     def set_effect(self, effect):
         self.effects = [effect]
-    def push_effect(self, effect):
+    def add_effect(self, effect):
         self.effects.append(effect)
-    def pop_effect(self):
-        self.effects.pop()
     def remove_effect(self, effect):
         self.effects.remove(effect)
 

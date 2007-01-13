@@ -173,6 +173,16 @@ class FlatView(View):
         self.dispatch_event(x, y, EVENT_MOUSE_ENTER)
         return EVENT_UNHANDLED
 
+    def on_mouse_enter(self, x, y):
+        x, y = self.translate_position(x, y)
+        self.dispatch_event(x, y, EVENT_MOUSE_ENTER)
+        return EVENT_UNHANDLED
+
+    def on_mouse_leave(self, x, y):
+        x, y = self.translate_position(x, y)
+        self.dispatch_event(x, y, EVENT_MOUSE_LEAVE)
+        return EVENT_UNHANDLED
+
     #
     # QUERY INTERFACE
     #
