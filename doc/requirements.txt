@@ -180,6 +180,8 @@ scene2d
     TBD:
      - OBB or AABB collision before occlusion query
      - animated sprites, or animated textures
+     - @for_cells needs to look up properties on TileSets
+     - @for_cells / @for_sprites need to be pre-evaluated
 
 model
     :description: Abstract interface for 3D modelling.

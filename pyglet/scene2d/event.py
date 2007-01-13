@@ -20,6 +20,9 @@ class MapFilter:
         r = []
         for cell in cells:
             for k, v in self.properties.items():
+                if k == 'id':
+                    if cell.id == v: continue
+                    else: break
                 if cell.properties[k] == v:
                     continue
                 if not hasattr(cell, 'tile') and cell.tile.properties[k] == v:
@@ -43,6 +46,9 @@ class SpriteFilter:
         r = []
         for sprite in sprites:
             for k, v in self.properties.items():
+                if k == 'id':
+                    if sprite.id == v: continue
+                    else: break
                 if sprite.properties[k] != v: break
             else:
                 r.append(sprite)
