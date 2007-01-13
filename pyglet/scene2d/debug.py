@@ -59,7 +59,7 @@ def gen_hex_map(meta, h):
             k = j
             if not i % 2:  k += 1
             image = HexCheckImage(HexCheckImage.COLOURS[k%3], cell)
-            c.append(HexCell(i, j, h, info, Tile('dbg', {}, image)))
+            c.append(HexCell(i, j, h, dict(info), Tile('dbg', {}, image)))
     return HexMap('debug', h, r)
 
 def gen_rect_map(meta, w, h):
@@ -73,6 +73,6 @@ def gen_rect_map(meta, w, h):
                 image = RectCheckImage(w, h, (.7, .7, .7, 1))
             else:
                 image = RectCheckImage(w, h, (.9, .9, .9, 1))
-            c.append(RectCell(i, j, w, h, info, Tile('dbg', {}, image)))
+            c.append(RectCell(i, j, w, h, dict(info), Tile('dbg', {}, image)))
     return RectMap('debug', w, h, r)
 
