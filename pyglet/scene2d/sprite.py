@@ -9,7 +9,11 @@ Model code for managing sprites
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-class Sprite(object):
+
+from pyglet.GL.VERSION_1_1 import *
+from pyglet.scene2d.image import Drawable
+
+class Sprite(Drawable):
     '''A sprite with some dimensions, image to draw and optional animation
     to run.
 
@@ -22,10 +26,12 @@ class Sprite(object):
         image           -- image for this sprite
         offset          -- offset of image from position (default (0,0))
         animations      -- a queue of SpriteAnimations to run
+        properties      -- arbitrary data in a dict
     '''
-    __slots__ = 'x y z image width height angle cog offset animations'.split()
+    __slots__ = 'x y z image width height angle cog offset properties animations'.split()
     def __init__(self, x, y, width, height, image, angle=0, cog=None,
-            offset=(0,0), z=0):
+            offset=(0,0), z=0, properties=None):
+        Drawable.__init__(self)
         self.x, self.y, self.z = x, y, z
         self.width, self.height = width, height
         self.angle = 0
@@ -35,12 +41,24 @@ class Sprite(object):
         self.image = image
         self.offset = offset
         self.animations = []
+        if properties is None:
+            self.properties = {}
+        else:
+            self.properties = properties
 
     @classmethod
     def from_image(cls, image):
         '''Set up the sprite from the image - sprite dimensions are the
         same as the image.'''
         return cls(0, 0, image.width, image.height, image)
+
+    def impl_draw(self):
+        glPushMatrix()
+        glTranslatef(self.cog[0], self.cog[1], 0)
+        glRotatef(self.angle, 0, 0, 1)
+        glTranslatef(-self.cog[0], -self.cog[1], 0)
+        self.image.draw()
+        glPopMatrix()
  
     def push_animation(self, animation):
         "Push a SpriteAnimation onto this sprite's animation queue."

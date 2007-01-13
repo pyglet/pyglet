@@ -6,6 +6,7 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import os
 import unittest
 
 from pyglet.GL.VERSION_1_1 import *
@@ -15,14 +16,17 @@ from pyglet.window.key import *
 import pyglet.clock
 from pyglet.scene2d import *
 
+ball_png = os.path.join(os.path.dirname(__file__), 'ball.png')
 
 class Marker:
+    def __init__(self):
+        self.image = Image2d.load(ball_png)
+
     def draw(self):
-        glColor4f(1, 0, 0, 1)
-        glPointSize(5)
-        glBegin(GL_POINTS)
-        glVertex2f(0, 0)
-        glEnd()
+        glPushMatrix()
+        glScalef(.25, .25, 1)
+        self.image.draw()
+        glPopMatrix()
 
 
 class RenderBase(unittest.TestCase):
@@ -30,10 +34,10 @@ class RenderBase(unittest.TestCase):
     def init_window(self, vx, vy):
         self.w = pyglet.window.Window(width=vx, height=vy)
 
-    def set_map(self, m):
-        if self.w is None:
+    def set_map(self, m, resize=False):
+        if resize:
             vx, vy = m.pxw, m.pxh
-            self.init_window(vx, vy)
+            self.w.set_size(vx, vy)
         else:
             vx = self.w.width
             vy = self.w.height
@@ -49,7 +53,7 @@ class RenderBase(unittest.TestCase):
     marker = None
     def show_focus(self):
         # add in a "sprite"
-        self.marker = Sprite(0, 0, 5, 5, Marker())
+        self.marker = Sprite(0, 0, 10, 10, Marker())
         self.scene.sprites.append(self.marker)
 
     def run_test(self):

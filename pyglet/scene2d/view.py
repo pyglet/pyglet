@@ -110,32 +110,43 @@ class FlatView(View):
             objs = []
 
             # maps to pass to the handler
-            if handler.maps is not None:
-                l = handler.maps
+            if hasattr(handler, 'map_filters') and \
+                    handler.map_filters is not None:
+                for mf in handler.map_filters:
+                    l = []
+                    for map in mf.maps:
+                        cell = map.get(px=(x, y))
+                        if cell:
+                            l.append(cell)
+                    objs.extend((map.z, mf(l)))
             else:
-                l = self.scene.maps
-            if l:
-                l.sort(key=operator.attrgetter('z'))
-                for smap in l:
-                    cell = smap.get(px=(x, y))
+                for map in self.scene.maps:
+                    cell = map.get(px=(x, y))
                     if cell:
-                        objs.append(cell)
+                        objs.append((map.z, cell))
 
             # sprites to pass to the handler
-            if handler.sprites is not None:
-                l = handler.sprites
+            if hasattr(handler, 'sprite_filters') and \
+                    handler.sprite_filters is not None:
+                for sf in handler.sprite_filters:
+                    l = []
+                    for sprite in sf.sprites:
+                        if sprite.is_inside(x, y):
+                            l.append((sprite.z, sprite))
+                    objs.extend(sf(l))
             else:
-                l = self.scene.sprites
-            if l:
-                l.sort(key=operator.attrgetter('z'))
-                for sprite in l:
+                for sprite in self.scene.sprites:
                     if sprite.is_inside(x, y):
-                        l.append(sprite)
-            # XXX don't do this for every handler?
+                        objs.append((sprite.z, sprite))
 
-            if handler.limit is not None:
-                l = handler.limit(objs)
+            # sort by depth
+            objs.sort()
+            l = [obj for o, obj in objs]
 
+            # highest to lowest
+            l.reverse()
+
+            # now gen events
             if event_type is EVENT_MOUSE_ENTER:
                 active = set(l)
                 l = active - self._mouse_in_objs
@@ -333,11 +344,7 @@ class FlatView(View):
         for sprite in self.scene.sprites:
             glPushMatrix()
             glTranslatef(sprite.x, sprite.y, sprite.z)
-            if sprite.angle:
-                glTranslatef(sprite.cog[0], sprite.cog[1], 0)
-                glRotatef(sprite.angle, 0, 0, 1)
-                glTranslatef(-sprite.cog[0], -sprite.cog[1], 0)
-            sprite.image.draw()
+            sprite.draw()
             glPopMatrix()
 
         glPopMatrix()

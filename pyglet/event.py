@@ -66,3 +66,12 @@ class EventDispatcher(object):
     def dispatch_events(self):
         raise NotImplementedError('Abstract; this method needs overriding')
 
+
+def event(dispatcher):
+    '''Use as a decorator to push a function onto the given
+    EventDispatcher.
+    '''
+    def decorate(func):
+        dispatcher.push_handlers(func)
+    return decorate
+

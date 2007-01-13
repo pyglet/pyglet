@@ -5,81 +5,92 @@ from pyglet.scene2d import *
 # when any cell changes we can check the changed property against the
 # "listening" "evaluated" searches
 
-class MapSearch:
-    def __init__(self, properties):
+class MapFilter:
+    def __init__(self, maps, properties):
+        self.maps = maps
         self.properties = properties
-        self.result = [] # XXX ...
 
-    def __call__(self, objs):
-        if not self.properties: return objs
+    def __call__(self, cells):
+        ''' Filter by the properties, if any.
+
+        Look in the Cell first, falling back to the Tile if there is one.
+        '''
+        if not self.properties:
+            return cells
         r = []
-        for obj in objs:
+        for cell in cells:
             for k, v in self.properties.items():
-                if obj.properties[k] != v:
-                    break
+                if cell.properties[k] == v:
+                    continue
+                if not hasattr(cell, 'tile') and cell.tile.properties[k] == v:
+                    continue
+                break
             else:
-                r.append(obj)
+                r.append(cell)
         return r
 
-    def update(self, cell):
-        # add to / remove from / don't touch self.result
-        raise NotImplemented()
 
-def event(dispatcher):
-    def decorate(func):
-        if not hasattr(func, 'limit'):
-            func.limit = None
-        if not hasattr(func, 'maps'):
-            func.maps = None
-        if not hasattr(func, 'sprites'):
-            func.sprites = None
-        dispatcher.push_handlers(func)
-    return decorate
+class SpriteFilter:
+    def __init__(self, sprites, properties):
+        self.sprites = sprites
+        self.properties = properties
 
-def for_cells(*maps, **limit):
+    def __call__(self, sprites):
+        ''' Filter by the properties, if any.
+        '''
+        if not self.properties:
+            return sprites
+        r = []
+        for sprite in sprites:
+            for k, v in self.properties.items():
+                if sprite.properties[k] != v: break
+            else:
+                r.append(sprite)
+        return r
+
+
+def for_cells(*maps, **criteria):
     def decorate(func):
-        # XXX limits need to stack with the props, maps and sprites args
-        func.limit = MapSearch(limit)
-        if maps:
-            func.maps = maps[0]
+        if maps: m = maps[0]
+        else: m = None
+        if m or criteria:
+            m = MapFilter(m, criteria)
+            if hasattr(func, 'map_filters'):
+                if func.map_filters is None:
+                    raise ValueError, 'Already seen a @for_sprites()'
+                func.map_filters.append(m)
+            else:
+                func.map_filters = [m]
         else:
-            func.maps = None
-        if not hasattr(func, 'sprites'):
-            func.sprites = []
+            func.map_filters = None
+
+        if not hasattr(func, 'sprite_filters'):
+            # search no sprites
+            func.sprite_filters = []
         return func
     return decorate
 
-def for_sprites(sprites, **limit):
+class FitlerPass:
+    pass
+
+def for_sprites(*sprites, **criteria):
     def decorate(func):
-        # XXX "compile" limit
-        func.limit = limit
-        func.sprites = sprites
-        if not hasattr(func, 'maps'):
-            func.maps = []
+        if sprites: s = sprites[0]
+        else: s = None
+        if s or criteria:
+            s = SpriteFilter(s, criteria)
+            if hasattr(func, 'sprite_filters'):
+                if func.sprite_filters is None:
+                    raise ValueError, 'Already seen a @for_sprites()'
+                func.sprite_filters.append(s)
+            else:
+                func.sprite_filters = [s]
+        else:
+            func.sprite_filters = None
+
+        if not hasattr(func, 'map_filters'):
+            # search no maps
+            func.map_filters = []
         return func
     return decorate
 
-"""
-@event(view)
-@for_cells(map, type='grass')
-@for_cells(map, is_base=True)
-def on_mouse_enter(cells, x, y):
-
-def on_mouse_leave(cells):
-
-@event(view)
-@for_sprites([list of sprites])
-def on_mouse_enter(sprites, x, y, button, modifier):
-
-def on_mouse_release(sprites, x, y, button, modifier):
-
-def on_mouse_drag(sprites, x, y, dx, dy, button, modifier):
-
-def on_view_enter(cells):
-    ''' sprite or cell has entered the View (even if potentially obscured by
-    another cell / sprite '''
-
-def on_view_leave(cells):
-    ' sprite or cell has left the View '
-
-"""

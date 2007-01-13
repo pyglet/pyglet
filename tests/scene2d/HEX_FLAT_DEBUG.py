@@ -17,8 +17,8 @@ from pyglet.scene2d.debug import gen_hex_map
 
 class HexFlatDebugTest(RenderBase):
     def test_main(self):
-        m = gen_hex_map(['a'*10]*10, 32)
-        self.set_map(m)
+        self.init_window(256, 256)
+        self.set_map(gen_hex_map([[{}]*10]*10, 32), resize=True)
         self.view.allow_oob = False
         self.run_test()
 
