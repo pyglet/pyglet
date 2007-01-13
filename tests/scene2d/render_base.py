@@ -53,7 +53,7 @@ class RenderBase(unittest.TestCase):
     marker = None
     def show_focus(self):
         # add in a "sprite"
-        self.marker = Sprite(0, 0, 10, 10, Marker())
+        self.marker = Sprite(0, 0, 16, 16, Marker())
         self.scene.sprites.append(self.marker)
 
     def run_test(self):

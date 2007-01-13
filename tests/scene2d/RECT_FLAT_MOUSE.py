@@ -28,11 +28,6 @@ from pyglet.scene2d.event import for_cells, for_sprites
 from pyglet.scene2d.image import RectTintEffect
 from pyglet.scene2d.debug import gen_rect_map, RectCheckImage
 
-hover_img = RectCheckImage(32, 32, (1, 0, 0, 1))
-hover = Tile('hover', {}, hover_img)
-clicked_img = RectCheckImage(32, 32, (0, 1, 0, 1))
-clicked = Tile('clicked', {}, clicked_img)
-
 class RectFlatMouseTest(RenderBase):
     def test_main(self):
         self.init_window(256, 256)

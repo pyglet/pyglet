@@ -20,7 +20,6 @@ class RectFlatDebugTest(RenderBase):
         self.init_window(256, 256)
         self.set_map(gen_rect_map([[{}]*10]*10, 32, 32), resize=True)
         self.view.allow_oob = False
-        self.show_focus()
         self.run_test()
 
 if __name__ == '__main__':
