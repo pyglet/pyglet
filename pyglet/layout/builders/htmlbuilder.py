@@ -18,6 +18,29 @@ from pyglet.layout.builders.xhtmlbuilder import *
 __all__ = ['HTMLElement', 'HTMLBuilder']
 
 class HTMLElement(ContentElement):
+    font_sizes = {
+        '1': Ident('xx-small'),
+        '2': Ident('small'),
+        '3': Ident('medium'),
+        '4': Ident('large'),
+        '5': Ident('x-large'),
+        '6': Ident('xx-large'),
+        '7': Ident('xx-large'),
+        '-6': Dimension('0.2em'),
+        '-5': Dimension('0.2em'),
+        '-4': Dimension('0.2em'),
+        '-3': Dimension('0.4em'),
+        '-2': Dimension('0.6em'),
+        '-1': Dimension('0.8em'),
+        '+0': Dimension('1em'),     # TODO: twiddle these to good effect
+        '+1': Dimension('1.2em'),
+        '+2': Dimension('1.4em'),
+        '+3': Dimension('1.6em'),
+        '+4': Dimension('1.8em'),
+        '+5': Dimension('2.0em'),
+        '+6': Dimension('2.2em'),
+    }
+    
     def __init__(self, name, attributes, parent, previous_sibling):
         super(HTMLElement, self).__init__(
             name, attributes, parent, previous_sibling)
@@ -27,6 +50,29 @@ class HTMLElement(ContentElement):
             self.classes = attributes['class'].lower().split()
         if attributes.has_key('style'):
             self.set_element_style(attributes['style'])
+
+        # Apply CSS to HTML presentation elements
+        if name == 'font':
+            declarations = []
+            if 'size' in attributes:
+                size = self.font_sizes.get(attributes['size'], 'medium')
+                declarations.append(
+                    Declaration('font-size', [size], None))
+            if 'face' in attributes:
+                faces = []
+                for face in attributes['face'].split(','):
+                    faces.append(Ident(face.strip()))
+                    faces.append(Delim(','))
+                declarations.append(
+                    Declaration('font-family', faces, None))
+            if 'color' in attributes:
+                if attributes['color'][:1] == '#':
+                    color = Hash(attributes['color'])
+                else:
+                    color = Ident(attributes['color'])
+                declarations.append(
+                    Declaration('color', [color], None))
+            self.intrinsic_declaration_set = DeclarationSet(declarations)
 
 class DTDElement(object):
     ANY = ()
@@ -220,3 +266,4 @@ class HTMLBuilder(XHTMLBuilder):
 
     def close(self):
         self.parser.close()
+

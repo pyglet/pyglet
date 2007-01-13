@@ -702,6 +702,8 @@ class FrameBuilder(object):
         declaration_sets = []
         for stylesheet in self.document.stylesheets:
             declaration_sets += stylesheet.get_element_declaration_sets(element)
+        if element.intrinsic_declaration_set:
+            declaration_sets.append(element.intrinsic_declaration_set)
         if element.element_declaration_set:
             declaration_sets.append(element.element_declaration_set)
         return declaration_sets

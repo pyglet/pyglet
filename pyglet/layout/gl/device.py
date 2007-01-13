@@ -294,7 +294,7 @@ class GLTextFrame(TextFrame):
             # within string anyway.
             if frame.to_index == frame.from_index and \
                (frame is not self or 
-                not self.contains_ws.search(self.text[frame.from_index])):
+                not self.contains_ws.search(self.text[frame.from_index:])):
                 frame.to_index = len(self.text)
 
             if frame.to_index != frame.from_index:

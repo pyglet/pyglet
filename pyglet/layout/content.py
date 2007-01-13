@@ -32,7 +32,8 @@ class ContentElement(SelectableElement):
     text = ''
 
     is_anonymous = False
-    element_declaration_set = None
+    element_declaration_set = None      # style from style attribute
+    intrinsic_declaration_set = None    # style on HTML presentation elements
     frame = None
 
     def __init__(self, name, attributes, parent, previous_sibling):
