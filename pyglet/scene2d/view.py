@@ -52,6 +52,8 @@ class View(EventDispatcher):
 EVENT_MOUSE_DRAG = View.register_event_type('on_mouse_drag')
 EVENT_MOUSE_PRESS = View.register_event_type('on_mouse_press')
 EVENT_MOUSE_RELEASE = View.register_event_type('on_mouse_release')
+EVENT_MOUSE_ENTER = View.register_event_type('on_mouse_enter')
+EVENT_MOUSE_LEAVE = View.register_event_type('on_mouse_leave')
 
 class FlatView(View):
     '''Render a flat view of a pyglet.scene2d.Scene.
@@ -94,25 +96,81 @@ class FlatView(View):
     #
     # EVENT HANDLING
     #
-    def dispatch_event(self, event_type, objs, *args):
+    _mouse_in_objs = set()
+    def dispatch_event(self, x, y, event_type, *args):
         ''' if a handler has a limit attached then use that to filter objs
         '''
+
+        # now fire the handler
         for frame in self._event_stack:
             handler = frame.get(event_type, None)
-            if handler:
-                if handler.limit is not None:
-                    l = handler.limit(objs)
+            if not handler: continue
+
+            # XXX don't do this for every handler?
+            objs = []
+
+            # maps to pass to the handler
+            if handler.maps is not None:
+                l = handler.maps
+            else:
+                l = self.scene.maps
+            if l:
+                l.sort(key=operator.attrgetter('z'))
+                for smap in l:
+                    cell = smap.get(px=(x, y))
+                    if cell:
+                        objs.append(cell)
+
+            # sprites to pass to the handler
+            if handler.sprites is not None:
+                l = handler.sprites
+            else:
+                l = self.scene.sprites
+            if l:
+                l.sort(key=operator.attrgetter('z'))
+                for sprite in l:
+                    if sprite.is_inside(x, y):
+                        l.append(sprite)
+            # XXX don't do this for every handler?
+
+            if handler.limit is not None:
+                l = handler.limit(objs)
+
+            if event_type is EVENT_MOUSE_ENTER:
+                active = set(l)
+                l = active - self._mouse_in_objs
                 if not l: continue
-                ret = handler(l, *args)
-                if ret != EVENT_UNHANDLED:
-                    break
+                self._mouse_in_objs = self._mouse_in_objs | l
+                l = list(l)
+            elif event_type is EVENT_MOUSE_LEAVE:
+                active = set(l)
+                l = self._mouse_in_objs - active
+                if not l: continue
+                self._mouse_in_objs = self._mouse_in_objs - l
+                l = list(l)
+            else:
+                if not l: continue
+
+            ret = handler(l, *args)
+
+            if ret != EVENT_UNHANDLED:
+                break
         return None
 
     def on_mouse_press(self, button, x, y, modifiers):
         x, y = self.translate_position(x, y)
-        objs = self.get(x, y)
-        self.dispatch_event(EVENT_MOUSE_PRESS, objs, button, x, y,
-            modifiers)
+        self.dispatch_event(x, y, EVENT_MOUSE_PRESS, button, x, y, modifiers)
+        return EVENT_UNHANDLED
+
+    def on_mouse_release(self, button, x, y, modifiers):
+        x, y = self.translate_position(x, y)
+        self.dispatch_event(x, y, EVENT_MOUSE_PRESS, button, x, y, modifiers)
+        return EVENT_UNHANDLED
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        x, y = self.translate_position(x, y)
+        self.dispatch_event(x, y, EVENT_MOUSE_ENTER)
+        self.dispatch_event(x, y, EVENT_MOUSE_LEAVE)
         return EVENT_UNHANDLED
 
     #
@@ -123,7 +181,7 @@ class FlatView(View):
         position.'''
         fx, fy = self._determine_focus()
         ox, oy = self.camera.width/2-fx, self.camera.height/2-fy
-        return (x - ox, y - oy)
+        return (int(x - ox), int(y - oy))
 
     def get(self, x, y):
         ''' Pick whatever is on the top at the position x, y. '''

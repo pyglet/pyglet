@@ -6,9 +6,7 @@ from pyglet.scene2d import *
 # "listening" "evaluated" searches
 
 class MapSearch:
-    def __init__(self, map, properties):
-        self.map = map      # XXX this has to be filtered during cell
-                            # collection, not after
+    def __init__(self, properties):
         self.properties = properties
         self.result = [] # XXX ...
 
@@ -31,20 +29,29 @@ def event(dispatcher):
     def decorate(func):
         if not hasattr(func, 'limit'):
             func.limit = None
+        if not hasattr(func, 'maps'):
+            func.maps = None
+        if not hasattr(func, 'sprites'):
+            func.sprites = None
         dispatcher.push_handlers(func)
     return decorate
 
-def for_cells(obj, **properties):
+def for_cells(maps, **limit):
     def decorate(func):
-        func.limit = MapSearch(obj, properties)
-        # XXX "compile" limit
+        func.limit = MapSearch(limit)
+        func.maps = maps
+        if not hasattr(func, 'sprites'):
+            func.sprites = []
         return func
     return decorate
 
-def for_sprites(obj, **properties):
+def for_sprites(sprites, **limit):
     def decorate(func):
         # XXX "compile" limit
-        func.limit = (obj, properties)
+        func.limit = limit
+        func.sprites = sprites
+        if not hasattr(func, 'maps'):
+            func.maps = []
         return func
     return decorate
 

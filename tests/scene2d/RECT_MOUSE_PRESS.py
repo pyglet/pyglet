@@ -29,7 +29,7 @@ class RectFlatDebugTest(RenderBase):
         self.view.allow_oob = False
 
         @event(self.view)
-        @for_cells(m, val='a')
+        @for_cells([m], val='a')
         def on_mouse_press(objs, button, x, y, modifiers):
             print 'PRESSED', objs
 
