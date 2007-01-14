@@ -2,8 +2,6 @@
 
 '''Testing mouse interaction
 
-NOTE: one cell in this map is a 2x2 grey check grid.
-
 The cell the mouse is hovering over should highlight in red.
 
 Clicking in a cell should highliht that cell green. Clicking again will
@@ -25,7 +23,7 @@ from render_base import RenderBase
 from pyglet.scene2d import Tile, Sprite
 from pyglet.event import event
 from pyglet.scene2d.event import for_cells, for_sprites
-from pyglet.scene2d.image import RectTintEffect
+from pyglet.scene2d.image import TintEffect
 from pyglet.scene2d.debug import gen_rect_map, RectCheckImage
 
 class RectFlatMouseTest(RenderBase):
@@ -39,7 +37,7 @@ class RectFlatMouseTest(RenderBase):
         @for_cells()
         def on_mouse_enter(cells):
             for cell in cells:
-                e = RectTintEffect((1, .5, .5, 1))
+                e = TintEffect((1, .5, .5, 1))
                 cell.properties['hover'] = e
                 cell.add_effect(e)
 
@@ -58,7 +56,7 @@ class RectFlatMouseTest(RenderBase):
                     obj.remove_effect(obj.properties['clicked'])
                     del obj.properties['clicked']
                 else:
-                    e = RectTintEffect((.5, 1, .5, 1))
+                    e = TintEffect((.5, 1, .5, 1))
                     obj.properties['clicked'] = e
                     obj.add_effect(e)
                 return

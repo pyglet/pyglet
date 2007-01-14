@@ -82,12 +82,15 @@ if maptype is None:
 
 filename = '%(x)s-%(e)s-%(r)s'%filename
 
+w = pyglet.window.Window(width=1, height=1, visible=False)
+
 mw, mh = size
 if maptype == 'hex':
-    m = pyglet.scene2d.HexMap(ch, cells=gen_hex_map(['a'*mh]*mw, ch))
+    m = gen_hex_map([[{}]*mh]*mw, ch)
 else:
-    m = pyglet.scene2d.RectMap(cw, ch, cells=gen_rect_map(['a'*mh]*mw, cw, ch))
-w = pyglet.window.Window(width=m.pxw, height=m.pxh)
+    m = gen_rect_map([[{}]*mh]*mw, cw, ch)
+w.set_size(width=m.pxw, height=m.pxh)
+w.set_visible()
 s = pyglet.scene2d.Scene(maps=[m])
 r = pyglet.scene2d.FlatView(s, 0, 0, m.pxw, m.pxh, allow_oob=False)
 

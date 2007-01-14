@@ -35,17 +35,9 @@ class HexCheckImage:
 
 class RectCheckImage:
     def __init__(self, w, h, colour):
-        self.image = Image2d.from_image(Image.create_checkerboard(w))
-        self.colour = colour
+        self.image = Image2d.from_image(Image.create_solid(w, colour))
     def draw(self):
         self.image.draw()
-        #glColor4f(*self.colour)
-        #glBegin(GL_QUADS)
-        #glVertex2f(0, 0)
-        #glVertex2f(self.w, 0)
-        #glVertex2f(self.w, self.h)
-        #glVertex2f(0, self.h)
-        #glEnd()
 
 def gen_hex_map(meta, h):
     r = []
@@ -70,9 +62,9 @@ def gen_rect_map(meta, w, h):
         r.append(c)
         for j, info in enumerate(m):
             if (i + j) % 2:
-                image = RectCheckImage(w, h, (.7, .7, .7, 1))
+                image = RectCheckImage(w, h, (150, 150, 150, 255))
             else:
-                image = RectCheckImage(w, h, (.9, .9, .9, 1))
+                image = RectCheckImage(w, h, (200, 200, 200, 255))
             c.append(RectCell(i, j, w, h, dict(info), Tile('dbg', {}, image)))
     return RectMap('debug', w, h, r)
 

@@ -87,8 +87,13 @@ class Image(object):
         raise first_exception
 
     @staticmethod
-    def create_checkerboard(size, 
-                          colour1=(150, 150, 150, 255), 
+    def create_solid(size, colour=(150, 150, 150, 255)):
+        return RawImage('%c%c%c%c'%colour * size * size, size, size, 'RGBA',
+            GL_UNSIGNED_BYTE)
+
+    @staticmethod
+    def create_checkerboard(size,
+                          colour1=(150, 150, 150, 255),
                           colour2=(200, 200, 200, 255)):
         half = size/2
         colour1 = '%c%c%c%c' % colour1

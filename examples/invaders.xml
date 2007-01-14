@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<resource>
+ <imageatlas size="64x64" file="invader-sprites.png">
+  <image id="player" offset="0,256" size="32x48" />
+  <image id="player-bullet" offset="64,256" size="18x18" />
+  <image id="enemy1" offset="128,256" size="30x30" />
+  <image id="enemy2" offset="0,192" size="34x24" />
+  <image id="enemy-bullet1" offset="64,192" size="9x27" />
+  <image id="enemy-bullet2" offset="128,192" size="9x27" />
+ </imageatlas>
+</resource>
