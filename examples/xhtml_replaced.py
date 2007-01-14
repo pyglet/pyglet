@@ -16,34 +16,36 @@ from pyglet.clock import *
 
 from pyglet.text import *
 from pyglet.layout import *
-from pyglet.layout.base import *
+from pyglet.layout.frame import *
 
 data = '''<?xml version="1.0"?>
 <html>  
   <head>
     <style>
+       .big { width:100%;border:1px solid;background-color:aqua }
+       .big:hover {background-color:fuschia}
     </style>
   </head>
   <body>
     <h1>Replaced element example</h1>
 
     <p>Replaced elements are drawn by the application.  You write a class
-    and attach it to the XML formatter to handle desired element names.
-    pyglet includes such a box generator to create image replaced element
-    boxes.</p>
+    and attach it to the layout (or at a lower level, to the frame builder)
+    to handle desired element names.
+    pyglet includes such a factory to create image replaced element
+    frames.</p>
 
     <p>Here we've created a custom replaced element tag: "&lt;cube&gt;":
     <cube/>.  Layout is handled by pyglet.layout, and rendering is handled by
     the application.  Of course, the usual CSS properties can be applied:</p>
 
-    <p><cube style="width:100%;border:1px solid;background-color:aqua" /></p>
+    <p><cube class="big" /></p>
 
     <p>If you click on the cube you might even get an event handled.</p>    
   </body>
 </html> '''
 
-class CubeBox(Box):
-    is_replaced = True
+class CubeDrawable(ReplacedElementDrawable):
     intrinsic_width = 32
     intrinsic_height = 32
     intrinsic_ratio = 1.
@@ -54,7 +56,7 @@ class CubeBox(Box):
         from pyglet.model.geometric import cube_list
         self.cube = cube_list()
 
-    def draw(self, render_device, left, top, right, bottom):
+    def draw(self, frame, render_device, left, top, right, bottom):
 
         glPushAttrib(GL_CURRENT_BIT | GL_LIGHTING_BIT | GL_ENABLE_BIT)
         glEnable(GL_LIGHTING)
@@ -103,17 +105,17 @@ class CubeBox(Box):
 
         glPopAttrib()
 
-class CubeGenerator(BoxGenerator):
+class CubeReplacedElementFactory(ReplacedElementFactory):
     accept_names = ['cube']
 
-    def create_box(self, name, attrs):
-        return CubeBox()
+    def create_drawable(self, element):
+        return CubeDrawable()
 
 # Create a window, attach the usual event handlers
 window = Window(visible=False)
 
 layout = Layout()
-layout.add_generator(CubeGenerator())
+layout.add_replaced_element_factory(CubeReplacedElementFactory())
 layout.set_xhtml(data)
 window.push_handlers(layout)
 
@@ -132,7 +134,7 @@ rate = 50
 
 while not window.has_exit:
     dt = clock.tick()
-    CubeBox.angle += dt * rate
+    CubeDrawable.angle += dt * rate
     print 'FPS = %.2f\r' % clock.get_fps(),
 
     window.dispatch_events()

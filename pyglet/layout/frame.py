@@ -738,9 +738,18 @@ class InlineReplacedElementFrame(InlineFrame):
 
         self.continuation = InlineReplacedElementDelegate(self, drawable)
 
+    def purge_style_cache(self, properties):
+        super(InlineReplacedElementFrame, self).purge_style_cache(properties)
+        self.continuation.purge_style_cache(properties)
+
+    def mark_flow_dirty(self):
+        super(InlineReplacedElementFrame, self).mark_flow_dirty()
+        self.continuation.mark_flow_dirty()
+
     def flow_inline(self, remaining_width):
         # Let continuation flow itself.
         self.continuation.containing_block = self.containing_block
+        self.continuation.style = self.style
         self.continuation.flow_inline(remaining_width)
 
 class InlineReplacedElementDelegate(InlineFrame):
