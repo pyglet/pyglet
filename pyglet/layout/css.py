@@ -254,7 +254,9 @@ class Rule(object):
         for s in simples:
             if s.id:
                 specifity += 1 << 16
-            specifity += (1 << 8) * (len(s.classes) + len(s.attribs))
+            specifity += (1 << 8) * (len(s.classes) + 
+                                     len(s.attribs) + 
+                                     len(s.pseudos))
             if s.name:
                 specifity += 1
         self.specifity = specifity
