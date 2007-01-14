@@ -2,10 +2,10 @@
 
 '''
 Results:
-      AMD64/mesa   AMD64/nvidia
-500:  77.0         63.5
-1000: 38.3         32.4
-2000: 18.5         16.4
+      AMD64/mesa   AMD64/nvidia   MacBook Pro
+500:  77.0         63.5           46.7
+1000: 38.3         32.4           23.5
+2000: 18.5         16.4           11.8
 '''
 
 import os
