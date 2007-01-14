@@ -214,7 +214,11 @@ class GLTextFrame(TextFrame):
 
     contains_ws = re.compile(u'[\n\u0020\u200b]')
 
-    def flow_inline(self, containing_block, remaining_width):
+    def purge_style_cache(self):
+        super(GLTextFrame, self).purge_style_cache()
+        self.glyph_string = None
+
+    def flow_inline(self, remaining_width):
         # Clear previous flow continuation if any
         self.continuation = None
 
@@ -228,7 +232,7 @@ class GLTextFrame(TextFrame):
         def used(property):
             value = computed(property)
             if type(value) == Percentage:
-                value = value * containing_block.width
+                value = value * self.containing_block.width
             return value
         
         # Calculate computed and used values of box properties when
@@ -269,7 +273,7 @@ class GLTextFrame(TextFrame):
             # No text fits, but there's a line-break to use
             if frame.to_index == frame.from_index and \
                 frame is not self and \
-               '\n' in self.text[frame.from_index:]:
+               '\n' in self.text[frame.from_index+1:]:
                 frame.to_index = self.text.index('\n', frame.from_index + 1)
 
             # If none of text fits, use all text, only if next frame will
@@ -312,13 +316,14 @@ class GLTextFrame(TextFrame):
                 # Ready for next iteration
                 frame.continuation = continuation
                 frame = continuation
-                remaining_width = containing_block.width
+                remaining_width = self.containing_block.width
 
             if frame.to_index >= len(self.text):
                 break
 
 
         frame.border_edge_width += content_right
+        self.frame_dirty = False
 
 
     def draw_text(self, x, y, render_context):

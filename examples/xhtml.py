@@ -27,14 +27,14 @@ data = '''<?xml version="1.0"?>
           background-image: url(examples/stripe.png)}
       body {background-image: url(examples/paper.jpg); 
             background-repeat: repeat;}
-      #wishing:hover {color:red;}
+      p:hover {color:red; border: 2px dashed blue;}
     </style>
   </head>
   <body>
     <h1>The Frog King</h1>
     <h2>Brothers Grimm</h2>
     <p>
-      In olden times when wishing still helped one,
+      In olden times when <span id="wishing">wishing</span> still helped one,
       there lived a king whose daughters were all beautiful, but the youngest
       was so beautiful that the sun itself, which has seen so much, was
       astonished whenever it shone in her face.  Close by the king's castle

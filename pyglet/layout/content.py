@@ -21,6 +21,9 @@ class DocumentListener(object):
     def on_set_root(self, root):
         pass
 
+    def on_element_modified(self, element):
+        pass
+
     def on_element_style_modified(self, element):
         pass
 
@@ -44,6 +47,12 @@ class Document(object):
         self.root = root
         for l in self.listeners:
             l.on_set_root(root)
+
+    def element_modified(self, element):
+        '''Notify that an element's children or text have changed.
+        '''
+        for l in self.listeners:
+            l.on_element_modified(element)
 
     def element_style_modified(self, element):
         '''Notify that the element's style has changed.

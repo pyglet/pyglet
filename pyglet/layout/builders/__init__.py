@@ -25,6 +25,7 @@ class ContentBuilder(object):
         element = self.element_class(name, attributes, parent, previous_sibling)
         if parent:
             parent.add_child(element)
+            self.document.element_modified(parent)
         else:
             self.document.set_root(element)
 
@@ -39,4 +40,5 @@ class ContentBuilder(object):
     def text(self, text):
         if self.document.root:
             self.parent_stack[-1].add_text(text)
+            self.document.element_modified(self.parent_stack[-1])
 

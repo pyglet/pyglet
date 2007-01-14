@@ -344,7 +344,7 @@ class SimpleSelector(object):
                 if value.split('-')[:len(pre)] != pre:
                     return False
         for pseudo in self.pseudos:
-            if pseudo not in elem.pseudo_classes:
+            if pseudo.name not in elem.pseudo_classes:
                 return False
         return True
         

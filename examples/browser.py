@@ -73,9 +73,9 @@ def on_key_press(symbol, modifiers):
     if symbol == K_E:
         layout.document.root.pprint()
     if symbol == K_F:
-        layout._visual._root_frame.pprint()
+        layout.view._root_frame.pprint()
     if symbol == K_S:
-        layout._visual._root_frame.pprint_style()
+        layout.view._root_frame.pprint_style()
     return True
 
 layout = Layout(locator=locator)

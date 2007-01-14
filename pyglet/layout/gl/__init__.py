@@ -8,15 +8,14 @@ __version__ = '$Id$'
 
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.event import *
-from pyglet.layout.visual import *
 from pyglet.layout.css import *
+from pyglet.layout.content import *
+from pyglet.layout.frame import *
 from pyglet.layout.locator import *
+from pyglet.layout.view import *
 from pyglet.layout.gl.device import *
 from pyglet.layout.gl.event import *
 from pyglet.layout.gl.image import *
-
-from pyglet.layout.content import *
-from pyglet.layout.frame import *
 from pyglet.layout.builders.htmlbuilder import *
 from pyglet.layout.builders.xmlbuilder import *
 from pyglet.layout.builders.xhtmlbuilder import *
@@ -37,8 +36,10 @@ class GLLayout(LayoutEventDispatcher):
 
         if not render_device:
             render_device = GLRenderDevice(self.locator)
-        self._visual = VisualLayout(render_device)
         self.render_device = render_device
+
+        self.document = Document()
+        self.view = DocumentView(self.render_device, self.document)
         
         # If the layout is added to a window event stack, the following
         # variables are taken care of automatically (x, y, viewport).
@@ -53,79 +54,49 @@ class GLLayout(LayoutEventDispatcher):
     def set_data(self, data, builder):
         builder.feed(data)
         builder.close()
-        self._visual.document = self.document
         self._mouse_over_elements = set()
         
     def set_xhtml(self, data):
-        self.document = Document()
+        self.document.root = None
         self.set_data(data, XHTMLBuilder(self.document))
 
     def set_html(self, data):
-        self.document = Document()
+        self.document.root = None
         self.set_data(data, HTMLBuilder(self.document))
 
-
-    '''
-    def set_xml(self, data, stylesheet):
-        formatter = XMLFormatter(self._visual.render_device, self.locator)
-        formatter.add_stylesheet(stylesheet)
-        self.set_data(data, formatter)
-
-    def set_xhtml(self, data):
-        formatter = XHTMLFormatter(self._visual.render_device, self.locator)
-        image_box_generator = ImageBoxGenerator(self.locator)
-        formatter.add_generator(image_box_generator)
-        self.set_data(data, formatter)
-
-    def set_html(self, data):
-        formatter = HTMLFormatter(self._visual.render_device, self.locator)
-        image_box_generator = ImageBoxGenerator(self.locator)
-        formatter.add_generator(image_box_generator)
-        self.set_data(data, formatter)
-
-    def set_data(self, data, formatter):
-        for generator in self.generators:
-            formatter.add_generator(generator)
-        self._visual.root_box = formatter.format(data)
-        self._mouse_over_elements = set()
-
-    def add_generator(self, generator):
-        self.generators.append(generator)
-    '''
-
-    # Duplicate the public properties of VisualLayout here for convenience
+    # Duplicate the public properties of DocumentView here for convenience
 
     def set_viewport_x(self, x):
-        self._visual.viewport_x = x
-    viewport_x = property(lambda self: self._visual.viewport_x, 
+        self.view.viewport_x = x
+    viewport_x = property(lambda self: self.view.viewport_x, 
                           set_viewport_x)
 
     def set_viewport_y(self, y):
-        self._visual.viewport_y = y
-    viewport_y = property(lambda self: self._visual.viewport_y, 
+        self.view.viewport_y = y
+    viewport_y = property(lambda self: self.view.viewport_y, 
                           set_viewport_y)
 
     def set_viewport_width(self, width):
-        self._visual.viewport_width = width
-    viewport_width = property(lambda self: self._visual.viewport_width, 
+        self.view.viewport_width = width
+    viewport_width = property(lambda self: self.view.viewport_width, 
                               set_viewport_width)
 
     def set_viewport_height(self, height):
-        self._visual.viewport_height = height
-    viewport_height = property(lambda self: self._visual.viewport_height, 
+        self.view.viewport_height = height
+    viewport_height = property(lambda self: self.view.viewport_height, 
                                set_viewport_height)
 
 
-    canvas_width = property(lambda self: self._visual.canvas_width)
-    canvas_height = property(lambda self: self._visual.canvas_height)
+    canvas_width = property(lambda self: self.view.canvas_width)
+    canvas_height = property(lambda self: self.view.canvas_height)
 
     def draw(self):
         glMatrixMode(GL_PROJECTION)
         glPushMatrix()
         glLoadIdentity()
         glOrtho(self.x,
-                self.x + self._visual.viewport_width,
-                self.y - self._visual.viewport_height,
+                self.x + self.view.viewport_width,
+                self.y - self.view.viewport_height,
                 self.y,
                 -1, 1)
         
@@ -134,7 +105,7 @@ class GLLayout(LayoutEventDispatcher):
         glLoadIdentity()
         glTranslatef(self.x, self.y, 0)
 
-        self._visual.draw()
+        self.view.draw()
 
         glPopMatrix()
         glMatrixMode(GL_PROJECTION)
@@ -160,8 +131,8 @@ class GLLayout(LayoutEventDispatcher):
     # Window event handlers.
     def on_resize(self, width, height):
         if self.size_to_window:
-            self._visual.viewport_width = width
-            self._visual.viewport_height = height
+            self.view.viewport_width = width
+            self.view.viewport_height = height
             self.x = 0
             self.y = height
         self.constrain_viewport()
@@ -175,7 +146,7 @@ class GLLayout(LayoutEventDispatcher):
     def on_mouse_press(self, button, x, y, modifiers):
         x -= self.x
         y -= self.y
-        elements = self._visual.get_elements_for_point(x, y)
+        elements = self.view.get_elements_for_point(x, y)
         for element in elements[::-1]:
             handled = self.dispatch_event(element, 'on_mouse_press', 
                 button, x, y, modifiers)
@@ -186,14 +157,16 @@ class GLLayout(LayoutEventDispatcher):
     def on_mouse_motion(self, x, y, dx, dy):
         x -= self.x
         y -= self.y
-        elements = self._visual.get_elements_for_point(x, y)
+        elements = self.view.get_elements_for_point(x, y)
         elements_set = set(elements)
         for element in self._mouse_over_elements - elements_set:
             self.dispatch_event(element, 'on_mouse_leave', x, y)
             element.remove_pseudo_class('hover')
+            self.document.element_style_modified(element)
         for element in elements_set - self._mouse_over_elements:
             self.dispatch_event(element, 'on_mouse_enter', x, y)
             element.add_pseudo_class('hover')
+            self.document.element_style_modified(element)
         self._mouse_over_elements = elements_set
 
     def on_mouse_leave(self, x, y):
@@ -202,6 +175,7 @@ class GLLayout(LayoutEventDispatcher):
         for element in self._mouse_over_elements:
             self.dispatch_event(element, 'on_mouse_leave', x, y)
             element.remove_pseudo_class('hover')
+            self.document.element_style_modified(element)
         self._mouse_over_elements = set()
 
 # As long as there's not going to be any other render device around, call
