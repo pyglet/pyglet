@@ -26,7 +26,7 @@ class ContentBuilder(object):
         if parent:
             parent.add_child(element)
         else:
-            self.document.root = element
+            self.document.set_root(element)
 
         self.parent_stack.append(element)
         self.sibling_stack.append(element)

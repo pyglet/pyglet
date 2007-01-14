@@ -1,20 +1,25 @@
 #!/usr/bin/env python
 
-'''Control rendering and viewport.
+'''Single view of a document.
+
+Responsible for maintaining frame and style trees.
 '''
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+from pyglet.layout.content import *
 from pyglet.layout.frame import *
 
-class VisualLayout(object):
-    def __init__(self, render_device):
+class DocumentView(DocumentListener):
+    def __init__(self, render_device, document):
         self.render_device = render_device
-        self._document = None
+        self.document = document
+        self.document.add_listener(self)
+        self.frame_builder = FrameBuilder(self.document, self.render_device)
+
         self._root_frame = None
-        self._need_reflow = True
-        self._need_reconstruct = True
+        self._pending_reflow = set()
 
         # Position of viewport on canvas (+ve Y is down).  Size of viewport
         # determines the initial containing block.
@@ -23,26 +28,38 @@ class VisualLayout(object):
         self._viewport_width = 0 
         self._viewport_height = 0
 
-    def set_document(self, document):
-        self._document = document
-        self._need_reconstruct = True
-    document = property(lambda self: self._document, set_document)
+    def on_set_root(self, element):
+        self._root_frame = self.frame_builder.build_frame(self.document.root)
+        self.reflow_resize()
+
+    def on_element_style_modified(self, element):
+        frame = element.frame
+        frame.style = self.frame_builder.get_style_node(element)
+        self._pending_reflow.add(frame)
+        frame.purge_style_cache()
+
+    def reflow_resize(self):
+        self._pending_reflow.clear()
+        self._pending_reflow.add(self._root_frame)
+        self._root_frame.containing_block = self.initial_containing_block()
+
+    def update_flow(self):
+        for frame in self._pending_reflow:
+            frame.reflow()
+            while frame:
+                frame.reposition_children()
+                frame = frame.parent
+        self._pending_reflow.clear()
 
     def get_canvas_width(self):
-        if not self._document:
-            return 0
-        if self._need_reflow:
-            self.reflow()
+        self.update_flow()
         # By convention with web browsers, don't allow viewport to show left
         # of origin.
         return self._root_frame.bounding_box_right
     canvas_width = property(get_canvas_width)
 
     def get_canvas_height(self):
-        if not self._document:
-            return 0
-        if self._need_reflow:
-            self.reflow()
+        self.update_flow()
         # By convention with web browsers, don't allow viewport to show above
         # of origin.
         return -self._root_frame.bounding_box_bottom
@@ -50,13 +67,13 @@ class VisualLayout(object):
 
     def set_viewport_width(self, width):
         self._viewport_width = width
-        self._need_reflow = True
+        self.reflow_resize()
     viewport_width = property(lambda self: self._viewport_width, 
                               set_viewport_width)
 
     def set_viewport_height(self, height):
         self._viewport_height = height
-        self._need_reflow = True
+        self.reflow_resize()
     viewport_height = property(lambda self: self._viewport_height, 
                                set_viewport_height)
 
@@ -64,30 +81,8 @@ class VisualLayout(object):
         if self._viewport_width <= 0 or self._viewport_height <= 0: 
             return
 
-        if not self.document:
-            return
-
-        if self._need_reflow:
-            self.reflow()
-
         self._root_frame.draw(self.viewport_x, self.viewport_y, 
             self.render_device)
-
-    def reconstruct(self):
-        self._need_reconstruct = False
-        frame_builder = FrameBuilder(self.document, self.render_device)
-        self._root_frame = frame_builder.build_frame(self.document.root)
-        self._need_reflow = True
-
-    def reflow(self):
-        if self._need_reconstruct:
-            self.reconstruct()
-        initial_containing_block = self.initial_containing_block()
-        if initial_containing_block.width <= 0:
-            return
-        self._need_reflow = False
-        self._root_frame.flow(initial_containing_block)
-        self._root_frame.resolve_bounding_box(0, 0)
 
     def get_frames_for_point(self, x, y):
         x += self.viewport_x

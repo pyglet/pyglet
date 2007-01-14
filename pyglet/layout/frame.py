@@ -35,6 +35,7 @@ class Frame(object):
 
     # What makes up a frame
     element = None
+    containing_block = None
     parent = None
     children = ()
     flowed_children = ()
@@ -77,26 +78,42 @@ class Frame(object):
     def get_computed_property(self, property):
         return self.style.get_computed_property(property, self)
 
+    def purge_style_cache(self):
+        self.computed_properties.clear()
+        for child in self.children:
+            child.purge_style_cache()
+
     # Reflow
     # ------
 
-    def flow(self, containing_block):
-        '''Flow all children, then position all children.
+    def flow(self):
+        '''Flow and position all children, size self.
         '''
         raise NotImplementedError('abstract')
 
-    def position(self, x, y, containing_block):
+    def reposition_children(self):
+        '''Assume all children are flowed and are sized, position children
+        and size self.
+        '''
+        pass
+
+    def position(self, x, y):
+        '''Position self border edge top-left at x, y.
+
+        Children are affected by relativity only (no child-positioning code
+        here).
+        '''
         self.border_edge_left = x
         self.border_edge_top = y
         if self.get_computed_property('position') == 'relative':
             left = self.get_computed_property('left')
             top = self.get_computed_property('top')
             if type(left) == Percentage:
-                left = left * containing_block.width
+                left = left * self.containing_block.width
             elif left == 'auto':
                 left = 0
             if type(top) == Percentage:
-                top = top * containing_block.height
+                top = top * self.containing_block.height
             elif top == 'auto':
                 top = 0
 
@@ -247,7 +264,7 @@ class BlockFrame(Frame):
     inline_level = False
     inline_context = True       # Flips if a block-level child is added
 
-    def create_containing_block(self, containing_block):
+    def create_containing_block(self):
         '''Also sets frame metrics with the exception of 
         border_edge_height, if implicit.
 
@@ -257,7 +274,7 @@ class BlockFrame(Frame):
         def used(property):
             value = computed(property)
             if type(value) == Percentage:
-                value = value * containing_block.width
+                value = value * self.containing_block.width
             return value
         
         # Calculate computed and used values of box properties when
@@ -282,12 +299,12 @@ class BlockFrame(Frame):
             self.margin_right = 0
         non_content_width = self.margin_left + self.content_left + \
             content_right + self.margin_right
-        remaining_width = containing_block.width - non_content_width
+        remaining_width = self.containing_block.width - non_content_width
 
         # Determine content width
         content_width = computed('width')
         if content_width == 'auto':
-            content_width = containing_block.width - non_content_width
+            content_width = self.containing_block.width - non_content_width
         else:
             if not auto_margin_left and not auto_margin_right:
                 # Over-constrained
@@ -312,10 +329,10 @@ class BlockFrame(Frame):
         # Determine content height (may be auto)
         content_height = computed('height')
         if type(content_height) == Percentage:
-            if containing_block.bottom is None:
+            if self.containing_block.bottom is None:
                 content_height = 'auto'
             else:
-                content_height =  content_height * containing_block.height
+                content_height =  content_height * self.containing_block.height
 
         if content_height == 'auto':
             return ContainingBlock(content_width, None)
@@ -323,17 +340,17 @@ class BlockFrame(Frame):
             return ContainingBlock(content_width, content_height)
 
 
-    def flow(self, containing_block):
-        '''Flow all children, then position all children.
+    def flow(self):
+        '''Flow all children, size self.
         '''
-        generated_containing_block = \
-            self.create_containing_block(containing_block)
+        child_containing_block = \
+            self.create_containing_block(self.containing_block)
         if self.inline_context:
-            self.flow_inline(generated_containing_block)
+            self.flow_for_inline_context(child_containing_block)
         else:
-            self.flow_block(generated_containing_block)
+            self.flow_for_block_context(child_containing_block)
 
-        # Only now set border_edge_height (now that generated containing block
+        # Only now set border_edge_height (now that child containing block
         # height has been resolved).
         computed = self.get_computed_property
         def used(property):
@@ -343,37 +360,59 @@ class BlockFrame(Frame):
             return value
 
         self.border_edge_height = self.content_top + \
-            generated_containing_block.height + self.content_bottom
+            child_containing_block.height + self.content_bottom
 
-    def flow_block(self, containing_block):
-        y = 0
-        positions = []
-        margin_collapse = 0
-        if not self.content_top:
-            margin_collapse = self.margin_top
+    def reposition_children(self):
+        if self.inline_context:
+            self.reposition_for_inline_context()
+        else:
+            self.reposition_for_block_context()
 
+    class BlockPositionIterator(object):
+        '''Encapsulate block positioning logic, used by flow size calculation
+        and child positioning.  Accounts for vertical margin collapse.
+
+        Instantiate with parent frame, then for each child that will be 
+        placed, call next(child) to get that child's y position.  After
+        iteration ends, 'y' gives the height of the content, and
+        'margin_collapse' gives the amount of margin on the final frame.
+        '''
+        def __init__(self, parent_frame):
+            self.y = 0
+            self.margin_collapse = 0
+            if not parent_frame.content_top:
+                self.margin_collapse = parent_frame.margin_top
+
+        def next(self, child_frame):
+            self.y += max(child.margin_top - self.margin_collapse, 0)
+            result = self.y
+            self.y += child.border_edge_height + child.margin_bottom
+            self.margin_collapse = child.margin_bottom
+            return result
+
+    def flow_for_block_context(self, child_containing_block):
+        it = BlockPositionIterator(self)
         self.flowed_children = self.children
         for child in self.children:
-            child.flow(containing_block)
-            y += max(child.margin_top - margin_collapse, 0)
-            positions.append(y)
-            y += child.border_edge_height + child.margin_bottom
-            margin_collapse = child.margin_bottom
+            child.containing_block = child_containing_block
+            child.flow()
+            it.next(child)
 
-        content_height = y
+        if child_containing_block.height is None:
+            content_height = it.y
+
         if not self.content_bottom:
-            self.margin_bottom = max(self.margin_bottom - margin_collapse, 0)
+            self.margin_bottom = max(self.margin_bottom, it.margin_collapse, 0)
 
-        if containing_block.height is None:
-            containing_block.height = content_height
+    def reposition_for_block_context(self):
+        it = BlockPositionIterator(self)
+        for child in self.flowed_children:
+            y = it.next(child)
+            child.position(self.content_left + child.margin_left, 
+                           self.content_top + y)
 
-        for child, y in zip(self.children, positions):
-            child.position(
-                self.content_left + child.margin_left, 
-                self.content_top + y, containing_block)
-
-    def flow_inline(self, containing_block):
-        width = containing_block.width
+    def flow_for_inline_context(self, child_containing_block):
+        remaining_width = child_containing_block.width
         strip_lines = self.get_computed_property('white-space') in \
             ('normal', 'nowrap', 'pre-line')
         lines = [LineBox(self, strip_lines)]
@@ -381,25 +420,27 @@ class BlockFrame(Frame):
         y = 0
         self.flowed_children = []
         for child in self.children:
-            child.flow_inline(containing_block, width)
+            child.containing_block = child_containing_block
+            child.flow_inline(remaining_width)
             import pdb
             #pdb.set_trace()
 
             while child:
                 self.flowed_children.append(child)
-                c_width = child.margin_left + child.border_edge_width + \
+                child_width = child.margin_left + child.border_edge_width + \
                     child.margin_right
 
                 if child.line_break or \
-                   (width - c_width < 0 and not lines[-1].is_empty):
+                   (remaining_width - child_width < 0 and \
+                    not lines[-1].is_empty):
                     # This child will not fit, start a new line
                     y += lines[-1].line_height
                     lines.append(LineBox(self, strip_lines))
-                    width = containing_block.width
+                    remaining_width = child_containing_block.width
                     for f in buffer:
-                        width -= f.margin_left + f.border_edge_width + \
-                            f.margin_right
-                width -= c_width
+                        remaining_width -= f.margin_left + \
+                            f.border_edge_width + f.margin_right
+                remaining_width -= child_width
 
                 if child.continuation:
                     for f in buffer:
@@ -419,8 +460,8 @@ class BlockFrame(Frame):
         else:
             y += lines[-1].line_height
 
-        if containing_block.height is None:
-            containing_block.height = y
+        if child_containing_block.height is None:
+            child_containing_block.height = y
 
         y = self.content_top
         for line in lines:
@@ -660,12 +701,15 @@ class FrameBuilder(object):
 
         self.replaced_element_builders = {}
 
-    def create_frame(self, element, parent):
+    def get_style_node(self, element):
         if element.is_anonymous:
             declaration_sets = []
         else:
             declaration_sets = self.get_element_declaration_sets(element)
-        style_node = self.style_tree.get_style_node(declaration_sets)
+        return self.style_tree.get_style_node(declaration_sets)
+
+    def create_frame(self, element, parent):
+        style_node = self.get_style_node(element) 
 
         temp_frame = Frame(style_node, element)
         display = style_node.get_computed_property('display', temp_frame) 

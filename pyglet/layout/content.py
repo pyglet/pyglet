@@ -11,10 +11,19 @@ __version__ = '$Id$'
 from pyglet.layout.css import SelectableElement, parse_style_declaration_set
 
 __all__ = ['Document',
+           'DocumentListener',
            'ContentElement', 
            'AnonymousElement',
            'AnonymousTextElement', 
           ]
+
+class DocumentListener(object):
+    def on_set_root(self, root):
+        pass
+
+    def on_element_style_modified(self, element):
+        pass
+
 
 class Document(object):
     root = None
@@ -23,7 +32,24 @@ class Document(object):
 
     def __init__(self):
         self.stylesheets = []
+        self.listeners = []
 
+    def add_listener(self, listener):
+        self.listeners.append(listener)
+
+    def remove_listener(self, listener):
+        self.listeners.remove(listener)
+
+    def set_root(self, root):
+        self.root = root
+        for l in self.listeners:
+            l.on_set_root(root)
+
+    def element_style_modified(self, element):
+        '''Notify that the element's style has changed.
+        '''
+        for l in self.listeners:
+            l.on_element_style_modified(element)
 
 class ContentElement(SelectableElement):
     # Either there are children or text; not both.  AnonymousTextElements
