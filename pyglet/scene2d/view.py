@@ -335,10 +335,6 @@ class FlatView(View):
         # determine the focus point
         fx, fy = self._determine_focus()
 
-        # XXX push state?
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_BLEND)
-
         # now draw
         glPushMatrix()
         glTranslatef(self.camera.width/2-fx, self.camera.height/2-fy, 0)

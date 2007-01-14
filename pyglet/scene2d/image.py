@@ -181,8 +181,10 @@ class Image2d(Drawable):
         self.__quad_list = glGenLists(1)
         glNewList(self.__quad_list, GL_COMPILE)
         glBindTexture(GL_TEXTURE_2D, self.texture.id)
-        glPushAttrib(GL_ENABLE_BIT)
+        glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT)
         glEnable(GL_TEXTURE_2D)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         glBegin(GL_QUADS)
         glTexCoord2f(l, b)

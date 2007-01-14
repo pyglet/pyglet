@@ -1,5 +1,13 @@
 # Lots Of Sprites
 
+'''
+Results:
+      AMD64/mesa   AMD64/nvidia
+500:  77.0         63.5
+1000: 38.3         32.4
+2000: 18.5         16.4
+'''
+
 import os
 import sys
 import random
