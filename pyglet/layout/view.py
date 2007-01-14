@@ -21,6 +21,7 @@ class DocumentView(DocumentListener):
         self._root_frame = None
 
         self._require_reconstruct = False # Temporary HACK
+        self._pending_reflows = set()
 
         # Position of viewport on canvas (+ve Y is down).  Size of viewport
         # determines the initial containing block.
@@ -37,10 +38,13 @@ class DocumentView(DocumentListener):
 
     def on_element_style_modified(self, element):
         frame = element.frame
+        # TODO look for 'display' modification, trigger reconstruct (of
+        # parent).
         if frame:
             frame.style = self.frame_builder.get_style_node(element)
             frame.purge_style_cache()
             frame.mark_flow_dirty()
+            self._pending_reflows.add(frame)
 
     def reflow_resize(self):
         if self._require_reconstruct:
@@ -48,15 +52,42 @@ class DocumentView(DocumentListener):
             self._root_frame.containing_block = self.initial_containing_block()
         self._root_frame.containing_block = self.initial_containing_block()
         self._root_frame.mark_flow_dirty()
+        self._pending_reflows.add(self._root_frame)
 
     def update_flow(self):
         if self._require_reconstruct:
             self._root_frame = self.frame_builder.build_frame(self.document.root)
             self._root_frame.containing_block = self.initial_containing_block()
             self._require_reconstruct = False
-        if self._root_frame.flow_dirty:
-            self._root_frame.flow()
-            self._root_frame.resolve_bounding_box(0, 0)
+
+        for frame in self._pending_reflows:
+            if not frame.flow_dirty:
+                continue  # Already reflowed by some other pending op.
+
+            while True:
+                # Reflow frame and all its dirty children, make note if
+                # its dimensions change.
+                old_metrics = frame.get_layout_metrics()
+                frame.flow()
+                new_metrics = frame.get_layout_metrics()
+                # TODO: this won't catch changes to relative position because
+                # these are computed at style, irrespective of flow.
+
+                # If the dimensions have changed, reflow the parent and 
+                # its dirty children (usual case: no children will be dirty).
+                if old_metrics != new_metrics and frame.parent:
+                    frame = frame.parent
+                else:
+                    break
+
+            if frame.parent:
+                frame.resolve_bounding_box(
+                    frame.parent.bounding_box_left,
+                    frame.parent.bounding_box_top)
+            else:
+                frame.resolve_bounding_box(0, 0) # root frame
+
+        self._pending_reflows.clear()
 
     def get_canvas_width(self):
         self.update_flow()
@@ -88,9 +119,7 @@ class DocumentView(DocumentListener):
         if self._viewport_width <= 0 or self._viewport_height <= 0: 
             return
 
-        if self._root_frame.flow_dirty:
-            self._root_frame.flow()
-            self._root_frame.resolve_bounding_box(0, 0)
+        self.update_flow()
 
         self._root_frame.draw(self.viewport_x, self.viewport_y, 
             self.render_device)

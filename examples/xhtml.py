@@ -17,7 +17,7 @@ from pyglet.clock import *
 from pyglet.text import *
 from pyglet.layout import *
 
-window = Window(visible=False)
+window = Window(visible=False, vsync=False)
 
 data = '''<?xml version="1.0"?>
 <html>  
@@ -27,7 +27,8 @@ data = '''<?xml version="1.0"?>
           background-image: url(examples/stripe.png)}
       body {background-image: url(examples/paper.jpg); 
             background-repeat: repeat;}
-      p:hover {color:red; border: 2px dashed blue;}
+      p {padding: 2px}
+      p:hover {color:red; padding: 0px; border: 2px dashed blue;}
     </style>
   </head>
   <body>
@@ -191,14 +192,6 @@ layout.push_handlers(on_mouse_press)
 def on_mouse_press(element, button, x, y, modifiers):
     print 'Granted three wishes!'
 layout.push_handlers(on_mouse_press)
-
-def on_mouse_enter(element, x, y):
-    print 'on_mouse_enter', element, x, y
-layout.push_handlers(on_mouse_enter)
-
-def on_mouse_leave(element, x, y):
-    print 'on_mouse_leave', element, x, y
-layout.push_handlers(on_mouse_leave)
 
 window.push_handlers(layout)
 

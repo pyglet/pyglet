@@ -87,13 +87,16 @@ class Frame(object):
             child.purge_style_cache()
 
     def mark_flow_dirty(self):
+        '''Mark this frame and all its descendents for reflow, 
+        '''
         self.flow_dirty = True
         for child in self.children:
             child.mark_flow_dirty()
-        frame = self.parent
-        while frame:
-            frame.flow_dirty = True
-            frame = frame.parent
+
+    def get_layout_metrics(self):
+        return (self.border_edge_width, self.border_edge_height,
+                self.margin_top, self.margin_right, 
+                self.margin_bottom, self.margin_left)
 
     # Reflow
     # ------
@@ -522,6 +525,15 @@ class InlineFrame(Frame):
     def __init__(self, style, element):
         super(InlineFrame, self).__init__(style, element)
         self.flowed_children = ()
+
+    def flow(self):
+        # Can't flow self, rely on ancestor non-inline frame to call this
+        # frame's flow_inline method.
+        if self.parent:
+            # Force reflow (this might not be set if it's a descendent with
+            # the 'real' dirty bit).
+            self.frame_dirty = True 
+            self.parent.flow()
 
     def lstrip(self):
         if self.flowed_children:
