@@ -53,20 +53,21 @@ class DocumentView(DocumentListener):
             frame.mark_flow_dirty()
             self._pending_reflows.add(frame)
 
-    def reflow_resize(self):
+    def update_reconstruct(self):
         if self._require_reconstruct:
             self._root_frame = self.frame_builder.build_frame(self.document.root)
             self._root_frame.containing_block = self.initial_containing_block()
+            self._require_reconstruct = False
+            self.reflow_resize()
+
+    def reflow_resize(self):
+        self.update_reconstruct()
         self._root_frame.containing_block = self.initial_containing_block()
         self._root_frame.mark_flow_dirty()
         self._pending_reflows.add(self._root_frame)
 
     def update_flow(self):
-        if self._require_reconstruct:
-            self._root_frame = self.frame_builder.build_frame(self.document.root)
-            self._root_frame.containing_block = self.initial_containing_block()
-            self._require_reconstruct = False
-
+        self.update_reconstruct()
         for frame in self._pending_reflows:
             if not frame.flow_dirty:
                 continue  # Already reflowed by some other pending op.
