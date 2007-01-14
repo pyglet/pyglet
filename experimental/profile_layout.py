@@ -20,13 +20,14 @@ def print_time(start, msg):
 def profile(xhtml, widths=[800,600,400,200,100], runs=3):
     for i in range(runs):
         start = time.time()
-        layout = render_xhtml(xhtml)
+        layout = Layout()
+        layout.set_xhtml(xhtml)
         print_time(start, 'create layout')
     for width in widths:
-        layout.render_device.width = width
         for i in range(runs):
             start = time.time()
-            layout.layout()
+            layout.viewport_width = width
+            layout.draw()
             print_time(start, 'layout width=%d' % width)
         for i in range(runs):
             start = time.time()

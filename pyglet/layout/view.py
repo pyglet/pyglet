@@ -43,6 +43,9 @@ class DocumentView(DocumentListener):
             frame.mark_flow_dirty()
 
     def reflow_resize(self):
+        if self._require_reconstruct:
+            self._root_frame = self.frame_builder.build_frame(self.document.root)
+            self._root_frame.containing_block = self.initial_containing_block()
         self._root_frame.containing_block = self.initial_containing_block()
         self._root_frame.mark_flow_dirty()
 
