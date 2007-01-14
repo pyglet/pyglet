@@ -56,7 +56,7 @@ class SpriteOverlapTest(unittest.TestCase):
 
             ball1.update()
             ball2.update()
-            if ball1.overalps(ball2):
+            if ball1.overlaps(ball2):
                 if 'overlap' not in ball2.properties:
                     ball2.properties['overlap'] = e
                     ball2.add_effect(e)
