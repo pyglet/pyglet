@@ -41,8 +41,15 @@ class DocumentView(DocumentListener):
         # TODO look for 'display' modification, trigger reconstruct (of
         # parent).
         if frame:
-            frame.style = self.frame_builder.get_style_node(element)
-            frame.purge_style_cache()
+            new_style = self.frame_builder.get_style_node(element)
+
+            # Common case (style was not modified in a significant way):
+            if new_style is frame.style:
+                return
+
+            differences = frame.style.get_specified_differences(new_style)
+            frame.style = new_style
+            frame.purge_style_cache(differences)
             frame.mark_flow_dirty()
             self._pending_reflows.add(frame)
 
@@ -72,7 +79,9 @@ class DocumentView(DocumentListener):
                 frame.flow()
                 new_metrics = frame.get_layout_metrics()
                 # TODO: this won't catch changes to relative position because
-                # these are computed at style, irrespective of flow.
+                # these are computed at style, irrespective of flow.  This
+                # is a problem because frame.position() is only called by
+                # parent flow at the moment.
 
                 # If the dimensions have changed, reflow the parent and 
                 # its dirty children (usual case: no children will be dirty).

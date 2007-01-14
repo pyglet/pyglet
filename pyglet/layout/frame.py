@@ -81,10 +81,17 @@ class Frame(object):
     def get_computed_property(self, property):
         return self.style.get_computed_property(property, self)
 
-    def purge_style_cache(self):
-        self.computed_properties.clear()
+    def purge_style_cache(self, properties):
+        '''Clear the cache of the given set of property names.
+
+        Only applies to local frame cache, not style node cache. 
+        '''
+        for property in properties:
+            if property in self.computed_properties:
+                del self.computed_properties[property]
+
         for child in self.children:
-            child.purge_style_cache()
+            child.purge_style_cache(properties)
 
     def mark_flow_dirty(self):
         '''Mark this frame and all its descendents for reflow, 

@@ -38,6 +38,7 @@ class StyleTree(object):
                 nodes = node.children
         return node
 
+
 _compute_functions = {}
 def css(*properties):
     def f(func):
@@ -114,6 +115,33 @@ class StyleNode(object):
                 # Computed as specified
                 result = _initial_values[property]
             return result
+
+    def get_specified_differences(self, other):
+        '''Return a set of specified properties (their names) that have
+        different values in 'other' than 'self', or are only specified
+        in one or the other.
+        '''
+        # Find all specified names that are unique to self or other.
+        self_names = set()
+        node = self
+        while node:
+            self_names |= set(node.specified_properties.keys())
+            node = node.parent
+        other_names = set()
+        node = other
+        while node:
+            other_names |= set(node.specified_properties.keys())
+            node = node.parent
+        common_names = self_names & other_names
+        differences = (self_names | other_names) - common_names
+
+        # Find specified names that are common but have different values
+        for property in common_names:
+            # TODO optimisation avoid method call, inline
+            if self.get_specified_property(property) != \
+                other.get_specified_property(property):
+                differences.add(property)
+        return differences
 
     @css('font-size')
     def _compute_font_size(self, property, specified, frame):

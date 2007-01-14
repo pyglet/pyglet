@@ -214,9 +214,13 @@ class GLTextFrame(TextFrame):
 
     contains_ws = re.compile(u'[\n\u0020\u200b]')
 
-    def purge_style_cache(self):
-        super(GLTextFrame, self).purge_style_cache()
-        self.glyph_string = None
+    def purge_style_cache(self, properties):
+        super(GLTextFrame, self).purge_style_cache(properties)
+        if ('font-name' in properties or
+            'font-size' in properties or
+            'font-weight' in properties or
+            'font-style' in properties):
+            self.glyph_string = None
 
     def flow_inline(self, remaining_width):
         # Clear previous flow continuation if any
