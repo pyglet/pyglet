@@ -78,7 +78,7 @@ class Sprite(Drawable):
         '''
         raise NotImplemented()
 
-    def is_inside(self, x, y):
+    def contains(self, x, y):
         '''Return True if the point is inside the sprite.'''
         if x < self.x: return False
         if y < self.y: return False
@@ -86,12 +86,13 @@ class Sprite(Drawable):
         if y >= self.y + self.height: return False
         return True
 
-    def is_overlap(self, rect):
+    def overlaps(self, rect):
         '''Return True if this sprite overlaps the other rect.
 
         A rect is an object that has an origin .x, .y and size .width,
         .height.
         '''
+        # we avoid using .right and .top properties here to speed things up
         if self.x > (rect.x + rect.width): return False
         if (self.x + self.width) < rect.x: return False
         if self.y > (rect.y + rect.height): return False
@@ -163,13 +164,13 @@ class Sprite(Drawable):
         self.y = y - self.height/2
     midright = property(get_midright, set_midright)
  
+"""
 class SpriteAnimation:
     def animate(self, sprite, dt):
         ''' run this animation to handle passing of dt time. alters sprite
         position and optionally image'''
         raise NotImplemented()
  
-"""
 class JumpAnimation(SpriteAnimation):
     velocity = (vx, vy)         # in pixels / second?
     gravity =                   # in pixels / second?

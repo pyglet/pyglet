@@ -131,12 +131,12 @@ class FlatView(View):
                 for sf in handler.sprite_filters:
                     l = []
                     for sprite in sf.sprites:
-                        if sprite.is_inside(x, y):
+                        if sprite.contains(x, y):
                             l.append((sprite.z, sprite))
                     objs.extend(sf(l))
             else:
                 for sprite in self.scene.sprites:
-                    if sprite.is_inside(x, y):
+                    if sprite.contains(x, y):
                         objs.append((sprite.z, sprite))
 
             # sort by depth
@@ -210,7 +210,7 @@ class FlatView(View):
 
         # XXX sprite layers
         for sprite in self.scene.sprites:
-            if sprite.is_inside(x, y):
+            if sprite.contains(x, y):
                 r.append(sprite)
 
         self.scene.maps.sort(key=operator.attrgetter('z'))
