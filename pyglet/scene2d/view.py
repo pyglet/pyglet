@@ -23,7 +23,23 @@ Creating a simple scene and displaying it:
 Events and Picking
 ------------------
 
+The following are examples of attaching event handlers to Views::
 
+    @event(view)
+    def on_mouse_enter(objects, x, y):
+        """ The mouse is hovering at map pixel position (x,y) over the
+            indicated objects (cells or sprites)."""
+           
+    @event(view)
+    def on_mouse_leave(objects):
+        ' The mouse has stopped hovering over the indicated objects.'
+               
+    @event(view)
+    def on_mouse_press(objects, button, x, y, modifiers):
+        ' The mouse has been clicked on the indicated objects. '
+
+The filters available in pyglet.scene2d.events module may be used to
+limit the cells or sprites for which events are generated.
 '''
 
 __docformat__ = 'restructuredtext'
