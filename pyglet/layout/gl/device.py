@@ -293,6 +293,7 @@ class GLTextFrame(TextFrame):
                self.text[-1] in u'\u0020\u200b\n':
                 continuation = GLTextFrame(
                     self.style, self.element, self.text)
+                continuation.parent = self.parent
                 continuation.glyph_string = self.glyph_string
                 continuation.is_continuation = True
                 continuation.from_index = continuation.to_index = frame.to_index
