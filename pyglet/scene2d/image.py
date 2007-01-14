@@ -118,10 +118,10 @@ class Drawable(object):
         '''
         raise NotImplemented()
 
-class RectTintEffect(object):
-    '''Draws the *rect* drawable and then draws a quad over the top of
-    the same size using the supplied colour (so make sure tha alpha
-    channel is appropriate).
+class TintEffect(object):
+    '''Changes the current colour, thus tinting the drawable being applied
+    to. Requires that the drawable be texture-mapped and that it not
+    specify its own colour.
     '''
     animate = None
     def __init__(self, colour):
@@ -132,6 +132,7 @@ class RectTintEffect(object):
         glColor4f(*self.colour)
         drawable.impl_draw()
         glPopAttrib()
+
 
 class Image2d(Drawable):
     def __init__(self, texture, x, y, width, height):

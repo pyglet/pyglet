@@ -20,24 +20,17 @@ class Sprite(Drawable):
     Attributes:
         x, y, z         -- position (z is optional and defaults to 0)
         width, height   -- sprite dimensions (may differ from image)
-        angle           -- angle of rotation in degrees
-        cog             -- center of gravity for rotation (x, y)
-                           (defaults to middle of sprite)
         image           -- image for this sprite
         offset          -- offset of image from position (default (0,0))
         animations      -- a queue of SpriteAnimations to run
         properties      -- arbitrary data in a dict
     '''
     __slots__ = 'x y z image width height angle cog offset properties animations'.split()
-    def __init__(self, x, y, width, height, image, angle=0, cog=None,
-            offset=(0,0), z=0, properties=None):
+    def __init__(self, x, y, width, height, image, offset=(0,0), z=0,
+            properties=None):
         Drawable.__init__(self)
         self.x, self.y, self.z = x, y, z
         self.width, self.height = width, height
-        self.angle = 0
-        if cog is None:
-            cog = (width/2, height/2)
-        self.cog = cog
         self.image = image
         self.offset = offset
         self.animations = []
@@ -47,18 +40,14 @@ class Sprite(Drawable):
             self.properties = properties
 
     @classmethod
-    def from_image(cls, image):
+    def from_image(cls, x, y, image, offset=(0,0), z=0, properties=None):
         '''Set up the sprite from the image - sprite dimensions are the
         same as the image.'''
-        return cls(0, 0, image.width, image.height, image)
+        return cls(x, y, image.width, image.height, image, offset, z,
+            properties)
 
     def impl_draw(self):
-        glPushMatrix()
-        glTranslatef(self.cog[0], self.cog[1], 0)
-        glRotatef(self.angle, 0, 0, 1)
-        glTranslatef(-self.cog[0], -self.cog[1], 0)
         self.image.draw()
-        glPopMatrix()
  
     def push_animation(self, animation):
         "Push a SpriteAnimation onto this sprite's animation queue."
@@ -164,6 +153,41 @@ class Sprite(Drawable):
         self.y = y - self.height/2
     midright = property(get_midright, set_midright)
  
+
+class RotatableSprite(Sprite):
+    '''A sprite that may be rotated.
+
+    Additional attributes:
+        angle           -- angle of rotation in degrees
+        cog             -- center of gravity for rotation (x, y)
+                           (defaults to middle of sprite)
+    '''
+    __slots__ = 'x y z image width height angle cog offset properties animations'.split()
+    def __init__(self, x, y, width, height, image, angle=0, cog=None,
+            offset=(0,0), z=0, properties=None):
+        Sprite.__init__(x, y, width, height, image, offset, z, properties)
+        self.angle = 0
+        if cog is None:
+            cog = (width/2, height/2)
+        self.cog = cog
+
+    @classmethod
+    def from_image(cls, x, y, image, angle=0, cog=None, offset=(0,0), z=0,
+            properties=None):
+        '''Set up the sprite from the image - sprite dimensions are the
+        same as the image.'''
+        return cls(x, y, image.width, image.height, image, angle, cog,
+            offset, z, properties)
+
+    def impl_draw(self):
+        glPushMatrix()
+        glTranslatef(self.cog[0], self.cog[1], 0)
+        glRotatef(self.angle, 0, 0, 1)
+        glTranslatef(-self.cog[0], -self.cog[1], 0)
+        self.image.draw()
+        glPopMatrix()
+
+
 """
 class SpriteAnimation:
     def animate(self, sprite, dt):

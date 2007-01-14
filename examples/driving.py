@@ -8,12 +8,13 @@ import pyglet.clock
 from pyglet.euclid import Vector2, Matrix3
 from pyglet.scene2d import *
 
-w = pyglet.window.Window(width=640, height=512)
+w = pyglet.window.Window(width=512, height=512)
 
 # load the map and car and set up the scene and view
 dirname = os.path.dirname(__file__)
 m = RectMap.load_xml(os.path.join(dirname, 'road-map.xml'), 'map0')
-car = Sprite.from_image(Image2d.load(os.path.join(dirname, 'car.png')))
+car = Image2d.load(os.path.join(dirname, 'car.png')))
+car = RotatableSprite.from_image(0, 0, car)
 scene = pyglet.scene2d.Scene(maps=[m], sprites=[car])
 view = pyglet.scene2d.FlatView.from_window(scene, w, allow_oob=False)
 w.push_handlers(view.camera)
