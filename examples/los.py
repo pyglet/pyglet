@@ -36,8 +36,10 @@ view = FlatView.from_window(scene, w)
 view.fx, view.fy = w.width/2, w.height/2
 
 clock = Clock(fps_limit=1000)
-while not w.has_exit:
-    print '\rFPS:', clock.get_fps(),
+while 1:
+    if w.has_exit:
+        print 'FPS:', clock.get_fps()
+        break
     sys.stdout.flush()
     clock.tick()
     w.dispatch_events()
