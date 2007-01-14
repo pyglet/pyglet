@@ -182,6 +182,8 @@ scene2d
      - animated sprites, or animated textures
      - @for_cells needs to look up properties on TileSets
      - @for_cells / @for_sprites need to be pre-evaluated
+     - sprites in groups (for collision detection, mostly)
+     - sprites in layers? (for sorting to display through view)
 
 model
     :description: Abstract interface for 3D modelling.
