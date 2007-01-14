@@ -40,7 +40,6 @@ while 1:
     if w.has_exit:
         print 'FPS:', clock.get_fps()
         break
-    sys.stdout.flush()
     clock.tick()
     w.dispatch_events()
     for s in sprites: s.update()
