@@ -50,6 +50,7 @@ class DocumentView(DocumentListener):
         if self._require_reconstruct:
             self._root_frame = self.frame_builder.build_frame(self.document.root)
             self._root_frame.containing_block = self.initial_containing_block()
+            self._require_reconstruct = False
         if self._root_frame.flow_dirty:
             self._root_frame.flow()
             self._root_frame.resolve_bounding_box(0, 0)
