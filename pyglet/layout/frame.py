@@ -13,7 +13,8 @@ from pyglet.layout.properties import *
 
 import re
 
-__all__ = ['ContainingBlock', 'FrameBuilder', 'TextFrame']
+__all__ = ['ContainingBlock', 'FrameBuilder', 'TextFrame',
+           'ReplacedElementDrawable', 'ReplacedElementFactory']
 
 class ContainingBlock(object):
     '''A rectangular region in which boxes are placed.  If height is None,
@@ -44,6 +45,9 @@ class Frame(object):
     computed_properties = None
     continuation = None
     is_continuation = False
+    force_border = False    # hack to draw LR borders even if a continuation;
+                            # should probably not test continuation for this
+                            # anyway. XXX
 
     # Incremental reflow flag
     flow_dirty = True
@@ -186,9 +190,9 @@ class Frame(object):
         bbottom = compute('border-bottom-width')
         bleft = compute('border-left-width')
 
-        if self.continuation:
+        if self.continuation and not self.force_border:
             bright = 0
-        if self.is_continuation:
+        if self.is_continuation and not self.force_border:
             bleft = 0
 
         if btop:
@@ -563,6 +567,10 @@ class InlineFrame(Frame):
             value = computed(property)
             if type(value) == Percentage:
                 value = value * self.containing_block.width
+            elif value == 'auto':
+                # actually only for margin-left, margin-right, top, left,
+                # but no harm done
+                value = 0   
             return value
 
         content_right = computed('border-right-width') + used('padding-right')
@@ -708,6 +716,191 @@ class TextFrame(InlineFrame):
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.text)
 
+class ReplacedElementDrawable(object):
+    intrinsic_width = None
+    intrinsic_height = None
+    intrinsic_ratio = None
+
+    def draw(self, frame, render_device, left, top, right, bottom):
+        raise NotImplementedError('abstract')
+
+class InlineReplacedElementFrame(InlineFrame):
+    def __init__(self, style, element, drawable):
+        super(InlineReplacedElementFrame, self).__init__(style, element)
+        # Always allow a line break before a replaced element.  Make this
+        # frame empty and put everything in the continuation.
+        self.margin_left = 0
+        self.border_edge_width = 0
+        self.margin_right = 0
+        self.content_ascent = self.content_descent = 0
+        self.line_ascent = self.line_descent =  0
+        self.border_edge_height = 0
+
+        self.continuation = InlineReplacedElementDelegate(self, drawable)
+
+    def flow_inline(self, remaining_width):
+        # Let continuation flow itself.
+        self.continuation.containing_block = self.containing_block
+        self.continuation.flow_inline(remaining_width)
+
+class InlineReplacedElementDelegate(InlineFrame):
+    force_border = True
+
+    def __init__(self, continued_frame, drawable):
+        super(InlineReplacedElementDelegate, self).__init__(
+            continued_frame.style, continued_frame.element)
+        self.is_continuation = True
+        self.drawable = drawable
+        self.continued_frame = continued_frame
+
+        # Add an empty continuation to allow for line-breaks after this
+        # frame.
+        self.continuation = InlineFrame(self.style, self.element)
+        self.continuation.is_continuation = True
+
+    def flow_inline(self, remaining_width):
+        computed = self.get_computed_property
+        def used(property):
+            value = computed(property)
+            if type(value) == Percentage:
+                return value * self.containing_block.width
+            elif value == 'auto':
+                return 0
+            return value
+
+        self.margin_left = used('margin-left')
+        self.margin_right = used('margin-right')
+        self.margin_top = used('margin-top')
+        self.margin_bottom = used('margin-bottom')
+        self.content_top = computed('border-top-width') + used('padding-top')
+        self.content_left = computed('border-left-width') + used('padding-left')
+        content_right = computed('border-right-width') + used('padding-right')
+        content_bottom = computed('border-bottom-width') + \
+            used('padding-bottom')
+
+        # See 10.3.2
+
+        intrinsic_width = self.drawable.intrinsic_width
+        intrinsic_height = self.drawable.intrinsic_height
+        intrinsic_ratio = self.drawable.intrinsic_ratio
+        
+        content_width = computed('width')
+        if type(content_width) == Percentage:
+            if self.containing_block.width is not None:
+                content_width = content_width * self.containing_block.width
+            else:
+                content_width = 'auto'
+        computed_width = content_width # save for height calc later
+
+        content_height = computed('height')
+        if type(content_height) == Percentage:
+            if self.containing_block.height is not None:
+                content_height = content_height * self.containing_block.height
+            else:
+                content_height = 'auto'
+
+        if content_width == 'auto':
+            if content_height == 'auto':
+                if intrinsic_width is not None:
+                    content_width = intrinsic_width
+                elif (intrinsic_height is not None and
+                      intrinsic_ratio is not None):
+                    content_width = intrinsic_height * intrinsic_ratio
+            elif intrinsic_ratio is not None:
+                content_width = content_height * intrinsic_ratio
+        if content_width == 'auto':
+            content_width = self.style.render_device.dimension_to_device(
+                Dimension('300px'))
+
+        # See 10.6.2
+        # For these calculations use computed_width, which may be 'auto'
+        # even though content_width has already been worked out.
+
+        if content_height == 'auto':
+            if computed_width == 'auto':
+                if intrinsic_height is not None:
+                    content_height = intrinsic_height
+                elif (intrinsic_width is not None and
+                      intrinsic_ratio is not None):
+                    content_height = content_width / intrinsic_ratio
+            elif intrinsic_ratio is not None:
+                content_height = content_width / intrinsic_ratio
+        if content_height == 'auto':
+            content_height = self.style.render_device.dimension_to_device(
+                Dimension('150px'))
+
+        # Use for drawing
+        self.content_width = content_width
+        self.content_height = content_height
+
+        self.border_edge_width = \
+            self.content_left + \
+            self.content_width + \
+            content_right
+        self.border_edge_height = \
+            self.content_top + \
+            self.content_height + \
+            content_bottom
+        
+        # XXX This is wrong for most vertical-aligns.
+        self.content_ascent = self.line_ascent = \
+            self.border_edge_height + self.margin_top + self.margin_bottom
+        self.content_descent = self.line_descent = 0
+
+    def draw(self, x, y, render_device):
+        lx = x + self.border_edge_left
+        ly = y - self.border_edge_top
+
+
+        self.draw_background(lx, ly, render_device)
+        self.draw_border(lx, ly, render_device)
+
+        self.drawable.draw(self.continued_frame, render_device,
+            lx + self.content_left, 
+            ly - self.content_top, 
+            lx + self.content_left + self.content_width, 
+            ly - self.content_top - self.content_height)
+            
+class ReplacedElementFactory(object):
+    accept_names = None
+
+    def create_drawable(self, element):
+        '''Simple use: override just this method to return an implementation
+        of ReplacedElementDrawable.
+
+        Return None if no frame should be created.
+        '''
+        raise NotImplementedError('abstract')
+
+    def create_frame(self, display, style, element):
+        '''Called by FrameBuilder to construct the frame.  Default
+        implementation calls 'create_drawable' and creates the appropriate
+        frame depending on display property.
+
+        Default implementation also inspects element attributes for 
+        'width' and 'height' attributes and uses these for intrinsic
+        width and height if specified.
+
+        Return None if no frame should be created.
+        '''
+        drawable = self.create_drawable(element)
+        if drawable is None:
+            return None
+
+        if display == 'inline':
+            frame = InlineReplacedElementFrame(style, element, drawable)
+        else:
+            warnings.warn(('Display type "%s" unsupported for ' + 
+                'replaced elements.') % display)
+            return None
+
+        if 'width' in element.attributes:
+            frame.intrinsic_width = element.attributes['width']
+        if 'height' in element.attributes:
+            frame.intrinsic_height = element.attributes['height']
+
+        return frame
+
 class FrameBuilder(object):
     '''Construct and update the frame tree for a content tree.
     '''
@@ -722,7 +915,13 @@ class FrameBuilder(object):
         self.render_device = render_device
         self.style_tree = StyleTree(render_device)
 
-        self.replaced_element_builders = {}
+        self.replaced_element_factories = {}
+
+    def add_replaced_element_factory(self, factory):
+        if not factory.accept_names:
+            raise RuntimeError('No accept_names specified on factory.')
+        for name in factory.accept_names:
+            self.replaced_element_factories[name] = factory
 
     def get_style_node(self, element):
         if element.is_anonymous:
@@ -745,9 +944,9 @@ class FrameBuilder(object):
             element.frame = frame
             return frame
 
-        if element.name in self.replaced_element_builders:
-            builder = self.replaced_element_builders[element.name]
-            frame = builder.build(style_node, element)
+        if element.name in self.replaced_element_factories:
+            factory = self.replaced_element_factories[element.name]
+            frame = factory.create_frame(display, style_node, element)
         elif display in self.display_element_classes:
             frame_class = self.display_element_classes[display]
             frame = frame_class(style_node, element)

@@ -40,6 +40,7 @@ class GLLayout(LayoutEventDispatcher):
 
         self.document = Document()
         self.view = DocumentView(self.render_device, self.document)
+        self.add_replaced_element_factory(ImageReplacedElementFactory(locator))
         
         # If the layout is added to a window event stack, the following
         # variables are taken care of automatically (x, y, viewport).
@@ -48,8 +49,8 @@ class GLLayout(LayoutEventDispatcher):
         self.x = 0
         self.y = 0
 
-        # Additional box generators to add to formatters
-        self.generators = []
+    def add_replaced_element_factory(self, factory):
+        self.view.frame_builder.add_replaced_element_factory(factory)
 
     def set_data(self, data, builder):
         builder.feed(data)

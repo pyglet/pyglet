@@ -101,6 +101,8 @@ class DocumentView(DocumentListener):
         self._pending_reflows.clear()
 
     def get_canvas_width(self):
+        if not self._root_frame:
+            return 0
         self.update_flow()
         # By convention with web browsers, don't allow viewport to show left
         # of origin.
@@ -108,6 +110,8 @@ class DocumentView(DocumentListener):
     canvas_width = property(get_canvas_width)
 
     def get_canvas_height(self):
+        if not self._root_frame:
+            return 0
         self.update_flow()
         # By convention with web browsers, don't allow viewport to show above
         # of origin.
