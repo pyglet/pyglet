@@ -78,9 +78,9 @@ br:before       { content: "\A" }
 /* XXX pseudo elements not supported yet
    :before, :after { white-space: pre-line } */
 center          { text-align: center }
-/* XXX pseudo elements not supported yet
-    :link, :visited { text-decoration: underline }
-    :focus          { outline: thin dotted invert } */
+:link, :visited { text-decoration: underline }
+a:hover          { color: red } /* XXX outside CSS recommendation */
+:focus          { outline: thin dotted invert } 
 
 /* Begin bidirectionality settings (do not change) */
 BDO[dir="ltr"]  { direction: ltr; unicode-bidi: bidi-override }

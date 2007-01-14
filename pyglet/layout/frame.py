@@ -106,6 +106,12 @@ class Frame(object):
         '''
         raise NotImplementedError('abstract')
 
+    def get_flow_master(self):
+        '''Return the frame responsible for flowing this one.  Typically
+        'self'.
+        '''
+        return self
+
     def position(self, x, y):
         '''Position self border edge top-left at x, y.
 
@@ -526,14 +532,17 @@ class InlineFrame(Frame):
         super(InlineFrame, self).__init__(style, element)
         self.flowed_children = ()
 
-    def flow(self):
+    def get_flow_master(self):
         # Can't flow self, rely on ancestor non-inline frame to call this
         # frame's flow_inline method.
         if self.parent:
             # Force reflow (this might not be set if it's a descendent with
             # the 'real' dirty bit).
             self.frame_dirty = True 
-            self.parent.flow()
+            return self.parent.get_flow_master()
+
+        # Hopeless case: inline as root element.
+        return self
 
     def lstrip(self):
         if self.flowed_children:

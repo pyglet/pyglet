@@ -64,6 +64,7 @@ class DocumentView(DocumentListener):
             if not frame.flow_dirty:
                 continue  # Already reflowed by some other pending op.
 
+            frame = frame.get_flow_master()
             while True:
                 # Reflow frame and all its dirty children, make note if
                 # its dimensions change.
