@@ -15,9 +15,9 @@ from pyglet.layout.builders.htmlstylesheet import *
 __all__ = ['XHTMLElement', 'XHTMLBuilder']
 
 class XHTMLElement(XMLElement):
-    def __init__(self, name, attributes, parent, previous_sibling):
+    def __init__(self, document, name, attributes, parent, previous_sibling):
         super(XHTMLElement, self).__init__(
-            name, attributes, parent, previous_sibling)
+            document, name, attributes, parent, previous_sibling)
         if attributes.has_key('class'):
             self.classes = attributes['class'].lower().split()
         if attributes.has_key('style'):

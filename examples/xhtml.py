@@ -191,8 +191,12 @@ layout.push_handlers(on_mouse_press)
 @select('#wishing')
 def on_mouse_press(element, button, x, y, modifiers):
     e = layout.document.get_element('shone')
-    e.set_element_style_property('border', '1px solid red')
-    layout.document.element_style_modified(e)
+    if 'border' not in e.style:
+        e.style['border'] = '1px solid blue'
+        e.style['color'] = '#f0f'
+    else:
+        del e.style['border']
+        del e.style['color']
 layout.push_handlers(on_mouse_press)
 
 window.push_handlers(layout)

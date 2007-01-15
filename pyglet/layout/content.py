@@ -64,6 +64,69 @@ class Document(object):
         for l in self.listeners:
             l.on_element_style_modified(element)
 
+class ContentElementStyle(object):
+    '''The style of an element is proxied by this class, which provides
+    a friendly dict-like interface for changing properties.
+    '''
+
+    __slots__ = ['element']
+
+    def __init__(self, element):
+        self.element = element
+
+    def __getitem__(self, key):
+        for decl in self.element.element_declaration_set.declarations:
+            if decl.property == key:
+                return ''.join(repr(decl))
+
+    def __setitem__(self, key, value):
+        element = self.element
+        if element.element_declaration_set:
+            declarations = \
+                [d for d in element.element_declaration_set.declarations \
+                 if d.property != key] 
+        else:
+            declarations = []
+
+        if type(value) in (str, unicode):
+            value = parse_style_expression(value)
+        elif type(value) != list:
+            value = [list]
+
+        decl = Declaration(key, value, None)
+        declarations.append(decl)
+
+        # XXX Can't reuse old DeclarationSet because there is already a
+        # StyleNode that uses it.  Unfortunately this can mean we leak
+        # memory as the StyleTree retains a reference to a potentially
+        # unused node.  This will build incrementally for all changes
+        # to element style.  One solution could be to maintain a declaration
+        # set cache.
+        element.element_declaration_set = DeclarationSet(declarations)
+
+        element.document.element_style_modified(element)
+
+    def __delitem__(self, key):
+        element = self.element
+        if element.element_declaration_set:
+            element.element_declaration_set = DeclarationSet(
+                [d for d in element.element_declaration_set.declarations \
+                 if d.property != key]) 
+        element.document.element_style_modified(element)
+
+    def __contains__(self, key):
+        element = self.element
+        if not element.element_declaration_set:
+            return False
+        return len([d for d in element.element_declaration_set.declarations \
+                    if d.property == key]) != 0
+ 
+    def __str__(self):
+        if not self.element.element_declaration_set:
+            return ''
+        return '; '.join([str(d) for d in \
+                          self.element.element_declaration_set.declarations])
+
 class ContentElement(SelectableElement):
     # Either there are children or text; not both.  AnonymousTextElements
     # are created where necessary.
@@ -75,7 +138,8 @@ class ContentElement(SelectableElement):
     intrinsic_declaration_set = None    # style on HTML presentation elements
     frame = None
 
-    def __init__(self, name, attributes, parent, previous_sibling):
+    def __init__(self, document, name, attributes, parent, previous_sibling):
+        self.document = document
         self.name = name
         self.attributes = attributes
         self.parent = parent
@@ -104,25 +168,11 @@ class ContentElement(SelectableElement):
 
     def set_element_style(self, style):
         self.element_declaration_set = parse_style_declaration_set(style)
+        self.document.element_style_modified(self)
 
-    def set_element_style_property(self, property, value):
-        if not self.element_declaration_set:
-            self.element_declaration_set = DeclarationSet([])
-
-        # Remove previous decl with same property.  Not strictly necessary,
-        # but likely to accumulate otherwise.
-        self.element_declaration_set.declarations = \
-            [d for d in self.element_declaration_set.declarations \
-             if d.property != property] 
-
-        if type(value) in (str, unicode):
-            value = parse_style_expression(value)
-        elif type(value) != list:
-            value = [list]
-
-        decl = Declaration(property, value, None)
-        self.element_declaration_set.declarations.append(decl)
-
+    style = property(lambda self: ContentElementStyle(self),
+                     set_element_style)
+        
     def pprint(self, indent=''):
         import textwrap
         print '\n'.join(textwrap.wrap(repr(self), 

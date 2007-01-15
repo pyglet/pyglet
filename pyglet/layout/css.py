@@ -416,6 +416,9 @@ class DeclarationSet(object):
     def __init__(self, declarations):
         self.declarations = declarations
 
+    def __str__(self):
+        return '; '.join([str(d) for d in self.declarations])
+
     def pprint(self):
         for declaration in self.declarations:
             print declaration, ';'
@@ -434,6 +437,12 @@ class Declaration(object):
         self.property = property
         self.values = values
         self.priority = priority
+
+    def __str__(self):
+        s = '%s: %s' % (self.property, ' '.join([str(v) for v in self.values]))
+        if self.priority:
+            s += ' ! important'
+        return s
 
     def __repr__(self):
         s = '%s: %r' % (self.property, self.values)

@@ -15,9 +15,9 @@ from pyglet.layout.builders import *
 __all__ = ['XMLElement', 'XMLBuilder']
 
 class XMLElement(ContentElement):
-    def __init__(self, name, attributes, parent, previous_sibling):
+    def __init__(self, document, name, attributes, parent, previous_sibling):
         super(XMLElement, self).__init__(
-            name, attributes, parent, previous_sibling)
+            document, name, attributes, parent, previous_sibling)
         if attributes.has_key('id'):
             self.id = attributes['id']
 

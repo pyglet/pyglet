@@ -22,7 +22,8 @@ class ContentBuilder(object):
     def begin_element(self, name, attributes):
         parent = self.parent_stack[-1]
         previous_sibling = self.sibling_stack.pop()
-        element = self.element_class(name, attributes, parent, previous_sibling)
+        element = self.element_class(
+            self.document, name, attributes, parent, previous_sibling)
         if parent:
             parent.add_child(element)
             self.document.element_modified(parent)
