@@ -87,6 +87,21 @@ You can cancel a function scheduled with any of these methods using
 And all the `schedule` methods can be called on either `Clock`, to apply
 to the default clock, or on a specific instance of `clock`.
 
+Displaying FPS
+==============
+
+The ClockDisplay class provides a simple FPS counter::
+
+    >>> fps_display = ClockDisplay()
+    >>> fps_display.draw()
+    >>>
+
+There are several options to change the font, color and text displayed
+within the __init__ method.  The display will be bottom-right aligned
+to the window by default (XXX temporary).
+
+Remember to `tick` the clock!
+
 '''
 
 __docformat__ = 'restructuredtext'
@@ -512,6 +527,50 @@ class ClockImpl(_ClockBase):
             elif item in self.schedule_interval_items:
                 self.schedule_interval_items.remove(item)
         del self.schedule_functions[func]
+
+class ClockDisplay(object):
+    '''Display current clock values, such as FPS.
+
+    Assumes an orthogonal window projection.
+    '''
+    
+    window_width = 0 #XXX temp
+    def __init__(self, 
+                 font=None,
+                 interval=0.25,
+                 format='%(fps).2f',
+                 color=(.5, .5, .5, .5),
+                 clock=None):
+
+        if not clock:
+            self.clock = Clock
+        self.clock.schedule_interval(self.update_text, interval)
+
+        if not font:
+            from pyglet.text import Font
+            font = Font('', 36, bold=True)
+
+        from pyglet.scene2d.textsprite import TextSprite
+        self.sprite = TextSprite(font, '', color=color, x=10, y=10)
+
+        self.format = format
+
+    def update_text(self, dt=0):
+        fps = self.clock.get_fps()
+        self.sprite.text = self.format % {'fps': fps}
+
+        # XXX temp until sprite.right implemented
+        if self.window_width:
+            self.sprite.x = self.window_width - self.sprite.width - 10
+
+    def draw(self):
+        self.sprite.draw()
+
+    def on_resize(self, width, height):
+        # TODO when TextSprite implements Sprite.
+        #self.sprite.right = width
+        self.window_width = width
+        return True
 
 if __name__ == '__main__':
     import sys

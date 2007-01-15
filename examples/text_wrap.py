@@ -14,7 +14,7 @@ from pyglet.clock import *
 from pyglet.scene2d.textsprite import *
 from pyglet.text import *
 
-window = Window()
+window = Window(visible=False)
 font = Font('Arial', 24)
 text = 'Type away... '
 
@@ -41,14 +41,20 @@ window.push_handlers(on_key_press)
 
 sprite = TextSprite(font, text, color=(0, 0, 0, 1))
 
+clock = Clock()
+fps = ClockDisplay()
+window.push_handlers(fps)
+
 glClearColor(1, 1, 1, 1)
 
-on_resize(window.width, window.height)
 
+window.set_visible()
 while not window.has_exit:
     window.dispatch_events()
+    clock.tick()
 
     glClear(GL_COLOR_BUFFER_BIT)
     sprite.y = sprite.height # TODO align on bottom
     sprite.draw()
+    fps.draw()
     window.flip()
