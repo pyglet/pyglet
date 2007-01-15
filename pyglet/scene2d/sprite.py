@@ -28,7 +28,7 @@ class Sprite(Drawable):
     __slots__ = 'x y z image width height angle cog offset properties animations'.split()
     def __init__(self, x, y, width, height, image, offset=(0,0), z=0,
             properties=None):
-        Drawable.__init__(self)
+        super(Sprite, self).__init__()
         self.x, self.y, self.z = x, y, z
         self.width, self.height = width, height
         self.image = image
@@ -165,7 +165,8 @@ class RotatableSprite(Sprite):
     __slots__ = 'x y z image width height angle cog offset properties animations'.split()
     def __init__(self, x, y, width, height, image, angle=0, cog=None,
             offset=(0,0), z=0, properties=None):
-        Sprite.__init__(x, y, width, height, image, offset, z, properties)
+        super(RotatableSprite, self).__init__(x, y, width, height, image,
+            offset, z, properties)
         self.angle = 0
         if cog is None:
             cog = (width/2, height/2)
