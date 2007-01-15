@@ -157,6 +157,7 @@ class ContentElement(SelectableElement):
             self.children = [element]
         else:
             self.children.append(element)
+        self.document.element_modified(self)
 
     def add_text(self, text):
         if self.children and type(self.children[-1]) == AnonymousTextElement:
@@ -167,6 +168,7 @@ class ContentElement(SelectableElement):
             self.children.append(anon)
         else:
             self.text += text
+        self.document.element_modified(self)
 
     def set_element_style(self, style):
         self.element_declaration_set = parse_style_declaration_set(style)

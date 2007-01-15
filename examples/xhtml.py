@@ -45,7 +45,7 @@ data = '''<?xml version="1.0"?>
       fountain, and when she was bored she took a golden ball, and threw it up
       on high and caught it, and this ball was her favorite plaything.
     </p>
-    <p>
+    <p id="para2">
       Now it so happened that on one occasion the princess's golden ball
       did not fall into the little hand which she was holding up for it, but
       on to the ground beyond, and rolled straight into the water. The king's
@@ -206,6 +206,11 @@ def on_mouse_press(element, button, x, y, modifiers):
         del e.style['display'] 
     else:
         e.style['display'] = 'none'
+layout.push_handlers(on_mouse_press)
+
+@select('#para2')
+def on_mouse_press(element, button, x, y, modifiers):
+    element.add_text('One fish two fish red fish blue fish.')
 layout.push_handlers(on_mouse_press)
 
 window.push_handlers(layout)
