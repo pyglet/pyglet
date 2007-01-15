@@ -146,6 +146,9 @@ class GlyphString(object):
     def draw(self, from_index=0, to_index=None):
         '''Draw the glyph string.  Assumes texture state is enabled.
         '''
+        if from_index == to_index or not self.text:
+            return
+
         # XXX Safe to assume all required textures will use same blend state I
         # think.  (otherwise move this into loop)
         self.states[0][2].apply_blend_state()
