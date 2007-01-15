@@ -125,7 +125,7 @@ event
         ============================== === === ===
 
 clock
-    :description: High-resolution timing and FPS measurement.
+    :description: High-resolution timing, scheduling and FPS measurement.
     :implementation:
         ============================== === === ===
         Component                      X11 WIN OSX
@@ -133,6 +133,9 @@ clock
         TICK                            X   X   X
         FPS                             X   X   X
         FPS_LIMIT                       X   X   X
+        SCHEDULE                        X   X   X
+        SCHEDULE_INTERVAL               X   X   X
+        SCHEDULE_ONCE                   X   X   X
         ============================== === === ===
 
 console
