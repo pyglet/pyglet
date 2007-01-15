@@ -151,11 +151,6 @@ resource
         Component                      GENERIC
         ============================== =======
         COMPLIANCE                        X
-        IMAGE                             X
-        IMAGEATLAS                        X
-        TILESET                           X
-        RECTMAP                           X
-        HEXMAP                             
         REQUIRE                           X
         ============================== =======
 
@@ -166,7 +161,12 @@ scene2d
         Component                      GENERIC
         ============================== =======
         MAP_MODEL                         X
-        MAP_LOAD                          X
+        LOAD_IMAGE                        X
+        LOAD_IMAGEATLAS                   X
+        LOAD_TILESET                      X
+        LOAD_RECTMAP                      X
+        LOAD_HEXMAP                             
+
         MAP_SAVE                           
         SPRITE_MODEL                      X
         SPRITE_OVERLAP                    X
@@ -176,7 +176,6 @@ scene2d
         FLAT_SCROLLING                    X
         FLAT_OOB                          X
         RECT_FLAT_MOUSE                   X
-        HEX_FLAT_PICKING                   
         VIEW_SUBWINDOW                     
         ============================== =======
 

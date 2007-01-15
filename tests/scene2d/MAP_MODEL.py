@@ -10,6 +10,7 @@ __version__ = '$Id$'
 
 import unittest
 
+from pyglet.window import Window
 from pyglet.scene2d import RectMap, HexMap, RectCell, HexCell
 from pyglet.scene2d.debug import gen_hex_map, gen_rect_map
 
@@ -21,6 +22,11 @@ hmd = [
 ]
 
 class MapModelTest(unittest.TestCase):
+    def setUp(self):
+        self.w = Window(width=1, height=1, visible=False)
+
+    def tearDown(self):
+        self.w.close()
 
     def test_rect_neighbor(self):
         # test rectangular tile map
@@ -84,6 +90,25 @@ class MapModelTest(unittest.TestCase):
         assert t.midleft == (0, 8)
         assert t.midright == (10, 8)
         assert t.midbottom == (5, 0)
+
+    def test_rect_pixel(self):
+        # test rectangular tile map
+        #    +---+---+---+
+        #    | d | e | f |
+        #    +---+---+---+
+        #    | a | b | c |
+        #    +---+---+---+
+        m = gen_rect_map(rmd, 10, 16)
+        t = m.get(px=(0,0))
+        assert (t.x, t.y) == (0, 0) and t.properties['meta'] == 'a'
+        t = m.get(px=(9,15))
+        assert (t.x, t.y) == (0, 0) and t.properties['meta'] == 'a'
+        t = m.get(px=(10,15))
+        assert (t.x, t.y) == (1, 0) and t.properties['meta'] == 'b'
+        t = m.get(px=(9,16))
+        assert (t.x, t.y) == (0, 1) and t.properties['meta'] == 'd'
+        t = m.get(px=(10,16))
+        assert (t.x, t.y) == (1, 1) and t.properties['meta'] == 'e'
 
     def test_hex_neighbor(self):
         # test hexagonal tile map
@@ -197,6 +222,25 @@ class MapModelTest(unittest.TestCase):
         assert t.topleft == t10.right
         assert t.midtopleft == t10.midbottomright
 
+    def test_hex_pixel(self):
+        # test hexagonal tile map
+        # tiles = [['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h']]
+        #   /d\ /h\
+        # /b\_/f\_/
+        # \_/c\_/g\
+        # /a\_/e\_/
+        # \_/ \_/ 
+        m = gen_hex_map(hmd, 32)
+        t = m.get(px=(0,0))
+        assert t is None
+        t = m.get(px=(0,16))
+        assert (t.x, t.y) == (0, 0) and t.properties['meta'] == 'a'
+        t = m.get(px=(16,16))
+        assert (t.x, t.y) == (0, 0) and t.properties['meta'] == 'a'
+        t = m.get(px=(35,16))
+        assert (t.x, t.y) == (0, 0) and t.properties['meta'] == 'a'
+        t = m.get(px=(36,16))
+        assert (t.x, t.y) == (1, 0) and t.properties['meta'] == 'c'
 
     def test_hex_dimensions(self):
         m = gen_hex_map([[{'a':'a'}]], 32)

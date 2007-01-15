@@ -304,7 +304,15 @@ class HexMap(RegularTesselationMap):
         if pos is not None:
             x, y = pos
         elif px is not None:
-            raise NotImplemented('TODO: translate pixel to cell')
+            s = self.edge_length
+            # map is divided into columns of
+            # s/2 (shared), s, s/2(shared), s, s/2 (shared), ...
+            px, py = px
+            x = px // (s/2 + s)
+            if x % 2:
+                # every second cell is up one
+                py -= self.th // 2
+            y = py // self.th
         else:
             raise ValueError, 'Either cell or pixel pos must be supplied'
         if x < 0 or y < 0:
