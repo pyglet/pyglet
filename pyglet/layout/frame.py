@@ -152,7 +152,35 @@ class Frame(object):
     # TODO: drawing/hit-testing is currently Y+up instead of against the
     # canvas Y+down.
 
-    def draw(self, x, y, render_device):
+    def draw_cull(self, x, y, render_device, left, top, right, bottom):
+        '''Draw this frame if it is within the given bounding box.
+        '''
+        # Check for entirely outside
+        if self.bounding_box_left >= right or \
+           self.bounding_box_right <= left or \
+           self.bounding_box_top <= bottom or \
+           self.bounding_box_bottom >= top:
+            return
+
+        # Check for entirely inside
+        if self.bounding_box_left >= left and \
+           self.bounding_box_right <= right and \
+           self.bounding_box_top <= top and \
+           self.bounding_box_bottom >= bottom:
+            self.draw_no_cull(x, y, render_device)
+            return
+        
+        # Overlaps bounding box.
+        lx = x + self.border_edge_left
+        ly = y - self.border_edge_top
+
+        self.draw_background(lx, ly, render_device)
+        self.draw_border(lx, ly, render_device)
+
+        for child in self.flowed_children:
+            child.draw_cull(lx, ly, render_device, left, top, right, bottom)
+        
+    def draw_no_cull(self, x, y, render_device):
         '''Draw this frame with border_edge relative to given x,y.
         '''
         lx = x + self.border_edge_left
@@ -162,7 +190,7 @@ class Frame(object):
         self.draw_border(lx, ly, render_device)
 
         for child in self.flowed_children:
-            child.draw(lx, ly, render_device)
+            child.draw_no_cull(lx, ly, render_device)
 
     def draw_background(self, x, y, render_device):
         '''Draw the background of this frame with the border-edge top-left at
@@ -688,9 +716,10 @@ class TextFrame(InlineFrame):
         super(TextFrame, self).__init__(style, element)
         self.text = text
 
-    def draw(self, x, y, render_device):
-        orig_x, orig_y = x, y
-
+    def draw_cull(self, x, y, render_device, left, top, right, bottom):
+        self.draw_no_cull(x, y, render_device) # TODO
+        
+    def draw_no_cull(self, x, y, render_device):
         x += self.border_edge_left
         y -= self.border_edge_top
 
@@ -751,6 +780,9 @@ class InlineReplacedElementFrame(InlineFrame):
         self.continuation.containing_block = self.containing_block
         self.continuation.style = self.style
         self.continuation.flow_inline(remaining_width)
+
+    def draw(self, x, y, render_device):
+        pass  # continuation only is drawn.
 
 class InlineReplacedElementDelegate(InlineFrame):
     force_border = True
@@ -856,10 +888,17 @@ class InlineReplacedElementDelegate(InlineFrame):
             self.border_edge_height + self.margin_top + self.margin_bottom
         self.content_descent = self.line_descent = 0
 
-    def draw(self, x, y, render_device):
+    def draw_cull(self, x, y, render_device, left, top, right, bottom):
+        # Check for partial intersection
+        if self.bounding_box_right > left and \
+           self.bounding_box_left < right and \
+           self.bounding_box_top > bottom and \
+           self.bounding_box_bottom < top:
+            self.draw_no_cull(x, y, render_device)
+
+    def draw_no_cull(self, x, y, render_device):
         lx = x + self.border_edge_left
         ly = y - self.border_edge_top
-
 
         self.draw_background(lx, ly, render_device)
         self.draw_border(lx, ly, render_device)

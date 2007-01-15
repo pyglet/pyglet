@@ -52,9 +52,11 @@ class ImageReplacedElementDrawable(ReplacedElementDrawable):
         self.intrinsic_ratio = image.width / float(image.height)
 
     def draw(self, frame, render_device, left, top, right, bottom):
-        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)
+        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_COLOR_BUFFER_BIT)
         glColor3f(1, 1, 1)
         glEnable(GL_TEXTURE_2D)        
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glBindTexture(GL_TEXTURE_2D, self.texture.id)
         glBegin(GL_QUADS)
 

@@ -136,8 +136,12 @@ class DocumentView(DocumentListener):
 
         self.update_flow()
 
-        self._root_frame.draw(self.viewport_x, self.viewport_y, 
-            self.render_device)
+        self._root_frame.draw_cull(self.viewport_x, self.viewport_y, 
+            self.render_device, 
+            self.viewport_x, 
+            -self.viewport_y, 
+            self.viewport_x + self._viewport_width, 
+            -self.viewport_y - self._viewport_height)
 
     def get_frames_for_point(self, x, y):
         x += self.viewport_x
