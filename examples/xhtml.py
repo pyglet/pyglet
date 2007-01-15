@@ -38,12 +38,12 @@ data = '''<?xml version="1.0"?>
       In olden times when <span id="wishing">wishing</span> still helped one,
       there lived a king whose daughters were all beautiful, but the youngest
       was so beautiful that the sun itself, which has seen so much, was
-      astonished whenever it shone in her face.  Close by the king's castle
-      lay a great dark forest, and under an old lime-tree in the forest was a
-      well, and when the day was very warm, the king's child went out into the
-      forest and sat down by the side of the cool fountain, and when she was
-      bored she took a golden ball, and threw it up on high and caught it, and
-      this ball was her favorite plaything.
+      astonished whenever it <span id="shone">shone</span> in her face.  Close
+      by the king's castle lay a great dark forest, and under an old lime-tree
+      in the forest was a well, and when the day was very warm, the king's
+      child went out into the forest and sat down by the side of the cool
+      fountain, and when she was bored she took a golden ball, and threw it up
+      on high and caught it, and this ball was her favorite plaything.
     </p>
     <p>
       Now it so happened that on one occasion the princess's golden ball
@@ -188,9 +188,11 @@ def on_mouse_press(element, button, x, y, modifiers):
     print 'I am brother Grimm!'
 layout.push_handlers(on_mouse_press)
 
-@select('#wish')
+@select('#wishing')
 def on_mouse_press(element, button, x, y, modifiers):
-    print 'Granted three wishes!'
+    e = layout.document.get_element('shone')
+    e.set_element_style_property('border', '1px solid red')
+    layout.document.element_style_modified(e)
 layout.push_handlers(on_mouse_press)
 
 window.push_handlers(layout)

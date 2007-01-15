@@ -220,6 +220,12 @@ def parse_style_declaration_set(style):
     declaration_set = parser.declaration_set()
     return declaration_set
 
+def parse_style_expression(value):
+    scanner = Scanner(lexicon, StringIO(value))
+    parser = Parser(scanner)
+    return parser.expr()
+    
+
 class Import(object):
     '''An @import declaration.  Currently ignored.
     '''

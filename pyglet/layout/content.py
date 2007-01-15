@@ -8,7 +8,7 @@ Use a module from pyglet.layout.builders to create the tree.
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.layout.css import SelectableElement, parse_style_declaration_set
+from pyglet.layout.css import *
 
 __all__ = ['Document',
            'DocumentListener',
@@ -36,6 +36,7 @@ class Document(object):
     def __init__(self):
         self.stylesheets = []
         self.listeners = []
+        self.element_ids = {}
 
     def add_listener(self, listener):
         self.listeners.append(listener)
@@ -47,6 +48,9 @@ class Document(object):
         self.root = root
         for l in self.listeners:
             l.on_set_root(root)
+
+    def get_element(self, id):
+        return self.element_ids.get(id, None)
 
     def element_modified(self, element):
         '''Notify that an element's children or text have changed.
@@ -100,6 +104,24 @@ class ContentElement(SelectableElement):
 
     def set_element_style(self, style):
         self.element_declaration_set = parse_style_declaration_set(style)
+
+    def set_element_style_property(self, property, value):
+        if not self.element_declaration_set:
+            self.element_declaration_set = DeclarationSet([])
+
+        # Remove previous decl with same property.  Not strictly necessary,
+        # but likely to accumulate otherwise.
+        self.element_declaration_set.declarations = \
+            [d for d in self.element_declaration_set.declarations \
+             if d.property != property] 
+
+        if type(value) in (str, unicode):
+            value = parse_style_expression(value)
+        elif type(value) != list:
+            value = [list]
+
+        decl = Declaration(property, value, None)
+        self.element_declaration_set.declarations.append(decl)
 
     def pprint(self, indent=''):
         import textwrap

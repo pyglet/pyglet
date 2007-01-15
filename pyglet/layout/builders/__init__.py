@@ -32,6 +32,8 @@ class ContentBuilder(object):
         self.parent_stack.append(element)
         self.sibling_stack.append(element)
         self.sibling_stack.append(None)
+        if element.id:
+            self.document.element_ids[element.id] = element
 
     def end_element(self, name):
         self.parent_stack.pop()
