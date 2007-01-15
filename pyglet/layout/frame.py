@@ -984,6 +984,7 @@ class FrameBuilder(object):
         temp_frame = Frame(style_node, element)
         display = style_node.get_computed_property('display', temp_frame) 
         if display == 'none':
+            element.frame = None
             return
 
         if element.text and display == 'inline':

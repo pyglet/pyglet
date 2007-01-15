@@ -75,9 +75,11 @@ class ContentElementStyle(object):
         self.element = element
 
     def __getitem__(self, key):
+        if not self.element.element_declaration_set:
+            return None
         for decl in self.element.element_declaration_set.declarations:
             if decl.property == key:
-                return ''.join(repr(decl))
+                return ''.join([str(v) for v in decl.values])
 
     def __setitem__(self, key, value):
         element = self.element

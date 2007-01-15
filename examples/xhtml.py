@@ -199,6 +199,15 @@ def on_mouse_press(element, button, x, y, modifiers):
         del e.style['color']
 layout.push_handlers(on_mouse_press)
 
+@select('#shone')
+def on_mouse_press(element, button, x, y, modifiers):
+    e = layout.document.get_element('wishing')
+    if e.style['display'] == 'none':
+        del e.style['display'] 
+    else:
+        e.style['display'] = 'none'
+layout.push_handlers(on_mouse_press)
+
 window.push_handlers(layout)
 
 

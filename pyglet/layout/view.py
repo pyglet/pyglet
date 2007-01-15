@@ -20,8 +20,8 @@ class DocumentView(DocumentListener):
 
         self._root_frame = None
 
-        self._require_reconstruct = False # Temporary HACK
-        self._pending_reflows = set()
+        self._pending_reflow = set()
+        self._pending_reconstruct = set()
 
         # Position of viewport on canvas (+ve Y is down).  Size of viewport
         # determines the initial containing block.
@@ -31,15 +31,17 @@ class DocumentView(DocumentListener):
         self._viewport_height = 0
 
     def on_set_root(self, element):
-        self._require_reconstruct = True
+        self._pending_reconstruct.clear()
+        self._pending_reconstruct.add(element)
 
     def on_element_modified(self, element):
-        self._require_reconstruct = True
+        # Simple optimisation: ignore if root is pending (TODO ancestors, etc)
+        if self.document.root in self._pending_reconstruct:
+            return
+        self._pending_reconstruct.add(element)
 
     def on_element_style_modified(self, element):
         frame = element.frame
-        # TODO look for 'display' modification, trigger reconstruct (of
-        # parent).
         if frame:
             new_style = self.frame_builder.get_style_node(element)
 
@@ -48,27 +50,89 @@ class DocumentView(DocumentListener):
                 return
 
             differences = frame.style.get_specified_differences(new_style)
-            frame.style = new_style
-            frame.purge_style_cache(differences)
-            frame.mark_flow_dirty()
-            self._pending_reflows.add(frame)
+            if 'display' in differences:
+                # Need to reconstruct and replace the parent (changing
+                # display might affect siblings and presence of anonymous
+                # frames).
+                if element.parent:
+                    self._pending_reconstruct.add(element.parent)
+                else:
+                    # display change on root.
+                    self._pending_reconstruct.add(element)
+
+            else:
+                # All other style changes just need reflow.
+                frame.style = new_style
+                frame.purge_style_cache(differences)
+                frame.mark_flow_dirty()
+                self._pending_reflow.add(frame)
+        else:
+            # Reconstruct the parent, possible that frame can be created now.
+            if element.parent:
+                self._pending_reconstruct.add(element.parent)
+            else:
+                self._pending_reconstruct.add(element)
 
     def update_reconstruct(self):
-        if self._require_reconstruct:
-            self._root_frame = self.frame_builder.build_frame(self.document.root)
-            self._root_frame.containing_block = self.initial_containing_block()
-            self._require_reconstruct = False
-            self.reflow_resize()
+        for element in self._pending_reconstruct:
+            if not element.parent:
+                assert element is self.document.root
+                self._root_frame = \
+                    self.frame_builder.build_frame(self.document.root)
+                self._root_frame.containing_block = \
+                    self.initial_containing_block()
+                self._pending_reconstruct.clear()
+                self.reflow_resize()
+                break
+            elif not element.frame:
+                # Doesn't currently exist in flow, can ignore. (display
+                # changes are pending on parent).
+                pass
+            else:
+                parent_frame = element.parent.frame
+                child_frame = element.frame
+                # Find ancestor of child_frame that is direct descendent of
+                # parent_frame (usually _is_ old_frame, unless there are 
+                # anonymous frames in the way).
+                while child_frame and child_frame.parent is not parent_frame:
+                    child_frame = child_frame.parent
+                if not child_frame:
+                    # This can happen if several content changes occur before
+                    # a reconstruct update occurs.  Solution is more careful
+                    # checking of content hierarchy when adding to pending
+                    # set.
+                    warnings.warn('Frame ancestry does not match content.' +\
+                        ' Element %r will not be updated' % element)
+                    continue
+                assert child_frame in parent_frame.children
+                i = parent_frame.children.index(child_frame)
+
+                new_frame = self.frame_builder.build_frame(element)
+                if not new_frame:
+                    # Eek, can't imagine how this can happen (display:none)
+                    # handled at parent.
+                    del parent_frame.children[i]
+                    element.frame = None
+                else:
+                    new_frame.parent = parent_frame
+                    parent_frame.children[i] = new_frame
+
+                # Reflow parent (should take care of new frame's containing
+                # block).
+                parent_frame.mark_flow_dirty()
+                self._pending_reflow.add(parent_frame)
+
+        self._pending_reconstruct.clear()
 
     def reflow_resize(self):
         self.update_reconstruct()
         self._root_frame.containing_block = self.initial_containing_block()
         self._root_frame.mark_flow_dirty()
-        self._pending_reflows.add(self._root_frame)
+        self._pending_reflow.add(self._root_frame)
 
     def update_flow(self):
         self.update_reconstruct()
-        for frame in self._pending_reflows:
+        for frame in self._pending_reflow:
             if not frame.flow_dirty:
                 continue  # Already reflowed by some other pending op.
 
@@ -98,7 +162,7 @@ class DocumentView(DocumentListener):
             else:
                 frame.resolve_bounding_box(0, 0) # root frame
 
-        self._pending_reflows.clear()
+        self._pending_reflow.clear()
 
     def get_canvas_width(self):
         if not self._root_frame:
