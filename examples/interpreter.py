@@ -6,7 +6,7 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from code import InteractiveConsole
+from code import InteractiveInterpreter
 import sys
 
 from pyglet.GL.VERSION_1_1 import *
@@ -40,12 +40,12 @@ data = '''<?xml version="1.0"?>
   <body>
     <h1>Interpreter example</h1>
     <div id="interpreter-block"><span
-id="interpreter">&gt;&gt;&gt; </span><span id="cursor"> </span></div>
+id="interpreter" /><span id="cursor"> </span></div>
   </body>
 </html>
 '''
 
-class DOMInterpreter(InteractiveConsole):
+class DOMInterpreter(InteractiveInterpreter):
     class Stream(object):
         def __init__(self, interpreter):
             self.interpreter = interpreter
@@ -54,7 +54,7 @@ class DOMInterpreter(InteractiveConsole):
             self.interpreter.write(data)
 
     def __init__(self, element):
-        InteractiveConsole.__init__(self)
+        InteractiveInterpreter.__init__(self)
         self.element = element
         self.buffer = ''
         self.stream = DOMInterpreter.Stream(self)
@@ -66,6 +66,7 @@ class DOMInterpreter(InteractiveConsole):
         self.element.add_text(data)
 
     def input(self, input):
+        print 'BEFORE', (self.element.text, )
         _stdout = sys.stdout
         sys.stdout = self.stream
 
@@ -73,13 +74,17 @@ class DOMInterpreter(InteractiveConsole):
         self.buffer += input
         if '\n' in self.buffer:
             source, self.buffer = self.buffer.rsplit('\n', 1)
+            print >> _stdout, ('run', source, self.buffer)
             prompt = self.runsource(source)
+            print >> _stdout, ('...', prompt)
+
             if prompt:
-                self.write('\n... ')
+                self.write('... ')
             else:
-                self.write('\n>>> ')
+                self.write('>>> ')
 
         sys.stdout = _stdout
+        print 'AFTER', (self.element.text, )
 
     def backspace(self):
         self.buffer = self.buffer[:-1]
