@@ -49,7 +49,7 @@ while 1:
     for event in pygame.event.get():
         if event.type in (QUIT, KEYDOWN, MOUSEBUTTONDOWN):
             print 'FPS:', clock.get_fps()
-            print 'us per sprite:', float(t) / (numsprites * numframes) * 1000000
+            print 'us per sprite:', float(t) / (numsprites * numframes) * 1000
             sys.exit(0)
     group.update(dt)
     win.fill((0,0,0))
