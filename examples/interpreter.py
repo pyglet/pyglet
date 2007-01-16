@@ -58,6 +58,7 @@ class DOMInterpreter(InteractiveInterpreter):
         self.element = element
         self.buffer = ''
         self.stream = DOMInterpreter.Stream(self)
+        self.source = []
 
         self.write('pyglet interpreter\n')
         self.write('>>> ')
@@ -66,7 +67,6 @@ class DOMInterpreter(InteractiveInterpreter):
         self.element.add_text(data)
 
     def input(self, input):
-        print 'BEFORE', (self.element.text, )
         _stdout = sys.stdout
         sys.stdout = self.stream
 
@@ -74,17 +74,16 @@ class DOMInterpreter(InteractiveInterpreter):
         self.buffer += input
         if '\n' in self.buffer:
             source, self.buffer = self.buffer.rsplit('\n', 1)
-            print >> _stdout, ('run', source, self.buffer)
-            prompt = self.runsource(source)
-            print >> _stdout, ('...', prompt)
+            self.source.append(source)
+            prompt = self.runsource('\n'.join(self.source))
 
             if prompt:
                 self.write('... ')
             else:
+                self.source = []
                 self.write('>>> ')
 
         sys.stdout = _stdout
-        print 'AFTER', (self.element.text, )
 
     def backspace(self):
         self.buffer = self.buffer[:-1]
