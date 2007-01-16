@@ -20,9 +20,10 @@ from pyglet.GL.VERSION_1_1 import *
 w = Window(600, 600, vsync=False)
 
 dirname = os.path.dirname(__file__)
-ball = Image2d.load(os.path.join(dirname, 'ball-small.png'))
+img = Image2d.load(os.path.join(dirname, 'car.png'))
 
 class BouncySprite(Sprite):
+    __slots__ = Sprite.__slots__
     def update(self):
         # move, check bounds
         p = self.properties
@@ -35,10 +36,11 @@ class BouncySprite(Sprite):
 sprites = []
 numsprites = int(sys.argv[1])
 for i in range(numsprites):
-    x = random.randint(0, 592)
-    y = random.randint(0, 592)
+    x = random.randint(0, w.width-img.width)
+    y = random.randint(0, w.height-img.height)
     p = {'dx': random.randint(-10, 10), 'dy': random.randint(-10, 10)}
-    sprites.append(BouncySprite(x, y, 8, 8, ball, properties=p))
+    sprites.append(BouncySprite(x, y, img.width, img.height, img,
+        properties=p))
 
 scene = Scene(sprites=sprites)
 view = FlatView.from_window(scene, w)

@@ -6,9 +6,7 @@ from pyglet.resource import *
 from pyglet.window.event import *
 from pyglet.window.key import *
 import pyglet.clock
-from pyglet.euclid import Vector2, Matrix3
 from pyglet.scene2d import *
-
 
 class PlayerSprite(Sprite):
     bullets = []

@@ -17,8 +17,9 @@ from pygame.locals import *
 
 pygame.init()
 win = pygame.display.set_mode((600, 600))
+ww, wh = win.get_size()
 
-ball = pygame.image.load('examples/ball-small.png')
+img = pygame.image.load('examples/car.png')
 
 class BouncySprite(pygame.sprite.Sprite):
     def update(self, dt):
@@ -32,12 +33,13 @@ class BouncySprite(pygame.sprite.Sprite):
 
 group = pygame.sprite.Group()
 numsprites = int(sys.argv[1])
+iw, ih = img.get_size()
 for i in range(numsprites):
-    x = random.randint(0, 592)
-    y = random.randint(0, 592)
+    x = random.randint(0, ww - iw)
+    y = random.randint(0, wh - ih)
     s = BouncySprite(group)
-    s.image = ball
-    s.rect = pygame.Rect(x, y, 8, 8)
+    s.image = img
+    s.rect = pygame.Rect(x, y, iw, ih)
     s.properties = {'dx': random.randint(-10, 10),
         'dy': random.randint(-10, 10)}
 
