@@ -31,7 +31,8 @@ class BouncySprite(pygame.sprite.Sprite):
         elif self.rect.top > 600: self.rect.top = 600; p['dy'] = -p['dy']
 
 group = pygame.sprite.Group()
-for i in range(int(sys.argv[1])):
+numsprites = int(sys.argv[1])
+for i in range(numsprites):
     x = random.randint(0, 592)
     y = random.randint(0, 592)
     s = BouncySprite(group)
@@ -41,14 +42,19 @@ for i in range(int(sys.argv[1])):
         'dy': random.randint(-10, 10)}
 
 clock = pygame.time.Clock()
+t = 0
+numframes = 0
 while 1:
     dt = clock.tick()
     for event in pygame.event.get():
         if event.type in (QUIT, KEYDOWN, MOUSEBUTTONDOWN):
             print 'FPS:', clock.get_fps()
+            print 'us per sprite:', float(t) / (numsprites * numframes) * 1000000
             sys.exit(0)
     group.update(dt)
     win.fill((0,0,0))
     group.draw(win)
     pygame.display.flip()
+    t += dt
+    numframes += 1
 

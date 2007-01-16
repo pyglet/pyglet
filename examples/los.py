@@ -33,7 +33,8 @@ class BouncySprite(Sprite):
         elif self.top > 600: self.top = 600; p['dy'] = -p['dy']
 
 sprites = []
-for i in range(int(sys.argv[1])):
+numsprites = int(sys.argv[1])
+for i in range(numsprites):
     x = random.randint(0, 592)
     y = random.randint(0, 592)
     p = {'dx': random.randint(-10, 10), 'dy': random.randint(-10, 10)}
@@ -44,16 +45,21 @@ view = FlatView.from_window(scene, w)
 view.fx, view.fy = w.width/2, w.height/2
 
 clock = Clock()
+t = 0
+numframes = 0
 while 1:
     if w.has_exit:
         print 'FPS:', clock.get_fps()
+        print 'us per sprite:', float(t) / (numsprites * numframes) * 1000000
+
         break
-    clock.tick()
+    t += clock.tick()
     w.dispatch_events()
     for s in sprites: s.update()
     view.clear()
     view.draw()
     w.flip()
+    numframes += 1
 w.close()
 
 
