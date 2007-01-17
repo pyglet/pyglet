@@ -49,6 +49,7 @@ import operator
 
 from pyglet.event import EventDispatcher, EVENT_UNHANDLED
 from pyglet.scene2d.camera import FlatCamera
+from pyglet.scene2d.drawable import draw_many
 from pyglet.GL.VERSION_1_1 import *
 
 class View(EventDispatcher):
@@ -353,11 +354,10 @@ class FlatView(View):
                     glPopMatrix()
             glPopMatrix()
 
-        for sprite in self.scene.sprites:
-            glPushMatrix()
-            glTranslatef(sprite.x, sprite.y, sprite.z)
-            sprite.draw()
-            glPopMatrix()
+
+        draw_many(self.scene.sprites)
+#        for sprite in self.scene.sprites:
+#            sprite.draw()
 
         glPopMatrix()
  

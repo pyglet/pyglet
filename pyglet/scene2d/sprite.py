@@ -11,7 +11,7 @@ __version__ = '$Id$'
 
 
 from pyglet.GL.VERSION_1_1 import *
-from pyglet.scene2d.image import Drawable
+from pyglet.scene2d.drawable import *
 
 class Sprite(Drawable):
     '''A sprite with some dimensions, image to draw and optional animation
@@ -25,11 +25,11 @@ class Sprite(Drawable):
         animations      -- a queue of SpriteAnimations to run
         properties      -- arbitrary data in a dict
     '''
-    __slots__ = 'x y z image width height angle cog offset properties animations'.split()
+    __slots__ = '_x _y z image width height offset properties animations _style'.split()
     def __init__(self, x, y, width, height, image, offset=(0,0), z=0,
             properties=None):
         super(Sprite, self).__init__()
-        self.x, self.y, self.z = x, y, z
+        self._x, self._y, self.z = x, y, z
         self.width, self.height = width, height
         self.image = image
         self.offset = offset
@@ -39,6 +39,10 @@ class Sprite(Drawable):
         else:
             self.properties = properties
 
+        self._style = DrawStyle(color=(1, 1, 1, 1), texture=image.texture,
+            x=x, y=y, z=z, width=width, height=height, uvs=image.uvs,
+            draw_env=DRAW_BLENDED, draw_list=image.quad_list)
+
     @classmethod
     def from_image(cls, x, y, image, offset=(0,0), z=0, properties=None):
         '''Set up the sprite from the image - sprite dimensions are the
@@ -46,8 +50,8 @@ class Sprite(Drawable):
         return cls(x, y, image.width, image.height, image, offset, z,
             properties)
 
-    def impl_draw(self):
-        self.image.draw()
+    def get_drawstyle(self):
+        return self._style
  
     def push_animation(self, animation):
         "Push a SpriteAnimation onto this sprite's animation queue."
@@ -87,6 +91,21 @@ class Sprite(Drawable):
         if self.y > (rect.y + rect.height): return False
         if (self.y + self.height) < rect.y: return False
         return True
+
+    def get_x(self):
+        # XXX this calls another getter
+        return self._x
+    def set_x(self, x):
+        self._x = x
+        self._style.x = x
+    x = property(get_x, set_x)
+    def get_y(self):
+        # XXX this calls another getter
+        return self._y
+    def set_y(self, y):
+        self._y = y
+        self._style.y = y
+    y = property(get_y, set_y)
  
     # r/w, in pixels, y extent
     def get_top(self): return self.y + self.height
@@ -162,15 +181,28 @@ class RotatableSprite(Sprite):
         cog             -- center of gravity for rotation (x, y)
                            (defaults to middle of sprite)
     '''
-    __slots__ = 'x y z image width height angle cog offset properties animations'.split()
+    __slots__ = Sprite.__slots__ + '_angle cog'.split()
     def __init__(self, x, y, width, height, image, angle=0, cog=None,
             offset=(0,0), z=0, properties=None):
         super(RotatableSprite, self).__init__(x, y, width, height, image,
             offset, z, properties)
-        self.angle = 0
+        self._angle = 0
         if cog is None:
             cog = (width/2, height/2)
         self.cog = cog
+
+    def get_angle(self):
+        return self._angle
+    def set_angle(self, angle):
+        self._angle = angle
+        s = self._style
+        if angle:
+            s.draw_func = self.draw_rotated
+            s.draw_list = None
+        else:
+            s.draw_func = None
+            s.draw_list = self.image.quad_list
+    angle = property(get_angle, set_angle)
 
     @classmethod
     def from_image(cls, x, y, image, angle=0, cog=None, offset=(0,0), z=0,
@@ -180,16 +212,17 @@ class RotatableSprite(Sprite):
         return cls(x, y, image.width, image.height, image, angle, cog,
             offset, z, properties)
 
-    def impl_draw(self):
-        if self.angle:
-            glPushMatrix()
-            glTranslatef(self.cog[0], self.cog[1], 0)
-            glRotatef(self.angle, 0, 0, 1)
-            glTranslatef(-self.cog[0], -self.cog[1], 0)
-            self.image.draw()
-            glPopMatrix()
-        else:
-            self.image.draw()
+    def draw_rotated(self):
+        cog = self.cog
+        glPushMatrix()
+        glTranslatef(cog[0], cog[1], 0)
+        glRotatef(self._angle, 0, 0, 1)
+        glTranslatef(-cog[0], -cog[1], 0)
+        glCallList(self.image.quad_list)
+        glPopMatrix()
+
+    def get_drawstyle(self):
+        return self._style
 
 
 """

@@ -22,7 +22,7 @@ __version__ = '$Id$'
 from pyglet.GL.VERSION_1_1 import *
 
 from pyglet.image import RawImage
-
+from pyglet.scene2d.drawable import *
 from pyglet.resource import register_factory, ResourceError
 
 
@@ -85,61 +85,21 @@ def image_factory(resource, tag):
     return image
 
 
-class Drawable(object):
-    ''' A draw()'able thing that might have additional (possibly animated)
-    effects attached.
-    '''
-    def __init__(self):
-        self.effects = []
-
-    def set_effect(self, effect):
-        self.effects = [effect]
-    def add_effect(self, effect):
-        self.effects.append(effect)
-    def remove_effect(self, effect):
-        self.effects.remove(effect)
-
-    def animate(self, dt):
-        for effect in self.effects:
-            if effect.animate is not None:
-                # XXX detect end of animation
-                effect.animate(dt)
-
-    def draw(self):
-        if self.effects:
-            self.effects[-1].draw(self)
-        else:
-            self.impl_draw()
-
-    def impl_draw(self, colour=None):
-        '''Implementation of drawing by a subclass.
-
-        If "colour" is not None it should be used to tint the drawing.
-        '''
-        raise NotImplemented()
-
-class TintEffect(object):
-    '''Changes the current colour, thus tinting the drawable being applied
-    to. Requires that the drawable be texture-mapped and that it not
-    specify its own colour.
-    '''
-    animate = None
-    def __init__(self, colour):
-        self.colour = colour
-
-    def draw(self, drawable):
-        glPushAttrib(GL_CURRENT_BIT)
-        glColor4f(*self.colour)
-        drawable.impl_draw()
-        glPopAttrib()
-
-
 class Image2d(Drawable):
     def __init__(self, texture, x, y, width, height):
-        Drawable.__init__(self)
         self.texture = texture
         self.x, self.y = x, y
         self.width, self.height = width, height
+
+        # textures are upside-down so we need to compensate for that
+        # XXX make textures not lie about their size
+        tw, th = self.texture.width, self.texture.height
+        tw, th, x, x = self.texture.get_texture_size(tw, th)
+        l = float(self.x) / tw
+        b = float(self.y) / th
+        r = float(self.x + self.width) / tw
+        t = float(self.y + self.height) / th
+        self.uvs = [(l,b),(l,t),(r,t),(r,b)]
 
     @classmethod
     def load(cls, filename=None, file=None):
@@ -168,42 +128,28 @@ class Image2d(Drawable):
         if self.__quad_list is not None:
             return self.__quad_list
 
-        # textures are upside-down so we need to compensate for that
-        # XXX make textures not lie about their size
-        tw, th = self.texture.width, self.texture.height
-        tw, th, x, x = self.texture.get_texture_size(tw, th)
-        l = float(self.x) / tw
-        b = float(self.y) / th
-        r = float(self.x + self.width) / tw
-        t = float(self.y + self.height) / th
-
         # Make quad display list
         self.__quad_list = glGenLists(1)
         glNewList(self.__quad_list, GL_COMPILE)
-        glBindTexture(GL_TEXTURE_2D, self.texture.id)
-        glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT)
-        glEnable(GL_TEXTURE_2D)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
         glBegin(GL_QUADS)
-        glTexCoord2f(l, b)
+        glTexCoord2f(*self.uvs[0])
         glVertex2f(0, 0)
-        glTexCoord2f(l, t)
+        glTexCoord2f(*self.uvs[1])
         glVertex2f(0, self.height)
-        glTexCoord2f(r, t)
+        glTexCoord2f(*self.uvs[2])
         glVertex2f(self.width, self.height)
-        glTexCoord2f(r, b)
+        glTexCoord2f(*self.uvs[3])
         glVertex2f(self.width, 0)
         glEnd()
-
-        glPopAttrib()
         glEndList()
         return self.__quad_list
     quad_list = property(quad_list)
 
-    def impl_draw(self):
-        glCallList(self.quad_list)
+    def get_drawstyle(self):
+        return DrawStyle(color=(1, 1, 1, 1), texture=self.texture,
+            x=self.x, y=self.y, z=self.z, width=self.width, 
+            height=self.height, uvs=self.uvs, draw_list=self.quad_list,
+            draw_env=DRAW_BLENDED)
 
     def subimage(self, x, y, width, height):
         # XXX should we care about recursive sub-image calls??

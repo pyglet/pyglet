@@ -9,15 +9,17 @@ from pyglet.euclid import Vector2, Matrix3
 from pyglet.scene2d import *
 
 class CarSprite(RotatableSprite):
-    speed = 0
+    __slots__ = RotatableSprite.__slots__
     def update(self, dt):
         # handle input and move the car
         self.angle += (keyboard[K_LEFT] - keyboard[K_RIGHT]) * 150 * dt
-        self.speed += (keyboard[K_UP] - keyboard[K_DOWN]) * 75 
-        if self.speed > 300: self.speed = 300
-        if self.speed < -150: self.speed = -150
-        r = Matrix3.new_rotate(math.radians(self.angle))
-        v = dt * self.speed * (r * Vector2(0, 1))
+        speed = self.properties.get('speed', 0)
+        speed += (keyboard[K_UP] - keyboard[K_DOWN]) * 75 
+        if speed > 300: speed = 300
+        if speed < -150: speed = -150
+        self.properties['speed'] = speed
+        r = Matrix3.new_rotate(math.radians(self.get_angle()))
+        v = dt * speed * (r * Vector2(0, 1))
         self.x += v.x
         self.y += v.y
 

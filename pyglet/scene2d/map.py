@@ -25,7 +25,7 @@ import xml.dom
 import xml.dom.minidom
 
 from pyglet.resource import Resource, register_factory
-from pyglet.scene2d.image import Drawable
+from pyglet.scene2d.drawable import *
 
 @register_factory('rectmap')
 def rectmap_factory(resource, tag):
@@ -153,12 +153,19 @@ class Cell(Drawable):
         properties        -- arbitrary properties
         cell       -- cell from the Map's cells
     '''
+    __slots__ = 'map x y width height properties tile'.split()
+
     def __init__(self, x, y, width, height, properties, tile):
         Drawable.__init__(self)
         self.width, self.height = width, height
         self.x, self.y = x, y
         self.properties = properties
         self.tile = tile
+
+        self._style = DrawStyle(color=(1, 1, 1, 1),
+            texture=tile.image.texture, x=x, y=y, width=width,
+            height=height, uvs=tile.image.uvs, draw_env=DRAW_BLENDED,
+            draw_list=tile.image.quad_list)
 
     def __repr__(self):
         return '<%s object at 0x%x (%g, %g) properties=%r tile=%r>'%(
@@ -169,8 +176,8 @@ class Cell(Drawable):
     def should_draw(self):
         return self.tile is not None
 
-    def impl_draw(self):
-        return self.tile.image.draw()
+    def get_drawstyle(self):
+        return self._style
 
 class RectCell(Cell):
     '''A rectangular cell from a Map.
@@ -191,7 +198,7 @@ class RectCell(Cell):
         midleft     -- (x, y) of middle of left side
         midright    -- (x, y) of middle of right side
     '''
-    __slots__ = 'map x y width height properties tile'.split()
+    __slots__ = Cell.__slots__
 
     # ro, side in pixels, y extent
     def get_top(self):
@@ -387,7 +394,7 @@ class HexCell(Cell):
         midbottomleft   -- (x, y) of middle of left side
         midbottomright  -- (x, y) of middle of right side
     '''
-    __slots__ = 'map x y width height properties tile'.split()
+    __slots__ = Cell.__slots__
 
     def __init__(self, x, y, height, properties, tile):
         width = int(height / math.sqrt(3)) * 2
