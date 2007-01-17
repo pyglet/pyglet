@@ -163,7 +163,7 @@ class Cell(Drawable):
         self.tile = tile
 
         self._style = DrawStyle(color=(1, 1, 1, 1),
-            texture=tile.image.texture, x=x, y=y, width=width,
+            texture=tile.image.texture, x=x*width, y=y*height, width=width,
             height=height, uvs=tile.image.uvs, draw_env=DRAW_BLENDED,
             draw_list=tile.image.quad_list)
 

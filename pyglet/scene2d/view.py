@@ -344,14 +344,17 @@ class FlatView(View):
             glTranslatef(smap.x, smap.y, smap.z)
 
             # XXX use smap.get_cells_in_region(bottomleft, topright)
+            l = []
             for column in smap.cells:
                 for cell in column:
                     if not cell.should_draw(): continue
-                    x, y = cell.origin
-                    glPushMatrix()
-                    glTranslatef(x, y, -1)
-                    cell.draw()
-                    glPopMatrix()
+                    l.append(cell)
+#                    x, y = cell.origin
+#                    glPushMatrix()
+#                    glTranslatef(x, y, -1)
+#                    cell.draw()
+#                    glPopMatrix()
+            draw_many(l)
             glPopMatrix()
 
 
