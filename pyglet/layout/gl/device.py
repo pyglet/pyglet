@@ -227,8 +227,15 @@ class GLTextFrame(TextFrame):
             'font-style' in properties):
             self.glyph_string = None
 
-    def flow_inline(self, remaining_width, strip_next):
+    def flow_inline(self, remaining_width, strip_first):
+        # Reset after last flow
         self.from_index = 0
+        
+        # Final white-space processing step (besides line beginning strip)
+        # from 16.6.1 step 4.
+        if strip_first and self.get_computed_property('white-space') in \
+           ('normal', 'nowrap', 'pre-line'):
+            self.from_index = len(self.text) - len(self.text.lstrip())
 
         # Clear previous flow continuation if any
         self.continuation = None
@@ -326,6 +333,7 @@ class GLTextFrame(TextFrame):
                     frame.line_break = True
 
                 # Ready for next iteration
+                frame.strip_next = False
                 frame.continuation = continuation
                 frame = continuation
                 remaining_width = self.containing_block.width
@@ -333,7 +341,7 @@ class GLTextFrame(TextFrame):
             if frame.to_index >= len(self.text):
                 break
 
-
+        frame.strip_next = self.text[-1] == ' '
         frame.border_edge_width += content_right
         self.frame_dirty = False
 
