@@ -147,7 +147,7 @@ class Image2d(Drawable):
 
     def get_drawstyle(self):
         return DrawStyle(color=(1, 1, 1, 1), texture=self.texture,
-            x=self.x, y=self.y, z=self.z, width=self.width, 
+            x=self.x, y=self.y, z=0, width=self.width, 
             height=self.height, uvs=self.uvs, draw_list=self.quad_list,
             draw_env=DRAW_BLENDED)
 
