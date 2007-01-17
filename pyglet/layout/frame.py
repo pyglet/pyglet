@@ -470,9 +470,8 @@ class BlockFrame(Frame):
                 child_width = child.margin_left + child.border_edge_width + \
                     child.margin_right
 
-                if child.line_break or \
-                   (remaining_width - child_width < 0 and \
-                    not lines[-1].is_empty):
+                if remaining_width - child_width < 0 and \
+                    not lines[-1].is_empty:
                     # This child will not fit, start a new line
                     y += lines[-1].line_height
                     lines.append(LineBox(self, strip_lines))
@@ -489,6 +488,16 @@ class BlockFrame(Frame):
                     lines[-1].add(child)
                 else:
                     buffer.append(child)
+
+                if child.line_break:
+                    # Start new line after the child
+                    for f in buffer:
+                        lines[-1].add(f)
+                    y += lines[-1].line_height
+                    lines.append(LineBox(self, strip_lines))
+                    remaining_width = child_containing_block.width
+                    buffer = []
+
 
                 child = child.continuation
   
