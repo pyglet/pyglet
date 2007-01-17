@@ -210,7 +210,12 @@ class GLTextFrame(TextFrame):
 
     def lstrip(self):
         text = self.text[self.from_index:self.to_index]
+        old_index = self.from_index
         self.from_index += len(text) - len(text.lstrip())
+        if old_index != self.from_index:
+            self.border_edge_width -= self.glyph_string.get_subwidth(
+                old_index, self.from_index)
+
 
     contains_ws = re.compile(u'[\n\u0020\u200b]')
 
@@ -222,7 +227,9 @@ class GLTextFrame(TextFrame):
             'font-style' in properties):
             self.glyph_string = None
 
-    def flow_inline(self, remaining_width):
+    def flow_inline(self, remaining_width, strip_next):
+        self.from_index = 0
+
         # Clear previous flow continuation if any
         self.continuation = None
 
@@ -314,7 +321,7 @@ class GLTextFrame(TextFrame):
                 frame.margin_right = 0
 
                 # Force line break
-                if self.text[frame.to_index-1] == '\n':
+                if frame.to_index and self.text[frame.to_index-1] == '\n':
                     frame.to_index -= 1
                     frame.line_break = True
 

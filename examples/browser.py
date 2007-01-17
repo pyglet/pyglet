@@ -8,6 +8,7 @@ Usage::
     Press 'v' to dump source (base file only).
     Press 'e' to dump elements.
     Press 'f' to dump frames.
+    Press 'w' to dump frames using flowed children.
     Press 's' to dump frames and style nodes.
 '''
 
@@ -39,34 +40,6 @@ window = Window(visible=False)
 offset_top = 0
 layout_height = 0
 
-def print_box(box, indent=''):
-    print '\n'.join(textwrap.wrap(repr(box), initial_indent=indent,
-            subsequent_indent=indent))
-    if box.children:
-        for child in box.children:
-            print_box(child, '  ' + indent)
-
-def print_frame(frame, indent=''):
-    print '\n'.join(textwrap.wrap(repr(frame), initial_indent=indent,
-            subsequent_indent=indent))
-    if hasattr(frame, 'children'):
-        for child in frame.children:
-            print_frame(child, '  ' + indent)
-
-def print_style(style, indent=''):
-    print '\n'.join(textwrap.wrap(repr(style), initial_indent=indent,
-            subsequent_indent=indent))
-    if style.parent:
-        print_style(style.parent, '  ' + indent)
-
-def print_element(element, indent=''):
-    print '\n'.join(textwrap.wrap(repr(element), initial_indent=indent,
-            subsequent_indent=indent))
-    if element.style_context:
-        print_style(element.style_context, indent + '  ')
-    for child in element.children:
-        print_element(child, '  ' + indent)
-
 def on_key_press(symbol, modifiers):
     if symbol == K_V:
         print repr(layout.locator.get_default_stream().read())
@@ -74,6 +47,8 @@ def on_key_press(symbol, modifiers):
         layout.document.root.pprint()
     if symbol == K_F:
         layout.view._root_frame.pprint()
+    if symbol == K_W:
+        layout.view._root_frame.pprint_flowed()
     if symbol == K_S:
         layout.view._root_frame.pprint_style()
     return True

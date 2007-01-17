@@ -300,6 +300,13 @@ class Frame(object):
         for child in self.children:
             child.pprint(indent + '  ')
 
+    def pprint_flowed(self, indent=''):
+        import textwrap
+        print '\n'.join(textwrap.wrap(repr(self), 
+            initial_indent=indent, subsequent_indent=indent))
+        for child in self.flowed_children:
+            child.pprint_flowed(indent + '  ')
+
     def pprint_style(self, indent=''):
         import textwrap
         print '\n'.join(textwrap.wrap(repr(self), 
@@ -454,6 +461,7 @@ class BlockFrame(Frame):
         remaining_width = child_containing_block.width
         strip_lines = self.get_computed_property('white-space') in \
             ('normal', 'nowrap', 'pre-line')
+        strip_next = strip_lines
         lines = [LineBox(self, strip_lines)]
         buffer = []
         y = 0
@@ -461,7 +469,7 @@ class BlockFrame(Frame):
         for child in self.children:
             child.containing_block = child_containing_block
             if child.flow_dirty:
-                child.flow_inline(remaining_width)
+                child.flow_inline(remaining_width, strip_next)
             import pdb
             #pdb.set_trace()
 
@@ -596,7 +604,7 @@ class InlineFrame(Frame):
         if self.flowed_children:
             self.flowed_children[0].lstrip()
 
-    def flow_inline(self, remaining_width):
+    def flow_inline(self, remaining_width, strip_next):
         self.continuation = None
 
         computed = self.get_computed_property
@@ -660,7 +668,7 @@ class InlineFrame(Frame):
                 remaining_width -= content_right - self.margin_right
             if child.flow_dirty:
                 child.containing_block = self.containing_block
-                child.flow_inline(remaining_width)
+                child.flow_inline(remaining_width, strip_next)
 
             while child:
                 c_width = child.margin_left + child.border_edge_width + \
@@ -784,11 +792,11 @@ class InlineReplacedElementFrame(InlineFrame):
         super(InlineReplacedElementFrame, self).mark_flow_dirty()
         self.continuation.mark_flow_dirty()
 
-    def flow_inline(self, remaining_width):
+    def flow_inline(self, remaining_width, strip_next):
         # Let continuation flow itself.
         self.continuation.containing_block = self.containing_block
         self.continuation.style = self.style
-        self.continuation.flow_inline(remaining_width)
+        self.continuation.flow_inline(remaining_width, strip_next)
 
     def draw(self, x, y, render_device):
         pass  # continuation only is drawn.
@@ -808,7 +816,7 @@ class InlineReplacedElementDelegate(InlineFrame):
         self.continuation = InlineFrame(self.style, self.element)
         self.continuation.is_continuation = True
 
-    def flow_inline(self, remaining_width):
+    def flow_inline(self, remaining_width, strip_next):
         computed = self.get_computed_property
         def used(property):
             value = computed(property)
