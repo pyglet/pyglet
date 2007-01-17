@@ -181,7 +181,7 @@ class RotatableSprite(Sprite):
             offset, z, properties)
 
     def impl_draw(self):
-        if angle:
+        if self.angle:
             glPushMatrix()
             glTranslatef(self.cog[0], self.cog[1], 0)
             glRotatef(self.angle, 0, 0, 1)
