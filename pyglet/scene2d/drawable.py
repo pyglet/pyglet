@@ -33,7 +33,12 @@ class Drawable(object):
         return style
 
     def draw(self):
-        '''Convenience method.'''
+        '''Convenience method.
+
+        Don't use this if you have a lot of drawables and care about
+        performance. Collect up your drawables in a list and pass that to
+        draw_many().
+        '''
         self.get_style().draw()
 
 
