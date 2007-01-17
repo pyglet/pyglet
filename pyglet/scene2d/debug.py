@@ -33,12 +33,6 @@ class HexCheckImage:
         glVertex2f(*self.cell.left)
         glEnd()
 
-class RectCheckImage:
-    def __init__(self, w, h, colour):
-        self.image = Image2d.from_image(Image.create_solid(w, colour))
-    def draw(self):
-        self.image.draw()
-
 def gen_hex_map(meta, h):
     r = []
     cell = None
@@ -57,14 +51,14 @@ def gen_hex_map(meta, h):
 def gen_rect_map(meta, w, h):
     r = []
     cell = None
+    dark = Image2d.from_image(Image.create_solid(w, (150, 150, 150, 255)))
+    light = Image2d.from_image(Image.create_solid(w, (200, 200, 200, 255)))
     for i, m in enumerate(meta):
         c = []
         r.append(c)
         for j, info in enumerate(m):
-            if (i + j) % 2:
-                image = RectCheckImage(w, h, (150, 150, 150, 255))
-            else:
-                image = RectCheckImage(w, h, (200, 200, 200, 255))
+            if (i + j) % 2: image = dark
+            else: image = light
             c.append(RectCell(i, j, w, h, dict(info), Tile('dbg', {}, image)))
     return RectMap('debug', w, h, r)
 

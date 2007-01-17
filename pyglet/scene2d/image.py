@@ -87,6 +87,7 @@ def image_factory(resource, tag):
 
 class Image2d(Drawable):
     def __init__(self, texture, x, y, width, height):
+        super(Image2d, self).__init__()
         self.texture = texture
         self.x, self.y = x, y
         self.width, self.height = width, height

@@ -348,12 +348,12 @@ class FlatView(View):
             for column in smap.cells:
                 for cell in column:
                     if not cell.should_draw(): continue
-                    l.append(cell)
 #                    x, y = cell.origin
 #                    glPushMatrix()
 #                    glTranslatef(x, y, -1)
 #                    cell.draw()
 #                    glPopMatrix()
+                    l.append(cell)
             draw_many(l)
             glPopMatrix()
 

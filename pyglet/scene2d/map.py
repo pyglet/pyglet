@@ -153,10 +153,10 @@ class Cell(Drawable):
         properties        -- arbitrary properties
         cell       -- cell from the Map's cells
     '''
-    __slots__ = 'map x y width height properties tile'.split()
+    __slots__ = Drawable.__slots__ + 'map x y width height properties tile _style'.split()
 
     def __init__(self, x, y, width, height, properties, tile):
-        Drawable.__init__(self)
+        super(Cell, self).__init__()
         self.width, self.height = width, height
         self.x, self.y = x, y
         self.properties = properties

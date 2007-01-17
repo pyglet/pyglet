@@ -15,19 +15,9 @@ from pyglet.window.event import *
 from pyglet.window.key import *
 import pyglet.clock
 from pyglet.scene2d import *
+from pyglet.scene2d.drawable import ScaleEffect
 
 ball_png = os.path.join(os.path.dirname(__file__), 'ball.png')
-
-class Marker:
-    def __init__(self):
-        self.image = Image2d.load(ball_png)
-
-    def draw(self):
-        glPushMatrix()
-        glScalef(.25, .25, 1)
-        self.image.draw()
-        glPopMatrix()
-
 
 class RenderBase(unittest.TestCase):
     w = None
@@ -53,7 +43,9 @@ class RenderBase(unittest.TestCase):
     marker = None
     def show_focus(self):
         # add in a "sprite"
-        self.marker = Sprite(0, 0, 16, 16, Marker())
+        marker = Image2d.load(ball_png)
+        self.marker = Sprite(0, 0, 16, 16, marker)
+        self.marker.add_effect(ScaleEffect(.25, .25))
         self.scene.sprites.append(self.marker)
 
     def run_test(self):

@@ -21,7 +21,14 @@ class DrawBlended(DrawEnv):
 DRAW_BLENDED = DrawBlended()
  
 class Drawable(object):
-    effects = []
+    __slots__ = ['effects']
+    def __init__(self):
+        self.effects = []
+
+    def add_effect(self, effect):
+        self.effects.append(effect)
+    def remove_effect(self, effect):
+        self.effects.remove(effect)
  
     def get_drawstate(self):
         raise NotImplemented('implement on subclass')
@@ -64,6 +71,36 @@ class TintEffect(Effect):
         style.color = tuple([style.color[i] * self.tint[i] for i in range(4)])
         return style
  
+class ScaleEffect(Effect):
+    '''Apply a scale to the Drawable.
+
+    Note that because this would change positioning this effect also
+    hard-codes the current positioning in the style. If you wish for an
+    effect to change the positioning you'll need to add that effect
+    before this one.
+    '''
+    def __init__(self, sx, sy):
+        self.sx, self.sy = sx, sy
+    def apply(self, style):
+        style = style.copy()
+        class ScaleEnv:
+            def __init__(self, style, sx, sy):
+                self.inner_env = style.draw_env
+                self.x, self.y = style.x, style.y
+                style.x = style.y = 0
+                self.sx, self.sy = sx, sy
+            def before(self):
+                glPushMatrix()
+                glTranslatef(self.x, self.y, 0)
+                glScalef(self.sx, self.sy, 0)
+                if hasattr(self.inner_env, 'before'):
+                    self.inner_env.before()
+            def after(self):
+                if hasattr(self.inner_env, 'after'):
+                    self.inner_env.after()
+                glPopMatrix()
+        style.draw_env = ScaleEnv(style, self.sx, self.sy)
+        return style
 
 class DrawStyle(object):
     __slots__ = ' color x y z width height texture uvs draw_list draw_env draw_func is_copy'.split()
@@ -88,7 +125,10 @@ class DrawStyle(object):
         self.is_copy = False
  
     def copy(self):
-        s = DrawStyle(**self.__dict__)
+        s = DrawStyle(color=self.color, texture=self.texture, x=self.x,
+            y=self.y, z=self.z, width=self.width, height=self.height,
+            uvs=self.uvs, draw_list=self.draw_list, draw_env=self.draw_env,
+            draw_func=self.draw_func)
         s.is_copy = True
         return s
  
@@ -120,7 +160,6 @@ class DrawStyle(object):
             glPopMatrix()
 
     def __cmp__(self, other):
-        print (self, other)
         return (
             cmp(self.color, other.color),
             cmp(self.texture.id, other.texture.id),
@@ -131,7 +170,7 @@ class DrawStyle(object):
 
 
 def draw_many(drawables):
-    styles = [d.get_drawstyle() for d in drawables]
+    styles = [d.get_style() for d in drawables]
     drawables.sort()
     old_color = None
     old_texture = None

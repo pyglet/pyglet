@@ -25,7 +25,7 @@ class Sprite(Drawable):
         animations      -- a queue of SpriteAnimations to run
         properties      -- arbitrary data in a dict
     '''
-    __slots__ = '_x _y z image width height offset properties animations _style'.split()
+    __slots__ = Drawable.__slots__ + '_x _y z image width height offset properties animations _style'.split()
     def __init__(self, x, y, width, height, image, offset=(0,0), z=0,
             properties=None):
         super(Sprite, self).__init__()

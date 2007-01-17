@@ -23,8 +23,8 @@ from render_base import RenderBase
 from pyglet.scene2d import Tile, Sprite
 from pyglet.event import event
 from pyglet.scene2d.event import for_cells, for_sprites
-from pyglet.scene2d.image import TintEffect
-from pyglet.scene2d.debug import gen_rect_map, RectCheckImage
+from pyglet.scene2d.drawable import TintEffect
+from pyglet.scene2d.debug import gen_rect_map
 
 class RectFlatMouseTest(RenderBase):
     def test_main(self):
