@@ -80,6 +80,19 @@ else:
     if not path:
         raise ImportError('GL shared library not found')
     _gl = ctypes.cdll.LoadLibrary(path)
+
+    # Look for glXGetProcAddressARB extension, use it as fallback (for
+    # ATI fglrx driver).  (note can't use
+    # pyglet.window.xlib.glx.ARB_get_proc_address as it depends on
+    # get_function.
+    try:
+        glXGetProcAddressARB = getattr(_gl, 'glXGetProcAddressARB')
+        glXGetProcAddressARB.restype = ctypes.c_void_p
+        glXGetProcAddressARB.argtypes = [ctypes.c_char_p]
+        _have_getprocaddress = True
+    except AttributeError:
+        _have_get_procaddress = False
+        
     def get_function(name, argtypes, rtype):
         try:
             func = getattr(_gl, name)
@@ -87,6 +100,13 @@ else:
             func.restype = rtype
             return func
         except AttributeError, e:
+            if _have_getprocaddress:
+                # Fallback if implemented but not in ABI
+                addr = glXGetProcAddressARB(name)
+                if addr:
+                    ftype = ctypes.CFUNCTYPE(*((rtype,) + tuple(argtypes)))
+                    return ftype(addr)
+
             raise ImportError(e)
  
 # No ptrdiff_t in ctypes, discover it
