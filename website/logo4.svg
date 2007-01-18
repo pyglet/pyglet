@@ -6,14 +6,14 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:sodipodi="http://inkscape.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="744.09448819"
    height="1052.3622047"
    id="svg2863"
    sodipodi:version="0.32"
-   inkscape:version="0.44.1"
-   sodipodi:docbase="/home/alex/projects/pyglet/website"
+   inkscape:version="0.43"
+   sodipodi:docbase="/home/richard/src/pyglet.googlecode.com/trunk/website"
    sodipodi:docname="logo4.svg">
   <defs
      id="defs2865">
@@ -109,8 +109,8 @@
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      inkscape:window-width="1226"
-     inkscape:window-height="968"
-     inkscape:window-x="1280"
+     inkscape:window-height="946"
+     inkscape:window-x="45"
      inkscape:window-y="0" />
   <metadata
      id="metadata2868">
@@ -134,7 +134,7 @@
        sodipodi:nodetypes="cccccscccss" />
     <path
        sodipodi:type="spiral"
-       style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:black;stroke-width:20.39999962;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-start:none;marker-end:none"
+       style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:#000000;stroke-width:20.39999962;stroke-linecap:butt;stroke-linejoin:miter;marker-start:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="path2873"
        sodipodi:cx="363.57144"
        sodipodi:cy="264.50504"
@@ -143,6 +143,7 @@
        sodipodi:radius="44.571114"
        sodipodi:argument="-8.4740696"
        sodipodi:t0="0.30856708"
-       d="M 372.57393,274.90239 C 367.38547,283.55487 355.29163,283.7591 347.81588,278.1469 C 336.75849,269.84589 336.83889,253.48634 345.2902,243.39127 C 356.60355,229.8775 377.36745,230.26276 390.04341,241.58443 C 406.03905,255.87108 405.33958,281.09653 391.13142,296.33521 C 385.7022,302.15823 378.64017,306.3544 370.96952,308.45788" />
+       d="M 372.57393,274.90239 C 367.38547,283.55487 355.29163,283.7591 347.81588,278.1469 C 336.75849,269.84589 336.83889,253.48634 345.2902,243.39127 C 356.60355,229.8775 377.36745,230.26276 390.04341,241.58443 C 406.03905,255.87108 405.33958,281.09653 391.13142,296.33521 C 385.7022,302.15823 378.64017,306.3544 370.96952,308.45788"
+       transform="matrix(-0.996753,-8.052117e-2,8.052117e-2,-0.996753,718.1134,533.4406)" />
   </g>
 </svg>
