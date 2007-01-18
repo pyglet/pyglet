@@ -53,7 +53,7 @@ class Drawable(object):
         self.get_style().draw()
 
 
-class Effect:
+class Effect(object):
     def apply(self, style):
         '''Modify some aspect of the style. If style.is_copy is False then
         .copy() it. We don't do that automatically because there's a chance
@@ -92,10 +92,11 @@ class ScaleEffect(Effect):
         class ScaleEnv:
             def __init__(self, style, sx, sy):
                 self.inner_env = style.draw_env
-                self.x, self.y = style.x, style.y
-                style.x = style.y = 0
+                self.style = style
                 self.sx, self.sy = sx, sy
             def before(self):
+                self.x, self.y = style.x, style.y
+                style.x = style.y = 0
                 glPushMatrix()
                 glTranslatef(self.x, self.y, 0)
                 glScalef(self.sx, self.sy, 0)
@@ -105,6 +106,7 @@ class ScaleEffect(Effect):
                 if hasattr(self.inner_env, 'after'):
                     self.inner_env.after()
                 glPopMatrix()
+                style.x, style.y = self.x, self.y
         style.draw_env = ScaleEnv(style, self.sx, self.sy)
         return style
 
@@ -139,7 +141,6 @@ class DrawStyle(object):
         return s
  
     def draw(self):
-
         if self.color is not None:
             glColor4f(*self.color)
         

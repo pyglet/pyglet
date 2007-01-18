@@ -135,20 +135,14 @@ class Sprite(Drawable):
     def set_x(self, x):
         self._x = x
         if self._style is not None:
-            # XXX this is a hack because of ScaleEffect
-            self._style = None
-            # ... it should be
-            #self._style.x = x
+            self._style.x = x
     x = property(get_x, set_x)
     def get_y(self):
         return self._y
     def set_y(self, y):
         self._y = y
         if self._style is not None:
-            # XXX this is a hack because of ScaleEffect
-            self._style = None
-            # ... it should be
-            #self._style.y = y
+            self._style.y = y
     y = property(get_y, set_y)
  
     # r/w, in pixels, y extent
