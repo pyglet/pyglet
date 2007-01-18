@@ -159,6 +159,10 @@ class Cell(Drawable):
         self.properties = properties
         self.tile = tile
 
+        if tile is not None:
+            # pre-calculate the style to force creation of _style
+            self.get_style()
+
     def __repr__(self):
         return '<%s object at 0x%x (%g, %g) properties=%r tile=%r>'%(
             self.__class__.__name__, id(self), self.x, self.y,

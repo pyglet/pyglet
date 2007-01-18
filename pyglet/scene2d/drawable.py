@@ -21,23 +21,27 @@ class DrawBlended(DrawEnv):
 DRAW_BLENDED = DrawBlended()
  
 class Drawable(object):
-    __slots__ = ['effects']
+    __slots__ = 'effects _style'.split()
     def __init__(self):
         self.effects = []
+        self._style = None
 
     def add_effect(self, effect):
         self.effects.append(effect)
+        self._style = None
     def remove_effect(self, effect):
         self.effects.remove(effect)
+        self._style = None
  
     def get_drawstyle(self):
         raise NotImplemented('implement on subclass')
  
     def get_style(self):
-        style = self.get_drawstyle()
-        for effect in self.effects:
-            style = effect.apply(style)
-        return style
+        if self._style is None:
+            self._style = self.get_drawstyle()
+            for effect in self.effects:
+                self._style = effect.apply(self._style)
+        return self._style
 
     def draw(self):
         '''Convenience method.

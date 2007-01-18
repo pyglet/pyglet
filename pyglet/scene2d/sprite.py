@@ -60,7 +60,7 @@ class Sprite(Drawable):
         animations      -- a queue of SpriteAnimations to run
         properties      -- arbitrary data in a dict
     '''
-    __slots__ = Drawable.__slots__ + '_x _y image width height offset properties animations _style'.split()
+    __slots__ = Drawable.__slots__ + '_x _y image width height offset properties animations'.split()
     def __init__(self, x, y, width, height, image, offset=(0,0),
             properties=None):
         super(Sprite, self).__init__()
@@ -74,9 +74,8 @@ class Sprite(Drawable):
         else:
             self.properties = properties
 
-        self._style = DrawStyle(color=(1, 1, 1, 1), texture=image.texture,
-            x=x, y=y, width=width, height=height, uvs=image.uvs,
-            draw_env=DRAW_BLENDED, draw_list=image.quad_list)
+        # pre-calculate the style to force creation of _style
+        self.get_style()
 
     @classmethod
     def from_image(cls, x, y, image, offset=(0,0), properties=None):
@@ -86,7 +85,11 @@ class Sprite(Drawable):
             properties)
 
     def get_drawstyle(self):
-        return self._style
+        '''Use the image style as a basis and modify to move.
+        '''
+        style = self.image.get_style().copy()
+        style.x, style.y = self._x, self._y
+        return style
  
     def push_animation(self, animation):
         "Push a SpriteAnimation onto this sprite's animation queue."
@@ -128,18 +131,24 @@ class Sprite(Drawable):
         return True
 
     def get_x(self):
-        # XXX this calls another getter
         return self._x
     def set_x(self, x):
         self._x = x
-        self._style.x = x
+        if self._style is not None:
+            # XXX this is a hack because of ScaleEffect
+            self._style = None
+            # ... it should be
+            #self._style.x = x
     x = property(get_x, set_x)
     def get_y(self):
-        # XXX this calls another getter
         return self._y
     def set_y(self, y):
         self._y = y
-        self._style.y = y
+        if self._style is not None:
+            # XXX this is a hack because of ScaleEffect
+            self._style = None
+            # ... it should be
+            #self._style.y = y
     y = property(get_y, set_y)
  
     # r/w, in pixels, y extent
