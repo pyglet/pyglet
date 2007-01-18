@@ -91,7 +91,7 @@ else:
     m = gen_rect_map([[{}]*mh]*mw, cw, ch)
 w.set_size(width=m.pxw, height=m.pxh)
 w.set_visible()
-s = pyglet.scene2d.Scene(maps=[m])
+s = pyglet.scene2d.Scene(layers=[m])
 r = pyglet.scene2d.FlatView(s, 0, 0, m.pxw, m.pxh, allow_oob=False)
 
 class SaveHandler:

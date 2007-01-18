@@ -70,7 +70,7 @@ class Map(Layer):
 class RegularTesselationMap(Map):
     '''A class of Map that has a regular array of Cells.
     '''
-    def get_pos(self, x, y):
+    def get_cell(self, x, y):
         ''' Return Cell at cell pos=(x,y).
 
         Return None if out of bounds.'''
@@ -119,7 +119,7 @@ class RectMap(RegularTesselationMap):
         ''' Return Cell at pixel px=(x,y).
 
         Return None if out of bounds.'''
-        return self.get_pos(x // self.tw, y // self.th)
+        return self.get_cell(x // self.tw, y // self.th)
  
     UP = (0, 1)
     DOWN = (0, -1)
@@ -132,7 +132,7 @@ class RectMap(RegularTesselationMap):
         Returns None if out of bounds.
         '''
         dx, dy = direction
-        return self.get_pos(cell.x + dx, cell.y + dy)
+        return self.get_cell(cell.x + dx, cell.y + dy)
 
     @classmethod
     def load_xml(cls, filename, id):
@@ -328,7 +328,7 @@ class HexMap(RegularTesselationMap):
             # every second cell is up one
             y -= self.th // 2
         y = y // self.th
-        return self.get_pos(x, y)
+        return self.get_cell(x, y)
 
     UP = 'up'
     DOWN = 'down'
@@ -344,29 +344,29 @@ class HexMap(RegularTesselationMap):
         Return None if out of bounds.
         '''
         if direction is self.UP:
-            return self.get_pos(cell.x, cell.y + 1)
+            return self.get_cell(cell.x, cell.y + 1)
         elif direction is self.DOWN:
-            return self.get_pos(cell.x, cell.y - 1)
+            return self.get_cell(cell.x, cell.y - 1)
         elif direction is self.UP_LEFT:
             if cell.x % 2:
-                return self.get_pos(cell.x - 1, cell.y + 1)
+                return self.get_cell(cell.x - 1, cell.y + 1)
             else:
-                return self.get_pos(cell.x - 1, cell.y)
+                return self.get_cell(cell.x - 1, cell.y)
         elif direction is self.UP_RIGHT:
             if cell.x % 2:
-                return self.get_pos(cell.x + 1, cell.y + 1)
+                return self.get_cell(cell.x + 1, cell.y + 1)
             else:
-                return self.get_pos(cell.x + 1, cell.y)
+                return self.get_cell(cell.x + 1, cell.y)
         elif direction is self.DOWN_LEFT:
             if cell.x % 2:
-                return self.get_pos(cell.x - 1, cell.y)
+                return self.get_cell(cell.x - 1, cell.y)
             else:
-                return self.get_pos(cell.x - 1, cell.y - 1)
+                return self.get_cell(cell.x - 1, cell.y - 1)
         elif direction is self.DOWN_RIGHT:
             if cell.x % 2:
-                return self.get_pos(cell.x + 1, cell.y)
+                return self.get_cell(cell.x + 1, cell.y)
             else:
-                return self.get_pos(cell.x + 1, cell.y - 1)
+                return self.get_cell(cell.x + 1, cell.y - 1)
         else:
             raise ValueError, 'Unknown direction %r'%direction
  
