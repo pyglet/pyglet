@@ -442,15 +442,11 @@ class BaseWindow(WindowEventDispatcher):
     def set_exclusive_keyboard(self, exclusive=True):
         raise NotImplementedError()
 
-    
+    width = property(lambda self: self.get_size()[0],
+                     lambda self, width: self.set_size(width, self.height))
 
-    @property
-    def width(self):
-        return self.get_size()[0]
-
-    @property
-    def height(self):
-        return self.get_size()[1]
+    height = property(lambda self: self.get_size()[1],
+                      lambda self, height: self.set_size(self.width, height))
 
 class BasePlatform(object):
     '''Abstraction of platform-specific methods.

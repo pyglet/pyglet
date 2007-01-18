@@ -453,6 +453,11 @@ class CarbonWindow(BaseWindow):
         rect.bottom = rect.top + height
         carbon.SetWindowBounds(self._window, kWindowContentRgn, byref(rect))
 
+        self.switch_to()
+        glViewport(0, 0, width, height)
+        self.dispatch_event(EVENT_RESIZE, width, height)
+        self.dispatch_event(EVENT_EXPOSE)
+
     def get_size(self):
         rect = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
