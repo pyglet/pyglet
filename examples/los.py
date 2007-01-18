@@ -42,8 +42,8 @@ for i in range(numsprites):
     p = {'dx': random.randint(-10, 10), 'dy': random.randint(-10, 10)}
     sprites.append(BouncySprite(x, y, img.width, img.height, img,
         properties=p))
-
-scene = Scene(sprites=sprites)
+layer = SpriteLayer(sprites=sprites)
+scene = Scene(layers=[layer])
 view = FlatView.from_window(scene, w)
 view.fx, view.fy = w.width/2, w.height/2
 

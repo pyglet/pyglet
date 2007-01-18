@@ -32,7 +32,7 @@ class RenderBase(unittest.TestCase):
             vx = self.w.width
             vy = self.w.height
 
-        self.scene = pyglet.scene2d.Scene(maps=[m])
+        self.scene = pyglet.scene2d.Scene(layers=[m])
         self.view = pyglet.scene2d.FlatView(self.scene, 0, 0, vx, vy)
 
         self.w.push_handlers(self.view.camera)

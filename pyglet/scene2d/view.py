@@ -14,7 +14,7 @@ Creating a simple scene and displaying it:
     >>> import pyglet.scene2d
     >>> m = pyglet.scene2d.RectMap(32, 32, cells=gen_rect_map([[0]*4]*4, 32, 32)
     >>> w = pyglet.window.Window(width=m.pxw, height=m.pxh)
-    >>> s = pyglet.scene2d.Scene(maps=[m])
+    >>> s = pyglet.scene2d.Scene(layers=[m])
     >>> v = pyglet.scene2d.FlatView.from_window(s, w)
     >>> v.debug((0,0))
     >>> w.flip()
@@ -50,6 +50,8 @@ import operator
 from pyglet.event import EventDispatcher, EVENT_UNHANDLED
 from pyglet.scene2d.camera import FlatCamera
 from pyglet.scene2d.drawable import draw_many
+from pyglet.scene2d.map import Map
+from pyglet.scene2d.sprite import SpriteLayer
 from pyglet.GL.VERSION_1_1 import *
 
 class View(EventDispatcher):
@@ -132,15 +134,16 @@ class FlatView(View):
                 for mf in handler.map_filters:
                     l = []
                     for map in mf.maps:
-                        cell = map.get(px=(x, y))
+                        cell = map.get(x, y)
                         if cell:
                             l.append(cell)
                     objs.extend((map.z, mf(l)))
             else:
-                for map in self.scene.maps:
-                    cell = map.get(px=(x, y))
+                for layer in self.scene.layers:
+                    if not isinstance(layer, Map): continue
+                    cell = layer.get(x, y)
                     if cell:
-                        objs.append((map.z, cell))
+                        objs.append((layer.z, cell))
 
             # sprites to pass to the handler
             if hasattr(handler, 'sprite_filters') and \
@@ -152,9 +155,15 @@ class FlatView(View):
                             l.append((sprite.z, sprite))
                     objs.extend(sf(l))
             else:
+                for layer in self.scene.layers:
+                    if not isinstance(layer, SpriteLayer): continue
+                    for sprite in layer.sprites:
+                        if sprite.contains(x, y):
+                            objs.append((layer.z, sprite))
                 for sprite in self.scene.sprites:
                     if sprite.contains(x, y):
-                        objs.append((sprite.z, sprite))
+                        # un-layered sprites are at depth 0
+                        objs.append((0, sprite))
 
             # sort by depth
             objs.sort()
@@ -225,14 +234,13 @@ class FlatView(View):
         ''' Pick whatever is on the top at the position x, y. '''
         r = []
 
-        # XXX sprite layers
         for sprite in self.scene.sprites:
             if sprite.contains(x, y):
                 r.append(sprite)
 
-        self.scene.maps.sort(key=operator.attrgetter('z'))
-        for smap in self.scene.maps:
-            cell = smap.get(px=(x, y))
+        self.scene.layers.sort(key=operator.attrgetter('z'))
+        for layer in self.scene.layers:
+            cell = layer.get(x, y)
             if cell:
                 r.append(cell)
 
@@ -260,15 +268,25 @@ class FlatView(View):
         fx = int(self.fx)
         fy = int(self.fy)
 
-        if not self.scene.maps or self.allow_oob: return (fx, fy)
+        
+        if self.allow_oob: return (fx, fy)
+
+        # check that any layer has bounds
+        bounded = []
+        for layer in self.scene.layers:
+            if hasattr(layer, 'pxw'):
+                bounded.append(layer)
+        if not bounded:
+            return (fx, fy)
+
 
         # figure the bounds min/max
-        m = self.scene.maps[0]
+        m = bounded[0]
         b_min_x = m.x
         b_min_y = m.y
         b_max_x = m.x + m.pxw
         b_max_y = m.y + m.pxh
-        for m in self.scene.maps[1:]:
+        for m in bounded[1:]:
             b_min_x = min(b_min_x, m.x)
             b_min_y = min(b_min_y, m.y)
             b_max_x = min(b_max_x, m.x + m.pxw)
@@ -331,36 +349,34 @@ class FlatView(View):
         self.camera.project()
 
         # sort by depth
-        self.scene.maps.sort(key=operator.attrgetter('z'))
+        self.scene.layers.sort(key=operator.attrgetter('z'))
 
         # determine the focus point
         fx, fy = self._determine_focus()
 
+        w2 = self.camera.width/2
+        h2 = self.camera.height/2
+        x1, y1 = fx - w2, fy - h2
+        x2, y2 = fx + w2, fy + h2
+
         # now draw
         glPushMatrix()
         glTranslatef(self.camera.width/2-fx, self.camera.height/2-fy, 0)
-        for smap in self.scene.maps:
-            glPushMatrix()
-            glTranslatef(smap.x, smap.y, smap.z)
 
-            # XXX use smap.get_cells_in_region(bottomleft, topright)
-            l = []
-            for column in smap.cells:
-                for cell in column:
-                    if not cell.should_draw(): continue
-#                    x, y = cell.origin
-#                    glPushMatrix()
-#                    glTranslatef(x, y, -1)
-#                    cell.draw()
-#                    glPopMatrix()
-                    l.append(cell)
-            draw_many(l)
-            glPopMatrix()
+        for layer in self.scene.layers:
+            if hasattr(layer, 'x'):
+                translate = layer.x or layer.y or layer.z
+            else:
+                translate = False
+            if translate:
+                glPushMatrix()
+                glTranslatef(layer.x, layer.y, layer.z)
+            draw_many(layer.get_in_region(x1, y1, x2, y2))
+            if translate:
+                glPopMatrix()
 
-
-        draw_many(self.scene.sprites)
-#        for sprite in self.scene.sprites:
-#            sprite.draw()
+        if self.scene.sprites:
+            draw_many(self.scene.sprites)
 
         glPopMatrix()
  

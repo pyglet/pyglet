@@ -26,6 +26,7 @@ import xml.dom.minidom
 
 from pyglet.resource import Resource, register_factory
 from pyglet.scene2d.drawable import *
+from pyglet.scene2d.scene import Layer
 
 @register_factory('rectmap')
 def rectmap_factory(resource, tag):
@@ -53,7 +54,7 @@ def rectmap_factory(resource, tag):
     return m
 
 
-class Map(object):
+class Map(Layer):
     '''Base class for Maps.
 
     Both rect and hex maps have the following attributes:
@@ -65,21 +66,20 @@ class Map(object):
         (x, y, z)       -- offset of map top left from origin in pixels
         cells           -- array [x][y] of Cell instances
     '''
-    def get(self, pos=None, px=None):
-        ''' Return Cell at cell pos=(x,y) or pixel px=(x,y).
-        Return None if out of bounds.'''
-        raise NotImplemented()
-
-    def get_cells_in_region(self, bottomleft, topright):
-        '''Return cells (in [column][row]) that are within the pixel bounds
-        specified by the bottom-left and top-right corners.
-        '''
-        raise NotImplemented()
-
 
 class RegularTesselationMap(Map):
     '''A class of Map that has a regular array of Cells.
     '''
+    def get_pos(self, x, y):
+        ''' Return Cell at cell pos=(x,y).
+
+        Return None if out of bounds.'''
+        if x < 0 or y < 0:
+            return None
+        try:
+            return self.cells[x][y]
+        except IndexError:
+            return None
 
 class RectMap(RegularTesselationMap):
     '''Rectangular map.
@@ -104,25 +104,22 @@ class RectMap(RegularTesselationMap):
         self.cells = cells
         self.pxw = len(cells) * tw
         self.pxh = len(cells[1]) * th
+
+    def get_in_region(self, x1, y1, x2, y2):
+        '''Return cells (in [column][row]) that are within the pixel bounds
+        specified by the bottom-left (x1, y1) and top-right (x2, y2) corners.
+        '''
+        x1 = max(0, x1 // self.tw)
+        y1 = max(0, y1 // self.th)
+        x2 = min(len(self.cells), x2 // self.tw + 1)
+        y2 = min(len(self.cells[0]), y2 // self.th + 1)
+        return [self.cells[x][y] for x in range(x1, x2) for y in range(y1, y2)]
  
-    def get(self, pos=None, px=None):
-        ''' Return Cell at cell pos=(x,y) or pixel px=(x,y).
+    def get(self, x, y):
+        ''' Return Cell at pixel px=(x,y).
 
         Return None if out of bounds.'''
-        if pos is not None:
-            x, y = pos
-        elif px is not None:
-            x, y = px
-            x //= self.tw
-            y //= self.th
-        else:
-            raise ValueError, 'Either cell or pixel pos must be supplied'
-        if x < 0 or y < 0:
-            return None
-        try:
-            return self.cells[x][y]
-        except IndexError:
-            return None
+        return self.get_pos(x // self.tw, y // self.th)
  
     UP = (0, 1)
     DOWN = (0, -1)
@@ -135,7 +132,7 @@ class RectMap(RegularTesselationMap):
         Returns None if out of bounds.
         '''
         dx, dy = direction
-        return self.get((cell.x + dx, cell.y + dy))
+        return self.get_pos(cell.x + dx, cell.y + dy)
 
     @classmethod
     def load_xml(cls, filename, id):
@@ -153,7 +150,7 @@ class Cell(Drawable):
         properties        -- arbitrary properties
         cell       -- cell from the Map's cells
     '''
-    __slots__ = Drawable.__slots__ + 'map x y width height properties tile _style'.split()
+    __slots__ = Drawable.__slots__ + 'x y width height properties tile _style'.split()
 
     def __init__(self, x, y, width, height, properties, tile):
         super(Cell, self).__init__()
@@ -162,10 +159,15 @@ class Cell(Drawable):
         self.properties = properties
         self.tile = tile
 
-        self._style = DrawStyle(color=(1, 1, 1, 1),
-            texture=tile.image.texture, x=x*width, y=y*height, width=width,
-            height=height, uvs=tile.image.uvs, draw_env=DRAW_BLENDED,
-            draw_list=tile.image.quad_list)
+        x, y = self.origin
+        kw = dict(color=(1, 1, 1, 1), x=x, y=y, width=width, height=height)
+        if tile is not None:
+            if hasattr(tile.image, 'texture'):
+                kw.update(dict(draw_env=DRAW_BLENDED, uvs=tile.image.uvs,
+                    texture=tile.image.texture, draw_list=tile.image.quad_list))
+            elif hasattr(tile.image, 'draw'):
+                kw['draw_func'] = tile.image.draw
+        self._style = DrawStyle(**kw)
 
     def __repr__(self):
         return '<%s object at 0x%x (%g, %g) properties=%r tile=%r>'%(
@@ -303,31 +305,30 @@ class HexMap(RegularTesselationMap):
         self.pxh = height * self.th
         if not width % 2:
             self.pxh += (th // 2)
- 
-    def get(self, pos=None, px=None):
-        '''Get the Cell at cell pos=(x,y) or pixel px=(x,y).
 
+    def get_in_region(self, x1, y1, x2, y2):
+        '''Return cells (in [column][row]) that are within the pixel bounds
+        specified by the bottom-left (x1, y1) and top-right (x2, y2) corners.
+        '''
+        col_width = self.tw // 2 + self.tw // 4
+        x1 = max(0, x1 // col_width)
+        y1 = max(0, y1 // self.th)
+        x2 = min(len(self.cells), x2 // col_width + 1)
+        y2 = min(len(self.cells[0]), y2 // self.th + 1)
+        return [self.cells[x][y] for x in range(x1, x2) for y in range(y1, y2)]
+ 
+    def get(self, x, y):
+        '''Get the Cell at pixel px=(x,y).
         Return None if out of bounds.'''
-        if pos is not None:
-            x, y = pos
-        elif px is not None:
-            s = self.edge_length
-            # map is divided into columns of
-            # s/2 (shared), s, s/2(shared), s, s/2 (shared), ...
-            px, py = px
-            x = px // (s/2 + s)
-            if x % 2:
-                # every second cell is up one
-                py -= self.th // 2
-            y = py // self.th
-        else:
-            raise ValueError, 'Either cell or pixel pos must be supplied'
-        if x < 0 or y < 0:
-            return None
-        try:
-            return self.cells[x][y]
-        except IndexError:
-            return None
+        s = self.edge_length
+        # map is divided into columns of
+        # s/2 (shared), s, s/2(shared), s, s/2 (shared), ...
+        x = x // (s/2 + s)
+        if x % 2:
+            # every second cell is up one
+            y -= self.th // 2
+        y = y // self.th
+        return self.get_pos(x, y)
 
     UP = 'up'
     DOWN = 'down'
@@ -343,29 +344,29 @@ class HexMap(RegularTesselationMap):
         Return None if out of bounds.
         '''
         if direction is self.UP:
-            return self.get((cell.x, cell.y + 1))
+            return self.get_pos(cell.x, cell.y + 1)
         elif direction is self.DOWN:
-            return self.get((cell.x, cell.y - 1))
+            return self.get_pos(cell.x, cell.y - 1)
         elif direction is self.UP_LEFT:
             if cell.x % 2:
-                return self.get((cell.x - 1, cell.y + 1))
+                return self.get_pos(cell.x - 1, cell.y + 1)
             else:
-                return self.get((cell.x - 1, cell.y))
+                return self.get_pos(cell.x - 1, cell.y)
         elif direction is self.UP_RIGHT:
             if cell.x % 2:
-                return self.get((cell.x + 1, cell.y + 1))
+                return self.get_pos(cell.x + 1, cell.y + 1)
             else:
-                return self.get((cell.x + 1, cell.y))
+                return self.get_pos(cell.x + 1, cell.y)
         elif direction is self.DOWN_LEFT:
             if cell.x % 2:
-                return self.get((cell.x - 1, cell.y))
+                return self.get_pos(cell.x - 1, cell.y)
             else:
-                return self.get((cell.x - 1, cell.y - 1))
+                return self.get_pos(cell.x - 1, cell.y - 1)
         elif direction is self.DOWN_RIGHT:
             if cell.x % 2:
-                return self.get((cell.x + 1, cell.y))
+                return self.get_pos(cell.x + 1, cell.y)
             else:
-                return self.get((cell.x + 1, cell.y - 1))
+                return self.get_pos(cell.x + 1, cell.y - 1)
         else:
             raise ValueError, 'Unknown direction %r'%direction
  

@@ -12,24 +12,59 @@ __version__ = '$Id$'
 
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.scene2d.drawable import *
+from pyglet.scene2d.scene import Layer
+
+class SpriteLayer(Layer):
+    '''Represents a group of sprites at the same z depth.
+    '''
+    __slots__ = ['z', 'sprites']
+
+    def __init__(self, z=0, sprites=None):
+        super(SpriteLayer, self).__init__()
+        self.z = z
+        if sprites is None:
+            sprites = []
+        self.sprites = sprites
+
+    def get(self, x, y):
+        ''' Return object at position px=(x,y).
+        Return None if out of bounds.'''
+        r = []
+        for sprite in self.sprites:
+            if sprite.contains(x, y):
+                r.append(sprite)
+        return r
+
+    def get_in_region(self, x1, y1, x2, y2):
+        '''Return Drawables that are within the pixel bounds specified by
+        the bottom-left (x1, y1) and top-right (x2, y2) corners.
+        '''
+        r = []
+        for sprite in self.sprites:
+            if sprite._x > x2: continue
+            if (sprite._x + sprite.width) < x1: continue
+            if sprite._y > y2: continue
+            if (sprite._y + sprite.height) < y1: continue
+            r.append(sprite)
+        return r
 
 class Sprite(Drawable):
     '''A sprite with some dimensions, image to draw and optional animation
     to run.
 
     Attributes:
-        x, y, z         -- position (z is optional and defaults to 0)
+        x, y            -- position
         width, height   -- sprite dimensions (may differ from image)
         image           -- image for this sprite
         offset          -- offset of image from position (default (0,0))
         animations      -- a queue of SpriteAnimations to run
         properties      -- arbitrary data in a dict
     '''
-    __slots__ = Drawable.__slots__ + '_x _y z image width height offset properties animations _style'.split()
-    def __init__(self, x, y, width, height, image, offset=(0,0), z=0,
+    __slots__ = Drawable.__slots__ + '_x _y image width height offset properties animations _style'.split()
+    def __init__(self, x, y, width, height, image, offset=(0,0),
             properties=None):
         super(Sprite, self).__init__()
-        self._x, self._y, self.z = x, y, z
+        self._x, self._y = x, y
         self.width, self.height = width, height
         self.image = image
         self.offset = offset
@@ -40,14 +75,14 @@ class Sprite(Drawable):
             self.properties = properties
 
         self._style = DrawStyle(color=(1, 1, 1, 1), texture=image.texture,
-            x=x, y=y, z=z, width=width, height=height, uvs=image.uvs,
+            x=x, y=y, width=width, height=height, uvs=image.uvs,
             draw_env=DRAW_BLENDED, draw_list=image.quad_list)
 
     @classmethod
-    def from_image(cls, x, y, image, offset=(0,0), z=0, properties=None):
+    def from_image(cls, x, y, image, offset=(0,0), properties=None):
         '''Set up the sprite from the image - sprite dimensions are the
         same as the image.'''
-        return cls(x, y, image.width, image.height, image, offset, z,
+        return cls(x, y, image.width, image.height, image, offset,
             properties)
 
     def get_drawstyle(self):
@@ -183,9 +218,9 @@ class RotatableSprite(Sprite):
     '''
     __slots__ = Sprite.__slots__ + '_angle cog'.split()
     def __init__(self, x, y, width, height, image, angle=0, cog=None,
-            offset=(0,0), z=0, properties=None):
+            offset=(0,0), properties=None):
         super(RotatableSprite, self).__init__(x, y, width, height, image,
-            offset, z, properties)
+            offset, properties)
         self._angle = 0
         if cog is None:
             cog = (width/2, height/2)
@@ -205,12 +240,12 @@ class RotatableSprite(Sprite):
     angle = property(get_angle, set_angle)
 
     @classmethod
-    def from_image(cls, x, y, image, angle=0, cog=None, offset=(0,0), z=0,
+    def from_image(cls, x, y, image, angle=0, cog=None, offset=(0,0),
             properties=None):
         '''Set up the sprite from the image - sprite dimensions are the
         same as the image.'''
         return cls(x, y, image.width, image.height, image, angle, cog,
-            offset, z, properties)
+            offset, properties)
 
     def draw_rotated(self):
         cog = self.cog
@@ -242,7 +277,7 @@ class JumpAnimation(SpriteAnimation):
 class PathAnimation(SpriteAnimation):
     ''' Will animate smoothly from one position to another, optionallyo to
     another, optionally accelerating, etc. '''
-    points = [(x, y, z)]        # points to move to in order
+    points = [(x, y)]           # points to move to in order
     speed =                     # initial speed in direction of first point
     velocity =                  # initial velocity if not in ^^^
     turn_speed =                # optional speed to slow to for turning

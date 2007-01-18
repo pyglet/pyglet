@@ -29,9 +29,8 @@ w.set_exclusive_mouse()
 # load the map and car and set up the scene and view
 dirname = os.path.dirname(__file__)
 m = RectMap.load_xml(os.path.join(dirname, 'road-map.xml'), 'map0')
-car = Image2d.load(os.path.join(dirname, 'car.png'))
-car = CarSprite.from_image(0, 0, car)
-scene = Scene(maps=[m], sprites=[car])
+car = CarSprite.from_image(0, 0, Image2d.load(os.path.join(dirname, 'car.png')))
+scene = Scene(layers=[m, SpriteLayer(1, [car])])
 view = FlatView.from_window(scene, w, allow_oob=False)
 
 keyboard = KeyboardStateHandler()

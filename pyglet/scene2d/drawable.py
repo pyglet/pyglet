@@ -79,6 +79,8 @@ class ScaleEffect(Effect):
     effect to change the positioning you'll need to add that effect
     before this one.
     '''
+    # XXX or perhaps we should include scale and rotate in the standard
+    # style?
     def __init__(self, sx, sy):
         self.sx, self.sy = sx, sy
     def apply(self, style):
@@ -103,13 +105,13 @@ class ScaleEffect(Effect):
         return style
 
 class DrawStyle(object):
-    __slots__ = ' color x y z width height texture uvs draw_list draw_env draw_func is_copy'.split()
+    __slots__ = ' color x y width height texture uvs draw_list draw_env draw_func is_copy'.split()
 
-    def __init__(self, color=None, texture=None, x=None, y=None, z=0,
+    def __init__(self, color=None, texture=None, x=None, y=None,
             width=None, height=None, uvs=None, draw_list=None,
             draw_env=None, draw_func=None):
         self.color = color
-        self.x, self.y, self.z = x, y, z
+        self.x, self.y = x, y
         self.width, self.height = width, height
 
         self.texture = texture
@@ -126,7 +128,7 @@ class DrawStyle(object):
  
     def copy(self):
         s = DrawStyle(color=self.color, texture=self.texture, x=self.x,
-            y=self.y, z=self.z, width=self.width, height=self.height,
+            y=self.y, width=self.width, height=self.height,
             uvs=self.uvs, draw_list=self.draw_list, draw_env=self.draw_env,
             draw_func=self.draw_func)
         s.is_copy = True
@@ -180,7 +182,8 @@ def draw_many(drawables):
             glColor4f(*d.color)
             old_color = d.color
         if d.texture != old_texture:
-            glBindTexture(GL_TEXTURE_2D, d.texture.id)
+            if d.texture is not None:
+                glBindTexture(GL_TEXTURE_2D, d.texture.id)
             old_texture = d.texture.id
         if d.draw_env != old_env:
             if old_env is not None and hasattr(old_env, 'after'):
@@ -188,14 +191,15 @@ def draw_many(drawables):
             if hasattr(d.draw_env, 'before'):
                 d.draw_env.before()
             old_env = d.draw_env
-        if d.x is not None and d.y is not None:
+        translate = d.x is not None and d.y is not None
+        if translate:
             glPushMatrix()
             glTranslatef(d.x, d.y, 0)
         if d.draw_list is not None:
             glCallList(d.draw_list)
         if d.draw_func is not None:
             d.draw_func()
-        if d.x is not None and d.y is not None:
+        if translate:
             glPopMatrix()
 
     if old_env is not None and hasattr(old_env, 'after'):
