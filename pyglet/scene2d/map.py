@@ -150,7 +150,7 @@ class Cell(Drawable):
         properties        -- arbitrary properties
         cell       -- cell from the Map's cells
     '''
-    __slots__ = Drawable.__slots__ + 'x y width height properties tile _style'.split()
+    __slots__ = Drawable.__slots__ + 'x y width height properties tile'.split()
 
     def __init__(self, x, y, width, height, properties, tile):
         super(Cell, self).__init__()
@@ -158,16 +158,6 @@ class Cell(Drawable):
         self.x, self.y = x, y
         self.properties = properties
         self.tile = tile
-
-        x, y = self.origin
-        kw = dict(color=(1, 1, 1, 1), x=x, y=y, width=width, height=height)
-        if tile is not None:
-            if hasattr(tile.image, 'texture'):
-                kw.update(dict(draw_env=DRAW_BLENDED, uvs=tile.image.uvs,
-                    texture=tile.image.texture, draw_list=tile.image.quad_list))
-            elif hasattr(tile.image, 'draw'):
-                kw['draw_func'] = tile.image.draw
-        self._style = DrawStyle(**kw)
 
     def __repr__(self):
         return '<%s object at 0x%x (%g, %g) properties=%r tile=%r>'%(
@@ -179,7 +169,12 @@ class Cell(Drawable):
         return self.tile is not None
 
     def get_drawstyle(self):
-        return self._style
+        '''Get the possibly-affected style from the tile. Adjust for this
+        cell's position.
+        '''
+        style = self.tile.image.get_style().copy()
+        style.x, style.y = self.get_origin()
+        return style
 
 class RectCell(Cell):
     '''A rectangular cell from a Map.
@@ -201,6 +196,10 @@ class RectCell(Cell):
         midright    -- (x, y) of middle of right side
     '''
     __slots__ = Cell.__slots__
+
+    def get_origin(self):
+        return self.x * self.width, self.y * self.height
+    origin = property(get_origin)
 
     # ro, side in pixels, y extent
     def get_top(self):

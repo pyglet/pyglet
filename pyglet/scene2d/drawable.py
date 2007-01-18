@@ -30,7 +30,7 @@ class Drawable(object):
     def remove_effect(self, effect):
         self.effects.remove(effect)
  
-    def get_drawstate(self):
+    def get_drawstyle(self):
         raise NotImplemented('implement on subclass')
  
     def get_style(self):

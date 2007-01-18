@@ -9,29 +9,35 @@ Simple images etc. to aid debugging
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.scene2d import RectMap, HexMap, RectCell, HexCell, Tile, Image2d
+from pyglet.scene2d import *
 from pyglet.image import Image
+from pyglet.scene2d.drawable import *
 from pyglet.GL.VERSION_1_1 import *
 
-class HexCheckImage:
+cell = HexCell(0, 0, 32, {}, None)
+def draw_hex():
+    glBegin(GL_POLYGON)
+    glVertex2f(*cell.topleft)
+    glVertex2f(*cell.topright)
+    glVertex2f(*cell.right)
+    glVertex2f(*cell.bottomright)
+    glVertex2f(*cell.bottomleft)
+    glVertex2f(*cell.left)
+    glEnd()
+
+class HexCheckImage(Drawable):
     COLOURS = [
         (.7, .7, .7, 1),
         (.9, .9, .9, 1),
         (1, 1, 1, 1)
     ]
     def __init__(self, colour, cell):
+        Drawable.__init__(self)
         self.colour = colour
         self.cell = cell
-    def draw(self):
-        glColor4f(*self.colour)
-        glBegin(GL_POLYGON)
-        glVertex2f(*self.cell.topleft)
-        glVertex2f(*self.cell.topright)
-        glVertex2f(*self.cell.right)
-        glVertex2f(*self.cell.bottomright)
-        glVertex2f(*self.cell.bottomleft)
-        glVertex2f(*self.cell.left)
-        glEnd()
+        self._style = DrawStyle(color=colour, draw_func=draw_hex)
+    def get_drawstyle(self):
+        return self._style
 
 def gen_hex_map(meta, h):
     r = []
