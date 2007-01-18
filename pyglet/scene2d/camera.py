@@ -12,7 +12,18 @@ __version__ = '$Id$'
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.event import *
 
-class FlatCamera(object):
+class Camera(object):
+    def project(self):
+        '''Set up the GL projection matrix. Leave us in GL_MODELVIEW mode.
+        '''
+        raise NotImplemented()
+
+    def on_resize(self, width, height):
+        '''Handle resize of the viewport.
+        '''
+        raise NotImplemented()
+
+class FlatCamera(Camera):
     def __init__(self, x, y, width, height, near=-50, far=50):
         self.x, self.y = x, y
         self.width, self.height = width, height

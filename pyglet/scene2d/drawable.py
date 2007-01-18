@@ -163,10 +163,10 @@ class DrawStyle(object):
 
     def __cmp__(self, other):
         return (
-            cmp(self.color, other.color),
-            cmp(self.texture.id, other.texture.id),
-            cmp(self.draw_env, other.draw_env),
-            cmp(self.draw_func, other.draw_func),
+            cmp(self.color, other.color) or
+            cmp(self.texture.id, other.texture.id) or
+            cmp(self.draw_env, other.draw_env) or
+            cmp(self.draw_func, other.draw_func) or
             cmp(self.draw_list, other.draw_list)
         )
 
