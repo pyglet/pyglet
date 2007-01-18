@@ -10,6 +10,7 @@ Usage::
     Press 'f' to dump frames.
     Press 'w' to dump frames using flowed children.
     Press 's' to dump frames and style nodes.
+    Press left/right keys with ctrl or shift to resize window width.
 '''
 
 __docformat__ = 'restructuredtext'
@@ -51,6 +52,15 @@ def on_key_press(symbol, modifiers):
         layout.view._root_frame.pprint_flowed()
     if symbol == K_S:
         layout.view._root_frame.pprint_style()
+    if symbol == K_LEFT and modifiers & MOD_CTRL:
+        window.width -= 1
+    if symbol == K_LEFT and modifiers & MOD_SHIFT:
+        window.width -= 10
+    if symbol == K_RIGHT and modifiers & MOD_CTRL:
+        window.width += 1
+    if symbol == K_RIGHT and modifiers & MOD_SHIFT:
+        window.width += 10
+    print 'window size is %dx%d' % (window.width, window.height)
     return True
 
 layout = Layout(locator=locator)
