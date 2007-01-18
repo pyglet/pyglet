@@ -227,18 +227,20 @@ class GLTextFrame(TextFrame):
             'font-style' in properties):
             self.glyph_string = None
 
-    def flow_inline(self, remaining_width, strip_first):
+    def flow_inline(self, context):
+        context = context.copy()
+
         # Reset after last flow
         self.from_index = 0
+        self.strip_next = False
+        self.continuation = None
         
         # Final white-space processing step (besides line beginning strip)
         # from 16.6.1 step 4.
-        if strip_first and self.get_computed_property('white-space') in \
-           ('normal', 'nowrap', 'pre-line'):
+        if context.strip_next and \
+           self.get_computed_property('white-space') in \
+               ('normal', 'nowrap', 'pre-line'):
             self.from_index = len(self.text) - len(self.text.lstrip())
-
-        # Clear previous flow continuation if any
-        self.continuation = None
 
         # Get GL glyph sequence if not already cached
         font = self.get_computed_property('--font')
@@ -279,36 +281,28 @@ class GLTextFrame(TextFrame):
         self.border_edge_height = self.content_ascent - self.content_descent
         self.border_edge_width = self.content_left
 
-        remaining_width -= self.margin_left + self.content_left
+        context.add(self.margin_left + self.content_left)
+        context.reserve(content_right + self.margin_right)
 
         # Break into continuations
         frame = self
         while True:
-            remaining_width -= content_right + self.margin_right
-
             frame.to_index = self.glyph_string.get_break_index(
-                frame.from_index, remaining_width)
-            # No text fits, but there's a line-break to use
-            if frame.to_index == frame.from_index and \
-                frame is not self and \
-               '\n' in self.text[frame.from_index+1:]:
-                frame.to_index = self.text.index('\n', frame.from_index + 1)
+                frame.from_index, 
+                context.remaining_width - context.reserved_width)
 
-            # If none of text fits, use all text, only if next frame will
-            # have same space to play with as this one (currently (no floats)
-            # true for non-first line), of if there is no break oppportunity
-            # within string anyway.
-            if frame.to_index == frame.from_index and \
-               (frame is not self or 
-                not self.contains_ws.search(self.text[frame.from_index:])):
-                frame.to_index = len(self.text)
+            if frame.to_index == frame.from_index:
+                ws = self.contains_ws.search(self.text[frame.from_index:])
+                if ws:
+                    frame.to_index = frame.from_index + ws.start() + 1
+                else:
+                    frame.to_index = len(self.text)
 
-            if frame.to_index != frame.from_index:
-                frame.border_edge_width += self.glyph_string.get_subwidth(
-                        frame.from_index, frame.to_index)
+            text_width = self.glyph_string.get_subwidth(
+                frame.from_index, frame.to_index) 
+            frame.border_edge_width += text_width
 
-            if frame.to_index < len(self.text) or \
-               self.text[-1] in u'\u0020\u200b\n':
+            if frame.to_index < len(self.text):
                 continuation = GLTextFrame(
                     self.style, self.element, self.text)
                 continuation.parent = self.parent
@@ -327,23 +321,30 @@ class GLTextFrame(TextFrame):
                 # Remove right-margin from continued frame
                 frame.margin_right = 0
 
+                if not context.can_add(text_width, True):  
+                    context.newline()
+                context.add(text_width)
+                context.breakpoint()
+                frame.soft_break = True
+
                 # Force line break
                 if frame.to_index and self.text[frame.to_index-1] == '\n':
                     frame.to_index -= 1
                     frame.line_break = True
+                    context.newline()
 
                 # Ready for next iteration
-                frame.strip_next = False
                 frame.continuation = continuation
                 frame = continuation
-                remaining_width = self.containing_block.width
+                context.newline()
 
             if frame.to_index >= len(self.text):
                 break
 
         frame.strip_next = self.text[-1] == ' '
+        frame.soft_break = self.text[-1] == ' '
         frame.border_edge_width += content_right
-        self.frame_dirty = False
+        self.flow_dirty = False
 
 
     def draw_text(self, x, y, render_context):
