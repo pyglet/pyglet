@@ -166,7 +166,6 @@ scene2d
         LOAD_TILESET                      X
         LOAD_RECTMAP                      X
         LOAD_HEXMAP                             
-
         MAP_SAVE                           
         SPRITE_MODEL                      X
         SPRITE_OVERLAP                    X
@@ -176,6 +175,7 @@ scene2d
         FLAT_SCROLLING                    X
         FLAT_OOB                          X
         RECT_FLAT_MOUSE                   X
+        RECT_HEX_MOUSE                    X
         VIEW_SUBWINDOW                     
         ============================== =======
 
@@ -185,7 +185,6 @@ scene2d
      - @for_cells needs to look up properties on TileSets
      - @for_cells / @for_sprites need to be pre-evaluated
      - sprites in groups (for collision detection, mostly)
-     - sprites in layers? (for sorting to display through view)
 
 model
     :description: Abstract interface for 3D modelling.
