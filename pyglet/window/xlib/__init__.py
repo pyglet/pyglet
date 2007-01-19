@@ -38,7 +38,7 @@ from pyglet.window.xlib.constants import *
 from pyglet.window.xlib.types import *
 
 try:
-    from pyglet.window.xlib.glx.SGI_video_sync import *
+    from pyglet.GL.GLX.SGI_video_sync import *
     _have_SGI_video_sync = True
 except ImportError:
     _have_SGI_video_sync = False

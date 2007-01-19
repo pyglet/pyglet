@@ -42,6 +42,7 @@ class WINDOW_OPEN(unittest.TestCase):
 
     def test_open_window(self):
         self.w1 = self.open_window()
+        self.w1.push_handlers(self)
         print 'vsync is %r' % self.w1.get_vsync()
         while not self.w1.has_exit:
             self.color_index = 1 - self.color_index
