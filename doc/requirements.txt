@@ -176,7 +176,7 @@ scene2d
         FLAT_OOB                          X
         RECT_FLAT_MOUSE                   X
         RECT_HEX_MOUSE                    X
-        VIEW_SUBWINDOW                     
+        VIEW_SUBWINDOW                    X
         ============================== =======
 
     TBD:
