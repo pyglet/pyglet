@@ -13,6 +13,7 @@ import unicodedata
 import warnings
 
 from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.AGL.VERSION_10_0 import *
 import pyglet.GL.info
 import pyglet.GLU.info
 from pyglet.window import *
@@ -21,7 +22,6 @@ from pyglet.window.key import *
 from pyglet.window.carbon.constants import *
 from pyglet.window.carbon.key import *
 from pyglet.window.carbon.types import *
-from pyglet.window.carbon.AGL.VERSION_10_0 import *
 
 class CarbonException(WindowException):
     pass

@@ -7,8 +7,8 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import ctypes as _ctypes
-from pyglet.window.carbon.agl.VERSION_10_2 import *
-from pyglet.window.carbon.agl.VERSION_10_2 import _get_function
+from pyglet.GL.AGL.VERSION_10_2 import *
+from pyglet.GL.AGL.VERSION_10_2 import _get_function
 
 aglCreatePBuffer = _get_function('aglCreatePBuffer', [_ctypes.c_int, _ctypes.c_int, _ctypes.c_uint, _ctypes.c_uint, _ctypes.c_long, _ctypes.POINTER(_ctypes.c_void_p)], _ctypes.c_ubyte)
 aglDestroyPBuffer = _get_function('aglDestroyPBuffer', [_ctypes.c_void_p], _ctypes.c_ubyte)
