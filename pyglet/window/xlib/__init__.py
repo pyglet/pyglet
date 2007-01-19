@@ -28,12 +28,12 @@ import unicodedata
 import warnings
 
 from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.GLX.VERSION_1_4 import *
 import pyglet.GL.info
 import pyglet.GLU.info
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
-from pyglet.window.xlib.glx.VERSION_1_4 import *
 from pyglet.window.xlib.constants import *
 from pyglet.window.xlib.types import *
 

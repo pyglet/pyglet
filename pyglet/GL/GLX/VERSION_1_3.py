@@ -6,7 +6,7 @@
 import ctypes as _ctypes
 from pyglet.GL import get_function as _get_function
 from pyglet.GL import c_ptrdiff_t as _c_ptrdiff_t
-from pyglet.window.xlib.glx.VERSION_1_2 import *
+from pyglet.GL.GLX.VERSION_1_2 import *
 GLX_WINDOW_BIT = 0x00000001
 GLX_PIXMAP_BIT = 0x00000002
 GLX_PBUFFER_BIT = 0x00000004
