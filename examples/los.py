@@ -1,11 +1,9 @@
 # Lots Of Sprites
 
 '''
-Results:
-      AMD64/mesa   AMD64/nv68k   MacBook Pro   AMD/nv78k
-2000: 18.5         16.4          24.3          22.5
----------------------------------------------------------
-us                               20.6          22.0
+Results (us per sprite per frame):
+sprites  AMD64/mesa   AMD64/nv6.6k   MacBook Pro   AMD/nv7.8k
+2000     28.3         29.3          20.6          22.0
 (us per sprite)
 '''
 
