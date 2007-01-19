@@ -28,11 +28,18 @@ def tileset_factory(resource, tag):
     for child in tag.childNodes:
         if not hasattr(child, 'tagName'): continue
         id = child.getAttribute('id')
+        offset = child.getAttribute('offset')
+        if offset:
+            offset = map(int, offset.split(','))
+        else:
+            offset = None
         properties = resource.handle_properties(child)
         image = child.getElementsByTagName('image')
-        if image: image = resource.handle(image[0])
-        else: image = None
-        tile = Tile(id, properties, image)
+        if image:
+            image = resource.handle(image[0])
+        else:
+            image = None
+        tile = Tile(id, properties, image, offset)
         resource.add_resource(id, tile)
         tileset[id] = tile
 

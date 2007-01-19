@@ -55,7 +55,7 @@ def rectmap_factory(resource, tag):
 
 @register_factory('hexmap')
 def hexmap_factory(resource, tag):
-    height = map(int, tag.getAttribute('tile_height').split('x'))
+    height = int(tag.getAttribute('tile_height'))
     width = hex_width(height)
     origin = None
     if tag.hasAttribute('origin'):
@@ -323,9 +323,11 @@ class HexMap(RegularTesselationMap):
     has cells = [['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h']]
     '''
     __slots__ = 'id tw th edge_length left right pxw pxh x y z cells'.split()
-    def __init__(self, id, th, cells, origin=(0, 0, 0)):
+    def __init__(self, id, th, cells, origin=None):
         self.id = id
         self.th = th
+        if origin is None:
+            origin = (0, 0, 0)
         self.x, self.y, self.z = origin
         self.cells = cells
 

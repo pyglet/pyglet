@@ -1,0 +1,87 @@
+<resource>
+ <imageatlas file="hextiles.png" size="40x36" >
+  <image id="idgreen" offset="0,0" />
+  <image id="ilblue" offset="40,0" />
+  <image id="idblue" offset="80,0" />
+  <image id="ilgreen" offset="0,36" />
+  <image id="ilbrown" offset="40,36" />
+  <image id="idbrown" offset="80,36" />
+  <image id="ilgrey" offset="0,72" />
+  <image id="idgrey" offset="40,72" />
+ </imageatlas>
+ <tileset>
+  <tile id="dgreen" offset="2,2"><image ref="idgreen" /></tile>
+  <tile id="lblue" offset="2,2"><image ref="ilblue" /></tile>
+  <tile id="dblue" offset="2,2"><image ref="idblue" /></tile>
+  <tile id="lgreen" offset="2,2"><image ref="ilgreen" /></tile>
+  <tile id="lbrown" offset="2,2"><image ref="ilbrown" /></tile>
+  <tile id="dbrown" offset="2,2"><image ref="idbrown" /></tile>
+  <tile id="lgrey" offset="2,2"><image ref="ilgrey" /></tile>
+  <tile id="dgrey" offset="2,2"><image ref="idgrey" /></tile>
+ </tileset>
+<hexmap id="test" tile_height="32">
+ <column>
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+ </column>
+ <column>
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+  <cell tile="lblue" />
+  <cell tile="lblue" />
+  <cell tile="lblue" />
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+ </column>
+ <column>
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+  <cell tile="lblue" />
+  <cell tile="lbrown" />
+  <cell tile="lbrown" />
+  <cell tile="lblue" />
+  <cell tile="dblue" />
+ </column>
+ <column>
+  <cell tile="dblue" />
+  <cell tile="lblue" />
+  <cell tile="lbrown" />
+  <cell tile="dbrown" />
+  <cell tile="lbrown" />
+  <cell tile="lblue" />
+  <cell tile="dblue" />
+ </column>
+ <column>
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+  <cell tile="lblue" />
+  <cell tile="lbrown" />
+  <cell tile="lbrown" />
+  <cell tile="lblue" />
+  <cell tile="dblue" />
+ </column>
+ <column>
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+  <cell tile="lblue" />
+  <cell tile="lblue" />
+  <cell tile="lblue" />
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+ </column>
+ <column>
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+  <cell tile="dblue" />
+ </column>
+</hexmap>
+</resource>

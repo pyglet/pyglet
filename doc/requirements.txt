@@ -165,7 +165,7 @@ scene2d
         LOAD_IMAGEATLAS                   X
         LOAD_TILESET                      X
         LOAD_RECTMAP                      X
-        LOAD_HEXMAP                             
+        LOAD_HEXMAP                       X
         MAP_SAVE                           
         SPRITE_MODEL                      X
         SPRITE_OVERLAP                    X
