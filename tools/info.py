@@ -14,6 +14,14 @@ from pyglet.GLU.VERSION_1_1 import *
 import pyglet.GL.info
 import pyglet.GLU.info
 
+platform = pyglet.window.get_platform()
+print 'Platform instance is %r' % platform
+factory = pyglet.window.get_factory()
+print 'Screens:'
+for screen in factory.get_screens():
+    print '  %r' % screen
+
+print 'Creating default context...'
 w = pyglet.window.Window(1, 1, visible=False)
 
 print 'GL attributes:'
