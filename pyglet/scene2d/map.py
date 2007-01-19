@@ -53,6 +53,36 @@ def rectmap_factory(resource, tag):
 
     return m
 
+@register_factory('hexmap')
+def hexmap_factory(resource, tag):
+    height = map(int, tag.getAttribute('tile_height').split('x'))
+    width = hex_width(height)
+    origin = None
+    if tag.hasAttribute('origin'):
+        origin = map(int, tag.getAttribute('origin').split(','))
+    id = tag.getAttribute('id')
+
+    # now load the columns
+    cells = []
+    for i, column in enumerate(tag.getElementsByTagName('column')):
+        c = []
+        cells.append(c)
+        for j, cell in enumerate(column.getElementsByTagName('cell')):
+            tile = cell.getAttribute('tile')
+            if tile: tile = resource.get_resource(tile)
+            else: tile = None
+            properties = resource.handle_properties(tag)
+            c.append(HexCell(i, j, height, properties, tile))
+
+    m = HexMap(id, width, cells, origin)
+    resource.add_resource(id, m)
+
+    return m
+
+def hex_width(height):
+    '''Determine a regular hexagon's width given its height.
+    '''
+    return int(height / math.sqrt(3)) * 2
 
 class Map(Layer):
     '''Base class for Maps.
@@ -176,8 +206,9 @@ class Cell(Drawable):
         '''Get the possibly-affected style from the tile. Adjust for this
         cell's position.
         '''
-        style = self.tile.image.get_style().copy()
-        style.x, style.y = self.get_origin()
+        style = self.tile.get_style().copy()
+        x, y = self.get_origin()
+        style.x, style.y = style.x + x, style.y + y
         return style
 
 class RectCell(Cell):
@@ -401,7 +432,7 @@ class HexCell(Cell):
     __slots__ = Cell.__slots__
 
     def __init__(self, x, y, height, properties, tile):
-        width = int(height / math.sqrt(3)) * 2
+        width = hex_width(height)
         Cell.__init__(self, x, y, width, height, properties, tile)
 
     def get_origin(self):

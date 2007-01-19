@@ -1,20 +1,23 @@
 '''Usage: %s <arguments>
 
- -x h           draw a hex grid
+ -h h           draw hexes with given height in a rectangular grid
+ -x h           draw hexes with given height in a hex grid
  -r w[,h]       draw a rect grid
+ -p n           put n pixels padding around each drawn cell
  -s w,h         map size in cells (default=5,5)
  -f             render flat (default)
  -o             render orthographic projection
  -a sx,sy,sz    render axiometric projection (scaled in x, y, z)
- -p ex,ey,ez    render perspective projection (specify eye offset)
  -h             this help
 
 Samples:
--x=32 -s5,15
+-h32 -p2
+      draw hexes in a rect grid, cell height 32, padding 2
+-x32 -s5,15
       draw a hex grid, cell height 32
--x=32
+-x32
       draw a rect grid, width and height 32
--r=16,32 -s=10,10
+-r16,32 -s10,10
       draw a 10x10 rect grid, width and height 32
 
 Press "s" to save the grid off a file. 
@@ -28,10 +31,10 @@ import pyglet.window.event
 import pyglet.clock
 import pyglet.image
 
-from pyglet.scene2d.debug import gen_hex_map, gen_rect_map
+from pyglet.scene2d.debug import gen_hex_map, gen_rect_map, gen_recthex_map
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'x:r:s:foa:p:h')
+    optlist, args = getopt.getopt(sys.argv[1:], 'x:r:s:foa:p:h:p:')
 except getopt.GetoptError, error:
     print error
     print __doc__%sys.argv[0]
@@ -40,9 +43,14 @@ except getopt.GetoptError, error:
 size = (5, 5)
 renderer = pyglet.scene2d.FlatView
 maptype = None
+padding = 0
 filename = { 'r': 'flat', 'e': '5x5' }
 for opt, value in optlist:
-    if opt == '-x':
+    if opt == '-h':
+        maptype = 'recthex'
+        ch = int(value)
+        filename['x'] = 'recthex(%d)'%ch
+    elif opt == '-x':
         maptype = 'hex'
         ch = int(value)
         filename['x'] = 'hex(%d)'%ch
@@ -53,6 +61,8 @@ for opt, value in optlist:
             args *= 2
         cw, ch = args
         filename['x'] = 'rect(%dx%d)'%tuple(args)
+    elif opt == '-p':
+        padding = int(value)
     elif opt == '-s':
         size = map(int, value.split(','))
         filename['e'] = '%dx%d'%tuple(size)
@@ -67,13 +77,6 @@ for opt, value in optlist:
         renderer = pyglet.scene2d.AxiometricView
         scale = map(float, value.split(','))
         filename['r'] = 'axio(%g,%g,%g)'%scale
-    elif opt == '-p':
-        renderer = pyglet.scene2d.PerspectiveView
-        eye = map(int, value.split(','))
-        filename['r'] = 'persp(%g,%g,%g)'%eye
-    elif opt == '-h':
-        print __doc__%sys.argv[0]
-        sys.exit()
 
 if maptype is None:
     print 'ERROR: -x or -r required'
@@ -85,7 +88,9 @@ filename = '%(x)s-%(e)s-%(r)s'%filename
 w = pyglet.window.Window(width=1, height=1, visible=False)
 
 mw, mh = size
-if maptype == 'hex':
+if maptype == 'recthex':
+    m = gen_recthex_map([[{}]*mh]*mw, ch, padding)
+elif maptype == 'hex':
     m = gen_hex_map([[{}]*mh]*mw, ch)
 else:
     m = gen_rect_map([[{}]*mh]*mw, cw, ch)

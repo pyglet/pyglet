@@ -15,6 +15,7 @@ import xml.dom.minidom
 
 from pyglet.scene2d.image import Image2d, Drawable
 from pyglet.resource import Resource, register_factory
+from pyglet.scene2d.drawable import *
 
 
 @register_factory('tileset')
@@ -38,17 +39,30 @@ def tileset_factory(resource, tag):
     return tileset
 
 
-class Tile(object):
-    __slots__ = 'id properties image'.split()
-    def __init__(self, id, properties, image):
+class Tile(Drawable):
+    __slots__ = Drawable.__slots__ + 'id properties image offset'.split()
+    def __init__(self, id, properties, image, offset=None):
+        super(Tile, self).__init__()
         self.id = id
         self.properties = properties
         self.image = image
+        self.offset = offset
 
     def __repr__(self):
-        return '<%s object at 0x%x id=%r properties=%r>'%(
-            self.__class__.__name__, id(self), self.id,
+        return '<%s object at 0x%x id=%r offset=%r properties=%r>'%(
+            self.__class__.__name__, id(self), self.id, self.offset,
                 self.properties)
+
+    def get_drawstyle(self):
+        '''Use the image style as a basis and modify to move.
+        '''
+        style = self.image.get_style()
+        if self.offset is not None:
+            style = style.copy()
+            x, y = self.offset
+            style.x, style.y = x, y
+        return style
+
 
 class TileSet(dict):
     '''Contains a tile set loaded from a map file and optionally image(s).

@@ -113,7 +113,7 @@ class ScaleEffect(Effect):
 class DrawStyle(object):
     __slots__ = ' color x y width height texture uvs draw_list draw_env draw_func is_copy'.split()
 
-    def __init__(self, color=None, texture=None, x=None, y=None,
+    def __init__(self, color=None, texture=None, x=0, y=0,
             width=None, height=None, uvs=None, draw_list=None,
             draw_env=None, draw_func=None):
         self.color = color
@@ -196,7 +196,7 @@ def draw_many(drawables):
             if hasattr(d.draw_env, 'before'):
                 d.draw_env.before()
             old_env = d.draw_env
-        translate = d.x is not None and d.y is not None
+        translate = d.x or d.y
         if translate:
             glPushMatrix()
             glTranslatef(d.x, d.y, 0)
