@@ -216,51 +216,34 @@ class RotatableSprite(Sprite):
 
     Additional attributes:
         angle           -- angle of rotation in degrees
-        cog             -- center of gravity for rotation (x, y)
-                           (defaults to middle of sprite)
     '''
-    __slots__ = Sprite.__slots__ + '_angle cog'.split()
-    def __init__(self, x, y, width, height, image, angle=0, cog=None,
+    __slots__ = Sprite.__slots__ + ['_angle']
+    def __init__(self, x, y, width, height, image, angle=0,
             offset=(0,0), properties=None):
+        self._angle = angle
         super(RotatableSprite, self).__init__(x, y, width, height, image,
             offset, properties)
-        self._angle = 0
-        if cog is None:
-            cog = (width/2, height/2)
-        self.cog = cog
 
     def get_angle(self):
         return self._angle
     def set_angle(self, angle):
         self._angle = angle
-        s = self._style
-        if angle:
-            s.draw_func = self.draw_rotated
-            s.draw_list = None
-        else:
-            s.draw_func = None
-            s.draw_list = self.image.quad_list
+        self._style.angle = angle
     angle = property(get_angle, set_angle)
 
     @classmethod
-    def from_image(cls, x, y, image, angle=0, cog=None, offset=(0,0),
+    def from_image(cls, x, y, image, angle=0, offset=(0,0),
             properties=None):
         '''Set up the sprite from the image - sprite dimensions are the
         same as the image.'''
-        return cls(x, y, image.width, image.height, image, angle, cog,
+        return cls(x, y, image.width, image.height, image, angle,
             offset, properties)
 
-    def draw_rotated(self):
-        cog = self.cog
-        glPushMatrix()
-        glTranslatef(cog[0], cog[1], 0)
-        glRotatef(self._angle, 0, 0, 1)
-        glTranslatef(-cog[0], -cog[1], 0)
-        glCallList(self.image.quad_list)
-        glPopMatrix()
-
     def get_drawstyle(self):
-        return self._style
+        style = self.image.get_style().copy()
+        style.x, style.y = self._x, self._y
+        style.angle = self._angle
+        return style
 
 
 """

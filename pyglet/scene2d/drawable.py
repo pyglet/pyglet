@@ -77,47 +77,35 @@ class TintEffect(Effect):
  
 class ScaleEffect(Effect):
     '''Apply a scale to the Drawable.
-
-    Note that because this would change positioning this effect also
-    hard-codes the current positioning in the style. If you wish for an
-    effect to change the positioning you'll need to add that effect
-    before this one.
     '''
-    # XXX or perhaps we should include scale and rotate in the standard
-    # style?
     def __init__(self, sx, sy):
         self.sx, self.sy = sx, sy
     def apply(self, style):
         style = style.copy()
-        class ScaleEnv:
-            def __init__(self, style, sx, sy):
-                self.inner_env = style.draw_env
-                self.style = style
-                self.sx, self.sy = sx, sy
-            def before(self):
-                self.x, self.y = style.x, style.y
-                style.x = style.y = 0
-                glPushMatrix()
-                glTranslatef(self.x, self.y, 0)
-                glScalef(self.sx, self.sy, 0)
-                if hasattr(self.inner_env, 'before'):
-                    self.inner_env.before()
-            def after(self):
-                if hasattr(self.inner_env, 'after'):
-                    self.inner_env.after()
-                glPopMatrix()
-                style.x, style.y = self.x, self.y
-        style.draw_env = ScaleEnv(style, self.sx, self.sy)
+        style.sx = self.sx
+        style.sy = self.sy
+        return style
+
+class RotateEffect(Effect):
+    '''Apply a rotation (about the Z axis) to the Drawable.
+    '''
+    def __init__(self, angle):
+        self.angle = angle
+    def apply(self, style):
+        style = style.copy()
+        style.angle = self.angle
         return style
 
 class DrawStyle(object):
-    __slots__ = ' color x y width height texture uvs draw_list draw_env draw_func is_copy'.split()
+    __slots__ = ' color x y sx sy angle width height texture uvs draw_list draw_env draw_func is_copy'.split()
 
-    def __init__(self, color=None, texture=None, x=0, y=0,
-            width=None, height=None, uvs=None, draw_list=None,
+    def __init__(self, color=None, texture=None, x=0, y=0, sx=1, sy=1,
+            angle=0, width=None, height=None, uvs=None, draw_list=None,
             draw_env=None, draw_func=None):
         self.color = color
         self.x, self.y = x, y
+        self.sx, self.sy = sx, sy
+        self.angle = angle
         self.width, self.height = width, height
 
         self.texture = texture
@@ -150,9 +138,21 @@ class DrawStyle(object):
         if hasattr(self.draw_env, 'before'):
             self.draw_env.before()
 
-        if self.x is not None and self.y is not None:
+        transform = self.x or self.y or self.sx != self.sy != 1 or self.angle
+        if transform:
             glPushMatrix()
+
+        if self.x or self.y:
             glTranslatef(self.x, self.y, 0)
+
+        if self.sx or self.sy:
+            glScalef(self.sx, self.sy, 1)
+
+        if self.angle:
+            cx, cy = self.width/2, self.height/2
+            glTranslatef(cx, cy, 0)
+            glRotatef(self.angle, 0, 0, 1)
+            glTranslatef(-cx, -cy, 0)
 
         if self.draw_func is not None:
             self.draw_func()
@@ -163,7 +163,7 @@ class DrawStyle(object):
         if hasattr(self.draw_env, 'after'):
             self.draw_env.after()
 
-        if self.x is not None and self.y is not None:
+        if transform:
             glPopMatrix()
 
     def __cmp__(self, other):
@@ -196,15 +196,23 @@ def draw_many(drawables):
             if hasattr(d.draw_env, 'before'):
                 d.draw_env.before()
             old_env = d.draw_env
-        translate = d.x or d.y
-        if translate:
+        transform = d.x or d.y or d.sx != d.sy != 1 or d.angle
+        if transform:
             glPushMatrix()
+        if d.x or d.y:
             glTranslatef(d.x, d.y, 0)
+        if d.sx != 1 or d.sy != 1:
+            glScalef(d.sx, d.sy, 1)
+        if d.angle:
+            cx, cy = d.width/2, d.height/2
+            glTranslatef(cx, cy, 0)
+            glRotatef(d.angle, 0, 0, 1)
+            glTranslatef(-cx, -cy, 0)
         if d.draw_list is not None:
             glCallList(d.draw_list)
         if d.draw_func is not None:
             d.draw_func()
-        if translate:
+        if transform:
             glPopMatrix()
 
     if old_env is not None and hasattr(old_env, 'after'):
