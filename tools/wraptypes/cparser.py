@@ -49,8 +49,8 @@ __all__ = ['CParser', 'DebugCParser',
            'Type']
 
 states = (
-    ('skip', 'exclusive'),
-    ('pp', 'exclusive'),
+    ('ppskip', 'exclusive'),
+    ('ppnewline', 'exclusive'),
 )
 
 tokens = (
@@ -97,9 +97,6 @@ def t_preprocessor(t):
     r'(^\#|\n\#).*'
     # DOTALL is not given, so regex terminates at EOL
 
-    # Trap the '\n' token when it comes.
-    t.lexer.push_state('pp')
-
     # Parse the pp line now, so we can act on #define and #undef
     # within the lexer straight away.  The returned token is
     # used in the grammar to call the CParser handle_* methods at
@@ -131,7 +128,8 @@ def t_preprocessor(t):
         t.type = 'PREPROCESSOR_DEFINE'
         t.value = (name, value)
     elif cmd == 'undef':
-        del t.lexer.defines[param]
+        if param in t.lexer.defines:
+            del t.lexer.defines[param]
         t.type = 'PREPROCESSOR_UNDEF'
         t.value = param
     elif cmd == 'if':
@@ -143,14 +141,26 @@ def t_preprocessor(t):
     elif cmd == 'ifndef':
         t.type = 'PREPROCESSOR_IFNDEF'
         t.value = param
+    elif cmd == 'else':
+        s = t.lexer.lexstate
+        t.lexer.pop_state()
+        if s == 'INITIAL':
+            t.lexer.push_state('ppskip')
+        else:
+            t.lexer.push_state('INITIAL')
+        print 'else', t.lexer.lexstate
+        return None
     elif cmd == 'endif':
         t.type = 'PREPROCESSOR_ENDIF'
     else:
         t.type = 'PREPROCESSOR_UNKNOWN'
 
-    return t
+    if t.lexer.accept_preprocessor:
+        # Trap the '\n' token when it comes.
+        t.lexer.push_state('ppnewline')
+        return t
 
-t_skip_preprocessor = t_preprocessor
+t_ppskip_preprocessor = t_preprocessor
 
 # Substitute {foo} with subs[foo] in string (makes regexes more lexy)
 sub_pattern = re.compile('{([^}]*)}')
@@ -255,12 +265,12 @@ def t_ccomment(t):
     r'/\*(.|\n)*?\*/'
     t.lexer.lineno += t.value.count('\n')
 
-def t_INITIAL_skip_newline(t):
+def t_INITIAL_ppskip_newline(t):
     r'\n'
     # Only match one newline, otherwise preprocessing is screwed up.
     t.lexer.lineno += 1
 
-def t_pp_newline(t):
+def t_ppnewline_newline(t):
     r'\n'
     t.type = 'PREPROCESSOR_NEWLINE'
     t.lexer.pop_state()
@@ -269,17 +279,17 @@ def t_pp_newline(t):
     t.lexer.lexpos -= 1
     return t
 
-def t_skip_any(t):
+def t_ppskip_any(t):
     r'[^\n\#]+'
 
 t_ignore = ' \t\v\f'
-t_skip_ignore = ' \t\v\f'
-t_pp_ignore = ''
+t_ppskip_ignore = ' \t\v\f'
+t_ppnewline_ignore = ''
 
 def t_error(t):
     t.lexer.skip(1)
 
-t_skip_error = t_pp_error = t_error
+t_ppskip_error = t_ppnewline_error = t_error
 
 lex.lex()
 
@@ -449,6 +459,9 @@ def p_declaration(p):
         declaration.declarator = declarator
         p.parser.cparser.impl_handle_declaration(declaration)
 
+    # ';' is being shifted now, so can accept PP again
+    p.lexer.accept_preprocessor = True
+
 def p_declaration_error(p):
     '''declaration : error ';'
     '''
@@ -503,10 +516,66 @@ def p_type_specifier(p):
                       | DOUBLE
                       | SIGNED
                       | UNSIGNED
+                      | struct_or_union_specifier
+                      | enum_specifier
                       | TYPE_NAME
     '''
     # Not handled: struct_or_union_specifier, enum_specifier
     p[0] = TypeSpecifier(p[1])
+
+def p_struct_or_union_specifier(p):
+    '''struct_or_union_specifier : struct_or_union IDENTIFIER '{' struct_declaration_list '}'
+         | struct_or_union '{' struct_declaration_list '}'
+         | struct_or_union IDENTIFIER
+    '''
+
+def p_struct_or_union(p):
+    '''struct_or_union : STRUCT
+                       | UNION
+    '''
+
+def p_struct_declaration_list(p):
+    '''struct_declaration_list : struct_declaration
+                               | struct_declaration_list struct_declaration
+    '''
+
+def p_struct_declaration(p):
+    '''struct_declaration : specifier_qualifier_list struct_declarator_list ';'
+    '''
+
+def p_specifier_qualifier_list(p):
+    '''specifier_qualifier_list : type_specifier specifier_qualifier_list
+                                | type_specifier
+                                | type_qualifier specifier_qualifier_list
+                                | type_qualifier
+    '''
+
+def p_struct_declarator_list(p):
+    '''struct_declarator_list : struct_declarator
+                              | struct_declarator_list ',' struct_declarator
+    '''
+
+def p_struct_declarator(p):
+    '''struct_declarator : declarator
+                         | ':' constant_expression
+                         | declarator ':' constant_expression
+    '''
+
+def p_enum_specifier(p):
+    '''enum_specifier : ENUM '{' enumerator_list '}'
+                      | ENUM IDENTIFIER '{' enumerator_list '}'
+                      | ENUM IDENTIFIER
+    '''
+
+def p_enumerator_list(p):
+    '''enumerator_list : enumerator
+                       | enumerator_list ',' enumerator
+    '''
+
+def p_enumerator(p):
+    '''enumerator : IDENTIFIER
+                  | IDENTIFIER '=' constant_expression
+    '''
 
 def p_type_qualifier(p):
     '''type_qualifier : CONST
@@ -717,7 +786,8 @@ def p_preprocessor(p):
                     | preprocessor_endif
                     | PREPROCESSOR_UNKNOWN
     '''
-    # Intentionally empty
+    # NEWLINE is shifted next, so can accept PP again
+    p.lexer.accept_preprocessor = True
 
 def p_preprocessor_define(p):
     '''preprocessor_define : PREPROCESSOR_DEFINE'''
@@ -754,20 +824,35 @@ def p_error(t):
     # up until it hits the catch-all at declaration, at which point
     # parsing continues (synchronisation).
 
+class CLexer(lex.Lexer):
+    def __init__(self):
+        lex.Lexer.__init__(self)
+        self.accept_preprocessor = True
+
+    def token(self):
+        result = lex.Lexer.token(self)
+        self.accept_preprocessor = False
+        return result
+
 class CParser(object):
     '''Parse a C source file.
 
     Subclass and override the handle_* methods.  Call `parse` with a string
     to parse.
     '''
-    def __init__(self):
-        self.lexer = lex.lex()
+    def __init__(self, stddef_types=True):
+        self.lexer = lex.lex(cls=CLexer)
         self.lexer.defines = {}
         self.lexer.type_names = set()
         self.lexer.cparser = self
 
         self.parser = yacc.yacc() 
         self.parser.cparser = self
+
+        if stddef_types:
+            self.lexer.type_names.add('wchar_t')
+            self.lexer.type_names.add('ptrdiff_t')
+            self.lexer.type_names.add('size_t')
     
     def parse(self, data, debug=False):
         '''Parse a source string.
@@ -805,7 +890,7 @@ class CParser(object):
     def handle_ifdef(self, name):
         '''#ifdef `name`'''
         if name == '__cplusplus':
-            self.lexer.push_state('skip')
+            self.lexer.push_state('ppskip')
         else:
             self.lexer.push_state(self.lexer.lexstate)
 
@@ -825,6 +910,9 @@ class CParser(object):
         '''
         if declaration.storage == 'typedef':
             declarator = declaration.declarator
+            if not declarator:
+                # XXX TEMPORARY while struct etc not filled
+                return
             while declarator.pointer:
                 declarator = declarator.pointer
             self.lexer.type_names.add(declarator.identifier)

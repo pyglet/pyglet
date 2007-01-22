@@ -486,13 +486,14 @@ def _statetoken(s,names):
 #
 # Build all of the regular expression rules from definitions in the supplied module
 # -----------------------------------------------------------------------------
-def lex(module=None,object=None,debug=0,optimize=0,lextab="lextab",reflags=0,nowarn=0):
+# cls added for pyglet/tools/wrapper/cparser.py by Alex Holkner on 22/Jan/2007 
+def lex(module=None,object=None,debug=0,optimize=0,lextab="lextab",reflags=0,nowarn=0,cls=Lexer):
     global lexer
     ldict = None
     stateinfo  = { 'INITIAL' : 'inclusive'}
     error = 0
     files = { }
-    lexobj = Lexer()
+    lexobj = cls()
     lexobj.lexdebug = debug
     lexobj.lexoptimize = optimize
     global token,input
