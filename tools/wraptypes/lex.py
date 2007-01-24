@@ -304,7 +304,10 @@ class Lexer:
                 
                 # Verify type of the token.  If not in the token map, raise an error
                 if not self.lexoptimize:
-                    if not self.lextokens.has_key(newtok.type):
+                    # Allow any single-character literal also for
+                    # pyglet/tools/wrapper/cparser.py by Alex Holkner on
+                    # 20/Jan/2007 
+                    if not self.lextokens.has_key(newtok.type) and len(newtok.type) > 1:
                         raise LexError, ("%s:%d: Rule '%s' returned an unknown token type '%s'" % (
                             func.func_code.co_filename, func.func_code.co_firstlineno,
                             func.__name__, newtok.type),lexdata[lexpos:])
