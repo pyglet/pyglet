@@ -2,6 +2,7 @@
 # ply: yacc.py
 #
 # Author(s): David M. Beazley (dave@dabeaz.com)
+# Modifications for pyglet by Alex Holkner (alex.holkner@gmail.com) (<ah>)
 #
 # Copyright (C) 2001-2006, David M. Beazley
 #
@@ -167,6 +168,10 @@ class Parser:
         self.require     = { }           # Attribute require table
         self.method      = "Unknown LR"  # Table construction method used
 
+        # <ah> 25 Jan 2007
+        self.statestackstack = []
+        self.symstackstack = []
+
     def errok(self):
         self.errorcount = 0
 
@@ -177,6 +182,19 @@ class Parser:
         sym.type = '$end'
         self.symstack.append(sym)
         self.statestack.append(0)
+
+    def push_state(self):
+        '''Save parser state and restart it.'''
+        # <ah> 25 Jan 2007
+        self.statestackstack.append(self.statestack[:])
+        self.symstackstack.append(self.symstack[:])
+        self.restart()
+
+    def pop_state(self):
+        '''Restore saved parser state.'''
+        # <ah> 25 Jan 2007
+        self.statestack[:] = self.statestackstack.pop()
+        self.symstack[:] = self.symstackstack.pop()
         
     def parse(self,input=None,lexer=None,debug=0):
         lookahead = None                 # Current lookahead symbol

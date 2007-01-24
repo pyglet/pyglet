@@ -360,15 +360,13 @@ def t_hash(t):
         # Start pp state (after hash, before keyword).
         t.lexer.push_state('PPBEGIN')
 
-        # If CParser says its ok to give hash token to parser, do so;
-        # otherwise this pp is in the middle of something complicated,
-        # so we'll need to parse it ourselves.
-        if t.lexer.accept_preprocessor:
-            t.type = 'PP_HASH'
-            return t
-        else:
-            # TODO
-            pass
+        # If CParser says its not ok to give hash token to parser, push
+        # the parser state.
+        if not t.lexer.accept_preprocessor:
+            t.lexer.cparser.parser.push_state()
+            t.lexer.pp_parser_pushed = True
+        t.type = 'PP_HASH'
+        return t
 
 @TOKEN(sub('{L}({L}|{D})*'))
 def t_check_type(t):
@@ -1466,8 +1464,13 @@ class CLexer(lex.Lexer):
     def __init__(self):
         lex.Lexer.__init__(self)
         self.accept_preprocessor = True
+        self.pp_parser_pushed = False   
+        # if True, parser was pushed for current preprocessing line.
 
     def token(self):
+        if self.lexstate == 'INITIAL' and self.pp_parser_pushed:
+            self.cparser.parser.pop_state()
+            self.pp_parser_pushed = False
         result = lex.Lexer.token(self)
         self.accept_preprocessor = False
         return result
