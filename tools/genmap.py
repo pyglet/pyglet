@@ -85,7 +85,7 @@ if maptype is None:
 
 filename = '%(x)s-%(e)s-%(r)s'%filename
 
-w = pyglet.window.Window(width=1, height=1, visible=False)
+w = pyglet.window.Window(width=1, height=1, visible=False, alpha_size=8)
 
 mw, mh = size
 if maptype == 'recthex':
@@ -94,10 +94,12 @@ elif maptype == 'hex':
     m = gen_hex_map([[{}]*mh]*mw, ch)
 else:
     m = gen_rect_map([[{}]*mh]*mw, cw, ch)
-w.set_size(width=m.pxw, height=m.pxh)
+pxw = m.pxw + padding * mw * 2
+pxh = m.pxh + padding * mh * 2
+w.set_size(width=pxw, height=pxh)
 w.set_visible()
 s = pyglet.scene2d.Scene(layers=[m])
-r = pyglet.scene2d.FlatView(s, 0, 0, m.pxw, m.pxh, allow_oob=False)
+r = pyglet.scene2d.FlatView(s, 0, 0, pxw, pxh, allow_oob=False)
 
 class SaveHandler:
     def on_text(self, text):
@@ -108,16 +110,15 @@ class SaveHandler:
         while os.path.exists(fn):
             fn = filename + str(n) + '.png'
             n += 1
-        print 'Saving to %s...'%fn
+        print "Saving to '%s'"%fn
         image.save(fn)
 w.push_handlers(SaveHandler())
 
 clock = pyglet.clock.Clock(fps_limit=10)
 while not w.has_exit:
     clock.tick()
-    w.switch_to()
     w.dispatch_events()
-    r.clear()
+    r.clear((0,0,0,0))
     r.draw()
     w.flip()
 

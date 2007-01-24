@@ -12,6 +12,7 @@ class DrawBlended(DrawEnv):
     '''
     def before(self):
         glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT)
+        # XXX this belongs in a "DrawTextureBlended" or something
         glEnable(GL_TEXTURE_2D)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -97,6 +98,12 @@ class RotateEffect(Effect):
         return style
 
 class DrawStyle(object):
+    '''
+
+    Notes:
+
+        draw_func(<DrawStyle instance>)
+    '''
     __slots__ = ' color x y sx sy angle width height texture uvs draw_list draw_env draw_func is_copy'.split()
 
     def __init__(self, color=None, texture=None, x=0, y=0, sx=1, sy=1,
@@ -155,7 +162,7 @@ class DrawStyle(object):
             glTranslatef(-cx, -cy, 0)
 
         if self.draw_func is not None:
-            self.draw_func()
+            self.draw_func(self)
 
         if self.draw_list is not None:
             glCallList(self.draw_list)
@@ -211,7 +218,7 @@ def draw_many(drawables):
         if d.draw_list is not None:
             glCallList(d.draw_list)
         if d.draw_func is not None:
-            d.draw_func()
+            d.draw_func(d)
         if transform:
             glPopMatrix()
 

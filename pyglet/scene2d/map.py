@@ -133,7 +133,10 @@ class RectMap(RegularTesselationMap):
         self.x, self.y, self.z = origin
         self.cells = cells
         self.pxw = len(cells) * tw
-        self.pxh = len(cells[1]) * th
+        if len(cells) > 1:
+            self.pxh = len(cells[1]) * th + th / 2
+        else:
+            self.pxh = len(cells[0]) * th
 
     def get_in_region(self, x1, y1, x2, y2):
         '''Return cells (in [column][row]) that are within the pixel bounds
