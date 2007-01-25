@@ -50,7 +50,7 @@ tokens = (
 
     'PP_IF', 'PP_IFDEF', 'PP_IFNDEF', 'PP_ELIF', 'PP_ELSE',
     'PP_ENDIF', 'PP_INCLUDE', 'PP_DEFINE', 'PP_UNDEF', 'PP_LINE',
-    'PP_ERROR', 'PP_PRAGMA', 'PP_LPAREN', 
+    'PP_ERROR', 'PP_PRAGMA', 'PP_LPAREN', 'PP_DEFINED',
     
     'PP_HEADER_NAME', 'PP_NUMBER',
 
@@ -107,6 +107,7 @@ STRING_LITERAL = sub(r'L?"(\\.|[^\\"])*"')
 # Token value types
 # --------------------------------------------------------------------------
 
+# Numbers represented as int and float types.
 # For all other tokens, type is just str representation.
 
 class StringLiteral(str):
@@ -277,15 +278,31 @@ def t_PP_punctuator(t):
 
 @TOKEN(sub('{L}({L}|{D})*'))
 def t_PP_identifier(t):
-    # 'defined' is a reserved word in PP state, but grammar is simpler if it's
-    # left as an identifier and sorted out somewhere else.
-    t.type = 'IDENTIFIER'
+    if t.lexer.replace_macro(t.value):
+        return None
+    elif t.value == 'defined':
+        t.type = 'PP_DEFINED'
+    else:
+        t.type = 'IDENTIFIER'
     return t
 
 # missing: universal-character-constant
 @TOKEN(sub(r'({D}|\.{D})({D}|{L}|e[+-]|E[+-]|p[+-]|P[+-]|\.)*'))
 def t_PP_pp_number(t):
     t.type = 'PP_NUMBER'
+    value = t.value.lstrip('LlFfUu')
+    try:
+        if value[:2] == '0x':
+            t.value = int(value[2:], 16)
+        elif t.value[0] == '0':
+            t.value = int(value, 8)
+        else:
+            t.value = int(value)
+    except ValueError:
+        try:
+            t.value = float(value)
+        except ValueError:
+            pass
     return t
     
 @TOKEN(CHARACTER_CONSTANT)
@@ -383,21 +400,8 @@ def t_hash(t):
 
 @TOKEN(sub('{L}({L}|{D})*'))
 def t_check_type(t):
-    if t.value in t.lexer.cparser.preprocessor_context.macros:
-        # Messy: insert replacement text before lexpos, then move back
-        # lexpos to read it.  len(replacement text) is always less than
-        # lexpos, since its #define must have preceeded it.  This is not
-        # true if #include processing is done (it is not currently, so
-        # no problem).
-
-        # TODO more advanced replacement, including functions
-        repl = t.lexer.cparser.preprocessor_context.macros[t.value]
-        pos = t.lexer.lexpos
-        t.lexer.lexdata = t.lexer.lexdata[:pos-len(repl)] + \
-            repl + t.lexer.lexdata[pos:]
-        t.lexer.lexpos -= len(repl)
+    if t.lexer.replace_macro(t.value):
         return None
-
     elif t.value in keywords:
         t.type = t.value.upper()
     elif t.value in t.lexer.type_names:
@@ -499,6 +503,16 @@ class IdentifierExpressionNode(ExpressionNode):
     def __str__(self):
         return str(self.identifier)
 
+class MacroDefinedExpressionNode(ExpressionNode):
+    def __init__(self, identifier):
+        self.identifier = identifier
+
+    def evaluate(self, context):
+        return context.is_defined(self.identifier)
+
+    def __str__(self):
+        return 'defined(%s)' % self.identifier
+
 class UnaryExpressionNode(ExpressionNode):
     def __init__(self, op, op_str, child):
         self.op = op
@@ -568,16 +582,8 @@ class FunctionExpressionNode(ExpressionNode):
         self.arguments = arguments
 
     def evaluate(self, context):
-        if type(self.function) == IdentifierExpressionNode and \
-           self.function.identifier == 'defined' and \
-           context.is_preprocessor and \
-           len(self.arguments) == 1 and \
-           type(self.arguments[0] == IdentifierExpressionNode):
-            return context.is_defined(self.arguments[0].identifier)
-        else:
-            args = [a.evaluate(context) for a in self.arguments]
-            return context.evaluate_function(self.function.evaluate(context), 
-                                             args)
+        args = [a.evaluate(context) for a in self.arguments]
+        return context.evaluate_function(self.function.evaluate(context), args)
 
     def __str__(self):
         return '%s(%s)' % \
@@ -692,7 +698,7 @@ def apply_specifiers(specifiers, declaration):
             if declaration.storage:
                 p.parser.cparser.handle_error(
                     'Declaration has more than one storage class', 
-                    p.lineno(1))
+                    '???', p.lineno(1))
                 return
             declaration.storage = s
         elif type(s) == TypeSpecifier:
@@ -732,6 +738,7 @@ def p_primary_expression(p):
                           | string_literal
                           | '(' expression ')'
                           | PP_LPAREN expression ')'
+                          | pp_defined_expression
     '''
     if p[1] == '(':
         p[0] = p[2]
@@ -1325,7 +1332,7 @@ def p_error(t):
         print >> sys.stderr, 'Syntax error at end of file.'
     else:
         t.lexer.cparser.handle_error('Syntax error at %r' % t.value, 
-            t.lexer.lineno)
+             t.lexer.filename, t.lexer.lineno)
     # Don't alter lexer: default behaviour is to pass error production
     # up until it hits the catch-all at declaration, at which point
     # parsing continues (synchronisation).
@@ -1506,6 +1513,15 @@ def p_punctuator(p):
     '''
     p[0] = p[1]
 
+def p_pp_defined_expression(p):
+    '''pp_defined_expression : PP_DEFINED identifier
+                             | PP_DEFINED '(' identifier ')'
+    '''
+    if len(p) == 3:
+        p[0] = MacroDefinedExpressionNode(p[2])
+    else:
+        p[0] = MacroDefinedExpressionNode(p[3])
+
 # --------------------------------------------------------------------------
 # Lexer
 # --------------------------------------------------------------------------
@@ -1527,6 +1543,23 @@ class CLexer(lex.Lexer):
         # Stack of include files: (lexdata, lexpos, filename)
         self.input_stack = []
         self.filename = None
+
+    def replace_macro(self, identifier):
+        if identifier in self.cparser.preprocessor_context.macros:
+            # Messy: insert replacement text before lexpos, then move back
+            # lexpos to read it.  len(replacement text) is always less than
+            # lexpos, since its #define must have preceeded it.  This is not
+            # true if #include processing is done (it is not currently, so
+            # no problem).
+
+            # TODO more advanced replacement, including functions
+            repl = self.cparser.preprocessor_context.macros[identifier]
+            pos = self.lexpos
+            self.lexdata = (
+                self.lexdata[:pos-len(repl)] + repl + self.lexdata[pos:])
+            self.lexpos -= len(repl)
+            return True
+        return False
 
     def push_input(self, data, filename):
         self.input_stack.append((self.lexdata, self.lexpos, self.filename))
@@ -1663,14 +1696,14 @@ class CParser(object):
     # Parser interface.  Override these methods in your subclass.
     # ----------------------------------------------------------------------
 
-    def handle_error(self, message, lineno):
+    def handle_error(self, message, filename, lineno):
         '''A parse error occured.  
         
         The default implementation prints `lineno` and `message` to stderr.
         The parser will try to recover from errors by synchronising at the
         next semicolon.
         '''
-        print >> sys.stderr, '%s:' % lineno, message
+        print >> sys.stderr, '%s:%s %s' % (filename, lineno, message)
 
     def handle_missing_header(self, header):
         '''A header was included that can't be located.
@@ -1692,7 +1725,8 @@ class CParser(object):
 
     def handle_undef(self, name):
         '''#undef `name`'''
-        del self.preprocessor_context.macros[name]
+        if name in self.preprocessor_context.macros:
+            del self.preprocessor_context.macros[name]
 
     def handle_if(self, expr):
         '''#if `expr`'''
@@ -1758,7 +1792,7 @@ class DebugCParser(CParser):
         super(DebugCParser, self).handle_undef(name)
 
     def handle_if(self, expr):
-        print '#if expr=%r' % expr
+        print '#if expr=%s' % expr
         super(DebugCParser, self).handle_if(expr)
 
     def handle_ifdef(self, name):
@@ -1770,7 +1804,7 @@ class DebugCParser(CParser):
         super(DebugCParser, self).handle_ifndef(name)
 
     def handle_elif(self, expr):
-        print '#elif expr=%r' % expr
+        print '#elif expr=%s' % expr
         super(DebugCParser, self).handle_elif(expr)
 
     def handle_else(self):
