@@ -215,7 +215,7 @@ def t_PPBEGIN_identifier(t):
     t.lexer.begin('PP')
     if t.value in pp_keywords:
         t.type = 'PP_%s' % t.value.upper()
-        if t.value == 'define':
+        if t.value in ('define', 'undef'):
             t.lexer.pp_replace_macro = False
         return t
     else:
@@ -1595,14 +1595,17 @@ class CLexer(lex.Lexer):
         return False
 
     def push_input(self, data, filename):
-        self.input_stack.append((self.lexdata, self.lexpos, self.filename))
+        self.input_stack.append(
+            (self.lexdata, self.lexpos, self.filename, self.lineno))
         self.lexdata = data
         self.lexpos = 0
+        self.lineno = 1
         self.filename = filename
         self.lexlen = len(self.lexdata)
 
     def pop_input(self):
-        self.lexdata, self.lexpos, self.filename = self.input_stack.pop()
+        self.lexdata, self.lexpos, self.filename, self.lineno = \
+            self.input_stack.pop()
         self.lexlen = len(self.lexdata)
 
     def token(self):
