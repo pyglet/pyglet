@@ -323,15 +323,13 @@ def t_SKIPTEXT_hash(t):
     else:
         t.lexer.push_state('PPBEGIN')
 
-        # If CParser says its ok to give hash token to parser, do so;
-        # otherwise this pp is in the middle of something complicated,
-        # so we'll need to parse it ourselves.
-        if t.lexer.accept_preprocessor:
-            t.type = 'PP_HASH'
-            return t
-        else:
-            # TODO
-            pass
+        # If CParser says its not ok to give hash token to parser, push
+        # the parser state.
+        if not t.lexer.accept_preprocessor:
+            t.lexer.cparser.parser.push_state()
+            t.lexer.pp_parser_pushed = True
+        t.type = 'PP_HASH'
+        return t
 
 def t_SKIPTEXT_newline(t):
     r'\n+'
@@ -370,13 +368,15 @@ def t_hash(t):
 
 @TOKEN(sub('{L}({L}|{D})*'))
 def t_check_type(t):
-    if t.value in t.lexer.defines:
+    if t.value in t.lexer.cparser.preprocessor_context.macros:
         # Messy: insert replacement text before lexpos, then move back
         # lexpos to read it.  len(replacement text) is always less than
         # lexpos, since its #define must have preceeded it.  This is not
         # true if #include processing is done (it is not currently, so
         # no problem).
-        repl = t.lexer.defines[t.value]
+
+        # TODO more advanced replacement, including functions
+        repl = t.lexer.cparser.preprocessor_context.macros[t.value]
         pos = t.lexer.lexpos
         t.lexer.lexdata = t.lexer.lexdata[:pos-len(repl)] + \
             repl + t.lexer.lexdata[pos:]
@@ -1344,18 +1344,27 @@ def p_pp_if_group(p):
                    | PP_HASH PP_IFDEF IDENTIFIER
                    | PP_HASH PP_IFNDEF IDENTIFIER
     '''
+    if p[2] == 'if':
+        p.parser.cparser.handle_if(p[3])
+    elif p[2] == 'ifdef':
+        p.parser.cparser.handle_ifdef(p[3])
+    elif p[2] == 'ifndef':
+        p.parser.cparser.handle_ifndef(p[3])
 
 def p_pp_elif_group(p):
     '''pp_elif_group : PP_HASH PP_ELIF constant_expression
     '''
+    p.parser.cparser.handle_elif(p[3])
 
 def p_pp_else_group(p):
     '''pp_else_group : PP_HASH PP_ELSE
     '''
+    p.parser.cparser.handle_else()
 
 def p_pp_endif(p):
     '''pp_endif_line : PP_HASH PP_ENDIF
     '''
+    p.parser.cparser.handle_endif()
 
 def p_pp_control_line(p):
     '''pp_control_line : PP_HASH PP_INCLUDE pp_tokens
@@ -1372,8 +1381,19 @@ def p_pp_control_line(p):
     #   pp_function or reduce to pp_token in pp_object replacement list).
     #   Default behaviour is to shift, which is correct in this situation.
 
+    if len(p) == 2:
+        return
+    elif p[2] == 'define':
+        p.parser.cparser.handle_define(p[3], p[4])
+    elif p[2] == 'undef':
+        p.parser.cparser.handle_undef(p[3])
+    else:
+        # TODO
+        pass
+
 def p_pp_object(p):
     '''pp_object : IDENTIFIER'''
+    p[0] = p[1]
 
 def p_pp_function(p):
     '''pp_function : IDENTIFIER PP_LPAREN opt_identifier_list ')'
@@ -1384,16 +1404,25 @@ def p_pp_function(p):
 def p_pp_replacement_list(p):
     '''pp_replacement_list : pp_opt_tokens
     '''
+    p[0] = ' '.join([str(t) for t in p[1]])
 
 def p_pp_opt_tokens(p):
     '''pp_opt_tokens : pp_tokens
                      |
     '''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = ()
 
 def p_pp_tokens(p):
     '''pp_tokens : pp_preprocessing_token
                  | pp_tokens pp_preprocessing_token
     '''
+    if len(p) == 2:
+        p[0] = (p[1],)
+    else:
+        p[0] = p[1] + (p[2],)
 
 def p_pp_preprocessing_token(p):
     '''pp_preprocessing_token : PP_HEADER_NAME
@@ -1403,6 +1432,7 @@ def p_pp_preprocessing_token(p):
                               | STRING_LITERAL
                               | punctuator
     '''
+    p[0] = p[1]
 
 def p_punctuator(p):
     '''punctuator : ELLIPSIS 
@@ -1455,6 +1485,7 @@ def p_punctuator(p):
                   | '#'
                   | PP_LPAREN
     '''
+    p[0] = p[1]
 
 # --------------------------------------------------------------------------
 # Lexer
@@ -1463,12 +1494,19 @@ def p_punctuator(p):
 class CLexer(lex.Lexer):
     def __init__(self):
         lex.Lexer.__init__(self)
+
+        # if True, grammar can accept PP tokens
         self.accept_preprocessor = True
-        self.pp_parser_pushed = False   
+
         # if True, parser was pushed for current preprocessing line.
+        self.pp_parser_pushed = False   
+
+        # If [-1] is True, current if/elif/else block has seen an execution
+        # block (and so subsequent elif/else parts must be skipped).
+        self.execution_stack = [True]
 
     def token(self):
-        if self.lexstate == 'INITIAL' and self.pp_parser_pushed:
+        if self.lexstate in ('INITIAL', 'SKIPTEXT') and self.pp_parser_pushed:
             self.cparser.parser.pop_state()
             self.pp_parser_pushed = False
         result = lex.Lexer.token(self)
@@ -1479,6 +1517,17 @@ class CLexer(lex.Lexer):
 # Parser
 # --------------------------------------------------------------------------
 
+class PreprocessorEvaluationContext(EvaluationContext):
+    is_preprocessor = True
+    def __init__(self):
+        self.macros = {}
+
+    def is_defined(self, name):
+        return name in self.macros
+
+    def evaluate_identifier(self, name):
+        return self.macros.get(name, '')
+
 class CParser(object):
     '''Parse a C source file.
 
@@ -1487,7 +1536,6 @@ class CParser(object):
     '''
     def __init__(self, stddef_types=True):
         self.lexer = lex.lex(cls=CLexer)
-        self.lexer.defines = {}
         self.lexer.type_names = set()
         self.lexer.cparser = self
 
@@ -1498,6 +1546,8 @@ class CParser(object):
             self.lexer.type_names.add('wchar_t')
             self.lexer.type_names.add('ptrdiff_t')
             self.lexer.type_names.add('size_t')
+
+        self.preprocessor_context = PreprocessorEvaluationContext()
     
     def parse(self, data, debug=False):
         '''Parse a source string.
@@ -1508,6 +1558,34 @@ class CParser(object):
             return
 
         self.parser.parse(data, debug=debug)
+
+    def apply_conditional(self, result):
+        if result:
+            self.lexer.push_state(self.lexer.lexstate)
+            self.lexer.execution_stack.append(True)
+        else:
+            self.lexer.push_state('SKIPTEXT')
+            self.lexer.execution_stack.append(False)
+
+    def apply_conditional_elif(self, result):
+        # TODO multiple elif's will fail, need to keep track of state.
+        if result and not self.lexer.execution_stack[-1]:
+            self.lexer.begin('INITIAL')
+            self.lexer.execution_stack[-1] = True
+        else:
+            self.lexer.begin('SKIPTEXT')
+
+    def apply_conditional_else(self):
+        # TODO multiple elif's will fail, need to keep track of state.
+        if not self.lexer.execution_stack[-1]:
+            self.lexer.begin('INITIAL')
+            self.lexer.execution_stack[-1] = True
+        else:
+            self.lexer.begin('SKIPTEXT')
+
+    def apply_conditional_endif(self):
+        self.lexer.pop_state()
+        self.lexer.execution_stack.pop()
 
     # ----------------------------------------------------------------------
     # Parser interface.  Override these methods in your subclass.
@@ -1523,32 +1601,36 @@ class CParser(object):
         print >> sys.stderr, '%s:' % lineno, message
 
     def handle_define(self, name, value):
-        '''#ifdef `name` `value` (both are strings)'''
-        pass
+        '''#define `name` `value` (both are strings)'''
+        self.preprocessor_context.macros[name] = value
 
     def handle_undef(self, name):
         '''#undef `name`'''
-        pass
+        del self.preprocessor_context.macros[name]
 
     def handle_if(self, expr):
         '''#if `expr`'''
-        self.lexer.push_state(self.lexer.lexstate)
+        self.apply_conditional(expr.evaluate(self.preprocessor_context))
 
     def handle_ifdef(self, name):
         '''#ifdef `name`'''
-        if name == '__cplusplus':
-            self.lexer.push_state('ppskip')
-        else:
-            self.lexer.push_state(self.lexer.lexstate)
+        self.apply_conditional(self.preprocessor_context.is_defined(name))
 
     def handle_ifndef(self, name):
         '''#ifndef `name`'''
-        self.lexer.push_state(self.lexer.lexstate)
+        self.apply_conditional(not self.preprocessor_context.is_defined(name))
+
+    def handle_elif(self, expr):
+        '''#elif `expr`'''
+        self.apply_conditional_elif(expr.evaluate(self.preprocessor_context))
+
+    def handle_else(self):
+        '''#else'''
+        self.apply_conditional_else()
 
     def handle_endif(self):
         '''#endif'''
-        self.lexer.pop_state()
-        pass
+        self.apply_conditional_endif()
 
     def impl_handle_declaration(self, declaration):
         '''Internal method that calls `handle_declaration`.  This method
@@ -1579,9 +1661,11 @@ class DebugCParser(CParser):
     '''
     def handle_define(self, name, value):
         print '#define name=%r, value=%r' % (name, value)
+        super(DebugCParser, self).handle_define(name, value)
 
     def handle_undef(self, name):
         print '#undef name=%r' % name
+        super(DebugCParser, self).handle_undef(name)
 
     def handle_if(self, expr):
         print '#if expr=%r' % expr
@@ -1594,6 +1678,14 @@ class DebugCParser(CParser):
     def handle_ifndef(self, name):
         print '#ifndef name=%r' % name
         super(DebugCParser, self).handle_ifndef(name)
+
+    def handle_elif(self, expr):
+        print '#elif expr=%r' % expr
+        super(DebugCParser, self).handle_elif(expr)
+
+    def handle_else(self):
+        print '#else'
+        super(DebugCParser, self).handle_else()
 
     def handle_endif(self):
         print '#endif'
