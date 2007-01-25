@@ -7,19 +7,7 @@ pass as parsing, and are included in the grammar.  Macros are expanded as
 usual (but not macro functions).
 
 The lexicon is complete, however the grammar is only currently equipped for
-declarations (function implementations will cause a parse error).  Structs, 
-enums, and initializer values are also not handled yet and will cause a parse
-error.
-
-Preprocessing behaviour is not like an ordinary compiler:
-
-  * Preprocessor declarations can occur only between declarations (i.e., not
-    in the middle of one).  
-  * Macros are expanded as usual (except for function macros).
-  * #define and #undef behave as usual.
-  * #ifdef, #ifndef, #if and #else are ignored, with the exception of 
-    #ifdef __cplusplus, whose contents are skipped.  (This handling should be
-    improved TODO).
+declarations (function implementations will cause a parse error).
 
 To use, subclass CParser and override its handle_* methods.  Then instantiate
 the class with a string to parse.
@@ -37,6 +25,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import operator
+import os.path
 import re
 import sys
 
@@ -113,6 +102,27 @@ def sub(s):
 CHARACTER_CONSTANT = sub(r"L?'(\\.|[^\\'])+'")
 FLOAT_CONSTANT = sub(r'({D}*\\.{D}+({E})?|{D}+\\.{D}*({E})?|{D}+{E}){FS}?')
 STRING_LITERAL = sub(r'L?"(\\.|[^\\"])*"')
+
+# --------------------------------------------------------------------------
+# Token value types
+# --------------------------------------------------------------------------
+
+# For all other tokens, type is just str representation.
+
+class StringLiteral(str):
+    def __new__(cls, value):
+        assert value[0] == '"' and value[-1] == '"'
+        # Unescaping probably not perfect but close enough.
+        value = value[1:-1].decode('string_escape')
+        return str.__new__(cls, value)
+
+class SystemHeaderName(str):
+    def __new__(cls, value):
+        assert value[0] == '<' and value[-1] == '>'
+        return str.__new__(cls, value[1:-1])
+
+    def __repr__(self):
+        return '<%s>' % (str(self))
 
 # --------------------------------------------------------------------------
 # Token declarations
@@ -195,6 +205,7 @@ def t_PPBEGIN_header_name(t):
     # Is also r'"[^\n"]"', but handled in STRING_LITERAL instead.
     t.lexer.begin('PP')
     t.type = 'PP_HEADER_NAME'
+    t.value = SystemHeaderName(t.value)
     return t
 
 @TOKEN(sub('{L}({L}|{D})*'))
@@ -224,6 +235,8 @@ def t_PPBEGIN_character_constant(t):
 def t_PPBEGIN_string_literal(t):
     t.lexer.begin('PP')
     t.type = 'STRING_LITERAL'
+    t.value = StringLiteral(t.value)
+    return t
 
 def t_PPBEGIN_newline(t):
     r'\n'
@@ -249,17 +262,17 @@ del pp_punctuators[r'(']
 # Hash can be a punctuator now
 pp_punctuators[r'#'] = (r'\#', '#')
 
+def t_PP_header_name(t):
+    r'<[^\n>]*>'
+    # Is also r'"[^\n"]"', but handled in STRING_LITERAL instead.
+    t.type = 'PP_HEADER_NAME'
+    t.value = SystemHeaderName(t.value)
+    return t
+
 @TOKEN(punctuator_regex(pp_punctuators))
 def t_PP_punctuator(t):
     t.lexer.begin('PP')
     t.type = pp_punctuators[t.value][1]
-    return t
-
-
-def t_PP_header_name(t):
-    r'<[^\n>]+>'
-    # Is also r'"[^\n"]"', but handled in STRING_LITERAL instead.
-    t.type = 'PP_HEADER_NAME'
     return t
 
 @TOKEN(sub('{L}({L}|{D})*'))
@@ -283,6 +296,8 @@ def t_PP_character_constant(t):
 @TOKEN(STRING_LITERAL)
 def t_PP_string_literal(t):
     t.type = 'STRING_LITERAL'
+    t.value = StringLiteral(t.value)
+    return t
 
 def t_PP_lparen(t):
     r'\('
@@ -1383,6 +1398,10 @@ def p_pp_control_line(p):
 
     if len(p) == 2:
         return
+    elif p[2] == 'include':
+        # TODO perform macro replacement
+        if len(p[3]) == 1:
+            p.parser.cparser.handle_include(p[3][0])
     elif p[2] == 'define':
         p.parser.cparser.handle_define(p[3], p[4])
     elif p[2] == 'undef':
@@ -1505,12 +1524,32 @@ class CLexer(lex.Lexer):
         # block (and so subsequent elif/else parts must be skipped).
         self.execution_stack = [True]
 
+        # Stack of include files: (lexdata, lexpos, filename)
+        self.input_stack = []
+        self.filename = None
+
+    def push_input(self, data, filename):
+        self.input_stack.append((self.lexdata, self.lexpos, self.filename))
+        self.lexdata = data
+        self.lexpos = 0
+        self.filename = filename
+        self.lexlen = len(self.lexdata)
+
+    def pop_input(self):
+        self.lexdata, self.lexpos, self.filename = self.input_stack.pop()
+        self.lexlen = len(self.lexdata)
+
     def token(self):
         if self.lexstate in ('INITIAL', 'SKIPTEXT') and self.pp_parser_pushed:
             self.cparser.parser.pop_state()
             self.pp_parser_pushed = False
         result = lex.Lexer.token(self)
         self.accept_preprocessor = False
+
+        while result is None and self.input_stack:
+            self.pop_input()
+            result = lex.Lexer.token(self)
+
         return result
 
 # --------------------------------------------------------------------------
@@ -1548,8 +1587,10 @@ class CParser(object):
             self.lexer.type_names.add('size_t')
 
         self.preprocessor_context = PreprocessorEvaluationContext()
+
+        self.include_path = ['/usr/include']
     
-    def parse(self, data, debug=False):
+    def parse(self, data, filename='input', debug=False):
         '''Parse a source string.
 
         If `debug` is True, parsing state is dumped to stdout.
@@ -1557,7 +1598,8 @@ class CParser(object):
         if not data.strip():
             return
 
-        self.parser.parse(data, debug=debug)
+        self.lexer.filename = filename
+        self.parser.parse(data, lexer=self.lexer, debug=debug)
 
     def apply_conditional(self, result):
         if result:
@@ -1587,6 +1629,36 @@ class CParser(object):
         self.lexer.pop_state()
         self.lexer.execution_stack.pop()
 
+    def include(self, source, filename):
+        if source:
+            self.lexer.push_input(source, filename)
+
+    def get_local_header(self, header):
+        '''Return the header text for `header`, which should be relative
+        to the file being parsed.  Calls `handle_missing_header` if not 
+        found.
+
+        Default implementation searches directory of lexer.filename
+        '''
+        try:
+            path = os.path.dirname(self.lexer.filename)
+            return open(os.path.join(path, header)).read()
+        except IOError:
+            self.handle_missing_header(header)
+
+    def get_system_header(self, header):
+        '''Return the header text for `header`, which should be in a system
+        include path.
+
+        Default implementation searches each directory in self.include_path.
+        '''
+        for path in self.include_path:
+            try:
+                return open(os.path.join(path, header)).read()
+            except IOError:
+                pass
+        self.handle_missing_header(header)
+
     # ----------------------------------------------------------------------
     # Parser interface.  Override these methods in your subclass.
     # ----------------------------------------------------------------------
@@ -1599,6 +1671,20 @@ class CParser(object):
         next semicolon.
         '''
         print >> sys.stderr, '%s:' % lineno, message
+
+    def handle_missing_header(self, header):
+        '''A header was included that can't be located.
+
+        Default implementation prints a warning to stderr.
+        '''
+        print >> sys.stderr, 'Could not find header %s' % header
+
+    def handle_include(self, header):
+        '''#include `header`'''
+        if type(header) == StringLiteral:
+            self.include(self.get_local_header(header), header)
+        else:
+            self.include(self.get_system_header(header), header)
 
     def handle_define(self, name, value):
         '''#define `name` `value` (both are strings)'''
@@ -1659,6 +1745,10 @@ class DebugCParser(CParser):
     '''A convenience class that prints each invocation of a handle_* method to
     stdout.
     '''
+    def handle_include(self, header):
+        print '#include header=%r' % header
+        super(DebugCParser, self).handle_include(header)
+
     def handle_define(self, name, value):
         print '#define name=%r, value=%r' % (name, value)
         super(DebugCParser, self).handle_define(name, value)
