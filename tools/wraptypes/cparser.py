@@ -43,6 +43,7 @@ states = (
     ('SKIPTEXT', 'exclusive'),  # in skipped if/else block
     ('PPBEGIN', 'exclusive'),   # after hash, before keyword
     ('PP', 'exclusive'),        # in pp line after keyword, before newline
+    ('PPDEFINED', 'exclusive'), # in pp line after 'defined', before identifier
 )
 
 tokens = (
@@ -214,6 +215,8 @@ def t_PPBEGIN_identifier(t):
     t.lexer.begin('PP')
     if t.value in pp_keywords:
         t.type = 'PP_%s' % t.value.upper()
+        if t.value == 'define':
+            t.lexer.pp_replace_macro = False
         return t
     else:
         t.type = 'IDENTIFIER'
@@ -272,16 +275,16 @@ def t_PP_header_name(t):
 
 @TOKEN(punctuator_regex(pp_punctuators))
 def t_PP_punctuator(t):
-    t.lexer.begin('PP')
     t.type = pp_punctuators[t.value][1]
     return t
 
 @TOKEN(sub('{L}({L}|{D})*'))
 def t_PP_identifier(t):
-    if t.lexer.replace_macro(t.value):
+    if t.lexer.pp_replace_macro and t.lexer.replace_macro(t.value):
         return None
     elif t.value == 'defined':
         t.type = 'PP_DEFINED'
+        t.lexer.begin('PPDEFINED')
     else:
         t.type = 'IDENTIFIER'
     return t
@@ -328,6 +331,7 @@ def t_PP_newline(t):
     r'\n'
     t.lexer.pop_state()
     t.lexer.lineno += 1
+    t.lexer.pp_replace_macro = True
     t.type = 'PP_NEWLINE'
     return t
 
@@ -335,6 +339,30 @@ def t_PP_error(t):
     t.lexer.skip(1)
 
 t_PP_ignore = ' \t\v\f'
+
+# --------------------------------------------------------------------------
+# PPDEFINED state
+# --------------------------------------------------------------------------
+
+# Similar to PP state but no macro expansion.  Return to PP after an
+# identifier.  All punctuators except '(' are invalid, but return them
+# anyway to get a better error message.  Numbers, string-literals and
+# character constants are all invalid (TODO return anyway for error msg).
+
+@TOKEN(sub('{L}({L}|{D})*'))
+def t_PPDEFINED_identifier(t):
+    t.type = 'IDENTIFIER'
+    t.lexer.begin('PP')
+    return t
+
+t_PPDEFINED_punctuator = t_PP_punctuator
+t_PPDEFINED_pp_number = t_PP_pp_number
+t_PPDEFINED_character_constant = t_PP_character_constant
+t_PPDEFINED_string_literal = t_PP_string_literal
+t_PPDEFINED_lparen = t_PP_lparen
+t_PPDEFINED_newline = t_PP_newline
+t_PPDEFINED_error = t_PP_error
+t_PPDEFINED_ignore = t_PP_ignore
 
 # --------------------------------------------------------------------------
 # SKIPTEXT state
@@ -1514,8 +1542,9 @@ def p_punctuator(p):
     p[0] = p[1]
 
 def p_pp_defined_expression(p):
-    '''pp_defined_expression : PP_DEFINED identifier
-                             | PP_DEFINED '(' identifier ')'
+    '''pp_defined_expression : PP_DEFINED IDENTIFIER
+                             | PP_DEFINED '(' IDENTIFIER ')'
+                             | PP_DEFINED PP_LPAREN IDENTIFIER ')'
     '''
     if len(p) == 3:
         p[0] = MacroDefinedExpressionNode(p[2])
@@ -1532,6 +1561,10 @@ class CLexer(lex.Lexer):
 
         # if True, grammar can accept PP tokens
         self.accept_preprocessor = True
+
+        # if True, preprocessor tokens should undergo macro replacements
+        # (set to False during #define commands)
+        self.pp_replace_macro = True
 
         # if True, parser was pushed for current preprocessing line.
         self.pp_parser_pushed = False   
