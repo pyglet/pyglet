@@ -215,7 +215,7 @@ def t_PPBEGIN_identifier(t):
     t.lexer.begin('PP')
     if t.value in pp_keywords:
         t.type = 'PP_%s' % t.value.upper()
-        if t.value in ('define', 'undef'):
+        if t.value in ('define', 'undef', 'ifdef', 'ifndef'):
             t.lexer.pp_replace_macro = False
         return t
     else:
@@ -244,8 +244,10 @@ def t_PPBEGIN_string_literal(t):
 
 def t_PPBEGIN_newline(t):
     r'\n'
-    t.lexer.pop_state()
     t.lexer.lineno += 1
+    if t.lexdata[t.lexpos-2] == '\\':
+        return None
+    t.lexer.pop_state()
     t.type = 'PP_NEWLINE'
     return t
 
@@ -329,8 +331,10 @@ def t_PP_lparen(t):
 
 def t_PP_newline(t):
     r'\n'
-    t.lexer.pop_state()
     t.lexer.lineno += 1
+    if t.lexer.lexdata[t.lexer.lexpos-2] == '\\':
+        return None
+    t.lexer.pop_state()
     t.lexer.pp_replace_macro = True
     t.type = 'PP_NEWLINE'
     return t
