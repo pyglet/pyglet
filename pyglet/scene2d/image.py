@@ -147,10 +147,13 @@ class Image2d(Drawable):
     quad_list = property(quad_list)
 
     def get_drawstyle(self):
+        # XXX note we don't pass in self.x/y here as they're offsets into the
+        # texture, not offsets to use when rendering the image to screen
+        # for other scene2d objects that *is* what .x/y are for - perhaps
+        # that's what they should be for here...
         return DrawStyle(color=(1, 1, 1, 1), texture=self.texture,
-            x=self.x, y=self.y, width=self.width,
-            height=self.height, uvs=self.uvs, draw_list=self.quad_list,
-            draw_env=DRAW_BLENDED)
+            width=self.width, height=self.height, uvs=self.uvs,
+            draw_list=self.quad_list, draw_env=DRAW_BLENDED)
 
     def subimage(self, x, y, width, height):
         # XXX should we care about recursive sub-image calls??

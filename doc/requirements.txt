@@ -175,7 +175,7 @@ scene2d
         FLAT_SCROLLING                    X
         FLAT_OOB                          X
         RECT_FLAT_MOUSE                   X
-        RECT_HEX_MOUSE                    X
+        HEX_FLAT_MOUSE                    X
         VIEW_SUBWINDOW                    X
         ============================== =======
 

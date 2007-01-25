@@ -3,7 +3,6 @@
  -h h           draw hexes with given height in a rectangular grid
  -x h           draw hexes with given height in a hex grid
  -r w[,h]       draw a rect grid
- -p n           put n pixels padding around each drawn cell
  -s w,h         map size in cells (default=5,5)
  -f             render flat (default)
  -o             render orthographic projection
@@ -12,7 +11,7 @@
 
 Samples:
 -h32 -p2
-      draw hexes in a rect grid, cell height 32, padding 2
+      draw hexes in a rect grid, cell height 32
 -x32 -s5,15
       draw a hex grid, cell height 32
 -x32
@@ -34,7 +33,7 @@ import pyglet.image
 from pyglet.scene2d.debug import gen_hex_map, gen_rect_map, gen_recthex_map
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'x:r:s:foa:p:h:p:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'x:r:s:foa:p:h:')
 except getopt.GetoptError, error:
     print error
     print __doc__%sys.argv[0]
@@ -43,7 +42,6 @@ except getopt.GetoptError, error:
 size = (5, 5)
 renderer = pyglet.scene2d.FlatView
 maptype = None
-padding = 0
 filename = { 'r': 'flat', 'e': '5x5' }
 for opt, value in optlist:
     if opt == '-h':
@@ -61,8 +59,6 @@ for opt, value in optlist:
             args *= 2
         cw, ch = args
         filename['x'] = 'rect(%dx%d)'%tuple(args)
-    elif opt == '-p':
-        padding = int(value)
     elif opt == '-s':
         size = map(int, value.split(','))
         filename['e'] = '%dx%d'%tuple(size)
@@ -89,13 +85,13 @@ w = pyglet.window.Window(width=1, height=1, visible=False, alpha_size=8)
 
 mw, mh = size
 if maptype == 'recthex':
-    m = gen_recthex_map([[{}]*mh]*mw, ch, padding)
+    m = gen_recthex_map([[{}]*mh]*mw, ch)
 elif maptype == 'hex':
     m = gen_hex_map([[{}]*mh]*mw, ch)
 else:
     m = gen_rect_map([[{}]*mh]*mw, cw, ch)
-pxw = m.pxw + padding * mw * 2
-pxh = m.pxh + padding * mh * 2
+pxw = m.pxw
+pxh = m.pxh
 w.set_size(width=pxw, height=pxh)
 w.set_visible()
 s = pyglet.scene2d.Scene(layers=[m])

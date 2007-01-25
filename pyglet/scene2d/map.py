@@ -351,7 +351,7 @@ class HexMap(RegularTesselationMap):
         '''
         col_width = self.tw // 2 + self.tw // 4
         x1 = max(0, x1 // col_width)
-        y1 = max(0, y1 // self.th)
+        y1 = max(0, y1 // self.th - 1)
         x2 = min(len(self.cells), x2 // col_width + 1)
         y2 = min(len(self.cells[0]), y2 // self.th + 1)
         return [self.cells[x][y] for x in range(x1, x2) for y in range(y1, y2)]

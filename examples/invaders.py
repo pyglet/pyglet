@@ -45,16 +45,15 @@ class EnemySprite(Sprite):
 
 w = pyglet.window.Window(width=512, height=512)
 w.set_exclusive_mouse()
+clock = pyglet.clock.Clock(fps_limit=30)
 
 # load the map and car and set up the scene and view
 dirname = os.path.dirname(__file__)
 r = Resource.load(os.path.join(dirname, 'invaders.xml'))
 player = PlayerSprite.from_image(0, 0, r['player'], properties=dict(fired=0))
+clock.schedule(player.update)
 scene = Scene(sprites=[player])
 view = FlatView.from_window(scene, w, fx=w.width/2, fy=w.height/2)
-
-keyboard = KeyboardStateHandler()
-w.push_handlers(keyboard)
 
 dead = False
 enemies = [
@@ -63,11 +62,11 @@ enemies = [
 ]
 for enemy in enemies:
     scene.sprites.append(enemy)
-
-clock = pyglet.clock.Clock(fps_limit=30)
-clock.schedule(player.update)
-for enemy in enemies:
     clock.schedule(enemy.update)
+
+keyboard = KeyboardStateHandler()
+w.push_handlers(keyboard)
+
 while not (w.has_exit or dead):
     dt = clock.tick()
     w.dispatch_events()

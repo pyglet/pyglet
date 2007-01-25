@@ -41,53 +41,17 @@ class HexCheckImage(Drawable):
         (.9, .9, .9, 1),
         (1, 1, 1, 1)
     ]
-    def __init__(self, colour, height, padding=0):
+    def __init__(self, colour, height):
         Drawable.__init__(self)
-        self.colour = colour
         cell = HexCell(0, 0, height, {}, None)
-        padlist = [float(i+1)/(padding+1) for i in range(padding)]
         def draw_hex(style):
-            glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT)
-            glEnable(GL_BLEND)
-            glBlendFunc(GL_SRC_ALPHA, GL_ZERO)
-            glBegin(GL_LINES)
-            x1, y1 = cell.bottomleft
-            x2, y2 = cell.left
             w = cell.width
-            ly = y2 - y1
-            line = brensenham_line(x1, y1, x2, y2)
+            line = brensenham_line(*(cell.bottomleft + cell.left))
             mx = max([x for x,y in line])
-            r, g, b, a = style.color
-
-            # draw middle wedges
-            for i in range(padding):
-                a = padlist[i]
-                j = padding - i
-                glColor4f(r, g, b, a)
-                glVertex2f(x2-j, y2 + j)
-                glVertex2f(x2-j, y2 - j)
-                glVertex2f(w+j-1, y2 + j)
-                glVertex2f(w+j-1, y2 - j)
-
-            # draw top
-            for x,y in line:
-                for i, a in enumerate(padlist):
-                    i = padding-i
-                    glColor4f(r, g, b, a)
-                    glVertex2f(mx-x-i, y + height/2 + i)
-                    glVertex2f(w-mx+x+i, y + height/2 + i)
-
-            # draw bottom (reversed so we don't draw over ourselves
-            for x,y in reversed(line):
-                for i, a in enumerate(padlist):
-                    i = padding-i
-                    glColor4f(r, g, b, a)
-                    glVertex2f(x-i, y - i)
-                    glVertex2f(w-x+i, y - i)
 
             # draw solid (not chewey) center
+            glBegin(GL_LINES)
             for x,y in line:
-                glColor4f(*style.color)
                 glVertex2f(x, y)
                 glVertex2f(w-x, y)
                 if x:
@@ -129,20 +93,18 @@ def gen_rect_map(meta, w, h):
     return RectMap('debug', w, h, r)
 
 
-def gen_recthex_map(meta, h, padding=0):
+def gen_recthex_map(meta, h):
     r = []
     cell = None
-    image = HexCheckImage((1., 1., 1., 1.), h, padding)
+    dark = HexCheckImage((.4, .4, .4, 1), h)
+    light = HexCheckImage((.7, .7, .7, 1), h)
     w = int(h / math.sqrt(3)) * 2
-    if padding:
-        offset = (padding,padding)
-    else:
-        offset = None
     for i, m in enumerate(meta):
         c = []
         r.append(c)
         for j, info in enumerate(m):
-            c.append(RectCell(i, j, w+padding*2, h+padding*2, dict(info),
-                Tile('dbg', {}, image, offset=offset)))
+            if (i + j) % 2: image = dark
+            else: image = light
+            c.append(RectCell(i, j, w, h, dict(info), Tile('dbg', {}, image)))
     return RectMap('debug', w, h, r)
 
