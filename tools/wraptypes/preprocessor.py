@@ -533,7 +533,7 @@ class PreprocessorGrammar(Grammar):
             p.parser.namespace.define_object(p[2], p[3])
 
     def p_define_function(self, p):
-        '''define_function : DEFINE IDENTIFIER LPAREN define_function_params ')' replacement_list NEWLINE
+        '''define_function : DEFINE IDENTIFIER LPAREN define_function_params ')' pp_tokens_opt NEWLINE
         '''
         if p.parser.enable_declaratives():
             p.parser.namespace.define_function(p[2], p[4], p[6])
@@ -597,10 +597,14 @@ class PreprocessorGrammar(Grammar):
 
     def p_replaced_constant_expression(self, p):
         '''replaced_constant_expression : pp_tokens'''
-        tokens = p[1]
-        tokens = p.parser.namespace.apply_macros(tokens)
-        lexer = TokenListLexer(tokens)
-        p[0] = ConstantExpressionParser(lexer, p.parser.namespace).parse()
+        if p.parser.enable_declaratives():
+            tokens = p[1]
+            tokens = p.parser.namespace.apply_macros(tokens)
+            lexer = TokenListLexer(tokens)
+            parser = ConstantExpressionParser(lexer, p.parser.namespace) 
+            p[0] = parser.parse(debug=True)
+        else:
+            p[0] = ConstantExpressionNode(0)
 
     def p_pp_tokens_opt(self, p):
         '''pp_tokens_opt : pp_tokens
@@ -950,7 +954,7 @@ class ConstantExpressionGrammar(Grammar):
         # parsing continues (synchronisation).
 
 class PreprocessorParser(yacc.Parser):
-    def __init__(self, namespace=None, output=None):
+    def __init__(self, namespace=None, output=None, gcc_search_path=True):
         yacc.Parser.__init__(self)
         if not namespace:
             namespace = PreprocessorNamespace()
@@ -963,7 +967,17 @@ class PreprocessorParser(yacc.Parser):
         self.lexer.filename = '<input>'
         PreprocessorGrammar.get_prototype().init_parser(self)
         self.condition_stack = [(True, True)]
-        self.include_path = ['/usr/include']
+        self.include_path = ['/usr/local/include', '/usr/include']
+
+        if gcc_search_path:
+            self.add_gcc_search_path()
+
+    def add_gcc_search_path(self):
+        from subprocess import Popen, PIPE
+        path = Popen('gcc -print-file-name=include', 
+                     shell=True, stdout=PIPE).communicate()[0].strip()
+        if path:
+            self.include_path.append(path)
 
     def parse(self, *args, **kwargs):
         if 'filename' in kwargs:
@@ -973,6 +987,7 @@ class PreprocessorParser(yacc.Parser):
         return yacc.Parser.parse(self, *args, **kwargs)
 
     def push_file(self, filename, data=None):
+        print >> sys.stderr, filename
         if not data:
             data = open(filename).read()
         self.lexer.push_input(data, filename)
