@@ -1113,8 +1113,6 @@ class PreprocessorNamespace(EvaluationContext):
                 r = self.objects[token.value]
                 if token.value != replacing and r:
                     repl += self.apply_macros(r, token.value)
-                else:
-                    repl.append(token)
             elif token.type == 'IDENTIFIER' and \
                  token.value in self.functions and \
                  len(tokens) - i > 2 and \
@@ -1148,8 +1146,6 @@ class PreprocessorNamespace(EvaluationContext):
                         else:
                             newr.append(t)
                     repl += self.apply_macros(newr, token.value)
-                else:
-                    repl.append(token)
             elif token.type == 'DEFINED':
                 if len(tokens) - i > 3 and \
                    tokens[i + 1].type in ('(', 'LPAREN') and \
