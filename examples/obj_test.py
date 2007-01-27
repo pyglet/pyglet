@@ -21,9 +21,9 @@ w1 = pyglet.window.Window(width=300, height=300)
 c = clock.Clock(60)
 
 fourfv = ctypes.c_float * 4
-glLightfv(GL_LIGHT0, GL_POSITION, fourfv(100, 200, 100, 0))
-glLightfv(GL_LIGHT0, GL_AMBIENT, fourfv(0.2, 0.2, 0.2, 1.0))
-glLightfv(GL_LIGHT0, GL_DIFFUSE, fourfv(0.5, 0.5, 0.5, 1.0))
+glLightfv(GL_LIGHT0, GL_POSITION, fourfv(100, 200, 200, 0))
+glLightfv(GL_LIGHT0, GL_AMBIENT, fourfv(0.5, 0.5, 0.5, 1.0))
+glLightfv(GL_LIGHT0, GL_DIFFUSE, fourfv(0.8, 0.8, 0.8, 1.0))
 glEnable(GL_LIGHT0)
 glEnable(GL_LIGHTING)
 glEnable(GL_DEPTH_TEST)
