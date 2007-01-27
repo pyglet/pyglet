@@ -10,13 +10,20 @@ __version__ = '$Id$'
 
 import unittest
 
-from pyglet.scene2d import Sprite
+from pyglet.window import Window
+from pyglet.image import Image
+from pyglet.scene2d import Sprite, Image2d
 
 class SpriteModelTest(unittest.TestCase):
 
     def setUp(self):
-        self.s = Sprite(10, 10, 10, 10, None)
+        self.w = Window(width=1, height=1, visible=False)
+        self.s = Sprite(10, 10, 10, 10,
+            Image2d.from_image(Image.create_solid(1)))
         assert (self.s.x, self.s.y) == (10, 10)
+
+    def tearDown(self):
+        self.w.close()
 
     def test_top(self):
         assert self.s.top == 20
