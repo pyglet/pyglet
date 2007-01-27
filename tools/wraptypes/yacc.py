@@ -152,14 +152,8 @@ class YaccProduction:
 # object. 
 
 class Parser:
-    def __init__(self,magic=None):
-
-        # This is a hack to keep users from trying to instantiate a Parser
-        # object directly.
-
-        if magic != "xyzzy":
-            raise YaccError, "Can't instantiate Parser. Use yacc() instead."
-
+    # <ah> Remove magic (use ParserPrototype)
+    def __init__(self):
         # Reset internal state
         self.productions = None          # List of productions
         self.errorfunc   = None          # Error handling function
@@ -1970,7 +1964,8 @@ except AttributeError:
 # Build the parser module
 # -----------------------------------------------------------------------------
 
-def yacc(method=default_lr, debug=yaccdebug, module=None, tabmodule=tab_module, start=None, check_recursion=1, optimize=0,write_tables=1,debugfile=debug_file,outputdir=''):
+# <ah> Add parserclass parameter.
+def yacc(method=default_lr, debug=yaccdebug, module=None, tabmodule=tab_module, start=None, check_recursion=1, optimize=0,write_tables=1,debugfile=debug_file,outputdir='', parserclass=Parser):
     global yaccdebug
     yaccdebug = debug
     
@@ -2183,24 +2178,41 @@ def yacc(method=default_lr, debug=yaccdebug, module=None, tabmodule=tab_module, 
     # Made it here.   Create a parser object and set up its internal state.
     # Set global parse() method to bound method of parser object.
 
-    p = Parser("xyzzy")
-    p.productions = Productions
-    p.errorfunc = Errorfunc
-    p.action = _lr_action
-    p.goto   = _lr_goto
-    p.method = _lr_method
-    p.require = Requires
-
-    global parse
-    parse = p.parse
+    g = ParserPrototype("xyzzy")
+    g.productions = Productions
+    g.errorfunc = Errorfunc
+    g.action = _lr_action
+    g.goto   = _lr_goto
+    g.method = _lr_method
+    g.require = Requires
 
     global parser
-    parser = p
+    parser = g.init_parser()
+
+    global parse
+    parse = parser.parse
 
     # Clean up all of the globals we created
     if (not optimize):
         yacc_cleanup()
-    return p
+    return g
+
+# <ah> Allow multiple instances of parser
+class ParserPrototype(object):
+    def __init__(self, magic=None):
+        if magic != "xyzzy":
+            raise YaccError, 'Use yacc()'
+
+    def init_parser(self, parser=None):
+        if not parser:
+            parser = Parser()
+        parser.productions = self.productions
+        parser.errorfunc = self.errorfunc
+        parser.action = self.action
+        parser.goto   = self.goto
+        parser.method = self.method
+        parser.require = self.require
+        return parser
 
 # yacc_cleanup function.  Delete all of the global variables
 # used during table construction
