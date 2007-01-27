@@ -20,7 +20,7 @@ import pyglet.window
 import pyglet.window.event
 import pyglet.clock
 from pyglet.scene2d import Sprite, Image2d, Scene, FlatView
-from pyglet.scene2d.image import RectTintEffect
+from pyglet.scene2d.image import TintEffect
 from pyglet.scene2d.camera import FlatCamera
 
 ball_png = os.path.join(os.path.dirname(__file__), 'ball.png')
@@ -49,7 +49,7 @@ class SpriteOverlapTest(unittest.TestCase):
         view.fx, view.fy = 160, 160
 
         clock = pyglet.clock.Clock(fps_limit=30)
-        e = RectTintEffect((.5, 1, .5, 1))
+        e = TintEffect((.5, 1, .5, 1))
         while not w.has_exit:
             clock.tick()
             w.dispatch_events()
