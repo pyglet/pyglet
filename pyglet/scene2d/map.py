@@ -45,7 +45,7 @@ def rectmap_factory(resource, tag):
             tile = cell.getAttribute('tile')
             if tile: tile = resource.get_resource(tile)
             else: tile = None
-            properties = resource.handle_properties(tag)
+            properties = resource.handle_properties(cell)
             c.append(RectCell(i, j, width, height, properties, tile))
 
     m = RectMap(id, width, height, cells, origin)

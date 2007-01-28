@@ -88,7 +88,8 @@ class Sprite(Drawable):
         '''Use the image style as a basis and modify to move.
         '''
         style = self.image.get_style().copy()
-        style.x, style.y = self._x, self._y
+        offx, offy = self.offset
+        style.x, style.y = self._x - offx, self._y - offy
         return style
  
     def push_animation(self, animation):
@@ -135,14 +136,14 @@ class Sprite(Drawable):
     def set_x(self, x):
         self._x = x
         if self._style is not None:
-            self._style.x = x
+            self._style.x = x - self.offset[0]
     x = property(get_x, set_x)
     def get_y(self):
         return self._y
     def set_y(self, y):
         self._y = y
         if self._style is not None:
-            self._style.y = y
+            self._style.y = y - self.offset[1]
     y = property(get_y, set_y)
  
     # r/w, in pixels, y extent
@@ -210,6 +211,39 @@ class Sprite(Drawable):
         self.y = y - self.height/2
     midright = property(get_midright, set_midright)
  
+    # r/w, in pixels, (x, y)
+    def get_topleft(self):
+        return (self.x, self.y + self.height)
+    def set_topleft(self, pos):
+        x, y = pos
+        self.x = x
+        self.y = y - self.height
+    topleft = property(get_topleft, set_topleft)
+ 
+    # r/w, in pixels, (x, y)
+    def get_topright(self):
+        return (self.x + self.width, self.y + self.height)
+    def set_topright(self, pos):
+        x, y = pos
+        self.x = x - self.width
+        self.y = y - self.height
+    topright = property(get_topright, set_topright)
+ 
+    # r/w, in pixels, (x, y)
+    def get_bottomright(self):
+        return (self.x + self.width, self.y)
+    def set_bottomright(self, pos):
+        x, y = pos
+        self.x = x - self.width
+        self.y = y
+    bottomright = property(get_bottomright, set_bottomright)
+ 
+    # r/w, in pixels, (x, y)
+    def get_bottomleft(self):
+        return (self.x, self.y)
+    def set_bottomleft(self, pos):
+        self.x, self.y = pos
+    bottomleft = property(get_bottomleft, set_bottomleft)
 
 class RotatableSprite(Sprite):
     '''A sprite that may be rotated.

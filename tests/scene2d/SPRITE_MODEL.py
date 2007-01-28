@@ -70,5 +70,25 @@ class SpriteModelTest(unittest.TestCase):
         self.s.midright = (5, 5)
         assert (self.s.x, self.s.y) == (-5, 0)
 
+    def test_topleft(self):
+        assert self.s.topleft == (10, 20)
+        self.s.topleft = (5, 5)
+        assert (self.s.x, self.s.y) == (5, -5)
+
+    def test_topright(self):
+        assert self.s.topright == (20, 20)
+        self.s.topright = (5, 5)
+        assert (self.s.x, self.s.y) == (-5, -5)
+
+    def test_bottomright(self):
+        assert self.s.bottomright == (20, 10)
+        self.s.bottomright = (5, 5)
+        assert (self.s.x, self.s.y) == (-5, 5)
+
+    def test_bottomleft(self):
+        assert self.s.bottomleft == (10, 10)
+        self.s.bottomleft = (5, 5)
+        assert (self.s.x, self.s.y) == (5, 5)
+
 if __name__ == '__main__':
     unittest.main()
