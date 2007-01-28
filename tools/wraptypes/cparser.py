@@ -705,6 +705,8 @@ class CLexer(object):
             # Transform PP tokens into C tokens
             if t.type == 'LPAREN':
                 t.type = '('
+            elif t.type == 'PP_NUMBER':
+                t.type = 'CONSTANT'
             elif t.type == 'IDENTIFIER' and t.value in keywords:
                 t.type = t.value.upper()
             elif t.type == 'IDENTIFIER' and t.value in self.type_names:
@@ -871,6 +873,9 @@ class DebugCParser(CParser):
         
 if __name__ == '__main__':
     import sys
-    pp = preprocessor.PreprocessorParser()
+    pp = preprocessor.PreprocessorParser('ppcache.py')
+    pp.cache('Carbon/Carbon.h')
+    pp.cache('X11/Xlib.h')
+    pp.cache('windows.h')
     pp.parse(filename=sys.argv[1], debug=True)
     DebugCParser().parse(pp.output, debug=1)
