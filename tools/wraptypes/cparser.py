@@ -335,8 +335,15 @@ def p_constant_expression(p):
     '''
 
 def p_declaration(p):
-    '''declaration : declaration_specifiers
-                   | declaration_specifiers init_declarator_list
+    '''declaration : declaration_impl ';'
+    '''
+    # The ';' must be here, not in 'declaration', as declaration needs to
+    # be executed before the ';' is shifted (otherwise the next lookahead will
+    # be read, which may be affected by this declaration if its a typedef.
+
+def p_declaration_impl(p):
+    '''declaration_impl : declaration_specifiers
+                        | declaration_specifiers init_declarator_list
     '''
     declaration = Declaration()
     apply_specifiers(p[1], declaration)
@@ -410,7 +417,6 @@ def p_type_specifier(p):
                       | enum_specifier
                       | TYPE_NAME
     '''
-    # Not handled: struct_or_union_specifier, enum_specifier
     p[0] = TypeSpecifier(p[1])
 
 def p_struct_or_union_specifier(p):
@@ -661,15 +667,77 @@ def p_initializer_list(p):
                         | initializer_list ',' initializer
     '''
 
-def p_external_declaration(p):
-    '''external_declaration : declaration ';'
+def p_statement(p):
+    '''statement : labeled_statement
+                 | compound_statement
+                 | expression_statement
+                 | selection_statement
+                 | iteration_statement
+                 | jump_statement
     '''
-    # The ';' must be here, not in 'declaration', as declaration needs to
-    # be executed before the ';' is shifted (otherwise the next lookahead will
-    # be read, which may be affected by this declaration if its a typedef.
 
-    # Not handled: function_definition
+def p_labeled_statement(p):
+    '''labeled_statement : IDENTIFIER ':' statement
+                         | CASE constant_expression ':' statement
+                         | DEFAULT ':' statement
+    '''
+
+def p_compound_statement(p):
+    '''compound_statement : '{' '}'
+                          | '{' statement_list '}'
+                          | '{' declaration_list '}'
+                          | '{' declaration_list statement_list '}'
+    '''
+
+def p_declaration_list(p):
+    '''declaration_list : declaration
+                        | declaration_list declaration
+    '''
+
+def p_statement_list(p):
+    '''statement_list : statement
+                      | statement_list statement
+    '''
+
+def p_expression_statement(p):
+    '''expression_statement : ';'
+                            | expression ';'
+    '''
+
+def p_selection_statement(p):
+    '''selection_statement : IF '(' expression ')' statement
+                           | IF '(' expression ')' statement ELSE statement
+                           | SWITCH '(' expression ')' statement
+    '''
+
+def p_iteration_statement(p):
+    '''iteration_statement : WHILE '(' expression ')' statement
+    | DO statement WHILE '(' expression ')' ';'
+    | FOR '(' expression_statement expression_statement ')' statement
+    | FOR '(' expression_statement expression_statement expression ')' statement
+    '''	
+
+def p_jump_statement(p):
+    '''jump_statement : GOTO IDENTIFIER ';'
+                      | CONTINUE ';'
+                      | BREAK ';'
+                      | RETURN ';'
+                      | RETURN expression ';'
+    '''
+
+def p_external_declaration(p):
+    '''external_declaration : declaration 
+                            | function_definition
+    '''
+
     # Intentionally empty
+
+def p_function_definition(p):
+    '''function_definition : declaration_specifiers declarator declaration_list compound_statement
+                        | declaration_specifiers declarator compound_statement
+                        | declarator declaration_list compound_statement
+                        | declarator compound_statement
+    '''
 
 def p_error(t):
     if not t:
