@@ -19,6 +19,7 @@ __version__ = '$Id$'
 import operator
 import os.path
 import re
+import sys
 
 import lex
 from lex import TOKEN
@@ -983,15 +984,11 @@ class ExecutionState(object):
             self.enabled = False
 
 class PreprocessorParser(yacc.Parser):
-    def __init__(self, namespace=None, output=None, gcc_search_path=True):
+    def __init__(self, namespace=None, gcc_search_path=True):
         yacc.Parser.__init__(self)
         if not namespace:
             namespace = PreprocessorNamespace()
         self.namespace = namespace
-        if not output:
-            import sys
-            output = sys.stdout
-        self.output = output
         self.lexer = lex.lex(cls=PreprocessorLexer)
         self.lexer.filename = '<input>'
         PreprocessorGrammar.get_prototype().init_parser(self)
@@ -1006,6 +1003,8 @@ class PreprocessorParser(yacc.Parser):
 
         if gcc_search_path:
             self.add_gcc_search_path()
+
+        self.output = []
 
     def add_gcc_search_path(self):
         from subprocess import Popen, PIPE
@@ -1113,7 +1112,9 @@ class PreprocessorParser(yacc.Parser):
         return self.condition_stack[-1].enabled
 
     def write(self, tokens):
-        print >> self.output, ' '.join([t.value for t in tokens])
+        for t in tokens:
+            t.filename = self.lexer.filename
+        self.output += list(tokens)
 
 class ConstantExpressionParser(yacc.Parser):
     def __init__(self, lexer, namespace):
@@ -1270,6 +1271,7 @@ class PreprocessorNamespace(EvaluationContext):
         return repl
 
 if __name__ == '__main__':
-    import sys
     filename = sys.argv[1]
-    PreprocessorParser().parse(filename=filename, debug=True)
+    parser = PreprocessorParser()
+    parser.parse(filename=filename, debug=True)
+    print ' '.join([t.value for t in parser.output])
