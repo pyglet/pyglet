@@ -94,8 +94,6 @@ class Declarator(object):
             s += '(' + ', '.join([repr(p) for p in self.parameters]) + ')'
         return s
 
-abstract_declarator = Declarator()
-
 class Pointer(Declarator):
     pointer = None
     def __init__(self):
@@ -605,7 +603,7 @@ def p_abstract_declarator(p):
             ptr = p[0]
             while ptr.pointer:
                 ptr = ptr.pointer
-            ptr.pointer = abstract_declarator
+            ptr.pointer = Declarator()
     else:
         p[0] = p[1]
         ptr = p[0]

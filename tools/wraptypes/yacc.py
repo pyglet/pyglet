@@ -91,6 +91,7 @@ class YaccError(Exception):   pass
 #        .endlexpos  = Ending lex position (optional, set automatically)
 
 class YaccSymbol:
+    filename = ''  # <ah>
     def __str__(self):    return self.type
     def __repr__(self):   return str(self)
 
@@ -289,6 +290,7 @@ class Parser:
                         targ[0] = sym
                         try:
                             sym.lineno = targ[1].lineno
+                            sym.filename = targ[1].filename
                             sym.endlineno = getattr(targ[-1],"endlineno",targ[-1].lineno)
                             sym.lexpos = targ[1].lexpos
                             sym.endlexpos = getattr(targ[-1],"endlexpos",targ[-1].lexpos)
