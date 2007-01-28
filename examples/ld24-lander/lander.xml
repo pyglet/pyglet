@@ -1,0 +1,263 @@
+<?xml version="1.0"?>
+<resource>
+
+ <imageatlas size="128x128" file="sprites.png">
+   <image id="rocket" offset="0,0" size="128x256" />
+   <image id="boom1" offset="128,0" />
+   <image id="boom2" offset="256,0" />
+   <image id="boom3" offset="384,0" />
+   <image id="flame1" offset="0,512" />
+   <image id="flame2" offset="128,512" />
+   <image id="flame3" offset="256,512" />
+   <image id="flame4" offset="384,512" />
+   <image id="flame5" offset="512,512" />
+   <image id="flame6" offset="0,384" />
+ </imageatlas>
+
+ <imageatlas size="128x128" file="land-tiles.png">
+    <image id="i-b1" offset="0,0" />
+    <image id="i-br" offset="128,0" />
+    <image id="i-bl" offset="256,0" />
+    <image id="i-b2" offset="384,0" />
+
+    <image id="i-open" offset="0,128" />
+    <image id="i-pad" offset="0,384" />
+
+    <image id="i-r1" offset="128,128" />
+    <image id="i-r2" offset="128,256" />
+    <image id="i-tl" offset="128,384" />
+    <image id="i-tr" offset="256,384" />
+    <image id="i-l1" offset="256,256" />
+    <image id="i-l2" offset="256,128" />
+ </imageatlas>
+
+ <tileset>
+    <tile id="b1"><image ref="i-b1" /></tile>
+    <tile id="b2"><image ref="i-b2" /></tile>
+    <tile id="l1"><image ref="i-l1" /></tile>
+    <tile id="l2"><image ref="i-l2" /></tile>
+    <tile id="r1"><image ref="i-r1" /></tile>
+    <tile id="r2"><image ref="i-r2" /></tile>
+    <tile id="bl"><image ref="i-bl" /></tile>
+    <tile id="br"><image ref="i-br" /></tile>
+    <tile id="tl"><image ref="i-tl" /></tile>
+    <tile id="tr"><image ref="i-tr" /></tile>
+    <tile id="pad"><image ref="i-pad" />
+        <property name="pad" value="yes" />
+    </tile>
+    <tile id="open"><image ref="i-open" />
+        <property name="open" value="yes" />
+    </tile>
+ </tileset>
+
+ <rectmap id="level1" tile_size="128x128" origin="0,0,0">
+  <column> <!-- 1 -->
+    <cell tile="bl" />
+    <cell tile="l1" />
+    <cell tile="l2" />
+    <cell tile="l2" />
+    <cell tile="l2" />
+    <cell tile="l1" />
+    <cell tile="l2" />
+    <cell tile="l1" />
+    <cell tile="l1" />
+    <cell tile="l2" />
+    <cell tile="l2" />
+    <cell tile="l1" />
+    <cell tile="l2" />
+    <cell tile="tr" />
+  </column>
+  <column> <!-- 2 -->
+    <cell tile="b1" />
+    <cell/>
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell><property name="player-start" value="yes" /></cell>
+    <cell />
+  </column>
+  <column> <!-- 3 -->
+    <cell tile="b2" />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+  </column>
+  <column> <!-- 4 -->
+    <cell tile="b2" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+  </column>
+  <column> <!-- 5 -->
+    <cell tile="b1" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+  </column>
+  <column> <!-- 6 -->
+    <cell tile="b1" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+  </column>
+  <column> <!-- 7 -->
+    <cell tile="b2" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+  </column>
+  <column> <!-- 8 -->
+    <cell tile="b1" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+  </column>
+  <column> <!-- 9 -->
+    <cell tile="b1" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+  </column>
+  <column> <!-- 10 -->
+    <cell tile="b2" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+  </column>
+  <column> <!-- 11 -->
+    <cell tile="pad" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+  </column>
+  <column> <!-- 12 -->
+    <cell tile="b1" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+    <cell tile="open" />
+  </column>
+  <column> <!-- 13 -->
+    <cell tile="br" />
+    <cell tile="r2" />
+    <cell tile="r2" />
+    <cell tile="r1" />
+    <cell tile="r2" />
+    <cell tile="r1" />
+    <cell tile="r2" />
+    <cell tile="r1" />
+    <cell tile="r1" />
+    <cell tile="r1" />
+    <cell tile="r2" />
+    <cell tile="r2" />
+    <cell tile="r1" />
+    <cell tile="tl" />
+  </column>
+ </rectmap>
+</resource>
