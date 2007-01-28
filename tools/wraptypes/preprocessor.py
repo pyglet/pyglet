@@ -9,6 +9,7 @@ Limitations:
 
 Reference is C99:
   * http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1124.pdf
+  * Also understands Objective-C #import directive
 
 '''
 
@@ -34,7 +35,7 @@ tokens = (
     'ELLIPSIS',
 
     'IF', 'IFDEF', 'IFNDEF', 'ELIF', 'ELSE', 'ENDIF', 'INCLUDE', 'DEFINE',
-    'UNDEF', 'LINE', 'ERROR', 'PRAGMA', 'DEFINED',
+    'UNDEF', 'LINE', 'ERROR', 'PRAGMA', 'DEFINED', 'IMPORT',
 
     'NEWLINE', 'LPAREN'
 )
@@ -144,6 +145,11 @@ def punctuator_regex(punctuators):
     punctuator_regexes.sort(lambda a, b: -cmp(len(a), len(b)))
     return '(%s)' % '|'.join(punctuator_regexes)
 
+def t_clinecomment(t):
+    r'//[^\n]*'
+    t.lexer.lineno += 1
+
+
 # C /* comments */.  Copied from the ylex.py example in PLY: it's not 100%
 # correct for ANSI C, but close enough for anything that's not crazy.
 def t_ccomment(t):
@@ -158,7 +164,7 @@ def t_header_name(t):
     return t
 
 def t_directive(t):
-    r'\#[ \t]*(ifdef|ifndef|if|elif|else|endif|define|undef|include|line|error|pragma)'
+    r'\#[ \t]*(ifdef|ifndef|if|elif|else|endif|define|undef|include|import|line|error|pragma)'
     if t.lexer.lasttoken in ('NEWLINE', None):
         t.type = t.value[1:].lstrip().upper()
     else:
@@ -495,8 +501,9 @@ class PreprocessorGrammar(Grammar):
         p.parser.condition_else()
 
     def p_endif_line(self, p):
-        '''endif_line : ENDIF NEWLINE
+        '''endif_line : ENDIF pp_tokens_opt NEWLINE
         '''
+        # pp_tokens needed (ignored) here for Apple.
         p.parser.condition_endif()
 
     def p_control_line(self, p):
@@ -511,20 +518,29 @@ class PreprocessorGrammar(Grammar):
 
     def p_include_line(self, p):
         '''include_line : INCLUDE pp_tokens 
+                        | IMPORT pp_tokens
         '''
         if p.parser.enable_declaratives():
             tokens = p[2]
             tokens = p.parser.namespace.apply_macros(tokens)
             if len(tokens) > 0:
-                if tokens[0].type == 'STRING_LITERAL':
-                    p.parser.include(tokens[0].value)
-                    return
-                elif tokens[0].type == 'HEADER_NAME':
-                    p.parser.include_system(tokens[0].value)
-                    return
+                if p.slice[1].type == 'INCLUDE':
+                    if tokens[0].type == 'STRING_LITERAL':
+                        p.parser.include(tokens[0].value)
+                        return
+                    elif tokens[0].type == 'HEADER_NAME':
+                        p.parser.include_system(tokens[0].value)
+                        return
+                else:
+                    if tokens[0].type == 'STRING_LITERAL':
+                        p.parser.import_(tokens[0].value)
+                        return
+                    elif tokens[0].type == 'HEADER_NAME':
+                        p.parser.import_system(tokens[0].value)
+                        return
+
             # TODO
             print >> sys.stderr, 'Invalid #include'
-
 
     def p_define_object(self, p):
         '''define_object : DEFINE IDENTIFIER replacement_list NEWLINE 
@@ -953,6 +969,19 @@ class ConstantExpressionGrammar(Grammar):
         # up until it hits the catch-all at declaration, at which point
         # parsing continues (synchronisation).
 
+class ExecutionState(object):
+    def __init__(self, parent_enabled, enabled):
+        self.enabled = parent_enabled and enabled
+        self.context_enabled = enabled
+        self.parent_enabled = parent_enabled
+
+    def enable(self, result):
+        if result:
+            self.enabled = self.parent_enabled and not self.context_enabled
+            self.context_enabled = True
+        else:
+            self.enabled = False
+
 class PreprocessorParser(yacc.Parser):
     def __init__(self, namespace=None, output=None, gcc_search_path=True):
         yacc.Parser.__init__(self)
@@ -966,8 +995,14 @@ class PreprocessorParser(yacc.Parser):
         self.lexer = lex.lex(cls=PreprocessorLexer)
         self.lexer.filename = '<input>'
         PreprocessorGrammar.get_prototype().init_parser(self)
-        self.condition_stack = [(True, True)]
+        self.condition_stack = [ExecutionState(True, True)]
         self.include_path = ['/usr/local/include', '/usr/include']
+        if sys.platform == 'darwin':
+            self.framework_path = ['/System/Library/Frameworks',
+                                   '/Library/Frameworks']
+        else:
+            self.framework_path = []
+        self.imported_headers = set()
 
         if gcc_search_path:
             self.add_gcc_search_path()
@@ -992,42 +1027,90 @@ class PreprocessorParser(yacc.Parser):
             data = open(filename).read()
         self.lexer.push_input(data, filename)
 
-    def include_system(self, header):
-        for path in self.include_path:
-            if os.path.exists(os.path.join(path, header)):
-                self.push_file(os.path.join(path, header))
-                return
-        # TODO
-        print >> sys.stderr, '"%s" not found' % header
-
     def include(self, header):
-        path = os.path.dirname(self.lexer.filename)
-        if os.path.exists(os.path.join(path, header)):
-            self.push_file(os.path.join(path, header))
+        path = self.get_header_path(header)
+        if path:
+            self.push_file(path)
         else:
-            # TODO
-            print >> sys.stderr, '"%s" not found' % header
+            print >> sys.stderr, '"%s" not found' % header # TODO
+
+    def include_system(self, header):
+        path = self.get_system_header_path(header)
+        if path:
+            self.push_file(path)
+        else:
+            print >> sys.stderr, '"%s" not found' % header # TODO
+
+    def import_(self, header):
+        path = self.get_header_path(header)
+        if path:
+            if path not in self.imported_headers:
+                self.imported_headers.add(path)
+                self.push_file(path)
+        else:
+            print >> sys.stderr, '"%s" not found' % header # TODO
+
+    def import_system(self, header):
+        path = self.get_system_header_path(header)
+        if path:
+            if path not in self.imported_headers:
+                self.imported_headers.add(path)
+                self.push_file(path)
+        else:
+            print >> sys.stderr, '"%s" not found' % header # TODO
+ 
+    def get_header_path(self, header):
+        p = os.path.join(os.path.dirname(self.lexer.filename), header)
+        if os.path.exists(p):
+            self.push_file(p)
+            return p
+        elif sys.platform == 'darwin':
+            p = self.get_framework_header_path(header)
+            if not p:
+                p = self.get_system_header_path(header)
+            return p
+
+    def get_system_header_path(self, header):
+        for path in self.include_path:
+            p = os.path.join(path, header)
+            if os.path.exists(p):
+                return p
+        if sys.platform == 'darwin':
+            return self.get_framework_header_path(header)
+
+    def get_framework_header_path(self, header):
+        if '/' in header:
+            # header is 'Framework/Framework.h' (e.g. OpenGL/OpenGL.h).
+            framework, header = header.split('/', 1)
+
+            paths = self.framework_path[:]
+            # Add ancestor frameworks of current file
+            localpath = ''
+            for parent in self.lexer.filename.split('.framework/')[:-1]:
+                localpath += parent + '.framework'
+                paths.append(os.path.join(localpath, 'Frameworks'))
+            for path in paths:
+                p = os.path.join(path, '%s.framework' % framework, 
+                                 'Headers', header)
+                if os.path.exists(p):
+                    return p
+
 
     def condition_if(self, result):
-        self.condition_stack.append((result, result))
+        self.condition_stack.append(
+            ExecutionState(self.condition_stack[-1].enabled, result))
 
     def condition_elif(self, result):
-        if not self.condition_stack[-1][1]:
-            self.condition_stack[-1] = (result, result)
-        else:
-            self.condition_stack[-1] = (False, True)
+        self.condition_stack[-1].enable(result)
 
     def condition_else(self):
-        if not self.condition_stack[-1][1]:
-            self.condition_stack[-1] = (True, True)
-        else:
-            self.condition_stack[-1] = (False, True)
+        self.condition_stack[-1].enable(True)
 
     def condition_endif(self):
         self.condition_stack.pop()
 
     def enable_declaratives(self):
-        return self.condition_stack[-1][0]
+        return self.condition_stack[-1].enabled
 
     def write(self, tokens):
         print >> self.output, ' '.join([t.value for t in tokens])
@@ -1045,36 +1128,50 @@ class ConstantExpressionParser(yacc.Parser):
         return self.result
 
 class PreprocessorNamespace(EvaluationContext):
-    def __init__(self, gcc_macros=True):
+    def __init__(self, gcc_macros=True, workaround_macros=True):
         self.objects = {}
         self.functions = {}
         
         if gcc_macros:
             self.add_gcc_macros()
 
+        if workaround_macros:
+            self.add_workaround_macros()
+
     def add_gcc_macros(self):
         import platform
         import sys
+
+        gcc_macros = () #'__GNUC__',)   # This just causes trouble.
+
+        # Get these from `gcc -E -dD empty.c`
         machine_macros = {
             'x86_64': ('__amd64', '__amd64__', '__x86_64', '__x86_64__',
                        '__tune_k8__', '__MMX__', '__SSE__', '__SSE2__',
                        '__SSE_MATH__', '__k8', '__k8__'),
+            'Power Macintosh': ('_ARCH_PPC', '__BIG_ENDIAN__', '_BIG_ENDIAN',
+                                '__ppc__', '__POWERPC__'),
             # TODO everyone else.
         }.get(platform.machine(), ())
         platform_macros = {
             'linux2': ('__gnu_linux__', '__linux', '__linux__', 'linux',
                        '__unix', '__unix__', 'unix'),
+            'darwin': ('__MACH__', '__APPLE__', '__DYNAMIC__'),
             # TODO everyone else
         }.get(sys.platform, ())
 
         tok1 = lex.LexToken()
         tok1.type = 'PP_NUMBER'
-        tok1.value = 1
+        tok1.value = '1'
         tok1.lineno = -1
         tok1.lexpos = -1
         
-        for macro in machine_macros + platform_macros:
+        for macro in machine_macros + platform_macros + gcc_macros:
             self.define_object(macro, (tok1,))
+
+    def add_workaround_macros(self):
+        if sys.platform == 'darwin':
+            self.define_object('CF_INLINE', ())
 
     def is_defined(self, name):
         return name in self.objects or name in self.functions
