@@ -862,23 +862,31 @@ class XlibWindow(BaseWindow):
         if event.type == KeyRelease:
             # Look in the queue for a matching KeyPress with same timestamp,
             # indicating an auto-repeat rather than actual key event.
-            auto_event = XEvent()
-            result = xlib.XCheckTypedWindowEvent(self._display,
-                self._window, KeyPress, byref(auto_event))
-            if result and abs(event.xkey.time - auto_event.xkey.time) < 4:
-                buffer = create_string_buffer(16)
-                count = xlib.XLookupString(byref(auto_event),
-                                           byref(buffer),
-                                           len(buffer),
-                                           c_void_p(),
-                                           c_void_p())
-                if count:
-                    text = buffer.value[:count]
-                    self.dispatch_event(EVENT_TEXT, text)
-                return
-            elif result:
-                # Whoops, put the event back, it's for real.
-                xlib.XPutBackEvent(self._display, byref(event))
+            saved = []
+            while True:
+                auto_event = XEvent()
+                result = xlib.XCheckWindowEvent(self._display,
+                    self._window, KeyPress|KeyRelease, byref(auto_event))
+                if not result:
+                    break
+                saved.append(auto_event)
+                if auto_event.type == KeyRelease:
+                    # just save this off for restoration back to the queue
+                    continue
+                if event.xkey.keycode == auto_event.xkey.keycode:
+                    buffer = create_string_buffer(16)
+                    count = xlib.XLookupString(byref(auto_event),
+                        byref(buffer), len(buffer), c_void_p(), c_void_p())
+                    if count:
+                        text = buffer.value[:count]
+                        self.dispatch_event(EVENT_TEXT, text)
+                    ditched = saved.pop()
+                    for auto_event in saved:
+                        xlib.XPutBackEvent(self._display, byref(auto_event))
+                    return
+            # Whoops, put the events back, it's for real.
+            for auto_event in reversed(saved):
+                xlib.XPutBackEvent(self._display, byref(auto_event))
 
         # pyglet.self.key keysymbols are identical to X11 keysymbols, no
         # need to map the keysymbol.
