@@ -88,6 +88,11 @@ class CtypesPointer(CtypesType):
 
 class CtypesFunction(CtypesType):
     def __init__(self, restype, parameters):
+        if parameters and parameters[-1] == '...':
+            # XXX Hmm, how to handle VARARGS with ctypes?  For now,
+            # drop it off (will cause errors).
+            parameters = parameters[:-1]
+            
         self.restype = restype
         self.argtypes = [remove_function_pointer(
                             get_ctypes_type(p.type, p.declarator)) \
