@@ -139,8 +139,10 @@ class RectMap(RegularTesselationMap):
             self.pxh = len(cells[0]) * th
 
     def get_in_region(self, x1, y1, x2, y2):
-        '''Return cells (in [column][row]) that are within the pixel bounds
-        specified by the bottom-left (x1, y1) and top-right (x2, y2) corners.
+        '''Return cells (in [column][row]) that are within the
+        pixel bounds specified by the bottom-left (x1, y1) and top-right
+        (x2, y2) corners.
+
         '''
         x1 = max(0, x1 // self.tw)
         y1 = max(0, y1 // self.th)
@@ -201,9 +203,9 @@ class Cell(Drawable):
             self.__class__.__name__, id(self), self.x, self.y,
                 self.properties, self.tile)
 
-    # XXX belongs in drawable?
-    def should_draw(self):
-        return self.tile is not None
+    def get_style(self):
+        if self.tile is None: return None
+        return super(Cell, self).get_style()
 
     def get_drawstyle(self):
         '''Get the possibly-affected style from the tile. Adjust for this

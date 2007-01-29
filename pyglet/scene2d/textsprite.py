@@ -105,3 +105,5 @@ class TextSprite(object):
         self._dirty = True
 
     text = property(lambda self: self._text, set_text)
+
+

@@ -89,7 +89,8 @@ class Sprite(Drawable):
         '''
         style = self.image.get_style().copy()
         offx, offy = self.offset
-        style.x, style.y = self._x - offx, self._y - offy
+        # XXX remove int() if we get sub-pixel drawing of textures
+        style.x, style.y = int(self._x - offx), int(self._y - offy)
         return style
  
     def push_animation(self, animation):
@@ -136,14 +137,16 @@ class Sprite(Drawable):
     def set_x(self, x):
         self._x = x
         if self._style is not None:
-            self._style.x = x - self.offset[0]
+            # XXX remove int() if we get sub-pixel drawing of textures
+            self._style.x = int(x - self.offset[0])
     x = property(get_x, set_x)
     def get_y(self):
         return self._y
     def set_y(self, y):
         self._y = y
         if self._style is not None:
-            self._style.y = y - self.offset[1]
+            # XXX remove int() if we get sub-pixel drawing of textures
+            self._style.y = int(y - self.offset[1])
     y = property(get_y, set_y)
  
     # r/w, in pixels, y extent

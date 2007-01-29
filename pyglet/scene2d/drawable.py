@@ -38,6 +38,10 @@ class Drawable(object):
         raise NotImplemented('implement on subclass')
  
     def get_style(self):
+        '''Return the DrawStyle for this Drawable.
+
+        This method should return None if nothing should be drawn.
+        '''
         if self._style is None:
             self._style = self.get_drawstyle()
             for effect in self.effects:
@@ -51,7 +55,8 @@ class Drawable(object):
         performance. Collect up your drawables in a list and pass that to
         draw_many().
         '''
-        self.get_style().draw()
+        style = self.get_style()
+        if style is not None: style.draw()
 
 
 class Effect(object):
@@ -184,7 +189,7 @@ class DrawStyle(object):
 
 
 def draw_many(drawables):
-    styles = [d.get_style() for d in drawables]
+    styles = filter(None, [d.get_style() for d in drawables])
     drawables.sort()
     old_color = None
     old_texture = None
