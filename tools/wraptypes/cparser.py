@@ -903,6 +903,7 @@ class CParser(object):
             self.header_cache[header] = (timestamp, ppp.output)
             self.save_header_cache()
             self.cache_headers = True
+            return ppp.output
 
         return None
 
