@@ -21,9 +21,9 @@ class CtypesWrapper(CtypesParser):
         self.file = file
         self.all_names = []
 
-    def wrap(self, source):
+    def wrap(self, filename, source=None):
         self.print_preamble()
-        self.parse(source)
+        self.parse(filename, source)
         self.print_epilogue()
 
     def print_preamble(self):
@@ -100,6 +100,6 @@ if __name__ == '__main__':
         options.output = '%s.py' % options.library
 
     wrapper = CtypesWrapper(options.library, open(options.output, 'w'))
-    wrapper.wrap(open(header).read())
+    wrapper.wrap(header)
 
     print 'Wrapped to %s' % options.output

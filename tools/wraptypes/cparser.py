@@ -798,23 +798,31 @@ class CParser(object):
     Subclass and override the handle_* methods.  Call `parse` with a string
     to parse.
     '''
-    def __init__(self, stddef_types=True):
+    def __init__(self, preprocessor_cache=None, stddef_types=True):
+        self.preprocessor_parser = \
+            preprocessor.PreprocessorParser(preprocessor_cache)
         self.parser = yacc.Parser()
         yacc.yacc(method='LALR').init_parser(self.parser)
         self.parser.cparser = self
-        self.lexer = CLexer(self)
 
+        self.lexer = CLexer(self)
         if stddef_types:
             self.lexer.type_names.add('wchar_t')
             self.lexer.type_names.add('ptrdiff_t')
             self.lexer.type_names.add('size_t')
     
-    def parse(self, tokens, debug=False):
-        '''Parse a list of tokens returned from the preprocessor.
+    def parse(self, filename, data=None, debug=False):
+        '''Parse a file.  Give filename or filename + data.
 
         If `debug` is True, parsing state is dumped to stdout.
         '''
-        self.lexer.input(tokens)
+        if not data:
+            data = open(filename, 'r').read()
+        
+        self.handle_status('Preprocessing %s' % filename)
+        self.preprocessor_parser.parse(data, filename=filename, debug=debug)
+        self.lexer.input(self.preprocessor_parser.output)
+        self.handle_status('Parsing %s' % filename)
         self.parser.parse(lexer=self.lexer, debug=debug)
 
     # ----------------------------------------------------------------------
@@ -829,6 +837,13 @@ class CParser(object):
         next semicolon.
         '''
         print >> sys.stderr, '%s:%s %s' % (filename, lineno, message)
+
+    def handle_status(self, message):
+        '''Progress information.
+
+        The default implementationg prints message to stderr.
+        '''
+        print >> sys.stderr, message
 
     def handle_include(self, header):
         '''#include `header`'''
@@ -924,10 +939,4 @@ class DebugCParser(CParser):
         print declaration
         
 if __name__ == '__main__':
-    import sys
-    pp = preprocessor.PreprocessorParser('ppcache.py')
-    #pp.cache('Carbon/Carbon.h')
-    #pp.cache('X11/Xlib.h')
-    #pp.cache('windows.h')
-    pp.parse(filename=sys.argv[1], debug=True)
-    DebugCParser().parse(pp.output, debug=1)
+    DebugCParser().parse(sys.argv[1], debug=True)
