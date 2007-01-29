@@ -991,7 +991,7 @@ class ExecutionState(object):
             self.enabled = False
 
 class PreprocessorParser(yacc.Parser):
-    def __init__(self, header_cache_filename=None, gcc_search_path=True):
+    def __init__(self, gcc_search_path=True):
         yacc.Parser.__init__(self)
         self.lexer = lex.lex(cls=PreprocessorLexer)
         PreprocessorGrammar.get_prototype().init_parser(self)
@@ -1006,38 +1006,6 @@ class PreprocessorParser(yacc.Parser):
             self.add_gcc_search_path()
 
         self.lexer.filename = ''
-
-        self.header_cache = {}
-        self.header_cache_filename = header_cache_filename
-        if header_cache_filename:
-            self.load_cache(self.header_cache_filename)
-
-    def load_cache(self, filename):
-        try:
-            cache_file = open(filename, 'rb')
-            print >> sys.stderr, 'Loading cache %r' % filename
-            self.header_cache.update(cPickle.load(cache_file))
-            print >> sys.stderr, 'Cache ok.'
-        except:
-            print >> sys.stderr, 'Failed to load cache %r' % filename
-
-    def cache(self, header, force=False):
-        header = self.get_system_header_path(header)
-        if not header:
-            return
-        if force or header not in self.header_cache:
-            self.parse(filename=header)
-            self.header_cache[header] = self.output
-            if self.header_cache_filename:
-                self.save_cache(self.header_cache_filename)
-
-    def save_cache(self, filename):
-        cache_file = open(filename, 'wb')
-        cPickle.dump(self.header_cache, cache_file)
-        try:
-            cPickle.dump(self.header_cache, cache_file)
-        except:
-            print >> sys.stderr, 'Failed to save cache %r' % filename
 
     def add_gcc_search_path(self):
         from subprocess import Popen, PIPE
@@ -1060,12 +1028,9 @@ class PreprocessorParser(yacc.Parser):
 
     def push_file(self, filename, data=None):
         print >> sys.stderr, filename
-        if filename in self.header_cache:
-            self.output += self.header_cache[filename]
-        else:
-            if not data:
-                data = open(filename).read()
-            self.lexer.push_input(data, filename)
+        if not data:
+            data = open(filename).read()
+        self.lexer.push_input(data, filename)
 
     def include(self, header):
         path = self.get_header_path(header)

@@ -17,6 +17,7 @@ Reference is C99:
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import cPickle
 import operator
 import os.path
 import re
@@ -792,15 +793,32 @@ class CLexer(object):
 # Parser
 # --------------------------------------------------------------------------
 
+class CPreprocessorParser(preprocessor.PreprocessorParser):
+    def __init__(self, cparser, **kwargs):
+        self.cparser = cparser
+        preprocessor.PreprocessorParser.__init__(self, **kwargs)
+
+    def push_file(self, filename, data=None):
+        if not self.cparser.handle_include(filename):
+            return
+
+        tokens = self.cparser.get_cached_tokens(filename)
+        if tokens is not None:
+            self.output += tokens
+            return
+
+        if not data:
+            data = open(filename).read()
+        self.lexer.push_input(data, filename)
+
 class CParser(object):
     '''Parse a C source file.
 
     Subclass and override the handle_* methods.  Call `parse` with a string
     to parse.
     '''
-    def __init__(self, preprocessor_cache=None, stddef_types=True):
-        self.preprocessor_parser = \
-            preprocessor.PreprocessorParser(preprocessor_cache)
+    def __init__(self, stddef_types=True, cache_headers=True):
+        self.preprocessor_parser = CPreprocessorParser(self)
         self.parser = yacc.Parser()
         yacc.yacc(method='LALR').init_parser(self.parser)
         self.parser.cparser = self
@@ -810,12 +828,18 @@ class CParser(object):
             self.lexer.type_names.add('wchar_t')
             self.lexer.type_names.add('ptrdiff_t')
             self.lexer.type_names.add('size_t')
+
+        self.header_cache = {}
+        self.cache_headers = cache_headers
+        self.load_header_cache()
     
     def parse(self, filename, data=None, debug=False):
         '''Parse a file.  Give filename or filename + data.
 
         If `debug` is True, parsing state is dumped to stdout.
         '''
+        self.included_headers = set()
+
         if not data:
             data = open(filename, 'r').read()
         
@@ -824,6 +848,53 @@ class CParser(object):
         self.lexer.input(self.preprocessor_parser.output)
         self.handle_status('Parsing %s' % filename)
         self.parser.parse(lexer=self.lexer, debug=debug)
+
+    def load_header_cache(self, filename=None):
+        if not filename:
+            filename = '.header.cache'
+        try:
+            self.header_cache = cPickle.load(open(filename, 'rb'))
+            self.handle_status('Loaded header cache "%s"' % filename)
+        except:
+            self.handle_status('Failed to load header cache "%s"' % filename)
+
+    def save_header_cache(self, filename=None):
+        if not filename:
+            filename = '.header.cache'
+        try:
+            cPickle.dump(self.header_cache, open(filename, 'wb'))
+            self.handle_status('Updated header cache "%s"' % filename)
+        except:
+            self.handle_status('Failed to update header cache "%s"' % filename)
+
+    def get_cached_tokens(self, header):
+        '''Return a list of tokens for `header`.
+
+        If there is no cached copy, return None.  Note that in general,
+        the contents of a header depends on the macros defined before
+        it was included.  The default implementation ignores this problem,
+        and assumes that the macros are always consistent the first
+        time a header is included, and returns an empty list for subsequent
+        inclusions.  This is reasonable (but far from correct) behaviour for
+        most system headers.
+        '''
+        if header in self.included_headers:
+            return []
+
+        self.included_headers.add(header)
+
+        if header in self.header_cache:
+            self.handle_status('Using cached header "%s"' % header)
+            return self.header_cache[header]
+
+        if self.cache_headers:
+            self.handle_status('Caching header "%s"' % header)
+            ppp = preprocessor.PreprocessorParser()
+            ppp.parse(filename=header)
+            self.header_cache[header] = ppp.output
+            self.save_header_cache()
+
+        return None
 
     # ----------------------------------------------------------------------
     # Parser interface.  Override these methods in your subclass.
@@ -846,7 +917,12 @@ class CParser(object):
         print >> sys.stderr, message
 
     def handle_include(self, header):
-        '''#include `header`'''
+        '''#include `header`
+        
+        Return True to proceed with including the header, otherwise return
+        False to skip it.  The default implementation returns True.
+        '''
+        return True
 
     def handle_define(self, name, value):
         '''#define `name` `value` (both are strings)'''
