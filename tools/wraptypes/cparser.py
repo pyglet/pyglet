@@ -22,6 +22,7 @@ import operator
 import os.path
 import re
 import sys
+import time
 
 import preprocessor
 import yacc
@@ -854,7 +855,9 @@ class CParser(object):
             filename = '.header.cache'
         try:
             self.header_cache = cPickle.load(open(filename, 'rb'))
-            self.handle_status('Loaded header cache "%s"' % filename)
+            self.handle_status('Loaded header cache "%s".  Found:' % filename)
+            for header in self.header_cache.keys():
+                self.handle_status('  %s' % header)
         except:
             self.handle_status('Failed to load header cache "%s"' % filename)
 
@@ -883,15 +886,20 @@ class CParser(object):
 
         self.included_headers.add(header)
 
-        if header in self.header_cache:
+        try:
+            timestamp = os.stat(header).st_mtime
+        except OSError:
+            timestamp = time.time()
+        if header in self.header_cache and \
+           self.header_cache[header][0] >= timestamp:
             self.handle_status('Using cached header "%s"' % header)
-            return self.header_cache[header]
+            return self.header_cache[header][1]
 
         if self.cache_headers:
             self.handle_status('Caching header "%s"' % header)
             ppp = preprocessor.PreprocessorParser()
             ppp.parse(filename=header)
-            self.header_cache[header] = ppp.output
+            self.header_cache[header] = (timestamp, ppp.output)
             self.save_header_cache()
 
         return None
