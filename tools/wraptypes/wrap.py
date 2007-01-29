@@ -39,6 +39,7 @@ class CtypesWrapper(CtypesParser):
             __docformat__ =  'restructuredtext'
             __version__ = '$Id$'
 
+            import ctypes
             from ctypes import *
             from ctypes.util import find_library as _find_library
 
@@ -46,6 +47,16 @@ class CtypesWrapper(CtypesParser):
             if not _libpath:
                 raise ImportError('Could not locate %(library)s library')
             _lib = cdll.LoadLibrary(_libpath)
+
+            _int_types = (c_int16, c_int32)
+            if hasattr(ctypes, 'c_int64'):
+                # Some builds of ctypes apparently do not have c_int64
+                # defined; it's a pretty good bet that these builds do not
+                # have 64-bit pointers.
+                _int_types += (ctypes.c_int64,)
+            for t in _int_types:
+                if sizeof(t) == sizeof(c_size_t):
+                    c_ptrdiff_t = t
         """ % {
             'library': self.library,
             'date': time.ctime(),

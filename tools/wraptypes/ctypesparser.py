@@ -32,6 +32,7 @@ ctypes_type_map = {
     ('uint16_t',True,   0): 'c_uint16_t',
     ('uint32_t',True,   0): 'c_uint32_t',
     ('uint64_t',True,   0): 'c_uint64_t',
+    ('ptrdiff_t',True,  0): 'c_ptrdiff_t',  # Requires definition in preamble
 }
 
 def get_ctypes_type(typ, declarator):
