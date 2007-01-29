@@ -143,9 +143,14 @@ class ContentElement(SelectableElement):
     def __init__(self, document, name, attributes, parent, previous_sibling):
         self.document = document
         self.name = name
-        self.attributes = attributes
         self.parent = parent
         self.previous_sibling = previous_sibling
+
+        # Make attributes more like a dict
+        #self.attributes = attributes
+        self.attributes = {}
+        for key, value in attributes.items():
+            self.attributes[key] = value
 
     def add_child(self, element):
         if self.text:
