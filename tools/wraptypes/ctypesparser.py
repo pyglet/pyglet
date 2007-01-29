@@ -126,6 +126,9 @@ class CtypesParser(CParser):
     def handle_declaration(self, declaration):
         t = get_ctypes_type(declaration.type, declaration.declarator)
         declarator = declaration.declarator
+        if declarator is None:
+            # XXX TEMPORARY while struct with no typedef not filled in
+            return
         while declarator.pointer:
             declarator = declarator.pointer
         name = declarator.identifier

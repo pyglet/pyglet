@@ -86,6 +86,9 @@ class Declarator(object):
         self.array = None
         self.parameters = None
 
+    # make pointer read-only to catch mistakes early
+    pointer = property(lambda self: None)
+
     def __repr__(self):
         s = self.identifier or ''
         if self.array:
@@ -615,7 +618,9 @@ def p_abstract_declarator(p):
             ptr = p[0]
             while ptr.pointer:
                 ptr = ptr.pointer
-            ptr.pointer = Declarator()
+            # Only if doesn't already terminate in a declarator
+            if type(ptr) == Pointer:
+                ptr.pointer = Declarator()
     else:
         p[0] = p[1]
         ptr = p[0]
