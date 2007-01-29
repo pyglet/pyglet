@@ -897,10 +897,12 @@ class CParser(object):
 
         if self.cache_headers:
             self.handle_status('Caching header "%s"' % header)
+            self.cache_headers = False
             ppp = preprocessor.PreprocessorParser()
             ppp.parse(filename=header)
             self.header_cache[header] = (timestamp, ppp.output)
             self.save_header_cache()
+            self.cache_headers = True
 
         return None
 

@@ -454,11 +454,7 @@ class PreprocessorGrammar(Grammar):
             type = p.slice[1].type
             if type == 'IF':
                 if p[2]:
-                    try:
-                        result = p[2].evaluate(p.parser.namespace)
-                    except:
-                        print p[2]
-                        print 'line', p.lineno(2), p.lexer.filename
+                    result = p[2].evaluate(p.parser.namespace)
                 else:
                     # error
                     result = False
@@ -517,7 +513,7 @@ class PreprocessorGrammar(Grammar):
                         | define_function
                         | undef_line
                         | LINE pp_tokens NEWLINE
-                        | ERROR pp_tokens_opt NEWLINE
+                        | error_line
                         | PRAGMA pp_tokens_opt NEWLINE
         '''
 
@@ -581,6 +577,13 @@ class PreprocessorGrammar(Grammar):
         if p.parser.enable_declaratives():
             p.parser.namespace.undef(p[2])
 
+    def p_error_line(self, p):
+        '''error_line : ERROR pp_tokens_opt NEWLINE
+        '''
+        if p.parser.enable_declaratives():
+            p.parser.error(' '.join([t.value for t in p[2]]), 
+                           p.slice[1].filename, p.slice[1].lineno)
+
     def p_text_line(self, p):
         '''text_line : pp_tokens_opt NEWLINE
         '''
@@ -621,7 +624,7 @@ class PreprocessorGrammar(Grammar):
 
     def p_replaced_constant_expression(self, p):
         '''replaced_constant_expression : pp_tokens'''
-        if p.parser.enable_declaratives():
+        if p.parser.enable_conditionals():
             tokens = p[1]
             tokens = p.parser.namespace.apply_macros(tokens)
             lexer = TokenListLexer(tokens)
@@ -1100,7 +1103,9 @@ class PreprocessorParser(yacc.Parser):
                 if os.path.exists(p):
                     return p
 
-
+    def error(self, message, filename, line):
+        print >> sys.stderr, '%s:%d #error %s' % (filename, line, message)
+    
     def condition_if(self, result):
         self.condition_stack.append(
             ExecutionState(self.condition_stack[-1].enabled, result))
@@ -1116,6 +1121,9 @@ class PreprocessorParser(yacc.Parser):
 
     def enable_declaratives(self):
         return self.condition_stack[-1].enabled
+
+    def enable_conditionals(self):
+        return self.condition_stack[-1].parent_enabled
 
     def write(self, tokens):
         for t in tokens:
