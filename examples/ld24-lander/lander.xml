@@ -101,147 +101,147 @@
   </column>
   <column> <!-- 4 -->
     <cell tile="b2" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
   </column>
   <column> <!-- 5 -->
     <cell tile="b1" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
   </column>
   <column> <!-- 6 -->
     <cell tile="b1" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
   </column>
   <column> <!-- 7 -->
     <cell tile="b2" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
   </column>
   <column> <!-- 8 -->
-    <cell tile="b1" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
+    <cell tile="br" />
+    <cell tile="r2" />
+    <cell tile="r1" />
+    <cell tile="r2" />
+    <cell tile="tl" />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
   </column>
   <column> <!-- 9 -->
-    <cell tile="b1" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
+    <cell tile="bl" />
+    <cell tile="l1" />
+    <cell tile="l2" />
+    <cell tile="l1" />
+    <cell tile="tr" />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
   </column>
   <column> <!-- 10 -->
-    <cell tile="b2" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
+    <cell tile="b1" />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
   </column>
   <column> <!-- 11 -->
     <cell tile="pad" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
   </column>
   <column> <!-- 12 -->
     <cell tile="b1" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
-    <cell tile="open" />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
+    <cell />
   </column>
   <column> <!-- 13 -->
     <cell tile="br" />

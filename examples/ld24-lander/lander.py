@@ -13,6 +13,7 @@ from pyglet.clock import *
 from pyglet.scene2d import *
 from pyglet.scene2d.textsprite import *
 from pyglet.text import *
+from pyglet.layout import *
 
 class RocketSprite(Sprite):
     def update(self, dt):
@@ -66,6 +67,7 @@ class AnimatedSprite(Sprite):
 
 # open window
 w = pyglet.window.Window(width=1280, height=1024, fullscreen=True)
+#w = pyglet.window.Window(width=800, height=600)
 w.set_exclusive_mouse()
 clock = Clock(fps_limit=30)
 keyboard = KeyboardStateHandler()
@@ -135,11 +137,11 @@ def play(level):
     # put up a message
     done = rocket.properties['done']
     if not done: return
-    if done == 1: text = 'YAY YOU WON!'
-    if done == 2: text = 'BOO YOU LOST'
-    text += '\npress [escape] to continue'
+    if done == 1: text = 'YAY YOU LANDED!'
+    if done == 2: text = 'BOO YOU CRASHED!'
+    text += '  (press [escape] to continue)'
     sprite = TextSprite(font, text, color=(1., 1., 1., 1.))
-    sprite.x, sprite.y = 640, 512
+    sprite.x, sprite.y = w.width/2 - sprite.width/2, w.height/2 - sprite.height/2
     w.exit_handler.has_exit = False
     while not w.has_exit:
         dt = clock.tick()
@@ -153,21 +155,33 @@ def play(level):
     if boom in effectlayer.sprites:
         effectlayer.sprites.remove(boom)
 
+data = '''<?xml version="1.0"?><html><head>
+<style>
+h1 {border-bottom: 1px solid;}
+body {background-color: black; color: white; font-family: sans-serif; font-size: 150%;}
+tt {background-color: #aaa; color: black;}
+</style></head><body>
+<h1>Lunar Lander (yet another clone)</h1>
+<p><b>Controls:</b></p>
+<p><tt>[space]</tt> fires the rocket's motors</p>
+<p><tt>[left/right arrows]</tt> push the rocket left or right</p>
+<p></p>
+<p>Press <tt>[space]</tt> to play or <tt>[escape]</tt> to quit.</p>
+</body></html>'''
+
+layout = Layout()
+layout.set_xhtml(data)
+layout.on_resize(w.width, w.height)
+
 def menu():
-    camera = FlatCamera(0, 0, 1280, 1024)
-    camera.project()
-    text = '''Press [space] to play, press [escape] to quit.'''
-    sprite = TextSprite(font, text, color=(1., 1., 1., 1.))
-    sprite.x, sprite.y = 640-sprite.width/2, 512
-    glClearColor(0, 0, 0, 0)
     w.exit_handler.has_exit = False
+    glClearColor(0, 0, 0, 0)
     while not w.has_exit:
         dt = clock.tick()
         w.dispatch_events()
         if keyboard[K_SPACE]: return True
         glClear(GL_COLOR_BUFFER_BIT)
-        sprite.draw()
-        fps.draw()
+        layout.draw()
         w.flip()
     return False
 
