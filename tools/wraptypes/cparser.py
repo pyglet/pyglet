@@ -230,7 +230,7 @@ def p_unary_expression(p):
                         | DEC_OP unary_expression
                         | unary_operator cast_expression
                         | SIZEOF unary_expression
-                        | SIZEOF '(' TYPE_NAME ')'
+                        | SIZEOF '(' type_name ')'
     '''
 
 def p_unary_operator(p):
@@ -598,6 +598,11 @@ def p_identifier_list(p):
     else:
         param.declarator.identifier = p[1]
         p[0] = (param,)
+
+def p_type_name(p):
+    '''type_name : specifier_qualifier_list
+                 | specifier_qualifier_list abstract_declarator
+    '''
 
 def p_abstract_declarator(p):
     '''abstract_declarator : pointer
