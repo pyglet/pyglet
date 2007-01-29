@@ -181,10 +181,12 @@ def apply_specifiers(specifiers, declaration):
 # --------------------------------------------------------------------------
 
 def p_translation_unit(p):
-    '''translation_unit : external_declaration
+    '''translation_unit : 
                         | translation_unit external_declaration
     '''
     # Starting production.
+    # Allow empty production so that files with no declarations are still
+    #    valid.
     # Intentionally empty
 
 def p_identifier(p):
@@ -355,9 +357,6 @@ def p_declaration_impl(p):
     for declarator in p[2]:
         declaration.declarator = declarator
         p.parser.cparser.impl_handle_declaration(declaration)
-
-    # ';' is being shifted now, so can accept PP again
-    p.lexer.accept_preprocessor = True
 
 def p_declaration_error(p):
     '''declaration : error ';'
@@ -764,9 +763,17 @@ class CLexer(object):
         self.pos = 0
 
     def token(self):
-        if self.pos < len(self.tokens):
+        while self.pos < len(self.tokens):
             t = self.tokens[self.pos]
             self.pos += 1
+
+            if not t:
+                break
+            
+            # PP events
+            if t.type == 'PP_DEFINE':
+                self.cparser.handle_define(t.value[0], t.value[1])
+                continue
 
             # Transform PP tokens into C tokens
             if t.type == 'LPAREN':
@@ -779,8 +786,7 @@ class CLexer(object):
                 t.type = 'TYPE_NAME'
             t.lexer = self
             return t
-        else:
-            return None
+        return None
         
 # --------------------------------------------------------------------------
 # Parser
@@ -824,52 +830,32 @@ class CParser(object):
         '''
         print >> sys.stderr, '%s:%s %s' % (filename, lineno, message)
 
-    def handle_missing_header(self, header):
-        '''A header was included that can't be located.
-
-        Default implementation prints a warning to stderr.
-        '''
-        print >> sys.stderr, 'Could not find header %s' % header
-
     def handle_include(self, header):
         '''#include `header`'''
-        if type(header) == StringLiteral:
-            self.include(self.get_local_header(header), header)
-        else:
-            self.include(self.get_system_header(header), header)
 
     def handle_define(self, name, value):
         '''#define `name` `value` (both are strings)'''
-        self.preprocessor_context.macros[name] = value
 
     def handle_undef(self, name):
         '''#undef `name`'''
-        if name in self.preprocessor_context.macros:
-            del self.preprocessor_context.macros[name]
 
     def handle_if(self, expr):
         '''#if `expr`'''
-        self.apply_conditional(expr.evaluate(self.preprocessor_context))
 
     def handle_ifdef(self, name):
         '''#ifdef `name`'''
-        self.apply_conditional(self.preprocessor_context.is_defined(name))
 
     def handle_ifndef(self, name):
         '''#ifndef `name`'''
-        self.apply_conditional(not self.preprocessor_context.is_defined(name))
 
     def handle_elif(self, expr):
         '''#elif `expr`'''
-        self.apply_conditional_elif(expr.evaluate(self.preprocessor_context))
 
     def handle_else(self):
         '''#else'''
-        self.apply_conditional_else()
 
     def handle_endif(self):
         '''#endif'''
-        self.apply_conditional_endif()
 
     def impl_handle_declaration(self, declaration):
         '''Internal method that calls `handle_declaration`.  This method
@@ -940,8 +926,8 @@ class DebugCParser(CParser):
 if __name__ == '__main__':
     import sys
     pp = preprocessor.PreprocessorParser('ppcache.py')
-    pp.cache('Carbon/Carbon.h')
-    pp.cache('X11/Xlib.h')
-    pp.cache('windows.h')
+    #pp.cache('Carbon/Carbon.h')
+    #pp.cache('X11/Xlib.h')
+    #pp.cache('windows.h')
     pp.parse(filename=sys.argv[1], debug=True)
     DebugCParser().parse(pp.output, debug=1)

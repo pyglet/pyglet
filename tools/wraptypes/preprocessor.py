@@ -359,6 +359,7 @@ class PreprocessorLexer(lex.Lexer):
 
         if result:
             self.lasttoken = result.type
+            result.filename = self.filename
         else:
             self.lasttoken = None
 
@@ -379,20 +380,22 @@ class TokenListLexer(object):
 
 def symbol_to_token(sym):
     if isinstance(sym, yacc.YaccSymbol):
-        '''
-        t = lex.LexToken()
-        t.type = sym.type
-        t.value = sym.value
-        t.lineno = sym.lineno
-        t.lexpos = sym.lexpos
-        return t
-        '''
         return sym.value
     elif isinstance(sym, lex.LexToken):
         return sym
     else:
         assert False, 'Not a symbol: %r' % sym
 
+def create_token(type, value, production):
+    '''Create a token of type and value, at the position where 'production'
+    was reduced.'''
+    t = lex.LexToken()
+    t.type = type
+    t.value = value
+    t.lexpos = -1
+    t.lineno = production.slice[1].lineno
+    t.filename = production.slice[1].filename
+    return t
 
 # --------------------------------------------------------------------------
 # Grammars
@@ -549,6 +552,9 @@ class PreprocessorGrammar(Grammar):
         '''
         if p.parser.enable_declaratives():
             p.parser.namespace.define_object(p[2], p[3])
+
+            v = ' '.join([str(t.value) for t in p[3]])
+            p.parser.write((create_token('PP_DEFINE', (p[2], v), p),))
 
     def p_define_function(self, p):
         '''define_function : DEFINE IDENTIFIER LPAREN define_function_params ')' pp_tokens_opt NEWLINE
@@ -1150,7 +1156,6 @@ class PreprocessorParser(yacc.Parser):
         for t in tokens:
             if hasattr(t, 'lexer'):
                 del t.lexer
-            t.filename = self.lexer.filename
         self.output += list(tokens)
 
 class ConstantExpressionParser(yacc.Parser):
