@@ -1165,7 +1165,8 @@ class PreprocessorNamespace(EvaluationContext):
         import platform
         import sys
 
-        gcc_macros = () #'__GNUC__',)   # This just causes trouble.
+        gcc_macros = ('__GLIBC_HAVE_LONG_LONG',) 
+        #'__GNUC__',)   # This just causes trouble.
 
         # Get these from `gcc -E -dD empty.c`
         machine_macros = {
