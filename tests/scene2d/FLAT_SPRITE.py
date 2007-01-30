@@ -18,7 +18,7 @@ from pyglet.GL.VERSION_1_1 import glClear
 import pyglet.window
 import pyglet.window.event
 import pyglet.clock
-from pyglet.scene2d import Sprite, Image2d, Scene, FlatView
+from pyglet.scene2d import Sprite, Image2d, FlatView
 from pyglet.scene2d.camera import FlatCamera
 
 ball_png = os.path.join(os.path.dirname(__file__), 'ball.png')
@@ -30,8 +30,7 @@ class FlatSpriteTest(unittest.TestCase):
 
         image = Image2d.load(ball_png)
         ball = Sprite(0, 0, 64, 64, image)
-        s = Scene(sprites=[ball])
-        view = FlatView(s, 0, 0, 320, 320)
+        view = FlatView(0, 0, 320, 320, sprites=[ball])
 
         w.push_handlers(view.camera)
 

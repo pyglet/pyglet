@@ -32,8 +32,7 @@ class RenderBase(unittest.TestCase):
             vx = self.w.width
             vy = self.w.height
 
-        self.scene = pyglet.scene2d.Scene(layers=[m])
-        self.view = pyglet.scene2d.FlatView(self.scene, 0, 0, vx, vy)
+        self.view = pyglet.scene2d.FlatView(0, 0, vx, vy, layers=[m])
 
         self.w.push_handlers(self.view.camera)
 
@@ -46,7 +45,7 @@ class RenderBase(unittest.TestCase):
         marker = Image2d.load(ball_png)
         self.marker = Sprite(0, 0, 16, 16, marker)
         self.marker.add_effect(ScaleEffect(.25, .25))
-        self.scene.sprites.append(self.marker)
+        self.view.sprites.append(self.marker)
 
     def run_test(self):
         clock = pyglet.clock.Clock(fps_limit=30)

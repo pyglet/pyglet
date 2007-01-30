@@ -19,7 +19,7 @@ from pyglet.GL.VERSION_1_1 import glClear
 import pyglet.window
 import pyglet.window.event
 import pyglet.clock
-from pyglet.scene2d import Sprite, Image2d, Scene, FlatView
+from pyglet.scene2d import Sprite, Image2d, FlatView
 from pyglet.scene2d.image import TintEffect
 from pyglet.scene2d.camera import FlatCamera
 
@@ -44,8 +44,7 @@ class SpriteOverlapTest(unittest.TestCase):
         ball1 = BouncySprite(0, 0, 64, 64, image, properties=dict(dx=10, dy=5))
         ball2 = BouncySprite(288, 0, 64, 64, image,
             properties=dict(dx=-10, dy=5))
-        s = Scene(sprites=[ball1, ball2])
-        view = FlatView(s, 0, 0, 320, 320)
+        view = FlatView(0, 0, 320, 320, sprites=[ball1, ball2])
         view.fx, view.fy = 160, 160
 
         clock = pyglet.clock.Clock(fps_limit=30)

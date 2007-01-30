@@ -9,7 +9,6 @@ from pyglet.euclid import Vector2, Matrix3
 from pyglet.scene2d import *
 
 class CarSprite(RotatableSprite):
-    __slots__ = RotatableSprite.__slots__
     def update(self, dt):
         # handle input and move the car
         self.angle += (keyboard[K_LEFT] - keyboard[K_RIGHT]) * 150 * dt
@@ -30,8 +29,7 @@ w.set_exclusive_mouse()
 dirname = os.path.dirname(__file__)
 m = RectMap.load_xml(os.path.join(dirname, 'road-map.xml'), 'map0')
 car = CarSprite.from_image(0, 0, Image2d.load(os.path.join(dirname, 'car.png')))
-scene = Scene(layers=[m, SpriteLayer(1, [car])])
-view = FlatView.from_window(scene, w, allow_oob=False)
+view = FlatView.from_window(w, layers=[m], sprites=[car])
 
 keyboard = KeyboardStateHandler()
 w.push_handlers(keyboard)

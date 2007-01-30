@@ -14,8 +14,7 @@ Creating a simple scene and displaying it:
     >>> import pyglet.scene2d
     >>> m = pyglet.scene2d.RectMap(32, 32, cells=gen_rect_map([[0]*4]*4, 32, 32)
     >>> w = pyglet.window.Window(width=m.pxw, height=m.pxh)
-    >>> s = pyglet.scene2d.Scene(layers=[m])
-    >>> v = pyglet.scene2d.FlatView.from_window(s, w)
+    >>> v = pyglet.scene2d.FlatView.from_window(s, w, layers=[m])
     >>> v.debug((0,0))
     >>> w.flip()
 
@@ -86,26 +85,29 @@ class FlatView(View):
                            for which there is no tile image). If set to
                            False then the map will not scroll to attempt
                            to display oob tiles.
-        scale, rotation -- scale to apply to the map (rotation in degrees)
         fx, fy          -- pixel point to center in the viewport, subject
                            to OOB checks
     '''
-    # XXX nuke scale? belongs in camera?
-    def __init__(self, scene, x, y, width, height, allow_oob=True,
-            scale=1, rotation=0, fx=0, fy=0):
+    def __init__(self, x, y, width, height, allow_oob=False,
+            fx=0, fy=0, layers=None, sprites=None):
         super(View, self).__init__()
-        self.scene = scene
         self.camera = FlatCamera(x, y, width, height)
         self.allow_oob = allow_oob
-        self.scale = scale
-        self.rotation = rotation
         self.fx, self.fy = fx, fy
+        if layers is None:
+            self.layers = []
+        else:
+            self.layers = layers
+        if sprites is None:
+            self.sprites = []
+        else:
+            self.sprites = sprites
 
     @classmethod
-    def from_window(cls, scene, window, **kw):
+    def from_window(cls, window, **kw):
         '''Create a view which is the same dimensions as the supplied
         window.'''
-        return cls(scene, 0, 0, window.width, window.height, **kw)
+        return cls(0, 0, window.width, window.height, **kw)
 
     def __repr__(self):
         return '<%s object at 0x%x focus=(%d,%d) oob=%s>'%(
@@ -139,7 +141,7 @@ class FlatView(View):
                             l.append(cell)
                     objs.extend((map.z, mf(l)))
             else:
-                for layer in self.scene.layers:
+                for layer in self.layers:
                     if not isinstance(layer, Map): continue
                     cell = layer.get(x, y)
                     if cell:
@@ -155,12 +157,12 @@ class FlatView(View):
                             l.append((sprite.z, sprite))
                     objs.extend(sf(l))
             else:
-                for layer in self.scene.layers:
+                for layer in self.layers:
                     if not isinstance(layer, SpriteLayer): continue
                     for sprite in layer.sprites:
                         if sprite.contains(x, y):
                             objs.append((layer.z, sprite))
-                for sprite in self.scene.sprites:
+                for sprite in self.sprites:
                     if sprite.contains(x, y):
                         # un-layered sprites are at depth 0
                         objs.append((0, sprite))
@@ -224,7 +226,7 @@ class FlatView(View):
     # QUERY INTERFACE
     #
     def translate_position(self, x, y):
-        '''Translate the on-screen pixel position to a Scene pixel
+        '''Translate the on-screen pixel position to a scene pixel
         position.'''
         fx, fy = self._determine_focus()
         ox, oy = self.camera.width/2-fx, self.camera.height/2-fy
@@ -234,12 +236,12 @@ class FlatView(View):
         ''' Pick whatever is on the top at the position x, y. '''
         r = []
 
-        for sprite in self.scene.sprites:
+        for sprite in self.sprites:
             if sprite.contains(x, y):
                 r.append(sprite)
 
-        self.scene.layers.sort(key=operator.attrgetter('z'))
-        for layer in self.scene.layers:
+        self.layers.sort(key=operator.attrgetter('z'))
+        for layer in self.layers:
             cell = layer.get(x, y)
             if cell:
                 r.append(cell)
@@ -273,7 +275,7 @@ class FlatView(View):
 
         # check that any layer has bounds
         bounded = []
-        for layer in self.scene.layers:
+        for layer in self.layers:
             if hasattr(layer, 'pxw'):
                 bounded.append(layer)
         if not bounded:
@@ -344,12 +346,12 @@ class FlatView(View):
 
 
     def draw(self):
-        '''Draw the scene centered (or closest, depending on allow_oob)
+        '''Draw the view centered (or closest, depending on allow_oob)
         on position which is (x, y). '''
         self.camera.project()
 
         # sort by depth
-        self.scene.layers.sort(key=operator.attrgetter('z'))
+        self.layers.sort(key=operator.attrgetter('z'))
 
         # determine the focus point
         fx, fy = self._determine_focus()
@@ -363,7 +365,7 @@ class FlatView(View):
         glPushMatrix()
         glTranslatef(self.camera.width/2-fx, self.camera.height/2-fy, 0)
 
-        for layer in self.scene.layers:
+        for layer in self.layers:
             if hasattr(layer, 'x'):
                 translate = layer.x or layer.y or layer.z
             else:
@@ -375,8 +377,8 @@ class FlatView(View):
             if translate:
                 glPopMatrix()
 
-        if self.scene.sprites:
-            draw_many(self.scene.sprites)
+        if self.sprites:
+            draw_many(self.sprites)
 
         glPopMatrix()
  

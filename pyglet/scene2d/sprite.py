@@ -12,15 +12,11 @@ __version__ = '$Id$'
 
 from pyglet.GL.VERSION_1_1 import *
 from pyglet.scene2d.drawable import *
-from pyglet.scene2d.scene import Layer
 
-class SpriteLayer(Layer):
+class SpriteLayer(object):
     '''Represents a group of sprites at the same z depth.
     '''
-    __slots__ = ['z', 'sprites']
-
     def __init__(self, z=0, sprites=None):
-        super(SpriteLayer, self).__init__()
         self.z = z
         if sprites is None:
             sprites = []
@@ -60,7 +56,6 @@ class Sprite(Drawable):
         animations      -- a queue of SpriteAnimations to run
         properties      -- arbitrary data in a dict
     '''
-    __slots__ = Drawable.__slots__ + '_x _y image width height offset properties animations'.split()
     def __init__(self, x, y, width, height, image, offset=(0,0),
             properties=None):
         super(Sprite, self).__init__()
@@ -254,7 +249,6 @@ class RotatableSprite(Sprite):
     Additional attributes:
         angle           -- angle of rotation in degrees
     '''
-    __slots__ = Sprite.__slots__ + ['_angle']
     def __init__(self, x, y, width, height, image, angle=0,
             offset=(0,0), properties=None):
         self._angle = angle

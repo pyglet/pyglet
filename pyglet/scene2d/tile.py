@@ -47,7 +47,6 @@ def tileset_factory(resource, tag):
 
 
 class Tile(Drawable):
-    __slots__ = Drawable.__slots__ + 'id properties image offset'.split()
     def __init__(self, id, properties, image, offset=None):
         super(Tile, self).__init__()
         self.id = id

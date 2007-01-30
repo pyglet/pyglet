@@ -111,8 +111,7 @@ effectlayer = SpriteLayer(5)
 rocketlayer = SpriteLayer(1, [rocket])
 
 def play(level):
-    scene = Scene(layers=[level, effectlayer, rocketlayer])
-    view = FlatView.from_window(scene, w, allow_oob=False)
+    view = FlatView.from_window(w, layers=[level, effectlayer, rocketlayer])
 
     # set rocket start
     for col in level.cells:

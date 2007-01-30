@@ -94,8 +94,7 @@ pxw = m.pxw
 pxh = m.pxh
 w.set_size(width=pxw, height=pxh)
 w.set_visible()
-s = pyglet.scene2d.Scene(layers=[m])
-r = pyglet.scene2d.FlatView(s, 0, 0, pxw, pxh, allow_oob=False)
+r = pyglet.scene2d.FlatView(0, 0, pxw, pxh, layers=[m])
 
 class SaveHandler:
     def on_text(self, text):

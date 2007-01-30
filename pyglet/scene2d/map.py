@@ -26,7 +26,6 @@ import xml.dom.minidom
 
 from pyglet.resource import Resource, register_factory
 from pyglet.scene2d.drawable import *
-from pyglet.scene2d.scene import Layer
 
 @register_factory('rectmap')
 def rectmap_factory(resource, tag):
@@ -84,7 +83,7 @@ def hex_width(height):
     '''
     return int(height / math.sqrt(3)) * 2
 
-class Map(Layer):
+class Map(object):
     '''Base class for Maps.
 
     Both rect and hex maps have the following attributes:
@@ -124,7 +123,6 @@ class RectMap(RegularTesselationMap):
     Thus cells = [['a', 'd'], ['b', 'e'], ['c', 'f']]
     and cells[0][1] = 'd'
     '''
-    __slots__ = 'id pxw pxh tw th x y z cells'.split()
     def __init__(self, id, tw, th, cells, origin=None):
         self.id = id
         self.tw, self.th = tw, th
@@ -133,10 +131,7 @@ class RectMap(RegularTesselationMap):
         self.x, self.y, self.z = origin
         self.cells = cells
         self.pxw = len(cells) * tw
-        if len(cells) > 1:
-            self.pxh = len(cells[1]) * th + th / 2
-        else:
-            self.pxh = len(cells[0]) * th
+        self.pxh = len(cells[0]) * th
 
     def get_in_region(self, x1, y1, x2, y2):
         '''Return cells (in [column][row]) that are within the
@@ -185,8 +180,6 @@ class Cell(Drawable):
         properties        -- arbitrary properties
         cell       -- cell from the Map's cells
     '''
-    __slots__ = Drawable.__slots__ + 'x y width height properties tile'.split()
-
     def __init__(self, x, y, width, height, properties, tile):
         super(Cell, self).__init__()
         self.width, self.height = width, height
@@ -235,8 +228,6 @@ class RectCell(Cell):
         midleft     -- (x, y) of middle of left side
         midright    -- (x, y) of middle of right side
     '''
-    __slots__ = Cell.__slots__
-
     def get_origin(self):
         return self.x * self.width, self.y * self.height
     origin = property(get_origin)
@@ -327,7 +318,6 @@ class HexMap(RegularTesselationMap):
         \_/ \_/ 
     has cells = [['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h']]
     '''
-    __slots__ = 'id tw th edge_length left right pxw pxh x y z cells'.split()
     def __init__(self, id, th, cells, origin=None):
         self.id = id
         self.th = th
@@ -436,8 +426,6 @@ class HexCell(Cell):
         midbottomleft   -- (x, y) of middle of left side
         midbottomright  -- (x, y) of middle of right side
     '''
-    __slots__ = Cell.__slots__
-
     def __init__(self, x, y, height, properties, tile):
         width = hex_width(height)
         Cell.__init__(self, x, y, width, height, properties, tile)

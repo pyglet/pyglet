@@ -21,7 +21,7 @@ class PlayerSprite(Sprite):
                 self.properties['fired'] = 1
                 shot = Sprite.from_image(0, 0, r['player-bullet'])
                 shot.midbottom = self.midtop
-                scene.sprites.append(shot)
+                view.sprites.append(shot)
                 self.bullets.append(shot)
 
 class EnemySprite(Sprite):
@@ -38,7 +38,7 @@ class EnemySprite(Sprite):
             self.properties['fired'] = 5
             shot = Sprite.from_image(0, 0, r['enemy-bullet1'])
             shot.midtop = self.midbottom
-            scene.sprites.append(shot)
+            view.sprites.append(shot)
             self.bullets.append(shot)
         else:
             self.properties['fired'] = max(0, self.properties['fired'] - dt)
@@ -47,13 +47,13 @@ w = pyglet.window.Window(width=512, height=512)
 w.set_exclusive_mouse()
 clock = pyglet.clock.Clock(fps_limit=30)
 
-# load the map and car and set up the scene and view
+# load the map and car and set up the view
 dirname = os.path.dirname(__file__)
 r = Resource.load(os.path.join(dirname, 'invaders.xml'))
 player = PlayerSprite.from_image(0, 0, r['player'], properties=dict(fired=0))
 clock.schedule(player.update)
-scene = Scene(sprites=[player])
-view = FlatView.from_window(scene, w, fx=w.width/2, fy=w.height/2)
+view = FlatView.from_window(w, fx=w.width/2, fy=w.height/2,
+    sprites=[player])
 
 dead = False
 enemies = [
@@ -61,7 +61,7 @@ enemies = [
         properties={'dx': 150, 'fired': 0})
 ]
 for enemy in enemies:
-    scene.sprites.append(enemy)
+    view.sprites.append(enemy)
     clock.schedule(enemy.update)
 
 keyboard = KeyboardStateHandler()
@@ -80,17 +80,17 @@ while not (w.has_exit or dead):
             break
         if shot.y < 0:
             enemies[0].bullets.remove(shot)
-            scene.sprites.remove(shot)
+            view.sprites.remove(shot)
     for shot in list(player.bullets):
         shot.y += 200 * dt
         for enemy in list(enemies):
             if shot.overlaps(enemy):
-                scene.sprites.remove(enemy)
+                view.sprites.remove(enemy)
                 enemies.remove(enemy)
                 clock.unschedule(enemy.update)
         if shot.y > 512:
             player.bullets.remove(shot)
-            scene.sprites.remove(shot)
+            view.sprites.remove(shot)
 
     # end game
     if not enemies:

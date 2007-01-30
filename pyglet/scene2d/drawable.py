@@ -22,7 +22,6 @@ class DrawBlended(DrawEnv):
 DRAW_BLENDED = DrawBlended()
  
 class Drawable(object):
-    __slots__ = 'effects _style'.split()
     def __init__(self):
         self.effects = []
         self._style = None
@@ -109,8 +108,6 @@ class DrawStyle(object):
 
         draw_func(<DrawStyle instance>)
     '''
-    __slots__ = ' color x y sx sy angle width height texture uvs draw_list draw_env draw_func is_copy'.split()
-
     def __init__(self, color=None, texture=None, x=0, y=0, sx=1, sy=1,
             angle=0, width=None, height=None, uvs=None, draw_list=None,
             draw_env=None, draw_func=None):
