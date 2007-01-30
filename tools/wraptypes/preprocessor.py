@@ -1027,6 +1027,9 @@ class PreprocessorParser(yacc.Parser):
             filename = os.path.abspath(kwargs['filename'])
             self.lexer.input(open(filename).read(), filename)
             del kwargs['filename']
+        if 'namespace' in kwargs:
+            self.namespace = kwargs['namespace']
+            del kwargs['namespace']
         return yacc.Parser.parse(self, *args, **kwargs)
 
     def push_file(self, filename, data=None):
@@ -1131,6 +1134,10 @@ class PreprocessorParser(yacc.Parser):
                 del t.lexer
         self.output += list(tokens)
 
+    def get_memento(self):
+        return (set(self.namespace.objects.keys()), 
+                set(self.namespace.functions.keys()))
+
 class ConstantExpressionParser(yacc.Parser):
     def __init__(self, lexer, namespace):
         yacc.Parser.__init__(self)
@@ -1201,14 +1208,22 @@ class PreprocessorNamespace(EvaluationContext):
 
     def define_object(self, name, replacements):
         # TODO check not already existing in objects or functions
+        for r in replacements:
+            if hasattr(r, 'lexer'):
+                del r.lexer
         self.objects[name] = replacements
 
     def define_function(self, name, params, replacements):
         # TODO check not already existing in objects or functions
+        for r in replacements:
+            if hasattr(r, 'lexer'):
+                del r.lexer
         replacements = list(replacements)
         params = list(params)
         numargs = len(params)
         for i, t in enumerate(replacements):
+            if hasattr(t, 'lexer'):
+                del t.lexer
             if t.type == 'IDENTIFIER' and t.value in params:
                 replacements[i] = params.index(t.value)
             elif t.type == 'IDENTIFIER' and t.value == '__VA_ARGS__' and \
@@ -1284,6 +1299,12 @@ class PreprocessorNamespace(EvaluationContext):
                 repl.append(token)
             i += 1
         return repl
+
+    def copy(self):
+        n = PreprocessorNamespace(gcc_macros=False, workaround_macros=False)
+        n.functions = self.functions.copy()
+        n.objects = self.objects.copy()
+        return n
 
 if __name__ == '__main__':
     filename = sys.argv[1]

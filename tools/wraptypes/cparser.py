@@ -849,8 +849,6 @@ class CParser(object):
 
         If `debug` is True, parsing state is dumped to stdout.
         '''
-        self.included_headers = set()
-
         if not data:
             data = open(filename, 'r').read()
         
@@ -883,34 +881,34 @@ class CParser(object):
     def get_cached_tokens(self, header):
         '''Return a list of tokens for `header`.
 
-        If there is no cached copy, return None.  Note that in general,
-        the contents of a header depends on the macros defined before
-        it was included.  The default implementation ignores this problem,
-        and assumes that the macros are always consistent the first
-        time a header is included, and returns an empty list for subsequent
-        inclusions.  This is reasonable (but far from correct) behaviour for
-        most system headers.
+        If there is no cached copy, return None.
         '''
-        if header in self.included_headers:
-            return []
-
-        self.included_headers.add(header)
-
         try:
-            timestamp = os.stat(header).st_mtime
+            now = os.stat(header).st_mtime
         except OSError:
-            timestamp = time.time()
-        if header in self.header_cache and \
-           self.header_cache[header][0] >= timestamp:
-            self.handle_status('Using cached header "%s"' % header)
-            return self.header_cache[header][1]
+            now = time.time()
+        current_memento = self.preprocessor_parser.get_memento()
+        if header in self.header_cache:
+            timestamp, memento, tokens, namespace = self.header_cache[header]
+            if now < timestamp:
+                self.handle_status('Not using cached header "%s" because ' \
+                                   'cached copy is stale.' % header)
+            elif memento != current_memento:
+                self.handle_status('Not using cached header "%s" because ' \
+                                   'memento differs.' % header)
+            else:
+                self.handle_status('Using cached header "%s"' % header)
+                self.preprocessor_parser.namespace = namespace
+                return tokens
 
         if self.cache_headers:
             self.handle_status('Caching header "%s"' % header)
             self.cache_headers = False
             ppp = preprocessor.PreprocessorParser()
-            ppp.parse(filename=header)
-            self.header_cache[header] = (timestamp, ppp.output)
+            ppp.parse(filename=header,
+                      namespace=self.preprocessor_parser.namespace)
+            self.header_cache[header] = (now, current_memento, 
+                                         ppp.output, ppp.namespace.copy())
             self.save_header_cache()
             self.cache_headers = True
             return ppp.output
