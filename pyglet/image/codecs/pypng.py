@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # png.py - PNG encoder in pure Python
 # Copyright (C) 2006 Johann C. Rocholl <johann@browsershots.org>
+# <ah> Modifications for pyglet by Alex Holkner <alex.holkner@gmail.com> 
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation files
@@ -209,6 +210,9 @@ class Writer:
         outfile.write(data)
         checksum = zlib.crc32(tag)
         checksum = zlib.crc32(data, checksum)
+        # <ah> Avoid DeprecationWarning: struct integer overflow masking
+        #      with Python2.5/Windows.
+        checksum = checksum & 0xffffffff
         outfile.write(struct.pack("!I", checksum))
 
     def write(self, outfile, scanlines):
