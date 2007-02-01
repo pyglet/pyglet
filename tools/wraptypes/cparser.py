@@ -46,7 +46,7 @@ tokens = (
     'STRUCT', 'UNION', 'ENUM', 'ELLIPSIS',
 
     'CASE', 'DEFAULT', 'IF', 'ELSE', 'SWITCH', 'WHILE', 'DO', 'FOR', 'GOTO',
-    'CONTINUE', 'BREAK', 'RETURN'
+    'CONTINUE', 'BREAK', 'RETURN', '__ASM__'
 )
 
 keywords = [
@@ -54,7 +54,7 @@ keywords = [
     'double', 'else', 'enum', 'extern', 'float', 'for', 'goto', 'if', 'int',
     'long', 'register', 'return', 'short', 'signed', 'sizeof', 'static',
     'struct', 'switch', 'typedef', 'union', 'unsigned', 'void', 'volatile',
-    'while'
+    'while', '__asm__'
 ]
 
 
@@ -228,6 +228,35 @@ def p_argument_expression_list(p):
                         | argument_expression_list ',' assignment_expression
     '''
 
+def p_asm_expression(p):
+    '''asm_expression : __ASM__ volatile_opt '(' string_literal ')'
+                      | __ASM__ volatile_opt '(' string_literal ':' str_opt_expr_pair_list ')'
+                      | __ASM__ volatile_opt '(' string_literal ':' str_opt_expr_pair_list ':' str_opt_expr_pair_list ')'
+                      | __ASM__ volatile_opt '(' string_literal ':' str_opt_expr_pair_list ':' str_opt_expr_pair_list ':' str_opt_expr_pair_list ')'
+    '''
+
+    # Definitely not ISO C, adapted from example ANTLR GCC parser at
+    #  http://www.antlr.org/grammar/cgram//grammars/GnuCParser.g
+    # but more lenient (expressions permitted in optional final part, when
+    # they shouldn't be -- avoids shift/reduce conflict with
+    # str_opt_expr_pair_list).
+
+def p_str_opt_expr_pair_list(p):
+    '''str_opt_expr_pair_list : 
+                              | str_opt_expr_pair
+                              | str_opt_expr_pair_list ',' str_opt_expr_pair
+    '''
+
+def p_str_opt_expr_pair(p):
+   '''str_opt_expr_pair : string_literal
+                        | string_literal '(' expression ')'
+    '''
+
+def p_volatile_opt(p):
+    '''volatile_opt : 
+                    | VOLATILE
+    '''
+
 def p_unary_expression(p):
     '''unary_expression : postfix_expression
                         | INC_OP unary_expression
@@ -235,6 +264,7 @@ def p_unary_expression(p):
                         | unary_operator cast_expression
                         | SIZEOF unary_expression
                         | SIZEOF '(' type_name ')'
+                        | asm_expression
     '''
 
 def p_unary_operator(p):

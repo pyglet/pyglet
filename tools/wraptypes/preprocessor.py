@@ -1289,9 +1289,6 @@ class PreprocessorNamespace(EvaluationContext):
         self.define_object('__inline', ())
         self.define_object('__inline__', ())
 
-        # HACK workaround; eliminate __asm__ statements.
-        self.define_function('__asm__', ('...',), ())
-
     def add_workaround_macros(self):
         if sys.platform == 'darwin':
             self.define_object('CF_INLINE', ())
