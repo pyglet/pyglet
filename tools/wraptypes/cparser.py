@@ -199,6 +199,7 @@ def p_identifier(p):
 
 def p_constant(p):
     '''constant : CONSTANT
+                | CHARACTER_CONSTANT
     '''
 
 def p_string_literal(p):
@@ -216,7 +217,7 @@ def p_postfix_expression(p):
                   | postfix_expression '[' expression ']'
                   | postfix_expression '(' ')'
                   | postfix_expression '(' argument_expression_list ')'
-                  | postfix_expression '.' IDENTIFIER
+                  | postfix_expression PERIOD IDENTIFIER
                   | postfix_expression PTR_OP IDENTIFIER
                   | postfix_expression INC_OP
                   | postfix_expression DEC_OP
@@ -247,7 +248,7 @@ def p_unary_operator(p):
 
 def p_cast_expression(p):
     '''cast_expression : unary_expression
-                       | '(' TYPE_NAME ')' cast_expression
+                       | '(' type_name ')' cast_expression
     '''
 
 def p_multiplicative_expression(p):
@@ -363,10 +364,12 @@ def p_declaration_impl(p):
         declaration.declarator = declarator
         p.parser.cparser.impl_handle_declaration(declaration)
 
+"""
 def p_declaration_error(p):
     '''declaration : error ';'
     '''
     # Error resynchronisation catch-all
+"""
 
 def p_declaration_specifiers(p):
     '''declaration_specifiers : storage_class_specifier
@@ -468,8 +471,15 @@ def p_enum_specifier(p):
     '''
 
 def p_enumerator_list(p):
-    '''enumerator_list : enumerator
-                       | enumerator_list ',' enumerator
+    '''enumerator_list : enumerator_list_iso
+                       | enumerator_list_iso ','
+    '''
+    # Apple headers sometimes have trailing ',' after enumerants, which is
+    # not ISO C.
+
+def p_enumerator_list_iso(p):
+    '''enumerator_list_iso : enumerator
+                           | enumerator_list_iso ',' enumerator
     '''
 
 def p_enumerator(p):
@@ -700,6 +710,11 @@ def p_compound_statement(p):
                           | '{' declaration_list statement_list '}'
     '''
 
+def p_compound_statement_error(p):
+    '''compound_statement : '{' error '}'
+    '''
+    # Error resynchronisation catch-all
+
 def p_declaration_list(p):
     '''declaration_list : declaration
                         | declaration_list declaration
@@ -714,6 +729,10 @@ def p_expression_statement(p):
     '''expression_statement : ';'
                             | expression ';'
     '''
+def p_expression_statement_error(p):
+    '''expression_statement : error ';'
+    '''
+    # Error resynchronisation catch-all
 
 def p_selection_statement(p):
     '''selection_statement : IF '(' expression ')' statement
@@ -757,6 +776,8 @@ def p_error(t):
     else:
         t.lexer.cparser.handle_error('Syntax error at %r' % t.value, 
              t.filename, t.lineno)
+        import pdb
+        pdb.set_trace()
     # Don't alter lexer: default behaviour is to pass error production
     # up until it hits the catch-all at declaration, at which point
     # parsing continues (synchronisation).
@@ -781,7 +802,7 @@ class CLexer(object):
 
             if not t:
                 break
-            
+
             # PP events
             if t.type == 'PP_DEFINE':
                 self.cparser.handle_define(t.value[0], t.value[1])
@@ -828,7 +849,7 @@ class CParser(object):
     Subclass and override the handle_* methods.  Call `parse` with a string
     to parse.
     '''
-    def __init__(self, stddef_types=True, cache_headers=True):
+    def __init__(self, stddef_types=True, gnu_types=True, cache_headers=True):
         self.preprocessor_parser = CPreprocessorParser(self)
         self.parser = yacc.Parser()
         yacc.yacc(method='LALR').init_parser(self.parser)
@@ -839,6 +860,8 @@ class CParser(object):
             self.lexer.type_names.add('wchar_t')
             self.lexer.type_names.add('ptrdiff_t')
             self.lexer.type_names.add('size_t')
+        if gnu_types:
+            self.lexer.type_names.add('__builtin_va_list')
 
         self.header_cache = {}
         self.cache_headers = cache_headers

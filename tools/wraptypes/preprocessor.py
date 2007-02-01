@@ -10,6 +10,7 @@ Limitations:
 Reference is C99:
   * http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1124.pdf
   * Also understands Objective-C #import directive
+  * Also understands GNU #include_next
 
 '''
 
@@ -36,8 +37,9 @@ tokens = (
     'AND_ASSIGN', 'XOR_ASSIGN', 'OR_ASSIGN',  'HASH_HASH', 'PERIOD',
     'ELLIPSIS',
 
-    'IF', 'IFDEF', 'IFNDEF', 'ELIF', 'ELSE', 'ENDIF', 'INCLUDE', 'DEFINE',
-    'UNDEF', 'LINE', 'ERROR', 'PRAGMA', 'DEFINED', 'IMPORT',
+    'IF', 'IFDEF', 'IFNDEF', 'ELIF', 'ELSE', 'ENDIF', 'INCLUDE',
+    'INCLUDE_NEXT', 'DEFINE', 'UNDEF', 'LINE', 'ERROR', 'PRAGMA', 'DEFINED',
+    'IMPORT',
 
     'NEWLINE', 'LPAREN'
 )
@@ -159,14 +161,21 @@ def t_ccomment(t):
     t.lexer.lineno += t.value.count('\n')
 
 def t_header_name(t):
-    r'<[^\n>]*>'
+    r'<([\/]?[^\/\*\n>])*[\/]?>(?=[ \t\f\v\n])'
+    # Should allow any character from charset, but that wreaks havok (skips
+    #   comment delimiter, for instance), so also don't permit '*' or '//'
+    # The non-matching group at the end prevents false-positives with
+    #   operators like '>='.
+    # In the event of a false positive (e.g. "if (a < b || c > d)"), the
+    #  token will be split and rescanned if it appears in a text production;
+    #  see PreprocessorParser.write.
     # Is also r'"[^\n"]"', but handled in STRING_LITERAL instead.
     t.type = 'HEADER_NAME'
     t.value = SystemHeaderName(t.value)
     return t
 
 def t_directive(t):
-    r'\#[ \t]*(ifdef|ifndef|if|elif|else|endif|define|undef|include|import|line|error|pragma)'
+    r'\#[ \t]*(ifdef|ifndef|if|elif|else|endif|define|undef|include_next|include|import|line|error|pragma)'
     if t.lexer.lasttoken in ('NEWLINE', None):
         t.type = t.value[1:].lstrip().upper()
     else:
@@ -386,15 +395,19 @@ def symbol_to_token(sym):
     else:
         assert False, 'Not a symbol: %r' % sym
 
-def create_token(type, value, production):
+def create_token(type, value, production=None):
     '''Create a token of type and value, at the position where 'production'
-    was reduced.'''
+    was reduced.  Don't specify production if the token is built-in'''
     t = lex.LexToken()
     t.type = type
     t.value = value
     t.lexpos = -1
-    t.lineno = production.slice[1].lineno
-    t.filename = production.slice[1].filename
+    if production:
+        t.lineno = production.slice[1].lineno
+        t.filename = production.slice[1].filename
+    else:
+        t.lineno = -1
+        t.filename = '<builtin>'
     return t
 
 # --------------------------------------------------------------------------
@@ -482,7 +495,7 @@ class PreprocessorGrammar(Grammar):
         '''
 
     def p_elif_line(self, p):
-        '''elif_line : ELIF replaced_constant_expression NEWLINE
+        '''elif_line : ELIF replaced_elif_constant_expression NEWLINE
         '''
         result = p[2].evaluate(p.parser.namespace)
         p.parser.condition_elif(result)
@@ -519,6 +532,7 @@ class PreprocessorGrammar(Grammar):
 
     def p_include_line(self, p):
         '''include_line : INCLUDE pp_tokens 
+                        | INCLUDE_NEXT pp_tokens
                         | IMPORT pp_tokens
         '''
         if p.parser.enable_declaratives():
@@ -532,6 +546,9 @@ class PreprocessorGrammar(Grammar):
                     elif tokens[0].type == 'HEADER_NAME':
                         p.parser.include_system(tokens[0].value)
                         return
+                elif p.slice[1].type == 'INCLUDE_NEXT':
+                    p.parser.include_next(tokens[0].value, p.slice[1].filename)
+                    return
                 else:
                     if tokens[0].type == 'STRING_LITERAL':
                         p.parser.import_(tokens[0].value)
@@ -632,6 +649,18 @@ class PreprocessorGrammar(Grammar):
             p[0] = parser.parse(debug=True)
         else:
             p[0] = ConstantExpressionNode(0)
+
+    def p_replaced_elif_constant_expression(self, p):
+        '''replaced_elif_constant_expression : pp_tokens'''
+        if p.parser.enable_elif_conditionals():
+            tokens = p[1]
+            tokens = p.parser.namespace.apply_macros(tokens)
+            lexer = TokenListLexer(tokens)
+            parser = ConstantExpressionParser(lexer, p.parser.namespace) 
+            p[0] = parser.parse(debug=True)
+        else:
+            p[0] = ConstantExpressionNode(0)
+
 
     def p_pp_tokens_opt(self, p):
         '''pp_tokens_opt : pp_tokens
@@ -1052,6 +1081,20 @@ class PreprocessorParser(yacc.Parser):
         else:
             print >> sys.stderr, '"%s" not found' % header # TODO
 
+    def include_next(self, header, reference):
+        # XXX doesn't go via get_system_header
+        next = False
+        for path in self.include_path:
+            p = os.path.join(path, header)
+            if os.path.exists(p):
+                if next:
+                    self.push_file(p)
+                    return
+                elif p == reference:
+                    next = True
+        print >> sys.stderr, '%s: cannot include_next from %s' % \
+            (header, reference) # TODO
+
     def import_(self, header):
         path = self.get_header_path(header)
         if path:
@@ -1126,13 +1169,41 @@ class PreprocessorParser(yacc.Parser):
         return self.condition_stack[-1].enabled
 
     def enable_conditionals(self):
-        return self.condition_stack[-1].parent_enabled
+        return self.condition_stack[-1].enabled
+
+    def enable_elif_conditionals(self):
+        return self.condition_stack[-1].parent_enabled and \
+               not self.condition_stack[-1].context_enabled
 
     def write(self, tokens):
         for t in tokens:
+            if t.type == 'HEADER_NAME':
+                # token was mis-parsed.  Do it again, without the '<', '>'.
+                ta = create_token('<', '<')
+                ta.filename = t.filename
+                ta.lineno = t.lineno
+                self.output.append(ta)
+
+                l = lex.lex(cls=PreprocessorLexer)
+                l.input(t.value, t.filename)
+                l.lineno = t.lineno
+                tb = l.token()
+                while tb is not None:
+                    if hasattr(tb, 'lexer'):
+                        del tb.lexer
+                    self.output.append(tb) 
+                    tb = l.token()
+
+                tc = create_token('>', '>')
+                tc.filename = t.filename
+                tc.lineno = t.lineno
+                self.output.append(tc)
+
+                continue
+
             if hasattr(t, 'lexer'):
                 del t.lexer
-        self.output += list(tokens)
+            self.output.append(t)
 
     def get_memento(self):
         return (set(self.namespace.objects.keys()), 
@@ -1151,9 +1222,14 @@ class ConstantExpressionParser(yacc.Parser):
         return self.result
 
 class PreprocessorNamespace(EvaluationContext):
-    def __init__(self, gcc_macros=True, workaround_macros=True):
+    def __init__(self, gcc_macros=True, 
+                       stdc_macros=True,
+                       workaround_macros=True):
         self.objects = {}
         self.functions = {}
+
+        if stdc_macros:
+            self.add_stdc_macros()
         
         if gcc_macros:
             self.add_gcc_macros()
@@ -1161,12 +1237,28 @@ class PreprocessorNamespace(EvaluationContext):
         if workaround_macros:
             self.add_workaround_macros()
 
+    def add_stdc_macros(self):
+        '''Add macros defined in 6.10.8 except __FILE__ and __LINE__.
+
+        This is potentially dangerous, as this preprocessor is not ISO
+        compliant in many ways (the most obvious is the lack of # and ##
+        operators).  It is required for Apple headers, however, which
+        otherwise assume some truly bizarre syntax is ok.
+        '''
+        import time
+        date = time.strftime('%b %d %Y') # XXX %d should have leading space
+        t = time.strftime('%H:%M:S')
+        self.objects['__DATE__'] = create_token('STRING_LITERAL', (date,))
+        self.objects['__TIME__'] = create_token('STRING_LITERAL', (t,))
+        self.objects['__STDC__'] = create_token('PP_NUMBER', ('1',))            
+        self.objects['__STDC_HOSTED__'] = create_token('PP_NUMBER', ('1',))
+        self.objects['__STDC_VERSION'] = create_token('PP_NUMBER', ('199901L',))
+
     def add_gcc_macros(self):
         import platform
         import sys
 
-        gcc_macros = ('__GLIBC_HAVE_LONG_LONG',) 
-        #'__GNUC__',)   # This just causes trouble.
+        gcc_macros = ('__GLIBC_HAVE_LONG_LONG', '__GNUC__',)
 
         # Get these from `gcc -E -dD empty.c`
         machine_macros = {
@@ -1180,7 +1272,7 @@ class PreprocessorNamespace(EvaluationContext):
         platform_macros = {
             'linux2': ('__gnu_linux__', '__linux', '__linux__', 'linux',
                        '__unix', '__unix__', 'unix'),
-            'darwin': ('__MACH__', '__APPLE__', '__DYNAMIC__'),
+            'darwin': ('__MACH__', '__APPLE__', '__DYNAMIC__', '__APPLE_CC__'),
             # TODO everyone else
         }.get(sys.platform, ())
 
@@ -1192,6 +1284,13 @@ class PreprocessorNamespace(EvaluationContext):
         
         for macro in machine_macros + platform_macros + gcc_macros:
             self.define_object(macro, (tok1,))
+
+        self.define_object('inline', ())
+        self.define_object('__inline', ())
+        self.define_object('__inline__', ())
+
+        # HACK workaround; eliminate __asm__ statements.
+        self.define_function('__asm__', ('...',), ())
 
     def add_workaround_macros(self):
         if sys.platform == 'darwin':
