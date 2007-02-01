@@ -350,7 +350,10 @@ class ClockImpl(_ClockBase):
             item.func(ts - item.last_ts, *item.args, **item.kwargs)
             if item.interval:
                 item.last_ts = ts
-                item.next_ts = ts + item.interval
+                # Try to keep timing regular, even if overslept this time;
+                # but don't schedule in the past (which could lead to
+                # infinitely-worsing error).
+                item.next_ts = max(item.next_ts + item.interval, ts)
                 need_resort = True
 
         # Remove finished one-shots.
