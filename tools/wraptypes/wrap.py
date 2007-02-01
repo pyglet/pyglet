@@ -23,7 +23,7 @@ class CtypesWrapper(CtypesParser):
 
     def wrap(self, filename, source=None):
         self.print_preamble()
-        self.parse(filename, source, debug=True)
+        self.parse(filename, source)
         self.print_epilogue()
 
     def print_preamble(self):

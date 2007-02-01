@@ -394,7 +394,7 @@ def p_declaration_impl(p):
         declaration.declarator = declarator
         p.parser.cparser.impl_handle_declaration(declaration)
 
-"""
+""" # shift/reduce conflict with p_statement_error.
 def p_declaration_error(p):
     '''declaration : error ';'
     '''
@@ -458,9 +458,14 @@ def p_type_specifier(p):
 
 def p_struct_or_union_specifier(p):
     '''struct_or_union_specifier : struct_or_union IDENTIFIER '{' struct_declaration_list '}'
+         | struct_or_union TYPE_NAME '{' struct_declaration_list '}'
          | struct_or_union '{' struct_declaration_list '}'
          | struct_or_union IDENTIFIER
+         | struct_or_union TYPE_NAME
     '''
+    # The TYPE_NAME ones are dodgy, needed for Apple headers
+    # CoreServices.framework/Frameworks/CarbonCore.framework/Headers/Files.h.
+    # CoreServices.framework/Frameworks/OSServices.framework/Headers/Power.h
 
 def p_struct_or_union(p):
     '''struct_or_union : STRUCT
@@ -806,8 +811,6 @@ def p_error(t):
     else:
         t.lexer.cparser.handle_error('Syntax error at %r' % t.value, 
              t.filename, t.lineno)
-        import pdb
-        pdb.set_trace()
     # Don't alter lexer: default behaviour is to pass error production
     # up until it hits the catch-all at declaration, at which point
     # parsing continues (synchronisation).
