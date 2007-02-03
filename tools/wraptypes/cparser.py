@@ -844,6 +844,10 @@ class CLexer(object):
                 self.cparser.handle_define(
                     t.value[0], t.value[1], t.filename, t.lineno)
                 continue
+            elif t.type == 'PP_IFNDEF':
+                self.cparser.handle_ifndef(t.value, t.filename, t.lineno)
+                continue
+            # TODO: other PP tokens
 
             # Transform PP tokens into C tokens
             if t.type == 'LPAREN':
@@ -1015,7 +1019,7 @@ class CParser(object):
     def handle_ifdef(self, name):
         '''#ifdef `name`'''
 
-    def handle_ifndef(self, name):
+    def handle_ifndef(self, name, filename, lineno):
         '''#ifndef `name`'''
 
     def handle_elif(self, expr):
@@ -1069,7 +1073,7 @@ class DebugCParser(CParser):
     def handle_ifdef(self, name):
         print '#ifdef name=%r' % name
 
-    def handle_ifndef(self, name):
+    def handle_ifndef(self, name, filename, lineno):
         print '#ifndef name=%r' % name
 
     def handle_elif(self, expr):

@@ -475,6 +475,7 @@ class PreprocessorGrammar(Grammar):
                 result = p.parser.namespace.is_defined(p[2])
             elif type == 'IFNDEF':
                 result = not p.parser.namespace.is_defined(p[2])
+                p.parser.write((create_token('PP_IFNDEF', p[2], p),))
         else:
             result = False
         

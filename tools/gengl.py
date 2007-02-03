@@ -15,14 +15,20 @@ import textwrap
 
 from wraptypes.wrap import CtypesWrapper
 
+GLEXT_LOCAL_H = '/usr/include/GL/glext.h'
+GLEXT_ABI_H = 'http://oss.sgi.com/projects/ogl-sample/ABI/glext.h'
+GLEXT_NV_H = 'http://developer.download.nvidia.com/opengl/includes/glext.h'
+GLXEXT_ABI_H = 'http://oss.sgi.com/projects/ogl-sample/ABI/glxext.h'
+GLXEXT_NV_H = 'http://developer.download.nvidia.com/opengl/includes/glxext.h'
+WGLEXT_ABI_H = 'http://oss.sgi.com/projects/ogl-sample/ABI/wglext.h'
+WGLEXT_NV_H = 'http://developer.download.nvidia.com/opengl/includes/wglext.h'
+
 GL_H = '/usr/include/GL/gl.h'
+GLU_H = '/usr/include/GL/glu.h'
 GLX_H = '/usr/include/GL/glx.h'
-GLEXT_URL = 'http://oss.sgi.com/projects/ogl-sample/ABI/glext.h'
-GLXEXT_URL = 'http://oss.sgi.com/projects/ogl-sample/ABI/glxext.h'
-WGLEXT_URL = 'http://oss.sgi.com/projects/ogl-sample/ABI/wglext.h'
-NV_GLEXT_URL = 'http://developer.download.nvidia.com/opengl/includes/glext.h'
-NV_GLXEXT_URL = 'http://developer.download.nvidia.com/opengl/includes/glxext.h'
-NV_WGLEXT_URL = 'http://developer.download.nvidia.com/opengl/includes/wglext.h'
+GLEXT_H = GLEXT_LOCAL_H   
+GLXEXT_H = GLXEXT_ABI_H
+WGLEXT_H = WGLEXT_ABI_H
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
 CACHE_FILE = os.path.join(script_dir, '.gengl.cache')
@@ -55,6 +61,9 @@ def read_url(url):
     return data
 
 class GLWrapper(CtypesWrapper):
+    link_function = 'link_GL'
+    requires = None
+
     def __init__(self, header, library_module, file):
         self.header = header
         self.library_module = library_module
@@ -73,59 +82,73 @@ class GLWrapper(CtypesWrapper):
             __version__ = '$Id$'
 
             from ctypes import *
-            from %(library_module)s import link_function as _link_function
+            from %(library_module)s import %(link_function)s as _link_function
+            from %(library_module)s import c_ptrdiff_t
         """ % {
             'header': self.header,
             'date': time.ctime(),
             'script': __file__,
             'library_module': self.library_module,
+            'link_function': self.link_function,
         }).lstrip()
 
-    def handle_ctypes_function(self, name, restype, argtypes):
-        self.all_names.append(name)
-        print >> self.file, '%s = _link_function(%r, %s, [%s])' % \
-            (name, name, str(restype), ', '.join([str(a) for a in argtypes]))
+    def handle_ctypes_function(self, name, restype, argtypes, filename, lineno):
+        if self.does_emit(name, filename):
+            self.emit_type(restype)
+            for a in argtypes:
+                self.emit_type(a)
+
+            self.all_names.append(name)
+            print >> self.file, '# %s:%d' % (filename, lineno)
+            print >> self.file, '%s = _link_function(%r, %s, [%s], %r)' % \
+              (name, name, str(restype), 
+               ', '.join([str(a) for a in argtypes]), self.requires)
+            print >> self.file
              
-    def handle_ctypes_variable(self, name, ctype):
-        assert False
+class GLEXTWrapper(GLWrapper):
+    def handle_ifndef(self, name, filename, lineno):
+        if name[:3] == 'GL_':
+            self.requires = name[3:]
+            print >> self.file, '# %s (%s:%d)'  % \
+                (self.requires, filename, lineno)
 
 def write_gl(dir):
     progress('Generating GL...')
     source = read_url(GL_H)
     outfile = open(os.path.join(dir, 'GL.py'), 'w')
     wrapper = GLWrapper('gl.h', 'pyglet.GL.lib', outfile)
-    wrapper.wrap(source)
+    wrapper.wrap(GL_H, source)
+
+def write_glu(dir):
+    progress('Generating GLU...')
+    source = read_url(GLU_H)
+    outfile = open(os.path.join(dir, 'GLU.py'), 'w')
+    wrapper = GLWrapper('glu.h', 'pyglet.GL.lib', outfile)
+    wrapper.link_function = 'link_GLU'
+    wrapper.wrap(GLU_H, source)
 
 def write_glx(dir):
     progress('Generating GLX...')
     source = read_url(GLX_H)
-    prerequisite = textwrap.dedent('''
-        typedef unsigned long XID;
-    ''')
-    source = prerequisite + source
     outfile = open(os.path.join(dir, 'GLX.py'), 'w')
     wrapper = GLWrapper('glx.h', 'pyglet.GL.lib', outfile)
-    wrapper.wrap(source)
+    wrapper.wrap(GLX_H, source)
+
+def write_glext(dir):
+    progress('Generating GLEXT...')
+    source = read_url(GLEXT_H)
+    source = '#defineGL_GLEXT_PROTOTYPES\n#include <GL/gl.h>\n' + source
+    outfile = open(os.path.join(dir, 'GLEXT.py'), 'w')
+    wrapper = GLEXTWrapper('glext.h', 'pyglet.GL.lib', outfile)
+    wrapper.wrap(GLEXT_H, source)
 
 def progress(msg):
     print >> sys.stderr, msg
         
 if __name__ == '__main__':
     op = optparse.OptionParser()
-    op.add_option('--gl-dir', dest='gldir',
-                  help='generate GL files in DIR', metavar='DIR')
-    op.add_option('--glu-dir', dest='gludir',
-                  help='generate GLU files in DIR', metavar='DIR')
-    op.add_option('--no-gl', dest='nogl',
-                  help="don't generate GL or GLEXT files")
-    op.add_option('--no-glext', dest='noglext',
-                  help="don't generate GLEXT files")
-    op.add_option('--no-glx', dest='noglx',
-                  help="don't generate GLX files")
-    op.add_option('--no-glxext', dest='noglxext',
-                  help="don't generate GLXEXT files")
-    op.add_option('--no-glu', dest='noglu',
-                  help="don't generate GLU files")
+    op.add_option('-D', '--dir', dest='dir',
+                  help='generate files in DIR', metavar='DIR')
     op.add_option('-r', '--refresh-cache', dest='refresh_cache',
                   help='clear cache first')
     options, args = op.parse_args()
@@ -135,28 +158,23 @@ if __name__ == '__main__':
     else:
         save_cache()
 
-    if not options.gldir:
-        options.gldir = os.path.join(script_dir, 
-                                     os.path.pardir,
-                                     'pyglet', 'GL')
+    if not options.dir:
+        options.dir = os.path.join(script_dir, os.path.pardir, 'pyglet', 'GL')
+    if not os.path.exists(options.dir):
+        os.path.makedirs(options.dir)
+    if not args:
+        print >> sys.stderr, 'Specify module(s) to generate:'
+        print >> sys.stderr, '  agl gl glext glu glx wgl'
 
-    if not options.nogl:
-        if not os.path.exists(options.gldir):
-            os.path.makedirs(options.gldir)
-        write_gl(options.gldir)
-
-    if not options.noglx and sys.platform == 'linux2':
-        glxdir = os.path.join(options.gldir, 'GLX')
-        if not os.path.exists(glxdir):
-            os.path.makedirs(glxdir)
-        write_glx(glxdir)
-
-    if not options.noglu:
-        if not options.gludir:
-            options.gludir = os.path.join(script_dir, 
-                                          os.path.pardir,
-                                         'pyglet', 'GLU')
-        if not os.path.exists(options.gludir):
-            os.path.makedirs(options.gludir)
-
-
+    for arg in args:
+        if arg == 'gl':
+            write_gl(options.dir)
+        elif arg == 'glx':
+            glxdir = os.path.join(options.dir, 'GLX')
+            if not os.path.exists(glxdir):
+                os.path.makedirs(glxdir)
+            write_glx(glxdir)
+        elif arg == 'glu':
+            write_glu(options.dir)
+        elif arg == 'glext':
+            write_glext(options.dir)

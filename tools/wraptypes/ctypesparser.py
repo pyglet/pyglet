@@ -109,8 +109,10 @@ class CtypesFunction(CtypesType):
                          for p in parameters]
 
     def get_required_type_names(self):
-        return list(self.restype.get_required_type_names()) + \
-                 [a.get_required_type_names() for a in self.argtypes]
+        lst = list(self.restype.get_required_type_names())
+        for a in self.argtypes:
+            lst += list(a.get_required_type_names())
+        return lst
 
     def __str__(self):
         return 'CFUNCTYPE(%s)' % ', '.join([str(self.restype)] + \
