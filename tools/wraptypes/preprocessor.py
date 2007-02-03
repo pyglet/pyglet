@@ -1288,6 +1288,7 @@ class PreprocessorNamespace(EvaluationContext):
         self.define_object('inline', ())
         self.define_object('__inline', ())
         self.define_object('__inline__', ())
+        self.define_object('__const', (create_token('IDENTIFIER', 'const'),))
 
     def add_workaround_macros(self):
         if sys.platform == 'darwin':

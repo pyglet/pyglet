@@ -107,7 +107,7 @@ class CtypesParser(CParser):
     
     Subclass and override the handle_ctypes_* methods.
     '''
-    def handle_define(self, name, value):
+    def handle_define(self, name, value, filename, lineno):
         if not value:
             return
         if len(value) >= 2 and value[0] == '"' and value[-1] == '"':
@@ -126,9 +126,9 @@ class CtypesParser(CParser):
                 except ValueError:
                     value = None
         if value:
-            self.handle_ctypes_constant(name, value)
+            self.handle_ctypes_constant(name, value, filename, lineno)
 
-    def handle_declaration(self, declaration):
+    def handle_declaration(self, declaration, filename, lineno):
         t = get_ctypes_type(declaration.type, declaration.declarator)
         declarator = declaration.declarator
         if declarator is None:
@@ -138,23 +138,25 @@ class CtypesParser(CParser):
             declarator = declarator.pointer
         name = declarator.identifier
         if declaration.storage == 'typedef':
-            self.handle_ctypes_type_definition(name, remove_function_pointer(t))
+            self.handle_ctypes_type_definition(
+                name, remove_function_pointer(t), filename, lineno)
         elif type(t) == CtypesFunction:
-            self.handle_ctypes_function(name, t.restype, t.argtypes)
+            self.handle_ctypes_function(
+                name, t.restype, t.argtypes, filename, lineno)
         elif declaration.storage != 'static':
-            self.handle_ctypes_variable(name, t)
+            self.handle_ctypes_variable(name, t, filename, lineno)
 
     # ctypes parser interface.  Override these methods in your subclass.
 
-    def handle_ctypes_constant(self, name, value):
+    def handle_ctypes_constant(self, name, value, filename, lineno):
         pass
 
-    def handle_ctypes_type_definition(self, name, ctype):
+    def handle_ctypes_type_definition(self, name, ctype, filename, lineno):
         pass
 
-    def handle_ctypes_function(self, name, restype, argtypes):
+    def handle_ctypes_function(self, name, restype, argtypes, filename, lineno):
         pass
 
-    def handle_ctypes_variable(self, name, ctype):
+    def handle_ctypes_variable(self, name, ctype, filename, lineno):
         pass
 

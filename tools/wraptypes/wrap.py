@@ -67,25 +67,31 @@ class CtypesWrapper(CtypesParser):
         print >> self.file, '__all__ = [%s]' % \
             ','.join([repr(n) for n in self.all_names])
 
-    def handle_ctypes_constant(self, name, value):
+    def handle_ctypes_constant(self, name, value, filename, lineno):
         self.all_names.append(name)
-        print >> self.file, '%s = %r' % (name, value)
+        print >> self.file, '%s = %r' % (name, value),
+        print >> self.file, '\t# %s:%d' % (filename, lineno)
 
-    def handle_ctypes_type_definition(self, name, ctype):
+    def handle_ctypes_type_definition(self, name, ctype, filename, lineno):
         self.all_names.append(name)
-        print >> self.file, '%s = %s' % (name, str(ctype))
+        print >> self.file, '%s = %s' % (name, str(ctype)),
+        print >> self.file, '\t# %s:%d' % (filename, lineno)
 
-    def handle_ctypes_function(self, name, restype, argtypes):
+    def handle_ctypes_function(self, name, restype, argtypes, filename, lineno):
         self.all_names.append(name)
+        print >> self.file, '# %s:%d' % (filename, lineno)
         print >> self.file, '%s = _lib.%s' % (name, name)
         print >> self.file, '%s.restype = %s' % (name, str(restype))
         print >> self.file, '%s.argtypes = [%s]' % \
             (name, ', '.join([str(a) for a in argtypes])) 
+        print >> self.file
 
-    def handle_ctypes_variable(self, name, ctype):
-        self.all_names.append(name)
-        print >> self.file, '%s = %s.indll(_lib, %r)' % \
-            (name, str(ctype), name)
+    def handle_ctypes_variable(self, name, ctype, filename, lineno):
+        # This doesn't work.
+        #self.all_names.append(name)
+        #print >> self.file, '%s = %s.indll(_lib, %r)' % \
+        #    (name, str(ctype), name)
+        pass
 
 if __name__ == '__main__':
     import optparse

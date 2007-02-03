@@ -386,13 +386,16 @@ def p_declaration_impl(p):
     declaration = Declaration()
     apply_specifiers(p[1], declaration)
 
+    filename = p.slice[1].filename
+    lineno = p.slice[1].lineno
+
     if len(p) == 2:
-        p.parser.cparser.impl_handle_declaration(declaration)
+        p.parser.cparser.impl_handle_declaration(declaration, filename, lineno)
         return
 
     for declarator in p[2]:
         declaration.declarator = declarator
-        p.parser.cparser.impl_handle_declaration(declaration)
+        p.parser.cparser.impl_handle_declaration(declaration, filename, lineno)
 
 """ # shift/reduce conflict with p_statement_error.
 def p_declaration_error(p):
@@ -838,7 +841,8 @@ class CLexer(object):
 
             # PP events
             if t.type == 'PP_DEFINE':
-                self.cparser.handle_define(t.value[0], t.value[1])
+                self.cparser.handle_define(
+                    t.value[0], t.value[1], t.filename, t.lineno)
                 continue
 
             # Transform PP tokens into C tokens
@@ -999,7 +1003,7 @@ class CParser(object):
         '''
         return True
 
-    def handle_define(self, name, value):
+    def handle_define(self, name, value, filename, lineno):
         '''#define `name` `value` (both are strings)'''
 
     def handle_undef(self, name):
@@ -1023,7 +1027,7 @@ class CParser(object):
     def handle_endif(self):
         '''#endif'''
 
-    def impl_handle_declaration(self, declaration):
+    def impl_handle_declaration(self, declaration, filename, lineno):
         '''Internal method that calls `handle_declaration`.  This method
         also adds any new type definitions to the lexer's list of valid type
         names, which affects the parsing of subsequent declarations.
@@ -1036,9 +1040,9 @@ class CParser(object):
             while declarator.pointer:
                 declarator = declarator.pointer
             self.lexer.type_names.add(declarator.identifier)
-        self.handle_declaration(declaration)
+        self.handle_declaration(declaration, filename, lineno)
 
-    def handle_declaration(self, declaration):
+    def handle_declaration(self, declaration, filename, lineno):
         '''A declaration was encountered.  
         
         `declaration` is an instance of Declaration.  Where a declaration has
@@ -1052,41 +1056,32 @@ class DebugCParser(CParser):
     '''
     def handle_include(self, header):
         print '#include header=%r' % header
-        super(DebugCParser, self).handle_include(header)
 
-    def handle_define(self, name, value):
+    def handle_define(self, name, value, filename, lineno):
         print '#define name=%r, value=%r' % (name, value)
-        super(DebugCParser, self).handle_define(name, value)
 
     def handle_undef(self, name):
         print '#undef name=%r' % name
-        super(DebugCParser, self).handle_undef(name)
 
     def handle_if(self, expr):
         print '#if expr=%s' % expr
-        super(DebugCParser, self).handle_if(expr)
 
     def handle_ifdef(self, name):
         print '#ifdef name=%r' % name
-        super(DebugCParser, self).handle_ifdef(name)
 
     def handle_ifndef(self, name):
         print '#ifndef name=%r' % name
-        super(DebugCParser, self).handle_ifndef(name)
 
     def handle_elif(self, expr):
         print '#elif expr=%s' % expr
-        super(DebugCParser, self).handle_elif(expr)
 
     def handle_else(self):
         print '#else'
-        super(DebugCParser, self).handle_else()
 
     def handle_endif(self):
         print '#endif'
-        super(DebugCParser, self).handle_endif()
 
-    def handle_declaration(self, declaration):
+    def handle_declaration(self, declaration, filename, lineno):
         print declaration
         
 if __name__ == '__main__':
