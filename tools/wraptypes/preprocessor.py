@@ -336,11 +336,11 @@ class ConditionalExpressionNode(ExpressionNode):
 class PreprocessorLexer(lex.Lexer):
     def __init__(self):
         lex.Lexer.__init__(self)
+        self.filename = '<input>'
 
     def input(self, data, filename=None):
-        if not filename:
-            filename = '<input>'
-        self.filename = filename 
+        if filename:
+            self.filename = filename 
         self.lasttoken = None
         self.input_stack = []
 

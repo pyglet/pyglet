@@ -75,6 +75,10 @@ class CtypesType(object):
     def __init__(self, name):
         self.name = name
 
+    def get_required_type_names(self):
+        '''Return all type names defined or needed by this type'''
+        return (self.name,)
+
     def __str__(self):
         return self.name
 
@@ -82,6 +86,12 @@ class CtypesPointer(CtypesType):
     def __init__(self, destination, qualifiers):
         self.destination = destination
         # ignore qualifiers, ctypes can't use them
+
+    def get_required_type_names(self):
+        if self.destination:
+            return self.destination.get_required_type_names()
+        else:
+            return ()
 
     def __str__(self):
         return 'POINTER(%s)' % str(self.destination)
@@ -97,6 +107,10 @@ class CtypesFunction(CtypesType):
         self.argtypes = [remove_function_pointer(
                             get_ctypes_type(p.type, p.declarator)) \
                          for p in parameters]
+
+    def get_required_type_names(self):
+        return list(self.restype.get_required_type_names()) + \
+                 [a.get_required_type_names() for a in self.argtypes]
 
     def __str__(self):
         return 'CFUNCTYPE(%s)' % ', '.join([str(self.restype)] + \
