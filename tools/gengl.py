@@ -23,6 +23,7 @@ GLXEXT_NV_H = 'http://developer.download.nvidia.com/opengl/includes/glxext.h'
 WGLEXT_ABI_H = 'http://oss.sgi.com/projects/ogl-sample/ABI/wglext.h'
 WGLEXT_NV_H = 'http://developer.download.nvidia.com/opengl/includes/wglext.h'
 
+AGL_H = '/System/Library/Frameworks/AGL.framework/Headers/agl.h'
 GL_H = '/usr/include/GL/gl.h'
 GLU_H = '/usr/include/GL/glu.h'
 GLX_H = '/usr/include/GL/glx.h'
@@ -132,6 +133,7 @@ def write_glx(dir):
     source = read_url(GLX_H)
     outfile = open(os.path.join(dir, 'GLX.py'), 'w')
     wrapper = GLWrapper('glx.h', 'pyglet.GL.lib', outfile)
+    wrapper.link_function = 'link_GLX'
     wrapper.wrap(GLX_H, source)
 
 def write_glext(dir):
@@ -141,6 +143,14 @@ def write_glext(dir):
     outfile = open(os.path.join(dir, 'GLEXT.py'), 'w')
     wrapper = GLEXTWrapper('glext.h', 'pyglet.GL.lib', outfile)
     wrapper.wrap(GLEXT_H, source)
+
+def write_agl(dir):
+    progress('Generating AGL...')
+    source = read_url(AGL_H)
+    outfile = open(os.path.join(dir, 'AGL.py'), 'w')
+    wrapper = GLWrapper('agl.h', 'pyglet.GL.lib', outfile)
+    wrapper.link_function = 'link_AGL'
+    wrapper.wrap(AGL_H, source)
 
 def progress(msg):
     print >> sys.stderr, msg
@@ -178,3 +188,8 @@ if __name__ == '__main__':
             write_glu(options.dir)
         elif arg == 'glext':
             write_glext(options.dir)
+        elif arg == 'agl':
+            agldir = os.path.join(options.dir, 'AGL')
+            if not os.path.exists(agldir):
+                os.path.makedirs(agldir)
+            write_agl(agldir)

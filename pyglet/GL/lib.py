@@ -9,7 +9,7 @@ __version__ = '$Id$'
 import sys
 import ctypes
 
-__all__ = ['link_GL', 'link_GLU']
+__all__ = ['link_GL', 'link_GLU', 'link_AGL', 'link_GLX', 'link_WGL']
 
 class MissingFunctionException(Exception):
     def __init__(self, name, requires=None, suggestions=None):
@@ -35,10 +35,14 @@ for t in _int_types:
     if ctypes.sizeof(t) == ctypes.sizeof(ctypes.c_size_t):
         c_ptrdiff_t = t
 
+link_AGL = None
+link_GLX = None
+link_WGL = None
+
 if sys.platform in ('win32', 'cygwin'):
-    from pyglet.GL.lib_wgl import link_GL, link_GLU
+    from pyglet.GL.lib_wgl import link_GL, link_GLU, link_WGL
 elif sys.platform == 'darwin':
-    from pyglet.GL.lib_agl import link_GL, link_GLU
+    from pyglet.GL.lib_agl import link_GL, link_GLU, link_AGL
 else:
-    from pyglet.GL.lib_glx import link_GL, link_GLU
+    from pyglet.GL.lib_glx import link_GL, link_GLU, link_GLX
 

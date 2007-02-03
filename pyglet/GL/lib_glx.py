@@ -11,7 +11,7 @@ from ctypes.util import find_library
 
 from pyglet.GL.lib import missing_function
 
-__all__ = ['link_function']
+__all__ = ['link_GL', 'link_GLU']
 
 gl_path = find_library('GL')
 if not gl_path:
@@ -50,6 +50,8 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
                 return ftype(addr)
 
     return missing_function(name, requires, suggestions)
+
+link_GLX = link_GL
 
 def link_GLU(name, restype, argtypes, requires=None, suggestions=None):
     try:
