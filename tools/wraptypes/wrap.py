@@ -13,6 +13,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from ctypesparser import *
+import textwrap
 
 class CtypesWrapper(CtypesParser):
     def __init__(self, library, file):
@@ -69,8 +70,11 @@ class CtypesWrapper(CtypesParser):
         }).lstrip()
 
     def print_epilogue(self):
-        print >> self.file, '__all__ = [%s]' % \
-            ','.join([repr(n) for n in self.all_names])
+        print >> self.file
+        print >> self.file,  '\n'.join(textwrap.wrap(
+            '__all__ = [%s]' % ', '.join([repr(n) for n in self.all_names]),
+            width=78,
+            break_long_words=False))
 
     def handle_ctypes_constant(self, name, value, filename, lineno):
         if self.does_emit(name, filename):
