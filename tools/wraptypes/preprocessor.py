@@ -153,6 +153,9 @@ def t_clinecomment(t):
     r'//[^\n]*'
     t.lexer.lineno += 1
 
+def t_cr(t):
+    r'\r'
+    # Skip over CR characters.  Only necessary on urlopen'd files.
 
 # C /* comments */.  Copied from the ylex.py example in PLY: it's not 100%
 # correct for ANSI C, but close enough for anything that's not crazy.
@@ -161,7 +164,7 @@ def t_ccomment(t):
     t.lexer.lineno += t.value.count('\n')
 
 def t_header_name(t):
-    r'<([\/]?[^\/\*\n>])*[\/]?>(?=[ \t\f\v\n])'
+    r'<([\/]?[^\/\*\n>])*[\/]?>(?=[ \t\f\v\r\n])'
     # Should allow any character from charset, but that wreaks havok (skips
     #   comment delimiter, for instance), so also don't permit '*' or '//'
     # The non-matching group at the end prevents false-positives with
