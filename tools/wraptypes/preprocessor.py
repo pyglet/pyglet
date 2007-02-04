@@ -1267,11 +1267,16 @@ class PreprocessorNamespace(EvaluationContext):
         import time
         date = time.strftime('%b %d %Y') # XXX %d should have leading space
         t = time.strftime('%H:%M:S')
-        self.objects['__DATE__'] = create_token('STRING_LITERAL', (date,))
-        self.objects['__TIME__'] = create_token('STRING_LITERAL', (t,))
-        self.objects['__STDC__'] = create_token('PP_NUMBER', ('1',))            
-        self.objects['__STDC_HOSTED__'] = create_token('PP_NUMBER', ('1',))
-        self.objects['__STDC_VERSION'] = create_token('PP_NUMBER', ('199901L',))
+        self.define_object('__DATE__', 
+                           (create_token('STRING_LITERAL', date),))
+        self.define_object('__TIME__', 
+                           (create_token('STRING_LITERAL', t),))
+        self.define_object('__STDC__', 
+                           (create_token('PP_NUMBER', '1'),))
+        self.define_object('__STDC_HOSTED__', 
+                           (create_token('PP_NUMBER', '1'),))
+        self.define_object('__STDC_VERSION', 
+                           (create_token('PP_NUMBER', '199901L'),))
 
     def add_gcc_macros(self):
         import platform
@@ -1292,6 +1297,7 @@ class PreprocessorNamespace(EvaluationContext):
             'linux2': ('__gnu_linux__', '__linux', '__linux__', 'linux',
                        '__unix', '__unix__', 'unix'),
             'darwin': ('__MACH__', '__APPLE__', '__DYNAMIC__', '__APPLE_CC__'),
+            'win32':  ('_WIN32',),
             # TODO everyone else
         }.get(sys.platform, ())
 

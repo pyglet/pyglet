@@ -135,6 +135,9 @@ if __name__ == '__main__':
                   help='write wrapper to FILE', metavar='FILE')
     op.add_option('-l', '--library', dest='library',
                   help='link to LIBRARY', metavar='LIBRARY')
+    op.add_option('-I', '--include-dir', action='append', dest='include_dirs',
+                  help='add DIR to include search path', metavar='DIR',
+                  default=[])
     
     (options, args) = op.parse_args()
     if len(args) < 1:
@@ -148,6 +151,7 @@ if __name__ == '__main__':
         options.output = '%s.py' % options.library
 
     wrapper = CtypesWrapper(options.library, open(options.output, 'w'))
+    wrapper.preprocessor_parser.include_path += options.include_dirs
     wrapper.wrap(header)
 
     print 'Wrapped to %s' % options.output

@@ -903,6 +903,8 @@ class CParser(object):
             self.lexer.type_names.add('size_t')
         if gnu_types:
             self.lexer.type_names.add('__builtin_va_list')
+        if sys.platform == 'win32':
+            self.lexer.type_names.add('__int64')
 
         self.header_cache = {}
         self.cache_headers = cache_headers
@@ -972,6 +974,7 @@ class CParser(object):
             self.handle_status('Caching header "%s"' % header)
             self.cache_headers = False
             ppp = preprocessor.PreprocessorParser()
+            ppp.include_path = self.preprocessor_parser.include_path
             ppp.parse(filename=header,
                       namespace=self.preprocessor_parser.namespace)
             self.header_cache[header] = (now, current_memento, 

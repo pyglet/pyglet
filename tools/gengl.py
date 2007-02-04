@@ -15,6 +15,8 @@ import textwrap
 
 from wraptypes.wrap import CtypesWrapper
 
+script_dir = os.path.abspath(os.path.dirname(__file__))
+
 GLEXT_ABI_H = 'http://oss.sgi.com/projects/ogl-sample/ABI/glext.h'
 GLEXT_NV_H = 'http://developer.download.nvidia.com/opengl/includes/glext.h'
 GLXEXT_ABI_H = 'http://oss.sgi.com/projects/ogl-sample/ABI/glxext.h'
@@ -26,8 +28,8 @@ AGL_H = '/System/Library/Frameworks/AGL.framework/Headers/agl.h'
 GL_H = '/usr/include/GL/gl.h'
 GLU_H = '/usr/include/GL/glu.h'
 GLX_H = '/usr/include/GL/glx.h'
+WGL_H = os.path.join(script_dir, 'wgl.h')
 
-script_dir = os.path.abspath(os.path.dirname(__file__))
 CACHE_FILE = os.path.join(script_dir, '.gengl.cache')
 _cache = {}
 
@@ -49,7 +51,7 @@ def save_cache():
 def read_url(url):
     if url in _cache:
         return _cache[url]
-    if url[0] == '/':
+    if os.path.exists(url):
         data = open(url).read()
     else:
         data = urllib2.urlopen(url).read()
@@ -201,7 +203,8 @@ modules = {
             prologue='#define GLX_GLXEXT_PROTOTYPES\n#include <GL/glx.h>\n'),
     'agl':
         ModuleWrapper(AGL_H, 'agl.py', link_function='link_AGL'),
-            
+    'wgl':
+        ModuleWrapper(WGL_H, 'wgl.py', link_function='link_WGL'),
 }
 
 

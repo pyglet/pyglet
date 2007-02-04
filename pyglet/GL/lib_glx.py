@@ -11,7 +11,7 @@ from ctypes.util import find_library
 
 from pyglet.GL.lib import missing_function
 
-__all__ = ['link_GL', 'link_GLU']
+__all__ = ['link_GL', 'link_GLU', 'link_GLX']
 
 gl_path = find_library('GL')
 if not gl_path:
