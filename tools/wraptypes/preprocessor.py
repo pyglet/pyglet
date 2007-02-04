@@ -1028,6 +1028,11 @@ class PreprocessorParser(yacc.Parser):
         yacc.Parser.__init__(self)
         self.lexer = lex.lex(cls=PreprocessorLexer)
         PreprocessorGrammar.get_prototype().init_parser(self)
+
+        # Map system header name to data, overrides path search and open()
+        self.system_headers = {}
+
+
         self.include_path = ['/usr/local/include', '/usr/include']
         if sys.platform == 'darwin':
             self.framework_path = ['/System/Library/Frameworks',
@@ -1047,20 +1052,21 @@ class PreprocessorParser(yacc.Parser):
         if path:
             self.include_path.append(path)
 
-    def parse(self, *args, **kwargs):
+    def parse(self, filename=None, data=None, namespace=None, debug=False): 
         self.output = []
-        self.namespace = PreprocessorNamespace()
+        if not namespace:
+            namespace = PreprocessorNamespace()
+        self.namespace = namespace
         self.imported_headers = set()
         self.condition_stack = [ExecutionState(True, True)]
-        self.lexer.filename = '<input>'
-        if 'filename' in kwargs:
-            filename = os.path.abspath(kwargs['filename'])
-            self.lexer.input(open(filename).read(), filename)
-            del kwargs['filename']
-        if 'namespace' in kwargs:
-            self.namespace = kwargs['namespace']
-            del kwargs['namespace']
-        return yacc.Parser.parse(self, *args, **kwargs)
+        if filename:
+            if not data:
+                data = open(filename, 'r').read()
+            self.lexer.input(data, filename)
+        elif data:
+            self.lexer.input(data, '<input>')
+
+        return yacc.Parser.parse(self, debug=debug)
 
     def push_file(self, filename, data=None):
         print >> sys.stderr, filename
@@ -1076,6 +1082,10 @@ class PreprocessorParser(yacc.Parser):
             print >> sys.stderr, '"%s" not found' % header # TODO
 
     def include_system(self, header):
+        if header in self.system_headers:
+            self.push_file(header, self.system_headers[header])
+            return
+
         path = self.get_system_header_path(header)
         if path:
             self.push_file(path)
@@ -1106,6 +1116,11 @@ class PreprocessorParser(yacc.Parser):
             print >> sys.stderr, '"%s" not found' % header # TODO
 
     def import_system(self, header):
+        if header in self.system_headers:
+            if path not in self.imported_headers:
+                self.imported_headers.add(path)
+                self.push_file(header, self.system_headers[header])
+            return
         path = self.get_system_header_path(header)
         if path:
             if path not in self.imported_headers:
@@ -1408,5 +1423,5 @@ class PreprocessorNamespace(EvaluationContext):
 if __name__ == '__main__':
     filename = sys.argv[1]
     parser = PreprocessorParser()
-    parser.parse(filename=filename, debug=True)
+    parser.parse(filename, debug=True)
     print ' '.join([t.value for t in parser.output])

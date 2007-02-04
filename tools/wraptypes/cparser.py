@@ -917,7 +917,7 @@ class CParser(object):
             data = open(filename, 'r').read()
         
         self.handle_status('Preprocessing %s' % filename)
-        self.preprocessor_parser.parse(data, filename=filename, debug=debug)
+        self.preprocessor_parser.parse(filename, data, debug=debug)
         self.lexer.input(self.preprocessor_parser.output)
         self.handle_status('Parsing %s' % filename)
         self.parser.parse(lexer=self.lexer, debug=debug)
@@ -954,7 +954,10 @@ class CParser(object):
         current_memento = self.preprocessor_parser.get_memento()
         if header in self.header_cache:
             timestamp, memento, tokens, namespace = self.header_cache[header]
-            if now < timestamp:
+            if self.preprocessor_parser.system_headers:
+                self.handle_status('Not using cached header "%s" because ' \
+                                   'of overridden system_headers.' % header)
+            elif now < timestamp:
                 self.handle_status('Not using cached header "%s" because ' \
                                    'cached copy is stale.' % header)
             elif memento != current_memento:
@@ -965,7 +968,7 @@ class CParser(object):
                 self.preprocessor_parser.namespace = namespace
                 return tokens
 
-        if self.cache_headers:
+        if self.cache_headers and not self.preprocessor_parser.system_headers:
             self.handle_status('Caching header "%s"' % header)
             self.cache_headers = False
             ppp = preprocessor.PreprocessorParser()
