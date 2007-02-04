@@ -1,13 +1,34 @@
 /* These are function prototypes and constants needed for WGL.  Derived
- * from WinGDI.h in Visual Studio .NET (7).
+ * from WinGDI.h and gl/GL.h in Visual Studio .NET (7).
  *  
- * $Id:$
+ * $Id: $
  */
+
+#ifndef WGL_H
+#define WGL_H
 
 #define WINAPI
 #define WINGDIAPI
 #define FAR
+#define NEAR
 #define CONST const
+
+
+typedef unsigned int GLenum;
+typedef unsigned char GLboolean;
+typedef unsigned int GLbitfield;
+typedef signed char GLbyte;
+typedef short GLshort;
+typedef int GLint;
+typedef int GLsizei;
+typedef unsigned char GLubyte;
+typedef unsigned short GLushort;
+typedef unsigned int GLuint;
+typedef float GLfloat;
+typedef float GLclampf;
+typedef double GLdouble;
+typedef double GLclampd;
+typedef void GLvoid;
 
 typedef signed char         INT8, *PINT8;
 typedef signed short        INT16, *PINT16;
@@ -18,11 +39,14 @@ typedef unsigned int        UINT32, *PUINT32;
 typedef signed int LONG32, *PLONG32;
 typedef unsigned int ULONG32, *PULONG32;
 typedef unsigned int DWORD32, *PDWORD32;
+typedef long long int       INT64, *PINT64;
+typedef unsigned long long int UINT64, *PUINT64;
 
-typedef void VOID;
+typedef void VOID, *LPVOID;
 typedef const char *LPCSTR;
+typedef char CHAR;
 typedef unsigned char BYTE;
-typedef unsigned short WORD;
+typedef unsigned short WORD, USHORT;
 typedef unsigned int UINT;
 typedef int INT, *INT_PTR;
 typedef long BOOL;
@@ -165,3 +189,13 @@ typedef struct _WGLSWAP
 #define WGL_SWAPMULTIPLE_MAX 16
 
 WINGDIAPI DWORD WINAPI wglSwapMultipleBuffers(UINT, CONST WGLSWAP *);
+
+typedef struct tagRECT
+{
+    LONG    left;
+    LONG    top;
+    LONG    right;
+    LONG    bottom;
+} RECT, *PRECT, NEAR *NPRECT, FAR *LPRECT;
+
+#endif /* WGL_H */

@@ -205,6 +205,16 @@ modules = {
         ModuleWrapper(AGL_H, 'agl.py', link_function='link_AGL'),
     'wgl':
         ModuleWrapper(WGL_H, 'wgl.py', link_function='link_WGL'),
+    'wglext_abi':
+        ModuleWrapper(WGLEXT_ABI_H, 'wglext_abi.py', requires_prefix='WGL_',
+            link_function='link_WGL',
+            prologue='#define WGL_WGLEXT_PROTOTYPES\n'\
+                     '#include "%s"\n' % WGL_H.encode('string_escape')),
+    'wglext_nv':
+        ModuleWrapper(WGLEXT_NV_H, 'wglext_nv.py', requires_prefix='WGL_',
+            link_function='link_WGL',
+            prologue='#define WGL_WGLEXT_PROTOTYPES\n'\
+                     '#include "%s"\n' % WGL_H.encode('string_escape')),
 }
 
 
