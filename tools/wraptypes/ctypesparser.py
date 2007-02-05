@@ -54,7 +54,13 @@ def get_ctypes_type(typ, declarator):
     while declarator and declarator.pointer:
         if declarator.parameters is not None:
             t = CtypesFunction(t, declarator.parameters)
-        t = CtypesPointer(t, declarator.qualifiers)
+
+        if type(t) == CtypesType and t.name == 'c_char':
+            t = CtypesType('c_char_p')
+        elif type(t) == CtypesType and t.name == 'None':
+            t = CtypesPointer(CtypesType('c_void'), declarator.qualifiers)
+        else:
+            t = CtypesPointer(t, declarator.qualifiers)
         declarator = declarator.pointer
     if declarator and declarator.parameters is not None:
         t = CtypesFunction(t, declarator.parameters)
