@@ -161,6 +161,23 @@ class StorageClassSpecifier(str):
 class TypeSpecifier(str):
     pass
 
+class StructTypeSpecifier(object):
+    def __init__(self, is_union, tag, declarations):
+        self.is_union = is_union
+        self.tag = tag
+        self.declarations = declarations
+
+    def __repr__(self):
+        if self.is_union:
+            s = 'union'
+        else:
+            s = 'struct'
+        if self.tag:
+            s += ' %s' % self.tag
+        if self.declarations:
+            s += ' {%s}' % '; '.join([repr(d) for d in self.declarations])
+        return s
+
 class TypeQualifier(str):
     pass
 
@@ -175,7 +192,7 @@ def apply_specifiers(specifiers, declaration):
                     '???', p.lineno(1))
                 return
             declaration.storage = s
-        elif type(s) == TypeSpecifier:
+        elif type(s) in (TypeSpecifier, StructTypeSpecifier):
             declaration.type.specifiers.append(s)
         elif type(s) == TypeQualifier:
             declaration.type.qualifiers.append(s)
@@ -457,7 +474,11 @@ def p_type_specifier(p):
                       | enum_specifier
                       | TYPE_NAME
     '''
-    p[0] = TypeSpecifier(p[1])
+    if type(p[1]) == StructTypeSpecifier:
+        p[0] = p[1]
+    else:
+        p[0] = TypeSpecifier(p[1])
+    # TODO enum
 
 def p_struct_or_union_specifier(p):
     '''struct_or_union_specifier : struct_or_union IDENTIFIER '{' struct_declaration_list '}'
@@ -469,20 +490,40 @@ def p_struct_or_union_specifier(p):
     # The TYPE_NAME ones are dodgy, needed for Apple headers
     # CoreServices.framework/Frameworks/CarbonCore.framework/Headers/Files.h.
     # CoreServices.framework/Frameworks/OSServices.framework/Headers/Power.h
+    if len(p) == 3:
+        p[0] = StructTypeSpecifier(p[1], p[2], None)
+    elif p[2] == '{':
+        p[0] = StructTypeSpecifier(p[1], '', p[3])
+    else:
+        p[0] = StructTypeSpecifier(p[1], p[2], p[4])
 
 def p_struct_or_union(p):
     '''struct_or_union : STRUCT
                        | UNION
     '''
+    p[0] = p[1] == 'union'
 
 def p_struct_declaration_list(p):
     '''struct_declaration_list : struct_declaration
                                | struct_declaration_list struct_declaration
     '''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = p[1] + p[2]
 
 def p_struct_declaration(p):
     '''struct_declaration : specifier_qualifier_list struct_declarator_list ';'
     '''
+    # p[0] returned is a tuple, to handle multiple declarators in one
+    # declaration.
+    r = ()
+    for declarator in p[2]:
+        declaration = Declaration()
+        apply_specifiers(p[1], declaration)
+        declaration.declarator = declarator
+        r += (declaration,)
+    p[0] = r
 
 def p_specifier_qualifier_list(p):
     '''specifier_qualifier_list : type_specifier specifier_qualifier_list
@@ -490,17 +531,31 @@ def p_specifier_qualifier_list(p):
                                 | type_qualifier specifier_qualifier_list
                                 | type_qualifier
     '''
+    # XXX Interesting.. why is this one right-recursion?
+    if len(p) == 3:
+        p[0] = (p[1],) + p[2]
+    else:
+        p[0] = (p[1],)
 
 def p_struct_declarator_list(p):
     '''struct_declarator_list : struct_declarator
                               | struct_declarator_list ',' struct_declarator
     '''
+    if len(p) == 2:
+        p[0] = (p[1],)
+    else:
+        p[0] = p[1] + (p[3],)
 
 def p_struct_declarator(p):
     '''struct_declarator : declarator
                          | ':' constant_expression
                          | declarator ':' constant_expression
     '''
+    # XXX ignoring bitfields.
+    if p[1] == ':':
+        p[0] = Declarator()
+    else:
+        p[0] = p[1]
 
 def p_enum_specifier(p):
     '''enum_specifier : ENUM '{' enumerator_list '}'

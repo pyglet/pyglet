@@ -24,6 +24,7 @@ class CtypesWrapper(CtypesParser):
         self.known_types = {}
 
     def wrap(self, filename, source=None):
+        self.structs = set()
         self.filename = filename
         self.print_preamble()
         self.parse(filename, source)
@@ -93,6 +94,8 @@ class CtypesWrapper(CtypesParser):
         if self.does_emit(name, filename):
             self.all_names.append(name)
             self.emit_type(ctype)
+            if type(ctype) == CtypesStruct:
+                self.write_struct(ctype)
             print >> self.file, '%s = %s' % (name, str(ctype)),
             print >> self.file, '\t# %s:%d' % (filename, lineno)
         else:
@@ -104,9 +107,40 @@ class CtypesWrapper(CtypesParser):
                 s_ctype, s_filename, s_lineno = self.known_types[s]
                 self.emit_type(s_ctype)
                
+                if type(s_ctype) == CtypesStruct:
+                    self.write_struct(s_ctype)
                 print >> self.file, '%s = %s' % (s, str(s_ctype)),
                 print >> self.file, '\t# %s:%d' % (s_filename, s_lineno)
                 del self.known_types[s]
+        if type(t) == CtypesStruct:
+            self.write_struct(t)
+
+    def write_struct(self, struct):
+        if struct.tag in self.structs:
+            return
+        self.structs.add(struct.tag)
+            
+        for m in struct.members:
+            if type(m[1]) == CtypesStruct:
+                self.write_struct(m[1])
+
+        base = {True: 'Union', False: 'Structure'}[struct.is_union]
+        print >> self.file, 'class struct_%s(%s):' % (struct.tag, base)
+        print >> self.file, '    __slots__ = ['
+        if not struct.opaque:
+            for m in struct.members:
+                print >> self.file, "        '%s'," % m[0]
+        print >> self.file, '    ]'
+        # Set fields after completing class, so incomplete structs can be
+        # referenced within struct.
+        print >> self.file, 'struct_%s._fields_ = [' % struct.tag
+        if struct.opaque:
+            print >> self.file, "    ('_opaque_struct', c_int)"
+        else:
+            for m in struct.members:
+                print >> self.file, "    ('%s', %s)," % (m[0], m[1])
+        print >> self.file, ']'
+        print >> self.file
 
     def handle_ctypes_function(self, name, restype, argtypes, filename, lineno):
         if self.does_emit(name, filename):

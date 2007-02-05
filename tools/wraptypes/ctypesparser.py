@@ -39,8 +39,11 @@ def get_ctypes_type(typ, declarator):
     signed = True
     typename = 'int'
     longs = 0
+    t = None
     for specifier in typ.specifiers:
-        if specifier == 'signed':
+        if isinstance(specifier, StructTypeSpecifier):
+            t = CtypesStruct(specifier)
+        elif specifier == 'signed':
             signed = True
         elif specifier == 'unsigned':
             signed = False
@@ -48,8 +51,9 @@ def get_ctypes_type(typ, declarator):
             longs += 1
         else:
             typename = str(specifier)
-    ctypes_name = ctypes_type_map.get((typename, signed, longs), typename)
-    t = CtypesType(ctypes_name)
+    if not t:
+        ctypes_name = ctypes_type_map.get((typename, signed, longs), typename)
+        t = CtypesType(ctypes_name)
 
     while declarator and declarator.pointer:
         if declarator.parameters is not None:
@@ -123,6 +127,45 @@ class CtypesFunction(CtypesType):
     def __str__(self):
         return 'CFUNCTYPE(%s)' % ', '.join([str(self.restype)] + \
             [str(a) for a in self.argtypes])
+
+last_tagnum = 0
+def anonymous_struct_tag():
+    global last_tagnum
+    last_tagnum += 1
+    return 'anon_%d' % last_tagnum
+
+class CtypesStruct(CtypesType):
+    def __init__(self, specifier):
+        self.is_union = specifier.is_union
+        self.tag = specifier.tag
+        if not self.tag:
+            self.tag = anonymous_struct_tag()
+
+        if specifier.declarations:
+            self.opaque = False
+            self.members = []
+            for declaration in specifier.declarations:
+                t = get_ctypes_type(declaration.type, declaration.declarator)
+                declarator = declaration.declarator
+                if declarator is None:
+                    # XXX TEMPORARY while struct with no typedef not filled in
+                    return
+                while declarator.pointer:
+                    declarator = declarator.pointer
+                name = declarator.identifier
+                self.members.append((name, t))
+        else:
+            self.opaque = True
+            self.members = []
+
+    def get_required_type_names(self):
+        lst = ['struct_%s' % self.tag]
+        for m in self.members:
+            lst += m[1].get_required_type_names()
+        return lst
+
+    def __str__(self):
+        return 'struct_%s' % self.tag
 
 class CtypesParser(CParser):
     '''Parse a C file for declarations that can be used by ctypes.
