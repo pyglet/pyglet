@@ -189,7 +189,7 @@ class CtypesWrapper(CtypesParser):
         #    (name, str(ctype), name)
         pass
 
-if __name__ == '__main__':
+def main(*argv):
     import optparse
     import sys
     import os.path
@@ -207,7 +207,7 @@ if __name__ == '__main__':
                   help='use symbols from MODULE', metavar='MODULE',
                   default=[])
     
-    (options, args) = op.parse_args()
+    (options, args) = op.parse_args(list(argv[1:]))
     if len(args) < 1:
         print >> sys.stderr, 'No header file specified.'
         sys.exit(1)
@@ -223,3 +223,6 @@ if __name__ == '__main__':
     wrapper.wrap(header, link_modules=options.link_modules)
 
     print 'Wrapped to %s' % options.output
+
+if __name__ == '__main__':
+    main(*sys.argv)

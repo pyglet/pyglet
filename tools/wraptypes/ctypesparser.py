@@ -66,8 +66,6 @@ def get_ctypes_type(typ, declarator):
             t = CtypesType('c_char_p')
         elif type(t) == CtypesType and t.name == 'c_wchar':
             t = CtypesType('c_wchar_p')
-        elif type(t) == CtypesType and t.name == 'None':
-            t = CtypesPointer(CtypesType('c_void'), declarator.qualifiers)
         else:
             t = CtypesPointer(t, declarator.qualifiers)
         declarator = declarator.pointer
@@ -126,6 +124,16 @@ class CtypesFunction(CtypesType):
             parameters = parameters[:-1]
             
         self.restype = restype
+
+        # Don't allow POINTER(None) (c_void_p) as a restype... causes errors
+        # when ctypes automagically returns it as an int.
+        # Instead, convert to POINTER(c_void).  c_void is not a ctypes type,
+        # you can make it any arbitrary type.
+        if type(self.restype) == CtypesPointer and \
+           type(self.restype.destination) == CtypesType and \
+           self.restype.destination.name == 'None':
+            self.restype = CtypesPointer(CtypesType('c_void'), ())
+
         self.argtypes = [remove_function_pointer(
                             get_ctypes_type(p.type, p.declarator)) \
                          for p in parameters]
