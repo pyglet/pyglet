@@ -24,14 +24,15 @@ ctypes_type_map = {
     ('float',   True,   0): 'c_float',
     ('double',  True,   0): 'c_double',
     ('size_t',  True,   0): 'c_size_t',
-    ('int8_t',  True,   0): 'c_int8_t',
-    ('int16_t', True,   0): 'c_int16_t',
-    ('int32_t', True,   0): 'c_int32_t',
-    ('int64_t', True,   0): 'c_int64_t',
-    ('uint8_t', True,   0): 'c_uint8_t',
-    ('uint16_t',True,   0): 'c_uint16_t',
-    ('uint32_t',True,   0): 'c_uint32_t',
-    ('uint64_t',True,   0): 'c_uint64_t',
+    ('int8_t',  True,   0): 'c_int8',
+    ('int16_t', True,   0): 'c_int16',
+    ('int32_t', True,   0): 'c_int32',
+    ('int64_t', True,   0): 'c_int64',
+    ('uint8_t', True,   0): 'c_uint8',
+    ('uint16_t',True,   0): 'c_uint16',
+    ('uint32_t',True,   0): 'c_uint32',
+    ('uint64_t',True,   0): 'c_uint64',
+    ('wchar_t', True,   0): 'c_wchar',
     ('ptrdiff_t',True,  0): 'c_ptrdiff_t',  # Requires definition in preamble
 }
 
@@ -61,6 +62,8 @@ def get_ctypes_type(typ, declarator):
 
         if type(t) == CtypesType and t.name == 'c_char':
             t = CtypesType('c_char_p')
+        elif type(t) == CtypesType and t.name == 'c_wchar':
+            t = CtypesType('c_wchar_p')
         elif type(t) == CtypesType and t.name == 'None':
             t = CtypesPointer(CtypesType('c_void'), declarator.qualifiers)
         else:
@@ -89,6 +92,9 @@ class CtypesType(object):
         '''Return all type names defined or needed by this type'''
         return (self.name,)
 
+    def visit_structs(self, visitor):
+        pass
+
     def __str__(self):
         return self.name
 
@@ -102,6 +108,10 @@ class CtypesPointer(CtypesType):
             return self.destination.get_required_type_names()
         else:
             return ()
+
+    def visit_structs(self, visitor):
+        if self.destination:
+            self.destination.visit_structs(visitor)
 
     def __str__(self):
         return 'POINTER(%s)' % str(self.destination)
@@ -123,6 +133,11 @@ class CtypesFunction(CtypesType):
         for a in self.argtypes:
             lst += list(a.get_required_type_names())
         return lst
+
+    def visit_structs(self, visitor):
+        self.restype.visit_structs(visitor)
+        for a in self.argtypes:
+            a.visit_structs(visitor)
 
     def __str__(self):
         return 'CFUNCTYPE(%s)' % ', '.join([str(self.restype)] + \
@@ -163,6 +178,9 @@ class CtypesStruct(CtypesType):
         for m in self.members:
             lst += m[1].get_required_type_names()
         return lst
+
+    def visit_structs(self, visitor):
+        visitor(self)
 
     def __str__(self):
         return 'struct_%s' % self.tag
