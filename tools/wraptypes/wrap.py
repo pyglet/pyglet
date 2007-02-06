@@ -19,15 +19,26 @@ import sys
 class CtypesWrapper(CtypesParser):
     def __init__(self, library, file):
         super(CtypesWrapper, self).__init__()
+
+        # TODO move __init__ params into wrap()
         self.library = library
         self.file = file
         self.all_names = []
         self.known_types = {}
 
-    def wrap(self, filename, source=None):
+    def wrap(self, filename, source=None, link_modules=()):
+        self.linked_symbols = {}
+        for name in link_modules:
+            module = __import__(name, globals(), locals(), ['foo'])
+            for symbol in dir(module):
+                if symbol not in self.linked_symbols:
+                    self.linked_symbols[symbol] = '%s.%s' % (name, symbol)
+        self.link_modules = link_modules
+
         self.structs = set()
         self.filename = filename
         self.print_preamble()
+        self.print_link_modules_imports()
         self.parse(filename, source)
         self.print_epilogue()
 
@@ -81,6 +92,11 @@ class CtypesWrapper(CtypesParser):
             'argv': ' '.join(sys.argv),
         }).lstrip()
 
+    def print_link_modules_imports(self):
+        for name in self.link_modules:
+            print >> self.file, 'import %s' % name
+        print >> self.file
+
     def print_epilogue(self):
         print >> self.file
         print >> self.file,  '\n'.join(textwrap.wrap(
@@ -97,10 +113,14 @@ class CtypesWrapper(CtypesParser):
     def handle_ctypes_type_definition(self, name, ctype, filename, lineno):
         if self.does_emit(name, filename):
             self.all_names.append(name)
-            ctype.visit_structs(self.write_struct)
-            self.emit_type(ctype)
-            print >> self.file, '%s = %s' % (name, str(ctype)),
-            print >> self.file, '\t# %s:%d' % (filename, lineno)
+            if name in self.linked_symbols:
+                print >> self.file, '%s = %s' % \
+                    (name, self.linked_symbols[name])
+            else:
+                ctype.visit_structs(self.write_struct)
+                self.emit_type(ctype)
+                print >> self.file, '%s = %s' % (name, str(ctype)),
+                print >> self.file, '\t# %s:%d' % (filename, lineno)
         else:
             self.known_types[name] = (ctype, filename, lineno)
 
@@ -108,12 +128,15 @@ class CtypesWrapper(CtypesParser):
         t.visit_structs(self.write_struct)
         for s in t.get_required_type_names():
             if s in self.known_types:
-                s_ctype, s_filename, s_lineno = self.known_types[s]
-                s_ctype.visit_structs(self.write_struct)
+                if s in self.linked_symbols:
+                    print >> self.file, '%s = %s' % (s, self.linked_symbols[s])
+                else:
+                    s_ctype, s_filename, s_lineno = self.known_types[s]
+                    s_ctype.visit_structs(self.write_struct)
 
-                self.emit_type(s_ctype)
-                print >> self.file, '%s = %s' % (s, str(s_ctype)),
-                print >> self.file, '\t# %s:%d' % (s_filename, s_lineno)
+                    self.emit_type(s_ctype)
+                    print >> self.file, '%s = %s' % (s, str(s_ctype)),
+                    print >> self.file, '\t# %s:%d' % (s_filename, s_lineno)
                 del self.known_types[s]
 
     def write_struct(self, struct):
@@ -180,6 +203,9 @@ if __name__ == '__main__':
     op.add_option('-I', '--include-dir', action='append', dest='include_dirs',
                   help='add DIR to include search path', metavar='DIR',
                   default=[])
+    op.add_option('-m', '--link-module', action='append', dest='link_modules',
+                  help='use symbols from MODULE', metavar='MODULE',
+                  default=[])
     
     (options, args) = op.parse_args()
     if len(args) < 1:
@@ -194,6 +220,6 @@ if __name__ == '__main__':
 
     wrapper = CtypesWrapper(options.library, open(options.output, 'w'))
     wrapper.preprocessor_parser.include_path += options.include_dirs
-    wrapper.wrap(header)
+    wrapper.wrap(header, link_modules=options.link_modules)
 
     print 'Wrapped to %s' % options.output
