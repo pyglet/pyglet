@@ -44,6 +44,8 @@ def get_ctypes_type(typ, declarator):
     for specifier in typ.specifiers:
         if isinstance(specifier, StructTypeSpecifier):
             t = CtypesStruct(specifier)
+        elif isinstance(specifier, EnumSpecifier):
+            t = CtypesEnum(specifier)
         elif specifier == 'signed':
             signed = True
         elif specifier == 'unsigned':
@@ -184,6 +186,27 @@ class CtypesStruct(CtypesType):
 
     def __str__(self):
         return 'struct_%s' % self.tag
+
+last_tagnum = 0
+def anonymous_enum_tag():
+    global last_tagnum
+    last_tagnum += 1
+    return 'anon_%d' % last_tagnum
+
+class CtypesEnum(CtypesType):
+    def __init__(self, specifier):
+        # XXX tag currently unused.
+        self.tag = specifier.tag
+        if not self.tag:
+            self.tag = anonymous_enum_tag()
+
+        # XXX TODO enumerators currently ignored
+
+    def get_required_type_names(self):
+        return []
+
+    def __str__(self):
+        return 'c_int'
 
 class CtypesParser(CParser):
     '''Parse a C file for declarations that can be used by ctypes.

@@ -178,6 +178,30 @@ class StructTypeSpecifier(object):
             s += ' {%s}' % '; '.join([repr(d) for d in self.declarations])
         return s
 
+class EnumSpecifier(object):
+    def __init__(self, tag, enumerators):
+        self.tag = tag
+        self.enumerators = enumerators
+
+    def __repr__(self):
+        s = 'enum'
+        if self.tag:
+            s += ' %s' % self.tag
+        if self.enumerators:
+            s += ' {%s}' % ', '.join([repr(e) for e in self.enumerators])
+        return s
+
+class Enumerator(object):
+    def __init__(self, name, expression):
+        self.name = name
+        self.expression = expression
+
+    def __repr__(self):
+        s = self.name
+        if self.expression:
+            s += ' = %r' % self.expression
+        return s
+
 class TypeQualifier(str):
     pass
 
@@ -192,7 +216,7 @@ def apply_specifiers(specifiers, declaration):
                     '???', p.lineno(1))
                 return
             declaration.storage = s
-        elif type(s) in (TypeSpecifier, StructTypeSpecifier):
+        elif type(s) in (TypeSpecifier, StructTypeSpecifier, EnumSpecifier):
             declaration.type.specifiers.append(s)
         elif type(s) == TypeQualifier:
             declaration.type.qualifiers.append(s)
@@ -474,7 +498,7 @@ def p_type_specifier(p):
                       | enum_specifier
                       | TYPE_NAME
     '''
-    if type(p[1]) == StructTypeSpecifier:
+    if type(p[1]) in (StructTypeSpecifier, EnumSpecifier):
         p[0] = p[1]
     else:
         p[0] = TypeSpecifier(p[1])
@@ -562,6 +586,12 @@ def p_enum_specifier(p):
                       | ENUM IDENTIFIER '{' enumerator_list '}'
                       | ENUM IDENTIFIER
     '''
+    if len(p) == 5:
+        p[0] = EnumSpecifier(None, p[3])
+    elif len(p) == 6:
+        p[0] = EnumSpecifier(p[2], p[4])
+    else:
+        p[0] = EnumSpecifier(p[2], ())
 
 def p_enumerator_list(p):
     '''enumerator_list : enumerator_list_iso
@@ -569,16 +599,25 @@ def p_enumerator_list(p):
     '''
     # Apple headers sometimes have trailing ',' after enumerants, which is
     # not ISO C.
+    p[0] = p[1]
 
 def p_enumerator_list_iso(p):
     '''enumerator_list_iso : enumerator
                            | enumerator_list_iso ',' enumerator
     '''
+    if len(p) == 2:
+        p[0] = (p[1],)
+    else:
+        p[0] = p[1] + (p[3],)
 
 def p_enumerator(p):
     '''enumerator : IDENTIFIER
                   | IDENTIFIER '=' constant_expression
     '''
+    if len(p) == 2:
+        p[0] = Enumerator(p[1], None)
+    else:
+        p[0] = Enumerator(p[1], p[3])
 
 def p_type_qualifier(p):
     '''type_qualifier : CONST
