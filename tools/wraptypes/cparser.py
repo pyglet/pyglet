@@ -151,7 +151,7 @@ class Type(object):
         self.specifiers = []
 
     def __repr__(self):
-        return ' '.join(self.qualifiers + self.specifiers)
+        return ' '.join(self.qualifiers + [str(s) for s in self.specifiers])
 
 # These are used only internally.
 
@@ -427,13 +427,14 @@ def p_declaration_impl(p):
     declaration = Declaration()
     apply_specifiers(p[1], declaration)
 
-    filename = p.slice[1].filename
-    lineno = p.slice[1].lineno
-
     if len(p) == 2:
+        filename = p.slice[1].filename
+        lineno = p.slice[1].lineno
         p.parser.cparser.impl_handle_declaration(declaration, filename, lineno)
         return
 
+    filename = p.slice[2].filename
+    lineno = p.slice[2].lineno
     for declarator in p[2]:
         declaration.declarator = declarator
         p.parser.cparser.impl_handle_declaration(declaration, filename, lineno)
@@ -1160,6 +1161,7 @@ class DebugCParser(CParser):
     '''
     def handle_include(self, header):
         print '#include header=%r' % header
+        return True
 
     def handle_define(self, name, value, filename, lineno):
         print '#define name=%r, value=%r' % (name, value)

@@ -1433,4 +1433,4 @@ if __name__ == '__main__':
     filename = sys.argv[1]
     parser = PreprocessorParser()
     parser.parse(filename, debug=True)
-    print ' '.join([t.value for t in parser.output])
+    print ' '.join([str(t.value) for t in parser.output])

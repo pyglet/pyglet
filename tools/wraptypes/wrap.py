@@ -14,6 +14,7 @@ __version__ = '$Id$'
 
 from ctypesparser import *
 import textwrap
+import sys
 
 class CtypesWrapper(CtypesParser):
     def __init__(self, library, file):
@@ -39,7 +40,9 @@ class CtypesWrapper(CtypesParser):
         print >> self.file, textwrap.dedent("""
             '''Wrapper for %(library)s
             
-            Generated %(date)s by %(class)s.  
+            Generated with:
+            %(argv)s
+            
             Do not modify this file.
             '''
 
@@ -75,6 +78,7 @@ class CtypesWrapper(CtypesParser):
             'library': self.library,
             'date': time.ctime(),
             'class': self.__class__.__name__,
+            'argv': ' '.join(sys.argv),
         }).lstrip()
 
     def print_epilogue(self):
