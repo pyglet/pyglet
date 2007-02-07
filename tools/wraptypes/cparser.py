@@ -223,6 +223,115 @@ def apply_specifiers(specifiers, declaration):
 
 
 # --------------------------------------------------------------------------
+# Expression Object Model
+# --------------------------------------------------------------------------
+
+class EvaluationContext(object):
+    '''Interface for evaluating expression nodes.
+    '''
+
+class ExpressionNode(object):
+    def evaluate(self, context):
+        return 0
+
+    def __str__(self):
+        return ''
+
+class ConstantExpressionNode(ExpressionNode):
+    def __init__(self, value):
+        self.value = value
+
+    def evaluate(self, context):
+        return self.value
+
+    def __str__(self):
+        return str(self.value)
+
+class IdentifierExpressionNode(ExpressionNode):
+    def __init__(self, name):
+        self.name = name
+
+    def evaluate(self, context):
+        return context.evaluate_identifier(self.name)
+
+    def __str__(self):
+        return str(self.value)
+
+class UnaryExpressionNode(ExpressionNode):
+    def __init__(self, op, op_str, child):
+        self.op = op
+        self.op_str = op_str
+        self.child = child
+
+    def evaluate(self, context):
+        return self.op(self.child.evaluate(context))
+
+    def __str__(self):
+        return '(%s %s)' % (self.op_str, self.child)
+
+class SizeOfExpressionNode(ExpressionNode):
+    def __init__(self, type):
+        self.type = type
+
+    def evaluate(self, context):
+        return context.evaluate_sizeof(self.type)
+
+    def __str__(self):
+        return 'sizeof(%s)' % str(self.type)
+
+class BinaryExpressionNode(ExpressionNode):
+    def __init__(self, op, op_str, left, right):
+        self.op = op
+        self.op_str = op_str
+        self.left = left
+        self.right = right
+
+    def evaluate(self, context):
+        return self.op(self.left.evaluate(context), 
+                       self.right.evaluate(context))
+
+    def __str__(self):
+        return '(%s %s %s)' % (self.left, self.op_str, self.right)
+
+class LogicalAndExpressionNode(ExpressionNode):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def evaluate(self, context):
+        return self.left.evaluate(context) and self.right.evaluate(context)
+
+    def __str__(self):
+        return '(%s && %s)' % (self.left, self.right)
+
+class LogicalOrExpressionNode(ExpressionNode):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def evaluate(self, context):
+        return self.left.evaluate(context) or self.right.evaluate(context)
+
+    def __str__(self):
+        return '(%s || %s)' % (self.left, self.right)
+
+class ConditionalExpressionNode(ExpressionNode):
+    def __init__(self, condition, left, right):
+        self.condition = condition
+        self.left = left
+        self.right = right
+
+    def evaluate(self, context):
+        if self.condition.evaluate(context):
+            return self.left.evaluate(context)
+        else:
+            return self.right.evaluate(context)
+
+    def __str__(self):
+        return '(%s ? %s : %s)' % (self.condition, self.left, self.right)
+
+
+# --------------------------------------------------------------------------
 # Grammar
 # --------------------------------------------------------------------------
 
@@ -237,14 +346,17 @@ def p_translation_unit(p):
 
 def p_identifier(p):
     '''identifier : IDENTIFIER'''
+    p[0] = IdentifierExpressionNode(p[1])
 
 def p_constant(p):
     '''constant : CONSTANT
                 | CHARACTER_CONSTANT
     '''
+    p[0] = ConstantExpressionNode(p[1])
 
 def p_string_literal(p):
     '''string_literal : STRING_LITERAL'''
+    p[0] = ConstantExpressionNode(p[1])
 
 def p_primary_expression(p):
     '''primary_expression : identifier
@@ -252,6 +364,10 @@ def p_primary_expression(p):
                           | string_literal
                           | '(' expression ')'
     '''
+    if p[1] == '(':
+        p[0] = p[2]
+    else:
+        p[0] = p[1]
 
 def p_postfix_expression(p):
     '''postfix_expression : primary_expression
@@ -263,6 +379,8 @@ def p_postfix_expression(p):
                   | postfix_expression INC_OP
                   | postfix_expression DEC_OP
     '''
+    # XXX Largely unsupported
+    p[0] = p[1]
 
 def p_argument_expression_list(p):
     '''argument_expression_list : assignment_expression
@@ -281,6 +399,9 @@ def p_asm_expression(p):
     # but more lenient (expressions permitted in optional final part, when
     # they shouldn't be -- avoids shift/reduce conflict with
     # str_opt_expr_pair_list).
+
+    # XXX node not supported
+    p[0] = ExpressionNode()
 
 def p_str_opt_expr_pair_list(p):
     '''str_opt_expr_pair_list : 
@@ -307,6 +428,19 @@ def p_unary_expression(p):
                         | SIZEOF '(' type_name ')'
                         | asm_expression
     '''
+    if len(p) == 2:
+        p[0] = p[1]
+    elif p[1] == 'sizeof':
+        if p[2] == '(':
+            p[0] = SizeOfExpressionNode(p[3])
+        else:
+            p[0] = SizeOfExpressionNode(p[2])
+    elif type(p[1]) == tuple:
+        # unary_operator reduces to (op, op_str)
+        p[0] = UnaryExpressionNode(p[1][0], p[1][1], p[2])
+    else:
+        # XXX INC_OP and DEC_OP expression nodes not supported
+        p[0] = p[2]
 
 def p_unary_operator(p):
     '''unary_operator : '&'
@@ -316,11 +450,24 @@ def p_unary_operator(p):
                       | '~'
                       | '!'
     '''
+    # reduces to (op, op_str)
+    p[0] = ({
+        '+': operator.pos,
+        '-': operator.neg,
+        '~': operator.inv,
+        '!': operator.not_,
+        '&': 'AddressOfUnaryOperator',
+        '*': 'DereferenceUnaryOperator'}[p[1]], p[1])
 
 def p_cast_expression(p):
     '''cast_expression : unary_expression
                        | '(' type_name ')' cast_expression
     '''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        # XXX cast node not supported
+        p[0] = p[4]
 
 def p_multiplicative_expression(p):
     '''multiplicative_expression : cast_expression
@@ -328,19 +475,38 @@ def p_multiplicative_expression(p):
                                  | multiplicative_expression '/' cast_expression
                                  | multiplicative_expression '%' cast_expression
     '''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = BinaryExpressionNode({
+            '*': operator.mul,
+            '/': operator.div,
+            '%': operator.mod}[p[2]], p[2], p[1], p[3])
 
 def p_additive_expression(p):
     '''additive_expression : multiplicative_expression
                            | additive_expression '+' multiplicative_expression
                            | additive_expression '-' multiplicative_expression
     '''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = BinaryExpressionNode({
+            '+': operator.add,
+            '-': operator.sub}[p[2]], p[2], p[1], p[3])
 
 def p_shift_expression(p):
     '''shift_expression : additive_expression
                         | shift_expression LEFT_OP additive_expression
                         | shift_expression RIGHT_OP additive_expression
     '''
-
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = BinaryExpressionNode({
+            '<<': operator.lshift,
+            '>>': operator.rshift}[p[2]], p[2], p[1], p[3])
+        
 def p_relational_expression(p):
     '''relational_expression : shift_expression 
                              | relational_expression '<' shift_expression
@@ -348,47 +514,91 @@ def p_relational_expression(p):
                              | relational_expression LE_OP shift_expression
                              | relational_expression GE_OP shift_expression
     '''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = BinaryExpressionNode({
+            '>': operator.gt,
+            '<': operator.lt,
+            '<=': operator.le,
+            '>=': operator.ge}[p[2]], p[2], p[1], p[3])
 
 def p_equality_expression(p):
     '''equality_expression : relational_expression
                            | equality_expression EQ_OP relational_expression
                            | equality_expression NE_OP relational_expression
     '''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = BinaryExpressionNode({
+            '==': operator.eq,
+            '!=': operator.ne}[p[2]], p[2], p[1], p[3])
 
 def p_and_expression(p):
     '''and_expression : equality_expression
                       | and_expression '&' equality_expression
     '''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = BinaryExpressionNode(operator.and_, '&', p[1], p[3])
 
 def p_exclusive_or_expression(p):
     '''exclusive_or_expression : and_expression
                                | exclusive_or_expression '^' and_expression
     ''' 
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = BinaryExpressionNode(operator.xor, '^', p[1], p[3])
 
 def p_inclusive_or_expression(p):
     '''inclusive_or_expression : exclusive_or_expression
-                       | inclusive_or_expression '|' exclusive_or_expression
+                   | inclusive_or_expression '|' exclusive_or_expression
     '''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = BinaryExpressionNode(operator.or_, '|', p[1], p[3])
 
 def p_logical_and_expression(p):
     '''logical_and_expression : inclusive_or_expression
-                      | logical_and_expression AND_OP inclusive_or_expression
+                  | logical_and_expression AND_OP inclusive_or_expression
     '''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = LogicalAndExpressionNode(p[1], p[3])
 
 def p_logical_or_expression(p):
     '''logical_or_expression : logical_and_expression
-                      | logical_or_expression OR_OP logical_and_expression
+                  | logical_or_expression OR_OP logical_and_expression
     '''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = LogicalOrExpressionNode(p[1], p[3])
+
 
 def p_conditional_expression(p):
     '''conditional_expression : logical_or_expression
-              | logical_or_expression '?' expression ':' conditional_expression
+          | logical_or_expression '?' expression ':' conditional_expression
     '''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = ConditionalExpressionNode(p[1], p[3], p[5])
 
 def p_assignment_expression(p):
     '''assignment_expression : conditional_expression
                  | unary_expression assignment_operator assignment_expression
     '''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        # XXX assignment expression node not supported
+        p[0] = p[3]
 
 def p_assignment_operator(p):
     '''assignment_operator : '='
@@ -408,10 +618,13 @@ def p_expression(p):
     '''expression : assignment_expression
                   | expression ',' assignment_expression
     '''
+    p[0] = p[1]
+    # XXX sequence expression node not supported 
 
 def p_constant_expression(p):
     '''constant_expression : conditional_expression
     '''
+    p[0] = p[1]
 
 def p_declaration(p):
     '''declaration : declaration_impl ';'

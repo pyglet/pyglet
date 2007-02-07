@@ -218,7 +218,7 @@ def main(*argv):
     headers = args
 
     if options.library is None:
-        options.library = os.path.splitext(header)[0]
+        options.library = os.path.splitext(headers[0])[0]
     if options.output is None:
         options.output = '%s.py' % options.library
 

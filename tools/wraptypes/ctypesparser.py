@@ -61,6 +61,10 @@ def get_ctypes_type(typ, declarator):
     while declarator and declarator.pointer:
         if declarator.parameters is not None:
             t = CtypesFunction(t, declarator.parameters)
+        a = declarator.array
+        while a:
+            t = CtypesArray(t, a.size)
+            a = a.array
 
         if type(t) == CtypesType and t.name == 'c_char':
             t = CtypesType('c_char_p')
@@ -71,6 +75,10 @@ def get_ctypes_type(typ, declarator):
         declarator = declarator.pointer
     if declarator and declarator.parameters is not None:
         t = CtypesFunction(t, declarator.parameters)
+    a = declarator.array
+    while a:
+        t = CtypesArray(t, a.size)
+        a = a.array
     return t
     
 # Remove one level of indirection from funtion pointer; needed for typedefs
@@ -115,6 +123,25 @@ class CtypesPointer(CtypesType):
 
     def __str__(self):
         return 'POINTER(%s)' % str(self.destination)
+
+class CtypesArray(CtypesType):
+    def __init__(self, base, count):
+        self.base = base
+        self.count = count
+    
+    def get_required_type_names(self):
+        # XXX Could be sizeofs within count expression
+        return self.base.get_required_type_names()
+ 
+    def visit_structs(self, visitor):
+        # XXX Could be sizeofs within count expression
+        self.base.visit_structs(visitor)
+
+    def __str__(self):
+        if type(self.base) == CtypesArray:
+            return '(%s) * %s' % (str(self.base), str(self.count))
+        else:
+            return '%s * %s' % (str(self.base), str(self.count))
 
 class CtypesFunction(CtypesType):
     def __init__(self, restype, parameters):
