@@ -28,50 +28,43 @@ import unicodedata
 import warnings
 
 from pyglet.GL.VERSION_1_1 import *
-from pyglet.GL.GLX.VERSION_1_4 import *
+from pyglet.GL.glx import *
+from pyglet.GL.glxext_abi import *
 import pyglet.GL.info
+import pyglet.GL.glx_info
 import pyglet.GLU.info
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
 from pyglet.window.xlib.constants import *
-from pyglet.window.xlib.types import *
+#from pyglet.window.xlib.types import *
 
+XStringStyle = 0
+XCompundTextStyle = 1
+XTextStyle = 2
+XStdICCTextStyle = 3
+XUTF8StringStyle = 4
+
+import pyglet.window.xlib.xlib
 try:
-    from pyglet.GL.GLX.SGI_video_sync import *
-    _have_SGI_video_sync = True
-except ImportError:
-    _have_SGI_video_sync = False
-
-# Load X11 library, specify argtypes and restype only when necessary.
-Atom = c_ulong
-
-path = util.find_library('X11')
-if not path:
-    raise ImportError('Cannot locate X11 library')
-xlib = cdll.LoadLibrary(path)
-
-path = util.find_library('Xinerama')
-if path:
+    import pyglet.window.xlib.xinerama
     _have_xinerama = True
-    xinerama = cdll.LoadLibrary(path)
-    xinerama.XineramaQueryScreens.restype = POINTER(XineramaScreenInfo)
-else:
+except:
     _have_xinerama = False
 
-xlib.XOpenDisplay.argtypes = [c_char_p]
-xlib.XScreenOfDisplay.restype = POINTER(Screen)
-xlib.XInternAtom.restype = Atom
-xlib.XNextEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
-xlib.XCheckTypedWindowEvent.argtypes = [POINTER(Display),
-    c_ulong, c_int, POINTER(XEvent)]
-xlib.XPutBackEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
-xlib.XCreateWindow.argtypes = [POINTER(Display), WindowRef,
-    c_int, c_int, c_uint, c_uint, c_uint, c_int, c_uint,
-    POINTER(Visual), c_ulong, POINTER(XSetWindowAttributes)]
+class mwmhints_t(Structure):
+    _fields_ = [
+        ('flags', c_uint32),
+        ('functions', c_uint32),
+        ('decorations', c_uint32),
+        ('input_mode', c_int32),
+        ('status', c_uint32)
+    ]
 
 # Do we have the November 2000 UTF8 extension?
-_have_utf8 = hasattr(xlib, 'Xutf8TextListToTextProperty')
+_have_utf8 = hasattr(xlib._lib, 'Xutf8TextListToTextProperty')
+
+
 
 class XlibException(WindowException):
     pass
@@ -85,7 +78,7 @@ class XlibPlatform(BasePlatform):
             infos = xinerama.XineramaQueryScreens(display, 
                                                   byref(number))
             infos = cast(infos, 
-                         POINTER(XineramaScreenInfo * number.value)).contents
+                 POINTER(xinerama.XineramaScreenInfo * number.value)).contents
             result = []
             for info in infos:
                 result.append(XlibScreen(display,
@@ -118,12 +111,12 @@ class XlibPlatform(BasePlatform):
         display = self._get_display(factory)
         screen = factory.get_screen()
 
-        have_13 = display.contents.have_glx_version(1, 3)
+        have_13 = display.contents.glx_info.have_version(1, 3)
         if have_13:
             config_class = XlibGLConfig13
             factory.set_gl_attribute('x_renderable', True)
         else:
-            if 'ATI' in display.contents.get_glx_client_vendor():
+            if 'ATI' in display.contents.glx_info.get_client_vendor():
                 config_class = XlibGLConfig10ATI
             else:
                 config_class = XlibGLConfig10
@@ -152,10 +145,16 @@ class XlibPlatform(BasePlatform):
                 attrib_list, byref(elements))
             if not configs:
                 return []
-            result = []
-            for i in range(elements.value):
-                result.append(XlibGLConfig13(display, screen, configs[i]))
-            xlib.XFree(configs)
+
+            configs = cast(configs, 
+                           POINTER(GLXFBConfig * elements.value)).contents
+
+            result = [XlibGLConfig13(display, screen, c) for c in configs]
+
+            # Can't free array until all XlibGLConfig13's are GC'd.  Too much
+            # hassle, live with leak. XXX
+            #xlib.XFree(configs)
+
             return result
         else:
             return [XlibGLConfig10(display, screen, attrib_list)]
@@ -166,7 +165,7 @@ class XlibPlatform(BasePlatform):
 
         context = config.create_context(context_share)
 
-        if context == GLXBadContext:
+        if context == GLX_BAD_CONTEXT:
             raise XlibException('Invalid context share')
         elif context == GLXBadFBConfig:
             raise XlibException('Invalid GL configuration')
@@ -188,48 +187,21 @@ class XlibPlatform(BasePlatform):
             if not display:
                 raise XlibException('Cannot connect to X server') 
             factory.set_x_display(display)
+            pyglet.GL.glx_info.set_display(display.contents)
         return display
 
-class XlibDisplay(Display):
+class XlibDisplay(xlib.Display):
+    _info = None
+
     def __repr__(self):
-        return 'XlibDisplay(%d)' % self
+        return 'XlibDisplay()'
 
-    def have_glx_version(self, major, minor):
-        if not glXQueryExtension(self, None, None):
-            raise XlibException('pyglet requires an X server with GLX')
+    def get_glx_info(self):
+        if not self._info:
+            self._info = pyglet.GL.glx_info.GLXInfo(self)
+        return self._info
 
-        server = [int(i) for i in self.get_glx_server_version().split('.')]
-        client = [int(i) for i in self.get_glx_client_version().split('.')]
-        return (tuple(server) >= (major, minor) and 
-                tuple(client) >= (major, minor))
-
-    def get_glx_server_vendor(self):
-        return glXQueryServerString(self, 0, GLX_VENDOR)
-
-    def get_glx_server_version(self):
-        # glXQueryServerString was introduced in GLX 1.1, so we need to use the
-        # 1.0 function here which queries the server implementation for its
-        # version.
-        major = c_int()
-        minor = c_int()
-        if not glXQueryVersion(self, byref(major), byref(minor)):
-            raise XlibException('Could not determine GLX server version')
-        return '%s.%s'%(major.value, minor.value)
-
-    def get_glx_server_extensions(self):
-        return glXQueryServerString(self, 0, GLX_EXTENSIONS).split()
-
-    def get_glx_client_vendor(self):
-        return glXGetClientString(self, GLX_VENDOR)
-
-    def get_glx_client_version(self):
-        return glXGetClientString(self, GLX_VERSION)
-
-    def get_glx_client_extensions(self):
-        return glXGetClientString(self, GLX_EXTENSIONS).split()
-
-    def get_glx_extensions(self):
-        return glXQueryExtensionsString(self, 0).split()
+    glx_info = property(get_glx_info)
 
 class XlibScreen(BaseScreen):
     def __init__(self, display, x_screen_id, x, y, width, height, xinerama):
@@ -330,8 +302,8 @@ class XlibGLConfig13(XlibGLConfig):
         self._attributes = {}
         for name, attr in self.attribute_ids.items():
             value = c_int()
-            result = glXGetFBConfigAttrib(self._display, 
-                self._fbconfig, attr, byref(value))
+            result = glXGetFBConfigAttrib(
+                self._display, self._fbconfig, attr, byref(value))
             if result >= 0:
                 self._attributes[name] = value.value
 
@@ -430,7 +402,7 @@ class XlibWindow(BaseWindow):
         if self._window and factory.get_fullscreen() != self._fullscreen:
             # clear out the GLX context
             glFlush()
-            glXMakeCurrent(self._display, 0, 0)
+            glXMakeCurrent(self._display, 0, None)
             if self._glx_window:
                 glXDestroyWindow(self._display, self._glx_window)
             xlib.XDestroyWindow(self._display, self._window)
@@ -453,7 +425,10 @@ class XlibWindow(BaseWindow):
         self._glx_context = context._context
         self._width, self._height = factory.get_size()
 
-        self._glx_1_3 = self._display.contents.have_glx_version(1, 3)
+        glx_info = self._display.contents.glx_info
+        self._glx_1_3 = glx_info.have_version(1, 3)
+        self._have_SGI_video_sync = \
+            glx_info.have_extension('GLX_SGI_video_sync')
 
         # Create X window if not already existing.
         if not self._window:
@@ -465,7 +440,7 @@ class XlibWindow(BaseWindow):
             visual_id = xlib.XVisualIDFromVisual(visual)
             default_visual = xlib.XDefaultVisual(self._display, self._screen_id)
             default_visual_id = xlib.XVisualIDFromVisual(default_visual)
-            window_attributes = XSetWindowAttributes()
+            window_attributes = xlib.XSetWindowAttributes()
             if visual_id != default_visual_id:
                 window_attributes.colormap = xlib.XCreateColormap(
                     self._display, root, visual, AllocNone)
@@ -478,8 +453,7 @@ class XlibWindow(BaseWindow):
 
             # Setting null background pixmap disables drawing the background,
             # preventing flicker while resizing.
-            xlib.XSetWindowBackgroundPixmap(self._display, self._window,
-                c_void_p())
+            xlib.XSetWindowBackgroundPixmap(self._display, self._window, 0)
 
             # Enable WM_DELETE_WINDOW message
             wm_delete_window = xlib.XInternAtom(self._display,
@@ -489,7 +463,7 @@ class XlibWindow(BaseWindow):
                 byref(wm_delete_window), 1)
 
         # Set window attributes
-        attributes = XSetWindowAttributes()
+        attributes = xlib.XSetWindowAttributes()
         attributes_mask = 0
 
         # Bypass the window manager in fullscreen.  This is the only reliable
@@ -522,12 +496,11 @@ class XlibWindow(BaseWindow):
         # Map the window, wait for map event before continuing.
         xlib.XSelectInput(self._display, self._window, StructureNotifyMask)
         xlib.XMapRaised(self._display, self._window)
-        e = XEvent()
+        e = xlib.XEvent()
         while True:
             xlib.XNextEvent(self._display, e)
             if e.type == MapNotify:
                 break
-
         xlib.XSelectInput(self._display, self._window, self._default_event_mask)
         self._mapped = True
 
@@ -543,7 +516,7 @@ class XlibWindow(BaseWindow):
 
         xlib.XSelectInput(self._display, self._window, StructureNotifyMask)
         xlib.XUnmapWindow(self._display, self._window)
-        e = XEvent()
+        e = xlib.XEvent()
         while True:
             xlib.XNextEvent(self._display, e)
             if e.type == UnmapNotify:
@@ -553,7 +526,7 @@ class XlibWindow(BaseWindow):
         self._mapped = False
 
     def _get_root(self):
-        attributes = XWindowAttributes()
+        attributes = xlib.XWindowAttributes()
         xlib.XGetWindowAttributes(self._display, self._window,
                                   byref(attributes))
         return attributes.root
@@ -561,7 +534,7 @@ class XlibWindow(BaseWindow):
     def close(self):
         # clear out the GLX context
         glFlush()
-        glXMakeCurrent(self._display, 0, 0)
+        glXMakeCurrent(self._display, 0, None)
 
         self._unmap()
         if self._glx_window:
@@ -595,7 +568,7 @@ class XlibWindow(BaseWindow):
             self.dispatch_event(EVENT_CONTEXT_STATE_LOST)
 
     def flip(self):
-        if self._vsync and _have_SGI_video_sync:
+        if self._vsync and self._have_SGI_video_sync:
             count = c_uint()
             glXGetVideoSyncSGI(byref(count))
             glXWaitVideoSyncSGI(2, (count.value + 1) % 2, byref(count))
@@ -639,7 +612,7 @@ class XlibWindow(BaseWindow):
         # only once, in which case attributes.x/y give the offset from
         # the frame to the content window.  Better solution would be
         # to use _NET_FRAME_EXTENTS, where supported.
-        attributes = XWindowAttributes()
+        attributes = xlib.XWindowAttributes()
         xlib.XGetWindowAttributes(self._display, self._window,
                                   byref(attributes))
         # XXX at least under KDE's WM these attrs are both 0
@@ -648,7 +621,7 @@ class XlibWindow(BaseWindow):
         xlib.XMoveWindow(self._display, self._window, x, y)
 
     def get_location(self):
-        child = WindowRef()
+        child = xlib.Window()
         x = c_int()
         y = c_int()
         xlib.XTranslateCoordinates(self._display,
@@ -692,11 +665,11 @@ class XlibWindow(BaseWindow):
         if exclusive:
             # Hide pointer by creating an empty cursor
             black = xlib.XBlackPixel(self._display, self._screen_id)
-            black = c_int(black)
+            black = xlib.XColor()
             bmp = xlib.XCreateBitmapFromData(self._display, self._window,
-                (c_byte * 8)(), 8, 8)
+                c_buffer(8), 8, 8)
             cursor = xlib.XCreatePixmapCursor(self._display, bmp, bmp,
-                byref(black), byref(black), 0, 0)
+                black, black, 0, 0)
             xlib.XDefineCursor(self._display, self._window, cursor)
             xlib.XFreeCursor(self._display, cursor)
             xlib.XFreePixmap(self._display, bmp)
@@ -749,7 +722,7 @@ class XlibWindow(BaseWindow):
     # Private utility
 
     def _set_wm_normal_hints(self):
-        hints = XSizeHints.from_address(xlib.XAllocSizeHints())
+        hints = xlib.XAllocSizeHints().contents
         if self._minimum_size:
             hints.flags |= PMinSize
             hints.min_width, hints.min_height = self._minimum_size
@@ -763,17 +736,18 @@ class XlibWindow(BaseWindow):
         if not atom:
             raise XlibException('Undefined atom "%s"' % name)
         if type(value) in (str, unicode):
-            property = XTextProperty()
+            property = xlib.XTextProperty()
             if _have_utf8 and allow_utf8:
                 buf = create_string_buffer(value.encode('utf8'))
                 result = xlib.Xutf8TextListToTextProperty(self._display,
-                    byref(pointer(buf)), 1, XUTF8StringStyle, byref(property))
+                    cast(pointer(buf), c_char_p), 1, XUTF8StringStyle, 
+                    byref(property))
                 if result < 0:
                     raise XlibException('Could not create UTF8 text property')
             else:
                 buf = create_string_buffer(value.encode('ascii', 'ignore'))
-                result = xlib.XStringListToTextProperty(byref(pointer(buf)),
-                    1, byref(property))
+                result = xlib.XStringListToTextProperty(
+                    cast(pointer(buf), c_char_p), 1, byref(property))
                 if result < 0:
                     raise XlibException('Could not create text property')
             xlib.XSetTextProperty(self._display,
@@ -789,18 +763,18 @@ class XlibWindow(BaseWindow):
             atoms.append(xlib.XInternAtom(self._display, state, False))
         atom_type = xlib.XInternAtom(self._display, 'ATOM', False)
         if len(atoms):
-            atoms_ar = (Atom * len(atoms))(*atoms)
+            atoms_ar = (xlib.Atom * len(atoms))(*atoms)
             xlib.XChangeProperty(self._display, self._window,
                 net_wm_state, atom_type, 32, PropModePrepend,
-                atoms_ar, len(atoms))
+                cast(pointer(atoms_ar), POINTER(c_ubyte)), len(atoms))
         else:
             xlib.XDeleteProperty(self._display, self._window, net_wm_state)
 
         # Nudge the WM
-        e = XEvent()
+        e = xlib.XEvent()
         e.xclient.type = ClientMessage
         e.xclient.message_type = net_wm_state
-        e.xclient.display = self._display
+        e.xclient.display = cast(self._display, POINTER(xlib.Display))
         e.xclient.window = self._window
         e.xclient.format = 32
         e.xclient.data.l[0] = PropModePrepend
@@ -812,7 +786,7 @@ class XlibWindow(BaseWindow):
     # Event handling
 
     def dispatch_events(self):
-        e = XEvent()
+        e = xlib.XEvent()
 
         # Check for the events specific to this window
         while xlib.XCheckWindowEvent(self._display, self._window,
@@ -829,7 +803,7 @@ class XlibWindow(BaseWindow):
         while xlib.XCheckTypedEvent(self._display, ClientMessage, byref(e)):
             if e.xclient.window != self._window:
                 push_back.append(e)
-                e = XEvent()
+                e = xlib.XEvent()
             else:
                 event_handler = self._event_handlers.get(e.type)
                 if event_handler:
@@ -864,7 +838,7 @@ class XlibWindow(BaseWindow):
             # indicating an auto-repeat rather than actual key event.
             saved = []
             while True:
-                auto_event = XEvent()
+                auto_event = xlib.XEvent()
                 result = xlib.XCheckWindowEvent(self._display,
                     self._window, KeyPress|KeyRelease, byref(auto_event))
                 if not result:
@@ -875,8 +849,8 @@ class XlibWindow(BaseWindow):
                     continue
                 if event.xkey.keycode == auto_event.xkey.keycode:
                     buffer = create_string_buffer(16)
-                    count = xlib.XLookupString(byref(auto_event),
-                        byref(buffer), len(buffer), c_void_p(), c_void_p())
+                    count = xlib.XLookupString(auto_event.xkey,
+                        buffer, len(buffer), None, None)
                     if count:
                         text = buffer.value[:count]
                         self.dispatch_event(EVENT_TEXT, text)
@@ -894,11 +868,11 @@ class XlibWindow(BaseWindow):
         if event.type == KeyPress:
             buffer = create_string_buffer(16)
             # TODO lookup UTF8
-            count = xlib.XLookupString(byref(event),
-                                       byref(buffer),
+            count = xlib.XLookupString(event.xkey,
+                                       buffer,
                                        len(buffer),
-                                       c_void_p(),
-                                       c_void_p())
+                                       None,
+                                       None)
             if count:
                 text = unicode(buffer.value[:count])
         symbol = xlib.XKeycodeToKeysym(self._display, event.xkey.keycode, 0)

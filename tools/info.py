@@ -51,29 +51,24 @@ context = w.get_context()
 print 'Context is', context
 
 if context.__class__.__name__ == 'XlibGLContext':
-    d = w._display
+    from pyglet.GL.glx_info import *
     print 'GLX %s direct'%(context.is_direct() and 'is' or 'is not')
-    if not d.contents.have_glx_version(1, 1):
+    if not glx_info.have_version(1, 1):
         print "GLX server version: 1.0"
     else:
-        from pyglet.GL.GLX.VERSION_1_1 import *
-        print 'GLX server vendor:', glXQueryServerString(w._display, 0,
-            GLX_VENDOR)
-        print 'GLX server version:', glXQueryServerString(w._display, 0,
-            GLX_VERSION)
+        print 'GLX server vendor:', glx_info.get_server_vendor()
+        print 'GLX server version:', glx_info.get_server_version()
         print 'GLX server extensions:'
-        exts = glXQueryServerString(w._display, 0, GLX_EXTENSIONS)
-        print ' ', '\n  '.join(textwrap.wrap(exts))
-        print 'GLX client vendor:', glXGetClientString(w._display,
-            GLX_VENDOR)
-        print 'GLX client version:', glXGetClientString(w._display,
-            GLX_VERSION)
+        exts = glx_info.get_server_extensions()
+        print ' ', '\n  '.join(textwrap.wrap(' '.join(exts)))
+        print 'GLX client vendor:', glx_info.get_client_vendor()
+        print 'GLX client version:', glx_info.get_client_version()
         print 'GLX client extensions:'
-        exts = glXGetClientString(w._display, GLX_EXTENSIONS)
-        print ' ', '\n  '.join(textwrap.wrap(exts))
+        exts = glx_info.get_client_extensions()
+        print ' ', '\n  '.join(textwrap.wrap(' '.join(exts)))
         print 'GLX extensions:'
-        exts = glXQueryExtensionsString(w._display, 0)
-        print ' ', '\n  '.join(textwrap.wrap(exts))
+        exts = glx_info.get_extensions()
+        print ' ', '\n  '.join(textwrap.wrap(' '.join(exts)))
 elif context.__class__.__name__ == 'Win32Context':
     from pyglet.GL.WGL.info import have_wgl_extension
     if have_wgl_extension('WGL_EXT_extensions_string'):

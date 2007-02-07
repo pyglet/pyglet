@@ -30,7 +30,7 @@ else:
 try:
     glXGetProcAddressARB = getattr(gl_lib, 'glXGetProcAddressARB')
     glXGetProcAddressARB.restype = c_void_p
-    glXGetProcAddressARB.argtypes = [c_char_p]
+    glXGetProcAddressARB.argtypes = [POINTER(c_ubyte)]
     _have_getprocaddress = True
 except AttributeError:
     _have_get_procaddress = False
@@ -44,7 +44,8 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
     except AttributeError, e:
         if _have_getprocaddress:
             # Fallback if implemented but not in ABI
-            addr = glXGetProcAddressARB(name)
+            bname = cast(pointer(create_string_buffer(name)), POINTER(c_ubyte))
+            addr = glXGetProcAddressARB(bname)
             if addr:
                 ftype = CFUNCTYPE(*((restype,) + tuple(argtypes)))
                 return ftype(addr)

@@ -35,6 +35,12 @@ for t in _int_types:
     if ctypes.sizeof(t) == ctypes.sizeof(ctypes.c_size_t):
         c_ptrdiff_t = t
 
+class c_void(ctypes.Structure):
+    # c_void_p is a buggy return type, converting to int, so
+    # POINTER(None) == c_void_p is actually written as
+    # POINTER(c_void), so it can be treated as a real pointer.
+    _fields_ = [('dummy', ctypes.c_int)]
+
 link_AGL = None
 link_GLX = None
 link_WGL = None

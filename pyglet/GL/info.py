@@ -8,6 +8,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import warnings
+from ctypes import *
 
 # We have to wait until a context is created (with a window) until any
 # information is available.
@@ -17,11 +18,11 @@ _have_context = False
 _version = '0.0.0'
 _vendor = ''
 _renderer = ''
-_extensions = []
+_extensions = set()
 
 # Called by GLContext when created and made current.
 def set_context():
-    from pyglet.GL.VERSION_1_1 import (glGetString, glGetError,
+    from pyglet.GL.gl import (glGetString, glGetError,
         GL_VENDOR, GL_RENDERER, GL_EXTENSIONS, GL_VERSION,
         GL_INVALID_ENUM, GL_INVALID_OPERATION)
 
@@ -30,11 +31,11 @@ def set_context():
         return
 
     _have_context = True
-    _vendor = glGetString(GL_VENDOR)
-    _renderer = glGetString(GL_RENDERER)
-    _extensions = glGetString(GL_EXTENSIONS)
+    _vendor = cast(glGetString(GL_VENDOR), c_char_p).value
+    _renderer = cast(glGetString(GL_RENDERER), c_char_p).value
+    _extensions = cast(glGetString(GL_EXTENSIONS), c_char_p).value
     if _extensions:
-        _extensions = _extensions.split()
+        _extensions = set(_extensions.split())
     else:
         error = glGetError()
         if error == GL_INVALID_ENUM:
@@ -43,7 +44,7 @@ def set_context():
             raise ValueError('glGetString incorrectly called between '
                 'glBegin and glEnd')
         _extensions = []
-    _version = glGetString(GL_VERSION)
+    _version = cast(glGetString(GL_VERSION), c_char_p).value
 
 def have_context():
     return _have_context
