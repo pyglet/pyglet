@@ -38,6 +38,365 @@ class c_void(Structure):
 import pyglet.GL.glx
 
 XlibSpecificationRelease = 6 	# /usr/include/X11/Xlib.h:39
+X_PROTOCOL = 11 	# /usr/include/X11/X.h:58
+X_PROTOCOL_REVISION = 0 	# /usr/include/X11/X.h:59
+XID = pyglet.GL.glx.XID
+Mask = c_ulong 	# /usr/include/X11/X.h:75
+Atom = c_ulong 	# /usr/include/X11/X.h:79
+VisualID = pyglet.GL.glx.VisualID
+Time = c_ulong 	# /usr/include/X11/X.h:82
+Window = pyglet.GL.glx.Window
+Drawable = XID 	# /usr/include/X11/X.h:102
+Font = pyglet.GL.glx.Font
+Pixmap = pyglet.GL.glx.Pixmap
+Cursor = XID 	# /usr/include/X11/X.h:108
+Colormap = XID 	# /usr/include/X11/X.h:109
+GContext = XID 	# /usr/include/X11/X.h:110
+KeySym = XID 	# /usr/include/X11/X.h:111
+KeyCode = c_ubyte 	# /usr/include/X11/X.h:113
+None_ = 0 	# /usr/include/X11/X.h:120
+ParentRelative = 1 	# /usr/include/X11/X.h:123
+CopyFromParent = 0 	# /usr/include/X11/X.h:126
+PointerWindow = 0 	# /usr/include/X11/X.h:131
+InputFocus = 1 	# /usr/include/X11/X.h:132
+PointerRoot = 1 	# /usr/include/X11/X.h:134
+AnyPropertyType = 0 	# /usr/include/X11/X.h:136
+AnyKey = 0 	# /usr/include/X11/X.h:138
+AnyButton = 0 	# /usr/include/X11/X.h:140
+AllTemporary = 0 	# /usr/include/X11/X.h:142
+CurrentTime = 0 	# /usr/include/X11/X.h:144
+NoSymbol = 0 	# /usr/include/X11/X.h:146
+NoEventMask = 0 	# /usr/include/X11/X.h:155
+KeyPressMask = 1 	# /usr/include/X11/X.h:156
+KeyReleaseMask = 2 	# /usr/include/X11/X.h:157
+ButtonPressMask = 4 	# /usr/include/X11/X.h:158
+ButtonReleaseMask = 8 	# /usr/include/X11/X.h:159
+EnterWindowMask = 16 	# /usr/include/X11/X.h:160
+LeaveWindowMask = 32 	# /usr/include/X11/X.h:161
+PointerMotionMask = 64 	# /usr/include/X11/X.h:162
+PointerMotionHintMask = 128 	# /usr/include/X11/X.h:163
+Button1MotionMask = 256 	# /usr/include/X11/X.h:164
+Button2MotionMask = 512 	# /usr/include/X11/X.h:165
+Button3MotionMask = 1024 	# /usr/include/X11/X.h:166
+Button4MotionMask = 2048 	# /usr/include/X11/X.h:167
+Button5MotionMask = 4096 	# /usr/include/X11/X.h:168
+ButtonMotionMask = 8192 	# /usr/include/X11/X.h:169
+KeymapStateMask = 16384 	# /usr/include/X11/X.h:170
+ExposureMask = 32768 	# /usr/include/X11/X.h:171
+VisibilityChangeMask = 65536 	# /usr/include/X11/X.h:172
+StructureNotifyMask = 131072 	# /usr/include/X11/X.h:173
+ResizeRedirectMask = 262144 	# /usr/include/X11/X.h:174
+SubstructureNotifyMask = 524288 	# /usr/include/X11/X.h:175
+SubstructureRedirectMask = 1048576 	# /usr/include/X11/X.h:176
+FocusChangeMask = 2097152 	# /usr/include/X11/X.h:177
+PropertyChangeMask = 4194304 	# /usr/include/X11/X.h:178
+ColormapChangeMask = 8388608 	# /usr/include/X11/X.h:179
+OwnerGrabButtonMask = 16777216 	# /usr/include/X11/X.h:180
+KeyPress = 2 	# /usr/include/X11/X.h:186
+KeyRelease = 3 	# /usr/include/X11/X.h:187
+ButtonPress = 4 	# /usr/include/X11/X.h:188
+ButtonRelease = 5 	# /usr/include/X11/X.h:189
+MotionNotify = 6 	# /usr/include/X11/X.h:190
+EnterNotify = 7 	# /usr/include/X11/X.h:191
+LeaveNotify = 8 	# /usr/include/X11/X.h:192
+FocusIn = 9 	# /usr/include/X11/X.h:193
+FocusOut = 10 	# /usr/include/X11/X.h:194
+KeymapNotify = 11 	# /usr/include/X11/X.h:195
+Expose = 12 	# /usr/include/X11/X.h:196
+GraphicsExpose = 13 	# /usr/include/X11/X.h:197
+NoExpose = 14 	# /usr/include/X11/X.h:198
+VisibilityNotify = 15 	# /usr/include/X11/X.h:199
+CreateNotify = 16 	# /usr/include/X11/X.h:200
+DestroyNotify = 17 	# /usr/include/X11/X.h:201
+UnmapNotify = 18 	# /usr/include/X11/X.h:202
+MapNotify = 19 	# /usr/include/X11/X.h:203
+MapRequest = 20 	# /usr/include/X11/X.h:204
+ReparentNotify = 21 	# /usr/include/X11/X.h:205
+ConfigureNotify = 22 	# /usr/include/X11/X.h:206
+ConfigureRequest = 23 	# /usr/include/X11/X.h:207
+GravityNotify = 24 	# /usr/include/X11/X.h:208
+ResizeRequest = 25 	# /usr/include/X11/X.h:209
+CirculateNotify = 26 	# /usr/include/X11/X.h:210
+CirculateRequest = 27 	# /usr/include/X11/X.h:211
+PropertyNotify = 28 	# /usr/include/X11/X.h:212
+SelectionClear = 29 	# /usr/include/X11/X.h:213
+SelectionRequest = 30 	# /usr/include/X11/X.h:214
+SelectionNotify = 31 	# /usr/include/X11/X.h:215
+ColormapNotify = 32 	# /usr/include/X11/X.h:216
+ClientMessage = 33 	# /usr/include/X11/X.h:217
+MappingNotify = 34 	# /usr/include/X11/X.h:218
+LASTEvent = 35 	# /usr/include/X11/X.h:219
+ShiftMask = 1 	# /usr/include/X11/X.h:225
+LockMask = 2 	# /usr/include/X11/X.h:226
+ControlMask = 4 	# /usr/include/X11/X.h:227
+Mod1Mask = 8 	# /usr/include/X11/X.h:228
+Mod2Mask = 16 	# /usr/include/X11/X.h:229
+Mod3Mask = 32 	# /usr/include/X11/X.h:230
+Mod4Mask = 64 	# /usr/include/X11/X.h:231
+Mod5Mask = 128 	# /usr/include/X11/X.h:232
+ShiftMapIndex = 0 	# /usr/include/X11/X.h:237
+LockMapIndex = 1 	# /usr/include/X11/X.h:238
+ControlMapIndex = 2 	# /usr/include/X11/X.h:239
+Mod1MapIndex = 3 	# /usr/include/X11/X.h:240
+Mod2MapIndex = 4 	# /usr/include/X11/X.h:241
+Mod3MapIndex = 5 	# /usr/include/X11/X.h:242
+Mod4MapIndex = 6 	# /usr/include/X11/X.h:243
+Mod5MapIndex = 7 	# /usr/include/X11/X.h:244
+Button1Mask = 256 	# /usr/include/X11/X.h:250
+Button2Mask = 512 	# /usr/include/X11/X.h:251
+Button3Mask = 1024 	# /usr/include/X11/X.h:252
+Button4Mask = 2048 	# /usr/include/X11/X.h:253
+Button5Mask = 4096 	# /usr/include/X11/X.h:254
+AnyModifier = 32768 	# /usr/include/X11/X.h:256
+Button1 = 1 	# /usr/include/X11/X.h:263
+Button2 = 2 	# /usr/include/X11/X.h:264
+Button3 = 3 	# /usr/include/X11/X.h:265
+Button4 = 4 	# /usr/include/X11/X.h:266
+Button5 = 5 	# /usr/include/X11/X.h:267
+NotifyNormal = 0 	# /usr/include/X11/X.h:271
+NotifyGrab = 1 	# /usr/include/X11/X.h:272
+NotifyUngrab = 2 	# /usr/include/X11/X.h:273
+NotifyWhileGrabbed = 3 	# /usr/include/X11/X.h:274
+NotifyHint = 1 	# /usr/include/X11/X.h:276
+NotifyAncestor = 0 	# /usr/include/X11/X.h:280
+NotifyVirtual = 1 	# /usr/include/X11/X.h:281
+NotifyInferior = 2 	# /usr/include/X11/X.h:282
+NotifyNonlinear = 3 	# /usr/include/X11/X.h:283
+NotifyNonlinearVirtual = 4 	# /usr/include/X11/X.h:284
+NotifyPointer = 5 	# /usr/include/X11/X.h:285
+NotifyPointerRoot = 6 	# /usr/include/X11/X.h:286
+NotifyDetailNone = 7 	# /usr/include/X11/X.h:287
+VisibilityUnobscured = 0 	# /usr/include/X11/X.h:291
+VisibilityPartiallyObscured = 1 	# /usr/include/X11/X.h:292
+VisibilityFullyObscured = 2 	# /usr/include/X11/X.h:293
+PlaceOnTop = 0 	# /usr/include/X11/X.h:297
+PlaceOnBottom = 1 	# /usr/include/X11/X.h:298
+FamilyInternet = 0 	# /usr/include/X11/X.h:302
+FamilyDECnet = 1 	# /usr/include/X11/X.h:303
+FamilyChaos = 2 	# /usr/include/X11/X.h:304
+FamilyInternet6 = 6 	# /usr/include/X11/X.h:305
+FamilyServerInterpreted = 5 	# /usr/include/X11/X.h:308
+PropertyNewValue = 0 	# /usr/include/X11/X.h:312
+PropertyDelete = 1 	# /usr/include/X11/X.h:313
+ColormapUninstalled = 0 	# /usr/include/X11/X.h:317
+ColormapInstalled = 1 	# /usr/include/X11/X.h:318
+GrabModeSync = 0 	# /usr/include/X11/X.h:322
+GrabModeAsync = 1 	# /usr/include/X11/X.h:323
+GrabSuccess = 0 	# /usr/include/X11/X.h:327
+AlreadyGrabbed = 1 	# /usr/include/X11/X.h:328
+GrabInvalidTime = 2 	# /usr/include/X11/X.h:329
+GrabNotViewable = 3 	# /usr/include/X11/X.h:330
+GrabFrozen = 4 	# /usr/include/X11/X.h:331
+AsyncPointer = 0 	# /usr/include/X11/X.h:335
+SyncPointer = 1 	# /usr/include/X11/X.h:336
+ReplayPointer = 2 	# /usr/include/X11/X.h:337
+AsyncKeyboard = 3 	# /usr/include/X11/X.h:338
+SyncKeyboard = 4 	# /usr/include/X11/X.h:339
+ReplayKeyboard = 5 	# /usr/include/X11/X.h:340
+AsyncBoth = 6 	# /usr/include/X11/X.h:341
+SyncBoth = 7 	# /usr/include/X11/X.h:342
+RevertToParent = 2 	# /usr/include/X11/X.h:348
+Success = 0 	# /usr/include/X11/X.h:354
+BadRequest = 1 	# /usr/include/X11/X.h:355
+BadValue = 2 	# /usr/include/X11/X.h:356
+BadWindow = 3 	# /usr/include/X11/X.h:357
+BadPixmap = 4 	# /usr/include/X11/X.h:358
+BadAtom = 5 	# /usr/include/X11/X.h:359
+BadCursor = 6 	# /usr/include/X11/X.h:360
+BadFont = 7 	# /usr/include/X11/X.h:361
+BadMatch = 8 	# /usr/include/X11/X.h:362
+BadDrawable = 9 	# /usr/include/X11/X.h:363
+BadAccess = 10 	# /usr/include/X11/X.h:364
+BadAlloc = 11 	# /usr/include/X11/X.h:373
+BadColor = 12 	# /usr/include/X11/X.h:374
+BadGC = 13 	# /usr/include/X11/X.h:375
+BadIDChoice = 14 	# /usr/include/X11/X.h:376
+BadName = 15 	# /usr/include/X11/X.h:377
+BadLength = 16 	# /usr/include/X11/X.h:378
+BadImplementation = 17 	# /usr/include/X11/X.h:379
+FirstExtensionError = 128 	# /usr/include/X11/X.h:381
+LastExtensionError = 255 	# /usr/include/X11/X.h:382
+InputOutput = 1 	# /usr/include/X11/X.h:391
+InputOnly = 2 	# /usr/include/X11/X.h:392
+CWBackPixmap = 1 	# /usr/include/X11/X.h:396
+CWBackPixel = 2 	# /usr/include/X11/X.h:397
+CWBorderPixmap = 4 	# /usr/include/X11/X.h:398
+CWBorderPixel = 8 	# /usr/include/X11/X.h:399
+CWBitGravity = 16 	# /usr/include/X11/X.h:400
+CWWinGravity = 32 	# /usr/include/X11/X.h:401
+CWBackingStore = 64 	# /usr/include/X11/X.h:402
+CWBackingPlanes = 128 	# /usr/include/X11/X.h:403
+CWBackingPixel = 256 	# /usr/include/X11/X.h:404
+CWOverrideRedirect = 512 	# /usr/include/X11/X.h:405
+CWSaveUnder = 1024 	# /usr/include/X11/X.h:406
+CWEventMask = 2048 	# /usr/include/X11/X.h:407
+CWDontPropagate = 4096 	# /usr/include/X11/X.h:408
+CWColormap = 8192 	# /usr/include/X11/X.h:409
+CWCursor = 16384 	# /usr/include/X11/X.h:410
+CWX = 1 	# /usr/include/X11/X.h:414
+CWY = 2 	# /usr/include/X11/X.h:415
+CWWidth = 4 	# /usr/include/X11/X.h:416
+CWHeight = 8 	# /usr/include/X11/X.h:417
+CWBorderWidth = 16 	# /usr/include/X11/X.h:418
+CWSibling = 32 	# /usr/include/X11/X.h:419
+CWStackMode = 64 	# /usr/include/X11/X.h:420
+ForgetGravity = 0 	# /usr/include/X11/X.h:425
+NorthWestGravity = 1 	# /usr/include/X11/X.h:426
+NorthGravity = 2 	# /usr/include/X11/X.h:427
+NorthEastGravity = 3 	# /usr/include/X11/X.h:428
+WestGravity = 4 	# /usr/include/X11/X.h:429
+CenterGravity = 5 	# /usr/include/X11/X.h:430
+EastGravity = 6 	# /usr/include/X11/X.h:431
+SouthWestGravity = 7 	# /usr/include/X11/X.h:432
+SouthGravity = 8 	# /usr/include/X11/X.h:433
+SouthEastGravity = 9 	# /usr/include/X11/X.h:434
+StaticGravity = 10 	# /usr/include/X11/X.h:435
+UnmapGravity = 0 	# /usr/include/X11/X.h:439
+NotUseful = 0 	# /usr/include/X11/X.h:443
+WhenMapped = 1 	# /usr/include/X11/X.h:444
+Always = 2 	# /usr/include/X11/X.h:445
+IsUnmapped = 0 	# /usr/include/X11/X.h:449
+IsUnviewable = 1 	# /usr/include/X11/X.h:450
+IsViewable = 2 	# /usr/include/X11/X.h:451
+SetModeInsert = 0 	# /usr/include/X11/X.h:455
+SetModeDelete = 1 	# /usr/include/X11/X.h:456
+DestroyAll = 0 	# /usr/include/X11/X.h:460
+RetainPermanent = 1 	# /usr/include/X11/X.h:461
+RetainTemporary = 2 	# /usr/include/X11/X.h:462
+Above = 0 	# /usr/include/X11/X.h:466
+Below = 1 	# /usr/include/X11/X.h:467
+TopIf = 2 	# /usr/include/X11/X.h:468
+BottomIf = 3 	# /usr/include/X11/X.h:469
+Opposite = 4 	# /usr/include/X11/X.h:470
+RaiseLowest = 0 	# /usr/include/X11/X.h:474
+LowerHighest = 1 	# /usr/include/X11/X.h:475
+PropModeReplace = 0 	# /usr/include/X11/X.h:479
+PropModePrepend = 1 	# /usr/include/X11/X.h:480
+PropModeAppend = 2 	# /usr/include/X11/X.h:481
+GXclear = 0 	# /usr/include/X11/X.h:489
+GXand = 1 	# /usr/include/X11/X.h:490
+GXandReverse = 2 	# /usr/include/X11/X.h:491
+GXcopy = 3 	# /usr/include/X11/X.h:492
+GXandInverted = 4 	# /usr/include/X11/X.h:493
+GXnoop = 5 	# /usr/include/X11/X.h:494
+GXxor = 6 	# /usr/include/X11/X.h:495
+GXor = 7 	# /usr/include/X11/X.h:496
+GXnor = 8 	# /usr/include/X11/X.h:497
+GXequiv = 9 	# /usr/include/X11/X.h:498
+GXinvert = 10 	# /usr/include/X11/X.h:499
+GXorReverse = 11 	# /usr/include/X11/X.h:500
+GXcopyInverted = 12 	# /usr/include/X11/X.h:501
+GXorInverted = 13 	# /usr/include/X11/X.h:502
+GXnand = 14 	# /usr/include/X11/X.h:503
+GXset = 0.0 	# /usr/include/X11/X.h:504
+LineSolid = 0 	# /usr/include/X11/X.h:508
+LineOnOffDash = 1 	# /usr/include/X11/X.h:509
+LineDoubleDash = 2 	# /usr/include/X11/X.h:510
+CapNotLast = 0 	# /usr/include/X11/X.h:514
+CapButt = 1 	# /usr/include/X11/X.h:515
+CapRound = 2 	# /usr/include/X11/X.h:516
+CapProjecting = 3 	# /usr/include/X11/X.h:517
+JoinMiter = 0 	# /usr/include/X11/X.h:521
+JoinRound = 1 	# /usr/include/X11/X.h:522
+JoinBevel = 2 	# /usr/include/X11/X.h:523
+FillSolid = 0 	# /usr/include/X11/X.h:527
+FillTiled = 1 	# /usr/include/X11/X.h:528
+FillStippled = 2 	# /usr/include/X11/X.h:529
+FillOpaqueStippled = 3 	# /usr/include/X11/X.h:530
+EvenOddRule = 0 	# /usr/include/X11/X.h:534
+WindingRule = 1 	# /usr/include/X11/X.h:535
+ClipByChildren = 0 	# /usr/include/X11/X.h:539
+IncludeInferiors = 1 	# /usr/include/X11/X.h:540
+Unsorted = 0 	# /usr/include/X11/X.h:544
+YSorted = 1 	# /usr/include/X11/X.h:545
+YXSorted = 2 	# /usr/include/X11/X.h:546
+YXBanded = 3 	# /usr/include/X11/X.h:547
+CoordModeOrigin = 0 	# /usr/include/X11/X.h:551
+CoordModePrevious = 1 	# /usr/include/X11/X.h:552
+Complex = 0 	# /usr/include/X11/X.h:556
+Nonconvex = 1 	# /usr/include/X11/X.h:557
+Convex = 2 	# /usr/include/X11/X.h:558
+ArcChord = 0 	# /usr/include/X11/X.h:562
+ArcPieSlice = 1 	# /usr/include/X11/X.h:563
+GCFunction = 1 	# /usr/include/X11/X.h:568
+GCPlaneMask = 2 	# /usr/include/X11/X.h:569
+GCForeground = 4 	# /usr/include/X11/X.h:570
+GCBackground = 8 	# /usr/include/X11/X.h:571
+GCLineWidth = 16 	# /usr/include/X11/X.h:572
+GCLineStyle = 32 	# /usr/include/X11/X.h:573
+GCCapStyle = 64 	# /usr/include/X11/X.h:574
+GCJoinStyle = 128 	# /usr/include/X11/X.h:575
+GCFillStyle = 256 	# /usr/include/X11/X.h:576
+GCFillRule = 512 	# /usr/include/X11/X.h:577
+GCTile = 1024 	# /usr/include/X11/X.h:578
+GCStipple = 2048 	# /usr/include/X11/X.h:579
+GCTileStipXOrigin = 4096 	# /usr/include/X11/X.h:580
+GCTileStipYOrigin = 8192 	# /usr/include/X11/X.h:581
+GCFont = 16384 	# /usr/include/X11/X.h:582
+GCSubwindowMode = 32768 	# /usr/include/X11/X.h:583
+GCGraphicsExposures = 65536 	# /usr/include/X11/X.h:584
+GCClipXOrigin = 131072 	# /usr/include/X11/X.h:585
+GCClipYOrigin = 262144 	# /usr/include/X11/X.h:586
+GCClipMask = 524288 	# /usr/include/X11/X.h:587
+GCDashOffset = 1048576 	# /usr/include/X11/X.h:588
+GCDashList = 2097152 	# /usr/include/X11/X.h:589
+GCArcMode = 4194304 	# /usr/include/X11/X.h:590
+GCLastBit = 22 	# /usr/include/X11/X.h:592
+FontLeftToRight = 0 	# /usr/include/X11/X.h:599
+FontRightToLeft = 1 	# /usr/include/X11/X.h:600
+FontChange = 255 	# /usr/include/X11/X.h:602
+XYBitmap = 0 	# /usr/include/X11/X.h:610
+XYPixmap = 1 	# /usr/include/X11/X.h:611
+ZPixmap = 2 	# /usr/include/X11/X.h:612
+AllocNone = 0 	# /usr/include/X11/X.h:620
+AllocAll = 1 	# /usr/include/X11/X.h:621
+DoRed = 1 	# /usr/include/X11/X.h:626
+DoGreen = 2 	# /usr/include/X11/X.h:627
+DoBlue = 4 	# /usr/include/X11/X.h:628
+CursorShape = 0 	# /usr/include/X11/X.h:636
+TileShape = 1 	# /usr/include/X11/X.h:637
+StippleShape = 2 	# /usr/include/X11/X.h:638
+AutoRepeatModeOff = 0 	# /usr/include/X11/X.h:644
+AutoRepeatModeOn = 1 	# /usr/include/X11/X.h:645
+AutoRepeatModeDefault = 2 	# /usr/include/X11/X.h:646
+LedModeOff = 0 	# /usr/include/X11/X.h:648
+LedModeOn = 1 	# /usr/include/X11/X.h:649
+KBKeyClickPercent = 1 	# /usr/include/X11/X.h:653
+KBBellPercent = 2 	# /usr/include/X11/X.h:654
+KBBellPitch = 4 	# /usr/include/X11/X.h:655
+KBBellDuration = 8 	# /usr/include/X11/X.h:656
+KBLed = 16 	# /usr/include/X11/X.h:657
+KBLedMode = 32 	# /usr/include/X11/X.h:658
+KBKey = 64 	# /usr/include/X11/X.h:659
+KBAutoRepeatMode = 128 	# /usr/include/X11/X.h:660
+MappingSuccess = 0 	# /usr/include/X11/X.h:662
+MappingBusy = 1 	# /usr/include/X11/X.h:663
+MappingFailed = 2 	# /usr/include/X11/X.h:664
+MappingModifier = 0 	# /usr/include/X11/X.h:666
+MappingKeyboard = 1 	# /usr/include/X11/X.h:667
+MappingPointer = 2 	# /usr/include/X11/X.h:668
+DontPreferBlanking = 0 	# /usr/include/X11/X.h:674
+PreferBlanking = 1 	# /usr/include/X11/X.h:675
+DefaultBlanking = 2 	# /usr/include/X11/X.h:676
+DisableScreenSaver = 0 	# /usr/include/X11/X.h:678
+DisableScreenInterval = 0 	# /usr/include/X11/X.h:679
+DontAllowExposures = 0 	# /usr/include/X11/X.h:681
+AllowExposures = 1 	# /usr/include/X11/X.h:682
+DefaultExposures = 2 	# /usr/include/X11/X.h:683
+ScreenSaverReset = 0 	# /usr/include/X11/X.h:687
+ScreenSaverActive = 1 	# /usr/include/X11/X.h:688
+HostInsert = 0 	# /usr/include/X11/X.h:696
+HostDelete = 1 	# /usr/include/X11/X.h:697
+EnableAccess = 1 	# /usr/include/X11/X.h:701
+DisableAccess = 0 	# /usr/include/X11/X.h:702
+StaticGray = 0 	# /usr/include/X11/X.h:708
+GrayScale = 1 	# /usr/include/X11/X.h:709
+StaticColor = 2 	# /usr/include/X11/X.h:710
+PseudoColor = 3 	# /usr/include/X11/X.h:711
+TrueColor = 4 	# /usr/include/X11/X.h:712
+DirectColor = 5 	# /usr/include/X11/X.h:713
+LSBFirst = 0 	# /usr/include/X11/X.h:718
+MSBFirst = 1 	# /usr/include/X11/X.h:719
 # /usr/include/X11/Xlib.h:94
 _Xmblen = _lib._Xmblen
 _Xmblen.restype = c_int
@@ -45,7 +404,11 @@ _Xmblen.argtypes = [c_char_p, c_int]
 
 X_HAVE_UTF8_STRING = 1 	# /usr/include/X11/Xlib.h:106
 XPointer = pyglet.GL.glx.XPointer
+Bool = 0 	# /usr/include/X11/Xlib.h:110
+Status = 0 	# /usr/include/X11/Xlib.h:111
 True = 1 	# /usr/include/X11/Xlib.h:112
+False = 0 	# /usr/include/X11/Xlib.h:113
+QueuedAlready = 0 	# /usr/include/X11/Xlib.h:115
 QueuedAfterReading = 1 	# /usr/include/X11/Xlib.h:116
 QueuedAfterFlush = 2 	# /usr/include/X11/Xlib.h:117
 XExtData = pyglet.GL.glx.XExtData
@@ -103,8 +466,6 @@ class struct_anon_10(Structure):
         'dash_offset',
         'dashes',
     ]
-Pixmap = pyglet.GL.glx.Pixmap
-Font = pyglet.GL.glx.Font
 struct_anon_10._fields_ = [
     ('function', c_int),
     ('plane_mask', c_ulong),
@@ -184,9 +545,6 @@ struct__XDisplay._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-Window = pyglet.GL.glx.Window
-XID = pyglet.GL.glx.XID
-Colormap = XID 	# /usr/include/X11/X.h:109
 struct_anon_13._fields_ = [
     ('ext_data', POINTER(XExtData)),
     ('display', POINTER(struct__XDisplay)),
@@ -244,7 +602,6 @@ class struct_anon_15(Structure):
         'colormap',
         'cursor',
     ]
-Cursor = XID 	# /usr/include/X11/X.h:108
 struct_anon_15._fields_ = [
     ('background_pixmap', Pixmap),
     ('background_pixel', c_ulong),
@@ -554,7 +911,6 @@ class struct_anon_27(Structure):
         'x',
         'y',
     ]
-Time = c_ulong 	# /usr/include/X11/X.h:82
 struct_anon_27._fields_ = [
     ('time', Time),
     ('x', c_short),
@@ -567,7 +923,6 @@ class struct_anon_28(Structure):
         'max_keypermod',
         'modifiermap',
     ]
-KeyCode = c_ubyte 	# /usr/include/X11/X.h:113
 struct_anon_28._fields_ = [
     ('max_keypermod', c_int),
     ('modifiermap', POINTER(KeyCode)),
@@ -927,7 +1282,6 @@ class struct_anon_37(Structure):
         'major_code',
         'minor_code',
     ]
-Drawable = XID 	# /usr/include/X11/X.h:102
 struct_anon_37._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
@@ -1287,7 +1641,6 @@ class struct_anon_52(Structure):
         'time',
         'state',
     ]
-Atom = c_ulong 	# /usr/include/X11/X.h:79
 struct_anon_52._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
@@ -1763,7 +2116,13 @@ struct_anon_72._fields_ = [
 ]
 
 XOMCharSetList = struct_anon_72 	# /usr/include/X11/Xlib.h:1127
-XOrientation = c_int 	# /usr/include/X11/Xlib.h:1135
+enum_anon_73 = c_int
+XOMOrientation_LTR_TTB = 1
+XOMOrientation_RTL_TTB = 2
+XOMOrientation_TTB_LTR = 3
+XOMOrientation_TTB_RTL = 4
+XOMOrientation_Context = 5
+XOrientation = enum_anon_73 	# /usr/include/X11/Xlib.h:1135
 class struct_anon_74(Structure):
     __slots__ = [
         'num_orientation',
@@ -1819,6 +2178,15 @@ struct_anon_76._fields_ = [
 ]
 
 XIMStyles = struct_anon_76 	# /usr/include/X11/Xlib.h:1174
+XIMPreeditArea = 1 	# /usr/include/X11/Xlib.h:1176
+XIMPreeditCallbacks = 2 	# /usr/include/X11/Xlib.h:1177
+XIMPreeditPosition = 4 	# /usr/include/X11/Xlib.h:1178
+XIMPreeditNothing = 8 	# /usr/include/X11/Xlib.h:1179
+XIMPreeditNone = 16 	# /usr/include/X11/Xlib.h:1180
+XIMStatusArea = 256 	# /usr/include/X11/Xlib.h:1181
+XIMStatusCallbacks = 512 	# /usr/include/X11/Xlib.h:1182
+XIMStatusNothing = 1024 	# /usr/include/X11/Xlib.h:1183
+XIMStatusNone = 2048 	# /usr/include/X11/Xlib.h:1184
 XBufferOverflow = -1 	# /usr/include/X11/Xlib.h:1230
 XLookupNone = 1 	# /usr/include/X11/Xlib.h:1231
 XLookupChars = 2 	# /usr/include/X11/Xlib.h:1232
@@ -1848,6 +2216,15 @@ struct_anon_78._fields_ = [
 
 XICCallback = struct_anon_78 	# /usr/include/X11/Xlib.h:1246
 XIMFeedback = c_ulong 	# /usr/include/X11/Xlib.h:1248
+XIMReverse = 1 	# /usr/include/X11/Xlib.h:1250
+XIMUnderline = 2 	# /usr/include/X11/Xlib.h:1251
+XIMHighlight = 4 	# /usr/include/X11/Xlib.h:1252
+XIMPrimary = 32 	# /usr/include/X11/Xlib.h:1253
+XIMSecondary = 64 	# /usr/include/X11/Xlib.h:1254
+XIMTertiary = 128 	# /usr/include/X11/Xlib.h:1255
+XIMVisibleToForward = 256 	# /usr/include/X11/Xlib.h:1256
+XIMVisibleToBackword = 512 	# /usr/include/X11/Xlib.h:1257
+XIMVisibleToCenter = 1024 	# /usr/include/X11/Xlib.h:1258
 class struct__XIMText(Structure):
     __slots__ = [
         'length',
@@ -1874,6 +2251,9 @@ struct__XIMText._fields_ = [
 
 XIMText = struct__XIMText 	# /usr/include/X11/Xlib.h:1268
 XIMPreeditState = c_ulong 	# /usr/include/X11/Xlib.h:1270
+XIMPreeditUnKnown = 0 	# /usr/include/X11/Xlib.h:1272
+XIMPreeditEnable = 1 	# /usr/include/X11/Xlib.h:1273
+XIMPreeditDisable = 2 	# /usr/include/X11/Xlib.h:1274
 class struct__XIMPreeditStateNotifyCallbackStruct(Structure):
     __slots__ = [
         'state',
@@ -1884,7 +2264,15 @@ struct__XIMPreeditStateNotifyCallbackStruct._fields_ = [
 
 XIMPreeditStateNotifyCallbackStruct = struct__XIMPreeditStateNotifyCallbackStruct 	# /usr/include/X11/Xlib.h:1278
 XIMResetState = c_ulong 	# /usr/include/X11/Xlib.h:1280
+XIMInitialState = 1 	# /usr/include/X11/Xlib.h:1282
+XIMPreserveState = 2 	# /usr/include/X11/Xlib.h:1283
 XIMStringConversionFeedback = c_ulong 	# /usr/include/X11/Xlib.h:1285
+XIMStringConversionLeftEdge = 1 	# /usr/include/X11/Xlib.h:1287
+XIMStringConversionRightEdge = 2 	# /usr/include/X11/Xlib.h:1288
+XIMStringConversionTopEdge = 4 	# /usr/include/X11/Xlib.h:1289
+XIMStringConversionBottomEdge = 8 	# /usr/include/X11/Xlib.h:1290
+XIMStringConversionConcealed = 16 	# /usr/include/X11/Xlib.h:1291
+XIMStringConversionWrapped = 32 	# /usr/include/X11/Xlib.h:1292
 class struct__XIMStringConversionText(Structure):
     __slots__ = [
         'length',
@@ -1912,8 +2300,27 @@ struct__XIMStringConversionText._fields_ = [
 XIMStringConversionText = struct__XIMStringConversionText 	# /usr/include/X11/Xlib.h:1302
 XIMStringConversionPosition = c_ushort 	# /usr/include/X11/Xlib.h:1304
 XIMStringConversionType = c_ushort 	# /usr/include/X11/Xlib.h:1306
+XIMStringConversionBuffer = 1 	# /usr/include/X11/Xlib.h:1308
+XIMStringConversionLine = 2 	# /usr/include/X11/Xlib.h:1309
+XIMStringConversionWord = 3 	# /usr/include/X11/Xlib.h:1310
+XIMStringConversionChar = 4 	# /usr/include/X11/Xlib.h:1311
 XIMStringConversionOperation = c_ushort 	# /usr/include/X11/Xlib.h:1313
-XIMCaretDirection = c_int 	# /usr/include/X11/Xlib.h:1326
+XIMStringConversionSubstitution = 1 	# /usr/include/X11/Xlib.h:1315
+XIMStringConversionRetrieval = 2 	# /usr/include/X11/Xlib.h:1316
+enum_anon_81 = c_int
+XIMForwardChar = 1
+XIMBackwardChar = 2
+XIMForwardWord = 3
+XIMBackwardWord = 4
+XIMCaretUp = 5
+XIMCaretDown = 6
+XIMNextLine = 7
+XIMPreviousLine = 8
+XIMLineStart = 9
+XIMLineEnd = 10
+XIMAbsolutePosition = 11
+XIMDontChange = 12
+XIMCaretDirection = enum_anon_81 	# /usr/include/X11/Xlib.h:1326
 class struct__XIMStringConversionCallbackStruct(Structure):
     __slots__ = [
         'position',
@@ -1946,7 +2353,11 @@ struct__XIMPreeditDrawCallbackStruct._fields_ = [
 ]
 
 XIMPreeditDrawCallbackStruct = struct__XIMPreeditDrawCallbackStruct 	# /usr/include/X11/Xlib.h:1341
-XIMCaretStyle = c_int 	# /usr/include/X11/Xlib.h:1347
+enum_anon_82 = c_int
+XIMIsInvisible = 1
+XIMIsPrimary = 2
+XIMIsSecondary = 3
+XIMCaretStyle = enum_anon_82 	# /usr/include/X11/Xlib.h:1347
 class struct__XIMPreeditCaretCallbackStruct(Structure):
     __slots__ = [
         'position',
@@ -1960,7 +2371,10 @@ struct__XIMPreeditCaretCallbackStruct._fields_ = [
 ]
 
 XIMPreeditCaretCallbackStruct = struct__XIMPreeditCaretCallbackStruct 	# /usr/include/X11/Xlib.h:1353
-XIMStatusDataType = c_int 	# /usr/include/X11/Xlib.h:1358
+enum_anon_83 = c_int
+XIMTextType = 1
+XIMBitmapType = 2
+XIMStatusDataType = enum_anon_83 	# /usr/include/X11/Xlib.h:1358
 class struct__XIMStatusDrawCallbackStruct(Structure):
     __slots__ = [
         'type',
@@ -1988,7 +2402,6 @@ class struct__XIMHotKeyTrigger(Structure):
         'modifier',
         'modifier_mask',
     ]
-KeySym = XID 	# /usr/include/X11/X.h:111
 struct__XIMHotKeyTrigger._fields_ = [
     ('keysym', KeySym),
     ('modifier', c_int),
@@ -2008,6 +2421,8 @@ struct__XIMHotKeyTriggers._fields_ = [
 
 XIMHotKeyTriggers = struct__XIMHotKeyTriggers 	# /usr/include/X11/Xlib.h:1377
 XIMHotKeyState = c_ulong 	# /usr/include/X11/Xlib.h:1379
+XIMHotKeyStateON = 1 	# /usr/include/X11/Xlib.h:1381
+XIMHotKeyStateOFF = 2 	# /usr/include/X11/Xlib.h:1382
 class struct_anon_85(Structure):
     __slots__ = [
         'count_values',
@@ -2174,7 +2589,6 @@ XCreateGC = _lib.XCreateGC
 XCreateGC.restype = GC
 XCreateGC.argtypes = [POINTER(Display), Drawable, c_ulong, POINTER(XGCValues)]
 
-GContext = XID 	# /usr/include/X11/X.h:110
 # /usr/include/X11/Xlib.h:1593
 XGContextFromGC = _lib.XGContextFromGC
 XGContextFromGC.restype = GContext
@@ -2295,7 +2709,6 @@ XDisplayMotionBufferSize = _lib.XDisplayMotionBufferSize
 XDisplayMotionBufferSize.restype = c_ulong
 XDisplayMotionBufferSize.argtypes = [POINTER(Display)]
 
-VisualID = pyglet.GL.glx.VisualID
 # /usr/include/X11/Xlib.h:1730
 XVisualIDFromVisual = _lib.XVisualIDFromVisual
 XVisualIDFromVisual.restype = VisualID
@@ -4076,21 +4489,752 @@ _Xwctomb = _lib._Xwctomb
 _Xwctomb.restype = c_int
 _Xwctomb.argtypes = [c_char_p, c_wchar]
 
+X_PROTOCOL = 11 	# /usr/include/X11/X.h:4066
+X_PROTOCOL_REVISION = 0 	# /usr/include/X11/X.h:4067
+None_ = 0 	# /usr/include/X11/X.h:4128
+ParentRelative = 1 	# /usr/include/X11/X.h:4131
+CopyFromParent = 0 	# /usr/include/X11/X.h:4134
+PointerWindow = 0 	# /usr/include/X11/X.h:4139
+InputFocus = 1 	# /usr/include/X11/X.h:4140
+PointerRoot = 1 	# /usr/include/X11/X.h:4142
+AnyPropertyType = 0 	# /usr/include/X11/X.h:4144
+AnyKey = 0 	# /usr/include/X11/X.h:4146
+AnyButton = 0 	# /usr/include/X11/X.h:4148
+AllTemporary = 0 	# /usr/include/X11/X.h:4150
+CurrentTime = 0 	# /usr/include/X11/X.h:4152
+NoSymbol = 0 	# /usr/include/X11/X.h:4154
+NoEventMask = 0 	# /usr/include/X11/X.h:4163
+KeyPressMask = 1 	# /usr/include/X11/X.h:4164
+KeyReleaseMask = 2 	# /usr/include/X11/X.h:4165
+ButtonPressMask = 4 	# /usr/include/X11/X.h:4166
+ButtonReleaseMask = 8 	# /usr/include/X11/X.h:4167
+EnterWindowMask = 16 	# /usr/include/X11/X.h:4168
+LeaveWindowMask = 32 	# /usr/include/X11/X.h:4169
+PointerMotionMask = 64 	# /usr/include/X11/X.h:4170
+PointerMotionHintMask = 128 	# /usr/include/X11/X.h:4171
+Button1MotionMask = 256 	# /usr/include/X11/X.h:4172
+Button2MotionMask = 512 	# /usr/include/X11/X.h:4173
+Button3MotionMask = 1024 	# /usr/include/X11/X.h:4174
+Button4MotionMask = 2048 	# /usr/include/X11/X.h:4175
+Button5MotionMask = 4096 	# /usr/include/X11/X.h:4176
+ButtonMotionMask = 8192 	# /usr/include/X11/X.h:4177
+KeymapStateMask = 16384 	# /usr/include/X11/X.h:4178
+ExposureMask = 32768 	# /usr/include/X11/X.h:4179
+VisibilityChangeMask = 65536 	# /usr/include/X11/X.h:4180
+StructureNotifyMask = 131072 	# /usr/include/X11/X.h:4181
+ResizeRedirectMask = 262144 	# /usr/include/X11/X.h:4182
+SubstructureNotifyMask = 524288 	# /usr/include/X11/X.h:4183
+SubstructureRedirectMask = 1048576 	# /usr/include/X11/X.h:4184
+FocusChangeMask = 2097152 	# /usr/include/X11/X.h:4185
+PropertyChangeMask = 4194304 	# /usr/include/X11/X.h:4186
+ColormapChangeMask = 8388608 	# /usr/include/X11/X.h:4187
+OwnerGrabButtonMask = 16777216 	# /usr/include/X11/X.h:4188
+KeyPress = 2 	# /usr/include/X11/X.h:4194
+KeyRelease = 3 	# /usr/include/X11/X.h:4195
+ButtonPress = 4 	# /usr/include/X11/X.h:4196
+ButtonRelease = 5 	# /usr/include/X11/X.h:4197
+MotionNotify = 6 	# /usr/include/X11/X.h:4198
+EnterNotify = 7 	# /usr/include/X11/X.h:4199
+LeaveNotify = 8 	# /usr/include/X11/X.h:4200
+FocusIn = 9 	# /usr/include/X11/X.h:4201
+FocusOut = 10 	# /usr/include/X11/X.h:4202
+KeymapNotify = 11 	# /usr/include/X11/X.h:4203
+Expose = 12 	# /usr/include/X11/X.h:4204
+GraphicsExpose = 13 	# /usr/include/X11/X.h:4205
+NoExpose = 14 	# /usr/include/X11/X.h:4206
+VisibilityNotify = 15 	# /usr/include/X11/X.h:4207
+CreateNotify = 16 	# /usr/include/X11/X.h:4208
+DestroyNotify = 17 	# /usr/include/X11/X.h:4209
+UnmapNotify = 18 	# /usr/include/X11/X.h:4210
+MapNotify = 19 	# /usr/include/X11/X.h:4211
+MapRequest = 20 	# /usr/include/X11/X.h:4212
+ReparentNotify = 21 	# /usr/include/X11/X.h:4213
+ConfigureNotify = 22 	# /usr/include/X11/X.h:4214
+ConfigureRequest = 23 	# /usr/include/X11/X.h:4215
+GravityNotify = 24 	# /usr/include/X11/X.h:4216
+ResizeRequest = 25 	# /usr/include/X11/X.h:4217
+CirculateNotify = 26 	# /usr/include/X11/X.h:4218
+CirculateRequest = 27 	# /usr/include/X11/X.h:4219
+PropertyNotify = 28 	# /usr/include/X11/X.h:4220
+SelectionClear = 29 	# /usr/include/X11/X.h:4221
+SelectionRequest = 30 	# /usr/include/X11/X.h:4222
+SelectionNotify = 31 	# /usr/include/X11/X.h:4223
+ColormapNotify = 32 	# /usr/include/X11/X.h:4224
+ClientMessage = 33 	# /usr/include/X11/X.h:4225
+MappingNotify = 34 	# /usr/include/X11/X.h:4226
+LASTEvent = 35 	# /usr/include/X11/X.h:4227
+ShiftMask = 1 	# /usr/include/X11/X.h:4233
+LockMask = 2 	# /usr/include/X11/X.h:4234
+ControlMask = 4 	# /usr/include/X11/X.h:4235
+Mod1Mask = 8 	# /usr/include/X11/X.h:4236
+Mod2Mask = 16 	# /usr/include/X11/X.h:4237
+Mod3Mask = 32 	# /usr/include/X11/X.h:4238
+Mod4Mask = 64 	# /usr/include/X11/X.h:4239
+Mod5Mask = 128 	# /usr/include/X11/X.h:4240
+ShiftMapIndex = 0 	# /usr/include/X11/X.h:4245
+LockMapIndex = 1 	# /usr/include/X11/X.h:4246
+ControlMapIndex = 2 	# /usr/include/X11/X.h:4247
+Mod1MapIndex = 3 	# /usr/include/X11/X.h:4248
+Mod2MapIndex = 4 	# /usr/include/X11/X.h:4249
+Mod3MapIndex = 5 	# /usr/include/X11/X.h:4250
+Mod4MapIndex = 6 	# /usr/include/X11/X.h:4251
+Mod5MapIndex = 7 	# /usr/include/X11/X.h:4252
+Button1Mask = 256 	# /usr/include/X11/X.h:4258
+Button2Mask = 512 	# /usr/include/X11/X.h:4259
+Button3Mask = 1024 	# /usr/include/X11/X.h:4260
+Button4Mask = 2048 	# /usr/include/X11/X.h:4261
+Button5Mask = 4096 	# /usr/include/X11/X.h:4262
+AnyModifier = 32768 	# /usr/include/X11/X.h:4264
+Button1 = 1 	# /usr/include/X11/X.h:4271
+Button2 = 2 	# /usr/include/X11/X.h:4272
+Button3 = 3 	# /usr/include/X11/X.h:4273
+Button4 = 4 	# /usr/include/X11/X.h:4274
+Button5 = 5 	# /usr/include/X11/X.h:4275
+NotifyNormal = 0 	# /usr/include/X11/X.h:4279
+NotifyGrab = 1 	# /usr/include/X11/X.h:4280
+NotifyUngrab = 2 	# /usr/include/X11/X.h:4281
+NotifyWhileGrabbed = 3 	# /usr/include/X11/X.h:4282
+NotifyHint = 1 	# /usr/include/X11/X.h:4284
+NotifyAncestor = 0 	# /usr/include/X11/X.h:4288
+NotifyVirtual = 1 	# /usr/include/X11/X.h:4289
+NotifyInferior = 2 	# /usr/include/X11/X.h:4290
+NotifyNonlinear = 3 	# /usr/include/X11/X.h:4291
+NotifyNonlinearVirtual = 4 	# /usr/include/X11/X.h:4292
+NotifyPointer = 5 	# /usr/include/X11/X.h:4293
+NotifyPointerRoot = 6 	# /usr/include/X11/X.h:4294
+NotifyDetailNone = 7 	# /usr/include/X11/X.h:4295
+VisibilityUnobscured = 0 	# /usr/include/X11/X.h:4299
+VisibilityPartiallyObscured = 1 	# /usr/include/X11/X.h:4300
+VisibilityFullyObscured = 2 	# /usr/include/X11/X.h:4301
+PlaceOnTop = 0 	# /usr/include/X11/X.h:4305
+PlaceOnBottom = 1 	# /usr/include/X11/X.h:4306
+FamilyInternet = 0 	# /usr/include/X11/X.h:4310
+FamilyDECnet = 1 	# /usr/include/X11/X.h:4311
+FamilyChaos = 2 	# /usr/include/X11/X.h:4312
+FamilyInternet6 = 6 	# /usr/include/X11/X.h:4313
+FamilyServerInterpreted = 5 	# /usr/include/X11/X.h:4316
+PropertyNewValue = 0 	# /usr/include/X11/X.h:4320
+PropertyDelete = 1 	# /usr/include/X11/X.h:4321
+ColormapUninstalled = 0 	# /usr/include/X11/X.h:4325
+ColormapInstalled = 1 	# /usr/include/X11/X.h:4326
+GrabModeSync = 0 	# /usr/include/X11/X.h:4330
+GrabModeAsync = 1 	# /usr/include/X11/X.h:4331
+GrabSuccess = 0 	# /usr/include/X11/X.h:4335
+AlreadyGrabbed = 1 	# /usr/include/X11/X.h:4336
+GrabInvalidTime = 2 	# /usr/include/X11/X.h:4337
+GrabNotViewable = 3 	# /usr/include/X11/X.h:4338
+GrabFrozen = 4 	# /usr/include/X11/X.h:4339
+AsyncPointer = 0 	# /usr/include/X11/X.h:4343
+SyncPointer = 1 	# /usr/include/X11/X.h:4344
+ReplayPointer = 2 	# /usr/include/X11/X.h:4345
+AsyncKeyboard = 3 	# /usr/include/X11/X.h:4346
+SyncKeyboard = 4 	# /usr/include/X11/X.h:4347
+ReplayKeyboard = 5 	# /usr/include/X11/X.h:4348
+AsyncBoth = 6 	# /usr/include/X11/X.h:4349
+SyncBoth = 7 	# /usr/include/X11/X.h:4350
+RevertToParent = 2 	# /usr/include/X11/X.h:4356
+Success = 0 	# /usr/include/X11/X.h:4362
+BadRequest = 1 	# /usr/include/X11/X.h:4363
+BadValue = 2 	# /usr/include/X11/X.h:4364
+BadWindow = 3 	# /usr/include/X11/X.h:4365
+BadPixmap = 4 	# /usr/include/X11/X.h:4366
+BadAtom = 5 	# /usr/include/X11/X.h:4367
+BadCursor = 6 	# /usr/include/X11/X.h:4368
+BadFont = 7 	# /usr/include/X11/X.h:4369
+BadMatch = 8 	# /usr/include/X11/X.h:4370
+BadDrawable = 9 	# /usr/include/X11/X.h:4371
+BadAccess = 10 	# /usr/include/X11/X.h:4372
+BadAlloc = 11 	# /usr/include/X11/X.h:4381
+BadColor = 12 	# /usr/include/X11/X.h:4382
+BadGC = 13 	# /usr/include/X11/X.h:4383
+BadIDChoice = 14 	# /usr/include/X11/X.h:4384
+BadName = 15 	# /usr/include/X11/X.h:4385
+BadLength = 16 	# /usr/include/X11/X.h:4386
+BadImplementation = 17 	# /usr/include/X11/X.h:4387
+FirstExtensionError = 128 	# /usr/include/X11/X.h:4389
+LastExtensionError = 255 	# /usr/include/X11/X.h:4390
+InputOutput = 1 	# /usr/include/X11/X.h:4399
+InputOnly = 2 	# /usr/include/X11/X.h:4400
+CWBackPixmap = 1 	# /usr/include/X11/X.h:4404
+CWBackPixel = 2 	# /usr/include/X11/X.h:4405
+CWBorderPixmap = 4 	# /usr/include/X11/X.h:4406
+CWBorderPixel = 8 	# /usr/include/X11/X.h:4407
+CWBitGravity = 16 	# /usr/include/X11/X.h:4408
+CWWinGravity = 32 	# /usr/include/X11/X.h:4409
+CWBackingStore = 64 	# /usr/include/X11/X.h:4410
+CWBackingPlanes = 128 	# /usr/include/X11/X.h:4411
+CWBackingPixel = 256 	# /usr/include/X11/X.h:4412
+CWOverrideRedirect = 512 	# /usr/include/X11/X.h:4413
+CWSaveUnder = 1024 	# /usr/include/X11/X.h:4414
+CWEventMask = 2048 	# /usr/include/X11/X.h:4415
+CWDontPropagate = 4096 	# /usr/include/X11/X.h:4416
+CWColormap = 8192 	# /usr/include/X11/X.h:4417
+CWCursor = 16384 	# /usr/include/X11/X.h:4418
+CWX = 1 	# /usr/include/X11/X.h:4422
+CWY = 2 	# /usr/include/X11/X.h:4423
+CWWidth = 4 	# /usr/include/X11/X.h:4424
+CWHeight = 8 	# /usr/include/X11/X.h:4425
+CWBorderWidth = 16 	# /usr/include/X11/X.h:4426
+CWSibling = 32 	# /usr/include/X11/X.h:4427
+CWStackMode = 64 	# /usr/include/X11/X.h:4428
+ForgetGravity = 0 	# /usr/include/X11/X.h:4433
+NorthWestGravity = 1 	# /usr/include/X11/X.h:4434
+NorthGravity = 2 	# /usr/include/X11/X.h:4435
+NorthEastGravity = 3 	# /usr/include/X11/X.h:4436
+WestGravity = 4 	# /usr/include/X11/X.h:4437
+CenterGravity = 5 	# /usr/include/X11/X.h:4438
+EastGravity = 6 	# /usr/include/X11/X.h:4439
+SouthWestGravity = 7 	# /usr/include/X11/X.h:4440
+SouthGravity = 8 	# /usr/include/X11/X.h:4441
+SouthEastGravity = 9 	# /usr/include/X11/X.h:4442
+StaticGravity = 10 	# /usr/include/X11/X.h:4443
+UnmapGravity = 0 	# /usr/include/X11/X.h:4447
+NotUseful = 0 	# /usr/include/X11/X.h:4451
+WhenMapped = 1 	# /usr/include/X11/X.h:4452
+Always = 2 	# /usr/include/X11/X.h:4453
+IsUnmapped = 0 	# /usr/include/X11/X.h:4457
+IsUnviewable = 1 	# /usr/include/X11/X.h:4458
+IsViewable = 2 	# /usr/include/X11/X.h:4459
+SetModeInsert = 0 	# /usr/include/X11/X.h:4463
+SetModeDelete = 1 	# /usr/include/X11/X.h:4464
+DestroyAll = 0 	# /usr/include/X11/X.h:4468
+RetainPermanent = 1 	# /usr/include/X11/X.h:4469
+RetainTemporary = 2 	# /usr/include/X11/X.h:4470
+Above = 0 	# /usr/include/X11/X.h:4474
+Below = 1 	# /usr/include/X11/X.h:4475
+TopIf = 2 	# /usr/include/X11/X.h:4476
+BottomIf = 3 	# /usr/include/X11/X.h:4477
+Opposite = 4 	# /usr/include/X11/X.h:4478
+RaiseLowest = 0 	# /usr/include/X11/X.h:4482
+LowerHighest = 1 	# /usr/include/X11/X.h:4483
+PropModeReplace = 0 	# /usr/include/X11/X.h:4487
+PropModePrepend = 1 	# /usr/include/X11/X.h:4488
+PropModeAppend = 2 	# /usr/include/X11/X.h:4489
+GXclear = 0 	# /usr/include/X11/X.h:4497
+GXand = 1 	# /usr/include/X11/X.h:4498
+GXandReverse = 2 	# /usr/include/X11/X.h:4499
+GXcopy = 3 	# /usr/include/X11/X.h:4500
+GXandInverted = 4 	# /usr/include/X11/X.h:4501
+GXnoop = 5 	# /usr/include/X11/X.h:4502
+GXxor = 6 	# /usr/include/X11/X.h:4503
+GXor = 7 	# /usr/include/X11/X.h:4504
+GXnor = 8 	# /usr/include/X11/X.h:4505
+GXequiv = 9 	# /usr/include/X11/X.h:4506
+GXinvert = 10 	# /usr/include/X11/X.h:4507
+GXorReverse = 11 	# /usr/include/X11/X.h:4508
+GXcopyInverted = 12 	# /usr/include/X11/X.h:4509
+GXorInverted = 13 	# /usr/include/X11/X.h:4510
+GXnand = 14 	# /usr/include/X11/X.h:4511
+GXset = 0.0 	# /usr/include/X11/X.h:4512
+LineSolid = 0 	# /usr/include/X11/X.h:4516
+LineOnOffDash = 1 	# /usr/include/X11/X.h:4517
+LineDoubleDash = 2 	# /usr/include/X11/X.h:4518
+CapNotLast = 0 	# /usr/include/X11/X.h:4522
+CapButt = 1 	# /usr/include/X11/X.h:4523
+CapRound = 2 	# /usr/include/X11/X.h:4524
+CapProjecting = 3 	# /usr/include/X11/X.h:4525
+JoinMiter = 0 	# /usr/include/X11/X.h:4529
+JoinRound = 1 	# /usr/include/X11/X.h:4530
+JoinBevel = 2 	# /usr/include/X11/X.h:4531
+FillSolid = 0 	# /usr/include/X11/X.h:4535
+FillTiled = 1 	# /usr/include/X11/X.h:4536
+FillStippled = 2 	# /usr/include/X11/X.h:4537
+FillOpaqueStippled = 3 	# /usr/include/X11/X.h:4538
+EvenOddRule = 0 	# /usr/include/X11/X.h:4542
+WindingRule = 1 	# /usr/include/X11/X.h:4543
+ClipByChildren = 0 	# /usr/include/X11/X.h:4547
+IncludeInferiors = 1 	# /usr/include/X11/X.h:4548
+Unsorted = 0 	# /usr/include/X11/X.h:4552
+YSorted = 1 	# /usr/include/X11/X.h:4553
+YXSorted = 2 	# /usr/include/X11/X.h:4554
+YXBanded = 3 	# /usr/include/X11/X.h:4555
+CoordModeOrigin = 0 	# /usr/include/X11/X.h:4559
+CoordModePrevious = 1 	# /usr/include/X11/X.h:4560
+Complex = 0 	# /usr/include/X11/X.h:4564
+Nonconvex = 1 	# /usr/include/X11/X.h:4565
+Convex = 2 	# /usr/include/X11/X.h:4566
+ArcChord = 0 	# /usr/include/X11/X.h:4570
+ArcPieSlice = 1 	# /usr/include/X11/X.h:4571
+GCFunction = 1 	# /usr/include/X11/X.h:4576
+GCPlaneMask = 2 	# /usr/include/X11/X.h:4577
+GCForeground = 4 	# /usr/include/X11/X.h:4578
+GCBackground = 8 	# /usr/include/X11/X.h:4579
+GCLineWidth = 16 	# /usr/include/X11/X.h:4580
+GCLineStyle = 32 	# /usr/include/X11/X.h:4581
+GCCapStyle = 64 	# /usr/include/X11/X.h:4582
+GCJoinStyle = 128 	# /usr/include/X11/X.h:4583
+GCFillStyle = 256 	# /usr/include/X11/X.h:4584
+GCFillRule = 512 	# /usr/include/X11/X.h:4585
+GCTile = 1024 	# /usr/include/X11/X.h:4586
+GCStipple = 2048 	# /usr/include/X11/X.h:4587
+GCTileStipXOrigin = 4096 	# /usr/include/X11/X.h:4588
+GCTileStipYOrigin = 8192 	# /usr/include/X11/X.h:4589
+GCFont = 16384 	# /usr/include/X11/X.h:4590
+GCSubwindowMode = 32768 	# /usr/include/X11/X.h:4591
+GCGraphicsExposures = 65536 	# /usr/include/X11/X.h:4592
+GCClipXOrigin = 131072 	# /usr/include/X11/X.h:4593
+GCClipYOrigin = 262144 	# /usr/include/X11/X.h:4594
+GCClipMask = 524288 	# /usr/include/X11/X.h:4595
+GCDashOffset = 1048576 	# /usr/include/X11/X.h:4596
+GCDashList = 2097152 	# /usr/include/X11/X.h:4597
+GCArcMode = 4194304 	# /usr/include/X11/X.h:4598
+GCLastBit = 22 	# /usr/include/X11/X.h:4600
+FontLeftToRight = 0 	# /usr/include/X11/X.h:4607
+FontRightToLeft = 1 	# /usr/include/X11/X.h:4608
+FontChange = 255 	# /usr/include/X11/X.h:4610
+XYBitmap = 0 	# /usr/include/X11/X.h:4618
+XYPixmap = 1 	# /usr/include/X11/X.h:4619
+ZPixmap = 2 	# /usr/include/X11/X.h:4620
+AllocNone = 0 	# /usr/include/X11/X.h:4628
+AllocAll = 1 	# /usr/include/X11/X.h:4629
+DoRed = 1 	# /usr/include/X11/X.h:4634
+DoGreen = 2 	# /usr/include/X11/X.h:4635
+DoBlue = 4 	# /usr/include/X11/X.h:4636
+CursorShape = 0 	# /usr/include/X11/X.h:4644
+TileShape = 1 	# /usr/include/X11/X.h:4645
+StippleShape = 2 	# /usr/include/X11/X.h:4646
+AutoRepeatModeOff = 0 	# /usr/include/X11/X.h:4652
+AutoRepeatModeOn = 1 	# /usr/include/X11/X.h:4653
+AutoRepeatModeDefault = 2 	# /usr/include/X11/X.h:4654
+LedModeOff = 0 	# /usr/include/X11/X.h:4656
+LedModeOn = 1 	# /usr/include/X11/X.h:4657
+KBKeyClickPercent = 1 	# /usr/include/X11/X.h:4661
+KBBellPercent = 2 	# /usr/include/X11/X.h:4662
+KBBellPitch = 4 	# /usr/include/X11/X.h:4663
+KBBellDuration = 8 	# /usr/include/X11/X.h:4664
+KBLed = 16 	# /usr/include/X11/X.h:4665
+KBLedMode = 32 	# /usr/include/X11/X.h:4666
+KBKey = 64 	# /usr/include/X11/X.h:4667
+KBAutoRepeatMode = 128 	# /usr/include/X11/X.h:4668
+MappingSuccess = 0 	# /usr/include/X11/X.h:4670
+MappingBusy = 1 	# /usr/include/X11/X.h:4671
+MappingFailed = 2 	# /usr/include/X11/X.h:4672
+MappingModifier = 0 	# /usr/include/X11/X.h:4674
+MappingKeyboard = 1 	# /usr/include/X11/X.h:4675
+MappingPointer = 2 	# /usr/include/X11/X.h:4676
+DontPreferBlanking = 0 	# /usr/include/X11/X.h:4682
+PreferBlanking = 1 	# /usr/include/X11/X.h:4683
+DefaultBlanking = 2 	# /usr/include/X11/X.h:4684
+DisableScreenSaver = 0 	# /usr/include/X11/X.h:4686
+DisableScreenInterval = 0 	# /usr/include/X11/X.h:4687
+DontAllowExposures = 0 	# /usr/include/X11/X.h:4689
+AllowExposures = 1 	# /usr/include/X11/X.h:4690
+DefaultExposures = 2 	# /usr/include/X11/X.h:4691
+ScreenSaverReset = 0 	# /usr/include/X11/X.h:4695
+ScreenSaverActive = 1 	# /usr/include/X11/X.h:4696
+HostInsert = 0 	# /usr/include/X11/X.h:4704
+HostDelete = 1 	# /usr/include/X11/X.h:4705
+EnableAccess = 1 	# /usr/include/X11/X.h:4709
+DisableAccess = 0 	# /usr/include/X11/X.h:4710
+StaticGray = 0 	# /usr/include/X11/X.h:4716
+GrayScale = 1 	# /usr/include/X11/X.h:4717
+StaticColor = 2 	# /usr/include/X11/X.h:4718
+PseudoColor = 3 	# /usr/include/X11/X.h:4719
+TrueColor = 4 	# /usr/include/X11/X.h:4720
+DirectColor = 5 	# /usr/include/X11/X.h:4721
+LSBFirst = 0 	# /usr/include/X11/X.h:4726
+MSBFirst = 1 	# /usr/include/X11/X.h:4727
 XlibSpecificationRelease = 6 	# /usr/include/X11/Xlib.h:39
+X_PROTOCOL = 11 	# /usr/include/X11/X.h:58
+X_PROTOCOL_REVISION = 0 	# /usr/include/X11/X.h:59
+None_ = 0 	# /usr/include/X11/X.h:120
+ParentRelative = 1 	# /usr/include/X11/X.h:123
+CopyFromParent = 0 	# /usr/include/X11/X.h:126
+PointerWindow = 0 	# /usr/include/X11/X.h:131
+InputFocus = 1 	# /usr/include/X11/X.h:132
+PointerRoot = 1 	# /usr/include/X11/X.h:134
+AnyPropertyType = 0 	# /usr/include/X11/X.h:136
+AnyKey = 0 	# /usr/include/X11/X.h:138
+AnyButton = 0 	# /usr/include/X11/X.h:140
+AllTemporary = 0 	# /usr/include/X11/X.h:142
+CurrentTime = 0 	# /usr/include/X11/X.h:144
+NoSymbol = 0 	# /usr/include/X11/X.h:146
+NoEventMask = 0 	# /usr/include/X11/X.h:155
+KeyPressMask = 1 	# /usr/include/X11/X.h:156
+KeyReleaseMask = 2 	# /usr/include/X11/X.h:157
+ButtonPressMask = 4 	# /usr/include/X11/X.h:158
+ButtonReleaseMask = 8 	# /usr/include/X11/X.h:159
+EnterWindowMask = 16 	# /usr/include/X11/X.h:160
+LeaveWindowMask = 32 	# /usr/include/X11/X.h:161
+PointerMotionMask = 64 	# /usr/include/X11/X.h:162
+PointerMotionHintMask = 128 	# /usr/include/X11/X.h:163
+Button1MotionMask = 256 	# /usr/include/X11/X.h:164
+Button2MotionMask = 512 	# /usr/include/X11/X.h:165
+Button3MotionMask = 1024 	# /usr/include/X11/X.h:166
+Button4MotionMask = 2048 	# /usr/include/X11/X.h:167
+Button5MotionMask = 4096 	# /usr/include/X11/X.h:168
+ButtonMotionMask = 8192 	# /usr/include/X11/X.h:169
+KeymapStateMask = 16384 	# /usr/include/X11/X.h:170
+ExposureMask = 32768 	# /usr/include/X11/X.h:171
+VisibilityChangeMask = 65536 	# /usr/include/X11/X.h:172
+StructureNotifyMask = 131072 	# /usr/include/X11/X.h:173
+ResizeRedirectMask = 262144 	# /usr/include/X11/X.h:174
+SubstructureNotifyMask = 524288 	# /usr/include/X11/X.h:175
+SubstructureRedirectMask = 1048576 	# /usr/include/X11/X.h:176
+FocusChangeMask = 2097152 	# /usr/include/X11/X.h:177
+PropertyChangeMask = 4194304 	# /usr/include/X11/X.h:178
+ColormapChangeMask = 8388608 	# /usr/include/X11/X.h:179
+OwnerGrabButtonMask = 16777216 	# /usr/include/X11/X.h:180
+KeyPress = 2 	# /usr/include/X11/X.h:186
+KeyRelease = 3 	# /usr/include/X11/X.h:187
+ButtonPress = 4 	# /usr/include/X11/X.h:188
+ButtonRelease = 5 	# /usr/include/X11/X.h:189
+MotionNotify = 6 	# /usr/include/X11/X.h:190
+EnterNotify = 7 	# /usr/include/X11/X.h:191
+LeaveNotify = 8 	# /usr/include/X11/X.h:192
+FocusIn = 9 	# /usr/include/X11/X.h:193
+FocusOut = 10 	# /usr/include/X11/X.h:194
+KeymapNotify = 11 	# /usr/include/X11/X.h:195
+Expose = 12 	# /usr/include/X11/X.h:196
+GraphicsExpose = 13 	# /usr/include/X11/X.h:197
+NoExpose = 14 	# /usr/include/X11/X.h:198
+VisibilityNotify = 15 	# /usr/include/X11/X.h:199
+CreateNotify = 16 	# /usr/include/X11/X.h:200
+DestroyNotify = 17 	# /usr/include/X11/X.h:201
+UnmapNotify = 18 	# /usr/include/X11/X.h:202
+MapNotify = 19 	# /usr/include/X11/X.h:203
+MapRequest = 20 	# /usr/include/X11/X.h:204
+ReparentNotify = 21 	# /usr/include/X11/X.h:205
+ConfigureNotify = 22 	# /usr/include/X11/X.h:206
+ConfigureRequest = 23 	# /usr/include/X11/X.h:207
+GravityNotify = 24 	# /usr/include/X11/X.h:208
+ResizeRequest = 25 	# /usr/include/X11/X.h:209
+CirculateNotify = 26 	# /usr/include/X11/X.h:210
+CirculateRequest = 27 	# /usr/include/X11/X.h:211
+PropertyNotify = 28 	# /usr/include/X11/X.h:212
+SelectionClear = 29 	# /usr/include/X11/X.h:213
+SelectionRequest = 30 	# /usr/include/X11/X.h:214
+SelectionNotify = 31 	# /usr/include/X11/X.h:215
+ColormapNotify = 32 	# /usr/include/X11/X.h:216
+ClientMessage = 33 	# /usr/include/X11/X.h:217
+MappingNotify = 34 	# /usr/include/X11/X.h:218
+LASTEvent = 35 	# /usr/include/X11/X.h:219
+ShiftMask = 1 	# /usr/include/X11/X.h:225
+LockMask = 2 	# /usr/include/X11/X.h:226
+ControlMask = 4 	# /usr/include/X11/X.h:227
+Mod1Mask = 8 	# /usr/include/X11/X.h:228
+Mod2Mask = 16 	# /usr/include/X11/X.h:229
+Mod3Mask = 32 	# /usr/include/X11/X.h:230
+Mod4Mask = 64 	# /usr/include/X11/X.h:231
+Mod5Mask = 128 	# /usr/include/X11/X.h:232
+ShiftMapIndex = 0 	# /usr/include/X11/X.h:237
+LockMapIndex = 1 	# /usr/include/X11/X.h:238
+ControlMapIndex = 2 	# /usr/include/X11/X.h:239
+Mod1MapIndex = 3 	# /usr/include/X11/X.h:240
+Mod2MapIndex = 4 	# /usr/include/X11/X.h:241
+Mod3MapIndex = 5 	# /usr/include/X11/X.h:242
+Mod4MapIndex = 6 	# /usr/include/X11/X.h:243
+Mod5MapIndex = 7 	# /usr/include/X11/X.h:244
+Button1Mask = 256 	# /usr/include/X11/X.h:250
+Button2Mask = 512 	# /usr/include/X11/X.h:251
+Button3Mask = 1024 	# /usr/include/X11/X.h:252
+Button4Mask = 2048 	# /usr/include/X11/X.h:253
+Button5Mask = 4096 	# /usr/include/X11/X.h:254
+AnyModifier = 32768 	# /usr/include/X11/X.h:256
+Button1 = 1 	# /usr/include/X11/X.h:263
+Button2 = 2 	# /usr/include/X11/X.h:264
+Button3 = 3 	# /usr/include/X11/X.h:265
+Button4 = 4 	# /usr/include/X11/X.h:266
+Button5 = 5 	# /usr/include/X11/X.h:267
+NotifyNormal = 0 	# /usr/include/X11/X.h:271
+NotifyGrab = 1 	# /usr/include/X11/X.h:272
+NotifyUngrab = 2 	# /usr/include/X11/X.h:273
+NotifyWhileGrabbed = 3 	# /usr/include/X11/X.h:274
+NotifyHint = 1 	# /usr/include/X11/X.h:276
+NotifyAncestor = 0 	# /usr/include/X11/X.h:280
+NotifyVirtual = 1 	# /usr/include/X11/X.h:281
+NotifyInferior = 2 	# /usr/include/X11/X.h:282
+NotifyNonlinear = 3 	# /usr/include/X11/X.h:283
+NotifyNonlinearVirtual = 4 	# /usr/include/X11/X.h:284
+NotifyPointer = 5 	# /usr/include/X11/X.h:285
+NotifyPointerRoot = 6 	# /usr/include/X11/X.h:286
+NotifyDetailNone = 7 	# /usr/include/X11/X.h:287
+VisibilityUnobscured = 0 	# /usr/include/X11/X.h:291
+VisibilityPartiallyObscured = 1 	# /usr/include/X11/X.h:292
+VisibilityFullyObscured = 2 	# /usr/include/X11/X.h:293
+PlaceOnTop = 0 	# /usr/include/X11/X.h:297
+PlaceOnBottom = 1 	# /usr/include/X11/X.h:298
+FamilyInternet = 0 	# /usr/include/X11/X.h:302
+FamilyDECnet = 1 	# /usr/include/X11/X.h:303
+FamilyChaos = 2 	# /usr/include/X11/X.h:304
+FamilyInternet6 = 6 	# /usr/include/X11/X.h:305
+FamilyServerInterpreted = 5 	# /usr/include/X11/X.h:308
+PropertyNewValue = 0 	# /usr/include/X11/X.h:312
+PropertyDelete = 1 	# /usr/include/X11/X.h:313
+ColormapUninstalled = 0 	# /usr/include/X11/X.h:317
+ColormapInstalled = 1 	# /usr/include/X11/X.h:318
+GrabModeSync = 0 	# /usr/include/X11/X.h:322
+GrabModeAsync = 1 	# /usr/include/X11/X.h:323
+GrabSuccess = 0 	# /usr/include/X11/X.h:327
+AlreadyGrabbed = 1 	# /usr/include/X11/X.h:328
+GrabInvalidTime = 2 	# /usr/include/X11/X.h:329
+GrabNotViewable = 3 	# /usr/include/X11/X.h:330
+GrabFrozen = 4 	# /usr/include/X11/X.h:331
+AsyncPointer = 0 	# /usr/include/X11/X.h:335
+SyncPointer = 1 	# /usr/include/X11/X.h:336
+ReplayPointer = 2 	# /usr/include/X11/X.h:337
+AsyncKeyboard = 3 	# /usr/include/X11/X.h:338
+SyncKeyboard = 4 	# /usr/include/X11/X.h:339
+ReplayKeyboard = 5 	# /usr/include/X11/X.h:340
+AsyncBoth = 6 	# /usr/include/X11/X.h:341
+SyncBoth = 7 	# /usr/include/X11/X.h:342
+RevertToParent = 2 	# /usr/include/X11/X.h:348
+Success = 0 	# /usr/include/X11/X.h:354
+BadRequest = 1 	# /usr/include/X11/X.h:355
+BadValue = 2 	# /usr/include/X11/X.h:356
+BadWindow = 3 	# /usr/include/X11/X.h:357
+BadPixmap = 4 	# /usr/include/X11/X.h:358
+BadAtom = 5 	# /usr/include/X11/X.h:359
+BadCursor = 6 	# /usr/include/X11/X.h:360
+BadFont = 7 	# /usr/include/X11/X.h:361
+BadMatch = 8 	# /usr/include/X11/X.h:362
+BadDrawable = 9 	# /usr/include/X11/X.h:363
+BadAccess = 10 	# /usr/include/X11/X.h:364
+BadAlloc = 11 	# /usr/include/X11/X.h:373
+BadColor = 12 	# /usr/include/X11/X.h:374
+BadGC = 13 	# /usr/include/X11/X.h:375
+BadIDChoice = 14 	# /usr/include/X11/X.h:376
+BadName = 15 	# /usr/include/X11/X.h:377
+BadLength = 16 	# /usr/include/X11/X.h:378
+BadImplementation = 17 	# /usr/include/X11/X.h:379
+FirstExtensionError = 128 	# /usr/include/X11/X.h:381
+LastExtensionError = 255 	# /usr/include/X11/X.h:382
+InputOutput = 1 	# /usr/include/X11/X.h:391
+InputOnly = 2 	# /usr/include/X11/X.h:392
+CWBackPixmap = 1 	# /usr/include/X11/X.h:396
+CWBackPixel = 2 	# /usr/include/X11/X.h:397
+CWBorderPixmap = 4 	# /usr/include/X11/X.h:398
+CWBorderPixel = 8 	# /usr/include/X11/X.h:399
+CWBitGravity = 16 	# /usr/include/X11/X.h:400
+CWWinGravity = 32 	# /usr/include/X11/X.h:401
+CWBackingStore = 64 	# /usr/include/X11/X.h:402
+CWBackingPlanes = 128 	# /usr/include/X11/X.h:403
+CWBackingPixel = 256 	# /usr/include/X11/X.h:404
+CWOverrideRedirect = 512 	# /usr/include/X11/X.h:405
+CWSaveUnder = 1024 	# /usr/include/X11/X.h:406
+CWEventMask = 2048 	# /usr/include/X11/X.h:407
+CWDontPropagate = 4096 	# /usr/include/X11/X.h:408
+CWColormap = 8192 	# /usr/include/X11/X.h:409
+CWCursor = 16384 	# /usr/include/X11/X.h:410
+CWX = 1 	# /usr/include/X11/X.h:414
+CWY = 2 	# /usr/include/X11/X.h:415
+CWWidth = 4 	# /usr/include/X11/X.h:416
+CWHeight = 8 	# /usr/include/X11/X.h:417
+CWBorderWidth = 16 	# /usr/include/X11/X.h:418
+CWSibling = 32 	# /usr/include/X11/X.h:419
+CWStackMode = 64 	# /usr/include/X11/X.h:420
+ForgetGravity = 0 	# /usr/include/X11/X.h:425
+NorthWestGravity = 1 	# /usr/include/X11/X.h:426
+NorthGravity = 2 	# /usr/include/X11/X.h:427
+NorthEastGravity = 3 	# /usr/include/X11/X.h:428
+WestGravity = 4 	# /usr/include/X11/X.h:429
+CenterGravity = 5 	# /usr/include/X11/X.h:430
+EastGravity = 6 	# /usr/include/X11/X.h:431
+SouthWestGravity = 7 	# /usr/include/X11/X.h:432
+SouthGravity = 8 	# /usr/include/X11/X.h:433
+SouthEastGravity = 9 	# /usr/include/X11/X.h:434
+StaticGravity = 10 	# /usr/include/X11/X.h:435
+UnmapGravity = 0 	# /usr/include/X11/X.h:439
+NotUseful = 0 	# /usr/include/X11/X.h:443
+WhenMapped = 1 	# /usr/include/X11/X.h:444
+Always = 2 	# /usr/include/X11/X.h:445
+IsUnmapped = 0 	# /usr/include/X11/X.h:449
+IsUnviewable = 1 	# /usr/include/X11/X.h:450
+IsViewable = 2 	# /usr/include/X11/X.h:451
+SetModeInsert = 0 	# /usr/include/X11/X.h:455
+SetModeDelete = 1 	# /usr/include/X11/X.h:456
+DestroyAll = 0 	# /usr/include/X11/X.h:460
+RetainPermanent = 1 	# /usr/include/X11/X.h:461
+RetainTemporary = 2 	# /usr/include/X11/X.h:462
+Above = 0 	# /usr/include/X11/X.h:466
+Below = 1 	# /usr/include/X11/X.h:467
+TopIf = 2 	# /usr/include/X11/X.h:468
+BottomIf = 3 	# /usr/include/X11/X.h:469
+Opposite = 4 	# /usr/include/X11/X.h:470
+RaiseLowest = 0 	# /usr/include/X11/X.h:474
+LowerHighest = 1 	# /usr/include/X11/X.h:475
+PropModeReplace = 0 	# /usr/include/X11/X.h:479
+PropModePrepend = 1 	# /usr/include/X11/X.h:480
+PropModeAppend = 2 	# /usr/include/X11/X.h:481
+GXclear = 0 	# /usr/include/X11/X.h:489
+GXand = 1 	# /usr/include/X11/X.h:490
+GXandReverse = 2 	# /usr/include/X11/X.h:491
+GXcopy = 3 	# /usr/include/X11/X.h:492
+GXandInverted = 4 	# /usr/include/X11/X.h:493
+GXnoop = 5 	# /usr/include/X11/X.h:494
+GXxor = 6 	# /usr/include/X11/X.h:495
+GXor = 7 	# /usr/include/X11/X.h:496
+GXnor = 8 	# /usr/include/X11/X.h:497
+GXequiv = 9 	# /usr/include/X11/X.h:498
+GXinvert = 10 	# /usr/include/X11/X.h:499
+GXorReverse = 11 	# /usr/include/X11/X.h:500
+GXcopyInverted = 12 	# /usr/include/X11/X.h:501
+GXorInverted = 13 	# /usr/include/X11/X.h:502
+GXnand = 14 	# /usr/include/X11/X.h:503
+GXset = 0.0 	# /usr/include/X11/X.h:504
+LineSolid = 0 	# /usr/include/X11/X.h:508
+LineOnOffDash = 1 	# /usr/include/X11/X.h:509
+LineDoubleDash = 2 	# /usr/include/X11/X.h:510
+CapNotLast = 0 	# /usr/include/X11/X.h:514
+CapButt = 1 	# /usr/include/X11/X.h:515
+CapRound = 2 	# /usr/include/X11/X.h:516
+CapProjecting = 3 	# /usr/include/X11/X.h:517
+JoinMiter = 0 	# /usr/include/X11/X.h:521
+JoinRound = 1 	# /usr/include/X11/X.h:522
+JoinBevel = 2 	# /usr/include/X11/X.h:523
+FillSolid = 0 	# /usr/include/X11/X.h:527
+FillTiled = 1 	# /usr/include/X11/X.h:528
+FillStippled = 2 	# /usr/include/X11/X.h:529
+FillOpaqueStippled = 3 	# /usr/include/X11/X.h:530
+EvenOddRule = 0 	# /usr/include/X11/X.h:534
+WindingRule = 1 	# /usr/include/X11/X.h:535
+ClipByChildren = 0 	# /usr/include/X11/X.h:539
+IncludeInferiors = 1 	# /usr/include/X11/X.h:540
+Unsorted = 0 	# /usr/include/X11/X.h:544
+YSorted = 1 	# /usr/include/X11/X.h:545
+YXSorted = 2 	# /usr/include/X11/X.h:546
+YXBanded = 3 	# /usr/include/X11/X.h:547
+CoordModeOrigin = 0 	# /usr/include/X11/X.h:551
+CoordModePrevious = 1 	# /usr/include/X11/X.h:552
+Complex = 0 	# /usr/include/X11/X.h:556
+Nonconvex = 1 	# /usr/include/X11/X.h:557
+Convex = 2 	# /usr/include/X11/X.h:558
+ArcChord = 0 	# /usr/include/X11/X.h:562
+ArcPieSlice = 1 	# /usr/include/X11/X.h:563
+GCFunction = 1 	# /usr/include/X11/X.h:568
+GCPlaneMask = 2 	# /usr/include/X11/X.h:569
+GCForeground = 4 	# /usr/include/X11/X.h:570
+GCBackground = 8 	# /usr/include/X11/X.h:571
+GCLineWidth = 16 	# /usr/include/X11/X.h:572
+GCLineStyle = 32 	# /usr/include/X11/X.h:573
+GCCapStyle = 64 	# /usr/include/X11/X.h:574
+GCJoinStyle = 128 	# /usr/include/X11/X.h:575
+GCFillStyle = 256 	# /usr/include/X11/X.h:576
+GCFillRule = 512 	# /usr/include/X11/X.h:577
+GCTile = 1024 	# /usr/include/X11/X.h:578
+GCStipple = 2048 	# /usr/include/X11/X.h:579
+GCTileStipXOrigin = 4096 	# /usr/include/X11/X.h:580
+GCTileStipYOrigin = 8192 	# /usr/include/X11/X.h:581
+GCFont = 16384 	# /usr/include/X11/X.h:582
+GCSubwindowMode = 32768 	# /usr/include/X11/X.h:583
+GCGraphicsExposures = 65536 	# /usr/include/X11/X.h:584
+GCClipXOrigin = 131072 	# /usr/include/X11/X.h:585
+GCClipYOrigin = 262144 	# /usr/include/X11/X.h:586
+GCClipMask = 524288 	# /usr/include/X11/X.h:587
+GCDashOffset = 1048576 	# /usr/include/X11/X.h:588
+GCDashList = 2097152 	# /usr/include/X11/X.h:589
+GCArcMode = 4194304 	# /usr/include/X11/X.h:590
+GCLastBit = 22 	# /usr/include/X11/X.h:592
+FontLeftToRight = 0 	# /usr/include/X11/X.h:599
+FontRightToLeft = 1 	# /usr/include/X11/X.h:600
+FontChange = 255 	# /usr/include/X11/X.h:602
+XYBitmap = 0 	# /usr/include/X11/X.h:610
+XYPixmap = 1 	# /usr/include/X11/X.h:611
+ZPixmap = 2 	# /usr/include/X11/X.h:612
+AllocNone = 0 	# /usr/include/X11/X.h:620
+AllocAll = 1 	# /usr/include/X11/X.h:621
+DoRed = 1 	# /usr/include/X11/X.h:626
+DoGreen = 2 	# /usr/include/X11/X.h:627
+DoBlue = 4 	# /usr/include/X11/X.h:628
+CursorShape = 0 	# /usr/include/X11/X.h:636
+TileShape = 1 	# /usr/include/X11/X.h:637
+StippleShape = 2 	# /usr/include/X11/X.h:638
+AutoRepeatModeOff = 0 	# /usr/include/X11/X.h:644
+AutoRepeatModeOn = 1 	# /usr/include/X11/X.h:645
+AutoRepeatModeDefault = 2 	# /usr/include/X11/X.h:646
+LedModeOff = 0 	# /usr/include/X11/X.h:648
+LedModeOn = 1 	# /usr/include/X11/X.h:649
+KBKeyClickPercent = 1 	# /usr/include/X11/X.h:653
+KBBellPercent = 2 	# /usr/include/X11/X.h:654
+KBBellPitch = 4 	# /usr/include/X11/X.h:655
+KBBellDuration = 8 	# /usr/include/X11/X.h:656
+KBLed = 16 	# /usr/include/X11/X.h:657
+KBLedMode = 32 	# /usr/include/X11/X.h:658
+KBKey = 64 	# /usr/include/X11/X.h:659
+KBAutoRepeatMode = 128 	# /usr/include/X11/X.h:660
+MappingSuccess = 0 	# /usr/include/X11/X.h:662
+MappingBusy = 1 	# /usr/include/X11/X.h:663
+MappingFailed = 2 	# /usr/include/X11/X.h:664
+MappingModifier = 0 	# /usr/include/X11/X.h:666
+MappingKeyboard = 1 	# /usr/include/X11/X.h:667
+MappingPointer = 2 	# /usr/include/X11/X.h:668
+DontPreferBlanking = 0 	# /usr/include/X11/X.h:674
+PreferBlanking = 1 	# /usr/include/X11/X.h:675
+DefaultBlanking = 2 	# /usr/include/X11/X.h:676
+DisableScreenSaver = 0 	# /usr/include/X11/X.h:678
+DisableScreenInterval = 0 	# /usr/include/X11/X.h:679
+DontAllowExposures = 0 	# /usr/include/X11/X.h:681
+AllowExposures = 1 	# /usr/include/X11/X.h:682
+DefaultExposures = 2 	# /usr/include/X11/X.h:683
+ScreenSaverReset = 0 	# /usr/include/X11/X.h:687
+ScreenSaverActive = 1 	# /usr/include/X11/X.h:688
+HostInsert = 0 	# /usr/include/X11/X.h:696
+HostDelete = 1 	# /usr/include/X11/X.h:697
+EnableAccess = 1 	# /usr/include/X11/X.h:701
+DisableAccess = 0 	# /usr/include/X11/X.h:702
+StaticGray = 0 	# /usr/include/X11/X.h:708
+GrayScale = 1 	# /usr/include/X11/X.h:709
+StaticColor = 2 	# /usr/include/X11/X.h:710
+PseudoColor = 3 	# /usr/include/X11/X.h:711
+TrueColor = 4 	# /usr/include/X11/X.h:712
+DirectColor = 5 	# /usr/include/X11/X.h:713
+LSBFirst = 0 	# /usr/include/X11/X.h:718
+MSBFirst = 1 	# /usr/include/X11/X.h:719
 # /usr/include/X11/Xlib.h:94
 _Xmblen = _lib._Xmblen
 _Xmblen.restype = c_int
 _Xmblen.argtypes = [c_char_p, c_int]
 
 X_HAVE_UTF8_STRING = 1 	# /usr/include/X11/Xlib.h:106
+Bool = 0 	# /usr/include/X11/Xlib.h:110
+Status = 0 	# /usr/include/X11/Xlib.h:111
 True = 1 	# /usr/include/X11/Xlib.h:112
+False = 0 	# /usr/include/X11/Xlib.h:113
+QueuedAlready = 0 	# /usr/include/X11/Xlib.h:115
 QueuedAfterReading = 1 	# /usr/include/X11/Xlib.h:116
 QueuedAfterFlush = 2 	# /usr/include/X11/Xlib.h:117
+XIMPreeditArea = 1 	# /usr/include/X11/Xlib.h:1176
+XIMPreeditCallbacks = 2 	# /usr/include/X11/Xlib.h:1177
+XIMPreeditPosition = 4 	# /usr/include/X11/Xlib.h:1178
+XIMPreeditNothing = 8 	# /usr/include/X11/Xlib.h:1179
+XIMPreeditNone = 16 	# /usr/include/X11/Xlib.h:1180
+XIMStatusArea = 256 	# /usr/include/X11/Xlib.h:1181
+XIMStatusCallbacks = 512 	# /usr/include/X11/Xlib.h:1182
+XIMStatusNothing = 1024 	# /usr/include/X11/Xlib.h:1183
+XIMStatusNone = 2048 	# /usr/include/X11/Xlib.h:1184
 XBufferOverflow = -1 	# /usr/include/X11/Xlib.h:1230
 XLookupNone = 1 	# /usr/include/X11/Xlib.h:1231
 XLookupChars = 2 	# /usr/include/X11/Xlib.h:1232
 XLookupKeySym = 3 	# /usr/include/X11/Xlib.h:1233
 XLookupBoth = 4 	# /usr/include/X11/Xlib.h:1234
+XIMReverse = 1 	# /usr/include/X11/Xlib.h:1250
+XIMUnderline = 2 	# /usr/include/X11/Xlib.h:1251
+XIMHighlight = 4 	# /usr/include/X11/Xlib.h:1252
+XIMPrimary = 32 	# /usr/include/X11/Xlib.h:1253
+XIMSecondary = 64 	# /usr/include/X11/Xlib.h:1254
+XIMTertiary = 128 	# /usr/include/X11/Xlib.h:1255
+XIMVisibleToForward = 256 	# /usr/include/X11/Xlib.h:1256
+XIMVisibleToBackword = 512 	# /usr/include/X11/Xlib.h:1257
+XIMVisibleToCenter = 1024 	# /usr/include/X11/Xlib.h:1258
+XIMPreeditUnKnown = 0 	# /usr/include/X11/Xlib.h:1272
+XIMPreeditEnable = 1 	# /usr/include/X11/Xlib.h:1273
+XIMPreeditDisable = 2 	# /usr/include/X11/Xlib.h:1274
+XIMInitialState = 1 	# /usr/include/X11/Xlib.h:1282
+XIMPreserveState = 2 	# /usr/include/X11/Xlib.h:1283
+XIMStringConversionLeftEdge = 1 	# /usr/include/X11/Xlib.h:1287
+XIMStringConversionRightEdge = 2 	# /usr/include/X11/Xlib.h:1288
+XIMStringConversionTopEdge = 4 	# /usr/include/X11/Xlib.h:1289
+XIMStringConversionBottomEdge = 8 	# /usr/include/X11/Xlib.h:1290
+XIMStringConversionConcealed = 16 	# /usr/include/X11/Xlib.h:1291
+XIMStringConversionWrapped = 32 	# /usr/include/X11/Xlib.h:1292
+XIMStringConversionBuffer = 1 	# /usr/include/X11/Xlib.h:1308
+XIMStringConversionLine = 2 	# /usr/include/X11/Xlib.h:1309
+XIMStringConversionWord = 3 	# /usr/include/X11/Xlib.h:1310
+XIMStringConversionChar = 4 	# /usr/include/X11/Xlib.h:1311
+XIMStringConversionSubstitution = 1 	# /usr/include/X11/Xlib.h:1315
+XIMStringConversionRetrieval = 2 	# /usr/include/X11/Xlib.h:1316
+XIMHotKeyStateON = 1 	# /usr/include/X11/Xlib.h:1381
+XIMHotKeyStateOFF = 2 	# /usr/include/X11/Xlib.h:1382
 # /usr/include/X11/Xlib.h:1397
 XLoadQueryFont = _lib.XLoadQueryFont
 XLoadQueryFont.restype = POINTER(XFontStruct)
@@ -6136,13 +7280,14 @@ _Xwctomb = _lib._Xwctomb
 _Xwctomb.restype = c_int
 _Xwctomb.argtypes = [c_char_p, c_wchar]
 
-XValue = 1 	# /usr/include/X11/Xutil.h:4071
-YValue = 2 	# /usr/include/X11/Xutil.h:4072
-WidthValue = 4 	# /usr/include/X11/Xutil.h:4073
-HeightValue = 8 	# /usr/include/X11/Xutil.h:4074
-AllValues = 15 	# /usr/include/X11/Xutil.h:4075
-XNegative = 16 	# /usr/include/X11/Xutil.h:4076
-YNegative = 32 	# /usr/include/X11/Xutil.h:4077
+NoValue = 0 	# /usr/include/X11/Xutil.h:4791
+XValue = 1 	# /usr/include/X11/Xutil.h:4792
+YValue = 2 	# /usr/include/X11/Xutil.h:4793
+WidthValue = 4 	# /usr/include/X11/Xutil.h:4794
+HeightValue = 8 	# /usr/include/X11/Xutil.h:4795
+AllValues = 0 	# /usr/include/X11/Xutil.h:4796
+XNegative = 16 	# /usr/include/X11/Xutil.h:4797
+YNegative = 32 	# /usr/include/X11/Xutil.h:4798
 class struct_anon_86(Structure):
     __slots__ = [
         'flags',
@@ -6201,7 +7346,18 @@ struct_anon_86._fields_ = [
     ('win_gravity', c_int),
 ]
 
-XSizeHints = struct_anon_86 	# /usr/include/X11/Xutil.h:4096
+XSizeHints = struct_anon_86 	# /usr/include/X11/Xutil.h:4817
+USPosition = 1 	# /usr/include/X11/Xutil.h:4825
+USSize = 2 	# /usr/include/X11/Xutil.h:4826
+PPosition = 4 	# /usr/include/X11/Xutil.h:4828
+PSize = 8 	# /usr/include/X11/Xutil.h:4829
+PMinSize = 16 	# /usr/include/X11/Xutil.h:4830
+PMaxSize = 32 	# /usr/include/X11/Xutil.h:4831
+PResizeInc = 64 	# /usr/include/X11/Xutil.h:4832
+PAspect = 128 	# /usr/include/X11/Xutil.h:4833
+PBaseSize = 256 	# /usr/include/X11/Xutil.h:4834
+PWinGravity = 512 	# /usr/include/X11/Xutil.h:4835
+PAllHints = 252 	# /usr/include/X11/Xutil.h:4838
 class struct_anon_89(Structure):
     __slots__ = [
         'flags',
@@ -6226,11 +7382,22 @@ struct_anon_89._fields_ = [
     ('window_group', XID),
 ]
 
-XWMHints = struct_anon_89 	# /usr/include/X11/Xutil.h:4132
-NormalState = 1 	# /usr/include/X11/Xutil.h:4149
-IconicState = 3 	# /usr/include/X11/Xutil.h:4150
-ZoomState = 2 	# /usr/include/X11/Xutil.h:4156
-InactiveState = 4 	# /usr/include/X11/Xutil.h:4157
+XWMHints = struct_anon_89 	# /usr/include/X11/Xutil.h:4853
+InputHint = 1 	# /usr/include/X11/Xutil.h:4857
+StateHint = 2 	# /usr/include/X11/Xutil.h:4858
+IconPixmapHint = 4 	# /usr/include/X11/Xutil.h:4859
+IconWindowHint = 8 	# /usr/include/X11/Xutil.h:4860
+IconPositionHint = 16 	# /usr/include/X11/Xutil.h:4861
+IconMaskHint = 32 	# /usr/include/X11/Xutil.h:4862
+WindowGroupHint = 64 	# /usr/include/X11/Xutil.h:4863
+AllHints = 127 	# /usr/include/X11/Xutil.h:4864
+XUrgencyHint = 256 	# /usr/include/X11/Xutil.h:4866
+WithdrawnState = 0 	# /usr/include/X11/Xutil.h:4869
+NormalState = 1 	# /usr/include/X11/Xutil.h:4870
+IconicState = 3 	# /usr/include/X11/Xutil.h:4871
+DontCareState = 0 	# /usr/include/X11/Xutil.h:4876
+ZoomState = 2 	# /usr/include/X11/Xutil.h:4877
+InactiveState = 4 	# /usr/include/X11/Xutil.h:4878
 class struct_anon_90(Structure):
     __slots__ = [
         'value',
@@ -6245,11 +7412,17 @@ struct_anon_90._fields_ = [
     ('nitems', c_ulong),
 ]
 
-XTextProperty = struct_anon_90 	# /usr/include/X11/Xutil.h:4170
-XNoMemory = -1 	# /usr/include/X11/Xutil.h:4172
-XLocaleNotSupported = -2 	# /usr/include/X11/Xutil.h:4173
-XConverterNotFound = -3 	# /usr/include/X11/Xutil.h:4174
-XICCEncodingStyle = c_int 	# /usr/include/X11/Xutil.h:4183
+XTextProperty = struct_anon_90 	# /usr/include/X11/Xutil.h:4891
+XNoMemory = -1 	# /usr/include/X11/Xutil.h:4893
+XLocaleNotSupported = -2 	# /usr/include/X11/Xutil.h:4894
+XConverterNotFound = -3 	# /usr/include/X11/Xutil.h:4895
+enum_anon_91 = c_int
+XStringStyle = 1
+XCompoundTextStyle = 2
+XTextStyle = 3
+XStdICCTextStyle = 4
+XUTF8StringStyle = 5
+XICCEncodingStyle = enum_anon_91 	# /usr/include/X11/Xutil.h:4904
 class struct_anon_92(Structure):
     __slots__ = [
         'min_width',
@@ -6268,7 +7441,7 @@ struct_anon_92._fields_ = [
     ('height_inc', c_int),
 ]
 
-XIconSize = struct_anon_92 	# /usr/include/X11/Xutil.h:4189
+XIconSize = struct_anon_92 	# /usr/include/X11/Xutil.h:4910
 class struct_anon_93(Structure):
     __slots__ = [
         'res_name',
@@ -6279,7 +7452,7 @@ struct_anon_93._fields_ = [
     ('res_class', c_char_p),
 ]
 
-XClassHint = struct_anon_93 	# /usr/include/X11/Xutil.h:4194
+XClassHint = struct_anon_93 	# /usr/include/X11/Xutil.h:4915
 class struct__XComposeStatus(Structure):
     __slots__ = [
         'compose_ptr',
@@ -6290,7 +7463,7 @@ struct__XComposeStatus._fields_ = [
     ('chars_matched', c_int),
 ]
 
-XComposeStatus = struct__XComposeStatus 	# /usr/include/X11/Xutil.h:4236
+XComposeStatus = struct__XComposeStatus 	# /usr/include/X11/Xutil.h:4957
 class struct__XRegion(Structure):
     __slots__ = [
     ]
@@ -6298,20 +7471,22 @@ struct__XRegion._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-Region = POINTER(struct__XRegion) 	# /usr/include/X11/Xutil.h:4275
-RectangleIn = 1 	# /usr/include/X11/Xutil.h:4280
-RectanglePart = 2 	# /usr/include/X11/Xutil.h:4281
+Region = POINTER(struct__XRegion) 	# /usr/include/X11/Xutil.h:4996
+RectangleOut = 0 	# /usr/include/X11/Xutil.h:5000
+RectangleIn = 1 	# /usr/include/X11/Xutil.h:5001
+RectanglePart = 2 	# /usr/include/X11/Xutil.h:5002
 XVisualInfo = pyglet.GL.glx.XVisualInfo
-VisualIDMask = 1 	# /usr/include/X11/Xutil.h:4307
-VisualScreenMask = 2 	# /usr/include/X11/Xutil.h:4308
-VisualDepthMask = 4 	# /usr/include/X11/Xutil.h:4309
-VisualClassMask = 8 	# /usr/include/X11/Xutil.h:4310
-VisualRedMaskMask = 16 	# /usr/include/X11/Xutil.h:4311
-VisualGreenMaskMask = 32 	# /usr/include/X11/Xutil.h:4312
-VisualBlueMaskMask = 64 	# /usr/include/X11/Xutil.h:4313
-VisualColormapSizeMask = 128 	# /usr/include/X11/Xutil.h:4314
-VisualBitsPerRGBMask = 256 	# /usr/include/X11/Xutil.h:4315
-VisualAllMask = 511 	# /usr/include/X11/Xutil.h:4316
+VisualNoMask = 0 	# /usr/include/X11/Xutil.h:5027
+VisualIDMask = 1 	# /usr/include/X11/Xutil.h:5028
+VisualScreenMask = 2 	# /usr/include/X11/Xutil.h:5029
+VisualDepthMask = 4 	# /usr/include/X11/Xutil.h:5030
+VisualClassMask = 8 	# /usr/include/X11/Xutil.h:5031
+VisualRedMaskMask = 16 	# /usr/include/X11/Xutil.h:5032
+VisualGreenMaskMask = 32 	# /usr/include/X11/Xutil.h:5033
+VisualBlueMaskMask = 64 	# /usr/include/X11/Xutil.h:5034
+VisualColormapSizeMask = 128 	# /usr/include/X11/Xutil.h:5035
+VisualBitsPerRGBMask = 256 	# /usr/include/X11/Xutil.h:5036
+VisualAllMask = 1 	# /usr/include/X11/Xutil.h:5037
 class struct_anon_95(Structure):
     __slots__ = [
         'colormap',
@@ -6338,540 +7513,528 @@ struct_anon_95._fields_ = [
     ('killid', XID),
 ]
 
-XStandardColormap = struct_anon_95 	# /usr/include/X11/Xutil.h:4333
-BitmapOpenFailed = 1 	# /usr/include/X11/Xutil.h:4342
-BitmapFileInvalid = 2 	# /usr/include/X11/Xutil.h:4343
-BitmapNoMemory = 3 	# /usr/include/X11/Xutil.h:4344
-XCNOMEM = 1 	# /usr/include/X11/Xutil.h:4356
-XCNOENT = 2 	# /usr/include/X11/Xutil.h:4357
-XContext = c_int 	# /usr/include/X11/Xutil.h:4359
-# /usr/include/X11/Xutil.h:4368
+XStandardColormap = struct_anon_95 	# /usr/include/X11/Xutil.h:5054
+BitmapSuccess = 0 	# /usr/include/X11/Xutil.h:5062
+BitmapOpenFailed = 1 	# /usr/include/X11/Xutil.h:5063
+BitmapFileInvalid = 2 	# /usr/include/X11/Xutil.h:5064
+BitmapNoMemory = 3 	# /usr/include/X11/Xutil.h:5065
+XCSUCCESS = 0 	# /usr/include/X11/Xutil.h:5076
+XCNOMEM = 1 	# /usr/include/X11/Xutil.h:5077
+XCNOENT = 2 	# /usr/include/X11/Xutil.h:5078
+XContext = c_int 	# /usr/include/X11/Xutil.h:5080
+# /usr/include/X11/Xutil.h:5089
 XAllocClassHint = _lib.XAllocClassHint
 XAllocClassHint.restype = POINTER(XClassHint)
 XAllocClassHint.argtypes = []
 
-# /usr/include/X11/Xutil.h:4372
+# /usr/include/X11/Xutil.h:5093
 XAllocIconSize = _lib.XAllocIconSize
 XAllocIconSize.restype = POINTER(XIconSize)
 XAllocIconSize.argtypes = []
 
-# /usr/include/X11/Xutil.h:4376
+# /usr/include/X11/Xutil.h:5097
 XAllocSizeHints = _lib.XAllocSizeHints
 XAllocSizeHints.restype = POINTER(XSizeHints)
 XAllocSizeHints.argtypes = []
 
-# /usr/include/X11/Xutil.h:4380
+# /usr/include/X11/Xutil.h:5101
 XAllocStandardColormap = _lib.XAllocStandardColormap
 XAllocStandardColormap.restype = POINTER(XStandardColormap)
 XAllocStandardColormap.argtypes = []
 
-# /usr/include/X11/Xutil.h:4384
+# /usr/include/X11/Xutil.h:5105
 XAllocWMHints = _lib.XAllocWMHints
 XAllocWMHints.restype = POINTER(XWMHints)
 XAllocWMHints.argtypes = []
 
-# /usr/include/X11/Xutil.h:4388
+# /usr/include/X11/Xutil.h:5109
 XClipBox = _lib.XClipBox
 XClipBox.restype = c_int
 XClipBox.argtypes = [Region, POINTER(XRectangle)]
 
-# /usr/include/X11/Xutil.h:4393
+# /usr/include/X11/Xutil.h:5114
 XCreateRegion = _lib.XCreateRegion
 XCreateRegion.restype = Region
 XCreateRegion.argtypes = []
 
-# /usr/include/X11/Xutil.h:4397
+# /usr/include/X11/Xutil.h:5118
 XDefaultString = _lib.XDefaultString
 XDefaultString.restype = c_char_p
 XDefaultString.argtypes = []
 
-# /usr/include/X11/Xutil.h:4399
+# /usr/include/X11/Xutil.h:5120
 XDeleteContext = _lib.XDeleteContext
 XDeleteContext.restype = c_int
 XDeleteContext.argtypes = [POINTER(Display), XID, XContext]
 
-# /usr/include/X11/Xutil.h:4405
+# /usr/include/X11/Xutil.h:5126
 XDestroyRegion = _lib.XDestroyRegion
 XDestroyRegion.restype = c_int
 XDestroyRegion.argtypes = [Region]
 
-# /usr/include/X11/Xutil.h:4409
+# /usr/include/X11/Xutil.h:5130
 XEmptyRegion = _lib.XEmptyRegion
 XEmptyRegion.restype = c_int
 XEmptyRegion.argtypes = [Region]
 
-# /usr/include/X11/Xutil.h:4413
+# /usr/include/X11/Xutil.h:5134
 XEqualRegion = _lib.XEqualRegion
 XEqualRegion.restype = c_int
 XEqualRegion.argtypes = [Region, Region]
 
-# /usr/include/X11/Xutil.h:4418
+# /usr/include/X11/Xutil.h:5139
 XFindContext = _lib.XFindContext
 XFindContext.restype = c_int
 XFindContext.argtypes = [POINTER(Display), XID, XContext, POINTER(XPointer)]
 
-# /usr/include/X11/Xutil.h:4425
+# /usr/include/X11/Xutil.h:5146
 XGetClassHint = _lib.XGetClassHint
 XGetClassHint.restype = c_int
 XGetClassHint.argtypes = [POINTER(Display), Window, POINTER(XClassHint)]
 
-# /usr/include/X11/Xutil.h:4431
+# /usr/include/X11/Xutil.h:5152
 XGetIconSizes = _lib.XGetIconSizes
 XGetIconSizes.restype = c_int
 XGetIconSizes.argtypes = [POINTER(Display), Window, POINTER(POINTER(XIconSize)), POINTER(c_int)]
 
-# /usr/include/X11/Xutil.h:4438
+# /usr/include/X11/Xutil.h:5159
 XGetNormalHints = _lib.XGetNormalHints
 XGetNormalHints.restype = c_int
 XGetNormalHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints)]
 
-# /usr/include/X11/Xutil.h:4444
+# /usr/include/X11/Xutil.h:5165
 XGetRGBColormaps = _lib.XGetRGBColormaps
 XGetRGBColormaps.restype = c_int
 XGetRGBColormaps.argtypes = [POINTER(Display), Window, POINTER(POINTER(XStandardColormap)), POINTER(c_int), Atom]
 
-# /usr/include/X11/Xutil.h:4452
+# /usr/include/X11/Xutil.h:5173
 XGetSizeHints = _lib.XGetSizeHints
 XGetSizeHints.restype = c_int
 XGetSizeHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints), Atom]
 
-# /usr/include/X11/Xutil.h:4459
+# /usr/include/X11/Xutil.h:5180
 XGetStandardColormap = _lib.XGetStandardColormap
 XGetStandardColormap.restype = c_int
 XGetStandardColormap.argtypes = [POINTER(Display), Window, POINTER(XStandardColormap), Atom]
 
-# /usr/include/X11/Xutil.h:4466
+# /usr/include/X11/Xutil.h:5187
 XGetTextProperty = _lib.XGetTextProperty
 XGetTextProperty.restype = c_int
 XGetTextProperty.argtypes = [POINTER(Display), Window, POINTER(XTextProperty), Atom]
 
-# /usr/include/X11/Xutil.h:4473
+# /usr/include/X11/Xutil.h:5194
 XGetVisualInfo = _lib.XGetVisualInfo
 XGetVisualInfo.restype = POINTER(XVisualInfo)
 XGetVisualInfo.argtypes = [POINTER(Display), c_long, POINTER(XVisualInfo), POINTER(c_int)]
 
-# /usr/include/X11/Xutil.h:4480
+# /usr/include/X11/Xutil.h:5201
 XGetWMClientMachine = _lib.XGetWMClientMachine
 XGetWMClientMachine.restype = c_int
 XGetWMClientMachine.argtypes = [POINTER(Display), Window, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:4486
+# /usr/include/X11/Xutil.h:5207
 XGetWMHints = _lib.XGetWMHints
 XGetWMHints.restype = POINTER(XWMHints)
 XGetWMHints.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xutil.h:4491
+# /usr/include/X11/Xutil.h:5212
 XGetWMIconName = _lib.XGetWMIconName
 XGetWMIconName.restype = c_int
 XGetWMIconName.argtypes = [POINTER(Display), Window, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:4497
+# /usr/include/X11/Xutil.h:5218
 XGetWMName = _lib.XGetWMName
 XGetWMName.restype = c_int
 XGetWMName.argtypes = [POINTER(Display), Window, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:4503
+# /usr/include/X11/Xutil.h:5224
 XGetWMNormalHints = _lib.XGetWMNormalHints
 XGetWMNormalHints.restype = c_int
 XGetWMNormalHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints), POINTER(c_long)]
 
-# /usr/include/X11/Xutil.h:4510
+# /usr/include/X11/Xutil.h:5231
 XGetWMSizeHints = _lib.XGetWMSizeHints
 XGetWMSizeHints.restype = c_int
 XGetWMSizeHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints), POINTER(c_long), Atom]
 
-# /usr/include/X11/Xutil.h:4518
+# /usr/include/X11/Xutil.h:5239
 XGetZoomHints = _lib.XGetZoomHints
 XGetZoomHints.restype = c_int
 XGetZoomHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints)]
 
-# /usr/include/X11/Xutil.h:4524
+# /usr/include/X11/Xutil.h:5245
 XIntersectRegion = _lib.XIntersectRegion
 XIntersectRegion.restype = c_int
 XIntersectRegion.argtypes = [Region, Region, Region]
 
-# /usr/include/X11/Xutil.h:4530
+# /usr/include/X11/Xutil.h:5251
 XConvertCase = _lib.XConvertCase
 XConvertCase.restype = None
 XConvertCase.argtypes = [KeySym, POINTER(KeySym), POINTER(KeySym)]
 
-# /usr/include/X11/Xutil.h:4536
+# /usr/include/X11/Xutil.h:5257
 XLookupString = _lib.XLookupString
 XLookupString.restype = c_int
 XLookupString.argtypes = [POINTER(XKeyEvent), c_char_p, c_int, POINTER(KeySym), POINTER(XComposeStatus)]
 
-# /usr/include/X11/Xutil.h:4544
+# /usr/include/X11/Xutil.h:5265
 XMatchVisualInfo = _lib.XMatchVisualInfo
 XMatchVisualInfo.restype = c_int
 XMatchVisualInfo.argtypes = [POINTER(Display), c_int, c_int, c_int, POINTER(XVisualInfo)]
 
-# /usr/include/X11/Xutil.h:4552
+# /usr/include/X11/Xutil.h:5273
 XOffsetRegion = _lib.XOffsetRegion
 XOffsetRegion.restype = c_int
 XOffsetRegion.argtypes = [Region, c_int, c_int]
 
-# /usr/include/X11/Xutil.h:4558
+# /usr/include/X11/Xutil.h:5279
 XPointInRegion = _lib.XPointInRegion
 XPointInRegion.restype = c_int
 XPointInRegion.argtypes = [Region, c_int, c_int]
 
-# /usr/include/X11/Xutil.h:4564
+# /usr/include/X11/Xutil.h:5285
 XPolygonRegion = _lib.XPolygonRegion
 XPolygonRegion.restype = Region
 XPolygonRegion.argtypes = [POINTER(XPoint), c_int, c_int]
 
-# /usr/include/X11/Xutil.h:4570
+# /usr/include/X11/Xutil.h:5291
 XRectInRegion = _lib.XRectInRegion
 XRectInRegion.restype = c_int
 XRectInRegion.argtypes = [Region, c_int, c_int, c_uint, c_uint]
 
-# /usr/include/X11/Xutil.h:4578
+# /usr/include/X11/Xutil.h:5299
 XSaveContext = _lib.XSaveContext
 XSaveContext.restype = c_int
 XSaveContext.argtypes = [POINTER(Display), XID, XContext, c_char_p]
 
-# /usr/include/X11/Xutil.h:4585
+# /usr/include/X11/Xutil.h:5306
 XSetClassHint = _lib.XSetClassHint
 XSetClassHint.restype = c_int
 XSetClassHint.argtypes = [POINTER(Display), Window, POINTER(XClassHint)]
 
-# /usr/include/X11/Xutil.h:4591
+# /usr/include/X11/Xutil.h:5312
 XSetIconSizes = _lib.XSetIconSizes
 XSetIconSizes.restype = c_int
 XSetIconSizes.argtypes = [POINTER(Display), Window, POINTER(XIconSize), c_int]
 
-# /usr/include/X11/Xutil.h:4598
+# /usr/include/X11/Xutil.h:5319
 XSetNormalHints = _lib.XSetNormalHints
 XSetNormalHints.restype = c_int
 XSetNormalHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints)]
 
-# /usr/include/X11/Xutil.h:4604
+# /usr/include/X11/Xutil.h:5325
 XSetRGBColormaps = _lib.XSetRGBColormaps
 XSetRGBColormaps.restype = None
 XSetRGBColormaps.argtypes = [POINTER(Display), Window, POINTER(XStandardColormap), c_int, Atom]
 
-# /usr/include/X11/Xutil.h:4612
+# /usr/include/X11/Xutil.h:5333
 XSetSizeHints = _lib.XSetSizeHints
 XSetSizeHints.restype = c_int
 XSetSizeHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints), Atom]
 
-# /usr/include/X11/Xutil.h:4619
+# /usr/include/X11/Xutil.h:5340
 XSetStandardProperties = _lib.XSetStandardProperties
 XSetStandardProperties.restype = c_int
 XSetStandardProperties.argtypes = [POINTER(Display), Window, c_char_p, c_char_p, Pixmap, POINTER(c_char_p), c_int, POINTER(XSizeHints)]
 
-# /usr/include/X11/Xutil.h:4630
+# /usr/include/X11/Xutil.h:5351
 XSetTextProperty = _lib.XSetTextProperty
 XSetTextProperty.restype = None
 XSetTextProperty.argtypes = [POINTER(Display), Window, POINTER(XTextProperty), Atom]
 
-# /usr/include/X11/Xutil.h:4637
+# /usr/include/X11/Xutil.h:5358
 XSetWMClientMachine = _lib.XSetWMClientMachine
 XSetWMClientMachine.restype = None
 XSetWMClientMachine.argtypes = [POINTER(Display), Window, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:4643
+# /usr/include/X11/Xutil.h:5364
 XSetWMHints = _lib.XSetWMHints
 XSetWMHints.restype = c_int
 XSetWMHints.argtypes = [POINTER(Display), Window, POINTER(XWMHints)]
 
-# /usr/include/X11/Xutil.h:4649
+# /usr/include/X11/Xutil.h:5370
 XSetWMIconName = _lib.XSetWMIconName
 XSetWMIconName.restype = None
 XSetWMIconName.argtypes = [POINTER(Display), Window, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:4655
+# /usr/include/X11/Xutil.h:5376
 XSetWMName = _lib.XSetWMName
 XSetWMName.restype = None
 XSetWMName.argtypes = [POINTER(Display), Window, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:4661
+# /usr/include/X11/Xutil.h:5382
 XSetWMNormalHints = _lib.XSetWMNormalHints
 XSetWMNormalHints.restype = None
 XSetWMNormalHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints)]
 
-# /usr/include/X11/Xutil.h:4667
+# /usr/include/X11/Xutil.h:5388
 XSetWMProperties = _lib.XSetWMProperties
 XSetWMProperties.restype = None
 XSetWMProperties.argtypes = [POINTER(Display), Window, POINTER(XTextProperty), POINTER(XTextProperty), POINTER(c_char_p), c_int, POINTER(XSizeHints), POINTER(XWMHints), POINTER(XClassHint)]
 
-# /usr/include/X11/Xutil.h:4679
+# /usr/include/X11/Xutil.h:5400
 XmbSetWMProperties = _lib.XmbSetWMProperties
 XmbSetWMProperties.restype = None
 XmbSetWMProperties.argtypes = [POINTER(Display), Window, c_char_p, c_char_p, POINTER(c_char_p), c_int, POINTER(XSizeHints), POINTER(XWMHints), POINTER(XClassHint)]
 
-# /usr/include/X11/Xutil.h:4691
+# /usr/include/X11/Xutil.h:5412
 Xutf8SetWMProperties = _lib.Xutf8SetWMProperties
 Xutf8SetWMProperties.restype = None
 Xutf8SetWMProperties.argtypes = [POINTER(Display), Window, c_char_p, c_char_p, POINTER(c_char_p), c_int, POINTER(XSizeHints), POINTER(XWMHints), POINTER(XClassHint)]
 
-# /usr/include/X11/Xutil.h:4703
+# /usr/include/X11/Xutil.h:5424
 XSetWMSizeHints = _lib.XSetWMSizeHints
 XSetWMSizeHints.restype = None
 XSetWMSizeHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints), Atom]
 
-# /usr/include/X11/Xutil.h:4710
+# /usr/include/X11/Xutil.h:5431
 XSetRegion = _lib.XSetRegion
 XSetRegion.restype = c_int
 XSetRegion.argtypes = [POINTER(Display), GC, Region]
 
-# /usr/include/X11/Xutil.h:4716
+# /usr/include/X11/Xutil.h:5437
 XSetStandardColormap = _lib.XSetStandardColormap
 XSetStandardColormap.restype = None
 XSetStandardColormap.argtypes = [POINTER(Display), Window, POINTER(XStandardColormap), Atom]
 
-# /usr/include/X11/Xutil.h:4723
+# /usr/include/X11/Xutil.h:5444
 XSetZoomHints = _lib.XSetZoomHints
 XSetZoomHints.restype = c_int
 XSetZoomHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints)]
 
-# /usr/include/X11/Xutil.h:4729
+# /usr/include/X11/Xutil.h:5450
 XShrinkRegion = _lib.XShrinkRegion
 XShrinkRegion.restype = c_int
 XShrinkRegion.argtypes = [Region, c_int, c_int]
 
-# /usr/include/X11/Xutil.h:4735
+# /usr/include/X11/Xutil.h:5456
 XStringListToTextProperty = _lib.XStringListToTextProperty
 XStringListToTextProperty.restype = c_int
 XStringListToTextProperty.argtypes = [POINTER(c_char_p), c_int, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:4741
+# /usr/include/X11/Xutil.h:5462
 XSubtractRegion = _lib.XSubtractRegion
 XSubtractRegion.restype = c_int
 XSubtractRegion.argtypes = [Region, Region, Region]
 
-# /usr/include/X11/Xutil.h:4747
+# /usr/include/X11/Xutil.h:5468
 XmbTextListToTextProperty = _lib.XmbTextListToTextProperty
 XmbTextListToTextProperty.restype = c_int
 XmbTextListToTextProperty.argtypes = [POINTER(Display), POINTER(c_char_p), c_int, XICCEncodingStyle, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:4755
+# /usr/include/X11/Xutil.h:5476
 XwcTextListToTextProperty = _lib.XwcTextListToTextProperty
 XwcTextListToTextProperty.restype = c_int
 XwcTextListToTextProperty.argtypes = [POINTER(Display), POINTER(c_wchar_p), c_int, XICCEncodingStyle, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:4763
+# /usr/include/X11/Xutil.h:5484
 Xutf8TextListToTextProperty = _lib.Xutf8TextListToTextProperty
 Xutf8TextListToTextProperty.restype = c_int
 Xutf8TextListToTextProperty.argtypes = [POINTER(Display), POINTER(c_char_p), c_int, XICCEncodingStyle, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:4771
+# /usr/include/X11/Xutil.h:5492
 XwcFreeStringList = _lib.XwcFreeStringList
 XwcFreeStringList.restype = None
 XwcFreeStringList.argtypes = [POINTER(c_wchar_p)]
 
-# /usr/include/X11/Xutil.h:4775
+# /usr/include/X11/Xutil.h:5496
 XTextPropertyToStringList = _lib.XTextPropertyToStringList
 XTextPropertyToStringList.restype = c_int
 XTextPropertyToStringList.argtypes = [POINTER(XTextProperty), POINTER(POINTER(c_char_p)), POINTER(c_int)]
 
-# /usr/include/X11/Xutil.h:4781
+# /usr/include/X11/Xutil.h:5502
 XmbTextPropertyToTextList = _lib.XmbTextPropertyToTextList
 XmbTextPropertyToTextList.restype = c_int
 XmbTextPropertyToTextList.argtypes = [POINTER(Display), POINTER(XTextProperty), POINTER(POINTER(c_char_p)), POINTER(c_int)]
 
-# /usr/include/X11/Xutil.h:4788
+# /usr/include/X11/Xutil.h:5509
 XwcTextPropertyToTextList = _lib.XwcTextPropertyToTextList
 XwcTextPropertyToTextList.restype = c_int
 XwcTextPropertyToTextList.argtypes = [POINTER(Display), POINTER(XTextProperty), POINTER(POINTER(c_wchar_p)), POINTER(c_int)]
 
-# /usr/include/X11/Xutil.h:4795
+# /usr/include/X11/Xutil.h:5516
 Xutf8TextPropertyToTextList = _lib.Xutf8TextPropertyToTextList
 Xutf8TextPropertyToTextList.restype = c_int
 Xutf8TextPropertyToTextList.argtypes = [POINTER(Display), POINTER(XTextProperty), POINTER(POINTER(c_char_p)), POINTER(c_int)]
 
-# /usr/include/X11/Xutil.h:4802
+# /usr/include/X11/Xutil.h:5523
 XUnionRectWithRegion = _lib.XUnionRectWithRegion
 XUnionRectWithRegion.restype = c_int
 XUnionRectWithRegion.argtypes = [POINTER(XRectangle), Region, Region]
 
-# /usr/include/X11/Xutil.h:4808
+# /usr/include/X11/Xutil.h:5529
 XUnionRegion = _lib.XUnionRegion
 XUnionRegion.restype = c_int
 XUnionRegion.argtypes = [Region, Region, Region]
 
-# /usr/include/X11/Xutil.h:4814
+# /usr/include/X11/Xutil.h:5535
 XWMGeometry = _lib.XWMGeometry
 XWMGeometry.restype = c_int
 XWMGeometry.argtypes = [POINTER(Display), c_int, c_char_p, c_char_p, c_uint, POINTER(XSizeHints), POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int)]
 
-# /usr/include/X11/Xutil.h:4828
+# /usr/include/X11/Xutil.h:5549
 XXorRegion = _lib.XXorRegion
 XXorRegion.restype = c_int
 XXorRegion.argtypes = [Region, Region, Region]
 
 
-__all__ = ['XlibSpecificationRelease', '_Xmblen', 'X_HAVE_UTF8_STRING',
-'XPointer', 'True', 'QueuedAfterReading', 'QueuedAfterFlush', 'XExtData',
-'XExtCodes', 'XPixmapFormatValues', 'XGCValues', 'GC', 'Visual', 'Depth',
-'Screen', 'ScreenFormat', 'XSetWindowAttributes', 'XWindowAttributes',
-'XHostAddress', 'XServerInterpretedAddress', 'XImage', 'XWindowChanges',
-'XColor', 'XSegment', 'XPoint', 'XRectangle', 'XArc', 'XKeyboardControl',
-'XKeyboardState', 'XTimeCoord', 'XModifierKeymap', 'Display', '_XPrivDisplay',
-'XKeyEvent', 'XKeyPressedEvent', 'XKeyReleasedEvent', 'XButtonEvent',
-'XButtonPressedEvent', 'XButtonReleasedEvent', 'XMotionEvent',
-'XPointerMovedEvent', 'XCrossingEvent', 'XEnterWindowEvent',
-'XLeaveWindowEvent', 'XFocusChangeEvent', 'XFocusInEvent', 'XFocusOutEvent',
-'XKeymapEvent', 'XExposeEvent', 'XGraphicsExposeEvent', 'XNoExposeEvent',
-'XVisibilityEvent', 'XCreateWindowEvent', 'XDestroyWindowEvent',
-'XUnmapEvent', 'XMapEvent', 'XMapRequestEvent', 'XReparentEvent',
-'XConfigureEvent', 'XGravityEvent', 'XResizeRequestEvent',
-'XConfigureRequestEvent', 'XCirculateEvent', 'XCirculateRequestEvent',
-'XPropertyEvent', 'XSelectionClearEvent', 'XSelectionRequestEvent',
-'XSelectionEvent', 'XColormapEvent', 'XClientMessageEvent', 'XMappingEvent',
-'XErrorEvent', 'XAnyEvent', 'XEvent', 'XCharStruct', 'XFontProp',
-'XFontStruct', 'XTextItem', 'XChar2b', 'XTextItem16', 'XEDataObject',
-'XFontSetExtents', 'XOM', 'XOC', 'XFontSet', 'XmbTextItem', 'XwcTextItem',
-'XOMCharSetList', 'XOrientation', 'XOMOrientation', 'XOMFontInfo', 'XIM',
-'XIC', 'XIMProc', 'XICProc', 'XIDProc', 'XIMStyle', 'XIMStyles',
-'XBufferOverflow', 'XLookupNone', 'XLookupChars', 'XLookupKeySym',
-'XLookupBoth', 'XVaNestedList', 'XIMCallback', 'XICCallback', 'XIMFeedback',
-'XIMText', 'XIMPreeditState', 'XIMPreeditStateNotifyCallbackStruct',
-'XIMResetState', 'XIMStringConversionFeedback', 'XIMStringConversionText',
-'XIMStringConversionPosition', 'XIMStringConversionType',
-'XIMStringConversionOperation', 'XIMCaretDirection',
-'XIMStringConversionCallbackStruct', 'XIMPreeditDrawCallbackStruct',
-'XIMCaretStyle', 'XIMPreeditCaretCallbackStruct', 'XIMStatusDataType',
+__all__ = ['XlibSpecificationRelease', 'X_PROTOCOL', 'X_PROTOCOL_REVISION',
+'XID', 'Mask', 'Atom', 'VisualID', 'Time', 'Window', 'Drawable', 'Font',
+'Pixmap', 'Cursor', 'Colormap', 'GContext', 'KeySym', 'KeyCode', 'None_',
+'ParentRelative', 'CopyFromParent', 'PointerWindow', 'InputFocus',
+'PointerRoot', 'AnyPropertyType', 'AnyKey', 'AnyButton', 'AllTemporary',
+'CurrentTime', 'NoSymbol', 'NoEventMask', 'KeyPressMask', 'KeyReleaseMask',
+'ButtonPressMask', 'ButtonReleaseMask', 'EnterWindowMask', 'LeaveWindowMask',
+'PointerMotionMask', 'PointerMotionHintMask', 'Button1MotionMask',
+'Button2MotionMask', 'Button3MotionMask', 'Button4MotionMask',
+'Button5MotionMask', 'ButtonMotionMask', 'KeymapStateMask', 'ExposureMask',
+'VisibilityChangeMask', 'StructureNotifyMask', 'ResizeRedirectMask',
+'SubstructureNotifyMask', 'SubstructureRedirectMask', 'FocusChangeMask',
+'PropertyChangeMask', 'ColormapChangeMask', 'OwnerGrabButtonMask', 'KeyPress',
+'KeyRelease', 'ButtonPress', 'ButtonRelease', 'MotionNotify', 'EnterNotify',
+'LeaveNotify', 'FocusIn', 'FocusOut', 'KeymapNotify', 'Expose',
+'GraphicsExpose', 'NoExpose', 'VisibilityNotify', 'CreateNotify',
+'DestroyNotify', 'UnmapNotify', 'MapNotify', 'MapRequest', 'ReparentNotify',
+'ConfigureNotify', 'ConfigureRequest', 'GravityNotify', 'ResizeRequest',
+'CirculateNotify', 'CirculateRequest', 'PropertyNotify', 'SelectionClear',
+'SelectionRequest', 'SelectionNotify', 'ColormapNotify', 'ClientMessage',
+'MappingNotify', 'LASTEvent', 'ShiftMask', 'LockMask', 'ControlMask',
+'Mod1Mask', 'Mod2Mask', 'Mod3Mask', 'Mod4Mask', 'Mod5Mask', 'ShiftMapIndex',
+'LockMapIndex', 'ControlMapIndex', 'Mod1MapIndex', 'Mod2MapIndex',
+'Mod3MapIndex', 'Mod4MapIndex', 'Mod5MapIndex', 'Button1Mask', 'Button2Mask',
+'Button3Mask', 'Button4Mask', 'Button5Mask', 'AnyModifier', 'Button1',
+'Button2', 'Button3', 'Button4', 'Button5', 'NotifyNormal', 'NotifyGrab',
+'NotifyUngrab', 'NotifyWhileGrabbed', 'NotifyHint', 'NotifyAncestor',
+'NotifyVirtual', 'NotifyInferior', 'NotifyNonlinear',
+'NotifyNonlinearVirtual', 'NotifyPointer', 'NotifyPointerRoot',
+'NotifyDetailNone', 'VisibilityUnobscured', 'VisibilityPartiallyObscured',
+'VisibilityFullyObscured', 'PlaceOnTop', 'PlaceOnBottom', 'FamilyInternet',
+'FamilyDECnet', 'FamilyChaos', 'FamilyInternet6', 'FamilyServerInterpreted',
+'PropertyNewValue', 'PropertyDelete', 'ColormapUninstalled',
+'ColormapInstalled', 'GrabModeSync', 'GrabModeAsync', 'GrabSuccess',
+'AlreadyGrabbed', 'GrabInvalidTime', 'GrabNotViewable', 'GrabFrozen',
+'AsyncPointer', 'SyncPointer', 'ReplayPointer', 'AsyncKeyboard',
+'SyncKeyboard', 'ReplayKeyboard', 'AsyncBoth', 'SyncBoth', 'RevertToParent',
+'Success', 'BadRequest', 'BadValue', 'BadWindow', 'BadPixmap', 'BadAtom',
+'BadCursor', 'BadFont', 'BadMatch', 'BadDrawable', 'BadAccess', 'BadAlloc',
+'BadColor', 'BadGC', 'BadIDChoice', 'BadName', 'BadLength',
+'BadImplementation', 'FirstExtensionError', 'LastExtensionError',
+'InputOutput', 'InputOnly', 'CWBackPixmap', 'CWBackPixel', 'CWBorderPixmap',
+'CWBorderPixel', 'CWBitGravity', 'CWWinGravity', 'CWBackingStore',
+'CWBackingPlanes', 'CWBackingPixel', 'CWOverrideRedirect', 'CWSaveUnder',
+'CWEventMask', 'CWDontPropagate', 'CWColormap', 'CWCursor', 'CWX', 'CWY',
+'CWWidth', 'CWHeight', 'CWBorderWidth', 'CWSibling', 'CWStackMode',
+'ForgetGravity', 'NorthWestGravity', 'NorthGravity', 'NorthEastGravity',
+'WestGravity', 'CenterGravity', 'EastGravity', 'SouthWestGravity',
+'SouthGravity', 'SouthEastGravity', 'StaticGravity', 'UnmapGravity',
+'NotUseful', 'WhenMapped', 'Always', 'IsUnmapped', 'IsUnviewable',
+'IsViewable', 'SetModeInsert', 'SetModeDelete', 'DestroyAll',
+'RetainPermanent', 'RetainTemporary', 'Above', 'Below', 'TopIf', 'BottomIf',
+'Opposite', 'RaiseLowest', 'LowerHighest', 'PropModeReplace',
+'PropModePrepend', 'PropModeAppend', 'GXclear', 'GXand', 'GXandReverse',
+'GXcopy', 'GXandInverted', 'GXnoop', 'GXxor', 'GXor', 'GXnor', 'GXequiv',
+'GXinvert', 'GXorReverse', 'GXcopyInverted', 'GXorInverted', 'GXnand',
+'GXset', 'LineSolid', 'LineOnOffDash', 'LineDoubleDash', 'CapNotLast',
+'CapButt', 'CapRound', 'CapProjecting', 'JoinMiter', 'JoinRound', 'JoinBevel',
+'FillSolid', 'FillTiled', 'FillStippled', 'FillOpaqueStippled', 'EvenOddRule',
+'WindingRule', 'ClipByChildren', 'IncludeInferiors', 'Unsorted', 'YSorted',
+'YXSorted', 'YXBanded', 'CoordModeOrigin', 'CoordModePrevious', 'Complex',
+'Nonconvex', 'Convex', 'ArcChord', 'ArcPieSlice', 'GCFunction', 'GCPlaneMask',
+'GCForeground', 'GCBackground', 'GCLineWidth', 'GCLineStyle', 'GCCapStyle',
+'GCJoinStyle', 'GCFillStyle', 'GCFillRule', 'GCTile', 'GCStipple',
+'GCTileStipXOrigin', 'GCTileStipYOrigin', 'GCFont', 'GCSubwindowMode',
+'GCGraphicsExposures', 'GCClipXOrigin', 'GCClipYOrigin', 'GCClipMask',
+'GCDashOffset', 'GCDashList', 'GCArcMode', 'GCLastBit', 'FontLeftToRight',
+'FontRightToLeft', 'FontChange', 'XYBitmap', 'XYPixmap', 'ZPixmap',
+'AllocNone', 'AllocAll', 'DoRed', 'DoGreen', 'DoBlue', 'CursorShape',
+'TileShape', 'StippleShape', 'AutoRepeatModeOff', 'AutoRepeatModeOn',
+'AutoRepeatModeDefault', 'LedModeOff', 'LedModeOn', 'KBKeyClickPercent',
+'KBBellPercent', 'KBBellPitch', 'KBBellDuration', 'KBLed', 'KBLedMode',
+'KBKey', 'KBAutoRepeatMode', 'MappingSuccess', 'MappingBusy', 'MappingFailed',
+'MappingModifier', 'MappingKeyboard', 'MappingPointer', 'DontPreferBlanking',
+'PreferBlanking', 'DefaultBlanking', 'DisableScreenSaver',
+'DisableScreenInterval', 'DontAllowExposures', 'AllowExposures',
+'DefaultExposures', 'ScreenSaverReset', 'ScreenSaverActive', 'HostInsert',
+'HostDelete', 'EnableAccess', 'DisableAccess', 'StaticGray', 'GrayScale',
+'StaticColor', 'PseudoColor', 'TrueColor', 'DirectColor', 'LSBFirst',
+'MSBFirst', '_Xmblen', 'X_HAVE_UTF8_STRING', 'XPointer', 'Bool', 'Status',
+'True', 'False', 'QueuedAlready', 'QueuedAfterReading', 'QueuedAfterFlush',
+'XExtData', 'XExtCodes', 'XPixmapFormatValues', 'XGCValues', 'GC', 'Visual',
+'Depth', 'Screen', 'ScreenFormat', 'XSetWindowAttributes',
+'XWindowAttributes', 'XHostAddress', 'XServerInterpretedAddress', 'XImage',
+'XWindowChanges', 'XColor', 'XSegment', 'XPoint', 'XRectangle', 'XArc',
+'XKeyboardControl', 'XKeyboardState', 'XTimeCoord', 'XModifierKeymap',
+'Display', '_XPrivDisplay', 'XKeyEvent', 'XKeyPressedEvent',
+'XKeyReleasedEvent', 'XButtonEvent', 'XButtonPressedEvent',
+'XButtonReleasedEvent', 'XMotionEvent', 'XPointerMovedEvent',
+'XCrossingEvent', 'XEnterWindowEvent', 'XLeaveWindowEvent',
+'XFocusChangeEvent', 'XFocusInEvent', 'XFocusOutEvent', 'XKeymapEvent',
+'XExposeEvent', 'XGraphicsExposeEvent', 'XNoExposeEvent', 'XVisibilityEvent',
+'XCreateWindowEvent', 'XDestroyWindowEvent', 'XUnmapEvent', 'XMapEvent',
+'XMapRequestEvent', 'XReparentEvent', 'XConfigureEvent', 'XGravityEvent',
+'XResizeRequestEvent', 'XConfigureRequestEvent', 'XCirculateEvent',
+'XCirculateRequestEvent', 'XPropertyEvent', 'XSelectionClearEvent',
+'XSelectionRequestEvent', 'XSelectionEvent', 'XColormapEvent',
+'XClientMessageEvent', 'XMappingEvent', 'XErrorEvent', 'XAnyEvent', 'XEvent',
+'XCharStruct', 'XFontProp', 'XFontStruct', 'XTextItem', 'XChar2b',
+'XTextItem16', 'XEDataObject', 'XFontSetExtents', 'XOM', 'XOC', 'XFontSet',
+'XmbTextItem', 'XwcTextItem', 'XOMCharSetList', 'XOrientation',
+'XOMOrientation_LTR_TTB', 'XOMOrientation_RTL_TTB', 'XOMOrientation_TTB_LTR',
+'XOMOrientation_TTB_RTL', 'XOMOrientation_Context', 'XOMOrientation',
+'XOMFontInfo', 'XIM', 'XIC', 'XIMProc', 'XICProc', 'XIDProc', 'XIMStyle',
+'XIMStyles', 'XIMPreeditArea', 'XIMPreeditCallbacks', 'XIMPreeditPosition',
+'XIMPreeditNothing', 'XIMPreeditNone', 'XIMStatusArea', 'XIMStatusCallbacks',
+'XIMStatusNothing', 'XIMStatusNone', 'XBufferOverflow', 'XLookupNone',
+'XLookupChars', 'XLookupKeySym', 'XLookupBoth', 'XVaNestedList',
+'XIMCallback', 'XICCallback', 'XIMFeedback', 'XIMReverse', 'XIMUnderline',
+'XIMHighlight', 'XIMPrimary', 'XIMSecondary', 'XIMTertiary',
+'XIMVisibleToForward', 'XIMVisibleToBackword', 'XIMVisibleToCenter',
+'XIMText', 'XIMPreeditState', 'XIMPreeditUnKnown', 'XIMPreeditEnable',
+'XIMPreeditDisable', 'XIMPreeditStateNotifyCallbackStruct', 'XIMResetState',
+'XIMInitialState', 'XIMPreserveState', 'XIMStringConversionFeedback',
+'XIMStringConversionLeftEdge', 'XIMStringConversionRightEdge',
+'XIMStringConversionTopEdge', 'XIMStringConversionBottomEdge',
+'XIMStringConversionConcealed', 'XIMStringConversionWrapped',
+'XIMStringConversionText', 'XIMStringConversionPosition',
+'XIMStringConversionType', 'XIMStringConversionBuffer',
+'XIMStringConversionLine', 'XIMStringConversionWord',
+'XIMStringConversionChar', 'XIMStringConversionOperation',
+'XIMStringConversionSubstitution', 'XIMStringConversionRetrieval',
+'XIMCaretDirection', 'XIMForwardChar', 'XIMBackwardChar', 'XIMForwardWord',
+'XIMBackwardWord', 'XIMCaretUp', 'XIMCaretDown', 'XIMNextLine',
+'XIMPreviousLine', 'XIMLineStart', 'XIMLineEnd', 'XIMAbsolutePosition',
+'XIMDontChange', 'XIMStringConversionCallbackStruct',
+'XIMPreeditDrawCallbackStruct', 'XIMCaretStyle', 'XIMIsInvisible',
+'XIMIsPrimary', 'XIMIsSecondary', 'XIMPreeditCaretCallbackStruct',
+'XIMStatusDataType', 'XIMTextType', 'XIMBitmapType',
 'XIMStatusDrawCallbackStruct', 'XIMHotKeyTrigger', 'XIMHotKeyTriggers',
-'XIMHotKeyState', 'XIMValuesList', 'XLoadQueryFont', 'XQueryFont',
-'XGetMotionEvents', 'XDeleteModifiermapEntry', 'XGetModifierMapping',
-'XInsertModifiermapEntry', 'XNewModifiermap', 'XCreateImage', 'XInitImage',
-'XGetImage', 'XGetSubImage', 'XOpenDisplay', 'XrmInitialize', 'XFetchBytes',
-'XFetchBuffer', 'XGetAtomName', 'XGetAtomNames', 'XGetDefault',
-'XDisplayName', 'XKeysymToString', 'XSynchronize', 'XSetAfterFunction',
-'XInternAtom', 'XInternAtoms', 'XCopyColormapAndFree', 'XCreateColormap',
-'XCreatePixmapCursor', 'XCreateGlyphCursor', 'XCreateFontCursor', 'XLoadFont',
-'XCreateGC', 'XGContextFromGC', 'XFlushGC', 'XCreatePixmap',
-'XCreateBitmapFromData', 'XCreatePixmapFromBitmapData', 'XCreateSimpleWindow',
-'XGetSelectionOwner', 'XCreateWindow', 'XListInstalledColormaps',
-'XListFonts', 'XListFontsWithInfo', 'XGetFontPath', 'XListExtensions',
-'XListProperties', 'XListHosts', 'XKeycodeToKeysym', 'XLookupKeysym',
-'XGetKeyboardMapping', 'XStringToKeysym', 'XMaxRequestSize',
-'XExtendedMaxRequestSize', 'XResourceManagerString', 'XScreenResourceString',
-'XDisplayMotionBufferSize', 'XVisualIDFromVisual', 'XInitThreads',
-'XLockDisplay', 'XUnlockDisplay', 'XInitExtension', 'XAddExtension',
-'XFindOnExtensionList', 'XEHeadOfExtensionList', 'XRootWindow',
-'XDefaultRootWindow', 'XRootWindowOfScreen', 'XDefaultVisual',
-'XDefaultVisualOfScreen', 'XDefaultGC', 'XDefaultGCOfScreen', 'XBlackPixel',
-'XWhitePixel', 'XAllPlanes', 'XBlackPixelOfScreen', 'XWhitePixelOfScreen',
-'XNextRequest', 'XLastKnownRequestProcessed', 'XServerVendor',
-'XDisplayString', 'XDefaultColormap', 'XDefaultColormapOfScreen',
-'XDisplayOfScreen', 'XScreenOfDisplay', 'XDefaultScreenOfDisplay',
-'XEventMaskOfScreen', 'XScreenNumberOfScreen', 'XErrorHandler',
-'XSetErrorHandler', 'XIOErrorHandler', 'XSetIOErrorHandler',
-'XListPixmapFormats', 'XListDepths', 'XReconfigureWMWindow',
-'XGetWMProtocols', 'XSetWMProtocols', 'XIconifyWindow', 'XWithdrawWindow',
-'XGetCommand', 'XGetWMColormapWindows', 'XSetWMColormapWindows',
-'XFreeStringList', 'XSetTransientForHint', 'XActivateScreenSaver', 'XAddHost',
-'XAddHosts', 'XAddToExtensionList', 'XAddToSaveSet', 'XAllocColor',
-'XAllocColorCells', 'XAllocColorPlanes', 'XAllocNamedColor', 'XAllowEvents',
-'XAutoRepeatOff', 'XAutoRepeatOn', 'XBell', 'XBitmapBitOrder', 'XBitmapPad',
-'XBitmapUnit', 'XCellsOfScreen', 'XChangeActivePointerGrab', 'XChangeGC',
-'XChangeKeyboardControl', 'XChangeKeyboardMapping', 'XChangePointerControl',
-'XChangeProperty', 'XChangeSaveSet', 'XChangeWindowAttributes',
-'XCheckIfEvent', 'XCheckMaskEvent', 'XCheckTypedEvent',
-'XCheckTypedWindowEvent', 'XCheckWindowEvent', 'XCirculateSubwindows',
-'XCirculateSubwindowsDown', 'XCirculateSubwindowsUp', 'XClearArea',
-'XClearWindow', 'XCloseDisplay', 'XConfigureWindow', 'XConnectionNumber',
-'XConvertSelection', 'XCopyArea', 'XCopyGC', 'XCopyPlane', 'XDefaultDepth',
-'XDefaultDepthOfScreen', 'XDefaultScreen', 'XDefineCursor', 'XDeleteProperty',
-'XDestroyWindow', 'XDestroySubwindows', 'XDoesBackingStore',
-'XDoesSaveUnders', 'XDisableAccessControl', 'XDisplayCells', 'XDisplayHeight',
-'XDisplayHeightMM', 'XDisplayKeycodes', 'XDisplayPlanes', 'XDisplayWidth',
-'XDisplayWidthMM', 'XDrawArc', 'XDrawArcs', 'XDrawImageString',
-'XDrawImageString16', 'XDrawLine', 'XDrawLines', 'XDrawPoint', 'XDrawPoints',
-'XDrawRectangle', 'XDrawRectangles', 'XDrawSegments', 'XDrawString',
-'XDrawString16', 'XDrawText', 'XDrawText16', 'XEnableAccessControl',
-'XEventsQueued', 'XFetchName', 'XFillArc', 'XFillArcs', 'XFillPolygon',
-'XFillRectangle', 'XFillRectangles', 'XFlush', 'XForceScreenSaver', 'XFree',
-'XFreeColormap', 'XFreeColors', 'XFreeCursor', 'XFreeExtensionList',
-'XFreeFont', 'XFreeFontInfo', 'XFreeFontNames', 'XFreeFontPath', 'XFreeGC',
-'XFreeModifiermap', 'XFreePixmap', 'XGeometry', 'XGetErrorDatabaseText',
-'XGetErrorText', 'XGetFontProperty', 'XGetGCValues', 'XGetGeometry',
-'XGetIconName', 'XGetInputFocus', 'XGetKeyboardControl', 'XGetPointerControl',
-'XGetPointerMapping', 'XGetScreenSaver', 'XGetTransientForHint',
-'XGetWindowProperty', 'XGetWindowAttributes', 'XGrabButton', 'XGrabKey',
-'XGrabKeyboard', 'XGrabPointer', 'XGrabServer', 'XHeightMMOfScreen',
-'XHeightOfScreen', 'XIfEvent', 'XImageByteOrder', 'XInstallColormap',
-'XKeysymToKeycode', 'XKillClient', 'XLookupColor', 'XLowerWindow',
-'XMapRaised', 'XMapSubwindows', 'XMapWindow', 'XMaskEvent',
-'XMaxCmapsOfScreen', 'XMinCmapsOfScreen', 'XMoveResizeWindow', 'XMoveWindow',
-'XNextEvent', 'XNoOp', 'XParseColor', 'XParseGeometry', 'XPeekEvent',
-'XPeekIfEvent', 'XPending', 'XPlanesOfScreen', 'XProtocolRevision',
-'XProtocolVersion', 'XPutBackEvent', 'XPutImage', 'XQLength',
-'XQueryBestCursor', 'XQueryBestSize', 'XQueryBestStipple', 'XQueryBestTile',
-'XQueryColor', 'XQueryColors', 'XQueryExtension', 'XQueryKeymap',
-'XQueryPointer', 'XQueryTextExtents', 'XQueryTextExtents16', 'XQueryTree',
-'XRaiseWindow', 'XReadBitmapFile', 'XReadBitmapFileData', 'XRebindKeysym',
-'XRecolorCursor', 'XRefreshKeyboardMapping', 'XRemoveFromSaveSet',
-'XRemoveHost', 'XRemoveHosts', 'XReparentWindow', 'XResetScreenSaver',
-'XResizeWindow', 'XRestackWindows', 'XRotateBuffers',
-'XRotateWindowProperties', 'XScreenCount', 'XSelectInput', 'XSendEvent',
-'XSetAccessControl', 'XSetArcMode', 'XSetBackground', 'XSetClipMask',
-'XSetClipOrigin', 'XSetClipRectangles', 'XSetCloseDownMode', 'XSetCommand',
-'XSetDashes', 'XSetFillRule', 'XSetFillStyle', 'XSetFont', 'XSetFontPath',
-'XSetForeground', 'XSetFunction', 'XSetGraphicsExposures', 'XSetIconName',
-'XSetInputFocus', 'XSetLineAttributes', 'XSetModifierMapping',
-'XSetPlaneMask', 'XSetPointerMapping', 'XSetScreenSaver',
-'XSetSelectionOwner', 'XSetState', 'XSetStipple', 'XSetSubwindowMode',
-'XSetTSOrigin', 'XSetTile', 'XSetWindowBackground',
-'XSetWindowBackgroundPixmap', 'XSetWindowBorder', 'XSetWindowBorderPixmap',
-'XSetWindowBorderWidth', 'XSetWindowColormap', 'XStoreBuffer', 'XStoreBytes',
-'XStoreColor', 'XStoreColors', 'XStoreName', 'XStoreNamedColor', 'XSync',
-'XTextExtents', 'XTextExtents16', 'XTextWidth', 'XTextWidth16',
-'XTranslateCoordinates', 'XUndefineCursor', 'XUngrabButton', 'XUngrabKey',
-'XUngrabKeyboard', 'XUngrabPointer', 'XUngrabServer', 'XUninstallColormap',
-'XUnloadFont', 'XUnmapSubwindows', 'XUnmapWindow', 'XVendorRelease',
-'XWarpPointer', 'XWidthMMOfScreen', 'XWidthOfScreen', 'XWindowEvent',
-'XWriteBitmapFile', 'XSupportsLocale', 'XSetLocaleModifiers', 'XOpenOM',
-'XCloseOM', 'XSetOMValues', 'XGetOMValues', 'XDisplayOfOM', 'XLocaleOfOM',
-'XCreateOC', 'XDestroyOC', 'XOMOfOC', 'XSetOCValues', 'XGetOCValues',
-'XCreateFontSet', 'XFreeFontSet', 'XFontsOfFontSet',
-'XBaseFontNameListOfFontSet', 'XLocaleOfFontSet', 'XContextDependentDrawing',
-'XDirectionalDependentDrawing', 'XContextualDrawing', 'XExtentsOfFontSet',
-'XmbTextEscapement', 'XwcTextEscapement', 'Xutf8TextEscapement',
-'XmbTextExtents', 'XwcTextExtents', 'Xutf8TextExtents',
-'XmbTextPerCharExtents', 'XwcTextPerCharExtents', 'Xutf8TextPerCharExtents',
-'XmbDrawText', 'XwcDrawText', 'Xutf8DrawText', 'XmbDrawString',
-'XwcDrawString', 'Xutf8DrawString', 'XmbDrawImageString',
-'XwcDrawImageString', 'Xutf8DrawImageString', 'XOpenIM', 'XCloseIM',
-'XGetIMValues', 'XSetIMValues', 'XDisplayOfIM', 'XLocaleOfIM', 'XCreateIC',
-'XDestroyIC', 'XSetICFocus', 'XUnsetICFocus', 'XwcResetIC', 'XmbResetIC',
-'Xutf8ResetIC', 'XSetICValues', 'XGetICValues', 'XIMOfIC', 'XFilterEvent',
-'XmbLookupString', 'XwcLookupString', 'Xutf8LookupString',
-'XVaCreateNestedList', 'XRegisterIMInstantiateCallback',
-'XUnregisterIMInstantiateCallback', 'XConnectionWatchProc',
-'XInternalConnectionNumbers', 'XProcessInternalConnection',
-'XAddConnectionWatch', 'XRemoveConnectionWatch', 'XSetAuthorization',
-'_Xmbtowc', '_Xwctomb', 'XlibSpecificationRelease', '_Xmblen',
-'X_HAVE_UTF8_STRING', 'True', 'QueuedAfterReading', 'QueuedAfterFlush',
-'XBufferOverflow', 'XLookupNone', 'XLookupChars', 'XLookupKeySym',
-'XLookupBoth', 'XLoadQueryFont', 'XQueryFont', 'XGetMotionEvents',
-'XDeleteModifiermapEntry', 'XGetModifierMapping', 'XInsertModifiermapEntry',
-'XNewModifiermap', 'XCreateImage', 'XInitImage', 'XGetImage', 'XGetSubImage',
-'XOpenDisplay', 'XrmInitialize', 'XFetchBytes', 'XFetchBuffer',
-'XGetAtomName', 'XGetAtomNames', 'XGetDefault', 'XDisplayName',
-'XKeysymToString', 'XSynchronize', 'XSetAfterFunction', 'XInternAtom',
-'XInternAtoms', 'XCopyColormapAndFree', 'XCreateColormap',
-'XCreatePixmapCursor', 'XCreateGlyphCursor', 'XCreateFontCursor', 'XLoadFont',
-'XCreateGC', 'XGContextFromGC', 'XFlushGC', 'XCreatePixmap',
-'XCreateBitmapFromData', 'XCreatePixmapFromBitmapData', 'XCreateSimpleWindow',
-'XGetSelectionOwner', 'XCreateWindow', 'XListInstalledColormaps',
-'XListFonts', 'XListFontsWithInfo', 'XGetFontPath', 'XListExtensions',
-'XListProperties', 'XListHosts', 'XKeycodeToKeysym', 'XLookupKeysym',
-'XGetKeyboardMapping', 'XStringToKeysym', 'XMaxRequestSize',
-'XExtendedMaxRequestSize', 'XResourceManagerString', 'XScreenResourceString',
-'XDisplayMotionBufferSize', 'XVisualIDFromVisual', 'XInitThreads',
-'XLockDisplay', 'XUnlockDisplay', 'XInitExtension', 'XAddExtension',
-'XFindOnExtensionList', 'XEHeadOfExtensionList', 'XRootWindow',
-'XDefaultRootWindow', 'XRootWindowOfScreen', 'XDefaultVisual',
-'XDefaultVisualOfScreen', 'XDefaultGC', 'XDefaultGCOfScreen', 'XBlackPixel',
-'XWhitePixel', 'XAllPlanes', 'XBlackPixelOfScreen', 'XWhitePixelOfScreen',
-'XNextRequest', 'XLastKnownRequestProcessed', 'XServerVendor',
-'XDisplayString', 'XDefaultColormap', 'XDefaultColormapOfScreen',
-'XDisplayOfScreen', 'XScreenOfDisplay', 'XDefaultScreenOfDisplay',
-'XEventMaskOfScreen', 'XScreenNumberOfScreen', 'XSetErrorHandler',
-'XSetIOErrorHandler', 'XListPixmapFormats', 'XListDepths',
+'XIMHotKeyState', 'XIMHotKeyStateON', 'XIMHotKeyStateOFF', 'XIMValuesList',
+'XLoadQueryFont', 'XQueryFont', 'XGetMotionEvents', 'XDeleteModifiermapEntry',
+'XGetModifierMapping', 'XInsertModifiermapEntry', 'XNewModifiermap',
+'XCreateImage', 'XInitImage', 'XGetImage', 'XGetSubImage', 'XOpenDisplay',
+'XrmInitialize', 'XFetchBytes', 'XFetchBuffer', 'XGetAtomName',
+'XGetAtomNames', 'XGetDefault', 'XDisplayName', 'XKeysymToString',
+'XSynchronize', 'XSetAfterFunction', 'XInternAtom', 'XInternAtoms',
+'XCopyColormapAndFree', 'XCreateColormap', 'XCreatePixmapCursor',
+'XCreateGlyphCursor', 'XCreateFontCursor', 'XLoadFont', 'XCreateGC',
+'XGContextFromGC', 'XFlushGC', 'XCreatePixmap', 'XCreateBitmapFromData',
+'XCreatePixmapFromBitmapData', 'XCreateSimpleWindow', 'XGetSelectionOwner',
+'XCreateWindow', 'XListInstalledColormaps', 'XListFonts',
+'XListFontsWithInfo', 'XGetFontPath', 'XListExtensions', 'XListProperties',
+'XListHosts', 'XKeycodeToKeysym', 'XLookupKeysym', 'XGetKeyboardMapping',
+'XStringToKeysym', 'XMaxRequestSize', 'XExtendedMaxRequestSize',
+'XResourceManagerString', 'XScreenResourceString', 'XDisplayMotionBufferSize',
+'XVisualIDFromVisual', 'XInitThreads', 'XLockDisplay', 'XUnlockDisplay',
+'XInitExtension', 'XAddExtension', 'XFindOnExtensionList',
+'XEHeadOfExtensionList', 'XRootWindow', 'XDefaultRootWindow',
+'XRootWindowOfScreen', 'XDefaultVisual', 'XDefaultVisualOfScreen',
+'XDefaultGC', 'XDefaultGCOfScreen', 'XBlackPixel', 'XWhitePixel',
+'XAllPlanes', 'XBlackPixelOfScreen', 'XWhitePixelOfScreen', 'XNextRequest',
+'XLastKnownRequestProcessed', 'XServerVendor', 'XDisplayString',
+'XDefaultColormap', 'XDefaultColormapOfScreen', 'XDisplayOfScreen',
+'XScreenOfDisplay', 'XDefaultScreenOfDisplay', 'XEventMaskOfScreen',
+'XScreenNumberOfScreen', 'XErrorHandler', 'XSetErrorHandler',
+'XIOErrorHandler', 'XSetIOErrorHandler', 'XListPixmapFormats', 'XListDepths',
 'XReconfigureWMWindow', 'XGetWMProtocols', 'XSetWMProtocols',
 'XIconifyWindow', 'XWithdrawWindow', 'XGetCommand', 'XGetWMColormapWindows',
 'XSetWMColormapWindows', 'XFreeStringList', 'XSetTransientForHint',
@@ -6953,19 +8116,305 @@ __all__ = ['XlibSpecificationRelease', '_Xmblen', 'X_HAVE_UTF8_STRING',
 'Xutf8ResetIC', 'XSetICValues', 'XGetICValues', 'XIMOfIC', 'XFilterEvent',
 'XmbLookupString', 'XwcLookupString', 'Xutf8LookupString',
 'XVaCreateNestedList', 'XRegisterIMInstantiateCallback',
+'XUnregisterIMInstantiateCallback', 'XConnectionWatchProc',
+'XInternalConnectionNumbers', 'XProcessInternalConnection',
+'XAddConnectionWatch', 'XRemoveConnectionWatch', 'XSetAuthorization',
+'_Xmbtowc', '_Xwctomb', 'X_PROTOCOL', 'X_PROTOCOL_REVISION', 'None_',
+'ParentRelative', 'CopyFromParent', 'PointerWindow', 'InputFocus',
+'PointerRoot', 'AnyPropertyType', 'AnyKey', 'AnyButton', 'AllTemporary',
+'CurrentTime', 'NoSymbol', 'NoEventMask', 'KeyPressMask', 'KeyReleaseMask',
+'ButtonPressMask', 'ButtonReleaseMask', 'EnterWindowMask', 'LeaveWindowMask',
+'PointerMotionMask', 'PointerMotionHintMask', 'Button1MotionMask',
+'Button2MotionMask', 'Button3MotionMask', 'Button4MotionMask',
+'Button5MotionMask', 'ButtonMotionMask', 'KeymapStateMask', 'ExposureMask',
+'VisibilityChangeMask', 'StructureNotifyMask', 'ResizeRedirectMask',
+'SubstructureNotifyMask', 'SubstructureRedirectMask', 'FocusChangeMask',
+'PropertyChangeMask', 'ColormapChangeMask', 'OwnerGrabButtonMask', 'KeyPress',
+'KeyRelease', 'ButtonPress', 'ButtonRelease', 'MotionNotify', 'EnterNotify',
+'LeaveNotify', 'FocusIn', 'FocusOut', 'KeymapNotify', 'Expose',
+'GraphicsExpose', 'NoExpose', 'VisibilityNotify', 'CreateNotify',
+'DestroyNotify', 'UnmapNotify', 'MapNotify', 'MapRequest', 'ReparentNotify',
+'ConfigureNotify', 'ConfigureRequest', 'GravityNotify', 'ResizeRequest',
+'CirculateNotify', 'CirculateRequest', 'PropertyNotify', 'SelectionClear',
+'SelectionRequest', 'SelectionNotify', 'ColormapNotify', 'ClientMessage',
+'MappingNotify', 'LASTEvent', 'ShiftMask', 'LockMask', 'ControlMask',
+'Mod1Mask', 'Mod2Mask', 'Mod3Mask', 'Mod4Mask', 'Mod5Mask', 'ShiftMapIndex',
+'LockMapIndex', 'ControlMapIndex', 'Mod1MapIndex', 'Mod2MapIndex',
+'Mod3MapIndex', 'Mod4MapIndex', 'Mod5MapIndex', 'Button1Mask', 'Button2Mask',
+'Button3Mask', 'Button4Mask', 'Button5Mask', 'AnyModifier', 'Button1',
+'Button2', 'Button3', 'Button4', 'Button5', 'NotifyNormal', 'NotifyGrab',
+'NotifyUngrab', 'NotifyWhileGrabbed', 'NotifyHint', 'NotifyAncestor',
+'NotifyVirtual', 'NotifyInferior', 'NotifyNonlinear',
+'NotifyNonlinearVirtual', 'NotifyPointer', 'NotifyPointerRoot',
+'NotifyDetailNone', 'VisibilityUnobscured', 'VisibilityPartiallyObscured',
+'VisibilityFullyObscured', 'PlaceOnTop', 'PlaceOnBottom', 'FamilyInternet',
+'FamilyDECnet', 'FamilyChaos', 'FamilyInternet6', 'FamilyServerInterpreted',
+'PropertyNewValue', 'PropertyDelete', 'ColormapUninstalled',
+'ColormapInstalled', 'GrabModeSync', 'GrabModeAsync', 'GrabSuccess',
+'AlreadyGrabbed', 'GrabInvalidTime', 'GrabNotViewable', 'GrabFrozen',
+'AsyncPointer', 'SyncPointer', 'ReplayPointer', 'AsyncKeyboard',
+'SyncKeyboard', 'ReplayKeyboard', 'AsyncBoth', 'SyncBoth', 'RevertToParent',
+'Success', 'BadRequest', 'BadValue', 'BadWindow', 'BadPixmap', 'BadAtom',
+'BadCursor', 'BadFont', 'BadMatch', 'BadDrawable', 'BadAccess', 'BadAlloc',
+'BadColor', 'BadGC', 'BadIDChoice', 'BadName', 'BadLength',
+'BadImplementation', 'FirstExtensionError', 'LastExtensionError',
+'InputOutput', 'InputOnly', 'CWBackPixmap', 'CWBackPixel', 'CWBorderPixmap',
+'CWBorderPixel', 'CWBitGravity', 'CWWinGravity', 'CWBackingStore',
+'CWBackingPlanes', 'CWBackingPixel', 'CWOverrideRedirect', 'CWSaveUnder',
+'CWEventMask', 'CWDontPropagate', 'CWColormap', 'CWCursor', 'CWX', 'CWY',
+'CWWidth', 'CWHeight', 'CWBorderWidth', 'CWSibling', 'CWStackMode',
+'ForgetGravity', 'NorthWestGravity', 'NorthGravity', 'NorthEastGravity',
+'WestGravity', 'CenterGravity', 'EastGravity', 'SouthWestGravity',
+'SouthGravity', 'SouthEastGravity', 'StaticGravity', 'UnmapGravity',
+'NotUseful', 'WhenMapped', 'Always', 'IsUnmapped', 'IsUnviewable',
+'IsViewable', 'SetModeInsert', 'SetModeDelete', 'DestroyAll',
+'RetainPermanent', 'RetainTemporary', 'Above', 'Below', 'TopIf', 'BottomIf',
+'Opposite', 'RaiseLowest', 'LowerHighest', 'PropModeReplace',
+'PropModePrepend', 'PropModeAppend', 'GXclear', 'GXand', 'GXandReverse',
+'GXcopy', 'GXandInverted', 'GXnoop', 'GXxor', 'GXor', 'GXnor', 'GXequiv',
+'GXinvert', 'GXorReverse', 'GXcopyInverted', 'GXorInverted', 'GXnand',
+'GXset', 'LineSolid', 'LineOnOffDash', 'LineDoubleDash', 'CapNotLast',
+'CapButt', 'CapRound', 'CapProjecting', 'JoinMiter', 'JoinRound', 'JoinBevel',
+'FillSolid', 'FillTiled', 'FillStippled', 'FillOpaqueStippled', 'EvenOddRule',
+'WindingRule', 'ClipByChildren', 'IncludeInferiors', 'Unsorted', 'YSorted',
+'YXSorted', 'YXBanded', 'CoordModeOrigin', 'CoordModePrevious', 'Complex',
+'Nonconvex', 'Convex', 'ArcChord', 'ArcPieSlice', 'GCFunction', 'GCPlaneMask',
+'GCForeground', 'GCBackground', 'GCLineWidth', 'GCLineStyle', 'GCCapStyle',
+'GCJoinStyle', 'GCFillStyle', 'GCFillRule', 'GCTile', 'GCStipple',
+'GCTileStipXOrigin', 'GCTileStipYOrigin', 'GCFont', 'GCSubwindowMode',
+'GCGraphicsExposures', 'GCClipXOrigin', 'GCClipYOrigin', 'GCClipMask',
+'GCDashOffset', 'GCDashList', 'GCArcMode', 'GCLastBit', 'FontLeftToRight',
+'FontRightToLeft', 'FontChange', 'XYBitmap', 'XYPixmap', 'ZPixmap',
+'AllocNone', 'AllocAll', 'DoRed', 'DoGreen', 'DoBlue', 'CursorShape',
+'TileShape', 'StippleShape', 'AutoRepeatModeOff', 'AutoRepeatModeOn',
+'AutoRepeatModeDefault', 'LedModeOff', 'LedModeOn', 'KBKeyClickPercent',
+'KBBellPercent', 'KBBellPitch', 'KBBellDuration', 'KBLed', 'KBLedMode',
+'KBKey', 'KBAutoRepeatMode', 'MappingSuccess', 'MappingBusy', 'MappingFailed',
+'MappingModifier', 'MappingKeyboard', 'MappingPointer', 'DontPreferBlanking',
+'PreferBlanking', 'DefaultBlanking', 'DisableScreenSaver',
+'DisableScreenInterval', 'DontAllowExposures', 'AllowExposures',
+'DefaultExposures', 'ScreenSaverReset', 'ScreenSaverActive', 'HostInsert',
+'HostDelete', 'EnableAccess', 'DisableAccess', 'StaticGray', 'GrayScale',
+'StaticColor', 'PseudoColor', 'TrueColor', 'DirectColor', 'LSBFirst',
+'MSBFirst', 'XlibSpecificationRelease', 'X_PROTOCOL', 'X_PROTOCOL_REVISION',
+'None_', 'ParentRelative', 'CopyFromParent', 'PointerWindow', 'InputFocus',
+'PointerRoot', 'AnyPropertyType', 'AnyKey', 'AnyButton', 'AllTemporary',
+'CurrentTime', 'NoSymbol', 'NoEventMask', 'KeyPressMask', 'KeyReleaseMask',
+'ButtonPressMask', 'ButtonReleaseMask', 'EnterWindowMask', 'LeaveWindowMask',
+'PointerMotionMask', 'PointerMotionHintMask', 'Button1MotionMask',
+'Button2MotionMask', 'Button3MotionMask', 'Button4MotionMask',
+'Button5MotionMask', 'ButtonMotionMask', 'KeymapStateMask', 'ExposureMask',
+'VisibilityChangeMask', 'StructureNotifyMask', 'ResizeRedirectMask',
+'SubstructureNotifyMask', 'SubstructureRedirectMask', 'FocusChangeMask',
+'PropertyChangeMask', 'ColormapChangeMask', 'OwnerGrabButtonMask', 'KeyPress',
+'KeyRelease', 'ButtonPress', 'ButtonRelease', 'MotionNotify', 'EnterNotify',
+'LeaveNotify', 'FocusIn', 'FocusOut', 'KeymapNotify', 'Expose',
+'GraphicsExpose', 'NoExpose', 'VisibilityNotify', 'CreateNotify',
+'DestroyNotify', 'UnmapNotify', 'MapNotify', 'MapRequest', 'ReparentNotify',
+'ConfigureNotify', 'ConfigureRequest', 'GravityNotify', 'ResizeRequest',
+'CirculateNotify', 'CirculateRequest', 'PropertyNotify', 'SelectionClear',
+'SelectionRequest', 'SelectionNotify', 'ColormapNotify', 'ClientMessage',
+'MappingNotify', 'LASTEvent', 'ShiftMask', 'LockMask', 'ControlMask',
+'Mod1Mask', 'Mod2Mask', 'Mod3Mask', 'Mod4Mask', 'Mod5Mask', 'ShiftMapIndex',
+'LockMapIndex', 'ControlMapIndex', 'Mod1MapIndex', 'Mod2MapIndex',
+'Mod3MapIndex', 'Mod4MapIndex', 'Mod5MapIndex', 'Button1Mask', 'Button2Mask',
+'Button3Mask', 'Button4Mask', 'Button5Mask', 'AnyModifier', 'Button1',
+'Button2', 'Button3', 'Button4', 'Button5', 'NotifyNormal', 'NotifyGrab',
+'NotifyUngrab', 'NotifyWhileGrabbed', 'NotifyHint', 'NotifyAncestor',
+'NotifyVirtual', 'NotifyInferior', 'NotifyNonlinear',
+'NotifyNonlinearVirtual', 'NotifyPointer', 'NotifyPointerRoot',
+'NotifyDetailNone', 'VisibilityUnobscured', 'VisibilityPartiallyObscured',
+'VisibilityFullyObscured', 'PlaceOnTop', 'PlaceOnBottom', 'FamilyInternet',
+'FamilyDECnet', 'FamilyChaos', 'FamilyInternet6', 'FamilyServerInterpreted',
+'PropertyNewValue', 'PropertyDelete', 'ColormapUninstalled',
+'ColormapInstalled', 'GrabModeSync', 'GrabModeAsync', 'GrabSuccess',
+'AlreadyGrabbed', 'GrabInvalidTime', 'GrabNotViewable', 'GrabFrozen',
+'AsyncPointer', 'SyncPointer', 'ReplayPointer', 'AsyncKeyboard',
+'SyncKeyboard', 'ReplayKeyboard', 'AsyncBoth', 'SyncBoth', 'RevertToParent',
+'Success', 'BadRequest', 'BadValue', 'BadWindow', 'BadPixmap', 'BadAtom',
+'BadCursor', 'BadFont', 'BadMatch', 'BadDrawable', 'BadAccess', 'BadAlloc',
+'BadColor', 'BadGC', 'BadIDChoice', 'BadName', 'BadLength',
+'BadImplementation', 'FirstExtensionError', 'LastExtensionError',
+'InputOutput', 'InputOnly', 'CWBackPixmap', 'CWBackPixel', 'CWBorderPixmap',
+'CWBorderPixel', 'CWBitGravity', 'CWWinGravity', 'CWBackingStore',
+'CWBackingPlanes', 'CWBackingPixel', 'CWOverrideRedirect', 'CWSaveUnder',
+'CWEventMask', 'CWDontPropagate', 'CWColormap', 'CWCursor', 'CWX', 'CWY',
+'CWWidth', 'CWHeight', 'CWBorderWidth', 'CWSibling', 'CWStackMode',
+'ForgetGravity', 'NorthWestGravity', 'NorthGravity', 'NorthEastGravity',
+'WestGravity', 'CenterGravity', 'EastGravity', 'SouthWestGravity',
+'SouthGravity', 'SouthEastGravity', 'StaticGravity', 'UnmapGravity',
+'NotUseful', 'WhenMapped', 'Always', 'IsUnmapped', 'IsUnviewable',
+'IsViewable', 'SetModeInsert', 'SetModeDelete', 'DestroyAll',
+'RetainPermanent', 'RetainTemporary', 'Above', 'Below', 'TopIf', 'BottomIf',
+'Opposite', 'RaiseLowest', 'LowerHighest', 'PropModeReplace',
+'PropModePrepend', 'PropModeAppend', 'GXclear', 'GXand', 'GXandReverse',
+'GXcopy', 'GXandInverted', 'GXnoop', 'GXxor', 'GXor', 'GXnor', 'GXequiv',
+'GXinvert', 'GXorReverse', 'GXcopyInverted', 'GXorInverted', 'GXnand',
+'GXset', 'LineSolid', 'LineOnOffDash', 'LineDoubleDash', 'CapNotLast',
+'CapButt', 'CapRound', 'CapProjecting', 'JoinMiter', 'JoinRound', 'JoinBevel',
+'FillSolid', 'FillTiled', 'FillStippled', 'FillOpaqueStippled', 'EvenOddRule',
+'WindingRule', 'ClipByChildren', 'IncludeInferiors', 'Unsorted', 'YSorted',
+'YXSorted', 'YXBanded', 'CoordModeOrigin', 'CoordModePrevious', 'Complex',
+'Nonconvex', 'Convex', 'ArcChord', 'ArcPieSlice', 'GCFunction', 'GCPlaneMask',
+'GCForeground', 'GCBackground', 'GCLineWidth', 'GCLineStyle', 'GCCapStyle',
+'GCJoinStyle', 'GCFillStyle', 'GCFillRule', 'GCTile', 'GCStipple',
+'GCTileStipXOrigin', 'GCTileStipYOrigin', 'GCFont', 'GCSubwindowMode',
+'GCGraphicsExposures', 'GCClipXOrigin', 'GCClipYOrigin', 'GCClipMask',
+'GCDashOffset', 'GCDashList', 'GCArcMode', 'GCLastBit', 'FontLeftToRight',
+'FontRightToLeft', 'FontChange', 'XYBitmap', 'XYPixmap', 'ZPixmap',
+'AllocNone', 'AllocAll', 'DoRed', 'DoGreen', 'DoBlue', 'CursorShape',
+'TileShape', 'StippleShape', 'AutoRepeatModeOff', 'AutoRepeatModeOn',
+'AutoRepeatModeDefault', 'LedModeOff', 'LedModeOn', 'KBKeyClickPercent',
+'KBBellPercent', 'KBBellPitch', 'KBBellDuration', 'KBLed', 'KBLedMode',
+'KBKey', 'KBAutoRepeatMode', 'MappingSuccess', 'MappingBusy', 'MappingFailed',
+'MappingModifier', 'MappingKeyboard', 'MappingPointer', 'DontPreferBlanking',
+'PreferBlanking', 'DefaultBlanking', 'DisableScreenSaver',
+'DisableScreenInterval', 'DontAllowExposures', 'AllowExposures',
+'DefaultExposures', 'ScreenSaverReset', 'ScreenSaverActive', 'HostInsert',
+'HostDelete', 'EnableAccess', 'DisableAccess', 'StaticGray', 'GrayScale',
+'StaticColor', 'PseudoColor', 'TrueColor', 'DirectColor', 'LSBFirst',
+'MSBFirst', '_Xmblen', 'X_HAVE_UTF8_STRING', 'Bool', 'Status', 'True',
+'False', 'QueuedAlready', 'QueuedAfterReading', 'QueuedAfterFlush',
+'XIMPreeditArea', 'XIMPreeditCallbacks', 'XIMPreeditPosition',
+'XIMPreeditNothing', 'XIMPreeditNone', 'XIMStatusArea', 'XIMStatusCallbacks',
+'XIMStatusNothing', 'XIMStatusNone', 'XBufferOverflow', 'XLookupNone',
+'XLookupChars', 'XLookupKeySym', 'XLookupBoth', 'XIMReverse', 'XIMUnderline',
+'XIMHighlight', 'XIMPrimary', 'XIMSecondary', 'XIMTertiary',
+'XIMVisibleToForward', 'XIMVisibleToBackword', 'XIMVisibleToCenter',
+'XIMPreeditUnKnown', 'XIMPreeditEnable', 'XIMPreeditDisable',
+'XIMInitialState', 'XIMPreserveState', 'XIMStringConversionLeftEdge',
+'XIMStringConversionRightEdge', 'XIMStringConversionTopEdge',
+'XIMStringConversionBottomEdge', 'XIMStringConversionConcealed',
+'XIMStringConversionWrapped', 'XIMStringConversionBuffer',
+'XIMStringConversionLine', 'XIMStringConversionWord',
+'XIMStringConversionChar', 'XIMStringConversionSubstitution',
+'XIMStringConversionRetrieval', 'XIMHotKeyStateON', 'XIMHotKeyStateOFF',
+'XLoadQueryFont', 'XQueryFont', 'XGetMotionEvents', 'XDeleteModifiermapEntry',
+'XGetModifierMapping', 'XInsertModifiermapEntry', 'XNewModifiermap',
+'XCreateImage', 'XInitImage', 'XGetImage', 'XGetSubImage', 'XOpenDisplay',
+'XrmInitialize', 'XFetchBytes', 'XFetchBuffer', 'XGetAtomName',
+'XGetAtomNames', 'XGetDefault', 'XDisplayName', 'XKeysymToString',
+'XSynchronize', 'XSetAfterFunction', 'XInternAtom', 'XInternAtoms',
+'XCopyColormapAndFree', 'XCreateColormap', 'XCreatePixmapCursor',
+'XCreateGlyphCursor', 'XCreateFontCursor', 'XLoadFont', 'XCreateGC',
+'XGContextFromGC', 'XFlushGC', 'XCreatePixmap', 'XCreateBitmapFromData',
+'XCreatePixmapFromBitmapData', 'XCreateSimpleWindow', 'XGetSelectionOwner',
+'XCreateWindow', 'XListInstalledColormaps', 'XListFonts',
+'XListFontsWithInfo', 'XGetFontPath', 'XListExtensions', 'XListProperties',
+'XListHosts', 'XKeycodeToKeysym', 'XLookupKeysym', 'XGetKeyboardMapping',
+'XStringToKeysym', 'XMaxRequestSize', 'XExtendedMaxRequestSize',
+'XResourceManagerString', 'XScreenResourceString', 'XDisplayMotionBufferSize',
+'XVisualIDFromVisual', 'XInitThreads', 'XLockDisplay', 'XUnlockDisplay',
+'XInitExtension', 'XAddExtension', 'XFindOnExtensionList',
+'XEHeadOfExtensionList', 'XRootWindow', 'XDefaultRootWindow',
+'XRootWindowOfScreen', 'XDefaultVisual', 'XDefaultVisualOfScreen',
+'XDefaultGC', 'XDefaultGCOfScreen', 'XBlackPixel', 'XWhitePixel',
+'XAllPlanes', 'XBlackPixelOfScreen', 'XWhitePixelOfScreen', 'XNextRequest',
+'XLastKnownRequestProcessed', 'XServerVendor', 'XDisplayString',
+'XDefaultColormap', 'XDefaultColormapOfScreen', 'XDisplayOfScreen',
+'XScreenOfDisplay', 'XDefaultScreenOfDisplay', 'XEventMaskOfScreen',
+'XScreenNumberOfScreen', 'XSetErrorHandler', 'XSetIOErrorHandler',
+'XListPixmapFormats', 'XListDepths', 'XReconfigureWMWindow',
+'XGetWMProtocols', 'XSetWMProtocols', 'XIconifyWindow', 'XWithdrawWindow',
+'XGetCommand', 'XGetWMColormapWindows', 'XSetWMColormapWindows',
+'XFreeStringList', 'XSetTransientForHint', 'XActivateScreenSaver', 'XAddHost',
+'XAddHosts', 'XAddToExtensionList', 'XAddToSaveSet', 'XAllocColor',
+'XAllocColorCells', 'XAllocColorPlanes', 'XAllocNamedColor', 'XAllowEvents',
+'XAutoRepeatOff', 'XAutoRepeatOn', 'XBell', 'XBitmapBitOrder', 'XBitmapPad',
+'XBitmapUnit', 'XCellsOfScreen', 'XChangeActivePointerGrab', 'XChangeGC',
+'XChangeKeyboardControl', 'XChangeKeyboardMapping', 'XChangePointerControl',
+'XChangeProperty', 'XChangeSaveSet', 'XChangeWindowAttributes',
+'XCheckIfEvent', 'XCheckMaskEvent', 'XCheckTypedEvent',
+'XCheckTypedWindowEvent', 'XCheckWindowEvent', 'XCirculateSubwindows',
+'XCirculateSubwindowsDown', 'XCirculateSubwindowsUp', 'XClearArea',
+'XClearWindow', 'XCloseDisplay', 'XConfigureWindow', 'XConnectionNumber',
+'XConvertSelection', 'XCopyArea', 'XCopyGC', 'XCopyPlane', 'XDefaultDepth',
+'XDefaultDepthOfScreen', 'XDefaultScreen', 'XDefineCursor', 'XDeleteProperty',
+'XDestroyWindow', 'XDestroySubwindows', 'XDoesBackingStore',
+'XDoesSaveUnders', 'XDisableAccessControl', 'XDisplayCells', 'XDisplayHeight',
+'XDisplayHeightMM', 'XDisplayKeycodes', 'XDisplayPlanes', 'XDisplayWidth',
+'XDisplayWidthMM', 'XDrawArc', 'XDrawArcs', 'XDrawImageString',
+'XDrawImageString16', 'XDrawLine', 'XDrawLines', 'XDrawPoint', 'XDrawPoints',
+'XDrawRectangle', 'XDrawRectangles', 'XDrawSegments', 'XDrawString',
+'XDrawString16', 'XDrawText', 'XDrawText16', 'XEnableAccessControl',
+'XEventsQueued', 'XFetchName', 'XFillArc', 'XFillArcs', 'XFillPolygon',
+'XFillRectangle', 'XFillRectangles', 'XFlush', 'XForceScreenSaver', 'XFree',
+'XFreeColormap', 'XFreeColors', 'XFreeCursor', 'XFreeExtensionList',
+'XFreeFont', 'XFreeFontInfo', 'XFreeFontNames', 'XFreeFontPath', 'XFreeGC',
+'XFreeModifiermap', 'XFreePixmap', 'XGeometry', 'XGetErrorDatabaseText',
+'XGetErrorText', 'XGetFontProperty', 'XGetGCValues', 'XGetGeometry',
+'XGetIconName', 'XGetInputFocus', 'XGetKeyboardControl', 'XGetPointerControl',
+'XGetPointerMapping', 'XGetScreenSaver', 'XGetTransientForHint',
+'XGetWindowProperty', 'XGetWindowAttributes', 'XGrabButton', 'XGrabKey',
+'XGrabKeyboard', 'XGrabPointer', 'XGrabServer', 'XHeightMMOfScreen',
+'XHeightOfScreen', 'XIfEvent', 'XImageByteOrder', 'XInstallColormap',
+'XKeysymToKeycode', 'XKillClient', 'XLookupColor', 'XLowerWindow',
+'XMapRaised', 'XMapSubwindows', 'XMapWindow', 'XMaskEvent',
+'XMaxCmapsOfScreen', 'XMinCmapsOfScreen', 'XMoveResizeWindow', 'XMoveWindow',
+'XNextEvent', 'XNoOp', 'XParseColor', 'XParseGeometry', 'XPeekEvent',
+'XPeekIfEvent', 'XPending', 'XPlanesOfScreen', 'XProtocolRevision',
+'XProtocolVersion', 'XPutBackEvent', 'XPutImage', 'XQLength',
+'XQueryBestCursor', 'XQueryBestSize', 'XQueryBestStipple', 'XQueryBestTile',
+'XQueryColor', 'XQueryColors', 'XQueryExtension', 'XQueryKeymap',
+'XQueryPointer', 'XQueryTextExtents', 'XQueryTextExtents16', 'XQueryTree',
+'XRaiseWindow', 'XReadBitmapFile', 'XReadBitmapFileData', 'XRebindKeysym',
+'XRecolorCursor', 'XRefreshKeyboardMapping', 'XRemoveFromSaveSet',
+'XRemoveHost', 'XRemoveHosts', 'XReparentWindow', 'XResetScreenSaver',
+'XResizeWindow', 'XRestackWindows', 'XRotateBuffers',
+'XRotateWindowProperties', 'XScreenCount', 'XSelectInput', 'XSendEvent',
+'XSetAccessControl', 'XSetArcMode', 'XSetBackground', 'XSetClipMask',
+'XSetClipOrigin', 'XSetClipRectangles', 'XSetCloseDownMode', 'XSetCommand',
+'XSetDashes', 'XSetFillRule', 'XSetFillStyle', 'XSetFont', 'XSetFontPath',
+'XSetForeground', 'XSetFunction', 'XSetGraphicsExposures', 'XSetIconName',
+'XSetInputFocus', 'XSetLineAttributes', 'XSetModifierMapping',
+'XSetPlaneMask', 'XSetPointerMapping', 'XSetScreenSaver',
+'XSetSelectionOwner', 'XSetState', 'XSetStipple', 'XSetSubwindowMode',
+'XSetTSOrigin', 'XSetTile', 'XSetWindowBackground',
+'XSetWindowBackgroundPixmap', 'XSetWindowBorder', 'XSetWindowBorderPixmap',
+'XSetWindowBorderWidth', 'XSetWindowColormap', 'XStoreBuffer', 'XStoreBytes',
+'XStoreColor', 'XStoreColors', 'XStoreName', 'XStoreNamedColor', 'XSync',
+'XTextExtents', 'XTextExtents16', 'XTextWidth', 'XTextWidth16',
+'XTranslateCoordinates', 'XUndefineCursor', 'XUngrabButton', 'XUngrabKey',
+'XUngrabKeyboard', 'XUngrabPointer', 'XUngrabServer', 'XUninstallColormap',
+'XUnloadFont', 'XUnmapSubwindows', 'XUnmapWindow', 'XVendorRelease',
+'XWarpPointer', 'XWidthMMOfScreen', 'XWidthOfScreen', 'XWindowEvent',
+'XWriteBitmapFile', 'XSupportsLocale', 'XSetLocaleModifiers', 'XOpenOM',
+'XCloseOM', 'XSetOMValues', 'XGetOMValues', 'XDisplayOfOM', 'XLocaleOfOM',
+'XCreateOC', 'XDestroyOC', 'XOMOfOC', 'XSetOCValues', 'XGetOCValues',
+'XCreateFontSet', 'XFreeFontSet', 'XFontsOfFontSet',
+'XBaseFontNameListOfFontSet', 'XLocaleOfFontSet', 'XContextDependentDrawing',
+'XDirectionalDependentDrawing', 'XContextualDrawing', 'XExtentsOfFontSet',
+'XmbTextEscapement', 'XwcTextEscapement', 'Xutf8TextEscapement',
+'XmbTextExtents', 'XwcTextExtents', 'Xutf8TextExtents',
+'XmbTextPerCharExtents', 'XwcTextPerCharExtents', 'Xutf8TextPerCharExtents',
+'XmbDrawText', 'XwcDrawText', 'Xutf8DrawText', 'XmbDrawString',
+'XwcDrawString', 'Xutf8DrawString', 'XmbDrawImageString',
+'XwcDrawImageString', 'Xutf8DrawImageString', 'XOpenIM', 'XCloseIM',
+'XGetIMValues', 'XSetIMValues', 'XDisplayOfIM', 'XLocaleOfIM', 'XCreateIC',
+'XDestroyIC', 'XSetICFocus', 'XUnsetICFocus', 'XwcResetIC', 'XmbResetIC',
+'Xutf8ResetIC', 'XSetICValues', 'XGetICValues', 'XIMOfIC', 'XFilterEvent',
+'XmbLookupString', 'XwcLookupString', 'Xutf8LookupString',
+'XVaCreateNestedList', 'XRegisterIMInstantiateCallback',
 'XUnregisterIMInstantiateCallback', 'XInternalConnectionNumbers',
 'XProcessInternalConnection', 'XAddConnectionWatch', 'XRemoveConnectionWatch',
-'XSetAuthorization', '_Xmbtowc', '_Xwctomb', 'XValue', 'YValue', 'WidthValue',
-'HeightValue', 'AllValues', 'XNegative', 'YNegative', 'XSizeHints',
-'XWMHints', 'NormalState', 'IconicState', 'ZoomState', 'InactiveState',
-'XTextProperty', 'XNoMemory', 'XLocaleNotSupported', 'XConverterNotFound',
-'XICCEncodingStyle', 'XIconSize', 'XClassHint', 'XComposeStatus', 'Region',
-'RectangleIn', 'RectanglePart', 'XVisualInfo', 'VisualIDMask',
-'VisualScreenMask', 'VisualDepthMask', 'VisualClassMask', 'VisualRedMaskMask',
-'VisualGreenMaskMask', 'VisualBlueMaskMask', 'VisualColormapSizeMask',
-'VisualBitsPerRGBMask', 'VisualAllMask', 'XStandardColormap',
-'BitmapOpenFailed', 'BitmapFileInvalid', 'BitmapNoMemory', 'XCNOMEM',
-'XCNOENT', 'XContext', 'XAllocClassHint', 'XAllocIconSize', 'XAllocSizeHints',
+'XSetAuthorization', '_Xmbtowc', '_Xwctomb', 'NoValue', 'XValue', 'YValue',
+'WidthValue', 'HeightValue', 'AllValues', 'XNegative', 'YNegative',
+'XSizeHints', 'USPosition', 'USSize', 'PPosition', 'PSize', 'PMinSize',
+'PMaxSize', 'PResizeInc', 'PAspect', 'PBaseSize', 'PWinGravity', 'PAllHints',
+'XWMHints', 'InputHint', 'StateHint', 'IconPixmapHint', 'IconWindowHint',
+'IconPositionHint', 'IconMaskHint', 'WindowGroupHint', 'AllHints',
+'XUrgencyHint', 'WithdrawnState', 'NormalState', 'IconicState',
+'DontCareState', 'ZoomState', 'InactiveState', 'XTextProperty', 'XNoMemory',
+'XLocaleNotSupported', 'XConverterNotFound', 'XICCEncodingStyle',
+'XStringStyle', 'XCompoundTextStyle', 'XTextStyle', 'XStdICCTextStyle',
+'XUTF8StringStyle', 'XIconSize', 'XClassHint', 'XComposeStatus', 'Region',
+'RectangleOut', 'RectangleIn', 'RectanglePart', 'XVisualInfo', 'VisualNoMask',
+'VisualIDMask', 'VisualScreenMask', 'VisualDepthMask', 'VisualClassMask',
+'VisualRedMaskMask', 'VisualGreenMaskMask', 'VisualBlueMaskMask',
+'VisualColormapSizeMask', 'VisualBitsPerRGBMask', 'VisualAllMask',
+'XStandardColormap', 'BitmapSuccess', 'BitmapOpenFailed', 'BitmapFileInvalid',
+'BitmapNoMemory', 'XCSUCCESS', 'XCNOMEM', 'XCNOENT', 'XContext',
+'XAllocClassHint', 'XAllocIconSize', 'XAllocSizeHints',
 'XAllocStandardColormap', 'XAllocWMHints', 'XClipBox', 'XCreateRegion',
 'XDefaultString', 'XDeleteContext', 'XDestroyRegion', 'XEmptyRegion',
 'XEqualRegion', 'XFindContext', 'XGetClassHint', 'XGetIconSizes',
