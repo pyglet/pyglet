@@ -75,10 +75,11 @@ def get_ctypes_type(typ, declarator):
         declarator = declarator.pointer
     if declarator and declarator.parameters is not None:
         t = CtypesFunction(t, declarator.parameters)
-    a = declarator.array
-    while a:
-        t = CtypesArray(t, a.size)
-        a = a.array
+    if declarator:
+        a = declarator.array
+        while a:
+            t = CtypesArray(t, a.size)
+            a = a.array
     return t
     
 # Remove one level of indirection from funtion pointer; needed for typedefs
