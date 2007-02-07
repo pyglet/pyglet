@@ -178,6 +178,7 @@ class CtypesWrapper(CtypesParser, CtypesTypeVisitor):
 
         print >> self.file, 'enum_%s = c_int' % enum.tag
         for name, value in enum.enumerators:
+            self.all_names.append(name)
             print >> self.file, '%s = %d' % (name, value)
 
     def handle_ctypes_function(self, name, restype, argtypes, filename, lineno):

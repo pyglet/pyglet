@@ -36,6 +36,8 @@ ctypes_type_map = {
     ('ptrdiff_t',True,  0): 'c_ptrdiff_t',  # Requires definition in preamble
 }
 
+reserved_names = ['None']
+
 def get_ctypes_type(typ, declarator):
     signed = True
     typename = 'int'
@@ -265,26 +267,10 @@ class CtypesParser(CParser):
     
     Subclass and override the handle_ctypes_* methods.
     '''
-    def handle_define(self, name, value, filename, lineno):
-        if not value:
-            return
-        if len(value) >= 2 and value[0] == '"' and value[-1] == '"':
-            value = value[1:-1].decode('string_escape')
-        else:
-            try:
-                if value[:2] == '0x':
-                    value = int(value[2:], 16)
-                elif value[0] == '0':
-                    value = int(value, 8)
-                else:
-                    value = int(value)
-            except ValueError:
-                try:
-                    value = float(value)
-                except ValueError:
-                    value = None
-        if value:
-            self.handle_ctypes_constant(name, value, filename, lineno)
+    def handle_define_constant(self, name, value, filename, lineno):
+        if name in reserved_names:
+            name += '_'
+        self.handle_ctypes_constant(name, value, filename, lineno)
 
     def handle_declaration(self, declaration, filename, lineno):
         t = get_ctypes_type(declaration.type, declaration.declarator)

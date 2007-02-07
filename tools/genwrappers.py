@@ -19,6 +19,7 @@ if __name__ == '__main__':
              '-lX11',
              '-mpyglet.GL.glx',
              '/usr/include/X11/Xlib.h',
+             '/usr/include/X11/X.h',
              '/usr/include/X11/Xutil.h')
         wrap('tools/wraptypes/wrap.py',
              '-opyglet/window/xlib/xinerama.py',

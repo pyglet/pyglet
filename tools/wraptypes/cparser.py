@@ -31,8 +31,8 @@ import yacc
 tokens = (
 
     'PP_IF', 'PP_IFDEF', 'PP_IFNDEF', 'PP_ELIF', 'PP_ELSE',
-    'PP_ENDIF', 'PP_INCLUDE', 'PP_DEFINE', 'PP_UNDEF', 'PP_LINE',
-    'PP_ERROR', 'PP_PRAGMA',
+    'PP_ENDIF', 'PP_INCLUDE', 'PP_DEFINE', 'PP_DEFINE_CONSTANT', 'PP_UNDEF',
+    'PP_LINE', 'PP_ERROR', 'PP_PRAGMA',
 
     'IDENTIFIER', 'CONSTANT', 'CHARACTER_CONSTANT', 'STRING_LITERAL', 'SIZEOF',
     'PTR_OP', 'INC_OP', 'DEC_OP', 'LEFT_OP', 'RIGHT_OP', 'LE_OP', 'GE_OP',
@@ -1157,8 +1157,14 @@ class CLexer(object):
 
             # PP events
             if t.type == 'PP_DEFINE':
+                name, value = t.value
                 self.cparser.handle_define(
-                    t.value[0], t.value[1], t.filename, t.lineno)
+                    name, value, t.filename, t.lineno)
+                continue
+            elif t.type == 'PP_DEFINE_CONSTANT':
+                name, value = t.value
+                self.cparser.handle_define_constant(
+                    name, value, t.filename, t.lineno)
                 continue
             elif t.type == 'PP_IFNDEF':
                 self.cparser.handle_ifndef(t.value, t.filename, t.lineno)
@@ -1330,7 +1336,16 @@ class CParser(object):
         return True
 
     def handle_define(self, name, value, filename, lineno):
-        '''#define `name` `value` (both are strings)'''
+        '''#define `name` `value` 
+
+        both are strings, value could not be parsed as an expression
+        '''
+
+    def handle_define_constant(self, name, value, filename, lineno):
+        '''#define `name` `value`
+
+        value is an int or float
+        '''
 
     def handle_undef(self, name):
         '''#undef `name`'''
@@ -1386,6 +1401,9 @@ class DebugCParser(CParser):
 
     def handle_define(self, name, value, filename, lineno):
         print '#define name=%r, value=%r' % (name, value)
+
+    def handle_define_constant(self, name, value, filename, lineno):
+        print '#define constant name=%r, value=%r' % (name, value)
 
     def handle_undef(self, name):
         print '#undef name=%r' % name

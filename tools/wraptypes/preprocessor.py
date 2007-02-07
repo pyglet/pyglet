@@ -570,8 +570,19 @@ class PreprocessorGrammar(Grammar):
         if p.parser.enable_declaratives():
             p.parser.namespace.define_object(p[2], p[3])
 
-            v = ' '.join([str(t.value) for t in p[3]])
-            p.parser.write((create_token('PP_DEFINE', (p[2], v), p),))
+            # Try to parse replacement list as an expression
+            tokens = p.parser.namespace.apply_macros(p[3])
+            lexer = TokenListLexer(tokens)
+            expr_parser = ConstantExpressionParser(lexer, p.parser.namespace)
+            value = expr_parser.parse(debug=False)
+            if value is not None:
+                value = value.evaluate(p.parser.namespace)
+                p.parser.write(
+                    (create_token('PP_DEFINE_CONSTANT', (p[2], value), p),))
+            else:
+                # Didn't parse, pass on as string
+                value = ' '.join([str(t.value) for t in p[3]])
+                p.parser.write((create_token('PP_DEFINE', (p[2], value), p),))
 
     def p_define_function(self, p):
         '''define_function : DEFINE IDENTIFIER LPAREN define_function_params ')' pp_tokens_opt NEWLINE
@@ -767,6 +778,9 @@ class PreprocessorGrammar(Grammar):
         # Don't alter lexer: default behaviour is to pass error production
         # up until it hits the catch-all at declaration, at which point
         # parsing continues (synchronisation).
+
+class ConstantExpressionParseException(Exception):
+    pass
 
 class ConstantExpressionGrammar(Grammar):
     name = 'expr'
@@ -1000,18 +1014,7 @@ class ConstantExpressionGrammar(Grammar):
             p[0] = p[1]
 
     def p_error(self, t):
-        if not t:
-            # Crap, no way to get to Parser instance.  FIXME TODO
-            print >> sys.stderr, 'Syntax error at end of file.'
-        else:
-            # TODO
-            print >> sys.stderr, '%s:%d Syntax error at %r' % \
-                (t.lexer.filename, t.lexer.lineno, t.value)
-            #t.lexer.cparser.handle_error('Syntax error at %r' % t.value, 
-            #     t.lexer.filename, t.lexer.lineno)
-        # Don't alter lexer: default behaviour is to pass error production
-        # up until it hits the catch-all at declaration, at which point
-        # parsing continues (synchronisation).
+        raise ConstantExpressionParseException()
 
 class ExecutionState(object):
     def __init__(self, parent_enabled, enabled):
@@ -1237,7 +1240,11 @@ class ConstantExpressionParser(yacc.Parser):
 
     def parse(self, debug=False):
         self.result = None
-        yacc.Parser.parse(self, lexer=self.lexer, debug=debug)
+        try:
+            yacc.Parser.parse(self, lexer=self.lexer, debug=debug)
+        except ConstantExpressionParseException:
+            # XXX warning here?
+            pass
         return self.result
 
 class PreprocessorNamespace(EvaluationContext):
