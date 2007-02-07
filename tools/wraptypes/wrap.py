@@ -17,16 +17,16 @@ import textwrap
 import sys
 
 class CtypesWrapper(CtypesParser):
-    def __init__(self, library, file):
-        super(CtypesWrapper, self).__init__()
-
-        # TODO move __init__ params into wrap()
+    file=None
+    def begin_output(self, output_file, library, link_modules=(), 
+                     emit_filenames=()):
         self.library = library
-        self.file = file
+        self.file = output_file
         self.all_names = []
         self.known_types = {}
+        self.structs = set()
+        self.emit_filenames = emit_filenames
 
-    def wrap(self, filename, source=None, link_modules=()):
         self.linked_symbols = {}
         for name in link_modules:
             module = __import__(name, globals(), locals(), ['foo'])
@@ -35,15 +35,19 @@ class CtypesWrapper(CtypesParser):
                     self.linked_symbols[symbol] = '%s.%s' % (name, symbol)
         self.link_modules = link_modules
 
-        self.structs = set()
-        self.filename = filename
         self.print_preamble()
         self.print_link_modules_imports()
+
+    def wrap(self, filename, source=None):
+        assert self.file, 'Call begin_output first'
         self.parse(filename, source)
+
+    def end_output(self):
         self.print_epilogue()
+        self.file = None
 
     def does_emit(self, symbol, filename):
-        return filename == self.filename
+        return filename in self.emit_filenames
 
     def print_preamble(self):
         import textwrap
@@ -209,18 +213,24 @@ def main(*argv):
     
     (options, args) = op.parse_args(list(argv[1:]))
     if len(args) < 1:
-        print >> sys.stderr, 'No header file specified.'
+        print >> sys.stderr, 'No header files specified.'
         sys.exit(1)
-    header = args[0]
+    headers = args
 
     if options.library is None:
         options.library = os.path.splitext(header)[0]
     if options.output is None:
         options.output = '%s.py' % options.library
 
-    wrapper = CtypesWrapper(options.library, open(options.output, 'w'))
+    wrapper = CtypesWrapper()
+    wrapper.begin_output(open(options.output, 'w'), 
+                         library=options.library, 
+                         emit_filenames=headers,
+                         link_modules=options.link_modules)
     wrapper.preprocessor_parser.include_path += options.include_dirs
-    wrapper.wrap(header, link_modules=options.link_modules)
+    for header in headers:
+        wrapper.wrap(header)
+    wrapper.end_output()
 
     print 'Wrapped to %s' % options.output
 

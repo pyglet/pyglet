@@ -63,9 +63,9 @@ class GLWrapper(CtypesWrapper):
     requires = None
     requires_prefix = None
 
-    def __init__(self, header, file):
+    def __init__(self, header):
         self.header = header
-        super(GLWrapper, self).__init__(None, file)
+        super(GLWrapper, self).__init__()
 
     def print_preamble(self):
         import time
@@ -143,14 +143,18 @@ class ModuleWrapper(object):
 
         outfile = open(filename, 'w')
         print >> outfile, ''.join(prologue)
-        wrapper = GLWrapper(self.header, outfile)
+        wrapper = GLWrapper(self.header)
         if self.system_header:
             wrapper.preprocessor_parser.system_headers[self.system_header] = \
                 source
+        header_name = self.system_header or self.header
+        wrapper.begin_output(outfile, 
+                             library=None,
+                             emit_filenames=(header_name,))
         wrapper.requires_prefix = self.requires_prefix
         source = self.prologue + source
-        header_name = self.system_header or self.header
         wrapper.wrap(header_name, source)
+        wrapper.end_output()
         print >> outfile, ''.join(epilogue)
 
 modules = {
