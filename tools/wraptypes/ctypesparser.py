@@ -93,6 +93,13 @@ def remove_function_pointer(t):
     else:
         return t
 
+class CtypesTypeVisitor(object):
+    def visit_struct(self, struct):
+        pass
+
+    def visit_enum(self, enum):
+        pass
+
 class CtypesType(object):
     def __init__(self, name):
         self.name = name
@@ -101,7 +108,7 @@ class CtypesType(object):
         '''Return all type names defined or needed by this type'''
         return (self.name,)
 
-    def visit_structs(self, visitor):
+    def visit(self, visitor):
         pass
 
     def __str__(self):
@@ -118,9 +125,9 @@ class CtypesPointer(CtypesType):
         else:
             return ()
 
-    def visit_structs(self, visitor):
+    def visit(self, visitor):
         if self.destination:
-            self.destination.visit_structs(visitor)
+            self.destination.visit(visitor)
 
     def __str__(self):
         return 'POINTER(%s)' % str(self.destination)
@@ -134,9 +141,9 @@ class CtypesArray(CtypesType):
         # XXX Could be sizeofs within count expression
         return self.base.get_required_type_names()
  
-    def visit_structs(self, visitor):
+    def visit(self, visitor):
         # XXX Could be sizeofs within count expression
-        self.base.visit_structs(visitor)
+        self.base.visit(visitor)
 
     def __str__(self):
         if type(self.base) == CtypesArray:
@@ -172,10 +179,10 @@ class CtypesFunction(CtypesType):
             lst += list(a.get_required_type_names())
         return lst
 
-    def visit_structs(self, visitor):
-        self.restype.visit_structs(visitor)
+    def visit(self, visitor):
+        self.restype.visit(visitor)
         for a in self.argtypes:
-            a.visit_structs(visitor)
+            a.visit(visitor)
 
     def __str__(self):
         return 'CFUNCTYPE(%s)' % ', '.join([str(self.restype)] + \
@@ -217,8 +224,8 @@ class CtypesStruct(CtypesType):
             lst += m[1].get_required_type_names()
         return lst
 
-    def visit_structs(self, visitor):
-        visitor(self)
+    def visit(self, visitor):
+        visitor.visit_struct(self)
 
     def __str__(self):
         return 'struct_%s' % self.tag
@@ -231,18 +238,27 @@ def anonymous_enum_tag():
 
 class CtypesEnum(CtypesType):
     def __init__(self, specifier):
-        # XXX tag currently unused.
         self.tag = specifier.tag
         if not self.tag:
             self.tag = anonymous_enum_tag()
 
-        # XXX TODO enumerators currently ignored
+        value = 1
+        context = EvaluationContext()
+        self.enumerators = []
+        for e in specifier.enumerators:
+            if e.expression:
+                value = int(e.expression.evaluate(context))
+            self.enumerators.append((e.name, value))
+            value += 1
 
     def get_required_type_names(self):
         return []
 
+    def visit(self, visitor):
+        visitor.visit_enum(self)
+
     def __str__(self):
-        return 'c_int'
+        return 'enum_%s' % self.tag
 
 class CtypesParser(CParser):
     '''Parse a C file for declarations that can be used by ctypes.

@@ -16,7 +16,7 @@ from ctypesparser import *
 import textwrap
 import sys
 
-class CtypesWrapper(CtypesParser):
+class CtypesWrapper(CtypesParser, CtypesTypeVisitor):
     file=None
     def begin_output(self, output_file, library, link_modules=(), 
                      emit_filenames=()):
@@ -25,6 +25,7 @@ class CtypesWrapper(CtypesParser):
         self.all_names = []
         self.known_types = {}
         self.structs = set()
+        self.enums = set()
         self.emit_filenames = emit_filenames
 
         self.linked_symbols = {}
@@ -121,7 +122,7 @@ class CtypesWrapper(CtypesParser):
                 print >> self.file, '%s = %s' % \
                     (name, self.linked_symbols[name])
             else:
-                ctype.visit_structs(self.write_struct)
+                ctype.visit(self)
                 self.emit_type(ctype)
                 print >> self.file, '%s = %s' % (name, str(ctype)),
                 print >> self.file, '\t# %s:%d' % (filename, lineno)
@@ -129,21 +130,21 @@ class CtypesWrapper(CtypesParser):
             self.known_types[name] = (ctype, filename, lineno)
 
     def emit_type(self, t):
-        t.visit_structs(self.write_struct)
+        t.visit(self)
         for s in t.get_required_type_names():
             if s in self.known_types:
                 if s in self.linked_symbols:
                     print >> self.file, '%s = %s' % (s, self.linked_symbols[s])
                 else:
                     s_ctype, s_filename, s_lineno = self.known_types[s]
-                    s_ctype.visit_structs(self.write_struct)
+                    s_ctype.visit(self)
 
                     self.emit_type(s_ctype)
                     print >> self.file, '%s = %s' % (s, str(s_ctype)),
                     print >> self.file, '\t# %s:%d' % (s_filename, s_lineno)
                 del self.known_types[s]
 
-    def write_struct(self, struct):
+    def visit_struct(self, struct):
         if struct.tag in self.structs:
             return
         self.structs.add(struct.tag)
@@ -169,6 +170,15 @@ class CtypesWrapper(CtypesParser):
                 print >> self.file, "    ('%s', %s)," % (m[0], m[1])
         print >> self.file, ']'
         print >> self.file
+
+    def visit_enum(self, enum):
+        if enum.tag in self.enums:
+            return
+        self.enums.add(enum.tag)
+
+        print >> self.file, 'enum_%s = c_int' % enum.tag
+        for name, value in enum.enumerators:
+            print >> self.file, '%s = %d' % (name, value)
 
     def handle_ctypes_function(self, name, restype, argtypes, filename, lineno):
         if self.does_emit(name, filename):

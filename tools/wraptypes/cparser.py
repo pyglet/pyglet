@@ -23,6 +23,7 @@ import os.path
 import re
 import sys
 import time
+import warnings
 
 import preprocessor
 import yacc
@@ -229,6 +230,13 @@ def apply_specifiers(specifiers, declaration):
 class EvaluationContext(object):
     '''Interface for evaluating expression nodes.
     '''
+    def evaluate_identifier(self, name):
+        warnings.warn('Attempt to evaluate identifier "%s" failed' % name)
+        return 0
+
+    def evaluate_sizeof(self, type):
+        warnings.warn('Attempt to evaluate sizeof "%s" failed' % str(type))
+        return 0
 
 class ExpressionNode(object):
     def evaluate(self, context):
