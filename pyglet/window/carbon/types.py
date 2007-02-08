@@ -8,6 +8,11 @@ __version__ = '$Id: $'
 
 from ctypes import *
 
+import pyglet.GL.agl
+agl = pyglet.GL.agl
+
+GDHandle = agl.GDHandle
+
 class Rect(Structure):
     _fields_ = [
         ('top', c_short),
@@ -49,8 +54,6 @@ CGByteValue = c_ubyte
 CGOpenGLDisplayMask = c_uint32
 CGRefreshRate = c_double
 CGCaptureOptions = c_uint32
-
-GDHandle = c_void_p
 
 HIPoint = CGPoint
 HISize = CGSize

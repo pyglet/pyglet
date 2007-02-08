@@ -13,7 +13,7 @@ import unicodedata
 import warnings
 
 from pyglet.GL.future import *
-from pyglet.GL.AGL.VERSION_10_0 import *
+from pyglet.GL.agl import *
 import pyglet.GL.info
 import pyglet.GLU.info
 from pyglet.window import *
@@ -56,7 +56,7 @@ if not MacOS.WMAvailable():
 carbon.GetEventDispatcherTarget.restype = EventTargetRef
 carbon.ReceiveNextEvent.argtypes = \
     [c_uint32, c_void_p, c_double, c_ubyte, POINTER(EventRef)]
-carbon.GetWindowPort.restype = c_void_p
+carbon.GetWindowPort.restype = AGLDrawable
 EventHandlerProcPtr = CFUNCTYPE(c_int, c_int, c_void_p, c_void_p)
 carbon.NewEventHandlerUPP.restype = c_void_p
 carbon.GetCurrentKeyModifiers = c_uint32
@@ -110,9 +110,9 @@ class CarbonPlatform(BasePlatform):
         screen = factory.get_screen()
         if screen:
             device = screen.get_gdevice()
-            pformat = aglChoosePixelFormat(byref(device), 1, attrib_list)
+            pformat = aglChoosePixelFormat(device, 1, attrib_list)
         else:
-            pformat = aglChoosePixelFormat(c_void_p(), 0, attrib_list)
+            pformat = aglChoosePixelFormat(None, 0, attrib_list)
         _aglcheck()
 
         if not pformat:
@@ -127,7 +127,7 @@ class CarbonPlatform(BasePlatform):
             context = aglCreateContext(config._pformat,
                                        context_share._context)
         else:
-            context = aglCreateContext(config._pformat, c_void_p())
+            context = aglCreateContext(config._pformat, None)
         _aglcheck()
         return CarbonGLContext(context, context_share)
 
