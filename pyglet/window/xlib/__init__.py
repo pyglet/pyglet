@@ -30,10 +30,10 @@ from pyglet.window.event import *
 from pyglet.window.key import *
 
 from pyglet.GL.future import *
+from pyglet.GL.gl_info import *
 from pyglet.GL.glu_info import *
 from pyglet.GL.glx import *
 from pyglet.GL.glxext_abi import *
-import pyglet.GL.info
 import pyglet.GL.glx_info
 
 import pyglet.window.xlib.xlib
@@ -547,7 +547,7 @@ class XlibWindow(BaseWindow):
             glXMakeCurrent(self._display, self._window, self._glx_context)
 
         self._context.set_current()
-        pyglet.GL.info.set_context()
+        gl_info.set_active_context()
         glu_info.set_active_context()
 
         if self._lost_context:

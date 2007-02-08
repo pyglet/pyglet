@@ -10,9 +10,8 @@ import textwrap
 
 import pyglet.window
 from pyglet.GL.future import *
+from pyglet.GL.gl_info import *
 from pyglet.GL.glu_info import *
-import pyglet.GL.info
-import pyglet.GLU.info
 
 platform = pyglet.window.get_platform()
 print 'Platform instance is %r' % platform
@@ -33,11 +32,11 @@ attrs = w.get_config().get_gl_attributes()
 attrs = ' '.join(['%s=%s'%(i, attrs[i]) for i in order])
 print '\n'.join(textwrap.wrap(attrs))
 
-print 'GL version:', pyglet.GL.info.get_version()
-print 'GL vendor:', pyglet.GL.info.get_vendor()
-print 'GL renderer:', pyglet.GL.info.get_renderer()
+print 'GL version:', gl_info.get_version()
+print 'GL vendor:', gl_info.get_vendor()
+print 'GL renderer:', gl_info.get_renderer()
 print 'GL extensions:'
-exts = ' '.join(pyglet.GL.info.get_extensions())
+exts = ' '.join(gl_info.get_extensions())
 print ' ', '\n  '.join(textwrap.wrap(exts))
 
 print 'GLU version:', glu_info.get_version()

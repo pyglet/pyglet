@@ -11,7 +11,7 @@ import unicodedata
 import warnings
 
 from pyglet.GL.future import *
-import pyglet.GL.info
+from pyglet.GL.gl_info import *
 from pyglet.GL.glu_info import *
 from pyglet.GL.wgl import *
 from pyglet.GL.wglext_abi import *
@@ -336,7 +336,7 @@ class Win32Window(BaseWindow):
     def switch_to(self):
         self._context.set_current()
         wglMakeCurrent(self._dc, self._wgl_context)
-        pyglet.GL.info.set_context()
+        gl_info.set_active_context()
         glu_info.set_active_context()
 
     def flip(self):

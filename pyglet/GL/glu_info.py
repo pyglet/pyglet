@@ -30,23 +30,24 @@ __version__ = '$Id$'
 __all__ = ['GLUInfo', 'glu_info']
 
 from ctypes import *
+import warnings
 
-from pyglet.GL.info import have_context
 from pyglet.GL.glu import *
 
-class GLUInfoException(Exception):
-    pass
-
 class GLUInfo(object):
+    have_context = False
     version = '0.0.0'
     extensions = []
 
     def set_active_context(self):
+        self.have_context = True
         self.extensions = \
             cast(gluGetString(GLU_EXTENSIONS), c_char_p).value.split()
         self.version = cast(gluGetString(GLU_VERSION), c_char_p).value
 
     def have_version(self, major, minor=0, release=0):
+        if not self.have_context:
+            warnings.warn('No GL context created yet.')
         ver = '%s.0.0' % self.version.split(' ', 1)[0]
         imajor, iminor, irelease = [int(v) for v in ver.split('.', 3)[:3]]
         return imajor > major or \
@@ -54,12 +55,18 @@ class GLUInfo(object):
            (imajor == major and iminor == minor and irelease >= release)
 
     def get_version(self):
+        if not self.have_context:
+            warnings.warn('No GL context created yet.')
         return self.version
 
     def have_extension(self, extension):
+        if not self.have_context:
+            warnings.warn('No GL context created yet.')
         return extension in self.extensions
 
     def get_extensions(self):
+        if not self.have_context:
+            warnings.warn('No GL context created yet.')
         return self.extensions
 
 # Single instance useful for apps with only a single context (or all contexts
