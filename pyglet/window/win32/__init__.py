@@ -12,7 +12,7 @@ import warnings
 
 from pyglet.GL.future import *
 import pyglet.GL.info
-import pyglet.GLU.info
+from pyglet.GL.glu_info import *
 from pyglet.GL.wgl import *
 from pyglet.GL.wglext_abi import *
 from pyglet.GL.wgl_info import *
@@ -337,7 +337,7 @@ class Win32Window(BaseWindow):
         self._context.set_current()
         wglMakeCurrent(self._dc, self._wgl_context)
         pyglet.GL.info.set_context()
-        pyglet.GLU.info.set_context()
+        glu_info.set_active_context()
 
     def flip(self):
         wglSwapLayerBuffers(self._dc, WGL_SWAP_MAIN_PLANE)

@@ -10,6 +10,7 @@ import textwrap
 
 import pyglet.window
 from pyglet.GL.future import *
+from pyglet.GL.glu_info import *
 import pyglet.GL.info
 import pyglet.GLU.info
 
@@ -39,9 +40,9 @@ print 'GL extensions:'
 exts = ' '.join(pyglet.GL.info.get_extensions())
 print ' ', '\n  '.join(textwrap.wrap(exts))
 
-print 'GLU version:', pyglet.GLU.info.get_version()
+print 'GLU version:', glu_info.get_version()
 print 'GLU extensions:'
-exts = ' '.join(pyglet.GLU.info.get_extensions())
+exts = ' '.join(glu_info.get_extensions())
 print ' ', '\n  '.join(textwrap.wrap(exts))
 
 print

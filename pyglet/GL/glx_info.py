@@ -1,7 +1,22 @@
 #!/usr/bin/env python
 
-'''Cached information about version and extensions of current GLX
-implementation.
+'''Information about version and extensions of current GLX implementation.
+
+Usage::
+
+    from pyglet.gl.glx_info import *
+
+    if glx_info.have_extension('GLX_NV_float_buffer'):
+        # ...
+
+Or, if using more than one display::
+
+    import pyglet.gl.glx_info
+
+    info = GLXInfo(window._display)
+    if info.get_server_vendor() == 'ATI':
+        # ...
+
 '''
 
 __docformat__ = 'restructuredtext'
@@ -21,7 +36,7 @@ class GLXInfo(object):
     def __init__(self, display):
         self.display = cast(pointer(display), POINTER(Display))
 
-    def have_version(self, major, minor):
+    def have_version(self, major, minor=0):
         if not glXQueryExtension(self.display, None, None):
             raise GLXInfoException('pyglet requires an X server with GLX')
 
@@ -63,52 +78,12 @@ class GLXInfo(object):
             return False
         return extension in self.get_extensions()
 
-# Top-level functions applicable for all apps that use only a single display
-# But don't __all__ export any except 'glx_info' because their names are
-# confusable with other infos.
+# Single instance suitable for apps that use only a single display.
 glx_info = None
 
 def set_display(display):
+    '''Set the default display used by glx_info.  Called by XlibWindow
+    when created on a display.
+    '''
     global glx_info 
     glx_info = GLXInfo(display)
-
-def verify_have_info():
-    if not glx_info:
-        raise GLXInfoException('No GLXInfo object has been set default.  '
-            'Most likely cause is not initialising an X display yet.')
-
-def have_version(major, minor):
-    verify_have_info()
-    return glx_info.have_version(major, minor)
-
-def get_server_vendor():
-    verify_have_info()
-    return glx_info.get_server_vendor()
-
-def get_server_version():
-    verify_have_info()
-    return glx_info.get_server_version()
-
-def get_server_extensions():
-    verify_have_info()
-    return glx_info.get_server_extensions()
-
-def get_client_vendor():
-    verify_have_info()
-    return glx_info.get_client_vendor()
-
-def get_client_version():
-    verify_have_info()
-    return glx_info.get_client_version()
-
-def get_client_extensions():
-    verify_have_info()
-    return glx_info.get_client_extensions()
-
-def get_extensions():
-    verify_have_info()
-    return glx_info.get_extensions()
-
-def have_extension(extension):
-    verify_have_info()
-    return glx_info.have_extension(extension)

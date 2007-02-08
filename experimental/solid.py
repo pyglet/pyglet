@@ -9,7 +9,7 @@ __version__ = '$Id$'
 from math import *
 from ctypes import *
 
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.future import *
 from pyglet.euclid import *
 
 def FloatArray(*args):
@@ -83,7 +83,6 @@ if __name__ == '__main__':
     from pyglet.clock import *
     from pyglet.window import *
     from pyglet.window.event import *
-    from pyglet.GLU.VERSION_1_1 import *
 
     clock = Clock()
     w = Window()

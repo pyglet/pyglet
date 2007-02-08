@@ -15,7 +15,7 @@ import warnings
 from pyglet.GL.future import *
 from pyglet.GL.agl import *
 import pyglet.GL.info
-import pyglet.GLU.info
+from pyglet.GL.glu_info import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
@@ -402,7 +402,7 @@ class CarbonWindow(BaseWindow):
         aglSetCurrentContext(self._agl_context)
         _aglcheck()
         pyglet.GL.info.set_context()
-        pyglet.GLU.info.set_context()
+        glu_info.set_active_context()
 
     def flip(self):
         aglSwapBuffers(self._agl_context)
