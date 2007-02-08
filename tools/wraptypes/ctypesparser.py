@@ -249,7 +249,10 @@ class CtypesEnum(CtypesType):
         self.enumerators = []
         for e in specifier.enumerators:
             if e.expression:
-                value = int(e.expression.evaluate(context))
+                try:
+                    value = int(e.expression.evaluate(context))
+                except:
+                    pass
             self.enumerators.append((e.name, value))
             value += 1
 

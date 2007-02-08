@@ -795,7 +795,7 @@ class ConstantExpressionGrammar(Grammar):
     def p_constant(self, p):
         '''constant : PP_NUMBER
         '''
-        value = p[1].rstrip('LlFfUu')
+        value = p[1].rstrip('LlFfUuEe')
         try:
             if value[:2] == '0x':
                 value = int(value[2:], 16)
@@ -807,7 +807,7 @@ class ConstantExpressionGrammar(Grammar):
             try:
                 value = float(value)
             except ValueError:
-                pass
+                value = 0
         p[0] = ConstantExpressionNode(value)
 
     def p_identifier(self, p):
