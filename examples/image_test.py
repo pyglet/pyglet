@@ -3,8 +3,7 @@ import os
 
 import pyglet.window
 from pyglet.window.event import *
-from pyglet.GL.VERSION_1_1 import *
-from pyglet.GLU.VERSION_1_1 import *
+from pyglet.GL.future import *
 from pyglet import clock
 from pyglet.scene2d import Image2d
 

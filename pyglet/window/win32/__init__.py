@@ -10,7 +10,7 @@ from ctypes import *
 import unicodedata
 import warnings
 
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.future import *
 import pyglet.GL.info
 import pyglet.GLU.info
 from pyglet.GL.WGL import *

@@ -11,14 +11,8 @@ from pyglet.window.event import *
 from pyglet.model.geometric import *
 #from pyglet.gui import fps
 
-from pyglet.GL.VERSION_2_0 import *
-from pyglet.GL.EXT_framebuffer_object import *
-from pyglet.GL.EXT_texture_cube_map import *
-from pyglet.GL.EXT_texture_filter_anisotropic import *
-from pyglet.GL.EXT_packed_depth_stencil import *
-from pyglet.GL.ARB_texture_rectangle import *
-from pyglet.GL.ARB_depth_texture import *
-from pyglet.GLU.VERSION_1_1 import *
+from pyglet.GL.future import *
+from pyglet.GL.EXT_packed_depth_stencil import * # TODO not in any glext.h
 
 c_float4 = c_float * 4
 

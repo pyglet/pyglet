@@ -12,7 +12,7 @@ import os.path
 import unicodedata
 import warnings
 
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.future import *
 from pyglet.GL.AGL.VERSION_10_0 import *
 import pyglet.GL.info
 import pyglet.GLU.info

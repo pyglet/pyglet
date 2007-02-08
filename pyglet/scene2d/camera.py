@@ -9,7 +9,7 @@ Camera for projecting 2d flat scenes
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.future import *
 from pyglet.event import *
 
 class Camera(object):

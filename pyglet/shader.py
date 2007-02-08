@@ -1,9 +1,6 @@
 from ctypes import *
 
-from pyglet.GL.VERSION_2_0 import *
-from pyglet.GL.ARB_shader_objects import *
-from pyglet.GL.ARB_vertex_shader import *
-from pyglet.GL.ARB_fragment_shader import *
+from pyglet.GL.future import *
 
 class GLSLException(Exception): pass
 

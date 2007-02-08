@@ -10,7 +10,7 @@ import unittest
 from StringIO import StringIO
 from os.path import dirname, join
 
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.future import *
 from pyglet.image import *
 from pyglet.image.codecs import *
 from pyglet.scene2d import *

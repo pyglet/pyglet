@@ -14,7 +14,7 @@ import math
 from pyglet.scene2d import *
 from pyglet.image import Image
 from pyglet.scene2d.drawable import *
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.future import *
 
 def brensenham_line(x, y, x2, y2):
     '''Modified to draw hex sides in HexCheckImage.

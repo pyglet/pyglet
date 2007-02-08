@@ -8,7 +8,7 @@ __version__ = '$Id: pil.py 163 2006-11-13 04:15:46Z Alex.Holkner $'
 
 from ctypes import *
 
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.future import *
 from pyglet.image import *
 from pyglet.image.codecs import *
 

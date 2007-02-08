@@ -14,7 +14,7 @@ import pyglet.event
 import pyglet.text
 from pyglet.window import key
 
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.future import *
 
 class Console(object):
     def __init__(self, width, height, globals=None, locals=None):

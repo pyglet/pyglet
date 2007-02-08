@@ -15,7 +15,7 @@ __version__ = '$Id$'
 import os
 import unittest
 
-from pyglet.GL.VERSION_1_1 import glClear
+from pyglet.GL.future import glClear
 import pyglet.window
 import pyglet.window.event
 import pyglet.clock

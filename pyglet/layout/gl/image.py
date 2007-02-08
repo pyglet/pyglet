@@ -8,7 +8,7 @@ __version__ = '$Id$'
 
 import warnings
 
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.future import *
 from pyglet.image import *
 from pyglet.layout.frame import *
 

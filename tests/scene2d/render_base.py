@@ -9,7 +9,7 @@ __version__ = '$Id$'
 import os
 import unittest
 
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.future import *
 import pyglet.window
 from pyglet.window.event import *
 from pyglet.window.key import *

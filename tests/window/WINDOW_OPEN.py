@@ -14,7 +14,7 @@ import unittest
 
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.future import *
 
 class WINDOW_OPEN(unittest.TestCase):
     def open_window(self):

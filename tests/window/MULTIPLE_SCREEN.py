@@ -22,7 +22,7 @@ import unittest
 
 import pyglet.window
 from pyglet.window.event import *
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.future import *
 
 colours = [
     (1, 0, 0, 1),

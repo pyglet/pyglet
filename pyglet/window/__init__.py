@@ -53,7 +53,7 @@ window it will be set as the current context automatically, so you can start
 using OpenGL functions straight away.  Use the window's `flip` method to
 make the back-buffer visible::
 
-    >>> from pyglet.GL.VERSION_1_1 import *
+    >>> from pyglet.GL.future import *
     >>> glClear(GL_COLOR_BUFFER_BIT)
     >>> win.flip()
     >>>
