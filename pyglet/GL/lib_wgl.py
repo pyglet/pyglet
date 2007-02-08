@@ -16,6 +16,7 @@ from pyglet.GL.info import have_context
 __all__ = ['link_GL', 'link_GLU', 'link_WGL']
 
 gl_lib = ctypes.windll.opengl32
+glu_lib = ctypes.windll.glu32
 wgl_lib = gl_lib
 
 try:
@@ -75,5 +76,28 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
 
         return missing_function(name, requires, suggestions)
 
-link_GLU = link_GL
+def link_GLU(name, restype, argtypes, requires=None, suggestions=None):
+    try:
+        func = getattr(glu_lib, name)
+        func.restype = restype
+        func.argtypes = argtypes
+        return func
+    except AttributeError, e:
+        # Not in glu32.dll. Try and get a pointer from WGL.
+        try:
+            fargs = (rtype,) + tuple(argtypes)
+            ftype = ctypes.WINFUNCTYPE(*fargs)
+            if _have_get_proc_address:
+                if have_context():
+                    address = wglGetProcAddress(name)
+                    if address:
+                        return ftype.from_address(address)
+                else:
+                    # Insert proxy until we have a context
+                    return WGLFunctionProxy(name, ftype, requires, suggestions)
+        except:
+            pass
+
+        return missing_function(name, requires, suggestions)
+
 link_WGL = link_GL

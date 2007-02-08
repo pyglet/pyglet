@@ -11,6 +11,9 @@ from ctypes import *
 from pyglet.GL.lib import link_WGL as _link_function
 from pyglet.GL.lib import c_ptrdiff_t
 
+if not _link_function:
+    raise ImportError('opengl32.dll is not available.')
+
 GLenum = c_uint 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:17
 GLboolean = c_ubyte 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:18
 GLbitfield = c_uint 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:19
