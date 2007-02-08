@@ -21,9 +21,7 @@ Resize and move are handled by a bunch of different events:
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-import sets
 from ctypes import *
-from ctypes import util
 import unicodedata
 import warnings
 
@@ -31,7 +29,7 @@ from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
 
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.GL.future import *
 from pyglet.GL.glx import *
 from pyglet.GL.glxext_abi import *
 import pyglet.GL.info
