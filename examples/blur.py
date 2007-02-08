@@ -12,7 +12,6 @@ from pyglet.model.geometric import *
 #from pyglet.gui import fps
 
 from pyglet.GL.future import *
-from pyglet.GL.EXT_packed_depth_stencil import * # TODO not in any glext.h
 
 c_float4 = c_float * 4
 

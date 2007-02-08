@@ -9,3 +9,4 @@ __version__ = '$Id$'
 from pyglet.GL.gl import *
 from pyglet.GL.glu import *
 from pyglet.GL.glext_abi import *
+from pyglet.GL.glext_missing import *
