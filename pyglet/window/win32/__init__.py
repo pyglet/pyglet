@@ -13,9 +13,9 @@ import warnings
 from pyglet.GL.future import *
 import pyglet.GL.info
 import pyglet.GLU.info
-from pyglet.GL.WGL import *
-from pyglet.GL.WGL.info import *
-from pyglet.GL.WGL.EXT_swap_control import *
+from pyglet.GL.wgl import *
+from pyglet.GL.wglext_abi import *
+from pyglet.GL.wgl_info import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
@@ -42,7 +42,7 @@ class Win32Platform(BasePlatform):
             screens.append(
                 Win32Screen(hMonitor, r.left, r.top, width, height))
             return True
-        enum_proc_type = CFUNCTYPE(BOOL, HMONITOR, HDC, POINTER(RECT), LPARAM)
+        enum_proc_type = WINFUNCTYPE(BOOL, HMONITOR, HDC, POINTER(RECT), LPARAM)
         enum_proc_ptr = enum_proc_type(enum_proc)
         _user32.EnumDisplayMonitors(NULL, NULL, enum_proc_ptr, 0)
         return screens
@@ -324,11 +324,11 @@ class Win32Window(BaseWindow):
         self._wgl_context = None
 
     def get_vsync(self):
-        if have_wgl_extension('WGL_EXT_swap_control'):
+        if wgl_info.have_extension('WGL_EXT_swap_control'):
             return bool(wglGetSwapIntervalEXT())
 
     def set_vsync(self, vsync):
-        if have_wgl_extension('WGL_EXT_swap_control'):
+        if wgl_info.have_extension('WGL_EXT_swap_control'):
             wglSwapIntervalEXT(int(vsync))
         else:
             warnings.warn('Could not set vsync; unsupported extension.')

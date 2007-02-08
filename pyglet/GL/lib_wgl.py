@@ -21,7 +21,7 @@ wgl_lib = gl_lib
 
 try:
     wglGetProcAddress = wgl_lib.wglGetProcAddress
-    wglGetProcAddress.restype = c_void_p
+    wglGetProcAddress.restype = CFUNCTYPE(POINTER(c_int))
     wglGetProcAddress.argtypes = [c_char_p]
     _have_get_proc_address = True
 except AttributeError:
@@ -46,11 +46,12 @@ class WGLFunctionProxy(object):
                 'Call to function "%s" before GL context created' % self.name)
         address = wglGetProcAddress(self.name)
         if address:
-            self.func = self.ftype(address)
+            self.func = cast(address, self.ftype)
         else:
             self.func = missing_function(
                 self.name, self.requires, self.suggestions)
-        return self.func(*args, **kwargs) 
+        result = self.func(*args, **kwargs) 
+        return result
 
 def link_GL(name, restype, argtypes, requires=None, suggestions=None):
     try:
@@ -61,13 +62,13 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
     except AttributeError, e:
         # Not in opengl32.dll. Try and get a pointer from WGL.
         try:
-            fargs = (rtype,) + tuple(argtypes)
+            fargs = (restype,) + tuple(argtypes)
             ftype = ctypes.WINFUNCTYPE(*fargs)
             if _have_get_proc_address:
                 if have_context():
                     address = wglGetProcAddress(name)
                     if address:
-                        return ftype.from_address(address)
+                        return cast(address, ftype)
                 else:
                     # Insert proxy until we have a context
                     return WGLFunctionProxy(name, ftype, requires, suggestions)
@@ -85,13 +86,13 @@ def link_GLU(name, restype, argtypes, requires=None, suggestions=None):
     except AttributeError, e:
         # Not in glu32.dll. Try and get a pointer from WGL.
         try:
-            fargs = (rtype,) + tuple(argtypes)
+            fargs = (restype,) + tuple(argtypes)
             ftype = ctypes.WINFUNCTYPE(*fargs)
             if _have_get_proc_address:
                 if have_context():
                     address = wglGetProcAddress(name)
                     if address:
-                        return ftype.from_address(address)
+                        return cast(address, ftype)
                 else:
                     # Insert proxy until we have a context
                     return WGLFunctionProxy(name, ftype, requires, suggestions)

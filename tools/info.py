@@ -9,8 +9,7 @@ __version__ = '$Id$'
 import textwrap
 
 import pyglet.window
-from pyglet.GL.VERSION_1_1 import *
-from pyglet.GLU.VERSION_1_1 import *
+from pyglet.GL.future import *
 import pyglet.GL.info
 import pyglet.GLU.info
 
@@ -70,13 +69,11 @@ if context.__class__.__name__ == 'XlibGLContext':
         exts = glx_info.get_extensions()
         print ' ', '\n  '.join(textwrap.wrap(' '.join(exts)))
 elif context.__class__.__name__ == 'Win32Context':
-    from pyglet.GL.WGL.info import have_wgl_extension
+    from pyglet.GL.wgl_info import have_wgl_extension, get_wgl_extensions
     if have_wgl_extension('WGL_EXT_extensions_string'):
-        from pyglet.GL.WGL.EXT_extensions_string import \
-            wglGetExtensionsStringEXT
-        wgl_extensions = wglGetExtensionsStringEXT()
+        wgl_extensions = get_wgl_extensions()
         print 'WGL extensions:'
-        print '', '\n '.join(textwrap.wrap(wgl_extensions))
+        print '', '\n '.join(textwrap.wrap(' '.join(wgl_extensions)))
     else:
-        print 'WGL_EXT_extensions_string is not implemented.'
+        print 'WGL_EXT_extensions_string extension not available.'
 
