@@ -12,7 +12,7 @@ import unittest
 from ctypes import *
 
 from pyglet.window import *
-from pyglet.GL.future import *
+from pyglet.gl import *
 
 __noninteractive = True
 

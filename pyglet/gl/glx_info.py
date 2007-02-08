@@ -24,8 +24,8 @@ __version__ = '$Id$'
 
 from ctypes import *
 
-from pyglet.GL.glx import *
-from pyglet.GL.glx import Display
+from pyglet.gl.glx import *
+from pyglet.gl.glx import Display
 
 __all__ = ['GLXInfo', 'glx_info']
 

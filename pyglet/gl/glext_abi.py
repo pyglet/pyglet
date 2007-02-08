@@ -8,8 +8,8 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from ctypes import *
-from pyglet.GL.lib import link_GL as _link_function
-from pyglet.GL.lib import c_ptrdiff_t
+from pyglet.gl.lib import link_GL as _link_function
+from pyglet.gl.lib import c_ptrdiff_t
 
 # BEGIN GENERATED CONTENT (do not edit below this line)
 

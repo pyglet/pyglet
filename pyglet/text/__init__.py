@@ -19,7 +19,7 @@ __version__ = '$Id$'
 import sys
 import os
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 from pyglet.window import *
 from pyglet.image import *
 import pyglet.layout.base

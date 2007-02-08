@@ -14,7 +14,7 @@ import pyglet.image
 import pyglet.sprite
 from pyglet.text import ttf
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 
 
 class BaseFontFactory:

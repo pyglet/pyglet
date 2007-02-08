@@ -14,7 +14,7 @@ from ctypes import *
 from pyglet.window.event import *
 from pyglet.model.geometric import tree_list
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 
 four_floats = c_float * 4
 

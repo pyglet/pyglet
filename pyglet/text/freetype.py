@@ -6,7 +6,7 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 
 from ctypes import *
 from ctypes import util

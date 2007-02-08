@@ -9,7 +9,7 @@ __version__ = '$Id: $'
 import unittest
 from os.path import dirname, join
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 from pyglet.image import *
 from pyglet.image.codecs import *
 from pyglet.scene2d.image import *

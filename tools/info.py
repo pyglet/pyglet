@@ -9,9 +9,9 @@ __version__ = '$Id$'
 import textwrap
 
 import pyglet.window
-from pyglet.GL.future import *
-from pyglet.GL.gl_info import *
-from pyglet.GL.glu_info import *
+from pyglet.gl import *
+from pyglet.gl.gl_info import *
+from pyglet.gl.glu_info import *
 
 platform = pyglet.window.get_platform()
 print 'Platform instance is %r' % platform
@@ -50,7 +50,7 @@ context = w.get_context()
 print 'Context is', context
 
 if context.__class__.__name__ == 'XlibGLContext':
-    from pyglet.GL.glx_info import *
+    from pyglet.gl.glx_info import *
     print 'GLX %s direct'%(context.is_direct() and 'is' or 'is not')
     if not glx_info.have_version(1, 1):
         print "GLX server version: 1.0"
@@ -69,7 +69,7 @@ if context.__class__.__name__ == 'XlibGLContext':
         exts = glx_info.get_extensions()
         print ' ', '\n  '.join(textwrap.wrap(' '.join(exts)))
 elif context.__class__.__name__ == 'Win32Context':
-    from pyglet.GL.wgl_info import have_wgl_extension, get_wgl_extensions
+    from pyglet.gl.wgl_info import have_wgl_extension, get_wgl_extensions
     if have_wgl_extension('WGL_EXT_extensions_string'):
         wgl_extensions = get_wgl_extensions()
         print 'WGL extensions:'

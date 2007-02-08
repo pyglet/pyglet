@@ -17,13 +17,13 @@ if __name__ == '__main__':
         wrap('tools/wraptypes/wrap.py',
              '-opyglet/window/xlib/xlib.py',
              '-lX11',
-             '-mpyglet.GL.glx',
+             '-mpyglet.gl.glx',
              '/usr/include/X11/Xlib.h',
              '/usr/include/X11/X.h',
              '/usr/include/X11/Xutil.h')
         wrap('tools/wraptypes/wrap.py',
              '-opyglet/window/xlib/xinerama.py',
              '-lXinerama',
-             '-mpyglet.GL.glx',
+             '-mpyglet.gl.glx',
              '-mpyglet.window.xlib.xlib',
              '/usr/include/X11/extensions/Xinerama.h')

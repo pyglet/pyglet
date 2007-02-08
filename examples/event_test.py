@@ -10,7 +10,7 @@ import pyglet.window
 from pyglet.window.event import *
 import time
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 
 w1 = pyglet.window.create(width=120, height=120)
 glClearColor(1, 0, 1, 1)

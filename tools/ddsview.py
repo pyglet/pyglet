@@ -13,7 +13,7 @@ import textwrap
 
 from SDL import *
 
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.gl.VERSION_1_1 import *
 import pyglet.dds
 import pyglet.event
 import pyglet.image

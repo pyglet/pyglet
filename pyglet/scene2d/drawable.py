@@ -1,4 +1,4 @@
-from pyglet.GL.future import *
+from pyglet.gl import *
  
 class DrawEnv(object):
     '''Sets up drawing environment.

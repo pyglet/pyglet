@@ -19,7 +19,7 @@ You may create a drawable image with:
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 
 from pyglet.image import RawImage
 from pyglet.scene2d.drawable import *

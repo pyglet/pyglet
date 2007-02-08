@@ -46,9 +46,9 @@ link_GLX = None
 link_WGL = None
 
 if sys.platform in ('win32', 'cygwin'):
-    from pyglet.GL.lib_wgl import link_GL, link_GLU, link_WGL
+    from pyglet.gl.lib_wgl import link_GL, link_GLU, link_WGL
 elif sys.platform == 'darwin':
-    from pyglet.GL.lib_agl import link_GL, link_GLU, link_AGL
+    from pyglet.gl.lib_agl import link_GL, link_GLU, link_AGL
 else:
-    from pyglet.GL.lib_glx import link_GL, link_GLU, link_GLX
+    from pyglet.gl.lib_glx import link_GL, link_GLU, link_GLX
 

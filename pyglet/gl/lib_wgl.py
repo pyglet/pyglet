@@ -10,8 +10,8 @@ import ctypes
 from ctypes import *
 from ctypes.util import find_library
 
-from pyglet.GL.lib import missing_function
-from pyglet.GL.gl_info import gl_info
+from pyglet.gl.lib import missing_function
+from pyglet.gl.gl_info import gl_info
 
 __all__ = ['link_GL', 'link_GLU', 'link_WGL']
 

@@ -35,7 +35,7 @@ class c_void(Structure):
     _fields_ = [('dummy', c_int)]
 
 
-import pyglet.GL.glx
+import pyglet.gl.glx
 import pyglet.window.xlib.xlib
 
 class struct_anon_181(Structure):
@@ -55,7 +55,7 @@ struct_anon_181._fields_ = [
 ]
 
 XineramaScreenInfo = struct_anon_181 	# /usr/include/X11/extensions/Xinerama.h:40
-Display = pyglet.GL.glx.Display
+Display = pyglet.gl.glx.Display
 # /usr/include/X11/extensions/Xinerama.h:44
 XineramaQueryExtension = _lib.XineramaQueryExtension
 XineramaQueryExtension.restype = c_int

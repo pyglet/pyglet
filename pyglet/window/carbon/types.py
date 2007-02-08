@@ -8,8 +8,8 @@ __version__ = '$Id: $'
 
 from ctypes import *
 
-import pyglet.GL.agl
-agl = pyglet.GL.agl
+import pyglet.gl.agl
+agl = pyglet.gl.agl
 
 GDHandle = agl.GDHandle
 

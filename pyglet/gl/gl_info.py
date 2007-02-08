@@ -29,7 +29,7 @@ __version__ = '$Id: $'
 from ctypes import *
 import warnings
 
-from pyglet.GL.gl import *
+from pyglet.gl.gl import *
 
 __all__ = ['GLInfo', 'gl_info']
 

@@ -9,7 +9,7 @@ __version__ = '$Id$'
 from math import *
 from ctypes import *
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 from pyglet.euclid import *
 
 def FloatArray(*args):

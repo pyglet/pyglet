@@ -8,7 +8,7 @@ __version__ = '$Id: window_test.py 111 2006-10-20 06:39:12Z r1chardj0n3s $'
 
 import pyglet.window
 from pyglet.window.event import *
-from pyglet.GL.future import *
+from pyglet.gl import *
 
 w1 = pyglet.window.create(200, 200)
 glClearColor(1, 0, 1, 1)

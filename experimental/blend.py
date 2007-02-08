@@ -10,7 +10,7 @@ __version__ = '$Id: $'
 
 from ctypes import *
 
-from pyglet.GL.VERSION_1_1 import *
+from pyglet.gl.VERSION_1_1 import *
 from pyglet.clock import *
 from pyglet.image import *
 from pyglet.window import *

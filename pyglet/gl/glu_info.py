@@ -32,7 +32,7 @@ __all__ = ['GLUInfo', 'glu_info']
 from ctypes import *
 import warnings
 
-from pyglet.GL.glu import *
+from pyglet.gl.glu import *
 
 class GLUInfo(object):
     have_context = False

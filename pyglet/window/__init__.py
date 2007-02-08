@@ -14,7 +14,7 @@ For games and kiosks you can also restrict the input to your windows,
 for example disabling users from switching away from the application
 with certain key combinations or capturing and hiding the mouse.
 
-This module depends on `pyglet.GL`, `pyglet.event` and `pyglet.image`.
+This module depends on `pyglet.gl`, `pyglet.event` and `pyglet.image`.
 
 ---------------
 Getting Started
@@ -53,7 +53,7 @@ window it will be set as the current context automatically, so you can start
 using OpenGL functions straight away.  Use the window's `flip` method to
 make the back-buffer visible::
 
-    >>> from pyglet.GL.future import *
+    >>> from pyglet.gl import *
     >>> glClear(GL_COLOR_BUFFER_BIT)
     >>> win.flip()
     >>>

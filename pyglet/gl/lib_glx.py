@@ -9,7 +9,7 @@ __version__ = '$Id$'
 from ctypes import *
 from ctypes.util import find_library
 
-from pyglet.GL.lib import missing_function
+from pyglet.gl.lib import missing_function
 
 __all__ = ['link_GL', 'link_GLU', 'link_GLX']
 

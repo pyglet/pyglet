@@ -11,8 +11,8 @@ from timeit import Timer
 NUMBER=100000
 
 setup='''
-from pyglet.GL.VERSION_1_1 import glBindTexture, glEnable, GL_TEXTURE_2D
-from pyglet.GL.VERSION_1_1 import glBegin, glEnd, glVertex2f, GL_LINES
+from pyglet.gl.VERSION_1_1 import glBindTexture, glEnable, GL_TEXTURE_2D
+from pyglet.gl.VERSION_1_1 import glBegin, glEnd, glVertex2f, GL_LINES
 from pyglet.window import Window
 from pyglet.image import Texture
 w = Window(visible=False)

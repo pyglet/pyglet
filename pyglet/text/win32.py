@@ -5,7 +5,7 @@
 
 from ctypes import *
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 from pyglet.text import *
 from pyglet.window.win32.constants import *
 from pyglet.window.win32.types import *

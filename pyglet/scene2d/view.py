@@ -51,7 +51,7 @@ from pyglet.scene2d.camera import FlatCamera
 from pyglet.scene2d.drawable import draw_many
 from pyglet.scene2d.map import Map
 from pyglet.scene2d.sprite import SpriteLayer
-from pyglet.GL.future import *
+from pyglet.gl import *
 
 class View(EventDispatcher):
 

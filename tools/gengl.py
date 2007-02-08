@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''Generate files in pyglet/GL and pyglet/GLU
+'''Generate files in pyglet.gl and pyglet/GLU
 '''
 
 __docformat__ = 'restructuredtext'

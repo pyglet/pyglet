@@ -35,20 +35,20 @@ class c_void(Structure):
     _fields_ = [('dummy', c_int)]
 
 
-import pyglet.GL.glx
+import pyglet.gl.glx
 
 XlibSpecificationRelease = 6 	# /usr/include/X11/Xlib.h:39
 X_PROTOCOL = 11 	# /usr/include/X11/X.h:58
 X_PROTOCOL_REVISION = 0 	# /usr/include/X11/X.h:59
-XID = pyglet.GL.glx.XID
+XID = pyglet.gl.glx.XID
 Mask = c_ulong 	# /usr/include/X11/X.h:75
 Atom = c_ulong 	# /usr/include/X11/X.h:79
-VisualID = pyglet.GL.glx.VisualID
+VisualID = pyglet.gl.glx.VisualID
 Time = c_ulong 	# /usr/include/X11/X.h:82
-Window = pyglet.GL.glx.Window
+Window = pyglet.gl.glx.Window
 Drawable = XID 	# /usr/include/X11/X.h:102
-Font = pyglet.GL.glx.Font
-Pixmap = pyglet.GL.glx.Pixmap
+Font = pyglet.gl.glx.Font
+Pixmap = pyglet.gl.glx.Pixmap
 Cursor = XID 	# /usr/include/X11/X.h:108
 Colormap = XID 	# /usr/include/X11/X.h:109
 GContext = XID 	# /usr/include/X11/X.h:110
@@ -403,7 +403,7 @@ _Xmblen.restype = c_int
 _Xmblen.argtypes = [c_char_p, c_int]
 
 X_HAVE_UTF8_STRING = 1 	# /usr/include/X11/Xlib.h:106
-XPointer = pyglet.GL.glx.XPointer
+XPointer = pyglet.gl.glx.XPointer
 Bool = 0 	# /usr/include/X11/Xlib.h:110
 Status = 0 	# /usr/include/X11/Xlib.h:111
 True = 1 	# /usr/include/X11/Xlib.h:112
@@ -411,7 +411,7 @@ False = 0 	# /usr/include/X11/Xlib.h:113
 QueuedAlready = 0 	# /usr/include/X11/Xlib.h:115
 QueuedAfterReading = 1 	# /usr/include/X11/Xlib.h:116
 QueuedAfterFlush = 2 	# /usr/include/X11/Xlib.h:117
-XExtData = pyglet.GL.glx.XExtData
+XExtData = pyglet.gl.glx.XExtData
 class struct_anon_8(Structure):
     __slots__ = [
         'extension',
@@ -501,7 +501,7 @@ struct__XGC._fields_ = [
 ]
 
 GC = POINTER(struct__XGC) 	# /usr/include/X11/Xlib.h:254
-Visual = pyglet.GL.glx.Visual
+Visual = pyglet.gl.glx.Visual
 class struct_anon_12(Structure):
     __slots__ = [
         'depth',
@@ -929,7 +929,7 @@ struct_anon_28._fields_ = [
 ]
 
 XModifierKeymap = struct_anon_28 	# /usr/include/X11/Xlib.h:510
-Display = pyglet.GL.glx.Display
+Display = pyglet.gl.glx.Display
 class struct_anon_29(Structure):
     __slots__ = [
         'ext_data',
@@ -7475,7 +7475,7 @@ Region = POINTER(struct__XRegion) 	# /usr/include/X11/Xutil.h:4996
 RectangleOut = 0 	# /usr/include/X11/Xutil.h:5000
 RectangleIn = 1 	# /usr/include/X11/Xutil.h:5001
 RectanglePart = 2 	# /usr/include/X11/Xutil.h:5002
-XVisualInfo = pyglet.GL.glx.XVisualInfo
+XVisualInfo = pyglet.gl.glx.XVisualInfo
 VisualNoMask = 0 	# /usr/include/X11/Xutil.h:5027
 VisualIDMask = 1 	# /usr/include/X11/Xutil.h:5028
 VisualScreenMask = 2 	# /usr/include/X11/Xutil.h:5029

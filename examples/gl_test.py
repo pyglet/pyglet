@@ -10,7 +10,7 @@ import pyglet.window
 from pyglet.window.event import *
 import time
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 from pyglet import clock
 
 w = pyglet.window.Window(200, 200)

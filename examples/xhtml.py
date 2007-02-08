@@ -8,7 +8,7 @@ reflow the layout.
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 from pyglet.layout import *
 from pyglet.window import *
 from pyglet.window.event import *

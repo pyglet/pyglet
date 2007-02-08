@@ -11,7 +11,7 @@ import ctypes
 import pyglet.window
 from pyglet.window.event import *
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 from pyglet import clock
 from pyglet.model import obj
 

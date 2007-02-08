@@ -1,6 +1,6 @@
 import os
 import ctypes
-from pyglet.GL.future import *
+from pyglet.gl import *
 
 THREEFV = ctypes.c_float * 3
 

@@ -8,7 +8,7 @@ __version__ = '$Id: $'
 
 import array
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 from pyglet.image import *
 from pyglet.image.codecs import *
 

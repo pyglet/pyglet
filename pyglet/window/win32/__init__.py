@@ -10,12 +10,12 @@ from ctypes import *
 import unicodedata
 import warnings
 
-from pyglet.GL.future import *
-from pyglet.GL.gl_info import *
-from pyglet.GL.glu_info import *
-from pyglet.GL.wgl import *
-from pyglet.GL.wglext_abi import *
-from pyglet.GL.wgl_info import *
+from pyglet.gl import *
+from pyglet.gl.gl_info import *
+from pyglet.gl.glu_info import *
+from pyglet.gl.wgl import *
+from pyglet.gl.wglext_abi import *
+from pyglet.gl.wgl_info import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *

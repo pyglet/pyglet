@@ -7,8 +7,8 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from ctypes import *
-from pyglet.GL.lib import link_GLX as _link_function
-from pyglet.GL.lib import c_ptrdiff_t, c_void
+from pyglet.gl.lib import link_GLX as _link_function
+from pyglet.gl.lib import c_ptrdiff_t, c_void
 
 if not _link_function:
     raise ImportError('libGL.so is not available.')

@@ -8,8 +8,8 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: gengl.py 601 2007-02-04 05:36:59Z Alex.Holkner $'
 
 from ctypes import *
-from pyglet.GL.lib import link_WGL as _link_function
-from pyglet.GL.lib import c_ptrdiff_t
+from pyglet.gl.lib import link_WGL as _link_function
+from pyglet.gl.lib import c_ptrdiff_t
 
 if not _link_function:
     raise ImportError('opengl32.dll is not available.')

@@ -8,8 +8,8 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from ctypes import *
-from pyglet.GL.lib import link_GLU as _link_function
-from pyglet.GL.lib import c_ptrdiff_t
+from pyglet.gl.lib import link_GLU as _link_function
+from pyglet.gl.lib import c_ptrdiff_t
 
 GLU_EXT_object_space_tess = 1 	# /usr/include/GL/glu.h:58
 GLU_EXT_nurbs_tessellator = 1 	# /usr/include/GL/glu.h:59

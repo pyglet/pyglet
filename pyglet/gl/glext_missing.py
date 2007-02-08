@@ -19,8 +19,8 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from ctypes import *
-from pyglet.GL.lib import link_GL as _link_function
-from pyglet.GL.lib import c_ptrdiff_t
+from pyglet.gl.lib import link_GL as _link_function
+from pyglet.gl.lib import c_ptrdiff_t
 
 # At time of writing, ABI glext.h was last updated 2005/06/20, so numbered
 # non-ARB extensions from 312 on must be included here.

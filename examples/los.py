@@ -17,7 +17,7 @@ import random
 from pyglet.window import Window
 from pyglet.clock import Clock
 from pyglet.scene2d import *
-from pyglet.GL.future import *
+from pyglet.gl import *
 
 w = Window(600, 600, vsync=False)
 

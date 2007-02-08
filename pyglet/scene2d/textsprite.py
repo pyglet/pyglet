@@ -8,7 +8,7 @@ __version__ = '$Id$'
 
 from ctypes import *
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 from pyglet.scene2d.sprite import Sprite
 from pyglet.text import GlyphString
 

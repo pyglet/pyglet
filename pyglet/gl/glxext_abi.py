@@ -9,8 +9,8 @@ __version__ = '$Id$'
 
 import ctypes
 from ctypes import *
-from pyglet.GL.lib import link_GLX as _link_function
-from pyglet.GL.lib import c_ptrdiff_t
+from pyglet.gl.lib import link_GLX as _link_function
+from pyglet.gl.lib import c_ptrdiff_t
 
 if not hasattr(ctypes, 'c_int64'):
     # XXX TODO completely wrong, but at least can import.

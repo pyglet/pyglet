@@ -8,7 +8,7 @@ __version__ = '$Id: xml_css.py 322 2006-12-26 12:53:18Z Alex.Holkner $'
 
 from ctypes import *
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.clock import *

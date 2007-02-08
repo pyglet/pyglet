@@ -20,7 +20,7 @@ import unittest
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
-from pyglet.GL.future import *
+from pyglet.gl import *
 
 class WINDOW_INITIAL_FULLSCREEN(unittest.TestCase):
     def on_key_press(self, symbol, modifiers):

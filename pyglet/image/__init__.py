@@ -14,8 +14,8 @@ from ctypes import *
 from math import ceil
 from StringIO import StringIO
 
-from pyglet.GL.future import *
-from pyglet.GL.gl_info import *
+from pyglet.gl import *
+from pyglet.gl.gl_info import *
 from pyglet.image.codecs import *
 
 class ImageException(Exception):

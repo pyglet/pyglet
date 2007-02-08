@@ -13,7 +13,7 @@ import pyglet
 import pyglet.image
 
 try:
-    from pyglet.GL.VERSION_1_5 import *
+    from pyglet.gl.VERSION_1_5 import *
 except ImportError:
     warnings.warn('OpenGL 1.5 or later is required collision detection. '\
                   'Please update your video card driver.')

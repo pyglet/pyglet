@@ -10,11 +10,11 @@ __version__ = '$Id: glx_info.py 615 2007-02-07 13:17:05Z Alex.Holkner $'
 from ctypes import *
 import warnings
 
-from pyglet.GL.lib import MissingFunctionException
-from pyglet.GL.gl import *
-from pyglet.GL.gl_info import *
-from pyglet.GL.wgl import *
-from pyglet.GL.wglext_abi import *
+from pyglet.gl.lib import MissingFunctionException
+from pyglet.gl.gl import *
+from pyglet.gl.gl_info import *
+from pyglet.gl.wgl import *
+from pyglet.gl.wglext_abi import *
 
 __all__ = ['WGLInfo', 'wgl_info']
 

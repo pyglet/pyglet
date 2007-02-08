@@ -4,7 +4,7 @@ import time
 
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.GL.future import *
+from pyglet.gl import *
 from pyglet import clock
 
 from pyglet.text import *

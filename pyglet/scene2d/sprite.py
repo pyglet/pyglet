@@ -10,7 +10,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 from pyglet.scene2d.drawable import *
 
 class SpriteLayer(object):

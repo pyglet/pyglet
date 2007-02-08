@@ -11,8 +11,8 @@ __version__ = '$Id$'
 from ctypes import *
 import struct
 
-from pyglet.GL.future import *
-from pyglet.GL.gl_info import *
+from pyglet.gl import *
+from pyglet.gl.gl_info import *
 from pyglet.image import *
 from pyglet.image.codecs import *
 

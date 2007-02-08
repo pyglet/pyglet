@@ -1,6 +1,6 @@
 from ctypes import *
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 
 class GLSLException(Exception): pass
 

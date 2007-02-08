@@ -9,7 +9,7 @@ __version__ = '$Id$'
 from code import InteractiveInterpreter
 import sys
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 from pyglet.layout import *
 from pyglet.window import *
 from pyglet.window.event import *

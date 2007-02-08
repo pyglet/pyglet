@@ -11,7 +11,7 @@ from pyglet.window.event import *
 from pyglet.model.geometric import *
 #from pyglet.gui import fps
 
-from pyglet.GL.future import *
+from pyglet.gl import *
 
 c_float4 = c_float * 4
 
