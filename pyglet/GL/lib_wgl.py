@@ -11,7 +11,7 @@ from ctypes import *
 from ctypes.util import find_library
 
 from pyglet.GL.lib import missing_function
-from pyglet.GL.info import have_context
+from pyglet.GL.gl_info import gl_info
 
 __all__ = ['link_GL', 'link_GLU', 'link_WGL']
 
@@ -41,7 +41,7 @@ class WGLFunctionProxy(object):
         if self.func:
             return self.func(*args, **kwargs)
 
-        if not have_context():
+        if not gl_info.have_context:
             raise Exception(
                 'Call to function "%s" before GL context created' % self.name)
         address = wglGetProcAddress(self.name)
@@ -65,7 +65,7 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
             fargs = (restype,) + tuple(argtypes)
             ftype = ctypes.WINFUNCTYPE(*fargs)
             if _have_get_proc_address:
-                if have_context():
+                if gl_info.have_context:
                     address = wglGetProcAddress(name)
                     if address:
                         return cast(address, ftype)
@@ -89,7 +89,7 @@ def link_GLU(name, restype, argtypes, requires=None, suggestions=None):
             fargs = (restype,) + tuple(argtypes)
             ftype = ctypes.WINFUNCTYPE(*fargs)
             if _have_get_proc_address:
-                if have_context():
+                if gl_info.have_context:
                     address = wglGetProcAddress(name)
                     if address:
                         return cast(address, ftype)

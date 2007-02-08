@@ -11,8 +11,8 @@ from ctypes import *
 import warnings
 
 from pyglet.GL.lib import MissingFunctionException
-from pyglet.GL.info import have_context
 from pyglet.GL.gl import *
+from pyglet.GL.gl_info import *
 from pyglet.GL.wgl import *
 from pyglet.GL.wglext_abi import *
 
@@ -23,7 +23,7 @@ class WGLInfoException(Exception):
 
 class WGLInfo(object):
     def get_extensions(self):
-        if not have_context():
+        if not gl_info.have_context:
             warnings.warn("Can't query WGL until a context is created.")
             return []
 
@@ -37,8 +37,3 @@ class WGLInfo(object):
 
 wgl_info = WGLInfo()
 
-def get_wgl_extensions():
-    return wgl_info.get_extensions()
-
-def have_wgl_extension(extension):
-    return wgl_info.have_extension(extension)

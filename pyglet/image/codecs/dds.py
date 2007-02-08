@@ -12,16 +12,9 @@ from ctypes import *
 import struct
 
 from pyglet.GL.future import *
-from pyglet.GL.info import have_extension
+from pyglet.GL.gl_info import *
 from pyglet.image import *
 from pyglet.image.codecs import *
-
-try:
-    from pyglet.GL.ARB_texture_compression import *
-    from pyglet.GL.EXT_texture_compression_s3tc import *
-    _have_s3tc = True
-except ImportError:
-    raise ImportError('Driver does not support S3TC extension')
 
 class DDSException(ImageDecodeException):
     pass
@@ -113,12 +106,11 @@ class DDPIXELFORMAT(_filestruct):
         ('dwRGBAlphaBitMask', 'I')
     ]
 
-if _have_s3tc:
-    _compression_formats = {
-        'DXT1': GL_COMPRESSED_RGB_S3TC_DXT1_EXT,
-        'DXT3': GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,
-        'DXT5': GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
-    }
+_compression_formats = {
+    'DXT1': GL_COMPRESSED_RGB_S3TC_DXT1_EXT,
+    'DXT3': GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,
+    'DXT5': GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+}
 
 def _check_error():
     e = glGetError()
@@ -131,7 +123,7 @@ class DDSImageDecoder(ImageDecoder):
 
     def decode(self, file, filename):
         # TODO: Write a software decoding fallback.
-        if not have_extension('GL_EXT_texture_compression_s3tc'):
+        if not gl_info.have_extension('GL_EXT_texture_compression_s3tc'):
             raise DDSException('S3TC extension not supported by device.')
 
         header = file.read(DDSURFACEDESC2.get_size())
@@ -169,9 +161,8 @@ class DDSImageDecoder(ImageDecoder):
             raise DDSException('Uncompressed DDS textures not supported.')
 
         format = None
-        if _have_s3tc:
-            format = _compression_formats.get(desc.ddpfPixelFormat.dwFourCC,
-                                              None)
+        format = _compression_formats.get(desc.ddpfPixelFormat.dwFourCC,
+                                          None)
         if not format:
             raise DDSException('Unsupported texture compression %s' % \
                 desc.ddpfPixelFormat.dwFourCC)

@@ -14,8 +14,8 @@ from ctypes import *
 from math import ceil
 from StringIO import StringIO
 
-from pyglet.GL.info import have_extension
 from pyglet.GL.future import *
+from pyglet.GL.gl_info import *
 from pyglet.image.codecs import *
 
 class ImageException(Exception):
@@ -237,14 +237,14 @@ class RawImage(Image):
             return GL_RGBA, self.type
         elif self.format == 'ARGB':
             if (self.type == GL_UNSIGNED_BYTE and
-                have_extension('GL_EXT_bgra') and
-                have_extension('GL_APPLE_packed_pixel')):
+                gl_info.have_extension('GL_EXT_bgra') and
+                gl_info.have_extension('GL_APPLE_packed_pixel')):
                 return GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV
         elif self.format == 'ABGR':
-            if have_extension('GL_EXT_abgr'):
+            if gl_info.have_extension('GL_EXT_abgr'):
                 return GL_ABGR_EXT, self.type
         elif self.format == 'BGR':
-            if have_extension('GL_EXT_bgra'):
+            if gl_info.have_extension('GL_EXT_bgra'):
                 return GL_BGR, self.type
 
         # No luck so far, probably in a format like ABGR but we don't
