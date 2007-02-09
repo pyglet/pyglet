@@ -1,0 +1,194 @@
+OpenGL Interface
+================
+
+pyglet provides an interface to OpenGL and GLU.  The interface is used by all
+of pyglet's higher-level API's, so that all rendering is done efficiently by
+the graphics card, rather than the operating system.  You can access this
+interface directly; using it is much like using OpenGL from C.
+
+The interface is a "thin-wrapper" around ``libGL.so`` on Linux,
+``opengl32.dll`` on Windows and ``OpenGL.framework`` on OS X.  The pyglet
+maintainers regenerate the interface from the latest specifications, so it is
+always up-to-date with the latest version and almost all extensions.
+
+The interface is provided by the ``pyglet.gl`` package.  To use it you will
+need a good knowledge of OpenGL, C and ctypes.  You may prefer to use OpenGL
+without using ctypes, in which case you should investigate `PyOpenGL`_.
+`PyOpenGL`_ provides similar functionality with a more "Pythonic" interface,
+and will work with pyglet without any modification.
+
+.. _PyOpenGL: http://pyopengl.sourceforge.net/
+
+Using OpenGL
+------------
+
+Documentation of OpenGL and GLU are provided at the `OpenGL website`_ and
+(more comprehensively) in the `OpenGL Programming Guide`_.
+
+Importing the package gives access to OpenGL, GLU, and all OpenGL registered
+extensions.   This is sufficient for all but the most advanced uses of
+OpenGL::
+
+    from pyglet.gl import *
+
+All function names and constants are identical to the C counterparts.  For
+example, the following program draws a triangle on the screen::
+
+    from pyglet.gl import *
+    from pyglet.window import *
+
+    # The OpenGL context is created only when you create a window.  Any calls
+    # to OpenGL before a window is created will fail.
+    window = Window(visible=False)
+
+    glMatrixMode(GL_PROJECTION)
+    glOrtho(0, window.width, 0, window.height, -1, 1)
+    glMatrixMode(GL_MODELVIEW)
+
+    window.set_visible()
+    while not window.has_exit:
+        window.dispatch_events()
+
+        glClear(GL_COLOR_BUFFER_BIT)
+        glLoadIdentity()
+        glBegin(GL_TRIANGLES)
+        glVertex2f(0, 0)
+        glVertex2f(window.width, 0)
+        glVertex2f(window.width, window.height)
+        glEnd()
+
+        window.flip()
+
+You can set the attributes of the OpenGL context when you create the window.
+For example, to ensure there is a stencil buffer::
+
+    window = Window(stencil_size=8)
+
+By default, windows are created with a depth buffer and two colour buffers
+(double-buffered).  See the `pyglet.window` documentation for complete
+reference.  If you are using a double-buffer, remember to call
+``window.flip()`` to swap the buffers after every frame.
+
+.. _OpenGL Website: http://www.opengl.org
+.. _OpenGL Programming Guide: http://opengl.org/documentation/red_book/
+
+Resizing the window
+-------------------
+
+If you try to resize the window created in the example above, you will notice
+that the triangle does not continue filling the area.  This is because pyglet
+will automatically call ``glViewport`` so that the whole window area is used
+when a window is resized, but does not change the projection matrix.
+
+Most OpenGL applications that use a resizeable window should recreate the
+projection matrix when the window is resized::
+
+    def on_resize(width, height):
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(0, width, 0, height, -1, 1)
+        glMatrixMode(GL_MODELVIEW)
+
+    window.push_handlers(on_resize)
+
+Using extension functions
+-------------------------
+
+Before using an extension function, you should check that the extension is
+implemented by the current driver.  Typically this is done using
+``glGetString(GL_EXTENSIONS)``, but pyglet has a convenience module,
+`pyglet.gl.gl_info` that does this for you::
+
+    from pyglet.gl.gl_info import *
+
+    if gl_info.have_extension('GL_ARB_shadow'):
+        # ... do shadow-related code.
+    else:
+        # ... raise an exception, or use a fallback method
+
+Note that the module ``gl_info`` exports an object also named ``gl_info``,
+through which you interact.  You can also easily check the version of
+OpenGL::
+
+    if gl_info.have_version(1,5):
+        # We can assume all OpenGL 1.5 functions are implemented.
+
+Remember to only call the ``gl_info`` functions after creating a window.
+
+There is a corresponding ``glu_info`` module for checking the version and
+extensions of GLU.
+
+nVidia often release hardware with extensions before having them registered
+officially.  When you ``import * from pyglet.gl`` you import only the
+registered extensions.  You can import the latest nVidia extensions
+with::
+
+    from pyglet.gl.glext_nv import *
+
+Using multiple windows
+----------------------
+
+pyglet allows you to create and display any number of windows simultaneously.
+Each will be created with its own OpenGL context, however all contexts will
+share the same texture objects, display lists, shader programs, and so on [#]_.
+Each context has its own state and framebuffers.
+
+.. [#] Sometimes objects and lists cannot be shared between contexts; for
+       example, when the contexts are provided by different video devices.
+       This will usually only occur if you explicitly select different screens
+       driven by different devices.
+
+There is always an active context (unless there are no windows).  By default,
+the active context belongs to whichever window was displayed last.  This works
+well if there is only ever one window visible at a time.  If there are more,
+you need to explicitly set the active context when you start drawing.  You can
+do this by calling the window's ``switch_to`` method::
+
+    window_1 = Window()
+    window_2 = Window()
+
+    while running:
+        window_1.dispatch_events()
+        window_2.dispatch_events()
+
+        # Draw the contents of window_1:
+        window_1.switch_to()
+        glClear(GL_COLOR_BUFFER_BIT)
+        # ...
+        window_1.flip()
+
+        window_2.switch_to()
+        glClear(GL_COLOR_BUFFER_BIT)
+        # ...
+        window_2.flip()
+
+AGL, GLX and WGL
+----------------
+
+The OpenGL context itself is managed by an operating-system specific library:
+AGL on OS X, GLX under X11 and WGL on Windows.  pyglet handles these details
+when a window is created, but you may need to use the functions directly (for
+example, to use pbuffers) or an extension function.
+
+The modules are named ``pyglet.gl.agl``, ``pyglet.gl.glx`` and
+``pyglet.gl.wgl``.  You must only import the correct module for the running
+operating system::
+
+    if sys.platform == 'linux2':
+        from pyglet.gl.glx import *
+        glxCreatePbuffer(...)
+    elif sys.platform == 'darwin':
+        from pyglet.gl.agl import *
+        aglCreatePbuffer(...)
+
+There are convenience modules for querying the version and extensions of WGL
+and GLX named ``pyglet.gl.wgl_info`` and ``pyglet.gl.glx_info``, respectively.
+AGL does not have such a module, just query the version of OS X instead.
+
+If using GLX extensions, you can import ``pyglet.gl.glxext_abi`` for the
+registered extensions or ``pyglet.gl.glxext_nv`` for the latest nVidia
+extensions.
+
+Similarly, if using WGL extensions, import ``pyglet.gl.wglext_abi`` or
+``pyglet.gl.wglext_nv``.
+
