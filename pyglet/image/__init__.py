@@ -1342,15 +1342,119 @@ class BufferImageMask(BufferImage):
     # TODO mask methods
 
 class TextureSequence(object):
-    def __init__(self, texture):
-        self.texture = texture
-
     def __getitem__(self, slice):
-        raise ImageException('Cannot getitem from %r' % self)
+        raise NotImplementedError('abstract')
 
     def __setitem__(self, slice, image):
-        raise ImageException('Cannot setitem on %r' % self)
+        raise NotImplementedError('abstract')
 
+    def __len__(self):
+        raise NotImplementedError('abstract')
+
+class UniformTextureSequence(TextureSequence):
+    def _get_item_width(self):
+        raise NotImplementedError('abstract')
+    item_width = property(_get_item_width)
+
+    def _get_item_height(self):
+        raise NotImplementedError('abstract')
+    item_height = property(_get_item_height)
+
+class TextureGrid(TextureRegion, UniformTextureSequence):
+    items = ()
+    rows = 1
+    columns = 1
+    item_width = 0
+    item_height = 0
+
+    @classmethod
+    def create_for_image(cls, image, rows, columns, 
+                         item_width=None, item_height=None,
+                         row_padding=0, column_padding=0):
+        image = image.texture
+        texture = cls(image.width, image.height, image, image.tex_coords)
+        if item_width is None:
+            item_width = \
+                int((texture.width - column_padding * (columns - 1)) / columns)
+        if item_height is None:
+            item_height = \
+                int((texture.height - row_padding * (rows - 1)) / rows)
+        items = []
+        y = 0
+        for row in rows:
+            x = 0
+            for col in columns:
+                items.append(self.get_region(x, y, item_width, item_height))
+                x + item_width + column_padding
+            y += item_height + row_padding
+
+        texture.items = items
+        texture.rows = rows
+        texture.columns = columns
+        texture.item_width = item_width
+        texture.item_height = item_height
+        return texture
+        
+    def get(self, row, column):
+        return self[(row, column)]
+
+    def __getitem__(self, index):
+        if type(index) is slice:
+            if type(index.start) is not tuple and \
+               type(index.stop) is not tuple:
+                return self.items[index]
+            else:
+                row1 = 0
+                col1 = 0
+                row2 = self.rows
+                col2 = self.cols
+                if type(index.start) is tuple:
+                    row1, col1 = index.start
+                elif type(index.start) is int:
+                    row1 = index.start / self.columns
+                    col1 = index.start % self.columns
+                assert row1 >= 0 and column1 >= 0 and \
+                       row1 < self.rows and column1 < self.columns
+
+                if type(index.stop) is tuple:
+                    row2, col2 = index.stop
+                elif type(index.stop) is int:
+                    row2 = index.stop / self.columns
+                    col2 = index.stop % self.columns
+                assert row2 >= 0 and column2 >= 0 and \
+                       row2 < self.rows and column2 < self.columns
+
+                result = []
+                i = row1 * self.columns
+                for row in range(row1, row2):
+                    result += self.items[i+col1:i+col2]
+                    i += self.columns
+                return result
+        else:
+            if type(index) is tuple:
+                row, column = index
+                assert row >= 0 and column >= 0 and \
+                       row < self.rows and column < self.columns
+                return self.items[row * self.columns + column]
+            elif type(index) is int:
+                return self.items[index]
+
+    def __setitem__(self, index, value):
+        if type(index) is slice:
+            for region, image in zip(self[index], value):
+                if image.width != self.item_width or \
+                   image.height != self.item_height:
+                    raise ImageException('Image has incorrect dimensions')
+                image.blit_into(region)
+        else:
+            image = value
+            if image.width != self.item_width or \
+               image.height != self.item_height:
+                raise ImageException('Image has incorrect dimensions')
+            image.blit_into(self[index])
+
+    def __len__(self):
+        return len(self.items)
 
 # Initialise default codecs
 from pyglet.image.codecs import *
