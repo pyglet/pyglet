@@ -25,6 +25,7 @@ from pyglet.gl.lib import c_ptrdiff_t
 # VERSION_1_4 (/usr/include/GL/glx.h:302)
 # ARB_get_proc_address (/usr/include/GL/glx.h:318)
 # GLXEXT_LEGACY (/usr/include/GL/glx.h:350)
+GLAPI = 0 	# GL/glxext.h:49
 GLX_GLXEXT_VERSION = 10 	# GL/glxext.h:57
 # ARB_get_proc_address (GL/glxext.h:59)
 # ARB_multisample (GL/glxext.h:62)
@@ -104,6 +105,7 @@ GLX_WINDOW_SGIX = 32802 	# GL/glxext.h:159
 GLX_PBUFFER_SGIX = 32803 	# GL/glxext.h:160
 # SGI_cushion (GL/glxext.h:163)
 # SGIX_video_resize (GL/glxext.h:166)
+GLX_SYNC_FRAME_SGIX = 0 	# GL/glxext.h:167
 GLX_SYNC_SWAP_SGIX = 1 	# GL/glxext.h:168
 # SGIX_dmbuffer (GL/glxext.h:171)
 GLX_DIGITAL_MEDIA_PBUFFER_SGIX = 32804 	# GL/glxext.h:172
@@ -161,7 +163,7 @@ struct___GLXFBConfigRec._fields_ = [
 
 GLXFBConfigSGIX = POINTER(struct___GLXFBConfigRec) 	# GL/glxext.h:262
 # SGIX_pbuffer (GL/glxext.h:265)
-class struct_anon_199(Structure):
+class struct_anon_301(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -186,7 +188,7 @@ struct__XDisplay._fields_ = [
 
 Display = struct__XDisplay 	# /usr/include/X11/Xlib.h:519
 GLXDrawable = XID 	# /usr/include/GL/glx.h:146
-struct_anon_199._fields_ = [
+struct_anon_301._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -202,7 +204,7 @@ struct_anon_199._fields_ = [
     ('count', c_int),
 ]
 
-GLXBufferClobberEventSGIX = struct_anon_199 	# GL/glxext.h:279
+GLXBufferClobberEventSGIX = struct_anon_301 	# GL/glxext.h:279
 # NV_swap_group (GL/glxext.h:282)
 # NV_video_out (GL/glxext.h:285)
 GLXVideoDeviceNV = c_uint 	# GL/glxext.h:290
@@ -236,6 +238,8 @@ GLX_FRONT_LEFT_EXT = 8414 	# GL/glxext.h:337
 GLX_FRONT_RIGHT_EXT = 8415 	# GL/glxext.h:338
 GLX_BACK_LEFT_EXT = 8416 	# GL/glxext.h:339
 GLX_BACK_RIGHT_EXT = 8417 	# GL/glxext.h:340
+GLX_FRONT_EXT = 8414 	# GL/glxext.h:341
+GLX_BACK_EXT = 8416 	# GL/glxext.h:342
 GLX_AUX0_EXT = 8418 	# GL/glxext.h:343
 GLX_AUX1_EXT = 8419 	# GL/glxext.h:344
 GLX_AUX2_EXT = 8420 	# GL/glxext.h:345
@@ -336,7 +340,7 @@ glXCreateGLXPixmapWithConfigSGIX = _link_function('glXCreateGLXPixmapWithConfigS
 # GL/glxext.h:461
 glXCreateContextWithConfigSGIX = _link_function('glXCreateContextWithConfigSGIX', GLXContext, [POINTER(Display), GLXFBConfigSGIX, c_int, GLXContext, c_int], 'SGIX_fbconfig')
 
-class struct_anon_196(Structure):
+class struct_anon_298(Structure):
     __slots__ = [
         'visual',
         'visualid',
@@ -349,7 +353,7 @@ class struct_anon_196(Structure):
         'colormap_size',
         'bits_per_rgb',
     ]
-class struct_anon_113(Structure):
+class struct_anon_215(Structure):
     __slots__ = [
         'ext_data',
         'visualid',
@@ -377,7 +381,7 @@ struct__XExtData._fields_ = [
 
 XExtData = struct__XExtData 	# /usr/include/X11/Xlib.h:187
 VisualID = c_ulong 	# /usr/include/X11/X.h:81
-struct_anon_113._fields_ = [
+struct_anon_215._fields_ = [
     ('ext_data', POINTER(XExtData)),
     ('visualid', VisualID),
     ('class', c_int),
@@ -388,8 +392,8 @@ struct_anon_113._fields_ = [
     ('map_entries', c_int),
 ]
 
-Visual = struct_anon_113 	# /usr/include/X11/Xlib.h:270
-struct_anon_196._fields_ = [
+Visual = struct_anon_215 	# /usr/include/X11/Xlib.h:270
+struct_anon_298._fields_ = [
     ('visual', POINTER(Visual)),
     ('visualid', VisualID),
     ('screen', c_int),
@@ -402,7 +406,7 @@ struct_anon_196._fields_ = [
     ('bits_per_rgb', c_int),
 ]
 
-XVisualInfo = struct_anon_196 	# /usr/include/X11/Xutil.h:296
+XVisualInfo = struct_anon_298 	# /usr/include/X11/Xutil.h:296
 # GL/glxext.h:462
 glXGetVisualFromFBConfigSGIX = _link_function('glXGetVisualFromFBConfigSGIX', POINTER(XVisualInfo), [POINTER(Display), GLXFBConfigSGIX], 'SGIX_fbconfig')
 
@@ -547,33 +551,33 @@ PFNGLXWAITFORSBCOMLPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable, c_int6
 GLX_NV_float_buffer = 1 	# GL/glxext.h:606
 # SGIX_hyperpipe (GL/glxext.h:609)
 GLX_SGIX_hyperpipe = 1 	# GL/glxext.h:610
-class struct_anon_200(Structure):
+class struct_anon_302(Structure):
     __slots__ = [
         'pipeName',
         'networkId',
     ]
-struct_anon_200._fields_ = [
+struct_anon_302._fields_ = [
     ('pipeName', c_char * 80),
     ('networkId', c_int),
 ]
 
-GLXHyperpipeNetworkSGIX = struct_anon_200 	# GL/glxext.h:615
-class struct_anon_201(Structure):
+GLXHyperpipeNetworkSGIX = struct_anon_302 	# GL/glxext.h:615
+class struct_anon_303(Structure):
     __slots__ = [
         'pipeName',
         'channel',
         'participationType',
         'timeSlice',
     ]
-struct_anon_201._fields_ = [
+struct_anon_303._fields_ = [
     ('pipeName', c_char * 80),
     ('channel', c_int),
     ('participationType', c_uint),
     ('timeSlice', c_int),
 ]
 
-GLXHyperpipeConfigSGIX = struct_anon_201 	# GL/glxext.h:623
-class struct_anon_202(Structure):
+GLXHyperpipeConfigSGIX = struct_anon_303 	# GL/glxext.h:623
+class struct_anon_304(Structure):
     __slots__ = [
         'pipeName',
         'srcXOrigin',
@@ -585,7 +589,7 @@ class struct_anon_202(Structure):
         'destWidth',
         'destHeight',
     ]
-struct_anon_202._fields_ = [
+struct_anon_304._fields_ = [
     ('pipeName', c_char * 80),
     ('srcXOrigin', c_int),
     ('srcYOrigin', c_int),
@@ -597,8 +601,8 @@ struct_anon_202._fields_ = [
     ('destHeight', c_int),
 ]
 
-GLXPipeRect = struct_anon_202 	# GL/glxext.h:629
-class struct_anon_203(Structure):
+GLXPipeRect = struct_anon_304 	# GL/glxext.h:629
+class struct_anon_305(Structure):
     __slots__ = [
         'pipeName',
         'XOrigin',
@@ -606,7 +610,7 @@ class struct_anon_203(Structure):
         'maxHeight',
         'maxWidth',
     ]
-struct_anon_203._fields_ = [
+struct_anon_305._fields_ = [
     ('pipeName', c_char * 80),
     ('XOrigin', c_int),
     ('YOrigin', c_int),
@@ -614,7 +618,7 @@ struct_anon_203._fields_ = [
     ('maxWidth', c_int),
 ]
 
-GLXPipeRectLimits = struct_anon_203 	# GL/glxext.h:634
+GLXPipeRectLimits = struct_anon_305 	# GL/glxext.h:634
 # GL/glxext.h:637
 glXQueryHyperpipeNetworkSGIX = _link_function('glXQueryHyperpipeNetworkSGIX', POINTER(GLXHyperpipeNetworkSGIX), [POINTER(Display), POINTER(c_int)], 'SGIX_hyperpipe')
 
@@ -731,8 +735,8 @@ glXReleaseTextImageEXT = _link_function('glXReleaseTextImageEXT', None, [POINTER
 PFNGLXBINDTEXIMAGEEXTPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, c_int, POINTER(c_int)) 	# GL/glxext.h:787
 PFNGLXRELEASETEXIMAGEEXTPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, c_int) 	# GL/glxext.h:791
 
-__all__ = ['GLX_GLXEXT_VERSION', 'GLX_SAMPLE_BUFFERS_ARB', 'GLX_SAMPLES_ARB',
-'GLX_RGBA_FLOAT_TYPE_ARB', 'GLX_RGBA_FLOAT_BIT_ARB',
+__all__ = ['GLAPI', 'GLX_GLXEXT_VERSION', 'GLX_SAMPLE_BUFFERS_ARB',
+'GLX_SAMPLES_ARB', 'GLX_RGBA_FLOAT_TYPE_ARB', 'GLX_RGBA_FLOAT_BIT_ARB',
 'GLX_SAMPLE_BUFFERS_SGIS', 'GLX_SAMPLES_SGIS', 'GLX_X_VISUAL_TYPE_EXT',
 'GLX_TRANSPARENT_TYPE_EXT', 'GLX_TRANSPARENT_INDEX_VALUE_EXT',
 'GLX_TRANSPARENT_RED_VALUE_EXT', 'GLX_TRANSPARENT_GREEN_VALUE_EXT',
@@ -756,10 +760,11 @@ __all__ = ['GLX_GLXEXT_VERSION', 'GLX_SAMPLE_BUFFERS_ARB', 'GLX_SAMPLES_ARB',
 'GLX_OPTIMAL_PBUFFER_HEIGHT_SGIX', 'GLX_PRESERVED_CONTENTS_SGIX',
 'GLX_LARGEST_PBUFFER_SGIX', 'GLX_WIDTH_SGIX', 'GLX_HEIGHT_SGIX',
 'GLX_EVENT_MASK_SGIX', 'GLX_DAMAGED_SGIX', 'GLX_SAVED_SGIX',
-'GLX_WINDOW_SGIX', 'GLX_PBUFFER_SGIX', 'GLX_SYNC_SWAP_SGIX',
-'GLX_DIGITAL_MEDIA_PBUFFER_SGIX', 'GLX_BLENDED_RGBA_SGIS',
-'GLX_MULTISAMPLE_SUB_RECT_WIDTH_SGIS', 'GLX_MULTISAMPLE_SUB_RECT_HEIGHT_SGIS',
-'GLX_SAMPLE_BUFFERS_3DFX', 'GLX_SAMPLES_3DFX', 'GLX_3DFX_WINDOW_MODE_MESA',
+'GLX_WINDOW_SGIX', 'GLX_PBUFFER_SGIX', 'GLX_SYNC_FRAME_SGIX',
+'GLX_SYNC_SWAP_SGIX', 'GLX_DIGITAL_MEDIA_PBUFFER_SGIX',
+'GLX_BLENDED_RGBA_SGIS', 'GLX_MULTISAMPLE_SUB_RECT_WIDTH_SGIS',
+'GLX_MULTISAMPLE_SUB_RECT_HEIGHT_SGIS', 'GLX_SAMPLE_BUFFERS_3DFX',
+'GLX_SAMPLES_3DFX', 'GLX_3DFX_WINDOW_MODE_MESA',
 'GLX_3DFX_FULLSCREEN_MODE_MESA', 'GLX_VISUAL_SELECT_GROUP_SGIX',
 'GLX_SWAP_METHOD_OML', 'GLX_SWAP_EXCHANGE_OML', 'GLX_SWAP_COPY_OML',
 'GLX_SWAP_UNDEFINED_OML', 'GLX_FLOAT_COMPONENTS_NV',
@@ -782,20 +787,20 @@ __all__ = ['GLX_GLXEXT_VERSION', 'GLX_SAMPLE_BUFFERS_ARB', 'GLX_SAMPLES_ARB',
 'GLX_TEXTURE_2D_BIT_EXT', 'GLX_TEXTURE_RECTANGLE_BIT_EXT',
 'GLX_TEXTURE_1D_EXT', 'GLX_TEXTURE_2D_EXT', 'GLX_TEXTURE_RECTANGLE_EXT',
 'GLX_FRONT_LEFT_EXT', 'GLX_FRONT_RIGHT_EXT', 'GLX_BACK_LEFT_EXT',
-'GLX_BACK_RIGHT_EXT', 'GLX_AUX0_EXT', 'GLX_AUX1_EXT', 'GLX_AUX2_EXT',
-'GLX_AUX3_EXT', 'GLX_AUX4_EXT', 'GLX_AUX5_EXT', 'GLX_AUX6_EXT',
-'GLX_AUX7_EXT', 'GLX_AUX8_EXT', 'GLX_AUX9_EXT', 'GLX_ARB_multisample',
-'GLX_ARB_fbconfig_float', 'GLX_SGIS_multisample', 'GLX_EXT_visual_info',
-'GLX_SGI_swap_control', 'glXSwapIntervalSGI', 'PFNGLXSWAPINTERVALSGIPROC',
-'GLX_SGI_video_sync', 'glXGetVideoSyncSGI', 'glXWaitVideoSyncSGI',
-'glXGetRefreshRateSGI', 'PFNGLXGETVIDEOSYNCSGIPROC',
-'PFNGLXWAITVIDEOSYNCSGIPROC', 'PFNGLXGETREFRESHRATESGIPROC',
-'GLX_SGI_make_current_read', 'glXMakeCurrentReadSGI',
-'glXGetCurrentReadDrawableSGI', 'PFNGLXMAKECURRENTREADSGIPROC',
-'PFNGLXGETCURRENTREADDRAWABLESGIPROC', 'GLX_SGIX_video_source',
-'GLX_EXT_visual_rating', 'GLX_EXT_import_context', 'glXGetCurrentDisplayEXT',
-'glXQueryContextInfoEXT', 'glXGetContextIDEXT', 'glXImportContextEXT',
-'glXFreeContextEXT', 'PFNGLXGETCURRENTDISPLAYEXTPROC',
+'GLX_BACK_RIGHT_EXT', 'GLX_FRONT_EXT', 'GLX_BACK_EXT', 'GLX_AUX0_EXT',
+'GLX_AUX1_EXT', 'GLX_AUX2_EXT', 'GLX_AUX3_EXT', 'GLX_AUX4_EXT',
+'GLX_AUX5_EXT', 'GLX_AUX6_EXT', 'GLX_AUX7_EXT', 'GLX_AUX8_EXT',
+'GLX_AUX9_EXT', 'GLX_ARB_multisample', 'GLX_ARB_fbconfig_float',
+'GLX_SGIS_multisample', 'GLX_EXT_visual_info', 'GLX_SGI_swap_control',
+'glXSwapIntervalSGI', 'PFNGLXSWAPINTERVALSGIPROC', 'GLX_SGI_video_sync',
+'glXGetVideoSyncSGI', 'glXWaitVideoSyncSGI', 'glXGetRefreshRateSGI',
+'PFNGLXGETVIDEOSYNCSGIPROC', 'PFNGLXWAITVIDEOSYNCSGIPROC',
+'PFNGLXGETREFRESHRATESGIPROC', 'GLX_SGI_make_current_read',
+'glXMakeCurrentReadSGI', 'glXGetCurrentReadDrawableSGI',
+'PFNGLXMAKECURRENTREADSGIPROC', 'PFNGLXGETCURRENTREADDRAWABLESGIPROC',
+'GLX_SGIX_video_source', 'GLX_EXT_visual_rating', 'GLX_EXT_import_context',
+'glXGetCurrentDisplayEXT', 'glXQueryContextInfoEXT', 'glXGetContextIDEXT',
+'glXImportContextEXT', 'glXFreeContextEXT', 'PFNGLXGETCURRENTDISPLAYEXTPROC',
 'PFNGLXQUERYCONTEXTINFOEXTPROC', 'PFNGLXGETCONTEXTIDEXTPROC',
 'PFNGLXIMPORTCONTEXTEXTPROC', 'PFNGLXFREECONTEXTEXTPROC', 'GLX_SGIX_fbconfig',
 'glXGetFBConfigAttribSGIX', 'glXChooseFBConfigSGIX',
@@ -857,5 +862,7 @@ __all__ = ['GLX_GLXEXT_VERSION', 'GLX_SAMPLE_BUFFERS_ARB', 'GLX_SAMPLES_ARB',
 'PFNGLXGETVIDEOINFONVPROC', 'glXBindTexImageEXT', 'glXReleaseTextImageEXT',
 'PFNGLXBINDTEXIMAGEEXTPROC', 'PFNGLXRELEASETEXIMAGEEXTPROC']
 # END GENERATED CONTENT (do not edit above this line)
+
+
 
 

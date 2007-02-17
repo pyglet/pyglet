@@ -214,9 +214,9 @@ if __name__ == '__main__':
         print >> sys.stderr, '  %s' % ' '.join(modules.keys())
 
     if not options.dir:
-        options.dir = os.path.join(script_dir, os.path.pardir, 'pyglet', 'GL')
+        options.dir = os.path.join(script_dir, os.path.pardir, 'pyglet', 'gl')
     if not os.path.exists(options.dir):
-        os.path.makedirs(options.dir)
+        os.makedirs(options.dir)
 
     for arg in args:
         if arg not in modules:

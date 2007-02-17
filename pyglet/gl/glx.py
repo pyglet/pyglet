@@ -401,7 +401,7 @@ class struct___GLXEvent(Union):
     ]
 struct___GLXEvent._fields_ = [
     ('glxpbufferclobber', GLXPbufferClobberEvent),
-    ('pad', c_long),
+    ('pad', c_long * 24),
 ]
 
 GLXEvent = struct___GLXEvent 	# /usr/include/GL/glx.h:348
@@ -549,4 +549,6 @@ __all__ += ['GLXBadContext', 'GLXBadContextState', 'GLXBadDrawable',
 'GLXBadPixmap', 'GLXBadContextTag', 'GLXBadCurrentWindow',
 'GLXBadRenderRequest', 'GLXBadLargeRequest', 'GLXUnsupportedPrivateRequest',
 'GLXBadFBConfig', 'GLXBadPbuffer', 'GLXBadCurrentDrawable', 'GLXBadWindow']
+
+
 
