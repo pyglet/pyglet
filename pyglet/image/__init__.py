@@ -926,6 +926,8 @@ class Texture(AbstractImage):
     region_class = None # Set to TextureRegion after it's defined
     tex_coords = ((0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0))
     level = 0
+    images = 1
+    x = y = z = 0
 
     def __init__(self, width, height, target, id):
         super(Texture, self).__init__(width, height)
@@ -1030,58 +1032,44 @@ class Texture(AbstractImage):
         source.blit_to_texture(self.target, self.level, x, y, z)
 
     def get_region(self, x, y, width, height):
-        u1 = x / float(self.width)
-        v1 = y / float(self.height)
-        u2 = (x + width) / float(self.width)
-        v2 = (y + height) / float(self.height)
-        z1 = self.tex_coords[0][2]
-        z2 = self.tex_coords[1][2]
-        z3 = self.tex_coords[2][2]
-        z4 = self.tex_coords[3][2]
-        return self.region_class(width, height, self,
-            ((u1, v1, z1), (u2, v1, z2), (u2, v2, z3), (u1, v2, z4)))
+        return self.region_class(x, y, 0, width, height, self)
+
 
 class TextureRegion(Texture):
     '''A rectangular region of a texture, presented as if it were
     a separate texture.
     '''
 
-    def __init__(self, width, height, owner, tex_coords):
+    def __init__(self, x, y, z, width, height, owner):
         super(TextureRegion, self).__init__(
             width, height, owner.target, owner.id)
         
+        self.x = x
+        self.y = y
+        self.z = z
         self.owner = owner
-        self.tex_coords = tex_coords
+        u1 = x / float(owner.width)
+        v1 = y / float(owner.height)
+        u2 = (x + width) / float(owner.width)
+        v2 = (y + height) / float(owner.height)
+        r = z / float(owner.images)
+        self.tex_coords = ((u1, v1, z), (u2, v1, z), (u2, v2, z), (u1, v2, z))
+
 
     def get_image_data(self):
-        me_x = int(self.tex_coords[0][0] * self.owner.width)
-        me_y = int(self.tex_coords[0][1] * self.owner.height)
         image_data = self.owner.get_image_data()
-        image_data.crop(me_x, me_y, self.width, self.height)
+        image_data.crop(self.x, self.y, self.width, self.height)
         return image_data
 
     image_data = property(get_image_data)
 
     def get_region(self, x, y, width, height):
-        me_x = self.tex_coords[0][0] * self.owner.width
-        me_y = self.tex_coords[0][1] * self.owner.height
-        x += me_x
-        y += me_y
-        u1 = x / float(self.owner.width)
-        v1 = y / float(self.owner.height)
-        u2 = (x + width) / float(self.owner.width)
-        v2 = (y + height) / float(self.owner.height)
-        z1 = self.tex_coords[0][2]
-        z2 = self.tex_coords[1][2]
-        z3 = self.tex_coords[2][2]
-        z4 = self.tex_coords[3][2]
-        return self.region_class(width, height, self.owner,
-            ((u1, v1, z1), (u2, v1, z2), (u2, v2, z3), (u1, v2, z4))) 
+        x += self.x
+        y += self.y
+        return self.region_class(x, y, self.z, width, height, self.owner)
 
     def blit_into(self, source, x, y, z):
-        me_x = int(self.tex_coords[0][0] * self.owner.width)
-        me_y = int(self.tex_coords[0][1] * self.owner.height)
-        self.owner.blit_into(source, x + me_x, y + me_y, z)
+        self.owner.blit_into(source, x + self.x, y + self.y, z)
 
 Texture.region_class = TextureRegion
 
@@ -1376,7 +1364,8 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
                          item_width=None, item_height=None,
                          row_padding=0, column_padding=0):
         image = image.texture
-        texture = cls(image.width, image.height, image, image.tex_coords)
+        texture = \
+            cls(image.x, image.y, image.z, image.width, image.height, image)
         if item_width is None:
             item_width = \
                 int((texture.width - column_padding * (columns - 1)) / columns)
