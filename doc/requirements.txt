@@ -245,6 +245,7 @@ image
         DDS_DXT5_SAVE                        
         BUFFER_SAVE                     X   X   X
         DEPTH_SAVE                      X   X   X
+        TEXTURE_GRID                    X   X   X
         ============================== === === ===
 
     TBD:

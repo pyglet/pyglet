@@ -610,7 +610,6 @@ class ImageData(AbstractImage):
                 Height of crop region
 
         '''
-
         self._ensure_string_data()
 
         x1 = len(self._current_format) * x
@@ -635,27 +634,7 @@ class ImageData(AbstractImage):
 
         self._ensure_string_data()
         data = self._current_data
-
-        if pitch != self._current_pitch:
-            diff = abs(self._current_pitch) - abs(pitch)
-            if diff > 0:
-                # New pitch is shorter than old pitch, chop bytes off each row
-                pattern = re.compile(
-                    '(%s)%s' % ('.' * abs(pitch), '.' * diff), re.DOTALL)
-                data = pattern.sub(r'\1', data)    
-            elif diff < 0:
-                # New pitch is longer than old pitch, add '0' bytes to each row
-                pattern = re.compile(
-                    '(%s)' % ('.' * abs(self._current_pitch)), re.DOTALL)
-                pad = '.' * -diff
-                data = pattern.sub(r'\1%s' % pad, data)
-
-            if self._current_pitch * pitch < 0:
-                # Pitch differs in sign, swap row order
-                rows = re.findall('.' * abs(pitch), data, re.DOTALL)
-                rows.reverse()
-                data = ''.join(rows)
-
+        current_pitch = self._current_pitch
         if format != self._current_format:
             # Create replacement string, e.g. r'\4\1\2\3' to convert RGBA to
             # ARGB
@@ -680,14 +659,37 @@ class ImageData(AbstractImage):
                     'Current image format is wider than 32 bits.')
 
             packed_pitch = self.width * len(self._current_format)
-            if abs(pitch) != packed_pitch:
+            if abs(self._current_pitch) != packed_pitch:
                 # Pitch is wider than pixel data, need to go row-by-row.
-                rows = re.findall('.' * abs(pitch), data, re.DOTALL)
+                rows = re.findall(
+                    '.' * abs(self._current_pitch), data, re.DOTALL)
                 rows = [swap_pattern.sub(repl, r) for r in rows]
                 data = ''.join(rows)
             else:
                 # Rows are tightly packed, apply regex over whole image.
                 data = swap_pattern.sub(repl, data)
+            current_pitch = self.width * len(format)
+
+        if pitch != current_pitch:
+            diff = abs(current_pitch) - abs(pitch)
+            if diff > 0:
+                # New pitch is shorter than old pitch, chop bytes off each row
+                pattern = re.compile(
+                    '(%s)%s' % ('.' * abs(pitch), '.' * diff), re.DOTALL)
+                data = pattern.sub(r'\1', data)    
+            elif diff < 0:
+                # New pitch is longer than old pitch, add '0' bytes to each row
+                pattern = re.compile(
+                    '(%s)' % ('.' * abs(current_pitch)), re.DOTALL)
+                pad = '.' * -diff
+                data = pattern.sub(r'\1%s' % pad, data)
+
+            if current_pitch * pitch < 0:
+                # Pitch differs in sign, swap row order
+                rows = re.findall('.' * abs(pitch), data, re.DOTALL)
+                rows.reverse()
+                data = ''.join(rows)
+
         return data
 
     def _ensure_string_data(self):
@@ -1063,6 +1065,8 @@ class TextureRegion(Texture):
     def get_region(self, x, y, width, height):
         me_x = self.tex_coords[0][0] * self.owner.width
         me_y = self.tex_coords[0][1] * self.owner.height
+        x += me_x
+        y += me_y
         u1 = x / float(self.owner.width)
         v1 = y / float(self.owner.height)
         u2 = (x + width) / float(self.owner.width)
@@ -1381,11 +1385,11 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
                 int((texture.height - row_padding * (rows - 1)) / rows)
         items = []
         y = 0
-        for row in rows:
+        for row in range(rows):
             x = 0
-            for col in columns:
-                items.append(self.get_region(x, y, item_width, item_height))
-                x + item_width + column_padding
+            for col in range(columns):
+                items.append(texture.get_region(x, y, item_width, item_height))
+                x += item_width + column_padding
             y += item_height + row_padding
 
         texture.items = items
@@ -1407,22 +1411,22 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
                 row1 = 0
                 col1 = 0
                 row2 = self.rows
-                col2 = self.cols
+                col2 = self.columns
                 if type(index.start) is tuple:
                     row1, col1 = index.start
                 elif type(index.start) is int:
                     row1 = index.start / self.columns
                     col1 = index.start % self.columns
-                assert row1 >= 0 and column1 >= 0 and \
-                       row1 < self.rows and column1 < self.columns
+                assert row1 >= 0 and col1 >= 0 and \
+                       row1 < self.rows and col1 < self.columns
 
                 if type(index.stop) is tuple:
                     row2, col2 = index.stop
                 elif type(index.stop) is int:
                     row2 = index.stop / self.columns
                     col2 = index.stop % self.columns
-                assert row2 >= 0 and column2 >= 0 and \
-                       row2 < self.rows and column2 < self.columns
+                assert row2 >= 0 and col2 >= 0 and \
+                       row2 < self.rows and col2 < self.columns
 
                 result = []
                 i = row1 * self.columns
