@@ -57,8 +57,6 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
         has_alpha = gdkpixbuf.gdk_pixbuf_get_has_alpha(pixbuf)
         pixels = gdkpixbuf.gdk_pixbuf_get_pixels(pixbuf)
 
-        alignment = 4 # TODO is this always the case?
-
         # Copy pixel data.
         buffer = (c_ubyte * (rowstride * height))()
         memmove(buffer, pixels, rowstride * (height - 1) + width * channels)
@@ -72,10 +70,7 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
         else:
             format = 'RGBA'
 
-        type = GL_UNSIGNED_BYTE
-
-        return RawImage(buffer, width, height, format, type, 
-            top_to_bottom=True, alignment=alignment)
+        return ImageData(width, height, format, buffer, -rowstride)
 
 def get_decoders():
     return [GdkPixbuf2ImageDecoder()]

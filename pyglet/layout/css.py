@@ -580,7 +580,7 @@ class ParserException(Exception):
 
 class UnexpectedToken(ParserException):
     def __init__(self, position, expected_list, got_token):
-        super(UnexpectedToken, self).__init__(*position)
+        ParserException.__init__(self, *position)
         if len(expected_list) == 1:
             self.expected = 'expected %r' % expected_list[0]
         else:

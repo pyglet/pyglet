@@ -151,51 +151,33 @@ class GLRenderDevice(RenderDevice):
         background_image = compute('background-image')
         if background_image != 'none':
             repeat = compute('background-repeat')
+            # TODO tileable texture in cache vs non-tileable, vice-versa
             if background_image not in self.texture_cache:
                 self.texture_cache[background_image] = None
                 stream = self.locator.get_stream(background_image)
                 if stream:
-                    texture = Image.load(file=stream).texture()
+                    image = load_image('', file=stream)
                     if repeat != 'no-repeat':
-                        texture.stretch()
+                        texture = TileableTexture.create_from_image(image)
+                    else:
+                        texture = image.texture
                     self.texture_cache[background_image] = texture
             texture = self.texture_cache[background_image]
             if texture:
-                u1, v1 = 0,0
-                u2, v2 = texture.uv
-                width, height = texture.width, texture.height
-                if repeat in ('no-repeat', 'repeat-y'):
-                    x2 = x1 + width
-                else:
-                    u2 = (x2 - x1) / width
-
-                if repeat in ('no-repeat', 'repeat-x'):
-                    y2 = y1 - height
-                else:
-                    v2 = (y1 - y2) / height
-                    # Compensate to keep tiling beginning at top, not bottom
-                    v1 = -(v2 - int(v2))
-                    v2 += v1
-
-                      # uv          # xyz
-                ar = [u1, v1,       x1, y2, 0,
-                      u1, v2,       x1, y1, 0,
-                      u2, v2,       x2, y1, 0,
-                      u2, v1,       x2, y2, 0]
-                ar = (c_float * len(ar))(*ar)
-            
-                glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
                 glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)
                 glColor3f(1, 1, 1)
-                glEnable(GL_TEXTURE_2D)
                 glEnable(GL_BLEND)
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-                glBindTexture(GL_TEXTURE_2D, texture.id)
-                glInterleavedArrays(GL_T2F_V3F, 0, ar)
-                glDrawArrays(GL_QUADS, 0, 4)
+                if isinstance(texture, TileableTexture):
+                    width, height = texture.width, texture.height
+                    if repeat in ('repeat', 'repeat-x'):
+                        width = x2 - x1
+                    if repeat in ('repeat', 'repeat-y'):
+                        height = y1 - y2
+                    texture.blit_tiled(x1, y2, 0, width, height)
+                else:
+                    texture.blit(x1, y2, 0)
                 glPopAttrib()
-                glPopClientAttrib()
-                    
    
 class GLTextFrame(TextFrame):
     glyph_string = None

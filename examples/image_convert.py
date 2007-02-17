@@ -26,7 +26,7 @@ def convert(src, dest):
         texture.save(dest)
     else:
         # Can do straight conversion without a window or context.
-        image = Image.load(src)
+        image = load_image(src)
         image.save(dest)
 
 if __name__ == '__main__':

@@ -85,9 +85,6 @@ def frac(value):
 def unfrac(value):
     return value >> 6
 
-class FreeTypeGlyphTextureAtlas(GlyphTextureAtlas):
-    pass
-
 class FreeTypeGlyphRenderer(GlyphRenderer):
     def __init__(self, font):
         super(FreeTypeGlyphRenderer, self).__init__(font)
@@ -106,28 +103,19 @@ class FreeTypeGlyphRenderer(GlyphRenderer):
         lsb = glyph_slot.bitmap_left
         advance = unfrac(glyph_slot.advance.x)
         pitch = glyph_slot.bitmap.pitch  # 1 component, so no alignment prob.
-    
-        # Allocate space within an atlas
-        glyph = self.font.allocate_glyph(width, height)
-        glyph.set_bearings(baseline, lsb, advance)
-        glyph.flip_vertical()
 
-        glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
-        glBindTexture(GL_TEXTURE_2D, glyph.texture.id)
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, pitch)
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-        glTexSubImage2D(GL_TEXTURE_2D, 0,
-            glyph.x, glyph.y,
-            width, height,
-            GL_ALPHA,
-            GL_UNSIGNED_BYTE,
-            glyph_slot.bitmap.buffer)
-        glPopClientAttrib()
+        # pitch should be negative, but much faster to just swap tex_coords
+        image = ImageData(width, height, 'A', glyph_slot.bitmap.buffer, pitch)
+        glyph = self.font.create_glyph(image) 
+        glyph.set_bearings(baseline, lsb, advance)
+        glyph.tex_coords = (glyph.tex_coords[3],
+                            glyph.tex_coords[2],
+                            glyph.tex_coords[1],
+                            glyph.tex_coords[0])
 
         return glyph
 
 class FreeTypeFont(BaseFont):
-    glyph_texture_atlas_class = FreeTypeGlyphTextureAtlas
     glyph_renderer_class = FreeTypeGlyphRenderer
 
     def __init__(self, name, size, bold=False, italic=False):

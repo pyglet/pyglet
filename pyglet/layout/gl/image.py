@@ -36,16 +36,13 @@ class ImageReplacedElementFactory(ReplacedElementFactory):
             warnings.warn('Image not loaded: "%s"' % attrs['src'])
             return None
 
-        image = Image.load(file=file)
+        image = load_image('', file=file)
         self.cache[src] = image
         return ImageReplacedElementDrawable(image)
 
 class ImageReplacedElementDrawable(ReplacedElementDrawable):
     def __init__(self, image):
-        if not isinstance(image, Texture):
-            self.texture = image.texture()
-        else:
-            self.texture = image
+        self.texture = image.texture
 
         self.intrinsic_width = image.width
         self.intrinsic_height = image.height
@@ -58,17 +55,22 @@ class ImageReplacedElementDrawable(ReplacedElementDrawable):
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glBindTexture(GL_TEXTURE_2D, self.texture.id)
-        glBegin(GL_QUADS)
 
-        # TODO use image.tex_coords to allow subimages here
-        glTexCoord2f(0, self.texture.uv[1])
-        glVertex2f(left, top)
-        glTexCoord2f(0, 0)
-        glVertex2f(left, bottom)
-        glTexCoord2f(self.texture.uv[0], 0)
-        glVertex2f(right, bottom)
-        glTexCoord2f(self.texture.uv[0], self.texture.uv[1])
-        glVertex2f(right, top)
+        # Create interleaved array in T4F_V4F format
+        t = self.texture.tex_coords
+        array = (GLfloat * 32)(
+             t[0][0], t[0][1], t[0][2], 1.,
+             left,    bottom,  0,       1.,
+             t[1][0], t[1][1], t[1][2], 1., 
+             right,   bottom,  0,       1.,
+             t[2][0], t[2][1], t[2][2], 1., 
+             right,   top,     0,       1.,
+             t[3][0], t[3][1], t[3][2], 1., 
+             left,    top,     0,       1.)
 
-        glEnd()
+        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+        glInterleavedArrays(GL_T4F_V4F, 0, array)
+        glDrawArrays(GL_QUADS, 0, 4)
+        glPopClientAttrib()
+
         glPopAttrib()

@@ -127,14 +127,6 @@ def str_ucs2(text):
         text = text.encode('utf_16_le')   # explicit endian avoids BOM
     return create_string_buffer(text + '\0')
 
-class CarbonGlyphTextureAtlas(GlyphTextureAtlas):
-    '''
-    def apply_blend_state(self):
-        # Textures have premultiplied alpha
-        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_BLEND)
-    '''
-
 class CarbonGlyphRenderer(GlyphRenderer):
     _bitmap = None
     _bitmap_context = None
@@ -211,26 +203,21 @@ class CarbonGlyphRenderer(GlyphRenderer):
             kATSUToTextEnd,
             fixed(-lsb + 1), fixed(baseline)) 
 
-        # Allocate space within an atlas
-        glyph = self.font.allocate_glyph(image_width, image_height)
-        glyph.flip_vertical()
+        
+        # A negative pitch is required, but it is much faster to load the
+        # glyph upside-down and flip the tex_coords.  Note skip_rows used
+        # to start at top of glyph image.
+        pitch = int(4 * self._bitmap_rect.size.width)
+        skip_rows = int(self._bitmap_rect.size.height - image_height)
+        image = ImageData(image_width, image_height, 'RGBA', self._bitmap,
+                          pitch, skip_rows)
+        glyph = self.font.create_glyph(image)
         glyph.set_bearings(baseline, lsb, advance)
-       
-        # Copy bitmap into the texture.
-        glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
-        glBindTexture(GL_TEXTURE_2D, glyph.texture.id)
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, int(self._bitmap_rect.size.width))
-        glPixelStorei(GL_UNPACK_SKIP_ROWS, 
-            int(self._bitmap_rect.size.height - image_height))
-        glTexSubImage2D(GL_TEXTURE_2D, 0,
-            glyph.x, glyph.y,
-            image_width,
-            image_height,
-            GL_RGBA,
-            GL_UNSIGNED_BYTE,
-            self._bitmap)
-        glPopClientAttrib()
-
+        glyph.tex_coords = (glyph.tex_coords[3], 
+                            glyph.tex_coords[2],
+                            glyph.tex_coords[1],
+                            glyph.tex_coords[0])
+        
         return glyph
 
     def _create_bitmap_context(self, width, height):
@@ -261,7 +248,6 @@ class CarbonGlyphRenderer(GlyphRenderer):
 
 class CarbonFont(BaseFont):
     glyph_renderer_class = CarbonGlyphRenderer
-    glyph_texture_atlas_class = CarbonGlyphTextureAtlas
 
     def __init__(self, name, size, bold=False, italic=False):
         super(CarbonFont, self).__init__()

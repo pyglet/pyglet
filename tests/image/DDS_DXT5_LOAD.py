@@ -9,15 +9,11 @@ __version__ = '$Id: $'
 import unittest
 import base_load
 
-from pyglet.image.codecs import *
-from pyglet.image.codecs import dds
+from pyglet.image.codecs.dds import *
 
 class TEST_DDS_DXT5_LOAD(base_load.TestLoad):
     texture_file = 'dxt5.dds'
-
-    def choose_codecs(self):
-        clear_decoders()
-        add_decoders(dds)
+    decoder = DDSImageDecoder()
 
 if __name__ == '__main__':
     unittest.main()

@@ -11,21 +11,16 @@ import unittest
 import base_load
 import sys
 
-from pyglet.image.codecs import *
-
 if sys.platform == 'linux2':
-    from pyglet.image.codecs import gdkpixbuf2 as platform_decoder
+    from pyglet.image.codecs.gdkpixbuf2 import GdkPixbuf2ImageDecoder as dclass
 elif sys.platform in ('win32', 'cygwin'):
-    from pyglet.image.codecs import gdiplus as platform_decoder
+    from pyglet.image.codecs.gdiplus import GDIPlusDecoder as dclass
 elif sys.platform == 'darwin':
-    from pyglet.image.codecs import quicktime as platform_decoder
+    from pyglet.image.codecs.quicktime import QuickTimeImageDecoder as dclass
 
-class TEST_PNG_RGBA_LOAD(base_load.TestLoad):
+class TEST_PLATFORM_RGBA_LOAD(base_load.TestLoad):
     texture_file = 'rgba.png'
-
-    def choose_codecs(self):
-        clear_decoders()
-        add_decoders(platform_decoder)
+    decoder = dclass()
 
 if __name__ == '__main__':
     unittest.main()

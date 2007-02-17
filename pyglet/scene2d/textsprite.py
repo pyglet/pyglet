@@ -71,7 +71,6 @@ class TextSprite(object):
 
         glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT)
         glEnable(GL_TEXTURE_2D)
-
         glColor4f(*self.color)
         glPushMatrix()
         glTranslatef(self.x, self.y, 0)

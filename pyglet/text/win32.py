@@ -178,24 +178,10 @@ class Win32GlyphRenderer(GlyphRenderer):
         gdi32.GdiFlush()
 
         # Create glyph object and copy bitmap data to texture
-        glyph = self.font.allocate_glyph(width, height)
+        image = ImageData(width, height, 'RGBA', self._bitmap_data,
+                          self._bitmap_rect.right * 4)
+        glyph = self.font.create_glyph(image)
         glyph.set_bearings(-self.font.descent, lsb, advance)
-
-        # Bizareness: GL_TEXTURE must be enabled for TexImage...?
-        # --> This seems to be a Win32 issue only.  Move into pyglet.image?
-        glPushAttrib(GL_ENABLE_BIT)
-        glBindTexture(GL_TEXTURE_2D, glyph.texture.id)
-        glEnable(GL_TEXTURE_2D)
-        glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, self._bitmap_rect.right)
-        glTexSubImage2D(GL_TEXTURE_2D, 0,
-            glyph.x, glyph.y,
-            glyph.width, glyph.height,
-            GL_RGBA,
-            GL_UNSIGNED_BYTE,
-            self._bitmap_data)
-        glPopClientAttrib()
-        glPopAttrib()
 
         return glyph
         

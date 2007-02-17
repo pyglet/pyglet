@@ -24,7 +24,7 @@ from pyglet.window import *
 from pyglet.image import *
 import pyglet.layout.base
 
-class Glyph(TextureSubImage):
+class Glyph(TextureRegion):
     advance = 0
     vertices = (0, 0, 0, 0)
 
@@ -39,7 +39,7 @@ class Glyph(TextureSubImage):
     def draw(self):
         '''Debug method: use the higher level APIs for performance and
         kerning.'''
-        glBindTexture(GL_TEXTURE_2D, self.texture.id)
+        glBindTexture(GL_TEXTURE_2D, self.owner.id)
         glBegin(GL_QUADS)
         self.draw_quad_vertices()
         glEnd()
@@ -47,24 +47,46 @@ class Glyph(TextureSubImage):
     def draw_quad_vertices(self):
         '''Debug method: use the higher level APIs for performance and
         kerning.'''
-        glTexCoord2f(self.tex_coords[0], self.tex_coords[1])
+        glTexCoord2f(self.tex_coords[0][0], self.tex_coords[0][1])
         glVertex2f(self.vertices[0], self.vertices[1])
-        glTexCoord2f(self.tex_coords[2], self.tex_coords[1])
+        glTexCoord2f(self.tex_coords[1][0], self.tex_coords[1][1])
         glVertex2f(self.vertices[2], self.vertices[1])
-        glTexCoord2f(self.tex_coords[2], self.tex_coords[3])
+        glTexCoord2f(self.tex_coords[2][0], self.tex_coords[2][1])
         glVertex2f(self.vertices[2], self.vertices[3])
-        glTexCoord2f(self.tex_coords[0], self.tex_coords[3])
+        glTexCoord2f(self.tex_coords[3][0], self.tex_coords[3][1])
         glVertex2f(self.vertices[0], self.vertices[3])
 
     def get_kerning_pair(self, right_glyph):
         return 0
 
-class GlyphTextureAtlas(AllocatingTextureAtlas):
-    subimage_class = Glyph
+class GlyphTextureAtlas(Texture):
+    region_class = Glyph
+    x = 0
+    y = 0
+    line_height = 0
 
     def apply_blend_state(self):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_BLEND)
+
+    def fit(self, image):
+        '''Places `image` within the texture, returns a TextureRegion for
+        that image.
+        Returns None if image doesn't fit.
+        '''
+        if self.x + image.width > self.texture.width:
+            self.x = 0
+            self.y += self.line_height
+            self.line_height = 0
+        if self.y + image.height > self.texture.height:
+            return None
+
+        self.line_height = max(self.line_height, image.height)
+        region = self.get_region(
+            self.x, self.y, image.width, image.height)
+        region.blit_into(image, 0, 0, 0)
+        self.x += image.width
+        return region
 
 class GlyphRenderer(object):
     def __init__(self, font):
@@ -94,20 +116,20 @@ class GlyphString(object):
         state_from = 0
         state_length = 0
         for i, glyph in enumerate(glyphs):
-            if glyph.texture != texture:
+            if glyph.owner != texture:
                 if state_length:
                     self.states.append((state_from, state_length, texture))
-                texture = glyph.texture
+                texture = glyph.owner
                 state_from = i
                 state_length = 0
             state_length += 1
-            lst += [glyph.tex_coords[0], glyph.tex_coords[1],
+            lst += [glyph.tex_coords[0][0], glyph.tex_coords[0][1],
                     x + glyph.vertices[0], y + glyph.vertices[1], 0.,
-                    glyph.tex_coords[2], glyph.tex_coords[1],
+                    glyph.tex_coords[1][0], glyph.tex_coords[1][1],
                     x + glyph.vertices[2], y + glyph.vertices[1], 0.,
-                    glyph.tex_coords[2], glyph.tex_coords[3],
+                    glyph.tex_coords[2][0], glyph.tex_coords[2][1],
                     x + glyph.vertices[2], y + glyph.vertices[3], 0.,
-                    glyph.tex_coords[0], glyph.tex_coords[3],
+                    glyph.tex_coords[3][0], glyph.tex_coords[3][1],
                     x + glyph.vertices[0], y + glyph.vertices[3], 0.]
             x += glyph.advance
             self.cumulative_advance.append(x)
@@ -177,13 +199,12 @@ class BaseFont(object):
     texture_height = 256
     texture_internalformat = GL_ALPHA
 
-    # These two need overriding by subclasses
-    glyph_texture_atlas_class = GlyphTextureAtlas
-    glyph_renderer_class = GlyphRenderer
-
     # These should also be set by subclass when known
     ascent = 0
     descent = 0
+
+    glyph_renderer_class = GlyphRenderer
+    texture_class = GlyphTextureAtlas
 
     def __init__(self):
         self.textures = []
@@ -199,29 +220,27 @@ class BaseFont(object):
         # Subclasses override
         return True
 
-    def allocate_glyph(self, width, height):
-        # Search atlases for a free spot
+    def create_glyph(self, image):
+        glyph = None
         for texture in self.textures:
-            try:
-                return texture.allocate(width, height)
-            except AllocatingTextureAtlasOutOfSpaceException:
-                pass
-
-        # If requested glyph size is bigger than atlas size, increase
-        # next atlas size.  A better heuristic could be applied earlier
-        # (say, if width is > 1/4 texture_width).
-        if width > self.texture_width or height > self.texture_height:
-            self.texture_width, self.texture_height, u, v= \
-                Texture.get_texture_size(width * 2, height * 2)
-
-        texture = self.glyph_texture_atlas_class.create(
-            self.texture_width,
-            self.texture_height,
-            self.texture_internalformat)
-        self.textures.insert(0, texture)
-
-        # This can't fail.
-        return texture.allocate(width, height)
+            glyph = texture.fit(image)
+            if glyph:
+                break
+        if not glyph:
+            if image.width > self.texture_width or \
+               image.height > self.texture_height:
+                texture = self.texture_class.create_for_size(GL_TEXTURE_2D,
+                    image.width * 2, image.height * 2,
+                    self.texture_internalformat)
+                self.texture_width = texture.width
+                self.texture_height = texture.height
+            else:
+                texture = self.texture_class.create_for_size(GL_TEXTURE_2D,
+                    self.texture_width, self.texture_height,
+                    self.texture_internalformat)
+            self.textures.insert(0, texture)
+            glyph = texture.fit(image)
+        return glyph
 
     def get_glyphs(self, text):
         '''Create and return a list of Glyphs for 'text'.

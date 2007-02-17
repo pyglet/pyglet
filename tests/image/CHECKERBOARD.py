@@ -20,6 +20,8 @@ from pyglet.window.event import *
 from tests.regression import ImageRegressionTestCase
 
 class TEST_CHECKERBOARD(ImageRegressionTestCase):
+    has_exit = False
+
     def on_resize(self, width, height):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
@@ -30,7 +32,7 @@ class TEST_CHECKERBOARD(ImageRegressionTestCase):
         glClearColor(1, 1, 1, 1)
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
-        self.texture.draw()
+        self.texture.blit_to_buffer(0, 0, 0)
         self.window.flip()
 
         if self.capture_regression_image():
@@ -41,7 +43,7 @@ class TEST_CHECKERBOARD(ImageRegressionTestCase):
         self.window = w = Window(width, height, visible=False)
         w.push_handlers(self)
 
-        self.texture = Image2d.from_image(Image.create_checkerboard(width))
+        self.texture = create_image(32, 32, CheckerImagePattern()).texture
 
         w.set_visible()
         while not (w.has_exit or self.has_exit):

@@ -38,7 +38,7 @@ class PILImageDecoder(ImageDecoder):
         type = GL_UNSIGNED_BYTE
         width, height = image.size
 
-        return RawImage(image.tostring(), width, height, image.mode, type)
+        return ImageData(width, height, image.mode, image.tostring())
 
 class PILImageEncoder(ImageEncoder):
     def get_file_extensions(self):
@@ -46,37 +46,28 @@ class PILImageEncoder(ImageEncoder):
         return ['.bmp', '.eps', '.gif', '.jpg', '.jpeg',
                 '.pcx', '.png', '.ppm', '.tiff', '.xbm']
 
-    def encode(self, image, file, filename, options={}):
-        # Format can be given in options dict, otherwise extracted
-        # from filename extension.  Defaults to PNG if no filename or format
-        # given.
-        format = options.get('format', 
-            filename and os.path.splitext(filename)[1][1:]) or 'png'
+    def encode(self, image, file, filename):
+        # File format is guessed from filename extension, otherwise defaults
+        # to PNG.
+        format = (filename and os.path.splitext(filename)[1][1:]) or 'png'
 
         if format.lower() == 'jpg':
             format = 'JPEG'
 
-        image = image.get_raw_image()
-        if image.type != GL_UNSIGNED_BYTE:
-            raise ImageEncodeException('Unsupported sample type')
+        image = image.image_data
+        image.pitch = -(image.width * len(image.format))
 
-        if len(image.format) == 2:
-            image.set_format('RGBA')
-        elif len(image.format) == 3:
-            image.set_format('RGB')
-        elif len(image.format) == 4:
-            image.set_format('RGBA')
+        # Only save in RGB or RGBA formats.
+        if image.format != 'RGB':
+            image.format = 'RGBA'
 
         # Note: Don't try and use frombuffer(..); different versions of
         # PIL will orient the image differently.
         pil_image = Image.fromstring(
             image.format, (image.width, image.height), image.data)
 
-        if not image.top_to_bottom:
-            pil_image = pil_image.transpose(Image.FLIP_TOP_BOTTOM)
-
         try:
-            pil_image.save(file, format, **options)
+            pil_image.save(file, format)
         except Exception, e:
             raise ImageEncodeException(e)
 

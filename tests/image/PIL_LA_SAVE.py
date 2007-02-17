@@ -11,15 +11,11 @@ __version__ = '$Id$'
 import unittest
 import base_save
 
-from pyglet.image.codecs import *
-from pyglet.image.codecs import pil
+from pyglet.image.codecs.pil import PILImageEncoder
 
-class TEST_PNG_LA_SAVE(base_save.TestSave):
+class TEST_PIL_LA_SAVE(base_save.TestSave):
     texture_file = 'la.png'
-
-    def choose_codecs(self):
-        clear_encoders()
-        add_encoders(pil)
+    encoder = PILImageEncoder()
 
 if __name__ == '__main__':
     unittest.main()

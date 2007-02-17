@@ -8,7 +8,7 @@ __version__ = '$Id$'
 
 import unittest
 
-from pyglet.image import BufferImage
+from pyglet.image import get_buffer_manager
 
 class ImageRegressionTestCase(unittest.TestCase):
     _enable_regression_image = False
@@ -19,5 +19,6 @@ class ImageRegressionTestCase(unittest.TestCase):
         if not self._enable_regression_image:
             return False
 
-        self._captured_image = BufferImage().get_raw_image()
+        self._captured_image = \
+            get_buffer_manager().get_color_buffer().image_data
         return not self._enable_interactive

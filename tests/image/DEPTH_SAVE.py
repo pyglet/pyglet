@@ -44,13 +44,13 @@ class TEST_DEPTH_SAVE(base_save.TestSave):
         self.draw()
 
         print 'Saving depth image...'
-        image = DepthImage()
+        image = get_buffer_manager().get_depth_buffer()
         file = StringIO()
         image.save('buffer.png', file)
 
         print 'Loading depth image as texture...'
         file.seek(0)
-        self.saved_texture = Image2d.load('buffer.png', file)
+        self.saved_texture = load_image('buffer.png', file)
 
         print 'Done.'
         self.window.set_visible(False)

@@ -10,15 +10,11 @@ __version__ = '$Id: $'
 import unittest
 import base_load
 
-from pyglet.image.codecs import *
-from pyglet.image.codecs import pil
+from pyglet.image.codecs.pil import *
 
-class TEST_PNG_RGBA_LOAD(base_load.TestLoad):
+class TEST_PIL_RGBA_LOAD(base_load.TestLoad):
     texture_file = 'rgba.png'
-
-    def choose_codecs(self):
-        clear_decoders()
-        add_decoders(pil)
+    decoder = PILImageDecoder()
 
 if __name__ == '__main__':
     unittest.main()

@@ -12,7 +12,6 @@ from os.path import dirname, join
 from pyglet.gl import *
 from pyglet.image import *
 from pyglet.image.codecs import *
-from pyglet.scene2d.image import *
 from pyglet.window import *
 from pyglet.window.event import *
 
@@ -24,6 +23,7 @@ class TestLoad(ImageRegressionTestCase):
     show_checkerboard = True
     alpha = True
     has_exit = False
+    decoder = None
 
     def on_resize(self, width, height):
         glMatrixMode(GL_PROJECTION)
@@ -46,7 +46,7 @@ class TestLoad(ImageRegressionTestCase):
                      self.window.height/float(self.checkerboard.height),
                      1.)
             glMatrixMode(GL_MODELVIEW)
-            self.checkerboard.draw()
+            self.checkerboard.blit(0, 0, 0)
             glMatrixMode(GL_TEXTURE)
             glPopMatrix()
             glMatrixMode(GL_MODELVIEW)
@@ -57,40 +57,25 @@ class TestLoad(ImageRegressionTestCase):
             glTranslatef((self.window.width - self.texture.width) / 2,
                          (self.window.height - self.texture.height) / 2,
                          0)
-            self.texture.draw()
+            self.texture.blit(0, 0, 0)
             glPopMatrix()
         self.window.flip()
 
         if self.capture_regression_image():
             self.has_exit = True
 
-    def setUp(self):
-        self.__encoder_state = get_encoders_state()
-        self.__decoder_state = get_decoders_state()
-
-    def choose_codecs(self):
-        clear_encoders()
-        clear_decoders()
-        add_default_image_codecs()
-
-    def tearDown(self):
-        set_encoders_state(self.__encoder_state)
-        set_decoders_state(self.__decoder_state)
-
     def test_load(self):
         width, height = 800, 600
         self.window = w = Window(width, height, visible=False)
-        self.choose_codecs()
         w.push_handlers(self)
 
-        self.checkerboard = \
-            Image2d.from_image(Image.create_checkerboard(32))
+        self.screen = get_buffer_manager().get_color_buffer()
+        self.checkerboard = create_image(32, 32, CheckerImagePattern())
 
         if self.texture_file:
             self.texture_file = join(dirname(__file__), self.texture_file)
-            self.texture = \
-                Texture.load(self.texture_file)
-            self.texture = Image2d.from_texture(self.texture)
+            self.texture = load_image(self.texture_file, 
+                                      decoder=self.decoder).texture 
 
         if self.alpha:
             glEnable(GL_BLEND)

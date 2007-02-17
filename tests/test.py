@@ -478,7 +478,7 @@ class RegressionCheckTestResult(unittest.TestResult):
     def __init__(self, component, tolerance):
         super(RegressionCheckTestResult, self).__init__()
         self.filename = component.get_regression_image_filename()
-        self.regression_image = pyglet.image.Image.load(self.filename)
+        self.regression_image = pyglet.image.load_image(self.filename)
         self.tolerance = tolerance
 
     def startTest(self, test):
@@ -490,11 +490,10 @@ class RegressionCheckTestResult(unittest.TestResult):
 
     def addSuccess(self, test):
         # Check image
-        ref_image = self.regression_image.get_raw_image()
-        this_image = test._captured_image.get_raw_image()
-        this_image.set_format(ref_image.format)
-        if this_image.top_to_bottom != ref_image.top_to_bottom:
-            this_image.swap_rows()
+        ref_image = self.regression_image.image_data
+        this_image = test._captured_image.image_data
+        this_image.format = ref_image.format
+        this_image.pitch = ref_image.pitch
 
         if this_image.width != ref_image.width:
             self.addFailure(test, 
@@ -502,7 +501,7 @@ class RegressionCheckTestResult(unittest.TestResult):
         elif this_image.height != ref_image.height:
             self.addFailure(test, 
                 'Buffer height does not match regression image')
-        elif not buffer_equal(this_image.tostring(), ref_image.tostring(),
+        elif not buffer_equal(this_image.data, ref_image.data,
                               self.tolerance):
             self.addFailure(test,
                 'Buffer does not match regression image')

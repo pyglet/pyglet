@@ -70,11 +70,10 @@ class QuickTimeImageDecoder(ImageDecoder):
         quicktime.GraphicsImportDraw(importer)
         quicktime.DisposeGWorld(world)
 
-        type = GL_UNSIGNED_BYTE
+        pitch = len(format) * width
 
-        return RawImage(buffer, width, height, format, type, 
-            top_to_bottom=True)
-
+        return ImageData(width, height, format, buffer, -pitch)
+        
 def get_decoders():
     return [QuickTimeImageDecoder()]
 

@@ -40,13 +40,13 @@ class TEST_BUFFER_SAVE(base_save.TestSave):
         self.draw()
 
         print 'Saving colour image...'
-        image = BufferImage()
+        image = get_buffer_manager().get_color_buffer()
         file = StringIO()
         image.save('buffer.png', file)
 
         print 'Loading colour image as texture...'
         file.seek(0)
-        self.saved_texture = Image2d.load('buffer.png', file)
+        self.saved_texture = load_image('buffer.png', file)
 
         print 'Done.'
         self.window.set_visible(False)

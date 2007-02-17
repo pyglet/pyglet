@@ -117,7 +117,6 @@ class GDIPlusDecoder(ImageDecoder):
 
         # Reverse from what's documented because of Intel little-endianness.
         format = 'BGRA'
-        type = GL_UNSIGNED_BYTE
         if pf == PixelFormat24bppRGB:
             format = 'BGR'
         elif pf == PixelFormat32bppRGB:
@@ -145,14 +144,6 @@ class GDIPlusDecoder(ImageDecoder):
         buffer = create_string_buffer(bitmap_data.Stride * height)
         memmove(buffer, bitmap_data.Scan0, len(buffer))
         
-        # Guess alignment from low stride bits.
-        if bitmap_data.Stride & 1:
-            alignment = 1
-        elif bitmap_data.Stride & 2:
-            alignment = 2
-        else:
-            alignment = 4
-
         # Unlock data
         gdiplus.GdipBitmapUnlockBits(bitmap, byref(bitmap_data))
 
@@ -160,8 +151,7 @@ class GDIPlusDecoder(ImageDecoder):
         gdiplus.GdipDisposeImage(bitmap)
         # TODO: How to call IUnknown::Release on stream?
 
-        return RawImage(buffer, width, height, format, type, 
-                        top_to_bottom=True, alignment=alignment)
+        return ImageData(width, height, format, buffer, -bitmap_data.Stride)
 
 def get_decoders():
     return [GDIPlusDecoder()]
