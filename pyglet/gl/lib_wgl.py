@@ -10,7 +10,7 @@ import ctypes
 from ctypes import *
 from ctypes.util import find_library
 
-from pyglet.gl.lib import missing_function
+from pyglet.gl.lib import missing_function, decorate_function
 
 __all__ = ['link_GL', 'link_GLU', 'link_WGL']
 
@@ -47,6 +47,7 @@ class WGLFunctionProxy(object):
         address = wglGetProcAddress(self.name)
         if address:
             self.func = cast(address, self.ftype)
+            decorate_function(self.func, self.name)
         else:
             self.func = missing_function(
                 self.name, self.requires, self.suggestions)
@@ -58,6 +59,7 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
         func = getattr(gl_lib, name)
         func.restype = restype
         func.argtypes = argtypes
+        decorate_function(func, name)
         return func
     except AttributeError, e:
         # Not in opengl32.dll. Try and get a pointer from WGL.
@@ -69,7 +71,9 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
                 if gl_info.have_context:
                     address = wglGetProcAddress(name)
                     if address:
-                        return cast(address, ftype)
+                        func = cast(address, ftype)
+                        decorate_function(func, name)
+                        return func
                 else:
                     # Insert proxy until we have a context
                     return WGLFunctionProxy(name, ftype, requires, suggestions)
@@ -83,6 +87,7 @@ def link_GLU(name, restype, argtypes, requires=None, suggestions=None):
         func = getattr(glu_lib, name)
         func.restype = restype
         func.argtypes = argtypes
+        decorate_function(func, name)
         return func
     except AttributeError, e:
         # Not in glu32.dll. Try and get a pointer from WGL.
@@ -94,7 +99,9 @@ def link_GLU(name, restype, argtypes, requires=None, suggestions=None):
                 if gl_info.have_context:
                     address = wglGetProcAddress(name)
                     if address:
-                        return cast(address, ftype)
+                        func = cast(address, ftype)
+                        decorate_function(func, name)
+                        return func
                 else:
                     # Insert proxy until we have a context
                     return WGLFunctionProxy(name, ftype, requires, suggestions)

@@ -12,6 +12,7 @@ from pyglet.model.geometric import *
 #from pyglet.gui import fps
 
 from pyglet.gl import *
+from pyglet.gl.gl_info import *
 
 c_float4 = c_float * 4
 
@@ -33,7 +34,8 @@ class TextureParam(object):
     ALL      = 63
 
     def __init__(self, wrap = GL_REPEAT, filter = GL_LINEAR, min_filter = None):
-        if self.max_anisotropy == 0.0:
+        if self.max_anisotropy == 0.0 and \
+           gl_info.have_extension('GL_EXT_texture_filter_anisotropic'):
             v = c_float()
             glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, byref(v))
             self.max_anisotropy = v.value

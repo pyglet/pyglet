@@ -14,3 +14,7 @@ def _require_ctypes_version(version):
     if not tuple(have) >= tuple(req):
         raise ImportError('pyglet requires ctypes %s or later.' % version)
 _require_ctypes_version('1.0.0')
+
+options = {
+    'gl_error_check': True,
+}

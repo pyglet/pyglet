@@ -41,6 +41,49 @@ class c_void(ctypes.Structure):
     # POINTER(c_void), so it can be treated as a real pointer.
     _fields_ = [('dummy', ctypes.c_int)]
 
+class GLException(Exception):
+    pass
+
+def errcheck(result, func, arguments):
+    from pyglet.window import get_current_context
+    context = get_current_context()
+    if not context:
+        raise GLException('No GL context; create a Window first')
+    if not context.gl_begin:
+        from pyglet.gl import glGetError, gluErrorString
+        error = glGetError()
+        if error:
+            message = ctypes.cast(gluErrorString(error), ctypes.c_char_p).value
+            raise GLException(message)
+        return result
+
+def errcheck_glbegin(result, func, arguments):
+    from pyglet.window import get_current_context
+    context = get_current_context()
+    if not context:
+        raise GLException('No GL context; create a Window first')
+    context.gl_begin = True
+    return result
+
+def errcheck_glend(result, func, arguments):
+    from pyglet.window import get_current_context
+    context = get_current_context()
+    if not context:
+        raise GLException('No GL context; create a Window first')
+    context.gl_begin = False
+    return errcheck(result, func, arguments)
+
+def decorate_function(func, name):
+    from pyglet import options
+    if options['gl_error_check']:
+        if name == 'glBegin':
+            func.errcheck = errcheck_glbegin
+        elif name == 'glEnd':
+            func.errcheck = errcheck_glend
+        elif name not in ('glGetError', 'gluErrorString') and \
+             name[:3] not in ('glX', 'agl', 'wgl'):
+            func.errcheck = errcheck
+
 link_AGL = None
 link_GLX = None
 link_WGL = None

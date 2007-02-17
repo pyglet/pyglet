@@ -91,6 +91,27 @@ projection matrix when the window is resized::
 
     window.push_handlers(on_resize)
 
+Error checking
+--------------
+
+By default, pyglet calls ``glGetError`` after every GL function call (except
+where such a check would be invalid).  If an error is reported, pyglet raises
+``GLException`` with the result of ``gluErrorString`` as the message.
+
+This is very handy during development, as it catches common coding errors
+early on.  However, it has a significant impact on performance.  You can
+disable this error check by setting the following option `before` importing
+``pyglet.gl`` or ``pyglet.window``::
+
+    # Disable error checking for increased performance
+    from pyglet import options
+    options['gl_error_check'] = False
+
+    from pyglet.gl import *
+
+Setting the option after importing ``pyglet.gl`` will have no effect.  Once
+disabled, there is no overhead in each GL call.
+
 Using extension functions
 -------------------------
 

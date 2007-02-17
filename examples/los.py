@@ -14,6 +14,9 @@ import os
 import sys
 import random
 
+from pyglet import options
+options['gl_error_check'] = False
+
 from pyglet.window import Window
 from pyglet.clock import Clock
 from pyglet.scene2d import *

@@ -9,7 +9,7 @@ __version__ = '$Id: $'
 from ctypes import *
 from ctypes.util import find_library
 
-from pyglet.gl.lib import missing_function
+from pyglet.gl.lib import missing_function, decorate_function
 
 __all__ = ['link_GL', 'link_GLU', 'link_AGL']
 
@@ -30,6 +30,7 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
         func = getattr(gl_lib, name)
         func.restype = restype
         func.argtypes = argtypes
+        decorate_function(func, name)
         return func
     except AttributeError, e:
         return missing_function(name, requires, suggestions)
@@ -41,6 +42,7 @@ def link_AGL(name, restype, argtypes, requires=None, suggestions=None):
         func = getattr(agl_lib, name)
         func.restype = restype
         func.argtypes = argtypes
+        decorate_function(func, name)
         return func
     except AttributeError, e:
         return missing_function(name, requires, suggestions)

@@ -285,6 +285,11 @@ class BaseGLContext(object):
     the context in a platform-independent manner.  Applications will have
     no need to deal with contexts directly.
     '''
+
+    # Used for error checking, True if currently within a glBegin/End block.
+    # Ignored if error checking is disabled.
+    gl_begin = False
+
     def __init__(self, context_share=None):
         if context_share:
             self._shared_object_space = context_share.get_shared_object_space()
