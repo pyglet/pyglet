@@ -322,9 +322,28 @@ class AbstractImage(object):
         '''Draw `source` on this image.'''
         raise ImageException('Cannot blit images onto %r.' % self)
 
-    def blit_to_texture(self, target, level, x, y, depth=0):
+    def blit_to_texture(self, target, level, x, y, z=0):
         '''Draw this image on the currently bound texture at `target`.'''
         raise ImageException('Cannot blit %r to a texture.' % self)
+
+class TextureSequence(object):
+    def __getitem__(self, slice):
+        raise NotImplementedError('abstract')
+
+    def __setitem__(self, slice, image):
+        raise NotImplementedError('abstract')
+
+    def __len__(self):
+        raise NotImplementedError('abstract')
+
+class UniformTextureSequence(TextureSequence):
+    def _get_item_width(self):
+        raise NotImplementedError('abstract')
+    item_width = property(_get_item_width)
+
+    def _get_item_height(self):
+        raise NotImplementedError('abstract')
+    item_height = property(_get_item_height)
 
 class ImageData(AbstractImage):
     '''An image represented as a string of unsigned bytes.
@@ -540,7 +559,7 @@ class ImageData(AbstractImage):
     def blit(self, x, y, z):
         self.texture.blit(x, y, z)
 
-    def blit_to_texture(self, target, level, x, y, depth, internalformat=None):
+    def blit_to_texture(self, target, level, x, y, z, internalformat=None):
         '''Draw this image to to the currently bound texture at `target`.
 
         If `internalformat` is specified, glTexImage is used to initialise
@@ -578,7 +597,14 @@ class ImageData(AbstractImage):
         glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
         glPixelStorei(GL_UNPACK_SKIP_ROWS, self._current_skip_rows)
 
-        if internalformat:
+        if target == GL_TEXTURE_3D:
+            assert not internalformat
+            glTexSubImage3D(target, level,
+                            x, y, z,
+                            self.width, self.height, 1,
+                            format, type,
+                            data)
+        elif internalformat:
             glTexImage2D(target, level,
                          internalformat,
                          self.width, self.height,
@@ -883,11 +909,18 @@ class CompressedImageData(AbstractImage):
     def blit_to_texture(self, target, level, x, y, z):
         self.verify_driver_supported()
 
-        glCompressedTexSubImage2DARB(target, level, 
-            x, y,
-            self.width, self.height,
-            self.gl_format,
-            len(self.data), self.data)
+        if target == GL_TEXTURE_3D:
+            glCompressedTexSubImage3DARB(target, level,
+                x, y, z,
+                self.width, self.height, 1,
+                self.gl_format,
+                len(self.data), self.data)
+        else:
+            glCompressedTexSubImage2DARB(target, level, 
+                x, y,
+                self.width, self.height,
+                self.gl_format,
+                len(self.data), self.data)
         
 def _nearest_pow2(v):
     # From http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
@@ -918,6 +951,8 @@ class Texture(AbstractImage):
             4-tuple of 3-tuple of float, giving four 3D texture coordinates
             of the bottom-left, bottom-right, top-right and top-left corners
             of the texture.
+        `target` : int
+            The GL texture target (e.g., ``GL_TEXTURE_2D``).
         `level` : int
             The mipmap level of this texture.
 
@@ -1053,7 +1088,7 @@ class TextureRegion(Texture):
         u2 = (x + width) / float(owner.width)
         v2 = (y + height) / float(owner.height)
         r = z / float(owner.images)
-        self.tex_coords = ((u1, v1, z), (u2, v1, z), (u2, v2, z), (u1, v2, z))
+        self.tex_coords = ((u1, v1, r), (u2, v1, r), (u2, v2, r), (u1, v2, r))
 
 
     def get_image_data(self):
@@ -1069,9 +1104,65 @@ class TextureRegion(Texture):
         return self.region_class(x, y, self.z, width, height, self.owner)
 
     def blit_into(self, source, x, y, z):
-        self.owner.blit_into(source, x + self.x, y + self.y, z)
+        self.owner.blit_into(source, x + self.x, y + self.y, z + self.z)
 
 Texture.region_class = TextureRegion
+
+class Texture3D(Texture, UniformTextureSequence):
+    '''A texture with more than one image slice.
+
+    Use `create_from_images` classmethod to construct.
+    '''
+    item_width = 0
+    item_height = 0
+    items = ()
+
+    @classmethod
+    def create_from_images(cls, images, internalformat=GL_RGBA):
+        item_width = images[0].width
+        item_height = images[0].height
+        for image in images:
+            if image.width != item_width or image.height != item_height:
+                raise ImageException('Images do not have same dimensions.')
+
+        depth = len(images)
+        if not gl_info.have_version(2,0):
+            depth = _nearest_pow2(depth)
+
+        texture = cls.create_for_size(GL_TEXTURE_3D, item_width, item_height)
+        texture.images = depth
+        
+        blank = (GLubyte * (texture.width * texture.height * texture.images))()
+        glBindTexture(texture.target, texture.id)
+        glTexImage3D(texture.target, texture.level,
+                     internalformat,
+                     texture.width, texture.height, texture.images, 0,
+                     GL_ALPHA, GL_UNSIGNED_BYTE,
+                     blank)
+
+        items = []
+        for i, image in enumerate(images):
+            item = self.region_class(0, 0, i, item_width, item_height, texture)
+            items.append(item)
+            image.blit_to_texture(texture.target, texture.level, 0, 0, i)
+
+        texture.items = items
+        texture.item_width = item_width
+        texture.item_heigth = item_height
+        return texture
+
+    def __len__(self):
+        return len(self.items)
+
+    def __getitem__(self, index):
+        return self.items[index]
+
+    def __setitem__(self, index, value):
+        if type(index) is slice:
+            for item, image in zip(self[index], value):
+                image.blit_to_texture(self.target, self.level, 0, 0, item.z)
+        else:
+            value.blit_to_texture(self.target, self.level, 0, 0, self[index].z)
 
 class TileableTexture(Texture):
     '''A texture that can be tiled efficiently.
@@ -1333,25 +1424,6 @@ class BufferImageMask(BufferImage):
 
     # TODO mask methods
 
-class TextureSequence(object):
-    def __getitem__(self, slice):
-        raise NotImplementedError('abstract')
-
-    def __setitem__(self, slice, image):
-        raise NotImplementedError('abstract')
-
-    def __len__(self):
-        raise NotImplementedError('abstract')
-
-class UniformTextureSequence(TextureSequence):
-    def _get_item_width(self):
-        raise NotImplementedError('abstract')
-    item_width = property(_get_item_width)
-
-    def _get_item_height(self):
-        raise NotImplementedError('abstract')
-    item_height = property(_get_item_height)
-
 class TextureGrid(TextureRegion, UniformTextureSequence):
     items = ()
     rows = 1
@@ -1438,13 +1510,13 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
                 if image.width != self.item_width or \
                    image.height != self.item_height:
                     raise ImageException('Image has incorrect dimensions')
-                image.blit_into(region)
+                image.blit_into(region, 0, 0, 0)
         else:
             image = value
             if image.width != self.item_width or \
                image.height != self.item_height:
                 raise ImageException('Image has incorrect dimensions')
-            image.blit_into(self[index])
+            image.blit_into(self[index], 0, 0, 0)
 
     def __len__(self):
         return len(self.items)
