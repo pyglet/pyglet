@@ -4,12 +4,15 @@ from ctypes import *
 from exceptions import *
 import random
 
+# disable error checking to make this code work :)
+from pyglet import options
+options['gl_error_check'] = False
+
 import pyglet.window
 import pyglet.clock
 from pyglet.shader import *
 from pyglet.window.event import *
 from pyglet.model.geometric import *
-#from pyglet.gui import fps
 
 from pyglet.gl import *
 from pyglet.gl.gl_info import *
@@ -17,10 +20,7 @@ from pyglet.gl.gl_info import *
 c_float4 = c_float * 4
 
 
-
 class Failed(Exception): pass
-
-
 
 class TextureParam(object):
     max_anisotropy = 0.0
@@ -81,7 +81,6 @@ class TextureParam(object):
         glTexParameterf(target, GL_TEXTURE_PRIORITY, self.priority)
 
 
-
 class Surface(object):
     SURF_NONE          = 0
     SURF_COLOUR        = 2
@@ -90,19 +89,19 @@ class Surface(object):
     SURF_DEPTH_STENCIL = 5
 
     DEFAULTS = {
-        SURF_COLOUR:        ( GL_RGBA,                 GL_TEXTURE_2D,       True,  False ),
-        SURF_DEPTH:         ( GL_DEPTH_COMPONENT24,    GL_RENDERBUFFER_EXT, False, False ),
-        SURF_STENCIL:       ( GL_STENCIL_INDEX8_EXT,   GL_RENDERBUFFER_EXT, False, False ),
-        SURF_DEPTH_STENCIL: ( GL_DEPTH24_STENCIL8_EXT, GL_RENDERBUFFER_EXT, False, False )
+        SURF_COLOUR:
+            (GL_RGBA,                 GL_TEXTURE_2D,       True,  False),
+        SURF_DEPTH:
+            (GL_DEPTH_COMPONENT24,    GL_RENDERBUFFER_EXT, False, False),
+        SURF_STENCIL:
+            (GL_STENCIL_INDEX8_EXT,   GL_RENDERBUFFER_EXT, False, False),
+        SURF_DEPTH_STENCIL:
+            (GL_DEPTH24_STENCIL8_EXT, GL_RENDERBUFFER_EXT, False, False)
     }
 
-    def __init__(self,
-                 surface_type = SURF_NONE,
-                 gl_fmt = None,
-                 gl_tgt = None,
-                 is_texture = None,
-                 is_mipmapped = None,
-                 params = None):
+    def __init__(self, surface_type = SURF_NONE, gl_fmt = None,
+            gl_tgt = None, is_texture = None, is_mipmapped = None,
+            params = None):
         self.gl_id = 0
 
         d = self.DEFAULTS[surface_type]
@@ -253,6 +252,17 @@ class Surface(object):
 class FrameBuffer(object):
     bound_fbo = [ 0 ]
 
+    def __init__(self, w, h, *surf):
+        self.frame_buffer = 0
+        self.width = w
+        self.height = h
+
+        self.colour = []
+        self.depth = None
+        self.stencil = None
+
+        for s in surf: self.add(s)
+
     def add(self, surf):
         if type(surf) in (tuple, list):
             surf, gl_tgt = surf
@@ -379,18 +389,6 @@ class FrameBuffer(object):
             fbo = c_uint(self.frame_buffer)
             glDeleteFramebuffersEXT(1, byref(fbo))
         self.frame_buffer = 0
-
-    def __init__(self, w, h, *surf):
-        self.frame_buffer = 0
-        self.width = w
-        self.height = h
-
-        self.colour = []
-        self.depth = None
-        self.stencil = None
-
-        for s in surf: self.add(s)
-
 
 
 class GaussianFuncs(FragmentShader):
@@ -603,7 +601,6 @@ void main() {
 """).addDependency(GaussianFuncs()))
 
 
-
 def gaussNoise(l):
     noise = []
     while len(noise) < l:
@@ -612,9 +609,7 @@ def gaussNoise(l):
     return noise
 
 
-
-def renderScene():
-    global r
+def renderScene(r, object):
     glClearColor(0.0, 0.0, 0.0, 1.0)
     glClearDepth(1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -629,9 +624,6 @@ def renderScene():
 
     glEnable(GL_DEPTH_TEST)
 
-    r += 1
-    if r > 360: r = 0
-
     glPushMatrix()
     glRotatef(r, 1, 3, 1)
 
@@ -643,8 +635,7 @@ def renderScene():
     glPopMatrix()
 
 
-
-def gaussianBlur(src, temp_fbo, tgt_fbo, px, py, pw, ph, blur = GaussianRect3()):
+def gaussianBlur(src, temp_fbo, tgt_fbo, px, py, pw, ph, blur):
     glDisable(GL_DEPTH_TEST)
 
     # blur horizonally.
@@ -689,8 +680,7 @@ def gaussianBlur(src, temp_fbo, tgt_fbo, px, py, pw, ph, blur = GaussianRect3())
     FrameBuffer.popBind()
 
 
-
-def downsample(src, tgt_fbo, downsampler = DownsamplerRect(), noise = gaussNoise(32)):
+def downsample(src, tgt_fbo, downsampler, noise):
     glDisable(GL_DEPTH_TEST)
 
     tgt_fbo.bind()
@@ -712,8 +702,8 @@ def downsample(src, tgt_fbo, downsampler = DownsamplerRect(), noise = gaussNoise
         for y in range(4):
             i = x + y * 4
             downsampler.uset2F("taps[" + str(i) + "]",
-                               src_texel_x * downsamp_x * noise[i * 2] * 2.0 - 1.0,
-                               src_texel_y * downsamp_y * noise[i * 2 + 1] * 2.0 - 1.0)
+                src_texel_x * downsamp_x * noise[i * 2] * 2.0 - 1.0,
+                src_texel_y * downsamp_y * noise[i * 2 + 1] * 2.0 - 1.0)
 
     downsampler.usetTex("src", 1, src)
 
@@ -722,13 +712,13 @@ def downsample(src, tgt_fbo, downsampler = DownsamplerRect(), noise = gaussNoise
     glVertex2f(0.0, 0.0)
 
     glTexCoord2f(src.width * src_texel_x, 0.0)
-    glVertex2f(buf_subsampled.width, 0.0)
+    glVertex2f(tgt_fbo.width, 0.0)
 
     glTexCoord2f(src.width * src_texel_x, src.height * src_texel_y)
-    glVertex2f(buf_subsampled.width, buf_subsampled.height)
+    glVertex2f(tgt_fbo.width, tgt_fbo.height)
 
     glTexCoord2f(0.0, src.height * src_texel_y)
-    glVertex2f(0.0, buf_subsampled.height)
+    glVertex2f(0.0, tgt_fbo.height)
     glEnd()
 
     downsampler.uninstall()
@@ -736,8 +726,7 @@ def downsample(src, tgt_fbo, downsampler = DownsamplerRect(), noise = gaussNoise
     tgt_fbo.unbind()
 
 
-
-def renderDOF(scene, alpha, blurred, pass1 = RenderDOFPass1(), pass2 = RenderDOFPass2(),  noise = gaussNoise(32)):
+def renderDOF(scene, alpha, blurred, pass1, pass2, noise):
     sx = scene.width
     sy = scene.height
 
@@ -767,7 +756,8 @@ def renderDOF(scene, alpha, blurred, pass1 = RenderDOFPass1(), pass2 = RenderDOF
     pass2.install()
     for i in range(1,16):
         pass2.uset2F("taps[0]", 0.0, 0.0)
-        pass2.uset2F("taps[" + str(i) + "]", noise[i * 2] * 2.0 - 1.0, noise[i * 2 + 1] * 2.0 - 1.0)
+        pass2.uset2F("taps[" + str(i) + "]", noise[i * 2] * 2.0 - 1.0,
+            noise[i * 2 + 1] * 2.0 - 1.0)
     pass2.usetTex("focus", 0, scene.colourBuffer(0))
     pass2.usetTex("blur", 1, blurred.colourBuffer(0))
     pass2.usetTex("alpha", 2, alpha.colourBuffer(0))
@@ -815,74 +805,87 @@ def blit(surf, x, y, w, h, mode):
     surf.unbindAndDisable()
 
 
-screen_width = 800
-screen_height = 600
+def main():
+    screen_width = 800
+    screen_height = 600
+    window = pyglet.window.Window(screen_width, screen_height)
 
-window = pyglet.window.create(screen_width, screen_height)
+    cparams = TextureParam(wrap = GL_CLAMP)
 
-clk = pyglet.clock.Clock(60)
-
-
-r = 0
-
-cparams = TextureParam(wrap = GL_CLAMP)
-
-buf = FrameBuffer(screen_width, screen_height,
-                  Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams),
-                  Surface(Surface.SURF_DEPTH,
-                          gl_tgt = GL_TEXTURE_RECTANGLE_ARB, gl_fmt = GL_DEPTH_COMPONENT32_ARB,
-                          is_texture = True, is_mipmapped = False, params = cparams))
-buf.init()
-buf.attach()
-buf.unbind()
-
-alpha_buf = FrameBuffer(screen_width, screen_height,
-                        Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams))
-alpha_buf.init()
-alpha_buf.attach()
-alpha_buf.unbind()
-
-buf_subsampled = FrameBuffer(200, 150,
-                             Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams),
-                             Surface(Surface.SURF_DEPTH, params = cparams))
-buf_subsampled.init()
-buf_subsampled.attach()
-buf_subsampled.unbind()
-
-buf_subsampled2 = FrameBuffer(200, 150,
-                              Surface(Surface.SURF_COLOUR, gl_tgt = GL_TEXTURE_RECTANGLE_ARB, params = cparams),
-                              Surface(Surface.SURF_DEPTH, params = cparams))
-buf_subsampled2.init()
-buf_subsampled2.attach()
-buf_subsampled2.unbind()
-
-object = cube_array_list()
-
-while not window.has_exit:
-    clk.tick()
-
-    window.dispatch_events()
-
-    buf.bind()
-    glViewport(0, 0, screen_width, screen_height)
-    renderScene()
+    buf = FrameBuffer(screen_width, screen_height,
+        Surface(Surface.SURF_COLOUR, gl_tgt=GL_TEXTURE_RECTANGLE_ARB,
+            params=cparams),
+        Surface(Surface.SURF_DEPTH, gl_tgt=GL_TEXTURE_RECTANGLE_ARB,
+            gl_fmt=GL_DEPTH_COMPONENT32_ARB, is_texture=True,
+            is_mipmapped=False, params=cparams))
+    buf.init()
+    buf.attach()
     buf.unbind()
 
-    downsample(buf.colourBuffer(0), buf_subsampled)
-    
-    gaussianBlur(buf_subsampled.colourBuffer(0),
-                 buf_subsampled2,
-                 buf_subsampled,
-                 0.0,
-                 0.0,
-                 200.0,
-                 150.0)
+    alpha_buf = FrameBuffer(screen_width, screen_height,
+        Surface(Surface.SURF_COLOUR, gl_tgt=GL_TEXTURE_RECTANGLE_ARB,
+            params = cparams))
+    alpha_buf.init()
+    alpha_buf.attach()
+    alpha_buf.unbind()
 
-    renderDOF(buf, alpha_buf, buf_subsampled)
+    buf_subsampled = FrameBuffer(200, 150,
+        Surface(Surface.SURF_COLOUR, gl_tgt=GL_TEXTURE_RECTANGLE_ARB,
+            params=cparams),
+        Surface(Surface.SURF_DEPTH, params=cparams))
+    buf_subsampled.init()
+    buf_subsampled.attach()
+    buf_subsampled.unbind()
 
-    #fps.draw(window, clk)
+    buf_subsampled2 = FrameBuffer(200, 150,
+        Surface(Surface.SURF_COLOUR, gl_tgt=GL_TEXTURE_RECTANGLE_ARB,
+            params=cparams),
+        Surface(Surface.SURF_DEPTH, params=cparams))
+    buf_subsampled2.init()
+    buf_subsampled2.attach()
+    buf_subsampled2.unbind()
 
-    window.flip()
+    object = cube_array_list()
 
-buf = None
-buf_subsampled = None
+    downsampler=DownsamplerRect()
+    noise=gaussNoise(32)
+    blur=GaussianRect3()
+    pass1=RenderDOFPass1()
+    pass2=RenderDOFPass2()
+
+    r = 0
+    clk = pyglet.clock.Clock(60)
+    while not window.has_exit:
+        clk.tick()
+
+        window.dispatch_events()
+
+        buf.bind()
+        glViewport(0, 0, screen_width, screen_height)
+        r += 1
+        if r > 360: r = 0
+        renderScene(r, object)
+        buf.unbind()
+
+        downsample(buf.colourBuffer(0), buf_subsampled, downsampler, noise)
+        
+        gaussianBlur(buf_subsampled.colourBuffer(0),
+                     buf_subsampled2,
+                     buf_subsampled,
+                     0.0,
+                     0.0,
+                     200.0,
+                     150.0,
+                     blur)
+
+        renderDOF(buf, alpha_buf, buf_subsampled, pass1, pass2, noise)
+
+        #fps.draw(window, clk)
+
+        window.flip()
+
+    buf = None
+    buf_subsampled = None
+
+main()
+
