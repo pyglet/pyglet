@@ -1442,8 +1442,13 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
                          item_width=None, item_height=None,
                          row_padding=0, column_padding=0):
         image = image.texture
-        texture = \
-            cls(image.x, image.y, image.z, image.width, image.height, image)
+        if isinstance(image, TextureRegion):
+            texture = cls(image.x, image.y, image.z, image.width, image.height, 
+                          image.owner)
+        else:
+            texture = cls(image.x, image.y, image.z, image.width, image.height,
+                          image) 
+
         if item_width is None:
             item_width = \
                 int((texture.width - column_padding * (columns - 1)) / columns)
