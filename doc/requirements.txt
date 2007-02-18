@@ -246,6 +246,7 @@ image
         BUFFER_SAVE                     X   X   X
         DEPTH_SAVE                      X   X   X
         TEXTURE_GRID                    X   X   X
+        TEXTURE_3D                      X   X   X
         ============================== === === ===
 
     TBD:
