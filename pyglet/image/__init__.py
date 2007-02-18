@@ -724,8 +724,8 @@ class ImageData(AbstractImage):
             memmove(buf, self._current_data, len(self._current_data))
             self._current_data = buf.raw
             if self._current_skip_rows:
-                self._current_data = \
-                    self._current_data[self._current_pitch*skip_rows:]
+                self._current_data = self._current_data[ \
+                    self._current_pitch*self._current_skip_rows:]
                 self._current_skip_rows = 0
 
     def _get_gl_format_and_type(self, format):
@@ -1016,7 +1016,7 @@ class Texture(AbstractImage):
                          
         return cls(width, height, target, id.value)
 
-    def get_image_data(self):
+    def get_image_data(self, z=0):
         glBindTexture(self.target, self.id)
 
         # Always extract complete RGBA data.  Could check internalformat
@@ -1026,12 +1026,18 @@ class Texture(AbstractImage):
 
         glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
         glPixelStorei(GL_PACK_ALIGNMENT, 1)
-        buffer = (GLubyte * (self.width * self.height * len(format)))()
+        buffer = \
+            (GLubyte * (self.width * self.height * self.images * len(format)))()
         glGetTexImage(self.target, self.level, 
                       gl_format, GL_UNSIGNED_BYTE, buffer)
         glPopClientAttrib()
 
-        return ImageData(self.width, self.height, format, buffer)
+        skip_rows = 0
+        if self.images != 1:
+            skip_rows = z * self.height
+
+        return ImageData(self.width, self.height, format, buffer,
+                         skip_rows=skip_rows)
 
     image_data = property(get_image_data)
 
@@ -1092,7 +1098,7 @@ class TextureRegion(Texture):
 
 
     def get_image_data(self):
-        image_data = self.owner.get_image_data()
+        image_data = self.owner.get_image_data(self.z)
         image_data.crop(self.x, self.y, self.width, self.height)
         return image_data
 
@@ -1142,7 +1148,7 @@ class Texture3D(Texture, UniformTextureSequence):
 
         items = []
         for i, image in enumerate(images):
-            item = self.region_class(0, 0, i, item_width, item_height, texture)
+            item = cls.region_class(0, 0, i, item_width, item_height, texture)
             items.append(item)
             image.blit_to_texture(texture.target, texture.level, 0, 0, i)
 
