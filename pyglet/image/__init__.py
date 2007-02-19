@@ -262,26 +262,39 @@ class AbstractImage(object):
         self.width = width
         self.height = height
 
-    def get_image_data(self):
+    def _get_image_data(self):
         '''Retrieve an ImageData instance for this image.'''
         raise ImageException('Cannot retrieve image data for %r' % self)
 
-    image_data = property(get_image_data)
+    image_data = property(_get_image_data)
 
-    def get_texture(self):
+    def _get_texture(self):
         '''Retrieve a Texture instance for this image.'''
         raise ImageException('Cannot retrieve texture for %r' % self)
 
-    texture = property(get_texture)
+    texture = property(_get_texture)
 
-    def get_mipmapped_texture(self):
+    def _get_mipmapped_texture(self):
         '''Retrieve a Texture instance with all mipmap levels filled in.'''
         raise ImageException('Cannot retrieve mipmapped texture for %r' % self)
 
-    mipmapped_texture = property(get_mipmapped_texture)
+    mipmapped_texture = property(_get_mipmapped_texture)
 
     def get_region(self, x, y, width, height):
-        '''Retrieve a portion of this image as AbstractImage.'''
+        '''Retrieve a rectangular region of this image.
+
+        :Parameters:
+            `x` : int
+                Left edge of region.
+            `y` : int
+                Bottom edge of region.
+            `width` : int
+                Width of region.
+            `height` : int
+                Height of region.
+
+        :rtype: AbstractImage
+        '''
         raise ImageException('Cannot get region for %r' % self)
 
     def save(self, filename=None, file=None, encoder=None):
@@ -331,23 +344,61 @@ class AbstractImage(object):
         raise ImageException('Cannot blit %r to a texture.' % self)
 
 class AbstractImageSequence(object):
+    '''Abstract sequence of images.
+
+    The sequence is useful for storing image animations or slices of a volume.
+    For efficient access, use the `texture_sequence` member.  The class
+    also implements the sequence interface (`__len__`, `__getitem__`,
+    `__setitem__`).
+    
+    :Ivariables:
+        `texture_sequence` : `TextureSequence`
+            Access this image sequence as a texture sequence.
+    '''
     def _get_texture_sequence(self):
         raise NotImplementedError('abstract')
     texture_sequence = property(_get_texture_sequence)
 
-class TextureSequence(AbstractImageSequence):
     def __getitem__(self, slice):
+        '''Retrieve a (list of) image.
+        
+        :rtype: AbstractImage
+        '''
         raise NotImplementedError('abstract')
 
     def __setitem__(self, slice, image):
+        '''Replace one or more images in the sequence.
+        
+        :Parameters:
+            `image` : `AbstractImage`
+                The replacement image.  The actual instance may not be used,
+                depending on this implementation.
+
+        '''
         raise NotImplementedError('abstract')
 
     def __len__(self):
         raise NotImplementedError('abstract')
 
+
+class TextureSequence(AbstractImageSequence):
+    '''Interface for a sequence of textures.
+
+    Typical implementations store multiple `TextureRegion`s within one
+    `Texture` so as to minimise state changes.
+    '''
     texture_sequence = property(lambda self: self)
 
 class UniformTextureSequence(TextureSequence):
+    '''Interface for a sequence of textures, each with the same dimensions.
+
+    :Ivariables:
+        `item_width` : int
+            Width of each texture in the sequence.
+        `item_height` : int
+            Height of each texture in the sequence.
+    
+    '''
     def _get_item_width(self):
         raise NotImplementedError('abstract')
     item_width = property(_get_item_width)
@@ -407,13 +458,13 @@ class ImageData(AbstractImage):
 
     image_data = property(lambda self: self)
 
-    def set_format(self, format):
+    def _set_format(self, format):
         self._desired_format = format.upper()
         self._current_texture = None
 
-    format = property(lambda self: self._desired_format, set_format)
+    format = property(lambda self: self._desired_format, _set_format)
 
-    def get_data(self):
+    def _get_data(self):
         if self._current_pitch != self.pitch or \
            self._current_format != self.format:
             self._current_data = self._convert(self.format, self.pitch)
@@ -423,14 +474,14 @@ class ImageData(AbstractImage):
         self._ensure_string_data()
         return self._current_data
 
-    def set_data(self, data):
+    def _set_data(self, data):
         self._current_data = data
         self._current_format = self.format
         self._current_pitch = self.pitch
         self._current_texture = None
         self._current_mipmapped_texture = None
 
-    data = property(get_data, set_data)
+    data = property(_get_data, _set_data)
 
     def set_mipmap_image(self, level, image):
         '''Set a mipmap image for a particular level.
@@ -510,14 +561,14 @@ class ImageData(AbstractImage):
         
         return texture 
 
-    def get_texture(self):
+    def _get_texture(self):
         if not self._current_texture:
             self._current_texture = self.create_texture(Texture)
         return self._current_texture
 
-    texture = property(get_texture)
+    texture = property(_get_texture)
 
-    def get_mipmapped_texture(self):
+    def _get_mipmapped_texture(self):
         '''Return a Texture with mipmaps.  
         
         If `set_mipmap_image` has been called with at least one image, the set
@@ -562,7 +613,23 @@ class ImageData(AbstractImage):
         self._current_mipmap_texture = texture
         return texture
 
+    mipmapped_texture = property(_get_mipmapped_texture)
+
     def get_region(self, x, y, width, height):
+        '''Retrieve a rectangular region of this image data.
+
+        :Parameters:
+            `x` : int
+                Left edge of region.
+            `y` : int
+                Bottom edge of region.
+            `width` : int
+                Width of region.
+            `height` : int
+                Height of region.
+
+        :rtype: ImageDataRegion
+        '''
         return ImageDataRegion(x, y, width, height, self)
 
     def blit(self, x, y, z):
@@ -630,38 +697,7 @@ class ImageData(AbstractImage):
 
     def _apply_region_unpack(self):
         pass
-    
-    def crop(self, x, y, width, height):
-        '''Crop this image in-place.
-
-        This is not a particularly efficient implementation (it uses regular
-        expressions on the string data).
-
-        :Parameters:
-            `x` : int
-                Left edge of crop region
-            `y` : int
-                Bottom edge of crop region (count from bottom of image)
-            `width` : int
-                Width of crop region
-            `height` : int
-                Height of crop region
-
-        '''
-        self._ensure_string_data()
-
-        x1 = len(self._current_format) * x
-        x2 = len(self._current_format) * (x + width)
-
-        data = self._convert(self._current_format, abs(self._current_pitch))
-        rows = re.findall('.' * abs(self._current_pitch), data, re.DOTALL)
-        rows = [row[x1:x2] for row in rows[y:y+height]]
-        self._current_data = ''.join(rows)
-        self._current_pitch = width * len(self._current_format)
-        self._current_texture = None
-        self.width = width
-        self.height = height
-
+   
     def _convert(self, format, pitch):
         '''Return data in the desired format; does not alter this instance's
         current format or pitch.
@@ -673,6 +709,7 @@ class ImageData(AbstractImage):
         self._ensure_string_data()
         data = self._current_data
         current_pitch = self._current_pitch
+        sign_pitch = current_pitch / abs(current_pitch)
         if format != self._current_format:
             # Create replacement string, e.g. r'\4\1\2\3' to convert RGBA to
             # ARGB
@@ -706,7 +743,7 @@ class ImageData(AbstractImage):
             else:
                 # Rows are tightly packed, apply regex over whole image.
                 data = swap_pattern.sub(repl, data)
-            current_pitch = self.width * len(format)
+            current_pitch = sign_pitch * self.width * len(format)
 
         if pitch != current_pitch:
             diff = abs(current_pitch) - abs(pitch)
@@ -875,7 +912,7 @@ class CompressedImageData(AbstractImage):
         self.mipmap_data += [None] * (level - len(self.mipmap_data))
         self.mipmap_data[level - 1] = data
 
-    def verify_driver_supported(self):
+    def _verify_driver_supported(self):
         '''Assert that the extension required for this image data is
         supported.
 
@@ -888,11 +925,11 @@ class CompressedImageData(AbstractImage):
             raise ImageException('%s is required to decode %r' % \
                 (self.extension, self))
 
-    def get_texture(self):
+    def _get_texture(self):
         if self._current_texture:
             return self._current_texture
 
-        self.verify_driver_supported()
+        self._verify_driver_supported()
 
         texture = Texture.create_for_size(
             GL_TEXTURE_2D, self.width, self.height)
@@ -907,13 +944,13 @@ class CompressedImageData(AbstractImage):
         self._current_texture = texture
         return texture
 
-    texture = property(get_texture)
+    texture = property(_get_texture)
 
-    def get_mipmapped_texture(self):
+    def _get_mipmapped_texture(self):
         if self._current_mipmap_texture:
             return self._current_mipmap_texture
 
-        self.verify_driver_supported()
+        self._verify_driver_supported()
 
         texture = Texture.create_for_size(
             GL_TEXTURE_2D, self.width, self.height)
@@ -947,8 +984,10 @@ class CompressedImageData(AbstractImage):
         self._current_mipmap_texture = texture
         return texture
 
+    mipmapped_texture = property(_get_mipmapped_texture)
+
     def blit_to_texture(self, target, level, x, y, z):
-        self.verify_driver_supported()
+        self._verify_driver_supported()
 
         if target == GL_TEXTURE_3D:
             glCompressedTexSubImage3DARB(target, level,
@@ -1058,6 +1097,14 @@ class Texture(AbstractImage):
         return cls(width, height, target, id.value)
 
     def get_image_data(self, z=0):
+        '''Get the image data of this texture.
+
+        :Parameters:
+            `z` : int
+                For 3D textures, the image slice to retrieve.
+
+        :rtype: `ImageData`
+        '''
         glBindTexture(self.target, self.id)
 
         # Always extract complete RGBA data.  Could check internalformat
@@ -1136,11 +1183,11 @@ class TextureRegion(Texture):
         self.tex_coords = ((u1, v1, r), (u2, v1, r), (u2, v2, r), (u1, v2, r))
 
 
-    def get_image_data(self):
+    def _get_image_data(self):
         image_data = self.owner.get_image_data(self.z)
         return image_data.get_region(self.x, self.y, self.width, self.height)
 
-    image_data = property(get_image_data)
+    image_data = property(_get_image_data)
 
     def get_region(self, x, y, width, height):
         x += self.x
@@ -1375,7 +1422,7 @@ class BufferImage(AbstractImage):
         self.width = width
         self.height = height
 
-    def get_image_data(self):
+    def _get_image_data(self):
         buffer = (GLubyte * (len(self.format) * self.width * self.height))()
 
         x = self.x
@@ -1393,7 +1440,7 @@ class BufferImage(AbstractImage):
 
         return ImageData(self.width, self.height, self.format, buffer)
 
-    image_data = property(get_image_data)
+    image_data = property(_get_image_data)
 
     def get_region(self, x, y, width, height):
         if self.owner:
@@ -1407,7 +1454,7 @@ class ColorBufferImage(BufferImage):
     gl_format = GL_RGBA
     format = 'RGBA'
 
-    def get_texture(self):
+    def _get_texture(self):
         texture = Texture.create_for_size(GL_TEXTURE_2D, 
             self.width, self.height)
         glBindTexture(texture.target, texture.id)
@@ -1431,7 +1478,7 @@ class ColorBufferImage(BufferImage):
                              self.x, self.y, self.width, self.height,
                              0)
 
-    texture = property(get_texture)
+    texture = property(_get_texture)
 
     def blit_to_texture(self, target, level, x, y, z):
         glReadBuffer(self.gl_buffer)
@@ -1443,7 +1490,7 @@ class DepthBufferImage(BufferImage):
     gl_format = GL_DEPTH_COMPONENT
     format = 'L'
 
-    def get_texture(self):
+    def _get_texture(self):
         if not _is_pow2(self.width) or not _is_pow2(self.height):
             raise ImageException(
                 'Depth texture requires that buffer dimensions be powers of 2')
@@ -1458,7 +1505,7 @@ class DepthBufferImage(BufferImage):
                          0)
         return texture
 
-    texture = property(get_texture)
+    texture = property(_get_texture)
 
     def blit_to_texture(self, target, level, x, y, z):
         glReadBuffer(self.gl_buffer)
@@ -1476,6 +1523,19 @@ class BufferImageMask(BufferImage):
 class ImageGrid(AbstractImage, AbstractImageSequence):
     '''An imaginary grid placed over an image allowing easy access to
     regular regions of that image.
+
+    The grid can be accessed either as a complete image, or as a sequence
+    of images.  The most useful applications are to access the grid
+    as a `TextureGrid`::
+
+        image_grid = ImageGrid(...)
+        texture_grid = image_grid.texture_sequence
+
+    or as a `Texture3D`::
+
+        image_grid = ImageGrid(...)
+        texture_3d = Texture3D.create_for_image_grid(image_grid)
+
     '''
     _items = ()
     _texture_grid = None
@@ -1483,6 +1543,32 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
     def __init__(self, image, rows, columns, 
                  item_width=None, item_height=None,
                  row_padding=0, column_padding=0):
+        '''Construct a grid for the given image.
+
+        You can specify parameters for the grid, for example setting
+        the padding between cells.  Grids are always aligned to the 
+        bottom-left corner of the image.
+
+        :Parameters:
+            `image` : AbstractImage
+                Image over which to construct the grid.
+            `rows` : int
+                Number of rows in the grid.
+            `columns` : int
+                Number of columns in the grid.
+            `item_width` : int
+                Width of each column.  If unspecified, is calculated such
+                that the entire image width is used.
+            `item_height` : int
+                Height of each row.  If unspecified, is calculated such that
+                the entire image height is used.
+            `row_padding` : int
+                Pixels separating adjacent rows.  The padding is only
+                inserted between rows, not at the edges of the grid.
+            `column_padding` : int
+                Pixels separating adjacent columns.  The padding is only 
+                inserted between columns, not at the edges of the grid.
+        '''
         super(ImageGrid, self).__init__(image.width, image.height)
 
         if item_width is None:
@@ -1499,22 +1585,22 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
         self.row_padding = row_padding
         self.column_padding = column_padding
 
-    def get_texture(self):
+    def _get_texture(self):
         return self.image.texture
 
-    texture = property(get_texture)
+    texture = property(_get_texture)
 
-    def get_image_data(self):
+    def _get_image_data(self):
         return self.image.image_data
 
-    image_data = property(get_image_data)
+    image_data = property(_get_image_data)
 
-    def get_texture_sequence(self):
+    def _get_texture_sequence(self):
         if not self._texture_grid:
             self._texture_grid = TextureGrid(self)
         return self._texture_grid
 
-    texture_sequence = property(get_texture_sequence)
+    texture_sequence = property(_get_texture_sequence)
 
     def __len__(self):
         return self.rows * self.columns
@@ -1535,6 +1621,37 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
         return self._items[index]
 
 class TextureGrid(TextureRegion, UniformTextureSequence):
+    '''A texture containing a regular grid of texture regions.
+
+    To construct, create an `ImageGrid` first::
+
+        image_grid = ImageGrid(...)
+        texture_grid = TextureGrid(image_grid)
+
+    The texture grid can be accessed as a single texture, or as a sequence
+    of `TextureRegion`.  When accessing as a sequence, you can specify
+    integer indexes, in which the images are arranged in rows from the
+    bottom-left to the top-right::
+
+        # assume the texture_grid is 3x3:
+        current_texture = texture_grid[3] # get the middle-left image
+
+    You can also specify tuples in the sequence methods, which are addressed
+    as ``row, column``::
+
+        # equivalent to the previous example:
+        current_texture = texture_grid[1, 0]
+
+    When using tuples in a slice, the returned sequence is over the
+    rectangular region defined by the slice::
+
+        # returns center, center-right, center-top, top-right images in that
+        # order:
+        images = texture_grid[(1,1):]
+        # equivalent to
+        images = texture_grid[(1,1):(3,3)]
+
+    '''
     items = ()
     rows = 1
     columns = 1

@@ -205,12 +205,13 @@ class CarbonGlyphRenderer(GlyphRenderer):
 
         
         # A negative pitch is required, but it is much faster to load the
-        # glyph upside-down and flip the tex_coords.  Note skip_rows used
+        # glyph upside-down and flip the tex_coords.  Note region used
         # to start at top of glyph image.
         pitch = int(4 * self._bitmap_rect.size.width)
+        image = ImageData(image_width, self._bitmap_rect.size.height, 
+            'RGBA', self._bitmap, pitch)
         skip_rows = int(self._bitmap_rect.size.height - image_height)
-        image = ImageData(image_width, image_height, 'RGBA', self._bitmap,
-                          pitch, skip_rows)
+        image = image.get_region(0, skip_rows, image.width, image_height)
         glyph = self.font.create_glyph(image)
         glyph.set_bearings(baseline, lsb, advance)
         glyph.tex_coords = (glyph.tex_coords[3], 

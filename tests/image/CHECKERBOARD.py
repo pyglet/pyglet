@@ -32,7 +32,7 @@ class TEST_CHECKERBOARD(ImageRegressionTestCase):
         glClearColor(1, 1, 1, 1)
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
-        self.texture.blit_to_buffer(0, 0, 0)
+        self.texture.blit(0, 0, 0)
         self.window.flip()
 
         if self.capture_regression_image():
