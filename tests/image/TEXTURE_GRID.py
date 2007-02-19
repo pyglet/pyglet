@@ -31,8 +31,8 @@ class TestTextureGrid(unittest.TestCase):
                 data += (width * '\0') * rowpad
         assert len(data) == width * height
         self.image = ImageData(width, height, 'L', data)
-        self.grid = TextureGrid.create_for_image(self.image, rows, cols,
-            itemwidth, itemheight, rowpad, colpad)
+        self.grid = ImageGrid(self.image, rows, cols,
+            itemwidth, itemheight, rowpad, colpad).texture_sequence
 
     def check_cell(self, cellimage, cellindex):
         self.assertTrue(cellimage.width == self.grid.item_width)

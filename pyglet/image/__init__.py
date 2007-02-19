@@ -280,6 +280,10 @@ class AbstractImage(object):
 
     mipmapped_texture = property(get_mipmapped_texture)
 
+    def get_region(self, x, y, width, height):
+        '''Retrieve a portion of this image as AbstractImage.'''
+        raise ImageException('Cannot get region for %r' % self)
+
     def save(self, filename=None, file=None, encoder=None):
         '''Save this image to a file.
 
@@ -326,7 +330,12 @@ class AbstractImage(object):
         '''Draw this image on the currently bound texture at `target`.'''
         raise ImageException('Cannot blit %r to a texture.' % self)
 
-class TextureSequence(object):
+class AbstractImageSequence(object):
+    def _get_texture_sequence(self):
+        raise NotImplementedError('abstract')
+    texture_sequence = property(_get_texture_sequence)
+
+class TextureSequence(AbstractImageSequence):
     def __getitem__(self, slice):
         raise NotImplementedError('abstract')
 
@@ -335,6 +344,8 @@ class TextureSequence(object):
 
     def __len__(self):
         raise NotImplementedError('abstract')
+
+    texture_sequence = property(lambda self: self)
 
 class UniformTextureSequence(TextureSequence):
     def _get_item_width(self):
@@ -367,7 +378,7 @@ class ImageData(AbstractImage):
     _current_texture = None
     _current_mipmap_texture = None
 
-    def __init__(self, width, height, format, data, pitch=None, skip_rows=0):
+    def __init__(self, width, height, format, data, pitch=None):
         '''Initialise image data.
 
         :Parameters:
@@ -383,8 +394,6 @@ class ImageData(AbstractImage):
                 If specified, the number of bytes per row.  Negative values
                 indicate a top-to-bottom arrangement.  Defaults to 
                 ``width * len(format)``.
-            `skip_rows` : int
-                Skip a number of rows in `data` before the image begins.
 
         '''
         super(ImageData, self).__init__(width, height)
@@ -395,8 +404,6 @@ class ImageData(AbstractImage):
             pitch = width * len(format)
         self._current_pitch = self.pitch = pitch
         self.mipmap_images = []
-        self._current_skip_rows = skip_rows
-
 
     image_data = property(lambda self: self)
 
@@ -420,7 +427,6 @@ class ImageData(AbstractImage):
         self._current_data = data
         self._current_format = self.format
         self._current_pitch = self.pitch
-        self._current_skip_rows = 0
         self._current_texture = None
         self._current_mipmapped_texture = None
 
@@ -556,6 +562,9 @@ class ImageData(AbstractImage):
         self._current_mipmap_texture = texture
         return texture
 
+    def get_region(self, x, y, width, height):
+        return ImageDataRegion(x, y, width, height, self)
+
     def blit(self, x, y, z):
         self.texture.blit(x, y, z)
 
@@ -595,7 +604,7 @@ class ImageData(AbstractImage):
         glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
         glPixelStorei(GL_UNPACK_ALIGNMENT, alignment)
         glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
-        glPixelStorei(GL_UNPACK_SKIP_ROWS, self._current_skip_rows)
+        self._apply_region_unpack()
 
         if target == GL_TEXTURE_3D:
             assert not internalformat
@@ -619,6 +628,9 @@ class ImageData(AbstractImage):
                             data)
         glPopClientAttrib()
 
+    def _apply_region_unpack(self):
+        pass
+    
     def crop(self, x, y, width, height):
         '''Crop this image in-place.
 
@@ -723,10 +735,6 @@ class ImageData(AbstractImage):
             buf = create_string_buffer(len(self._current_data))
             memmove(buf, self._current_data, len(self._current_data))
             self._current_data = buf.raw
-            if self._current_skip_rows:
-                self._current_data = self._current_data[ \
-                    self._current_pitch*self._current_skip_rows:]
-                self._current_skip_rows = 0
 
     def _get_gl_format_and_type(self, format):
         if format == 'I':
@@ -775,6 +783,39 @@ class ImageData(AbstractImage):
         elif format == 'I':
             return GL_INTENSITY
         return GL_RGBA
+
+class ImageDataRegion(ImageData):
+    def __init__(self, x, y, width, height, image_data):
+        super(ImageDataRegion, self).__init__(width, height,
+            image_data._current_format, image_data._current_data, 
+            image_data._current_pitch)
+        self.x = x
+        self.y = y
+    
+    def _apply_region_unpack(self):
+        glPixelStorei(GL_UNPACK_SKIP_PIXELS, self.x)
+        glPixelStorei(GL_UNPACK_SKIP_ROWS, self.y)
+
+    def _ensure_string_data(self):
+        super(ImageDataRegion, self)._ensure_string_data()
+
+        # And crop the data
+        x1 = len(self._current_format) * self.x
+        x2 = len(self._current_format) * (self.x + self.width)
+
+        data = self._convert(self._current_format, abs(self._current_pitch))
+        rows = re.findall('.' * abs(self._current_pitch), data, re.DOTALL)
+        rows = [row[x1:x2] for row in rows[self.y:self.y+self.height]]
+        self._current_data = ''.join(rows)
+        self._current_pitch = self.width * len(self._current_format)
+        self._current_texture = None
+        self.x = 0
+        self.y = 0
+
+    def get_region(self, x, y, width, height):
+        x += self.x
+        y += self.y
+        return super(ImageDataRegion, self).get_region(x, y, width, height)
 
 class CompressedImageData(AbstractImage):
     '''Image representing some compressed data suitable for direct uploading
@@ -1032,12 +1073,10 @@ class Texture(AbstractImage):
                       gl_format, GL_UNSIGNED_BYTE, buffer)
         glPopClientAttrib()
 
-        skip_rows = 0
-        if self.images != 1:
-            skip_rows = z * self.height
-
-        return ImageData(self.width, self.height, format, buffer,
-                         skip_rows=skip_rows)
+        data = ImageData(self.width, self.height, format, buffer)
+        if self.images > 1:
+            data = data.get_region(0, z * self.height, self.width, self.height)
+        return data
 
     image_data = property(get_image_data)
 
@@ -1099,8 +1138,7 @@ class TextureRegion(Texture):
 
     def get_image_data(self):
         image_data = self.owner.get_image_data(self.z)
-        image_data.crop(self.x, self.y, self.width, self.height)
-        return image_data
+        return image_data.get_region(self.x, self.y, self.width, self.height)
 
     image_data = property(get_image_data)
 
@@ -1117,14 +1155,15 @@ Texture.region_class = TextureRegion
 class Texture3D(Texture, UniformTextureSequence):
     '''A texture with more than one image slice.
 
-    Use `create_from_images` classmethod to construct.
+    Use `create_for_images` or `create_for_image_grid` classmethod to
+    construct.
     '''
     item_width = 0
     item_height = 0
     items = ()
 
     @classmethod
-    def create_from_images(cls, images, internalformat=GL_RGBA):
+    def create_for_images(cls, images, internalformat=GL_RGBA):
         item_width = images[0].width
         item_height = images[0].height
         for image in images:
@@ -1154,8 +1193,12 @@ class Texture3D(Texture, UniformTextureSequence):
 
         texture.items = items
         texture.item_width = item_width
-        texture.item_heigth = item_height
+        texture.item_height = item_height
         return texture
+
+    @classmethod
+    def create_for_image_grid(cls, grid, internalformat=GL_RGBA):
+        return cls.create_for_images(grid[:], internalformat)
 
     def __len__(self):
         return len(self.items)
@@ -1173,7 +1216,7 @@ class Texture3D(Texture, UniformTextureSequence):
 class TileableTexture(Texture):
     '''A texture that can be tiled efficiently.
 
-    Use `create_from_image` classmethod to construct.
+    Use `create_for_image` classmethod to construct.
     '''
     def __init__(self, width, height, target, id):
         if not _is_pow2(width) or not _is_pow2(height):
@@ -1212,7 +1255,7 @@ class TileableTexture(Texture):
         
 
     @classmethod
-    def create_from_image(cls, image):
+    def create_for_image(cls, image):
         if not _is_pow2(image.width) or not _is_pow2(image.height):
             # Potentially unnecessary conversion if a GL format exists.
             image = image.image_data
@@ -1343,7 +1386,7 @@ class BufferImage(AbstractImage):
 
         glReadBuffer(self.gl_buffer)
         glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+        glPixelStorei(GL_PACK_ALIGNMENT, 1)
         glReadPixels(x, y, self.width, self.height, 
                      self.gl_format, GL_UNSIGNED_BYTE, buffer)
         glPopClientAttrib()
@@ -1430,6 +1473,67 @@ class BufferImageMask(BufferImage):
 
     # TODO mask methods
 
+class ImageGrid(AbstractImage, AbstractImageSequence):
+    '''An imaginary grid placed over an image allowing easy access to
+    regular regions of that image.
+    '''
+    _items = ()
+    _texture_grid = None
+
+    def __init__(self, image, rows, columns, 
+                 item_width=None, item_height=None,
+                 row_padding=0, column_padding=0):
+        super(ImageGrid, self).__init__(image.width, image.height)
+
+        if item_width is None:
+            item_width = \
+                int((image.width - column_padding * (columns - 1)) / columns)
+        if item_height is None:
+            item_height = \
+                int((image.height - row_padding * (rows - 1)) / rows) 
+        self.image = image
+        self.rows = rows
+        self.columns = columns
+        self.item_width = item_width
+        self.item_height = item_height
+        self.row_padding = row_padding
+        self.column_padding = column_padding
+
+    def get_texture(self):
+        return self.image.texture
+
+    texture = property(get_texture)
+
+    def get_image_data(self):
+        return self.image.image_data
+
+    image_data = property(get_image_data)
+
+    def get_texture_sequence(self):
+        if not self._texture_grid:
+            self._texture_grid = TextureGrid(self)
+        return self._texture_grid
+
+    texture_sequence = property(get_texture_sequence)
+
+    def __len__(self):
+        return self.rows * self.columns
+
+    def __getitem__(self, index):
+        if not self._items:
+            self._items = []
+            y = 0
+            for row in range(self.rows):
+                x = 0
+                for col in range(self.columns):
+                    self._items.append(self.image.get_region(
+                        x, y, self.item_width, self.item_height))
+                    x += self.item_width + self.column_padding
+                y += self.item_height + self.row_padding
+
+        # TODO tuples
+        return self._items[index]
+
 class TextureGrid(TextureRegion, UniformTextureSequence):
     items = ()
     rows = 1
@@ -1437,39 +1541,31 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
     item_width = 0
     item_height = 0
 
-    @classmethod
-    def create_for_image(cls, image, rows, columns, 
-                         item_width=None, item_height=None,
-                         row_padding=0, column_padding=0):
-        image = image.texture
+    def __init__(self, grid):
+        image = grid.texture
         if isinstance(image, TextureRegion):
-            texture = cls(image.x, image.y, image.z, image.width, image.height, 
-                          image.owner)
+            owner = image.owner
         else:
-            texture = cls(image.x, image.y, image.z, image.width, image.height,
-                          image) 
+            owner = image
 
-        if item_width is None:
-            item_width = \
-                int((texture.width - column_padding * (columns - 1)) / columns)
-        if item_height is None:
-            item_height = \
-                int((texture.height - row_padding * (rows - 1)) / rows)
+        super(TextureGrid, self).__init__(
+            image.x, image.y, image.z, image.width, image.height, owner)
+        
         items = []
         y = 0
-        for row in range(rows):
+        for row in range(grid.rows):
             x = 0
-            for col in range(columns):
-                items.append(texture.get_region(x, y, item_width, item_height))
-                x += item_width + column_padding
-            y += item_height + row_padding
+            for col in range(grid.columns):
+                items.append(
+                    self.get_region(x, y, grid.item_width, grid.item_height))
+                x += grid.item_width + grid.column_padding
+            y += grid.item_height + grid.row_padding
 
-        texture.items = items
-        texture.rows = rows
-        texture.columns = columns
-        texture.item_width = item_width
-        texture.item_height = item_height
-        return texture
+        self.items = items
+        self.rows = grid.rows
+        self.columns = grid.columns
+        self.item_width = grid.item_width
+        self.item_height = grid.item_height
         
     def get(self, row, column):
         return self[(row, column)]

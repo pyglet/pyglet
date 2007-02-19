@@ -158,7 +158,7 @@ class GLRenderDevice(RenderDevice):
                 if stream:
                     image = load_image('', file=stream)
                     if repeat != 'no-repeat':
-                        texture = TileableTexture.create_from_image(image)
+                        texture = TileableTexture.create_for_image(image)
                     else:
                         texture = image.texture
                     self.texture_cache[background_image] = texture
