@@ -55,11 +55,10 @@ class PILImageEncoder(ImageEncoder):
             format = 'JPEG'
 
         image = image.image_data
-        image.pitch = -(image.width * len(image.format))
-
-        # Only save in RGB or RGBA formats.
         if image.format != 'RGB':
+            # Only save in RGB or RGBA formats.
             image.format = 'RGBA'
+        image.pitch = -(image.width * len(image.format))
 
         # Note: Don't try and use frombuffer(..); different versions of
         # PIL will orient the image differently.
