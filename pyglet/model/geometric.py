@@ -106,7 +106,6 @@ def cube_array_list():
                     (z + 10.0) / 20.0, 1.0)
                 render_cube()
                 glPopMatrix()
-    glEnd()
     glPopMatrix()
     glDisable(GL_COLOR_MATERIAL)
     glEndList()

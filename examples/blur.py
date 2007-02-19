@@ -6,7 +6,7 @@ import random
 
 # disable error checking to make this code work :)
 from pyglet import options
-options['gl_error_check'] = False
+options['gl_error_check'] = True
 
 import pyglet.window
 import pyglet.clock
@@ -508,7 +508,7 @@ uniform sampler2DRect focus;
 uniform sampler2DRect blur;
 uniform sampler2DRect alpha;
 uniform vec4 scale;
-uniform vec4 taps[16];
+uniform vec2 taps[16];
 
 float coc_r = 10.0;
 float coc_d = 20.0;
@@ -630,6 +630,7 @@ def renderScene(r, object):
     glColor4f(0.4, 0.5, 1.0, 1.0)
     glEnable(GL_LIGHTING)
     glEnable(GL_LIGHT0)
+
     object.draw()
 
     glPopMatrix()
@@ -736,7 +737,7 @@ def renderDOF(scene, alpha, blurred, pass1, pass2, noise):
     pass1.uset1F("far", 60.0);
     pass1.usetTex("depth", 0, scene.depthBuffer());
 
-    glDisable(GL_DEPTH)
+    glDisable(GL_DEPTH_TEST)
 
     alpha.pushBind()
     setup2D(scene.width, scene.height)
@@ -886,6 +887,5 @@ def main():
 
     buf = None
     buf_subsampled = None
-
 main()
 
