@@ -11,7 +11,7 @@ __version__ = '$Id$'
 import unittest
 
 from pyglet.window import Window
-from pyglet.image import Image
+from pyglet.image import SolidColorImagePattern
 from pyglet.scene2d import Sprite, Image2d
 
 class SpriteModelTest(unittest.TestCase):
@@ -19,7 +19,8 @@ class SpriteModelTest(unittest.TestCase):
     def setUp(self):
         self.w = Window(width=1, height=1, visible=False)
         self.s = Sprite(10, 10, 10, 10,
-            Image2d.from_image(Image.create_solid(1)))
+            Image2d.from_image(SolidColorImagePattern((0, 0, 0,
+                0)).create_image(1, 1)))
         assert (self.s.x, self.s.y) == (10, 10)
 
     def tearDown(self):

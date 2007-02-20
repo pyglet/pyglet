@@ -12,7 +12,7 @@ __version__ = '$Id$'
 import math
 
 from pyglet.scene2d import *
-from pyglet.image import Image
+from pyglet.image import *
 from pyglet.scene2d.drawable import *
 from pyglet.gl import *
 
@@ -58,7 +58,6 @@ class HexCheckImage(Drawable):
                     glVertex2f(mx-x, y + height/2)
                     glVertex2f(w-mx+x, y + height/2)
             glEnd()
-            glPopAttrib()
         self._style = DrawStyle(color=colour, draw_func=draw_hex)
     def get_drawstyle(self):
         return self._style
@@ -81,8 +80,10 @@ def gen_hex_map(meta, h):
 def gen_rect_map(meta, w, h):
     r = []
     cell = None
-    dark = Image2d.from_image(Image.create_solid(w, (150, 150, 150, 255)))
-    light = Image2d.from_image(Image.create_solid(w, (200, 200, 200, 255)))
+    dark = Image2d.from_image(SolidColorImagePattern((150, 150, 150,
+        255)).create_image(w, h))
+    light = Image2d.from_image(SolidColorImagePattern((200, 200, 200,
+        255)).create_image(w, h))
     for i, m in enumerate(meta):
         c = []
         r.append(c)
