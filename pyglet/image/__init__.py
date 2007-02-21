@@ -262,6 +262,9 @@ class AbstractImage(object):
         self.width = width
         self.height = height
 
+    def __repr__(self):
+        return '<%s %dx%d>' % (self.__class__.__name__, self.width, self.height)
+
     def _get_image_data(self):
         '''Retrieve an ImageData instance for this image.'''
         raise ImageException('Cannot retrieve image data for %r' % self)
