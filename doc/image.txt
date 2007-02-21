@@ -1,0 +1,292 @@
+Images
+======
+
+pyglet can load many types of images, such as PNG, GIF, JPEG, BMP and DDS.
+More image types can be loaded, depending on the operating system and any
+optional modules installed (see `Image decoders and encoders`_, below).  Once
+loaded, images can be efficiently displayed or used with other pyglet
+modules for more sophisticated effects.
+
+pyglet can also save images; typically this is used for saving "screenshots"
+of a window, but can also be used as a handy image format conversion utility.
+
+Other pyglet packages rely on images; for example, `pyglet.sprite` and
+`pyglet.layout`.  They will typically require an instance of
+`AbstractImage`.  This chapter will describe how to work with these images,
+but does not cover any specific functionality provided by modules outside of
+`pyglet.image`.
+
+Loading an image
+----------------
+
+Quite possibly the only function you need to know is how to load an image::
+
+    from pyglet.image import *
+    image = load_image('kitten.png')
+
+Without any additional arguments, `load_image` will attempt to load the
+filename specified using any available image decoder.  This will allow you to
+load PNG, GIF, JPEG, BMP and DDS files, and possibly other files as well,
+depending on your operating system and additional installed modules.  If the
+image cannot be loaded, an `ImageDecodeException` will be raised.
+
+You can load an image from any file-like object by specifying the `file`
+keyword parameter::
+
+    kitten_stream = open('kitten.png', 'rb')
+    image = load_image('kitten.png', file=kitten_stream)
+
+In this case the filename ``kitten.png`` is optional, but gives a hint to the
+decoder as to the file type (it is otherwise unused).
+
+Working with images
+-------------------
+
+The image returned will implement the `AbstractImage` class.  You cannot make
+any assumptions about the particular class instance that will be returned, as
+this depends on the decoder used.  All images support the attributes:
+
+`width`
+    The width of the image, in pixels.
+`height`
+    The height of the image, in pixels.
+
+You may only want to use a portion of the complete image.  You can use the
+`get_region` method to return an image of a rectangular region of a source
+image::
+
+    image_part = image.get_region(x=10, y=10, width=100, height=100)
+
+This returns an image with dimensions 100x100.  The region extracted from
+`image` is aligned such that the bottom-left corner of the rectangle is 10
+pixels from the left and 10 pixels from the bottom of the image.
+
+Image regions can be used as if they were complete images.  Note that changes
+to an image region may or may not be reflected on the source image, and
+changes to the source image may or may not be reflected on any region images.
+You should not assume either behaviour.
+
+Displaying images
+^^^^^^^^^^^^^^^^^
+
+Use the `blit` method to draw an image to the current window::
+
+    image.blit(x, y, z)
+
+This method assumes an appropriate projection and transformation has been
+applied to the window.  This is not done automatically done by pyglet unless
+you are using the `pyglet.sprite` package.  If you are doing all the drawing
+with `blit`, the following code will set up an appropriate projection::
+
+    from pyglet.gl import *
+    from pyglet.window import *
+
+    window = Window()
+
+    def on_resize(width, height):
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(0, 0, width, height, -1, 1)
+        glMatrixMode(GL_MODELVIEW)
+    window.push_handlers(on_resize)
+
+**TODO**: Camera/view module outside of sprite should do this.
+
+The `x`, `y` and `z` coordinates locate where to draw the  bottom-left corner
+of the image.  With the projection defined above (or the one used by
+`pyglet.sprite`), the Y dimension is 0 at the bottom of the window and
+increases upwards, and the Z dimension is unused.
+
+You can use the `blit` method to draw any image, including an image region.
+
+Saving an image
+^^^^^^^^^^^^^^^
+
+Any image can be saved using the `save` method::
+
+    image.save('kitten.jpg')
+
+or, specifying a file-like object::
+
+    kitten_stream = open('kitten.jpg', 'wb')
+    image.save('kitten.jpg', file=kitten_stream)
+
+Module details
+--------------
+
+As mentioned above, images all implement the `AbstractImage` class.  The
+class hierarchy of this interface is shown below.
+
+.. image: image-class.svg
+
+For the simple uses described in the previous section, it is enough to use
+only the `AbstractImage` interface; for example, for loading, saving and
+blitting images.
+
+Accessing pixel data
+^^^^^^^^^^^^^^^^^^^^
+
+The `ImageData` class represents an image as a string or sequence of pixel
+data, or as a ctypes pointer.  Details such as the pitch and component layout
+are also stored in the class.  
+
+Most image decoders return an instance of `ImageData` when an image is loaded.
+You can also create an `ImageData` instance for any type of `AbstractImage` by
+accessing the `image_data` property.  For example::
+
+    image = load_image('kitten.jpg')
+    # image is probably an `ImageData`, but there is no guarantee
+    image = image.image_data
+    # now image is definitely `ImageData`.
+
+There is no performance penalty for accessing `image_data` of an `ImageData`,
+however accessing it for a `Texture` (see next section) can be quite
+time-consuming.
+
+The design of `ImageData` is to allow applications to access the detail in the
+format they prefer, rather than having to understand the many formats that
+each operating system and OpenGL make use of.
+
+The `pitch` and `format` properties determine how the bytes are arranged.
+`pitch` gives the number of bytes between each consecutive row.  The data is
+assumed to run from left-to-right, bottom-to-top, unless `pitch` is negative,
+in which case it runs from left-to-right, top-to-bottom.  There is no need for
+rows to be tightly packed; larger `pitch` values are often used to align each
+row to machine word boundaries.
+
+The `format` property gives the number and order of color components.  It is a
+string of one or more of the letters corresponding to the components in the
+following table:
+
+    = ============
+    R Red
+    G Green
+    B Blue
+    A Alpha
+    L Luminance
+    I Intensity
+    = ============
+
+For example, a format string of ``"RGBA"`` corrensponds to four bytes of
+colour data, in the order red, green, blue, alpha.  Note that machine
+endianness has no impact on the interpretation of a format string.
+
+The length of a format string always gives the number of bytes per pixel.  So,
+the minimum absolute pitch for a given image is ``len(image.format) *
+image.width``.   
+
+To retrieve pixel data in a particular format, set the `pitch` and `format`
+properties then read `data`.  The following example reads tightly packed rows
+in ``RGB`` format (the alpha component, if any, will be discarded)::
+
+    image = image.image_data
+    image.format = 'RGB'
+    image.pitch = len(image.format) * image.width
+    data = image.data
+
+`image.data` always returns a string, however it can be set to a ctypes array,
+stdlib array, list of byte data, string, or ctypes pointer.  Remember to 
+set the format and pitch of the data `before` setting it on the instance.
+
+The `CompressedImageData` class is unrelated to `ImageData`; it stores image
+data in one of the OpenGL compressed texture formats such as S3TC.  There
+currently no software conversion implemented to access the pixel data of these
+images (however, you can convert `CompressedImageData` to a `Texture` and then
+back into an `ImageData`).
+
+OpenGL imaging
+^^^^^^^^^^^^^^
+
+This section assumes you are familiar with texture mapping in OpenGL (for
+example, chapter 9 of the `OpenGL Programming Guide`_).
+
+To create a texture from any `AbstractImage`, access its `texture` property::
+
+    image = load_image('kitten.jpg')
+    texture = image.texture
+
+Textures are automatically created and used by `ImageData` when blitted.  It
+is useful to use textures directly when aiming for high performance or 3D
+applications.
+
+The `Texture` class represents any texture object.  The `target` attribute
+gives the texture target (for example, ``GL_TEXTURE_2D``) and `id` the texture
+name.  For example, to bind a texture::
+
+    glBindTexture(texture.target, texture.id)
+
+Implementations of OpenGL prior to 2.0 require textures to have dimensions
+that are powers of two (i.e., 2, 4, 8, 16, ...).  Because of this restriction,
+pyglet will always create textures of these dimensions (there are several
+non-conformant post-2.0 implementations).  This could have unexpected results
+for a user blitting a texture loaded from a file of non-standard dimensions.
+To remedy this, pyglet returns a `TextureRegion` of the larger texture
+corresponding to just the part of the texture covered by the original image.
+
+A `TextureRegion` has an `owner` attribute that references the larger texture.
+The following session demonstrates this::
+
+    >>> image = load_image('tests/image/rgba.png')
+    >>> image
+    <ImageData 235x257>         # The image is 235x257
+    >>> image.texture
+    <TextureRegion 235x257>     # The returned texture is a region
+    >>> image.texture.owner
+    <Texture 256x512>           # The owning texture has power-2 dimensions
+    >>> 
+
+A `TextureRegion` defines a `tex_coords` attribute that gives the texture
+coordinates to use for a quad mapping the whole image.  `tex_coords` is a
+4-tuple of 3-tuple of floats; i.e., each texture coordinate is given in 3
+dimensions.  The following code can be used to render a quad for a texture
+region::
+
+    image = image.texture
+    t = image.tex_coords
+    w, h = image.width, image.height
+    array = (GLfloat * 32)(
+         t[0][0], t[0][1], t[0][2], 1.,
+         x,       y,       z,       1.,
+         t[1][0], t[1][1], t[1][2], 1., 
+         x + w,   y,       z,       1.,
+         t[2][0], t[2][1], t[2][2], 1., 
+         x + w,   y + h,   z,       1.,
+         t[3][0], t[3][1], t[3][2], 1., 
+         x,       y + h,   z,       1.)
+
+    glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+    glInterleavedArrays(GL_T4F_V4F, 0, array)
+    glDrawArrays(GL_QUADS, 0, 4)
+    glPopClientAttrib()
+
+The `Texture.blit` method does this.
+
+.. _OpenGL Programming Guide: http://opengl.org/documentation/red_book/
+
+Drawing to images
+^^^^^^^^^^^^^^^^^
+
+The `blit_into` method can be used to create composite images.  For example,
+to blit an image of a sheep onto an image of some grass::
+
+    grass = load_image('grass.png').texture
+    sheep = load_image('sheep.png')
+    grass.blit_into(sheep, x, y, z)
+
+The `z` parameter is ignored except for `Texture3D` (described in `Image
+sequences`_).  `x` and `y` locate the lower-left corner of the source image
+within the destination image.  The Y dimension increases upwards.
+
+There are several restrictions on the use of `blit_into`:
+
+* The destination image cannot be an `ImageData` or `CompressedImageData`
+* If the destination image is a texture, the source cannot be a texture.
+
+Image decoders and encoders
+---------------------------
+
+Image sequences
+---------------
+
+Buffer images
+-------------
