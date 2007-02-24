@@ -32,8 +32,6 @@ w1.push_handlers(debug_handler, on_key_press=do_nothing,
     on_key_release=do_nothing)
 w1.push_handlers(on_text)
 
-w2.push_handlers(exit_handler)
-
 while not (w1.has_exit or w2.has_exit):
     w1.dispatch_events()
     w2.dispatch_events()
