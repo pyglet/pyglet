@@ -52,18 +52,19 @@ class GLLayout(LayoutEventDispatcher):
     def add_replaced_element_factory(self, factory):
         self.view.frame_builder.add_replaced_element_factory(factory)
 
-    def set_data(self, data, builder):
+    def set_data(self, data, builder_class):
+        self.document = Document()
+        self.view.set_document(self.document)
+        builder  = builder_class(self.document)
         builder.feed(data)
         builder.close()
         self._mouse_over_elements = set()
         
     def set_xhtml(self, data):
-        self.document.root = None
-        self.set_data(data, XHTMLBuilder(self.document))
+        self.set_data(data, XHTMLBuilder)
 
     def set_html(self, data):
-        self.document.root = None
-        self.set_data(data, HTMLBuilder(self.document))
+        self.set_data(data, HTMLBuilder)
 
     # Duplicate the public properties of DocumentView here for convenience
 

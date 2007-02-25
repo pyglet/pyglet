@@ -12,12 +12,11 @@ from pyglet.layout.content import *
 from pyglet.layout.frame import *
 
 class DocumentView(DocumentListener):
+    document = None
     def __init__(self, render_device, document):
         self.render_device = render_device
-        self.document = document
-        self.document.add_listener(self)
-        self.frame_builder = FrameBuilder(self.document, self.render_device)
-
+        self.set_document(document)
+        
         self._root_frame = None
 
         self._pending_reflow = set()
@@ -29,6 +28,13 @@ class DocumentView(DocumentListener):
         self.viewport_y = 0
         self._viewport_width = 0 
         self._viewport_height = 0
+
+    def set_document(self, document):
+        if self.document:
+            self.document.remove_listener(self)
+        self.document = document
+        self.document.add_listener(self)
+        self.frame_builder = FrameBuilder(self.document, self.render_device)
 
     def on_set_root(self, element):
         self._pending_reconstruct.clear()
