@@ -608,7 +608,7 @@ class LineBox(object):
             x += frame.margin_left
             valign = frame.get_computed_property('vertical-align')
             if valign == 'baseline':
-                ly = baseline - frame.content_ascent + frame.margin_top
+                ly = baseline - frame.baseline + frame.margin_top
             elif valign == 'top':
                 ly = y + frame.margin_top
             else:
@@ -629,6 +629,7 @@ class InlineFrame(Frame):
     line_descent = 0
     content_ascent = 0
     content_descent = 0
+    baseline = 0        # +ve distance from top of border to baseline
 
     def __init__(self, style, element):
         super(InlineFrame, self).__init__(style, element)
@@ -681,7 +682,7 @@ class InlineFrame(Frame):
             # Correct vertical height for child that was split but turns out
             # to be in the same line.
             if frame.flowed_children and \
-               child == frame.flowed_children[-1].continuation:
+               child == frame.flowed_children[-1].continuation and False:
                 prev = frame.flowed_children[-1]
                 child.line_ascent = max(child.line_ascent, 
                                         prev.line_ascent)
@@ -691,8 +692,8 @@ class InlineFrame(Frame):
                                          prev.line_descent)
                 child.content_descent = min(child.content_descent, 
                                             prev.content_descent)
-                child.border_edge_height = child.content_ascent - \
-                    child.content_descent
+                child.border_edge_height = self.content_top + content_bottom + \
+                    child.line_ascent - child.line_descent
 
             frame.flowed_children.append(child)
             frame.border_edge_width += child.margin_left + \
@@ -713,13 +714,12 @@ class InlineFrame(Frame):
             frame.flowed_children = []
 
         def finish(frame):
-            frame.content_ascent += self.content_top
-            frame.content_descent -= content_bottom
-            frame.border_edge_height = frame.content_ascent - \
-                frame.content_descent
-            if line_height == 'normal':
-                frame.line_ascent = frame.content_ascent
-                frame.line_descent = frame.content_descent
+            frame.border_edge_height = self.content_top + content_bottom + \
+                frame.line_ascent - frame.line_descent
+            frame.baseline = self.content_top + frame.content_ascent
+            #if line_height == 'normal':
+            #    frame.line_ascent = frame.content_ascent
+            #    frame.line_descent = frame.content_descent
 
         frame = self
         init(frame)
@@ -789,12 +789,12 @@ class InlineFrame(Frame):
     def position(self, x, y):
         super(InlineFrame, self).position(x, y)
         x = self.content_left
-        baseline = self.content_ascent
+        baseline = self.baseline
         for child in self.flowed_children:
             x += child.margin_left
             valign = child.get_computed_property('vertical-align')
             if valign == 'baseline':
-                ly = baseline - child.content_ascent + child.margin_top
+                ly = baseline - child.baseline + child.margin_top
             elif valign == 'top':
                 ly = child.margin_top
             child.position(x, ly)
@@ -817,11 +817,11 @@ class TextFrame(InlineFrame):
 
         # Align baseline to integer (not background/border, that screws up
         # touching borders).
-        rounding = (y - self.content_ascent) - int(y - self.content_ascent)
+        rounding = (y - self.baseline) - int(y - self.baseline)
         y -= rounding
 
         self.draw_text(x + self.content_left, 
-                       y - self.content_ascent, 
+                       y - self.baseline, 
                        render_device)
 
     def draw_text(self, x, y, render_context):
@@ -976,6 +976,7 @@ class InlineReplacedElementDelegate(InlineFrame):
         self.content_ascent = self.line_ascent = \
             self.border_edge_height + self.margin_top + self.margin_bottom
         self.content_descent = self.line_descent = 0
+        self.baseline = self.content_ascent
 
     def draw_cull(self, x, y, render_device, left, top, right, bottom):
         # Check for partial intersection

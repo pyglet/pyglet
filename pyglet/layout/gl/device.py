@@ -250,8 +250,8 @@ class GLTextFrame(TextFrame):
 
         # Calculate text metrics (actually not dependent on flow, could
         # optimise out).
-        self.content_ascent = font.ascent + self.content_top
-        self.content_descent = font.descent - content_bottom
+        self.content_ascent = font.ascent
+        self.content_descent = font.descent
         line_height = self.get_computed_property('line-height') 
         if line_height != 'normal':
             half_leading = (line_height - \
@@ -260,8 +260,10 @@ class GLTextFrame(TextFrame):
             half_leading = 0
         self.line_ascent = self.content_ascent + half_leading
         self.line_descent = self.content_descent - half_leading
-        self.border_edge_height = self.content_ascent - self.content_descent
+        self.border_edge_height = self.content_ascent - self.content_descent +\
+            self.content_top + content_bottom
         self.border_edge_width = self.content_left
+        self.baseline = self.content_ascent + self.content_top
 
         context.add(self.margin_left + self.content_left)
         context.reserve(content_right + self.margin_right)
@@ -299,6 +301,7 @@ class GLTextFrame(TextFrame):
                 continuation.line_descent = self.line_descent
                 continuation.content_ascent = self.content_ascent
                 continuation.content_descent = self.content_descent
+                continuation.baseline = self.baseline
 
                 # Remove right-margin from continued frame
                 frame.margin_right = 0
