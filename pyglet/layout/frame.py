@@ -678,6 +678,22 @@ class InlineFrame(Frame):
         self.border_edge_width = self.content_left
 
         def add(child):
+            # Correct vertical height for child that was split but turns out
+            # to be in the same line.
+            if frame.flowed_children and \
+               child == frame.flowed_children[-1].continuation:
+                prev = frame.flowed_children[-1]
+                child.line_ascent = max(child.line_ascent, 
+                                        prev.line_ascent)
+                child.content_ascent = max(child.content_ascent, 
+                                           prev.content_ascent)
+                child.line_descent = min(child.line_descent, 
+                                         prev.line_descent)
+                child.content_descent = min(child.content_descent, 
+                                            prev.content_descent)
+                child.border_edge_height = child.content_ascent - \
+                    child.content_descent
+
             frame.flowed_children.append(child)
             frame.border_edge_width += child.margin_left + \
                 child.border_edge_width + child.margin_right
@@ -756,12 +772,6 @@ class InlineFrame(Frame):
             continuation.margin_right = self.margin_right
             init(continuation)
 
-            # XXX HACK
-            continuation.line_ascent = frame.line_ascent
-            continuation.line_descent = frame.line_descent
-            continuation.content_ascent = frame.content_ascent
-            continuation.content_descent = frame.content_descent
-            
             finish(frame)
             frame.margin_right = 0
             frame.continuation = continuation
