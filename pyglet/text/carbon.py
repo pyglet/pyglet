@@ -321,6 +321,5 @@ class CarbonFont(BaseFont):
             byref(bounds_actual))
         self.ascent = -fix2float(bounds.upperLeft.y)
         self.descent = -fix2float(bounds.lowerLeft.y)
-        print self.ascent, self.descent
 
 

@@ -15,7 +15,7 @@ from pyglet.scene2d.textsprite import *
 from pyglet.text import *
 
 window = Window(visible=False)
-font = Font('Arial', 24)
+font = load_font('Arial', 24)
 text = 'Type away... '
 
 def on_resize(width, height):

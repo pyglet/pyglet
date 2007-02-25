@@ -22,7 +22,6 @@ import os
 from pyglet.gl import *
 from pyglet.window import *
 from pyglet.image import *
-import pyglet.layout.base
 
 class Glyph(TextureRegion):
     advance = 0
@@ -98,7 +97,6 @@ class GlyphRenderer(object):
 class GlyphString(object):
     '''An immutable string of glyphs that can be rendererd quickly.
     '''
-    width = 0       # Set to 
 
     def __init__(self, text, glyphs, x=0, y=0):
         '''Initialise the string with the given sequence of glyphs, and
@@ -302,10 +300,6 @@ class BaseFont(object):
 
         return glyphs
 
-    def render(self, text, color=(1, 1, 1, 1)):
-        raise NotImplementedError('Functionality temporarily removed')
-        
-    
 # Load platform dependent module
 if sys.platform == 'darwin':
     from pyglet.text.carbon import CarbonFont
@@ -317,47 +311,68 @@ else:
     from pyglet.text.freetype import FreeTypeFont
     _font_class = FreeTypeFont
 
-class Font(object):
-    def __new__(cls, name, size, bold=False, italic=False):
-        # Find first matching name
-        if type(name) in (tuple, list):
-            for n in name:
-                if _font_class.have_font(n):
-                    name = n
-                    break
-            else:
-                name = None
-    
-        # Locate or create font cache   
-        shared_object_space = get_current_context().get_shared_object_space()
-        if not hasattr(shared_object_space, 'pyglet_text_font_cache'):
-            shared_object_space.pyglet_text_font_cache = {}
-        font_cache = shared_object_space.pyglet_text_font_cache
+def load_font(name, size, bold=False, italic=False):
+    '''Load a font for rendering.
 
-        # Look for font name in font cache
-        descriptor = (name, size, bold, italic)
-        if descriptor in font_cache:
-            return font_cache[descriptor]
+    :Parameters:
+        `name` : str, or list of str
+            Font family, for example, "Times New Roman".  If a list of names
+            is provided, the first one matching a known font is used.  If no
+            font can be matched to the name(s), a default font is used.
+        `size` : float
+            Size of the font, in points.  The returned font may be an exact
+            match or the closest available.
+        `bold` : bool
+            If True, a bold variant is returned, if one exists for the given
+            family and size.
+        `italic` : bool
+            If True, an italic variant is returned, if one exists for the given
+            family and size.
 
-        # Not in cache, create from scratch
-        font = _font_class(name, size, bold=bold, italic=italic)
-        font_cache[descriptor] = font
-        return font
+    :rtype: `BaseFont`
+    '''
+    # Find first matching name
+    if type(name) in (tuple, list):
+        for n in name:
+            if _font_class.have_font(n):
+                name = n
+                break
+        else:
+            name = None
 
-    @staticmethod
-    def add_font(font):
-        if type(font) in (str, unicode):
-            font = open(font, 'r')
-        if hasattr(font, 'read'):
-            font = font.read()
-        _font_class.add_font_data(font)
+    # Locate or create font cache   
+    shared_object_space = get_current_context().get_shared_object_space()
+    if not hasattr(shared_object_space, 'pyglet_text_font_cache'):
+        shared_object_space.pyglet_text_font_cache = {}
+    font_cache = shared_object_space.pyglet_text_font_cache
+
+    # Look for font name in font cache
+    descriptor = (name, size, bold, italic)
+    if descriptor in font_cache:
+        return font_cache[descriptor]
+
+    # Not in cache, create from scratch
+    font = _font_class(name, size, bold=bold, italic=italic)
+    font_cache[descriptor] = font
+    return font
+
+def add_font(font):
+    if type(font) in (str, unicode):
+        font = open(font, 'r')
+    if hasattr(font, 'read'):
+        font = font.read()
+    _font_class.add_font_data(font)
 
 
-    @staticmethod
-    def add_font_dir(dir):
-        import os
-        for file in os.listdir(dir):
-            if file[:-4].lower() == '.ttf':
-                add_font(file)
+def add_font_dir(dir):
+    import os
+    for file in os.listdir(dir):
+        if file[:-4].lower() == '.ttf':
+            add_font(file)
 
+# Deprectated API:
+def Font(*args, **kwargs):
+    import warnings
+    warnings.warn('Font is deprecated, use load_font.')
+    load_font(*args, **kwargs)
 

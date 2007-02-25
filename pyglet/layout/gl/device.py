@@ -40,7 +40,7 @@ class GLRenderDevice(RenderDevice):
         bold = weight >= 700
         assert type(size) == Dimension and size.unit == 'pt'
 
-        return pyglet.text.Font(names, size, italic=italic, bold=bold)
+        return pyglet.text.load_font(names, size, italic=italic, bold=bold)
 
     def create_text_frame(self, style, element, text):
         return GLTextFrame(style, element, text)
@@ -329,9 +329,6 @@ class GLTextFrame(TextFrame):
 
         frame.strip_next = self.text[-1] == ' '
         frame.soft_break = self.text[-1] == ' '
-        if self.text[-1] == '\n':
-            frame.line_break = True
-            frame.to_index -= 1
         frame.border_edge_width += content_right
         self.flow_dirty = False
 

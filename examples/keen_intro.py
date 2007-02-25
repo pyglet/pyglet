@@ -15,7 +15,7 @@ from pyglet.text import *
 width, height = 640, 480
 window = Window(width=width, height=height)
 
-font = Font('Arial', 500, bold=True)
+font = load_font('Arial', 500, bold=True)
 commander = TextSprite(font, 'COMMANDER', color=(1, 1, 1, 0.5))
 keen = TextSprite(font, 'KEEN', color=(1, 1, 1, 0.5))
 

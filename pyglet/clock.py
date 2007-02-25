@@ -550,8 +550,8 @@ class ClockDisplay(object):
         self.clock.schedule_interval(self.update_text, interval)
 
         if not font:
-            from pyglet.text import Font
-            font = Font('', 36, bold=True)
+            from pyglet.text import load_font
+            font = load_font('', 36, bold=True)
 
         from pyglet.scene2d.textsprite import TextSprite
         self.sprite = TextSprite(font, '', color=color, x=10, y=10)

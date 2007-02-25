@@ -86,7 +86,7 @@ class SaveHandler:
         image.save(fn)
 w.push_handlers(SaveHandler())
 
-font = Font('Bitstream Vera Sans', 24)
+font = load_font('Bitstream Vera Sans', 24)
 
 # load the sprites & level
 dirname = os.path.dirname(__file__)
