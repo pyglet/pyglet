@@ -799,7 +799,12 @@ class Window(_platform.get_window_class()):
         super(Window, self).__init__()
 
         factory = get_factory()
-        if width and height:
+        if width or height:
+            _width, _height = factory.get_size()
+            if not width:
+                width = _width
+            if not height:
+                height = _height
             factory.set_size(width, height)
         factory.set_fullscreen(fullscreen)
         factory.set_gl_attribute('doublebuffer', doublebuffer)
