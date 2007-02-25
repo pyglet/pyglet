@@ -521,6 +521,13 @@ class BlockFrame(Frame):
                 child.flow_inline(context)
 
             while child:
+                # Avoid adding empty frames into line box
+                if strip_lines and lines[-1].is_empty:
+                    child.lstrip()
+                if not child.border_edge_width:
+                    child = child.continuation
+                    continue
+
                 self.flowed_children.append(child)
                 context.strip_next = child.strip_next
                 child_width = child.margin_left + child.border_edge_width + \
@@ -589,8 +596,6 @@ class LineBox(object):
         self.line_descent = min(self.line_descent, frame.line_descent)
         self.line_height = max(self.line_height, 
                                self.line_ascent - self.line_descent)
-        if self.strip_lines and self.is_empty:
-            frame.lstrip()
         self.is_empty = False
 
     def position(self, x, y, containing_block):
