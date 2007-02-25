@@ -329,6 +329,9 @@ class GLTextFrame(TextFrame):
 
         frame.strip_next = self.text[-1] == ' '
         frame.soft_break = self.text[-1] == ' '
+        if self.text[-1] == '\n':
+            frame.line_break = True
+            frame.to_index -= 1
         frame.border_edge_width += content_right
         self.flow_dirty = False
 
