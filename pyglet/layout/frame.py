@@ -742,18 +742,21 @@ class InlineFrame(Frame):
                     child.margin_right
 
                 if not context.can_add(c_width, ignore_reserve):
-                    continuation = InlineFrame(self.style, self.element)
-                    continuation.is_continuation = True
-                    continuation.margin_right = self.margin_right
-                    init(continuation)
+                    if not frame.flowed_children:
+                        context.newline()
+                    else:
+                        continuation = InlineFrame(self.style, self.element)
+                        continuation.is_continuation = True
+                        continuation.margin_right = self.margin_right
+                        init(continuation)
 
-                    finish(frame)
-                    context.newline()
-                     
-                    frame.margin_right = 0
+                        finish(frame)
+                        context.newline()
+                         
+                        frame.margin_right = 0
 
-                    frame.continuation = continuation
-                    frame = continuation
+                        frame.continuation = continuation
+                        frame = continuation
 
                 context.add(c_width)
                 buffer.append(child)
