@@ -183,7 +183,6 @@ class GLTextFrame(TextFrame):
     glyph_string = None
     from_index = 0
     to_index = None
-    is_continuation = False
 
     content_ascent = 0
 
@@ -216,6 +215,7 @@ class GLTextFrame(TextFrame):
         self.from_index = 0
         self.strip_next = False
         self.continuation = None
+        self.close_border = True
         
         # Final white-space processing step (besides line beginning strip)
         # from 16.6.1 step 4.
@@ -291,7 +291,7 @@ class GLTextFrame(TextFrame):
                     self.style, self.element, self.text)
                 continuation.parent = self.parent
                 continuation.glyph_string = self.glyph_string
-                continuation.is_continuation = True
+                continuation.open_border = False
                 continuation.from_index = continuation.to_index = frame.to_index
 
                 continuation.border_edge_height = self.border_edge_height
@@ -320,6 +320,7 @@ class GLTextFrame(TextFrame):
 
                 # Ready for next iteration
                 frame.continuation = continuation
+                frame.close_border = False
                 frame = continuation
                 context.newline()
 

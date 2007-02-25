@@ -44,10 +44,9 @@ class Frame(object):
     style = None
     computed_properties = None
     continuation = None
-    is_continuation = False
-    force_border = False    # hack to draw LR borders even if a continuation;
-                            # should probably not test continuation for this
-                            # anyway. XXX
+
+    open_border = True      # False for continued frames (usually)
+    close_border = True     # False for continuation frames (usually)
 
     # Incremental reflow flag
     flow_dirty = True
@@ -218,10 +217,10 @@ class Frame(object):
         bbottom = compute('border-bottom-width')
         bleft = compute('border-left-width')
 
-        if self.continuation and not self.force_border:
-            bright = 0
-        if self.is_continuation and not self.force_border:
+        if not self.open_border:
             bleft = 0
+        if not self.close_border:
+            bright = 0
 
         if btop:
             render_device.draw_horizontal_border(
@@ -654,6 +653,7 @@ class InlineFrame(Frame):
     def flow_inline(self, context):
         context = context.copy()
         self.continuation = None
+        self.close_border = True
 
         computed = self.get_computed_property
         def used(property):
@@ -746,7 +746,7 @@ class InlineFrame(Frame):
                         context.newline()
                     else:
                         continuation = InlineFrame(self.style, self.element)
-                        continuation.is_continuation = True
+                        continuation.open_border = False
                         continuation.margin_right = self.margin_right
                         init(continuation)
 
@@ -756,6 +756,7 @@ class InlineFrame(Frame):
                         frame.margin_right = 0
 
                         frame.continuation = continuation
+                        frame.close_border = False
                         frame = continuation
 
                 context.add(c_width)
@@ -771,13 +772,14 @@ class InlineFrame(Frame):
 
         if buffer:
             continuation = InlineFrame(self.style, self.element)
-            continuation.is_continuation = True
+            continuation.open_border = False
             continuation.margin_right = self.margin_right
             init(continuation)
 
             finish(frame)
             frame.margin_right = 0
             frame.continuation = continuation
+            frame.close_border = False
             frame = continuation
             for f in buffer:
                 add(f)
@@ -853,6 +855,8 @@ class InlineReplacedElementFrame(InlineFrame):
         self.content_ascent = self.content_descent = 0
         self.line_ascent = self.line_descent =  0
         self.border_edge_height = 0
+        self.close_border = False
+        self.open_border = False
 
         self.continuation = InlineReplacedElementDelegate(self, drawable)
 
@@ -874,19 +878,17 @@ class InlineReplacedElementFrame(InlineFrame):
         pass  # continuation only is drawn.
 
 class InlineReplacedElementDelegate(InlineFrame):
-    force_border = True
-
     def __init__(self, continued_frame, drawable):
         super(InlineReplacedElementDelegate, self).__init__(
             continued_frame.style, continued_frame.element)
-        self.is_continuation = True
         self.drawable = drawable
         self.continued_frame = continued_frame
 
         # Add an empty continuation to allow for line-breaks after this
         # frame.
         self.continuation = InlineFrame(self.style, self.element)
-        self.continuation.is_continuation = True
+        self.continuation.open_border = False
+        self.continuation.close_border = False
 
     def flow_inline(self, context):
         computed = self.get_computed_property
