@@ -244,7 +244,7 @@ class Win32Window(BaseWindow):
         if not self._window_class:
             white = _gdi32.GetStockObject(WHITE_BRUSH)
             self._window_class = WNDCLASS()
-            self._window_class.lpszClassName = 'GenericAppClass'
+            self._window_class.lpszClassName = 'GenericAppClass%d' % id(self)
             self._window_class.lpfnWndProc = WNDPROC(self._wnd_proc)
             self._window_class.style = CS_VREDRAW | CS_HREDRAW
             self._window_class.hInstance = 0
