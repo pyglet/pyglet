@@ -106,6 +106,7 @@ boom = AnimatedSprite.from_image(0, 0, frames[0],
 clock.schedule(boom.update)
 
 fps = ClockDisplay(color=(1., .5, .5, .5))
+clock.schedule(fps.update_text)
 
 effectlayer = SpriteLayer(5)
 rocketlayer = SpriteLayer(1, [rocket])
