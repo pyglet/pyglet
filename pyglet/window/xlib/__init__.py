@@ -432,7 +432,7 @@ class XlibWindow(BaseWindow):
             window_attributes = xlib.XSetWindowAttributes()
             if visual_id != default_visual_id:
                 window_attributes.colormap = xlib.XCreateColormap(
-                    self._display, root, visual, AllocNone)
+                    self._display, root, visual, xlib.AllocNone)
             else:
                 window_attributes.colormap = xlib.XDefaultColormap(
                     self._display, self._screen_id)
