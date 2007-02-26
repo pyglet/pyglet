@@ -831,18 +831,13 @@ class ImageDataRegion(ImageData):
             image_data._current_pitch)
         self.x = x
         self.y = y
-    
-    def _apply_region_unpack(self):
-        glPixelStorei(GL_UNPACK_SKIP_PIXELS, self.x)
-        glPixelStorei(GL_UNPACK_SKIP_ROWS, self.y)
 
-    def _ensure_string_data(self):
-        super(ImageDataRegion, self)._ensure_string_data()
-
-        # And crop the data
+    def _get_data(self):
+        # Crop the data first
         x1 = len(self._current_format) * self.x
         x2 = len(self._current_format) * (self.x + self.width)
 
+        self._ensure_string_data()
         data = self._convert(self._current_format, abs(self._current_pitch))
         rows = re.findall('.' * abs(self._current_pitch), data, re.DOTALL)
         rows = [row[x1:x2] for row in rows[self.y:self.y+self.height]]
@@ -851,6 +846,22 @@ class ImageDataRegion(ImageData):
         self._current_texture = None
         self.x = 0
         self.y = 0
+
+        return super(ImageDataRegion, self)._get_data()
+
+    def _set_data(self, data):
+        self.x = 0
+        self.y = 0
+        super(ImageDataRegion, self)._set_data(data)
+ 
+    data = property(_get_data, _set_data)
+    
+    def _apply_region_unpack(self):
+        glPixelStorei(GL_UNPACK_SKIP_PIXELS, self.x)
+        glPixelStorei(GL_UNPACK_SKIP_ROWS, self.y)
+
+    def _ensure_string_data(self):
+        super(ImageDataRegion, self)._ensure_string_data()
 
     def get_region(self, x, y, width, height):
         x += self.x
