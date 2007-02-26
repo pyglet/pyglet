@@ -45,7 +45,7 @@ class WGLFunctionProxy(object):
             raise Exception(
                 'Call to function "%s" before GL context created' % self.name)
         address = wglGetProcAddress(self.name)
-        if address:
+        if cast(address, POINTER(c_int)):  # check cast because address is func
             self.func = cast(address, self.ftype)
             decorate_function(self.func, self.name)
         else:
