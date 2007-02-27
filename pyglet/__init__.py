@@ -16,5 +16,5 @@ def _require_ctypes_version(version):
 _require_ctypes_version('1.0.0')
 
 options = {
-    'gl_error_check': True,
+    'gl_error_check': __debug__,
 }
