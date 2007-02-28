@@ -63,7 +63,7 @@ class _EuclidMetaclass(type):
             return types.ClassType.__new__(types.ClassType, name, bases, dct)
 __metaclass__ = _EuclidMetaclass
 
-class Vector2:
+class Vector2(object):
     __slots__ = ['x', 'y']
 
     def __init__(self, x, y):
@@ -258,7 +258,7 @@ class Vector2:
         return Vector2(self.x - d * normal.x,
                        self.y - d * normal.y)
 
-class Vector3:
+class Vector3(object):
     __slots__ = ['x', 'y', 'z']
 
     def __init__(self, x, y, z):
@@ -493,7 +493,7 @@ class Vector3:
 # e f g 
 # i j k 
 
-class Matrix3:
+class Matrix3(object):
     __slots__ = list('abcefgijk')
 
     def __init__(self):
@@ -637,7 +637,7 @@ class Matrix3:
 # i j k l
 # m n o p
 
-class Matrix4:
+class Matrix4(object):
     __slots__ = list('abcdefghijklmnop')
 
     def __init__(self):
@@ -913,7 +913,7 @@ class Matrix4:
         return self
     new_perspective = classmethod(new_perspective)
 
-class Quaternion:
+class Quaternion(object):
     # All methods and naming conventions based off 
     # http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions
 
@@ -1158,7 +1158,7 @@ class Quaternion:
 # Much maths thanks to Paul Bourke, http://astronomy.swin.edu.au/~pbourke
 # ---------------------------------------------------------------------------
 
-class Geometry:
+class Geometry(object):
     def _connect_unimplemented(self, other):
         raise AttributeError, 'Cannot connect %s to %s' % \
             (self.__class__, other.__class__)
@@ -1667,7 +1667,7 @@ class Point3(Vector3, Geometry):
         if c:
             return c._swap()
 
-class Line3:
+class Line3(object):
     __slots__ = ['p', 'v']
 
     def __init__(self, *args):
@@ -1773,7 +1773,7 @@ class LineSegment3(Line3):
 
     length = property(lambda self: abs(self.v))
 
-class Sphere:
+class Sphere(object):
     __slots__ = ['c', 'r']
 
     def __init__(self, center, radius):
@@ -1821,7 +1821,7 @@ class Sphere:
         if c:
             return c
 
-class Plane:
+class Plane(object):
     # n.p = k, where n is normal, p is point on plane, k is constant scalar
     __slots__ = ['n', 'k']
 
