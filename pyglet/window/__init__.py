@@ -441,6 +441,9 @@ class BaseWindow(WindowEventDispatcher):
     def set_vsync(self, vsync):
         pass
 
+    def set_mouse_visible(self, visible=True):
+        raise NotImplementedError()
+
     def set_exclusive_mouse(self, exclusive=True):
         raise NotImplementedError()
 

@@ -65,6 +65,7 @@ window
         WINDOW_BORDERS                  
         WINDOW_ICON
         WINDOW_CURSOR
+        WINDOW_MOUSE_VISIBLE            X
         MULTIPLE_SCREEN                 X   X   X
         CONTEXT_SHARE                   X   X   X
         ============================== === === ===

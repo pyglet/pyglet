@@ -353,6 +353,7 @@ class XlibWindow(BaseWindow):
     _height = 0             # Last known window size
     _mouse = None           # Last known mouse position and button state
     _ignore_motion = False  # Set to true to skip the next mousemotion event
+    _visible_mouse = True
     _exclusive_mouse = False
     _exclusive_mouse_client = None
     _exclusive_keyboard = False
@@ -648,11 +649,11 @@ class XlibWindow(BaseWindow):
         self._set_wm_state('_NET_WM_STATE_MAXIMIZED_HORZ',
                            '_NET_WM_STATE_MAXIMIZED_VERT')
 
-    def set_exclusive_mouse(self, exclusive=True):
-        if exclusive == self._exclusive_mouse:
+    def set_mouse_visible(self, visible=True):
+        if visible == self._visible_mouse:
             return
 
-        if exclusive:
+        if not visible:
             # Hide pointer by creating an empty cursor
             black = xlib.XBlackPixel(self._display, self._screen_id)
             black = xlib.XColor()
@@ -663,6 +664,17 @@ class XlibWindow(BaseWindow):
             xlib.XDefineCursor(self._display, self._window, cursor)
             xlib.XFreeCursor(self._display, cursor)
             xlib.XFreePixmap(self._display, bmp)
+        else:
+            # Restore cursor
+            xlib.XUndefineCursor(self._display, self._window)
+        self._visible_mouse = visible
+
+    def set_exclusive_mouse(self, exclusive=True):
+        if exclusive == self._exclusive_mouse:
+            return
+
+        if exclusive:
+            self.set_mouse_visible(False)
 
             # Restrict to client area
             xlib.XGrabPointer(self._display, self._window,
@@ -686,11 +698,9 @@ class XlibWindow(BaseWindow):
                 x, y)
             self._ignore_motion = True
         else:
-            # Restore cursor
-            xlib.XUndefineCursor(self._display, self._window)
-
             # Unclip
             xlib.XUngrabPointer(self._display, xlib.CurrentTime)
+            self.set_mouse_visible(True)
 
         self._exclusive_mouse = exclusive
 
