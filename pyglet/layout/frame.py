@@ -44,6 +44,7 @@ class Frame(object):
     style = None
     computed_properties = None
     continuation = None
+    is_replaced = False     # True if a replaced element
 
     open_border = True      # False for continued frames (usually)
     close_border = True     # False for continuation frames (usually)
@@ -850,6 +851,8 @@ class ReplacedElementDrawable(object):
         raise NotImplementedError('abstract')
 
 class InlineReplacedElementFrame(InlineFrame):
+    is_replaced = True
+
     def __init__(self, style, element, drawable):
         super(InlineReplacedElementFrame, self).__init__(style, element)
         # Always allow a line break before a replaced element.  Make this
@@ -883,6 +886,8 @@ class InlineReplacedElementFrame(InlineFrame):
         pass  # continuation only is drawn.
 
 class InlineReplacedElementDelegate(InlineFrame):
+    is_replaced = True
+
     def __init__(self, continued_frame, drawable):
         super(InlineReplacedElementDelegate, self).__init__(
             continued_frame.style, continued_frame.element)
@@ -1147,6 +1152,7 @@ class FrameBuilder(object):
                 # collapse it later anyway.
                 if (not child.children and
                     not child.text.strip() and
+                    not child.is_replaced and 
                     child.get_computed_property('white-space') in
                         ('normal', 'nowrap', 'pre-line')):
                     continue
