@@ -40,7 +40,7 @@ class Frame(object):
     parent = None
     children = ()
     flowed_children = ()
-    text = None
+    text = ''
     style = None
     computed_properties = None
     continuation = None
