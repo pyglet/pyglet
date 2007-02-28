@@ -30,6 +30,8 @@ class GLLayout(LayoutEventDispatcher):
     def __init__(self, render_device=None, locator=None):
         super(GLLayout, self).__init__()
 
+        self.replaced_element_factories = []
+
         if not locator:
             locator = LocalFileLocator()
         self.locator = locator
@@ -50,11 +52,15 @@ class GLLayout(LayoutEventDispatcher):
         self.y = 0
 
     def add_replaced_element_factory(self, factory):
+        # XXX duplication
+        self.replaced_element_factories.append(factory)
         self.view.frame_builder.add_replaced_element_factory(factory)
 
     def set_data(self, data, builder_class):
         self.document = Document()
         self.view.set_document(self.document)
+        for factory in self.replaced_element_factories:
+            self.view.frame_builder.add_replaced_element_factory(factory)
         builder  = builder_class(self.document)
         builder.feed(data)
         builder.close()
