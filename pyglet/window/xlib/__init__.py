@@ -559,6 +559,8 @@ class XlibWindow(BaseWindow):
             self.dispatch_event(EVENT_CONTEXT_STATE_LOST)
 
     def flip(self):
+        self.draw_mouse_cursor()
+
         if self._vsync and self._have_SGI_video_sync:
             count = c_uint()
             glXGetVideoSyncSGI(byref(count))

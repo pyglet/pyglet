@@ -183,6 +183,7 @@ __version__ = '$Id$'
 import pprint
 import sys
 
+from pyglet.gl import *
 from pyglet.window.event import WindowEventDispatcher, ExitHandler
 import pyglet.window.key
 
@@ -210,6 +211,7 @@ class BaseScreen(object):
     '''Virtual screen that supports windows and/or fullscreen.
 
     Virtual screens typically map onto a physical display such as a
+    from pyglet.gl import *
     monitor, television or projector.  Selecting a screen for a window
     has no effect unless the window is made fullscreen, in which case
     the window will fill only that particular virtual screen.
@@ -349,6 +351,9 @@ class BaseWindow(WindowEventDispatcher):
     _windowed_size = None
     _windowed_location = None
 
+    _mouse_cursor = None
+    _mouse = None # subclasses must set to something with x and y
+
     def __init__(self):
         WindowEventDispatcher.__init__(self)
 
@@ -369,6 +374,27 @@ class BaseWindow(WindowEventDispatcher):
 
     def switch_to(self):
         raise NotImplementedError()
+
+    def draw_mouse_cursor(self):
+        # Draw mouse cursor if set.
+        # XXX leaves state in modelview regardless of starting state
+        if self._mouse_cursor:
+            glMatrixMode(GL_PROJECTION)
+            glPushMatrix()
+            glLoadIdentity()
+            glOrtho(0, self.width, 0, self.height, -1, 1)
+
+            glMatrixMode(GL_MODELVIEW)
+            glPushMatrix()
+            glLoadIdentity()
+
+            self._mouse_cursor.draw(self._mouse.x, self._mouse.y)
+
+            glMatrixMode(GL_PROJECTION)
+            glPopMatrix()
+
+            glMatrixMode(GL_MODELVIEW)
+            glPopMatrix()
 
     def get_context(self):
         return self._context
@@ -443,6 +469,10 @@ class BaseWindow(WindowEventDispatcher):
 
     def set_mouse_visible(self, visible=True):
         raise NotImplementedError()
+
+    def set_mouse_cursor(self, cursor=None):
+        self.set_mouse_visible(cursor is None)
+        self._mouse_cursor = cursor
 
     def set_exclusive_mouse(self, exclusive=True):
         raise NotImplementedError()
@@ -525,7 +555,7 @@ class WindowFactory(object):
     _height = 480 # Reasonable default size.
     _location = LOCATION_DEFAULT
     _x_display = None
-        
+
     def __init__(self, platform):
         self._platform = platform
 
@@ -726,6 +756,20 @@ class WindowFactory(object):
         self._context = None
 
         return window
+
+class MouseCursor(object):
+    # Subclass for animated/3D/particle/etc cursors
+    def __init__(self, image, hot_x, hot_y):
+        self.texture = image.texture
+        self.hot_x = hot_x
+        self.hot_y = hot_y
+
+    def draw(self, x, y):
+        glPushAttrib(GL_ENABLE_BIT)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
+        glPopAttrib()
 
 def get_platform():
     '''Get an instance of the BasePlatform most appropriate for this
