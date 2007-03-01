@@ -872,3 +872,16 @@ class Window(_platform.get_window_class()):
             self.set_visible(True)
             self.activate()
 
+__all__ = ['CONTEXT_SHARE_NONE', 'CONTEXT_SHARE_EXISTING',
+           'LOCATION_DEFAULT',
+           'get_current_context',
+           'WindowException',
+           'BaseScreen',
+           'BaseGLConfig',
+           'GLSharedObjectSpace',
+           'BaseGLContext',
+           'BaseWindow',
+           'BasePlatform',
+           'WindowFactory',
+           'MouseCursor',
+           'Window']
