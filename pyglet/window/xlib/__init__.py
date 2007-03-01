@@ -523,8 +523,12 @@ class XlibWindow(BaseWindow):
         return attributes.root
 
     def close(self):
-        # clear out the GLX context
-        glFlush()
+        # clear out the GLX context.  Can fail if current context already
+        # destroyed (on exit, say).
+        try:
+            glFlush()
+        except GLException:
+            pass
         glXMakeCurrent(self._display, 0, None)
 
         self._unmap()
