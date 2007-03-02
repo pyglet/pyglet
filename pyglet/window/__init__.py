@@ -201,6 +201,12 @@ CONTEXT_SHARE_EXISTING = 1          # Share the context with any other
 # Constants for WindowFactory.set_location
 LOCATION_DEFAULT = None             # No preference for window location.
 
+# Constants for BaseWindow.get_mouse_cursor
+CURSOR_DEFAULT = None
+CURSOR_WAIT = 'wait'
+CURSOR_TEXT = 'text'
+CURSOR_CROSSHAIR = 'crosshair'
+
 def get_current_context():
     return _current_context
 
@@ -321,6 +327,28 @@ class BaseGLContext(object):
     def get_shared_object_space(self):
         return self._shared_object_space
 
+class MouseCursor(object):
+    drawable = True     # if True, draw method is called each frame
+    def draw(self, x, y):
+        raise NotImplementedError('abstract')
+
+class DefaultMouseCursor(MouseCursor):
+    drawable = False
+
+class ImageMouseCursor(MouseCursor):
+    drawable = True
+    def __init__(self, image, hot_x, hot_y):
+        self.texture = image.texture
+        self.hot_x = hot_x
+        self.hot_y = hot_y
+
+    def draw(self, x, y):
+        glPushAttrib(GL_ENABLE_BIT)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
+        glPopAttrib()
+
 class BaseWindow(WindowEventDispatcher):
     '''Platform-independent application window.
 
@@ -352,13 +380,12 @@ class BaseWindow(WindowEventDispatcher):
     _windowed_location = None
 
     # Subclasses should update these after relevant events
-    _mouse_cursor = None
+    _mouse_cursor = DefaultMouseCursor()
     _mouse_x = 0
     _mouse_y = 0
     _mouse_visible = True
-    _mouse_platform_visible = True 
-    _mouse_platform_in_window = True
     _mouse_exclusive = False
+    _mouse_in_window = True
  
     def __init__(self):
         WindowEventDispatcher.__init__(self)
@@ -384,9 +411,9 @@ class BaseWindow(WindowEventDispatcher):
     def draw_mouse_cursor(self):
         # Draw mouse cursor if set and visible.
         # XXX leaves state in modelview regardless of starting state
-        if (self._mouse_cursor and 
+        if (self._mouse_cursor.drawable and 
             self._mouse_visible and 
-            self._mouse_platform_in_window):
+            self._mouse_in_window):
             glMatrixMode(GL_PROJECTION)
             glPushMatrix()
             glLoadIdentity()
@@ -493,10 +520,11 @@ class BaseWindow(WindowEventDispatcher):
                 a bool value will override and force a visibility.
 
         '''
-
         raise NotImplementedError()
 
     def set_mouse_cursor(self, cursor=None):
+        if cursor is None:
+            cursor = DefaultMouseCursor()
         self._mouse_cursor = cursor
         self.set_mouse_platform_visible()
 
@@ -512,19 +540,24 @@ class BaseWindow(WindowEventDispatcher):
     height = property(lambda self: self.get_size()[1],
                       lambda self, height: self.set_size(self.width, height))
 
-class MouseCursor(object):
-    # Subclass for animated/3D/particle/etc cursors
-    def __init__(self, image, hot_x, hot_y):
-        self.texture = image.texture
-        self.hot_x = hot_x
-        self.hot_y = hot_y
+    def get_system_mouse_cursor(self, name):
+        '''Subclasses must override to return a mouse cursor for the
+        given name.
 
-    def draw(self, x, y):
-        glPushAttrib(GL_ENABLE_BIT)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
-        glPopAttrib()
+        Valid names are
+        * pyglet.window.CURSOR_DEFAULT
+        * pyglet.window.CURSOR_WAIT 
+        * pyglet.window.CURSOR_TEXT 
+        * pyglet.window.CURSOR_CROSS
+
+        :Parameters:
+            `name` : str
+                Name describing the mouse cursor to return.
+
+
+        :rtype: MouseCursor
+        '''
+        raise NotImplementedError()
 
 class BasePlatform(object):
     '''Abstraction of platform-specific methods.
@@ -562,7 +595,6 @@ class BasePlatform(object):
         BaseWindow.
         '''
         raise NotImplementedError()
-
 
 class WindowFactory(object):
     '''Configuration and build pattern for BaseWindow instances.
@@ -901,6 +933,10 @@ class Window(_platform.get_window_class()):
 
 __all__ = ['CONTEXT_SHARE_NONE', 'CONTEXT_SHARE_EXISTING',
            'LOCATION_DEFAULT',
+           'CURSOR_DEFAULT',
+           'CURSOR_CROSSHAIR',
+           'CURSOR_TEXT',
+           'CURSOR_WAIT',
            'get_current_context',
            'WindowException',
            'BaseScreen',
@@ -911,4 +947,5 @@ __all__ = ['CONTEXT_SHARE_NONE', 'CONTEXT_SHARE_EXISTING',
            'BasePlatform',
            'WindowFactory',
            'MouseCursor',
-           'Window']
+           'Window',
+           'get_platform']

@@ -58,6 +58,12 @@ _have_utf8 = hasattr(xlib._lib, 'Xutf8TextListToTextProperty')
 class XlibException(WindowException):
     pass
 
+class XlibMouseCursor(MouseCursor):
+    drawable = False
+
+    def __init__(self, cursor):
+        self.cursor = cursor
+
 class XlibPlatform(BasePlatform):
     def get_screens(self, factory):
         display = self._get_display(factory)
@@ -649,9 +655,8 @@ class XlibWindow(BaseWindow):
 
     def set_mouse_platform_visible(self, platform_visible=None):
         if platform_visible is None:
-            platform_visible = self._mouse_visible and not self._mouse_cursor
-        if platform_visible == self._mouse_platform_visible:
-            return
+            platform_visible = self._mouse_visible and \
+                               not self._mouse_cursor.drawable
 
         if not platform_visible:
             # Hide pointer by creating an empty cursor
@@ -666,8 +671,11 @@ class XlibWindow(BaseWindow):
             xlib.XFreePixmap(self._display, bmp)
         else:
             # Restore cursor
-            xlib.XUndefineCursor(self._display, self._window)
-        self._mouse_platform_visible = platform_visible
+            if isinstance(self._mouse_cursor, XlibMouseCursor):
+                xlib.XDefineCursor(self._display, self._window, 
+                                   self._mouse_cursor.cursor)
+            else:
+                xlib.XUndefineCursor(self._display, self._window)
 
     def set_exclusive_mouse(self, exclusive=True):
         if exclusive == self._mouse_exclusive:
@@ -718,6 +726,20 @@ class XlibWindow(BaseWindow):
                 xlib.CurrentTime)
         else:
              xlib.XUngrabKeyboard(self._display, xlib.CurrentTime)
+
+    def get_system_mouse_cursor(self, name):
+        if name == CURSOR_DEFAULT:
+            return DefaultMouseCursor()
+
+        cursor_shapes = {
+            CURSOR_WAIT: 150,         # XC_watch
+            CURSOR_TEXT: 152,         # XC_xterm
+            CURSOR_CROSSHAIR: 30,     # XC_crosshair
+        }
+        if name not in cursor_shapes:
+            raise XlibException('Unknown cursor name "%s"' % name)
+        cursor = xlib.XCreateFontCursor(self._display, cursor_shapes[name])
+        return XlibMouseCursor(cursor)
 
     # Private utility
 
@@ -917,7 +939,7 @@ class XlibWindow(BaseWindow):
 
         self._mouse_x = x
         self._mouse_y = y
-        self._mouse_platform_in_window = True
+        self._mouse_in_window = True
 
         buttons = 0
         if event.xmotion.state & xlib.Button1MotionMask:
@@ -989,7 +1011,7 @@ class XlibWindow(BaseWindow):
         # mouse position
         x = self._mouse_x = event.xcrossing.x
         y = self._mouse_y = self.height - event.xcrossing.y
-        self._mouse_platform_in_window = True
+        self._mouse_in_window = True
 
         # XXX there may be more we could do here
         self.dispatch_event(EVENT_MOUSE_ENTER, x, y)
@@ -998,7 +1020,7 @@ class XlibWindow(BaseWindow):
     def _event_leavenotify(self, event):
         x = self._mouse_x = event.xcrossing.x
         y = self._mouse_y = self.height - event.xcrossing.y
-        self._mouse_platform_in_window = False
+        self._mouse_in_window = False
         self.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
 
     @XlibEventHandler(xlib.ConfigureNotify)
