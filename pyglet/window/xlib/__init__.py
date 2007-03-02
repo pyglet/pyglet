@@ -742,19 +742,33 @@ class XlibWindow(BaseWindow):
         return XlibMouseCursor(cursor)
 
     def set_icon(self, *images):
+        # Careful!  XChangeProperty takes an array of long when data type
+        # is 32-bit (but long can be 64 bit!), so pad high bytes of format if
+        # necessary.
+
+        import sys
+        format = {
+            ('little', 4): 'BGRA',
+            ('little', 8): 'BGRAAAAA',
+            ('big', 4):    'ARGB',
+            ('big', 8):    'AAAAARGB'
+        }[(sys.byteorder, sizeof(c_ulong))]
+
         data = ''
         for image in images:
             image = image.image_data
-            image.format = 'ARGB'
+            image.format = format
             image.pitch = -(image.width * len(image.format))
-            data += '%c%c' % (image.width, image.height)
-            data += image.data
+            s = c_buffer(sizeof(c_ulong) * 2)
+            memmove(s, cast((c_ulong * 2)(image.width, image.height), 
+                            POINTER(c_ubyte)), len(s))
+            data += s.raw + image.data
         buffer = (c_ubyte * len(data))()
-        memmove(data, data, len(data))
+        memmove(buffer, data, len(data))
         atom = xlib.XInternAtom(self._display, '_NET_WM_ICON', False)
         XA_CARDINAL = 6 # Xatom.h:14
         xlib.XChangeProperty(self._display, self._window, atom, XA_CARDINAL,
-            32, xlib.PropModeReplace, buffer, len(data))
+            32, xlib.PropModeReplace, buffer, len(data)/sizeof(c_ulong))
 
     # Private utility
 
