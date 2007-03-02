@@ -332,11 +332,6 @@ def XlibEventHandler(event):
         return f
     return handler_wrapper
 
-class XlibMouse(object):
-    def __init__(self):
-        self.x, self.y = 0, 0
-        self.buttons = [False] * 6      # mouse buttons index from 1 + 
-
 class XlibWindow(BaseWindow):
     _display = None         # X display connection
     _screen_id = None       # X screen index
@@ -351,11 +346,9 @@ class XlibWindow(BaseWindow):
     _y = 0                  # Last known window position
     _width = 0
     _height = 0             # Last known window size
-    _mouse = None           # Last known mouse position and button state
     _ignore_motion = False  # Set to true to skip the next mousemotion event
-    _visible_mouse = True
-    _exclusive_mouse = False
-    _exclusive_mouse_client = None
+    _mouse_exclusive_client = None  # x,y of "real" mouse during exclusive
+    _mouse_buttons = [False] * 6 # State of each xlib button
     _exclusive_keyboard = False
     _mapped = False
     _lost_context = False
@@ -367,7 +360,6 @@ class XlibWindow(BaseWindow):
 
     def __init__(self):
         super(XlibWindow, self).__init__()
-        self._mouse = XlibMouse()
 
         # Bind event handlers
         self._event_handlers = {}
@@ -655,11 +647,13 @@ class XlibWindow(BaseWindow):
         self._set_wm_state('_NET_WM_STATE_MAXIMIZED_HORZ',
                            '_NET_WM_STATE_MAXIMIZED_VERT')
 
-    def set_mouse_visible(self, visible=True):
-        if visible == self._visible_mouse:
+    def set_mouse_platform_visible(self, platform_visible=None):
+        if platform_visible is None:
+            platform_visible = self._mouse_visible and not self._mouse_cursor
+        if platform_visible == self._mouse_platform_visible:
             return
 
-        if not visible:
+        if not platform_visible:
             # Hide pointer by creating an empty cursor
             black = xlib.XBlackPixel(self._display, self._screen_id)
             black = xlib.XColor()
@@ -673,14 +667,14 @@ class XlibWindow(BaseWindow):
         else:
             # Restore cursor
             xlib.XUndefineCursor(self._display, self._window)
-        self._visible_mouse = visible
+        self._mouse_platform_visible = platform_visible
 
     def set_exclusive_mouse(self, exclusive=True):
-        if exclusive == self._exclusive_mouse:
+        if exclusive == self._mouse_exclusive:
             return
 
         if exclusive:
-            self.set_mouse_visible(False)
+            self.set_mouse_platform_visible(False)
 
             # Restrict to client area
             xlib.XGrabPointer(self._display, self._window,
@@ -695,7 +689,7 @@ class XlibWindow(BaseWindow):
             # Move pointer to center of window
             x = self._width / 2
             y = self._height / 2
-            self._exclusive_mouse_client = x, y
+            self._mouse_exclusive_client = x, y
             xlib.XWarpPointer(self._display,
                 0,              # src window
                 self._window,   # dst window
@@ -706,9 +700,9 @@ class XlibWindow(BaseWindow):
         else:
             # Unclip
             xlib.XUngrabPointer(self._display, xlib.CurrentTime)
-            self.set_mouse_visible(True)
+            self.set_mouse_platform_visible()
 
-        self._exclusive_mouse = exclusive
+        self._mouse_exclusive = exclusive
 
     def set_exclusive_keyboard(self, exclusive=True):
         if exclusive == self._exclusive_keyboard:
@@ -903,26 +897,27 @@ class XlibWindow(BaseWindow):
         if self._ignore_motion:
             # Ignore events caused by XWarpPointer
             self._ignore_motion = False
-            self._mouse.x = x
-            self._mouse.y = y
+            self._mouse_x = x
+            self._mouse_y = y
             return
 
-        if self._exclusive_mouse:
+        if self._mouse_exclusive:
             # Reset pointer position
             xlib.XWarpPointer(self._display,
                 0,
                 self._window,
                 0, 0,
                 0, 0,
-                self._exclusive_mouse_client[0],
-                self._exclusive_mouse_client[1])
+                self._mouse_exclusive_client[0],
+                self._mouse_exclusive_client[1])
             self._ignore_motion = True
 
-        dx = x - self._mouse.x
-        dy = y - self._mouse.y
+        dx = x - self._mouse_x
+        dy = y - self._mouse_y
 
-        self._mouse.x = x
-        self._mouse.y = y
+        self._mouse_x = x
+        self._mouse_y = y
+        self._mouse_platform_in_window = True
 
         buttons = 0
         if event.xmotion.state & xlib.Button1MotionMask:
@@ -963,12 +958,12 @@ class XlibWindow(BaseWindow):
             elif event.xbutton.button == 5:
                 self.dispatch_event(EVENT_MOUSE_SCROLL, 0, -1)
             else:
-                self._mouse.buttons[event.xbutton.button] = True
+                self._mouse_buttons[event.xbutton.button] = True
                 self.dispatch_event(EVENT_MOUSE_PRESS, button,
                     x, y, modifiers)
         else:
             if event.xbutton.button < 4:
-                self._mouse.buttons[event.xbutton.button] = False
+                self._mouse_buttons[event.xbutton.button] = False
                 self.dispatch_event(EVENT_MOUSE_RELEASE, button,
                     x, y, modifiers)
 
@@ -985,23 +980,25 @@ class XlibWindow(BaseWindow):
         # figure active mouse buttons
         # XXX ignore modifier state?
         state = event.xcrossing.state
-        self._mouse.buttons[1] = state & xlib.Button1Mask
-        self._mouse.buttons[2] = state & xlib.Button2Mask
-        self._mouse.buttons[3] = state & xlib.Button3Mask
-        self._mouse.buttons[4] = state & xlib.Button4Mask
-        self._mouse.buttons[5] = state & xlib.Button5Mask
+        self._mouse_buttons[1] = state & xlib.Button1Mask
+        self._mouse_buttons[2] = state & xlib.Button2Mask
+        self._mouse_buttons[3] = state & xlib.Button3Mask
+        self._mouse_buttons[4] = state & xlib.Button4Mask
+        self._mouse_buttons[5] = state & xlib.Button5Mask
 
         # mouse position
-        x = self._mouse.x = event.xcrossing.x
-        y = self._mouse.y = self.height - event.xcrossing.y
+        x = self._mouse_x = event.xcrossing.x
+        y = self._mouse_y = self.height - event.xcrossing.y
+        self._mouse_platform_in_window = True
 
         # XXX there may be more we could do here
         self.dispatch_event(EVENT_MOUSE_ENTER, x, y)
 
     @XlibEventHandler(xlib.LeaveNotify)
     def _event_leavenotify(self, event):
-        x = self._mouse.x = event.xcrossing.x
-        y = self._mouse.y = self.height - event.xcrossing.y
+        x = self._mouse_x = event.xcrossing.x
+        y = self._mouse_y = self.height - event.xcrossing.y
+        self._mouse_platform_in_window = False
         self.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
 
     @XlibEventHandler(xlib.ConfigureNotify)

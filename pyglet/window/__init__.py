@@ -351,9 +351,15 @@ class BaseWindow(WindowEventDispatcher):
     _windowed_size = None
     _windowed_location = None
 
+    # Subclasses should update these after relevant events
     _mouse_cursor = None
-    _mouse = None # subclasses must set to something with x and y
-
+    _mouse_x = 0
+    _mouse_y = 0
+    _mouse_visible = True
+    _mouse_platform_visible = True 
+    _mouse_platform_in_window = True
+    _mouse_exclusive = False
+ 
     def __init__(self):
         WindowEventDispatcher.__init__(self)
 
@@ -376,9 +382,11 @@ class BaseWindow(WindowEventDispatcher):
         raise NotImplementedError()
 
     def draw_mouse_cursor(self):
-        # Draw mouse cursor if set.
+        # Draw mouse cursor if set and visible.
         # XXX leaves state in modelview regardless of starting state
-        if self._mouse_cursor:
+        if (self._mouse_cursor and 
+            self._mouse_visible and 
+            self._mouse_platform_in_window):
             glMatrixMode(GL_PROJECTION)
             glPushMatrix()
             glLoadIdentity()
@@ -388,7 +396,7 @@ class BaseWindow(WindowEventDispatcher):
             glPushMatrix()
             glLoadIdentity()
 
-            self._mouse_cursor.draw(self._mouse.x, self._mouse.y)
+            self._mouse_cursor.draw(self._mouse_x, self._mouse_y)
 
             glMatrixMode(GL_PROJECTION)
             glPopMatrix()
@@ -468,11 +476,29 @@ class BaseWindow(WindowEventDispatcher):
         pass
 
     def set_mouse_visible(self, visible=True):
+        self._mouse_visible = visible
+        self.set_mouse_platform_visible()
+
+    def set_mouse_platform_visible(self, platform_visible=None):
+        '''Set the platform-drawn mouse cursor visibility.  This is called
+        automatically after changing the mouse cursor or exclusive mode.
+
+        Applications should not normally need to call this method, see
+        `set_mouse_visible` instead.
+
+        :Parameters:
+            `platform_visible` : bool or None
+                If None, sets platform visibility to the required visibility
+                for the current exclusive mode and cursor type.  Otherwise,
+                a bool value will override and force a visibility.
+
+        '''
+
         raise NotImplementedError()
 
     def set_mouse_cursor(self, cursor=None):
-        self.set_mouse_visible(cursor is None)
         self._mouse_cursor = cursor
+        self.set_mouse_platform_visible()
 
     def set_exclusive_mouse(self, exclusive=True):
         raise NotImplementedError()
@@ -485,6 +511,20 @@ class BaseWindow(WindowEventDispatcher):
 
     height = property(lambda self: self.get_size()[1],
                       lambda self, height: self.set_size(self.width, height))
+
+class MouseCursor(object):
+    # Subclass for animated/3D/particle/etc cursors
+    def __init__(self, image, hot_x, hot_y):
+        self.texture = image.texture
+        self.hot_x = hot_x
+        self.hot_y = hot_y
+
+    def draw(self, x, y):
+        glPushAttrib(GL_ENABLE_BIT)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
+        glPopAttrib()
 
 class BasePlatform(object):
     '''Abstraction of platform-specific methods.
@@ -523,6 +563,7 @@ class BasePlatform(object):
         '''
         raise NotImplementedError()
 
+
 class WindowFactory(object):
     '''Configuration and build pattern for BaseWindow instances.
 
@@ -555,7 +596,7 @@ class WindowFactory(object):
     _height = 480 # Reasonable default size.
     _location = LOCATION_DEFAULT
     _x_display = None
-
+    
     def __init__(self, platform):
         self._platform = platform
 
@@ -756,20 +797,6 @@ class WindowFactory(object):
         self._context = None
 
         return window
-
-class MouseCursor(object):
-    # Subclass for animated/3D/particle/etc cursors
-    def __init__(self, image, hot_x, hot_y):
-        self.texture = image.texture
-        self.hot_x = hot_x
-        self.hot_y = hot_y
-
-    def draw(self, x, y):
-        glPushAttrib(GL_ENABLE_BIT)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
-        glPopAttrib()
 
 def get_platform():
     '''Get an instance of the BasePlatform most appropriate for this
