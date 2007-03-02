@@ -741,6 +741,21 @@ class XlibWindow(BaseWindow):
         cursor = xlib.XCreateFontCursor(self._display, cursor_shapes[name])
         return XlibMouseCursor(cursor)
 
+    def set_icon(self, *images):
+        data = ''
+        for image in images:
+            image = image.image_data
+            image.format = 'ARGB'
+            image.pitch = -(image.width * len(image.format))
+            data += '%c%c' % (image.width, image.height)
+            data += image.data
+        buffer = (c_ubyte * len(data))()
+        memmove(data, data, len(data))
+        atom = xlib.XInternAtom(self._display, '_NET_WM_ICON', False)
+        XA_CARDINAL = 6 # Xatom.h:14
+        xlib.XChangeProperty(self._display, self._window, atom, XA_CARDINAL,
+            32, xlib.PropModeReplace, buffer, len(data))
+
     # Private utility
 
     def _set_wm_normal_hints(self):

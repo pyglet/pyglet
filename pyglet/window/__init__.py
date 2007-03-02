@@ -559,6 +559,23 @@ class BaseWindow(WindowEventDispatcher):
         '''
         raise NotImplementedError()
 
+    def set_icon(self, *images):
+        '''Set the window icon.
+
+        If multiple images are provided, one with an appropriate size 
+        will be selected (if the correct size is not provided, the image
+        will be scaled).
+
+        Useful sizes to provide are 16x16, 32x32, 64x64 (Mac only) and
+        128x128 (Mac only).
+
+        :Parameters:
+            `images` : sequence of `pyglet.image.AbstractImage`
+                List of images to use for the window icon.
+        
+        '''
+        pass
+
 class BasePlatform(object):
     '''Abstraction of platform-specific methods.
 
