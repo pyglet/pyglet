@@ -66,7 +66,7 @@ window
         WINDOW_ICON
         WINDOW_SET_MOUSE_VISIBLE          X       X
         WINDOW_SET_MOUSE_CURSOR           X       X
-        WINDOW_SET_MOUSE_PLATFORM_CURSOR  X
+        WINDOW_SET_MOUSE_PLATFORM_CURSOR  X       X
         MULTIPLE_SCREEN                   X   X   X
         CONTEXT_SHARE                     X   X   X
         ================================ === === ===

@@ -220,6 +220,31 @@ kEventClassSystem = _name('macs')
 kEventClassInk = _name('ink ')
 kEventClassTSMDocumentAccess = _name('tdac')
 
+# Appearance.h
+kThemeArrowCursor             = 0
+kThemeCopyArrowCursor         = 1
+kThemeAliasArrowCursor        = 2
+kThemeContextualMenuArrowCursor = 3
+kThemeIBeamCursor             = 4
+kThemeCrossCursor             = 5
+kThemePlusCursor              = 6
+kThemeWatchCursor             = 7
+kThemeClosedHandCursor        = 8
+kThemeOpenHandCursor          = 9
+kThemePointingHandCursor      = 10
+kThemeCountingUpHandCursor    = 11
+kThemeCountingDownHandCursor  = 12
+kThemeCountingUpAndDownHandCursor = 13
+kThemeSpinningCursor          = 14
+kThemeResizeLeftCursor        = 15
+kThemeResizeRightCursor       = 16
+kThemeResizeLeftRightCursor   = 17
+kThemeNotAllowedCursor        = 18
+kThemeResizeUpCursor          = 19
+kThemeResizeDownCursor        = 20
+kThemeResizeUpDownCursor      = 21
+kThemePoofCursor              = 22
+
 # Keyboard
 kEventRawKeyDown                = 1
 kEventRawKeyRepeat              = 2

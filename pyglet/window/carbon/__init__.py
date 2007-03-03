@@ -245,6 +245,11 @@ def CarbonEventHandler(event_class, event_kind):
         return f
     return handler_wrapper
 
+class CarbonMouseCursor(MouseCursor):
+    drawable = False
+    def __init__(self, theme):
+        self.theme = theme
+
 class CarbonWindow(BaseWindow):
     _window = None                  # Carbon WindowRef
     _agl_context = None             # AGL context ID
@@ -532,6 +537,12 @@ class CarbonWindow(BaseWindow):
         if not self._mouse_in_window:
             platform_visible = True
 
+        if self._mouse_in_window and \
+           isinstance(self._mouse_cursor, CarbonMouseCursor):
+            carbon.SetThemeCursor(self._mouse_cursor.theme)
+        else:
+            carbon.SetThemeCursor(kThemeArrowCursor)
+
         if self._mouse_platform_visible == platform_visible:
             return
 
@@ -568,6 +579,19 @@ class CarbonWindow(BaseWindow):
                  kUIOptionDisableHide))
         else:
             carbon.SetSystemUIMode(kUIModeNormal, 0)
+
+    def get_system_mouse_cursor(self, name):
+        if name == CURSOR_DEFAULT:
+            return DefaultMouseCursor()
+
+        themes = {
+            CURSOR_WAIT: kThemeWatchCursor,
+            CURSOR_TEXT: kThemeIBeamCursor,
+            CURSOR_CROSSHAIR: kThemeCrossCursor,
+        }
+        if name not in themes:
+            raise CarbonException('Unknown cursor name "%s"' % name)
+        return CarbonMouseCursor(themes[name])
 
     # Non-public utilities
 
