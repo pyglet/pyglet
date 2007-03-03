@@ -964,5 +964,7 @@ __all__ = ['CONTEXT_SHARE_NONE', 'CONTEXT_SHARE_EXISTING',
            'BasePlatform',
            'WindowFactory',
            'MouseCursor',
+           'DefaultMouseCursor',
+           'ImageMouseCursor',
            'Window',
            'get_platform']

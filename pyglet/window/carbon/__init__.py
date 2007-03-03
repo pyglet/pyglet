@@ -12,16 +12,16 @@ import os.path
 import unicodedata
 import warnings
 
-from pyglet.gl import *
-from pyglet.gl.agl import *
-from pyglet.gl.gl_info import *
-from pyglet.gl.glu_info import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
 from pyglet.window.carbon.constants import *
 from pyglet.window.carbon.key import *
 from pyglet.window.carbon.types import *
+from pyglet.gl import *
+from pyglet.gl.agl import *
+from pyglet.gl.gl_info import *
+from pyglet.gl.glu_info import *
 
 class CarbonException(WindowException):
     pass
@@ -261,6 +261,9 @@ class CarbonWindow(BaseWindow):
     _track_ref = 0
     _track_region = None
 
+    _mouse_exclusive = False
+    _mouse_platform_visible = True
+
     def __init__(self):
         super(CarbonWindow, self).__init__()
         self._window = WindowRef()
@@ -405,6 +408,7 @@ class CarbonWindow(BaseWindow):
         glu_info.set_active_context()
 
     def flip(self):
+        self.draw_mouse_cursor()
         aglSwapBuffers(self._agl_context)
         _aglcheck()
 
@@ -520,7 +524,25 @@ class CarbonWindow(BaseWindow):
         if not carbon.IsWindowInStandardState(self._window, byref(p), None):
             carbon.ZoomWindowIdeal(self._window, inZoomOut, byref(p))
 
+    def set_mouse_platform_visible(self, platform_visible=None):
+        if platform_visible is None:
+            platform_visible = self._mouse_visible and \
+                               not self._mouse_exclusive and \
+                               not self._mouse_cursor.drawable
+        if not self._mouse_in_window:
+            platform_visible = True
+
+        if self._mouse_platform_visible == platform_visible:
+            return
+
+        if platform_visible:
+            carbon.ShowCursor()
+        else:
+            carbon.HideCursor()
+        self._mouse_platform_visible = platform_visible
+
     def set_exclusive_mouse(self, exclusive=True):
+        self._mouse_exclusive = exclusive
         if exclusive:
             # Move mouse to center of window
             rect = Rect()
@@ -530,10 +552,9 @@ class CarbonWindow(BaseWindow):
             point.y = (rect.bottom + rect.top) / 2
             carbon.CGWarpMouseCursorPosition(point)
             carbon.CGAssociateMouseAndMouseCursorPosition(False)
-            carbon.HideCursor()
         else:
             carbon.CGAssociateMouseAndMouseCursorPosition(True)
-            carbon.ShowCursor()
+        self.set_mouse_platform_visible()
 
     def set_exclusive_keyboard(self, exclusive=True):
         if exclusive:
@@ -777,6 +798,9 @@ class CarbonWindow(BaseWindow):
         if x < 0 or y < 0:
             return noErr
 
+        self._mouse_x = x
+        self._mouse_y = y
+
         delta = HIPoint()
         carbon.GetEventParameter(event, kEventParamMouseDelta,
             typeHIPoint, c_void_p(), sizeof(delta), c_void_p(),
@@ -797,6 +821,12 @@ class CarbonWindow(BaseWindow):
     def _on_mouse_entered(self, next_handler, event, data):
         x, y = self._get_mouse_position(event)
         y = self.height - y
+
+        self._mouse_x = x
+        self._mouse_y = y
+        self._mouse_in_window = True
+        self.set_mouse_platform_visible()
+
         self.dispatch_event(EVENT_MOUSE_ENTER, x, y)
 
         carbon.CallNextEventHandler(next_handler, event)
@@ -806,6 +836,10 @@ class CarbonWindow(BaseWindow):
     def _on_mouse_exited(self, next_handler, event, data):
         x, y = self._get_mouse_position(event)
         y = self.height - y
+
+        self._mouse_in_window = False
+        self.set_mouse_platform_visible()
+
         self.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
 
         carbon.CallNextEventHandler(next_handler, event)

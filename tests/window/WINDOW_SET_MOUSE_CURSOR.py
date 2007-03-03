@@ -31,7 +31,7 @@ class WINDOW_SET_EXCLUSIVE_MOUSE(unittest.TestCase):
         self.width, self.height = 200, 200
         self.w = w = Window(self.width, self.height)
         image = load_image(cursor_file)
-        w.set_mouse_cursor(MouseCursor(image, 4, 28))
+        w.set_mouse_cursor(ImageMouseCursor(image, 4, 28))
         w.push_handlers(self)
         glClearColor(1, 1, 1, 1)
         while not w.has_exit:

@@ -64,9 +64,8 @@ window
         WINDOW_CAPTION                    X   X   X
         WINDOW_BORDERS                  
         WINDOW_ICON
-        WINDOW_CURSOR
-        WINDOW_SET_MOUSE_VISIBLE          X
-        WINDOW_SET_MOUSE_CURSOR           X
+        WINDOW_SET_MOUSE_VISIBLE          X       X
+        WINDOW_SET_MOUSE_CURSOR           X       X
         WINDOW_SET_MOUSE_PLATFORM_CURSOR  X
         MULTIPLE_SCREEN                   X   X   X
         CONTEXT_SHARE                     X   X   X
