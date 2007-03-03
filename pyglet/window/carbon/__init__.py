@@ -593,6 +593,38 @@ class CarbonWindow(BaseWindow):
             raise CarbonException('Unknown cursor name "%s"' % name)
         return CarbonMouseCursor(themes[name])
 
+    def set_icon(self, *images):
+        # Only use the biggest image
+        image = images[0]
+        size = image.width * image.height
+        for img in images:
+            if img.width * img.height > size:
+                size = img.width * img.height
+                image = img
+
+        image = image.image_data
+        image.format = 'ARGB'
+        image.pitch = -len(image.format) * image.width
+
+        provider = carbon.CGDataProviderCreateWithData(
+            None, image.data, len(image.data), None)
+
+        colorspace = carbon.CGColorSpaceCreateDeviceRGB()
+
+        cgi = carbon.CGImageCreate(
+            image.width, image.height, 8, 32, -image.pitch,
+            colorspace,
+            kCGImageAlphaFirst,
+            provider,
+            None,
+            True,
+            kCGRenderingIntentDefault)
+
+        carbon.SetApplicationDockTileImage(cgi)
+
+        carbon.CGDataProviderRelease(provider)
+        carbon.CGColorSpaceRelease(colorspace)
+
     # Non-public utilities
 
     def _update_drawable(self):

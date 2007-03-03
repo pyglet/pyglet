@@ -458,3 +458,16 @@ kEventWindowPaint                   = 1013
 kNoProcess                    = 0
 kSystemProcess                = 1
 kCurrentProcess               = 2
+
+# CGColorSpace.h
+kCGRenderingIntentDefault = 0
+
+# CGImage.h
+kCGImageAlphaNone                   = 0
+kCGImageAlphaPremultipliedLast      = 1
+kCGImageAlphaPremultipliedFirst     = 2
+kCGImageAlphaLast                   = 3
+kCGImageAlphaFirst                  = 4
+kCGImageAlphaNoneSkipLast           = 5
+kCGImageAlphaNoneSkipFirst          = 6
+kCGImageAlphaOnly                   = 7
