@@ -37,6 +37,7 @@ from pyglet.gl.glxext_abi import *
 import pyglet.gl.glx_info
 
 import pyglet.window.xlib.xlib
+from pyglet.window.xlib import cursorfont
 try:
     import pyglet.window.xlib.xinerama
     _have_xinerama = True
@@ -731,10 +732,27 @@ class XlibWindow(BaseWindow):
         if name == CURSOR_DEFAULT:
             return DefaultMouseCursor()
 
+        # NQR means default shape is not pretty... surely there is another
+        # cursor font?
         cursor_shapes = {
-            CURSOR_WAIT: 150,         # XC_watch
-            CURSOR_TEXT: 152,         # XC_xterm
-            CURSOR_CROSSHAIR: 30,     # XC_crosshair
+            CURSOR_CROSSHAIR:       cursorfont.XC_crosshair,
+            CURSOR_HAND:            cursorfont.XC_hand2,
+            CURSOR_HELP:            cursorfont.XC_question_arrow,  # NQR
+            CURSOR_NO:              cursorfont.XC_pirate,          # NQR
+            CURSOR_SIZE:            cursorfont.XC_fleur,
+            CURSOR_SIZE_UP:         cursorfont.XC_top_side,
+            CURSOR_SIZE_UP_RIGHT:   cursorfont.XC_top_right_corner,
+            CURSOR_SIZE_RIGHT:      cursorfont.XC_right_side,
+            CURSOR_SIZE_DOWN_RIGHT: cursorfont.XC_bottom_right_corner,
+            CURSOR_SIZE_DOWN:       cursorfont.XC_bottom_side,
+            CURSOR_SIZE_DOWN_LEFT:  cursorfont.XC_bottom_left_corner,
+            CURSOR_SIZE_LEFT:       cursorfont.XC_left_side,
+            CURSOR_SIZE_UP_LEFT:    cursorfont.XC_top_left_corner,
+            CURSOR_SIZE_UP_DOWN:    cursorfont.XC_sb_v_double_arrow,
+            CURSOR_SIZE_LEFT_RIGHT: cursorfont.XC_sb_h_double_arrow,
+            CURSOR_TEXT:            cursorfont.XC_xterm,
+            CURSOR_WAIT:            cursorfont.XC_watch,
+            CURSOR_WAIT_ARROW:      cursorfont.XC_watch,           # NQR
         }
         if name not in cursor_shapes:
             raise XlibException('Unknown cursor name "%s"' % name)

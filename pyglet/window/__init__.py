@@ -201,11 +201,26 @@ CONTEXT_SHARE_EXISTING = 1          # Share the context with any other
 # Constants for WindowFactory.set_location
 LOCATION_DEFAULT = None             # No preference for window location.
 
-# Constants for BaseWindow.get_mouse_cursor
+# Constants for Window.get_system_mouse_cursor
 CURSOR_DEFAULT = None
-CURSOR_WAIT = 'wait'
-CURSOR_TEXT = 'text'
 CURSOR_CROSSHAIR = 'crosshair'
+CURSOR_HAND = 'hand'
+CURSOR_HELP = 'help'
+CURSOR_NO = 'no'
+CURSOR_SIZE = 'size'
+CURSOR_SIZE_UP = 'size_up'
+CURSOR_SIZE_UP_RIGHT = 'size_up_right'
+CURSOR_SIZE_RIGHT = 'size_right'
+CURSOR_SIZE_DOWN_RIGHT = 'size_down_right'
+CURSOR_SIZE_DOWN = 'size_down'
+CURSOR_SIZE_DOWN_LEFT = 'size_down_left'
+CURSOR_SIZE_LEFT = 'size_left'
+CURSOR_SIZE_UP_LEFT = 'size_up_left'
+CURSOR_SIZE_UP_DOWN = 'size_up_down'
+CURSOR_SIZE_LEFT_RIGHT = 'size_left_right'
+CURSOR_TEXT = 'text'
+CURSOR_WAIT = 'wait'
+CURSOR_WAIT_ARROW = 'wait_arrow'
 
 def get_current_context():
     return _current_context
@@ -952,8 +967,23 @@ __all__ = ['CONTEXT_SHARE_NONE', 'CONTEXT_SHARE_EXISTING',
            'LOCATION_DEFAULT',
            'CURSOR_DEFAULT',
            'CURSOR_CROSSHAIR',
+           'CURSOR_HAND',
+           'CURSOR_HELP',
+           'CURSOR_NO',
+           'CURSOR_SIZE',
+           'CURSOR_SIZE_UP',
+           'CURSOR_SIZE_UP_RIGHT',
+           'CURSOR_SIZE_RIGHT',
+           'CURSOR_SIZE_DOWN_RIGHT',
+           'CURSOR_SIZE_DOWN',
+           'CURSOR_SIZE_DOWN_LEFT',
+           'CURSOR_SIZE_LEFT',
+           'CURSOR_SIZE_UP_LEFT',
+           'CURSOR_SIZE_UP_DOWN',
+           'CURSOR_SIZE_LEFT_RIGHT',
            'CURSOR_TEXT',
            'CURSOR_WAIT',
+           'CURSOR_WAIT_ARROW',
            'get_current_context',
            'WindowException',
            'BaseScreen',
