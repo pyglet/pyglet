@@ -585,9 +585,24 @@ class CarbonWindow(BaseWindow):
             return DefaultMouseCursor()
 
         themes = {
-            CURSOR_WAIT: kThemeWatchCursor,
-            CURSOR_TEXT: kThemeIBeamCursor,
-            CURSOR_CROSSHAIR: kThemeCrossCursor,
+            CURSOR_CROSSHAIR:       kThemeCrossCursor,
+            CURSOR_HAND:            kThemePointingHandCursor,
+            CURSOR_HELP:            kThemeArrowCursor,
+            CURSOR_NO:              kThemeNotAllowedCursor,
+            CURSOR_SIZE:            kThemeArrowCursor,
+            CURSOR_SIZE_UP:         kThemeResizeUpCursor,
+            CURSOR_SIZE_UP_RIGHT:   kThemeArrowCursor,
+            CURSOR_SIZE_RIGHT:      kThemeResizeRightCursor,
+            CURSOR_SIZE_DOWN_RIGHT: kThemeArrowCursor,
+            CURSOR_SIZE_DOWN:       kThemeResizeDownCursor,
+            CURSOR_SIZE_DOWN_LEFT:  kThemeArrowCursor,
+            CURSOR_SIZE_LEFT:       kThemeResizeLeftCursor,
+            CURSOR_SIZE_UP_LEFT:    kThemeArrowCursor,
+            CURSOR_SIZE_UP_DOWN:    kThemeResizeUpDownCursor,
+            CURSOR_SIZE_LEFT_RIGHT: kThemeResizeLeftRightCursor,
+            CURSOR_TEXT:            kThemeIBeamCursor,
+            CURSOR_WAIT:            kThemeWatchCursor,
+            CURSOR_WAIT_ARROW:      kThemeWatchCursor,
         }
         if name not in themes:
             raise CarbonException('Unknown cursor name "%s"' % name)
