@@ -10,18 +10,18 @@ from ctypes import *
 import unicodedata
 import warnings
 
-from pyglet.gl import *
-from pyglet.gl.gl_info import *
-from pyglet.gl.glu_info import *
-from pyglet.gl.wgl import *
-from pyglet.gl.wglext_abi import *
-from pyglet.gl.wgl_info import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
 from pyglet.window.win32.constants import *
 from pyglet.window.win32.key import *
 from pyglet.window.win32.types import *
+from pyglet.gl import *
+from pyglet.gl.gl_info import *
+from pyglet.gl.glu_info import *
+from pyglet.gl.wgl import *
+from pyglet.gl.wglext_abi import *
+from pyglet.gl.wgl_info import *
 
 _gdi32 = windll.gdi32
 _kernel32 = windll.kernel32
@@ -178,6 +178,11 @@ class Win32Mouse(object):
     x = 0
     y = 0
 
+class Win32MouseCursor(MouseCursor):
+    drawable = False
+    def __init__(self, cursor):
+        self.cursor = cursor
+
 class Win32Window(BaseWindow):
     _window_class = None
     _hwnd = None
@@ -190,6 +195,7 @@ class Win32Window(BaseWindow):
     _exclusive_mouse = False
     _exclusive_mouse_screen = None
     _ignore_mousemove = False
+    _mouse_platform_visible = True
 
     _style = 0
     _ex_style = 0
@@ -340,6 +346,7 @@ class Win32Window(BaseWindow):
         glu_info.set_active_context()
 
     def flip(self):
+        self.draw_mouse_cursor()
         wglSwapLayerBuffers(self._dc, WGL_SWAP_MAIN_PLANE)
 
     def set_location(self, x, y):
@@ -397,6 +404,26 @@ class Win32Window(BaseWindow):
         super(Win32Window, self).set_caption(caption)
         _user32.SetWindowTextW(self._hwnd, c_wchar_p(caption))
 
+    def set_mouse_platform_visible(self, platform_visible=None):
+        if platform_visible is None:
+            platform_visible = self._mouse_visible and \
+                               not self._exclusive_mouse and \
+                               not self._mouse_cursor.drawable
+
+        if platform_visible and not self._mouse_cursor.drawable:
+            if isinstance(self._mouse_cursor, Win32MouseCursor):
+                cursor = self._mouse_cursor.cursor
+            else:
+                cursor = _user32.LoadCursorA(None, IDC_ARROW)
+            _user32.SetClassLongA(self._hwnd, GCL_HCURSOR, cursor)
+            _user32.SetCursor(cursor)
+
+        if platform_visible == self._mouse_platform_visible:
+            return
+
+        _user32.ShowCursor(platform_visible)
+        self._mouse_platform_visible = platform_visible
+
     def set_exclusive_mouse(self, exclusive=True):
         if self._exclusive_mouse == exclusive:
             return
@@ -423,8 +450,8 @@ class Win32Window(BaseWindow):
             # Release clip
             _user32.ClipCursor(c_void_p())
 
-        _user32.ShowCursor(not exclusive)
         self._exclusive_mouse = exclusive
+        self.set_platform_visible()
 
     def set_exclusive_keyboard(self, exclusive=True):
         if self._exclusive_keyboard == exclusive:
@@ -437,6 +464,21 @@ class Win32Window(BaseWindow):
                 _user32.UnregisterHotKey(self._hwnd, i)
 
         self._exclusive_keyboard = exclusive
+
+    def get_system_mouse_cursor(self, name):
+        if name == CURSOR_DEFAULT:
+            return DefaultMouseCursor()
+
+        names = {
+            CURSOR_WAIT: IDC_WAIT,
+            CURSOR_TEXT: IDC_IBEAM,
+            CURSOR_CROSSHAIR: IDC_CROSS
+        }
+        if name not in names:
+            raise Win32Exception('Unknown cursor name "%s"' % name)
+        cursor = _user32.LoadCursorA(None, names[name])
+        return Win32MouseCursor(cursor)
+
 
     # Private util
 
@@ -541,6 +583,10 @@ class Win32Window(BaseWindow):
     def _event_mousemove(self, msg, wParam, lParam):
         x, y = self._get_location(lParam)
         y = self.height - y
+
+        self._mouse_x = x
+        self._mouse_y = y
+
         if self._ignore_mousemove:
             # Ignore the event caused by SetCursorPos
             self._ignore_mousemove = False
@@ -559,6 +605,7 @@ class Win32Window(BaseWindow):
             # first WM_MOUSEMOVE event after leaving.  Use self._tracking
             # to determine when to recreate the tracking structure after
             # re-entering (to track the next WM_MOUSELEAVE).
+            self._mouse_in_window = True
             self.dispatch_event(EVENT_MOUSE_ENTER, x, y)
             self._tracking = True
             track = TRACKMOUSEEVENT()
@@ -596,6 +643,7 @@ class Win32Window(BaseWindow):
         x = point.x
         y = self.height - point.y
         self._tracking = False
+        self._mouse_in_window = False
         self.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
         return 0
 
