@@ -472,9 +472,24 @@ class Win32Window(BaseWindow):
             return DefaultMouseCursor()
 
         names = {
-            CURSOR_WAIT: IDC_WAIT,
-            CURSOR_TEXT: IDC_IBEAM,
-            CURSOR_CROSSHAIR: IDC_CROSS
+            CURSOR_CROSSHAIR:       IDC_CROSS,
+            CURSOR_HAND:            IDC_HAND,
+            CURSOR_HELP:            IDC_HELP,
+            CURSOR_NO:              IDC_NO,
+            CURSOR_SIZE:            IDC_SIZEALL,
+            CURSOR_SIZE_UP:         IDC_SIZENS,
+            CURSOR_SIZE_UP_RIGHT:   IDC_SIZENESW,
+            CURSOR_SIZE_RIGHT:      IDC_SIZEWE,
+            CURSOR_SIZE_DOWN_RIGHT: IDC_SIZENWSE,
+            CURSOR_SIZE_DOWN:       IDC_SIZENS,
+            CURSOR_SIZE_DOWN_LEFT:  IDC_SIZENESW,
+            CURSOR_SIZE_LEFT:       IDC_SIZEWE,
+            CURSOR_SIZE_UP_LEFT:    IDC_SIZENWSE,
+            CURSOR_SIZE_UP_DOWN:    IDC_SIZENS,
+            CURSOR_SIZE_LEFT_RIGHT: IDC_SIZEWE,
+            CURSOR_TEXT:            IDC_IBEAM,
+            CURSOR_WAIT:            IDC_WAIT,
+            CURSOR_WAIT_ARROW:      IDC_APPSTARTING,
         }
         if name not in names:
             raise Win32Exception('Unknown cursor name "%s"' % name)
