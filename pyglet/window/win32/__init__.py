@@ -28,6 +28,8 @@ _kernel32 = windll.kernel32
 _user32 = windll.user32
 
 _user32.GetKeyState.restype = c_short
+_gdi32.CreateDIBitmap.argtypes = [HDC, POINTER(BITMAPINFOHEADER), DWORD,
+    c_void_p, POINTER(BITMAPINFO), c_uint]
 
 class Win32Exception(WindowException):
     pass
@@ -479,6 +481,40 @@ class Win32Window(BaseWindow):
         cursor = _user32.LoadCursorA(None, names[name])
         return Win32MouseCursor(cursor)
 
+    def set_icon(self, *images):
+        # TODO multiple icon sizes
+
+        # XXX Undocumented AFAICT, but XP seems happy to resize an image
+        # of any size, so no scaling to 16x16,32x32 necessary.
+        image = images[0].image_data
+        image.format = 'BGRA'
+        image.pitch = len(image.format) * image.width
+
+        info = BITMAPINFO()
+        info.bmiHeader.biSize = sizeof(info.bmiHeader)
+        info.bmiHeader.biWidth = image.width
+        info.bmiHeader.biHeight = image.height
+        info.bmiHeader.biPlanes = 1
+        info.bmiHeader.biBitCount = 32
+        info.bmiHeader.biCompression = BI_RGB
+
+        dc = _gdi32.CreateDCA('DISPLAY', None, None, None)
+        bitmap = _gdi32.CreateDIBitmap(
+            dc, info.bmiHeader, CBM_INIT, image.data, info, DIB_RGB_COLORS)
+
+        # XXX Undocumented AFAICT, XP seems happy to use an 8-bit alpha
+        # as mask instead of a bitmask.
+        image.format = 'AAAA'
+        bitmap_mask = _gdi32.CreateDIBitmap(
+            dc, info.bmiHeader, CBM_INIT, image.data, info, DIB_RGB_COLORS)
+
+        iconinfo = ICONINFO()
+        iconinfo.fIcon = True
+        iconinfo.hbmMask = bitmap_mask
+        iconinfo.hbmColor = bitmap
+        icon = _user32.CreateIconIndirect(byref(iconinfo))
+
+        _user32.SetClassLongA(self._hwnd, GCL_HICON, icon)
 
     # Private util
 

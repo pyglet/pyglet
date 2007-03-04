@@ -10,12 +10,16 @@ from ctypes import *
 
 BOOL = c_int
 DWORD = c_uint32
+BYTE = c_char
+LONG = c_long
+WORD = c_short
 
 HANDLE = c_void_p
 HWND = HANDLE
 HMONITOR = HANDLE
 HGLOBAL = HANDLE
 HDC = HANDLE
+HBITMAP = HANDLE
 LPARAM = c_long
 
 WNDPROC = WINFUNCTYPE(c_long, c_int, c_uint, c_int, c_int)
@@ -103,4 +107,42 @@ class MINMAXINFO(Structure):
         ('ptMaxPosition', POINT),
         ('ptMinTrackSize', POINT),
         ('ptMaxTrackSize', POINT)
+    ]
+
+class RGBQUAD(Structure):
+    _fields_ = [
+        ('rgbBlue', BYTE),
+        ('rgbGreen', BYTE),
+        ('rgbRed', BYTE),
+        ('rgbReserved', BYTE),
+    ]
+
+class BITMAPINFOHEADER(Structure):
+    _fields_ = [
+        ('biSize', DWORD),
+        ('biWidth', LONG),
+        ('biHeight', LONG),
+        ('biPlanes', WORD),
+        ('biBitCount', WORD),
+        ('biCompression', DWORD),
+        ('biSizeImage', DWORD),
+        ('biXPelsPerMeter', LONG),
+        ('biYPelsPerMeter', LONG),
+        ('biClrUsed', DWORD),
+        ('biClrImportant', DWORD),
+    ]
+
+class BITMAPINFO(Structure):
+    _fields_ = [
+        ('bmiHeader', BITMAPINFOHEADER),
+        ('bmiColors', RGBQUAD * 1)
+    ]
+
+class ICONINFO(Structure):
+    _fields_ = [
+        ('fIcon', BOOL),
+        ('xHotspot', DWORD),
+        ('yHotspot', DWORD),
+        ('hbmMask', HBITMAP),
+        ('hbmColor', HBITMAP)
     ]
