@@ -342,13 +342,32 @@ class CarbonWindow(BaseWindow):
             rect.right = rect.left + width
             rect.bottom = rect.top + height
 
-            window_class = kDocumentWindowClass
-            window_attributes = kWindowStandardDocumentAttributes
+            styles = {
+                WINDOW_STYLE_DEFAULT:       (kDocumentWindowClass,
+                                             kWindowCloseBoxAttribute |
+                                             kWindowCollapseBoxAttribute),
+                WINDOW_STYLE_DIALOG:        (kDocumentWindowClass,
+                                             kWindowCloseBoxAttribute),
+                WINDOW_STYLE_TOOL:          (kUtilityWindowClass,
+                                             kWindowCloseBoxAttribute),
+                WINDOW_STYLE_BORDERLESS:    (kOverlayWindowClass,
+                                             kWindowNoAttributes)
+            }
+            self._style = factory.get_style()
+            window_class, window_attributes = \
+                styles.get(self._style, kDocumentWindowClass)
 
-            carbon.CreateNewWindow(window_class,
+            self._resizable = factory.get_resizable()
+            if self._resizable:
+                window_attributes |= (kWindowFullZoomAttribute |
+                                      kWindowResizableAttribute)
+
+            r = carbon.CreateNewWindow(window_class,
                                    window_attributes,
                                    byref(rect),
                                    byref(self._window))
+            _oscheck(r)
+
             aglSetDrawable(self._agl_context,
                 carbon.GetWindowPort(self._window))
 

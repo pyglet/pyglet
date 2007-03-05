@@ -47,6 +47,7 @@ kHelpWindowClass = 10
 kSheetWindowClass = 11
 kToolbarWindowClass = 12
 kPlainWindowClass = 13
+kOverlayWindowClass = 14
 kSheetAlertWindowClass = 15
 kAltPlainWindowClass = 16
 kSimpleWindowClass = 18  # no window frame
