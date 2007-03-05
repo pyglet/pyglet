@@ -14,7 +14,7 @@ from pyglet.clock import *
 from pyglet.scene2d.textsprite import *
 from pyglet.text import *
 
-window = Window(visible=False)
+window = Window(visible=False, resizable=True)
 font = load_font('Arial', 24)
 text = 'Type away... '
 

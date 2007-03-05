@@ -413,6 +413,7 @@ class XlibWindow(BaseWindow):
         self._screen_id = config._screen._x_screen_id
         self._glx_context = context._context
         self._width, self._height = factory.get_size()
+        self._resizable = factory.get_resizable()
 
         glx_info = self._display.contents.glx_info
         self._glx_1_3 = glx_info.have_version(1, 3)
@@ -473,6 +474,14 @@ class XlibWindow(BaseWindow):
 
         xlib.XChangeWindowAttributes(self._display, self._window, 
             attributes_mask, byref(attributes))
+
+        # Set resizeable
+        if not factory.get_resizable():
+            self.set_minimum_size(self._width, self._height)
+            self.set_maximum_size(self._width, self._height)
+        else:
+            # XXX Need to be able to revert if recreating a window
+            pass
 
         # Set vsync if requested
         vsync = factory.get_vsync()

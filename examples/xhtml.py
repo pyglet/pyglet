@@ -17,7 +17,7 @@ from pyglet.clock import *
 from pyglet.text import *
 from pyglet.layout import *
 
-window = Window(visible=False, vsync=False)
+window = Window(visible=False, vsync=False, resizable=True)
 
 data = '''<?xml version="1.0"?>
 <html>  

@@ -22,7 +22,7 @@ class EVENT_RESIZE(unittest.TestCase):
         print 'Window resized to %dx%d.' % (width, height)
 
     def test_resize(self):
-        w = Window(200, 200)
+        w = Window(200, 200, resizable=True)
         w.push_handlers(self)
         while not w.has_exit:
             w.dispatch_events()

@@ -111,7 +111,7 @@ class CubeReplacedElementFactory(ReplacedElementFactory):
         return CubeDrawable()
 
 # Create a window, attach the usual event handlers
-window = Window(visible=False)
+window = Window(visible=False, resizable=True)
 
 layout = Layout()
 layout.add_replaced_element_factory(CubeReplacedElementFactory())

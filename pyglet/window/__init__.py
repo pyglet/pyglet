@@ -394,6 +394,8 @@ class BaseWindow(WindowEventDispatcher):
     _windowed_size = None
     _windowed_location = None
 
+    _resizable = False
+
     # Subclasses should update these after relevant events
     _mouse_cursor = DefaultMouseCursor()
     _mouse_x = 0
@@ -510,6 +512,11 @@ class BaseWindow(WindowEventDispatcher):
         self.create(factory)
         self.switch_to()
         self.set_visible(True)
+
+    def get_resizable(self):
+        return self._resizable
+
+    resizable = property(get_resizable)
 
     def get_vsync(self):
         return None
@@ -654,6 +661,7 @@ class WindowFactory(object):
     _context_share = CONTEXT_SHARE_EXISTING
 
     _screen = None
+    _resizable = False
     _fullscreen = False
     _vsync = None
     _width = 640
@@ -683,6 +691,12 @@ class WindowFactory(object):
 
     def get_fullscreen(self):
         return self._fullscreen
+
+    def set_resizable(self, resizable):
+        self._resizable = resizable
+
+    def get_resizable(self):
+        return self._resizable
 
     def set_vsync(self, vsync):
         self._vsync = vsync
@@ -927,6 +941,7 @@ class Window(_platform.get_window_class()):
     def __init__(self, 
                  width=None,
                  height=None,
+                 resizable=False,
                  fullscreen=False,
                  visible=True,
                  doublebuffer=True,
@@ -944,6 +959,7 @@ class Window(_platform.get_window_class()):
             if not height:
                 height = _height
             factory.set_size(width, height)
+        factory.set_resizable(resizable)
         factory.set_fullscreen(fullscreen)
         factory.set_gl_attribute('doublebuffer', doublebuffer)
         factory.set_gl_attribute('depth_size', depth_size)
