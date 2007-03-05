@@ -9,6 +9,10 @@ __version__ = '$Id: $'
 from ctypes import *
 import unicodedata
 import warnings
+import sys
+
+if sys.platform not in ('cygwin', 'win32'):
+    raise ImportError('Not a win32 platform.')
 
 from pyglet.window import *
 from pyglet.window.event import *
