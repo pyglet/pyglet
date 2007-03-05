@@ -222,6 +222,11 @@ CURSOR_TEXT = 'text'
 CURSOR_WAIT = 'wait'
 CURSOR_WAIT_ARROW = 'wait_arrow'
 
+WINDOW_STYLE_DEFAULT = None
+WINDOW_STYLE_DIALOG = 'dialog'
+WINDOW_STYLE_TOOL = 'tool'
+WINDOW_STYLE_BORDERLESS = 'borderless'
+
 def get_current_context():
     return _current_context
 
@@ -395,6 +400,7 @@ class BaseWindow(WindowEventDispatcher):
     _windowed_location = None
 
     _resizable = False
+    _style = WINDOW_STYLE_DEFAULT
 
     # Subclasses should update these after relevant events
     _mouse_cursor = DefaultMouseCursor()
@@ -517,6 +523,11 @@ class BaseWindow(WindowEventDispatcher):
         return self._resizable
 
     resizable = property(get_resizable)
+
+    def get_style(self):
+        return self._style
+    
+    style = property(get_style)
 
     def get_vsync(self):
         return None
@@ -662,6 +673,7 @@ class WindowFactory(object):
 
     _screen = None
     _resizable = False
+    _style = WINDOW_STYLE_DEFAULT
     _fullscreen = False
     _vsync = None
     _width = 640
@@ -697,6 +709,12 @@ class WindowFactory(object):
 
     def get_resizable(self):
         return self._resizable
+
+    def set_style(self, style):
+        self._style = style
+
+    def get_style(self):
+        return self._style
 
     def set_vsync(self, vsync):
         self._vsync = vsync
@@ -942,6 +960,7 @@ class Window(_platform.get_window_class()):
                  width=None,
                  height=None,
                  resizable=False,
+                 style=WINDOW_STYLE_DEFAULT,
                  fullscreen=False,
                  visible=True,
                  doublebuffer=True,
@@ -960,6 +979,7 @@ class Window(_platform.get_window_class()):
                 height = _height
             factory.set_size(width, height)
         factory.set_resizable(resizable)
+        factory.set_style(style)
         factory.set_fullscreen(fullscreen)
         factory.set_gl_attribute('doublebuffer', doublebuffer)
         factory.set_gl_attribute('depth_size', depth_size)
@@ -1000,6 +1020,10 @@ __all__ = ['CONTEXT_SHARE_NONE', 'CONTEXT_SHARE_EXISTING',
            'CURSOR_TEXT',
            'CURSOR_WAIT',
            'CURSOR_WAIT_ARROW',
+           'WINDOW_STYLE_DEFAULT',
+           'WINDOW_STYLE_DIALOG',
+           'WINDOW_STYLE_TOOL',
+           'WINDOW_STYLE_BORDERLESS',
            'get_current_context',
            'WindowException',
            'BaseScreen',

@@ -475,6 +475,20 @@ class XlibWindow(BaseWindow):
         xlib.XChangeWindowAttributes(self._display, self._window, 
             attributes_mask, byref(attributes))
 
+        # Set style
+        styles = {
+            WINDOW_STYLE_DEFAULT: '_NET_WM_WINDOW_TYPE_NORMAL',
+            WINDOW_STYLE_DIALOG: '_NET_WM_WINDOW_TYPE_DIALOG',
+            WINDOW_STYLE_TOOL: '_NET_WM_WINDOW_TYPE_UTILITY',
+            WINDOW_STYLE_BORDERLESS: '_NET_WM_WINDOW_TYPE_SPLASH', 
+            # XXX BORDERLESS is inhibiting task-bar entry (Gnome)
+        }
+        self._style = factory.get_style()
+        if self._style in styles:
+            print self._style
+            self._set_atoms_property('_NET_WM_WINDOW_TYPE', 
+                                     (styles[self._style],))
+
         # Set resizeable
         if not factory.get_resizable():
             self.set_minimum_size(self._width, self._height)
@@ -594,10 +608,10 @@ class XlibWindow(BaseWindow):
 
     def set_caption(self, caption):
         self._caption = caption
-        self._set_property('WM_NAME', caption, allow_utf8=False)
-        self._set_property('WM_ICON_NAME', caption, allow_utf8=False)
-        self._set_property('_NET_WM_NAME', caption)
-        self._set_property('_NET_WM_ICON_NAME', caption)
+        self._set_text_property('WM_NAME', caption, allow_utf8=False)
+        self._set_text_property('WM_ICON_NAME', caption, allow_utf8=False)
+        self._set_text_property('_NET_WM_NAME', caption)
+        self._set_text_property('_NET_WM_ICON_NAME', caption)
 
     def get_caption(self):
         return self._caption
@@ -809,29 +823,43 @@ class XlibWindow(BaseWindow):
             hints.max_width, hints.max_height = self._maximum_size
         xlib.XSetWMNormalHints(self._display, self._window, byref(hints))
 
-    def _set_property(self, name, value, allow_utf8=True):
+    def _set_text_property(self, name, value, allow_utf8=True):
         atom = xlib.XInternAtom(self._display, name, True)
         if not atom:
             raise XlibException('Undefined atom "%s"' % name)
-        if type(value) in (str, unicode):
-            property = xlib.XTextProperty()
-            if _have_utf8 and allow_utf8:
-                buf = create_string_buffer(value.encode('utf8'))
-                result = xlib.Xutf8TextListToTextProperty(self._display,
-                    cast(pointer(buf), c_char_p), 1, xlib.XStdICCTextStyle, 
-                    byref(property))
-                if result < 0:
-                    raise XlibException('Could not create UTF8 text property')
-            else:
-                buf = create_string_buffer(value.encode('ascii', 'ignore'))
-                result = xlib.XStringListToTextProperty(
-                    cast(pointer(buf), c_char_p), 1, byref(property))
-                if result < 0:
-                    raise XlibException('Could not create text property')
-            xlib.XSetTextProperty(self._display,
-                self._window, byref(property), atom)
-            # XXX <rj> Xlib doesn't like us freeing this
-            #xlib.XFree(property.value)
+        assert type(value) in (str, unicode)
+        property = xlib.XTextProperty()
+        if _have_utf8 and allow_utf8:
+            buf = create_string_buffer(value.encode('utf8'))
+            result = xlib.Xutf8TextListToTextProperty(self._display,
+                cast(pointer(buf), c_char_p), 1, xlib.XStdICCTextStyle, 
+                byref(property))
+            if result < 0:
+                raise XlibException('Could not create UTF8 text property')
+        else:
+            buf = create_string_buffer(value.encode('ascii', 'ignore'))
+            result = xlib.XStringListToTextProperty(
+                cast(pointer(buf), c_char_p), 1, byref(property))
+            if result < 0:
+                raise XlibException('Could not create text property')
+        xlib.XSetTextProperty(self._display,
+            self._window, byref(property), atom)
+        # XXX <rj> Xlib doesn't like us freeing this
+        #xlib.XFree(property.value)
+
+    def _set_atoms_property(self, name, values, mode=xlib.PropModeReplace):
+        name_atom = xlib.XInternAtom(self._display, name, False)
+        atoms = []
+        for value in values:
+            atoms.append(xlib.XInternAtom(self._display, value, False))
+        atom_type = xlib.XInternAtom(self._display, 'ATOM', False)
+        if len(atoms):
+            atoms_ar = (xlib.Atom * len(atoms))(*atoms)
+            xlib.XChangeProperty(self._display, self._window,
+                name_atom, atom_type, 32, mode,
+                cast(pointer(atoms_ar), POINTER(c_ubyte)), len(atoms))
+        else:
+            xlib.XDeleteProperty(self._display, self._window, net_wm_state)
 
     def _set_wm_state(self, *states):
         # Set property
