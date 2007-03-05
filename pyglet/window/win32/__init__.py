@@ -203,8 +203,8 @@ class Win32Window(BaseWindow):
     _ignore_mousemove = False
     _mouse_platform_visible = True
 
-    _style = 0
-    _ex_style = 0
+    _ws_style = 0
+    _ex_ws_style = 0
     _minimum_size = None
     _maximum_size = None
 
@@ -239,12 +239,26 @@ class Win32Window(BaseWindow):
         fullscreen = factory.get_fullscreen()
 
         # Ensure style is set before determining width/height.
+        self._style = factory.get_style()
         if fullscreen:
-            self._style = WS_POPUP
-            self._ex_style = 0 # WS_EX_TOPMOST
+            self._ws_style = WS_POPUP
+            self._ex_ws_style = 0 # WS_EX_TOPMOST
         else:
-            self._style = WS_OVERLAPPEDWINDOW
-            self._ex_style = 0
+            styles = {
+                WINDOW_STYLE_DEFAULT:   (WS_OVERLAPPEDWINDOW, 0),
+                WINDOW_STYLE_DIALOG:    (WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU,
+                                         WS_EX_DLGMODALFRAME),
+                WINDOW_STYLE_TOOL:      (WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU,
+                                         WS_EX_TOOLWINDOW),
+                WINDOW_STYLE_BORDERLESS:(WS_POPUP, 0),
+            }
+            self._ws_style, self._ex_ws_style = styles[self._style]
+
+        self._resizable = factory.get_resizable()
+        if self._resizable:
+            self._ws_style |= WS_THICKFRAME
+        else:
+            self._ws_style &= ~(WS_THICKFRAME|WS_MAXIMIZEBOX)
 
         width, height = self._client_to_window_size(*factory.get_size())
         context = factory.get_context()
@@ -271,10 +285,10 @@ class Win32Window(BaseWindow):
         
         if not self._hwnd:
             self._hwnd = _user32.CreateWindowExA(
-                self._ex_style,
+                self._ex_ws_style,
                 self._window_class.lpszClassName,
                 '',
-                self._style,
+                self._ws_style,
                 CW_USEDEFAULT,
                 CW_USEDEFAULT,
                 width,
@@ -294,10 +308,10 @@ class Win32Window(BaseWindow):
 
             _user32.SetWindowLongA(self._hwnd,
                 GWL_STYLE,
-                self._style)
+                self._ws_style)
             _user32.SetWindowLongA(self._hwnd,
                 GWL_EXSTYLE,
-                self._ex_style)
+                self._ex_ws_style)
 
         if fullscreen:
             hwnd_after = HWND_TOPMOST
@@ -567,7 +581,7 @@ class Win32Window(BaseWindow):
         rect.right = width
         rect.bottom = height
         _user32.AdjustWindowRectEx(byref(rect),
-            self._style, False, self._ex_style)
+            self._ws_style, False, self._ex_ws_style)
         return rect.right - rect.left, rect.bottom - rect.top
 
     def _client_to_window_pos(self, x, y):
@@ -575,7 +589,7 @@ class Win32Window(BaseWindow):
         rect.left = x
         rect.top = y
         _user32.AdjustWindowRectEx(byref(rect),
-            self._style, False, self._ex_style)
+            self._ws_style, False, self._ex_ws_style)
         return rect.left, rect.top
 
     # Event dispatching

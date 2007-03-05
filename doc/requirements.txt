@@ -62,10 +62,10 @@ window
         WINDOW_SET_VSYNC                  X   X   X
         WINDOW_INITIAL_FULLSCREEN         X   X   X
         WINDOW_CAPTION                    X   X   X
-        WINDOW_STYLE_DIALOG
-        WINDOW_STYLE_TOOL
-        WINDOW_STYLE_BORDERLESS
-        WINDOW_RESIZABLE                  X
+        WINDOW_STYLE_DIALOG               X   X   X
+        WINDOW_STYLE_TOOL                 X   X   X
+        WINDOW_STYLE_BORDERLESS           X   X   X
+        WINDOW_RESIZABLE                  X   X   X
         WINDOW_SET_ICON                   X   X   X
         WINDOW_SET_MOUSE_VISIBLE          X   X   X
         WINDOW_SET_MOUSE_CURSOR           X   X   X
@@ -107,19 +107,7 @@ window
        case the app doesn't need to reload objects, but will need to
        reset the state.  yikes.
      - xlib and carbon: window caption is lost when recreating window.
-     - Possible window borders (check that all platforms have reasonable
-       support):
-
-        - None
-        - Resizable (default)
-        - Fixed
-        - Palette (smaller footprint)
-
-       With these options:
-        - Maximize button
-        - Minimize button
-        - Close button / system menu
-        - Modal (specify parent)
+     - modal windows (probably too hard / risky, especially on Carbon.. omit?)
 
 event
     :description: Platform-independent events.
