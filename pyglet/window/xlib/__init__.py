@@ -1114,8 +1114,6 @@ class XlibWindow(BaseWindow):
         if self._width != w or self._height != h:
             self._width = w
             self._height = h
-            self.switch_to()
-            glViewport(0, 0, w, h)
             self.dispatch_event(EVENT_RESIZE, w, h)
             self.dispatch_event(EVENT_EXPOSE)
         if self._x != x or self._y != y:

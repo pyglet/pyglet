@@ -185,6 +185,7 @@ import sys
 
 from pyglet.gl import *
 from pyglet.window.event import WindowEventDispatcher, ExitHandler
+from pyglet import projection
 import pyglet.window.key
 
 # List of contexts currently in use, so we can create new contexts that
@@ -993,11 +994,29 @@ class Window(_platform.get_window_class()):
             factory.set_size(screen.width, screen.height)
 
         self.create(factory)
-        self.switch_to()
         self.set_caption(sys.argv[0])
+
+        self.switch_to()
+        self.set_viewport()
+        self.set_projection()
+        self.set_handlers(self)
+
         if visible:
             self.set_visible(True)
             self.activate()
+
+    def set_viewport(self):
+        self.viewport = projection.WindowViewport(self)
+
+    def set_projection(self):
+        self.projection = projection.OrthographicProjection(self.viewport)
+        self.projection.apply()
+
+    def on_resize(self, width, height):
+        # TODO rearrange this so switch_to not magically called from
+        # event handler; wait until user switches, then apply.
+        self.switch_to()
+        self.projection.apply()
 
 __all__ = ['CONTEXT_SHARE_NONE', 'CONTEXT_SHARE_EXISTING',
            'LOCATION_DEFAULT',

@@ -73,25 +73,6 @@ Use the `blit` method to draw an image to the current window::
 
     image.blit(x, y, z)
 
-This method assumes an appropriate projection and transformation has been
-applied to the window.  This is not done automatically done by pyglet unless
-you are using the `pyglet.sprite` package.  If you are doing all the drawing
-with `blit`, the following code will set up an appropriate projection::
-
-    from pyglet.gl import *
-    from pyglet.window import *
-
-    window = Window()
-
-    def on_resize(width, height):
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(0, 0, width, height, -1, 1)
-        glMatrixMode(GL_MODELVIEW)
-    window.push_handlers(on_resize)
-
-**TODO**: Camera/view module outside of sprite should do this.
-
 The `x`, `y` and `z` coordinates locate where to draw the  bottom-left corner
 of the image.  With the projection defined above (or the one used by
 `pyglet.sprite`), the Y dimension is 0 at the bottom of the window and

@@ -99,26 +99,11 @@ class GLLayout(LayoutEventDispatcher):
     canvas_height = property(lambda self: self.view.canvas_height)
 
     def draw(self):
-        glMatrixMode(GL_PROJECTION)
-        glPushMatrix()
-        glLoadIdentity()
-        glOrtho(self.x,
-                self.x + self.view.viewport_width,
-                self.y - self.view.viewport_height,
-                self.y,
-                -1, 1)
-        
-        glMatrixMode(GL_MODELVIEW)
         glPushMatrix()
         glLoadIdentity()
         glTranslatef(self.x, self.y, 0)
-
         self.view.draw()
-
         glPopMatrix()
-        glMatrixMode(GL_PROJECTION)
-        glPopMatrix()
-        glMatrixMode(GL_MODELVIEW)
 
     def constrain_viewport(self):
         '''Ensure the viewport is not showing anything that's not the

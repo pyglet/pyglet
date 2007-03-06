@@ -28,12 +28,6 @@ class TestSave(ImageRegressionTestCase):
     has_exit = False
     encodedr = None
 
-    def on_resize(self, width, height):
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(0, width, 0, height, -1, 1)
-        glMatrixMode(GL_MODELVIEW)
-
     def on_expose(self):
         self.draw()
         self.window.flip()

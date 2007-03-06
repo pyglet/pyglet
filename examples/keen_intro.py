@@ -25,10 +25,6 @@ keen.x = -keen.width
 commander.dx = -(commander.width + width) / 10
 keen.dx = (keen.width + width) / 10 
 
-glMatrixMode(GL_PROJECTION)
-glOrtho(0, width, 0, height, -1, 1)
-glMatrixMode(GL_MODELVIEW)
-
 clock = Clock(fps_limit=30)
 
 while not window.has_exit:

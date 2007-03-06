@@ -815,8 +815,6 @@ class Win32Window(BaseWindow):
             self._hidden = False
             self.dispatch_event(EVENT_SHOW)
         w, h = self._get_location(lParam)
-        self.switch_to()
-        glViewport(0, 0, w, h)
         self.dispatch_event(EVENT_RESIZE, w, h)
         return 0
 

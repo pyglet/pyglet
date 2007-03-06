@@ -22,10 +22,6 @@ layout.layout()
 
 c = clock.Clock(10)
 
-glMatrixMode(GL_PROJECTION)
-glLoadIdentity()
-glOrtho(0, w.width, 0, w.height, -1, 1)
-glMatrixMode(GL_MODELVIEW)
 glClearColor(1, 1, 1, 1)
 
 while not w.has_exit:

@@ -19,12 +19,9 @@ font = load_font('Arial', 24)
 text = 'Type away... '
 
 def on_resize(width, height):
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    glOrtho(0, width, 0, height, -1, 1)
-    glMatrixMode(GL_MODELVIEW)
     sprite.width = width
     sprite.x = 10
+    return True
 
 def on_text(text):
     sprite.text += text.replace('\r', '\n')

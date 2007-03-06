@@ -22,12 +22,6 @@ class TextTestBase(ImageRegressionTestCase):
     font_size = 24
     text = 'Quickly brown fox'
 
-    def on_resize(self, width, height):
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(0, width, 0, height, -1, 1)
-        glMatrixMode(GL_MODELVIEW)
-
     def on_expose(self):
         glClearColor(0.5, 0, 0, 1)
         glClear(GL_COLOR_BUFFER_BIT)

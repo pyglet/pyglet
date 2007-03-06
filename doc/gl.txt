@@ -41,10 +41,6 @@ example, the following program draws a triangle on the screen::
     # to OpenGL before a window is created will fail.
     window = Window(visible=False)
 
-    glMatrixMode(GL_PROJECTION)
-    glOrtho(0, window.width, 0, window.height, -1, 1)
-    glMatrixMode(GL_MODELVIEW)
-
     window.set_visible()
     while not window.has_exit:
         window.dispatch_events()
@@ -75,18 +71,15 @@ reference.  If you are using a double-buffer, remember to call
 Resizing the window
 -------------------
 
-If you try to resize the window created in the example above, you will notice
-that the triangle does not continue filling the area.  This is because pyglet
-will automatically call ``glViewport`` so that the whole window area is used
-when a window is resized, but does not change the projection matrix.
-
-Most OpenGL applications that use a resizeable window should recreate the
-projection matrix when the window is resized::
+pyglet sets up the viewport and an orthographic projection on each window
+automatically.  If you define your own projection (for example, to use
+a perspective projection), you will also need to add a handler for
+the resize event to update this matrix::
 
     def on_resize(width, height):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        glOrtho(0, width, 0, height, -1, 1)
+        gluPerspective(65, width / float(height), .1, 1000)
         glMatrixMode(GL_MODELVIEW)
 
     window.push_handlers(on_resize)
@@ -99,9 +92,11 @@ where such a check would be invalid).  If an error is reported, pyglet raises
 ``GLException`` with the result of ``gluErrorString`` as the message.
 
 This is very handy during development, as it catches common coding errors
-early on.  However, it has a significant impact on performance.  You can
-disable this error check by setting the following option `before` importing
-``pyglet.gl`` or ``pyglet.window``::
+early on.  However, it has a significant impact on performance, and is
+disabled when python is run with the ``-O`` option.
+
+You can also disable this error check by setting the following option `before`
+importing ``pyglet.gl`` or ``pyglet.window``::
 
     # Disable error checking for increased performance
     from pyglet import options

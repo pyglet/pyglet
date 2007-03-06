@@ -22,12 +22,6 @@ from tests.regression import ImageRegressionTestCase
 class TEST_CHECKERBOARD(ImageRegressionTestCase):
     has_exit = False
 
-    def on_resize(self, width, height):
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(0, width, 0, height, -1, 1)
-        glMatrixMode(GL_MODELVIEW)
-
     def on_expose(self):
         glClearColor(1, 1, 1, 1)
         glClear(GL_COLOR_BUFFER_BIT)
