@@ -148,6 +148,8 @@ class CtypesArray(CtypesType):
         self.base.visit(visitor)
 
     def __str__(self):
+        if self.count is None:
+            return 'POINTER(%s)' % str(self.base)
         if type(self.base) == CtypesArray:
             return '(%s) * %s' % (str(self.base), str(self.count))
         else:

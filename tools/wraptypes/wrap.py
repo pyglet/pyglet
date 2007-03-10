@@ -19,7 +19,7 @@ import sys
 class CtypesWrapper(CtypesParser, CtypesTypeVisitor):
     file=None
     def begin_output(self, output_file, library, link_modules=(), 
-                     emit_filenames=()):
+                     emit_filenames=(), all_headers=False):
         self.library = library
         self.file = output_file
         self.all_names = []
@@ -27,6 +27,7 @@ class CtypesWrapper(CtypesParser, CtypesTypeVisitor):
         self.structs = set()
         self.enums = set()
         self.emit_filenames = emit_filenames
+        self.all_headers = all_headers
 
         self.linked_symbols = {}
         for name in link_modules:
@@ -48,7 +49,7 @@ class CtypesWrapper(CtypesParser, CtypesTypeVisitor):
         self.file = None
 
     def does_emit(self, symbol, filename):
-        return filename in self.emit_filenames
+        return self.all_headers or filename in self.emit_filenames
 
     def print_preamble(self):
         import textwrap
@@ -221,6 +222,9 @@ def main(*argv):
     op.add_option('-m', '--link-module', action='append', dest='link_modules',
                   help='use symbols from MODULE', metavar='MODULE',
                   default=[])
+    op.add_option('-a', '--all-headers', action='store_true',
+                  dest='all_headers',
+                  help='include symbols from all headers', default=False)
     
     (options, args) = op.parse_args(list(argv[1:]))
     if len(args) < 1:
@@ -237,7 +241,8 @@ def main(*argv):
     wrapper.begin_output(open(options.output, 'w'), 
                          library=options.library, 
                          emit_filenames=headers,
-                         link_modules=options.link_modules)
+                         link_modules=options.link_modules,
+                         all_headers=options.all_headers)
     wrapper.preprocessor_parser.include_path += options.include_dirs
     for header in headers:
         wrapper.wrap(header)
