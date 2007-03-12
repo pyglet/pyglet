@@ -11,6 +11,7 @@ __version__ = '$Id$'
 import ctypes
 from ctypes import util
 import os
+import time
 
 def get_library(name):
     path = util.find_library(name)
@@ -25,7 +26,8 @@ def get_library(name):
 
 import lib_avformat as avformat
 import lib_avcodec as avcodec
-openal = get_library('openal')
+import lib_openal as al
+import lib_alc as alc
 
 def init():
     avformat.av_register_all()
@@ -75,51 +77,116 @@ def get_codec(container, stream):
 
     return context
 
+class BufferPool(list):
+    def get_buffer(self):
+        if not self:
+            buffer = al.ALuint()
+            al.alGenBuffers(1, buffer)
+        else:
+            buffer = self.pop(0)
+        return buffer
+
+    def replace_buffer(self, buffer):
+        self.insert(0, buffer)
+
+class AVCodecDecoder(object):
+    def __init__(self, container, stream):
+        self.codec = get_codec(container, stream)
+        if self.codec.contents.channels == 1:
+            self.buffer_format = al.AL_FORMAT_MONO16
+        elif self.codec.contents.channels == 2:
+            self.buffer_format = al.AL_FORMAT_STEREO16
+        else:
+            raise Exception('Invalid number of channels')
+        self.sample_rate = self.codec.contents.sample_rate
+
+        self.container = container
+        self.stream = stream
+        self.packet = avformat.AVPacket()
+        self.sample_buffer = \
+            (ctypes.c_int16 * (avcodec.AVCODEC_MAX_AUDIO_FRAME_SIZE/2))() 
+
+        self.read_packet()
+
+    def read_packet(self):
+        while True:
+            if self.packet.data:
+                self.packet.data = None
+                self.packet.size = 0
+
+            if avformat.av_read_packet(self.container, self.packet) < 0:
+                break
+
+            if self.packet.stream_index == self.stream:
+                break
+
+        self.packet_data = self.packet.data
+        self.packet_size = self.packet.size
+
+    def fill_buffer(self, buffer):
+        if self.packet_size <= 0:
+            self.read_packet()
+        
+        if self.packet_size == 0: # EOS
+            return False
+
+        sample_buffer_size = ctypes.c_int()
+        len = avcodec.avcodec_decode_audio(self.codec, 
+                                           self.sample_buffer,
+                                           sample_buffer_size,
+                                           self.packet_data,
+                                           self.packet_size)
+        if len < 0:
+            # Error, skip frame
+            raise Exception('frame error TODO')
+
+        if sample_buffer_size.value > 0:
+            al.alBufferData(buffer, self.buffer_format, 
+                            self.sample_buffer, sample_buffer_size.value,
+                            self.sample_rate)
+
+        # Advance buffer pointer
+        self.packet_data = ctypes.c_uint8.from_address(
+                                ctypes.addressof(self.packet_data) + len)
+        self.packet_size -= len
+
+        return True
+        
 if __name__ == '__main__':
     import sys
 
+    # openal
+    device = alc.alcOpenDevice(None)
+    if not device:
+        raise Exception('No OpenAL device.')
+
+    alcontext = alc.alcCreateContext(device, None)
+    alc.alcMakeContextCurrent(alcontext)
+
+    source = al.ALuint()
+    al.alGenSources(1, source)
+
+    pool = BufferPool()
+
+    # avcodec
     init()
     container = open(sys.argv[1])
     stream = get_audio_stream(container)
-    codec = get_codec(container, stream)
     
-    sample_rate = codec.contents.sample_rate
-    channels = codec.contents.channels
-    print 'Found %d channels at %d Hz' % (channels, sample_rate)
+    decoder = AVCodecDecoder(container, stream)
+    
+    while True:
+        buffer = pool.get_buffer()
+        if not decoder.fill_buffer(buffer):
+            break
+        al.alSourceQueueBuffers(source, 1, buffer)
 
-
-    samples = (ctypes.c_int16 * (avcodec.AVCODEC_MAX_AUDIO_FRAME_SIZE/2))()
-    frame_size = ctypes.c_int(len(samples)*2)
-
-    packet = avformat.AVPacket()
+    al.alSourcePlay(source)
 
     while True:
-        avformat.av_read_packet(container, packet)
-
-        size = packet.size
-        if size == 0:
-            # EOS
+        value = al.ALint()
+        al.alGetSourcei(source, al.AL_SOURCE_STATE, value)
+        if value.value == al.AL_STOPPED:
             break
 
-        inbuf = packet.data
-
-        while size > 0:
-            len = avcodec.avcodec_decode_audio(codec, samples, 
-                                               ctypes.byref(frame_size),
-                                               inbuf, size)
-            # len: number of bytes from packet that were used
-            # frame_size: number of bytes filled into 'samples'
-
-            if len < 0:
-                raise Exception('Decode error')
-
-            if frame_size.value > 0:
-                # yield these samples
-                print 'Yield %d samples' % frame_size.value
-                pass
-
-            # ptr add
-            inbuf = ctypes.c_uint8.from_address(
-                        ctypes.addressof(inbuf) + len)
-            size -= len
-
+        time.sleep(1)
