@@ -166,6 +166,7 @@ class CtypesWrapper(CtypesParser, CtypesTypeVisitor):
         print >> self.file, 'struct_%s._fields_ = [' % struct.tag
         if struct.opaque:
             print >> self.file, "    ('_opaque_struct', c_int)"
+            self.structs.remove(struct.tag)
         else:
             for m in struct.members:
                 print >> self.file, "    ('%s', %s)," % (m[0], m[1])
