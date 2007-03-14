@@ -10,7 +10,7 @@ from ctypes import *
 import re
 
 from pyglet.gl import *
-import pyglet.text
+import pyglet.font
 from pyglet.layout.base import *
 from pyglet.layout.frame import *
 from pyglet.layout.locator import *
@@ -40,7 +40,7 @@ class GLRenderDevice(RenderDevice):
         bold = weight >= 700
         assert type(size) == Dimension and size.unit == 'pt'
 
-        return pyglet.text.load_font(names, size, italic=italic, bold=bold)
+        return pyglet.font.load_font(names, size, italic=italic, bold=bold)
 
     def create_text_frame(self, style, element, text):
         return GLTextFrame(style, element, text)
@@ -227,7 +227,7 @@ class GLTextFrame(TextFrame):
         # Get GL glyph sequence if not already cached
         font = self.get_computed_property('--font')
         if not self.glyph_string:
-            self.glyph_string = pyglet.text.GlyphString(
+            self.glyph_string = pyglet.font.GlyphString(
                 self.text, font.get_glyphs(self.text))
 
         computed = self.get_computed_property

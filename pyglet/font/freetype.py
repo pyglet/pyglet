@@ -12,8 +12,8 @@ from ctypes import *
 from ctypes import util
 from warnings import warn
 
-from pyglet.text import *
-from pyglet.text.freetype_lib import *
+from pyglet.font import *
+from pyglet.font.freetype_lib import *
 
 # fontconfig library definitions
 

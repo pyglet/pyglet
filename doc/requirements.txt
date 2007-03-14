@@ -264,7 +264,7 @@ shader
      - what is the value of the usexx methods on ShaderProgram?  do
        we like wrapping objects around GL?
 
-text
+font
     :description: Text rendering.
     :implementation:
         ============================== === === ===

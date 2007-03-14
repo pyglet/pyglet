@@ -93,7 +93,7 @@ class GLXInfo(object):
         return extension in self.get_extensions()
 
 # Single instance suitable for apps that use only a single display.
-_glx_info = None
+_glx_info = GLXInfo()
 
 set_display = _glx_info.set_display
 check_display = _glx_info.check_display

@@ -10,7 +10,7 @@ from ctypes import *
 
 from pyglet.gl import *
 from pyglet.scene2d.sprite import Sprite
-from pyglet.text import GlyphString
+from pyglet.font import GlyphString
 
 # TODO: inherit from Sprite
 class TextSprite(object):

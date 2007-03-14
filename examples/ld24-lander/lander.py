@@ -12,7 +12,7 @@ from pyglet.window.key import *
 from pyglet.clock import *
 from pyglet.scene2d import *
 from pyglet.scene2d.textsprite import *
-from pyglet.text import *
+from pyglet.font import *
 from pyglet.layout import *
 
 class RocketSprite(Sprite):

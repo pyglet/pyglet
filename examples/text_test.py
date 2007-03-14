@@ -7,7 +7,7 @@ from pyglet.window.event import *
 from pyglet.gl import *
 from pyglet import clock
 
-from pyglet.text import *
+from pyglet.font import *
 from pyglet.layout import *
 
 from ctypes import *

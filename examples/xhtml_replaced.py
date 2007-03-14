@@ -13,7 +13,7 @@ from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.clock import *
 
-from pyglet.text import *
+from pyglet.font import *
 from pyglet.layout import *
 from pyglet.layout.frame import *
 

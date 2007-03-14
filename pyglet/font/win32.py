@@ -6,7 +6,7 @@
 from ctypes import *
 
 from pyglet.gl import *
-from pyglet.text import *
+from pyglet.font import *
 from pyglet.window.win32.constants import *
 from pyglet.window.win32.types import *
 from pyglet.window.win32 import _gdi32 as gdi32, _user32 as user32

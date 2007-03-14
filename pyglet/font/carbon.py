@@ -9,7 +9,7 @@ __version__ = '$Id: $'
 from ctypes import *
 from sys import byteorder
 
-from pyglet.text import *
+from pyglet.font import *
 from pyglet.window.carbon import carbon 
 from pyglet.window.carbon import _create_cfstring
 from pyglet.window.carbon.types import Rect, CGRect

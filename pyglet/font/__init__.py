@@ -302,13 +302,13 @@ class BaseFont(object):
 
 # Load platform dependent module
 if sys.platform == 'darwin':
-    from pyglet.text.carbon import CarbonFont
+    from pyglet.font.carbon import CarbonFont
     _font_class = CarbonFont
 elif sys.platform == 'win32':
-    from pyglet.text.win32 import Win32Font
+    from pyglet.font.win32 import Win32Font
     _font_class = Win32Font
 else:
-    from pyglet.text.freetype import FreeTypeFont
+    from pyglet.font.freetype import FreeTypeFont
     _font_class = FreeTypeFont
 
 def load_font(name, size, bold=False, italic=False):
@@ -342,9 +342,9 @@ def load_font(name, size, bold=False, italic=False):
 
     # Locate or create font cache   
     shared_object_space = get_current_context().get_shared_object_space()
-    if not hasattr(shared_object_space, 'pyglet_text_font_cache'):
-        shared_object_space.pyglet_text_font_cache = {}
-    font_cache = shared_object_space.pyglet_text_font_cache
+    if not hasattr(shared_object_space, 'pyglet_font_font_cache'):
+        shared_object_space.pyglet_font_font_cache = {}
+    font_cache = shared_object_space.pyglet_font_font_cache
 
     # Look for font name in font cache
     descriptor = (name, size, bold, italic)

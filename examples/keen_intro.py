@@ -10,7 +10,7 @@ from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.clock import *
 from pyglet.scene2d.textsprite import *
-from pyglet.text import *
+from pyglet.font import *
 
 width, height = 640, 480
 window = Window(width=width, height=height)
