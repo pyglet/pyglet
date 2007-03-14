@@ -17,12 +17,12 @@ import unittest
 
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 
 class WINDOW_SET_MOUSE_VISIBLE(unittest.TestCase):
     def on_key_press(self, symbol, modifiers):
-        if symbol == K_V:
-            visible = (modifiers & MOD_SHIFT)
+        if symbol == key.V:
+            visible = (modifiers & key.MOD_SHIFT)
             self.w.set_mouse_visible(visible)
             print 'Mouse is now %s' % (visible and 'visible' or 'hidden')
         return True

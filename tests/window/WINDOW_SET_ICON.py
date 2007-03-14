@@ -18,7 +18,7 @@ from pyglet.gl import *
 from pyglet.image import load_image
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 
 from os.path import join, dirname
 icon_file = join(dirname(__file__), 'icon1.png')

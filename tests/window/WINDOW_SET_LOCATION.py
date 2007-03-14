@@ -18,18 +18,18 @@ import unittest
 
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 
 class WINDOW_SET_SIZE(unittest.TestCase):
     def on_key_press(self, symbol, modifiers):
         x, y = self.w.get_location()
-        if symbol == K_LEFT:
+        if symbol == key.LEFT:
             x -= 10
-        if symbol == K_RIGHT:
+        if symbol == key.RIGHT:
             x += 10
-        if symbol == K_UP:
+        if symbol == key.UP:
             y -= 10
-        if symbol == K_DOWN:
+        if symbol == key.DOWN:
             y += 10
         self.w.set_location(x, y)
         print 'Window location set to %dx%d.' % (x, y)

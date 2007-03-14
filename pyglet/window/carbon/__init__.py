@@ -14,7 +14,7 @@ import warnings
 
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 from pyglet.window.carbon.constants import *
 from pyglet.window.carbon.key import *
 from pyglet.window.carbon.types import *
@@ -778,15 +778,15 @@ class CarbonWindow(BaseWindow):
     def _map_modifiers(modifiers):
         mapped_modifiers = 0
         if modifiers & (shiftKey | rightShiftKey):
-            mapped_modifiers |= MOD_SHIFT
+            mapped_modifiers |= key.MOD_SHIFT
         if modifiers & (controlKey | rightControlKey):
-            mapped_modifiers |= MOD_CTRL
+            mapped_modifiers |= key.MOD_CTRL
         if modifiers & (optionKey | rightOptionKey):
-            mapped_modifiers |= MOD_OPTION
+            mapped_modifiers |= key.MOD_OPTION
         if modifiers & alphaLock:
-            mapped_modifiers |= MOD_CAPSLOCK
+            mapped_modifiers |= key.MOD_CAPSLOCK
         if modifiers & cmdKey:
-            mapped_modifiers |= MOD_COMMAND
+            mapped_modifiers |= key.MOD_COMMAND
 
         return mapped_modifiers
 
@@ -799,15 +799,15 @@ class CarbonWindow(BaseWindow):
         modifiers = modifiers.value
         deltas = modifiers ^ self._current_modifiers
         for mask, key in [
-            (controlKey, K_LCTRL),
-            (shiftKey, K_LSHIFT),
-            (cmdKey, K_LCOMMAND),
-            (optionKey, K_LOPTION),
-            (rightShiftKey, K_RSHIFT),
-            (rightOptionKey, K_ROPTION),
-            (rightControlKey, K_RCTRL),
-            (alphaLock, K_CAPSLOCK),
-            (numLock, K_NUMLOCK)]:
+            (controlKey, key.LCTRL),
+            (shiftKey, key.LSHIFT),
+            (cmdKey, key.LCOMMAND),
+            (optionKey, key.LOPTION),
+            (rightShiftKey, key.RSHIFT),
+            (rightOptionKey, key.ROPTION),
+            (rightControlKey, key.RCTRL),
+            (alphaLock, key.CAPSLOCK),
+            (numLock, key.NUMLOCK)]:
             if deltas & mask:
                 if modifiers & mask:
                     self.dispatch_event(EVENT_KEY_PRESS, 

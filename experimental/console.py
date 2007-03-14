@@ -36,16 +36,16 @@ class Console(object):
 
     def on_key_press(self, symbol, modifiers):
         # TODO cursor control / line editing
-        if modifiers & key.MOD_CTRL and symbol == key.K_C:
+        if modifiers & key.key.MOD_CTRL and symbol == key.key.C:
             self.buffer = ''
             self.pre_buffer = ''
             return
-        if symbol == key.K_ENTER:
+        if symbol == key.key.ENTER:
             self.write('%s%s\n' % (self.get_prompt(), self.buffer))
             self.execute(self.pre_buffer + self.buffer)
             self.buffer = ''
             return
-        if symbol == key.K_BACKSPACE:
+        if symbol == key.key.BACKSPACE:
             self.buffer = self.buffer[:-1]
             return
         return EVENT_UNHANDLED

@@ -16,7 +16,7 @@ import unittest
 from pyglet.gl import *
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 
 class WINDOW_TEST_STYLE_BORDERLESS(unittest.TestCase):
     def test_style_borderless(self):

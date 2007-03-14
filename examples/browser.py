@@ -21,7 +21,7 @@ from pyglet.ext.layout import *
 from pyglet.ext.layout.locator import *
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 from pyglet.clock import *
 
 from pyglet.font import *
@@ -42,23 +42,23 @@ offset_top = 0
 layout_height = 0
 
 def on_key_press(symbol, modifiers):
-    if symbol == K_V:
+    if symbol == key.V:
         print repr(layout.locator.get_default_stream().read())
-    if symbol == K_E:
+    if symbol == key.E:
         layout.document.root.pprint()
-    if symbol == K_F:
+    if symbol == key.F:
         layout.view._root_frame.pprint()
-    if symbol == K_W:
+    if symbol == key.W:
         layout.view._root_frame.pprint_flowed()
-    if symbol == K_S:
+    if symbol == key.S:
         layout.view._root_frame.pprint_style()
-    if symbol == K_LEFT and modifiers & MOD_CTRL:
+    if symbol == key.LEFT and modifiers & key.key.MOD_CTRL:
         window.width -= 1
-    if symbol == K_LEFT and modifiers & MOD_SHIFT:
+    if symbol == key.LEFT and modifiers & key.key.MOD_SHIFT:
         window.width -= 10
-    if symbol == K_RIGHT and modifiers & MOD_CTRL:
+    if symbol == key.RIGHT and modifiers & key.key.MOD_CTRL:
         window.width += 1
-    if symbol == K_RIGHT and modifiers & MOD_SHIFT:
+    if symbol == key.RIGHT and modifiers & key.key.MOD_SHIFT:
         window.width += 10
     print 'window size is %dx%d' % (window.width, window.height)
     return True

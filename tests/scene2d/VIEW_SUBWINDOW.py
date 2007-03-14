@@ -20,7 +20,7 @@ from render_base import RenderBase
 import pyglet.ext.scene2d
 from pyglet.event import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 from pyglet.ext.scene2d.debug import gen_rect_map
 
 class OOBTest(RenderBase):

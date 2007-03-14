@@ -16,7 +16,7 @@ import unittest
 from pyglet.gl import *
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 
 class TEST_WINDOW_STYLE_TOOL(unittest.TestCase):
     def test_style_tool(self):

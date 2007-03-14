@@ -17,7 +17,7 @@ import unittest
 
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 from pyglet.gl import *
 
 class WINDOW_OPEN(unittest.TestCase):
@@ -28,7 +28,7 @@ class WINDOW_OPEN(unittest.TestCase):
         return Window(200, 200)
 
     def on_key_press(self, key, modifiers):
-        if key == K_V:
+        if key == key.V:
             vsync = not (self.w1.get_vsync() or False)
             self.w1.set_vsync(vsync)
             print 'vsync is %r' % self.w1.get_vsync()

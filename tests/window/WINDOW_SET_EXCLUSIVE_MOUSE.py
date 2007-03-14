@@ -25,12 +25,12 @@ import unittest
 
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 
 class WINDOW_SET_EXCLUSIVE_MOUSE(unittest.TestCase):
     def on_key_press(self, symbol, modifiers):
-        if symbol == K_E:
-            exclusive = not (modifiers & MOD_SHIFT)
+        if symbol == key.E:
+            exclusive = not (modifiers & key.MOD_SHIFT)
             self.w.set_exclusive_mouse(exclusive)
             print 'Exclusive mouse is now %r' % exclusive
 

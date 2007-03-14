@@ -15,7 +15,7 @@ from pyglet.clock import *
 from pyglet.image import *
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 
 
 def on_resize(width, height):
@@ -26,13 +26,13 @@ def on_resize(width, height):
 
 def on_key_press(symbol, modifiers):
     global target
-    if symbol == K_R:
+    if symbol == key.R:
         target[0] = 1 - target[0]
-    if symbol == K_G:
+    if symbol == key.G:
         target[1] = 1 - target[1]
-    if symbol == K_B:
+    if symbol == key.B:
         target[2] = 1 - target[2]
-    if symbol == K_S:
+    if symbol == key.S:
         target[3] = 1 - target[3]
 
     print_target()

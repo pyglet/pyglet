@@ -12,7 +12,7 @@ import sys
 from pyglet.gl import *
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 from pyglet.clock import *
 
 from pyglet.font import *
@@ -103,7 +103,7 @@ def on_text(text):
 window.push_handlers(on_text)
 
 def on_key_press(symbol, modifiers):
-    if symbol == K_BACKSPACE:
+    if symbol == key.BACKSPACE:
         interp.backspace()
     else:
         return True

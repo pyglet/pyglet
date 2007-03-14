@@ -3,7 +3,7 @@ import math
 
 import pyglet.window
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 import pyglet.clock
 from pyglet.ext.euclid import Vector2, Matrix3
 from pyglet.ext.scene2d import *
@@ -11,9 +11,9 @@ from pyglet.ext.scene2d import *
 class CarSprite(RotatableSprite):
     def update(self, dt):
         # handle input and move the car
-        self.angle += (keyboard[K_LEFT] - keyboard[K_RIGHT]) * 150 * dt
+        self.angle += (keyboard[key.LEFT] - keyboard[key.RIGHT]) * 150 * dt
         speed = self.properties.get('speed', 0)
-        speed += (keyboard[K_UP] - keyboard[K_DOWN]) * 75 
+        speed += (keyboard[key.UP] - keyboard[key.DOWN]) * 75 
         if speed > 300: speed = 300
         if speed < -150: speed = -150
         self.properties['speed'] = speed

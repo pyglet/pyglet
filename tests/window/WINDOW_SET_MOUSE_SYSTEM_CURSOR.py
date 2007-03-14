@@ -21,7 +21,7 @@ import unittest
 
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 from pyglet.gl import *
 
 class WINDOW_SET_MOUSE_PLATFORM_CURSOR(unittest.TestCase):
@@ -48,9 +48,9 @@ class WINDOW_SET_MOUSE_PLATFORM_CURSOR(unittest.TestCase):
             CURSOR_WAIT,
             CURSOR_WAIT_ARROW,
         ]
-        if symbol == K_RIGHT:
+        if symbol == key.RIGHT:
             self.i = (self.i + 1) % len(names)
-        elif symbol == K_LEFT:
+        elif symbol == key.LEFT:
             self.i = (self.i - 1) % len(names)
         cursor = self.w.get_system_mouse_cursor(names[self.i])
         self.w.set_mouse_cursor(cursor)

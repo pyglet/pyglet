@@ -27,7 +27,7 @@ import warnings
 
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 
 from pyglet.gl import *
 from pyglet.gl import gl_info
@@ -922,17 +922,17 @@ class XlibWindow(BaseWindow):
     def _translate_modifiers(state):
         modifiers = 0
         if state & xlib.ShiftMask:
-            modifiers |= MOD_SHIFT
+            modifiers |= key.MOD_SHIFT
         if state & xlib.ControlMask:
-            modifiers |= MOD_CTRL
+            modifiers |= key.MOD_CTRL
         if state & xlib.LockMask:
-            modifiers |= MOD_CAPSLOCK
+            modifiers |= key.MOD_CAPSLOCK
         if state & xlib.Mod1Mask:
-            modifiers |= MOD_ALT
+            modifiers |= key.MOD_ALT
         if state & xlib.Mod2Mask:
-            modifiers |= MOD_NUMLOCK
+            modifiers |= key.MOD_NUMLOCK
         if state & xlib.Mod4Mask:
-            modifiers |= MOD_WINDOWS
+            modifiers |= key.MOD_WINDOWS
         return modifiers
 
     # Event handlers

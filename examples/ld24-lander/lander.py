@@ -8,7 +8,7 @@ import math
 import pyglet.window
 from pyglet.ext.resource import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 from pyglet.clock import *
 from pyglet.ext.scene2d import *
 from pyglet.ext.scene2d.textsprite import *
@@ -18,9 +18,9 @@ from pyglet.ext.layout import *
 class RocketSprite(Sprite):
     def update(self, dt):
         p = self.properties
-        p['dx'] += (keyboard[K_RIGHT] - keyboard[K_LEFT]) * 25 * dt
+        p['dx'] += (keyboard[key.RIGHT] - keyboard[key.LEFT]) * 25 * dt
         p['dx'] = min(300, max(-300, p['dx']))
-        if keyboard[K_SPACE]:
+        if keyboard[key.SPACE]:
             if flame not in effectlayer.sprites:
                 effectlayer.sprites.append(flame)
             p['dy'] += 50 * dt
@@ -179,7 +179,7 @@ def menu():
     while not w.has_exit:
         dt = clock.tick()
         w.dispatch_events()
-        if keyboard[K_SPACE]: return True
+        if keyboard[key.SPACE]: return True
         glClear(GL_COLOR_BUFFER_BIT)
         layout.draw()
         w.flip()

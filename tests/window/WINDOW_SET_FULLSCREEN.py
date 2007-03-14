@@ -20,15 +20,15 @@ import unittest
 
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 from pyglet.gl import *
 
 class WINDOW_SET_FULLSCREEN(unittest.TestCase):
     def on_key_press(self, symbol, modifiers):
-        if symbol == K_F:
+        if symbol == key.F:
             print 'Setting fullscreen.'
             self.w.set_fullscreen(True)
-        elif symbol == K_G:
+        elif symbol == key.G:
             print 'Leaving fullscreen.'
             self.w.set_fullscreen(False)
 

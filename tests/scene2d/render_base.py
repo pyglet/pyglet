@@ -12,7 +12,7 @@ import unittest
 from pyglet.gl import *
 import pyglet.window
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 import pyglet.clock
 from pyglet.ext.scene2d import *
 from pyglet.ext.scene2d.drawable import ScaleEffect
@@ -52,8 +52,8 @@ class RenderBase(unittest.TestCase):
         while not self.w.has_exit:
             clock.tick()
             self.w.dispatch_events()
-            self.view.fx += (self.keyboard[K_RIGHT] - self.keyboard[K_LEFT]) * 5
-            self.view.fy += (self.keyboard[K_UP] - self.keyboard[K_DOWN]) * 5
+            self.view.fx += (self.keyboard[key.RIGHT] - self.keyboard[key.LEFT]) * 5
+            self.view.fy += (self.keyboard[key.UP] - self.keyboard[key.DOWN]) * 5
             if self.marker is not None:
                 self.marker.x = self.view.fx
                 self.marker.y = self.view.fy

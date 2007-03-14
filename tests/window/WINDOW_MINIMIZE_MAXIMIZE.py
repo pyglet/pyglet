@@ -18,14 +18,14 @@ import unittest
 
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 
 class WINDOW_MINIMIZE_MAXIMIZE(unittest.TestCase):
     def on_key_press(self, symbol, modifiers):
-        if symbol == K_X:
+        if symbol == key.X:
             self.w.maximize()
             print 'Window maximized.'
-        elif symbol == K_N:
+        elif symbol == key.N:
             self.w.minimize()
             print 'Window minimized.'
 

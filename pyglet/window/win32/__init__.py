@@ -16,7 +16,7 @@ if sys.platform not in ('cygwin', 'win32'):
 
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 from pyglet.window.win32.constants import *
 from pyglet.window.win32.key import *
 from pyglet.window.win32.types import *
@@ -615,17 +615,17 @@ class Win32Window(BaseWindow):
     def _get_modifiers(self, key_lParam=0):
         modifiers = 0
         if _user32.GetKeyState(VK_SHIFT) & 0xff00:
-            modifiers |= MOD_SHIFT
+            modifiers |= key.MOD_SHIFT
         if _user32.GetKeyState(VK_CONTROL) & 0xff00:
-            modifiers |= MOD_CTRL
+            modifiers |= key.MOD_CTRL
         if _user32.GetKeyState(VK_LWIN) & 0xff00:
-            modifiers |= MOD_WINDOWS
+            modifiers |= key.MOD_WINDOWS
         if _user32.GetKeyState(VK_CAPITAL) & 0x00ff:    # toggle
-            modifiers |= MOD_CAPSLOCK
+            modifiers |= key.MOD_CAPSLOCK
         if _user32.GetKeyState(VK_NUMLOCK) & 0x00ff:    # toggle
-            modifiers |= MOD_NUMLOCK
+            modifiers |= key.MOD_NUMLOCK
         if key_lParam & (1 << 29):
-            modifiers |= MOD_ALT
+            modifiers |= key.MOD_ALT
         return modifiers
 
     @staticmethod
@@ -648,11 +648,11 @@ class Win32Window(BaseWindow):
 
         symbol = keymap.get(wParam, None)
         if symbol:
-            if symbol == K_LCTRL and lParam & (1 << 24):
-                symbol = K_RCTRL
-            if symbol == K_LALT and lParam & (1 << 24):
-                symbol = K_RALT
-            elif symbol == K_LSHIFT:
+            if symbol == key.LCTRL and lParam & (1 << 24):
+                symbol = key.RCTRL
+            if symbol == key.LALT and lParam & (1 << 24):
+                symbol = key.RALT
+            elif symbol == key.LSHIFT:
                 pass # TODO: some magic with getstate to find out if it's the
                      # right or left shift key. 
             

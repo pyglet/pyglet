@@ -5,7 +5,7 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-import pyglet.window.key
+from pyglet.window import key
 from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED, EventDispatcher
 
 class WindowEventDispatcher(EventDispatcher):
@@ -45,20 +45,20 @@ MOUSE_RIGHT_BUTTON =  1 << 2
 
 def _modifiers_to_string(modifiers):
     mod_names = []
-    if modifiers & pyglet.window.key.MOD_SHIFT:
-        mod_names.append('MOD_SHIFT')
-    if modifiers & pyglet.window.key.MOD_CTRL:
-        mod_names.append('MOD_CTRL')
-    if modifiers & pyglet.window.key.MOD_ALT:
-        mod_names.append('MOD_ALT')
-    if modifiers & pyglet.window.key.MOD_CAPSLOCK:
-        mod_names.append('MOD_CAPSLOCK')
-    if modifiers & pyglet.window.key.MOD_NUMLOCK:
-        mod_names.append('MOD_NUMLOCK')
-    if modifiers & pyglet.window.key.MOD_COMMAND:
-        mod_names.append('MOD_COMMAND')
-    if modifiers & pyglet.window.key.MOD_OPTION:
-        mod_names.append('MOD_OPTION')
+    if modifiers & key.MOD_SHIFT:
+        mod_names.append('key.MOD_SHIFT')
+    if modifiers & key.MOD_CTRL:
+        mod_names.append('key.MOD_CTRL')
+    if modifiers & key.MOD_ALT:
+        mod_names.append('key.MOD_ALT')
+    if modifiers & key.MOD_CAPSLOCK:
+        mod_names.append('key.MOD_CAPSLOCK')
+    if modifiers & key.MOD_NUMLOCK:
+        mod_names.append('key.MOD_NUMLOCK')
+    if modifiers & key.MOD_COMMAND:
+        mod_names.append('key.MOD_COMMAND')
+    if modifiers & key.MOD_OPTION:
+        mod_names.append('key.MOD_OPTION')
     return '|'.join(mod_names)
 
 def _buttons_to_string(buttons):
@@ -72,7 +72,7 @@ def _buttons_to_string(buttons):
     return '|'.join(button_names)
 
 def _symbol_to_string(symbol):
-    return pyglet.window.key._key_names.get(symbol, str(symbol))
+    return key._key_names.get(symbol, str(symbol))
 
 # Does nothing, but shows prototypes.
 class EventHandler(object):
@@ -150,7 +150,7 @@ class ExitHandler(object):
     def on_close(self):
         self.has_exit = True
     def on_key_press(self, symbol, modifiers):
-        if symbol == pyglet.window.key.K_ESCAPE:
+        if symbol == key.ESCAPE:
             self.has_exit = True
         return EVENT_UNHANDLED
 
@@ -162,9 +162,9 @@ class KeyboardStateHandler(dict):
 
         >>> keyboard = KeyboardStateHandler()
         >>> # hold down the "up" arrow
-        >>> keyboard[K_UP]
+        >>> keyboard[key.UP]
         True
-        >>> keyboard[K_DOWN]
+        >>> keyboard[key.DOWN]
         False
     '''
     def on_key_press(self, symbol, modifiers):

@@ -4,19 +4,19 @@ import math
 import pyglet.window
 from pyglet.ext.resource import *
 from pyglet.window.event import *
-from pyglet.window.key import *
+from pyglet.window import key
 import pyglet.clock
 from pyglet.ext.scene2d import *
 
 class PlayerSprite(Sprite):
     bullets = []
     def update(self, dt):
-        self.x += (keyboard[K_RIGHT] - keyboard[K_LEFT]) * 200 * dt
+        self.x += (keyboard[key.RIGHT] - keyboard[key.LEFT]) * 200 * dt
         if self.left < 0: self.left = 0
         if self.right > w.width: self.right = w.width
         if self.properties['fired']:
             self.properties['fired'] = max(0, self.properties['fired'] - dt)
-        if keyboard[K_SPACE]:
+        if keyboard[key.SPACE]:
             if not self.properties['fired']:
                 self.properties['fired'] = 1
                 shot = Sprite.from_image(0, 0, r['player-bullet'])
