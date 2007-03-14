@@ -11,7 +11,7 @@ __version__ = '$Id$'
 from pyglet.gl import *
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.clock import *
+from pyglet import clock
 
 from pyglet.font import *
 from pyglet.ext.layout import *
@@ -232,7 +232,6 @@ def print_element(element, indent=''):
         print_element(child, '  ' + indent)
 
 glClearColor(1, 1, 1, 1)
-clock = Clock()
 
 window.set_visible()
 

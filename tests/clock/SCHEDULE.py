@@ -10,7 +10,7 @@ __version__ = '$Id: TICK.py 310 2006-12-23 15:56:35Z Alex.Holkner $'
 import time
 import unittest
 
-from pyglet.clock import *
+from pyglet import clock
 
 __noninteractive = True
 
@@ -22,7 +22,7 @@ class SCHEDULE(unittest.TestCase):
         self.callback_count += 1
 
     def test_schedule(self):
-        clock = Clock()
+        clock.set_default(clock.Clock())
         clock.schedule(self.callback)
 
         result = clock.tick()
@@ -39,7 +39,7 @@ class SCHEDULE(unittest.TestCase):
         self.assertTrue(result == self.callback_dt)
 
     def test_unschedule(self):
-        clock = Clock()
+        clock.set_default(clock.Clock())
         clock.schedule(self.callback)
 
         result = clock.tick()
@@ -51,38 +51,8 @@ class SCHEDULE(unittest.TestCase):
         result = clock.tick()
         self.assertTrue(self.callback_dt == None)
 
-    def test_default_schedule(self):
-        # simulate startup
-        Clock.set_default(None)
-        Clock.schedule(self.callback)
-        clock = Clock()
-
-        result = clock.tick()
-        self.assertTrue(result == self.callback_dt)
-        self.callback_dt = None
-        time.sleep(1)
-
-        result = clock.tick()
-        self.assertTrue(result == self.callback_dt)
-
-    def test_default_unschedule(self):
-        self.callback_dt = None
-
-        Clock.set_default(None)
-        Clock.schedule(self.callback)
-        Clock.unschedule(self.callback)
-        clock = Clock()
-
-        result = clock.tick()
-        self.assertTrue(self.callback_dt == None)
-        self.callback_dt = None
-        time.sleep(1)
-
-        result = clock.tick()
-        self.assertTrue(self.callback_dt == None)
-
     def test_schedule_multiple(self):
-        clock = Clock()
+        clock.set_default(clock.Clock())
         clock.schedule(self.callback)
         clock.schedule(self.callback)
         self.callback_count = 0
@@ -94,7 +64,7 @@ class SCHEDULE(unittest.TestCase):
         self.assertTrue(self.callback_count == 4)
 
     def test_schedule_multiple(self):
-        clock = Clock()
+        clock.set_default(clock.Clock())
         clock.schedule(self.callback)
         clock.schedule(self.callback)
         self.callback_count = 0

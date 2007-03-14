@@ -22,7 +22,7 @@ from pyglet.ext.layout.locator import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window import key
-from pyglet.clock import *
+from pyglet import clock
 
 from pyglet.font import *
 
@@ -79,7 +79,6 @@ window.push_handlers(layout)
 window.push_handlers(on_key_press=on_key_press)
 
 glClearColor(1, 1, 1, 1)
-clock = Clock()
 window.set_visible()
 
 while not window.has_exit:

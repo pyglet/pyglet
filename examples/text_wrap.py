@@ -10,7 +10,7 @@ from pyglet.gl import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window import key
-from pyglet.clock import *
+from pyglet import clock
 from pyglet.ext.scene2d.textsprite import *
 from pyglet.font import *
 
@@ -38,8 +38,7 @@ window.push_handlers(on_key_press)
 
 sprite = TextSprite(font, text, color=(0, 0, 0, 1))
 
-clock = Clock()
-fps = ClockDisplay()
+fps = clock.ClockDisplay()
 window.push_handlers(fps)
 
 glClearColor(1, 1, 1, 1)

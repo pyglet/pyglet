@@ -9,7 +9,7 @@ import pyglet.window
 from pyglet.ext.resource import *
 from pyglet.window.event import *
 from pyglet.window import key
-from pyglet.clock import *
+from pyglet import clock
 from pyglet.ext.scene2d import *
 from pyglet.ext.scene2d.textsprite import *
 from pyglet.font import *
@@ -69,7 +69,7 @@ class AnimatedSprite(Sprite):
 w = pyglet.window.Window(width=1280, height=1024, fullscreen=True)
 #w = pyglet.window.Window(width=800, height=600)
 w.set_exclusive_mouse()
-clock = Clock(fps_limit=30)
+clock.set_fps_limit(60)
 keyboard = KeyboardStateHandler()
 w.push_handlers(keyboard)
 
@@ -105,8 +105,7 @@ boom = AnimatedSprite.from_image(0, 0, frames[0],
     properties=dict(frame=0, t=0, frames=frames))
 clock.schedule(boom.update)
 
-fps = ClockDisplay(color=(1., .5, .5, .5))
-clock.schedule(fps.update_text)
+fps = clock.ClockDisplay(color=(1., .5, .5, .5))
 
 effectlayer = SpriteLayer(5)
 rocketlayer = SpriteLayer(1, [rocket])

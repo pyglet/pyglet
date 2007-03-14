@@ -11,7 +11,7 @@ from ctypes import *
 from pyglet.gl import *
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.clock import *
+from pyglet import clock
 
 from pyglet.font import *
 from pyglet.ext.layout import *
@@ -126,7 +126,6 @@ layout.push_handlers(on_mouse_press)
 
 glClearColor(1, 1, 1, 1)
 
-clock = Clock()
 window.set_visible()
 
 rate = 50

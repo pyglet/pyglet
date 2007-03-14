@@ -13,7 +13,7 @@ from pyglet.gl import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window import key
-from pyglet.clock import *
+from pyglet import clock
 
 from pyglet.font import *
 from pyglet.ext.layout import *
@@ -115,7 +115,6 @@ def blink_cursor(dt):
         del cursor.style['background-color']
     else:
         cursor.style['background-color'] = 'black'
-clock = Clock()
 clock.schedule_interval(blink_cursor, 0.5)
 
 glClearColor(1, 1, 1, 1)

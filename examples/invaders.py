@@ -5,7 +5,7 @@ import pyglet.window
 from pyglet.ext.resource import *
 from pyglet.window.event import *
 from pyglet.window import key
-import pyglet.clock
+from pyglet import clock
 from pyglet.ext.scene2d import *
 
 class PlayerSprite(Sprite):
@@ -45,7 +45,7 @@ class EnemySprite(Sprite):
 
 w = pyglet.window.Window(width=512, height=512)
 w.set_exclusive_mouse()
-clock = pyglet.clock.Clock(fps_limit=30)
+clock.set_fps_limit(30)
 
 # load the map and car and set up the view
 dirname = os.path.dirname(__file__)

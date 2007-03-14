@@ -13,7 +13,7 @@ from pyglet.gl import *
 import pyglet.window
 from pyglet.window.event import *
 from pyglet.window import key
-import pyglet.clock
+from pyglet import clock
 from pyglet.ext.scene2d import *
 from pyglet.ext.scene2d.drawable import ScaleEffect
 
@@ -48,7 +48,7 @@ class RenderBase(unittest.TestCase):
         self.view.sprites.append(self.marker)
 
     def run_test(self):
-        clock = pyglet.clock.Clock(fps_limit=30)
+        clock.set_fps_limit(30)
         while not self.w.has_exit:
             clock.tick()
             self.w.dispatch_events()

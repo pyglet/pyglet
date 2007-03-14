@@ -11,7 +11,7 @@ __version__ = '$Id: $'
 from ctypes import *
 
 from pyglet.gl.VERSION_1_1 import *
-from pyglet.clock import *
+from pyglet import clock
 from pyglet.image import *
 from pyglet.window import *
 from pyglet.window.event import *
@@ -52,7 +52,6 @@ def blend_to_color(r, g, b, s):
         (c_float * 4)(r + (1-s)*(1-r), g + (1-s)*(1-g), b + (1-s)*(1-b), 1))
     glColor3f(s*r, s*g, s*b)
 
-clock = Clock()
 w = Window()
 w.push_handlers(on_resize)
 w.push_handlers(on_key_press)

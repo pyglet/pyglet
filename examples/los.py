@@ -18,7 +18,7 @@ from pyglet import options
 options['gl_error_check'] = False
 
 from pyglet.window import Window
-from pyglet.clock import Clock
+from pyglet import clock
 from pyglet.ext.scene2d import *
 from pyglet.gl import *
 
@@ -51,7 +51,6 @@ for i in range(numsprites):
 view = FlatView.from_window(w, sprites=sprites)
 view.fx, view.fy = w.width/2, w.height/2
 
-clock = Clock()
 t = 0
 numframes = 0
 while 1:

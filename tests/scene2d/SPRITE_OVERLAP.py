@@ -18,7 +18,7 @@ import unittest
 from pyglet.gl import glClear
 import pyglet.window
 import pyglet.window.event
-import pyglet.clock
+from pyglet import clock
 from pyglet.ext.scene2d import Sprite, Image2d, FlatView
 from pyglet.ext.scene2d.image import TintEffect
 from pyglet.ext.scene2d.camera import FlatCamera
@@ -47,7 +47,7 @@ class SpriteOverlapTest(unittest.TestCase):
         view = FlatView(0, 0, 320, 320, sprites=[ball1, ball2])
         view.fx, view.fy = 160, 160
 
-        clock = pyglet.clock.Clock(fps_limit=30)
+        clock.set_fps_limit(60)
         e = TintEffect((.5, 1, .5, 1))
         while not w.has_exit:
             clock.tick()

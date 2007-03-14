@@ -4,12 +4,11 @@ from ctypes import *
 from exceptions import *
 import random
 
-# disable error checking to make this code work :)
+# disable error checking (python -O) to make this code work :)
 from pyglet import options
-options['gl_error_check'] = True
 
 import pyglet.window
-import pyglet.clock
+from pyglet import clock
 from pyglet.shader import *
 from pyglet.window.event import *
 from pyglet.ext.model.geometric import *
@@ -855,7 +854,7 @@ def main():
     pass2=RenderDOFPass2()
 
     r = 0
-    clk = pyglet.clock.Clock(60)
+    clk = clock.Clock(60)
     while not window.has_exit:
         clk.tick()
 

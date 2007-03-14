@@ -27,7 +27,7 @@ import sys, getopt, os
 import pyglet.ext.scene2d
 import pyglet.window
 import pyglet.window.event
-import pyglet.clock
+from pyglet import clock
 import pyglet.image
 
 from pyglet.ext.scene2d.debug import gen_hex_map, gen_rect_map, gen_recthex_map
@@ -109,7 +109,7 @@ class SaveHandler:
         image.save(fn)
 w.push_handlers(SaveHandler())
 
-clock = pyglet.clock.Clock(fps_limit=10)
+clock.set_fps_limit(10)
 while not w.has_exit:
     clock.tick()
     w.dispatch_events()

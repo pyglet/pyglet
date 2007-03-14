@@ -9,13 +9,14 @@ __version__ = '$Id$'
 import time
 import unittest
 
-from pyglet.clock import *
+from pyglet import clock
 
 __noninteractive = True
 
 class FPS_LIMIT(unittest.TestCase):
     def test_fps_limit(self):
-        clock = Clock(20)
+        clock.set_default(clock.Clock())
+        clock.set_fps_limit(20)
         self.assertTrue(clock.get_fps() == 0)
 
         t1 = time.time()

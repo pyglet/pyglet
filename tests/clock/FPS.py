@@ -10,13 +10,13 @@ __version__ = '$Id$'
 import time
 import unittest
 
-from pyglet.clock import *
+from pyglet import clock
 
 __noninteractive = True
 
 class FPS(unittest.TestCase):
     def test_fps(self):
-        clock = Clock()
+        clock.set_default(clock.Clock())
         self.assertTrue(clock.get_fps() == 0)
         for i in range(10):
             time.sleep(0.2)

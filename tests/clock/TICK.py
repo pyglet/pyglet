@@ -10,13 +10,13 @@ __version__ = '$Id$'
 import time
 import unittest
 
-from pyglet.clock import *
+from pyglet import clock
 
 __noninteractive = True
 
 class TICK(unittest.TestCase):
     def test_tick(self):
-        clock = Clock()
+        clock.set_default(clock.Clock())
         result = clock.tick()
         self.assertTrue(result == 0)
         time.sleep(1)

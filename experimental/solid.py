@@ -80,11 +80,10 @@ if __name__ == '__main__':
         return (random() * (max - min) + min)
 
     from random import *
-    from pyglet.clock import *
+    from pyglet import clock
     from pyglet.window import *
     from pyglet.window.event import *
 
-    clock = Clock()
     w = Window()
     w.push_handlers(on_resize)
     on_resize(w.width, w.height)

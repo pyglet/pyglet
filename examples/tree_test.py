@@ -9,7 +9,7 @@ __version__ = '$Id: gl_tree_test.py 114 2006-10-22 09:46:11Z r1chardj0n3s $'
 import math
 import random
 from pyglet.window import *
-import pyglet.clock
+from pyglet import clock
 from ctypes import *
 from pyglet.window.event import *
 from pyglet.ext.model.geometric import tree_list
@@ -69,7 +69,7 @@ tree2 = Tree(n=10, r=False)
 w2.push_handlers(tree2)
 
 n = 0
-clock = pyglet.clock.Clock(fps_limit=30)
+clock.set_fps_limit(30)
 while not (w1.has_exit or w2.has_exit):
     clock.tick()
     n += 1

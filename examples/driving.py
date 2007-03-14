@@ -4,7 +4,7 @@ import math
 import pyglet.window
 from pyglet.window.event import *
 from pyglet.window import key
-import pyglet.clock
+from pyglet import clock
 from pyglet.ext.euclid import Vector2, Matrix3
 from pyglet.ext.scene2d import *
 
@@ -34,7 +34,7 @@ view = FlatView.from_window(w, layers=[m], sprites=[car])
 keyboard = KeyboardStateHandler()
 w.push_handlers(keyboard)
 
-clock = pyglet.clock.Clock(fps_limit=30)
+clock.set_fps_limit(30)
 clock.schedule(car.update)
 while not w.has_exit:
     dt = clock.tick()

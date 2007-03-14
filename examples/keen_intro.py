@@ -8,7 +8,7 @@ __version__ = '$Id$'
 
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.clock import *
+from pyglet import clock
 from pyglet.ext.scene2d.textsprite import *
 from pyglet.font import *
 
@@ -25,7 +25,7 @@ keen.x = -keen.width
 commander.dx = -(commander.width + width) / 10
 keen.dx = (keen.width + width) / 10 
 
-clock = Clock(fps_limit=30)
+clock.set_fps_limit(30)
 
 while not window.has_exit:
     window.dispatch_events()

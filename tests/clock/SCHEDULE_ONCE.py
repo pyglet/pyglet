@@ -10,7 +10,7 @@ __version__ = '$Id: TICK.py 310 2006-12-23 15:56:35Z Alex.Holkner $'
 import time
 import unittest
 
-from pyglet.clock import *
+from pyglet import clock
 
 __noninteractive = True
 
@@ -38,7 +38,7 @@ class SCHEDULE_ONCE(unittest.TestCase):
 
     def test_schedule_once(self):
         self.clear()
-        clock = Clock()
+        clock.set_default(clock.Clock())
         clock.schedule_once(self.callback_1, 0.1) 
         clock.schedule_once(self.callback_2, 0.35)
         clock.schedule_once(self.callback_3, 0.07)
@@ -49,41 +49,6 @@ class SCHEDULE_ONCE(unittest.TestCase):
         self.assertTrue(self.callback_1_count == 1)
         self.assertTrue(self.callback_2_count == 1)
         self.assertTrue(self.callback_3_count == 1)
-
-    def test_default_schedule_once(self):
-        self.clear()
-        # simulate startup
-        Clock.set_default(None)
-        Clock.schedule_once(self.callback_1, 0.1) 
-        Clock.schedule_once(self.callback_2, 0.35)
-        Clock.schedule_once(self.callback_3, 0.07)
-        clock = Clock()
-
-        t = 0
-        while t < 1:
-            t += clock.tick()
-        self.assertTrue(self.callback_1_count == 1)
-        self.assertTrue(self.callback_2_count == 1)
-        self.assertTrue(self.callback_3_count == 1)
-
-    def test_default_unschedule_once(self):
-        self.clear()
-        # simulate startup
-        Clock.set_default(None)
-        Clock.schedule_once(self.callback_1, 0.1) 
-        Clock.schedule_once(self.callback_2, 0.35)
-        Clock.schedule_once(self.callback_3, 0.07)
-        Clock.unschedule(self.callback_2)
-        clock = Clock()
-
-        t = 0
-        while t < 1:
-            t += clock.tick()
-        self.assertTrue(self.callback_1_count == 1)
-        self.assertTrue(self.callback_2_count == 0)
-        self.assertTrue(self.callback_3_count == 1)
-
-
 
 if __name__ == '__main__':
     unittest.main()
