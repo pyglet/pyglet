@@ -30,11 +30,11 @@ from pyglet.window.event import *
 from pyglet.window.key import *
 
 from pyglet.gl import *
-from pyglet.gl.gl_info import *
-from pyglet.gl.glu_info import *
+from pyglet.gl import gl_info
+from pyglet.gl import glu_info
 from pyglet.gl.glx import *
 from pyglet.gl.glxext_abi import *
-import pyglet.gl.glx_info
+from pyglet.gl import glx_info
 
 import pyglet.window.xlib.xlib
 from pyglet.window.xlib import cursorfont
@@ -183,7 +183,7 @@ class XlibPlatform(BasePlatform):
             if not display:
                 raise XlibException('Cannot connect to X server') 
             factory.set_x_display(display)
-            pyglet.gl.glx_info.set_display(display.contents)
+            glx_info.set_display(display.contents)
         return display
 
 class XlibDisplay(xlib.Display):
@@ -194,7 +194,7 @@ class XlibDisplay(xlib.Display):
 
     def get_glx_info(self):
         if not self._info:
-            self._info = pyglet.gl.glx_info.GLXInfo(self)
+            self._info = glx_info.GLXInfo(self)
         return self._info
 
     glx_info = property(get_glx_info)

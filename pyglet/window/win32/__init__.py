@@ -21,11 +21,11 @@ from pyglet.window.win32.constants import *
 from pyglet.window.win32.key import *
 from pyglet.window.win32.types import *
 from pyglet.gl import *
-from pyglet.gl.gl_info import *
-from pyglet.gl.glu_info import *
+from pyglet.gl import gl_info
+from pyglet.gl import glu_info
 from pyglet.gl.wgl import *
-from pyglet.gl.wglext_abi import *
-from pyglet.gl.wgl_info import *
+from pyglet.gl import wglext_abi
+from pyglet.gl import wgl_info
 
 _gdi32 = windll.gdi32
 _kernel32 = windll.kernel32

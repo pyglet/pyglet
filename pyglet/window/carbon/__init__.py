@@ -20,8 +20,8 @@ from pyglet.window.carbon.key import *
 from pyglet.window.carbon.types import *
 from pyglet.gl import *
 from pyglet.gl.agl import *
-from pyglet.gl.gl_info import *
-from pyglet.gl.glu_info import *
+from pyglet.gl import gl_info
+from pyglet.gl import glu_info
 
 class CarbonException(WindowException):
     pass
