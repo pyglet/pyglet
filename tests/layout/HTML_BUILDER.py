@@ -8,8 +8,8 @@ __version__ = '$Id$'
 
 import unittest
 
-from pyglet.layout.content import *
-from pyglet.layout.builders.htmlbuilder import *
+from pyglet.ext.layout.content import *
+from pyglet.ext.layout.builders.htmlbuilder import *
 
 class HTMLBuilderTest(unittest.TestCase):
     def check(self, test, expected):

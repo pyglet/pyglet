@@ -13,9 +13,9 @@ import os
 import xml.dom
 import xml.dom.minidom
 
-from pyglet.scene2d.image import Image2d, Drawable
-from pyglet.resource import Resource, register_factory
-from pyglet.scene2d.drawable import *
+from pyglet.ext.scene2d.image import Image2d, Drawable
+from pyglet.ext.resource import Resource, register_factory
+from pyglet.ext.scene2d.drawable import *
 
 
 @register_factory('tileset')

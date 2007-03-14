@@ -14,14 +14,14 @@ __version__ = '$Id$'
 import os
 import unittest
 from render_base import RenderBase
-import pyglet.scene2d
+import pyglet.ext.scene2d
 
 class MapLoadTest(RenderBase):
     def test_main(self):
         map_xml = os.path.join(os.path.dirname(__file__), 'hexmap.xml')
 
         self.init_window(256, 256)
-        self.set_map(pyglet.scene2d.RectMap.load_xml(map_xml, 'test'))
+        self.set_map(pyglet.ext.scene2d.RectMap.load_xml(map_xml, 'test'))
         self.view.allow_oob = False
         self.run_test()
 

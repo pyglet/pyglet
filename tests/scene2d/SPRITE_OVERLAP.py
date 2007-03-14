@@ -19,9 +19,9 @@ from pyglet.gl import glClear
 import pyglet.window
 import pyglet.window.event
 import pyglet.clock
-from pyglet.scene2d import Sprite, Image2d, FlatView
-from pyglet.scene2d.image import TintEffect
-from pyglet.scene2d.camera import FlatCamera
+from pyglet.ext.scene2d import Sprite, Image2d, FlatView
+from pyglet.ext.scene2d.image import TintEffect
+from pyglet.ext.scene2d.camera import FlatCamera
 
 ball_png = os.path.join(os.path.dirname(__file__), 'ball.png')
 

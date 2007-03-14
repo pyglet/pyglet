@@ -10,7 +10,7 @@ from math import *
 from ctypes import *
 
 from pyglet.gl import *
-from pyglet.euclid import *
+from pyglet.ext.euclid import *
 
 def FloatArray(*args):
     t = (c_float * len(args))

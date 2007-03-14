@@ -12,8 +12,8 @@ __version__ = '$Id$'
 
 import unittest
 from render_base import RenderBase
-import pyglet.scene2d
-from pyglet.scene2d.debug import gen_hex_map
+import pyglet.ext.scene2d
+from pyglet.ext.scene2d.debug import gen_hex_map
 
 class HexFlatDebugTest(RenderBase):
     def test_main(self):

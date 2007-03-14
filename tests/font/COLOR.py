@@ -9,7 +9,7 @@ __version__ = '$Id$'
 
 import unittest
 import base_text
-from pyglet.scene2d.textsprite import *
+from pyglet.ext.scene2d.textsprite import *
 
 class TEST_COLOR(base_text.TextTestBase):
     font_name = ''

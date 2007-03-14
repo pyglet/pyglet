@@ -9,13 +9,12 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from pyglet.gl import *
-from pyglet.layout import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.clock import *
 
 from pyglet.font import *
-from pyglet.layout import *
+from pyglet.ext.layout import *
 
 window = Window(visible=False, vsync=False, resizable=True)
 

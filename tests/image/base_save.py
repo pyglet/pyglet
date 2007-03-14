@@ -13,7 +13,7 @@ from os.path import dirname, join
 from pyglet.gl import *
 from pyglet.image import *
 from pyglet.image.codecs import *
-from pyglet.scene2d import *
+from pyglet.ext.scene2d import *
 from pyglet.window import *
 from pyglet.window.event import *
 

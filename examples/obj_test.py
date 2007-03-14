@@ -13,7 +13,7 @@ from pyglet.window.event import *
 
 from pyglet.gl import *
 from pyglet import clock
-from pyglet.model import obj
+from pyglet.ext.model import obj
 
 w1 = pyglet.window.Window(width=300, height=300)
 

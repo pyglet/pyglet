@@ -11,7 +11,7 @@ __version__ = '$Id$'
 
 
 from pyglet.gl import *
-from pyglet.scene2d.drawable import *
+from pyglet.ext.scene2d.drawable import *
 
 class SpriteLayer(object):
     '''Represents a group of sprites at the same z depth.

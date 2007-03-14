@@ -9,7 +9,7 @@ __version__ = '$Id$'
 from ctypes import *
 
 from pyglet.gl import *
-from pyglet.scene2d.sprite import Sprite
+from pyglet.ext.scene2d.sprite import Sprite
 from pyglet.font import GlyphString
 
 # TODO: inherit from Sprite

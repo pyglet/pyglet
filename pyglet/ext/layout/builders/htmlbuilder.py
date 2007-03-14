@@ -9,11 +9,11 @@ __version__ = '$Id$'
 from HTMLParser import HTMLParser
 from htmlentitydefs import entitydefs
 
-from pyglet.layout.content import *
-from pyglet.layout.css import *
-from pyglet.layout.builders import *
-from pyglet.layout.builders.htmlstylesheet import *
-from pyglet.layout.builders.xhtmlbuilder import *
+from pyglet.ext.layout.content import *
+from pyglet.ext.layout.css import *
+from pyglet.ext.layout.builders import *
+from pyglet.ext.layout.builders.htmlstylesheet import *
+from pyglet.ext.layout.builders.xhtmlbuilder import *
 
 __all__ = ['HTMLElement', 'HTMLBuilder']
 

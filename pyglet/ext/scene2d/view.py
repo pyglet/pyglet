@@ -11,10 +11,10 @@ Getting Started
 Creating a simple scene and displaying it:
 
     >>> import pyglet.window
-    >>> import pyglet.scene2d
-    >>> m = pyglet.scene2d.RectMap(32, 32, cells=gen_rect_map([[0]*4]*4, 32, 32)
+    >>> import pyglet.ext.scene2d
+    >>> m = pyglet.ext.scene2d.RectMap(32, 32, cells=gen_rect_map([[0]*4]*4, 32, 32)
     >>> w = pyglet.window.Window(width=m.pxw, height=m.pxh)
-    >>> v = pyglet.scene2d.FlatView.from_window(s, w, layers=[m])
+    >>> v = pyglet.ext.scene2d.FlatView.from_window(s, w, layers=[m])
     >>> v.debug((0,0))
     >>> w.flip()
 
@@ -37,7 +37,7 @@ The following are examples of attaching event handlers to Views::
     def on_mouse_press(objects, button, x, y, modifiers):
         ' The mouse has been clicked on the indicated objects. '
 
-The filters available in pyglet.scene2d.events module may be used to
+The filters available in pyglet.ext.scene2d.events module may be used to
 limit the cells or sprites for which events are generated.
 '''
 
@@ -47,10 +47,10 @@ __version__ = '$Id$'
 import operator
 
 from pyglet.event import EventDispatcher, EVENT_UNHANDLED
-from pyglet.scene2d.camera import FlatCamera
-from pyglet.scene2d.drawable import draw_many
-from pyglet.scene2d.map import Map
-from pyglet.scene2d.sprite import SpriteLayer
+from pyglet.ext.scene2d.camera import FlatCamera
+from pyglet.ext.scene2d.drawable import draw_many
+from pyglet.ext.scene2d.map import Map
+from pyglet.ext.scene2d.sprite import SpriteLayer
 from pyglet.gl import *
 
 class View(EventDispatcher):
@@ -74,12 +74,12 @@ EVENT_MOUSE_ENTER = View.register_event_type('on_mouse_enter')
 EVENT_MOUSE_LEAVE = View.register_event_type('on_mouse_leave')
 
 class FlatView(View):
-    '''Render a flat view of a pyglet.scene2d.Scene.
+    '''Render a flat view of a pyglet.ext.scene2d.Scene.
 
     Attributes:
 
-        scene           -- a pyglet.scene2d.Scene instance
-        camera          -- a pyglet.scene2d.FlatCamera instance
+        scene           -- a pyglet.ext.scene2d.Scene instance
+        camera          -- a pyglet.ext.scene2d.FlatCamera instance
         allow_oob       -- indicates whether the viewport will allow
                            viewing of out-of-bounds tile positions (ie.
                            for which there is no tile image). If set to

@@ -24,13 +24,13 @@ Press "s" to save the grid off a file.
 
 import sys, getopt, os
 
-import pyglet.scene2d
+import pyglet.ext.scene2d
 import pyglet.window
 import pyglet.window.event
 import pyglet.clock
 import pyglet.image
 
-from pyglet.scene2d.debug import gen_hex_map, gen_rect_map, gen_recthex_map
+from pyglet.ext.scene2d.debug import gen_hex_map, gen_rect_map, gen_recthex_map
 
 try:
     optlist, args = getopt.getopt(sys.argv[1:], 'x:r:s:foa:p:h:')
@@ -40,7 +40,7 @@ except getopt.GetoptError, error:
     sys.exit()
 
 size = (5, 5)
-renderer = pyglet.scene2d.FlatView
+renderer = pyglet.ext.scene2d.FlatView
 maptype = None
 filename = { 'r': 'flat', 'e': '5x5' }
 for opt, value in optlist:
@@ -63,14 +63,14 @@ for opt, value in optlist:
         size = map(int, value.split(','))
         filename['e'] = '%dx%d'%tuple(size)
     elif opt == '-f':
-        renderer = pyglet.scene2d.FlatView
+        renderer = pyglet.ext.scene2d.FlatView
         filename['r'] = 'flat'
     elif opt == '-o':
-        renderer = pyglet.scene2d.AxiometricView
+        renderer = pyglet.ext.scene2d.AxiometricView
         scale = (1, 1, 1)
         filename['r'] = 'iso'
     elif opt == '-a':
-        renderer = pyglet.scene2d.AxiometricView
+        renderer = pyglet.ext.scene2d.AxiometricView
         scale = map(float, value.split(','))
         filename['r'] = 'axio(%g,%g,%g)'%scale
 
@@ -94,7 +94,7 @@ pxw = m.pxw
 pxh = m.pxh
 w.set_size(width=pxw, height=pxh)
 w.set_visible()
-r = pyglet.scene2d.FlatView(0, 0, pxw, pxh, layers=[m])
+r = pyglet.ext.scene2d.FlatView(0, 0, pxw, pxh, layers=[m])
 
 class SaveHandler:
     def on_text(self, text):

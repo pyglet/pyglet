@@ -6,4 +6,4 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.layout.gl import *
+from pyglet.ext.layout.gl import *

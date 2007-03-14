@@ -10,14 +10,13 @@ from code import InteractiveInterpreter
 import sys
 
 from pyglet.gl import *
-from pyglet.layout import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *
 from pyglet.clock import *
 
 from pyglet.font import *
-from pyglet.layout import *
+from pyglet.ext.layout import *
 
 data = '''<?xml version="1.0"?>
 <html>

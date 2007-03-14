@@ -17,8 +17,8 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: xhtml.py 366 2007-01-02 07:48:00Z Alex.Holkner $'
 
 from pyglet.gl import *
-from pyglet.layout import *
-from pyglet.layout.locator import *
+from pyglet.ext.layout import *
+from pyglet.ext.layout.locator import *
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window.key import *

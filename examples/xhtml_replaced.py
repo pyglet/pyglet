@@ -14,8 +14,8 @@ from pyglet.window.event import *
 from pyglet.clock import *
 
 from pyglet.font import *
-from pyglet.layout import *
-from pyglet.layout.frame import *
+from pyglet.ext.layout import *
+from pyglet.ext.layout.frame import *
 
 data = '''<?xml version="1.0"?>
 <html>  
@@ -35,7 +35,7 @@ data = '''<?xml version="1.0"?>
     frames.</p>
 
     <p>Here we've created a custom replaced element tag: "&lt;cube&gt;":
-    <cube/>.  Layout is handled by pyglet.layout, and rendering is handled by
+    <cube/>.  Layout is handled by pyglet.ext.layout, and rendering is handled by
     the application.  Of course, the usual CSS properties can be applied:</p>
 
     <p><cube class="big" /></p>
@@ -52,7 +52,7 @@ class CubeDrawable(ReplacedElementDrawable):
     angle = 0
 
     def __init__(self):
-        from pyglet.model.geometric import cube_list
+        from pyglet.ext.model.geometric import cube_list
         self.cube = cube_list()
 
     def draw(self, frame, render_device, left, top, right, bottom):

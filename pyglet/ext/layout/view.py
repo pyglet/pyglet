@@ -8,8 +8,8 @@ Responsible for maintaining frame and style trees.
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.layout.content import *
-from pyglet.layout.frame import *
+from pyglet.ext.layout.content import *
+from pyglet.ext.layout.frame import *
 
 class DocumentView(DocumentListener):
     document = None

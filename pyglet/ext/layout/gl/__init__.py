@@ -8,17 +8,17 @@ __version__ = '$Id$'
 
 from pyglet.gl import *
 from pyglet.event import *
-from pyglet.layout.css import *
-from pyglet.layout.content import *
-from pyglet.layout.frame import *
-from pyglet.layout.locator import *
-from pyglet.layout.view import *
-from pyglet.layout.gl.device import *
-from pyglet.layout.gl.event import *
-from pyglet.layout.gl.image import *
-from pyglet.layout.builders.htmlbuilder import *
-from pyglet.layout.builders.xmlbuilder import *
-from pyglet.layout.builders.xhtmlbuilder import *
+from pyglet.ext.layout.css import *
+from pyglet.ext.layout.content import *
+from pyglet.ext.layout.frame import *
+from pyglet.ext.layout.locator import *
+from pyglet.ext.layout.view import *
+from pyglet.ext.layout.gl.device import *
+from pyglet.ext.layout.gl.event import *
+from pyglet.ext.layout.gl.image import *
+from pyglet.ext.layout.builders.htmlbuilder import *
+from pyglet.ext.layout.builders.xmlbuilder import *
+from pyglet.ext.layout.builders.xhtmlbuilder import *
 
 __all__ = ['Layout', 'select']
 

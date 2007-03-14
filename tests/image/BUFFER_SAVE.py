@@ -19,7 +19,7 @@ import unittest
 import base_save
 
 from pyglet.image import *
-from pyglet.scene2d import *
+from pyglet.ext.scene2d import *
 
 class TEST_BUFFER_SAVE(base_save.TestSave):
     def draw_original(self):

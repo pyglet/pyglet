@@ -12,7 +12,7 @@ from pyglet.window import *
 import pyglet.clock
 from ctypes import *
 from pyglet.window.event import *
-from pyglet.model.geometric import tree_list
+from pyglet.ext.model.geometric import tree_list
 
 from pyglet.gl import *
 

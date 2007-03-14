@@ -2,11 +2,11 @@ import os
 import math
 
 import pyglet.window
-from pyglet.resource import *
+from pyglet.ext.resource import *
 from pyglet.window.event import *
 from pyglet.window.key import *
 import pyglet.clock
-from pyglet.scene2d import *
+from pyglet.ext.scene2d import *
 
 class PlayerSprite(Sprite):
     bullets = []

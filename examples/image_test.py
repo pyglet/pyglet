@@ -5,7 +5,7 @@ import pyglet.window
 from pyglet.window.event import *
 from pyglet.gl import *
 from pyglet import clock
-from pyglet.scene2d import Image2d
+from pyglet.ext.scene2d import Image2d
 
 from ctypes import *
 

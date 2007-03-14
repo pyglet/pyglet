@@ -8,7 +8,7 @@ __version__ = '$Id$'
 
 import time
 
-from pyglet.layout import *
+from pyglet.ext.layout import *
 from pyglet.window import *
 
 window = Window(visible=False)

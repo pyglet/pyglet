@@ -2,13 +2,13 @@
 
 '''Describes document content (element) tree.  
 
-Use a module from pyglet.layout.builders to create the tree.
+Use a module from pyglet.ext.layout.builders to create the tree.
 '''
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.layout.css import *
+from pyglet.ext.layout.css import *
 
 __all__ = ['Document',
            'DocumentListener',

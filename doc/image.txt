@@ -10,8 +10,8 @@ modules for more sophisticated effects.
 pyglet can also save images; typically this is used for saving "screenshots"
 of a window, but can also be used as a handy image format conversion utility.
 
-Other pyglet packages rely on images; for example, `pyglet.sprite` and
-`pyglet.layout`.  They will typically require an instance of
+Other pyglet packages rely on images; for example, `pyglet.ext.scene2d` and
+`pyglet.ext.layout`.  They will typically require an instance of
 `AbstractImage`.  This chapter will describe how to work with these images,
 but does not cover any specific functionality provided by modules outside of
 `pyglet.image`.

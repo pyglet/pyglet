@@ -553,7 +553,7 @@ class ClockDisplay(object):
             from pyglet.font import load_font
             font = load_font('', 36, bold=True)
 
-        from pyglet.scene2d.textsprite import TextSprite
+        from pyglet.ext.scene2d.textsprite import TextSprite
         self.sprite = TextSprite(font, '', color=color, x=10, y=10)
 
         self.format = format

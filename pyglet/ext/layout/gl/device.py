@@ -11,9 +11,9 @@ import re
 
 from pyglet.gl import *
 import pyglet.font
-from pyglet.layout.base import *
-from pyglet.layout.frame import *
-from pyglet.layout.locator import *
+from pyglet.ext.layout.base import *
+from pyglet.ext.layout.frame import *
+from pyglet.ext.layout.locator import *
 from pyglet.image import *
 
 class GLRenderDevice(RenderDevice):

@@ -10,7 +10,7 @@ import unittest
 import sys
 
 from pyglet.gl import *
-from pyglet.scene2d.textsprite import *
+from pyglet.ext.scene2d.textsprite import *
 from pyglet.font import *
 from pyglet.window import *
 from pyglet.window.event import *
