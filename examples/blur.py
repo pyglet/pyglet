@@ -15,7 +15,7 @@ from pyglet.window.event import *
 from pyglet.model.geometric import *
 
 from pyglet.gl import *
-from pyglet.gl.gl_info import *
+from pyglet.gl import gl_info
 
 c_float4 = c_float * 4
 

@@ -16,8 +16,6 @@ from pyglet.gl.gl_info import *
 from pyglet.gl.wgl import *
 from pyglet.gl.wglext_abi import *
 
-__all__ = ['WGLInfo', 'wgl_info']
-
 class WGLInfoException(Exception):
     pass
 
@@ -35,5 +33,7 @@ class WGLInfo(object):
     def have_extension(self, extension):
         return extension in self.get_extensions()
 
-wgl_info = WGLInfo()
+_wgl_info = WGLInfo()
 
+get_extensions = _wgl_info.get_extensions
+have_extension = _wgl_info.have_extension

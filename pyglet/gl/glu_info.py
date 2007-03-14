@@ -4,7 +4,7 @@
 
 Usage::
 
-    from pyglet.gl.glu_info import glu_info
+    from pyglet.gl import glu_info
 
     if glu_info.have_extension('GLU_EXT_nurbs_tessellator'):
         # ...
@@ -26,8 +26,6 @@ created.
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
-
-__all__ = ['GLUInfo', 'glu_info']
 
 from ctypes import *
 import warnings
@@ -71,4 +69,10 @@ class GLUInfo(object):
 
 # Single instance useful for apps with only a single context (or all contexts
 # have same GLU driver, common case). 
-glu_info = GLUInfo()
+_glu_info = GLUInfo()
+
+set_active_context = _glu_info.set_active_context
+have_version = _glu_info.have_version
+get_version = _glu_info.get_version
+have_extension = _glu_info.have_extension
+get_extensions = _glu_info.get_extensions

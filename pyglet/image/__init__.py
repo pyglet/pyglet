@@ -105,7 +105,7 @@ from math import ceil
 from StringIO import StringIO
 
 from pyglet.gl import *
-from pyglet.gl.gl_info import *
+from pyglet.gl import gl_info
 from pyglet.window import *
 
 class ImageException(Exception):

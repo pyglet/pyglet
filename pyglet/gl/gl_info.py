@@ -4,7 +4,7 @@
 
 Usage::
     
-    from pyglet.gl.gl_info import gl_info
+    from pyglet.gl import gl_info
 
     if gl_info.have_extension('GL_NV_register_combiners'):
         # ...
@@ -30,8 +30,6 @@ from ctypes import *
 import warnings
 
 from pyglet.gl.gl import *
-
-__all__ = ['GLInfo', 'gl_info']
 
 class GLInfo(object):
     have_context = False
@@ -85,4 +83,12 @@ class GLInfo(object):
 
 # Single instance useful for apps with only a single context (or all contexts
 # have same GL driver, common case). 
-gl_info = GLInfo()
+_gl_info = GLInfo()
+
+set_active_context = _gl_info.set_active_context
+have_extension = _gl_info.have_extension
+get_extensions = _gl_info.get_extensions
+get_version = _gl_info.get_version
+have_version = _gl_info.have_version
+get_renderer = _gl_info.get_renderer
+get_vendor = _gl_info.get_vendor

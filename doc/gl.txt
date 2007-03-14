@@ -115,16 +115,14 @@ implemented by the current driver.  Typically this is done using
 ``glGetString(GL_EXTENSIONS)``, but pyglet has a convenience module,
 `pyglet.gl.gl_info` that does this for you::
 
-    from pyglet.gl.gl_info import *
+    from pyglet.gl import gl_info
 
     if gl_info.have_extension('GL_ARB_shadow'):
         # ... do shadow-related code.
     else:
         # ... raise an exception, or use a fallback method
 
-Note that the module ``gl_info`` exports an object also named ``gl_info``,
-through which you interact.  You can also easily check the version of
-OpenGL::
+You can also easily check the version of OpenGL::
 
     if gl_info.have_version(1,5):
         # We can assume all OpenGL 1.5 functions are implemented.
