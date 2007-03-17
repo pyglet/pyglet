@@ -10,7 +10,7 @@ from ctypes import *
 from sys import byteorder
 
 from pyglet.font import base
-from pyglet import image
+import pyglet.image
 from pyglet.window.carbon import carbon 
 from pyglet.window.carbon import _create_cfstring
 from pyglet.window.carbon.types import Rect, CGRect
@@ -209,7 +209,7 @@ class CarbonGlyphRenderer(base.GlyphRenderer):
         # glyph upside-down and flip the tex_coords.  Note region used
         # to start at top of glyph image.
         pitch = int(4 * self._bitmap_rect.size.width)
-        image = pyget.image.ImageData(image_width, 
+        image = pyglet.image.ImageData(image_width, 
             self._bitmap_rect.size.height, 'RGBA', self._bitmap, pitch)
         skip_rows = int(self._bitmap_rect.size.height - image_height)
         image = image.get_region(0, skip_rows, image.width, image_height)
