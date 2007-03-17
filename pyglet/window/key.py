@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''Key constants for pyglet.window.
+'''Key constants and utilities for pyglet.window.
 
 Usage::
 
@@ -9,7 +9,7 @@ Usage::
 
     window = Window()
 
-    @event(window)
+    @window.event
     def on_key_press(symbol, modifiers):
         # Symbolic names:
         if symbol == key.RETURN:
@@ -30,6 +30,78 @@ Usage::
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
+
+class KeyboardStateHandler(dict):
+    '''Simple handler that tracks the state of keys on the keyboard. If a
+    key is pressed then this handler holds a True value for it.
+
+    For example::
+
+        >>> win = window.Window
+        >>> keyboard = key.KeyboardStateHandler()
+        >>> win.set_handlers(keyboard)
+
+        # Hold down the "up" arrow...
+
+        >>> keyboard[key.UP]
+        True
+        >>> keyboard[key.DOWN]
+        False
+
+    '''
+    def on_key_press(self, symbol, modifiers):
+        self[symbol] = True
+    def on_key_release(self, symbol, modifiers):
+        self[symbol] = False
+    def __getitem__(self, key):
+        return self.get(key, False)
+
+def modifiers_string(modifiers):
+    '''Return a string describing a set of modifiers.
+
+    Example::
+
+        >>> modifiers_string(MOD_SHIFT | MOD_CTRL)
+        'MOD_SHIFT|MOD_CTRL'
+
+    :Parameters:
+        `modifiers` : int
+            Bitwise combination of modifier constants.
+
+    :rtype: str
+    '''
+    mod_names = []
+    if modifiers & MOD_SHIFT:
+        mod_names.append('MOD_SHIFT')
+    if modifiers & MOD_CTRL:
+        mod_names.append('MOD_CTRL')
+    if modifiers & MOD_ALT:
+        mod_names.append('MOD_ALT')
+    if modifiers & MOD_CAPSLOCK:
+        mod_names.append('MOD_CAPSLOCK')
+    if modifiers & MOD_NUMLOCK:
+        mod_names.append('MOD_NUMLOCK')
+    if modifiers & MOD_COMMAND:
+        mod_names.append('MOD_COMMAND')
+    if modifiers & MOD_OPTION:
+        mod_names.append('MOD_OPTION')
+    return '|'.join(mod_names)
+
+def symbol_string(symbol):
+    '''Return a string describing a key symbol.
+
+    Example::
+        
+        >>> symbol_string(BACKSPACE)
+        'BACKSPACE'
+
+    :Parameters:
+        `symbol` : int
+            Symbolic key constant.
+
+    :rtype: str
+    '''
+    return _key_names.get(symbol, str(symbol))
 
 # Modifier mask constants
 MOD_SHIFT       = 1 << 0

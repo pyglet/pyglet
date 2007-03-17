@@ -15,13 +15,12 @@ __version__ = '$Id: $'
 
 import time
 import unittest
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
 
 class WINDOW_CAPTION(unittest.TestCase):
     def test_caption(self):
-        w1 = Window(200, 200)
-        w2 = Window(200, 200)
+        w1 = window.Window(200, 200)
+        w2 = window.Window(200, 200)
         count = 1
         w1.set_caption('Window caption %d' % count)
         w2.set_caption(u'\u00bfHabla espa\u00f1ol?')

@@ -1,12 +1,16 @@
 #!/usr/bin/env python
-'''
+
+'''Events for `pyglet.window`.
+
+See `WindowEventHandler` for a description of the window event types.
 '''
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from pyglet.window import key
-from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED, EventDispatcher
+from pyglet.window import mouse
+from pyglet.event import EventDispatcher
 
 class WindowEventDispatcher(EventDispatcher):
     pass
@@ -38,229 +42,365 @@ EVENT_CONTEXT_LOST = \
 EVENT_CONTEXT_STATE_LOST = \
     WindowEventDispatcher.register_event_type('on_context_state_lost')
 
-# symbolic names for the mouse buttons
-MOUSE_LEFT_BUTTON =   1 << 0
-MOUSE_MIDDLE_BUTTON = 1 << 1
-MOUSE_RIGHT_BUTTON =  1 << 2
+class WindowEventHandler(object):
+    '''The abstract window event handler.
 
-def _modifiers_to_string(modifiers):
-    mod_names = []
-    if modifiers & key.MOD_SHIFT:
-        mod_names.append('key.MOD_SHIFT')
-    if modifiers & key.MOD_CTRL:
-        mod_names.append('key.MOD_CTRL')
-    if modifiers & key.MOD_ALT:
-        mod_names.append('key.MOD_ALT')
-    if modifiers & key.MOD_CAPSLOCK:
-        mod_names.append('key.MOD_CAPSLOCK')
-    if modifiers & key.MOD_NUMLOCK:
-        mod_names.append('key.MOD_NUMLOCK')
-    if modifiers & key.MOD_COMMAND:
-        mod_names.append('key.MOD_COMMAND')
-    if modifiers & key.MOD_OPTION:
-        mod_names.append('key.MOD_OPTION')
-    return '|'.join(mod_names)
+    This class contains all method definitions for window event handlers.  The
+    methods do nothing; this class merely serves as documentation for the
+    arguments that each handler expects.
+    '''
 
-def _buttons_to_string(buttons):
-    button_names = []
-    if buttons & MOUSE_LEFT_BUTTON:
-        button_names.append('MOUSE_LEFT_BUTTON')
-    if buttons & MOUSE_MIDDLE_BUTTON:
-        button_names.append('MOUSE_MIDDLE_BUTTON')
-    if buttons & MOUSE_RIGHT_BUTTON:
-        button_names.append('MOUSE_RIGHT_BUTTON')
-    return '|'.join(button_names)
-
-def _symbol_to_string(symbol):
-    return key._key_names.get(symbol, str(symbol))
-
-# Does nothing, but shows prototypes.
-class EventHandler(object):
     def on_key_press(self, symbol, modifiers):
-        pass
+        '''A key on the keyboard was pressed (and held down).
+
+        :Parameters:
+            `symbol` : int
+                The key symbol pressed.
+            `modifiers` : int
+                Bitwise combination of the key modifiers active.
+
+        '''
 
     def on_key_release(self, symbol, modifiers):
-        pass
+        '''A key on the keyboard was released.
+
+        :Parameters:
+            `symbol` : int
+                The key symbol pressed.
+            `modifiers` : int
+                Bitwise combination of the key modifiers active.
+
+        '''
 
     def on_text(self, text):
-        pass
+        '''The user input some text.
+
+        Typically this is called after `on_key_press` and before
+        `on_key_release`, but may also be called multiple times if the key is
+        held down (key repeating); or called without key presses if another
+        input method was used (e.g., a pen input).
+
+        You should always use this method for interpreting text, as the
+        key symbols often have complex mappings to their unicode
+        representation which this event takes care of.
+
+        :Parameters:
+            `text` : unicode
+                The text entered by the user.
+
+        '''
+
 
     def on_mouse_motion(self, x, y, dx, dy):
-        pass
+        '''The mouse was moved with no buttons held down.
+
+        :Parameters:
+            `x` : float
+                Distance in pixels from the left edge of the window.
+            `y`: float
+                Distance in pixels from the bottom edge of the window.
+            `dx` : float
+                Relative X position from the previous mouse position.
+            `dy` : float
+                Relative Y position from the previous mouse position.
+
+        '''
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        pass
+        '''The mouse was moved with one or more mouse buttons pressed.
+
+        This event will continue to be fired even if the mouse leaves
+        the window, so long as the drag buttons are continuously held down.
+
+        :Parameters:
+            `x` : float
+                Distance in pixels from the left edge of the window.
+            `y`: float
+                Distance in pixels from the bottom edge of the window.
+            `dx` : float
+                Relative X position from the previous mouse position.
+            `dy` : float
+                Relative Y position from the previous mouse position.
+            `buttons` : int
+                Bitwise combination of the mouse buttons currently pressed.
+            `modifiers` : int
+                Bitwise combination of any keyboard modifiers currently
+                active.
+
+        '''
 
     def on_mouse_press(self, button, x, y, modifiers):
+        '''A mouse button was pressed (and held down).
+
+        :Parameters:
+            `button` : int
+                The mouse button that was pressed.
+            `x` : float
+                Distance in pixels from the left edge of the window.
+            `y`: float
+                Distance in pixels from the bottom edge of the window.
+            `modifiers` : int
+                Bitwise combination of any keyboard modifiers currently
+                active.
+            
         '''
-            "button" is one of:
-                MOUSE_LEFT_BUTTON = 1
-                MOUSE_MIDDLE_BUTTON = 2
-                MOUSE_RIGHT_BUTTON = 4
-        '''
-        pass
 
     def on_mouse_release(self, button, x, y, modifiers):
-        pass
+        '''A mouse button was released.
 
+        :Parameters:
+            `button` : int
+                The mouse button that was released.
+            `x` : float
+                Distance in pixels from the left edge of the window.
+            `y`: float
+                Distance in pixels from the bottom edge of the window.
+            `modifiers` : int
+                Bitwise combination of any keyboard modifiers currently
+                active.
+        '''
+            
     def on_mouse_scroll(self, dx, dy):
-        pass
+        '''The mouse wheel was scrolled.
+
+        Note that most mice have only a vertical scroll wheel, so `dx` is
+        usually 0.  An exception to this is the Apple Mighty Mouse, which
+        has a mouse ball in place of the wheel which allows both `dx` and `dy`
+        movement.
+
+        :Parameters:
+            `dx` : int
+                Number of "clicks" towards the right (left if negative).
+            `dy` : int
+                Number of "clicks" upwards (downards if negative).
+
+        '''
 
     def on_close(self):
-        pass
+        '''The user attempted to close the window.
 
-    def on_mouse_enter(self, x, y):
-        pass
+        This event can be triggered by clicking on the "X" control box in
+        the window title bar, or by some other platform-dependent manner.
+        '''
 
     def on_mouse_leave(self, x, y):
-        pass
+        '''The mouse was moved outside of the window.
+
+        This event will not be trigged if the mouse is currently being
+        dragged.
+
+        :Parameters:
+            `x` : float
+                Distance in pixels from the left edge of the window.
+            `y`: float
+                Distance in pixels from the bottom edge of the window.
+        '''
 
     def on_expose(self):
-        pass
+        '''A portion of the window needs to be redrawn.
+
+        This event is triggered when the window first appears, and any time
+        the contents of the window is invalidated due to another window
+        obscuring it.
+
+        There is no way to determine which portion of the window needs
+        redrawing.  Note that the use of this method is becoming increasingly
+        uncommon, as newer window managers composite windows automatically and
+        keep a backing store of the window contents.
+        '''
 
     def on_resize(self, width, height):
-        pass
+        '''The window was resized.
+
+        :Parameters:
+            `width` : int
+                The new width of the window, in pixels.
+            `height` : int
+                The new height of the window, in pixels.
+
+        '''
 
     def on_move(self, x, y):
-        pass
+        '''The window was moved.
+
+        :Parameters:
+            `x` : int
+                Distance from the left edge of the screen to the left edge
+                of the window.
+            `y` : int
+                Distance from the top edge of the screen to the top edge of
+                the window.  Note that this is one of few methods in pyglet
+                which use a Y-down coordinate system.
+
+        '''
 
     def on_activate(self):
-        pass
+        '''The window was activated.
+
+        This event can be triggered by clicking on the title bar, bringing
+        it to the foreground; or by some platform-specific method.
+
+        When a window is "active" it has the keyboard focus.
+        '''
 
     def on_deactivate(self):
-        pass
+        '''The window was deactivated.
+
+        This event can be triggered by clicking on another application window.
+        When a window is deactivated it no longer has the keyboard focus.
+        '''
 
     def on_show(self):
-        pass
+        '''The window was shown.
+
+        This event is triggered when a window is restored after being
+        minimised, or after being displayed for the first time.
+        '''
 
     def on_hide(self):
-        pass
+        '''The window was hidden.
+
+        This event is triggered when a window is minimised or (on Mac OS X)
+        hidden by the user.
+        '''
 
     def on_context_lost(self):
-        pass
+        '''The window's GL context was lost.
+        
+        When the context is lost no more GL methods can be called until it is
+        recreated.  This is a rare event, triggered perhaps by the user
+        switching to an incompatible video mode.  When it occurs, an
+        application will need to reload all objects (display lists, texture
+        objects, shaders) as well as restore the GL state.
+        '''
 
     def on_context_state_lost(self):
-        pass
+        '''The state of the window's GL context was lost.
 
-class ExitHandler(object):
-    '''Simple handler that detects the window close button or escape key
-    press.
+        pyglet may sometimes need to recreate the window's GL context if the
+        window is moved to another video device, or between fullscreen or
+        windowed mode.  In this case it will try to share the objects (display
+        lists, texture objects, shaders) between the old and new contexts.  If
+        this is possible, only the current state of the GL context is lost,
+        and the application should simply restore state.
+        '''
+
+class WindowExitHandler(object):
+    '''Determine if the window should be closed.
+
+    This event handler watches for the ESC key or the window close event
+    and sets `self.has_exit` to True when either is pressed.  An instance
+    of this class is automatically attached to all new `pyglet.window.Window`
+    objects.
+
+    :Ivariables:
+        `has_exit` : bool
+            True if the user wants to close the window.
+
     '''
     has_exit = False
+
     def on_close(self):
         self.has_exit = True
+
     def on_key_press(self, symbol, modifiers):
         if symbol == key.ESCAPE:
             self.has_exit = True
-        return EVENT_UNHANDLED
 
-class KeyboardStateHandler(dict):
-    '''Simple handler that tracks the state of keys on the keyboard. If a
-    key is pressed then this handler holds a True value for it.
+class WindowEventLogger(object):
+    '''Print all events to a file.
 
-    For example:
+    When this event handler is added to a window it prints out all events
+    and their parameters; useful for debugging or discovering which events
+    you need to handle.
 
-        >>> keyboard = KeyboardStateHandler()
-        >>> # hold down the "up" arrow
-        >>> keyboard[key.UP]
-        True
-        >>> keyboard[key.DOWN]
-        False
+    Example::
+
+        win = window.Window()
+        win.push_handlers(WindowEventLogger())
+
     '''
-    def on_key_press(self, symbol, modifiers):
-        self[symbol] = True
-        return EVENT_UNHANDLED
-    def on_key_release(self, symbol, modifiers):
-        self[symbol] = False
-        return EVENT_UNHANDLED
-    def __getitem__(self, key):
-        return self.get(key, False)
+    def __init__(self, logfile=None):
+        '''Create a `WindowEventLogger` which writes to `logfile`.
 
-class DebugEventHandler(object):
+        :Parameters:
+            `logfile` : file-like object
+                The file to write to.  If unspecified, stdout will be used.
+
+        '''
+        if logfile is None:
+            import sys
+            logfile = sys.stdout
+        self.file = logfile
+
     def on_key_press(self, symbol, modifiers):
-        print 'on_key_press(symbol=%s, modifiers=%s)' % (
-            _symbol_to_string(symbol), _modifiers_to_string(modifiers))
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_key_press(symbol=%s, modifiers=%s)' % (
+            key.symbol_string(symbol), key.modifiers_string(modifiers))
 
     def on_key_release(self, symbol, modifiers):
-        print 'on_key_release(symbol=%s, modifiers=%s)' % (
-            _symbol_to_string(symbol), _modifiers_to_string(modifiers))
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_key_release(symbol=%s, modifiers=%s)' % (
+            key.symbol_string(symbol), key.modifiers_string(modifiers))
 
     def on_text(self, text):
-        print 'on_text(text=%r)' % text
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_text(text=%r)' % text
 
     def on_mouse_motion(self, x, y, dx, dy):
-        print 'on_mouse_motion(x=%d, y=%d, dx=%d, dy=%d)' % (x, y, dx, dy)
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_mouse_motion(x=%d, y=%d, dx=%d, dy=%d)' % (
+            x, y, dx, dy)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        print 'on_mouse_drag(x=%d, y=%d, dx=%d, dy=%d, '\
+        print >> self.file, 'on_mouse_drag(x=%d, y=%d, dx=%d, dy=%d, '\
                             'buttons=%s, modifiers=%s)' % (
               x, y, dx, dy, 
-              _buttons_to_string(buttons),
-              _modifiers_to_string(modifiers))
-        return EVENT_UNHANDLED
+              mouse.buttons_string(buttons), key.modifiers_string(modifiers))
 
     def on_mouse_press(self, button, x, y, modifiers):
-        print 'on_mouse_press(button=%r, x=%d, y=%d, modifiers=%s)' % (
-            button, x, y, _modifiers_to_string(modifiers))
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_mouse_press(button=%r, x=%d, y=%d, '\
+                            'modifiers=%s)' % (
+            mouse.buttons_string(button), x, y, 
+            key.modifiers_string(modifiers))
 
     def on_mouse_release(self, button, x, y, modifiers):
-        print 'on_mouse_release(button=%r, x=%d, y=%d, modifiers=%s)' % (
-            button, x, y, _modifiers_to_string(modifiers))
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_mouse_release(button=%r, x=%d, y=%d, '\
+                            'modifiers=%s)' % (
+            mouse.buttons_string(button), x, y, 
+            key.modifiers_string(modifiers))
 
     def on_mouse_scroll(self, dx, dy):
-        print 'on_mouse_scroll(dx=%f, dy=%f)' % (dx, dy)
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_mouse_scroll(dx=%f, dy=%f)' % (dx, dy)
 
     def on_close(self):
-        print 'on_destroy()'
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_destroy()'
 
     def on_mouse_enter(self, x, y):
-        print 'on_mouse_enter(x=%d, y=%d)' % (x, y)
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_mouse_enter(x=%d, y=%d)' % (x, y)
 
     def on_mouse_leave(self, x, y):
-        print 'on_mouse_leave(x=%d, y=%d)' % (x, y)
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_mouse_leave(x=%d, y=%d)' % (x, y)
 
     def on_expose(self):
-        print 'on_expose()'
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_expose()'
 
     def on_resize(self, width, height):
-        print 'on_resize(width=%d, height=%d)' % (width, height)
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_resize(width=%d, height=%d)' % (width, height)
 
     def on_move(self, x, y):
-        print 'on_move(x=%d, y=%d)' % (x, y)
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_move(x=%d, y=%d)' % (x, y)
 
     def on_activate(self):
-        print 'on_activate()'
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_activate()'
 
     def on_deactivate(self):
-        print 'on_deactivate()'
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_deactivate()'
 
     def on_show(self):
-        print 'on_show()'
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_show()'
 
     def on_hide(self):
-        print 'on_hide()'
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_hide()'
 
     def on_context_lost(self):
-        print 'on_context_lost()'
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_context_lost()'
 
     def on_context_state_lost(self):
-        print 'on_context_state_lost()'
-        return EVENT_UNHANDLED
+        print >> self.file, 'on_context_state_lost()'

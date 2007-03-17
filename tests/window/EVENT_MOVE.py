@@ -14,15 +14,14 @@ __version__ = '$Id: $'
 
 import unittest
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
 
 class EVENT_MOVE(unittest.TestCase):
     def on_move(self, x, y):
         print 'Window moved to %dx%d.' % (x, y)
 
     def test_move(self):
-        w = Window(200, 200)
+        w = window.Window(200, 200)
         w.push_handlers(self)
         while not w.has_exit:
             w.dispatch_events()

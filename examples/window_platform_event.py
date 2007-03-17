@@ -14,8 +14,7 @@ A message will be printed to stdout when the following events are caught:
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet.window import Window
 
 # Check for Carbon (OS X)
 try:

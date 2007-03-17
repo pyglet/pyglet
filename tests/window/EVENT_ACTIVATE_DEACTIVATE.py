@@ -21,8 +21,7 @@ __version__ = '$Id: $'
 
 import unittest
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
 
 class EVENT_ACTIVATE_DEACTIVATE(unittest.TestCase):
     def on_activate(self):
@@ -32,7 +31,7 @@ class EVENT_ACTIVATE_DEACTIVATE(unittest.TestCase):
         print 'Window deactivated.'
 
     def test_activate_deactivate(self):
-        w = Window(200, 200)
+        w = window.Window(200, 200)
         w.push_handlers(self)
         while not w.has_exit:
             w.dispatch_events()

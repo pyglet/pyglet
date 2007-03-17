@@ -18,8 +18,7 @@ __version__ = '$Id: $'
 
 import unittest
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
 from pyglet.window import key
 
 class WINDOW_SET_MIN_MAX_SIZE(unittest.TestCase):
@@ -37,7 +36,7 @@ class WINDOW_SET_MIN_MAX_SIZE(unittest.TestCase):
 
     def test_min_max_size(self):
         self.width, self.height = 200, 200
-        self.w = w = Window(self.width, self.height, resizable=True)
+        self.w = w = window.Window(self.width, self.height, resizable=True)
         w.push_handlers(self)
         while not w.has_exit:
             w.dispatch_events()

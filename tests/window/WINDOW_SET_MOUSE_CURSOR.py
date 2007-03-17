@@ -16,22 +16,20 @@ import unittest
 
 from pyglet.gl import *
 from pyglet.image import load_image
-from pyglet.window import *
-from pyglet.window.event import *
-from pyglet.window import key
+from pyglet import window
 
 from os.path import join, dirname
 cursor_file = join(dirname(__file__), 'cursor.png')
 
-class WINDOW_SET_EXCLUSIVE_MOUSE(unittest.TestCase):
+class WINDOW_SET_MOUSE_CURSOR(unittest.TestCase):
     def on_mouse_motion(self, x, y, dx, dy):
         print 'on_mousemotion(x=%f, y=%f, dx=%f, dy=%f)' % (x, y, dx, dy)
 
-    def test_set_exclusive_mouse(self):
+    def test_set_mouse_cursor(self):
         self.width, self.height = 200, 200
-        self.w = w = Window(self.width, self.height)
+        self.w = w = window.Window(self.width, self.height)
         image = load_image(cursor_file)
-        w.set_mouse_cursor(ImageMouseCursor(image, 4, 28))
+        w.set_mouse_cursor(window.ImageMouseCursor(image, 4, 28))
         w.push_handlers(self)
         glClearColor(1, 1, 1, 1)
         while not w.has_exit:

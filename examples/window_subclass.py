@@ -6,8 +6,7 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet.window import Window
 
 class MyWindow(Window):
     def run(self):

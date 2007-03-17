@@ -17,15 +17,14 @@ __version__ = '$Id: $'
 
 import unittest
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
 
 class EVENT_EXPOSE(unittest.TestCase):
     def on_expose(self):
         print 'Window exposed.'
 
     def test_expose(self):
-        w = pyglet.window.create(200, 200)
+        w = window.Window(200, 200)
         w.push_handlers(self)
         while not w.has_exit:
             w.dispatch_events()

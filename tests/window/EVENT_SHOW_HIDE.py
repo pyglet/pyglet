@@ -18,8 +18,7 @@ __version__ = '$Id: $'
 
 import unittest
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
 
 class EVENT_SHOW_HIDE(unittest.TestCase):
     def on_show(self):
@@ -29,7 +28,7 @@ class EVENT_SHOW_HIDE(unittest.TestCase):
         print 'Window hidden.'
 
     def test_show_hide(self):
-        w = Window(200, 200)
+        w = window.Window(200, 200)
         w.push_handlers(self)
         while not w.has_exit:
             w.dispatch_events()

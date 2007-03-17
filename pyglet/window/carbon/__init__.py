@@ -15,6 +15,7 @@ import warnings
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window import key
+from pyglet.window import mouse
 from pyglet.window.carbon.constants import *
 from pyglet.window.carbon.key import *
 from pyglet.window.carbon.types import *
@@ -838,15 +839,12 @@ class CarbonWindow(BaseWindow):
             typeMouseButton, c_void_p(), sizeof(button), c_void_p(),
             byref(button))
         
-        # kEventMouseButtonPrimary == MOUSE_LEFT_BUTTON == 1
-        # kEventMouseButtonSecondary == MOUSE_MIDDLE_BUTTON == 2
-        # kEventMouseButtonTertiary == 3 != MOUSE_RIGHT_BUTTON == 4
-        #if button == 3:
-        #    button = MOUSE_RIGHT_BUTTON
-        # <rj> not on my mouse they're not!
-        if button.value == 1: button = MOUSE_LEFT_BUTTON
-        elif button.value == 2: button = MOUSE_RIGHT_BUTTON
-        elif button.value == 3: button = MOUSE_MIDDLE_BUTTON
+        if button.value == 1: 
+            button = mouse.MOUSE_LEFT_BUTTON
+        elif button.value == 2: 
+            button = mouse.MOUSE_RIGHT_BUTTON
+        elif button.value == 3: 
+            button = mouse.MOUSE_MIDDLE_BUTTON
 
         modifiers = c_uint32()
         carbon.GetEventParameter(event, kEventParamKeyModifiers,

@@ -19,8 +19,7 @@ __version__ = '$Id: WINDOW_SET_MOUSE_VISIBLE.py 703 2007-02-28 14:18:00Z Alex.Ho
 
 import unittest
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
 from pyglet.window import key
 from pyglet.gl import *
 
@@ -60,7 +59,7 @@ class WINDOW_SET_MOUSE_PLATFORM_CURSOR(unittest.TestCase):
 
     def test_set_visible(self):
         self.width, self.height = 200, 200
-        self.w = w = Window(self.width, self.height)
+        self.w = w = window.Window(self.width, self.height)
         w.push_handlers(self)
         while not w.has_exit:
             glClear(GL_COLOR_BUFFER_BIT)

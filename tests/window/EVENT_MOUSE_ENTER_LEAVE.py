@@ -14,8 +14,7 @@ __version__ = '$Id: $'
 
 import unittest
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
 
 class EVENT_MOUSE_ENTER_LEAVE(unittest.TestCase):
     def on_mouse_enter(self, x, y):
@@ -25,7 +24,7 @@ class EVENT_MOUSE_ENTER_LEAVE(unittest.TestCase):
         print 'Left at %f, %f' % (x, y)
 
     def test_motion(self):
-        w = Window(200, 200)
+        w = window.Window(200, 200)
         w.push_handlers(self)
         while not w.has_exit:
             w.dispatch_events()

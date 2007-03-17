@@ -36,7 +36,7 @@ class RenderBase(unittest.TestCase):
 
         self.w.push_handlers(self.view.camera)
 
-        self.keyboard = KeyboardStateHandler()
+        self.keyboard = key.KeyboardStateHandler()
         self.w.push_handlers(self.keyboard)
 
     marker = None

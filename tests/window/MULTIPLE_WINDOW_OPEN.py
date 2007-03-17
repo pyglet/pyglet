@@ -13,13 +13,12 @@ __version__ = '$Id: $'
 
 import unittest
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
 from pyglet.gl import *
 
 class MULTIPLE_WINDOW_OPEN(unittest.TestCase):
     def open_window(self):
-        return Window(200, 200)
+        return window.Window(200, 200)
 
     def draw_window(self, window, colour):
         window.switch_to()

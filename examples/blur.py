@@ -10,7 +10,6 @@ from pyglet import options
 import pyglet.window
 from pyglet import clock
 from pyglet.shader import *
-from pyglet.window.event import *
 from pyglet.ext.model.geometric import *
 
 from pyglet.gl import *

@@ -28,6 +28,7 @@ import warnings
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window import key
+from pyglet.window import mouse
 
 from pyglet.gl import *
 from pyglet.gl import gl_info
@@ -485,7 +486,6 @@ class XlibWindow(BaseWindow):
         }
         self._style = factory.get_style()
         if self._style in styles:
-            print self._style
             self._set_atoms_property('_NET_WM_WINDOW_TYPE', 
                                      (styles[self._style],))
 
@@ -1027,11 +1027,11 @@ class XlibWindow(BaseWindow):
 
         buttons = 0
         if event.xmotion.state & xlib.Button1MotionMask:
-            buttons |= MOUSE_LEFT_BUTTON
+            buttons |= mouse.MOUSE_LEFT_BUTTON
         if event.xmotion.state & xlib.Button2MotionMask:
-            buttons |= MOUSE_MIDDLE_BUTTON
+            buttons |= mouse.MOUSE_MIDDLE_BUTTON
         if event.xmotion.state & xlib.Button3MotionMask:
-            buttons |= MOUSE_RIGHT_BUTTON
+            buttons |= mouse.MOUSE_RIGHT_BUTTON
 
         if buttons:
             # Drag event

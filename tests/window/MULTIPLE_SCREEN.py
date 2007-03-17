@@ -21,7 +21,6 @@ __version__ = '$Id: $'
 import unittest
 
 import pyglet.window
-from pyglet.window.event import *
 from pyglet.gl import *
 
 colours = [

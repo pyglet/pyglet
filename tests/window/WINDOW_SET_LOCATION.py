@@ -16,8 +16,7 @@ __version__ = '$Id: $'
 
 import unittest
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
 from pyglet.window import key
 
 class WINDOW_SET_SIZE(unittest.TestCase):
@@ -35,7 +34,7 @@ class WINDOW_SET_SIZE(unittest.TestCase):
         print 'Window location set to %dx%d.' % (x, y)
 
     def test_set_size(self):
-        self.w = w = Window(200, 200)
+        self.w = w = window.Window(200, 200)
         w.push_handlers(self)
         while not w.has_exit:
             w.dispatch_events()

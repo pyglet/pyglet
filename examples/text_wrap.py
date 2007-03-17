@@ -7,8 +7,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from pyglet.gl import *
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet.window import Window
 from pyglet.window import key
 from pyglet import clock
 from pyglet.ext.scene2d.textsprite import *
@@ -18,23 +17,19 @@ window = Window(visible=False, resizable=True)
 font = load_font('Arial', 24)
 text = 'Type away... '
 
+@window.event
 def on_resize(width, height):
     sprite.width = width
     sprite.x = 10
-    return True
 
+@window.event
 def on_text(text):
     sprite.text += text.replace('\r', '\n')
 
+@window.event
 def on_key_press(symbol, modifiers):
     if symbol == key.BACKSPACE:
         sprite.text = sprite.text[:-1]
-    else:
-        return EVENT_UNHANDLED
-
-window.push_handlers(on_resize)
-window.push_handlers(on_text)
-window.push_handlers(on_key_press)
 
 sprite = TextSprite(font, text, color=(0, 0, 0, 1))
 

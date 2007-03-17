@@ -10,8 +10,7 @@ from code import InteractiveInterpreter
 import sys
 
 from pyglet.gl import *
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet.window import Window
 from pyglet.window import key
 from pyglet import clock
 

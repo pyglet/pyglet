@@ -14,15 +14,14 @@ __version__ = '$Id: $'
 
 import unittest
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
 
 class EVENT_RESIZE(unittest.TestCase):
     def on_resize(self, width, height):
         print 'Window resized to %dx%d.' % (width, height)
 
     def test_resize(self):
-        w = Window(200, 200, resizable=True)
+        w = window.Window(200, 200, resizable=True)
         w.push_handlers(self)
         while not w.has_exit:
             w.dispatch_events()

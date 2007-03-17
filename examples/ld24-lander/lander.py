@@ -7,7 +7,6 @@ import math
 
 import pyglet.window
 from pyglet.ext.resource import *
-from pyglet.window.event import *
 from pyglet.window import key
 from pyglet import clock
 from pyglet.ext.scene2d import *
@@ -70,20 +69,20 @@ w = pyglet.window.Window(width=1280, height=1024, fullscreen=True)
 #w = pyglet.window.Window(width=800, height=600)
 w.set_exclusive_mouse()
 clock.set_fps_limit(60)
-keyboard = KeyboardStateHandler()
+keyboard = key.KeyboardStateHandler()
 w.push_handlers(keyboard)
 
 class SaveHandler:
     def on_text(self, text):
-        if text != 's': return pyglet.window.event.EVENT_UNHANDLED
-        image = pyglet.image.BufferImage().get_raw_image()
-        fn = 'screenshot.png'
-        n = 1
-        while os.path.exists(fn):
-            fn = 'screenshot' + str(n) + '.png'
-            n += 1
-        print "Saving to '%s'"%fn
-        image.save(fn)
+        if text == 's':
+            image = pyglet.image.BufferImage().get_raw_image()
+            fn = 'screenshot.png'
+            n = 1
+            while os.path.exists(fn):
+                fn = 'screenshot' + str(n) + '.png'
+                n += 1
+            print "Saving to '%s'"%fn
+            image.save(fn)
 w.push_handlers(SaveHandler())
 
 font = load_font('Bitstream Vera Sans', 24)

@@ -9,6 +9,7 @@ __version__ = '$Id: gl_tree_test.py 114 2006-10-22 09:46:11Z r1chardj0n3s $'
 import math
 import random
 from pyglet.window import *
+from pyglet.window import mouse
 from pyglet import clock
 from ctypes import *
 from pyglet.window.event import *
@@ -36,10 +37,10 @@ class Tree(object):
         self.rmb = False
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        if buttons & MOUSE_LEFT_BUTTON:
+        if buttons & mouse.MOUSE_LEFT_BUTTON:
             self.rx += dx
             self.ry += dy
-        if buttons & MOUSE_RIGHT_BUTTON:
+        if buttons & mouse.MOUSE_RIGHT_BUTTON:
             self.x += dx
             self.y += dy
 

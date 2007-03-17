@@ -3,7 +3,6 @@ import math
 
 import pyglet.window
 from pyglet.ext.resource import *
-from pyglet.window.event import *
 from pyglet.window import key
 from pyglet import clock
 from pyglet.ext.scene2d import *
@@ -64,7 +63,7 @@ for enemy in enemies:
     view.sprites.append(enemy)
     clock.schedule(enemy.update)
 
-keyboard = KeyboardStateHandler()
+keyboard = key.KeyboardStateHandler()
 w.push_handlers(keyboard)
 
 while not (w.has_exit or dead):

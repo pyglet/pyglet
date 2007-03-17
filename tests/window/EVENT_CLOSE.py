@@ -15,15 +15,16 @@ __version__ = '$Id: $'
 
 import unittest
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
+from pyglet import event
 
 class EVENT_CLOSE(unittest.TestCase):
     def on_close(self):
         print 'Window close event.'
+        return event.EVENT_HANDLED
 
     def test_close(self):
-        w = Window(200, 200)
+        w = window.Window(200, 200)
         w.push_handlers(self)
         while not w.has_exit:
             w.dispatch_events()

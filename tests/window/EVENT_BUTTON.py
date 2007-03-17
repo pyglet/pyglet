@@ -17,20 +17,20 @@ __version__ = '$Id: $'
 
 import unittest
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
+from pyglet.window import key
 
 class EVENT_BUTTON(unittest.TestCase):
     def on_mouse_press(self, button, x, y, modifiers):
         print 'Mouse button %d pressed at %f,%f with %s' % \
-            (button, x, y, pyglet.window.event._modifiers_to_string(modifiers))
+            (button, x, y, key.modifiers_string(modifiers))
 
     def on_mouse_release(self, button, x, y, modifiers):
         print 'Mouse button %d released at %f,%f with %s' % \
-            (button, x, y, pyglet.window.event._modifiers_to_string(modifiers))
+            (button, x, y, key.modifiers_string(modifiers))
 
     def test_button(self):
-        w = Window(200, 200)
+        w = window.Window(200, 200)
         w.push_handlers(self)
         while not w.has_exit:
             w.dispatch_events()

@@ -16,8 +16,7 @@ __version__ = '$Id: $'
 
 import unittest
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
 
 class EVENT_MOUSEMOTION(unittest.TestCase):
     def on_mouse_motion(self, x, y, dx, dy):
@@ -25,7 +24,7 @@ class EVENT_MOUSEMOTION(unittest.TestCase):
             (x, y, dx, dy)
 
     def test_motion(self):
-        w = Window(200, 200)
+        w = window.Window(200, 200)
         w.push_handlers(self)
         while not w.has_exit:
             w.dispatch_events()

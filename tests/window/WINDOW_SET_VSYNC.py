@@ -15,8 +15,7 @@ __version__ = '$Id$'
 
 import unittest
 
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
 from pyglet.window import key
 from pyglet.gl import *
 
@@ -25,7 +24,7 @@ class WINDOW_OPEN(unittest.TestCase):
     color_index = 0
 
     def open_window(self):
-        return Window(200, 200)
+        return window.Window(200, 200)
 
     def on_key_press(self, key, modifiers):
         if key == key.V:

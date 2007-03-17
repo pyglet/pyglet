@@ -41,6 +41,7 @@ def heartbeat():
     glib.g_main_context_iteration(mainloop_context, False)
 
 if __name__ == '__main__':
+    init()
     play('file://%s' % sys.argv[1])
     while True:
         heartbeat()

@@ -36,14 +36,14 @@ onto them::
     >>> win.push_handlers(MyEvents())
     >>>
 
-Windows automatically set an instance of ExitHandler, which sets a flag
+Windows automatically set an instance of WindowExitHandler, which sets a flag
 has_exit if the window is closed or the ESC key is pressed.
 
 The easiest way to find out the events that are available and their
-parameters, use the DebugEventHandler, which will print out all events
+parameters, use the WindowEventLogger, which will print out all events
 received by the window to the terminal::
 
-    >>> win.push_handler(pyglet.window.event.DebugEventHandler())
+    >>> win.push_handler(pyglet.window.event.WindowEventLogger())
     >>>
 
 For a complete list of events, see the `pyglet.window.event` documentation.
@@ -184,7 +184,7 @@ import pprint
 import sys
 
 from pyglet.gl import *
-from pyglet.window.event import WindowEventDispatcher, ExitHandler
+from pyglet.window.event import WindowEventDispatcher, WindowExitHandler
 from pyglet import projection
 import pyglet.window.key
 
@@ -414,8 +414,9 @@ class BaseWindow(WindowEventDispatcher):
     def __init__(self):
         WindowEventDispatcher.__init__(self)
 
-        self.exit_handler = ExitHandler()
+        self.exit_handler = WindowExitHandler()
         self.set_handlers(self.exit_handler)
+        self.push_handlers()
 
     has_exit = property(lambda self: self.exit_handler.has_exit)
 

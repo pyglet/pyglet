@@ -17,6 +17,7 @@ if sys.platform not in ('cygwin', 'win32'):
 from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.window import key
+from pyglet.window import mouse
 from pyglet.window.win32.constants import *
 from pyglet.window.win32.key import *
 from pyglet.window.win32.types import *
@@ -711,11 +712,11 @@ class Win32Window(BaseWindow):
         
         buttons = 0
         if wParam & MK_LBUTTON:
-            buttons |= MOUSE_LEFT_BUTTON
+            buttons |= mouse.MOUSE_LEFT_BUTTON
         if wParam & MK_MBUTTON:
-            buttons |= MOUSE_MIDDLE_BUTTON
+            buttons |= mouse.MOUSE_MIDDLE_BUTTON
         if wParam & MK_RBUTTON:
-            buttons |= MOUSE_RIGHT_BUTTON
+            buttons |= mouse.MOUSE_RIGHT_BUTTON
 
         if buttons:
             # Drag event
@@ -752,32 +753,32 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_LBUTTONDOWN)
     def _event_lbuttondown(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            EVENT_MOUSE_PRESS, MOUSE_LEFT_BUTTON, lParam)
+            EVENT_MOUSE_PRESS, mouse.MOUSE_LEFT_BUTTON, lParam)
 
     @Win32EventHandler(WM_LBUTTONUP)
     def _event_lbuttonup(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            EVENT_MOUSE_RELEASE, MOUSE_LEFT_BUTTON, lParam)
+            EVENT_MOUSE_RELEASE, mouse.MOUSE_LEFT_BUTTON, lParam)
 
     @Win32EventHandler(WM_MBUTTONDOWN)
     def _event_mbuttondown(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            EVENT_MOUSE_PRESS, MOUSE_MIDDLE_BUTTON, lParam)
+            EVENT_MOUSE_PRESS, mouse.MOUSE_MIDDLE_BUTTON, lParam)
 
     @Win32EventHandler(WM_MBUTTONUP)
     def _event_mbuttonup(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            EVENT_MOUSE_RELEASE, MOUSE_MIDDLE_BUTTON, lParam)
+            EVENT_MOUSE_RELEASE, mouse.MOUSE_MIDDLE_BUTTON, lParam)
 
     @Win32EventHandler(WM_RBUTTONDOWN)
     def _event_rbuttondown(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            EVENT_MOUSE_PRESS, MOUSE_RIGHT_BUTTON, lParam)
+            EVENT_MOUSE_PRESS, mouse.MOUSE_RIGHT_BUTTON, lParam)
 
     @Win32EventHandler(WM_RBUTTONUP)
     def _event_rbuttonup(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            EVENT_MOUSE_RELEASE, MOUSE_RIGHT_BUTTON, lParam)
+            EVENT_MOUSE_RELEASE, mouse.MOUSE_RIGHT_BUTTON, lParam)
 
     @Win32EventHandler(WM_MOUSEWHEEL)
     def _event_mousewheel(self, msg, wParam, lParam):

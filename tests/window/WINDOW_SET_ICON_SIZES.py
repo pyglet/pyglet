@@ -26,8 +26,7 @@ import unittest
 
 from pyglet.gl import *
 from pyglet.image import load_image
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet import window
 from pyglet.window import key
 
 from os.path import join, dirname
@@ -40,7 +39,7 @@ icon_file5 = join(dirname(__file__), 'icon_size5.png')
 class WINDOW_SET_ICON_SIZES(unittest.TestCase):
     def test_set_icon_sizes(self):
         self.width, self.height = 200, 200
-        self.w = w = Window(self.width, self.height)
+        self.w = w = window.Window(self.width, self.height)
         w.set_icon(load_image(icon_file1),
                    load_image(icon_file2),
                    load_image(icon_file3),

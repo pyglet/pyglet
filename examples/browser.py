@@ -19,8 +19,7 @@ __version__ = '$Id: xhtml.py 366 2007-01-02 07:48:00Z Alex.Holkner $'
 from pyglet.gl import *
 from pyglet.ext.layout import *
 from pyglet.ext.layout.locator import *
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet.window import Window
 from pyglet.window import key
 from pyglet import clock
 
@@ -37,10 +36,24 @@ url = sys.argv[1]
 locator = create_locator(url)
 file = locator.get_default_stream()
 
-window = Window(visible=False)
+window = Window(visible=False, resizable=True)
 offset_top = 0
 layout_height = 0
 
+layout = Layout(locator=locator)
+layout.set_html(locator.get_default_stream().read())
+
+@select('a')
+def on_mouse_press(element, button, x, y, modifiers):
+    url = element.attributes['href']
+    print 'Going to %s...' % url
+    file = locator.get_stream(url)
+    layout.set_html(file.read())
+
+layout.push_handlers(on_mouse_press)
+window.push_handlers(layout)
+
+@window.event
 def on_key_press(symbol, modifiers):
     if symbol == key.V:
         print repr(layout.locator.get_default_stream().read())
@@ -61,22 +74,6 @@ def on_key_press(symbol, modifiers):
     if symbol == key.RIGHT and modifiers & key.key.MOD_SHIFT:
         window.width += 10
     print 'window size is %dx%d' % (window.width, window.height)
-    return True
-
-layout = Layout(locator=locator)
-layout.set_html(locator.get_default_stream().read())
-
-@select('a')
-def on_mouse_press(element, button, x, y, modifiers):
-    url = element.attributes['href']
-    print 'Going to %s...' % url
-    file = locator.get_stream(url)
-    layout.set_html(file.read())
-
-layout.push_handlers(on_mouse_press)
-
-window.push_handlers(layout)
-window.push_handlers(on_key_press=on_key_press)
 
 glClearColor(1, 1, 1, 1)
 window.set_visible()

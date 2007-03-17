@@ -12,7 +12,7 @@ __version__ = '$Id: $'
 
 import sys
 
-from pyglet.window import *
+from pyglet.window import Window
 from pyglet.image import *
 
 window = None
