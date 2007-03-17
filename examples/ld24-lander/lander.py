@@ -11,7 +11,7 @@ from pyglet.window import key
 from pyglet import clock
 from pyglet.ext.scene2d import *
 from pyglet.ext.scene2d.textsprite import *
-from pyglet.font import *
+from pyglet import font
 from pyglet.ext.layout import *
 
 class RocketSprite(Sprite):
@@ -85,7 +85,7 @@ class SaveHandler:
             image.save(fn)
 w.push_handlers(SaveHandler())
 
-font = load_font('Bitstream Vera Sans', 24)
+font = font.load('Bitstream Vera Sans', 24)
 
 # load the sprites & level
 dirname = os.path.dirname(__file__)

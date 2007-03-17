@@ -9,14 +9,14 @@ __version__ = '$Id$'
 from pyglet.window import Window
 from pyglet import clock
 from pyglet.ext.scene2d.textsprite import *
-from pyglet.font import *
+from pyglet import font
 
 width, height = 640, 480
 window = Window(width=width, height=height)
 
-font = load_font('Arial', 500, bold=True)
-commander = TextSprite(font, 'COMMANDER', color=(1, 1, 1, 0.5))
-keen = TextSprite(font, 'KEEN', color=(1, 1, 1, 0.5))
+arial = font.load('Arial', 500, bold=True)
+commander = TextSprite(arial, 'COMMANDER', color=(1, 1, 1, 0.5))
+keen = TextSprite(arial, 'KEEN', color=(1, 1, 1, 0.5))
 
 print dir(keen)
 commander.x = width

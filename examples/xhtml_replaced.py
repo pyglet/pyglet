@@ -12,7 +12,6 @@ from pyglet.gl import *
 from pyglet.window import Window
 from pyglet import clock
 
-from pyglet.font import *
 from pyglet.ext.layout import *
 from pyglet.ext.layout.frame import *
 

@@ -14,7 +14,6 @@ from pyglet.window import Window
 from pyglet.window import key
 from pyglet import clock
 
-from pyglet.font import *
 from pyglet.ext.layout import *
 
 data = '''<?xml version="1.0"?>

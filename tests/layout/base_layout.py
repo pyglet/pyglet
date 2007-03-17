@@ -11,7 +11,6 @@ import sys
 
 from pyglet.gl import *
 from pyglet.ext.layout import *
-from pyglet.font import *
 from pyglet.window import *
 from pyglet.window.event import *
 

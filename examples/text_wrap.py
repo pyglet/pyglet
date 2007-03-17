@@ -10,11 +10,11 @@ from pyglet.gl import *
 from pyglet.window import Window
 from pyglet.window import key
 from pyglet import clock
+from pyglet import font
 from pyglet.ext.scene2d.textsprite import *
-from pyglet.font import *
 
 window = Window(visible=False, resizable=True)
-font = load_font('Arial', 24)
+arial = font.load('Arial', 24)
 text = 'Type away... '
 
 @window.event
@@ -31,7 +31,7 @@ def on_key_press(symbol, modifiers):
     if symbol == key.BACKSPACE:
         sprite.text = sprite.text[:-1]
 
-sprite = TextSprite(font, text, color=(0, 0, 0, 1))
+sprite = TextSprite(arial, text, color=(0, 0, 0, 1))
 
 fps = clock.ClockDisplay()
 window.push_handlers(fps)

@@ -533,10 +533,9 @@ class ClockDisplay(object):
         if clock is None:
             self.clock = _default
         self.clock.schedule_interval(self.update_text, interval)
-        print self.clock
 
         if not font:
-            from pyglet.font import load_font
+            from pyglet.font import load as load_font
             font = load_font('', 36, bold=True)
 
         from pyglet.ext.scene2d.textsprite import TextSprite
@@ -559,7 +558,6 @@ class ClockDisplay(object):
         # TODO when TextSprite implements Sprite.
         #self.sprite.right = width
         self.window_width = width
-        return True
 
 if __name__ == '__main__':
     import sys

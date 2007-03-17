@@ -40,7 +40,7 @@ class GLRenderDevice(RenderDevice):
         bold = weight >= 700
         assert type(size) == Dimension and size.unit == 'pt'
 
-        return pyglet.font.load_font(names, size, italic=italic, bold=bold)
+        return pyglet.font.load(names, size, italic=italic, bold=bold)
 
     def create_text_frame(self, style, element, text):
         return GLTextFrame(style, element, text)

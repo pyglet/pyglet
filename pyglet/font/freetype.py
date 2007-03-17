@@ -6,13 +6,12 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.gl import *
-
 from ctypes import *
 from ctypes import util
 from warnings import warn
 
-from pyglet.font import *
+from pyglet.font import base
+from pyglet import image
 from pyglet.font.freetype_lib import *
 
 # fontconfig library definitions
@@ -85,7 +84,7 @@ def frac(value):
 def unfrac(value):
     return value >> 6
 
-class FreeTypeGlyphRenderer(GlyphRenderer):
+class FreeTypeGlyphRenderer(base.GlyphRenderer):
     def __init__(self, font):
         super(FreeTypeGlyphRenderer, self).__init__(font)
         self.font = font
@@ -95,7 +94,8 @@ class FreeTypeGlyphRenderer(GlyphRenderer):
         glyph_index = fontconfig.FcFreeTypeCharIndex(byref(face), ord(text[0]))
         error = FT_Load_Glyph(face, glyph_index, FT_LOAD_RENDER)
         if error != 0:
-            raise FontException('Could not load glyph for "c"' % text[0], error) 
+            raise base.FontException(
+                'Could not load glyph for "c"' % text[0], error) 
         glyph_slot = face.glyph.contents
         width = glyph_slot.bitmap.width
         height = glyph_slot.bitmap.rows
@@ -105,8 +105,9 @@ class FreeTypeGlyphRenderer(GlyphRenderer):
         pitch = glyph_slot.bitmap.pitch  # 1 component, so no alignment prob.
 
         # pitch should be negative, but much faster to just swap tex_coords
-        image = ImageData(width, height, 'A', glyph_slot.bitmap.buffer, pitch)
-        glyph = self.font.create_glyph(image) 
+        img = image.ImageData(width, height, 
+                              'A', glyph_slot.bitmap.buffer, pitch)
+        glyph = self.font.create_glyph(img) 
         glyph.set_bearings(baseline, lsb, advance)
         glyph.tex_coords = (glyph.tex_coords[3],
                             glyph.tex_coords[2],
@@ -115,7 +116,7 @@ class FreeTypeGlyphRenderer(GlyphRenderer):
 
         return glyph
 
-class FreeTypeFont(BaseFont):
+class FreeTypeFont(base.Font):
     glyph_renderer_class = FreeTypeGlyphRenderer
 
     def __init__(self, name, size, bold=False, italic=False):
@@ -124,17 +125,19 @@ class FreeTypeFont(BaseFont):
 
         match = self.get_fontconfig_match(name, size, bold, italic)
         if not match:
-            raise FontException('Could not match font "%s"' % name)
+            raise base.FontException('Could not match font "%s"' % name)
 
         f = FT_Face()
         if fontconfig.FcPatternGetFTFace(match, FC_FT_FACE, 0, byref(f)) != 0:
             value = FcValue()
             result = fontconfig.FcPatternGet(match, FC_FILE, 0, byref(value))
             if result != 0:
-                raise FontException('No filename or FT face for "%s"' % name)
+                raise base.FontException('No filename or FT face for "%s"' % \
+                                         name)
             result = FT_New_Face(ft_library, value.u.s, 0, byref(f))
             if result:
-                raise FontException('Could not load "%s": %d' % (name, result))
+                raise base.FontException('Could not load "%s": %d' % \
+                                         (name, result))
 
         fontconfig.FcPatternDestroy(match)
 

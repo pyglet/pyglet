@@ -20,8 +20,6 @@ class TextSprite(object):
                           # ascender)
 
     _dirty = False        # Flag if require layout
-    _states = None        # List of state changes when drawing
-    _array = None         # Interleaved vertex/texcoord array
 
     def __init__(self, font, text, x=0, y=0, z=0, color=(1,1,1,1)):
         self._dirty = True
@@ -35,6 +33,7 @@ class TextSprite(object):
     def _clean(self):
         '''Resolve changed layout'''
 
+        '''
         # Each 'line' in 'glyph_lines' is a list of Glyph objects.  Do
         # line wrapping now.
         glyph_lines = []
@@ -62,6 +61,42 @@ class TextSprite(object):
             self.strings.append(string)
 
         self._text_height = -y
+        '''
+
+        text = self._text + ' '
+        glyphs = self.font.get_glyphs(text)
+        self._glyph_string = GlyphString(text, glyphs)
+
+        self.lines = []
+        i = 0
+        if self._layout_width is None:
+            self._text_width = 0
+            while '\n' in text[i:]:
+                end = text.index('\n', i)
+                self.lines.append((i, end))
+                self._text_width = max(self._text_width, 
+                                       self._glyph_string.get_subwidth(i, end))
+                i = end + 1
+            end = len(text)
+            if end != i:
+                self.lines.append((i, end))
+                self._text_width = max(self._text_width,
+                                       self._glyph_string.get_subwidth(i, end))
+                                   
+        else:
+            bp = self._glyph_string.get_break_index(i, self._layout_width)
+            while i < len(text) and bp > i:
+                if text[bp-1] == '\n':
+                    self.lines.append((i, bp - 1))
+                else:
+                    self.lines.append((i, bp))
+                i = bp
+                bp = self._glyph_string.get_break_index(i, self._layout_width)
+            if i < len(text) - 1:
+                self.lines.append((i, len(text)))
+            
+        self.line_height = self.font.ascent - self.font.descent + self.leading
+        self._text_height = self.line_height * len(self.lines)
 
         self._dirty = False
         
@@ -74,8 +109,9 @@ class TextSprite(object):
         glColor4f(*self.color)
         glPushMatrix()
         glTranslatef(self.x, self.y, 0)
-        for string in self.strings:
-            string.draw()
+        for start, end in self.lines:
+            self._glyph_string.draw(start, end)
+            glTranslatef(0, -self.line_height, 0)
         glPopMatrix()
         glPopAttrib()
 

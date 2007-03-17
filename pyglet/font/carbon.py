@@ -9,7 +9,8 @@ __version__ = '$Id: $'
 from ctypes import *
 from sys import byteorder
 
-from pyglet.font import *
+from pyglet.font import base
+from pyglet import image
 from pyglet.window.carbon import carbon 
 from pyglet.window.carbon import _create_cfstring
 from pyglet.window.carbon.types import Rect, CGRect
@@ -127,7 +128,7 @@ def str_ucs2(text):
         text = text.encode('utf_16_le')   # explicit endian avoids BOM
     return create_string_buffer(text + '\0')
 
-class CarbonGlyphRenderer(GlyphRenderer):
+class CarbonGlyphRenderer(base.GlyphRenderer):
     _bitmap = None
     _bitmap_context = None
     _bitmap_rect = None
@@ -208,8 +209,8 @@ class CarbonGlyphRenderer(GlyphRenderer):
         # glyph upside-down and flip the tex_coords.  Note region used
         # to start at top of glyph image.
         pitch = int(4 * self._bitmap_rect.size.width)
-        image = ImageData(image_width, self._bitmap_rect.size.height, 
-            'RGBA', self._bitmap, pitch)
+        image = pyget.image.ImageData(image_width, 
+            self._bitmap_rect.size.height, 'RGBA', self._bitmap, pitch)
         skip_rows = int(self._bitmap_rect.size.height - image_height)
         image = image.get_region(0, skip_rows, image.width, image_height)
         glyph = self.font.create_glyph(image)
@@ -247,7 +248,7 @@ class CarbonGlyphRenderer(GlyphRenderer):
         self._bitmap_rect.size.height = height
         
 
-class CarbonFont(BaseFont):
+class CarbonFont(base.Font):
     glyph_renderer_class = CarbonGlyphRenderer
 
     def __init__(self, name, size, bold=False, italic=False):

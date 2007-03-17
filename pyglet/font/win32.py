@@ -5,8 +5,8 @@
 
 from ctypes import *
 
-from pyglet.gl import *
-from pyglet.font import *
+from pyglet.font import base
+import pyglet.image
 from pyglet.window.win32.constants import *
 from pyglet.window.win32.types import *
 from pyglet.window.win32 import _gdi32 as gdi32, _user32 as user32
@@ -119,10 +119,7 @@ def str_ucs2(text):
         text = text.encode('utf_16_le')   # explicit endian avoids BOM
     return create_string_buffer(text + '\0')
 
-class Win32GlyphTextureAtlas(GlyphTextureAtlas):
-    pass
-
-class Win32GlyphRenderer(GlyphRenderer):
+class Win32GlyphRenderer(base.GlyphRenderer):
     _bitmap = None
     _bitmap_dc = None
     _bitmap_rect = None
@@ -178,8 +175,8 @@ class Win32GlyphRenderer(GlyphRenderer):
         gdi32.GdiFlush()
 
         # Create glyph object and copy bitmap data to texture
-        image = ImageData(width, height, 'RGBA', self._bitmap_data,
-                          self._bitmap_rect.right * 4)
+        image = pyglet.image.ImageData(width, height, 
+            'RGBA', self._bitmap_data, self._bitmap_rect.right * 4)
         glyph = self.font.create_glyph(image)
         glyph.set_bearings(-self.font.descent, lsb, advance)
 
@@ -218,9 +215,8 @@ class Win32GlyphRenderer(GlyphRenderer):
         self._bitmap_rect.top = 0
         self._bitmap_rect.bottom = height
 
-class Win32Font(BaseFont):
+class Win32Font(base.Font):
     glyph_renderer_class = Win32GlyphRenderer
-    glyph_texture_atlas_class = Win32GlyphTextureAtlas
 
     def __init__(self, name, size, bold=False, italic=False):
         super(Win32Font, self).__init__()

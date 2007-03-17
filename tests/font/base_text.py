@@ -11,7 +11,7 @@ import sys
 
 from pyglet.gl import *
 from pyglet.ext.scene2d.textsprite import *
-from pyglet.font import *
+from pyglet import font
 from pyglet.window import *
 from pyglet.window.event import *
 
@@ -34,7 +34,7 @@ class TextTestBase(ImageRegressionTestCase):
             self.window.exit_handler.has_exit = True
 
     def create_font(self):
-        self.font = load_font(self.font_name, self.font_size) 
+        self.font = font.load(self.font_name, self.font_size) 
 
     def render(self):
         self.sprite = TextSprite(self.font, self.text)

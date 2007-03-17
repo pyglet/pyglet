@@ -1,16 +1,34 @@
 #!/usr/bin/env python
 
-'''
+'''Load fonts and render text.
 
-TODO in near future:
- - Kerning
- - Character spacing
- - Word spacing
+This is a fairly-low level interface to text rendering.  Obtain a font using
+`load`::
 
-TODO much later:
- - BIDI
- - Vertical text
- - Path following?
+    from pyglet import font
+    arial = font.load('Arial', 14, bold=True, italic=False)
+
+pyglet will load any system-installed fonts.  You can add additional fonts
+(for example, from your program resources) using `add_file` or
+`add_directory`.
+
+Obtain a list of `Glyph` objects for a string of text using the `Font`
+object::
+
+    text = 'Hello, world!'
+    glyphs = arial.get_glyphs(text)
+
+The most efficient way to render these glyphs is with a `GlyphString`::
+
+    glyph_string = GlyphString(text, glyphs)
+    glyph_string.draw()
+
+There are also a variety of methods in both `Font` and `GlyphString` to
+facilitate word-wrapping.
+
+For complex multi-font rendering and layout, consider the `pyglet.ext.layout`
+package.
+
 '''
 
 __docformat__ = 'restructuredtext'
@@ -20,88 +38,35 @@ import sys
 import os
 
 from pyglet.gl import *
-from pyglet.window import *
-from pyglet.image import *
-
-class Glyph(TextureRegion):
-    advance = 0
-    vertices = (0, 0, 0, 0)
-
-    def set_bearings(self, baseline, left_side_bearing, advance):
-        self.advance = advance
-        self.vertices = (
-            left_side_bearing,
-            -baseline,
-            left_side_bearing + self.width,
-            -baseline + self.height)
-
-    def draw(self):
-        '''Debug method: use the higher level APIs for performance and
-        kerning.'''
-        glBindTexture(GL_TEXTURE_2D, self.owner.id)
-        glBegin(GL_QUADS)
-        self.draw_quad_vertices()
-        glEnd()
-
-    def draw_quad_vertices(self):
-        '''Debug method: use the higher level APIs for performance and
-        kerning.'''
-        glTexCoord2f(self.tex_coords[0][0], self.tex_coords[0][1])
-        glVertex2f(self.vertices[0], self.vertices[1])
-        glTexCoord2f(self.tex_coords[1][0], self.tex_coords[1][1])
-        glVertex2f(self.vertices[2], self.vertices[1])
-        glTexCoord2f(self.tex_coords[2][0], self.tex_coords[2][1])
-        glVertex2f(self.vertices[2], self.vertices[3])
-        glTexCoord2f(self.tex_coords[3][0], self.tex_coords[3][1])
-        glVertex2f(self.vertices[0], self.vertices[3])
-
-    def get_kerning_pair(self, right_glyph):
-        return 0
-
-class GlyphTextureAtlas(Texture):
-    region_class = Glyph
-    x = 0
-    y = 0
-    line_height = 0
-
-    def apply_blend_state(self):
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_BLEND)
-
-    def fit(self, image):
-        '''Places `image` within the texture, returns a TextureRegion for
-        that image.
-        Returns None if image doesn't fit.
-        '''
-        if self.x + image.width > self.texture.width:
-            self.x = 0
-            self.y += self.line_height
-            self.line_height = 0
-        if self.y + image.height > self.texture.height:
-            return None
-
-        self.line_height = max(self.line_height, image.height)
-        region = self.get_region(
-            self.x, self.y, image.width, image.height)
-        region.blit_into(image, 0, 0, 0)
-        self.x += image.width
-        return region
-
-class GlyphRenderer(object):
-    def __init__(self, font):
-        pass
-
-    def render(self, text):
-        raise NotImplementedError('Subclass must override')
+from pyglet import window
 
 class GlyphString(object):
-    '''An immutable string of glyphs that can be rendererd quickly.
+    '''An immutable string of glyphs that can be rendered quickly.
+
+    This class is ideal for quickly rendering single or multi-line strings
+    of text that use the same font.  To wrap text using a glyph string,
+    call `get_break_index` to find the optimal breakpoint for each line,
+    the repeatedly call `draw` for each breakpoint.
     '''
 
     def __init__(self, text, glyphs, x=0, y=0):
-        '''Initialise the string with the given sequence of glyphs, and
-        optional offset in x and y.  Note that no attributes of this
-        class are mutable.
+        '''Create a glyph string.
+        
+        The `text` string is used to determine valid breakpoints; all glyphs
+        must have already been determined using `Font.get_glyphs`.  The string
+        will be positioned with the baseline of the left-most glyph at the
+        given coordinates.
+        
+        :Parameters:
+            `text` : str or unicode
+                String to represent.
+            `glyphs` : list of `pyglet.font.base.Glyph`
+                Glyphs representing `text`.
+            `x` : float
+                X coordinate of the left-side bearing of the left-most glyph.
+            `y` : float
+                Y coordinate of the baseline.
+
         '''
         # Create an interleaved array in GL_T2F_V3F format and determine
         # state changes required.
@@ -137,13 +102,29 @@ class GlyphString(object):
         self.width = x
 
     def get_break_index(self, from_index, width):
-        '''Return valid breakpoint after from_index so that text
-        between from_index and breakpoint fits within width.  Uses
-        precomputed cumulative glyph widths to give quick answer.
+        '''Find a breakpoint within the text for a given width.
+        
+        Returns a valid breakpoint after `from_index` so that the text
+        between `from_index` and the breakpoint fits within `width` pixels.
 
-        Returns from_index if there is no valid breakpoint in range.
+        This method uses precomputed cumulative glyph widths to give quick
+        answer, and so is much faster than 
+        `pyglet.font.base.Font.get_glyphs_for_width`.  
+
+        :Parameters:
+            `from_index` : int
+                Index of text to begin at, or 0 for the beginning of the
+                string. 
+            `width` : float
+                Maximum width to use.
+
+        :rtype: int
+        :return: the index of text which will be used as the breakpoint, or
+            `from_index` if there is no valid breakpoint.
         '''
         to_index = from_index
+        if from_index >= len(self.text):
+            return from_index
         if from_index:
             width += self.cumulative_advance[from_index-1]
         for i, (c, w) in enumerate(
@@ -158,15 +139,39 @@ class GlyphString(object):
         return to_index
 
     def get_subwidth(self, from_index, to_index):
+        '''Return the width of a slice of this string.
+
+        :Parameters:
+            `from_index` : int
+                The start index of the string to measure.
+            `to_index` : int
+                The end index (exclusive) of the string to measure.
+
+        :rtype: float
+        '''
         width = self.cumulative_advance[to_index-1] 
         if from_index:
             width -= self.cumulative_advance[from_index-1]
         return width
 
     def draw(self, from_index=0, to_index=None):
-        '''Draw the glyph string.  Assumes texture state is enabled.
+        '''Draw a region of the glyph string.
+        
+        Assumes texture state is enabled.  To enable the texture state::
+
+            from pyglet.gl import *
+            glEnable(GL_TEXTURE_2D)
+
+        :Parameters:
+            `from_index` : int
+                Start index of text to render.
+            `to_index` : int
+                End index (exclusive) of text to render.
+
         '''
-        if from_index == to_index or not self.text:
+        if from_index >= len(self.text) or \
+           from_index == to_index or \
+           not self.text:
             return
 
         # XXX Safe to assume all required textures will use same blend state I
@@ -174,6 +179,7 @@ class GlyphString(object):
         self.states[0][2].apply_blend_state()
 
         if from_index:
+            glPushMatrix()
             glTranslatef(-self.cumulative_advance[from_index-1], 0, 0)
         if to_index is None:
             to_index = len(self.text)
@@ -189,116 +195,8 @@ class GlyphString(object):
             glBindTexture(GL_TEXTURE_2D, texture.id)
             glDrawArrays(GL_QUADS, state_from * 4, state_length * 4)
 
-class FontException(Exception):
-    pass
-
-class BaseFont(object):
-    texture_width = 256
-    texture_height = 256
-    texture_internalformat = GL_ALPHA
-
-    # These should also be set by subclass when known
-    ascent = 0
-    descent = 0
-
-    glyph_renderer_class = GlyphRenderer
-    texture_class = GlyphTextureAtlas
-
-    def __init__(self):
-        self.textures = []
-        self.glyphs = {}
-
-    @classmethod
-    def add_font_data(cls, data):
-        # Ignored unless overridden
-        pass
-
-    @classmethod
-    def have_font(cls, name):
-        # Subclasses override
-        return True
-
-    def create_glyph(self, image):
-        glyph = None
-        for texture in self.textures:
-            glyph = texture.fit(image)
-            if glyph:
-                break
-        if not glyph:
-            if image.width > self.texture_width or \
-               image.height > self.texture_height:
-                texture = self.texture_class.create_for_size(GL_TEXTURE_2D,
-                    image.width * 2, image.height * 2,
-                    self.texture_internalformat)
-                self.texture_width = texture.width
-                self.texture_height = texture.height
-            else:
-                texture = self.texture_class.create_for_size(GL_TEXTURE_2D,
-                    self.texture_width, self.texture_height,
-                    self.texture_internalformat)
-            self.textures.insert(0, texture)
-            glyph = texture.fit(image)
-        return glyph
-
-    def get_glyphs(self, text):
-        '''Create and return a list of Glyphs for 'text'.
-        '''
-        glyph_renderer = None
-        glyphs = []         # glyphs that are committed.
-        for c in text:
-            # Get the glyph for 'c'
-            if c not in self.glyphs:
-                if not glyph_renderer:
-                    glyph_renderer = self.glyph_renderer_class(self)
-                self.glyphs[c] = glyph_renderer.render(c)
-            glyphs.append(self.glyphs[c])
-        return glyphs
-
-
-    def get_glyphs_for_width(self, text, width):
-        '''Create and return a list of Glyphs that fit within 'width',
-        beginning with the text 'text'.  If the entire text is larger than
-        'width', as much as possible will be used while breaking after
-        a space or zero-width space character.  If a newline is enountered
-        in text, only text up to that newline will be used.  If no break
-        opportunities (newlines or spaces) occur within 'width', the text
-        up to the first break opportunity will be used (this will exceed
-        'width').  If there are no break opportunities, the entire text
-        will be used.
-        '''
-        glyph_renderer = None
-        glyph_buffer = []   # next glyphs to be added, as soon as a BP is found
-        glyphs = []         # glyphs that are committed.
-        for c in text:
-            if c == '\n':
-                glyphs += glyph_buffer
-                break
-
-            # Get the glyph for 'c'
-            if c not in self.glyphs:
-                if not glyph_renderer:
-                    glyph_renderer = self.glyph_renderer_class(self)
-                self.glyphs[c] = glyph_renderer.render(c)
-            glyph = self.glyphs[c]
-            
-            # Add to holding buffer and measure
-            glyph_buffer.append(glyph)
-            width -= glyph.advance
-            
-            # If over width and have some committed glyphs, finish.
-            if width <= 0 and len(glyphs) > 0:
-                break
-
-            # If a valid breakpoint, commit holding buffer
-            if c in u'\u0020\u200b':
-                glyphs += glyph_buffer
-                glyph_buffer = []
-
-        # If nothing was committed, commit everything (no breakpoints found).
-        if len(glyphs) == 0:
-            glyphs = glyph_buffer
-
-        return glyphs
+        if from_index:
+            glPopMatrix()
 
 # Load platform dependent module
 if sys.platform == 'darwin':
@@ -311,7 +209,7 @@ else:
     from pyglet.font.freetype import FreeTypeFont
     _font_class = FreeTypeFont
 
-def load_font(name, size, bold=False, italic=False):
+def load(name, size, bold=False, italic=False):
     '''Load a font for rendering.
 
     :Parameters:
@@ -329,7 +227,7 @@ def load_font(name, size, bold=False, italic=False):
             If True, an italic variant is returned, if one exists for the given
             family and size.
 
-    :rtype: `BaseFont`
+    :rtype: `pyglet.font.base.Font`
     '''
     # Find first matching name
     if type(name) in (tuple, list):
@@ -341,7 +239,7 @@ def load_font(name, size, bold=False, italic=False):
             name = None
 
     # Locate or create font cache   
-    shared_object_space = get_current_context().get_shared_object_space()
+    shared_object_space = window.get_current_context().get_shared_object_space()
     if not hasattr(shared_object_space, 'pyglet_font_font_cache'):
         shared_object_space.pyglet_font_font_cache = {}
     font_cache = shared_object_space.pyglet_font_font_cache
@@ -356,7 +254,7 @@ def load_font(name, size, bold=False, italic=False):
     font_cache[descriptor] = font
     return font
 
-def add_font(font):
+def add_file(font):
     if type(font) in (str, unicode):
         font = open(font, 'r')
     if hasattr(font, 'read'):
@@ -364,15 +262,9 @@ def add_font(font):
     _font_class.add_font_data(font)
 
 
-def add_font_dir(dir):
+def add_directory(dir):
     import os
     for file in os.listdir(dir):
         if file[:-4].lower() == '.ttf':
-            add_font(file)
-
-# Deprectated API:
-def Font(*args, **kwargs):
-    import warnings
-    warnings.warn('Font is deprecated, use load_font.')
-    load_font(*args, **kwargs)
+            add_file(file)
 
