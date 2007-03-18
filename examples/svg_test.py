@@ -14,7 +14,7 @@ import os.path
 from pyglet.window import Window
 from pyglet import clock
 from pyglet.window.event import *
-from pyglet.euclid import *
+from pyglet.ext.euclid import *
 from pyglet.gl import *
 import xml.dom
 import xml.dom.minidom
