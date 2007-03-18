@@ -13,8 +13,15 @@ def get_library(name):
     return ctypes.cdll.LoadLibrary(path)
 
 gst = get_library('gstreamer-0.10')
+gstaudio = get_library('gstaudio-0.10')
 glib = get_library('glib-2.0')
 gobject = get_library('gobject-2.0')
+
+GST_VERSION_MAJOR = 0
+GST_VERSION_MINOR = 10
+GST_VERSION_MICRO = 11
+
+GST_STATE_PLAYING = 4
 
 mainloop = None
 mainloop_context = None
@@ -34,7 +41,6 @@ def play(uri):
     playbin = gst.gst_element_factory_make('playbin', 'play')
     gobject.g_object_set(playbin, 'uri', uri, None)
 
-    GST_STATE_PLAYING = 4
     gst.gst_element_set_state(playbin, GST_STATE_PLAYING)
 
 def heartbeat():
