@@ -13,13 +13,13 @@ def get_library(name):
     return ctypes.cdll.LoadLibrary(path)
 
 gst = get_library('gstreamer-0.10')
-gstaudio = get_library('gstaudio-0.10')
+gstaudio = get_library('gstaudio.0.10')
 glib = get_library('glib-2.0')
 gobject = get_library('gobject-2.0')
 
 GST_VERSION_MAJOR = 0
 GST_VERSION_MINOR = 10
-GST_VERSION_MICRO = 11
+GST_VERSION_BUILD = 11
 
 GST_STATE_PLAYING = 4
 
