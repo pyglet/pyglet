@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# $Id:$
+# $Id$
 
 import ctypes
 
@@ -29,23 +29,43 @@ class BufferPool(list):
 buffer_pool = BufferPool()
 
 class Sound(object):
+    channels = 0
+    rate = 0
 
     def get_source(self):
         return Source(self)
 
+    def play(self):
+        source = self.get_source()
+        source.play()
+        return source
+
 class Source(object):
+    finished = False
+
     def __init__(self):
         self.source = al.ALuint()
         al.alGenSources(1, self.source)
         self.play_when_buffered = False
 
+    def __del__(self, al=al):
+        if al and al.alDeleteSources:
+            al.alDeleteSources(1, self.source)
+
     def play(self):
         buffers = al.ALint()
         al.alGetSourcei(self.source, al.AL_BUFFERS_QUEUED, buffers)
-        print 'play, %d' % buffers.value
         if buffers.value == 0:
             self.play_when_buffered = True
         else:
             al.alSourcePlay(self.source)
             self.play_when_buffered = False
+
+    def pump(self):
+        queued = al.ALint()
+        processed = al.ALint()
+        al.alGetSourcei(self.source, al.AL_BUFFERS_QUEUED, queued)
+        al.alGetSourcei(self.source, al.AL_BUFFERS_PROCESSED, processed)
+        if processed.value == queued.value:
+            self.finished = True
 

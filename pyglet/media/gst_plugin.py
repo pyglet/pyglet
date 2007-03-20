@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# $Id:$
+# $Id$
 
 '''Plugin architecture for Gstreamer.
 
@@ -367,6 +367,28 @@ class GstBuffer(ctypes.Structure):
         ('_gst_reserved', ctypes.c_void_p * GST_PADDING),
     ]
 
+GST_EVENT_TYPE_SHIFT = 4
+GST_EVENT_TYPE_UPSTREAM = 1 << 0
+GST_EVENT_TYPE_DOWNSTREAM = 1 << 1
+GST_EVENT_TYPE_SERIALIZED = 1 << 2
+
+def GST_EVENT_MAKE_TYPE(num, flags):
+    return (num << GST_EVENT_TYPE_SHIFT) | flags
+
+GstEventType = ctypes.c_int
+GST_EVENT_EOS = GST_EVENT_MAKE_TYPE(5, 
+    GST_EVENT_TYPE_DOWNSTREAM | GST_EVENT_TYPE_SERIALIZED)
+
+class GstEvent(ctypes.Structure):
+    _fields_ = [
+        ('mini_object', GstMiniObject),
+        ('type', GstEventType),
+        ('timestamp', ctypes.c_uint64),
+        ('src', ctypes.c_void_p),
+        ('structure', ctypes.c_void_p),
+        ('_gst_reserved', ctypes.c_void_p),
+    ]
+
 def py_derived_element(base):
     '''Derive a GstElement with a 'pyobject' member.'''
     class PyGstElement(ctypes.Structure):
@@ -385,6 +407,8 @@ GstPadChainFunction = ctypes.CFUNCTYPE(GstFlowReturn,
     ctypes.POINTER(GstPad), ctypes.POINTER(GstBuffer))
 GstPadSetCapsFunction = ctypes.CFUNCTYPE(ctypes.c_int,
     ctypes.POINTER(GstPad), ctypes.POINTER(GstCaps))
+GstPadEventFunction = ctypes.CFUNCTYPE(ctypes.c_int,
+    ctypes.POINTER(GstPad), ctypes.POINTER(GstEvent))
 
 # Python high-level classes
 
@@ -569,10 +593,15 @@ class Pad(object):
         gst.gst_pad_set_chain_function(this, chain)
         self.funcptrs.append(chain)
 
+        event = GstPadEventFunction(self.event)
+        gst.gst_pad_set_event_function(this, event)
+        self.funcptrs.append(event)
+
     def setcaps(self, this, caps):
         return True
 
     def chain(self, this, buf):
         return GST_FLOW_OK
 
-
+    def event(self, this, event):
+        return False

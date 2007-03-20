@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# $Id:$
+# $Id$
 
 import ctypes
 
@@ -28,7 +28,6 @@ class OpenALStaticSinkPad(gst_plugin.Pad):
         '''
 
     def setcaps(self, this, caps):
-        print 'setcaps'
         gst.gst_caps_get_structure.restype = ctypes.c_void_p
         structure = gst.gst_caps_get_structure(caps, 0)
 
@@ -49,6 +48,9 @@ class OpenALStaticSinkPad(gst_plugin.Pad):
             (2, 16): al.AL_FORMAT_STEREO16,
         }[(channels.value, depth.value)]
 
+        self.element.channels = channels.value
+        self.element.rate = rate.value
+
         return True
 
     def chain(self, this, buffer):
@@ -58,6 +60,12 @@ class OpenALStaticSinkPad(gst_plugin.Pad):
                         self.rate)
         self.element.sound.add_buffer(albuffer)
         return gst_plugin.GST_FLOW_OK
+
+    def event(self, this, event):
+        if event.contents.type == gst_plugin.GST_EVENT_EOS:
+            self.element.sound.finished_buffering()
+            return True
+        return False
 
 class OpenALStaticSinkElement(gst_plugin.Element):
     name = 'openalstaticsink'
@@ -98,6 +106,7 @@ class GstreamerStaticSound(openal.Sound):
 
     def get_source(self):
         source = openal.Source()
+        sources.append(source)
         for buffer in self.buffers:
             al.alSourceQueueBuffers(source.source, 1, buffer)
         if self.buffering:
@@ -107,7 +116,6 @@ class GstreamerStaticSound(openal.Sound):
     def finished_buffering(self):
         self.buffering = False
         self.sources = None
-             
 
 class OpenALStreamingSinkElement(gst_plugin.Element):
     name = 'openalstreamingsink'
@@ -166,46 +174,33 @@ class OpenALPlugin(gst_plugin.Plugin):
     origin = 'http://www.pyglet.org'
 
     elements = (OpenALStreamingSinkElement, OpenALStaticSinkElement)
-    #elements = (OpenALStaticSinkElement,)
 
 
-class GstreamerOpenALDevice(object):
-    def __init__(self):
-        openal.init()
-        gstreamer.init()
-        self.openal_plugin = OpenALPlugin()
-        self.openal_plugin.register()
-        pass
+openal.init()
+gstreamer.init()
+openal_plugin = OpenALPlugin()
+openal_plugin.register()
 
-    def load(self, filename, file=None, streaming=None):
-        if streaming is None:
-            streaming = False
+# Active sources
+sources = []
 
-        uri = 'file://%s' % filename
+# Device interface
+# --------------------------------------------------------------------------
 
-        if not streaming:
-            print uri
-            return GstreamerStaticSound(uri)
+def load(filename, file=None, streaming=None):
+    if streaming is None:
+        streaming = False
 
-        # TODO streaming, file objects 
+    uri = 'file://%s' % filename
 
-device = GstreamerOpenALDevice()
+    if not streaming:
+        return GstreamerStaticSound(uri)
 
-if __name__ == '__main__':
-    import sys
-    import time
+    raise NotImplementedError('streaming')
+    # TODO streaming, file objects 
 
-    sound = device.load(sys.argv[1])
-    source = sound.get_source()
-    source.play() 
-
-    time.sleep(3)
-    print 'splash'
-    source = sound.get_source()
-    source.play()
-
-    while True:
-        #gstreamer.heartbeat()
-        time.sleep(0.1)
-
-
+def dispatch_events():
+    global sources
+    for source in sources:
+        source.pump()
+    sources = [source for source in sources if not source.finished]
