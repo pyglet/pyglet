@@ -3,6 +3,7 @@
 
 import ctypes
 
+from pyglet.media import Sound
 from pyglet.media import lib_openal as al
 from pyglet.media import lib_alc as alc
 
@@ -28,19 +29,8 @@ class BufferPool(list):
 
 buffer_pool = BufferPool()
 
-class Sound(object):
-    channels = 0
-    rate = 0
 
-    def get_source(self):
-        return Source(self)
-
-    def play(self):
-        source = self.get_source()
-        source.play()
-        return source
-
-class Source(object):
+class OpenALSound(Sound):
     finished = False
 
     def __init__(self):
@@ -61,7 +51,7 @@ class Source(object):
             al.alSourcePlay(self.source)
             self.play_when_buffered = False
 
-    def pump(self):
+    def dispatch_events(self):
         queued = al.ALint()
         processed = al.ALint()
         al.alGetSourcei(self.source, al.AL_BUFFERS_QUEUED, queued)

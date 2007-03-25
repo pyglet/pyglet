@@ -22,7 +22,6 @@ if len(sys.argv) > 1:
 
 window = Window(640, 480)
 sound = media.load(BALL_SOUND)
-print sound.channels, sound.rate
 
 class Ball(object):
     ball_image = image.load_image(BALL_IMAGE)
