@@ -12,7 +12,7 @@ __version__ = '$Id: $'
 import unittest
 
 from pyglet.gl import *
-from pyglet.image import *
+from pyglet import image
 from pyglet.ext.scene2d import *
 from pyglet.window import *
 from pyglet.window.event import *
@@ -37,7 +37,7 @@ class TEST_CHECKERBOARD(ImageRegressionTestCase):
         self.window = w = Window(width, height, visible=False)
         w.push_handlers(self)
 
-        self.texture = create_image(32, 32, CheckerImagePattern()).texture
+        self.texture = image.create(32, 32, CheckerImagePattern()).texture
 
         w.set_visible()
         while not (w.has_exit or self.has_exit):

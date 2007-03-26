@@ -478,7 +478,7 @@ class RegressionCheckTestResult(unittest.TestResult):
     def __init__(self, component, tolerance):
         super(RegressionCheckTestResult, self).__init__()
         self.filename = component.get_regression_image_filename()
-        self.regression_image = pyglet.image.load_image(self.filename)
+        self.regression_image = pyglet.image.load(self.filename)
         self.tolerance = tolerance
 
     def startTest(self, test):

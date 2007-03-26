@@ -14,7 +14,7 @@ import pyglet.font
 from pyglet.ext.layout.base import *
 from pyglet.ext.layout.frame import *
 from pyglet.ext.layout.locator import *
-from pyglet.image import *
+from pyglet import image
 
 class GLRenderDevice(RenderDevice):
     _stock_font_names = {
@@ -156,11 +156,11 @@ class GLRenderDevice(RenderDevice):
                 self.texture_cache[background_image] = None
                 stream = self.locator.get_stream(background_image)
                 if stream:
-                    image = load_image('', file=stream)
+                    img = image.load('', file=stream)
                     if repeat != 'no-repeat':
-                        texture = TileableTexture.create_for_image(image)
+                        texture = TileableTexture.create_for_image(img)
                     else:
-                        texture = image.texture
+                        texture = img.texture
                     self.texture_cache[background_image] = texture
             texture = self.texture_cache[background_image]
             if texture:

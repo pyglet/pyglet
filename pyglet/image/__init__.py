@@ -7,14 +7,14 @@ accompanying documentation.
 
 To load an image::
 
-    from pyglet.image import *
-    image = load_image('picture.png')
+    from pyglet import image
+    pic = image.load('picture.png')
 
 The supported image file types include PNG, BMP, GIF, JPG, and many more,
 somewhat depending on the operating system.  To load an image from a file-like
 object instead of a filename::
 
-    image = load_image('hint.jpg', file=fileobj)
+    pic = image.load('hint.jpg', file=fileobj)
 
 The hint helps the module locate an appropriate decoder to use based on the
 file extension.  It is optional.
@@ -23,12 +23,12 @@ Once loaded, images can be used directly by most other modules of pyglet (for
 example, pyglet.ext.scene2d).  All images have a width and height you can
 access::
 
-    width, height = image.width, image.height
+    width, height = pic.width, pic.height
 
 You can extract a region of an image (this keeps the original image intact;
 the memory is shared efficiently)::
 
-    subimage = image.get_region(x, y, width, height)
+    subimage = pic.get_region(x, y, width, height)
 
 Remember that y-coordinates are always increasing upwards.
 
@@ -37,7 +37,7 @@ Drawing images
 
 To draw an image at some point on the screen::
 
-    image.blit(x, y, z)
+    pic.blit(x, y, z)
 
 This assumes an appropriate view transform and projection have been applied.
 
@@ -46,7 +46,7 @@ Texture access
 
 If you are using OpenGL directly, you can access the image as a texture::
 
-    texture = image.texture
+    texture = pic.texture
 
 (This is the most efficient way to obtain a texture; some images are
 immediately loaded as textures, whereas others go through an intermediate
@@ -62,7 +62,7 @@ Pixel access
 
 To access raw pixel data of an image::
 
-    rawimage = image.image_data
+    rawimage = pic.image_data
 
 (If the image has just been loaded this will be a very quick operation;
 however if the image is a texture a relatively expensive readback operation
@@ -112,7 +112,7 @@ from pyglet.window import *
 class ImageException(Exception):
     pass
 
-def load_image(filename, file=None, decoder=None):
+def load(filename, file=None, decoder=None):
     '''Load an image from a file.
 
     :note: You can make no assumptions about the return type; usually it will
@@ -142,19 +142,19 @@ def load_image(filename, file=None, decoder=None):
         return decoder.decode(file, filename)
     else:
         first_exception = None
-        for decoder in get_decoders(filename):
+        for decoder in codecs.get_decoders(filename):
             try:
                 image = decoder.decode(file, filename)
                 return image
-            except ImageDecodeException, e:
+            except codecs.ImageDecodeException, e:
                 first_exception = first_exception or e
                 file.seek(0)
 
         if not first_exception:
-            raise ImageDecodeException('No image decoders are available')
+            raise codecs.ImageDecodeException('No image decoders are available')
         raise first_exception 
 
-def create_image(width, height, pattern=None):
+def create(width, height, pattern=None):
     '''Create an image optionally filled with the given pattern.
 
     :note: You can make no assumptions about the return type; usually it will
@@ -323,16 +323,17 @@ class AbstractImage(object):
             encoder.encode(self, file, filename)
         else:
             first_exception = None
-            for encoder in get_encoders(filename):
+            for encoder in codecs.get_encoders(filename):
                 try:
                     encoder.encode(self, file, filename)
                     return
-                except ImageDecodeException, e:
+                except codecs.ImageDecodeException, e:
                     first_exception = first_exception or e
                     file.seek(0)
 
             if not first_exception:
-                raise ImageEncodeException('No image encoders are available')
+                raise codecs.ImageEncodeException(
+                        'No image encoders are available')
             raise first_exception
 
     def blit(self, x, y, z):
@@ -1761,5 +1762,5 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
         return len(self.items)
 
 # Initialise default codecs
-from pyglet.image.codecs import *
-add_default_image_codecs()
+from pyglet.image import codecs
+codecs.add_default_image_codecs()

@@ -15,7 +15,7 @@ __version__ = '$Id$'
 import unittest
 
 from pyglet.gl import *
-from pyglet.image import load_image
+from pyglet import image
 from pyglet import window
 
 from os.path import join, dirname
@@ -28,8 +28,8 @@ class WINDOW_SET_MOUSE_CURSOR(unittest.TestCase):
     def test_set_mouse_cursor(self):
         self.width, self.height = 200, 200
         self.w = w = window.Window(self.width, self.height)
-        image = load_image(cursor_file)
-        w.set_mouse_cursor(window.ImageMouseCursor(image, 4, 28))
+        img = image.load(cursor_file)
+        w.set_mouse_cursor(window.ImageMouseCursor(img, 4, 28))
         w.push_handlers(self)
         glClearColor(1, 1, 1, 1)
         while not w.has_exit:

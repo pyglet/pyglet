@@ -18,7 +18,7 @@ from StringIO import StringIO
 import unittest
 import base_save
 
-from pyglet.image import *
+from pyglet import image
 from pyglet.ext.scene2d import *
 
 class TEST_DEPTH_SAVE(base_save.TestSave):
@@ -44,13 +44,13 @@ class TEST_DEPTH_SAVE(base_save.TestSave):
         self.draw()
 
         print 'Saving depth image...'
-        image = get_buffer_manager().get_depth_buffer()
+        img = image.get_buffer_manager().get_depth_buffer()
         file = StringIO()
-        image.save('buffer.png', file)
+        img.save('buffer.png', file)
 
         print 'Loading depth image as texture...'
         file.seek(0)
-        self.saved_texture = load_image('buffer.png', file)
+        self.saved_texture = image.load('buffer.png', file)
 
         print 'Done.'
         self.window.set_visible(False)

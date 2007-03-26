@@ -10,8 +10,8 @@ import unittest
 from os.path import dirname, join
 
 from pyglet.gl import *
-from pyglet.image import *
-from pyglet.image.codecs import *
+from pyglet import image
+from pyglet.image import codecs
 from pyglet.window import *
 from pyglet.window.event import *
 
@@ -64,11 +64,11 @@ class TestLoad(ImageRegressionTestCase):
         w.push_handlers(self)
 
         self.screen = get_buffer_manager().get_color_buffer()
-        self.checkerboard = create_image(32, 32, CheckerImagePattern())
+        self.checkerboard = image.create(32, 32, CheckerImagePattern())
 
         if self.texture_file:
             self.texture_file = join(dirname(__file__), self.texture_file)
-            self.texture = load_image(self.texture_file, 
+            self.texture = image.load(self.texture_file, 
                                       decoder=self.decoder).texture 
 
         if self.alpha:

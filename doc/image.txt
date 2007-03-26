@@ -21,10 +21,10 @@ Loading an image
 
 Quite possibly the only function you need to know is how to load an image::
 
-    from pyglet.image import *
-    image = load_image('kitten.png')
+    from pyglet import image
+    kitten = image.load('kitten.png')
 
-Without any additional arguments, `load_image` will attempt to load the
+Without any additional arguments, `load` will attempt to load the
 filename specified using any available image decoder.  This will allow you to
 load PNG, GIF, JPEG, BMP and DDS files, and possibly other files as well,
 depending on your operating system and additional installed modules.  If the
@@ -34,7 +34,7 @@ You can load an image from any file-like object by specifying the `file`
 keyword parameter::
 
     kitten_stream = open('kitten.png', 'rb')
-    image = load_image('kitten.png', file=kitten_stream)
+    kitten = image.load('kitten.png', file=kitten_stream)
 
 In this case the filename ``kitten.png`` is optional, but gives a hint to the
 decoder as to the file type (it is otherwise unused).
@@ -55,7 +55,7 @@ You may only want to use a portion of the complete image.  You can use the
 `get_region` method to return an image of a rectangular region of a source
 image::
 
-    image_part = image.get_region(x=10, y=10, width=100, height=100)
+    image_part = kitten.get_region(x=10, y=10, width=100, height=100)
 
 This returns an image with dimensions 100x100.  The region extracted from
 `image` is aligned such that the bottom-left corner of the rectangle is 10
@@ -71,7 +71,7 @@ Displaying images
 
 Use the `blit` method to draw an image to the current window::
 
-    image.blit(x, y, z)
+    kitten.blit(x, y, z)
 
 The `x`, `y` and `z` coordinates locate where to draw the  bottom-left corner
 of the image.  With the projection defined above (or the one used by
@@ -85,12 +85,12 @@ Saving an image
 
 Any image can be saved using the `save` method::
 
-    image.save('kitten.jpg')
+    kitten.save('kitten.jpg')
 
 or, specifying a file-like object::
 
     kitten_stream = open('kitten.jpg', 'wb')
-    image.save('kitten.jpg', file=kitten_stream)
+    kitten.save('kitten.jpg', file=kitten_stream)
 
 Module details
 --------------
@@ -115,9 +115,9 @@ Most image decoders return an instance of `ImageData` when an image is loaded.
 You can also create an `ImageData` instance for any type of `AbstractImage` by
 accessing the `image_data` property.  For example::
 
-    image = load_image('kitten.jpg')
+    kitten = image.load('kitten.jpg')
     # image is probably an `ImageData`, but there is no guarantee
-    image = image.image_data
+    kitten = kitten.image_data
     # now image is definitely `ImageData`.
 
 There is no performance penalty for accessing `image_data` of an `ImageData`,
@@ -153,19 +153,19 @@ colour data, in the order red, green, blue, alpha.  Note that machine
 endianness has no impact on the interpretation of a format string.
 
 The length of a format string always gives the number of bytes per pixel.  So,
-the minimum absolute pitch for a given image is ``len(image.format) *
-image.width``.   
+the minimum absolute pitch for a given image is ``len(kitten.format) *
+kitten.width``.   
 
 To retrieve pixel data in a particular format, set the `pitch` and `format`
 properties then read `data`.  The following example reads tightly packed rows
 in ``RGB`` format (the alpha component, if any, will be discarded)::
 
-    image = image.image_data
-    image.format = 'RGB'
-    image.pitch = len(image.format) * image.width
-    data = image.data
+    kitten = kitten.image_data
+    kitten.format = 'RGB'
+    kitten.pitch = len(kitten.format) * kitten.width
+    data = kitten.data
 
-`image.data` always returns a string, however it can be set to a ctypes array,
+`data` always returns a string, however it can be set to a ctypes array,
 stdlib array, list of byte data, string, or ctypes pointer.  Remember to 
 set the format and pitch of the data `before` setting it on the instance.
 
@@ -183,8 +183,8 @@ example, chapter 9 of the `OpenGL Programming Guide`_).
 
 To create a texture from any `AbstractImage`, access its `texture` property::
 
-    image = load_image('kitten.jpg')
-    texture = image.texture
+    kitten = image.load('kitten.jpg')
+    texture = kitten.texture
 
 Textures are automatically created and used by `ImageData` when blitted.  It
 is useful to use textures directly when aiming for high performance or 3D
@@ -207,12 +207,12 @@ corresponding to just the part of the texture covered by the original image.
 A `TextureRegion` has an `owner` attribute that references the larger texture.
 The following session demonstrates this::
 
-    >>> image = load_image('tests/image/rgba.png')
-    >>> image
+    >>> rgba = image.load('tests/image/rgba.png')
+    >>> rgba
     <ImageData 235x257>         # The image is 235x257
-    >>> image.texture
+    >>> rgba.texture
     <TextureRegion 235x257>     # The returned texture is a region
-    >>> image.texture.owner
+    >>> rgba.texture.owner
     <Texture 256x512>           # The owning texture has power-2 dimensions
     >>> 
 
@@ -222,9 +222,9 @@ coordinates to use for a quad mapping the whole image.  `tex_coords` is a
 dimensions.  The following code can be used to render a quad for a texture
 region::
 
-    image = image.texture
-    t = image.tex_coords
-    w, h = image.width, image.height
+    texture = kitten.texture
+    t = texture.tex_coords
+    w, h = texture.width, texture.height
     array = (GLfloat * 32)(
          t[0][0], t[0][1], t[0][2], 1.,
          x,       y,       z,       1.,
@@ -250,8 +250,8 @@ Drawing to images
 The `blit_into` method can be used to create composite images.  For example,
 to blit an image of a sheep onto an image of some grass::
 
-    grass = load_image('grass.png').texture
-    sheep = load_image('sheep.png')
+    grass = image.load('grass.png').texture
+    sheep = image.load('sheep.png')
     grass.blit_into(sheep, x, y, z)
 
 The `z` parameter is ignored except for `Texture3D` (described in `Image

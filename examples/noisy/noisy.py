@@ -24,7 +24,7 @@ window = Window(640, 480)
 sound = media.load(BALL_SOUND)
 
 class Ball(object):
-    ball_image = image.load_image(BALL_IMAGE)
+    ball_image = image.load(BALL_IMAGE)
     width = ball_image.width
     height = ball_image.height
     def __init__(self):

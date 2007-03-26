@@ -12,7 +12,7 @@ __version__ = '$Id$'
 import math
 
 from pyglet.ext.scene2d import *
-from pyglet.image import *
+from pyglet import image
 from pyglet.ext.scene2d.drawable import *
 from pyglet.gl import *
 

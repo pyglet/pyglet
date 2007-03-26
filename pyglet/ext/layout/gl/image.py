@@ -9,7 +9,7 @@ __version__ = '$Id$'
 import warnings
 
 from pyglet.gl import *
-from pyglet.image import *
+from pyglet import image
 from pyglet.ext.layout.frame import *
 
 class ImageReplacedElementFactory(ReplacedElementFactory):
@@ -36,9 +36,9 @@ class ImageReplacedElementFactory(ReplacedElementFactory):
             warnings.warn('Image not loaded: "%s"' % attrs['src'])
             return None
 
-        image = load_image('', file=file)
-        self.cache[src] = image
-        return ImageReplacedElementDrawable(image)
+        img = image.load('', file=file)
+        self.cache[src] = img
+        return ImageReplacedElementDrawable(img)
 
 class ImageReplacedElementDrawable(ReplacedElementDrawable):
     def __init__(self, image):

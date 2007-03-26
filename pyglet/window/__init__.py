@@ -22,7 +22,7 @@ Getting Started
 
 Call the Window constructor to create a new window:
 
-    >>> from pyglet.window import *
+    >>> from pyglet.window import Window
     >>> win = Window(width=640, height=480, fullscreen=False)
     >>> 
 
@@ -908,43 +908,6 @@ def get_factory():
     '''
     return WindowFactory(_platform)
 
-def create(width=None, 
-           height=None, 
-           fullscreen=False,
-           visible=True,
-           doublebuffer=True,
-           vsync=True,
-           depth_size=24,
-           window_class=None,
-           **kwargs):
-    '''Create a new window.
-
-    Unless otherwise specified, the created window will be initially
-    visible and double-buffered.  You can specify additional GL attributes
-    as keyword arguments.
-    '''
-    import warnings
-    warnings.warn('pyglet.window.create is deprecated in favour of Window()')
-    factory = get_factory()
-    if width and height:
-        factory.set_size(width, height)
-    factory.set_fullscreen(fullscreen)
-    factory.set_gl_attribute('doublebuffer', doublebuffer)
-    factory.set_gl_attribute('depth_size', depth_size)
-    for key, value in kwargs.items():
-        factory.set_gl_attribute(key, value)
-    sys.argv = factory.set_arguments(sys.argv)
-
-    if fullscreen:
-        screen = factory.get_screen()
-        factory.set_size(screen.width, screen.height)
-
-    window = factory.create_window(window_class)
-    window.set_caption(sys.argv[0])
-    if visible:
-        window.set_visible(True)
-        window.activate()
-    return window
 
 # Try to determine which platform to use.
 if sys.platform == 'darwin':
@@ -957,6 +920,7 @@ else:
     from pyglet.window.xlib import XlibPlatform
     _platform = XlibPlatform()
    
+
 class Window(_platform.get_window_class()):
     def __init__(self, 
                  width=None,
@@ -1019,42 +983,3 @@ class Window(_platform.get_window_class()):
         self.switch_to()
         self.projection.apply()
 
-__all__ = ['CONTEXT_SHARE_NONE', 'CONTEXT_SHARE_EXISTING',
-           'LOCATION_DEFAULT',
-           'CURSOR_DEFAULT',
-           'CURSOR_CROSSHAIR',
-           'CURSOR_HAND',
-           'CURSOR_HELP',
-           'CURSOR_NO',
-           'CURSOR_SIZE',
-           'CURSOR_SIZE_UP',
-           'CURSOR_SIZE_UP_RIGHT',
-           'CURSOR_SIZE_RIGHT',
-           'CURSOR_SIZE_DOWN_RIGHT',
-           'CURSOR_SIZE_DOWN',
-           'CURSOR_SIZE_DOWN_LEFT',
-           'CURSOR_SIZE_LEFT',
-           'CURSOR_SIZE_UP_LEFT',
-           'CURSOR_SIZE_UP_DOWN',
-           'CURSOR_SIZE_LEFT_RIGHT',
-           'CURSOR_TEXT',
-           'CURSOR_WAIT',
-           'CURSOR_WAIT_ARROW',
-           'WINDOW_STYLE_DEFAULT',
-           'WINDOW_STYLE_DIALOG',
-           'WINDOW_STYLE_TOOL',
-           'WINDOW_STYLE_BORDERLESS',
-           'get_current_context',
-           'WindowException',
-           'BaseScreen',
-           'BaseGLConfig',
-           'GLSharedObjectSpace',
-           'BaseGLContext',
-           'BaseWindow',
-           'BasePlatform',
-           'WindowFactory',
-           'MouseCursor',
-           'DefaultMouseCursor',
-           'ImageMouseCursor',
-           'Window',
-           'get_platform']

@@ -15,7 +15,7 @@ __version__ = '$Id: WINDOW_SET_MOUSE_CURSOR.py 717 2007-03-03 07:04:10Z Alex.Hol
 import unittest
 
 from pyglet.gl import *
-from pyglet.image import load_image
+from pyglet import image
 from pyglet import window
 from pyglet.window import key
 
@@ -26,7 +26,7 @@ class WINDOW_SET_ICON(unittest.TestCase):
     def test_set_icon(self):
         self.width, self.height = 200, 200
         self.w = w = window.Window(self.width, self.height)
-        w.set_icon(load_image(icon_file))
+        w.set_icon(image.load(icon_file))
         glClearColor(1, 1, 1, 1)
         while not w.has_exit:
             glClear(GL_COLOR_BUFFER_BIT)

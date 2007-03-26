@@ -13,7 +13,7 @@ __version__ = '$Id: $'
 import sys
 
 from pyglet.window import Window
-from pyglet.image import *
+from pyglet import image
 
 window = None
 def convert(src, dest):
@@ -22,12 +22,12 @@ def convert(src, dest):
         # A window is necessary to create a GL context so we can do
         # compressed texture conversions.
         window = window or Window(visible=False)
-        texture = Texture.load(src)
+        texture = image.load(src).texture
         texture.save(dest)
     else:
         # Can do straight conversion without a window or context.
-        image = load_image(src)
-        image.save(dest)
+        img = image.load(src)
+        img.save(dest)
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:

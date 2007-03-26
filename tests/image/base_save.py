@@ -11,8 +11,8 @@ from StringIO import StringIO
 from os.path import dirname, join
 
 from pyglet.gl import *
-from pyglet.image import *
-from pyglet.image.codecs import *
+from pyglet import image
+from pyglet.image import codecs
 from pyglet.ext.scene2d import *
 from pyglet.window import *
 from pyglet.window.event import *
@@ -26,7 +26,6 @@ class TestSave(ImageRegressionTestCase):
     show_checkerboard = True
     alpha = True
     has_exit = False
-    encodedr = None
 
     def on_expose(self):
         self.draw()
@@ -76,13 +75,13 @@ class TestSave(ImageRegressionTestCase):
     def load_texture(self):
         if self.texture_file:
             self.texture_file = join(dirname(__file__), self.texture_file)
-            self.original_texture = load_image(self.texture_file).texture
+            self.original_texture = image.load(self.texture_file).texture
 
             file = StringIO()
             self.original_texture.save(self.texture_file, file,
                                        encoder=self.encoder)
             file.seek(0)
-            self.saved_texture = load_image(self.texture_file, file).texture
+            self.saved_texture = image.load(self.texture_file, file).texture
 
     def create_window(self):
         width, height = 800, 600
@@ -93,7 +92,7 @@ class TestSave(ImageRegressionTestCase):
         w.push_handlers(self)
 
         self.screen = get_buffer_manager().get_color_buffer()
-        self.checkerboard = create_image(32, 32, CheckerImagePattern())
+        self.checkerboard = image.create(32, 32, CheckerImagePattern())
 
         self.load_texture()
 

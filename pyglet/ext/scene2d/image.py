@@ -21,7 +21,7 @@ __version__ = '$Id$'
 
 from pyglet.gl import *
 
-from pyglet.image import load_image
+from pyglet import image
 from pyglet.ext.scene2d.drawable import *
 from pyglet.ext.resource import register_factory, ResourceError
 
@@ -101,10 +101,10 @@ class Image2d(Drawable):
     @classmethod
     def load(cls, filename=None, file=None):
         '''Image is loaded from the given file.'''
-        image = load_image(filename=filename, file=file)
-        image = cls(image.texture, 0, 0)
-        image.filename = filename
-        return image
+        img = image.load(filename=filename, file=file)
+        img = cls(image.texture, 0, 0)
+        img.filename = filename
+        return img
 
     @classmethod
     def from_image(cls, image):
