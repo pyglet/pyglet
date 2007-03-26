@@ -102,7 +102,7 @@ class Image2d(Drawable):
     def load(cls, filename=None, file=None):
         '''Image is loaded from the given file.'''
         img = image.load(filename=filename, file=file)
-        img = cls(image.texture, 0, 0)
+        img = cls(img.texture, 0, 0)
         img.filename = filename
         return img
 

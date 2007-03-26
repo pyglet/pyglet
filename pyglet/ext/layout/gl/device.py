@@ -158,7 +158,7 @@ class GLRenderDevice(RenderDevice):
                 if stream:
                     img = image.load('', file=stream)
                     if repeat != 'no-repeat':
-                        texture = TileableTexture.create_for_image(img)
+                        texture = image.TileableTexture.create_for_image(img)
                     else:
                         texture = img.texture
                     self.texture_cache[background_image] = texture
@@ -168,7 +168,7 @@ class GLRenderDevice(RenderDevice):
                 glColor3f(1, 1, 1)
                 glEnable(GL_BLEND)
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-                if isinstance(texture, TileableTexture):
+                if isinstance(texture, image.TileableTexture):
                     width, height = texture.width, texture.height
                     if repeat in ('repeat', 'repeat-x'):
                         width = x2 - x1

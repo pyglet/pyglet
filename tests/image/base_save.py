@@ -91,8 +91,8 @@ class TestSave(ImageRegressionTestCase):
         self.window = w = self.create_window()
         w.push_handlers(self)
 
-        self.screen = get_buffer_manager().get_color_buffer()
-        self.checkerboard = image.create(32, 32, CheckerImagePattern())
+        self.screen = image.get_buffer_manager().get_color_buffer()
+        self.checkerboard = image.create(32, 32, image.CheckerImagePattern())
 
         self.load_texture()
 

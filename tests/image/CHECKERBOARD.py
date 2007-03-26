@@ -37,7 +37,7 @@ class TEST_CHECKERBOARD(ImageRegressionTestCase):
         self.window = w = Window(width, height, visible=False)
         w.push_handlers(self)
 
-        self.texture = image.create(32, 32, CheckerImagePattern()).texture
+        self.texture = image.create(32, 32, image.CheckerImagePattern()).texture
 
         w.set_visible()
         while not (w.has_exit or self.has_exit):

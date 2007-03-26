@@ -18,6 +18,7 @@ from StringIO import StringIO
 import unittest
 import base_save
 
+from pyglet.gl import *
 from pyglet import image
 from pyglet.ext.scene2d import *
 

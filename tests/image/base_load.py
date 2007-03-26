@@ -63,8 +63,8 @@ class TestLoad(ImageRegressionTestCase):
         self.window = w = Window(width, height, visible=False)
         w.push_handlers(self)
 
-        self.screen = get_buffer_manager().get_color_buffer()
-        self.checkerboard = image.create(32, 32, CheckerImagePattern())
+        self.screen = image.get_buffer_manager().get_color_buffer()
+        self.checkerboard = image.create(32, 32, image.CheckerImagePattern())
 
         if self.texture_file:
             self.texture_file = join(dirname(__file__), self.texture_file)
