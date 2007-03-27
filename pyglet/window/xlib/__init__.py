@@ -354,7 +354,6 @@ class XlibWindow(BaseWindow):
     _y = 0                  # Last known window position
     _width = 0
     _height = 0             # Last known window size
-    _ignore_motion = False  # Set to true to skip the next mousemotion event
     _mouse_exclusive_client = None  # x,y of "real" mouse during exclusive
     _mouse_buttons = [False] * 6 # State of each xlib button
     _exclusive_keyboard = False
@@ -728,7 +727,6 @@ class XlibWindow(BaseWindow):
                 0, 0,           # src x, y
                 0, 0,           # src w, h
                 x, y)
-            self._ignore_motion = True
         else:
             # Unclip
             xlib.XUngrabPointer(self._display, xlib.CurrentTime)
@@ -1000,26 +998,25 @@ class XlibWindow(BaseWindow):
         x = event.xmotion.x
         y = self.height - event.xmotion.y
 
-        if self._ignore_motion:
+        dx = x - self._mouse_x
+        dy = y - self._mouse_y
+
+        if self._mouse_exclusive and \
+           (event.xmotion.x, event.xmotion.y) == self._mouse_exclusive_client:
             # Ignore events caused by XWarpPointer
-            self._ignore_motion = False
             self._mouse_x = x
             self._mouse_y = y
             return
 
         if self._mouse_exclusive:
             # Reset pointer position
+            ex, ey = self._mouse_exclusive_client
             xlib.XWarpPointer(self._display,
                 0,
                 self._window,
                 0, 0,
                 0, 0,
-                self._mouse_exclusive_client[0],
-                self._mouse_exclusive_client[1])
-            self._ignore_motion = True
-
-        dx = x - self._mouse_x
-        dy = y - self._mouse_y
+                ex, ey)
 
         self._mouse_x = x
         self._mouse_y = y

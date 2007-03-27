@@ -538,21 +538,17 @@ class ClockDisplay(object):
             from pyglet.font import load as load_font
             font = load_font('', 36, bold=True)
 
-        from pyglet.ext.scene2d.textsprite import TextSprite
-        self.sprite = TextSprite(font, '', color=color, x=10, y=10)
+        import pyglet.font
+        self.label = pyglet.font.Label(font, '', color=color, x=10, y=10)
 
         self.format = format
 
     def update_text(self, dt=0):
         fps = self.clock.get_fps()
-        self.sprite.text = self.format % {'fps': fps}
-
-        # XXX temp until sprite.right implemented
-        if self.window_width:
-            self.sprite.x = self.window_width - self.sprite.width - 10
+        self.label.text = self.format % {'fps': fps}
 
     def draw(self):
-        self.sprite.draw()
+        self.label.draw()
 
     def on_resize(self, width, height):
         # TODO when TextSprite implements Sprite.

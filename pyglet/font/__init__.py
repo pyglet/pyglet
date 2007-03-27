@@ -274,9 +274,11 @@ class Label(object):
 
         x = self.x
         if self.halign == self.RIGHT:
-            x -= self.width
+            raise NotImplementedError('no align yet')
+            x += self._layout_width - self.width
         elif self.halign == self.CENTER:
-            x -= self.width / 2
+            raise NotImplementedError('no align yet')
+            x += -self._layout_width / 2 + self._text_width / 2
 
         y = self.y
         if self.valign == self.BOTTOM:
