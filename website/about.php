@@ -3,9 +3,17 @@ $title = "About pyglet";
 include("page_head.php");
 ?>
 
-<p>Pyglet is a cross-platform gaming / multimedia library written in
+<p>pyglet is a cross-platform gaming / multimedia library written in
 pure Python.  It uses built-in operating system facilities on Linux, Mac OS X
 and Windows to provide windowing, drawing, event handling and so on.
+</p>
+
+<p>pyglet is still under development, and does not yet have any releases.  We
+are working towards a Beta release in this half of the year.  In the meantime,
+you can checkout a copy of the source tree; see the instructions in "Getting
+Involved".</p>
+
+<!--
 Pyglet is the top layer in the following diagram:</p>
 
 <table align="center" id="overview">
@@ -25,7 +33,7 @@ Pyglet is the top layer in the following diagram:</p>
 <TD colspan="2" title="Windows XP or later">Windows</TD></tr>
 </tbody>
 </table>
-
+-->
 <p><strong>Pyglet is designed with the following goals:</strong></p>
 <ol>
 <li>Requirements for running are Python and ctypes.</li>
@@ -33,7 +41,7 @@ Pyglet is the top layer in the following diagram:</p>
 <li>Feature-full and easy to use API.</li>
 <li>Fast enough for writing games.</li>
 </ol>
-
+<!--
 <p><strong>The current status of pyglet is broadly:</strong></p>
 
 <table id="status">
@@ -61,6 +69,6 @@ mouse).</li>
 </ul>
 
   </div>
-
+-->
   </body>
 </html>

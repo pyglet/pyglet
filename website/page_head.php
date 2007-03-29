@@ -11,6 +11,7 @@
   <body>
   <div id="content">
 
+<!--
 <table align="center">
 <tbody>
 <tr>
@@ -24,5 +25,6 @@
 </tr>
 </tbody>
 </table>
+-->
 
-<h1 align="center"><?php echo $title; ?></h1>
+<h1><?php echo $title; ?></h1>

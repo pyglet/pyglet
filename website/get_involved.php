@@ -3,7 +3,9 @@ $title = "Get invoved in pyglet";
 include("page_head.php");
 ?>
 
-<p>Pyglet is still in very early development, but we are happy for people to pitch in. The most important help we can get at this time is for people to run the test suite on their system and let us know how it goes.</p>
+<p>pyglet is still in very early development, but we are happy for people to
+pitch in. The most important help we can get at this time is for people to run
+the test suite on their system and let us know how it goes.</p>
 
 <h2>Discuss</h2>
 <p>Please sign up to the <a
@@ -44,8 +46,8 @@ system</a>.</p>
   <dt><strong>Windows</strong></dt>
   <dd>
     <ul>
-      <li>XP or later (2000 and server editions are <em>not</em>
-      supported).</li>
+      <li>XP (2000 and server editions are <em>not</em> supported, nor is
+      Vista at this time).</li>
     </ul>
   </dd>
 </dl>

@@ -1,21 +1,35 @@
 <?php 
-$title = "Welcome to pyglet";
+$title = "pyglet";
 include("page_head.php");
 ?>
 
+<!--
 <table align="center">
 <tbody>
 <tr>
-  <td><A href="/about.php"><IMG src="about.png" alt="Learn More" width="138" height="42" align="left" border="0"></A></td>
-  <td><A href="/download.php"><IMG src="download.png" alt="Download" width="138" height="42" align="left" border="0"></A></td>
+  <td><A href="/about.php"><IMG src="about.png" alt="Learn More"
+width="138" height="42" align="left" border="0"></A></td>
+  <td><A href="/download.php"><IMG src="download.png" alt="Download"
+  width="138" height="42" align="left" border="0"></A></td>
   <td><A href="/get_involved.php"><IMG src="get_involved.png" alt="Get Involved" width="138" height="42" align="left" border="0"></A></td>
 </tr>
 </tbody>
 </table>
+-->
 
-<p>Pyglet is a cross-platform gaming / multimedia library written in
-pure Python. It uses built-in operating system facilities on Linux, Mac OS X
-and Windows to provide windowing, drawing, event handling and so on.
+<p>pyglet is an open-source, cross-platform gaming and multimedia library
+written in Python. It uses the built-in operating system facilities on Linux,
+Mac OS X and Windows to provide simple and consistent windowing, input,
+graphics, audio and video interfaces to the application developer.
+</p>
+
+<p>pyglet is still in early development, but we are working towards an initial
+Beta release in the first half of 2007.  In the meantime, we encourage you to
+see what we've done so far by checking out a copy of the source tree, and to
+get involved by joining us on the mailing list.  See the <a
+href="get_involved.php">Get Involved</a> page for more information.</p>
+
+<!--
 Pyglet is the top layer in the following diagram:</p>
 
 <table align="center" id="overview">
@@ -35,7 +49,7 @@ Pyglet is the top layer in the following diagram:</p>
 <TD colspan="2" title="Windows XP or later">Windows</TD></tr>
 </tbody>
 </table>
-
+-->
 
 <?php include("news.php"); ?>
   </div>

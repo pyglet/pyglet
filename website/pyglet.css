@@ -1,7 +1,4 @@
-body { text-align: center; background-image: url(cube.png); background-repeat:
-no-repeat;}
-div#content { margin-left: 150px;width: 700px; text-align: left;}
-h1 { text-align: center; }
+body { background-color: #ffd}
 table#news { width: 40em; margin-top: 2em}
 table#news td { vertical-align: top; width: 75%; text-align: left}
 table#news td.first { width: 25%; text-align: right}
