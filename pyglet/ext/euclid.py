@@ -27,7 +27,7 @@ at http://code.google.com/p/pyeuclid
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
-__revision__ = '$Revision: 1.3 $'
+__revision__ = '$Revision: 19 $'
 
 import math
 import operator
@@ -56,14 +56,35 @@ if _enable_swizzle_set:
 # Implement _use_slots magic.
 class _EuclidMetaclass(type):
     def __new__(cls, name, bases, dct):
+        if '__slots__' in dct:
+            dct['__getstate__'] = cls._create_getstate(dct['__slots__'])
+            dct['__setstate__'] = cls._create_setstate(dct['__slots__'])
         if _use_slots:
             return type.__new__(cls, name, bases + (object,), dct)
         else:
-            del dct['__slots__']
+            if '__slots__' in dct:
+                del dct['__slots__']
             return types.ClassType.__new__(types.ClassType, name, bases, dct)
+
+    @classmethod
+    def _create_getstate(cls, slots):
+        def __getstate__(self):
+            d = {}
+            for slot in slots:
+                d[slot] = getattr(self, slot)
+            return d
+        return __getstate__
+
+    @classmethod
+    def _create_setstate(cls, slots):
+        def __setstate__(self, state):
+            for name, value in state.items():
+                setattr(self, name, value)
+        return __setstate__
+
 __metaclass__ = _EuclidMetaclass
 
-class Vector2(object):
+class Vector2:
     __slots__ = ['x', 'y']
 
     def __init__(self, x, y):
@@ -258,7 +279,7 @@ class Vector2(object):
         return Vector2(self.x - d * normal.x,
                        self.y - d * normal.y)
 
-class Vector3(object):
+class Vector3:
     __slots__ = ['x', 'y', 'z']
 
     def __init__(self, x, y, z):
@@ -377,10 +398,6 @@ class Vector3(object):
                            other.z - self[2])
 
     def __mul__(self, other):
-        if isinstance(other, Vector3):
-            return Vector3(self.x * other.x,
-                           self.y * other.y,
-                           self.z * other.z)
         assert type(other) in (int, long, float)
         return Vector3(self.x * other,
                        self.y * other,
@@ -493,7 +510,7 @@ class Vector3(object):
 # e f g 
 # i j k 
 
-class Matrix3(object):
+class Matrix3:
     __slots__ = list('abcefgijk')
 
     def __init__(self):
@@ -637,7 +654,7 @@ class Matrix3(object):
 # i j k l
 # m n o p
 
-class Matrix4(object):
+class Matrix4:
     __slots__ = list('abcdefghijklmnop')
 
     def __init__(self):
@@ -913,7 +930,7 @@ class Matrix4(object):
         return self
     new_perspective = classmethod(new_perspective)
 
-class Quaternion(object):
+class Quaternion:
     # All methods and naming conventions based off 
     # http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions
 
@@ -1158,7 +1175,7 @@ class Quaternion(object):
 # Much maths thanks to Paul Bourke, http://astronomy.swin.edu.au/~pbourke
 # ---------------------------------------------------------------------------
 
-class Geometry(object):
+class Geometry:
     def _connect_unimplemented(self, other):
         raise AttributeError, 'Cannot connect %s to %s' % \
             (self.__class__, other.__class__)
@@ -1568,7 +1585,8 @@ def _connect_sphere_plane(S, P):
     v = p2 - S.c
     v.normalize()
     v *= S.r
-    return LineSegment3(Point3(S.c.x + v.x, S.c.y + v.y, S.c.z + v.z), p2)
+    return LineSegment3(Point3(S.c.x + v.x, S.c.y + v.y, S.c.z + v.z), 
+                        p2)
 
 def _connect_plane_plane(A, B):
     if A.n.cross(B.n):
@@ -1667,7 +1685,7 @@ class Point3(Vector3, Geometry):
         if c:
             return c._swap()
 
-class Line3(object):
+class Line3:
     __slots__ = ['p', 'v']
 
     def __init__(self, *args):
@@ -1773,7 +1791,7 @@ class LineSegment3(Line3):
 
     length = property(lambda self: abs(self.v))
 
-class Sphere(object):
+class Sphere:
     __slots__ = ['c', 'r']
 
     def __init__(self, center, radius):
@@ -1821,7 +1839,7 @@ class Sphere(object):
         if c:
             return c
 
-class Plane(object):
+class Plane:
     # n.p = k, where n is normal, p is point on plane, k is constant scalar
     __slots__ = ['n', 'k']
 
