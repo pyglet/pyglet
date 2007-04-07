@@ -472,7 +472,7 @@ class Win32Window(BaseWindow):
             _user32.ClipCursor(c_void_p())
 
         self._exclusive_mouse = exclusive
-        self.set_platform_visible()
+        self.set_mouse_platform_visible()
 
     def set_exclusive_keyboard(self, exclusive=True):
         if self._exclusive_keyboard == exclusive:
