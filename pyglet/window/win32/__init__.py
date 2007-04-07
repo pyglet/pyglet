@@ -201,7 +201,7 @@ class Win32Window(BaseWindow):
     _exclusive_keyboard = False
     _exclusive_mouse = False
     _exclusive_mouse_screen = None
-    _ignore_mousemove = False
+    _exclusive_mouse_client = None
     _mouse_platform_visible = True
 
     _ws_style = 0
@@ -461,7 +461,7 @@ class Win32Window(BaseWindow):
             # This is the point the mouse will be kept at while in exclusive
             # mode.
             self._exclusive_mouse_screen = p.x, p.y
-            self._ignore_mousemove = True
+            self._exclusive_mouse_client = p.x - rect.left, p.y - rect.top
             _user32.SetCursorPos(p.x, p.y)
 
             # Clip to client area, to prevent large mouse movements taking
@@ -675,19 +675,17 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_MOUSEMOVE)
     def _event_mousemove(self, msg, wParam, lParam):
         x, y = self._get_location(lParam)
-        y = self.height - y
 
-        self._mouse_x = x
-        self._mouse_y = y
-
-        if self._ignore_mousemove:
+        if (x, y) == self._exclusive_mouse_client:
             # Ignore the event caused by SetCursorPos
-            self._ignore_mousemove = False
+            self._mouse.x = x
+            self._mouse.y = y
             return 0
+
+        y = self.height - y
 
         if self._exclusive_mouse:
             # Reset mouse position (so we don't hit the edge of the screen).
-            self._ignore_mousemove = True
             _user32.SetCursorPos(*self._exclusive_mouse_screen)
             
         dx = x - self._mouse.x
