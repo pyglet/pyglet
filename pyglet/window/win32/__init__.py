@@ -356,7 +356,7 @@ class Win32Window(BaseWindow):
 
     def set_vsync(self, vsync):
         if wgl_info.have_extension('WGL_EXT_swap_control'):
-            wglSwapIntervalEXT(int(vsync))
+            wglext_abi.wglSwapIntervalEXT(int(vsync))
         else:
             warnings.warn('Could not set vsync; unsupported extension.')
 

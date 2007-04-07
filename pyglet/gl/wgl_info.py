@@ -12,7 +12,7 @@ import warnings
 
 from pyglet.gl.lib import MissingFunctionException
 from pyglet.gl.gl import *
-from pyglet.gl.gl_info import *
+from pyglet.gl import gl_info
 from pyglet.gl.wgl import *
 from pyglet.gl.wglext_abi import *
 
@@ -21,7 +21,7 @@ class WGLInfoException(Exception):
 
 class WGLInfo(object):
     def get_extensions(self):
-        if not gl_info.have_context:
+        if not gl_info.have_context():
             warnings.warn("Can't query WGL until a context is created.")
             return []
 

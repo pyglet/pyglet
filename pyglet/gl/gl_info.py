@@ -92,3 +92,6 @@ get_version = _gl_info.get_version
 have_version = _gl_info.have_version
 get_renderer = _gl_info.get_renderer
 get_vendor = _gl_info.get_vendor
+
+def have_context():
+    return _gl_info.have_context
