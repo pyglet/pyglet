@@ -184,6 +184,7 @@ class GlyphString(object):
         if to_index is None:
             to_index = len(self.text)
 
+        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glInterleavedArrays(GL_T2F_V3F, 0, self.array)
         for state_from, state_length, texture in self.states:
             if state_from + state_length < from_index:
@@ -194,6 +195,7 @@ class GlyphString(object):
                 break
             glBindTexture(GL_TEXTURE_2D, texture.id)
             glDrawArrays(GL_QUADS, state_from * 4, state_length * 4)
+        glPopClientAttrib()
 
         if from_index:
             glPopMatrix()
