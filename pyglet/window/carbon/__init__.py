@@ -799,7 +799,7 @@ class CarbonWindow(BaseWindow):
             byref(modifiers))
         modifiers = modifiers.value
         deltas = modifiers ^ self._current_modifiers
-        for mask, key in [
+        for mask, k in [
             (controlKey, key.LCTRL),
             (shiftKey, key.LSHIFT),
             (cmdKey, key.LCOMMAND),
@@ -812,10 +812,10 @@ class CarbonWindow(BaseWindow):
             if deltas & mask:
                 if modifiers & mask:
                     self.dispatch_event(EVENT_KEY_PRESS, 
-                        key, self._mapped_modifiers)
+                        k, self._mapped_modifiers)
                 else:
                     self.dispatch_event(EVENT_KEY_RELEASE,
-                        key, self._mapped_modifiers)
+                        k, self._mapped_modifiers)
         carbon.CallNextEventHandler(next_handler, event)
 
         self._mapped_modifiers = self._map_modifiers(modifiers)
@@ -895,10 +895,10 @@ class CarbonWindow(BaseWindow):
         if button:
             # Drag event
             self.dispatch_event(EVENT_MOUSE_DRAG,
-                x, y, delta.x, delta.y, button, modifiers)
+                x, y, delta.x, -delta.y, button, modifiers)
         else:
             # Motion event
-            self.dispatch_event(EVENT_MOUSE_MOTION, x, y, delta.x, delta.y)
+            self.dispatch_event(EVENT_MOUSE_MOTION, x, y, delta.x, -delta.y)
 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr
