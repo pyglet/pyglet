@@ -208,7 +208,12 @@ class QuickTimeMedium(Medium):
             self.static_buffers = (al.ALuint * len(buffers))(*buffers)
 
     def __del__(self):
-        if not self.streaming:
+        if self.streaming:
+            try:
+                quicktime.DisposeMovie(self.movie)
+            except NameError:
+                pass
+        else:
             try:
                 openal.buffer_pool.replace(self.static_buffers)
             except NameError:
