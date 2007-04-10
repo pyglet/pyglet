@@ -32,6 +32,9 @@ class Sound(object):
 if sys.platform == 'linux2':
     from pyglet.media import gst_openal
     device = gst_openal
+elif sys.platform == 'darwin':
+    from pyglet.media import quicktime
+    device = quicktime
 else:
     raise ImportError('pyglet.media not yet supported on %s' % sys.platform)
 

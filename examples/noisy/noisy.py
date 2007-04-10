@@ -62,8 +62,8 @@ if __name__ == '__main__':
     label = font.Label(font.load('Arial', 14), 
         'Press space to add a ball, backspace to remove.', 
         window.width / 2, 10)
-    label.halign = label.CENTER
-    label.valign = label.BASELINE
+    #label.halign = label.CENTER
+    #label.valign = label.BASELINE
 
     while not window.has_exit:
         window.dispatch_events()
