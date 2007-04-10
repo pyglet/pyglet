@@ -24,14 +24,21 @@ class BufferPool(list):
             buffer = self.pop(0)
         return buffer
 
-    def replace(self, buffer):
-        self.insert(0, buffer)
+    def replace(self, buffers):
+        self.extend(buffers)
+
+    def __del__(self, al=al):
+        if al and al.ALuint and al.alDeleteBuffers:
+            buffers = (al.ALuint * len(self))(*self)
+            al.alDeleteBuffers(len(self), buffers)
 
 buffer_pool = BufferPool()
 
-
 class OpenALSound(Sound):
     finished = False
+
+    _processed_buffers = 0
+    _queued_buffers = 0
 
     def __init__(self):
         self.source = al.ALuint()
@@ -58,4 +65,24 @@ class OpenALSound(Sound):
         al.alGetSourcei(self.source, al.AL_BUFFERS_PROCESSED, processed)
         if processed.value == queued.value:
             self.finished = True
+        self._processed_buffers = processed.value
+        self._queued_buffers = queued.value
 
+class OpenALStreamingSound(OpenALSound):
+    def dispatch_events(self):
+        super(OpenALStreamingSound, self).dispatch_events()
+
+        # Release spent buffers
+        if self._processed_buffers:
+            discard_buffers = (al.ALuint * self._processed_buffers)()
+            al.alSourceUnqueueBuffers(
+                self.source, len(discard_buffers), discard_buffers)
+            buffer_pool.replace(discard_buffers)
+
+class OpenALStaticSound(OpenALSound):
+    def __init__(self, medium):
+        super(OpenALStaticSound, self).__init__()
+
+        # Keep a reference to the medium to avoid premature release of
+        # buffers.
+        self.medium = medium

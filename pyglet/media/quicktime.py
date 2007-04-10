@@ -7,6 +7,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import ctypes
+import math
 import sys
 
 from pyglet.media import Sound, Medium
@@ -84,7 +85,7 @@ class ExtractionSession(object):
         _oscheck(result)
 
         self.channels = asbd.mChannelsPerFrame
-        self.rate = asbd.mSampleRate
+        self.sample_rate = asbd.mSampleRate
         
         # Always signed 16-bit interleaved
         asbd.mFormatFlags = kAudioFormatFlagIsSignedInteger | \
@@ -109,9 +110,11 @@ class ExtractionSession(object):
         else:
             raise NotImplementedError('not mono or stereo')
 
-    def __del__(self, quicktime=quicktime):
-        if quicktime:
+    def __del__(self):
+        try:
             quicktime.MovieAudioExtractionEnd(self.extraction_session_ref)
+        except NameError:
+            pass
 
     def get_buffer(self, bytes):
         '''Fill and return an OpenAL buffer'''
@@ -141,7 +144,7 @@ class ExtractionSession(object):
         al.alBufferData(albuffer, self.format,
             audio_buffer_list.mBuffers[0].mData, 
             audio_buffer_list.mBuffers[0].mDataByteSize,
-            int(self.rate))
+            int(self.sample_rate))
         return albuffer
 
     def get_buffers(self, bytes):
@@ -150,6 +153,37 @@ class ExtractionSession(object):
             if not buffer:
                 break
             yield buffer
+
+class QuickTimeStreamingSound(openal.OpenALStreamingSound):
+    _buffer_time = .5            # seconds ahead to buffer
+    _buffer_size = BUFFER_SIZE   # bytes in each al buffer
+
+    def __init__(self, extraction_session):
+        super(QuickTimeStreamingSound, self).__init__()
+
+        self._extraction_session = extraction_session
+        time_per_buffer = \
+            (self._buffer_size / extraction_session.sample_rate /
+             extraction_session.channels / 2)
+        self._buffers_ahead = int(math.ceil(
+            self._buffer_time / float(time_per_buffer)))
+
+        # Queue up first buffers
+        self.dispatch_events()
+
+    def dispatch_events(self):
+        super(QuickTimeStreamingSound, self).dispatch_events()
+
+        needed_buffers = max(0, self._buffers_ahead - self._queued_buffers)
+        buffers = []
+        for i in range(needed_buffers):
+            buffer = self._extraction_session.get_buffer(self._buffer_size)
+            if not buffer:
+                break
+            self.finished = False
+            buffers.append(buffer)
+        buffers = (al.ALuint * len(buffers))(*buffers)
+        al.alSourceQueueBuffers(self.source, len(buffers), buffers)
 
 class QuickTimeMedium(Medium):
     def __init__(self, filename, file=None, streaming=None):
@@ -161,23 +195,41 @@ class QuickTimeMedium(Medium):
         self.streaming = streaming
 
         if self.streaming:
-            raise NotImplementedError('TODO: streaming')
+            self.movie = self._create_movie()
+            self.extraction_session = ExtractionSession(self.movie)
+            self.channels = self.extraction_session.channels
+            self.sample_rate = self.extraction_session.sample_rate
         else:
             movie = self._create_movie()
             extraction_session = ExtractionSession(movie)
+            self.channels = extraction_session.channels
+            self.sample_rate = extraction_session.sample_rate
             buffers = [b for b in extraction_session.get_buffers(BUFFER_SIZE)]
             self.static_buffers = (al.ALuint * len(buffers))(*buffers)
+
+    def __del__(self):
+        if not self.streaming:
+            try:
+                openal.buffer_pool.replace(self.static_buffers)
+            except NameError:
+                pass
             
     def get_sound(self):
         if self.streaming:
-            raise NotImplementedError('TODO: streaming')
+            extraction_session = self.extraction_session
+            if not extraction_session:
+                extraction_session = ExtractionSession(self.movie)
+            self.extraction_session = None
+
+            sound = QuickTimeStreamingSound(extraction_session)
+            sounds.append(sound)
+            return sound
         else:
-            sound = openal.OpenALSound()
+            sound = openal.OpenALStaticSound(self)
             sounds.append(sound)
             al.alSourceQueueBuffers(
                 sound.source, len(self.static_buffers), self.static_buffers)
             return sound
-
 
     def _create_movie(self):
         if self.file is not None:
