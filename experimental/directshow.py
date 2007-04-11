@@ -30,6 +30,18 @@ filter_graph = client.CreateObject(CLSID_FilterGraph,
 filter_builder = filter_graph.QueryInterface(qedit.IGraphBuilder)
 filter_builder.RenderFile(filename, None)
 
+enum = filter_graph.EnumFilters()
+filter, count = enum.Next(1)
+while filter:
+    filter_name = u''.join(
+        [unichr(c) for c in filter.QueryFilterInfo().achName]).strip(u'\0')
+    if 'DirectSound' in filter_name:
+        output_filter = filter
+    else:
+        del filter
+    filter, count = enum.Next(1)
+del enum
+
 media_control = filter_graph.QueryInterface(quartz.IMediaControl)
 media_control.Run()
 

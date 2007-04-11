@@ -35,8 +35,6 @@ class BufferPool(list):
 buffer_pool = BufferPool()
 
 class OpenALSound(Sound):
-    finished = False
-
     _processed_buffers = 0
     _queued_buffers = 0
 

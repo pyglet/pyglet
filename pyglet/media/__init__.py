@@ -23,6 +23,8 @@ class Medium(object):
         return sound
 
 class Sound(object):
+    finished = False
+    
     def play(self):
         raise NotImplementedError('abstract')
 
@@ -35,6 +37,9 @@ if sys.platform == 'linux2':
 elif sys.platform == 'darwin':
     from pyglet.media import quicktime
     device = quicktime
+elif sys.platform in ('win32', 'cygwin'):
+    from pyglet.media import directshow
+    device = directshow
 else:
     raise ImportError('pyglet.media not yet supported on %s' % sys.platform)
 
