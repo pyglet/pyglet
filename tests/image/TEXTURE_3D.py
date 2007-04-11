@@ -12,6 +12,8 @@ from pyglet.gl import *
 from pyglet.image import *
 from pyglet.window import *
 
+__noninteractive = True
+
 class TestTexture3D(unittest.TestCase):
     def create_image(self, width, height, color):
         data = ('%c' % color) * (width * height)
