@@ -143,8 +143,8 @@ resource
         ============================== =======
         Component                      GENERIC
         ============================== =======
-        COMPLIANCE                        X
-        REQUIRE                           X
+        COMPLIANCE                        D
+        REQUIRE                           D
         ============================== =======
 
 scene2d
@@ -153,23 +153,23 @@ scene2d
         ============================== =======
         Component                      GENERIC
         ============================== =======
-        MAP_MODEL                         X
-        LOAD_IMAGE                        X
-        LOAD_IMAGEATLAS                   X
-        LOAD_TILESET                      X
-        LOAD_RECTMAP                      X
-        LOAD_HEXMAP                       X
+        MAP_MODEL                         D
+        LOAD_IMAGE                        D
+        LOAD_IMAGEATLAS                   D
+        LOAD_TILESET                      D
+        LOAD_RECTMAP                      D
+        LOAD_HEXMAP                       D
         MAP_SAVE                           
-        SPRITE_MODEL                      X
-        SPRITE_OVERLAP                    X
-        FLAT_SPRITE                       X
-        RECT_FLAT_DEBUG                   X
-        HEX_FLAT_DEBUG                    X
-        FLAT_SCROLLING                    X
-        FLAT_OOB                          X
-        RECT_FLAT_MOUSE                   X
-        HEX_FLAT_MOUSE                    X
-        VIEW_SUBWINDOW                    X
+        SPRITE_MODEL                      D
+        SPRITE_OVERLAP                    D
+        FLAT_SPRITE                       D
+        RECT_FLAT_DEBUG                   D
+        HEX_FLAT_DEBUG                    D
+        FLAT_SCROLLING                    D
+        FLAT_OOB                          D
+        RECT_FLAT_MOUSE                   D
+        HEX_FLAT_MOUSE                    D
+        VIEW_SUBWINDOW                    D
         ============================== =======
 
     TBD:
@@ -193,7 +193,7 @@ model
             ============================== =======
             Component                      GENERIC
             ============================== =======
-            OBJ_LOAD                          X
+            OBJ_LOAD                          D
             ============================== =======
         
     geometric
