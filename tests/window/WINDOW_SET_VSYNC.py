@@ -26,12 +26,11 @@ class WINDOW_OPEN(unittest.TestCase):
     def open_window(self):
         return window.Window(200, 200)
 
-    def on_key_press(self, key, modifiers):
-        if key == key.V:
+    def on_key_press(self, symbol, modifiers):
+        if symbol == key.V:
             vsync = not (self.w1.get_vsync() or False)
             self.w1.set_vsync(vsync)
             print 'vsync is %r' % self.w1.get_vsync()
-        return True
 
     def draw_window(self, window, colour):
         window.switch_to()

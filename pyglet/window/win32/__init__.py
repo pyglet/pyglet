@@ -351,7 +351,7 @@ class Win32Window(BaseWindow):
 
     def get_vsync(self):
         if wgl_info.have_extension('WGL_EXT_swap_control'):
-            return bool(wglGetSwapIntervalEXT())
+            return bool(wglext_abi.wglGetSwapIntervalEXT())
 
     def set_vsync(self, vsync):
         if wgl_info.have_extension('WGL_EXT_swap_control'):
