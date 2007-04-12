@@ -11,6 +11,8 @@ Expected behaviour:
      - press "y" to increase the height
      - press "Y" to decrease the height
 
+    You should see a green border inside the window but no red.
+
     Close the window or press ESC to end the test.
 '''
 
@@ -21,6 +23,8 @@ import unittest
 
 from pyglet import window
 from pyglet.window import key
+
+import window_util
 
 class WINDOW_SET_SIZE(unittest.TestCase):
     def on_key_press(self, symbol, modifiers):
@@ -40,6 +44,8 @@ class WINDOW_SET_SIZE(unittest.TestCase):
         w.push_handlers(self)
         while not w.has_exit:
             w.dispatch_events()
+            window_util.draw_client_border(w)
+            w.flip()
         w.close()
 
 if __name__ == '__main__':

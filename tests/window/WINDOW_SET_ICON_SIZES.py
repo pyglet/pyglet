@@ -29,6 +29,8 @@ from pyglet import image
 from pyglet import window
 from pyglet.window import key
 
+import window_util
+
 from os.path import join, dirname
 icon_file1 = join(dirname(__file__), 'icon_size1.png')
 icon_file2 = join(dirname(__file__), 'icon_size2.png')
