@@ -186,6 +186,10 @@ class Win32MouseCursor(MouseCursor):
     def __init__(self, cursor):
         self.cursor = cursor
 
+# This is global state, we have to be careful not to set the same state twice,
+# which will throw off the ShowCursor counter.
+_win32_cursor_visible = True
+
 class Win32Window(BaseWindow):
     _window_class = None
     _hwnd = None
@@ -340,6 +344,7 @@ class Win32Window(BaseWindow):
         super(Win32Window, self).close()
         _user32.DestroyWindow(self._hwnd)
         _user32.UnregisterClassA(self._window_class.lpszClassName, 0)
+        self.set_mouse_platform_visible(True)
         self._hwnd = None
         self._dc = None
         self._wgl_context = None
@@ -410,6 +415,7 @@ class Win32Window(BaseWindow):
         else:
             _user32.ShowWindow(self._hwnd, SW_HIDE)
             self.dispatch_event(EVENT_HIDE)
+        self.set_mouse_platform_visible()
 
     def minimize(self):
         _user32.ShowWindow(self._hwnd, SW_MINIMIZE)
@@ -439,7 +445,13 @@ class Win32Window(BaseWindow):
         if platform_visible == self._mouse_platform_visible:
             return
 
-        _user32.ShowCursor(platform_visible)
+        # Avoid calling ShowCursor with the current visibility (which would
+        # push the counter too far away from zero).
+        global _win32_cursor_visible
+        if _win32_cursor_visible != platform_visible:
+            _user32.ShowCursor(platform_visible)
+            _win32_cursor_visible = platform_visible
+
         self._mouse_platform_visible = platform_visible
 
     def set_exclusive_mouse(self, exclusive=True):
