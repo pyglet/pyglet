@@ -181,10 +181,6 @@ def Win32EventHandler(message):
         return f
     return handler_wrapper
 
-class Win32Mouse(object):
-    x = 0
-    y = 0
-
 class Win32MouseCursor(MouseCursor):
     drawable = False
     def __init__(self, cursor):
@@ -220,8 +216,6 @@ class Win32Window(BaseWindow):
             func = getattr(self, func_name)
             for message in func._win32_handler:
                 self._event_handlers[message] = func
-
-        self._mouse = Win32Mouse()
 
     def _context_compatible(self, factory):
         # XXX TODO determine if context config is the same.
@@ -429,9 +423,10 @@ class Win32Window(BaseWindow):
 
     def set_mouse_platform_visible(self, platform_visible=None):
         if platform_visible is None:
-            platform_visible = self._mouse_visible and \
-                               not self._exclusive_mouse and \
-                               not self._mouse_cursor.drawable
+            platform_visible = (self._mouse_visible and
+                                not self._exclusive_mouse and
+                                not self._mouse_cursor.drawable) or \
+                               not self._mouse_in_window
 
         if platform_visible and not self._mouse_cursor.drawable:
             if isinstance(self._mouse_cursor, Win32MouseCursor):
@@ -680,8 +675,8 @@ class Win32Window(BaseWindow):
 
         if (x, y) == self._exclusive_mouse_client:
             # Ignore the event caused by SetCursorPos
-            self._mouse.x = x
-            self._mouse.y = y
+            self._mouse_x = x
+            self._mouse_y = y
             return 0
 
         y = self.height - y
@@ -690,8 +685,8 @@ class Win32Window(BaseWindow):
             # Reset mouse position (so we don't hit the edge of the screen).
             _user32.SetCursorPos(*self._exclusive_mouse_screen)
             
-        dx = x - self._mouse.x
-        dy = y - self._mouse.y
+        dx = x - self._mouse_x
+        dy = y - self._mouse_y
 
         if not self._tracking:
             # There is no WM_MOUSEENTER message (!), so fake it from the
@@ -699,6 +694,7 @@ class Win32Window(BaseWindow):
             # to determine when to recreate the tracking structure after
             # re-entering (to track the next WM_MOUSELEAVE).
             self._mouse_in_window = True
+            self.set_mouse_platform_visible()
             self.dispatch_event(EVENT_MOUSE_ENTER, x, y)
             self._tracking = True
             track = TRACKMOUSEEVENT()
@@ -707,8 +703,8 @@ class Win32Window(BaseWindow):
             track.hwndTrack = self._hwnd
             _user32.TrackMouseEvent(byref(track))
 
-        self._mouse.x = x
-        self._mouse.y = y
+        self._mouse_x = x
+        self._mouse_y = y
         
         buttons = 0
         if wParam & MK_LBUTTON:
@@ -737,6 +733,7 @@ class Win32Window(BaseWindow):
         y = self.height - point.y
         self._tracking = False
         self._mouse_in_window = False
+        self.set_mouse_platform_visible()
         self.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
         return 0
 
