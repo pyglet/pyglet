@@ -411,9 +411,11 @@ class Win32Window(BaseWindow):
                     SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
             else:
                 _user32.ShowWindow(self._hwnd, SW_SHOW)
+            self.dispatch_event(EVENT_SHOW)
             self.activate()
         else:
             _user32.ShowWindow(self._hwnd, SW_HIDE)
+            self.dispatch_event(EVENT_HIDE)
 
     def minimize(self):
         _user32.ShowWindow(self._hwnd, SW_MINIMIZE)

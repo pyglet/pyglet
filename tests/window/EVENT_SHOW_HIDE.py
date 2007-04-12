@@ -28,8 +28,9 @@ class EVENT_SHOW_HIDE(unittest.TestCase):
         print 'Window hidden.'
 
     def test_show_hide(self):
-        w = window.Window(200, 200)
+        w = window.Window(200, 200, visible=False)
         w.push_handlers(self)
+        w.set_visible()
         while not w.has_exit:
             w.dispatch_events()
         w.close()
