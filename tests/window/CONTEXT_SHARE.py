@@ -42,8 +42,8 @@ class CONTEXT_SHARE(unittest.TestCase):
         glEndList()
         self.assertTrue(glIsList(list))
 
-        factory = get_factory()
-        factory.set_context_share(CONTEXT_SHARE_NONE)
+        factory = window.get_factory()
+        factory.set_context_share(window.CONTEXT_SHARE_NONE)
         factory.set_size(200, 200)
         w2 = factory.create_window()
         w2.set_visible(True)
