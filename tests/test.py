@@ -45,11 +45,11 @@ with an "X"; partial or incomplete implementations with either a "/"
 or empty table cell.  This test script will not attempt to run
 unit tests for unfinished implementations.
 
-Some tests generate regression images, so you will only need to run
-through the interactive procedure once.  During subsequent runs the
-image shown on screen will be compared with the regression images
-and passed automatically if they match.  There are command line 
-options for disabling this feature.
+Some tests generate regression images if enabled, so you will only
+need to run through the interactive procedure once.  During
+subsequent runs the image shown on screen will be compared with the
+regression images and passed automatically if they match.  There are
+command line options for enabling this feature.
 
 By default regression images are saved in tests/regression/images/
 
@@ -92,11 +92,14 @@ Command-line options:
     Specify the minimum log level to write (defaults to 10: info)
 --log-file=
     Specify log file to write to (defaults to stderr [TODO])
---no-regression-capture
-    Don't save regression images to disk.
---no-regression-check
-    Don't look for a regression image on disk; assume none exists (good
-    for rebuilding out of date regression images).
+--regression-capture
+    Save regression images to disk.  Use this only if the tests have
+    already been shown to pass.
+--regression-check
+    Look for a regression image on disk instead of prompting the user for
+    passage.  If a regression image is found, it is compared with the test
+    case using the tolerance specified below.  Recommended only for
+    developers.
 --regression-tolerance=
     Specify the tolerance when comparing a regression image.  A value of
     2, for example, means each sample component must be +/- 2 units
@@ -130,22 +133,10 @@ Runs all tests in the window section with the given capabilities.
 Test just the FULLSCREEN_TOGGLE component in the window section,
 without prompting for input (useful for development).
 
-Currently the image and text tests use regression images::
-
-    python tests/test.py --no-regression-check image
-
-Rebuild all of the regression images for the image section tests.
-
-    python tests/test.py --no-regression-capture image
-
-Run the image section tests, but don't overwrite the regression images (they
-will still be checked, if possible though).
-
     python tests/image/PIL_RGBA_SAVE.py
 
 Run a single test outside of the test harness.  Handy for development; it
-is equivalent to specifying --no-interactive --no-regression-check
---no-regression-capture options.
+is equivalent to specifying --no-interactive.
 
 Writing tests
 -------------
@@ -520,8 +511,8 @@ def main(args):
     test_root = script_root
     log_level = 10
     log_file = None
-    enable_regression_capture = True
-    enable_regression_check = True
+    enable_regression_capture = False
+    enable_regression_check = False
     regression_tolerance = 2
     interactive = True
     developer = False
@@ -544,8 +535,8 @@ def main(args):
          'log-file=',
          'regression-path=',
          'regression-tolerance=',
-         'no-regression-capture',
-         'no-regression-check',
+         'regression-capture',
+         'regression-check',
          'no-interactive',
          'developer',
          'start-with=',
@@ -566,8 +557,8 @@ OPTIONS (with default values):
   --log-file=%s
   --regression-path=%s
   --regression-tolerance=%s
-  --no-regression-capture
-  --no-regression-check
+  --regression-capture
+  --regression-check
   --no-interactive
   --start-with=
   --developer
@@ -600,10 +591,10 @@ OPTIONS (with default values):
             regressions_path = value
         elif key == '--regression-tolerance':
             regression_tolerance = int(value)
-        elif key == '--no-regression-capture':
-            enable_regression_capture = False
-        elif key == '--no-regression-check':
-            enable_regression_check = False
+        elif key == '--regression-capture':
+            enable_regression_capture = True
+        elif key == '--regression-check':
+            enable_regression_check = True
         elif key == '--no-interactive':
             interactive = False
             enable_regression_capture = False
@@ -711,6 +702,7 @@ OPTIONS (with default values):
         if (module_interactive and 
             len(result.failures) == 0 and 
             len(result.errors) == 0):
+            print module.__doc__
             user_result = raw_input('[P]assed test, [F]ailed test: ')
             if user_result and user_result[0] in ('F', 'f'):
                 print 'Enter failure description: '
