@@ -43,5 +43,9 @@ elif sys.platform in ('win32', 'cygwin'):
 else:
     raise ImportError('pyglet.media not yet supported on %s' % sys.platform)
 
+init = device.init
 load = device.load
 dispatch_events = device.dispatch_events
+cleanup = device.cleanup
+
+init()

@@ -354,10 +354,14 @@ def dispatch_events():
         sound.dispatch_events()
     sounds = [sound for sound in sounds if not sound.finished]
 
-openal.init()
-gstreamer.init()
-openal_plugin = OpenALPlugin()
-openal_plugin.register()
+def init():
+    openal.init()
+    gstreamer.init()
+    openal_plugin = OpenALPlugin()
+    openal_plugin.register()
+
+def cleanup():
+    pass
 
 # Active sounds
 sounds = []

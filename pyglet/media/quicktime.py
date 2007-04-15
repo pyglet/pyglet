@@ -273,6 +273,10 @@ def dispatch_events():
         sound.dispatch_events()
     sounds = [sound for sound in sounds if not sound.finished]
 
-openal.init()
+def init():
+    openal.init()
+
+def cleanup():
+    pass
 
 sounds = []
