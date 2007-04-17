@@ -39,6 +39,8 @@ GstPluginInitFunc = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p)
 GST_PADDING = 4
 GST_PADDING_LARGE = 20
 
+
+
 class GstPluginDesc(ctypes.Structure):
     _fields_ = [
         ('major_version', ctypes.c_int),
@@ -357,7 +359,7 @@ class GstAudioSinkClass(ctypes.Structure):
         ('unprepare', ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p)),
         ('close', ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p)),
         ('write', ctypes.CFUNCTYPE(ctypes.c_uint, ctypes.c_void_p,
-                                   ctypes.c_void_p, ctypes.c_uint)),
+                                   ctypes.POINTER(ctypes.c_byte), ctypes.c_uint)),
         ('delay', ctypes.CFUNCTYPE(ctypes.c_uint, ctypes.c_void_p)),
         ('reset', ctypes.CFUNCTYPE(None, ctypes.c_void_p)),
         ('_gst_reserved', ctypes.c_void_p * GST_PADDING),
@@ -454,6 +456,8 @@ class GstMessage(ctypes.Structure):
         ('structure', ctypes.c_void_p),
         ('_gst_reserved', ctypes.c_void_p * GST_PADDING),
     ]
+
+gst.gst_bus_poll.restype = ctypes.POINTER(GstMessage)
 
 #TEMP
 GstPad = ctypes.c_int
@@ -619,6 +623,9 @@ class Element(object):
         _pyinstance = ctypes.cast(element,
                                   ctypes.POINTER(cls._py_instance_struct))
         return _pyinstance.contents.pyobject
+
+    def __del__(self):
+        print 'kill me!'
 
 GST_FLOW_OK = 0
 

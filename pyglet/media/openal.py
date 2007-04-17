@@ -84,3 +84,13 @@ class OpenALStaticSound(OpenALSound):
         # Keep a reference to the medium to avoid premature release of
         # buffers.
         self.medium = medium
+
+_format_map = {
+    (1,  8): al.AL_FORMAT_MONO8,
+    (1, 16): al.AL_FORMAT_MONO16,
+    (2,  8): al.AL_FORMAT_STEREO8,
+    (2, 16): al.AL_FORMAT_STEREO16,
+}
+def get_format(channels, depth):
+    return _format_map[channels, depth]
+

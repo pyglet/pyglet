@@ -7,6 +7,9 @@
 
 import sys
 
+class MediaException(Exception):
+    pass
+
 class Medium(object):
     duration = 0
     
