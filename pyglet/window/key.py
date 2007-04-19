@@ -101,7 +101,23 @@ def symbol_string(symbol):
 
     :rtype: str
     '''
-    return _key_names.get(symbol, str(symbol))
+    if symbol < 1 << 32:
+        return _key_names.get(symbol, str(symbol))
+    else:
+        return 'user_key(%x)' % (symbol >> 32)
+
+def user_key(scancode):
+    '''Return a key symbol for a key not supported by pyglet.  
+    
+    This can be used to map virtual keys or scancodes from unsupported
+    keyboard layouts into a machine-specific symbol.  The symbol will
+    be meaningless on any other machine, or under a different keyboard layout.
+
+    Applications should use user-keys only when user explicitly binds them
+    (for example, mapping keys to actions in a game options screen).
+    '''
+    assert scancode > 0
+    return scancode << 32
 
 # Modifier mask constants
 MOD_SHIFT       = 1 << 0

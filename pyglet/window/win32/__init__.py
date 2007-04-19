@@ -657,16 +657,17 @@ class Win32Window(BaseWindow):
             event = EVENT_KEY_PRESS
 
         symbol = keymap.get(wParam, None)
-        if symbol:
-            if symbol == key.LCTRL and lParam & (1 << 24):
-                symbol = key.RCTRL
-            if symbol == key.LALT and lParam & (1 << 24):
-                symbol = key.RALT
-            elif symbol == key.LSHIFT:
-                pass # TODO: some magic with getstate to find out if it's the
-                     # right or left shift key. 
-            
-            self.dispatch_event(event, symbol, self._get_modifiers(lParam))
+        if symbol is None:
+            symbol = key.user_key(wParam)
+        elif symbol == key.LCTRL and lParam & (1 << 24):
+            symbol = key.RCTRL
+        elif symbol == key.LALT and lParam & (1 << 24):
+            symbol = key.RALT
+        elif symbol == key.LSHIFT:
+            pass # TODO: some magic with getstate to find out if it's the
+                 # right or left shift key. 
+        
+        self.dispatch_event(event, symbol, self._get_modifiers(lParam))
 
         # Send on to DefWindowProc if not exclusive.
         if self._exclusive_keyboard:

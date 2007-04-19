@@ -764,16 +764,19 @@ class CarbonWindow(BaseWindow):
 
     @staticmethod
     def _get_symbol_and_modifiers(event):
-        symbol = c_uint32()
+        sym = c_uint32()
         carbon.GetEventParameter(event, kEventParamKeyCode,
-            typeUInt32, c_void_p(), sizeof(symbol), c_void_p(), byref(symbol))
+            typeUInt32, c_void_p(), sizeof(sym), c_void_p(), byref(sym))
         modifiers = c_uint32()
         carbon.GetEventParameter(event, kEventParamKeyModifiers,
             typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
             byref(modifiers))
 
-        return (keymap.get(symbol.value, None),
-                CarbonWindow._map_modifiers(modifiers.value))
+        symbol = keymap.get(sym.value, None)
+        if symbol is None:
+            symbol = key.user_key(sym.value)
+
+        return (symbol, CarbonWindow._map_modifiers(modifiers.value))
 
     @staticmethod
     def _map_modifiers(modifiers):

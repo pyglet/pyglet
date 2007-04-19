@@ -982,6 +982,8 @@ class XlibWindow(BaseWindow):
             if count:
                 text = unicode(buffer.value[:count])
         symbol = xlib.XKeycodeToKeysym(self._display, event.xkey.keycode, 0)
+        if symbol not in key._key_names.keys():
+            symbol = key.user_key(symbol)
 
         modifiers = self._translate_modifiers(event.xkey.state)
 
