@@ -634,7 +634,10 @@ class Win32Window(BaseWindow):
             modifiers |= key.MOD_CAPSLOCK
         if _user32.GetKeyState(VK_NUMLOCK) & 0x00ff:    # toggle
             modifiers |= key.MOD_NUMLOCK
-        if key_lParam & (1 << 29):
+        if key_lParam:
+            if key_lParam & (1 << 29):
+                modifiers |= key.MOD_ALT
+        elif _user32.GetKeyState(VK_MENU) < 0:
             modifiers |= key.MOD_ALT
         return modifiers
 
