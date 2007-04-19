@@ -509,7 +509,8 @@ def virtual_method(cls, name, ctype):
     def f(this, *args):
         this = ctypes.cast(this, ctypes.POINTER(cls._py_instance_struct))
         self = this.contents.pyobject
-        return getattr(self, name)(*args)
+        if hasattr(self, name):
+            return getattr(self, name)(*args)
     return ctype(f)
 
 class Element(object):

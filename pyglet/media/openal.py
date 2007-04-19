@@ -21,7 +21,7 @@ class BufferPool(list):
             buffer = al.ALuint()
             al.alGenBuffers(1, buffer)
         else:
-            buffer = self.pop(0)
+            buffer = al.ALuint(self.pop(0))
         return buffer
 
     def replace(self, buffers):
@@ -48,6 +48,9 @@ class OpenALSound(Sound):
             al.alDeleteSources(1, self.source)
 
     def play(self):
+        self._openal_play()
+
+    def _openal_play(self):
         buffers = al.ALint()
         al.alGetSourcei(self.source, al.AL_BUFFERS_QUEUED, buffers)
         if buffers.value == 0:
@@ -65,6 +68,9 @@ class OpenALSound(Sound):
             self.finished = True
         self._processed_buffers = processed.value
         self._queued_buffers = queued.value
+
+        if self.play_when_buffered and queued.value:
+            self._openal_play()
 
 class OpenALStreamingSound(OpenALSound):
     def dispatch_events(self):

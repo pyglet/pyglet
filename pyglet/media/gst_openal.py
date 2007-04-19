@@ -4,7 +4,7 @@
 import ctypes
 import time
 
-from pyglet.media import Sound, Medium, MediaException
+from pyglet.media import Medium, MediaException
 from pyglet.media import gstreamer
 from pyglet.media import lib_openal as al
 from pyglet.media import openal
@@ -40,6 +40,10 @@ class GstreamerDecoder(object):
         gst.gst_bin_add_many(pipeline, src, decoder, None)
         gst.gst_element_link(src, decoder)
 
+        # Create audioconvert
+        self.convert = gst.gst_element_factory_make('audioconvert', 'convert')
+        gst.gst_bin_add(pipeline, self.convert)
+
         return pipeline
 
     def _new_decoded_pad(self, decodebin, pad, last, data):
@@ -67,180 +71,7 @@ class GstreamerDecoder(object):
     def _no_more_pads(self, decodebin, data):
         pass
 
-# OpenAL streaming
-# -----------------------------------------------------------------------------
-
-class OpenALStreamingSinkPad(gstreamer.Pad):
-    name = 'sink'
-    direction = gstreamer.GST_PAD_SINK
-    caps = '''audio/x-raw-int,
-                width = (int) 16,
-                depth = (int) 16,
-                signed = (boolean) TRUE,
-                endianness = (int) BYTE_ORDER,
-                channels = (int) { 1, 2 },
-                rate = (int) [ 1, MAX ];
-              audio/x-raw-int,
-                width = (int) 8,
-                depth = (int) 8,
-                signed = (boolean) FALSE,
-                channels = (int) { 1, 2 },
-                rate = (int) [ 1, MAX ]
-        '''
-
-class OpenALStreamingSinkElement(gstreamer.Element):
-    name = 'openalstreamingsink'
-    klass = 'audio/openal-streaming-sink'
-    description = 'Sink to streaming OpenAL buffers'
-    author = 'pyglet.org'
-
-    instance_struct = gstreamer.GstAudioSink
-    class_struct = gstreamer.GstAudioSinkClass
-    parent_type = gstaudio.gst_audio_sink_get_type
-
-    pad_templates = (OpenALStreamingSinkPad,)
-    pad_instances = [] # GstAudioSink takes care of creating the pad
-
-    vmethods = (
-        'open', 
-        'prepare', 
-        'write', 
-        'unprepare', 
-        'close', 
-        'delay',
-        'reset')
-
-    def open(self):
-        print 'open!'
-        return True
-
-    def prepare(self, spec):
-        print 'prepare!', self, spec
-        print spec.contents.sign, spec.contents.bigend, spec.contents.depth
-        print spec.contents.rate, spec.contents.channels
-        self.bytes_per_sample = spec.contents.bytes_per_sample
-
-        print spec.contents.buffer_time
-        print spec.contents.latency_time
-        #spec.contents.segsize = 100
-        #spec.contents.segtotal = 8
-
-        self.format = openal.get_format(spec.contents.channels, 
-                                        spec.contents.depth)
-        self.rate = spec.contents.rate
-        return True
-
-    count = 0
-    def write(self, data, length):
-        self.count += 1
-        #print 'write', data, length, self.count
-
-        albuffer = openal.buffer_pool.get()
-        al.alBufferData(albuffer, self.format, 
-                        data, length,
-                        self.rate)
-
-        self.sound._add_buffer(albuffer)
-        return length
-
-    def delay(self):
-        print 'delay'
-        return 0
-
-    def unprepare(self):
-        print 'unprepare!'
-        return 1
-
-    def close(self):
-        print 'close!'
-        return 1
-
-    def reset(self):
-        print 'reset'
-
-class OpenALStreamingSound(openal.OpenALSound, 
-                           GstreamerDecoder):
-    def __init__(self, filename, file):
-        super(OpenALStreamingSound, self).__init__()
-        self.pipeline = self._create_decoder_pipeline(filename, file)
-        self.bus = gst.gst_pipeline_get_bus(self.pipeline)
-
-        self.sink = gst.gst_element_factory_make('openalstreamingsink', 'sink')
-        self.pysink = OpenALStreamingSinkElement.get_instance(self.sink)
-        self.pysink.sound = self
-        gst.gst_bin_add(self.pipeline, self.sink)
-
-        gst.gst_element_set_state(self.pipeline, gstreamer.GST_STATE_PAUSED)
-
-    def _new_audio_pad(self, pad, channels, depth, sample_rate):
-        sinkpad = gst.gst_element_get_pad(self.sink, 'sink')
-        gst.gst_pad_link(pad, sinkpad)
-        gst.gst_object_unref(sinkpad)
-
-    def _add_buffer(self, buffer):
-        al.alSourceQueueBuffers(self.source, 1, buffer)
-        if self.play_when_buffered:
-            al.alSourcePlay(self.source) # TODO merge into openal.py
-
-    def play(self):
-        self.play_when_buffered = True
-        gst.gst_element_set_state(self.pipeline, gstreamer.GST_STATE_PLAYING)
-
-    def cleanup(self):
-        '''Dispose of GST elements to prevent stale callbacks.'''
-        del self.pysink
-        gst.gst_object_unref(self.sink)
-        del self.sink
-
-        gst.gst_object_unref(self.bus)
-        del self.bus
-
-        gst.gst_object_unref(self.pipeline)
-        del self.pipeline
-
-        self.dispatch_events = lambda self: None
-
-    def dispatch_events(self):
-        super(OpenALStreamingSound, self).dispatch_events()
-        print 'pp', self._processed_buffers, self._queued_buffers
-
-        msg = gst.gst_bus_poll(self.bus, gstreamer.GST_MESSAGE_ANY, 0)
-        if msg:
-            print 'msg', msg.contents.type
-        if msg.contents.type == gstreamer.GST_MESSAGE_STATE_CHANGED:
-            state = gstreamer.GstState()
-            pending = gstreamer.GstState()
-            gst.gst_element_get_state(self.pipeline,
-                                      ctypes.byref(state),
-                                      ctypes.byref(pending),
-                                      0)
-            print 'state change', state, pending
-            if pending.value == gstreamer.GST_STATE_VOID_PENDING:
-                gst.gst_element_set_state(self.pipeline, 
-                                          gstreamer.GST_STATE_NULL)
-                #self.finished = True
-
-        # This never happens; instead we get the VOID_PENDING state, above.
-        if msg.contents.type == gstreamer.GST_MESSAGE_EOS:
-            self.finished = True
-            print 'done'
-
-class OpenALStreamingMedium(Medium):
-    def __init__(self, filename, file):
-        self.filename = filename
-        self.file = file
-
-    def get_sound(self):
-        sound = OpenALStreamingSound(self.filename, self.file)
-        sounds.append(sound)
-        import gc
-        print gc.get_referrers(sound)
-        return sound
-
-# OpenAL static
-# -----------------------------------------------------------------------------
-
-class OpenALStaticSinkPad(gstreamer.Pad):
+class OpenALSinkPad(gstreamer.Pad):
     name = 'sink'
     direction = gstreamer.GST_PAD_SINK
     caps = '''audio/x-raw-int,
@@ -276,15 +107,20 @@ class OpenALStaticSinkPad(gstreamer.Pad):
         self.element.channels = channels.value
         self.element.rate = rate.value
 
+        self.bytes_per_second = \
+            float(channels.value * depth.value / 8 * rate.value)
+
         return True
 
     def chain(self, this, buffer):
         albuffer = openal.buffer_pool.get()
+        size = buffer.contents.size
         al.alBufferData(albuffer, self.format, 
-                        buffer.contents.data, buffer.contents.size,
+                        buffer.contents.data, size,
                         self.rate)
+        #gst.gst_object_unref(buffer)
 
-        self.element._add_buffer(albuffer)
+        self.element._add_buffer(albuffer, size / self.bytes_per_second)
         return gstreamer.GST_FLOW_OK
 
     def event(self, this, event):
@@ -293,15 +129,97 @@ class OpenALStaticSinkPad(gstreamer.Pad):
             return True
         return False
 
+# OpenAL streaming
+# -----------------------------------------------------------------------------
+
+class OpenALStreamingSinkElement(gstreamer.Element):
+    name = 'openalstreamingsink'
+    klass = 'audio/openal-streaming-sink'
+    description = 'Sink to streaming OpenAL buffers'
+    author = 'pyglet.org'
+
+    pad_templates = (OpenALSinkPad,)
+    pad_instances = [
+        ('sink', OpenALSinkPad),
+    ]
+
+    def init(self, sound):
+        self.sound = sound
+
+    def _add_buffer(self, buffer, buffer_time):
+        al.alSourceQueueBuffers(self.sound.source, 1, buffer)
+        if self.sound._buffers_ahead is None:
+            # Now we know how many buffers are needed
+            self.sound._buffers_ahead = self.sound._buffer_time / buffer_time
+        
+        # Assume GIL will lock for us
+        self.sound._queued_buffers += 1
+
+        extra_buffers = self.sound._queued_buffers - self.sound._buffers_ahead
+        if extra_buffers > 0:
+            # We've buffered more than necessary, take a break (this is
+            # running in a separate thread, so sleeping is cool).
+            time.sleep(buffer_time * extra_buffers)
+
+    def _finished_buffering(self):
+        self.sound._on_eos()
+
+class GstreamerOpenALStreamingSound(openal.OpenALStreamingSound, 
+                                    GstreamerDecoder):
+    _buffer_time = .5  # seconds ahead to buffer
+    _buffers_ahead = None # Number of buffers ahead to buffer (calculated later)
+
+    def __init__(self, filename, file):
+        super(GstreamerOpenALStreamingSound, self).__init__()
+        self.pipeline = self._create_decoder_pipeline(filename, file)
+
+        self.sink = gst.gst_element_factory_make('openalstreamingsink', 'sink')
+        gst.gst_bin_add(self.pipeline, self.sink)
+        gst.gst_element_link(self.convert, self.sink)
+
+        gst.gst_element_set_state(self.pipeline, gstreamer.GST_STATE_PAUSED)
+
+    def play(self):
+        super(GstreamerOpenALStreamingSound, self).play()
+        gst.gst_element_set_state(self.pipeline, gstreamer.GST_STATE_PLAYING)
+
+    def _new_audio_pad(self, pad, channels, depth, sample_rate):
+        '''Create and connect the sink for the given source pad.'''
+        convertpad = gst.gst_element_get_pad(self.convert, 'sink')
+        gst.gst_pad_link(pad, convertpad)
+        gst.gst_object_unref(convertpad)
+
+        sink = self.sink
+        pysink = OpenALStreamingSinkElement.get_instance(self.sink)
+        pysink.init(self)
+        pysink.sound = self
+
+    def _on_eos(self):
+        pass
+
+class GstreamerOpenALStreamingMedium(Medium):
+    def __init__(self, filename, file):
+        self.filename = filename
+        self.file = file
+
+    def get_sound(self):
+        sound = GstreamerOpenALStreamingSound(self.filename, self.file)
+        sounds.append(sound)
+        return sound
+
+
+# OpenAL static
+# -----------------------------------------------------------------------------
+
 class OpenALStaticSinkElement(gstreamer.Element, Medium):
     name = 'openalstaticsink'
     klass = 'audio/openal-static-sink'
     description = 'Sink to static OpenAL buffers'
     author = 'pyglet.org'
 
-    pad_templates = (OpenALStaticSinkPad,)
+    pad_templates = (OpenALSinkPad,)
     pad_instances = [
-        ('sink', OpenALStaticSinkPad),
+        ('sink', OpenALSinkPad),
     ]
 
     def init(self):
@@ -309,7 +227,7 @@ class OpenALStaticSinkElement(gstreamer.Element, Medium):
         self.sounds = []
         self.buffering = True
 
-    def _add_buffer(self, buffer):
+    def _add_buffer(self, buffer, buffer_time):
         self.buffers.append(buffer)
         for sound in self.sounds:
             al.alSourceQueueBuffers(sound.source, 1, buffer)
@@ -382,7 +300,7 @@ class GstreamerMedium(Medium, GstreamerDecoder):
 
         # TODO cleanup into device.load()
         if self.streaming:
-            self.delegate = OpenALStreamingMedium(self.filename, self.file)
+            self.delegate = GstreamerOpenALStreamingMedium(self.filename, self.file)
         else:
             self.pipeline = self._create_decoder_pipeline(filename, file)
 
@@ -391,6 +309,7 @@ class GstreamerMedium(Medium, GstreamerDecoder):
             # receive buffers.  Why??
             self.sink = gst.gst_element_factory_make('openalstaticsink', 'sink')
             gst.gst_bin_add(self.pipeline, self.sink)
+            gst.gst_element_link(self.convert, self.sink)
 
             # Set to pause state so that pads are detected (in another thread)
             # as soon as possible.
@@ -398,13 +317,14 @@ class GstreamerMedium(Medium, GstreamerDecoder):
  
     def _new_audio_pad(self, pad, channels, depth, sample_rate):
         '''Create and connect an OpenALStaticSink for the given source pad.'''
+        convertpad = gst.gst_element_get_pad(self.convert, 'sink')
+        gst.gst_pad_link(pad, convertpad)
+        gst.gst_object_unref(convertpad)
+
         sink = self.sink
-        sinkpad = gst.gst_element_get_pad(self.sink, 'sink')
         pysink = OpenALStaticSinkElement.get_instance(self.sink)
         pysink.init()
         pysink.media = self
-        gst.gst_pad_link(pad, sinkpad)
-        gst.gst_object_unref(sinkpad)
 
         # Set state to playing to push all the content into the sink straight
         # away (where it is held in OpenAL buffers).
@@ -435,6 +355,12 @@ def dispatch_events():
     sounds = [sound for sound in sounds if not sound.finished]
 
 def init():
+    gthread = gstreamer.get_library('gthread-2.0')
+    thread_supported = ctypes.cast(gthread.g_threads_got_initialized,
+                                   ctypes.POINTER(ctypes.c_int)).contents.value
+    if not thread_supported:
+        gthread.g_thread_init(None)
+
     openal.init()
     gstreamer.init()
     openal_plugin = OpenALPlugin()
