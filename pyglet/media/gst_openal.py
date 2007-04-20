@@ -370,6 +370,8 @@ def cleanup():
     import gc
     gc.collect()
 
+listener = openal.OpenALListener()
+
 # Active sounds
 sounds = []
 

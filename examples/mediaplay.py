@@ -33,8 +33,10 @@ class MediaPlayWindow(window.Window):
         add_label(filename)
         add_label('')
         self.playing_label = add_label('Playing; press space to pause')
-        self.volume_label = add_label('Volume 1.0; adjust with +/-')
+        self.volume_label = add_label('Volume 1.0; adjust with +,-')
+        self.pitch_label = add_label('Pitch 1.0: adjust with [,]')
         self.position_label = add_label('Position 0,0,0: adjust with W,A,S,D')
+        self.velocity_label = add_label('Velocity 0,0,0: adjust with I,J,K,L')
 
         medium = media.load(filename, streaming=True)
         self.sound = medium.play()
@@ -58,6 +60,18 @@ class MediaPlayWindow(window.Window):
             'Position %.2f, %.2f, %.2f; adjust with W,A,S,D' % \
                 self.sound.position
 
+    def add_velocity(self, dx, dy, dz):
+        x, y, z = self.sound.velocity
+        self.sound.velocity = x + dx, y + dy, z + dz
+        self.velocity_label.text = \
+            'Velocity %.2f, %.2f, %.2f; adjust with W,A,S,D' % \
+                self.sound.velocity
+
+    def add_pitch(self, pitch):
+        self.sound.pitch += pitch
+        self.pitch_label.text = \
+            'Pitch %.2f; adjust with [,]' % self.sound.pitch
+
     def on_key_press(self, symbol, modifiers):
         if symbol == key.SPACE:
             if self.sound.playing:
@@ -78,6 +92,18 @@ class MediaPlayWindow(window.Window):
             self.add_position(.1, 0, 0)
         elif symbol == key.W:
             self.add_position(0, 0, -.1)
+        elif symbol == key.J:
+            self.add_velocity(-.1, 0, 0)
+        elif symbol == key.K:
+            self.add_velocity(0, 0, .1)
+        elif symbol == key.L:
+            self.add_velocity(.1, 0, 0)
+        elif symbol == key.I:
+            self.add_velocity(0, 0, -.1)
+        elif symbol == key.BRACKETLEFT:
+            self.add_pitch(-0.1)
+        elif symbol == key.BRACKETRIGHT:
+            self.add_pitch(0.1)
 
     def run(self):
         clock.set_fps_limit(30)

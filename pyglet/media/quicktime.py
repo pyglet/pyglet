@@ -279,4 +279,6 @@ def init():
 def cleanup():
     pass
 
+listener = openal.OpenALListener()
+
 sounds = []

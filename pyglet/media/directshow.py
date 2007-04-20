@@ -214,6 +214,9 @@ def cleanup():
     del directsound
     del directx
 
+# XXX temporary
+listener = media.Listener()
+
 sounds = []
 
 '''

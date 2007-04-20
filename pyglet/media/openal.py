@@ -3,7 +3,7 @@
 
 import ctypes
 
-from pyglet.media import Sound
+from pyglet.media import Sound, Listener
 from pyglet.media import lib_openal as al
 from pyglet.media import lib_alc as alc
 
@@ -33,6 +33,15 @@ class BufferPool(list):
             al.alDeleteBuffers(len(self), buffers)
 
 buffer_pool = BufferPool()
+
+_format_map = {
+    (1,  8): al.AL_FORMAT_MONO8,
+    (1, 16): al.AL_FORMAT_MONO16,
+    (2,  8): al.AL_FORMAT_STEREO8,
+    (2, 16): al.AL_FORMAT_STEREO16,
+}
+def get_format(channels, depth):
+    return _format_map[channels, depth]
 
 class OpenALSound(Sound):
     _processed_buffers = 0
@@ -65,14 +74,47 @@ class OpenALSound(Sound):
         al.alSourcePause(self.source)
 
     def _set_volume(self, volume):
-        volume = max(0, volume)
-        al.alSourcef(self.source, al.AL_GAIN, volume)
+        al.alSourcef(self.source, al.AL_GAIN, max(0, volume))
         self._volume = volume
+
+    def _set_min_gain(self, min_gain):
+        al.alSourcef(self.source, al.AL_MIN_GAIN, max(0, min_gain))
+        self._min_gain = min_gain
+
+    def _set_max_gain(self, max_gain):
+        al.alSourcef(self.source, al.AL_MAX_GAIN, max(0, max_gain))
+        self._max_gain = max_gain
 
     def _set_position(self, position):
         x, y, z = position
         al.alSource3f(self.source, al.AL_POSITION, x, y, z)
         self._position = position
+
+    def _set_velocity(self, velocity):
+        x, y, z = velocity
+        al.alSource3f(self.source, al.AL_VELOCITY, x, y, z)
+        self._velocity = velocity
+
+    def _set_pitch(self, pitch):
+        al.alSourcef(self.source, al.AL_PITCH, max(0, pitch))
+        self._pitch = pitch
+
+    def _set_cone_orientation(self, cone_orientation):
+        x, y, z = cone_orientation
+        al.alSource3f(self.source, al.AL_DIRECTION, x, y, z)
+        self._cone_orientation = cone_orientation
+
+    def _set_cone_inner_angle(self, cone_inner_angle):
+        al.alSourcef(self.source, al.AL_CONE_INNER_ANGLE, cone_inner_angle)
+        self._cone_inner_angle = cone_inner_angle
+
+    def _set_cone_outer_angle(self, cone_outer_angle):
+        al.alSourcef(self.source, al.AL_CONE_OUTER_ANGLE, cone_outer_angle)
+        self._cone_outer_angle = cone_outer_angle
+
+    def _set_cone_outer_gain(self, cone_outer_gain):
+        al.alSourcef(self.source, al.AL_CONE_OUTER_GAIN, cone_outer_gain)
+        self._cone_outer_gain = cone_outer_gain
 
     def dispatch_events(self):
         queued = al.ALint()
@@ -107,12 +149,31 @@ class OpenALStaticSound(OpenALSound):
         # buffers.
         self.medium = medium
 
-_format_map = {
-    (1,  8): al.AL_FORMAT_MONO8,
-    (1, 16): al.AL_FORMAT_MONO16,
-    (2,  8): al.AL_FORMAT_STEREO8,
-    (2, 16): al.AL_FORMAT_STEREO16,
-}
-def get_format(channels, depth):
-    return _format_map[channels, depth]
+class OpenALListener(Listener):
+    def _set_position(self, position):
+        x, y, z = position
+        al.alListener3f(al.AL_POSITION, x, y, z)
+        self._position = position 
 
+    def _set_velocity(self, velocity):
+        x, y, z = velocity
+        al.alListener3f(al.AL_VELOCITY, x, y, z)
+        self._velocity = velocity 
+
+    def _set_forward_orientation(self, orientation):
+        val = (ALfloat * 6)(*(orientation + self._up_orientation))
+        al.alListenerfv(al.AL_ORIENTATION, val)
+        self._forward_orientation = orientation
+
+    def _set_up_orientation(self, orientation):
+        val = (ALfloat * 6)(*(self._forward_orientation + orientation))
+        al.alListenerfv(al.AL_ORIENTATION, val)
+        self._up_orientation = orientation
+
+    def _set_doppler_factor(self, factor):
+        al.alDopplerFactor(factor)
+        self._doppler_factor = factor
+
+    def _set_speed_of_sound(self, speed_of_sound):
+        al.alSpeedOfSound(speed_of_sound)
+        self._speed_of_sound = speed_of_sound
