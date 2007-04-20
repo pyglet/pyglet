@@ -983,7 +983,7 @@ class XlibWindow(BaseWindow):
                 text = unicode(buffer.value[:count])
         symbol = xlib.XKeycodeToKeysym(self._display, event.xkey.keycode, 0)
         if symbol not in key._key_names.keys():
-            symbol = key.user_key(symbol)
+            symbol = key.user_key(event.xkey.keycode)
 
         modifiers = self._translate_modifiers(event.xkey.state)
 
