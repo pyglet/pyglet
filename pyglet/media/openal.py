@@ -2,6 +2,7 @@
 # $Id$
 
 import ctypes
+import time
 
 from pyglet.media import Sound, Listener
 from pyglet.media import lib_openal as al
@@ -47,6 +48,16 @@ class OpenALSound(Sound):
     _processed_buffers = 0
     _queued_buffers = 0
 
+    # AL_*_OFFSET is not supported on Linux yet.  We could use entire buffers
+    # as the time granularity, but it's a lot easier and more precise to use
+    # the system clock.  Too bad about drift.
+    #
+    # TODO Mac OS X should implement AL_*_OFFSET.
+    #
+    # _time_offset gives the time to subtract from now() to get the playback
+    # time.  It is modified by play() and pause().
+    _time_offset = 0
+
     def __init__(self):
         self.source = al.ALuint()
         al.alGenSources(1, self.source)
@@ -56,10 +67,19 @@ class OpenALSound(Sound):
         if al and al.alDeleteSources:
             al.alDeleteSources(1, self.source)
 
+    def _get_time(self):
+        if self.playing:
+            return time.time() - self._time_offset
+        else:
+            return -self._time_offset
+
     def play(self):
         self._openal_play()
 
     def _openal_play(self):
+        if self.playing:
+            return
+
         buffers = al.ALint()
         al.alGetSourcei(self.source, al.AL_BUFFERS_QUEUED, buffers)
         if buffers.value == 0:
@@ -68,8 +88,12 @@ class OpenALSound(Sound):
             al.alSourcePlay(self.source)
             self.play_when_buffered = False
             self.playing = True
+            self._time_offset += time.time()
 
     def pause(self):
+        if self.playing:
+            self._time_offset = -self.time
+
         self.playing = False
         al.alSourcePause(self.source)
 

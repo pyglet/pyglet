@@ -256,9 +256,6 @@ class GstreamerOpenALStaticMedium(Medium, GstreamerDecoder):
     OpenALStaticSinkElement implements ``openalstaticsink`` and contains
     a reference to this instance.
     '''
-    # All media
-    duration = 0        # Not filled in
-
     def __init__(self, filename, file=None):
         self._pipeline = self._create_decoder_pipeline(filename, file)
         self._sink = gst.gst_element_factory_make('openalstaticsink', 'sink')

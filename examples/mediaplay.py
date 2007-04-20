@@ -31,6 +31,7 @@ class MediaPlayWindow(window.Window):
             return l
 
         add_label(filename)
+        self.time_label = add_label('')
         add_label('')
         self.playing_label = add_label('Playing; press space to pause')
         self.volume_label = add_label('Volume 1.0; adjust with +,-')
@@ -112,12 +113,15 @@ class MediaPlayWindow(window.Window):
             self.dispatch_events()
             media.dispatch_events()
 
+            t = self.sound.time
+            self.time_label.text = '%d:%05.2f' % \
+                (int(t / 60), t - 60 * int(t / 60))
             self.draw()
 
 if __name__ == '__main__':
     filename = sys.argv[1]
 
-    win = MediaPlayWindow(filename, width=400, height=100)
+    win = MediaPlayWindow(filename, width=400, height=150, resizable=True)
     time.sleep(.1)
     win.run()
 

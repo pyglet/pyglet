@@ -11,15 +11,48 @@ class MediaException(Exception):
     pass
 
 class Medium(object):
-    duration = 0
+    '''An audio and/or video medium that can be played.
+
+    A medium cannot itself be played, but it can provide a sound instance
+    which represents an instance of a playing sample.  You can retrieve
+    an instance of the sound, which will be queued up as soon as possible,
+    with `get_sound`.  
+    
+    For convenience, the `play` method will return a sound and begin playing
+    it as soon as possible (for a static Medium, this will be almost
+    immediately).
+    '''
+
+    _duration = None
     
     has_audio = False
     has_video = False
 
+    def _get_duration(self):
+        return self._duration
+
+    duration = property(lambda self: self._get_duration(),
+                        doc='''The length of the medium, in seconds.
+
+        Not all media can determine their duration; in this case the value
+        is None.
+        ''')
+
     def get_sound(self):
+        '''Create and return a new sound that can be played.
+
+        Each call to this method creates a new sound instance; the multiple
+        sounds can be played, paused, and otherwise manipulated independently
+        and simultaneously.
+        '''
         raise NotImplementedError('abstract')
 
     def play(self):
+        '''Play the medium.
+
+        This is a convenience method which creates a sound and plays it
+        immediately.
+        '''
         sound = self.get_sound()
         sound.play()
         return sound
@@ -35,7 +68,9 @@ class Sound(object):
         `playing` : bool
             If True, the sound is currently playing.  Even after calling
             `play`, the sound may not begin playing until enough audio has
-            been buffered.  This variable is read-only.
+            been buffered.  If False, the sound is either buffering and
+            about to play, is explicitly paused, or has finished.
+            This variable is read-only.
         `finished` : bool
             If True, the sound has finished playing.  This variable is
             read-only.
@@ -89,6 +124,18 @@ class Sound(object):
         This has no effect if the sound is already paused.
         '''
         raise NotImplementedError('abstract')
+
+    def _get_time(self):
+        raise NotImplementedError('abstract')
+
+    time = property(lambda self: self._get_time(),
+                    doc='''Retrieve the current playback time of the sound.
+                    
+         The playback time is a float expressed in seconds, with 0.0 being
+         the beginning of the sound.  The playback time returned represents
+         the time encoded in the media, and may not reflect actual time
+         passed due to pitch shifting or pausing.
+         ''')
 
     def _set_volume(self, volume):
         raise NotImplementedError('abstract')
