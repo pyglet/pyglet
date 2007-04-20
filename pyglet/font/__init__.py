@@ -222,7 +222,7 @@ class Label(object):
     halign = LEFT
     valign = BASELINE
 
-    def __init__(self, font, text, x=0, y=0, z=0, color=(1,1,1,1)):
+    def __init__(self, font, text='', x=0, y=0, z=0, color=(1,1,1,1)):
         self._dirty = True
         self.font = font
         self._text = text

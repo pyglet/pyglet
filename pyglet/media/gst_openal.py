@@ -1,6 +1,10 @@
 #!/usr/bin/python
 # $Id$
 
+'''Provide a media device that decodes with Gstreamer and plays back with
+OpenAL.
+'''
+
 import ctypes
 import time
 
@@ -129,6 +133,7 @@ class OpenALSinkPad(gstreamer.Pad):
             return True
         return False
 
+
 # OpenAL streaming
 # -----------------------------------------------------------------------------
 
@@ -222,33 +227,99 @@ class OpenALStaticSinkElement(gstreamer.Element, Medium):
         ('sink', OpenALSinkPad),
     ]
 
-    def init(self):
-        self.buffers = []
-        self.sounds = []
-        self.buffering = True
+    def init(self, medium):
+        self.medium = medium
 
     def _add_buffer(self, buffer, buffer_time):
-        self.buffers.append(buffer)
-        for sound in self.sounds:
+        self.medium.buffers.append(buffer)
+
+        # Any sounds that are already created, queue the new buffer as well
+        for sound in self.medium.sounds:
             al.alSourceQueueBuffers(sound.source, 1, buffer)
-            if sound.play_when_buffered:
-                sound.play()
 
     def _finished_buffering(self):
-        self.buffering = False
+        # Convert list of buffers to an array of buffers for fast queueing
+        # in the future.
+        del self.medium.sounds
+        self.medium.buffering = False
+        self.medium.buffers = \
+            (al.ALuint * len(self.medium.buffers))(*self.medium.buffers)
+       
+class GstreamerOpenALStaticMedium(Medium, GstreamerDecoder):
+    '''A Medium which decodes all data into a list of OpenAL buffers which
+    are shared by many OpenALSound instances.
+
+    The pipeline created during decoding is::
+
+        filesrc ! decodebin ! audioconvert ! openalstaticsink
+
+    OpenALStaticSinkElement implements ``openalstaticsink`` and contains
+    a reference to this instance.
+    '''
+    # All media
+    duration = 0        # Not filled in
+
+    def __init__(self, filename, file=None):
+        self._pipeline = self._create_decoder_pipeline(filename, file)
+        self._sink = gst.gst_element_factory_make('openalstaticsink', 'sink')
+        gst.gst_bin_add(self._pipeline, self._sink)
+        gst.gst_element_link(self.convert, self._sink)
+
+        self._element = OpenALStaticSinkElement.get_instance(self._sink)
+        self._element.init(self)
+
+        self.has_audio = False
+
+        # The list of OpenAL buffers.  When self.buffering is True, newly
+        # decoded buffers must also be queued on all sounds in self.sounds.
+        # When self.buffering is False (the entire sound is decoded),
+        # self.sounds is no longer maintained.
+        self.buffering = True
+        self.buffers = []
         self.sounds = []
+
+        gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PLAYING)
+
+    def _new_audio_pad(self, pad, channels, depth, sample_rate):
+        # Connect the decoded audio pad to the audioconvert
+        convertpad = gst.gst_element_get_pad(self.convert, 'sink')
+        gst.gst_pad_link(pad, convertpad)
+        gst.gst_object_unref(convertpad)
+
+        self.has_audio = True
+
+    def _no_more_pads(self, decodebin, data):
+        # XXX This will pop out of another thread, which is not ideal.
+        if not self.audio:
+            raise MediaException('No useable audio stream')
 
     def get_sound(self):
         sound = openal.OpenALSound()
         sounds.append(sound)
-        for buffer in self.buffers:
-            # TODO all at once
-            al.alSourceQueueBuffers(sound.source, 1, buffer)
+
         if self.buffering:
+            # Queue buffers already decoded
+            for buffer in self.buffers:
+                al.alSourceQueueBuffers(sound.source, 1, buffer)
+
+            # Keep track of this sound so we can queue additional buffers
+            # as they are decoded
             self.sounds.append(sound)
+        else:
+            # Queue all buffers in one go
+            al.alSourceQueueBuffers(sound.source, 
+                len(self.buffers), self.buffers)
+
         return sound
 
+ 
 class OpenALPlugin(gstreamer.Plugin):
+    '''A static plugin to hold the ``openalstreamingsink`` and
+    ``openalstaticsink`` elements.
+    
+    This is equivalent to the GST_PLUGIN_DEFINE macro.
+    '''
+
     name = 'openal-plugin'
     description = 'OpenAL plugin'
     version = '1.0'
@@ -258,93 +329,20 @@ class OpenALPlugin(gstreamer.Plugin):
 
     elements = (OpenALStreamingSinkElement, OpenALStaticSinkElement)
 
-# Front-end Medium
-# --------------------------------------------------------------------------
-
-class GstreamerBlockingDelegate(Medium):
-    def __init__(self, medium):
-        self.medium = medium
-
-    def get_sound(self):
-        while self.medium.delegate is self:
-            time.sleep(0.1)
-        return self.medium.delegate.get_sound()
-
-class GstreamerErrorDelegate(Medium):
-    def __init__(self, message):
-        self.message = message
-
-    def get_sound(self):
-        raise MediaException(self.message)
-
-class GstreamerMedium(Medium, GstreamerDecoder):
-    # All media
-    duration = 0        # Not filled in
-    delegate = None
-
-    def __init__(self, filename, file=None, streaming=None):
-        self.delegate = GstreamerBlockingDelegate(self)
-
-        if file is not None:
-            raise NotImplementedError('TODO: file object loading')
-
-        if streaming is None:
-            # It would be nice if we could choose to stream media < 5 secs,
-            # for example, but unfortunately Gstreamer duration messages
-            # don't ever work.
-            streaming = False
-
-        self.filename = filename
-        self.file = file
-        self.streaming = streaming
-
-        # TODO cleanup into device.load()
-        if self.streaming:
-            self.delegate = GstreamerOpenALStreamingMedium(self.filename, self.file)
-        else:
-            self.pipeline = self._create_decoder_pipeline(filename, file)
-
-            # All elements that _might_ be attached to the decodebin must
-            # be in the pipeline before it goes to PAUSED, otherwise they never
-            # receive buffers.  Why??
-            self.sink = gst.gst_element_factory_make('openalstaticsink', 'sink')
-            gst.gst_bin_add(self.pipeline, self.sink)
-            gst.gst_element_link(self.convert, self.sink)
-
-            # Set to pause state so that pads are detected (in another thread)
-            # as soon as possible.
-            gst.gst_element_set_state(self.pipeline, gstreamer.GST_STATE_PAUSED)
- 
-    def _new_audio_pad(self, pad, channels, depth, sample_rate):
-        '''Create and connect an OpenALStaticSink for the given source pad.'''
-        convertpad = gst.gst_element_get_pad(self.convert, 'sink')
-        gst.gst_pad_link(pad, convertpad)
-        gst.gst_object_unref(convertpad)
-
-        sink = self.sink
-        pysink = OpenALStaticSinkElement.get_instance(self.sink)
-        pysink.init()
-        pysink.media = self
-
-        # Set state to playing to push all the content into the sink straight
-        # away (where it is held in OpenAL buffers).
-        gst.gst_element_set_state(self.pipeline, gstreamer.GST_STATE_PLAYING)
-
-        self.delegate = pysink        
-        self.channels = channels
-
-    def _no_more_pads(self, decodebin, data):
-        if isinstance(self.delegate, GstreamerBlockingDelegate):
-            self.delegate = GstreamerErrorDelegate('No useable streams')
-
-    def get_sound(self):
-        return self.delegate.get_sound()
 
 # Device interface
 # --------------------------------------------------------------------------
 
 def load(filename, file=None, streaming=None):
-    return GstreamerMedium(filename, file, streaming)
+    if streaming is None:
+        # Gstreamer can't tell us the duration of a file, so don't stream
+        # unless asked to.  This gives best runtime performance at the
+        # expense of higher CPU and memory usage for long music clips.
+        streaming = False
+    if streaming:
+        return GstreamerOpenALStreamingMedium(filename, file)
+    else:
+        return GstreamerOpenALStaticMedium(filename, file)
 
 def dispatch_events():
     global sounds

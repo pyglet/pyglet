@@ -58,6 +58,21 @@ class OpenALSound(Sound):
         else:
             al.alSourcePlay(self.source)
             self.play_when_buffered = False
+            self.playing = True
+
+    def pause(self):
+        self.playing = False
+        al.alSourcePause(self.source)
+
+    def _set_volume(self, volume):
+        volume = max(0, volume)
+        al.alSourcef(self.source, al.AL_GAIN, volume)
+        self._volume = volume
+
+    def _set_position(self, position):
+        x, y, z = position
+        al.alSource3f(self.source, al.AL_POSITION, x, y, z)
+        self._position = position
 
     def dispatch_events(self):
         queued = al.ALint()
@@ -66,6 +81,7 @@ class OpenALSound(Sound):
         al.alGetSourcei(self.source, al.AL_BUFFERS_PROCESSED, processed)
         if processed.value == queued.value:
             self.finished = True
+            self.playing = False
         self._processed_buffers = processed.value
         self._queued_buffers = queued.value
 
