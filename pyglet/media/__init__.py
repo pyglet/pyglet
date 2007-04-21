@@ -44,25 +44,38 @@ class Medium(object):
         Each call to this method creates a new sound instance; the multiple
         sounds can be played, paused, and otherwise manipulated independently
         and simultaneously.
+
+        :rtype: `Sound`
         '''
         raise NotImplementedError('abstract')
 
+    def get_video(self):
+        '''Create and return a new video that can be played.
+
+        Each call to this method creates a new video instance, which can be
+        played and paused independently of any other videos.
+
+        This call can fail if the medium has no video data (i.e., it is a
+        sound file), or if the medium was loaded statically instead of
+        streaming.
+
+        :rtype: `Video`
+        '''
+
     def play(self):
-        '''Play the medium.
+        '''Play the sound.
 
         This is a convenience method which creates a sound and plays it
         immediately.
+
+        :rtype: `Sound`
         '''
         sound = self.get_sound()
         sound.play()
         return sound
 
-class Sound(object):
-    '''An instance of a sound, either currently playing or ready to be played.
-
-    By default, monaural sounds are played at nominal volume equally among
-    all speakers, however they may also be positioned in 3D space.  Stereo
-    sounds are not positionable.
+class MediumInstance(object):
+    '''An instance of a sound or video.
 
     :Ivariables:
         `playing` : bool
@@ -74,6 +87,54 @@ class Sound(object):
         `finished` : bool
             If True, the sound has finished playing.  This variable is
             read-only.
+    '''
+
+    playing = False
+    finished = False
+
+    def play(self):
+        '''Begin playing the instance.
+
+        This has no effect if the instance is already playing.
+        '''
+        raise NotImplementedError('abstract')
+
+    def pause(self):
+        '''Pause playback of the instance.
+
+        This has no effect if the instance is already paused.
+        '''
+        raise NotImplementedError('abstract')
+
+    def _get_time(self):
+        raise NotImplementedError('abstract')
+
+    time = property(lambda self: self._get_time(),
+                    doc='''Retrieve the current playback time of the instance.
+                    
+         The playback time is a float expressed in seconds, with 0.0 being
+         the beginning of the sound.  The playback time returned represents
+         the time encoded in the media, and may not reflect actual time
+         passed due to pitch shifting or pausing.
+         ''')
+ 
+    def dispatch_events(self):
+        '''Dispatch any pending events and perform regular heartbeat functions
+        to maintain playback.
+
+        This method is called automatically by `pyglet.media.dispatch_events`,
+        there is no need to call this from an application.
+        '''
+        pass
+
+class Sound(MediumInstance):
+    '''An instance of a sound, either currently playing or ready to be played.
+
+    By default, monaural sounds are played at nominal volume equally among
+    all speakers, however they may also be positioned in 3D space.  Stereo
+    sounds are not positionable.
+
+    :Ivariables:
         `depth` : int
             The number of bits per sample per channel (usually 8 or 16).
             The value is None if the audio properties have not yet been
@@ -90,9 +151,6 @@ class Sound(object):
 
     '''
         
-    playing = False
-    finished = False
-
     depth = None
     sample_rate = None
     channels = None
@@ -110,32 +168,6 @@ class Sound(object):
     _cone_outer_angle = 360.
     _cone_outer_gain = 1.
 
-    
-    def play(self):
-        '''Begin playing the sound.
-
-        This has no effect if the sound is already playing.
-        '''
-        raise NotImplementedError('abstract')
-
-    def pause(self):
-        '''Pause playback of the sound.
-
-        This has no effect if the sound is already paused.
-        '''
-        raise NotImplementedError('abstract')
-
-    def _get_time(self):
-        raise NotImplementedError('abstract')
-
-    time = property(lambda self: self._get_time(),
-                    doc='''Retrieve the current playback time of the sound.
-                    
-         The playback time is a float expressed in seconds, with 0.0 being
-         the beginning of the sound.  The playback time returned represents
-         the time encoded in the media, and may not reflect actual time
-         passed due to pitch shifting or pausing.
-         ''')
 
     def _set_volume(self, volume):
         raise NotImplementedError('abstract')
@@ -250,14 +282,27 @@ class Sound(object):
         When the listener is positioned outside the volume defined by the
         outer cone, this gain is applied instead of `volume`.''')
 
-    def dispatch_events(self):
-        '''Dispatch any pending events and perform regular heartbeat functions
-        to maintain audio playback.
 
-        This method is called automatically by `pyglet.media.dispatch_events`,
-        there is no need to call this from an application.
-        '''
-        pass
+class Video(MediumInstance):
+    '''A video that can be played.
+
+    :Ivariables:
+        `sound` : `Sound`
+            Reference to the sound instance that accompanies this video.
+        `texture` : `pyglet.image.Texture`
+            Reference to the texture object that holds the current frame of
+            video.
+        `width` : int
+            Width of the video, in pixels.  None if unknown.
+        `height` : int
+            Height of the video, in pixels.  None if unknown.
+
+    '''
+    sound = None
+    texture = None
+
+    width = None
+    height = None
 
 class Listener(object):
     '''The listener properties for positional audio.

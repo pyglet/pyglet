@@ -17,13 +17,20 @@ def init():
     alc.alcMakeContextCurrent(alcontext)
 
 class BufferPool(list):
-    def get(self):
+    def __init__(self):
+        self.timestamps = {}
+
+    def get(self, timestamp):
         if not self:
             buffer = al.ALuint()
             al.alGenBuffers(1, buffer)
         else:
             buffer = al.ALuint(self.pop(0))
+        self.timestamps[buffer.value] = timestamp
         return buffer
+
+    def timestamp(self, buffer):
+        return self.timestamps[buffer]
 
     def replace(self, buffers):
         self.extend(buffers)
@@ -48,30 +55,53 @@ class OpenALSound(Sound):
     _processed_buffers = 0
     _queued_buffers = 0
 
-    # AL_*_OFFSET is not supported on Linux yet.  We could use entire buffers
-    # as the time granularity, but it's a lot easier and more precise to use
-    # the system clock.  Too bad about drift.
-    #
-    # TODO Mac OS X should implement AL_*_OFFSET.
-    #
-    # _time_offset gives the time to subtract from now() to get the playback
-    # time.  It is modified by play() and pause().
-    _time_offset = 0
-
     def __init__(self):
         self.source = al.ALuint()
         al.alGenSources(1, self.source)
         self.play_when_buffered = False
+
+        # OpenAL on Linux lacks the time functions, so this is a stab at
+        # interpolating time between the known buffer timestamps.  When a
+        # timestamp is read from the active buffer, the current system time is
+        # stored in self._last_buffer_time, and the buffer that was used is
+        # stored in self._last_buffer. 
+        #
+        # If the same buffer is in use the next time the time is requested,
+        # the elapsed system time is added to the buffer timestamp.
+        #
+        # The (completely invalid) assumption is that the buffer is just
+        # beginning when _last_buffer_time is stored.  This is more likely
+        # than not, at least, if the buffers are long.  If the buffers are
+        # short, hopefully not much interpolation will be needed and the
+        # difference won't be noticeable.
+        #
+        # The alternative -- reusing the same timestamp without adding system
+        # time -- results in slightly jumpy video due to lost frames.
+        #
+        # XXX Mac OS X should implement the time functions, so no need for
+        # this hackery.  Need to detect AL 1.1.
+        #
+        # XXX Need special consideration when pausing.
+        self._last_buffer = 0
+        self._last_buffer_time = 0
 
     def __del__(self, al=al):
         if al and al.alDeleteSources:
             al.alDeleteSources(1, self.source)
 
     def _get_time(self):
-        if self.playing:
-            return time.time() - self._time_offset
+        buffer = al.ALint()
+        al.alGetSourcei(self.source, al.AL_BUFFER, buffer)
+        if not buffer:
+            return 0.
+
+        buffer_timestamp = buffer_pool.timestamp(buffer.value)
+        if buffer.value == self._last_buffer:
+            return time.time() - self._last_buffer_time + buffer_timestamp
         else:
-            return -self._time_offset
+            self._last_buffer = buffer.value
+            self._last_buffer_time = time.time()
+            return buffer_timestamp
 
     def play(self):
         self._openal_play()
@@ -88,12 +118,8 @@ class OpenALSound(Sound):
             al.alSourcePlay(self.source)
             self.play_when_buffered = False
             self.playing = True
-            self._time_offset += time.time()
 
     def pause(self):
-        if self.playing:
-            self._time_offset = -self.time
-
         self.playing = False
         al.alSourcePause(self.source)
 
