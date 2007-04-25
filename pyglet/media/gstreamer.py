@@ -16,10 +16,10 @@ def get_library(name):
         raise ImportError('Could not find library "%s"' % name)
     return ctypes.cdll.LoadLibrary(path)
 
-gst = get_library('gstreamer-0.10')
-gstaudio = get_library('gstaudio.0.10')
 glib = get_library('glib-2.0')
 gobject = get_library('gobject-2.0')
+gst = get_library('gstreamer-0.10')
+gstbase = get_library('gstbase.0.10')
 
 GST_VERSION_MAJOR = 0
 GST_VERSION_MINOR = 10
@@ -181,6 +181,87 @@ class GstElementDetails(ctypes.Structure):
 GstState = ctypes.c_int
 GstStateChangeReturn = ctypes.c_int
 GstClockTimeDiff = ctypes.c_int64
+GstClockID = ctypes.c_void_p
+GstClockTime = ctypes.c_uint64
+GstClockTimeDiff = ctypes.c_int64
+
+GST_CLOCK_TIME_NONE = -1
+
+class GstMiniObject(ctypes.Structure):
+    _fields_ = [
+        ('instance', GTypeInstance),
+        ('refcount', ctypes.c_int),
+        ('flags', ctypes.c_uint),
+        ('_gst_reserved', ctypes.c_void_p),
+    ]
+
+GST_EVENT_TYPE_SHIFT = 4
+GST_EVENT_TYPE_UPSTREAM = 1 << 0
+GST_EVENT_TYPE_DOWNSTREAM = 1 << 1
+GST_EVENT_TYPE_SERIALIZED = 1 << 2
+
+def GST_EVENT_MAKE_TYPE(num, flags):
+    return (num << GST_EVENT_TYPE_SHIFT) | flags
+
+GstEventType = ctypes.c_int
+GST_EVENT_EOS = GST_EVENT_MAKE_TYPE(5, 
+    GST_EVENT_TYPE_DOWNSTREAM | GST_EVENT_TYPE_SERIALIZED)
+
+class GstEvent(ctypes.Structure):
+    _fields_ = [
+        ('mini_object', GstMiniObject),
+        ('type', GstEventType),
+        ('timestamp', ctypes.c_uint64),
+        ('src', ctypes.c_void_p),
+        ('structure', ctypes.c_void_p),
+        ('_gst_reserved', ctypes.c_void_p),
+    ]
+
+
+class GstBuffer(ctypes.Structure):
+    _fields_ = [
+        ('mini_object', GstMiniObject),
+        ('data', ctypes.c_void_p),
+        ('size', ctypes.c_uint),
+        ('timestamp', GstClockTime),
+        ('duration', GstClockTime),
+        ('caps', ctypes.POINTER(GstCaps)),
+        ('offset', ctypes.c_uint64),
+        ('offset_end', ctypes.c_uint64),
+        ('malloc_data', ctypes.c_void_p),
+        ('_gst_reserved', ctypes.c_void_p * GST_PADDING),
+    ]
+
+class GstSegment(ctypes.Structure):
+    _fields_ = [
+        ('rate', ctypes.c_double),
+        ('abs_rate', ctypes.c_double),
+        ('format', ctypes.c_int),
+        ('flags', ctypes.c_int),
+        ('start', ctypes.c_int64),
+        ('stop', ctypes.c_int64),
+        ('time', ctypes.c_int64),
+        ('accum', ctypes.c_int64),
+        ('last_stop', ctypes.c_int64),
+        ('duration', ctypes.c_int64),
+        #('applied_rate', ctypes.c_double),  ABI added 0.10.6
+        ('_gst_reserved', ctypes.c_void_p * GST_PADDING),
+    ]
+
+#TEMP
+GstPad = ctypes.c_int
+
+GstFlowReturn = ctypes.c_int
+GstPadChainFunction = ctypes.CFUNCTYPE(GstFlowReturn, 
+    ctypes.POINTER(GstPad), ctypes.POINTER(GstBuffer))
+GstPadSetCapsFunction = ctypes.CFUNCTYPE(ctypes.c_int,
+    ctypes.POINTER(GstPad), ctypes.POINTER(GstCaps))
+GstPadEventFunction = ctypes.CFUNCTYPE(ctypes.c_int,
+    ctypes.POINTER(GstPad), ctypes.POINTER(GstEvent))
+GstPadGetRangeFunction = ctypes.CFUNCTYPE(ctypes.c_int,
+    ctypes.POINTER(GstPad), ctypes.c_uint64, ctypes.c_uint,
+    ctypes.POINTER(ctypes.POINTER(GstBuffer)))
+
 
 class GstElement(ctypes.Structure):
     _fields_ = [
@@ -232,21 +313,68 @@ class GstElementClass(ctypes.Structure):
         ('_gst_reserved', ctypes.c_void_p * GST_PADDING),
     ]
 
-class GstSegment(ctypes.Structure):
+class GstBaseSrc(ctypes.Structure):
     _fields_ = [
-        ('rate', ctypes.c_double),
-        ('abs_rate', ctypes.c_double),
-        ('format', ctypes.c_int),
-        ('flags', ctypes.c_int),
-        ('start', ctypes.c_int64),
-        ('stop', ctypes.c_int64),
-        ('time', ctypes.c_int64),
-        ('accum', ctypes.c_int64),
-        ('last_stop', ctypes.c_int64),
-        ('duration', ctypes.c_int64),
-        #('applied_rate', ctypes.c_double),  ABI added 0.10.6
-        ('_gst_reserved', ctypes.c_void_p * GST_PADDING),
+        ('element', GstElement),
+        ('srcpad', ctypes.POINTER(GstPad)),
+        ('live_lock', ctypes.c_void_p),
+        ('live_cond', ctypes.c_void_p),
+        ('is_live', ctypes.c_int),
+        ('live_running', ctypes.c_int),
+        ('blocksize', ctypes.c_int),
+        ('can_activate_push', ctypes.c_int),
+        ('pad_mode', ctypes.c_int),
+        ('seekable', ctypes.c_int),
+        ('random_access', ctypes.c_int),
+        ('clock_id', GstClockID),
+        ('end_time', GstClockTime),
+        ('segment', GstSegment),
+        ('need_newsegment', ctypes.c_int),
+        ('offset', ctypes.c_uint64),
+        ('size', ctypes.c_uint64),
+        ('num_buffers', ctypes.c_int),
+        ('num_buffers_left', ctypes.c_int),
+        ('_gst_reserved', ctypes.c_void_p * (GST_PADDING_LARGE - 1)),
+        ('priv', ctypes.c_void_p),
     ]
+
+class GstBaseSrcClass(ctypes.Structure):
+    _fields_ = [
+        ('parent_class', GstElementClass),
+        ('get_caps', ctypes.CFUNCTYPE(ctypes.c_void_p,
+            ctypes.POINTER(GstBaseSrc))),
+        ('set_caps', ctypes.CFUNCTYPE(ctypes.c_int,
+            ctypes.POINTER(GstBaseSrc), ctypes.c_void_p)),
+        ('negotiate', ctypes.CFUNCTYPE(ctypes.c_int,
+            ctypes.POINTER(GstBaseSrc))),
+        ('newsegment', ctypes.CFUNCTYPE(ctypes.c_int,
+            ctypes.POINTER(GstBaseSrc))),
+        ('start', ctypes.CFUNCTYPE(ctypes.c_int,
+            ctypes.POINTER(GstBaseSrc))),
+        ('stop', ctypes.CFUNCTYPE(ctypes.c_int,
+            ctypes.POINTER(GstBaseSrc))),
+        ('get_times', ctypes.CFUNCTYPE(None,
+            ctypes.POINTER(GstBaseSrc), ctypes.POINTER(GstBuffer),
+            ctypes.POINTER(GstClockTime), ctypes.POINTER(GstClockTime))),
+        ('get_size', ctypes.CFUNCTYPE(ctypes.c_int,
+            ctypes.POINTER(GstBaseSrc), ctypes.POINTER(ctypes.c_uint64))),
+        ('is_seekable', ctypes.CFUNCTYPE(ctypes.c_int,
+            ctypes.POINTER(GstBaseSrc))),
+        ('unlock', ctypes.CFUNCTYPE(ctypes.c_int,
+            ctypes.POINTER(GstBaseSrc))),
+        ('event', ctypes.CFUNCTYPE(ctypes.c_int,
+            ctypes.POINTER(GstBaseSrc), ctypes.POINTER(GstEvent))),
+        ('create', ctypes.CFUNCTYPE(GstFlowReturn,
+            ctypes.POINTER(GstBaseSrc), ctypes.c_uint64, ctypes.c_uint, 
+            ctypes.POINTER(ctypes.POINTER(GstBuffer)))),
+        ('do_seek', ctypes.CFUNCTYPE(ctypes.c_int,
+            ctypes.POINTER(GstBaseSrc), ctypes.POINTER(GstSegment))),
+        ('query', ctypes.c_void_p),
+        ('check_get_range', ctypes.c_void_p),
+        ('fixate', ctypes.c_void_p),
+        ('_gst_reserved', (ctypes.c_void_p * (GST_PADDING_LARGE - 4))),
+    ]
+
 
 class GstBaseSink(ctypes.Structure):
     _fields_ = [
@@ -365,53 +493,6 @@ class GstAudioSinkClass(ctypes.Structure):
         ('_gst_reserved', ctypes.c_void_p * GST_PADDING),
     ]
 
-GstClockTime = ctypes.c_uint64
-GstClockTimeDiff = ctypes.c_int64
-
-class GstMiniObject(ctypes.Structure):
-    _fields_ = [
-        ('instance', GTypeInstance),
-        ('refcount', ctypes.c_int),
-        ('flags', ctypes.c_uint),
-        ('_gst_reserved', ctypes.c_void_p),
-    ]
-
-class GstBuffer(ctypes.Structure):
-    _fields_ = [
-        ('mini_object', GstMiniObject),
-        ('data', ctypes.c_void_p),
-        ('size', ctypes.c_uint),
-        ('timestamp', GstClockTime),
-        ('duration', GstClockTime),
-        ('caps', ctypes.POINTER(GstCaps)),
-        ('offset', ctypes.c_uint64),
-        ('offset_end', ctypes.c_uint64),
-        ('malloc_data', ctypes.c_void_p),
-        ('_gst_reserved', ctypes.c_void_p * GST_PADDING),
-    ]
-
-GST_EVENT_TYPE_SHIFT = 4
-GST_EVENT_TYPE_UPSTREAM = 1 << 0
-GST_EVENT_TYPE_DOWNSTREAM = 1 << 1
-GST_EVENT_TYPE_SERIALIZED = 1 << 2
-
-def GST_EVENT_MAKE_TYPE(num, flags):
-    return (num << GST_EVENT_TYPE_SHIFT) | flags
-
-GstEventType = ctypes.c_int
-GST_EVENT_EOS = GST_EVENT_MAKE_TYPE(5, 
-    GST_EVENT_TYPE_DOWNSTREAM | GST_EVENT_TYPE_SERIALIZED)
-
-class GstEvent(ctypes.Structure):
-    _fields_ = [
-        ('mini_object', GstMiniObject),
-        ('type', GstEventType),
-        ('timestamp', ctypes.c_uint64),
-        ('src', ctypes.c_void_p),
-        ('structure', ctypes.c_void_p),
-        ('_gst_reserved', ctypes.c_void_p),
-    ]
-
 def py_derived_element(base):
     '''Derive a GstElement with a 'pyobject' member.'''
     class PyGstElement(ctypes.Structure):
@@ -458,17 +539,6 @@ class GstMessage(ctypes.Structure):
     ]
 
 gst.gst_bus_poll.restype = ctypes.POINTER(GstMessage)
-
-#TEMP
-GstPad = ctypes.c_int
-
-GstFlowReturn = ctypes.c_int
-GstPadChainFunction = ctypes.CFUNCTYPE(GstFlowReturn, 
-    ctypes.POINTER(GstPad), ctypes.POINTER(GstBuffer))
-GstPadSetCapsFunction = ctypes.CFUNCTYPE(ctypes.c_int,
-    ctypes.POINTER(GstPad), ctypes.POINTER(GstCaps))
-GstPadEventFunction = ctypes.CFUNCTYPE(ctypes.c_int,
-    ctypes.POINTER(GstPad), ctypes.POINTER(GstEvent))
 
 # Python high-level classes
 
@@ -628,7 +698,14 @@ class Element(object):
     def __del__(self):
         print 'kill me!'
 
+GST_FLOW_RESENT = 1
 GST_FLOW_OK = 0
+GST_FLOW_NOT_LINKED = -1
+GST_FLOW_WRONG_STATE = -2
+GST_FLOW_UNEXPECTED = -3
+GST_FLOW_NOT_NEGOTIATED = -4
+GST_FLOW_ERROR = -5
+GST_FLOW_NOT_SUPPORTED = -6
 
 class Pad(object):
     # Fill these in as class attributes
@@ -645,26 +722,34 @@ class Pad(object):
         self.this = this
         self.element = element
 
-        setcaps = GstPadSetCapsFunction(self.setcaps)
-        gst.gst_pad_set_setcaps_function(this, setcaps)
-        self.funcptrs.append(setcaps)
+        if hasattr(self, 'setcaps'):
+            setcaps = GstPadSetCapsFunction(self.setcaps)
+            gst.gst_pad_set_setcaps_function(this, setcaps)
+            self.funcptrs.append(setcaps)
 
-        chain = GstPadChainFunction(self.chain)
-        gst.gst_pad_set_chain_function(this, chain)
-        self.funcptrs.append(chain)
+        if hasattr(self, 'chain'):
+            chain = GstPadChainFunction(self.chain)
+            gst.gst_pad_set_chain_function(this, chain)
+            self.funcptrs.append(chain)
 
-        event = GstPadEventFunction(self.event)
-        gst.gst_pad_set_event_function(this, event)
-        self.funcptrs.append(event)
+        if hasattr(self, 'event'):
+            event = GstPadEventFunction(self.event)
+            gst.gst_pad_set_event_function(this, event)
+            self.funcptrs.append(event)
 
-    def setcaps(self, this, caps):
-        return True
+        if hasattr(self, 'get_range'):
+            get_range = GstPadGetRangeFunction(self.get_range)
+            gst.gst_pad_set_get_range_function(this, get_range)
+            self.funcptrs.append(get_range)
 
-    def chain(self, this, buf):
-        return GST_FLOW_OK
+    #def setcaps(self, this, caps):
+    #    return True
 
-    def event(self, this, event):
-        return False
+    #def chain(self, this, buf):
+    #    return GST_FLOW_OK
+
+    #def event(self, this, event):
+    #    return False
 
 mainloop = None
 mainloop_context = None

@@ -14,7 +14,7 @@ from pyglet.media import Medium, MediaException, Video
 from pyglet.media import gstreamer
 from pyglet.media import lib_openal as al
 from pyglet.media import openal
-from pyglet.media.gstreamer import gst, gstaudio, gobject
+from pyglet.media.gstreamer import gst, gstbase, gobject
 
 DecodebinNewDecodedPad = ctypes.CFUNCTYPE(None,
     ctypes.POINTER(gstreamer.GstElement), ctypes.POINTER(gstreamer.GstPad),
@@ -25,11 +25,93 @@ DecodebinNoMorePads = ctypes.CFUNCTYPE(None,
 GstBusFunc = ctypes.CFUNCTYPE(ctypes.c_int,
     ctypes.c_void_p, ctypes.POINTER(gstreamer.GstMessage), ctypes.c_void_p)
 
+class PythonFileObjectSrcPad(gstreamer.Pad):
+    name = 'src'
+    direction = gstreamer.GST_PAD_SRC
+    caps = 'ANY'
+
+class PythonFileObjectSrc(gstreamer.Element):
+    name = 'pyfileobjectsrc'
+    klass = 'Source/PythonFileObject'
+    description = 'Read from a Python file object'
+    author = 'pyglet.org'
+
+    class_struct = gstreamer.GstBaseSrcClass
+    instance_struct = gstreamer.GstBaseSrc
+    parent_type = gstbase.gst_base_src_get_type
+
+    vmethods = ('create', 'start', 'stop', 'is_seekable', 'do_seek')
+
+    pad_templates = (PythonFileObjectSrcPad,)
+    pad_instances = [
+        # Instance is created from template by superclass (GstBaseSrcClass)
+    ]
+
+    def init(self, file):
+        # Not a vmethod; this is the Python interface
+        self.file = file
+        self.offset =  0
+
+    def start(self):
+        return True
+
+    def stop(self):
+        return True
+
+    def is_seekable(self):
+        return False
+        # TODO return hasattr(self.file, 'seek')
+
+    def do_seek(self, segment):
+        # TODO
+        return True
+
+    def create(self, offset, size, bufp):
+        if offset != self.offset:
+            self.file.seek(offset)
+            self.offset = offset
+
+        try:
+            data = self.file.read(size)
+            if not data and size > 0:
+                # EOF
+                return gstreamer.GST_FLOW_UNEXPECTED
+        except IOError:
+            return gstreamer.GST_FLOW_ERROR
+
+        gst.gst_buffer_new_and_alloc.restype = \
+            ctypes.POINTER(gstreamer.GstBuffer)
+        buffer = gst.gst_buffer_new_and_alloc(size)
+
+        size = len(data)
+        ctypes.memmove(buffer.contents.data, data, size)
+
+        buffer.contents.size = size
+        buffer.contents.offset = offset
+        buffer.contents.offset_end = offset + size
+        buffer.contents.timestamp = gstreamer.GST_CLOCK_TIME_NONE
+
+        self.offset += size
+
+        bufp.contents.contents = buffer.contents
+
+        return gstreamer.GST_FLOW_OK
+
+
 class GstreamerDecoder(object):
     def _create_decoder_pipeline(self, filename, file):
-        # Create filesrc to read file (TODO: file-like objects)
-        src = gst.gst_element_factory_make('filesrc', 'src')
-        gobject.g_object_set(src, 'location', filename, None)
+        if file is None:
+            # Hooray, can just use filename
+            src = gst.gst_element_factory_make('filesrc', 'src')
+            gobject.g_object_set(src, 'location', filename, None)
+        else:
+            # Boo, use PythonFileObjectSrc
+            src = gst.gst_element_factory_make('pyfileobjectsrc', 'src')
+            pysrc = PythonFileObjectSrc.get_instance(src)
+            pysrc.init(file)
+            
+            # Don't GC the source
+            self._file_source = pysrc
 
         # Create pipeline to manage pause/play state.
         pipeline = gst.gst_pipeline_new('pipeline')
@@ -464,7 +546,7 @@ class GstreamerOpenALStaticMedium(Medium, GstreamerDecoder):
 
     def _no_more_pads(self, decodebin, data):
         # XXX This will pop out of another thread, which is not ideal.
-        if not self.audio:
+        if not self.has_audio:
             raise MediaException('No useable audio stream')
 
     def get_sound(self):
@@ -501,7 +583,10 @@ class OpenALPlugin(gstreamer.Plugin):
     package = 'pyglet'
     origin = 'http://www.pyglet.org'
 
-    elements = (OpenALStreamingSinkElement, OpenALStaticSinkElement)
+    elements = (
+        PythonFileObjectSrc,
+        OpenALStreamingSinkElement, 
+        OpenALStaticSinkElement)
 
 
 # Device interface
