@@ -952,11 +952,19 @@ class CompressedImageData(AbstractImage):
         glBindTexture(texture.target, texture.id)
         glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
 
-        glCompressedTexImage2DARB(texture.target, texture.level,
-            self.gl_format,
-            self.width, self.height, 0,
-            len(self.data), self.data)
-            
+        if False:
+            glCompressedTexImage2DARB(texture.target, texture.level,
+                self.gl_format,
+                self.width, self.height, 0,
+                len(self.data), self.data)
+        else:
+            from pyglet.image import s3tc
+            # TODO use packed only if GL >= 1.2
+            data = s3tc.decode_dxt1_packed(self.data, self.width, self.height)
+            glTexImage2D(texture.target, texture.level,
+                GL_RGB, self.width, self.height, 0,
+                GL_RGB, GL_UNSIGNED_SHORT_5_6_5, data)
+                
         self._current_texture = texture
         return texture
 
