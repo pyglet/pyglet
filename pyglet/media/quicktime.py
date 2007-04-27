@@ -96,6 +96,10 @@ class ExtractionSession(object):
         asbd.mBytesPerPacket = asbd.mBytesPerFrame
         self.bytes_per_frame = asbd.mBytesPerFrame
 
+        # For calculating timestamps
+        self.seconds_per_byte = 1. / self.sample_rate / self.channels / 2
+        self.time = 0.
+
         result = quicktime.MovieAudioExtractionSetProperty(
             self.extraction_session_ref,
             kQTPropertyClass_MovieAudioExtraction_Audio,
@@ -140,11 +144,13 @@ class ExtractionSession(object):
         if frames.value == 0:
             return None
 
-        albuffer = openal.buffer_pool.get()
+        size = audio_buffer_list.mBuffers[0].mDataByteSize
+        albuffer = openal.buffer_pool.get(self.time)
         al.alBufferData(albuffer, self.format,
-            audio_buffer_list.mBuffers[0].mData, 
-            audio_buffer_list.mBuffers[0].mDataByteSize,
+            audio_buffer_list.mBuffers[0].mData, size,
             int(self.sample_rate))
+
+        self.time += self.seconds_per_byte * size
         return albuffer
 
     def get_buffers(self, bytes):
