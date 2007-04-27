@@ -9,14 +9,13 @@ __version__ = '$Id$'
 
 import unittest
 import base_text
-from pyglet.ext.scene2d.textsprite import *
+
+from pyglet import font
 
 class TEST_COLOR(base_text.TextTestBase):
-    font_name = ''
-    font_size = 72
-
     def render(self):
-        self.sprite = TextSprite(self.font, self.text, color=(0, 0, 1, 1))
+        fnt = font.load(self.font_name, self.font_size)
+        self.label = font.Label(fnt, self.text, 10, 10, color=(0, 0, 1, 1))
 
 if __name__ == '__main__':
     unittest.main()

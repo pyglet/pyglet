@@ -10,7 +10,6 @@ import unittest
 import sys
 
 from pyglet.gl import *
-from pyglet.ext.scene2d.textsprite import *
 from pyglet import font
 from pyglet.window import *
 from pyglet.window.event import *
@@ -26,25 +25,24 @@ class TextTestBase(ImageRegressionTestCase):
         glClearColor(0.5, 0, 0, 1)
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
-        glTranslatef(10, 10, 0)
-        self.sprite.draw()
+        self.draw()
         self.window.flip()
 
         if self.capture_regression_image():
             self.window.exit_handler.has_exit = True
 
-    def create_font(self):
-        self.font = font.load(self.font_name, self.font_size) 
-
     def render(self):
-        self.sprite = TextSprite(self.font, self.text)
+        fnt = font.load(self.font_name, self.font_size) 
+        self.label = font.Label(fnt, self.text, 10, 10)
+
+    def draw(self):
+        self.label.draw()
 
     def test_main(self):
         width, height = 200, 200
         self.window = w = Window(width, height, visible=False, resizable=True)
         w.push_handlers(self)
 
-        self.create_font()
         self.render()
 
         w.set_visible()

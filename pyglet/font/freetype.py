@@ -41,6 +41,9 @@ FC_WEIGHT_BOLD = 200
 FC_SLANT_ROMAN = 0
 FC_SLANT_ITALIC = 100
 
+FT_STYLE_FLAG_ITALIC = 1
+FT_STYLE_FLAG_BOLD = 2
+
 (FcTypeVoid,
  FcTypeInteger,
  FcTypeDouble, 
@@ -131,6 +134,8 @@ class FreeTypeMemoryFont(object):
             raise base.FontException('Could not load font data')
 
         self.name = self.face.contents.family_name
+        self.bold = self.face.contents.style_flags & FT_STYLE_FLAG_BOLD != 0
+        self.italic = self.face.contents.style_flags & FT_STYLE_FLAG_ITALIC != 0
 
     def __del__(self):
         try:
@@ -141,18 +146,20 @@ class FreeTypeMemoryFont(object):
 class FreeTypeFont(base.Font):
     glyph_renderer_class = FreeTypeGlyphRenderer
 
-    # Map font name to FreeTypeMemoryFont
+    # Map font (name, bold, italic) to FreeTypeMemoryFont
     _memory_fonts = {}
 
     def __init__(self, name, size, bold=False, italic=False):
         super(FreeTypeFont, self).__init__()
 
+        # Check if font name/style matches a font loaded into memory by user
         lname = name.lower()
-        if lname in self._memory_fonts:
-            font = self._memory_fonts[lname]
+        if (lname, bold, italic) in self._memory_fonts:
+            font = self._memory_fonts[lname, bold, italic]
             self._set_face(font.face, size)
             return
 
+        # Use fontconfig to match the font (or substitute a default).
         ft_library = ft_get_library()
 
         match = self.get_fontconfig_match(name, size, bold, italic)
@@ -179,7 +186,6 @@ class FreeTypeFont(base.Font):
         self.face = face.contents
         self._face_size = frac(size)
 
-        print '1', self.face
         FT_Set_Char_Size(self.face, 0, frac(size), 0, 0)
         self.ascent = self.face.ascender * size / self.face.units_per_EM
         self.descent = self.face.descender * size / self.face.units_per_EM
@@ -223,4 +229,4 @@ class FreeTypeFont(base.Font):
     @classmethod
     def add_font_data(cls, data):
         font = FreeTypeMemoryFont(data)
-        cls._memory_fonts[font.name.lower()] = font
+        cls._memory_fonts[font.name.lower(), font.bold, font.italic] = font
