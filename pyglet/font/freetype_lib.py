@@ -215,12 +215,6 @@ class FT_FaceRec(Structure):
     def has_kerning(self):
         return self.face_flags & FT_FACE_FLAG_KERNING
 
-    def __del__(self, byref=byref, FT_Done_Face=FT_Done_Face,
-            addressof=addressof):
-        # FT_Done_FreeType doc says it will free up faces...
-        if _library is not None:
-            FT_Done_Face(byref(self))
-
 FT_Face = POINTER(FT_FaceRec)
 
 class Error(Exception):
@@ -324,7 +318,7 @@ FT_F26Dot6 = c_long
 FT_Init_FreeType = _get_function('FT_Init_FreeType',
     [POINTER(FT_Library)], c_int)
 FT_New_Memory_Face = _get_function('FT_New_Memory_Face',
-    [FT_Library, c_char_p, c_long, c_long, POINTER(FT_Face)], c_int)
+    [FT_Library, POINTER(c_byte), c_long, c_long, POINTER(FT_Face)], c_int)
 FT_New_Face = _get_function('FT_New_Face',
     [FT_Library, c_char_p, c_long, POINTER(FT_Face)], c_int)
 FT_Set_Pixel_Sizes = _get_function('FT_Set_Pixel_Sizes',

@@ -6,6 +6,7 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import ctypes
 from ctypes import *
 from ctypes import util
 from warnings import warn
@@ -91,6 +92,7 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
 
     def render(self, text):
         face = self.font.face
+        FT_Set_Char_Size(face, 0, self.font._face_size, 0, 0)
         glyph_index = fontconfig.FcFreeTypeCharIndex(byref(face), ord(text[0]))
         error = FT_Load_Glyph(face, glyph_index, FT_LOAD_RENDER)
         if error != 0:
@@ -116,11 +118,41 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
 
         return glyph
 
+class FreeTypeMemoryFont(object):
+    def __init__(self, data):
+        self.buffer = (ctypes.c_byte * len(data))()
+        ctypes.memmove(self.buffer, data, len(data))
+
+        ft_library = ft_get_library()
+        self.face = FT_Face()
+        r = FT_New_Memory_Face(ft_library, 
+            self.buffer, len(self.buffer), 0, self.face)
+        if r != 0:
+            raise base.FontException('Could not load font data')
+
+        self.name = self.face.contents.family_name
+
+    def __del__(self):
+        try:
+            FT_Done_Face(self.face)
+        except NameError:
+            pass
+
 class FreeTypeFont(base.Font):
     glyph_renderer_class = FreeTypeGlyphRenderer
 
+    # Map font name to FreeTypeMemoryFont
+    _memory_fonts = {}
+
     def __init__(self, name, size, bold=False, italic=False):
         super(FreeTypeFont, self).__init__()
+
+        lname = name.lower()
+        if lname in self._memory_fonts:
+            font = self._memory_fonts[lname]
+            self._set_face(font.face, size)
+            return
+
         ft_library = ft_get_library()
 
         match = self.get_fontconfig_match(name, size, bold, italic)
@@ -141,8 +173,13 @@ class FreeTypeFont(base.Font):
 
         fontconfig.FcPatternDestroy(match)
 
-        self.face = f.contents
+        self._set_face(f, size)
 
+    def _set_face(self, face, size):
+        self.face = face.contents
+        self._face_size = frac(size)
+
+        print '1', self.face
         FT_Set_Char_Size(self.face, 0, frac(size), 0, 0)
         self.ascent = self.face.ascender * size / self.face.units_per_EM
         self.descent = self.face.descender * size / self.face.units_per_EM
@@ -182,3 +219,8 @@ class FreeTypeFont(base.Font):
         match = cls.get_fontconfig_match(name, 12, False, False)
         result = fontconfig.FcPatternGet(match, FC_FAMILY, 0, byref(value))
         return value.u.s == name
+    
+    @classmethod
+    def add_font_data(cls, data):
+        font = FreeTypeMemoryFont(data)
+        cls._memory_fonts[font.name.lower()] = font
