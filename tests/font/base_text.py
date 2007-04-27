@@ -41,7 +41,7 @@ class TextTestBase(ImageRegressionTestCase):
 
     def test_main(self):
         width, height = 200, 200
-        self.window = w = Window(width, height, visible=False)
+        self.window = w = Window(width, height, visible=False, resizable=True)
         w.push_handlers(self)
 
         self.create_font()
