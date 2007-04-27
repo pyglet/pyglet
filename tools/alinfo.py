@@ -13,6 +13,7 @@ import ctypes
 import optparse
 import sys
 
+from pyglet.media import openal
 from pyglet.media import lib_openal as al
 from pyglet.media import lib_alc as alc
 
@@ -63,20 +64,10 @@ if __name__ == '__main__':
 
     if options.device:
         print 'Using device "%s"...' % options.device
-        device = alc.alcOpenDevice(options.device)
+        openal.init(options.device)
     else:
         print 'Using default device...'
-        device = alc.alcOpenDevice(None)
+        openal.init()
 
-    minor = alc.ALCint()
-    major = alc.ALCint()
-    size = alc.ALCint()
-    alc.alcGetIntegerv(device, alc.ALC_MAJOR_VERSION, 
-                       ctypes.sizeof(major), major)
-    alc.alcGetIntegerv(device, alc.ALC_MINOR_VERSION, 
-                       ctypes.sizeof(minor), minor)
-    extensions = split_nul_strings(
-        alc.alcGetString(device, alc.ALC_EXTENSIONS))
-
-    print 'OpenAL version %d.%d' % (major.value, minor.value)
-    print 'Extensions:              %s' % ', '.join(extensions)
+    print 'OpenAL version %d.%d' % openal.get_version()
+    print 'Extensions:              %s' % ', '.join(openal.get_extensions())

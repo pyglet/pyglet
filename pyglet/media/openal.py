@@ -2,19 +2,70 @@
 # $Id$
 
 import ctypes
+import sys
 import time
 
 from pyglet.media import Sound, Listener
 from pyglet.media import lib_openal as al
 from pyglet.media import lib_alc as alc
 
-def init():
-    device = alc.alcOpenDevice(None)
-    if not device:
+_device = None
+_is_init = False
+_have_1_1 = False
+def init(device_name = None):
+    global _device
+    global _is_init
+    global _have_1_1
+
+    _device = alc.alcOpenDevice(device_name)
+    if not _device:
         raise Exception('No OpenAL device.')
 
-    alcontext = alc.alcCreateContext(device, None)
+    alcontext = alc.alcCreateContext(_device, None)
     alc.alcMakeContextCurrent(alcontext)
+    _is_init = True
+
+    if have_version(1, 1):
+        # Good version info to cache
+        _have_1_1 = True
+
+def _split_nul_strings(s):
+    # NUL-separated list of strings, double-NUL-terminated.
+    nul = False
+    i = 0
+    while True:
+        if s[i] == '\0':
+            if nul:
+                break
+            else:
+                nul = True
+        else:
+            nul = False
+        i += 1
+    s = s[:i - 1]
+    return s.split('\0')
+
+def get_version():
+    major = alc.ALCint()
+    minor = alc.ALCint()
+    alc.alcGetIntegerv(_device, alc.ALC_MAJOR_VERSION, 
+                       ctypes.sizeof(major), major)
+    alc.alcGetIntegerv(_device, alc.ALC_MINOR_VERSION, 
+                       ctypes.sizeof(minor), minor)
+    return major.value, minor.value
+
+def have_version(major, minor):
+    return (major, minor) <= get_version()
+
+def get_extensions():
+    extensions = alc.alcGetString(_device, alc.ALC_EXTENSIONS)
+    if sys.platform == 'darwin':
+        return ctypes.cast(extensions, ctypes.c_char_p).value.split(' ')
+    else:
+        return _split_nul_strings(extensions)
+
+def have_extension(extension):
+    return extension in get_extensions()
 
 class BufferPool(list):
     def __init__(self):
@@ -78,10 +129,10 @@ class OpenALSound(Sound):
         # The alternative -- reusing the same timestamp without adding system
         # time -- results in slightly jumpy video due to lost frames.
         #
-        # XXX Mac OS X should implement the time functions, so no need for
-        # this hackery.  Need to detect AL 1.1.
+        # When OpenAL 1.1 is present (i.e., on OS X), we add the buffer's
+        # timestamp to the retrieved sample offset within the current buffer.
         #
-        # XXX Need special consideration when pausing.
+        # XXX Need special consideration when pausing (Linux only).
         self._last_buffer = 0
         self._last_buffer_time = 0
 
@@ -95,13 +146,25 @@ class OpenALSound(Sound):
         if not buffer:
             return 0.
 
+        # The playback position at the start of the current buffer
         buffer_timestamp = buffer_pool.timestamp(buffer.value)
-        if buffer.value == self._last_buffer:
-            return time.time() - self._last_buffer_time + buffer_timestamp
+
+        if _have_1_1:
+            # Add buffer timestamp to sample offset
+            buffer_samples = al.ALint()
+            al.alGetSourcei(self.source, al.AL_SAMPLE_OFFSET, buffer_samples)
+            sample_rate = al.ALint()
+            al.alGetBufferi(buffer.value, al.AL_FREQUENCY, sample_rate)
+            buffer_time = buffer_samples.value / float(sample_rate.value)
+            return buffer_timestamp + buffer_time
         else:
-            self._last_buffer = buffer.value
-            self._last_buffer_time = time.time()
-            return buffer_timestamp
+            # Interpolate system time past buffer timestamp
+            if buffer.value == self._last_buffer:
+                return time.time() - self._last_buffer_time + buffer_timestamp
+            else:
+                self._last_buffer = buffer.value
+                self._last_buffer_time = time.time()
+                return buffer_timestamp
 
     def play(self):
         self._openal_play()
