@@ -5,12 +5,23 @@
 OpenAL.
 '''
 
+# There are a LOT of threads going on here, all of them managed by Gstreamer.
+# If pyglet ever needs to run under a Python that doesn't have a GIL, some
+# locks will need to be introduced to prevent concurrency catastrophes.  
+#
+# At the moment, no locks are used because we assume only one thread is
+# executing Python code at a time.  Some semaphores are used to block and wake
+# up the main thread when needed, these are all instances of
+# threading.Semaphore.  Note that these don't represent any kind of
+# thread-safety.
+
 import ctypes
 import time
+import threading
 
 from pyglet.gl import *
 from pyglet import image
-from pyglet.media import Medium, MediaException, Video
+from pyglet.media import Medium, MediaException, InvalidMediumException, Video
 from pyglet.media import gstreamer
 from pyglet.media import lib_openal as al
 from pyglet.media import openal
@@ -99,6 +110,13 @@ class PythonFileObjectSrc(gstreamer.Element):
 
 
 class GstreamerDecoder(object):
+    _decodebin_pads_semaphore = None
+    _have_pads = False
+
+    def __init__(self):
+        # Lock a semaphore to block until all pads are decoded.
+        self._decodebin_pads_semaphore = threading.Semaphore(0)
+
     def _create_decoder_pipeline(self, filename, file):
         if file is None:
             # Hooray, can just use filename
@@ -134,6 +152,12 @@ class GstreamerDecoder(object):
 
         return pipeline
 
+    def _destroy_pipeline(self, pipeline):
+        gst.gst_element_set_state(pipeline, gstreamer.GST_STATE_NULL)
+        gst.gst_object_unref(pipeline)
+        del self._no_more_pads_func
+        del self._new_decoded_pad_func
+
     def _new_decoded_pad(self, decodebin, pad, last, data):
         '''Called by decodebin element when a source pad is created.'''
         caps = gst.gst_pad_get_caps(pad)
@@ -157,7 +181,21 @@ class GstreamerDecoder(object):
         pass
 
     def _no_more_pads(self, decodebin, data):
+        self._decodebin_pads_semaphore.release()
+
+    def _no_more_pads_deferred(self):
+        '''Callback from main application thread when all pads have been
+        decoded.  In contrast, _no_more_pads is called from the streaming
+        thread.'''
         pass
+
+    def _wait_no_more_pads(self):
+        self._decodebin_pads_semaphore.acquire()
+        self._decodebin_pads_semaphore.release()
+        if not self._have_pads:
+            self._have_pads = True
+            self._no_more_pads_deferred()
+
 
 class OpenALSinkPad(gstreamer.Pad):
     name = 'sink'
@@ -240,6 +278,8 @@ class TextureSinkPad(gstreamer.Pad):
         height = ctypes.c_int()
         gst.gst_structure_get_int(structure, 'height', ctypes.byref(height))
 
+        self.element._set_frame_format(width.value, height.value)
+
         return True
 
     def chain(self, this, buffer):
@@ -251,6 +291,25 @@ class TextureSinkPad(gstreamer.Pad):
 
     def event(self, this, event):
         return False
+
+# Gstreamer thread management
+# -----------------------------------------------------------------------------
+
+class GstreamerMedium(Medium, GstreamerDecoder):
+    # The have_video and have_sound properties have to block until all pads
+    # have been discovered.
+    _has_audio = False
+    _has_video = False
+
+    def _get_has_audio(self):
+        self._wait_no_more_pads()
+        return self._has_audio
+    has_audio = property(_get_has_audio)
+
+    def _get_has_video(self):
+        self._wait_no_more_pads()
+        return self._has_video
+    has_video = property(_get_has_video)
 
 # OpenAL streaming
 # -----------------------------------------------------------------------------
@@ -277,7 +336,6 @@ class OpenALStreamingSinkElement(gstreamer.Element):
             # Now we know how many buffers are needed
             self.sound._buffers_ahead = self.sound._buffer_time / buffer_time
         
-        # Assume GIL will lock for us
         self.sound._queued_buffers += 1
 
         extra_buffers = self.sound._queued_buffers - self.sound._buffers_ahead
@@ -302,17 +360,26 @@ class GstreamerOpenALStreamingSound(openal.OpenALStreamingSound,
 
     def __init__(self, filename, file):
         super(GstreamerOpenALStreamingSound, self).__init__()
-        self.pipeline = self._create_decoder_pipeline(filename, file)
+        self._pipeline = self._create_decoder_pipeline(filename, file)
 
         self.sink = gst.gst_element_factory_make('openalstreamingsink', 'sink')
-        gst.gst_bin_add(self.pipeline, self.sink)
+        gst.gst_bin_add(self._pipeline, self.sink)
         gst.gst_element_link(self.convert, self.sink)
 
-        gst.gst_element_set_state(self.pipeline, gstreamer.GST_STATE_PAUSED)
+        gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PAUSED)
 
     def play(self):
         super(GstreamerOpenALStreamingSound, self).play()
-        gst.gst_element_set_state(self.pipeline, gstreamer.GST_STATE_PLAYING)
+        gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PLAYING)
+
+    def pause(self):
+        super(GstreamerOpenALStreamingSound, self).pause()
+        gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PAUSED)
+
+    def stop(self):
+        super(GstreamerOpenALStreamingSound, self).stop()
+        self._destroy_pipeline(self._pipeline)
+        self._pipeline = None
 
     def _new_audio_pad(self, pad, channels, depth, sample_rate):
         '''Create and connect the sink for the given source pad.'''
@@ -332,36 +399,91 @@ class GstreamerOpenALStreamingVideo(Video,
     _buffer_time = .5  # seconds ahead to buffer
     _buffers_ahead = None # Number of buffers ahead to buffer (calculated later)
 
-    finished = False
+    _sound = None
+    _texture = None
+    
+    _width = None
+    _height = None
+    _frame_format_semaphore = None
 
     def __init__(self, filename, file):
         super(GstreamerOpenALStreamingVideo, self).__init__()
-        self.pipeline = self._create_decoder_pipeline(filename, file)
+
+        # Block frame format until width/height arrives
+        self._frame_format_semaphore = threading.Semaphore(0)
+
+        self._pipeline = self._create_decoder_pipeline(filename, file)
 
         self.sink = gst.gst_element_factory_make('openalstreamingsink', 'sink')
-        gst.gst_bin_add(self.pipeline, self.sink)
+        gst.gst_bin_add(self._pipeline, self.sink)
         gst.gst_element_link(self.convert, self.sink)
 
         self.videoconvert = \
             gst.gst_element_factory_make('ffmpegcolorspace', 'videoconvert')
-        gst.gst_bin_add(self.pipeline, self.videoconvert)
+        gst.gst_bin_add(self._pipeline, self.videoconvert)
         gst.gst_element_link(self.videoconvert, self.sink)
 
-        gst.gst_element_set_state(self.pipeline, gstreamer.GST_STATE_PAUSED)
+        gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PAUSED)
 
         self._frames = [] # queued upcoming video frames
         self._last_frame_timestamp = 0.
 
+    def _get_sound(self):
+        self._wait_no_more_pads()
+        return self._sound
+    sound = property(_get_sound)
+
+    def _wait_frame_format(self):
+        self._frame_format_semaphore.acquire()
+        self._frame_format_semaphore.release()
+
+    def _get_width(self):
+        self._wait_frame_format()
+        return self._width
+    width = property(_get_width)
+
+    def _get_height(self):
+        self._wait_frame_format()
+        return self._height
+    height = property(_get_height)
+
+    def _get_texture(self):
+        self._wait_frame_format()
+        if not self._texture:
+            glEnable(GL_TEXTURE_2D)
+            texture = image.Texture.create_for_size(GL_TEXTURE_2D,
+                self.width, self.height, GL_RGB)
+            if texture.width != self.width or texture.height != self.height:
+                self._texture = texture.get_region(
+                    0, 0, self.width, self.height)
+            else:
+                self._texture = texture
+
+            # Flip texture coords (good enough for simple apps).
+            bl, br, tr, tl = self._texture.tex_coords
+            self._texture.tex_coords = tl, tr, br, bl
+        return self._texture
+    texture = property(_get_texture)
 
     def play(self):
-        gst.gst_element_set_state(self.pipeline, gstreamer.GST_STATE_PLAYING)
+        self._wait_no_more_pads()
+        gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PLAYING)
         self.sound.play()
+        self.playing = True
 
     def pause(self):
-        gst.gst_element_set_state(self.pipeline, gstreamer.GST_STATE_PAUSED)
+        self._wait_no_more_pads()
+        gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PAUSED)
         self.sound.pause()
+        self.playing = False
+
+    def stop(self):
+        self.sound.stop()
+        self._destroy_pipeline(self._pipeline)
+        self._pipeline = None
 
     def _get_time(self):
+        self._wait_no_more_pads()
         return self.sound.time
 
     def _new_audio_pad(self, pad, channels, depth, sample_rate):
@@ -370,9 +492,9 @@ class GstreamerOpenALStreamingVideo(Video,
         gst.gst_pad_link(pad, convertpad)
         gst.gst_object_unref(convertpad)
 
-        self.sound = openal.OpenALStreamingSound()
-        self.sound._buffers_ahead = self._buffers_ahead # XXX
-        self.sound._buffer_time = self._buffer_time
+        self._sound = openal.OpenALStreamingSound()
+        self._sound._buffers_ahead = self._buffers_ahead # XXX
+        self._sound._buffer_time = self._buffer_time
 
     def _new_video_pad(self, pad):
         sinkpad = gst.gst_element_get_pad(self.videoconvert, 'sink')
@@ -380,8 +502,9 @@ class GstreamerOpenALStreamingVideo(Video,
         gst.gst_object_unref(sinkpad)
 
     def _set_frame_format(self, width, height):
-        self.width = width
-        self.height = height
+        self._width = width
+        self._height = height
+        self._frame_format_semaphore.release()
     
     def _add_frame(self, buffer, length, timestamp):
         # Make a copy of the frame and queue it up with its timestamp
@@ -394,29 +517,9 @@ class GstreamerOpenALStreamingVideo(Video,
         if timestamp > self._frames[0][1] + self._buffer_time:
             time.sleep(self._buffer_time / 2)
 
-        '''
-        # Deal with frames != packets
-        offset = 0
-        while length:
-            if self._frame_buffer is None:
-                self._frame_buffer = \
-                    (ctypes.c_byte * (self.width * self.height * 4))()
-                self._frame_buffer_len = 0
-            copylen = min(length, 
-                          len(self._frame_buffer) - self._frame_buffer_len)
-            ctypes.memmove(
-                ctypes.addressof(self._frame_buffer) + self._frame_buffer_len, 
-                buffer + offset, 
-                copylen)
-            length -= copylen
-            offset += copylen
-            self._frame_buffer_len += copylen
-            if self._frame_buffer_len == len(self._frame_buffer):
-                self._frames.append((self._frame_buffer, timestamp))
-                self._frame_buffer = None
-        '''
-
     def _no_more_pads(self, decodebin, data):
+        super(GstreamerOpenALStreamingVideo, self)._no_more_pads(
+            decodebin, data)
         sink = self.sink
         pysink = OpenALStreamingSinkElement.get_instance(self.sink)
         pysink.init(self.sound, self)
@@ -427,18 +530,6 @@ class GstreamerOpenALStreamingVideo(Video,
     def dispatch_events(self):
         self.sound.dispatch_events()
 
-        if not self.texture:
-            glEnable(GL_TEXTURE_2D)
-            texture = image.Texture.create_for_size(GL_TEXTURE_2D,
-                self.width, self.height, GL_RGB)
-            if texture.width != self.width or texture.height != self.height:
-                self.texture = texture.get_region(0, 0, self.width, self.height)
-            else:
-                self.texture = texture
-
-            # Flip texture coords (good enough for simple apps).
-            bl, br, tr, tl = self.texture.tex_coords
-            self.texture.tex_coords = tl, tr, br, bl
 
         time = self.sound.time
         frame = None
@@ -448,26 +539,51 @@ class GstreamerOpenALStreamingVideo(Video,
         self._last_frame_timestamp = timestamp
 
         if frame:
-            glBindTexture(self.texture.target, self.texture.id)
-            glTexSubImage2D(self.texture.target,
-                            self.texture.level,
+            texture = self.texture
+            glBindTexture(texture.target, texture.id)
+            glTexSubImage2D(texture.target,
+                            texture.level,
                             0, 0,
                             self.width, self.height,
                             GL_RGBA, # TODO
                             GL_UNSIGNED_BYTE,
                             frame)
 
-class GstreamerOpenALStreamingMedium(Medium):
+class GstreamerOpenALStreamingMedium(GstreamerMedium):
     def __init__(self, filename, file):
+        super(GstreamerOpenALStreamingMedium, self).__init__()
         self.filename = filename
         self.file = file
 
+        # Set up a decoder pipeline just enough to determine if there's
+        # sound/video in the medium.  The pipeline is otherwise unused.
+        self._pipeline = self._create_decoder_pipeline(filename, file)
+        gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PLAYING)
+
+    def _new_audio_pad(self, pad, channels, depth, sample_rate):
+        self._has_audio = True
+
+    def _new_video_pad(self, pad):
+        self._has_video = True
+
+    def _no_more_pads(self, decodebin, data):
+        super(GstreamerOpenALStreamingMedium, self)._no_more_pads(
+            decodebin, data)
+
+    def _no_more_pads_deferred(self):
+        gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_NULL)
+        gst.gst_object_unref(self._pipeline)
+
     def get_sound(self):
+        if not self.has_audio:
+            raise InvalidMediumException('No audio in medium')
         sound = GstreamerOpenALStreamingSound(self.filename, self.file)
         instances.append(sound)
         return sound
 
     def get_video(self):
+        if not self.has_video:
+            raise InvalidMediumException('No video in medium')
         video = GstreamerOpenALStreamingVideo(self.filename, self.file)
         instances.append(video)
         return video
@@ -475,7 +591,7 @@ class GstreamerOpenALStreamingMedium(Medium):
 # OpenAL static
 # -----------------------------------------------------------------------------
 
-class OpenALStaticSinkElement(gstreamer.Element, Medium):
+class OpenALStaticSinkElement(gstreamer.Element):
     name = 'openalstaticsink'
     klass = 'audio/openal-static-sink'
     description = 'Sink to static OpenAL buffers'
@@ -486,25 +602,20 @@ class OpenALStaticSinkElement(gstreamer.Element, Medium):
         ('sink', OpenALSinkPad),
     ]
 
-    def init(self, medium):
-        self.medium = medium
+    def init(self):
+        # List of buffers, locked until completed decoding.
+        self.buffers = []
+        self.buffers_semaphore = threading.Semaphore(0)
 
     def _add_buffer(self, buffer, buffer_time):
-        self.medium.buffers.append(buffer)
-
-        # Any sounds that are already created, queue the new buffer as well
-        for sound in self.medium.sounds:
-            al.alSourceQueueBuffers(sound.source, 1, buffer)
+        self.buffers.append(buffer)
 
     def _finished_buffering(self):
         # Convert list of buffers to an array of buffers for fast queueing
-        # in the future.
-        del self.medium.sounds
-        self.medium.buffering = False
-        self.medium.buffers = \
-            (al.ALuint * len(self.medium.buffers))(*self.medium.buffers)
+        self.buffers = (al.ALuint * len(self.buffers))(*self.buffers)
+        self.buffers_semaphore.release()
        
-class GstreamerOpenALStaticMedium(Medium, GstreamerDecoder):
+class GstreamerOpenALStaticMedium(GstreamerMedium):
     '''A Medium which decodes all data into a list of OpenAL buffers which
     are shared by many OpenALSound instances.
 
@@ -515,56 +626,61 @@ class GstreamerOpenALStaticMedium(Medium, GstreamerDecoder):
     OpenALStaticSinkElement implements ``openalstaticsink`` and contains
     a reference to this instance.
     '''
+    _buffers = None
+
+    # XXX The __del__ method is not called if get_sound was never called, as
+    # there is a circular reference with bound callback methods from
+    # GstreamerDecoder.  This can cause streaming thread to still be active
+    # while Python is cleaning up.  Presents as:
+    #
+    #   Error in sys.excepthook:
+    #   Original exception was:
+    #
+    # which is ugly but harmless.
+    #
+    # If it _were_ called, we would call self._destroy_pipeline, to
+    # prevent this problem.  Since the pipeline is already destroyed if
+    # get_sound is called, there is no point in a destructor with this flaw.
+
     def __init__(self, filename, file=None):
+        super(GstreamerOpenALStaticMedium, self).__init__()
+
         self._pipeline = self._create_decoder_pipeline(filename, file)
         self._sink = gst.gst_element_factory_make('openalstaticsink', 'sink')
         gst.gst_bin_add(self._pipeline, self._sink)
         gst.gst_element_link(self.convert, self._sink)
 
         self._element = OpenALStaticSinkElement.get_instance(self._sink)
-        self._element.init(self)
-
-        self.has_audio = False
-
-        # The list of OpenAL buffers.  When self.buffering is True, newly
-        # decoded buffers must also be queued on all sounds in self.sounds.
-        # When self.buffering is False (the entire sound is decoded),
-        # self.sounds is no longer maintained.
-        self.buffering = True
-        self.buffers = []
-        self.sounds = []
+        self._element.init()
 
         gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PLAYING)
 
+        
     def _new_audio_pad(self, pad, channels, depth, sample_rate):
         # Connect the decoded audio pad to the audioconvert
         convertpad = gst.gst_element_get_pad(self.convert, 'sink')
         gst.gst_pad_link(pad, convertpad)
         gst.gst_object_unref(convertpad)
 
-        self.has_audio = True
-
-    def _no_more_pads(self, decodebin, data):
-        # XXX This will pop out of another thread, which is not ideal.
-        if not self.has_audio:
-            raise MediaException('No useable audio stream')
+        self._has_audio = True
 
     def get_sound(self):
+        if not self.has_audio:
+            raise InvalidMediumException('No audio in medium')
+
+        if self._buffers is None:
+            # Wait until sound has finished decoding
+            self._element.buffers_semaphore.acquire()
+            self._element.buffers_semaphore.release()
+
+            # Save buffers here, then throw away the decoding pipeline
+            self._buffers = self._element.buffers
+            self._destroy_pipeline(self._pipeline)
+            self._pipeline = None
+
         sound = openal.OpenALSound()
+        al.alSourceQueueBuffers(sound.source, len(self._buffers), self._buffers)
         instances.append(sound)
-
-        if self.buffering:
-            # Queue buffers already decoded
-            for buffer in self.buffers:
-                al.alSourceQueueBuffers(sound.source, 1, buffer)
-
-            # Keep track of this sound so we can queue additional buffers
-            # as they are decoded
-            self.sounds.append(sound)
-        else:
-            # Queue all buffers in one go
-            al.alSourceQueueBuffers(sound.source, 
-                len(self.buffers), self.buffers)
 
         return sound
 
@@ -625,7 +741,8 @@ def init():
 
 def cleanup():
     while instances:
-        instances.pop()
+        instance = instances.pop()
+        instance.stop()
     import gc
     gc.collect()
 

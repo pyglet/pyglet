@@ -10,6 +10,9 @@ import sys
 class MediaException(Exception):
     pass
 
+class InvalidMediumException(MediaException):
+    pass
+
 class Medium(object):
     '''An audio and/or video medium that can be played.
 
@@ -21,6 +24,15 @@ class Medium(object):
     For convenience, the `play` method will return a sound and begin playing
     it as soon as possible (for a static Medium, this will be almost
     immediately).
+
+    :Ivariables:
+        `has_audio` : bool
+            If True, there is an audio track in the medium, and `get_sound`
+            can be called to use it.
+        `has_video` : bool
+            If True, there is a video track in the medium, and `get_video`
+            can be called to use it.
+
     '''
 
     _duration = None
@@ -103,6 +115,13 @@ class MediumInstance(object):
         '''Pause playback of the instance.
 
         This has no effect if the instance is already paused.
+        '''
+        raise NotImplementedError('abstract')
+
+    def stop(self):
+        '''Stop playback of the instance and release all resources.
+
+        Once an instance has been stopped, it cannot be started again.
         '''
         raise NotImplementedError('abstract')
 

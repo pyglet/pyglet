@@ -186,6 +186,11 @@ class OpenALSound(Sound):
         self.playing = False
         al.alSourcePause(self.source)
 
+    def stop(self):
+        self.playing = False
+        self.finished = True
+        al.alSourceStop(self.source)
+
     def _set_volume(self, volume):
         al.alSourcef(self.source, al.AL_GAIN, max(0, volume))
         self._volume = volume
@@ -244,15 +249,33 @@ class OpenALSound(Sound):
             self._openal_play()
 
 class OpenALStreamingSound(OpenALSound):
+    def __del__(self):
+        try:
+            self.stop()
+        except NameError:
+            pass
+
+    def stop(self):
+        super(OpenALStreamingSound, self).stop()
+
+        # Release all buffers
+        queued = al.ALint()
+        al.alGetSourcei(self.source, al.AL_BUFFERS_QUEUED, queued)
+        self._release_buffers(queued.value)
+
     def dispatch_events(self):
         super(OpenALStreamingSound, self).dispatch_events()
 
         # Release spent buffers
         if self._processed_buffers:
-            discard_buffers = (al.ALuint * self._processed_buffers)()
-            al.alSourceUnqueueBuffers(
-                self.source, len(discard_buffers), discard_buffers)
-            buffer_pool.replace(discard_buffers)
+            self._release_buffers(self._processed_buffers)
+
+    def _release_buffers(self, num_buffers):
+        discard_buffers = (al.ALuint * num_buffers)()
+        al.alSourceUnqueueBuffers(
+            self.source, len(discard_buffers), discard_buffers)
+        buffer_pool.replace(discard_buffers)
+
 
 class OpenALStaticSound(OpenALSound):
     def __init__(self, medium):
@@ -261,6 +284,11 @@ class OpenALStaticSound(OpenALSound):
         # Keep a reference to the medium to avoid premature release of
         # buffers.
         self.medium = medium
+
+    def stop(self):
+        super(OpenALSound, self).stop()
+
+        self.medium = None
 
 class OpenALListener(Listener):
     def _set_position(self, position):

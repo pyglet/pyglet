@@ -17,8 +17,29 @@ from pyglet import window
 from pyglet.window import key
 
 class MediaPlayWindow(window.Window):
+    instance = None
+    sound = None
+    video = None
+
     def __init__(self, filename, *args, **kwargs):
         super(MediaPlayWindow, self).__init__(*args, **kwargs)
+
+        # Load the medium, determine if it's video and/or audio
+        medium = media.load(filename, streaming=True)
+        if medium.has_video:
+            self.instance = self.video = medium.get_video()
+            self.sound = self.instance.sound
+            self.width = self.video.width
+            self.height = self.video.height
+        elif medium.has_audio:
+            self.sound = self.instance = medium.get_sound()
+
+        if not self.sound and not self.video:
+            raise Exception("Media file doesn't contain sound or video")
+
+        self.instance.play()
+
+        # Decorative labels
 
         self.y = self.height
         self.labels = []
@@ -39,12 +60,11 @@ class MediaPlayWindow(window.Window):
         self.position_label = add_label('Position 0,0,0: adjust with W,A,S,D')
         self.velocity_label = add_label('Velocity 0,0,0: adjust with I,J,K,L')
 
-        medium = media.load(filename, streaming=True)
-        self.sound = medium.play()
-
     def draw(self):
         glClearColor(0, 0, 0, 1)
         glClear(GL_COLOR_BUFFER_BIT)
+        if self.video:
+            self.video.texture.blit(0, 0, 0)
         for label in self.labels:
             label.draw()
         self.flip()
@@ -75,11 +95,11 @@ class MediaPlayWindow(window.Window):
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.SPACE:
-            if self.sound.playing:
-                self.sound.pause()
+            if self.instance.playing:
+                self.instance.pause()
                 self.playing_label.text = 'Paused; press space to resume'
             else:
-                self.sound.play()
+                self.instance.play()
                 self.playing_label.text = 'Playing; press space to pause'
         if symbol in (key.EQUAL, key.NUM_ADD):
             self.add_volume(.1)
@@ -116,13 +136,13 @@ class MediaPlayWindow(window.Window):
             t = self.sound.time
             self.time_label.text = '%d:%05.2f' % \
                 (int(t / 60), t - 60 * int(t / 60))
+
             self.draw()
 
 if __name__ == '__main__':
     filename = sys.argv[1]
 
     win = MediaPlayWindow(filename, width=400, height=150, resizable=True)
-    time.sleep(.1)
     win.run()
 
     media.cleanup()

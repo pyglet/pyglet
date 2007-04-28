@@ -616,6 +616,8 @@ class XlibWindow(BaseWindow):
         return self._caption
 
     def set_size(self, width, height):
+        self._width = width
+        self._height = height
         xlib.XResizeWindow(self._display, self._window, width, height)
 
     def get_size(self):
