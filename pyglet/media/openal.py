@@ -159,7 +159,9 @@ class OpenALSound(Sound):
             return buffer_timestamp + buffer_time
         else:
             # Interpolate system time past buffer timestamp
-            if buffer.value == self._last_buffer:
+            if not self.playing:
+                return self._last_buffer_time + buffer_timestamp
+            elif buffer.value == self._last_buffer:
                 return time.time() - self._last_buffer_time + buffer_timestamp
             else:
                 self._last_buffer = buffer.value
@@ -181,9 +183,11 @@ class OpenALSound(Sound):
             al.alSourcePlay(self.source)
             self.play_when_buffered = False
             self.playing = True
+            self._last_buffer_time = time.time() - self._last_buffer_time
 
     def pause(self):
         self.playing = False
+        self._last_buffer_time = time.time() - self._last_buffer_time
         al.alSourcePause(self.source)
 
     def stop(self):

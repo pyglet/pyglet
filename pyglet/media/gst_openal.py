@@ -27,6 +27,11 @@ from pyglet.media import lib_openal as al
 from pyglet.media import openal
 from pyglet.media.gstreamer import gst, gstbase, gobject
 
+# Minimum time (secs) to allow for decoding another frame or audio buffer, in
+# case sleep time is exactly equal to buffered time.  Also compensates for
+# late return from sleep.
+SLEEP_UNDERSHOOT = 0.1
+
 DecodebinNewDecodedPad = ctypes.CFUNCTYPE(None,
     ctypes.POINTER(gstreamer.GstElement), ctypes.POINTER(gstreamer.GstPad),
     ctypes.c_int, ctypes.c_void_p)
@@ -332,17 +337,8 @@ class OpenALStreamingSinkElement(gstreamer.Element):
 
     def _add_buffer(self, buffer, buffer_time):
         al.alSourceQueueBuffers(self.sound.source, 1, buffer)
-        if self.sound._buffers_ahead is None:
-            # Now we know how many buffers are needed
-            self.sound._buffers_ahead = self.sound._buffer_time / buffer_time
-        
-        self.sound._queued_buffers += 1
-
-        extra_buffers = self.sound._queued_buffers - self.sound._buffers_ahead
-        if extra_buffers > 0:
-            # We've buffered more than necessary, take a break (this is
-            # running in a separate thread, so sleeping is cool).
-            time.sleep(buffer_time * extra_buffers)
+        if buffer_time - self.sound.time > self.sound._buffer_time:
+            time.sleep(self.sound._buffer_time - SLEEP_UNDERSHOOT)
 
     def _set_frame_format(self, width, height):
         self.video._set_frame_format(width, height)
@@ -356,7 +352,6 @@ class OpenALStreamingSinkElement(gstreamer.Element):
 class GstreamerOpenALStreamingSound(openal.OpenALStreamingSound, 
                                     GstreamerDecoder):
     _buffer_time = .5  # seconds ahead to buffer
-    _buffers_ahead = None # Number of buffers ahead to buffer (calculated later)
 
     def __init__(self, filename, file):
         super(GstreamerOpenALStreamingSound, self).__init__()
@@ -397,7 +392,6 @@ class GstreamerOpenALStreamingSound(openal.OpenALStreamingSound,
 class GstreamerOpenALStreamingVideo(Video,
                                     GstreamerDecoder):
     _buffer_time = .5  # seconds ahead to buffer
-    _buffers_ahead = None # Number of buffers ahead to buffer (calculated later)
 
     _sound = None
     _texture = None
@@ -493,7 +487,6 @@ class GstreamerOpenALStreamingVideo(Video,
         gst.gst_object_unref(convertpad)
 
         self._sound = openal.OpenALStreamingSound()
-        self._sound._buffers_ahead = self._buffers_ahead # XXX
         self._sound._buffer_time = self._buffer_time
 
     def _new_video_pad(self, pad):
@@ -515,7 +508,7 @@ class GstreamerOpenALStreamingVideo(Video,
         # If we've queued enough, sleep (otherwise chain will just run hot
         # and exhaust cpu and memory).
         if timestamp > self._frames[0][1] + self._buffer_time:
-            time.sleep(self._buffer_time / 2)
+            time.sleep(self._buffer_time - SLEEP_UNDERSHOOT)
 
     def _no_more_pads(self, decodebin, data):
         super(GstreamerOpenALStreamingVideo, self)._no_more_pads(
