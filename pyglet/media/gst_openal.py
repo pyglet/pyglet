@@ -400,6 +400,12 @@ class GstreamerOpenALStreamingVideo(Video,
     _height = None
     _frame_format_semaphore = None
 
+    # For videos with no sound, we use the system clock as a timer (and no
+    # pitch shifting is possible).  _start_time gives the system time the
+    # video was started (and is updated to reflect pause/resume).  When
+    # paused, _start_time has the video position time instead.
+    _start_time = 0
+
     def __init__(self, filename, file):
         super(GstreamerOpenALStreamingVideo, self).__init__()
 
@@ -462,23 +468,38 @@ class GstreamerOpenALStreamingVideo(Video,
     def play(self):
         self._wait_no_more_pads()
         gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PLAYING)
-        self.sound.play()
+        if self.sound:
+            self.sound.play()
+        else:
+            self._start_time = time.time() - self._start_time
         self.playing = True
 
     def pause(self):
         self._wait_no_more_pads()
         gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PAUSED)
-        self.sound.pause()
+        if self.sound:
+            self.sound.pause()
+        else:
+            self._start_time = time.time() - self._start_time
         self.playing = False
 
     def stop(self):
-        self.sound.stop()
+        if self.sound:
+            self.sound.stop()
         self._destroy_pipeline(self._pipeline)
         self._pipeline = None
+        self.playing = False
+        self.finished = True
 
     def _get_time(self):
         self._wait_no_more_pads()
-        return self.sound.time
+        if self.sound:
+            return self.sound.time
+        else:
+            if self.playing:
+                return time.time() - self._start_time
+            else:
+                return self._start_time
 
     def _new_audio_pad(self, pad, channels, depth, sample_rate):
         '''Create and connect the sink for the given source pad.'''
@@ -521,10 +542,10 @@ class GstreamerOpenALStreamingVideo(Video,
         pass
 
     def dispatch_events(self):
-        self.sound.dispatch_events()
+        if self.sound:
+            self.sound.dispatch_events()
 
-
-        time = self.sound.time
+        time = self.time
         frame = None
         timestamp = self._last_frame_timestamp
         while self._frames and time >= timestamp:

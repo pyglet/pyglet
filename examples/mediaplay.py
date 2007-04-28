@@ -128,12 +128,12 @@ class MediaPlayWindow(window.Window):
 
     def run(self):
         clock.set_fps_limit(30)
-        while not self.sound.finished and not self.has_exit:
+        while not self.instance.finished and not self.has_exit:
             clock.tick()
             self.dispatch_events()
             media.dispatch_events()
 
-            t = self.sound.time
+            t = self.instance.time
             self.time_label.text = '%d:%05.2f' % \
                 (int(t / 60), t - 60 * int(t / 60))
 
