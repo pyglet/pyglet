@@ -796,7 +796,8 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_MOUSEWHEEL)
     def _event_mousewheel(self, msg, wParam, lParam):
         delta = c_short(wParam >> 16).value
-        self.dispatch_event(EVENT_MOUSE_SCROLL, 0, float(delta) / WHEEL_DELTA)
+        self.dispatch_event(EVENT_MOUSE_SCROLL, 
+            self._mouse_x, self._mouse_y, 0, float(delta) / WHEEL_DELTA)
         return 0
 
     @Win32EventHandler(WM_CLOSE)

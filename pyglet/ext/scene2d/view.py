@@ -389,7 +389,7 @@ class ViewScrollHandler(object):
     def __init__(self, view):
         self.view = view
 
-    def on_mouse_scroll(self, dx, dy):
+    def on_mouse_scroll(self, x, y, dx, dy):
         fx, fy = self.view._determine_focus()
         self.view.fx = fx + dx * 30
         self.view.fy = fy + dy * 30

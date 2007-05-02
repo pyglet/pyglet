@@ -44,7 +44,7 @@ class Tree(object):
             self.x += dx
             self.y += dy
 
-    def on_mouse_scroll(self, dx, dy):
+    def on_mouse_scroll(self, x, y, dx, dy):
         self.zpos = max(-10, self.zpos + dy)
 
     def draw(self):

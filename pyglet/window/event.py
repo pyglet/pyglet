@@ -160,7 +160,7 @@ class WindowEventHandler(object):
                 active.
         '''
             
-    def on_mouse_scroll(self, dx, dy):
+    def on_mouse_scroll(self, x, y, dx, dy):
         '''The mouse wheel was scrolled.
 
         Note that most mice have only a vertical scroll wheel, so `dx` is
@@ -169,6 +169,10 @@ class WindowEventHandler(object):
         movement.
 
         :Parameters:
+            `x` : float
+                Distance in pixels from the left edge of the window.
+            `y` : float
+                Distance in pixels from the bottom edge of the window.
             `dx` : int
                 Number of "clicks" towards the right (left if negative).
             `dy` : int
@@ -380,11 +384,12 @@ class WindowEventLogger(object):
             mouse.buttons_string(button), x, y, 
             key.modifiers_string(modifiers))
 
-    def on_mouse_scroll(self, dx, dy):
-        print >> self.file, 'on_mouse_scroll(dx=%f, dy=%f)' % (dx, dy)
+    def on_mouse_scroll(self, x, y, dx, dy):
+        print >> self.file, 'on_mouse_scroll(x=%f, y=%f, dx=%f, dy=%f)' % (
+            x, y, dx, dy)
 
     def on_close(self):
-        print >> self.file, 'on_destroy()'
+        print >> self.file, 'on_close()'
 
     def on_mouse_enter(self, x, y):
         print >> self.file, 'on_mouse_enter(x=%d, y=%d)' % (x, y)

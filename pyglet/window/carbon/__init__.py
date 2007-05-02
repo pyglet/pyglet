@@ -936,6 +936,9 @@ class CarbonWindow(BaseWindow):
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseWheelMoved)
     def _on_mouse_wheel_moved(self, next_handler, event, data):
+        x, y = self._get_mouse_position(event)
+        y = self.height - y
+
         axis = EventMouseWheelAxis()
         carbon.GetEventParameter(event, kEventParamMouseWheelAxis,
             typeMouseWheelAxis, c_void_p(), sizeof(axis), c_void_p(),
@@ -945,9 +948,11 @@ class CarbonWindow(BaseWindow):
             typeSInt32, c_void_p(), sizeof(delta), c_void_p(),
             byref(delta))
         if axis.value == kEventMouseWheelAxisX:
-            self.dispatch_event(EVENT_MOUSE_SCROLL, float(delta.value), 0.)
+            self.dispatch_event(EVENT_MOUSE_SCROLL, 
+                x, y, float(delta.value), 0.)
         else:
-            self.dispatch_event(EVENT_MOUSE_SCROLL, 0., float(delta.value))
+            self.dispatch_event(EVENT_MOUSE_SCROLL, 
+                x, y, 0., float(delta.value))
                 
         carbon.CallNextEventHandler(next_handler, event)
         return noErr

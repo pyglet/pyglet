@@ -131,7 +131,7 @@ class GLLayout(LayoutEventDispatcher):
         self.constrain_viewport()
         return EVENT_UNHANDLED
 
-    def on_mouse_scroll(self, dx, dy):
+    def on_mouse_scroll(self, x, y, dx, dy):
         self.viewport_x += dx * 30
         self.viewport_y -= dy * 30
         self.constrain_viewport()

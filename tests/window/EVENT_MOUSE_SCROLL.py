@@ -24,8 +24,8 @@ import unittest
 from pyglet import window
 
 class EVENT_MOUSE_SCROLL(unittest.TestCase):
-    def on_mouse_scroll(self, dx, dy):
-        print 'Mouse scrolled (%f, %f)' % (dx, dy)
+    def on_mouse_scroll(self, x, y, dx, dy):
+        print 'Mouse scrolled (%f, %f) (x=%f, y=%f)' % (dx, dy, x, y)
 
     def test_mouse_scroll(self):
         w = window.Window(200, 200)

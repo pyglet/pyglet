@@ -1060,9 +1060,9 @@ class XlibWindow(BaseWindow):
         modifiers = self._translate_modifiers(event.xbutton.state)
         if event.type == xlib.ButtonPress:
             if event.xbutton.button == 4:
-                self.dispatch_event(EVENT_MOUSE_SCROLL, 0, 1)
+                self.dispatch_event(EVENT_MOUSE_SCROLL, x, y, 0, 1)
             elif event.xbutton.button == 5:
-                self.dispatch_event(EVENT_MOUSE_SCROLL, 0, -1)
+                self.dispatch_event(EVENT_MOUSE_SCROLL, x, y, 0, -1)
             else:
                 self._mouse_buttons[event.xbutton.button] = True
                 self.dispatch_event(EVENT_MOUSE_PRESS, button,
