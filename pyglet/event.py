@@ -49,11 +49,30 @@ handler to a dispatcher in several ways with `EventDispatcher.set_handlers`:
 The `EventDispatcher.set_handlers` method will actually accept any number
 of event handlers, and will attach them all simultaneously.
 
+You can also attach events more directly:
+
+5. By setting a closure directly on the instance::
+
+       def on_resize(width, height):
+           # ...
+       dispatcher.on_resize = on_resize
+
+
+6. By subclassing the dispatcher and overriding the event::
+
+       class MyDispatcher(DispatcherClass):
+           def on_resize(self, width, height):
+               # ...
+
+Note that these methods (5 and 6) affect the handler "below" the last handler
+on the stack (described below); you should only use them if you are not using
+the handler stack.
+
 Event handler stack
 ===================
 
-When attaching an event handler to a dispatcher using the above method, it
-replacing any existing handler (causing the original handler to no longer be
+When attaching an event handler to a dispatcher using the above methods, it
+replaces any existing handler (causing the original handler to no longer be
 called).  Each dispatcher maintains a stack of event handlers, allowing you to
 insert an event handler "above" the existing one rather than replacing it.
 
@@ -115,8 +134,8 @@ class EventDispatcher(object):
 
     See the module docstring for usage.
     '''
-    def __init__(self):
-        self._event_stack = [{}]
+    # Placeholder empty stack; real stack is created only if needed
+    _event_stack = ()
 
     @classmethod
     def register_event_type(cls, name):
@@ -137,6 +156,11 @@ class EventDispatcher(object):
 
         See `set_handlers` for the accepted argument types.
         '''
+        # Create event stack if necessary
+        if type(self._event_stack) is tuple:
+            self._event_stack = [{}]
+
+        # Place dict full of new handlers at beginning of stack
         self._event_stack.insert(0, {})
         self.set_handlers(*args, **kwargs)
 
@@ -148,6 +172,10 @@ class EventDispatcher(object):
         object may also be specified, in which case it will be searched for
         callables with event names.
         '''
+        # Create event stack if necessary
+        if type(self._event_stack) is tuple:
+            self._event_stack = [{}]
+
         for object in args:
             if inspect.isroutine(object):
                 # Single magically named function
@@ -176,11 +204,17 @@ class EventDispatcher(object):
                 Event handler to attach.
 
         '''
+        # Create event stack if necessary
+        if type(self._event_stack) is tuple:
+            self._event_stack = [{}]
+
         self._event_stack[0][name] = handler
 
     def pop_handlers(self):
         '''Pop the top level of event handlers off the stack.
         '''
+        assert self._event_stack and 'No handlers pushed'
+
         del self._event_stack[0]
 
     def dispatch_event(self, event_type, *args):
@@ -196,12 +230,17 @@ class EventDispatcher(object):
                 Arguments to pass to the event handler.
 
         '''
+        # Search handler stack for matching event handlers
         for frame in self._event_stack:
             handler = frame.get(event_type, None)
             if handler:
                 ret = handler(*args)
                 if ret != EVENT_UNHANDLED:
-                    break
+                    return
+
+        # Check instance for an event handler
+        if hasattr(self, event_type):
+            getattr(self, event_type)(*args)
 
     def dispatch_events(self):
         '''Call attached event handlers for all queued events.
