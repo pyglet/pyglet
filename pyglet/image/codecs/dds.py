@@ -2,7 +2,7 @@
 
 '''DDS texture loader.
 
-http://msdn.microsoft.com/library/en-us/directx9_c/dx9_graphics_reference_dds_file.asp
+Reference: http://msdn2.microsoft.com/en-us/library/bb172993.aspx
 '''
 
 __docformat__ = 'restructuredtext'
@@ -12,10 +12,12 @@ from ctypes import *
 import struct
 
 from pyglet.gl import *
-from pyglet.image import *
-from pyglet.image.codecs import *
+from pyglet.gl import gl_info
+from pyglet.image import CompressedImageData
+from pyglet.image import codecs
+from pyglet.image.codecs import s3tc
 
-class DDSException(ImageDecodeException):
+class DDSException(codecs.ImageDecodeException):
     pass
 
 # dwFlags of DDSURFACEDESC2
@@ -93,6 +95,7 @@ class DDSURFACEDESC2(_filestruct):
         super(DDSURFACEDESC2, self).__init__(data)
         self.ddpfPixelFormat = DDPIXELFORMAT(self.ddpfPixelFormat)
 
+
 class DDPIXELFORMAT(_filestruct):
     _fields = [
         ('dwSize', 'I'),
@@ -106,9 +109,9 @@ class DDPIXELFORMAT(_filestruct):
     ]
 
 _compression_formats = {
-    'DXT1': GL_COMPRESSED_RGB_S3TC_DXT1_EXT,
-    'DXT3': GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,
-    'DXT5': GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+    'DXT1': (GL_COMPRESSED_RGB_S3TC_DXT1_EXT, s3tc.decode_dxt1),
+    'DXT3': (GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, s3tc.decode_dxt3),
+    'DXT5': (GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, s3tc.decode_dxt5),
 }
 
 def _check_error():
@@ -116,7 +119,7 @@ def _check_error():
     if e != 0:
         print 'GL error %d' % e
 
-class DDSImageDecoder(ImageDecoder):
+class DDSImageDecoder(codecs.ImageDecoder):
     def get_file_extensions(self):
         return ['.dds']
 
@@ -156,8 +159,8 @@ class DDSImageDecoder(ImageDecoder):
             raise DDSException('Uncompressed DDS textures not supported.')
 
         format = None
-        format = _compression_formats.get(desc.ddpfPixelFormat.dwFourCC,
-                                          None)
+        format, decoder = _compression_formats.get(
+            desc.ddpfPixelFormat.dwFourCC, None)
         if not format:
             raise DDSException('Unsupported texture compression %s' % \
                 desc.ddpfPixelFormat.dwFourCC)
@@ -183,7 +186,7 @@ class DDSImageDecoder(ImageDecoder):
             h >>= 1
 
         image = CompressedImageData(width, height, format, datas[0],
-            'GL_EXT_texture_compression_s3tc')
+            'GL_EXT_texture_compression_s3tc', decoder)
         level = 0
         for data in datas[1:]:
             level += 1

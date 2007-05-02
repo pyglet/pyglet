@@ -874,13 +874,12 @@ class CompressedImageData(AbstractImage):
     '''Image representing some compressed data suitable for direct uploading
     to driver.
     '''
-    # TODO software decoding interface
 
-    _have_extension = None
     _current_texture = None
     _current_mipmapped_texture = None
 
-    def __init__(self, width, height, gl_format, data, extension=None):
+    def __init__(self, width, height, gl_format, data, 
+                 extension=None, decoder=None):
         '''Construct a CompressedImageData with the given compressed data.
 
         :Parameters:
@@ -896,6 +895,9 @@ class CompressedImageData(AbstractImage):
             `extension` : str or None
                 If specified, gives the name of a GL extension to check for
                 before creating a texture.
+            `decoder` : function(data, width, height) -> AbstractImage
+                A function to decode the compressed data, to be used if the
+                required extension is not present.
                 
         '''
         if not _is_pow2(width) or not _is_pow2(height):
@@ -905,6 +907,7 @@ class CompressedImageData(AbstractImage):
         self.data = data
         self.gl_format = gl_format
         self.extension = extension
+        self.decoder = decoder
         self.mipmap_data = []
 
     def set_mipmap_data(self, level, data):
@@ -928,6 +931,9 @@ class CompressedImageData(AbstractImage):
         self.mipmap_data += [None] * (level - len(self.mipmap_data))
         self.mipmap_data[level - 1] = data
 
+    def _have_extension(self):
+        return self.extension is None or gl_info.have_extension(self.extension)
+
     def _verify_driver_supported(self):
         '''Assert that the extension required for this image data is
         supported.
@@ -935,9 +941,7 @@ class CompressedImageData(AbstractImage):
         Raises `ImageException` if not.
         '''
 
-        if self._have_extension is None and self.extension:
-            self._have_extension = gl_info.have_extension(self.extension)
-        if not self._have_extension:
+        if not self._have_extension():
             raise ImageException('%s is required to decode %r' % \
                 (self.extension, self))
 
@@ -945,25 +949,21 @@ class CompressedImageData(AbstractImage):
         if self._current_texture:
             return self._current_texture
 
-        self._verify_driver_supported()
-
         texture = Texture.create_for_size(
             GL_TEXTURE_2D, self.width, self.height)
         glBindTexture(texture.target, texture.id)
         glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
 
-        if False:
+        if self._have_extension():
             glCompressedTexImage2DARB(texture.target, texture.level,
                 self.gl_format,
                 self.width, self.height, 0,
                 len(self.data), self.data)
         else:
-            from pyglet.image import s3tc
-            # TODO use packed only if GL >= 1.2
-            data = s3tc.decode_dxt1_packed(self.data, self.width, self.height)
-            glTexImage2D(texture.target, texture.level,
-                GL_RGB, self.width, self.height, 0,
-                GL_RGB, GL_UNSIGNED_SHORT_5_6_5, data)
+            image = self.decoder(self.data, self.width, self.height)
+            texture = image.texture
+            assert texture.width == self.width
+            assert texture.height == self.height
                 
         self._current_texture = texture
         return texture
@@ -974,7 +974,10 @@ class CompressedImageData(AbstractImage):
         if self._current_mipmap_texture:
             return self._current_mipmap_texture
 
-        self._verify_driver_supported()
+        if not self._have_extension():
+            # TODO mip-mapped software decoded compressed textures.  For now,
+            # just return a non-mipmapped texture.
+            return self.texture
 
         texture = Texture.create_for_size(
             GL_TEXTURE_2D, self.width, self.height)
