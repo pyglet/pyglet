@@ -183,11 +183,25 @@ class WindowEventHandler(object):
         the window title bar, or by some other platform-dependent manner.
         '''
 
+    def on_mouse_enter(self, x, y):
+        '''The mouse was moved into the window.
+
+        This event will not be trigged if the mouse is currently being
+        dragged.
+
+        :Parameters:
+            `x` : float
+                Distance in pixels from the left edge of the window.
+            `y`: float
+                Distance in pixels from the bottom edge of the window.
+        '''
+
     def on_mouse_leave(self, x, y):
         '''The mouse was moved outside of the window.
 
         This event will not be trigged if the mouse is currently being
-        dragged.
+        dragged.  Note that the coordinates of the mouse pointer will be
+        outside of the window rectangle.
 
         :Parameters:
             `x` : float

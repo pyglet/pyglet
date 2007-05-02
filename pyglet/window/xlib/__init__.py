@@ -619,6 +619,7 @@ class XlibWindow(BaseWindow):
         self._width = width
         self._height = height
         xlib.XResizeWindow(self._display, self._window, width, height)
+        self.dispatch_event(EVENT_RESIZE, width, height)
 
     def get_size(self):
         # XGetGeometry and XWindowAttributes seem to always return the
