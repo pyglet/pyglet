@@ -1050,8 +1050,6 @@ class XlibWindow(BaseWindow):
             'WM_DELETE_WINDOW', False)
         if event.xclient.data.l[0] == wm_delete_window:
             self.dispatch_event(EVENT_CLOSE)
-        else:
-            raise NotImplementedError
 
     @XlibEventHandler(xlib.ButtonPress)
     @XlibEventHandler(xlib.ButtonRelease)

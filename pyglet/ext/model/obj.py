@@ -1,135 +1,209 @@
 import os
-import ctypes
+import warnings
+
 from pyglet.gl import *
+from pyglet import image
 
-THREEFV = ctypes.c_float * 3
+class Material(object):
+    diffuse = [.8, .8, .8]
+    ambient = [.2, .2, .2]
+    specular = [0., 0., 0.]
+    emission = [0., 0., 0.]
+    shininess = 0.
+    opacity = 1.
+    texture = None
 
-def MTL(filename):
-    contents = {}
-    mtl = None
-    for line in open(filename, "r"):
-        if line.startswith('#'): continue
-        values = line.split()
-        if not values: continue
-        if values[0] == 'newmtl':
-            mtl = contents[values[1]] = {}
-        elif mtl is None:
-            raise ValueError, "mtl file doesn't start with newmtl stmt"
-        elif values[0] == 'map_Kd':
-            # load the texture referred to by this declaration
-            mtl[values[0]] = values[1]
-            surf = pygame.image.load(mtl['map_Kd'])
-            image = pygame.image.tostring(surf, 'RGBA', 1)
-            ix, iy = surf.get_rect().size
-            texid = mtl['texture_Kd'] = glGenTextures(1)
-            glBindTexture(GL_TEXTURE_2D, texid)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                GL_LINEAR)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                GL_LINEAR)
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0, GL_RGBA,
-                GL_UNSIGNED_BYTE, image)
+    def __init__(self, name):
+        self.name = name
+
+    def apply(self, face=GL_FRONT_AND_BACK):
+        if self.texture:
+            glEnable(self.texture.target)
+            glBindTexture(self.texture.target, self.texture.id)
         else:
-            mtl[values[0]] = map(float, values[1:])
-    return contents
+            glDisable(GL_TEXTURE_2D)
 
-class OBJ:
-    def __init__(self, filename, swapyz=False):
-        """Loads a Wavefront OBJ file. """
-        self.filename = filename
+        glMaterialfv(face, GL_DIFFUSE, 
+            (GLfloat * 4)(*(self.diffuse + [self.opacity])))
+        glMaterialfv(face, GL_AMBIENT, 
+            (GLfloat * 4)(*(self.ambient + [self.opacity])))
+        glMaterialfv(face, GL_SPECULAR, 
+            (GLfloat * 4)(*(self.specular + [self.opacity])))
+        glMaterialfv(face, GL_EMISSION, 
+            (GLfloat * 4)(*(self.emission + [self.opacity])))
+
+class MaterialGroup(object):
+    def __init__(self, material):
+        self.material = material
+
+        # Interleaved array of floats in GL_T2F_N3F_V3F format
         self.vertices = []
-        self.normals = []
-        self.texcoords = []
-        self.faces = []
-        self.mtl = None
+        self.array = None
 
-        material = None
-        path = os.path.split(filename)[0]
-        use_texture = False
-        for line in open(filename, "r"):
-            if line.startswith('#'): continue
-            values = line.split()
-            if not values: continue
-            if values[0] == 'v':
-                v = map(float, values[1:4])
-                if swapyz:
-                    v = v[0], v[2], v[1]
-                self.vertices.append(v)
-            elif values[0] == 'vn':
-                v = map(float, values[1:4])
-                if swapyz:
-                    v = v[0], v[2], v[1]
-                self.normals.append(v)
-            elif values[0] == 'vt':
-                self.texcoords.append(map(float, values[1:3]))
-            elif values[0] in ('usemtl', 'usemat'):
-                material = values[1]
-            elif values[0] == 'mtllib':
-                self.mtl = MTL(os.path.join(path, values[1]))
-                for name in self.mtl:
-                    if 'texture_Kd' in self.mtl[name]:
-                        use_texture = True
-            elif values[0] == 'f':
-                face = []
-                texcoords = []
-                norms = []
-                for v in values[1:]:
-                    w = v.split('/')
-                    vert = int(w[0])
-                    if vert < 0:
-                        # refers to -ve indexed verts defined up to this
-                        # point
-                        vert += len(self.vertices)
-                    face.append(vert)
-                    if len(w) >= 2 and len(w[1]) > 0:
-                        texcoords.append(int(w[1]))
-                    else:
-                        texcoords.append(0)
-                    if len(w) >= 3 and len(w[2]) > 0:
-                        norms.append(int(w[2]))
-                    else:
-                        norms.append(0)
-                self.faces.append((face, norms, texcoords, material))
-            else:
-                #print 'UNHANDLED', values
-                continue
+class Mesh(object):
+    def __init__(self, name):
+        self.name = name
+        self.groups = []
 
-        self.gl_list = glGenLists(1)
-        glNewList(self.gl_list, GL_COMPILE)
-        if use_texture: glEnable(GL_TEXTURE_2D)
-
-        for face in self.faces:
-            vertices, normals, texture_coords, material = face
-
-            if material:
-                mtl = self.mtl[material]
-                if 'texture_Kd' in mtl:
-                    # use diffuse texmap
-                    glBindTexture(GL_TEXTURE_2D, mtl['texture_Kd'])
-                else:
-                    # just use diffuse colour
-                    glColor3f(*mtl['Kd'])
-            else:
-                glColor4f(1., 1., 1., 1.)
-
-            glBegin(GL_POLYGON)
-            for i in range(0, len(vertices)):
-                if normals[i]:
-                    glNormal3f(*self.normals[normals[i] - 1])
-                if texture_coords[i]:
-                    glTexCoord2f(*self.texcoords[texture_coords[i] - 1])
-                glVertex3f(*self.vertices[vertices[i] - 1])
-            glEnd()
-        if use_texture: glDisable(GL_TEXTURE_2D)
-        glEndList()
-
-    def __repr__(self):
-        return '<OBJ %r>'%self.filename
+        # Display list, created only if compile() is called, but used
+        # automatically by draw()
+        self.list = None
 
     def draw(self):
-        glPushAttrib(GL_ENABLE_BIT)
+        if self.list:
+            glCallList(self.list)
+            return
+
+        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+        glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT | GL_LIGHTING_BIT)
         glEnable(GL_CULL_FACE)
         glCullFace(GL_BACK)
-        glCallList(self.gl_list)
+        for group in self.groups:
+            group.material.apply()
+            if group.array is None:
+                group.array = (GLfloat * len(group.vertices))(*group.vertices)
+                group.triangles = len(group.vertices) / 8
+            glInterleavedArrays(GL_T2F_N3F_V3F, 0, group.array)
+            glDrawArrays(GL_TRIANGLES, 0, group.triangles)
         glPopAttrib()
+        glPopClientAttrib()
+
+    def compile(self):
+        if not self.list:
+            list = glGenLists(1)
+            glNewList(list, GL_COMPILE)
+            self.draw()
+            glEndList()
+            self.list = list
+
+class OBJ:
+    def __init__(self, filename, file=None, path=None):
+        self.materials = {}
+        self.meshes = {}        # Name mapping
+        self.mesh_list = []     # Also includes anonymous meshes
+
+        if file is None:
+            file = open(filename, 'r')
+
+        if path is None:
+            path = os.path.dirname(filename)
+        self.path = path
+
+        mesh = None
+        group = None
+        material = None
+
+        vertices = [[0., 0., 0.]]
+        normals = [[0., 0., 0.]]
+        tex_coords = [[0., 0.]]
+
+        for line in open(filename, "r"):
+            if line.startswith('#'): 
+                continue
+            values = line.split()
+            if not values: 
+                continue
+
+            if values[0] == 'v':
+                vertices.append(map(float, values[1:4]))
+            elif values[0] == 'vn':
+                normals.append(map(float, values[1:4]))
+            elif values[0] == 'vt':
+                tex_coords.append(map(float, values[1:3]))
+            elif values[0] == 'mtllib':
+                self.load_material_library(values[1])
+            elif values[0] in ('usemtl', 'usemat'):
+                material = self.materials.get(values[1], None)
+                if material is None:
+                    warnings.warn('Unknown material: %s' % values[1])
+                if mesh is not None:
+                    group = MaterialGroup(material)
+                    mesh.groups.append(group)
+            elif values[0] == 'o':
+                mesh = Mesh(values[1])
+                self.meshes[mesh.name] = mesh
+                self.mesh_list.append(mesh)
+                group = None
+            elif values[0] == 'f':
+                if mesh is None:
+                    mesh = Mesh('')
+                    self.mesh_list.append(mesh)
+                if material is None:
+                    material = Material()
+                if group is None:
+                    group = MaterialGroup(self, material)
+                    mesh.groups.append(group)
+
+                # For fan triangulation, remember first and latest vertices
+                v1 = None
+                vlast = None
+                points = []
+                for i, v in enumerate(values[1:]):
+                    v_index, t_index, n_index = \
+                        (map(int, [j or 0 for j in v.split('/')]) + [0, 0])[:3]
+                    if v_index < 0:
+                        v_index += len(vertices) - 1
+                    if t_index < 0:
+                        t_index += len(tex_coords) - 1
+                    if n_index < 0:
+                        n_index += len(normals) - 1
+                    vertex = tex_coords[t_index] + \
+                             normals[n_index] + \
+                             vertices[v_index] 
+
+                    if i >= 3:
+                        # Triangulate
+                        group.vertices += v1 + vlast
+                    group.vertices += vertex
+
+                    if i == 0:
+                        v1 = vertex
+                    vlast = vertex
+                    
+    def open_material_file(self, filename):
+        '''Override for loading from archive/network etc.'''
+        return open(os.path.join(self.path, filename), 'r')
+
+    def load_material_library(self, filename):
+        material = None
+        file = self.open_material_file(filename)
+
+        for line in file:
+            if line.startswith('#'):
+                continue
+            values = line.split()
+            if not values:
+                continue
+
+            if values[0] == 'newmtl':
+                material = Material(values[1])
+                self.materials[material.name] = material
+            elif material is None:
+                warnings.warn('Expected "newmtl" in %s' % filename)
+                continue
+
+            try:
+                if values[0] == 'Kd':
+                    material.diffuse = map(float, values[1:])
+                elif values[0] == 'Ka':
+                    material.ambient = map(float, values[1:])
+                elif values[0] == 'Ks':
+                    material.specular = map(float, values[1:])
+                elif values[0] == 'Ke':
+                    material.emissive = map(float, values[1:])
+                elif values[0] == 'Ns':
+                    material.shininess = float(values[1])
+                elif values[0] == 'd':
+                    material.opacity = float(values[1])
+                elif values[0] == 'map_Kd':
+                    try:
+                        material.texture = image.load(values[1]).texture
+                    except image.ImageDecodeException:
+                        warnings.warn('Could not load texture %s' % values[1])
+            except:
+                warnings.warn('Parse error in %s.' % filename)
+
+    def draw(self):
+        for mesh in self.mesh_list:
+            mesh.draw()
 
