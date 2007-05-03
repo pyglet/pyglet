@@ -131,7 +131,7 @@ class OBJ:
                 if material is None:
                     material = Material()
                 if group is None:
-                    group = MaterialGroup(self, material)
+                    group = MaterialGroup(material)
                     mesh.groups.append(group)
 
                 # For fan triangulation, remember first and latest vertices
