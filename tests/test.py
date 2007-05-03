@@ -8,42 +8,33 @@ Overview
 
 First, some definitions:
 
-Component:
-    A component is a single feature that can be tested more or less
-    in isolation.  In a requirements document, this appears as a row
-    in the implementation table, and by convention is named with
-    UPPERCASE_AND_UNDERSCORES.  A component corresponds to a single
-    unit test, located in tests/section/subsection/COMPONENT.py
-
-Capability:
-    A capability is a special case of a component which has a separate
-    implementation and/or environment.  For example, the window
-    components have OS-specific capabilities: WIN, X11 and OSX.   An
-    implementation of, for example, FULLSCREEN_TOGGLE, will depend
-    very much on this capability, so it makes sense to track the
-    progress of the implementation separately.  Capabilities are
-    represented in the requirements document as the columns in the
-    implementation table.  Arbitrary capabilities can be defined,
-    for example, our graphics functions may need separate NVIDIA
-    and ATI capabilities.
+Test case:
+    A single test, implemented by a Python module in the tests/ directory.
+    Tests can be interactive (requiring the user to pass or fail them) or
+    non-interactive (the test passes or fails itself).
 
 Section:
-    A section groups together related components.  It has a description
-    and an implementation table, which lists components and the
-    current progress with respect to the capabilities.  Sections
-    can also contain subsections, which are separated by periods, for
-    example: image.codecs.gdk is a (hypothetical) section.
+    A list of test cases to be run in a specified order.  Sections can
+    also contain other sections to an arbitrary level.
 
-The requirements document (doc/requirements.txt) is written in
-reStructured text and contains all the sections, components and
-capabilities for the project.  The intent here is to integrate
-our writings on "what needs to be done" with "what has been done"
-and "what works at the moment".
+Capability:
+    A capability is a tag that can be applied to a test-case, which specifies
+    a particular instance of the test.  The tester can select which
+    capabilities are present on their system; and only test cases matching
+    those capabilities will be run.  
+    
+    There are platform capabilities "WIN", "OSX" and "X11", which are
+    automatically selected by default.  
+    
+    The "DEVELOPER" capability is used to mark test cases which test a feature
+    under active development.  
+    
+    The "GENERIC" capability signifies that the test case is equivalent under
+    all platforms, and is selected by default.
 
-A finished component is marked against the appropriate capabilities
-with an "X"; partial or incomplete implementations with either a "/"
-or empty table cell.  This test script will not attempt to run
-unit tests for unfinished implementations.
+    Other capabilities can be specified and selected as needed.  For example,
+    we may wish to use an "NVIDIA" or "ATI" capability to specialise a
+    test-case for a particular video card make.
 
 Some tests generate regression images if enabled, so you will only
 need to run through the interactive procedure once.  During
@@ -58,8 +49,7 @@ Running tests
 
 The test procedure is interactive (this is necessary to facilitate the
 many GUI-related tests, which cannot be completely automated).  With no
-command-line arguments, all tests for all components in all sections
-will be run::
+command-line arguments, all test cases in all sections will be run::
 
     python tests/test.py
 
@@ -78,16 +68,15 @@ default log files].
 
 Command-line options:
 
---requirements=
-    Specify the requirements file (defaults to doc/requirements.txt)
+--plan=
+    Specify the test plan file (defaults to tests/plan.txt)
 --test-root=
     Specify the top-level directory to look for unit tests in (defaults
     to test/)
 --capabilities=
-    Specify the capabilities to test, comma separated.  By default this
-    only includes your operating system capability (X11, WIN or OSX).  If
-    you specify an empty set of capabilties, the capabilities check
-    will be ignored, and all tests are run.
+    Specify the capabilities to select, comma separated.  By default this
+    only includes your operating system capability (X11, WIN or OSX) and
+    GENERIC.
 --log-level=
     Specify the minimum log level to write (defaults to 10: info)
 --log-file=
@@ -110,16 +99,13 @@ Command-line options:
     Specify the directory to store and look for regression images.
     Defaults to tests/regression/images/
 --developer
-    Run tests with capability progress marked 'D' (developer-only).  Enable
-    this only if you are the developer of the feature; otherwise expect
-    it to fail.
+    Selects the DEVELOPER capability.
 --no-interactive=
     Don't write descriptions or prompt for confirmation; just run each
     test in succcession.
 
-After the command line options, you can specify the all or part or a regular
-expression of any components or sections you wish to test.  If none are
-specified, all tests are run.
+After the command line options, you can specify a list of sections or test
+cases to run.
 
 Examples
 --------
@@ -128,10 +114,10 @@ Examples
 
 Runs all tests in the window section with the given capabilities.
 
-    python tests/test.py --no-interactive window.FULLSCREEN_TOGGLE
+    python tests/test.py --no-interactive FULLSCREEN_TOGGLE
 
-Test just the FULLSCREEN_TOGGLE component in the window section,
-without prompting for input (useful for development).
+Test just the FULLSCREEN_TOGGLE test case without prompting for input (useful
+for development).
 
     python tests/image/PIL_RGBA_SAVE.py
 
@@ -141,11 +127,9 @@ is equivalent to specifying --no-interactive.
 Writing tests
 -------------
 
-Add the capability to the appropriate implementation table in the requirements
-document (see requirements.txt for formatting).   Create one unit test
-script per capability, located in the directory corresponding to the
-section.  For example, the test for window.FULLSCREEN_TOGGLE is
-located at::
+Add the test case to the appropriate section in the test plan (plan.txt).
+Create one unit test script per test case.  For example, the test for
+window.FULLSCREEN_TOGGLE is located at::
 
     tests/window/FULLSCREEN_TOGGLE.py
 
@@ -159,8 +143,9 @@ The test file must contain:
 - Optionally, the attribute "__noninteractive = True" to specify that
   the test is not interactive; doesn't require user intervention.
 
-Mark off capabilities as implemented earlier rather than later, so that
-the tests get run by default (even if they are failing).
+During development, test cases should be marked with DEVELOPER.  Once finished
+add the WIN, OSX and X11 capabilities, or GENERIC if it's platform
+independent.
 
 Writing regression tests
 ------------------------
@@ -174,25 +159,15 @@ was captured, wait for user confirmation).  You can call
 capture_regression_image() several times; only the final image will be
 used.
 
-Open questions
---------------
-
-- Can/should this be integrated into an issue tracker?
-- What should be done with test logs?
-- Wouldn't an ncurses interface for this be cool?
-
 '''
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import array
-import docutils.nodes
-import docutils.parsers.rst
-import getopt
-import imp
 import logging
 import os
+import optparse
 import re
 import sys
 import time
@@ -204,220 +179,167 @@ import pyglet.image
 regressions_path = os.path.join(os.path.dirname(__file__), 
                                 'regression', 'images')
 
-class RequirementsComponent(object):
-    FULL = 50
-    DEVELOPER = 40
-    PARTIAL = 25
-    NONE = 0
-    UNKNOWN = -1
-
-    def __init__(self, section, name):
-        self.section = section
+class TestCase(object):
+    def __init__(self, name):
         self.name = name
-        self.progress = {}
-
-    def set_progress(self, capability, progress):
-        self.progress[capability] = progress
-
-    def get_absname(self):
-        return '%s.%s' % (self.section.get_absname(), self.name)
-
-    def get_progress(self, capabilities):
-        '''Return the progress of this component for a given set of
-           capabilities.  If no capabilities match, we assume that
-           they are unspecified, and return the best progress
-           for any capability.'''
-        for capability in capabilities:
-            if capability in self.progress:
-                return self.progress[capability]
-        # None match, so return highest.
-        return max(self.progress.values())
-
-    def is_implemented(self, capabilities):
-        if 'DEVELOPER' in capabilities:
-            return self.get_progress(capabilities) >= self.DEVELOPER
-        else:
-            return self.get_progress(capabilities) >= self.FULL
+        self.short_name = name.split('.')[-1]
+        self.capabilities = set()
 
     def get_module_filename(self, root=''):
-        path = os.path.join(*self.get_absname().split('.'))
+        path = os.path.join(*self.name.split('.'))
         return '%s.py' % os.path.join(root, path)
 
     def get_module(self, root=''):
-        name = 'tests.%s' % self.get_absname()
+        name = 'tests.%s' % self.name
         module = __import__(name)
         for c in name.split('.')[1:]:
             module = getattr(module, c)
         return module
 
     def get_regression_image_filename(self):
-        return os.path.join(regressions_path, '%s.png' % self.get_absname())
+        return os.path.join(regressions_path, '%s.png' % self.name)
+
+    def test(self, options):
+        if not options.capabilities.intersection(self.capabilities):
+            return
+
+        options.log.info('Testing %s.', self)
+        if options.pretend:
+            return
+
+        module = None
+        try:
+            module = self.get_module(options.test_root)
+        except IOError:
+            options.log.warning('No test exists for %s', self)
+        except Exception:
+            options.log.exception('Cannot load test for %s', self)
+        if not module:
+            return
+
+        module_interactive = options.interactive
+        if hasattr(module, '__noninteractive') and module.__noninteractive:
+            module_interactive = False
+
+        if options.regression_check and \
+           os.path.exists(self.get_regression_image_filename()):
+            result = RegressionCheckTestResult(
+                self, options.regression_tolerance)
+            module_interactive = False
+        elif options.regression_capture:
+            result = RegressionCaptureTestResult(self)
+        else:
+            result = StandardTestResult(self)
+
+        if module_interactive:
+            print '-' * 78
+            if module.__doc__:
+                print module.__doc__
+            raw_input('Press return to begin test...')
+        suite = unittest.TestLoader().loadTestsFromModule(module)
+
+        options.log.info('Begin unit tests for %s', self)
+        suite(result)
+        for failure in result.failures:
+            options.log.error('Failure in %s', self)
+            options.log.error(failure[1])
+        for error in result.errors:
+            options.log.error('Error in %s', self)
+            options.log.error(error[1])
+        options.log.info('%d tests run', result.testsRun)
+
+        if (module_interactive and 
+            len(result.failures) == 0 and 
+            len(result.errors) == 0):
+            print module.__doc__
+            user_result = raw_input('[P]assed test, [F]ailed test: ')
+            if user_result and user_result[0] in ('F', 'f'):
+                print 'Enter failure description: '
+                description = raw_input('> ')
+                options.log.error('User marked fail for %s', self)
+                options.log.error(description)
+            else:
+                options.log.info('User marked pass for %s', self)
+                result.setUserPass()
 
     def __repr__(self):
-        return 'RequirementsComponent(%s)' % self.get_absname()
+        return 'TestCase(%s)' % self.name
 
     def __str__(self):
-        return self.get_absname()
+        return self.name
 
     def __cmp__(self, other):
         return cmp(str(self), str(other))
 
-class RequirementsSection(object):
-    def __init__(self, parent, name):
-        self.parent = parent
+class TestSection(object):
+    def __init__(self, name):
         self.name = name
-        self.description = ''
-        self.sections = {}
-        self.components = {}
-        self.all_components = []
-        self.all_sections = []
+        self.children = []
 
-    def add_section(self, section):
-        self.sections[section.name] = section
+    def add(self, child):
+        # child can be TestSection or TestCase
+        self.children.append(child)
 
-    def get_section(self, name):
-        if '.' in name:
-            root, path = name.split('.', 1)
-            section = self.sections.get(root, None)
-            if section:
-                return section.get_section(path)
-        else:
-            return self.sections.get(name, None)
-
-    def add_component(self, component):
-        assert component.section is self
-        self.components[component.name] = component
-
-    def get_component(self, name):
-        section, component = name.rsplit('.', 1)
-        section = self.get_section(section)
-        if section:
-            return section.components.get(component, None)
-
-    def get_all_components(self):
-        if not self.all_components:
-            self.all_components = self.components.values()
-            for section in self.sections.values():
-                self.all_components += section.get_all_components()
-        return self.all_components
-
-    def get_all_sections(self): 
-        if not self.all_sections:
-            self.all_sections = self.sections.values()
-            for section in self.sections.values():
-                self.all_sections += section.get_all_sections()
-        return self.all_sections
-
-    def search(self, query):
-        pattern = re.compile(query, re.I)
-        results = []
-        for component in self.get_all_components():
-            if pattern.search(component.get_absname()):
-                results.append(component)
-
-        for section in self.get_all_sections():
-            if pattern.search(section.get_absname()):
-                results += section.get_all_components()
-
-        return results
-    
-    def get_absname(self):
-        names = []
-        me = self
-        while me and me.name:
-            names.insert(0, me.name)
-            me = me.parent
-        return '.'.join(names)
+    def test(self, options):
+        for child in self.children:
+            child.test(options)
         
     def __repr__(self):
-        return 'RequirementsSection(%s)' % self.get_absname()
+        return 'TestSection(%s)' % self.name
 
-class Requirements(RequirementsSection):
+class TestPlan(TestSection):
     def __init__(self):
-        super(Requirements, self).__init__(None, '')
+        self.root = None
+        self.names = {}
 
     @classmethod
-    def from_rst(cls, rst):
-        requirements = Requirements()
-        parser = docutils.parsers.rst.Parser()
-        document = docutils.utils.new_document('requirements')
-        document.settings.tab_width = 4
-        document.settings.report_level = 1
-        document.settings.pep_references = 1
-        document.settings.rfc_references = 1
-        parser.parse(rst, document)
-        document.walkabout(RequirementsParser(document, requirements))
-        return requirements
+    def from_file(cls, file):
+        plan = TestPlan()
+        plan.root = TestSection('{root}')
+        plan.root.indent = None
 
+        # Section stack
+        sections = [plan.root]
 
-class RequirementsParser(docutils.nodes.GenericNodeVisitor):
-    def __init__(self, document, requirements):
-        docutils.nodes.GenericNodeVisitor.__init__(self, document)
+        if not hasattr(file, 'read'):
+            file = open(file, 'r')
+        line_number = 0
+        for line in file:
+            line_number += 1
+            # Skip empty lines
+            if not line.strip():
+                continue
 
-        self.requirements = requirements
-        self.section_stack = [requirements]
-        self.field_key = None
+            # Skip comments
+            if line[0] == '#':
+                continue
 
-    def get_section(self):
-        return self.section_stack[-1]
+            indent = len(line) - len(line.lstrip())
+            while sections and sections[-1].indent > indent:
+                sections.pop()
 
-    def default_visit(self, node):
-        pass
+            if sections[-1].indent is None:
+                sections[-1].indent = indent
 
-    def default_departure(self, node):
-        pass
+            if sections[-1].indent != indent:
+                raise Exception('Indentation mismatch line %d' % line_number)
+            
+            if '.' in line:
+                tokens = line.strip().split()
+                test_case = TestCase(tokens[0])
+                test_case.capabilities = set(tokens[1:])
+                sections[-1].add(test_case)
+                plan.names[test_case.name] = test_case
+                plan.names[test_case.short_name] = test_case
+            else:
+                section = TestSection(line.strip())
+                section.indent = None
+                sections[-1].add(section)
+                sections.append(section)
+                plan.names[section.name] = section
 
-    def visit_term(self, node):
-        section = RequirementsSection(self.get_section(), node.astext())
-        self.get_section().add_section(section)
-        self.section_stack.append(section)
-
-    def depart_definition_list_item(self, node):
-        self.section_stack.pop()
-
-    def visit_field_name(self, node):
-        self.field_key = node.astext()
-
-    def visit_field_body(self, node):
-        if self.field_key == 'description':
-            self.get_section().description = node.astext()
-        elif self.field_key == 'implementation':
-            parser = ImplementationParser(self.document, self.get_section())
-            node.walkabout(parser)
-
-class ImplementationParser(docutils.nodes.GenericNodeVisitor):
-    progress_lookup = {
-        'X': RequirementsComponent.FULL,
-        'D': RequirementsComponent.DEVELOPER,
-        '/': RequirementsComponent.PARTIAL,
-        '': RequirementsComponent.NONE,
-    }
-
-    def __init__(self, document, section):
-        docutils.nodes.GenericNodeVisitor.__init__(
-            self, document)
-        self.section = section
-        self.capabilities = []
-
-    def default_visit(self, node):
-        pass
-
-    def default_departure(self, node):
-        pass
-
-    def visit_row(self, node):
-        entries = [n.astext() for n in node.children]
-        if node.parent.tagname == 'thead':
-            # Head row; remember names of capabilities for this table.
-            self.capabilities = entries[1:]
-        else:
-            component = RequirementsComponent(self.section, entries[0])
-            self.section.add_component(component)
-            for capability, progress in zip(self.capabilities, entries[1:]):
-                progress = self.progress_lookup.get(progress.strip(),    
-                               RequirementsComponent.UNKNOWN)
-                component.set_progress(capability, progress)
-
+        return plan
+        
 class StandardTestResult(unittest.TestResult):
     def __init__(self, component):
         super(StandardTestResult, self).__init__()
@@ -504,20 +426,8 @@ class RegressionCheckTestResult(unittest.TestResult):
         super(RegressionCheckTestResult, self).addFailure(test, (Regression,
             err, []))
 
-def main(args):
-    script_root = os.path.dirname(args[0]) or os.path.curdir
-    requirements_filename = os.path.normpath(os.path.join(script_root,
-        os.path.pardir, 'doc', 'requirements.txt'))
-    test_root = script_root
-    log_level = 10
-    log_file = None
-    enable_regression_capture = False
-    enable_regression_check = False
-    regression_tolerance = 2
-    interactive = True
-    developer = False
-    start_with = None
 
+def main():
     capabilities = ['GENERIC']
     platform_capabilities = {
         'linux2': 'X11',
@@ -528,193 +438,74 @@ def main(args):
     if sys.platform in platform_capabilities:
         capabilities.append(platform_capabilities[sys.platform])
 
-    arguments = ['requirements=',
-         'test-root=',
-         'capabilities=',
-         'log-level=',
-         'log-file=',
-         'regression-path=',
-         'regression-tolerance=',
-         'regression-capture',
-         'regression-check',
-         'no-interactive',
-         'developer',
-         'start-with=',
-         'help',
-         'full-help'
-    ]
+    script_root = os.path.dirname(__file__)
+    plan_filename = os.path.normpath(os.path.join(script_root, 'plan.txt'))
+    test_root = script_root
+ 
+    op = optparse.OptionParser()
+    op.usage = 'test.py [options] [components]'
+    op.add_option('--plan', help='test plan file', default=plan_filename)
+    op.add_option('--test-root', default=script_root,
+        help='directory containing test cases')
+    op.add_option('--capabilities', help='selected test capabilities',
+        default=','.join(capabilities))
+    op.add_option('--log-level', help='verbosity of logging',
+        default=10, type='int')
+    op.add_option('--log-file', help='log to FILE', metavar='FILE')
+    op.add_option('--regression-path', metavar='DIR', default=regressions_path,
+        help='locate regression images in DIR')
+    op.add_option('--regression-tolerance', type='int', default=2,
+        help='tolerance for comparing regression images')
+    op.add_option('--regression-check', action='store_true',
+        help='enable image regression checks')
+    op.add_option('--regression-capture', action='store_true',
+        help='enable image regression capture')
+    op.add_option('--no-interactive', action='store_false', default=True,
+        dest='interactive', help='disable interactive prompting')
+    op.add_option('--developer', action='store_true',
+        help='add DEVELOPER capability')
+    op.add_option('--pretend', action='store_true',
+        help='print selected test cases only')
 
-    def usage():
-        print '''Usage: %s [args] [tests]
-Runs tests, optionally limited to just those specified as "tests" which may
-be a regular expression (e.g. "image" to just run image tests).
+    options, args = op.parse_args()
 
-OPTIONS (with default values):
-  --requirements=%s
-  --test-root=%s
-  --capabilities=%s
-  --log-level=%s
-  --log-file=%s
-  --regression-path=%s
-  --regression-tolerance=%s
-  --regression-capture
-  --regression-check
-  --no-interactive
-  --start-with=
-  --developer
-  --help
-  --full-help'''%(sys.argv[0], requirements_filename, test_root,
-            ','.join(capabilities), log_level, log_file or '<stdout>',
-            regressions_path, regression_tolerance)
+    options.capabilities = set(options.capabilities.split(','))
+    if options.developer:
+        options.capabilities.add('DEVELOPER')
 
-    try:
-        opts, arguments = getopt.getopt(args[1:], '', arguments)
-    except getopt.GetoptError, error:
-        print '\nERROR:', error
-        print
-        usage()
-        return
-
-    for key, value in opts:
-        if key == '--requirements':
-            requirements_filename = value
-        elif key == '--test-root':
-            test_root = value
-        elif key == '--capabilities':
-            capabilities = value.split(',')
-        elif key == '--log-level':
-            log_level = int(value)
-        elif key == '--log-file':
-            log_file = value
-        elif key == '--regression-path':
-            global regressions_path
-            regressions_path = value
-        elif key == '--regression-tolerance':
-            regression_tolerance = int(value)
-        elif key == '--regression-capture':
-            enable_regression_capture = True
-        elif key == '--regression-check':
-            enable_regression_check = True
-        elif key == '--no-interactive':
-            interactive = False
-            enable_regression_capture = False
-        elif key == '--developer':
-            developer = True
-        elif key == '--start-with':
-            start_with = value
-        elif key == '--help':
-            usage()
-            return
-        elif key == '--full-help':
-            print __doc__
-            return
-
-    if developer:
-        capabilities.append('DEVELOPER')
-
-    if enable_regression_capture:
+    if options.regression_capture:
         try:
             os.makedirs(regressions_path)
         except OSError:
             pass
 
-    logging.basicConfig(filename=log_file, level=log_level)
+    logging.basicConfig(filename=options.log_file, level=options.log_level)
+    options.log = logging.getLogger()
 
-    log = logging.getLogger()
+    options.log.info('Beginning test at %s', time.ctime())
+    options.log.info('Capabilities are: %s', ', '.join(options.capabilities))
+    options.log.info('sys.platform = %s', sys.platform)
+    options.log.info('Reading test plan from %s', options.plan)
+    plan = TestPlan.from_file(options.plan)
 
-    log.info('Beginning test at %s', time.ctime())
-    log.info('Capabilities are: %s', ', '.join(capabilities))
-    log.info('sys.platform = %s', sys.platform)
-    log.info('Reading requirements from %s', requirements_filename)
-    requirements = Requirements.from_rst(open(requirements_filename).read())
-
-    # Parse arguments: each one is the name of either a section or
-    # a sepecific component.  Add all components under a section and
-    # its subsection.  If nothing specified, test everything.
-    if arguments:
-        sections = []
+    errors = False
+    if args:
         components = []
-        for arg in arguments:
-            matches = requirements.search(arg)
-            if not matches:
-                log.error('No components or sections match "%s"', arg)
-            components += matches
+        for arg in args:
+            try:
+                component = plan.names[arg]
+                components.append(component)
+            except KeyError:
+                options.log.error('Unknown test case or section "%s"', arg)
+                errors = True
     else:
-        components = requirements.get_all_components()
+        components = [plan.root]
 
-    components = list(set(components))
-    components.sort()
-
-    if start_with:
-        skipping = True
-    else:
-        skipping = False
-    # Now test each component
-    for component in components:
-        if skipping:
-            if component.get_absname() == start_with:
-                skipping = False
-            else:
-                continue
-        if not component.is_implemented(capabilities):
-            log.info('%s is marked not implemented, skipping.', component)
-            continue
-        log.info('Testing %s.', component)
-        module = None
-        try:
-            module = component.get_module(test_root)
-        except IOError:
-            log.warning('No test exists for %s', component)
-        except Exception:
-            log.exception('Cannot load test for %s', component)
-        if not module:
-            continue
-
-        module_interactive = interactive and \
-         not (hasattr(module, '__noninteractive') and module.__noninteractive)
-
-        if enable_regression_check and \
-           os.path.exists(component.get_regression_image_filename()):
-            result = RegressionCheckTestResult(component, regression_tolerance)
-            module_interactive = False
-        elif enable_regression_capture:
-            result = RegressionCaptureTestResult(component)
-        else:
-            result = StandardTestResult(component)
-
-        if module_interactive:
-            print '-' * 78
-            if module.__doc__:
-                print module.__doc__
-            raw_input('Press return to begin test...')
-        suite = unittest.TestLoader().loadTestsFromModule(module)
-
-        log.info('Begin unit tests for %s', component)
-        suite(result)
-        for failure in result.failures:
-            log.error('Failure in %s', component)
-            log.error(failure[1])
-        for error in result.errors:
-            log.error('Error in %s', component)
-            log.error(error[1])
-        log.info('%d tests run', result.testsRun)
-
-        if (module_interactive and 
-            len(result.failures) == 0 and 
-            len(result.errors) == 0):
-            print module.__doc__
-            user_result = raw_input('[P]assed test, [F]ailed test: ')
-            if user_result and user_result[0] in ('F', 'f'):
-                print 'Enter failure description: '
-                description = raw_input('> ')
-                log.error('User marked fail for %s', component)
-                log.error(description)
-            else:
-                log.info('User marked pass for %s', component)
-                result.setUserPass()
-        
+    if not errors:
+        for component in components:
+            component.test(options)
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
 
 
