@@ -57,6 +57,24 @@ class mwmhints_t(Structure):
 # Do we have the November 2000 UTF8 extension?
 _have_utf8 = hasattr(xlib._lib, 'Xutf8TextListToTextProperty')
 
+# symbol,ctrl -> motion mapping
+_motion_map = {
+    (key.UP, False):        key.MOTION_UP,
+    (key.RIGHT, False):     key.MOTION_RIGHT,
+    (key.DOWN, False):      key.MOTION_DOWN,
+    (key.LEFT, False):      key.MOTION_LEFT,
+    (key.RIGHT, True):      key.MOTION_NEXT_WORD,
+    (key.LEFT, True):       key.MOTION_PREVIOUS_WORD,
+    (key.HOME, False):      key.MOTION_BEGINNING_OF_LINE,
+    (key.END, False):       key.MOTION_END_OF_LINE,
+    (key.PAGEUP, False):    key.MOTION_PREVIOUS_PAGE,
+    (key.PAGEDOWN, False):  key.MOTION_NEXT_PAGE,
+    (key.PAGEUP, True):     key.MOTION_BEGINNING_OF_FILE,
+    (key.PAGEDOWN, True):   key.MOTION_END_OF_FILE,
+    (key.BACKSPACE, False): key.MOTION_BACKSPACE,
+    (key.DELETE, False):    key.MOTION_DELETE,
+}
+
 class XlibException(WindowException):
     pass
 
@@ -937,6 +955,34 @@ class XlibWindow(BaseWindow):
         return modifiers
 
     # Event handlers
+    def _event_symbol(self, event):
+        # pyglet.self.key keysymbols are identical to X11 keysymbols, no
+        # need to map the keysymbol.
+        symbol = xlib.XKeycodeToKeysym(self._display, event.xkey.keycode, 0)
+        if symbol not in key._key_names.keys():
+            symbol = key.user_key(event.xkey.keycode)
+        return symbol
+
+    def _event_text(self, event):
+        if event.type == xlib.KeyPress:
+            buffer = create_string_buffer(16)
+            # TODO lookup UTF8
+            count = xlib.XLookupString(event.xkey,
+                                       buffer,
+                                       len(buffer),
+                                       None,
+                                       None)
+            if count:
+                text = unicode(buffer.value[:count])
+                if unicodedata.category(text) != 'Cc' or text == '\r':
+                    return text
+        return None
+
+    def _event_text_motion(self, symbol, modifiers):
+        if modifiers & key.MOD_ALT:
+            return None
+        ctrl = modifiers & key.MOD_CTRL != 0
+        return _motion_map.get((symbol, ctrl), None)
 
     @XlibEventHandler(xlib.KeyPress)
     @XlibEventHandler(xlib.KeyRelease)
@@ -957,43 +1003,41 @@ class XlibWindow(BaseWindow):
                     # just save this off for restoration back to the queue
                     continue
                 if event.xkey.keycode == auto_event.xkey.keycode:
-                    buffer = create_string_buffer(16)
-                    count = xlib.XLookupString(auto_event.xkey,
-                        buffer, len(buffer), None, None)
-                    if count:
-                        text = buffer.value[:count]
+                    # Found a key repeat: dispatch EVENT_TEXT* event
+                    symbol = self._event_symbol(event)
+                    modifiers = self._translate_modifiers(event.xkey.state)
+                    text = self._event_text(auto_event)
+                    motion = self._event_text_motion(symbol, modifiers)
+                    if motion:
+                        if modifiers & key.MOD_SHIFT:
+                            self.dispatch_event(
+                                EVENT_TEXT_MOTION_SELECT, motion)
+                        else:
+                            self.dispatch_event(EVENT_TEXT_MOTION, motion)    
+                    elif text:
                         self.dispatch_event(EVENT_TEXT, text)
+
                     ditched = saved.pop()
-                    for auto_event in saved:
+                    for auto_event in reversed(saved):
                         xlib.XPutBackEvent(self._display, byref(auto_event))
                     return
             # Whoops, put the events back, it's for real.
             for auto_event in reversed(saved):
                 xlib.XPutBackEvent(self._display, byref(auto_event))
 
-        # pyglet.self.key keysymbols are identical to X11 keysymbols, no
-        # need to map the keysymbol.
-        text = None 
-        if event.type == xlib.KeyPress:
-            buffer = create_string_buffer(16)
-            # TODO lookup UTF8
-            count = xlib.XLookupString(event.xkey,
-                                       buffer,
-                                       len(buffer),
-                                       None,
-                                       None)
-            if count:
-                text = unicode(buffer.value[:count])
-        symbol = xlib.XKeycodeToKeysym(self._display, event.xkey.keycode, 0)
-        if symbol not in key._key_names.keys():
-            symbol = key.user_key(event.xkey.keycode)
-
+        symbol = self._event_symbol(event)
         modifiers = self._translate_modifiers(event.xkey.state)
+        text = self._event_text(event)
+        motion = self._event_text_motion(symbol, modifiers)
 
         if event.type == xlib.KeyPress:
             self.dispatch_event(EVENT_KEY_PRESS, symbol, modifiers)
-            if (text and 
-                (unicodedata.category(text) != 'Cc' or text == '\r')):
+            if motion:
+                if modifiers & key.MOD_SHIFT:
+                    self.dispatch_event(EVENT_TEXT_MOTION_SELECT, motion)
+                else:
+                    self.dispatch_event(EVENT_TEXT_MOTION, motion)
+            elif text:
                 self.dispatch_event(EVENT_TEXT, text)
         elif event.type == xlib.KeyRelease:
             self.dispatch_event(EVENT_KEY_RELEASE, symbol, modifiers)

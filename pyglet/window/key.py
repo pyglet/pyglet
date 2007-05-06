@@ -106,6 +106,22 @@ def symbol_string(symbol):
     else:
         return 'user_key(%x)' % (symbol >> 32)
 
+def motion_string(motion):
+    '''Return a string describing a text motion.
+
+    Example::
+        
+        >>> motion_string(MOTION_NEXT_WORD):
+        'MOTION_NEXT_WORD'
+
+    :Parameters:
+        `motion` : int
+            Text motion constant.
+
+    :rtype: str
+    '''
+    return _motion_names.get(motion, str(motion))
+
 def user_key(scancode):
     '''Return a key symbol for a key not supported by pyglet.  
     
@@ -128,6 +144,8 @@ MOD_NUMLOCK     = 1 << 4
 MOD_WINDOWS     = 1 << 5
 MOD_COMMAND     = 1 << 6
 MOD_OPTION      = 1 << 7
+
+
 
 # Key symbol constants
 
@@ -170,6 +188,22 @@ HELP          = 0xff6a
 BREAK         = 0xff6b
 MODESWITCH    = 0xff7e
 SCRIPTSWITCH  = 0xff7e
+
+# Text motion constants: these are allowed to clash with key constants
+MOTION_UP                = UP
+MOTION_RIGHT             = RIGHT
+MOTION_DOWN              = DOWN
+MOTION_LEFT              = LEFT
+MOTION_NEXT_WORD         = 1
+MOTION_PREVIOUS_WORD     = 2
+MOTION_BEGINNING_OF_LINE = 3
+MOTION_END_OF_LINE       = 4
+MOTION_NEXT_PAGE         = PAGEDOWN
+MOTION_PREVIOUS_PAGE     = PAGEUP
+MOTION_BEGINNING_OF_FILE = 5
+MOTION_END_OF_FILE       = 6
+MOTION_BACKSPACE         = BACKSPACE
+MOTION_DELETE            = DELETE
 
 # Number pad
 NUMLOCK       = 0xff7f
@@ -423,6 +457,11 @@ THORN = 0x0fe
 YDIAERESIS = 0x0ff
 
 _key_names = {}
+_motion_names = {}
 for name, value in locals().items():
     if name[:2] != '__' and name.upper() == name:
-        _key_names[value] = name
+        if name.startswith('MOTION'):
+            _motion_names[value] = name
+        else:
+            _key_names[value] = name
+

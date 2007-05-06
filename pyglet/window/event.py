@@ -19,6 +19,9 @@ class WindowEventDispatcher(EventDispatcher):
 EVENT_KEY_PRESS = WindowEventDispatcher.register_event_type('on_key_press')
 EVENT_KEY_RELEASE = WindowEventDispatcher.register_event_type('on_key_release')
 EVENT_TEXT = WindowEventDispatcher.register_event_type('on_text')
+EVENT_TEXT_MOTION = WindowEventDispatcher.register_event_type('on_text_motion')
+EVENT_TEXT_MOTION_SELECT = \
+    WindowEventDispatcher.register_event_type('on_text_motion_select')
 EVENT_MOUSE_MOTION = \
     WindowEventDispatcher.register_event_type('on_mouse_motion')
 EVENT_MOUSE_DRAG = WindowEventDispatcher.register_event_type('on_mouse_drag')
@@ -90,6 +93,72 @@ class WindowEventHandler(object):
 
         '''
 
+    def on_text_motion(self, motion):
+        '''The user moved the text input cursor.
+
+        Typically this is called after `on_key_press` and before
+        `on_key_release`, but may also be called multiple times if the key is
+        help down (key repeating).
+
+        You should always use this method for moving the text input cursor
+        (caret), as different platforms have different default keyboard
+        mappings, and key repeats are handled correctly.
+
+        The values that `motion` can take are defined in `pyglet.window.key`:
+
+        * MOTION_UP
+        * MOTION_RIGHT
+        * MOTION_DOWN
+        * MOTION_LEFT
+        * MOTION_NEXT_WORD
+        * MOTION_PREVIOUS_WORD
+        * MOTION_BEGINNING_OF_LINE
+        * MOTION_END_OF_LINE
+        * MOTION_NEXT_PAGE
+        * MOTION_PREVIOUS_PAGE
+        * MOTION_BEGINNING_OF_FILE
+        * MOTION_END_OF_FILE
+        * MOTION_BACKSPACE
+        * MOTION_DELETE
+
+        :Parameters:
+            `motion` : int
+                The direction of motion; see remarks.
+
+        '''
+
+    def on_text_motion_select(self, motion):
+        '''The user moved the text input cursor while extending the selection.
+
+        Typically this is called after `on_key_press` and before
+        `on_key_release`, but may also be called multiple times if the key is
+        help down (key repeating).
+
+        You should always use this method for responding to text selection
+        events rather than the raw `on_key_press`, as different platforms have
+        different default keyboard mappings, and key repeats are handled
+        correctly.
+
+        The values that `motion` can take are defined in `pyglet.window.key`:
+
+        * MOTION_UP
+        * MOTION_RIGHT
+        * MOTION_DOWN
+        * MOTION_LEFT
+        * MOTION_NEXT_WORD
+        * MOTION_PREVIOUS_WORD
+        * MOTION_BEGINNING_OF_LINE
+        * MOTION_END_OF_LINE
+        * MOTION_NEXT_PAGE
+        * MOTION_PREVIOUS_PAGE
+        * MOTION_BEGINNING_OF_FILE
+        * MOTION_END_OF_FILE
+
+        :Parameters:
+            `motion` : int
+                The direction of selection motion; see remarks.
+
+        '''
 
     def on_mouse_motion(self, x, y, dx, dy):
         '''The mouse was moved with no buttons held down.
@@ -361,6 +430,14 @@ class WindowEventLogger(object):
 
     def on_text(self, text):
         print >> self.file, 'on_text(text=%r)' % text
+
+    def on_text_motion(self, motion):
+        print >> self.file, 'on_text_motion(motion=%s)' % (
+            key.motion_string(motion))
+
+    def on_text_motion_select(self, motion):
+        print >> self.file, 'on_text_motion_select(motion=%s)' % (
+            key.motion_string(motion))
 
     def on_mouse_motion(self, x, y, dx, dy):
         print >> self.file, 'on_mouse_motion(x=%d, y=%d, dx=%d, dy=%d)' % (
