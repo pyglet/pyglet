@@ -50,7 +50,7 @@ class RectFlatMouseTest(RenderBase):
         @event(self.view)
         @for_cells()
         @for_sprites()
-        def on_mouse_press(objs, button, x, y, modifiers):
+        def on_mouse_press(objs, x, y, button, modifiers):
             for obj in objs:
                 if 'clicked' in obj.properties:
                     obj.remove_effect(obj.properties['clicked'])

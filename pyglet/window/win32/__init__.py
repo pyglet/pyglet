@@ -760,7 +760,7 @@ class Win32Window(BaseWindow):
             _user32.ReleaseCapture()
         x, y = self._get_location(lParam)
         y = self.height - y
-        self.dispatch_event(event, button, x, y, self._get_modifiers())
+        self.dispatch_event(event, x, y, button, self._get_modifiers())
         return 0
 
     @Win32EventHandler(WM_LBUTTONDOWN)

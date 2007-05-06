@@ -34,7 +34,7 @@ The following are examples of attaching event handlers to Views::
         ' The mouse has stopped hovering over the indicated objects.'
                
     @event(view)
-    def on_mouse_press(objects, button, x, y, modifiers):
+    def on_mouse_press(objects, x, y, button, modifiers):
         ' The mouse has been clicked on the indicated objects. '
 
 The filters available in pyglet.ext.scene2d.events module may be used to
@@ -196,14 +196,14 @@ class FlatView(View):
                 break
         return None
 
-    def on_mouse_press(self, button, x, y, modifiers):
+    def on_mouse_press(self, x, y, button, modifiers):
         x, y = self.translate_position(x, y)
-        self.dispatch_event(x, y, EVENT_MOUSE_PRESS, button, x, y, modifiers)
+        self.dispatch_event(x, y, EVENT_MOUSE_PRESS, x, y, button, modifiers)
         return EVENT_UNHANDLED
 
-    def on_mouse_release(self, button, x, y, modifiers):
+    def on_mouse_release(self, x, y, button, modifiers):
         x, y = self.translate_position(x, y)
-        self.dispatch_event(x, y, EVENT_MOUSE_RELEASE, button, x, y, modifiers)
+        self.dispatch_event(x, y, EVENT_MOUSE_RELEASE, x, y, button, modifiers)
         return EVENT_UNHANDLED
 
     def on_mouse_motion(self, x, y, dx, dy):

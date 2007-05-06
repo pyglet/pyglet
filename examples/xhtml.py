@@ -170,23 +170,23 @@ layout = Layout()
 layout.set_xhtml(data)
 
 @select('body')
-def on_mouse_press(element, button, x, y, modifiers):
+def on_mouse_press(element, x, y, button, modifiers):
     print 'I am the body'
 layout.push_handlers(on_mouse_press)
 
 @select('h1')
-def on_mouse_press(element, button, x, y, modifiers):
+def on_mouse_press(element, x, y, button, modifiers):
     print 'I am the frog!'
     return EVENT_UNHANDLED
 layout.push_handlers(on_mouse_press)
 
 @select('h2')
-def on_mouse_press(element, button, x, y, modifiers):
+def on_mouse_press(element, x, y, button, modifiers):
     print 'I am brother Grimm!'
 layout.push_handlers(on_mouse_press)
 
 @select('#wishing')
-def on_mouse_press(element, button, x, y, modifiers):
+def on_mouse_press(element, x, y, button, modifiers):
     e = layout.document.get_element('shone')
     if 'border' not in e.style:
         e.style['border'] = '1px solid blue'
@@ -197,7 +197,7 @@ def on_mouse_press(element, button, x, y, modifiers):
 layout.push_handlers(on_mouse_press)
 
 @select('#shone')
-def on_mouse_press(element, button, x, y, modifiers):
+def on_mouse_press(element, x, y, button, modifiers):
     e = layout.document.get_element('wishing')
     if e.style['display'] == 'none':
         del e.style['display'] 
@@ -206,7 +206,7 @@ def on_mouse_press(element, button, x, y, modifiers):
 layout.push_handlers(on_mouse_press)
 
 @select('#para2')
-def on_mouse_press(element, button, x, y, modifiers):
+def on_mouse_press(element, x, y, button, modifiers):
     element.add_text('One fish two fish red fish blue fish.')
 layout.push_handlers(on_mouse_press)
 

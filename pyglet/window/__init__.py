@@ -563,6 +563,9 @@ class BaseWindow(WindowEventDispatcher):
         self._mouse_cursor = cursor
         self.set_mouse_platform_visible()
 
+    def get_mouse_cursor(self):
+        return self._mouse_cursor
+
     def set_exclusive_mouse(self, exclusive=True):
         raise NotImplementedError()
 

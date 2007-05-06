@@ -129,32 +129,32 @@ class WindowEventHandler(object):
 
         '''
 
-    def on_mouse_press(self, button, x, y, modifiers):
+    def on_mouse_press(self, x, y, button, modifiers):
         '''A mouse button was pressed (and held down).
 
         :Parameters:
-            `button` : int
-                The mouse button that was pressed.
             `x` : float
                 Distance in pixels from the left edge of the window.
             `y`: float
                 Distance in pixels from the bottom edge of the window.
+            `button` : int
+                The mouse button that was pressed.
             `modifiers` : int
                 Bitwise combination of any keyboard modifiers currently
                 active.
             
         '''
 
-    def on_mouse_release(self, button, x, y, modifiers):
+    def on_mouse_release(self, x, y, button, modifiers):
         '''A mouse button was released.
 
         :Parameters:
-            `button` : int
-                The mouse button that was released.
             `x` : float
                 Distance in pixels from the left edge of the window.
             `y`: float
                 Distance in pixels from the bottom edge of the window.
+            `button` : int
+                The mouse button that was released.
             `modifiers` : int
                 Bitwise combination of any keyboard modifiers currently
                 active.
@@ -372,14 +372,14 @@ class WindowEventLogger(object):
               x, y, dx, dy, 
               mouse.buttons_string(buttons), key.modifiers_string(modifiers))
 
-    def on_mouse_press(self, button, x, y, modifiers):
-        print >> self.file, 'on_mouse_press(button=%r, x=%d, y=%d, '\
+    def on_mouse_press(self, x, y, button, modifiers):
+        print >> self.file, 'on_mouse_press(x=%d, y=%d, button=%r, '\
                             'modifiers=%s)' % (
             mouse.buttons_string(button), x, y, 
             key.modifiers_string(modifiers))
 
-    def on_mouse_release(self, button, x, y, modifiers):
-        print >> self.file, 'on_mouse_release(button=%r, x=%d, y=%d, '\
+    def on_mouse_release(self, x, y, button, modifiers):
+        print >> self.file, 'on_mouse_release(x=%d, y=%d, button=%r, '\
                             'modifiers=%s)' % (
             mouse.buttons_string(button), x, y, 
             key.modifiers_string(modifiers))

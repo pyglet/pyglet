@@ -117,7 +117,7 @@ layout.set_xhtml(data)
 window.push_handlers(layout)
 
 @select('cube')
-def on_mouse_press(element, button, x, y, modifiers):
+def on_mouse_press(element, x, y, button, modifiers):
     global rate
     rate = -rate
 layout.push_handlers(on_mouse_press)

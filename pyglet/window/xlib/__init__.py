@@ -1065,13 +1065,13 @@ class XlibWindow(BaseWindow):
                 self.dispatch_event(EVENT_MOUSE_SCROLL, x, y, 0, -1)
             else:
                 self._mouse_buttons[event.xbutton.button] = True
-                self.dispatch_event(EVENT_MOUSE_PRESS, button,
-                    x, y, modifiers)
+                self.dispatch_event(EVENT_MOUSE_PRESS, 
+                    x, y, button, modifiers)
         else:
             if event.xbutton.button < 4:
                 self._mouse_buttons[event.xbutton.button] = False
-                self.dispatch_event(EVENT_MOUSE_RELEASE, button,
-                    x, y, modifiers)
+                self.dispatch_event(EVENT_MOUSE_RELEASE, 
+                    x, y, button, modifiers)
 
     @XlibEventHandler(xlib.Expose)
     def _event_expose(self, event):

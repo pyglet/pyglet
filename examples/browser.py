@@ -42,7 +42,7 @@ layout = Layout(locator=locator)
 layout.set_html(locator.get_default_stream().read())
 
 @select('a')
-def on_mouse_press(element, button, x, y, modifiers):
+def on_mouse_press(element, x, y, button, modifiers):
     url = element.attributes['href']
     print 'Going to %s...' % url
     file = locator.get_stream(url)

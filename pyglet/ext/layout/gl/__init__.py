@@ -136,13 +136,13 @@ class GLLayout(LayoutEventDispatcher):
         self.viewport_y -= dy * 30
         self.constrain_viewport()
 
-    def on_mouse_press(self, button, x, y, modifiers):
+    def on_mouse_press(self, x, y, button, modifiers):
         x -= self.x
         y -= self.y
         elements = self.view.get_elements_for_point(x, y)
         for element in elements[::-1]:
             handled = self.dispatch_event(element, 'on_mouse_press', 
-                button, x, y, modifiers)
+                x, y, button, modifiers)
             if handled:
                 return EVENT_HANDLED
         return EVENT_UNHANDLED
