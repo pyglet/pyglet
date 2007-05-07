@@ -13,12 +13,13 @@ import unicodedata
 import warnings
 
 from pyglet.window import *
-from pyglet.window.event import *
 from pyglet.window import key
 from pyglet.window import mouse
+from pyglet.window import event
 from pyglet.window.carbon.constants import *
-from pyglet.window.carbon.key import *
 from pyglet.window.carbon.types import *
+from pyglet.window.carbon.quartzkey import keymap
+
 from pyglet.gl import *
 from pyglet.gl.agl import *
 from pyglet.gl import gl_info
@@ -64,6 +65,27 @@ carbon.GetCurrentKeyModifiers = c_uint32
 carbon.NewRgn.restype = RgnHandle
 carbon.CGDisplayBounds.argtypes = [c_void_p]
 carbon.CGDisplayBounds.restype = CGRect
+
+# Map symbol,modifiers -> motion
+# Determined by experiment with TextEdit.app
+_motion_map = {
+    (key.UP, False):                    key.MOTION_UP,
+    (key.RIGHT, False):                 key.MOTION_RIGHT,
+    (key.DOWN, False):                  key.MOTION_DOWN,
+    (key.LEFT, False):                  key.MOTION_LEFT,
+    (key.LEFT, key.MOD_OPTION):         key.MOTION_PREVIOUS_WORD,
+    (key.RIGHT, key.MOD_OPTION):        key.MOTION_NEXT_WORD,
+    (key.LEFT, key.MOD_COMMAND):        key.MOTION_BEGINNING_OF_LINE,
+    (key.RIGHT, key.MOD_COMMAND):       key.MOTION_END_OF_LINE,
+    (key.PAGEUP, False):                key.MOTION_PREVIOUS_PAGE,
+    (key.PAGEDOWN, False):              key.MOTION_NEXT_PAGE,
+    (key.HOME, False):                  key.MOTION_BEGINNING_OF_FILE,
+    (key.END, False):                   key.MOTION_END_OF_FILE,
+    (key.UP, key.MOD_COMMAND):          key.MOTION_BEGINNING_OF_FILE,
+    (key.DOWN, key.MOD_COMMAND):        key.MOTION_END_OF_FILE,
+    (key.BACKSPACE, False):             key.MOTION_BACKSPACE,
+    (key.DELETE, False):                key.MOTION_DELETE,
+}
 
 class CarbonPlatform(BasePlatform):
     def get_screens(self, factory):
@@ -482,8 +504,8 @@ class CarbonWindow(BaseWindow):
         rect.bottom = rect.top + height
         carbon.SetWindowBounds(self._window, kWindowContentRgn, byref(rect))
 
-        self.dispatch_event(EVENT_RESIZE, width, height)
-        self.dispatch_event(EVENT_EXPOSE)
+        self.dispatch_event(event.EVENT_RESIZE, width, height)
+        self.dispatch_event(event.EVENT_EXPOSE)
 
     def get_size(self):
         rect = Rect()
@@ -531,7 +553,7 @@ class CarbonWindow(BaseWindow):
     def set_visible(self, visible=True):
         if visible:
             width, height = self.get_size()
-            self.dispatch_event(EVENT_RESIZE, width, height)
+            self.dispatch_event(event.EVENT_RESIZE, width, height)
 
             carbon.ShowWindow(self._window)
         else:
@@ -670,7 +692,7 @@ class CarbonWindow(BaseWindow):
         _aglcheck()
 
         # Need a redraw
-        self.dispatch_event(EVENT_EXPOSE)
+        self.dispatch_event(event.EVENT_EXPOSE)
 
     def _update_track_region(self):
         carbon.GetWindowRegion(self._window, 
@@ -722,53 +744,57 @@ class CarbonWindow(BaseWindow):
     # Carbon event handlers
 
     @CarbonEventHandler(kEventClassTextInput, kEventTextInputUnicodeForKeyEvent)
-    def _on_text_input(self, next_handler, event, data):
+    def _on_text_input(self, next_handler, ev, data):
         size = c_uint32()
-        carbon.GetEventParameter(event, kEventParamTextInputSendText,
+        carbon.GetEventParameter(ev, kEventParamTextInputSendText,
             typeUTF8Text, c_void_p(), 0, byref(size), c_void_p())
         text = create_string_buffer(size.value)
-        carbon.GetEventParameter(event, kEventParamTextInputSendText,
+        carbon.GetEventParameter(ev, kEventParamTextInputSendText,
             typeUTF8Text, c_void_p(), size.value, c_void_p(), byref(text))
         text = text.value.decode('utf8')
 
-        modifiers = c_uint32()
         raw_event = EventRef()
-        carbon.GetEventParameter(event, kEventParamTextInputSendKeyboardEvent,
+        carbon.GetEventParameter(ev, kEventParamTextInputSendKeyboardEvent,
             typeEventRef, c_void_p(), sizeof(raw_event), c_void_p(),
             byref(raw_event))
-        carbon.GetEventParameter(raw_event, kEventParamKeyModifiers,
-            typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
-            byref(modifiers))
+        symbol, modifiers = self._get_symbol_and_modifiers(raw_event)
 
-        # Don't send command code points.   
-        if ((unicodedata.category(text[0]) != 'Cc' or text == u'\r') and
-            not (modifiers.value & cmdKey)):
-            self.dispatch_event(EVENT_TEXT, text)
+        motion_modifiers = modifiers & \
+            (key.MOD_COMMAND | key.MOD_CTRL | key.MOD_OPTION)
+        if (symbol, motion_modifiers) in _motion_map:
+            motion = _motion_map[symbol, motion_modifiers]
+            if modifiers & key.MOD_SHIFT:
+                self.dispatch_event(event.EVENT_TEXT_MOTION_SELECT, motion)
+            else:
+                self.dispatch_event(event.EVENT_TEXT_MOTION, motion)
+        elif ((unicodedata.category(text[0]) != 'Cc' or text == u'\r') and
+            not (modifiers & key.MOD_COMMAND)):
+            self.dispatch_event(event.EVENT_TEXT, text)
         return noErr
 
     @CarbonEventHandler(kEventClassKeyboard, kEventRawKeyUp)
-    def _on_key_up(self, next_handler, event, data):
-        symbol, modifiers = self._get_symbol_and_modifiers(event)
+    def _on_key_up(self, next_handler, ev, data):
+        symbol, modifiers = self._get_symbol_and_modifiers(ev)
         if symbol:
-            self.dispatch_event(EVENT_KEY_RELEASE, symbol, modifiers)
-        carbon.CallNextEventHandler(next_handler, event)
+            self.dispatch_event(event.EVENT_KEY_RELEASE, symbol, modifiers)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassKeyboard, kEventRawKeyDown)
-    def _on_key_down(self, next_handler, event, data):
-        symbol, modifiers = self._get_symbol_and_modifiers(event)
+    def _on_key_down(self, next_handler, ev, data):
+        symbol, modifiers = self._get_symbol_and_modifiers(ev)
         if symbol:
-            self.dispatch_event(EVENT_KEY_PRESS, symbol, modifiers)
-        carbon.CallNextEventHandler(next_handler, event)
+            self.dispatch_event(event.EVENT_KEY_PRESS, symbol, modifiers)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @staticmethod
-    def _get_symbol_and_modifiers(event):
+    def _get_symbol_and_modifiers(ev):
         sym = c_uint32()
-        carbon.GetEventParameter(event, kEventParamKeyCode,
+        carbon.GetEventParameter(ev, kEventParamKeyCode,
             typeUInt32, c_void_p(), sizeof(sym), c_void_p(), byref(sym))
         modifiers = c_uint32()
-        carbon.GetEventParameter(event, kEventParamKeyModifiers,
+        carbon.GetEventParameter(ev, kEventParamKeyModifiers,
             typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
             byref(modifiers))
 
@@ -795,9 +821,9 @@ class CarbonWindow(BaseWindow):
         return mapped_modifiers
 
     @CarbonEventHandler(kEventClassKeyboard, kEventRawKeyModifiersChanged)
-    def _on_modifiers_changed(self, next_handler, event, data):
+    def _on_modifiers_changed(self, next_handler, ev, data):
         modifiers = c_uint32()
-        carbon.GetEventParameter(event, kEventParamKeyModifiers,
+        carbon.GetEventParameter(ev, kEventParamKeyModifiers,
             typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
             byref(modifiers))
         modifiers = modifiers.value
@@ -814,20 +840,20 @@ class CarbonWindow(BaseWindow):
             (numLock, key.NUMLOCK)]:
             if deltas & mask:
                 if modifiers & mask:
-                    self.dispatch_event(EVENT_KEY_PRESS, 
+                    self.dispatch_event(event.EVENT_KEY_PRESS, 
                         k, self._mapped_modifiers)
                 else:
-                    self.dispatch_event(EVENT_KEY_RELEASE,
+                    self.dispatch_event(event.EVENT_KEY_RELEASE,
                         k, self._mapped_modifiers)
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
 
         self._mapped_modifiers = self._map_modifiers(modifiers)
         self._current_modifiers = modifiers
         return noErr
 
-    def _get_mouse_position(self, event):
+    def _get_mouse_position(self, ev):
         position = HIPoint()
-        carbon.GetEventParameter(event, kEventParamMouseLocation,
+        carbon.GetEventParameter(ev, kEventParamMouseLocation,
             typeHIPoint, c_void_p(), sizeof(position), c_void_p(),
             byref(position))
 
@@ -836,9 +862,9 @@ class CarbonWindow(BaseWindow):
         return position.x - bounds.left, position.y - bounds.top
 
     @staticmethod
-    def _get_mouse_button_and_modifiers(event):
+    def _get_mouse_button_and_modifiers(ev):
         button = EventMouseButton()
-        carbon.GetEventParameter(event, kEventParamMouseButton,
+        carbon.GetEventParameter(ev, kEventParamMouseButton,
             typeMouseButton, c_void_p(), sizeof(button), c_void_p(),
             byref(button))
         
@@ -850,39 +876,41 @@ class CarbonWindow(BaseWindow):
             button = mouse.MOUSE_MIDDLE_BUTTON
 
         modifiers = c_uint32()
-        carbon.GetEventParameter(event, kEventParamKeyModifiers,
+        carbon.GetEventParameter(ev, kEventParamKeyModifiers,
             typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
             byref(modifiers))
 
         return button, CarbonWindow._map_modifiers(modifiers.value)
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseDown)
-    def _on_mouse_down(self, next_handler, event, data):
-        button, modifiers = self._get_mouse_button_and_modifiers(event)
-        x, y = self._get_mouse_position(event)
+    def _on_mouse_down(self, next_handler, ev, data):
+        button, modifiers = self._get_mouse_button_and_modifiers(ev)
+        x, y = self._get_mouse_position(ev)
         y = self.height - y
         if x >= 0 and y >= 0:
-            self.dispatch_event(EVENT_MOUSE_PRESS, x, y, button, modifiers)
+            self.dispatch_event(event.EVENT_MOUSE_PRESS, 
+                x, y, button, modifiers)
 
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseUp)
-    def _on_mouse_up(self, next_handler, event, data):
-        button, modifiers = self._get_mouse_button_and_modifiers(event)
-        x, y = self._get_mouse_position(event)
+    def _on_mouse_up(self, next_handler, ev, data):
+        button, modifiers = self._get_mouse_button_and_modifiers(ev)
+        x, y = self._get_mouse_position(ev)
         y = self.height - y
         if x >= 0 and y >= 0:
-            self.dispatch_event(EVENT_MOUSE_RELEASE, x, y, button, modifiers)
+            self.dispatch_event(event.EVENT_MOUSE_RELEASE, 
+                x, y, button, modifiers)
 
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseMoved)
     @CarbonEventHandler(kEventClassMouse, kEventMouseDragged)
-    def _on_mouse_moved(self, next_handler, event, data):
-        button, modifiers = self._get_mouse_button_and_modifiers(event)
-        x, y = self._get_mouse_position(event)
+    def _on_mouse_moved(self, next_handler, ev, data):
+        button, modifiers = self._get_mouse_button_and_modifiers(ev)
+        x, y = self._get_mouse_position(ev)
         y = self.height - y
         if x < 0 or y < 0:
             return noErr
@@ -891,24 +919,25 @@ class CarbonWindow(BaseWindow):
         self._mouse_y = y
 
         delta = HIPoint()
-        carbon.GetEventParameter(event, kEventParamMouseDelta,
+        carbon.GetEventParameter(ev, kEventParamMouseDelta,
             typeHIPoint, c_void_p(), sizeof(delta), c_void_p(),
             byref(delta))
 
         if button:
             # Drag event
-            self.dispatch_event(EVENT_MOUSE_DRAG,
+            self.dispatch_event(event.EVENT_MOUSE_DRAG,
                 x, y, delta.x, -delta.y, button, modifiers)
         else:
             # Motion event
-            self.dispatch_event(EVENT_MOUSE_MOTION, x, y, delta.x, -delta.y)
+            self.dispatch_event(event.EVENT_MOUSE_MOTION, 
+                x, y, delta.x, -delta.y)
 
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseEntered)
-    def _on_mouse_entered(self, next_handler, event, data):
-        x, y = self._get_mouse_position(event)
+    def _on_mouse_entered(self, next_handler, ev, data):
+        x, y = self._get_mouse_position(ev)
         y = self.height - y
 
         self._mouse_x = x
@@ -916,136 +945,136 @@ class CarbonWindow(BaseWindow):
         self._mouse_in_window = True
         self.set_mouse_platform_visible()
 
-        self.dispatch_event(EVENT_MOUSE_ENTER, x, y)
+        self.dispatch_event(event.EVENT_MOUSE_ENTER, x, y)
 
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseExited)
-    def _on_mouse_exited(self, next_handler, event, data):
-        x, y = self._get_mouse_position(event)
+    def _on_mouse_exited(self, next_handler, ev, data):
+        x, y = self._get_mouse_position(ev)
         y = self.height - y
 
         self._mouse_in_window = False
         self.set_mouse_platform_visible()
 
-        self.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
+        self.dispatch_event(event.EVENT_MOUSE_LEAVE, x, y)
 
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseWheelMoved)
-    def _on_mouse_wheel_moved(self, next_handler, event, data):
+    def _on_mouse_wheel_moved(self, next_handler, ev, data):
         x, y = self._get_mouse_position(event)
         y = self.height - y
 
         axis = EventMouseWheelAxis()
-        carbon.GetEventParameter(event, kEventParamMouseWheelAxis,
+        carbon.GetEventParameter(ev, kEventParamMouseWheelAxis,
             typeMouseWheelAxis, c_void_p(), sizeof(axis), c_void_p(),
             byref(axis))
         delta = c_long()
-        carbon.GetEventParameter(event, kEventParamMouseWheelDelta,
+        carbon.GetEventParameter(ev, kEventParamMouseWheelDelta,
             typeSInt32, c_void_p(), sizeof(delta), c_void_p(),
             byref(delta))
         if axis.value == kEventMouseWheelAxisX:
-            self.dispatch_event(EVENT_MOUSE_SCROLL, 
+            self.dispatch_event(event.EVENT_MOUSE_SCROLL, 
                 x, y, float(delta.value), 0.)
         else:
-            self.dispatch_event(EVENT_MOUSE_SCROLL, 
+            self.dispatch_event(event.EVENT_MOUSE_SCROLL, 
                 x, y, 0., float(delta.value))
                 
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassWindow, kEventWindowClose)
-    def _on_window_close(self, next_handler, event, data):
-        self.dispatch_event(EVENT_CLOSE)
+    def _on_window_close(self, next_handler, ev, data):
+        self.dispatch_event(event.EVENT_CLOSE)
 
         # Presumably the next event handler is the one that closes
         # the window; don't do that here. 
-        #carbon.CallNextEventHandler(next_handler, event)
+        #carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassWindow, kEventWindowResizeCompleted)
-    def _on_window_resize_completed(self, next_handler, event, data):
+    def _on_window_resize_completed(self, next_handler, ev, data):
         rect = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
         width = rect.right - rect.left
         height = rect.bottom - rect.top
 
-        self.dispatch_event(EVENT_RESIZE, width, height)
-        self.dispatch_event(EVENT_EXPOSE)
+        self.dispatch_event(event.EVENT_RESIZE, width, height)
+        self.dispatch_event(event.EVENT_EXPOSE)
 
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassWindow, kEventWindowDragCompleted)
-    def _on_window_drag_completed(self, next_handler, event, data):
+    def _on_window_drag_completed(self, next_handler, ev, data):
         rect = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
 
-        self.dispatch_event(EVENT_MOVE, rect.left, rect.top)
+        self.dispatch_event(event.EVENT_MOVE, rect.left, rect.top)
 
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassWindow, kEventWindowBoundsChanged)
-    def _on_window_bounds_change(self, next_handler, event, data):
+    def _on_window_bounds_change(self, next_handler, ev, data):
         self._update_track_region()
         self._update_drawable()
 
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassWindow, kEventWindowZoomed)
-    def _on_window_zoomed(self, next_handler, event, data):
+    def _on_window_zoomed(self, next_handler, ev, data):
         rect = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
         width = rect.right - rect.left
         height = rect.bottom - rect.top
 
-        self.dispatch_event(EVENT_MOVE, rect.left, rect.top)
-        self.dispatch_event(EVENT_RESIZE, width, height)
+        self.dispatch_event(event.EVENT_MOVE, rect.left, rect.top)
+        self.dispatch_event(event.EVENT_RESIZE, width, height)
 
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassWindow, kEventWindowActivated)
-    def _on_window_activated(self, next_handler, event, data):
-        self.dispatch_event(EVENT_ACTIVATE)
+    def _on_window_activated(self, next_handler, ev, data):
+        self.dispatch_event(event.EVENT_ACTIVATE)
 
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassWindow, kEventWindowDeactivated)
-    def _on_window_deactivated(self, next_handler, event, data):
-        self.dispatch_event(EVENT_DEACTIVATE)
+    def _on_window_deactivated(self, next_handler, ev, data):
+        self.dispatch_event(event.EVENT_DEACTIVATE)
 
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
         
     @CarbonEventHandler(kEventClassWindow, kEventWindowShown)
     @CarbonEventHandler(kEventClassWindow, kEventWindowExpanded)
-    def _on_window_shown(self, next_handler, event, data):
+    def _on_window_shown(self, next_handler, ev, data):
         self._update_drawable()
-        self.dispatch_event(EVENT_SHOW)
+        self.dispatch_event(event.EVENT_SHOW)
 
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassWindow, kEventWindowHidden)
     @CarbonEventHandler(kEventClassWindow, kEventWindowCollapsed)
-    def _on_window_hidden(self, next_handler, event, data):
-        self.dispatch_event(EVENT_HIDE)
+    def _on_window_hidden(self, next_handler, ev, data):
+        self.dispatch_event(event.EVENT_HIDE)
 
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassWindow, kEventWindowDrawContent)
-    def _on_window_draw_content(self, next_handler, event, data):
-        self.dispatch_event(EVENT_EXPOSE)
+    def _on_window_draw_content(self, next_handler, ev, data):
+        self.dispatch_event(event.EVENT_EXPOSE)
 
-        carbon.CallNextEventHandler(next_handler, event)
+        carbon.CallNextEventHandler(next_handler, ev)
         return noErr
         
 

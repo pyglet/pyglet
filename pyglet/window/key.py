@@ -459,8 +459,9 @@ YDIAERESIS = 0x0ff
 _key_names = {}
 _motion_names = {}
 for name, value in locals().items():
-    if name[:2] != '__' and name.upper() == name:
-        if name.startswith('MOTION'):
+    if name[:2] != '__' and name.upper() == name and \
+       not name.startswith('MOD_'):
+        if name.startswith('MOTION_'):
             _motion_names[value] = name
         else:
             _key_names[value] = name
