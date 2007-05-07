@@ -258,3 +258,8 @@ class Win32Font(base.Font):
         # CreateFontIndirect always returns a font... have to work out
         # something with EnumFontFamily... TODO
         return True
+
+    @classmethod
+    def add_font_data(cls, data):
+        numfonts = c_uint32()
+        gdi32.AddFontMemResourceEx(data, len(data), 0, byref(numfonts))

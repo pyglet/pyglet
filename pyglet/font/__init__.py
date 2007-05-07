@@ -388,9 +388,10 @@ def load(name, size, bold=False, italic=False):
 
 def add_file(font):
     if type(font) in (str, unicode):
-        font = open(font, 'r')
+        font = open(font, 'rb')
     if hasattr(font, 'read'):
         font = font.read()
+        print len(font)
     _font_class.add_font_data(font)
 
 

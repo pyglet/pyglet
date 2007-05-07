@@ -141,7 +141,7 @@ font
         font.COLOR_BLEND                        X11 WIN OSX
     
     font-load
-        font.ADD_FONT                           X11 DEVELOPER
+        font.ADD_FONT                           X11 WIN DEVELOPER
 
     font-metrics
         font.KERNING
