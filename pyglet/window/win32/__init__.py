@@ -15,12 +15,13 @@ if sys.platform not in ('cygwin', 'win32'):
     raise ImportError('Not a win32 platform.')
 
 from pyglet.window import *
-from pyglet.window.event import *
+from pyglet.window import event
 from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.window.win32.constants import *
-from pyglet.window.win32.key import *
+from pyglet.window.win32.winkey import *
 from pyglet.window.win32.types import *
+
 from pyglet.gl import *
 from pyglet.gl import gl_info
 from pyglet.gl import glu_info
@@ -35,6 +36,24 @@ _user32 = windll.user32
 _user32.GetKeyState.restype = c_short
 _gdi32.CreateDIBitmap.argtypes = [HDC, POINTER(BITMAPINFOHEADER), DWORD,
     c_void_p, POINTER(BITMAPINFO), c_uint]
+
+# symbol,ctrl -> motion mapping
+_motion_map = {
+    (key.UP, False):        key.MOTION_UP,
+    (key.RIGHT, False):     key.MOTION_RIGHT,
+    (key.DOWN, False):      key.MOTION_DOWN,
+    (key.LEFT, False):      key.MOTION_LEFT,
+    (key.RIGHT, True):      key.MOTION_NEXT_WORD,
+    (key.LEFT, True):       key.MOTION_PREVIOUS_WORD,
+    (key.HOME, False):      key.MOTION_BEGINNING_OF_LINE,
+    (key.END, False):       key.MOTION_END_OF_LINE,
+    (key.PAGEUP, False):    key.MOTION_PREVIOUS_PAGE,
+    (key.PAGEDOWN, False):  key.MOTION_NEXT_PAGE,
+    (key.PAGEUP, True):     key.MOTION_BEGINNING_OF_FILE,
+    (key.PAGEDOWN, True):   key.MOTION_END_OF_FILE,
+    (key.BACKSPACE, False): key.MOTION_BACKSPACE,
+    (key.DELETE, False):    key.MOTION_DELETE,
+}
 
 class Win32Exception(WindowException):
     pass
@@ -410,11 +429,11 @@ class Win32Window(BaseWindow):
                     SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
             else:
                 _user32.ShowWindow(self._hwnd, SW_SHOW)
-            self.dispatch_event(EVENT_SHOW)
+            self.dispatch_event(event.EVENT_SHOW)
             self.activate()
         else:
             _user32.ShowWindow(self._hwnd, SW_HIDE)
-            self.dispatch_event(EVENT_HIDE)
+            self.dispatch_event(event.EVENT_HIDE)
         self.set_mouse_platform_visible()
 
     def minimize(self):
@@ -652,12 +671,13 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_SYSKEYDOWN)
     @Win32EventHandler(WM_SYSKEYUP)
     def _event_key(self, msg, wParam, lParam):
+        repeat = False
         if lParam & (1 << 30):
             if msg not in (WM_KEYUP, WM_SYSKEYUP):
-                return 0    # key repeat
-            event = EVENT_KEY_RELEASE
+                repeat = True
+            ev = event.EVENT_KEY_RELEASE
         else:
-            event = EVENT_KEY_PRESS
+            ev = event.EVENT_KEY_PRESS
 
         symbol = keymap.get(wParam, None)
         if symbol is None:
@@ -669,8 +689,19 @@ class Win32Window(BaseWindow):
         elif symbol == key.LSHIFT:
             pass # TODO: some magic with getstate to find out if it's the
                  # right or left shift key. 
+
+        modifiers = self._get_modifiers(lParam)
         
-        self.dispatch_event(event, symbol, self._get_modifiers(lParam))
+        if not repeat:
+            self.dispatch_event(ev, symbol, modifiers)
+
+        ctrl = modifiers & key.MOD_CTRL != 0
+        if (symbol, ctrl) in _motion_map:
+            motion = _motion_map[symbol, ctrl]
+            if modifiers & key.MOD_SHIFT:
+                self.dispatch_event(event.EVENT_TEXT_MOTION_SELECT, motion)
+            else:
+                self.dispatch_event(event.EVENT_TEXT_MOTION, motion)
 
         # Send on to DefWindowProc if not exclusive.
         if self._exclusive_keyboard:
@@ -682,7 +713,7 @@ class Win32Window(BaseWindow):
     def _event_char(self, msg, wParam, lParam):
         text = unichr(wParam)
         if unicodedata.category(text) != 'Cc' or text == '\r':
-            self.dispatch_event(EVENT_TEXT, text)
+            self.dispatch_event(event.EVENT_TEXT, text)
         return 0
 
     @Win32EventHandler(WM_MOUSEMOVE)
@@ -711,7 +742,7 @@ class Win32Window(BaseWindow):
             # re-entering (to track the next WM_MOUSELEAVE).
             self._mouse_in_window = True
             self.set_mouse_platform_visible()
-            self.dispatch_event(EVENT_MOUSE_ENTER, x, y)
+            self.dispatch_event(event.EVENT_MOUSE_ENTER, x, y)
             self._tracking = True
             track = TRACKMOUSEEVENT()
             track.cbSize = sizeof(track)
@@ -733,11 +764,11 @@ class Win32Window(BaseWindow):
         if buttons:
             # Drag event
             modifiers = self._get_modifiers()
-            self.dispatch_event(EVENT_MOUSE_DRAG, 
+            self.dispatch_event(event.EVENT_MOUSE_DRAG, 
                 x, y, dx, dy, buttons, modifiers)
         else:
             # Motion event
-            self.dispatch_event(EVENT_MOUSE_MOTION, x, y, dx, dy)
+            self.dispatch_event(event.EVENT_MOUSE_MOTION, x, y, dx, dy)
         return 0
 
     @Win32EventHandler(WM_MOUSELEAVE)
@@ -750,64 +781,64 @@ class Win32Window(BaseWindow):
         self._tracking = False
         self._mouse_in_window = False
         self.set_mouse_platform_visible()
-        self.dispatch_event(EVENT_MOUSE_LEAVE, x, y)
+        self.dispatch_event(event.EVENT_MOUSE_LEAVE, x, y)
         return 0
 
-    def _event_mousebutton(self, event, button, lParam):
-        if event == EVENT_MOUSE_PRESS:
+    def _event_mousebutton(self, ev, button, lParam):
+        if ev == event.EVENT_MOUSE_PRESS:
             _user32.SetCapture(self._hwnd)
         else:
             _user32.ReleaseCapture()
         x, y = self._get_location(lParam)
         y = self.height - y
-        self.dispatch_event(event, x, y, button, self._get_modifiers())
+        self.dispatch_event(ev, x, y, button, self._get_modifiers())
         return 0
 
     @Win32EventHandler(WM_LBUTTONDOWN)
     def _event_lbuttondown(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            EVENT_MOUSE_PRESS, mouse.MOUSE_LEFT_BUTTON, lParam)
+            event.EVENT_MOUSE_PRESS, mouse.MOUSE_LEFT_BUTTON, lParam)
 
     @Win32EventHandler(WM_LBUTTONUP)
     def _event_lbuttonup(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            EVENT_MOUSE_RELEASE, mouse.MOUSE_LEFT_BUTTON, lParam)
+            event.EVENT_MOUSE_RELEASE, mouse.MOUSE_LEFT_BUTTON, lParam)
 
     @Win32EventHandler(WM_MBUTTONDOWN)
     def _event_mbuttondown(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            EVENT_MOUSE_PRESS, mouse.MOUSE_MIDDLE_BUTTON, lParam)
+            event.EVENT_MOUSE_PRESS, mouse.MOUSE_MIDDLE_BUTTON, lParam)
 
     @Win32EventHandler(WM_MBUTTONUP)
     def _event_mbuttonup(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            EVENT_MOUSE_RELEASE, mouse.MOUSE_MIDDLE_BUTTON, lParam)
+            event.EVENT_MOUSE_RELEASE, mouse.MOUSE_MIDDLE_BUTTON, lParam)
 
     @Win32EventHandler(WM_RBUTTONDOWN)
     def _event_rbuttondown(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            EVENT_MOUSE_PRESS, mouse.MOUSE_RIGHT_BUTTON, lParam)
+            event.EVENT_MOUSE_PRESS, mouse.MOUSE_RIGHT_BUTTON, lParam)
 
     @Win32EventHandler(WM_RBUTTONUP)
     def _event_rbuttonup(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            EVENT_MOUSE_RELEASE, mouse.MOUSE_RIGHT_BUTTON, lParam)
+            event.EVENT_MOUSE_RELEASE, mouse.MOUSE_RIGHT_BUTTON, lParam)
 
     @Win32EventHandler(WM_MOUSEWHEEL)
     def _event_mousewheel(self, msg, wParam, lParam):
         delta = c_short(wParam >> 16).value
-        self.dispatch_event(EVENT_MOUSE_SCROLL, 
+        self.dispatch_event(event.EVENT_MOUSE_SCROLL, 
             self._mouse_x, self._mouse_y, 0, float(delta) / WHEEL_DELTA)
         return 0
 
     @Win32EventHandler(WM_CLOSE)
     def _event_close(self, msg, wParam, lParam):
-        self.dispatch_event(EVENT_CLOSE)
+        self.dispatch_event(event.EVENT_CLOSE)
         return 0
 
     @Win32EventHandler(WM_PAINT)
     def _event_paint(self, msg, wParam, lParam):
-        self.dispatch_event(EVENT_EXPOSE)
+        self.dispatch_event(event.EVENT_EXPOSE)
         # Validating the window using ValidateRect or ValidateRgn
         # doesn't clear the paint message when more than one window
         # is open [why?]; defer to DefWindowProc instead.
@@ -823,20 +854,20 @@ class Win32Window(BaseWindow):
         if wParam == SIZE_MINIMIZED:
             # Minimized, not resized.
             self._hidden = True
-            self.dispatch_event(EVENT_HIDE)
+            self.dispatch_event(event.EVENT_HIDE)
             return 0
         if self._hidden:
             # Restored
             self._hidden = False
-            self.dispatch_event(EVENT_SHOW)
+            self.dispatch_event(event.EVENT_SHOW)
         w, h = self._get_location(lParam)
-        self.dispatch_event(EVENT_RESIZE, w, h)
+        self.dispatch_event(event.EVENT_RESIZE, w, h)
         return 0
 
     @Win32EventHandler(WM_MOVE)
     def _event_move(self, msg, wParam, lParam):
         x, y = self._get_location(lParam)
-        self.dispatch_event(EVENT_MOVE, x, y)
+        self.dispatch_event(event.EVENT_MOVE, x, y)
         return 0
 
     '''
@@ -846,21 +877,21 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_ACTIVATE)
     def _event_activate(self, msg, wParam, lParam):
         if wParam & 0xffff == WA_INACTIVE:
-            self.dispatch_event(EVENT_DEACTIVATE)
+            self.dispatch_event(event.EVENT_DEACTIVATE)
         else:
-            self.dispatch_event(EVENT_ACTIVATE)
+            self.dispatch_event(event.EVENT_ACTIVATE)
             _user32.SetFocus(self._hwnd)
         return 0
     '''
 
     @Win32EventHandler(WM_SETFOCUS)
     def _event_setfocus(self, msg, wParam, lParam):
-        self.dispatch_event(EVENT_ACTIVATE)
+        self.dispatch_event(event.EVENT_ACTIVATE)
         return 0
 
     @Win32EventHandler(WM_KILLFOCUS)
     def _event_killfocus(self, msg, wParam, lParam):
-        self.dispatch_event(EVENT_DEACTIVATE)
+        self.dispatch_event(event.EVENT_DEACTIVATE)
         return 0
 
     @Win32EventHandler(WM_GETMINMAXINFO)
