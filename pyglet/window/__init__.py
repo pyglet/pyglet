@@ -935,11 +935,16 @@ class Window(_platform.get_window_class()):
                  doublebuffer=True,
                  vsync=True,
                  depth_size=24,
+                 factory=None,
+                 screen=None,
                  **kwargs):
 
         super(Window, self).__init__()
 
-        factory = get_factory()
+        if factory is None:
+            factory = get_factory()
+        if screen is not None:
+            factory.set_screen(screen)
         if width or height:
             _width, _height = factory.get_size()
             if not width:

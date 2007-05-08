@@ -32,14 +32,7 @@ colours = [
 class MULTIPLE_SCREEN(unittest.TestCase):
     def open_next_window(self):
         screen = self.screens[self.index]
-        factory = pyglet.window.get_factory()
-        factory.set_size(screen.width, screen.height)
-        factory.set_fullscreen(True)
-        factory.set_gl_attribute('doublebuffer', True)
-        factory.set_screen(screen)
-        self.w = factory.create_window()
-        self.w.push_handlers(self)
-        self.w.set_visible()
+        self.w = pyglet.window.Window(screen=screen, fullscreen=True)
 
     def on_expose(self):
         self.w.switch_to()
