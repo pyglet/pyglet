@@ -11,7 +11,7 @@ from sys import byteorder
 
 from pyglet.font import base
 import pyglet.image
-from pyglet.window.carbon import carbon 
+from pyglet.window.carbon import carbon, _oscheck
 from pyglet.window.carbon import _create_cfstring
 from pyglet.window.carbon.types import Rect, CGRect
 
@@ -83,6 +83,8 @@ kFontNoLanguageCode           = c_ulong(-1)
 
 kATSUseDeviceOrigins          = 1
 
+kATSFontFormatUnspecified     = 0
+kATSFontContextLocal          = 2
 
 carbon.CGColorSpaceCreateWithName.restype = c_void_p
 carbon.CGBitmapContextCreate.restype = POINTER(c_void_p)
@@ -324,3 +326,10 @@ class CarbonFont(base.Font):
         self.descent = -fix2float(bounds.lowerLeft.y)
 
 
+    @classmethod
+    def add_font_data(cls, data):
+        container = c_void_p()
+        r = carbon.ATSFontActivateFromMemory(data, len(data),
+            kATSFontContextLocal, kATSFontFormatUnspecified, None, 0,
+            byref(container))
+        _oscheck(r)

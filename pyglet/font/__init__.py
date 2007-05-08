@@ -391,7 +391,6 @@ def add_file(font):
         font = open(font, 'rb')
     if hasattr(font, 'read'):
         font = font.read()
-        print len(font)
     _font_class.add_font_data(font)
 
 
