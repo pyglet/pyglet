@@ -4,7 +4,7 @@
 
 All objects that produce events in pyglet implement `EventDispatcher`,
 providing a consistent interface for registering and manipulating event
-handlers.  The most commonly used event dispatcher is `pyglet.window.Window`.
+handlers.  A commonly used event dispatcher is `pyglet.window.Window`.
 
 Event types
 ===========
@@ -19,54 +19,23 @@ Attaching event handlers
 ========================
 
 An event handler is simply a function or method.  You can attach an event
-handler to a dispatcher in several ways with `EventDispatcher.set_handlers`:
+handler by setting the appropriate function on the instance::
 
-1. By implicitly using the name of the function as the event type::
+    def on_resize(width, height):
+        # ...
+    dispatcher.on_resize = on_resize
 
-       def on_resize(width, height):
-           # ...
-       dispatcher.set_handlers(on_resize)
+There is also a convenience decorator that reduces typing::
 
-2. By explicitly specifying the event type with a keyword argument::
+    @dispatcher.event
+    def on_resize(width, height):
+        # ...
 
-       def my_on_resize(width, height):
-           # ...
-       dispatcher.set_handlers(on_resize=my_on_resize)
+You may prefer to subclass and override the event handlers instead::
 
-3. By supplying an instance with methods corresponding to the event types::
-
-       class ResizeHandler(object):
-            def on_resize(self, width, height):
-                # ...
-       dispatcher.set_handlers(ResizeHandler())
-
-4. Using the `event` function decorator::
-
-       @dispatcher.event
-       def on_resize(width, height):
-           # ...
-
-The `EventDispatcher.set_handlers` method will actually accept any number
-of event handlers, and will attach them all simultaneously.
-
-You can also attach events more directly:
-
-5. By setting a closure directly on the instance::
-
-       def on_resize(width, height):
-           # ...
-       dispatcher.on_resize = on_resize
-
-
-6. By subclassing the dispatcher and overriding the event::
-
-       class MyDispatcher(DispatcherClass):
-           def on_resize(self, width, height):
-               # ...
-
-Note that these methods (5 and 6) affect the handler "below" the last handler
-on the stack (described below); you should only use them if you are not using
-the handler stack.
+    class MyDispatcher(DispatcherClass):
+        def on_resize(self, width, height):
+            # ...
 
 Event handler stack
 ===================
@@ -86,19 +55,31 @@ There are two main use cases for "pushing" event handlers:
   takes care of it.
 
 Use `EventDispatcher.push_handlers` to create a new level in the stack and
-attach handlers to it.  This method parses its arguments in the same way as
-`EventDispatcher.set_handlers`::
+attach handlers to it.  You can push several handlers at once::
 
-    dispatcher.push_handlers(on_resize=temp_on_resize,
-                             on_key_press=temp_on_key_press)
+    dispatcher.push_handlers(on_resize, on_key_press)
+
+If your function handlers have different names to the events they handle, use
+keyword arguments::
+
+    dispatcher.push_handlers(on_resize=my_resize,
+                             on_key_press=my_key_press)
 
 After an event handler has processed an event, it is passed on to the
 next-lowest event handler, unless the handler returns `EVENT_HANDLED`, which
 prevents further propogation.
 
-To remove all handlers on this stack level (those specified in `push_handlers`
-as well as any subsequent `set_handlers` calls), use
+To remove all handlers on the top stack level, use
 `EventDispatcher.pop_handlers`.
+
+Note that any handlers pushed onto the stack have precedence over the
+handlers set directly on the instance (for example, using the methods
+described in the previous section), regardless of when they were set.
+For example, handler `foo` is called before handler `bar` in the following
+example::
+
+    dispatcher.push_handlers(on_resize=foo)
+    dispatcher.on_resize = bar
 
 Dispatching events
 ==================
@@ -115,6 +96,9 @@ updates the application state and checks for new events::
     while True:
         dispatcher.dispatch_events()
         # ... additional per-frame processing
+
+Not all event dispatchers require the call to `dispatch_events`; check with
+the particular class's documentation.
 
 '''
 
@@ -154,7 +138,10 @@ class EventDispatcher(object):
         '''Push a level onto the top of the handler stack, then attach zero or
         more event handlers.
 
-        See `set_handlers` for the accepted argument types.
+        If keyword arguments are given, they name the event type to attach.
+        Otherwise, a callable's `__name__` attribute will be used.  Any other
+        object may also be specified, in which case it will be searched for
+        callables with event names.
         '''
         # Create event stack if necessary
         if type(self._event_stack) is tuple:
@@ -165,12 +152,10 @@ class EventDispatcher(object):
         self.set_handlers(*args, **kwargs)
 
     def set_handlers(self, *args, **kwargs):
-        '''Attach one or more event handlers.  
+        '''Attach one or more event handlers to the top level of the handler
+        stack.
         
-        If keyword arguments are given, they name the event type to attach.
-        Otherwise, a callable's `__name__` attribute will be used.  Any other
-        object may also be specified, in which case it will be searched for
-        callables with event names.
+        See `push_handlers` for the accepted argument types.
         '''
         # Create event stack if necessary
         if type(self._event_stack) is tuple:
@@ -245,7 +230,8 @@ class EventDispatcher(object):
     def dispatch_events(self):
         '''Call attached event handlers for all queued events.
         '''
-        raise NotImplementedError('Abstract; this method needs overriding')
+        raise NotImplementedError(
+            'This class does not implement dispatch_events')
 
 
     def event(self, *args):
@@ -269,15 +255,17 @@ class EventDispatcher(object):
         '''
         if len(args) == 0:                      # @window.event()
             def decorator(func):
-                self.set_handlers(func)
+                name = func.__name__
+                setattr(self, name, func)
                 return func
             return decorator
         elif inspect.isroutine(args[0]):        # @window.event
-            self.set_handlers(args[0])
+            name = func.__name__
+            setattr(self, name, func)
             return args[0]
         elif type(args[0]) in (str, unicode):   # @window.event('on_resize')
             name = args[0]
             def decorator(func):
-                self.set_handler(name, func) 
+                setattr(self, name, func)
                 return func
             return decorator

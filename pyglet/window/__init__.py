@@ -370,7 +370,7 @@ class ImageMouseCursor(MouseCursor):
         self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
         glPopAttrib()
 
-class BaseWindow(WindowEventDispatcher):
+class BaseWindow(WindowEventDispatcher, WindowExitHandler):
     '''Platform-independent application window.
 
     A window is a "heavyweight" object occupying operating system resources.
@@ -413,12 +413,6 @@ class BaseWindow(WindowEventDispatcher):
  
     def __init__(self):
         WindowEventDispatcher.__init__(self)
-
-        self.exit_handler = WindowExitHandler()
-        self.set_handlers(self.exit_handler)
-        self.push_handlers()
-
-    has_exit = property(lambda self: self.exit_handler.has_exit)
 
     def create(self, factory):
         self._config = factory.get_config()
@@ -972,7 +966,6 @@ class Window(_platform.get_window_class()):
         self.switch_to()
         self.set_viewport()
         self.set_projection()
-        self.set_handlers(self)
 
         if visible:
             self.set_visible(True)

@@ -39,7 +39,7 @@ class KeyboardStateHandler(dict):
 
         >>> win = window.Window
         >>> keyboard = key.KeyboardStateHandler()
-        >>> win.set_handlers(keyboard)
+        >>> win.push_handlers(keyboard)
 
         # Hold down the "up" arrow...
 
