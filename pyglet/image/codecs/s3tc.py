@@ -60,7 +60,7 @@ class PackedImageData(AbstractImage):
     
     texture = property(_get_texture)
 
-def decode_dxt1(data, width, height):
+def decode_dxt1_rgb(data, width, height):
     # Decode to 16-bit RGB UNSIGNED_SHORT_5_6_5
     out = (ctypes.c_uint16 * (width * height))()
 
@@ -118,12 +118,76 @@ def decode_dxt1(data, width, height):
     return PackedImageData(width, height, 
         GL_RGB, GL_UNSIGNED_SHORT_5_6_5, out)
 
-def decode_dxt3(data, width, height):
+def decode_dxt1_rgba(data, width, height):
     # Decode to GL_RGBA
     out = (ctypes.c_ubyte * (width * height * 4))()
     pitch = width << 2
 
     # Read 8 bytes at a time
+    image_offset = 0
+    col = 0
+    for c0_lo, c0_hi, c1_lo, c1_hi, b0, b1, b2, b3 in split_8byte.findall(data):
+        color0 = ord(c0_lo) | ord(c0_hi) << 8
+        color1 = ord(c1_lo) | ord(c1_hi) << 8
+        bits = ord(b0) | ord(b1) << 8 | ord(b2) << 16 | ord(b3) << 24
+
+        r0 = color0 & 0x1f
+        g0 = (color0 & 0x7e0) >> 5
+        b0 = (color0 & 0xf800) >> 11
+        r1 = color1 & 0x1f
+        g1 = (color1 & 0x7e0) >> 5
+        b1 = (color1 & 0xf800) >> 11
+
+        # i is the dest ptr for this block
+        i = image_offset
+        for y in range(4):
+            for x in range(4):
+                code = bits & 0x3
+                a = 255
+
+                if code == 0:
+                    r, g, b = r0, g0, b0
+                elif code == 1:
+                    r, g, b = r1, g1, b1
+                elif code == 3 and color0 <= color1:
+                    r = g = b = a = 0
+                else:
+                    if code == 2 and color0 > color1:
+                        r = (2 * r0 + r1) / 3
+                        g = (2 * g0 + g1) / 3
+                        b = (2 * b0 + b1) / 3
+                    elif code == 3 and color0 > color1:
+                        r = (r0 + 2 * r1) / 3
+                        g = (g0 + 2 * g1) / 3
+                        b = (b0 + 2 * b1) / 3
+                    else:
+                        assert code == 2 and color0 <= color1
+                        r = (r0 + r1) / 2
+                        g = (g0 + g1) / 2
+                        b = (b0 + b1) / 2
+
+                out[i] = b << 3
+                out[i+1] = g << 2
+                out[i+2] = r << 3
+                out[i+3] = a << 4
+
+                bits >>= 2
+                i += 4
+            i += pitch - 16
+
+        # Move dest ptr to next 4x4 block
+        advance_row = (image_offset + 16) % pitch == 0
+        image_offset += pitch * 3 * advance_row + 16
+
+    return PackedImageData(width, height, GL_RGBA, GL_UNSIGNED_BYTE, out)
+
+
+def decode_dxt3(data, width, height):
+    # Decode to GL_RGBA
+    out = (ctypes.c_ubyte * (width * height * 4))()
+    pitch = width << 2
+
+    # Read 16 bytes at a time
     image_offset = 0
     col = 0
     for (a0, a1, a2, a3, a4, a5, a6, a7,
@@ -191,7 +255,7 @@ def decode_dxt5(data, width, height):
     out = (ctypes.c_ubyte * (width * height * 4))()
     pitch = width << 2
 
-    # Read 8 bytes at a time
+    # Read 16 bytes at a time
     image_offset = 0
     col = 0
     for (alpha0, alpha1, ab0, ab1, ab2, ab3, ab4, ab5, 
@@ -268,10 +332,10 @@ def decode_dxt5(data, width, height):
                     elif acode == 5:
                         a = (1 * alpha0 + 4 * alpha1) / 5
                     elif acode == 6:
-                        a = 0.
+                        a = 0
                     else:
                         assert acode == 7
-                        a = 1.
+                        a = 255
 
                 out[i] = b << 3
                 out[i+1] = g << 2
@@ -279,7 +343,7 @@ def decode_dxt5(data, width, height):
                 out[i+3] = a
 
                 bits >>= 2
-                acode >>= 3
+                abits >>= 3
                 i += 4
             i += pitch - 16
 

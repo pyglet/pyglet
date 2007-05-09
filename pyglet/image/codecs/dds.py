@@ -109,9 +109,12 @@ class DDPIXELFORMAT(_filestruct):
     ]
 
 _compression_formats = {
-    'DXT1': (GL_COMPRESSED_RGB_S3TC_DXT1_EXT, s3tc.decode_dxt1),
-    'DXT3': (GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, s3tc.decode_dxt3),
-    'DXT5': (GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, s3tc.decode_dxt5),
+    ('DXT1', False): (GL_COMPRESSED_RGB_S3TC_DXT1_EXT,  s3tc.decode_dxt1_rgb),
+    ('DXT1', True):  (GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, s3tc.decode_dxt1_rgba),
+    ('DXT3', False): (GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, s3tc.decode_dxt3),
+    ('DXT3', True):  (GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, s3tc.decode_dxt3),
+    ('DXT5', False): (GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, s3tc.decode_dxt5),
+    ('DXT5', True):  (GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, s3tc.decode_dxt5),
 }
 
 def _check_error():
@@ -158,9 +161,11 @@ class DDSImageDecoder(codecs.ImageDecoder):
         if not desc.ddpfPixelFormat.dwFlags & DDPF_FOURCC:
             raise DDSException('Uncompressed DDS textures not supported.')
 
+        has_alpha = desc.ddpfPixelFormat.dwRGBAlphaBitMask != 0
+
         format = None
         format, decoder = _compression_formats.get(
-            desc.ddpfPixelFormat.dwFourCC, None)
+            (desc.ddpfPixelFormat.dwFourCC, has_alpha), None)
         if not format:
             raise DDSException('Unsupported texture compression %s' % \
                 desc.ddpfPixelFormat.dwFourCC)
