@@ -121,9 +121,10 @@ image
         image.PLATFORM_L_LOAD                   X11 WIN OSX
 
     image-dds
-        image.DDS_DXT1_LOAD                     DEVELOPER
-        image.DDS_DXT3_LOAD                     DEVELOPER
-        image.DDS_DXT5_LOAD                     GENERIC
+        image.DDS_RGB_DXT1_LOAD                 GENERIC
+        image.DDS_RGBA_DXT1_LOAD                DEVELOPER
+        image.DDS_RGBA_DXT3_LOAD                GENERIC
+        image.DDS_RGBA_DXT5_LOAD                GENERIC
 
     image-buffer
         image.BUFFER_SAVE                       X11 WIN OSX
