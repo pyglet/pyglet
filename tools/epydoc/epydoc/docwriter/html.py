@@ -832,8 +832,13 @@ class HTMLWriter:
         out('<h1 class="epydoc">%s %s</h1>' % (typ, shortname))
         out(self.pysrc_link(doc) + '<br /><br />\n')
 
+        # <pyglet> Hide private known subclasses
+        subclasses = [s for s in doc.subclasses
+                        if self._show_private or \
+                           not s.canonical_name[-1].startswith('_')]
+
         if ((doc.bases not in (UNKNOWN, None) and len(doc.bases) > 0) or
-            (doc.subclasses not in (UNKNOWN,None) and len(doc.subclasses)>0)):
+            (subclasses not in (UNKNOWN,None) and len(subclasses)>0)):
             # Display bases graphically, if requested.
             if 'umlclasstree' in self._graph_types:
                 linker = _HTMLDocstringLinker(self, doc)
@@ -853,11 +858,11 @@ class HTMLWriter:
                         self.base_tree(doc))
 
                 # Write the known subclasses
-                if (doc.subclasses not in (UNKNOWN, None) and
-                    len(doc.subclasses) > 0):
+                if (subclasses not in (UNKNOWN, None) and
+                    len(subclasses) > 0):
                     out('<dl><dt>Known Subclasses:</dt>\n<dd>\n    ')
                     out(',\n    '.join([self.href(c, context=doc)
-                                        for c in doc.subclasses]))
+                                        for c in subclasses]))
                     out('\n</dd></dl>\n\n')
 
             out('<hr />\n')

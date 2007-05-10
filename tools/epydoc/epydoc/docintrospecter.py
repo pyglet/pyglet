@@ -899,6 +899,9 @@ def _import(name, filename=None):
     # Remove any command-line arguments
     sys.argv = ['(imported)']
 
+    # <pyglet> Let the module know it's being documented
+    sys.is_epydoc = True
+
     try:
         try:
             if filename is None:

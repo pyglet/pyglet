@@ -493,16 +493,22 @@ def parse_arguments():
     return options, names
 
 def parse_configfiles(configfiles, options, names):
-    configparser = ConfigParser.ConfigParser()
-    # ConfigParser.read() silently ignores errors, so open the files
-    # manually (since we want to notify the user of any errors).
+    # <pyglet> Don't use configparser, it doesn't let us append values
+    lines = []
     for configfile in configfiles:
         fp = open(configfile, 'r') # may raise IOError.
-        configparser.readfp(fp, configfile)
+        lines += fp.readlines()
         fp.close()
-    for optname in configparser.options('epydoc'):
-        val = configparser.get('epydoc', optname, vars=os.environ).strip()
-        optname = optname.lower().strip()
+    for line in lines:
+        if ':' not in line:
+            continue
+
+        if line.startswith('#'):
+            continue
+
+        optname, val = line.split(':', 1)
+        optname = optname.strip()
+        val = val.strip()
 
         if optname in ('modules', 'objects', 'values',
                        'module', 'object', 'value'):
@@ -538,11 +544,11 @@ def parse_configfiles(configfiles, options, names):
             if val.lower() not in INHERITANCE_STYLES:
                 raise ValueError('"%s" expected one of: %s.' %
                                  (optname, ', '.join(INHERITANCE_STYLES)))
-            options.inerhitance = val.lower()
+            options.inheritance = val.lower()
         elif optname =='private':
-            options.private = _str_to_bool(val, optname)
+            options.show_private = _str_to_bool(val, optname)
         elif optname =='imports':
-            options.imports = _str_to_bool(val, optname)
+            options.show_imports = _str_to_bool(val, optname)
         elif optname == 'sourcecode':
             options.include_source_code = _str_to_bool(val, optname)
         elif optname in ('include-log', 'include_log'):

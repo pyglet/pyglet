@@ -665,6 +665,15 @@ class _EpydocHTMLTranslator(HTMLTranslator):
         self.body.append(graph.to_html(image_file, image_url))
         raise SkipNode()
 
+    # <pyglet> Source-colorise all literal-blocks, not just doctest
+    def visit_literal_block(self, node):
+        pysrc = node[0].astext()
+        if node.get('codeblock'):
+            self.body.append(HTMLDoctestColorizer().colorize_codeblock(pysrc))
+        else:
+            self.body.append(doctest_to_html(pysrc))
+        raise SkipNode()
+
     def visit_doctest_block(self, node):
         pysrc = node[0].astext()
         if node.get('codeblock'):
