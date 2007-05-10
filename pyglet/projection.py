@@ -107,6 +107,7 @@ class WindowViewport(Viewport):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
         glViewport(0, 0, self.window.width, self.window.height)
 
         glDisable(GL_CLIP_PLANE0)
@@ -144,5 +145,15 @@ class OrthographicViewport(Viewport):
             0,       0,       (f-n)/2, 0,
             (r+l)/2, (t+b)/2, (f+n)/2, 1))
         glMatrixMode(GL_MODELVIEW)
+
+        glClipPlane(GL_CLIP_PLANE0, (GLdouble * 4)(1, 0, 0, 0))
+        glClipPlane(GL_CLIP_PLANE1, (GLdouble * 4)(-1, 0, 0, self.width))
+        glClipPlane(GL_CLIP_PLANE2, (GLdouble * 4)(0, 1, 0, 0))
+        glClipPlane(GL_CLIP_PLANE3, (GLdouble * 4)(0, -1, 0, self.height))
+      
+        glEnable(GL_CLIP_PLANE0)
+        glEnable(GL_CLIP_PLANE1)
+        glEnable(GL_CLIP_PLANE2)
+        glEnable(GL_CLIP_PLANE3)
 
 
