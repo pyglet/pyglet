@@ -341,7 +341,12 @@ class AbstractImage(object):
         raise ImageException('Cannot blit %r.' % self)
 
     def blit_into(self, source, x, y, z):
-        '''Draw `source` on this image.'''
+        '''Draw `source` on this image.
+        
+        Note that if `source` is larger than this image (or the positioning
+        would cause the copy to go out of bounds) then you must pass a
+        region of `source` to this method, typically using get_region().
+        '''
         raise ImageException('Cannot blit images onto %r.' % self)
 
     def blit_to_texture(self, target, level, x, y, z=0):
@@ -1076,10 +1081,13 @@ class Texture(AbstractImage):
         self.target = target
         self.id = id
 
+    def delete(self):
+        id = GLuint(self.id)
+        glDeleteTextures(1, byref(id))
+
     def __del__(self):
         # TODO
-        #id = GLuint(self.id)
-        #glDeleteTextures(1, byref(id))
+        # self.delete()
         pass
 
     @classmethod
