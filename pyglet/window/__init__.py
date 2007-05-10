@@ -905,20 +905,29 @@ def get_factory():
     '''
     return WindowFactory(_platform)
 
-
-# Try to determine which platform to use.
-if sys.platform == 'darwin':
-    from pyglet.window.carbon import CarbonPlatform
-    _platform = CarbonPlatform()
-elif sys.platform in ('win32', 'cygwin'):
-    from pyglet.window.win32 import Win32Platform
-    _platform = Win32Platform()
+if hasattr(sys, 'is_epydoc') and sys.is_epydoc:
+    # We are building documentation: fake the base platform class.
+    print >> open('tmp', 'a'), 'documenting'
+    class _DocumentedPlatform(BasePlatform):
+        def get_window_class(self):
+            return BaseWindow
+    _platform = _DocumentedPlatform()
 else:
-    from pyglet.window.xlib import XlibPlatform
-    _platform = XlibPlatform()
-   
+    print >> open('tmp', 'a'), 'not documenting', sys.argv[0]
+    # Try to determine which platform to use.
+    if sys.platform == 'darwin':
+        from pyglet.window.carbon import CarbonPlatform
+        _platform = CarbonPlatform()
+    elif sys.platform in ('win32', 'cygwin'):
+        from pyglet.window.win32 import Win32Platform
+        _platform = Win32Platform()
+    else:
+        from pyglet.window.xlib import XlibPlatform
+        _platform = XlibPlatform()
+_window_base = _platform.get_window_class()
 
-class Window(_platform.get_window_class()):
+
+class Window(_window_base):
     def __init__(self, 
                  width=None,
                  height=None,
