@@ -1,0 +1,875 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.gui</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        Module&nbsp;gui
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.gui-module.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== MODULE DESCRIPTION ==================== -->
+<h1 class="epydoc">Module gui</h1><span class="codelink"><a href="epydoc.gui-pysrc.html">source&nbsp;code</a></span><br /><br />
+<p>Graphical interface to epydoc.  This interface might be useful for 
+  systems where it's inconvenient to use the command-line interface (such 
+  as Windows).  It supports many (but not all) of the features that are 
+  supported by the command-line interface.  It also supports loading and 
+  saving of <a name="index-project_files"></a><i class="indexterm">project 
+  files</i>, which store a set of related modules, and the options that 
+  should be used to generate the documentation for those modules.</p>
+  Usage:
+<pre class="literalblock">
+   epydocgui [OPTIONS] [FILE.prj | MODULES...]
+
+   FILE.prj                  An epydoc GUI project file.
+   MODULES...                A list of Python modules to document.
+   -V, --version             Print the version of epydoc.
+   -h, -?, --help, --usage   Display this usage message
+   --debug                   Do not suppress error messages
+</pre><br /><br />
+
+<hr />
+<div class="fields">      <p><strong>To Do:</strong>
+        Use ini-style project files, rather than pickles (using the same 
+    format as the CLI).
+      </p>
+</div><!-- ==================== CLASSES ==================== -->
+<a name="section-Classes"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Classes"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.gui.GUILogger-class.html" class="summary-name">GUILogger</a>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.gui.EpydocGUI-class.html" class="summary-name">EpydocGUI</a><br />
+      A graphical user interace to epydoc.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTIONS ==================== -->
+<a name="section-Functions"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Functions</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Functions"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.gui-module.html#document" class="summary-sig-name">document</a>(<span class="summary-sig-arg">options</span>,
+        <span class="summary-sig-arg">cancel</span>,
+        <span class="summary-sig-arg">done</span>)</span><br />
+      Create the documentation for <code>modules</code>, using the 
+      options specified by <code>options</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.gui-pysrc.html#document">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>None</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_version"></a><span class="summary-sig-name">_version</span>()</span><br />
+      Display the version information, and exit.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.gui-pysrc.html#_version">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_usage"></a><span class="summary-sig-name">_usage</span>()</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.gui-pysrc.html#_usage">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_error"></a><span class="summary-sig-name">_error</span>(<span class="summary-sig-arg">s</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.gui-pysrc.html#_error">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="gui"></a><span class="summary-sig-name">gui</span>()</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.gui-pysrc.html#gui">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== VARIABLES ==================== -->
+<a name="section-Variables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Variables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="DEBUG"></a><span class="summary-name">DEBUG</span> = <code title="0">0</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="BG_COLOR"></a><span class="summary-name">BG_COLOR</span> = <code title="'#e0e0e0'">'#e0e0e0'</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="ACTIVEBG_COLOR"></a><span class="summary-name">ACTIVEBG_COLOR</span> = <code title="'#e0e0e0'">'#e0e0e0'</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="TEXT_COLOR"></a><span class="summary-name">TEXT_COLOR</span> = <code title="'black'">'black'</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="ENTRYSELECT_COLOR"></a><span class="summary-name">ENTRYSELECT_COLOR</span> = <code title="'#e0e0e0'">'#e0e0e0'</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="SELECT_COLOR"></a><span class="summary-name">SELECT_COLOR</span> = <code title="'#208070'">'#208070'</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="MESSAGE_COLOR"></a><span class="summary-name">MESSAGE_COLOR</span> = <code title="'#000060'">'#000060'</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="ERROR_COLOR"></a><span class="summary-name">ERROR_COLOR</span> = <code title="'#600000'">'#600000'</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="GUIERROR_COLOR"></a><span class="summary-name">GUIERROR_COLOR</span> = <code title="'#600000'">'#600000'</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="WARNING_COLOR"></a><span class="summary-name">WARNING_COLOR</span> = <code title="'#604000'">'#604000'</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="HEADER_COLOR"></a><span class="summary-name">HEADER_COLOR</span> = <code title="'#000000'">'#000000'</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.gui-module.html#COLOR_CONFIG" class="summary-name">COLOR_CONFIG</a> = <code title="{'background': BG_COLOR, 'highlightcolor': BG_COLOR, 'foreground': TEX\
+T_COLOR, 'highlightbackground': BG_COLOR}">{'background': BG_COLOR, 'highlightcolor': BG_C<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.gui-module.html#ENTRY_CONFIG" class="summary-name">ENTRY_CONFIG</a> = <code title="{'background': BG_COLOR, 'highlightcolor': BG_COLOR, 'foreground': TEX\
+T_COLOR, 'highlightbackground': BG_COLOR, 'selectbackground': ENTRYSEL\
+ECT_COLOR, 'selectforeground': TEXT_COLOR}">{'background': BG_COLOR, 'highlightcolor': BG_C<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.gui-module.html#SB_CONFIG" class="summary-name">SB_CONFIG</a> = <code title="{'troughcolor': BG_COLOR, 'activebackground': BG_COLOR, 'background': \
+BG_COLOR, 'highlightbackground': BG_COLOR}">{'troughcolor': BG_COLOR, 'activebackground': BG_C<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.gui-module.html#LISTBOX_CONFIG" class="summary-name">LISTBOX_CONFIG</a> = <code title="{'highlightcolor': BG_COLOR, 'highlightbackground': BG_COLOR, 'foregro\
+und': TEXT_COLOR, 'selectforeground': TEXT_COLOR, 'selectbackground': \
+ACTIVEBG_COLOR, 'background': BG_COLOR}">{'highlightcolor': BG_COLOR, 'highlightbackgr<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.gui-module.html#BUTTON_CONFIG" class="summary-name">BUTTON_CONFIG</a> = <code title="{'background': BG_COLOR, 'highlightthickness': 0, 'padx': 4, 'highligh\
+tbackground': BG_COLOR, 'foreground': TEXT_COLOR, 'highlightcolor': BG\
+_COLOR, 'activeforeground': TEXT_COLOR, 'activebackground': ACTIVEBG_C\
+OLOR, 'pady': 0}">{'background': BG_COLOR, 'highlightthickness':<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.gui-module.html#CBUTTON_CONFIG" class="summary-name">CBUTTON_CONFIG</a> = <code title="{'background': BG_COLOR, 'highlightthickness': 0, 'padx': 4, 'highligh\
+tbackground': BG_COLOR, 'foreground': TEXT_COLOR, 'highlightcolor': BG\
+_COLOR, 'activeforeground': TEXT_COLOR, 'activebackground': ACTIVEBG_C\
+OLOR, 'pady': 0, 'selectcolor': SELECT_COLOR}">{'background': BG_COLOR, 'highlightthickness'<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="SHOWMSG_CONFIG"></a><span class="summary-name">SHOWMSG_CONFIG</span> = <code title="CBUTTON_CONFIG.copy()">CBUTTON_CONFIG.copy()</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="SHOWWRN_CONFIG"></a><span class="summary-name">SHOWWRN_CONFIG</span> = <code title="CBUTTON_CONFIG.copy()">CBUTTON_CONFIG.copy()</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="SHOWERR_CONFIG"></a><span class="summary-name">SHOWERR_CONFIG</span> = <code title="CBUTTON_CONFIG.copy()">CBUTTON_CONFIG.copy()</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="PROGRESS_HEIGHT"></a><span class="summary-name">PROGRESS_HEIGHT</span> = <code title="16">16</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="PROGRESS_WIDTH"></a><span class="summary-name">PROGRESS_WIDTH</span> = <code title="200">200</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="PROGRESS_BG"></a><span class="summary-name">PROGRESS_BG</span> = <code title="'#305060'">'#305060'</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="PROGRESS_COLOR1"></a><span class="summary-name">PROGRESS_COLOR1</span> = <code title="'#30c070'">'#30c070'</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="PROGRESS_COLOR2"></a><span class="summary-name">PROGRESS_COLOR2</span> = <code title="'#60ffa0'">'#60ffa0'</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="PROGRESS_COLOR3"></a><span class="summary-name">PROGRESS_COLOR3</span> = <code title="'#106030'">'#106030'</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="DX"></a><span class="summary-name">DX</span> = <code title="1">1</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="DY"></a><span class="summary-name">DY</span> = <code title="1">1</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="DH"></a><span class="summary-name">DH</span> = <code title="1">1</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="DW"></a><span class="summary-name">DW</span> = <code title="3">3</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="IMPORT_PROGRESS"></a><span class="summary-name">IMPORT_PROGRESS</span> = <code title="0.1">0.1</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="BUILD_PROGRESS"></a><span class="summary-name">BUILD_PROGRESS</span> = <code title="0.2">0.2</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="WRITE_PROGRESS"></a><span class="summary-name">WRITE_PROGRESS</span> = <code title="1.0-BUILD_PROGRESS-IMPORT_PROGRESS">1.0-BUILD_PROGRESS-IMPORT_PROGRESS</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.gui-module.html#UP_GIF" class="summary-name">UP_GIF</a> = <code title="'''\
+R0lGODlhCwAMALMAANnZ2QDMmQCZZgBmZgAAAAAzM////////wAAAAAAAAAAAAAAAAAAAA\
+AAAAAA
+AAAAACH5BAEAAAAALAAAAAALAAwAAAQjEMhJKxCW4gzCIJxXZIEwFGDlDadqsii1sq1U0n\
+A64+ON
+5xEAOw==
+'''">'<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.gui-module.html#DOWN_GIF" class="summary-name">DOWN_GIF</a> = <code title="'''\
+R0lGODlhCwAMALMAANnZ2QDMmQCZZgBmZgAAAAAzM////////wAAAAAAAAAAAAAAAAAAAA\
+AAAAAA
+AAAAACH5BAEAAAAALAAAAAALAAwAAAQmEIQxgLVUCsppsVPngVtXEFfIfWk5nBe4xuSL0t\
+KLy/cu
+7JffJQIAOw==
+'''">'<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.gui-module.html#LEFT_GIF" class="summary-name">LEFT_GIF</a> = <code title="'''\
+R0lGODlhDAALAKIAANnZ2QDMmQCZZgBmZgAAAAAzM////////yH5BAEAAAAALAAAAAAMAA\
+sAAAM4
+CLocgaCrESiDoBshOAoAgBEyMzgAEIGCowsiOLoLgEBVOLoIqlSFo4OgC1RYM4Ogq1RYg6\
+DLVJgA
+Ow==
+'''">'<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.gui-module.html#RIGHT_GIF" class="summary-name">RIGHT_GIF</a> = <code title="'''\
+R0lGODlhDAALAKIAANnZ2QDMmQBmZgCZZgAzMwAAAP///////yH5BAEAAAAALAAAAAAMAA\
+sAAAM5
+GIGgyzIYgaCrIigTgaALIigyEQiqKLoTgaAoujuDgKJLVAgqIoJEBQAIIkKEhaArRFgIuk\
+qFoMsJ
+ADs=
+'''">'<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTION DETAILS ==================== -->
+<a name="section-FunctionDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Function Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-FunctionDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="document"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">document</span>(<span class="sig-arg">options</span>,
+        <span class="sig-arg">cancel</span>,
+        <span class="sig-arg">done</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.gui-pysrc.html#document">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Create the documentation for <code>modules</code>, using the options 
+  specified by <code>options</code>.  <code>document</code> is designed to 
+  be started in its own thread by <a 
+  href="epydoc.gui.EpydocGUI-class.html#_go" 
+  class="link">EpydocGUI._go</a>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>options</code></strong> (<code>dictionary</code>) - The options to use for generating documentation. This includes
+          keyword options that can be given to <a 
+          href="epydoc.docwriter.html.HTMLWriter-class.html" 
+          class="link">docwriter.html.HTMLWriter</a>, as well as the option
+          <code>target</code>, which controls where the output is written 
+          to.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== VARIABLES DETAILS ==================== -->
+<a name="section-VariablesDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-VariablesDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="COLOR_CONFIG"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">COLOR_CONFIG</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+{'background': BG_COLOR, 'highlightcolor': BG_COLOR, 'foreground': TEX<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+T_COLOR, 'highlightbackground': BG_COLOR}
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="ENTRY_CONFIG"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">ENTRY_CONFIG</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+{'background': BG_COLOR, 'highlightcolor': BG_COLOR, 'foreground': TEX<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+T_COLOR, 'highlightbackground': BG_COLOR, 'selectbackground': ENTRYSEL<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+ECT_COLOR, 'selectforeground': TEXT_COLOR}
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="SB_CONFIG"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">SB_CONFIG</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+{'troughcolor': BG_COLOR, 'activebackground': BG_COLOR, 'background': <span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+BG_COLOR, 'highlightbackground': BG_COLOR}
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="LISTBOX_CONFIG"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">LISTBOX_CONFIG</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+{'highlightcolor': BG_COLOR, 'highlightbackground': BG_COLOR, 'foregro<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+und': TEXT_COLOR, 'selectforeground': TEXT_COLOR, 'selectbackground': <span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+ACTIVEBG_COLOR, 'background': BG_COLOR}
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="BUTTON_CONFIG"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">BUTTON_CONFIG</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+{'background': BG_COLOR, 'highlightthickness': 0, 'padx': 4, 'highligh<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+tbackground': BG_COLOR, 'foreground': TEXT_COLOR, 'highlightcolor': BG<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+_COLOR, 'activeforeground': TEXT_COLOR, 'activebackground': ACTIVEBG_C<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+OLOR, 'pady': 0}
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="CBUTTON_CONFIG"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">CBUTTON_CONFIG</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+{'background': BG_COLOR, 'highlightthickness': 0, 'padx': 4, 'highligh<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+tbackground': BG_COLOR, 'foreground': TEXT_COLOR, 'highlightcolor': BG<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+_COLOR, 'activeforeground': TEXT_COLOR, 'activebackground': ACTIVEBG_C<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+OLOR, 'pady': 0, 'selectcolor': SELECT_COLOR}
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="UP_GIF"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">UP_GIF</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+'''\
+R0lGODlhCwAMALMAANnZ2QDMmQCZZgBmZgAAAAAzM////////wAAAAAAAAAAAAAAAAAAAA<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+AAAAAA
+AAAAACH5BAEAAAAALAAAAAALAAwAAAQjEMhJKxCW4gzCIJxXZIEwFGDlDadqsii1sq1U0n<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+A64+ON
+5xEAOw==
+'''
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="DOWN_GIF"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">DOWN_GIF</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+'''\
+R0lGODlhCwAMALMAANnZ2QDMmQCZZgBmZgAAAAAzM////////wAAAAAAAAAAAAAAAAAAAA<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+AAAAAA
+AAAAACH5BAEAAAAALAAAAAALAAwAAAQmEIQxgLVUCsppsVPngVtXEFfIfWk5nBe4xuSL0t<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+KLy/cu
+7JffJQIAOw==
+'''
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="LEFT_GIF"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">LEFT_GIF</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+'''\
+R0lGODlhDAALAKIAANnZ2QDMmQCZZgBmZgAAAAAzM////////yH5BAEAAAAALAAAAAAMAA<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+sAAAM4
+CLocgaCrESiDoBshOAoAgBEyMzgAEIGCowsiOLoLgEBVOLoIqlSFo4OgC1RYM4Ogq1RYg6<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+DLVJgA
+Ow==
+'''
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="RIGHT_GIF"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">RIGHT_GIF</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+'''\
+R0lGODlhDAALAKIAANnZ2QDMmQBmZgCZZgAzMwAAAP///////yH5BAEAAAAALAAAAAAMAA<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+sAAAM5
+GIGgyzIYgaCrIigTgaALIigyEQiqKLoTgaAoujuDgKJLVAgqIoJEBQAIIkKEhaArRFgIuk<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+qFoMsJ
+ADs=
+'''
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:03:04 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

@@ -1,0 +1,677 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.restructuredtext._EpydocLaTeXTranslator</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        <a href="epydoc.markup.restructuredtext-module.html">Module&nbsp;restructuredtext</a> ::
+        Class&nbsp;_EpydocLaTeXTranslator
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.restructuredtext._EpydocLaTeXTranslator-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class _EpydocLaTeXTranslator</h1><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocLaTeXTranslator">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_m_21" name="uml_class_diagram_for_epydoc_m_21">
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.generator" alt="" coords="23,172,263,191" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.latex_head" alt="" coords="23,191,263,210" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.compound_enumerators" alt="" coords="23,210,263,228" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.latex_equivalents" alt="" coords="23,228,263,247" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.hyperlink_color" alt="" coords="23,247,263,266" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.use_optionlist_for_docinfo" alt="" coords="23,266,263,284" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.section_enumerator_separator" alt="" coords="23,284,263,303" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.use_latex_toc" alt="" coords="23,303,263,322" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.encoding" alt="" coords="23,322,263,340" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.linking" alt="" coords="23,340,263,359" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.section_prefix_for_enumerators" alt="" coords="23,359,263,378" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.attribution_formats" alt="" coords="23,378,263,396" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.stylesheet" alt="" coords="23,396,263,415" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.depart_line" alt="" coords="23,418,263,436" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.depart_strong" alt="" coords="23,436,263,455" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.visit_definition_list" alt="" coords="23,455,263,474" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.depart_figure" alt="" coords="23,474,263,492" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.visit_block_quote" alt="" coords="23,492,263,511" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.depart_field" alt="" coords="23,511,263,530" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.visit_subscript" alt="" coords="23,530,263,548" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.unicode_to_latex" alt="" coords="23,548,263,567" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.depart_entry" alt="" coords="23,567,263,586" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.depart_image" alt="" coords="23,586,263,604" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.depart_footnote" alt="" coords="23,604,263,623" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.depart_thead" alt="" coords="23,623,263,642" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.depart_subscript" alt="" coords="23,642,263,660" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator.visit_label" alt="" coords="23,679,263,698" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.latex2e.LaTeXTranslator" alt="" coords="11,150,275,704" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocLaTeXTranslator&#45;class.html#settings" title="epydoc.markup.restructuredtext._EpydocLaTeXTranslator.settings" alt="" coords="17,746,268,764" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocLaTeXTranslator&#45;class.html#depart_document" title="epydoc.markup.restructuredtext._EpydocLaTeXTranslator.depart_document" alt="" coords="17,767,268,786" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocLaTeXTranslator&#45;class.html#visit_document" title="epydoc.markup.restructuredtext._EpydocLaTeXTranslator.visit_document" alt="" coords="17,786,268,804" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocLaTeXTranslator&#45;class.html#visit_dotgraph" title="epydoc.markup.restructuredtext._EpydocLaTeXTranslator.visit_dotgraph" alt="" coords="17,804,268,823" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocLaTeXTranslator&#45;class.html#visit_title_reference" title="epydoc.markup.restructuredtext._EpydocLaTeXTranslator.visit_title_reference" alt="" coords="17,823,268,842" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocLaTeXTranslator&#45;class.html#__init__" title="epydoc.markup.restructuredtext._EpydocLaTeXTranslator.__init__" alt="" coords="17,842,268,860" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocLaTeXTranslator&#45;class.html#visit_doctest_block" title="epydoc.markup.restructuredtext._EpydocLaTeXTranslator.visit_doctest_block" alt="" coords="17,860,268,879" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocLaTeXTranslator&#45;class.html" title="epydoc.markup.restructuredtext._EpydocLaTeXTranslator" alt="" coords="5,723,280,886" />
+<area shape="rect" href="javascript: void(0);" title="Tuple containing node class names (as strings)." alt="" coords="47,28,239,47" />
+<area shape="rect" href="javascript: void(0);" title="Call self.&quot;visit_ + node class name&quot; with node as parameter." alt="" coords="47,50,239,68" />
+<area shape="rect" href="javascript: void(0);" title="Called before exiting unknown Node types." alt="" coords="47,68,239,87" />
+<area shape="rect" href="javascript: void(0);" title="Called when entering unknown Node types." alt="" coords="47,87,239,106" />
+<area shape="rect" href="javascript: void(0);" title="Call self.&quot;depart_ + node class name&quot; with node as parameter." alt="" coords="47,106,239,124" />
+<area shape="rect" href="javascript: void(0);" title="&quot;Visitor&quot; pattern GoF95 abstract superclass implementation for document tree traversals." alt="" coords="35,6,251,131" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_m_21.gif" alt='' usemap="#uml_class_diagram_for_epydoc_m_21" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._EpydocLaTeXTranslator-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">document</span>,
+        <span class="summary-sig-arg">docstring_linker</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocLaTeXTranslator.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._EpydocLaTeXTranslator-class.html#visit_title_reference" class="summary-sig-name">visit_title_reference</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocLaTeXTranslator.visit_title_reference">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._EpydocLaTeXTranslator-class.html#visit_document" class="summary-sig-name">visit_document</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocLaTeXTranslator.visit_document">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._EpydocLaTeXTranslator-class.html#depart_document" class="summary-sig-name">depart_document</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocLaTeXTranslator.depart_document">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="visit_dotgraph"></a><span class="summary-sig-name">visit_dotgraph</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocLaTeXTranslator.visit_dotgraph">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._EpydocLaTeXTranslator-class.html#visit_doctest_block" class="summary-sig-name">visit_doctest_block</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocLaTeXTranslator.visit_doctest_block">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.writers.latex2e.LaTeXTranslator</code></b>:
+      <code>astext</code>,
+      <code>attval</code>,
+      <code>bookmark</code>,
+      <code>depart_Text</code>,
+      <code>depart_address</code>,
+      <code>depart_admonition</code>,
+      <code>depart_attention</code>,
+      <code>depart_attribution</code>,
+      <code>depart_author</code>,
+      <code>depart_authors</code>,
+      <code>depart_block_quote</code>,
+      <code>depart_bullet_list</code>,
+      <code>depart_caption</code>,
+      <code>depart_caution</code>,
+      <code>depart_citation</code>,
+      <code>depart_citation_reference</code>,
+      <code>depart_classifier</code>,
+      <code>depart_colspec</code>,
+      <code>depart_compound</code>,
+      <code>depart_contact</code>,
+      <code>depart_container</code>,
+      <code>depart_copyright</code>,
+      <code>depart_danger</code>,
+      <code>depart_date</code>,
+      <code>depart_decoration</code>,
+      <code>depart_definition</code>,
+      <code>depart_definition_list</code>,
+      <code>depart_definition_list_item</code>,
+      <code>depart_description</code>,
+      <code>depart_docinfo</code>,
+      <code>depart_docinfo_item</code>,
+      <code>depart_doctest_block</code>,
+      <code>depart_emphasis</code>,
+      <code>depart_entry</code>,
+      <code>depart_enumerated_list</code>,
+      <code>depart_error</code>,
+      <code>depart_field</code>,
+      <code>depart_field_argument</code>,
+      <code>depart_field_body</code>,
+      <code>depart_field_list</code>,
+      <code>depart_field_name</code>,
+      <code>depart_figure</code>,
+      <code>depart_footer</code>,
+      <code>depart_footnote</code>,
+      <code>depart_footnote_reference</code>,
+      <code>depart_generated</code>,
+      <code>depart_header</code>,
+      <code>depart_hint</code>,
+      <code>depart_image</code>,
+      <code>depart_important</code>,
+      <code>depart_inline</code>,
+      <code>depart_interpreted</code>,
+      <code>depart_label</code>,
+      <code>depart_legend</code>,
+      <code>depart_line</code>,
+      <code>depart_line_block</code>,
+      <code>depart_list_item</code>,
+      <code>depart_literal</code>,
+      <code>depart_literal_block</code>,
+      <code>depart_meta</code>,
+      <code>depart_note</code>,
+      <code>depart_option</code>,
+      <code>depart_option_argument</code>,
+      <code>depart_option_group</code>,
+      <code>depart_option_list</code>,
+      <code>depart_option_list_item</code>,
+      <code>depart_option_string</code>,
+      <code>depart_organization</code>,
+      <code>depart_paragraph</code>,
+      <code>depart_problematic</code>,
+      <code>depart_reference</code>,
+      <code>depart_revision</code>,
+      <code>depart_row</code>,
+      <code>depart_rubric</code>,
+      <code>depart_section</code>,
+      <code>depart_sidebar</code>,
+      <code>depart_status</code>,
+      <code>depart_strong</code>,
+      <code>depart_subscript</code>,
+      <code>depart_subtitle</code>,
+      <code>depart_superscript</code>,
+      <code>depart_system_message</code>,
+      <code>depart_table</code>,
+      <code>depart_target</code>,
+      <code>depart_tbody</code>,
+      <code>depart_term</code>,
+      <code>depart_tgroup</code>,
+      <code>depart_thead</code>,
+      <code>depart_tip</code>,
+      <code>depart_title</code>,
+      <code>depart_title_reference</code>,
+      <code>depart_topic</code>,
+      <code>depart_transition</code>,
+      <code>depart_version</code>,
+      <code>depart_warning</code>,
+      <code>encode</code>,
+      <code>label_delim</code>,
+      <code>language_label</code>,
+      <code>latex_image_length</code>,
+      <code>to_latex_encoding</code>,
+      <code>unicode_to_latex</code>,
+      <code>unimplemented_visit</code>,
+      <code>visit_Text</code>,
+      <code>visit_address</code>,
+      <code>visit_admonition</code>,
+      <code>visit_attention</code>,
+      <code>visit_attribution</code>,
+      <code>visit_author</code>,
+      <code>visit_authors</code>,
+      <code>visit_block_quote</code>,
+      <code>visit_bullet_list</code>,
+      <code>visit_caption</code>,
+      <code>visit_caution</code>,
+      <code>visit_citation</code>,
+      <code>visit_citation_reference</code>,
+      <code>visit_classifier</code>,
+      <code>visit_colspec</code>,
+      <code>visit_comment</code>,
+      <code>visit_compound</code>,
+      <code>visit_contact</code>,
+      <code>visit_container</code>,
+      <code>visit_copyright</code>,
+      <code>visit_danger</code>,
+      <code>visit_date</code>,
+      <code>visit_decoration</code>,
+      <code>visit_definition</code>,
+      <code>visit_definition_list</code>,
+      <code>visit_definition_list_item</code>,
+      <code>visit_description</code>,
+      <code>visit_docinfo</code>,
+      <code>visit_docinfo_item</code>,
+      <code>visit_emphasis</code>,
+      <code>visit_entry</code>,
+      <code>visit_enumerated_list</code>,
+      <code>visit_error</code>,
+      <code>visit_field</code>,
+      <code>visit_field_argument</code>,
+      <code>visit_field_body</code>,
+      <code>visit_field_list</code>,
+      <code>visit_field_name</code>,
+      <code>visit_figure</code>,
+      <code>visit_footer</code>,
+      <code>visit_footnote</code>,
+      <code>visit_footnote_reference</code>,
+      <code>visit_generated</code>,
+      <code>visit_header</code>,
+      <code>visit_hint</code>,
+      <code>visit_image</code>,
+      <code>visit_important</code>,
+      <code>visit_inline</code>,
+      <code>visit_interpreted</code>,
+      <code>visit_label</code>,
+      <code>visit_legend</code>,
+      <code>visit_line</code>,
+      <code>visit_line_block</code>,
+      <code>visit_list_item</code>,
+      <code>visit_literal</code>,
+      <code>visit_literal_block</code>,
+      <code>visit_meta</code>,
+      <code>visit_note</code>,
+      <code>visit_option</code>,
+      <code>visit_option_argument</code>,
+      <code>visit_option_group</code>,
+      <code>visit_option_list</code>,
+      <code>visit_option_list_item</code>,
+      <code>visit_option_string</code>,
+      <code>visit_organization</code>,
+      <code>visit_paragraph</code>,
+      <code>visit_problematic</code>,
+      <code>visit_raw</code>,
+      <code>visit_reference</code>,
+      <code>visit_revision</code>,
+      <code>visit_row</code>,
+      <code>visit_rubric</code>,
+      <code>visit_section</code>,
+      <code>visit_sidebar</code>,
+      <code>visit_status</code>,
+      <code>visit_strong</code>,
+      <code>visit_subscript</code>,
+      <code>visit_substitution_definition</code>,
+      <code>visit_substitution_reference</code>,
+      <code>visit_subtitle</code>,
+      <code>visit_superscript</code>,
+      <code>visit_system_message</code>,
+      <code>visit_table</code>,
+      <code>visit_target</code>,
+      <code>visit_tbody</code>,
+      <code>visit_term</code>,
+      <code>visit_tgroup</code>,
+      <code>visit_thead</code>,
+      <code>visit_tip</code>,
+      <code>visit_title</code>,
+      <code>visit_topic</code>,
+      <code>visit_transition</code>,
+      <code>visit_version</code>,
+      <code>visit_warning</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.nodes.NodeVisitor</code></b>:
+      <code>dispatch_departure</code>,
+      <code>dispatch_visit</code>,
+      <code>unknown_departure</code>,
+      <code>unknown_visit</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="settings"></a><span class="summary-name">settings</span> = <code title="True">True</code>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.writers.latex2e.LaTeXTranslator</code></b>:
+      <code>attribution_formats</code>,
+      <code>compound_enumerators</code>,
+      <code>encoding</code>,
+      <code>generator</code>,
+      <code>hyperlink_color</code>,
+      <code>latex_equivalents</code>,
+      <code>latex_head</code>,
+      <code>linking</code>,
+      <code>section_enumerator_separator</code>,
+      <code>section_prefix_for_enumerators</code>,
+      <code>stylesheet</code>,
+      <code>use_latex_toc</code>,
+      <code>use_optionlist_for_docinfo</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.nodes.NodeVisitor</code></b>:
+      <code>optional</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">document</span>,
+        <span class="sig-arg">docstring_linker</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocLaTeXTranslator.__init__">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.writers.latex2e.LaTeXTranslator.__init__
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="visit_title_reference"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">visit_title_reference</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">node</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocLaTeXTranslator.visit_title_reference">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.writers.latex2e.LaTeXTranslator.visit_title_reference
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="visit_document"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">visit_document</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">node</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocLaTeXTranslator.visit_document">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.writers.latex2e.LaTeXTranslator.visit_document
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="depart_document"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">depart_document</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">node</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocLaTeXTranslator.depart_document">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.writers.latex2e.LaTeXTranslator.depart_document
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="visit_doctest_block"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">visit_doctest_block</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">node</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocLaTeXTranslator.visit_doctest_block">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.writers.latex2e.LaTeXTranslator.visit_doctest_block
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:05:20 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

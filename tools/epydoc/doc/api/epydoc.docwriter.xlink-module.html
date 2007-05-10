@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.docwriter.xlink</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.docwriter-module.html">Package&nbsp;docwriter</a> ::
+        Module&nbsp;xlink
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.docwriter.xlink-module.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== MODULE DESCRIPTION ==================== -->
+<h1 class="epydoc">Module xlink</h1><span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html">source&nbsp;code</a></span><br /><br />
+<p>A <a class="rst-rst-rst-rst-reference rst-rst-rst-reference rst-rst-reference rst-reference" href="http://docutils.sourceforge.net/" target="_top">Docutils</a> interpreted text role for cross-API reference support.</p>
+<p>This module allows a <a class="rst-reference" href="http://docutils.sourceforge.net/" target="_top">Docutils</a> document to refer to elements defined in
+external API documentation. It is possible to refer to many external API
+from the same document.</p>
+<p>Each API documentation is assigned a new interpreted text role: using such
+interpreted text, an user can specify an object name inside an API
+documentation. The system will convert such text into an url and generate a
+reference to it. For example, if the API <tt class="rst-docutils literal"><span class="pre">db</span></tt> is defined, being a database
+package, then a certain method may be referred as:</p>
+<pre class="rst-literal-block">
+:db:`Connection.cursor()`
+</pre>
+<p>To define a new API, an <em>index file</em> must be provided. This file contains
+a mapping from the object name to the URL part required to resolve such object.</p>
+<div class="rst-section" id="rst-index-file">
+<h1 class="heading">Index file</h1>
+<p>Each line in the the index file describes an object.</p>
+<p>Each line contains the fully qualified name of the object and the URL at which
+the documentation is located. The fields are separated by a <tt class="rst-docutils literal"><span class="pre">&lt;tab&gt;</span></tt>
+character.</p>
+<p>The URL's in the file are relative from the documentation root: the system can
+be configured to add a prefix in front of each returned URL.</p>
+</div>
+<div class="rst-section" id="rst-allowed-names">
+<h1 class="heading">Allowed names</h1>
+<p>When a name is used in an API text role, it is split over any <em>separator</em>.
+The separators defined are '<tt class="rst-docutils literal"><span class="pre">.</span></tt>', '<tt class="rst-docutils literal"><span class="pre">::</span></tt>', '<tt class="rst-docutils literal"><span class="pre">-&gt;</span></tt>'. All the text from the
+first noise char (neither a separator nor alphanumeric or '<tt class="rst-docutils literal"><span class="pre">_</span></tt>') is
+discarded. The same algorithm is applied when the index file is read.</p>
+<p>First the sequence of name parts is looked for in the provided index file.
+If no matching name is found, a partial match against the trailing part of the
+names in the index is performed. If no object is found, or if the trailing part
+of the name may refer to many objects, a warning is issued and no reference
+is created.</p>
+</div>
+<div class="rst-section" id="rst-configuration">
+<h1 class="heading">Configuration</h1>
+<p>This module provides the class <a href="epydoc.docwriter.xlink.ApiLinkReader-class.html" class="link">ApiLinkReader</a> a replacement for the Docutils
+standalone reader. Such reader specifies the settings required for the
+API canonical roles configuration. The same command line options are exposed by
+Epydoc.</p>
+<p>The script <tt class="rst-docutils literal"><span class="pre">apirst2html.py</span></tt> is a frontend for the <a href="epydoc.docwriter.xlink.ApiLinkReader-class.html" class="link">ApiLinkReader</a> reader.</p>
+<p>API Linking Options:</p>
+<pre class="rst-literal-block">
+--external-api=NAME
+                    Define a new API document.  A new interpreted text
+                    role NAME will be added.
+--external-api-file=NAME:FILENAME
+                    Use records in FILENAME to resolve objects in the API
+                    named NAME.
+--external-api-root=NAME:STRING
+                    Use STRING as prefix for the URL generated from the
+                    API NAME.
+</pre>
+</div><br /><br />
+
+<hr />
+<div class="fields">      <p><strong>Version:</strong>
+        1556
+      </p>
+      <p><strong>Author:</strong>
+        Daniele Varrazzo
+      </p>
+      <p><strong>Copyright:</strong>
+        Copyright (C) 2007 by Daniele Varrazzo
+      </p>
+</div><!-- ==================== CLASSES ==================== -->
+<a name="section-Classes"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Classes"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.xlink.UrlGenerator-class.html" class="summary-name">UrlGenerator</a><br />
+      Generate URL from an object name.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.xlink.VoidUrlGenerator-class.html" class="summary-name">VoidUrlGenerator</a><br />
+      Don't actually know any url, but don't report any error.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.xlink.DocUrlGenerator-class.html" class="summary-name">DocUrlGenerator</a><br />
+      Read a <em>documentation index</em> and generate URL's for it.
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Command line parsing</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.xlink.ApiLinkReader-class.html" class="summary-name">ApiLinkReader</a><br />
+      A Docutils standalone reader allowing external documentation links.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTIONS ==================== -->
+<a name="section-Functions"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Functions</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Functions"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;API register</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.xlink-module.html#register_api" class="summary-sig-name">register_api</a>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">generator</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Register the API <code class="link">name</code> into the <a href="epydoc.docwriter.xlink-module.html#api_register" class="link">api_register</a>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#register_api">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.xlink-module.html#set_api_file" class="summary-sig-name">set_api_file</a>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">file</span>)</span><br />
+      Set an URL generator populated with data from <code class="link">file</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#set_api_file">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.xlink-module.html#set_api_root" class="summary-sig-name">set_api_root</a>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">prefix</span>)</span><br />
+      Set the root for the URLs returned by a registered URL generator.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#set_api_root">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.xlink-module.html#create_api_role" class="summary-sig-name">create_api_role</a>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">problematic</span>)</span><br />
+      Create and register a new role to create links for an API documentation.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#create_api_role">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Command line parsing</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="split_name"></a><span class="summary-sig-name">split_name</span>(<span class="summary-sig-arg">value</span>)</span><br />
+      Split an option in form <tt class="rst-docutils literal"><span class="pre">NAME:VALUE</span></tt> and check if <tt class="rst-docutils literal"><span class="pre">NAME</span></tt> exists.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#split_name">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== VARIABLES ==================== -->
+<a name="section-Variables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Variables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;API register</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="api_register"></a><span class="summary-name">api_register</span> = <code title="{}"><code class="variable-group">{</code><code class="variable-group">}</code></code><br />
+      Mapping from the API name to the <a href="epydoc.docwriter.xlink.UrlGenerator-class.html" class="link">UrlGenerator</a> to be used.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTION DETAILS ==================== -->
+<a name="section-FunctionDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Function Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-FunctionDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="register_api"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">register_api</span>(<span class="sig-arg">name</span>,
+        <span class="sig-arg">generator</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#register_api">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  <p>Register the API <code class="link">name</code> into the <a href="epydoc.docwriter.xlink-module.html#api_register" class="link">api_register</a>.</p>
+<p>A registered API is available to the markup as the interpreted text
+role <tt class="rst-docutils literal"><span class="pre">name</span></tt>.</p>
+<p>If a <code class="link">generator</code> is not provided, register a <a href="epydoc.docwriter.xlink.VoidUrlGenerator-class.html" class="link">VoidUrlGenerator</a> instance:
+in this case no warning will be issued for missing names, but no URL will
+be generated and all the dotted names will simply be rendered as literals.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>name</code></strong> (<code class="link">str</code>) - the name of the generator to be registered</li>
+        <li><strong class="pname"><code>generator</code></strong> (<a href="epydoc.docwriter.xlink.UrlGenerator-class.html" class="link">UrlGenerator</a>) - the object to register to translate names into URLs.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="set_api_file"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_api_file</span>(<span class="sig-arg">name</span>,
+        <span class="sig-arg">file</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#set_api_file">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  <p>Set an URL generator populated with data from <code class="link">file</code>.</p>
+<p>Use <code class="link">file</code> to populate a new <a href="epydoc.docwriter.xlink.DocUrlGenerator-class.html" class="link">DocUrlGenerator</a> instance and register it
+as <code class="link">name</code>.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>name</code></strong> (<code class="link">str</code>) - the name of the generator to be registered</li>
+        <li><strong class="pname"><code>file</code></strong> (<code class="link">str</code> or file) - the file to parse populate the URL generator</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="set_api_root"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_api_root</span>(<span class="sig-arg">name</span>,
+        <span class="sig-arg">prefix</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#set_api_root">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Set the root for the URLs returned by a registered URL generator.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>name</code></strong> (<code class="link">str</code>) - the name of the generator to be updated</li>
+        <li><strong class="pname"><code>prefix</code></strong> (<code class="link">str</code>) - the prefix for the generated URL's</li>
+    </ul></dd>
+    <dt>Raises:</dt>
+    <dd><ul class="nomargin-top">
+        <li><code><strong class='fraise'>IndexError</strong></code> - <code class="link">name</code> is not a registered generator</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="create_api_role"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">create_api_role</span>(<span class="sig-arg">name</span>,
+        <span class="sig-arg">problematic</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#create_api_role">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  <p>Create and register a new role to create links for an API documentation.</p>
+<p>Create a role called <code class="link">name</code>, which will use the <tt class="rst-docutils literal"><span class="pre">name</span></tt> registered
+URL resolver to create a link for an object.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:03:04 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

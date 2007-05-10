@@ -1,0 +1,681 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.apidoc</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        Module&nbsp;apidoc
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.apidoc-module.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== MODULE DESCRIPTION ==================== -->
+<h1 class="epydoc">Module apidoc</h1><span class="codelink"><a href="epydoc.apidoc-pysrc.html">source&nbsp;code</a></span><br /><br />
+<p>Classes for encoding API documentation about Python programs. These 
+  classes are used as a common representation for combining information 
+  derived from introspection and from parsing.</p>
+  <p>The API documentation for a Python program is encoded using a graph of
+  <a href="epydoc.apidoc.APIDoc-class.html" class="link">APIDoc</a> 
+  objects, each of which encodes information about a single Python variable
+  or value.  <code>APIDoc</code> has two direct subclasses: <a 
+  href="epydoc.apidoc.VariableDoc-class.html" class="link">VariableDoc</a>,
+  for documenting variables; and <a 
+  href="epydoc.apidoc.ValueDoc-class.html" class="link">ValueDoc</a>, for 
+  documenting values.  The <code>ValueDoc</code> class is subclassed 
+  further, to define the different pieces of information that should be 
+  recorded about each value type:</p>
+  <p><center><table border="0" cellpadding="0" cellspacing="0" 
+  class="graph">
+    <tr><td align="center">
+    <map id="class_hierarchy_for_apidoc" name="class_hierarchy_for_apidoc">
+  <area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html" 
+  title="APIDoc" alt="" coords="299,7,368,31" />
+  <area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html" 
+  title="ValueDoc" alt="" coords="239,63,319,87" />
+  <area shape="rect" href="epydoc.apidoc.VariableDoc&#45;class.html" 
+  title="VariableDoc" alt="" coords="343,63,436,87" />
+  <area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html" 
+  title="ClassDoc" alt="" coords="97,175,175,199" />
+  <area shape="rect" href="epydoc.apidoc.ClassMethodDoc&#45;class.html" 
+  title="ClassMethodDoc" alt="" coords="369,175,492,199" />
+  <area shape="rect" href="epydoc.apidoc.GenericValueDoc&#45;class.html" 
+  title="GenericValueDoc" alt="" coords="5,119,131,143" />
+  <area shape="rect" href="epydoc.apidoc.ModuleDoc&#45;class.html" 
+  title="ModuleDoc" alt="" coords="199,175,287,199" />
+  <area shape="rect" href="epydoc.apidoc.NamespaceDoc&#45;class.html" 
+  title="NamespaceDoc" alt="" coords="155,119,272,143" />
+  <area shape="rect" href="epydoc.apidoc.PropertyDoc&#45;class.html" 
+  title="PropertyDoc" alt="" coords="296,119,392,143" />
+  <area shape="rect" href="epydoc.apidoc.RoutineDoc&#45;class.html" 
+  title="RoutineDoc" alt="" coords="416,119,507,143" />
+  <area shape="rect" href="epydoc.apidoc.StaticMethodDoc&#45;class.html" 
+  title="StaticMethodDoc" alt="" coords="516,175,639,199" />
+  </map>
+    <img src="class_hierarchy_for_apidoc.gif" alt='Class Hierarchy for 
+  APIDoc' usemap="#class_hierarchy_for_apidoc" ismap="ismap" 
+  class="graph-with-title" />
+    </td></tr>
+    <tr><td align='center'>
+  <span class="graph-title">Class Hierarchy for APIDoc</span>
+    </td></tr>
+  </table><br/></center></p>
+  The distinction between variables and values is intentionally made 
+  explicit.  This allows us to distinguish information about a variable 
+  itself (such as whether it should be considered 'public' in its 
+  containing namespace) from information about the value it contains (such 
+  as what type the value has).  This distinction is also important because 
+  several variables can contain the same value: each variable should be 
+  described by a separate <code>VariableDoc</code>; but we only need one 
+  <code>ValueDoc</code>, since they share a single value.<br /><br />
+
+<hr />
+<div class="fields">      <p><strong>To Do:</strong>
+        Add a cache to canonical name lookup?
+      </p>
+</div><!-- ==================== CLASSES ==================== -->
+<a name="section-Classes"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Classes"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.DottedName-class.html" class="summary-name">DottedName</a><br />
+      A sequence of identifiers, separated by periods, used to name a 
+        Python variable, value, or argument.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc._Sentinel-class.html" class="summary-name">_Sentinel</a><br />
+      A unique value that won't compare equal to any other value.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.APIDoc-class.html" class="summary-name">APIDoc</a><br />
+      API documentation information for a single element of a Python 
+        program.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.VariableDoc-class.html" class="summary-name">VariableDoc</a><br />
+      API documentation information about a single Python 
+        variable.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.ValueDoc-class.html" class="summary-name">ValueDoc</a><br />
+      API documentation information about a single Python value.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.GenericValueDoc-class.html" class="summary-name">GenericValueDoc</a><br />
+      API documentation about a 'generic' value, i.e., one that does 
+        not have its own docstring or any information other than its value 
+        and parse representation.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.NamespaceDoc-class.html" class="summary-name">NamespaceDoc</a><br />
+      API documentation information about a singe Python namespace 
+        value.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.ModuleDoc-class.html" class="summary-name">ModuleDoc</a><br />
+      API documentation information about a single module.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.ClassDoc-class.html" class="summary-name">ClassDoc</a><br />
+      API documentation information about a single class.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.RoutineDoc-class.html" class="summary-name">RoutineDoc</a><br />
+      API documentation information about a single routine.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.ClassMethodDoc-class.html" class="summary-name">ClassMethodDoc</a>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.StaticMethodDoc-class.html" class="summary-name">StaticMethodDoc</a>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.PropertyDoc-class.html" class="summary-name">PropertyDoc</a><br />
+      API documentation information about a single property.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.DocIndex-class.html" class="summary-name">DocIndex</a><br />
+      [xx] out of date.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTIONS ==================== -->
+<a name="section-Functions"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Functions</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Functions"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc-module.html#reachable_valdocs" class="summary-sig-name">reachable_valdocs</a>(<span class="summary-sig-arg">root</span>,
+        <span class="summary-sig-arg">**filters</span>)</span><br />
+      Return a list of all <code>ValueDoc</code>s that can be reached, 
+      directly or indirectly from the given root list of 
+      <code>ValueDoc</code>s.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#reachable_valdocs">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_reachable_valdo-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_reachable_valdo-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_reachable_valdo" name="call_graph_for_reachable_valdo">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="APIDoc.__cmp__()" alt="" coords="559,6,729,38" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__hash__" title="APIDoc.__hash__()" alt="" coords="559,62,729,94" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#apidoc_links" title="ClassDoc.apidoc_links()" alt="" coords="541,118,747,150" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#reachable_valdocs" title="DocIndex.reachable_valdocs()" alt="" coords="7,174,257,206" />
+<area shape="rect" href="epydoc.apidoc&#45;module.html#reachable_valdocs" title="reachable_valdocs()" alt="" coords="307,174,480,206" />
+<area shape="rect" href="epydoc.apidoc.ModuleDoc&#45;class.html#apidoc_links" title="ModuleDoc.apidoc_links()" alt="" coords="532,174,756,206" />
+<area shape="rect" href="epydoc.apidoc.PropertyDoc&#45;class.html#apidoc_links" title="PropertyDoc.apidoc_links()" alt="" coords="529,230,759,262" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#apidoc_links" title="ValueDoc.apidoc_links()" alt="" coords="539,286,749,318" />
+<area shape="rect" href="epydoc.apidoc.VariableDoc&#45;class.html#apidoc_links" title="VariableDoc.apidoc_links()" alt="" coords="529,342,759,374" />
+</map>
+  <img src="call_graph_for_reachable_valdo.gif" alt='' usemap="#call_graph_for_reachable_valdo" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_flatten"></a><span class="summary-sig-name">_flatten</span>(<span class="summary-sig-arg">lst</span>,
+        <span class="summary-sig-arg">out</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Return a flattened version of <code>lst</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#_flatten">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__flatten-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__flatten-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__flatten" name="call_graph_for__flatten">
+<area shape="rect" href="epydoc.apidoc.RoutineDoc&#45;class.html#all_args" title="RoutineDoc.all_args()" alt="" coords="7,6,193,38" />
+<area shape="rect" href="epydoc.apidoc&#45;module.html#_flatten" title="_flatten()" alt="" coords="244,6,335,38" />
+</map>
+  <img src="call_graph_for__flatten.gif" alt='' usemap="#call_graph_for__flatten" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc-module.html#pp_apidoc" class="summary-sig-name">pp_apidoc</a>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">doublespace</span>=<span class="summary-sig-default">0</span>,
+        <span class="summary-sig-arg">depth</span>=<span class="summary-sig-default">5</span>,
+        <span class="summary-sig-arg">exclude</span>=<span class="summary-sig-default"><code class="variable-group">(</code><code class="variable-group">)</code></span>,
+        <span class="summary-sig-arg">include</span>=<span class="summary-sig-default"><code class="variable-group">(</code><code class="variable-group">)</code></span>,
+        <span class="summary-sig-arg">backpointers</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Returns:
+      A multiline pretty-printed string representation for the given 
+      <code>APIDoc</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#pp_apidoc">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_pp_list"></a><span class="summary-sig-name">_pp_list</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">items</span>,
+        <span class="summary-sig-arg">doublespace</span>,
+        <span class="summary-sig-arg">depth</span>,
+        <span class="summary-sig-arg">exclude</span>,
+        <span class="summary-sig-arg">include</span>,
+        <span class="summary-sig-arg">backpointers</span>,
+        <span class="summary-sig-arg">is_last</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#_pp_list">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_pp_dict"></a><span class="summary-sig-name">_pp_dict</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">dict</span>,
+        <span class="summary-sig-arg">doublespace</span>,
+        <span class="summary-sig-arg">depth</span>,
+        <span class="summary-sig-arg">exclude</span>,
+        <span class="summary-sig-arg">include</span>,
+        <span class="summary-sig-arg">backpointers</span>,
+        <span class="summary-sig-arg">is_last</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#_pp_dict">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_pp_apidoc"></a><span class="summary-sig-name">_pp_apidoc</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">val</span>,
+        <span class="summary-sig-arg">doublespace</span>,
+        <span class="summary-sig-arg">depth</span>,
+        <span class="summary-sig-arg">exclude</span>,
+        <span class="summary-sig-arg">include</span>,
+        <span class="summary-sig-arg">backpointers</span>,
+        <span class="summary-sig-arg">is_last</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#_pp_apidoc">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_pp_val"></a><span class="summary-sig-name">_pp_val</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">val</span>,
+        <span class="summary-sig-arg">doublespace</span>,
+        <span class="summary-sig-arg">depth</span>,
+        <span class="summary-sig-arg">exclude</span>,
+        <span class="summary-sig-arg">include</span>,
+        <span class="summary-sig-arg">backpointers</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#_pp_val">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== VARIABLES ==================== -->
+<a name="section-Variables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Variables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc-module.html#UNKNOWN" class="summary-name">UNKNOWN</a> = <code title="_Sentinel('UNKNOWN')">_Sentinel('UNKNOWN')</code><br />
+      A special value used to indicate that a given piece of information
+      about an object is unknown.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTION DETAILS ==================== -->
+<a name="section-FunctionDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Function Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-FunctionDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="reachable_valdocs"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">reachable_valdocs</span>(<span class="sig-arg">root</span>,
+        <span class="sig-arg">**filters</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#reachable_valdocs">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_reachable_valdo-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_reachable_valdo-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_reachable_valdo" name="call_graph_for_reachable_valdo">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="APIDoc.__cmp__()" alt="" coords="559,6,729,38" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__hash__" title="APIDoc.__hash__()" alt="" coords="559,62,729,94" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#apidoc_links" title="ClassDoc.apidoc_links()" alt="" coords="541,118,747,150" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#reachable_valdocs" title="DocIndex.reachable_valdocs()" alt="" coords="7,174,257,206" />
+<area shape="rect" href="epydoc.apidoc&#45;module.html#reachable_valdocs" title="reachable_valdocs()" alt="" coords="307,174,480,206" />
+<area shape="rect" href="epydoc.apidoc.ModuleDoc&#45;class.html#apidoc_links" title="ModuleDoc.apidoc_links()" alt="" coords="532,174,756,206" />
+<area shape="rect" href="epydoc.apidoc.PropertyDoc&#45;class.html#apidoc_links" title="PropertyDoc.apidoc_links()" alt="" coords="529,230,759,262" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#apidoc_links" title="ValueDoc.apidoc_links()" alt="" coords="539,286,749,318" />
+<area shape="rect" href="epydoc.apidoc.VariableDoc&#45;class.html#apidoc_links" title="VariableDoc.apidoc_links()" alt="" coords="529,342,759,374" />
+</map>
+  <img src="call_graph_for_reachable_valdo.gif" alt='' usemap="#call_graph_for_reachable_valdo" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Return a list of all <code>ValueDoc</code>s that can be reached, 
+  directly or indirectly from the given root list of 
+  <code>ValueDoc</code>s.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>filters</code></strong> - A set of filters that can be used to prevent 
+          <code>reachable_valdocs</code> from following specific link types
+          when looking for <code>ValueDoc</code>s that can be reached from 
+          the root set.  See <code>APIDoc.apidoc_links</code> for a more 
+          complete description.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="pp_apidoc"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">pp_apidoc</span>(<span class="sig-arg">api_doc</span>,
+        <span class="sig-arg">doublespace</span>=<span class="sig-default">0</span>,
+        <span class="sig-arg">depth</span>=<span class="sig-default">5</span>,
+        <span class="sig-arg">exclude</span>=<span class="sig-default"><code class="variable-group">(</code><code class="variable-group">)</code></span>,
+        <span class="sig-arg">include</span>=<span class="sig-default"><code class="variable-group">(</code><code class="variable-group">)</code></span>,
+        <span class="sig-arg">backpointers</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#pp_apidoc">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>doublespace</code></strong> - If true, then extra lines will be inserted to make the output 
+          more readable.</li>
+        <li><strong class="pname"><code>depth</code></strong> - The maximum depth that pp_apidoc will descend into descendent 
+          VarDocs.  To put no limit on depth, use 
+          <code>depth=-1</code>.</li>
+        <li><strong class="pname"><code>exclude</code></strong> - A list of names of attributes whose values should not be 
+          shown.</li>
+        <li><strong class="pname"><code>backpointers</code></strong> - For internal use.</li>
+    </ul></dd>
+    <dt>Returns:</dt>
+        <dd>A multiline pretty-printed string representation for the given
+          <code>APIDoc</code>.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== VARIABLES DETAILS ==================== -->
+<a name="section-VariablesDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-VariablesDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="UNKNOWN"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">UNKNOWN</h3>
+  A special value used to indicate that a given piece of information 
+  about an object is unknown.  This is used as the default value for all 
+  instance variables.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+_Sentinel('UNKNOWN')
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:02:13 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

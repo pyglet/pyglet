@@ -1,0 +1,568 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.cli.HTMLLogger</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.cli-module.html">Module&nbsp;cli</a> ::
+        Class&nbsp;HTMLLogger
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.cli.HTMLLogger-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class HTMLLogger</h1><span class="codelink"><a href="epydoc.cli-pysrc.html#HTMLLogger">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_c_2" name="uml_class_diagram_for_epydoc_c_2">
+<area shape="rect" href="epydoc.log.Logger&#45;class.html#end_progress" title="Finish off the display of progress for the current task." alt="" coords="18,36,234,55" />
+<area shape="rect" href="epydoc.log.Logger&#45;class.html#start_progress" title="Begin displaying progress for a new task." alt="" coords="18,55,234,74" />
+<area shape="rect" href="epydoc.log.Logger&#45;class.html#progress" title="Update the progress display." alt="" coords="18,74,234,92" />
+<area shape="rect" href="epydoc.log.Logger&#45;class.html" title="An abstract base class that defines the interface for loggers, which are used by epydoc to report information back to the user." alt="" coords="6,6,246,99" />
+<area shape="rect" href="epydoc.cli.HTMLLogger&#45;class.html#END_BLOCK" title="epydoc.cli.HTMLLogger.END_BLOCK" alt="" coords="28,140,223,159" />
+<area shape="rect" href="epydoc.cli.HTMLLogger&#45;class.html#HEADER" title="epydoc.cli.HTMLLogger.HEADER" alt="" coords="28,159,223,178" />
+<area shape="rect" href="epydoc.cli.HTMLLogger&#45;class.html#FOOTER" title="epydoc.cli.HTMLLogger.FOOTER" alt="" coords="28,178,223,196" />
+<area shape="rect" href="epydoc.cli.HTMLLogger&#45;class.html#FILENAME" title="epydoc.cli.HTMLLogger.FILENAME" alt="" coords="28,196,223,215" />
+<area shape="rect" href="epydoc.cli.HTMLLogger&#45;class.html#START_BLOCK" title="epydoc.cli.HTMLLogger.START_BLOCK" alt="" coords="28,215,223,234" />
+<area shape="rect" href="epydoc.cli.HTMLLogger&#45;class.html#MESSAGE" title="epydoc.cli.HTMLLogger.MESSAGE" alt="" coords="28,234,223,252" />
+<area shape="rect" href="epydoc.cli.HTMLLogger&#45;class.html#end_block" title="End a warning block." alt="" coords="28,255,223,274" />
+<area shape="rect" href="epydoc.cli.HTMLLogger&#45;class.html#log" title="Display a message." alt="" coords="28,274,223,292" />
+<area shape="rect" href="epydoc.cli.HTMLLogger&#45;class.html#start_block" title="Start a new message block." alt="" coords="28,292,223,311" />
+<area shape="rect" href="epydoc.cli.HTMLLogger&#45;class.html#write_options" title="epydoc.cli.HTMLLogger.write_options" alt="" coords="28,311,223,330" />
+<area shape="rect" href="epydoc.cli.HTMLLogger&#45;class.html#close" title="Perform any tasks needed to close this logger." alt="" coords="28,330,223,348" />
+<area shape="rect" href="epydoc.cli.HTMLLogger&#45;class.html#__init__" title="epydoc.cli.HTMLLogger.__init__" alt="" coords="28,348,223,367" />
+<area shape="rect" href="epydoc.cli.HTMLLogger&#45;class.html" title="A logger used to generate a log of all warnings and messages to an HTML file." alt="" coords="16,118,235,374" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_c_2.gif" alt='' usemap="#uml_class_diagram_for_epydoc_c_2" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+A logger used to generate a log of all warnings and messages to an 
+  HTML file.<br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="__init__"></a><span class="summary-sig-name">__init__</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">directory</span>,
+        <span class="summary-sig-arg">options</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#HTMLLogger.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="write_options"></a><span class="summary-sig-name">write_options</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">options</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#HTMLLogger.write_options">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.cli.HTMLLogger-class.html#start_block" class="summary-sig-name">start_block</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">header</span>)</span><br />
+      Start a new message block.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#HTMLLogger.start_block">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.cli.HTMLLogger-class.html#end_block" class="summary-sig-name">end_block</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      End a warning block.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#HTMLLogger.end_block">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.cli.HTMLLogger-class.html#log" class="summary-sig-name">log</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">level</span>,
+        <span class="summary-sig-arg">message</span>)</span><br />
+      Display a message.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#HTMLLogger.log">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_message"></a><span class="summary-sig-name">_message</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">level</span>,
+        <span class="summary-sig-arg">message</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#HTMLLogger._message">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.cli.HTMLLogger-class.html#close" class="summary-sig-name">close</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Perform any tasks needed to close this logger.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#HTMLLogger.close">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_elapsed_time"></a><span class="summary-sig-name">_elapsed_time</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#HTMLLogger._elapsed_time">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.log.Logger-class.html">log.Logger</a></code></b>:
+      <code><a href="epydoc.log.Logger-class.html#end_progress">end_progress</a></code>,
+      <code><a href="epydoc.log.Logger-class.html#progress">progress</a></code>,
+      <code><a href="epydoc.log.Logger-class.html#start_progress">start_progress</a></code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="FILENAME"></a><span class="summary-name">FILENAME</span> = <code title="'epydoc-log.html'"><code class="variable-quote">'</code><code class="variable-string">epydoc-log.html</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.cli.HTMLLogger-class.html#HEADER" class="summary-name">HEADER</a> = <code title="'''&lt;?xml version=&quot;1.0&quot; encoding=&quot;ascii&quot;?&gt;
+&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Transitional//EN&quot;
+          &quot;DTD/xhtml1-transitional.dtd&quot;&gt;
+&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot; xml:lang=&quot;en&quot; lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;title&gt;Epydoc Log&lt;/title&gt;
+  &lt;link rel=&quot;stylesheet&quot; href=&quot;epydoc.css&quot; type=&quot;text/css&quot; /&gt;
+&lt;/head&gt;
+..."><code class="variable-quote">'</code><code class="variable-string">&lt;?xml version=&quot;1.0&quot; encoding=&quot;ascii&quot;?&gt;\n&lt;!DOCTYPE ht</code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.cli.HTMLLogger-class.html#START_BLOCK" class="summary-name">START_BLOCK</a> = <code title="'&lt;div class=&quot;log-block&quot;&gt;&lt;h2 class=&quot;log-hdr&quot;&gt;%s&lt;/h2&gt;'"><code class="variable-quote">'</code><code class="variable-string">&lt;div class=&quot;log-block&quot;&gt;&lt;h2 class=&quot;log-hdr&quot;&gt;%s&lt;/</code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="MESSAGE"></a><span class="summary-name">MESSAGE</span> = <code title="'''&lt;div class=&quot;log-%s&quot;&gt;&lt;b&gt;%s&lt;/b&gt;: 
+%s&lt;/div&gt;
+'''"><code class="variable-quote">'</code><code class="variable-string">&lt;div class=&quot;log-%s&quot;&gt;&lt;b&gt;%s&lt;/b&gt;: \n%s&lt;/div&gt;\n</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="END_BLOCK"></a><span class="summary-name">END_BLOCK</span> = <code title="'&lt;/div&gt;'"><code class="variable-quote">'</code><code class="variable-string">&lt;/div&gt;</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="FOOTER"></a><span class="summary-name">FOOTER</span> = <code title="'''&lt;/body&gt;
+&lt;/html&gt;
+'''"><code class="variable-quote">'</code><code class="variable-string">&lt;/body&gt;\n&lt;/html&gt;\n</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="start_block"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">start_block</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">header</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.cli-pysrc.html#HTMLLogger.start_block">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Start a new message block.  Any calls to <a 
+  href="epydoc.log-module.html#info" class="link">info()</a>, <a 
+  href="epydoc.log-module.html#warning" class="link">warning()</a>, or <a 
+  href="epydoc.log-module.html#error" class="link">error()</a> that occur 
+  between a call to <code>start_block</code> and a corresponding call to 
+  <code>end_block</code> will be grouped together, and displayed with a 
+  common header. <code>start_block</code> can be called multiple times (to 
+  form nested blocks), but every call to <code>start_block</code> 
+  <i>must</i> be balanced by a call to <code>end_block</code>.
+  <dl class="fields">
+    <dt>Overrides:
+      <a href="epydoc.log.Logger-class.html#start_block">log.Logger.start_block</a>
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="end_block"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">end_block</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.cli-pysrc.html#HTMLLogger.end_block">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  End a warning block.  See <a 
+  href="epydoc.cli.ConsoleLogger-class.html#start_block" 
+  class="link">start_block</a> for details.
+  <dl class="fields">
+    <dt>Overrides:
+      <a href="epydoc.log.Logger-class.html#end_block">log.Logger.end_block</a>
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="log"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">log</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">level</span>,
+        <span class="sig-arg">message</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.cli-pysrc.html#HTMLLogger.log">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Display a message.
+  <dl class="fields">
+    <dt>Overrides:
+      <a href="epydoc.log.Logger-class.html#log">log.Logger.log</a>
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="close"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">close</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.cli-pysrc.html#HTMLLogger.close">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Perform any tasks needed to close this logger.
+  <dl class="fields">
+    <dt>Overrides:
+      <a href="epydoc.log.Logger-class.html#close">log.Logger.close</a>
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== CLASS VARIABLE DETAILS ==================== -->
+<a name="section-ClassVariableDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="HEADER"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">HEADER</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-quote">'''</code><code class="variable-string">&lt;?xml version=&quot;1.0&quot; encoding=&quot;ascii&quot;?&gt;</code>
+<code class="variable-string">&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Transitional//EN&quot;</code>
+<code class="variable-string">          &quot;DTD/xhtml1-transitional.dtd&quot;&gt;</code>
+<code class="variable-string">&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot; xml:lang=&quot;en&quot; lang=&quot;en&quot;&gt;</code>
+<code class="variable-string">&lt;head&gt;</code>
+<code class="variable-string">  &lt;title&gt;Epydoc Log&lt;/title&gt;</code>
+<code class="variable-string">  &lt;link rel=&quot;stylesheet&quot; href=&quot;epydoc.css&quot; type=&quot;text/css&quot; /&gt;</code>
+<code class="variable-string">&lt;/head&gt;</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="START_BLOCK"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">START_BLOCK</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-quote">'</code><code class="variable-string">&lt;div class=&quot;log-block&quot;&gt;&lt;h2 class=&quot;log-hdr&quot;&gt;%s&lt;/h2&gt;</code><code class="variable-quote">'</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:04:03 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

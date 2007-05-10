@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.restructuredtext.OptimizedReporter</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        <a href="epydoc.markup.restructuredtext-module.html">Module&nbsp;restructuredtext</a> ::
+        Class&nbsp;OptimizedReporter
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.restructuredtext.OptimizedReporter-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class OptimizedReporter</h1><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#OptimizedReporter">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_m_17" name="uml_class_diagram_for_epydoc_m_17">
+<area shape="rect" href="javascript: void(0);" title="The level at or above which SystemMessage exceptions will be raised, halting execution." alt="" coords="17,28,679,47" />
+<area shape="rect" href="javascript: void(0);" title="Where warning output is sent." alt="" coords="17,47,679,66" />
+<area shape="rect" href="javascript: void(0);" title="The highest level system message generated so far." alt="" coords="17,66,679,84" />
+<area shape="rect" href="javascript: void(0);" title="The character encoding for the stderr output." alt="" coords="17,84,679,103" />
+<area shape="rect" href="javascript: void(0);" title="The character encoding error handler." alt="" coords="17,103,679,122" />
+<area shape="rect" href="javascript: void(0);" title="List of bound methods or functions to call with each system_message created." alt="" coords="17,122,679,140" />
+<area shape="rect" href="javascript: void(0);" title="The path to or description of the source data." alt="" coords="17,140,679,159" />
+<area shape="rect" href="javascript: void(0);" title="List of names for system message levels, indexed by level." alt="" coords="17,159,679,178" />
+<area shape="rect" href="javascript: void(0);" title="The level at or above which warning output will be sent to self.stream." alt="" coords="17,178,679,196" />
+<area shape="rect" href="javascript: void(0);" title="Show debug (level=0) system messages?" alt="" coords="17,196,679,215" />
+<area shape="rect" href="javascript: void(0);" title="Level&#45;1, &quot;INFO&quot;: a minor issue that can be ignored." alt="" coords="17,218,679,236" />
+<area shape="rect" href="javascript: void(0);" title="Return a system_message object." alt="" coords="17,236,679,255" />
+<area shape="rect" href="javascript: void(0);" title="docutils.utils.Reporter.notify_observers" alt="" coords="17,255,679,274" />
+<area shape="rect" href="javascript: void(0);" title="docutils.utils.Reporter.detach_observer" alt="" coords="17,274,679,292" />
+<area shape="rect" href="javascript: void(0);" title="Level&#45;4, &quot;SEVERE&quot;: a severe error that must be addressed." alt="" coords="17,292,679,311" />
+<area shape="rect" href="javascript: void(0);" title="Level&#45;3, &quot;ERROR&quot;: an error that should be addressed." alt="" coords="17,311,679,330" />
+<area shape="rect" href="javascript: void(0);" title="docutils.utils.Reporter.set_conditions" alt="" coords="17,330,679,348" />
+<area shape="rect" href="javascript: void(0);" title="Level&#45;2, &quot;WARNING&quot;: an issue that should be addressed." alt="" coords="17,348,679,367" />
+<area shape="rect" href="javascript: void(0);" title="docutils.utils.Reporter.__init__" alt="" coords="17,367,679,386" />
+<area shape="rect" href="javascript: void(0);" title="The observer parameter is a function or bound method which takes one argument, a nodes.system_message instance." alt="" coords="17,386,679,404" />
+<area shape="rect" href="javascript: void(0);" title="Info/warning/error reporter and system_message element generator." alt="" coords="5,6,691,411" />
+<area shape="rect" href="epydoc.markup.restructuredtext.OptimizedReporter&#45;class.html#debug" title="Level&#45;0, &quot;DEBUG&quot;: an internal reporting issue." alt="" coords="261,460,435,479" />
+<area shape="rect" href="epydoc.markup.restructuredtext.OptimizedReporter&#45;class.html" title="A reporter that ignores all debug messages." alt="" coords="249,430,447,486" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_m_17.gif" alt='' usemap="#uml_class_diagram_for_epydoc_m_17" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+A reporter that ignores all debug messages.  This is used to shave a 
+  couple seconds off of epydoc's run time, since docutils isn't very fast 
+  about processing its own debug messages.<br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext.OptimizedReporter-class.html#debug" class="summary-sig-name">debug</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">*args</span>,
+        <span class="summary-sig-arg">**kwargs</span>)</span><br />
+      Level-0, &quot;DEBUG&quot;: an internal reporting issue.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#OptimizedReporter.debug">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_debug_2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_debug_2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_debug_2" name="call_graph_for_debug_2">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Node.walk()" alt="" coords="84,6,311,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.OptimizedReporter&#45;class.html#debug" title="debug()" alt="" coords="438,90,518,122" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Node.walkabout()" alt="" coords="63,62,332,94" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_departure()" alt="" coords="6,118,390,150" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="24,174,371,206" />
+</map>
+  <img src="call_graph_for_debug_2.gif" alt='' usemap="#call_graph_for_debug_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.utils.Reporter</code></b>:
+      <code>__init__</code>,
+      <code>attach_observer</code>,
+      <code>detach_observer</code>,
+      <code>error</code>,
+      <code>info</code>,
+      <code>notify_observers</code>,
+      <code>set_conditions</code>,
+      <code>severe</code>,
+      <code>system_message</code>,
+      <code>warning</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.utils.Reporter</code></b>:
+      <code>levels</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.utils.Reporter</code></b>:
+      <code>debug_flag</code>,
+      <code>encoding</code>,
+      <code>error_handler</code>,
+      <code>halt_level</code>,
+      <code>max_level</code>,
+      <code>observers</code>,
+      <code>report_level</code>,
+      <code>source</code>,
+      <code>stream</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="debug"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">debug</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">*args</span>,
+        <span class="sig-arg">**kwargs</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#OptimizedReporter.debug">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_debug_2-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_debug_2-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_debug_2" name="call_graph_for_debug_2">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Node.walk()" alt="" coords="84,6,311,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.OptimizedReporter&#45;class.html#debug" title="debug()" alt="" coords="438,90,518,122" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Node.walkabout()" alt="" coords="63,62,332,94" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_departure()" alt="" coords="6,118,390,150" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="24,174,371,206" />
+</map>
+  <img src="call_graph_for_debug_2.gif" alt='' usemap="#call_graph_for_debug_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Level-0, &quot;DEBUG&quot;: an internal reporting issue. Typically, there is no
+effect on the processing. Level-0 system messages are handled
+separately from the others.
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.utils.Reporter.debug
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:05:11 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

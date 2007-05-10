@@ -1,0 +1,1202 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.apidoc.DottedName</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.apidoc-module.html">Module&nbsp;apidoc</a> ::
+        Class&nbsp;DottedName
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.apidoc.DottedName-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class DottedName</h1><span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName">source&nbsp;code</a></span><br /><br />
+A sequence of identifiers, separated by periods, used to name a Python
+  variable, value, or argument.  The identifiers that make up a dotted name
+  can be accessed using the indexing operator:
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>name = DottedName(<span class="py-string">'epydoc'</span>, <span class="py-string">'api_doc'</span>, <span class="py-string">'DottedName'</span>)
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> name
+<span class="py-output">epydoc.apidoc.DottedName</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>name[1]
+<span class="py-output">'api_doc'</span></pre><br /><br />
+
+<!-- ==================== NESTED CLASSES ==================== -->
+<a name="section-NestedClasses"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Nested Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-NestedClasses"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.DottedName.InvalidDottedName-class.html" class="summary-name">InvalidDottedName</a><br />
+      An exception raised by the DottedName constructor when one of 
+        its arguments is not a valid dotted name.
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc.DottedName-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">*pieces</span>)</span><br />
+      Construct a new dotted name from the given sequence of pieces, 
+      each of which can be either a <code>string</code> or a 
+      <code>DottedName</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.__init__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___3-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___init___3-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___3" name="call_graph_for___init___3">
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#is_exception" title="ClassDoc.is_exception()" alt="" coords="130,6,335,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="__init__()" alt="" coords="508,734,604,766" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#is_newstyle_class" title="ClassDoc.is_newstyle_class()" alt="" coords="111,62,354,94" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#is_type" title="ClassDoc.is_type()" alt="" coords="151,118,314,150" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#find" title="DocIndex.find()" alt="" coords="160,174,304,206" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__add__" title="__add__()" alt="" coords="183,230,282,262" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="__getitem__()" alt="" coords="168,286,296,318" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__radd__" title="__radd__()" alt="" coords="180,342,284,374" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#container" title="container()" alt="" coords="180,398,284,430" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_module_file" title="docbuilder._get_docs_from_module_file()" alt="" coords="63,454,402,486" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_unreachable_name_for" title="docbuilder._unreachable_name_for()" alt="" coords="83,510,382,542" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#assign_canonical_names" title="docbuilder.assign_canonical_names()" alt="" coords="82,566,383,598" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_canonical_name" title="docintrospecter.get_canonical_name()" alt="" coords="79,622,386,654" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_containing_module" title="docintrospecter.get_containing_module()" alt="" coords="68,678,396,710" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_value_from_filename" title="docintrospecter.get_value_from_filename()" alt="" coords="60,734,404,766" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_get_module_name" title="docparser._get_module_name()" alt="" coords="103,790,362,822" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_is_submodule_import_var" title="docparser._is_submodule_import_var()" alt="" coords="75,846,390,878" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_process_fromstar_import" title="docparser._process_fromstar_import()" alt="" coords="79,902,386,934" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#apply_decorator" title="docparser.apply_decorator()" alt="" coords="116,958,348,990" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#find_base" title="docparser.find_base()" alt="" coords="140,1014,324,1046" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#parse_docs" title="docparser.parse_docs()" alt="" coords="135,1070,330,1102" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#parse_dotted_name" title="docparser.parse_dotted_name()" alt="" coords="104,1126,360,1158" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#process_classdef" title="docparser.process_classdef()" alt="" coords="114,1182,351,1214" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#process_from_import" title="docparser.process_from_import()" alt="" coords="98,1238,367,1270" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#process_funcdef" title="docparser.process_funcdef()" alt="" coords="116,1294,348,1326" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#rhs_to_valuedoc" title="docparser.rhs_to_valuedoc()" alt="" coords="115,1350,350,1382" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_raise_field" title="docstringparser.process_raise_field()" alt="" coords="84,1406,380,1438" />
+<area shape="rect" href="epydoc.docwriter.html_colorize.PythonSourceColorizer&#45;class.html#doclink" title="docwriter.html_colorize.PythonSourceColorizer.doclink()" alt="" coords="7,1462,458,1494" />
+</map>
+  <img src="call_graph_for___init___3.gif" alt='' usemap="#call_graph_for___init___3" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="__repr__"></a><span class="summary-sig-name">__repr__</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.__repr__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___repr___2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___repr___2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___repr___2" name="call_graph_for___repr___2">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__repr__" title="__repr__()" alt="" coords="423,6,524,38" />
+<area shape="rect" href="epydoc.markup.pyval_repr.PyvalColorizer&#45;class.html#_colorize" title="markup.pyval_repr.PyvalColorizer._colorize()" alt="" coords="7,6,372,38" />
+</map>
+  <img src="call_graph_for___repr___2.gif" alt='' usemap="#call_graph_for___repr___2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc.DottedName-class.html#__str__" class="summary-sig-name">__str__</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return the dotted name as a string formed by joining its 
+      identifiers with periods:</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.__str__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___str__-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___str__-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___str__" name="call_graph_for___str__">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="__str__()" alt="" coords="567,961,657,993" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#__repr__" title="ValueDoc.__repr__()" alt="" coords="171,9,352,41" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_module_file" title="docbuilder._get_docs_from_module_file()" alt="" coords="92,65,431,97" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_unreachable_name_for" title="docbuilder._unreachable_name_for()" alt="" coords="112,121,411,153" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_bases" title="docbuilder.merge_bases()" alt="" coords="155,177,368,209" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs" title="docbuilder.merge_docs()" alt="" coords="157,233,365,265" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_valuedoc" title="docintrospecter._get_valuedoc()" alt="" coords="131,289,392,321" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_value_from_filename" title="docintrospecter.get_value_from_filename()" alt="" coords="89,345,433,377" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_module" title="docintrospecter.introspect_module()" alt="" coords="116,401,407,433" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#find_base" title="docparser.find_base()" alt="" coords="169,457,353,489" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#lookup_value" title="docparser.lookup_value()" alt="" coords="156,513,367,545" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphEdge&#45;class.html#to_dotfile" title="docwriter.dotgraph.DotGraphEdge.to_dotfile()" alt="" coords="76,569,447,601" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html#to_dotfile" title="docwriter.dotgraph.DotGraphNode.to_dotfile()" alt="" coords="76,625,447,657" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#_attribute_cell" title="docwriter.dotgraph.DotGraphUmlClassNode._attribute_cell()" alt="" coords="21,681,501,713" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#_get_html_label" title="docwriter.dotgraph.DotGraphUmlClassNode._get_html_label()" alt="" coords="15,737,508,769" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#_operation_cell" title="docwriter.dotgraph.DotGraphUmlClassNode._operation_cell()" alt="" coords="17,793,505,825" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#to_dotfile" title="docwriter.dotgraph.DotGraphUmlClassNode.to_dotfile()" alt="" coords="39,849,484,881" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlModuleNode&#45;class.html#_get_html_label" title="docwriter.dotgraph.DotGraphUmlModuleNode._get_html_label()" alt="" coords="5,905,517,937" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlModuleNode&#45;class.html#to_dotfile" title="docwriter.dotgraph.DotGraphUmlModuleNode.to_dotfile()" alt="" coords="31,961,492,993" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#name_list" title="docwriter.dotgraph.name_list()" alt="" coords="135,1017,388,1049" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#specialize_valdoc_node" title="docwriter.dotgraph.specialize_valdoc_node()" alt="" coords="83,1073,440,1105" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#uml_class_tree_graph" title="docwriter.dotgraph.uml_class_tree_graph()" alt="" coords="89,1129,433,1161" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_url" title="docwriter.html.HTMLWriter._url()" alt="" coords="119,1185,404,1217" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#href" title="docwriter.html.HTMLWriter.href()" alt="" coords="119,1241,404,1273" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#pysrc_url" title="docwriter.html.HTMLWriter.pysrc_url()" alt="" coords="99,1297,424,1329" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write" title="docwriter.html.HTMLWriter.write()" alt="" coords="115,1353,408,1385" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_class" title="docwriter.html.HTMLWriter.write_class()" alt="" coords="92,1409,431,1441" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_module" title="docwriter.html.HTMLWriter.write_module()" alt="" coords="83,1465,440,1497" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_redirect_page" title="docwriter.html.HTMLWriter.write_redirect_page()" alt="" coords="60,1521,463,1553" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_sourcecode" title="docwriter.html.HTMLWriter.write_sourcecode()" alt="" coords="68,1577,455,1609" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_toc_section" title="docwriter.html.HTMLWriter.write_toc_section()" alt="" coords="68,1633,455,1665" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_url_record" title="docwriter.html.HTMLWriter.write_url_record()" alt="" coords="72,1689,451,1721" />
+<area shape="rect" href="epydoc.docwriter.html_colorize.PythonSourceColorizer&#45;class.html#doc_descr" title="docwriter.html_colorize.PythonSourceColorizer.doc_descr()" alt="" coords="25,1745,497,1777" />
+<area shape="rect" href="epydoc.docwriter.html_colorize.PythonSourceColorizer&#45;class.html#handle_line" title="docwriter.html_colorize.PythonSourceColorizer.handle_line()" alt="" coords="20,1801,503,1833" />
+<area shape="rect" href="epydoc.log&#45;module.html#info" title="log.info()" alt="" coords="216,1857,307,1889" />
+<area shape="rect" href="epydoc.log&#45;module.html#progress" title="log.progress()" alt="" coords="199,1913,324,1945" />
+</map>
+  <img src="call_graph_for___str__.gif" alt='' usemap="#call_graph_for___str__" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="__add__"></a><span class="summary-sig-name">__add__</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">other</span>)</span><br />
+      Return a new <code>DottedName</code> whose identifier sequence is 
+      formed by adding <code>other</code>'s identifier sequence to 
+      <code>self</code>'s.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.__add__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___add__-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___add__-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___add__" name="call_graph_for___add__">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#find" title="DocIndex.find()" alt="" coords="62,6,206,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__add__" title="__add__()" alt="" coords="311,90,410,122" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="__init__()" alt="" coords="460,90,556,122" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_global_name" title="docparser._global_name()" alt="" coords="26,62,242,94" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#lookup_value" title="docparser.lookup_value()" alt="" coords="28,118,239,150" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#set_var_descr" title="docstringparser.set_var_descr()" alt="" coords="6,174,262,206" />
+</map>
+  <img src="call_graph_for___add__.gif" alt='' usemap="#call_graph_for___add__" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="__radd__"></a><span class="summary-sig-name">__radd__</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">other</span>)</span><br />
+      Return a new <code>DottedName</code> whose identifier sequence is 
+      formed by adding <code>self</code>'s identifier sequence to 
+      <code>other</code>'s.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.__radd__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___radd__-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___radd__-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___radd__" name="call_graph_for___radd__">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#find" title="DocIndex.find()" alt="" coords="35,6,179,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__radd__" title="__radd__()" alt="" coords="258,34,362,66" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="__init__()" alt="" coords="412,34,508,66" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_import_var" title="docparser._import_var()" alt="" coords="6,62,208,94" />
+</map>
+  <img src="call_graph_for___radd__.gif" alt='' usemap="#call_graph_for___radd__" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc.DottedName-class.html#__getitem__" class="summary-sig-name">__getitem__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">i</span>)</span><br />
+      Return the <code>i</code>th identifier in this 
+      <code>DottedName</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.__getitem__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___getitem__-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___getitem__-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___getitem__" name="call_graph_for___getitem__">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get" title="DocIndex._get()" alt="" coords="189,9,333,41" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="__getitem__()" alt="" coords="565,989,693,1021" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get_from" title="DocIndex._get_from()" alt="" coords="167,65,356,97" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get_module_classes" title="DocIndex._get_module_classes()" alt="" coords="125,121,397,153" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#find" title="DocIndex.find()" alt="" coords="189,177,333,209" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="__init__()" alt="" coords="743,989,839,1021" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#contextualize" title="contextualize()" alt="" coords="195,233,328,265" />
+<area shape="rect" href="epydoc.apidoc.ModuleDoc&#45;class.html#init_submodule_groups" title="ModuleDoc.init_submodule_groups()" alt="" coords="109,289,413,321" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_report_valdoc_progress" title="docbuilder._report_valdoc_progress()" alt="" coords="111,345,412,377" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#verify_name" title="docintrospecter.verify_name()" alt="" coords="137,401,385,433" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_find" title="docparser._find()" alt="" coords="187,457,336,489" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_find_in_namespace" title="docparser._find_in_namespace()" alt="" coords="129,513,393,545" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_global_name" title="docparser._global_name()" alt="" coords="153,569,369,601" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_import_var" title="docparser._import_var()" alt="" coords="160,625,363,657" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#add_to_group" title="docparser.add_to_group()" alt="" coords="155,681,368,713" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#del_variable" title="docparser.del_variable()" alt="" coords="160,737,363,769" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#find_base" title="docparser.find_base()" alt="" coords="169,793,353,825" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#lookup_value" title="docparser.lookup_value()" alt="" coords="156,849,367,881" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#lookup_variable" title="docparser.lookup_variable()" alt="" coords="145,905,377,937" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#process_assignment" title="docparser.process_assignment()" alt="" coords="132,961,391,993" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="docstringparser.parse_docstring()" alt="" coords="125,1017,397,1049" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlModuleNode&#45;class.html#_get_html_label" title="docwriter.dotgraph.DotGraphUmlModuleNode._get_html_label()" alt="" coords="5,1073,517,1105" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#import_graph" title="docwriter.dotgraph.import_graph()" alt="" coords="121,1129,401,1161" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_crumb" title="docwriter.html.HTMLWriter._crumb()" alt="" coords="105,1185,417,1217" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_doc_or_ancestor_is_private" title="docwriter.html.HTMLWriter._doc_or_ancestor_is_private()" alt="" coords="27,1241,496,1273" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_url" title="docwriter.html.HTMLWriter._url()" alt="" coords="119,1297,404,1329" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#breadcrumbs" title="docwriter.html.HTMLWriter.breadcrumbs()" alt="" coords="87,1353,436,1385" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#build_identifier_index" title="docwriter.html.HTMLWriter.build_identifier_index()" alt="" coords="51,1409,472,1441" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#doc_kind" title="docwriter.html.HTMLWriter.doc_kind()" alt="" coords="100,1465,423,1497" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#pysrc_url" title="docwriter.html.HTMLWriter.pysrc_url()" alt="" coords="99,1521,424,1553" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write" title="docwriter.html.HTMLWriter.write()" alt="" coords="115,1577,408,1609" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_class" title="docwriter.html.HTMLWriter.write_class()" alt="" coords="92,1633,431,1665" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_index_section" title="docwriter.html.HTMLWriter.write_index_section()" alt="" coords="59,1689,464,1721" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_module" title="docwriter.html.HTMLWriter.write_module()" alt="" coords="83,1745,440,1777" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_module_toc" title="docwriter.html.HTMLWriter.write_module_toc()" alt="" coords="67,1801,456,1833" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_module_tree_item" title="docwriter.html.HTMLWriter.write_module_tree_item()" alt="" coords="43,1857,480,1889" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_toc_section" title="docwriter.html.HTMLWriter.write_toc_section()" alt="" coords="68,1913,455,1945" />
+<area shape="rect" href="epydoc.docwriter.html_colorize.PythonSourceColorizer&#45;class.html#doc_kind" title="docwriter.html_colorize.PythonSourceColorizer.doc_kind()" alt="" coords="28,1969,495,2001" />
+</map>
+  <img src="call_graph_for___getitem__.gif" alt='' usemap="#call_graph_for___getitem__" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="__hash__"></a><span class="summary-sig-name">__hash__</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.__hash__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___hash___2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___hash___2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___hash___2" name="call_graph_for___hash___2">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get" title="DocIndex._get()" alt="" coords="148,6,292,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__hash__" title="__hash__()" alt="" coords="483,90,590,122" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_items" title="docbuilder._get_docs_from_items()" alt="" coords="76,62,364,94" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_unreachable_name_for" title="docbuilder._unreachable_name_for()" alt="" coords="71,118,370,150" />
+<area shape="rect" href="epydoc.docwriter.html._HTMLDocstringLinker&#45;class.html#_failed_xref" title="docwriter.html._HTMLDocstringLinker._failed_xref()" alt="" coords="6,174,435,206" />
+</map>
+  <img src="call_graph_for___hash___2.gif" alt='' usemap="#call_graph_for___hash___2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc.DottedName-class.html#__cmp__" class="summary-sig-name">__cmp__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">other</span>)</span><br />
+      Compare this dotted name to <code>other</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.__cmp__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___cmp___2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___cmp___2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___cmp___2" name="call_graph_for___cmp___2">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="APIDoc.__cmp__()" alt="" coords="88,6,259,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="__cmp__()" alt="" coords="391,566,495,598" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#is_exception" title="ClassDoc.is_exception()" alt="" coords="71,62,276,94" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#is_newstyle_class" title="ClassDoc.is_newstyle_class()" alt="" coords="52,118,295,150" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#is_type" title="ClassDoc.is_type()" alt="" coords="92,174,255,206" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#__init__" title="DocIndex.__init__()" alt="" coords="85,230,261,262" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get" title="DocIndex._get()" alt="" coords="101,286,245,318" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get_module_classes" title="DocIndex._get_module_classes()" alt="" coords="37,342,309,374" />
+<area shape="rect" href="epydoc.apidoc.ModuleDoc&#45;class.html#init_submodule_groups" title="ModuleDoc.init_submodule_groups()" alt="" coords="21,398,325,430" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_unreachable_name_for" title="docbuilder._unreachable_name_for()" alt="" coords="24,454,323,486" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_var_shadows_self" title="docbuilder._var_shadows_self()" alt="" coords="43,510,304,542" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="docbuilder.build_doc_index()" alt="" coords="52,566,295,598" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_bases" title="docbuilder.merge_bases()" alt="" coords="67,622,280,654" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs" title="docbuilder.merge_docs()" alt="" coords="69,678,277,710" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_module" title="docintrospecter.introspect_module()" alt="" coords="28,734,319,766" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_is_submodule_import_var" title="docparser._is_submodule_import_var()" alt="" coords="16,790,331,822" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#apply_decorator" title="docparser.apply_decorator()" alt="" coords="57,846,289,878" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#find_base" title="docparser.find_base()" alt="" coords="81,902,265,934" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#lookup_value" title="docparser.lookup_value()" alt="" coords="68,958,279,990" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#process_classdef" title="docparser.process_classdef()" alt="" coords="55,1014,292,1046" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#add_valdoc_nodes" title="docwriter.dotgraph.add_valdoc_nodes()" alt="" coords="13,1070,333,1102" />
+<area shape="rect" href="epydoc.markup.pyval_repr.PyvalColorizer&#45;class.html#_sort" title="markup.pyval_repr.PyvalColorizer._sort()" alt="" coords="7,1126,340,1158" />
+</map>
+  <img src="call_graph_for___cmp___2.gif" alt='' usemap="#call_graph_for___cmp___2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="__len__"></a><span class="summary-sig-name">__len__</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return the number of identifiers in this dotted name.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.__len__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___len__-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___len__-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___len__" name="call_graph_for___len__">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get" title="DocIndex._get()" alt="" coords="168,6,312,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__len__" title="__len__()" alt="" coords="523,622,619,654" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#container" title="DocIndex.container()" alt="" coords="149,62,331,94" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#find" title="DocIndex.find()" alt="" coords="168,118,312,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#contextualize" title="contextualize()" alt="" coords="173,174,307,206" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_items" title="docbuilder._get_docs_from_items()" alt="" coords="96,230,384,262" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_unreachable_name_for" title="docbuilder._unreachable_name_for()" alt="" coords="91,286,389,318" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_module" title="docintrospecter.introspect_module()" alt="" coords="95,342,385,374" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#verify_name" title="docintrospecter.verify_name()" alt="" coords="116,398,364,430" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_find" title="docparser._find()" alt="" coords="165,454,315,486" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_find_in_namespace" title="docparser._find_in_namespace()" alt="" coords="108,510,372,542" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_import_var" title="docparser._import_var()" alt="" coords="139,566,341,598" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#del_variable" title="docparser.del_variable()" alt="" coords="139,622,341,654" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#find_base" title="docparser.find_base()" alt="" coords="148,678,332,710" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#get_lhs_parent" title="docparser.get_lhs_parent()" alt="" coords="129,734,351,766" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#lookup_value" title="docparser.lookup_value()" alt="" coords="135,790,345,822" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#lookup_variable" title="docparser.lookup_variable()" alt="" coords="124,846,356,878" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#process_assignment" title="docparser.process_assignment()" alt="" coords="111,902,369,934" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#user_docfields" title="docstringparser.user_docfields()" alt="" coords="109,958,371,990" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#import_graph" title="docwriter.dotgraph.import_graph()" alt="" coords="100,1014,380,1046" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_crumb" title="docwriter.html.HTMLWriter._crumb()" alt="" coords="84,1070,396,1102" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_doc_or_ancestor_is_private" title="docwriter.html.HTMLWriter._doc_or_ancestor_is_private()" alt="" coords="5,1126,475,1158" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#breadcrumbs" title="docwriter.html.HTMLWriter.breadcrumbs()" alt="" coords="65,1182,415,1214" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#pysrc_url" title="docwriter.html.HTMLWriter.pysrc_url()" alt="" coords="77,1238,403,1270" />
+</map>
+  <img src="call_graph_for___len__.gif" alt='' usemap="#call_graph_for___len__" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc.DottedName-class.html#container" class="summary-sig-name">container</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return the DottedName formed by removing the last identifier from 
+      this dotted name's identifier sequence.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.container">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_container_2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_container_2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_container_2" name="call_graph_for_container_2">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#container" title="DocIndex.container()" alt="" coords="62,6,243,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#container" title="container()" alt="" coords="347,118,451,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="__init__()" alt="" coords="500,118,596,150" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_module" title="docintrospecter.introspect_module()" alt="" coords="7,62,298,94" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#get_lhs_parent" title="docparser.get_lhs_parent()" alt="" coords="42,118,263,150" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#user_docfields" title="docstringparser.user_docfields()" alt="" coords="22,174,283,206" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#href" title="docwriter.html.HTMLWriter.href()" alt="" coords="10,230,295,262" />
+</map>
+  <img src="call_graph_for_container_2.gif" alt='' usemap="#call_graph_for_container_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc.DottedName-class.html#dominates" class="summary-sig-name">dominates</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">strict</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Return true if this dotted name is equal to a prefix of 
+      <code>name</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.dominates">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_dominates-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_dominates-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_dominates" name="call_graph_for_dominates">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get" title="DocIndex._get()" alt="" coords="120,6,264,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#dominates" title="dominates()" alt="" coords="428,90,537,122" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_var_shadows_self" title="docbuilder._var_shadows_self()" alt="" coords="61,62,323,94" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_find_top_page" title="docwriter.html.HTMLWriter._find_top_page()" alt="" coords="7,118,377,150" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#pysrc_url" title="docwriter.html.HTMLWriter.pysrc_url()" alt="" coords="29,174,355,206" />
+</map>
+  <img src="call_graph_for_dominates.gif" alt='' usemap="#call_graph_for_dominates" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><a href="epydoc.apidoc.DottedName-class.html" 
+      class="link">DottedName</a></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc.DottedName-class.html#contextualize" class="summary-sig-name">contextualize</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">context</span>)</span><br />
+      If <code>self</code> and <code>context</code> share a common 
+      ancestor, then return a name for <code>self</code>, relative to that 
+      ancestor.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.contextualize">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_contextualize-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_contextualize-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_contextualize" name="call_graph_for_contextualize">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="__getitem__()" alt="" coords="731,62,859,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__len__" title="__len__()" alt="" coords="747,118,843,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#contextualize" title="contextualize()" alt="" coords="549,90,683,122" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#_get_html_label" title="docwriter.dotgraph.DotGraphUmlClassNode._get_html_label()" alt="" coords="7,6,500,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#add_valdoc_nodes" title="docwriter.dotgraph.add_valdoc_nodes()" alt="" coords="93,62,413,94" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#name_list" title="docwriter.dotgraph.name_list()" alt="" coords="127,118,380,150" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#href" title="docwriter.html.HTMLWriter.href()" alt="" coords="111,174,396,206" />
+</map>
+  <img src="call_graph_for_contextualize.gif" alt='' usemap="#call_graph_for_contextualize" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="UNREACHABLE"></a><span class="summary-name">UNREACHABLE</span> = <code title="'??'"><code class="variable-quote">'</code><code class="variable-string">??</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.DottedName-class.html#_IDENTIFIER_RE" class="summary-name">_IDENTIFIER_RE</a> = <code title="re.compile(r'(?x)(\?\?|(script-)?\w+\'?)(-\d+)?$')">re.compile(r'<code class="re-flags">(?x)</code><code class="re-group">(</code>\?\?<code class="re-op">|</code><code class="re-group">(</code>script-<code class="re-group">)</code><code class="re-op">?</code>\w<code class="re-op">+</code>\'<code class="re-op">?</code><code class="re-group">)</code><code class="re-group">(</code>-\d<code class="re-op">+</code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.DottedName-class.html#_ok_identifiers" class="summary-name">_ok_identifiers</a> = <code title="set(['??',
+     '??-1',
+     '??-10',
+     '??-11',
+     '??-2',
+     '??-3',
+     '??-4',
+     '??-5',
+..."><code class="variable-group">set([</code><code class="variable-quote">'</code><code class="variable-string">??</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">??-1</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">??-10</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">??-11</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">??-2</code><code class="variable-quote">'</code><code class="variable-op">,</code><code class="variable-ellipsis">...</code></code><br />
+      A cache of identifier strings that have been checked against 
+      _IDENTIFIER_RE and found to be acceptable.
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">*pieces</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.__init__">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___3-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for___init___3-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___3" name="call_graph_for___init___3">
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#is_exception" title="ClassDoc.is_exception()" alt="" coords="130,6,335,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="__init__()" alt="" coords="508,734,604,766" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#is_newstyle_class" title="ClassDoc.is_newstyle_class()" alt="" coords="111,62,354,94" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#is_type" title="ClassDoc.is_type()" alt="" coords="151,118,314,150" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#find" title="DocIndex.find()" alt="" coords="160,174,304,206" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__add__" title="__add__()" alt="" coords="183,230,282,262" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="__getitem__()" alt="" coords="168,286,296,318" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__radd__" title="__radd__()" alt="" coords="180,342,284,374" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#container" title="container()" alt="" coords="180,398,284,430" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_module_file" title="docbuilder._get_docs_from_module_file()" alt="" coords="63,454,402,486" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_unreachable_name_for" title="docbuilder._unreachable_name_for()" alt="" coords="83,510,382,542" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#assign_canonical_names" title="docbuilder.assign_canonical_names()" alt="" coords="82,566,383,598" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_canonical_name" title="docintrospecter.get_canonical_name()" alt="" coords="79,622,386,654" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_containing_module" title="docintrospecter.get_containing_module()" alt="" coords="68,678,396,710" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_value_from_filename" title="docintrospecter.get_value_from_filename()" alt="" coords="60,734,404,766" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_get_module_name" title="docparser._get_module_name()" alt="" coords="103,790,362,822" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_is_submodule_import_var" title="docparser._is_submodule_import_var()" alt="" coords="75,846,390,878" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_process_fromstar_import" title="docparser._process_fromstar_import()" alt="" coords="79,902,386,934" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#apply_decorator" title="docparser.apply_decorator()" alt="" coords="116,958,348,990" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#find_base" title="docparser.find_base()" alt="" coords="140,1014,324,1046" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#parse_docs" title="docparser.parse_docs()" alt="" coords="135,1070,330,1102" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#parse_dotted_name" title="docparser.parse_dotted_name()" alt="" coords="104,1126,360,1158" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#process_classdef" title="docparser.process_classdef()" alt="" coords="114,1182,351,1214" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#process_from_import" title="docparser.process_from_import()" alt="" coords="98,1238,367,1270" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#process_funcdef" title="docparser.process_funcdef()" alt="" coords="116,1294,348,1326" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#rhs_to_valuedoc" title="docparser.rhs_to_valuedoc()" alt="" coords="115,1350,350,1382" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_raise_field" title="docstringparser.process_raise_field()" alt="" coords="84,1406,380,1438" />
+<area shape="rect" href="epydoc.docwriter.html_colorize.PythonSourceColorizer&#45;class.html#doclink" title="docwriter.html_colorize.PythonSourceColorizer.doclink()" alt="" coords="7,1462,458,1494" />
+</map>
+  <img src="call_graph_for___init___3.gif" alt='' usemap="#call_graph_for___init___3" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  <p>Construct a new dotted name from the given sequence of pieces, each of
+  which can be either a <code>string</code> or a <code>DottedName</code>. 
+  Each piece is divided into a sequence of identifiers, and these sequences
+  are combined together (in order) to form the identifier sequence for the 
+  new <code>DottedName</code>.  If a piece contains a string, then it is 
+  divided into substrings by splitting on periods, and each substring is 
+  checked to see if it is a valid identifier.</p>
+  As an optimization, <code>pieces</code> may also contain a single 
+  tuple of values.  In that case, that tuple will be used as the 
+  <code>DottedName</code>'s identifiers; it will <i>not</i> be checked to 
+  see if it's valid.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="__str__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__str__</span>(<span class="sig-arg">self</span>)</span>
+    <br /><em class="fname">(Informal representation operator)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.__str__">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___str__-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for___str__-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___str__" name="call_graph_for___str__">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="__str__()" alt="" coords="567,961,657,993" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#__repr__" title="ValueDoc.__repr__()" alt="" coords="171,9,352,41" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_module_file" title="docbuilder._get_docs_from_module_file()" alt="" coords="92,65,431,97" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_unreachable_name_for" title="docbuilder._unreachable_name_for()" alt="" coords="112,121,411,153" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_bases" title="docbuilder.merge_bases()" alt="" coords="155,177,368,209" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs" title="docbuilder.merge_docs()" alt="" coords="157,233,365,265" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_valuedoc" title="docintrospecter._get_valuedoc()" alt="" coords="131,289,392,321" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_value_from_filename" title="docintrospecter.get_value_from_filename()" alt="" coords="89,345,433,377" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_module" title="docintrospecter.introspect_module()" alt="" coords="116,401,407,433" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#find_base" title="docparser.find_base()" alt="" coords="169,457,353,489" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#lookup_value" title="docparser.lookup_value()" alt="" coords="156,513,367,545" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphEdge&#45;class.html#to_dotfile" title="docwriter.dotgraph.DotGraphEdge.to_dotfile()" alt="" coords="76,569,447,601" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html#to_dotfile" title="docwriter.dotgraph.DotGraphNode.to_dotfile()" alt="" coords="76,625,447,657" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#_attribute_cell" title="docwriter.dotgraph.DotGraphUmlClassNode._attribute_cell()" alt="" coords="21,681,501,713" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#_get_html_label" title="docwriter.dotgraph.DotGraphUmlClassNode._get_html_label()" alt="" coords="15,737,508,769" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#_operation_cell" title="docwriter.dotgraph.DotGraphUmlClassNode._operation_cell()" alt="" coords="17,793,505,825" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#to_dotfile" title="docwriter.dotgraph.DotGraphUmlClassNode.to_dotfile()" alt="" coords="39,849,484,881" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlModuleNode&#45;class.html#_get_html_label" title="docwriter.dotgraph.DotGraphUmlModuleNode._get_html_label()" alt="" coords="5,905,517,937" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlModuleNode&#45;class.html#to_dotfile" title="docwriter.dotgraph.DotGraphUmlModuleNode.to_dotfile()" alt="" coords="31,961,492,993" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#name_list" title="docwriter.dotgraph.name_list()" alt="" coords="135,1017,388,1049" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#specialize_valdoc_node" title="docwriter.dotgraph.specialize_valdoc_node()" alt="" coords="83,1073,440,1105" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#uml_class_tree_graph" title="docwriter.dotgraph.uml_class_tree_graph()" alt="" coords="89,1129,433,1161" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_url" title="docwriter.html.HTMLWriter._url()" alt="" coords="119,1185,404,1217" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#href" title="docwriter.html.HTMLWriter.href()" alt="" coords="119,1241,404,1273" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#pysrc_url" title="docwriter.html.HTMLWriter.pysrc_url()" alt="" coords="99,1297,424,1329" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write" title="docwriter.html.HTMLWriter.write()" alt="" coords="115,1353,408,1385" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_class" title="docwriter.html.HTMLWriter.write_class()" alt="" coords="92,1409,431,1441" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_module" title="docwriter.html.HTMLWriter.write_module()" alt="" coords="83,1465,440,1497" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_redirect_page" title="docwriter.html.HTMLWriter.write_redirect_page()" alt="" coords="60,1521,463,1553" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_sourcecode" title="docwriter.html.HTMLWriter.write_sourcecode()" alt="" coords="68,1577,455,1609" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_toc_section" title="docwriter.html.HTMLWriter.write_toc_section()" alt="" coords="68,1633,455,1665" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_url_record" title="docwriter.html.HTMLWriter.write_url_record()" alt="" coords="72,1689,451,1721" />
+<area shape="rect" href="epydoc.docwriter.html_colorize.PythonSourceColorizer&#45;class.html#doc_descr" title="docwriter.html_colorize.PythonSourceColorizer.doc_descr()" alt="" coords="25,1745,497,1777" />
+<area shape="rect" href="epydoc.docwriter.html_colorize.PythonSourceColorizer&#45;class.html#handle_line" title="docwriter.html_colorize.PythonSourceColorizer.handle_line()" alt="" coords="20,1801,503,1833" />
+<area shape="rect" href="epydoc.log&#45;module.html#info" title="log.info()" alt="" coords="216,1857,307,1889" />
+<area shape="rect" href="epydoc.log&#45;module.html#progress" title="log.progress()" alt="" coords="199,1913,324,1945" />
+</map>
+  <img src="call_graph_for___str__.gif" alt='' usemap="#call_graph_for___str__" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Return the dotted name as a string formed by joining its identifiers 
+  with periods:
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> DottedName(<span class="py-string">'epydoc'</span>, <span class="py-string">'api_doc'</span>, DottedName')
+<span class="py-output">epydoc.apidoc.DottedName</span></pre>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="__getitem__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__getitem__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">i</span>)</span>
+    <br /><em class="fname">(Indexing operator)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.__getitem__">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___getitem__-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for___getitem__-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___getitem__" name="call_graph_for___getitem__">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get" title="DocIndex._get()" alt="" coords="189,9,333,41" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="__getitem__()" alt="" coords="565,989,693,1021" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get_from" title="DocIndex._get_from()" alt="" coords="167,65,356,97" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get_module_classes" title="DocIndex._get_module_classes()" alt="" coords="125,121,397,153" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#find" title="DocIndex.find()" alt="" coords="189,177,333,209" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="__init__()" alt="" coords="743,989,839,1021" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#contextualize" title="contextualize()" alt="" coords="195,233,328,265" />
+<area shape="rect" href="epydoc.apidoc.ModuleDoc&#45;class.html#init_submodule_groups" title="ModuleDoc.init_submodule_groups()" alt="" coords="109,289,413,321" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_report_valdoc_progress" title="docbuilder._report_valdoc_progress()" alt="" coords="111,345,412,377" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#verify_name" title="docintrospecter.verify_name()" alt="" coords="137,401,385,433" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_find" title="docparser._find()" alt="" coords="187,457,336,489" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_find_in_namespace" title="docparser._find_in_namespace()" alt="" coords="129,513,393,545" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_global_name" title="docparser._global_name()" alt="" coords="153,569,369,601" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_import_var" title="docparser._import_var()" alt="" coords="160,625,363,657" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#add_to_group" title="docparser.add_to_group()" alt="" coords="155,681,368,713" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#del_variable" title="docparser.del_variable()" alt="" coords="160,737,363,769" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#find_base" title="docparser.find_base()" alt="" coords="169,793,353,825" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#lookup_value" title="docparser.lookup_value()" alt="" coords="156,849,367,881" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#lookup_variable" title="docparser.lookup_variable()" alt="" coords="145,905,377,937" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#process_assignment" title="docparser.process_assignment()" alt="" coords="132,961,391,993" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="docstringparser.parse_docstring()" alt="" coords="125,1017,397,1049" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlModuleNode&#45;class.html#_get_html_label" title="docwriter.dotgraph.DotGraphUmlModuleNode._get_html_label()" alt="" coords="5,1073,517,1105" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#import_graph" title="docwriter.dotgraph.import_graph()" alt="" coords="121,1129,401,1161" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_crumb" title="docwriter.html.HTMLWriter._crumb()" alt="" coords="105,1185,417,1217" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_doc_or_ancestor_is_private" title="docwriter.html.HTMLWriter._doc_or_ancestor_is_private()" alt="" coords="27,1241,496,1273" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_url" title="docwriter.html.HTMLWriter._url()" alt="" coords="119,1297,404,1329" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#breadcrumbs" title="docwriter.html.HTMLWriter.breadcrumbs()" alt="" coords="87,1353,436,1385" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#build_identifier_index" title="docwriter.html.HTMLWriter.build_identifier_index()" alt="" coords="51,1409,472,1441" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#doc_kind" title="docwriter.html.HTMLWriter.doc_kind()" alt="" coords="100,1465,423,1497" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#pysrc_url" title="docwriter.html.HTMLWriter.pysrc_url()" alt="" coords="99,1521,424,1553" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write" title="docwriter.html.HTMLWriter.write()" alt="" coords="115,1577,408,1609" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_class" title="docwriter.html.HTMLWriter.write_class()" alt="" coords="92,1633,431,1665" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_index_section" title="docwriter.html.HTMLWriter.write_index_section()" alt="" coords="59,1689,464,1721" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_module" title="docwriter.html.HTMLWriter.write_module()" alt="" coords="83,1745,440,1777" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_module_toc" title="docwriter.html.HTMLWriter.write_module_toc()" alt="" coords="67,1801,456,1833" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_module_tree_item" title="docwriter.html.HTMLWriter.write_module_tree_item()" alt="" coords="43,1857,480,1889" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_toc_section" title="docwriter.html.HTMLWriter.write_toc_section()" alt="" coords="68,1913,455,1945" />
+<area shape="rect" href="epydoc.docwriter.html_colorize.PythonSourceColorizer&#45;class.html#doc_kind" title="docwriter.html_colorize.PythonSourceColorizer.doc_kind()" alt="" coords="28,1969,495,2001" />
+</map>
+  <img src="call_graph_for___getitem__.gif" alt='' usemap="#call_graph_for___getitem__" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Return the <code>i</code>th identifier in this 
+  <code>DottedName</code>.  If <code>i</code> is a non-empty slice, then 
+  return a <code>DottedName</code> built from the identifiers selected by 
+  the slice.  If <code>i</code> is an empty slice, return an empty list 
+  (since empty <code>DottedName</code>s are not valid).
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="__cmp__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__cmp__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">other</span>)</span>
+    <br /><em class="fname">(Comparison operator)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.__cmp__">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___cmp___2-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for___cmp___2-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___cmp___2" name="call_graph_for___cmp___2">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="APIDoc.__cmp__()" alt="" coords="88,6,259,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="__cmp__()" alt="" coords="391,566,495,598" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#is_exception" title="ClassDoc.is_exception()" alt="" coords="71,62,276,94" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#is_newstyle_class" title="ClassDoc.is_newstyle_class()" alt="" coords="52,118,295,150" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#is_type" title="ClassDoc.is_type()" alt="" coords="92,174,255,206" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#__init__" title="DocIndex.__init__()" alt="" coords="85,230,261,262" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get" title="DocIndex._get()" alt="" coords="101,286,245,318" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get_module_classes" title="DocIndex._get_module_classes()" alt="" coords="37,342,309,374" />
+<area shape="rect" href="epydoc.apidoc.ModuleDoc&#45;class.html#init_submodule_groups" title="ModuleDoc.init_submodule_groups()" alt="" coords="21,398,325,430" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_unreachable_name_for" title="docbuilder._unreachable_name_for()" alt="" coords="24,454,323,486" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_var_shadows_self" title="docbuilder._var_shadows_self()" alt="" coords="43,510,304,542" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="docbuilder.build_doc_index()" alt="" coords="52,566,295,598" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_bases" title="docbuilder.merge_bases()" alt="" coords="67,622,280,654" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs" title="docbuilder.merge_docs()" alt="" coords="69,678,277,710" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_module" title="docintrospecter.introspect_module()" alt="" coords="28,734,319,766" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#_is_submodule_import_var" title="docparser._is_submodule_import_var()" alt="" coords="16,790,331,822" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#apply_decorator" title="docparser.apply_decorator()" alt="" coords="57,846,289,878" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#find_base" title="docparser.find_base()" alt="" coords="81,902,265,934" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#lookup_value" title="docparser.lookup_value()" alt="" coords="68,958,279,990" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#process_classdef" title="docparser.process_classdef()" alt="" coords="55,1014,292,1046" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#add_valdoc_nodes" title="docwriter.dotgraph.add_valdoc_nodes()" alt="" coords="13,1070,333,1102" />
+<area shape="rect" href="epydoc.markup.pyval_repr.PyvalColorizer&#45;class.html#_sort" title="markup.pyval_repr.PyvalColorizer._sort()" alt="" coords="7,1126,340,1158" />
+</map>
+  <img src="call_graph_for___cmp___2.gif" alt='' usemap="#call_graph_for___cmp___2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Compare this dotted name to <code>other</code>.  Two dotted names are 
+  considered equal if their identifier subsequences are equal. Ordering 
+  between dotted names is lexicographic, in order of identifier from left 
+  to right.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="container"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">container</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.container">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_container_2-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_container_2-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_container_2" name="call_graph_for_container_2">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#container" title="DocIndex.container()" alt="" coords="62,6,243,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#container" title="container()" alt="" coords="347,118,451,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="__init__()" alt="" coords="500,118,596,150" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_module" title="docintrospecter.introspect_module()" alt="" coords="7,62,298,94" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#get_lhs_parent" title="docparser.get_lhs_parent()" alt="" coords="42,118,263,150" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#user_docfields" title="docstringparser.user_docfields()" alt="" coords="22,174,283,206" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#href" title="docwriter.html.HTMLWriter.href()" alt="" coords="10,230,295,262" />
+</map>
+  <img src="call_graph_for_container_2.gif" alt='' usemap="#call_graph_for_container_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Return the DottedName formed by removing the last identifier from this
+  dotted name's identifier sequence.  If this dotted name only has one name
+  in its identifier sequence, return <code>None</code> instead.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="dominates"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">dominates</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">name</span>,
+        <span class="sig-arg">strict</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.dominates">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_dominates-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_dominates-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_dominates" name="call_graph_for_dominates">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get" title="DocIndex._get()" alt="" coords="120,6,264,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#dominates" title="dominates()" alt="" coords="428,90,537,122" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_var_shadows_self" title="docbuilder._var_shadows_self()" alt="" coords="61,62,323,94" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_find_top_page" title="docwriter.html.HTMLWriter._find_top_page()" alt="" coords="7,118,377,150" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#pysrc_url" title="docwriter.html.HTMLWriter.pysrc_url()" alt="" coords="29,174,355,206" />
+</map>
+  <img src="call_graph_for_dominates.gif" alt='' usemap="#call_graph_for_dominates" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Return true if this dotted name is equal to a prefix of 
+  <code>name</code>.  If <code>strict</code> is true, then also require 
+  that <code>self!=name</code>.
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>DottedName(<span class="py-string">'a.b'</span>).dominates(DottedName(<span class="py-string">'a.b.c.d'</span>))
+<span class="py-output">True</span></pre>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="contextualize"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">contextualize</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">context</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#DottedName.contextualize">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_contextualize-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_contextualize-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_contextualize" name="call_graph_for_contextualize">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="__getitem__()" alt="" coords="731,62,859,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__len__" title="__len__()" alt="" coords="747,118,843,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#contextualize" title="contextualize()" alt="" coords="549,90,683,122" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#_get_html_label" title="docwriter.dotgraph.DotGraphUmlClassNode._get_html_label()" alt="" coords="7,6,500,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#add_valdoc_nodes" title="docwriter.dotgraph.add_valdoc_nodes()" alt="" coords="93,62,413,94" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#name_list" title="docwriter.dotgraph.name_list()" alt="" coords="127,118,380,150" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#href" title="docwriter.html.HTMLWriter.href()" alt="" coords="111,174,396,206" />
+</map>
+  <img src="call_graph_for_contextualize.gif" alt='' usemap="#call_graph_for_contextualize" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  <p>If <code>self</code> and <code>context</code> share a common ancestor,
+  then return a name for <code>self</code>, relative to that ancestor.  If 
+  they do not share a common ancestor (or if <code>context</code> is 
+  <code>UNKNOWN</code>), then simply return <code>self</code>.</p>
+  This is used to generate shorter versions of dotted names in cases 
+  where users can infer the intended target from the context.
+  <dl class="fields">
+    <dt>Returns: <a href="epydoc.apidoc.DottedName-class.html" 
+      class="link">DottedName</a></dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== CLASS VARIABLE DETAILS ==================== -->
+<a name="section-ClassVariableDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="_IDENTIFIER_RE"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_IDENTIFIER_RE</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+re.compile(r'<code class="re-flags">(?x)</code><code class="re-group">(</code>\?\?<code class="re-op">|</code><code class="re-group">(</code>script-<code class="re-group">)</code><code class="re-op">?</code>\w<code class="re-op">+</code>\'<code class="re-op">?</code><code class="re-group">)</code><code class="re-group">(</code>-\d<code class="re-op">+</code><code class="re-group">)</code><code class="re-op">?</code>$')
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_ok_identifiers"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_ok_identifiers</h3>
+  A cache of identifier strings that have been checked against 
+  _IDENTIFIER_RE and found to be acceptable.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">set([</code><code class="variable-quote">'</code><code class="variable-string">??</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+     <code class="variable-quote">'</code><code class="variable-string">??-1</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+     <code class="variable-quote">'</code><code class="variable-string">??-10</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+     <code class="variable-quote">'</code><code class="variable-string">??-11</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+     <code class="variable-quote">'</code><code class="variable-string">??-2</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+     <code class="variable-quote">'</code><code class="variable-string">??-3</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+     <code class="variable-quote">'</code><code class="variable-string">??-4</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+     <code class="variable-quote">'</code><code class="variable-string">??-5</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:03:43 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

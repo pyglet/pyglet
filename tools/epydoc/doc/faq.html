@@ -1,0 +1,411 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title>Epydoc: Frequently Asked Questions</title>
+<link rel="stylesheet" href="epydoc.css" type="text/css"/>
+</head>
+<!-- $Id: faq.html 1519 2007-02-16 07:24:02Z edloper $ -->
+<body>
+
+<body>
+<div class="body">
+<h1>Frequently Asked Questions</h1>
+<!-- <center><i>(Average question asking frequency: 0.03)</i></center> -->
+
+<div class="box">
+<h2 class="box-title">Contents</h2>
+<p><b>Docstrings &amp; Docstring Markup</b>
+<ul class="nomargin">
+  <li><a href="#backslash">Why does epydoc get confused when I include a
+  backslash in a docstring?</a></li>
+  <li><a href="#which_markup">Which markup language do you recommend?</a></li>
+  <li><a href="#new_markup">Will you
+  add support for my favorite markup language <i>xyz</i>?</a></li>
+  <li><a href="#new_field">Is there a way to define a new field?</a></li>
+</ul></p>
+<p><b>Extracting Documentation</b>
+<ul class="nomargin">
+  <li><a href="#introspect_vs_parse">Why does epydoc use both
+  introspection and parsing?</a></li>
+  <li><a href="#parse_only">When should I use <code>--parse-only</code>?
+  </a></li>
+  <li><a href="#is_epydoc_running">How can I test whether
+  epydoc is currently running?</a></li>
+  <li><a href="#speed">I'm documenting a large project.  How can I make
+    epydoc go faster?</a></li>
+</ul></p>
+<p><b>Generated Output</b>
+<ul class="nomargin">
+  <li><a href="#change_html">How can I change the appearance of the HTML
+  output?</a></li>
+  <li><a href="#change_latex">How can I change the appearance of the LaTeX,
+    Postscript, or PDF output?</a></li>
+  <li><a href="#exclude">How can I exclude a specific object from the
+    generated documentation?</a></li>
+  <li><a href="#graphs">How can I include graphs in the generated output?
+    </a></li>
+  <li><a href="#urls">Why does epydoc add "<tt>-module</tt>" and
+    "<tt>-class</tt>" to the names of the HTML pages it generates?
+    </a></li>
+  <li><a href="#redirect">Is there a way to link to the API documentation
+    for objects using a simple URL based on the object's dotted name?
+    </a></li>
+</ul></p>
+<p><b>Development of Epydoc</b>
+<ul class="nomargin">
+  <li><a href="#bug">I've found a bug in epydoc!  Where should I report it?</a></li>
+  <li><a href="#help">I'd like to help!  What can I do?</a></li>
+<!--  <li><a href="#"></a></li>-->
+</ul></p>
+<p><b><a href="mailto:edloper@gradient.cis.upenn.edu">Ask a new question...</a></b></p>
+</div>
+
+<!-- ==================== DOCSTRINGS ========================= -->
+<h2>Docstrings &amp; Docstring Markup</h2>
+
+
+<dl class="faq">
+  <!-- QUESTION --><a name="backslash" />
+  <dt><p><b>Q:</b> Why does epydoc get confused when I include a
+  backslash in a docstring?</p></dt>
+
+  <dd><p>A Python docstring is a string, and is interpreted like any
+  other string.  In particular, Python interprets "\n" as a newline,
+  "\t" as a tab, etc.  If you want to include backslashes in your
+  docstring (e.g. because you want to talk about file paths, regular
+  expressions, or escaped characters), you should use a raw string.
+  E.g.:</p>
+
+    <div class="screen"><pre>
+<code class="prompt">&gt;&gt;&gt;</code> <code class="keyword">f</code>(x):
+<code class="prompt">...</code>     r<code class="string">"""</code>
+<code class="prompt">...</code>     <code class="string">Return true if x matches the regexp '\w+\s*\w+'.</code>
+<code class="prompt">...</code>     <code class="string">"""</code>
+    </pre></div>
+  </dd>
+  <!-- QUESTION --><a name="which_markup" />
+  <dt><p><b>Q:</b> Which markup language do you recommend? </p></dt>
+
+   <dd><p>For many modules, <a href="epytextintro.html">epytext</a>
+   works well: it is very lightweight, so it won't get in the way; but
+   it lets you mark important information about objects.  If you would
+   like to use a more expressive markup language, then we recommend
+   using <a href="othermarkup.html">reStructuredText</a>, which is
+   easy to write, easy to read, and has support for a very wide array
+   of constructs.</p></dd>
+
+  <!-- QUESTION --><a name="new_markup" />
+  <dt> <p><b>Q:</b> reStructuredText is capitalized weirdly; Javadoc
+  has too much caffeine; and Epydoc just isn't cool enough.  Will you
+  add support for my favorite markup language <i>xyz</i>?</p>
+
+  <dd> <p>No, but you can!  See the documentation for the function <a
+  href="epydoc.markup-module.html#register_markup_language"
+  ><code>register_markup_language()</code></a>, which can be used to
+  register new markup languages.  If you add support for a new markup
+  language, and believe that others might like to use it, please
+  contribute it back to epydoc!</p> </dd>
+
+  <!-- QUESTION --><a name="new_field" />
+  <dt><p><b>Q:</b> Is there a way to define a new field?  </p></dt>
+
+  <dd><p>You can add new fields that describe simple metadata using
+  the <code>@newfield</code> field.  See the documentation for <a
+  href="fields.html#newfield">fields</a>
+  for more information. </p></dd> </p></dd>
+
+</dl>
+
+<!-- ================ EXTRACTING DOCUMENTATION ===================== -->
+<h2>Extracting Documentation</h2>
+<dl class="faq">
+
+  <!-- QUESTION --><a name="introspect_vs_parse" />
+  <dt> <p><b>Q:</b> Why does epydoc use both introspection <i>and</i>
+  parsing?  Wouldn't one or the other be sufficient?</p> </dt>
+
+  <dd><p>Epydoc can extract documentation about objects from two
+  different sources: <i>inspection</i> (importing the objects and
+  examining them programmatically) and <i>parsing</i>(reading and
+  extracting information from the objects' Python source code).
+  Furthermore, epydoc can combine documentation information obtained
+  from these two sources.  This is important because each source has
+  its own advantages and disadvantages with respect to the other.  In
+  particular: </p>
+
+  <ul>
+    <li> Introspection gives epydoc an accurate picture of what modules
+    will look like programmatically.  In particular, some modules
+    actively modify the namespace they define, or use various "magic"
+    techniques to alter their public interface.  Using introspection
+    gives epydoc an accurate picture of what these modified interfaces
+    look like. </li>
+
+    <li> If a module has dependencies that are not met on the current system,
+    then it may not be possible to import and introspect it; but the
+    parser can still examine its contents. </li>
+
+    <li> If importing a module has significant side effects, then 
+    introspecting it might not be desirable; but the parser can
+    still examine its contents. </li>
+
+    <li> If a module is not trusted, then it might not be desirable to
+    import it; but the parser can still examine its contents. </li>
+
+    <li> By parsing a module, we can find "pseudo-docstrings" and
+    "docstring comments," which are unavailable via introspection.
+    In particular, this makes it possible to associate API
+    documentation with variables. </li>
+
+    <li> Introspection can give information about builtin and extension
+    modules, which would be unavailable to a python source code
+    parser.  This includes builtin or extension bases for pure Python
+    classes. </li>
+
+    <li> By parsing a module, we can easily determine which values were
+    imported, and where they were imported from.  This information
+    is not available via introspection. </li>
+
+  </ul></dd>
+
+  <!-- QUESTION --><a name="parse_only" />
+  <dt> <p><b>Q:</b> When should I use <code>--parse-only</code>?
+  </p></dt>
+
+  <dd> <p>The <code>--parse-only</code> option instructs epydoc to
+  only get documentation information from parsing (and not from
+  introspection.)  You should use this option if:</p>
+
+  <ul>
+    <li>The project you are documenting contains untrusted source
+    code.</li>
+    <li>The project you are documenting has dependencies which are
+    not met (e.g., documenting windows-specific code on a
+    non-windows machine). </li>
+    <li>You wish to document a module where importing the module
+    would have undesired side effects.</li>
+  </ul></dd>
+
+  <!-- QUESTION --><a name="is_epydoc_running" />
+  <dt> <p><b>Q:</b> How can I test whether my program is
+  being documented by epydoc?
+  </p></dt>
+
+  <dd> <p>Some programs or libraries need to take special actions when
+  being documented by epydoc.  E.g., you might want your code to skip
+  certain set-up actions if it's just being imported to be documented.
+  You can test whether epydoc is currently running by testing whether
+  <code>'epydoc'</code> is in <code>sys.modules</code>:</p>
+
+<div class="screen"><pre>
+  >>> import sys.modules
+  >>> if 'epydoc' in sys.modules:
+  ...     print 'Epydoc is running'
+</pre></div>
+  </dd>
+
+  <!-- QUESTION --><a name="speed" />
+  <dt><p><b>Q:</b> I'm documenting a large project.  How can I make
+    epydoc go faster? </p></dt>
+  <dd><p>Try the following options: </p>
+    <table border="1" cellspacing="0" cellpadding="3">
+
+      <tr>
+      <th align="left"><code>&#8722;&#8722;no-sourcecode</code></th>
+      <td>Don't generate pages containing source code with syntax
+      highlighting.</td></tr>
+
+      <tr>
+      <th align="left"><code>&#8722;&#8722;no&#8722;private</code></th>
+      <td> Don't generate documentation for private objects.</td></tr>
+
+      <tr>
+      <th align="left"><code>&#8722;&#8722;introspect&#8722;only</code> or
+                       <code>&#8722;&#8722;parse&#8722;only</code></th>
+      <td> Extract information about objects using introspection
+      <i>or</i> parsing (but not both).  This may decrease the amount
+      of information that epydoc can extract from your
+      project.</td></tr>
+
+      <tr>
+      <th align="left"><code>&#8722;&#8722;docformat=plaintext</code></th>
+      <td> Format docstrings as plaintext, instead of epytext.
+      (Docstrings will be rendered verbatim).</td></tr>
+
+    </table>
+
+    <p>Also, note that including graphs in the output can
+    slow epydoc down significantly. </p></dd></dl>
+
+</dl>
+
+<!-- ==================== GENERATED OUTPUT ========================= -->
+<h2>Generated Output</h2>
+<dl class="faq">
+
+  <!-- QUESTION --><a name="change_html" />
+  <dt> <p><b>Q:</b> How can I change the appearance of the HTML
+  output?</p> </dt>
+
+  <dd><p>The CSS stylesheet can be used to modify the colors, fonts,
+  and styles that are used by epydoc.  You can specify your own CSS
+  stylesheet using the <code>--css</code> option.  (To generate the
+  default stylesheet, simply run epydoc on a small module.)</p>
+
+  <p>If your objections have to do with the actual layout of the
+  pages, then I'd be happy to hear your suggestions for improving it;
+  but I'm fairly happy with the layout, and probably won't make
+  changes unless I agree that they improve the appearance
+  significantly.</p></dd>
+
+  <!-- QUESTION --><a name="change_latex" />
+  <dt><p><b>Q:</b> How can I change the appearance of the LaTeX,
+    Postscript, or PDF output? </p></dt>
+  <dd><p>Currently, the LaTeX output, and derived output formats,
+    are not very customizable.  If you have suggestions for
+    improving the appearance of the generated output, please let
+    me know.</p></dd>
+
+  <!-- QUESTION --><a name="graphs" />
+  <dt><p><b>Q:</b> How can I include graphs in the generated output? 
+  </p></dt>
+
+  <dd><p>Epydoc can automatically generate a variety of graphs,
+  including class tress, package trees, uml class graphs, and import
+  graphs.  These graphs can be included in one of two ways:</p>
+
+  <ul>
+     <li> Use the <code>--graph</code> option to automatically
+     generate a given type of graph for all applicable modules,
+     classes, or functions.  For example, using
+     <code>--graph&nbsp;classtree</code> will replace the text-based
+     class tree with a graphical class tree on all module pages.
+     See the <a href="using.html#cli">command line usage</a> 
+     documentation for more information.</li>
+
+     <li> Graphs may be explicitly created by docstrings, using
+     appropriate markup.  In epytext, graphs are created using the
+     "<code>G</code>" colorization marker (i.e.,
+     "<code>G{<i>graphname</i>}</code>", or "<code>G{<i>graphname</i>
+     <i>options...</i>}</code>" for graphs with options).  In
+     reStructuredText, graphs are created using custom <a
+     href="http://docutils.sourceforge.net/docs/user/rst/quickref.html#directives">directives</a>.
+     For more information, see the <a
+     href="epytext.html#graphs">epytext manual</a> or the notes on <a
+     href="othermarkup.html#restructuredtext">using reStructuredText
+     with epydoc. </a>.</li>
+  </ul>
+    
+
+  <p> Graph generation requires the <a
+  href="http://www.graphviz.org/">Graphviz package</a>.  If the
+  <code>dot</code> executable is not on the path, then its location
+  should be specified using the <code>--dotptah</code> option.</p>
+
+
+
+  <!-- QUESTION --><a name="exclude" />
+  <dt><p><b>Q:</b> How can I exclude a specific object from the
+    generated documentation? </p></dt>
+  <dd><p>Use the <code>@undocumented</code> field.  See the
+  documentation for <a
+  href="fields.html">fields</a> for
+  more information. </p></dd>
+
+  <!-- QUESTION --><a name="urls" />
+  <dt><p><b>Q:</b> Why does epydoc add "<tt>-module</tt>" and
+    "<tt>-class</tt>" to the names of the HTML pages it generates?
+    </p></dt>
+  <dd><p>There are two reasons.  First, this ensures that the names of
+  module and class pages do not conflict with the names of existing
+  special pages.  For example, if a module were named
+  "<tt>index</tt>", then naming its documentation page
+  "<tt>index.html</tt>" would interfere with the use of that name for
+  the documentation's main page.  Second, it is possible to define a
+  package where a module and a class share the same name.  In those
+  cases, this naming scheme ensures that the two object's pages do not
+  conflict.</p></dd>
+
+  <!-- QUESTION --><a name="redirect" />
+  <dt><p><b>Q:</b> Is there a way to link to the API documentation
+    for objects using a simple URL based on the object's dotted name?
+    </p></dt>
+
+  <dd><p>Epydoc creates a page named "<tt>redirect.html</tt>" that
+  uses javascript to automatically convert dotted names to the
+  corresponding URLs.  In particular, loading the page
+  "<tt>redirect.html#<i>dotted.name</i></tt>" will automatically
+  redirect the user's browser to the URL for the object whose dotted
+  name is <tt><i>dotted.name</i></tt>.  For example, a link to
+  <tt>&lt;<a href="api/redirect.html#epydoc.cli.HELP_TOPICS"
+  >redirect.html#epydoc.cli.HELP_TOPICS</a>&gt;</tt> automatically
+  redirects the browser to <tt>&lt;<a
+  href="api/epydoc.cli-module.html#HELP_TOPICS"
+  >epydoc.cli-module.html#HELP_TOPICS</a>&gt;</tt>.  The redirect page can
+  be used for any object documented by epydoc, including modules,
+  classes, functions, varaibles, properties, etc. </p></dd>
+</dl>
+
+<!-- ==================== DEVELOPMENT ========================= -->
+<h2>Development of Epydoc</h2>
+<dl class="faq">
+  <!-- QUESTION --><a name="bug" />
+  <dt><p><b>Q:</b> I've found a bug in epydoc!  Where should I report it?
+    </p></dt>
+  <dd><p> Use the <a
+  href="http://sourceforge.net/tracker/?func=add&group_id=32455&atid=405618">Sourceforge
+  bug tracker</a> to report bugs.  If you want to hear back when we fix
+  it, be sure to either log in to Sourceforge, or include your email
+  address in the bug report.
+    </p></dd>
+  <!-- QUESTION --><a name="help" />
+  <dt><p><b>Q:</b> I'd like to help!  What can I do?
+    </p></dt>
+  <dd><p> If there are any features that you want to add to Epydoc,
+    we'd be happy to accept patches.  Patches should be submitted with
+    the <a
+    href="http://sourceforge.net/tracker/?func=add&group_id=32455&atid=405620">Sourceforge
+    patch tracker</a> (be sure to describe what your patch does!).  If
+    you plan to make several changes, we could also add you as a
+    developer on Sourceforge.  Email me if you're interested. </p>
+
+    <p> For a list of additions that we'd like to make to Epydoc, see
+    the todo list in the <a href="api/">Epydoc reference
+    documentation</a>; or the SourceForge <a
+    href="http://sourceforge.net/tracker/?group_id=32455&atid=405621">feature
+    request tracker</a> and <a
+    href="http://sourceforge.net/tracker/?group_id=32455&atid=405618">bug
+    tracker</a> </p></dd>
+
+  <!-- QUESTION TEMPLATE
+  <dt><p><b>Q: </b> ...</p></dt>
+  <dd><p> ... </p></dd> -->
+
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="index.html">
+    Home</a></td></a>
+  <a class="nav" href="installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

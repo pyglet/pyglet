@@ -1,0 +1,1142 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.restructuredtext</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        Module&nbsp;restructuredtext
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.restructuredtext-module.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== MODULE DESCRIPTION ==================== -->
+<h1 class="epydoc">Module restructuredtext</h1><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html">source&nbsp;code</a></span><br /><br />
+<p>Epydoc parser for ReStructuredText strings.  ReStructuredText is the 
+  standard markup language used by the Docutils project. <a 
+  href="epydoc.markup.restructuredtext-module.html#parse_docstring" 
+  class="link">parse_docstring()</a> provides the primary interface to this
+  module; it returns a <a 
+  href="epydoc.markup.restructuredtext.ParsedRstDocstring-class.html" 
+  class="link">ParsedRstDocstring</a>, which supports all of the methods 
+  defined by <a href="epydoc.markup.ParsedDocstring-class.html" 
+  class="link">ParsedDocstring</a>.</p>
+  <a href="epydoc.markup.restructuredtext.ParsedRstDocstring-class.html"
+  class="link">ParsedRstDocstring</a> is basically just a <a 
+  href="epydoc.markup.ParsedDocstring-class.html" 
+  class="link">ParsedDocstring</a> wrapper for the 
+  <code>docutils.nodes.document</code> class.
+  <h1 class="heading">Creating <code>ParsedRstDocstring</code>s</h1>
+    <code>ParsedRstDocstring</code>s are created by the 
+    <code>parse_document</code> function, using the 
+    <code>docutils.core.publish_string()</code> method, with the following 
+    helpers:
+    <ul>
+      <li>
+        An <a 
+        href="epydoc.markup.restructuredtext._EpydocReader-class.html" 
+        class="link">_EpydocReader</a> is used to capture all error 
+        messages as it parses the docstring.
+      </li>
+      <li>
+        A <a 
+        href="epydoc.markup.restructuredtext._DocumentPseudoWriter-class.html"
+        class="link">_DocumentPseudoWriter</a> is used to extract the 
+        document itself, without actually writing any output.  The document
+        is saved for further processing.  The settings for the writer are 
+        copied from <code>docutils.writers.html4css1.Writer</code>, since 
+        those settings will be used when we actually write the docstring to
+        html.
+      </li>
+    </ul>
+  <h1 class="heading">Using <code>ParsedRstDocstring</code>s</h1>
+    <code>ParsedRstDocstring</code>s support all of the methods defined 
+    by <code>ParsedDocstring</code>; but only the following four methods 
+    have non-default behavior:
+    <ul>
+      <li>
+        <a 
+        href="epydoc.markup.restructuredtext.ParsedRstDocstring-class.html#to_html"
+        class="link">to_html()</a> uses an <a 
+        href="epydoc.markup.restructuredtext._EpydocHTMLTranslator-class.html"
+        class="link">_EpydocHTMLTranslator</a> to translate the 
+        <code>ParsedRstDocstring</code>'s document into an HTML 
+        segment.
+      </li>
+      <li>
+        <a 
+        href="epydoc.markup.restructuredtext.ParsedRstDocstring-class.html#split_fields"
+        class="link">split_fields()</a> uses a <a 
+        href="epydoc.markup.restructuredtext._SplitFieldsTranslator-class.html"
+        class="link">_SplitFieldsTranslator</a> to divide the 
+        <code>ParsedRstDocstring</code>'s document into its main body and 
+        its fields.  Special handling is done to account for consolidated 
+        fields.
+      </li>
+      <li>
+        <a 
+        href="epydoc.markup.restructuredtext.ParsedRstDocstring-class.html#summary"
+        class="link">summary()</a> uses a <a 
+        href="epydoc.markup.restructuredtext._SummaryExtractor-class.html" 
+        class="link">_SummaryExtractor</a> to extract the first sentence 
+        from the <code>ParsedRstDocstring</code>'s document.
+      </li>
+      <li>
+        <a 
+        href="epydoc.markup.restructuredtext.ParsedRstDocstring-class.html#to_plaintext"
+        class="link">to_plaintext()</a> uses <code>document.astext()</code>
+        to convert the <code>ParsedRstDocstring</code>'s document to 
+        plaintext.
+      </li>
+    </ul><br /><br />
+
+<hr />
+<div class="fields">      <p><strong>To Do:</strong>
+        Add ParsedRstDocstring.to_latex()
+      </p>
+</div><!-- ==================== CLASSES ==================== -->
+<a name="section-Classes"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Classes"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.restructuredtext.OptimizedReporter-class.html" class="summary-name">OptimizedReporter</a><br />
+      A reporter that ignores all debug messages.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.restructuredtext.ParsedRstDocstring-class.html" class="summary-name">ParsedRstDocstring</a><br />
+      An encoded version of a ReStructuredText docstring.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.restructuredtext._EpydocReader-class.html" class="summary-name">_EpydocReader</a><br />
+      A reader that captures all errors that are generated by parsing,
+        and appends them to a list.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.restructuredtext._DocumentPseudoWriter-class.html" class="summary-name">_DocumentPseudoWriter</a><br />
+      A pseudo-writer for the docutils framework, that can be used to 
+        access the document itself.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.restructuredtext._SummaryExtractor-class.html" class="summary-name">_SummaryExtractor</a><br />
+      A docutils node visitor that extracts the first sentence from 
+        the first paragraph in a document.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.restructuredtext._TermsExtractor-class.html" class="summary-name">_TermsExtractor</a><br />
+      A docutils node visitor that extracts the terms from 
+        documentation.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.restructuredtext._SplitFieldsTranslator-class.html" class="summary-name">_SplitFieldsTranslator</a><br />
+      A docutils translator that removes all fields from a document, 
+        and collects them into the instance variable 
+        <code>fields</code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.restructuredtext._EpydocLaTeXTranslator-class.html" class="summary-name">_EpydocLaTeXTranslator</a>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.restructuredtext._EpydocHTMLTranslator-class.html" class="summary-name">_EpydocHTMLTranslator</a>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Graph Generation Directives</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.restructuredtext.dotgraph-class.html" class="summary-name">dotgraph</a><br />
+      A custom docutils node that should be rendered using Graphviz 
+        dot.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTIONS ==================== -->
+<a name="section-Functions"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Functions</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Functions"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext-module.html#parse_docstring" class="summary-sig-name">parse_docstring</a>(<span class="summary-sig-arg">docstring</span>,
+        <span class="summary-sig-arg">errors</span>,
+        <span class="summary-sig-arg">**options</span>)</span><br />
+      Parse the given docstring, which is formatted using 
+      ReStructuredText; and return a <a 
+      href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a> representation of its contents.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#parse_docstring">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_parse_docstring_5-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_parse_docstring_5-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_parse_docstring_5" name="call_graph_for_parse_docstring_5">
+<area shape="rect" href="epydoc.markup&#45;module.html#parse" title="parse()" alt="" coords="6,62,80,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="130,62,282,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#__init__" title="ParsedRstDocstring.__init__()" alt="" coords="352,6,600,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._DocumentPseudoWriter&#45;class.html#__init__" title="_DocumentPseudoWriter.__init__()" alt="" coords="331,62,622,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocReader&#45;class.html#__init__" title="_EpydocReader.__init__()" alt="" coords="366,118,587,150" />
+</map>
+  <img src="call_graph_for_parse_docstring_5.gif" alt='' usemap="#call_graph_for_parse_docstring_5" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="latex_head_prefix"></a><span class="summary-sig-name">latex_head_prefix</span>()</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#latex_head_prefix">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext-module.html#python_code_directive" class="summary-sig-name">python_code_directive</a>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">arguments</span>,
+        <span class="summary-sig-arg">options</span>,
+        <span class="summary-sig-arg">content</span>,
+        <span class="summary-sig-arg">lineno</span>,
+        <span class="summary-sig-arg">content_offset</span>,
+        <span class="summary-sig-arg">block_text</span>,
+        <span class="summary-sig-arg">state</span>,
+        <span class="summary-sig-arg">state_machine</span>)</span><br />
+      A custom restructuredtext directive which can be used to display 
+      syntax-highlighted Python code blocks.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#python_code_directive">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="term_role"></a><span class="summary-sig-name">term_role</span>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">rawtext</span>,
+        <span class="summary-sig-arg">text</span>,
+        <span class="summary-sig-arg">lineno</span>,
+        <span class="summary-sig-arg">inliner</span>,
+        <span class="summary-sig-arg">options</span>=<span class="summary-sig-default"><code class="variable-group">{</code><code class="variable-group">}</code></span>,
+        <span class="summary-sig-arg">content</span>=<span class="summary-sig-default"><code class="variable-group">[</code><code class="variable-group">]</code></span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#term_role">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Graph Generation Directives</th></tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_dir_option"></a><span class="summary-sig-name">_dir_option</span>(<span class="summary-sig-arg">argument</span>)</span><br />
+      A directive option spec for the orientation of a graph.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_dir_option">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext-module.html#digraph_directive" class="summary-sig-name">digraph_directive</a>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">arguments</span>,
+        <span class="summary-sig-arg">options</span>,
+        <span class="summary-sig-arg">content</span>,
+        <span class="summary-sig-arg">lineno</span>,
+        <span class="summary-sig-arg">content_offset</span>,
+        <span class="summary-sig-arg">block_text</span>,
+        <span class="summary-sig-arg">state</span>,
+        <span class="summary-sig-arg">state_machine</span>)</span><br />
+      A custom restructuredtext directive which can be used to display 
+      Graphviz dot graphs.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#digraph_directive">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_digraph_directi-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_digraph_directi-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_digraph_directi" name="call_graph_for_digraph_directi">
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#digraph_directive" title="digraph_directive()" alt="" coords="5,6,171,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#__init__" title="dotgraph.__init__()" alt="" coords="220,6,385,38" />
+</map>
+  <img src="call_graph_for_digraph_directi.gif" alt='' usemap="#call_graph_for_digraph_directi" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_construct_digraph"></a><span class="summary-sig-name">_construct_digraph</span>(<span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">context</span>,
+        <span class="summary-sig-arg">linker</span>,
+        <span class="summary-sig-arg">title</span>,
+        <span class="summary-sig-arg">caption</span>,
+        <span class="summary-sig-arg">body</span>)</span><br />
+      Graph generator for <a 
+      href="epydoc.markup.restructuredtext-module.html#digraph_directive" 
+      class="link">digraph_directive</a></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_construct_digraph">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__construct_digr-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__construct_digr-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__construct_digr" name="call_graph_for__construct_digr">
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#__init__" title="docwriter.dotgraph.DotGraph.__init__()" alt="" coords="428,6,748,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#link" title="docwriter.dotgraph.DotGraph.link()" alt="" coords="444,62,732,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_digraph" title="_construct_digraph()" alt="" coords="200,34,379,66" />
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#graph" title="dotgraph.graph()" alt="" coords="6,34,152,66" />
+</map>
+  <img src="call_graph_for__construct_digr.gif" alt='' usemap="#call_graph_for__construct_digr" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext-module.html#classtree_directive" class="summary-sig-name">classtree_directive</a>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">arguments</span>,
+        <span class="summary-sig-arg">options</span>,
+        <span class="summary-sig-arg">content</span>,
+        <span class="summary-sig-arg">lineno</span>,
+        <span class="summary-sig-arg">content_offset</span>,
+        <span class="summary-sig-arg">block_text</span>,
+        <span class="summary-sig-arg">state</span>,
+        <span class="summary-sig-arg">state_machine</span>)</span><br />
+      A custom restructuredtext directive which can be used to 
+      graphically display a class hierarchy.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#classtree_directive">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_classtree_direc-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_classtree_direc-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_classtree_direc" name="call_graph_for_classtree_direc">
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#classtree_directive" title="classtree_directive()" alt="" coords="5,6,179,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#__init__" title="dotgraph.__init__()" alt="" coords="228,6,393,38" />
+</map>
+  <img src="call_graph_for_classtree_direc.gif" alt='' usemap="#call_graph_for_classtree_direc" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_construct_classtree"></a><span class="summary-sig-name">_construct_classtree</span>(<span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">context</span>,
+        <span class="summary-sig-arg">linker</span>,
+        <span class="summary-sig-arg">arguments</span>,
+        <span class="summary-sig-arg">options</span>)</span><br />
+      Graph generator for <a 
+      href="epydoc.markup.restructuredtext-module.html#classtree_directive"
+      class="link">classtree_directive</a></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_construct_classtree">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__construct_clas-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__construct_clas-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__construct_clas" name="call_graph_for__construct_clas">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#find" title="apidoc.DocIndex.find()" alt="" coords="491,6,686,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#class_tree_graph" title="docwriter.dotgraph.class_tree_graph()" alt="" coords="435,62,742,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_classtree" title="_construct_classtree()" alt="" coords="200,34,387,66" />
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#graph" title="dotgraph.graph()" alt="" coords="6,34,152,66" />
+</map>
+  <img src="call_graph_for__construct_clas.gif" alt='' usemap="#call_graph_for__construct_clas" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext-module.html#packagetree_directive" class="summary-sig-name">packagetree_directive</a>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">arguments</span>,
+        <span class="summary-sig-arg">options</span>,
+        <span class="summary-sig-arg">content</span>,
+        <span class="summary-sig-arg">lineno</span>,
+        <span class="summary-sig-arg">content_offset</span>,
+        <span class="summary-sig-arg">block_text</span>,
+        <span class="summary-sig-arg">state</span>,
+        <span class="summary-sig-arg">state_machine</span>)</span><br />
+      A custom restructuredtext directive which can be used to 
+      graphically display a package hierarchy.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#packagetree_directive">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_packagetree_dir-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_packagetree_dir-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_packagetree_dir" name="call_graph_for_packagetree_dir">
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#__init__" title="dotgraph.__init__()" alt="" coords="255,6,420,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#packagetree_directive" title="packagetree_directive()" alt="" coords="7,6,204,38" />
+</map>
+  <img src="call_graph_for_packagetree_dir.gif" alt='' usemap="#call_graph_for_packagetree_dir" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_construct_packagetree"></a><span class="summary-sig-name">_construct_packagetree</span>(<span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">context</span>,
+        <span class="summary-sig-arg">linker</span>,
+        <span class="summary-sig-arg">arguments</span>,
+        <span class="summary-sig-arg">options</span>)</span><br />
+      Graph generator for <a 
+      href="epydoc.markup.restructuredtext-module.html#packagetree_directive"
+      class="link">packagetree_directive</a></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_construct_packagetree">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__construct_pack-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__construct_pack-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__construct_pack" name="call_graph_for__construct_pack">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#find" title="apidoc.DocIndex.find()" alt="" coords="529,6,724,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#package_tree_graph" title="docwriter.dotgraph.package_tree_graph()" alt="" coords="461,62,792,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_packagetree" title="_construct_packagetree()" alt="" coords="201,34,412,66" />
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#graph" title="dotgraph.graph()" alt="" coords="5,34,152,66" />
+</map>
+  <img src="call_graph_for__construct_pack.gif" alt='' usemap="#call_graph_for__construct_pack" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="importgraph_directive"></a><span class="summary-sig-name">importgraph_directive</span>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">arguments</span>,
+        <span class="summary-sig-arg">options</span>,
+        <span class="summary-sig-arg">content</span>,
+        <span class="summary-sig-arg">lineno</span>,
+        <span class="summary-sig-arg">content_offset</span>,
+        <span class="summary-sig-arg">block_text</span>,
+        <span class="summary-sig-arg">state</span>,
+        <span class="summary-sig-arg">state_machine</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#importgraph_directive">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_importgraph_dir-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_importgraph_dir-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_importgraph_dir" name="call_graph_for_importgraph_dir">
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#__init__" title="dotgraph.__init__()" alt="" coords="257,6,423,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#importgraph_directive" title="importgraph_directive()" alt="" coords="7,6,207,38" />
+</map>
+  <img src="call_graph_for_importgraph_dir.gif" alt='' usemap="#call_graph_for_importgraph_dir" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_construct_importgraph"></a><span class="summary-sig-name">_construct_importgraph</span>(<span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">context</span>,
+        <span class="summary-sig-arg">linker</span>,
+        <span class="summary-sig-arg">arguments</span>,
+        <span class="summary-sig-arg">options</span>)</span><br />
+      Graph generator for <a 
+      href="epydoc.markup.restructuredtext-module.html#importgraph_directive"
+      class="link">importgraph_directive</a></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_construct_importgraph">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__construct_impo-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__construct_impo-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__construct_impo" name="call_graph_for__construct_impo">
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#import_graph" title="docwriter.dotgraph.import_graph()" alt="" coords="463,6,743,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_importgraph" title="_construct_importgraph()" alt="" coords="200,6,413,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#graph" title="dotgraph.graph()" alt="" coords="5,6,152,38" />
+</map>
+  <img src="call_graph_for__construct_impo.gif" alt='' usemap="#call_graph_for__construct_impo" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="callgraph_directive"></a><span class="summary-sig-name">callgraph_directive</span>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">arguments</span>,
+        <span class="summary-sig-arg">options</span>,
+        <span class="summary-sig-arg">content</span>,
+        <span class="summary-sig-arg">lineno</span>,
+        <span class="summary-sig-arg">content_offset</span>,
+        <span class="summary-sig-arg">block_text</span>,
+        <span class="summary-sig-arg">state</span>,
+        <span class="summary-sig-arg">state_machine</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#callgraph_directive">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_construct_callgraph"></a><span class="summary-sig-name">_construct_callgraph</span>(<span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">context</span>,
+        <span class="summary-sig-arg">linker</span>,
+        <span class="summary-sig-arg">arguments</span>,
+        <span class="summary-sig-arg">options</span>)</span><br />
+      Graph generator for <a 
+      href="epydoc.markup.restructuredtext-module.html#callgraph_directive"
+      class="link">callgraph_directive</a></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_construct_callgraph">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== VARIABLES ==================== -->
+<a name="section-Variables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Variables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.restructuredtext-module.html#CONSOLIDATED_FIELDS" class="summary-name">CONSOLIDATED_FIELDS</a> = <code title="{'arguments': 'arg',
+ 'cvariables': 'cvar',
+ 'exceptions': 'except',
+ 'groups': 'group',
+ 'ivariables': 'ivar',
+ 'keywords': 'keyword',
+ 'parameters': 'param',
+ 'types': 'type',
+..."><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">arguments</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">arg</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">cvariables</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">cvar</code><code class="variable-ellipsis">...</code></code><br />
+      A dictionary encoding the set of 'consolidated fields' that can be
+      used.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.restructuredtext-module.html#CONSOLIDATED_DEFLIST_FIELDS" class="summary-name">CONSOLIDATED_DEFLIST_FIELDS</a> = <code title="['param', 'arg', 'var', 'ivar', 'cvar', 'keyword']"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">param</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">arg</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">var</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">ivar</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-ellipsis">...</code></code><br />
+      A list of consolidated fields whose bodies may be specified using 
+      a definition list, rather than a bulleted list.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTION DETAILS ==================== -->
+<a name="section-FunctionDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Function Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-FunctionDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="parse_docstring"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">parse_docstring</span>(<span class="sig-arg">docstring</span>,
+        <span class="sig-arg">errors</span>,
+        <span class="sig-arg">**options</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#parse_docstring">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_parse_docstring_5-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_parse_docstring_5-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_parse_docstring_5" name="call_graph_for_parse_docstring_5">
+<area shape="rect" href="epydoc.markup&#45;module.html#parse" title="parse()" alt="" coords="6,62,80,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="130,62,282,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#__init__" title="ParsedRstDocstring.__init__()" alt="" coords="352,6,600,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._DocumentPseudoWriter&#45;class.html#__init__" title="_DocumentPseudoWriter.__init__()" alt="" coords="331,62,622,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocReader&#45;class.html#__init__" title="_EpydocReader.__init__()" alt="" coords="366,118,587,150" />
+</map>
+  <img src="call_graph_for_parse_docstring_5.gif" alt='' usemap="#call_graph_for_parse_docstring_5" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Parse the given docstring, which is formatted using ReStructuredText; 
+  and return a <a href="epydoc.markup.ParsedDocstring-class.html" 
+  class="link">ParsedDocstring</a> representation of its contents.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>docstring</code></strong> (<code>string</code>) - The docstring to parse</li>
+        <li><strong class="pname"><code>errors</code></strong> (<code>list</code> of <a 
+          href="epydoc.markup.ParseError-class.html" 
+          class="link">ParseError</a>) - A list where any errors generated during parsing will be 
+          stored.</li>
+        <li><strong class="pname"><code>options</code></strong> - Extra options.  Unknown options are ignored. Currently, no 
+          extra options are defined.</li>
+    </ul></dd>
+    <dt>Returns: <a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a></dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="python_code_directive"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">python_code_directive</span>(<span class="sig-arg">name</span>,
+        <span class="sig-arg">arguments</span>,
+        <span class="sig-arg">options</span>,
+        <span class="sig-arg">content</span>,
+        <span class="sig-arg">lineno</span>,
+        <span class="sig-arg">content_offset</span>,
+        <span class="sig-arg">block_text</span>,
+        <span class="sig-arg">state</span>,
+        <span class="sig-arg">state_machine</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#python_code_directive">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  A custom restructuredtext directive which can be used to display 
+  syntax-highlighted Python code blocks.  This directive takes no 
+  arguments, and the body should contain only Python code.  This directive 
+  can be used instead of doctest blocks when it is inconvenient to list 
+  prompts on each line, or when you would prefer that the output not 
+  contain prompts (e.g., to make copy/paste easier).
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="digraph_directive"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">digraph_directive</span>(<span class="sig-arg">name</span>,
+        <span class="sig-arg">arguments</span>,
+        <span class="sig-arg">options</span>,
+        <span class="sig-arg">content</span>,
+        <span class="sig-arg">lineno</span>,
+        <span class="sig-arg">content_offset</span>,
+        <span class="sig-arg">block_text</span>,
+        <span class="sig-arg">state</span>,
+        <span class="sig-arg">state_machine</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#digraph_directive">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_digraph_directi-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_digraph_directi-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_digraph_directi" name="call_graph_for_digraph_directi">
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#digraph_directive" title="digraph_directive()" alt="" coords="5,6,171,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#__init__" title="dotgraph.__init__()" alt="" coords="220,6,385,38" />
+</map>
+  <img src="call_graph_for_digraph_directi.gif" alt='' usemap="#call_graph_for_digraph_directi" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  A custom restructuredtext directive which can be used to display 
+  Graphviz dot graphs.  This directive takes a single argument, which is 
+  used as the graph's name.  The contents of the directive are used as the 
+  body of the graph.  Any href attributes whose value has the form 
+  &lt;name&gt; will be replaced by the URL of the object with that name.  
+  Here's a simple example:
+<pre class="literalblock">
+.. digraph:: example_digraph
+  a -&gt; b -&gt; c
+  c -&gt; a [dir=&quot;none&quot;]
+</pre>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="classtree_directive"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">classtree_directive</span>(<span class="sig-arg">name</span>,
+        <span class="sig-arg">arguments</span>,
+        <span class="sig-arg">options</span>,
+        <span class="sig-arg">content</span>,
+        <span class="sig-arg">lineno</span>,
+        <span class="sig-arg">content_offset</span>,
+        <span class="sig-arg">block_text</span>,
+        <span class="sig-arg">state</span>,
+        <span class="sig-arg">state_machine</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#classtree_directive">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_classtree_direc-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_classtree_direc-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_classtree_direc" name="call_graph_for_classtree_direc">
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#classtree_directive" title="classtree_directive()" alt="" coords="5,6,179,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#__init__" title="dotgraph.__init__()" alt="" coords="228,6,393,38" />
+</map>
+  <img src="call_graph_for_classtree_direc.gif" alt='' usemap="#call_graph_for_classtree_direc" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  <p>A custom restructuredtext directive which can be used to graphically 
+  display a class hierarchy.  If one or more arguments are given, then 
+  those classes and all their descendants will be displayed.  If no 
+  arguments are given, and the directive is in a class's docstring, then 
+  that class and all its descendants will be displayed.  It is an error to 
+  use this directive with no arguments in a non-class docstring.</p>
+  Options:
+  <ul>
+    <li>
+      <code>:dir:</code> -- Specifies the orientation of the graph.  One
+      of <code>down</code>, <code>right</code> (default), 
+      <code>left</code>, <code>up</code>.
+    </li>
+  </ul>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="packagetree_directive"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">packagetree_directive</span>(<span class="sig-arg">name</span>,
+        <span class="sig-arg">arguments</span>,
+        <span class="sig-arg">options</span>,
+        <span class="sig-arg">content</span>,
+        <span class="sig-arg">lineno</span>,
+        <span class="sig-arg">content_offset</span>,
+        <span class="sig-arg">block_text</span>,
+        <span class="sig-arg">state</span>,
+        <span class="sig-arg">state_machine</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#packagetree_directive">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_packagetree_dir-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_packagetree_dir-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_packagetree_dir" name="call_graph_for_packagetree_dir">
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#__init__" title="dotgraph.__init__()" alt="" coords="255,6,420,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#packagetree_directive" title="packagetree_directive()" alt="" coords="7,6,204,38" />
+</map>
+  <img src="call_graph_for_packagetree_dir.gif" alt='' usemap="#call_graph_for_packagetree_dir" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  <p>A custom restructuredtext directive which can be used to graphically 
+  display a package hierarchy.  If one or more arguments are given, then 
+  those packages and all their submodules will be displayed.  If no 
+  arguments are given, and the directive is in a package's docstring, then 
+  that package and all its submodules will be displayed.  It is an error to
+  use this directive with no arguments in a non-package docstring.</p>
+  Options:
+  <ul>
+    <li>
+      <code>:dir:</code> -- Specifies the orientation of the graph.  One
+      of <code>down</code>, <code>right</code> (default), 
+      <code>left</code>, <code>up</code>.
+    </li>
+  </ul>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== VARIABLES DETAILS ==================== -->
+<a name="section-VariablesDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-VariablesDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="CONSOLIDATED_FIELDS"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">CONSOLIDATED_FIELDS</h3>
+  A dictionary whose keys are the &quot;consolidated fields&quot; that 
+  are recognized by epydoc; and whose values are the corresponding epydoc 
+  field names that should be used for the individual fields.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">arguments</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">arg</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">cvariables</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">cvar</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">exceptions</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">except</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">groups</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">group</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">ivariables</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">ivar</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">keywords</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">keyword</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">parameters</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">param</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">types</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">type</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="CONSOLIDATED_DEFLIST_FIELDS"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">CONSOLIDATED_DEFLIST_FIELDS</h3>
+  A list of consolidated fields whose bodies may be specified using a 
+  definition list, rather than a bulleted list.  For these fields, the 
+  'classifier' for each term in the definition list is translated into a 
+  @type field.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">param</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">arg</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">var</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">ivar</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">cvar</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">keyword</code><code class="variable-quote">'</code><code class="variable-group">]</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:03:14 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

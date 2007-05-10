@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>References</title>
+<link rel="stylesheet" href="custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="references">
+<h1 class="title">References</h1>
+
+<!-- $Id: manual-reference.txt 1549 2007-02-24 16:23:49Z dvarrazzo $ -->
+<div class="section" id="command-line-usage">
+<h1>Command Line Usage</h1>
+<p>Usage: <tt class="docutils literal"><span class="pre">epydoc.py</span></tt> [<em>ACTION</em>] [<em>options</em>] <em>NAMES...</em></p>
+<dl class="docutils">
+<dt>NAMES...</dt>
+<dd>A list of the Python objects that should be documented. Objects can be
+specified using dotted names (such as <tt class="docutils literal"><span class="pre">os.path</span></tt>), module filenames (such
+as <tt class="docutils literal"><span class="pre">epydoc/epytext.py</span></tt>), or package directory names (such as
+<tt class="docutils literal"><span class="pre">epydoc/</span></tt>). Packages are expanded to include all sub-modules and
+sub-packages.</dd>
+<dt>options</dt>
+<dd><pre class="first last literal-block">
+--config=FILE         A configuration file, specifying additional OPTIONS
+                      and/or NAMES.  This option may be repeated.
+-o PATH, --output=PATH
+                      The output directory.  If PATH does not exist, then it
+                      will be created.
+-q, --quiet           Decrease the verbosity.
+-v, --verbose         Increase the verbosity.
+--debug               Show full tracebacks for internal errors.
+--simple-term         Do not try to use color or cursor control when
+                      displaying the progress bar, warnings, or errors.
+
+Actions:
+  --html              Write HTML output.
+  --text              Write plaintext output. (not implemented yet)
+  --latex             Write LaTeX output.
+  --dvi               Write DVI output.
+  --ps                Write Postscript output.
+  --pdf               Write PDF output.
+  --check             Check completeness of docs.
+  --pickle            Write the documentation to a pickle file.
+  --version           Show epydoc's version number and exit.
+  -h, --help          Show this message and exit.  For help on specific
+                      topics, use &quot;--help TOPIC&quot;.  Use &quot;--help topics&quot; for a
+                      list of available help topics
+
+Generation Options:
+  --docformat=NAME    The default markup language for docstrings.  Defaults
+                      to &quot;epytext&quot;.
+  --parse-only        Get all information from parsing (don't introspect)
+  --introspect-only   Get all information from introspecting (don't parse)
+  --exclude=PATTERN   Exclude modules whose dotted name matches the regular
+                      expression PATTERN
+  --exclude-introspect=PATTERN
+                      Exclude introspection of modules whose dotted name
+                      matches the regular expression PATTERN
+  --exclude-parse=PATTERN
+                      Exclude parsing of modules whose dotted name matches
+                      the regular expression PATTERN
+  --inheritance=STYLE
+                      The format for showing inheritance objects.  STYLE
+                      should be one of: grouped, listed, included.
+  --show-private      Include private variables in the output. (default)
+  --no-private        Do not include private variables in the output.
+  --show-imports      List each module's imports.
+  --no-imports        Do not list each module's imports. (default)
+  --show-sourcecode   Include source code with syntax highlighting in the
+                      HTML output. (default)
+  --no-sourcecode     Do not include source code with syntax highlighting in
+                      the HTML output.
+  --include-log       Include a page with the process log (epydoc-log.html)
+
+Output Options:
+  --name=NAME         The documented project's name (for the navigation
+                      bar).
+  --css=STYLESHEET    The CSS stylesheet.  STYLESHEET can be either a
+                      builtin stylesheet or the name of a CSS file.
+  --url=URL           The documented project's URL (for the navigation bar).
+  --navlink=HTML      HTML code for a navigation link to place in the
+                      navigation bar.
+  --top=PAGE          The &quot;top&quot; page for the HTML documentation.  PAGE can
+                      be a URL, the name of a module or class, or one of the
+                      special names &quot;trees.html&quot;, &quot;indices.html&quot;, or
+                      &quot;help.html&quot;
+  --help-file=FILE    An alternate help file.  FILE should contain the body
+                      of an HTML file -- navigation bars will be added to
+                      it.
+  --show-frames       Include frames in the HTML output. (default)
+  --no-frames         Do not include frames in the HTML output.
+  --separate-classes  When generating LaTeX or PDF output, list each class
+                      in its own section, instead of listing them under
+                      their containing module.
+
+API Linking Options:
+  --external-api=NAME
+                      Define a new API document.  A new interpreted text
+                      role NAME will be added.
+  --external-api-file=NAME:FILENAME
+                      Use records in FILENAME to resolve objects in the API
+                      named NAME.
+  --external-api-root=NAME:STRING
+                      Use STRING as prefix for the URL generated from the
+                      API NAME.
+
+Graph Options:
+  --graph=GRAPHTYPE   Include graphs of type GRAPHTYPE in the generated
+                      output.  Graphs are generated using the Graphviz dot
+                      executable.  If this executable is not on the path,
+                      then use --dotpath to specify its location.  This
+                      option may be repeated to include multiple graph types
+                      in the output.  GRAPHTYPE should be one of: all,
+                      classtree, callgraph, umlclasstree.
+  --dotpath=PATH      The path to the Graphviz 'dot' executable.
+  --graph-font=FONT   Specify the font used to generate Graphviz graphs.
+                      (e.g., helvetica or times).
+  --graph-font-size=SIZE
+                      Specify the font size used to generate Graphviz
+                      graphs, in points.
+  --pstat=FILE        A pstat output file, to be used in generating call
+                      graphs.
+
+Return Value Options:
+  --fail-on-error     Return a non-zero exit status, indicating failure, if
+                      any errors are encountered.
+  --fail-on-warning   Return a non-zero exit status, indicating failure, if
+                      any errors or warnings are encountered (not including
+                      docstring warnings).
+  --fail-on-docstring-warning
+                      Return a non-zero exit status, indicating failure, if
+                      any errors or warnings are encountered (including
+                      docstring warnings).
+</pre>
+</dd>
+</dl>
+</div>
+<div class="section" id="sample-configuration-file">
+<h1>Sample Configuration File</h1>
+<p>Configuration files, specified using the <tt class="docutils literal"><span class="pre">--config</span></tt> option, may be used to
+specify both the list of objects to document, and the options that should be
+used to document them. Configuration files are read using the standard
+<a class="reference" href="http://docs.python.org/lib/module-ConfigParser.html">ConfigParser</a> module. The following example configuration file demonstrates the
+various options that you can set. Lines beginning with <tt class="docutils literal"><span class="pre">#</span></tt> or <tt class="docutils literal"><span class="pre">;</span></tt> are
+treated as comments.</p>
+<pre class="literal-block">
+<strong>[epydoc]</strong> <em># Epydoc section marker (required by ConfigParser)</em>
+
+<em># The list of objects to document.  Objects can be named using</em>
+<em># dotted names, module filenames, or package directory names.</em>
+<em># Alases for this option include &quot;objects&quot; and &quot;values&quot;.</em>
+<strong>modules: sys, os.path, re</strong>
+
+<em># The type of output that should be generated.  Should be one</em>
+<em># of: html, text, latex, dvi, ps, pdf.</em>
+<strong>output: html</strong>
+
+<em># The path to the output directory.  May be relative or absolute.</em>
+<strong>target: html/</strong>
+
+<em># An integer indicating how verbose epydoc should be.  The default</em>
+<em># value is 0; negative values will supress warnings and errors;</em>
+<em># positive values will give more verbose output.</em>
+<strong>verbosity: 0</strong>
+
+<em># A boolean value indicating that Epydoc should show a tracaback</em>
+<em># in case of unexpected error. By default don't show tracebacks</em>
+<strong>debug: 0</strong>
+
+<em># If True, don't try to use colors or cursor control when doing</em>
+<em># textual output. The default False assumes a rich text prompt</em>
+<strong>simple-term: 0</strong>
+
+
+<strong>### Generation options</strong>
+
+<em># The default markup language for docstrings, for modules that do</em>
+<em># not define __docformat__.  Defaults to epytext.</em>
+<strong>docformat: epytext</strong>
+
+<em># Whether or not parsing should be used to examine objects.</em>
+<strong>parse: yes</strong>
+
+<em># Whether or not introspection should be used to examine objects.</em>
+<strong>introspect: yes</strong>
+
+<em># Don't examine in any way the modules whose dotted name match this</em>
+<em># regular expression pattern.</em>
+<strong>#exclude</strong>
+
+<em># Don't perform introspection on the modules whose dotted name match this</em>
+<em># regular expression pattern.</em>
+<strong>#exclude-introspect</strong>
+
+<em># Don't perform parsing on the modules whose dotted name match this</em>
+<em># regular expression pattern.</em>
+<strong>#exclude-parse</strong>
+
+<em># The format for showing inheritance objects.</em>
+<em># It should be one of: 'grouped', 'listed', 'included'.</em>
+<strong>inheritance: listed</strong>
+
+<em># Whether or not to inclue private variables.  (Even if included,</em>
+<em># private variables will be hidden by default.)</em>
+<strong>private: yes</strong>
+
+<em># Whether or not to list each module's imports.</em>
+<strong>imports: no</strong>
+
+<em># Whether or not to include syntax highlighted source code in</em>
+<em># the output (HTML only).</em>
+<strong>sourcecode: yes</strong>
+
+<em># Whether or not to includea a page with Epydoc log, containing</em>
+<em># effective option at the time of generation and the reported logs.</em>
+<strong>include-log: no</strong>
+
+
+<strong>### Output options</strong>
+
+<em># The documented project's name.</em>
+<strong>#name: Example</strong>
+
+<em># The CSS stylesheet for HTML output.  Can be the name of a builtin</em>
+<em># stylesheet, or the name of a file.</em>
+<strong>css: white</strong>
+
+<em># The documented project's URL.</em>
+<strong>#url: http://some.project/</strong>
+
+<em># HTML code for the project link in the navigation bar.  If left</em>
+<em># unspecified, the project link will be generated based on the</em>
+<em># project's name and URL.</em>
+<strong>#link: &lt;a href=&quot;somewhere&quot;&gt;My Cool Project&lt;/a&gt;</strong>
+
+<em># The &quot;top&quot; page for the documentation.  Can be a URL, the name</em>
+<em># of a module or class, or one of the special names &quot;trees.html&quot;,</em>
+<em># &quot;indices.html&quot;, or &quot;help.html&quot;</em>
+<strong>#top: os.path</strong>
+
+<em># An alternative help file.  The named file should contain the</em>
+<em># body of an HTML file; navigation bars will be added to it.</em>
+<strong>#help: my_helpfile.html</strong>
+
+<em># Whether or not to include a frames-based table of contents.</em>
+<strong>frames: yes</strong>
+
+<em># Whether each class should be listed in its own section when</em>
+<em># generating LaTeX or PDF output.</em>
+<strong>separate-classes: no</strong>
+
+
+<strong>### API linking options</strong>
+
+<em># Define a new API document.  A new interpreted text role</em>
+<em># will be created</em>
+<strong>#external-api: epydoc</strong>
+
+<em># Use the records in this file to resolve objects in the API named NAME.</em>
+<strong>#external-api-file: epydoc:api-objects.txt</strong>
+
+<em># Use this URL prefix to configure the string returned for external API.</em>
+<strong>#external-api-root: epydoc:http://epydoc.sourceforge.net/api</strong>
+
+
+<strong>### Graph options</strong>
+
+<em># The list of graph types that should be automatically included</em>
+<em># in the output.  Graphs are generated using the Graphviz &quot;dot&quot;</em>
+<em># executable.  Graph types include: &quot;classtree&quot;, &quot;callgraph&quot;,</em>
+<em># &quot;umlclass&quot;.  Use &quot;all&quot; to include all graph types</em>
+<strong>graph: all</strong>
+
+<em># The path to the Graphviz &quot;dot&quot; executable, used to generate</em>
+<em># graphs.</em>
+<strong>dotpath: /usr/local/bin/dot</strong>
+
+<em># The name of one or more pstat files (generated by the profile</em>
+<em># or hotshot module).  These are used to generate call graphs.</em>
+<strong>pstat: profile.out</strong>
+
+<em># Specify the font used to generate Graphviz graphs.</em>
+<em># (e.g., helvetica or times).</em>
+<strong>graph-font: Helvetica</strong>
+
+<em># Specify the font size used to generate Graphviz graphs.</em>
+<strong>graph-font-size: 10</strong>
+
+
+<strong>### Return value options</strong>
+
+<em># The condition upon which Epydoc should exit with a non-zero</em>
+<em># exit status. Possible values are error, warning, docstring_warning</em>
+<strong>#fail-on: error</strong>
+</pre>
+</div>
+<div class="section" id="warnings-and-errors">
+<h1>Warnings and Errors</h1>
+<p>If epydoc encounters an error while processing a docstring, it issues a warning
+message that describes the error, and attempts to continue generating
+documentation. Errors related to epytext are divided into three categories:</p>
+<dl class="docutils">
+<dt>Epytext Warnings</dt>
+<dd>are caused by epytext docstrings that contain questionable or suspicious
+markup. Epytext warnings do not prevent the docstring in question from
+being parsed.</dd>
+<dt>Field Warnings</dt>
+<dd>are caused by epytext docstrings containing invalid fields. The contents of
+the invalid field are generally ignored.</dd>
+<dt>Epytext Errors</dt>
+<dd>are caused by epytext docstrings that contain invalid markup. Whenever an
+epytext error is detected, the docstring in question is treated as a
+plaintext docstring.</dd>
+</dl>
+<p>The following sections list and describe the warning messages that epydoc can
+generate. They are intended as a reference resource, which you can search for
+more information and possible causes if you encounter an error and do not
+understand it. These descriptions are also available in the <tt class="docutils literal"><span class="pre">epydoc(1)</span></tt> man
+page.</p>
+<div class="section" id="epytext-warnings">
+<h2>Epytext Warnings</h2>
+<dl class="docutils">
+<dt>Possible mal-formatted field item.</dt>
+<dd>Epytext detected a line that looks like a field item, but is not correctly
+formatted. This typically occurs when the trailing colon (<tt class="docutils literal"><span class="pre">:</span></tt>) is not
+included in the field tag.</dd>
+<dt>Possible heading typo.</dt>
+<dd>Epytext detected a pair of lines that looks like a heading, but the number
+of underline characters does not match the number of characters in the
+heading. The number of characters in these two lines must match exactly for
+them to be considered a heading.</dd>
+</dl>
+</div>
+<div class="section" id="field-warnings">
+<h2>Field Warnings</h2>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;param</span></tt> for unknown parameter <em>param</em>.</dt>
+<dd>A <tt class="docutils literal"><span class="pre">&#64;param</span></tt> field was used to specify the type for a parameter that is not
+included in the function's signature. This is typically caused by a typo in
+the parameter name.</dd>
+<dt><em>tag</em> did not expect an argument.</dt>
+<dd>The field tag <em>tag</em> was used with an argument, but it does not take one.</dd>
+<dt><em>tag</em> expected an argument.</dt>
+<dd>The field tag <em>tag</em> was used without an argument, but it requires one.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;type</span></tt> for unknown parameter <em>param</em>.</dt>
+<dd>A <tt class="docutils literal"><span class="pre">&#64;type</span></tt> field was used to specify the type for a parameter that is not
+included in the function's signature. This is typically caused by a typo in
+the parameter name.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;type</span></tt> for unknown variable <em>var</em>.</dt>
+<dd>A <tt class="docutils literal"><span class="pre">&#64;type</span></tt> field was used to specify the type for a variable, but no
+other information is known about the variable. This is typically caused
+by a typo in the variable name.</dd>
+<dt>Unknown field tag <em>tag</em>.</dt>
+<dd>A docstring contains a field with the unknown tag <em>tag</em>.</dd>
+<dt>Redefinition of <em>field</em>.</dt>
+<dd>Multiple field tags define the value of field in the same docstring, but
+field can only take a single value.</dd>
+</dl>
+</div>
+<div class="section" id="epytext-errors">
+<h2>Epytext Errors</h2>
+<dl class="docutils">
+<dt>Bad link target.</dt>
+<dd>The target specified for an inline link contruction (L{...}) is not
+well-formed. Link targets must be valid Python identifiers.</dd>
+<dt>Bad uri target.</dt>
+<dd>The target specified for an inline uri contruction (<tt class="docutils literal"><span class="pre">U{...}</span></tt>) is not
+well-formed. This typically occurs if inline markup is nested inside the
+URI target.</dd>
+<dt>Fields must be at the top level.</dt>
+<dd>The list of fields (<tt class="docutils literal"><span class="pre">&#64;param</span></tt>, etc.) is contained by some other block
+structure (such as a list or a section).</dd>
+<dt>Fields must be the final elements in an epytext string.</dt>
+<dd>The list of fields (<tt class="docutils literal"><span class="pre">&#64;param</span></tt>, etc.) is not at the end of a docstring.</dd>
+<dt>Headings must occur at top level.</dt>
+<dd>The heading is contianed in some other block structure (such as a list).</dd>
+<dt>Improper doctest block indentation.</dt>
+<dd>The doctest block dedents past the indentation of its initial prompt line.</dd>
+<dt>Improper heading indentation.</dt>
+<dd>The heading for a section is not left-aligned with the paragraphs in the
+section that contains it.</dd>
+<dt>Improper paragraph indentation.</dt>
+<dd>The paragraphs within a block are not left-aligned. This error is often
+generated when plaintext docstrings are parsed using epytext.</dd>
+<dt>Invalid escape.</dt>
+<dd>An unknown escape sequence was used with the inline escape construction
+(<tt class="docutils literal"><span class="pre">E{...}</span></tt>).</dd>
+<dt>Lists must be indented.</dt>
+<dd>An unindented line immediately following a paragraph starts with a list
+bullet. Epydoc is not sure whether you meant to start a new list item, or
+meant for a paragraph to include a word that looks like a bullet. If you
+intended the former, then indent the list. If you intended the latter, then
+change the word-wrapping of the paragraph, or escape the first character of
+the word that looks like a bullet.</dd>
+<dt>Unbalanced '<tt class="docutils literal"><span class="pre">{</span></tt>'.</dt>
+<dd>The docstring contains unbalanced braces. Epytext requires that all braces
+must be balanced. To include a single unbalanced brace, use the escape
+sequences <tt class="docutils literal"><span class="pre">E{lb}</span></tt> (left brace) and <tt class="docutils literal"><span class="pre">E{rb}</span></tt> (right brace).</dd>
+<dt>Unbalanced '<tt class="docutils literal"><span class="pre">}</span></tt>'.</dt>
+<dd>The docstring contains unbalanced braces. Epytext requires that all braces
+must be balanced. To include a single unbalanced brace, use the escape
+sequences <tt class="docutils literal"><span class="pre">E{lb}</span></tt> (left brace) and <tt class="docutils literal"><span class="pre">E{rb}</span></tt> (right brace).</dd>
+<dt>Unknown inline markup tag.</dt>
+<dd>An unknown tag was used with the inline markup construction (<tt class="docutils literal"><span class="pre">x{...}</span></tt>).</dd>
+<dt>Wrong underline character for heading.</dt>
+<dd>The underline character used for this section heading does not indicate an
+appopriate section level. The '<tt class="docutils literal"><span class="pre">=</span></tt>' character should be used to underline
+sections; '<tt class="docutils literal"><span class="pre">-</span></tt>' for subsections; and '<tt class="docutils literal"><span class="pre">~</span></tt>' for subsubsections.</dd>
+</dl>
+</div>
+</div>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="index.html">
+    Home</a></td></a>
+  <a class="nav" href="installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,789 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.checker.DocChecker</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.checker-module.html">Module&nbsp;checker</a> ::
+        Class&nbsp;DocChecker
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.checker.DocChecker-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class DocChecker</h1><span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker">source&nbsp;code</a></span><br /><br />
+<p>Documentation completeness checker.  <code>DocChecker</code> can be 
+  used to check that specified classes of objects are documented.  To check
+  the documentation for a group of objects, you should create a 
+  <code>DocChecker</code> from a <a 
+  href="epydoc.apidoc.DocIndex-class.html" class="link">DocIndex</a> that 
+  documents those objects; and then use the <a 
+  href="epydoc.checker.DocChecker-class.html#check" class="link">check</a> 
+  method to run specified checks on the objects' documentation.</p>
+  What checks are run, and what objects they are run on, are specified 
+  by the constants defined by <code>DocChecker</code>.  These constants are
+  divided into three groups.
+  <ul>
+    <li>
+      Type specifiers indicate what type of objects should be checked: 
+      <a href="epydoc.checker.DocChecker-class.html#MODULE" 
+      class="link">MODULE</a>; <a 
+      href="epydoc.checker.DocChecker-class.html#CLASS" 
+      class="link">CLASS</a>; <a 
+      href="epydoc.checker.DocChecker-class.html#FUNC" 
+      class="link">FUNC</a>; <a 
+      href="epydoc.checker.DocChecker-class.html#VAR" class="link">VAR</a>;
+      <a href="epydoc.checker.DocChecker-class.html#IVAR" 
+      class="link">IVAR</a>; <a 
+      href="epydoc.checker.DocChecker-class.html#CVAR" 
+      class="link">CVAR</a>; <a 
+      href="epydoc.checker.DocChecker-class.html#PARAM" 
+      class="link">PARAM</a>; and <a 
+      href="epydoc.checker.DocChecker-class.html#RETURN" 
+      class="link">RETURN</a>.
+    </li>
+    <li>
+      Public/private specifiers indicate whether public or private 
+      objects should be checked: <a 
+      href="epydoc.checker.DocChecker-class.html#PRIVATE" 
+      class="link">PRIVATE</a>.
+    </li>
+    <li>
+      Check specifiers indicate what checks should be run on the 
+      objects: <a href="epydoc.checker.DocChecker-class.html#TYPE" 
+      class="link">TYPE</a>; <a 
+      href="epydoc.checker.DocChecker-class.html#DESCR" 
+      class="link">DESCR</a>; <a 
+      href="epydoc.checker.DocChecker-class.html#AUTHOR" 
+      class="link">AUTHOR</a>; and <a 
+      href="epydoc.checker.DocChecker-class.html#VERSION" 
+      class="link">VERSION</a>.
+    </li>
+  </ul>
+  The <a href="epydoc.checker.DocChecker-class.html#check" 
+  class="link">check</a> method is used to perform a check on the 
+  documentation.  Its parameter is formed by or-ing together at least one 
+  value from each specifier group:
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>checker.check(DocChecker.MODULE | DocChecker.DESCR)</pre>
+  To specify multiple values from a single group, simply or their values
+  together:
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>checker.check(DocChecker.MODULE | DocChecker.CLASS |
+<span class="py-more">... </span>              DocChecker.FUNC )</pre><br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.checker.DocChecker-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">docindex</span>)</span><br />
+      Create a new <code>DocChecker</code> that can be used to run 
+      checks on the documentation of the objects documented by 
+      <code>docindex</code></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>boolean</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.checker.DocChecker-class.html#check" class="summary-sig-name">check</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">*check_sets</span>)</span><br />
+      Run the specified checks on the documentation of the objects 
+      contained by this <code>DocChecker</code>'s 
+      <code>DocIndex</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker.check">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_check"></a><span class="summary-sig-name">_check</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">checks</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker._check">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_name"></a><span class="summary-sig-name">_name</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">doc</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker._name">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>None</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.checker.DocChecker-class.html#_check_basic" class="summary-sig-name">_check_basic</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">doc</span>)</span><br />
+      Check the description, author, version, and see-also fields of 
+      <code>doc</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker._check_basic">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>None</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.checker.DocChecker-class.html#_check_module" class="summary-sig-name">_check_module</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">doc</span>)</span><br />
+      Run checks on the module whose APIDoc is <code>doc</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker._check_module">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>None</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.checker.DocChecker-class.html#_check_class" class="summary-sig-name">_check_class</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">doc</span>)</span><br />
+      Run checks on the class whose APIDoc is <code>doc</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker._check_class">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_check_property"></a><span class="summary-sig-name">_check_property</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">doc</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker._check_property">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>None</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.checker.DocChecker-class.html#_check_var" class="summary-sig-name">_check_var</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">doc</span>)</span><br />
+      Run checks on the variable whose documentation is <code>var</code>
+      and whose name is <code>name</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker._check_var">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>None</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.checker.DocChecker-class.html#_check_func" class="summary-sig-name">_check_func</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">doc</span>)</span><br />
+      Run checks on the function whose APIDoc is <code>doc</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker._check_func">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="warning"></a><span class="summary-sig-name">warning</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">msg</span>,
+        <span class="summary-sig-arg">doc</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker.warning">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="PROPERTY"></a><span class="summary-name">PROPERTY</span> = <code title="256">256</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="ALL"></a><span class="summary-name">ALL</span> = <code title="24831">24831</code>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Types</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="MODULE"></a><span class="summary-name">MODULE</span> = <code title="1">1</code><br />
+      Type specifier that indicates that the documentation of modules 
+      should be checked.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="CLASS"></a><span class="summary-name">CLASS</span> = <code title="2">2</code><br />
+      Type specifier that indicates that the documentation of classes 
+      should be checked.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="FUNC"></a><span class="summary-name">FUNC</span> = <code title="4">4</code><br />
+      Type specifier that indicates that the documentation of functions 
+      should be checked.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="VAR"></a><span class="summary-name">VAR</span> = <code title="8">8</code><br />
+      Type specifier that indicates that the documentation of module 
+      variables should be checked.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="PARAM"></a><span class="summary-name">PARAM</span> = <code title="64">64</code><br />
+      Type specifier that indicates that the documentation of function 
+      and method parameters should be checked.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="RETURN"></a><span class="summary-name">RETURN</span> = <code title="128">128</code><br />
+      Type specifier that indicates that the documentation of return 
+      values should be checked.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="ALL_T"></a><span class="summary-name">ALL_T</span> = <code title="511">511</code><br />
+      Type specifier that indicates that the documentation of all 
+      objects should be checked.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="CVAR"></a><span class="summary-name">CVAR</span><br />
+      Type specifier that indicates that the documentation of class 
+      variables should be checked.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="IVAR"></a><span class="summary-name">IVAR</span><br />
+      Type specifier that indicates that the documentation of instance 
+      variables should be checked.
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Checks</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="TYPE"></a><span class="summary-name">TYPE</span> = <code title="256">256</code><br />
+      Check specifier that indicates that every variable and parameter 
+      should have a <code>@type</code> field.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="AUTHOR"></a><span class="summary-name">AUTHOR</span> = <code title="1024">1024</code><br />
+      Check specifier that indicates that every object should have an 
+      <code>author</code> field.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="VERSION"></a><span class="summary-name">VERSION</span> = <code title="2048">2048</code><br />
+      Check specifier that indicates that every object should have a 
+      <code>version</code> field.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="DESCR"></a><span class="summary-name">DESCR</span> = <code title="4096">4096</code><br />
+      Check specifier that indicates that every object should have a 
+      description.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="ALL_C"></a><span class="summary-name">ALL_C</span> = <code title="7936">7936</code><br />
+      Check specifier that indicates that  all checks should be run.
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Publicity</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="PRIVATE"></a><span class="summary-name">PRIVATE</span> = <code title="16384">16384</code><br />
+      Specifier that indicates that private objects should be 
+      checked.
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">docindex</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker.__init__">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Create a new <code>DocChecker</code> that can be used to run checks on
+  the documentation of the objects documented by <code>docindex</code>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>docindex</code></strong> (<a href="epydoc.apidoc.DocIndex-class.html" 
+          class="link">Docindex</a>) - A documentation map containing the documentation for the 
+          objects to be checked.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="check"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">check</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">*check_sets</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker.check">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Run the specified checks on the documentation of the objects contained
+  by this <code>DocChecker</code>'s <code>DocIndex</code>.  Any errors 
+  found are printed to standard out.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>check_sets</code></strong> (<code>int</code>) - The checks that should be run on the documentation.  This 
+          value is constructed by or-ing together the specifiers that 
+          indicate which objects should be checked, and which checks should
+          be run.  See the <a href="epydoc.checker-module.html" 
+          class="link">module description</a> for more information. If no 
+          checks are specified, then a default set of checks will be 
+          run.</li>
+    </ul></dd>
+    <dt>Returns: <code>boolean</code></dt>
+        <dd>True if no problems were found.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_check_basic"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_check_basic</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">doc</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker._check_basic">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Check the description, author, version, and see-also fields of 
+  <code>doc</code>.  This is used as a helper function by <a 
+  href="epydoc.checker.DocChecker-class.html#_check_module" 
+  class="link">_check_module</a>, <a 
+  href="epydoc.checker.DocChecker-class.html#_check_class" 
+  class="link">_check_class</a>, and <a 
+  href="epydoc.checker.DocChecker-class.html#_check_func" 
+  class="link">_check_func</a>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>doc</code></strong> (<a href="epydoc.apidoc.APIDoc-class.html" 
+          class="link">APIDoc</a>) - The documentation that should be checked.</li>
+    </ul></dd>
+    <dt>Returns: <code>None</code></dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_check_module"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_check_module</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">doc</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker._check_module">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Run checks on the module whose APIDoc is <code>doc</code>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>doc</code></strong> (<a href="epydoc.apidoc.APIDoc-class.html" 
+          class="link">APIDoc</a>) - The APIDoc of the module to check.</li>
+    </ul></dd>
+    <dt>Returns: <code>None</code></dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_check_class"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_check_class</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">doc</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker._check_class">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Run checks on the class whose APIDoc is <code>doc</code>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>doc</code></strong> (<a href="epydoc.apidoc.APIDoc-class.html" 
+          class="link">APIDoc</a>) - The APIDoc of the class to check.</li>
+    </ul></dd>
+    <dt>Returns: <code>None</code></dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_check_var"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_check_var</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">doc</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker._check_var">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Run checks on the variable whose documentation is <code>var</code> and
+  whose name is <code>name</code>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>doc</code></strong> (<a href="epydoc.apidoc.APIDoc-class.html" 
+          class="link">APIDoc</a>) - The documentation for the variable to check.</li>
+    </ul></dd>
+    <dt>Returns: <code>None</code></dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_check_func"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_check_func</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">doc</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.checker-pysrc.html#DocChecker._check_func">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Run checks on the function whose APIDoc is <code>doc</code>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>doc</code></strong> (<a href="epydoc.apidoc.APIDoc-class.html" 
+          class="link">APIDoc</a>) - The APIDoc of the function to check.</li>
+    </ul></dd>
+    <dt>Returns: <code>None</code></dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:04:02 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

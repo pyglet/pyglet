@@ -1,0 +1,957 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.restructuredtext._EpydocHTMLTranslator</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        <a href="epydoc.markup.restructuredtext-module.html">Module&nbsp;restructuredtext</a> ::
+        Class&nbsp;_EpydocHTMLTranslator
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.restructuredtext._EpydocHTMLTranslator-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class _EpydocHTMLTranslator</h1><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_m_20" name="uml_class_diagram_for_epydoc_m_20">
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.generator" alt="" coords="85,172,371,191" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.xml_declaration" alt="" coords="85,191,371,209" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.stylesheet_link" alt="" coords="85,209,371,228" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.words_and_spaces" alt="" coords="85,228,371,247" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.head_prefix_template" alt="" coords="85,247,371,265" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.content_type" alt="" coords="85,265,371,284" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.doctype" alt="" coords="85,284,371,303" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.attribution_formats" alt="" coords="85,303,371,321" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.embedded_stylesheet" alt="" coords="85,321,371,340" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.depart_line" alt="" coords="85,343,371,361" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.depart_strong" alt="" coords="85,361,371,380" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.depart_figure" alt="" coords="85,380,371,399" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_block_quote" alt="" coords="85,399,371,417" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.depart_field" alt="" coords="85,417,371,436" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.write_colspecs" alt="" coords="85,436,371,455" />
+<area shape="rect" href="javascript: void(0);" title="Set class class_ on the visible child no." alt="" coords="85,455,371,473" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.depart_entry" alt="" coords="85,473,371,492" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.depart_image" alt="" coords="85,492,371,511" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.depart_footnote" alt="" coords="85,511,371,529" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.depart_thead" alt="" coords="85,529,371,548" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.depart_subscript" alt="" coords="85,548,371,567" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_authors" alt="" coords="85,567,371,585" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.depart_title_reference" alt="" coords="85,604,371,623" />
+<area shape="rect" href="javascript: void(0);" title="This HTML writer has been optimized to produce visually compact lists (less vertical whitespace)." alt="" coords="73,149,383,629" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#settings" title="epydoc.markup.restructuredtext._EpydocHTMLTranslator.settings" alt="" coords="17,671,439,689" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#depart_document" title="epydoc.markup.restructuredtext._EpydocHTMLTranslator.depart_document" alt="" coords="17,692,439,711" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#visit_document" title="epydoc.markup.restructuredtext._EpydocHTMLTranslator.visit_document" alt="" coords="17,711,439,729" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#should_be_compact_paragraph" title="Determine if the &lt;p&gt; tags around paragraph node can be omitted." alt="" coords="17,729,439,748" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#visit_dotgraph" title="epydoc.markup.restructuredtext._EpydocHTMLTranslator.visit_dotgraph" alt="" coords="17,748,439,767" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#visit_title_reference" title="epydoc.markup.restructuredtext._EpydocHTMLTranslator.visit_title_reference" alt="" coords="17,767,439,785" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#starttag" title="This modified version of starttag makes a few changes to HTML tags, to  prevent them from conflicting with epydoc." alt="" coords="17,785,439,804" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#visit_doctest_block" title="epydoc.markup.restructuredtext._EpydocHTMLTranslator.visit_doctest_block" alt="" coords="17,804,439,823" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#__init__" title="epydoc.markup.restructuredtext._EpydocHTMLTranslator.__init__" alt="" coords="17,823,439,841" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html" title="epydoc.markup.restructuredtext._EpydocHTMLTranslator" alt="" coords="5,648,451,848" />
+<area shape="rect" href="javascript: void(0);" title="Tuple containing node class names (as strings)." alt="" coords="132,28,324,47" />
+<area shape="rect" href="javascript: void(0);" title="Call self.&quot;visit_ + node class name&quot; with node as parameter." alt="" coords="132,49,324,68" />
+<area shape="rect" href="javascript: void(0);" title="Called before exiting unknown Node types." alt="" coords="132,68,324,87" />
+<area shape="rect" href="javascript: void(0);" title="Called when entering unknown Node types." alt="" coords="132,87,324,105" />
+<area shape="rect" href="javascript: void(0);" title="Call self.&quot;depart_ + node class name&quot; with node as parameter." alt="" coords="132,105,324,124" />
+<area shape="rect" href="javascript: void(0);" title="&quot;Visitor&quot; pattern GoF95 abstract superclass implementation for document tree traversals." alt="" coords="120,5,336,131" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_m_20.gif" alt='' usemap="#uml_class_diagram_for_epydoc_m_20" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._EpydocHTMLTranslator-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">document</span>,
+        <span class="summary-sig-arg">docstring_linker</span>,
+        <span class="summary-sig-arg">directory</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">context</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator.__init__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___44-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___init___44-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___44" name="call_graph_for___init___44">
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.__init__()" alt="" coords="447,6,876,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#to_html" title="ParsedRstDocstring.to_html()" alt="" coords="7,6,250,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#__init__" title="__init__()" alt="" coords="300,6,396,38" />
+</map>
+  <img src="call_graph_for___init___44.gif" alt='' usemap="#call_graph_for___init___44" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._EpydocHTMLTranslator-class.html#visit_title_reference" class="summary-sig-name">visit_title_reference</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator.visit_title_reference">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_visit_title_ref-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_visit_title_ref-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_visit_title_ref" name="call_graph_for_visit_title_ref">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.astext()" alt="" coords="764,6,1020,38" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="5,62,352,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#visit_title_reference" title="visit_title_reference()" alt="" coords="401,62,583,94" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.encode()" alt="" coords="681,62,1103,94" />
+<area shape="rect" href="epydoc.docwriter.html._HTMLDocstringLinker&#45;class.html#translate_identifier_xref" title="docwriter.html._HTMLDocstringLinker.translate_identifier_xref()" alt="" coords="633,118,1151,150" />
+</map>
+  <img src="call_graph_for_visit_title_ref.gif" alt='' usemap="#call_graph_for_visit_title_ref" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._EpydocHTMLTranslator-class.html#should_be_compact_paragraph" class="summary-sig-name">should_be_compact_paragraph</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span><br />
+      Determine if the &lt;p&gt; tags around paragraph <tt class="rst-docutils literal"><span class="pre">node</span></tt> can be omitted.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator.should_be_compact_paragraph">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_should_be_compa-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_should_be_compa-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_should_be_compa" name="call_graph_for_should_be_compa">
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.should_be_compact_paragraph()" alt="" coords="855,6,1455,38" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_paragraph()" alt="" coords="7,6,489,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#should_be_compact_paragraph" title="should_be_compact_paragraph()" alt="" coords="539,6,805,38" />
+</map>
+  <img src="call_graph_for_should_be_compa.gif" alt='' usemap="#call_graph_for_should_be_compa" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._EpydocHTMLTranslator-class.html#visit_document" class="summary-sig-name">visit_document</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator.visit_document">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_visit_document-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_visit_document-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_visit_document" name="call_graph_for_visit_document">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="6,6,352,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#visit_document" title="visit_document()" alt="" coords="400,6,550,38" />
+</map>
+  <img src="call_graph_for_visit_document.gif" alt='' usemap="#call_graph_for_visit_document" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._EpydocHTMLTranslator-class.html#depart_document" class="summary-sig-name">depart_document</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator.depart_document">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_depart_document-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_depart_document-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_depart_document" name="call_graph_for_depart_document">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_departure()" alt="" coords="5,6,389,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#depart_document" title="depart_document()" alt="" coords="437,6,600,38" />
+</map>
+  <img src="call_graph_for_depart_document.gif" alt='' usemap="#call_graph_for_depart_document" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._EpydocHTMLTranslator-class.html#starttag" class="summary-sig-name">starttag</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>,
+        <span class="summary-sig-arg">tagname</span>,
+        <span class="summary-sig-arg">suffix</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string">\n</code><code class="variable-quote">'</code></span>,
+        <span class="summary-sig-arg">**attributes</span>)</span><br />
+      This modified version of starttag makes a few changes to HTML 
+      tags, to prevent them from conflicting with epydoc.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator.starttag">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_starttag-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_starttag-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_starttag" name="call_graph_for_starttag">
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.starttag()" alt="" coords="736,370,1160,402" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_block_quote()" alt="" coords="27,6,528,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#starttag" title="starttag()" alt="" coords="599,370,687,402" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_bullet_list()" alt="" coords="36,62,519,94" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_citation_reference()" alt="" coords="5,118,549,150" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_definition()" alt="" coords="36,174,519,206" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_definition_list()" alt="" coords="20,230,535,262" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_enumerated_list()" alt="" coords="13,286,541,318" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_list_item()" alt="" coords="40,342,515,374" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_literal()" alt="" coords="51,398,504,430" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_literal_block()" alt="" coords="25,454,529,486" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_paragraph()" alt="" coords="36,510,519,542" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_reference()" alt="" coords="37,566,517,598" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_section()" alt="" coords="47,622,508,654" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_term()" alt="" coords="56,678,499,710" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_title()" alt="" coords="59,734,496,766" />
+</map>
+  <img src="call_graph_for_starttag.gif" alt='' usemap="#call_graph_for_starttag" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="visit_dotgraph"></a><span class="summary-sig-name">visit_dotgraph</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator.visit_dotgraph">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_visit_dotgraph-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_visit_dotgraph-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_visit_dotgraph" name="call_graph_for_visit_dotgraph">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="5,34,352,66" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#visit_dotgraph" title="visit_dotgraph()" alt="" coords="400,34,541,66" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#to_html" title="docwriter.dotgraph.DotGraph.to_html()" alt="" coords="589,6,907,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#graph" title="dotgraph.graph()" alt="" coords="675,62,821,94" />
+</map>
+  <img src="call_graph_for_visit_dotgraph.gif" alt='' usemap="#call_graph_for_visit_dotgraph" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._EpydocHTMLTranslator-class.html#visit_doctest_block" class="summary-sig-name">visit_doctest_block</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator.visit_doctest_block">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.writers.html4css1.HTMLTranslator</code></b>:
+      <code>add_meta</code>,
+      <code>astext</code>,
+      <code>attval</code>,
+      <code>check_simple_list</code>,
+      <code>cloak_email</code>,
+      <code>cloak_mailto</code>,
+      <code>depart_Text</code>,
+      <code>depart_abbreviation</code>,
+      <code>depart_acronym</code>,
+      <code>depart_address</code>,
+      <code>depart_admonition</code>,
+      <code>depart_attribution</code>,
+      <code>depart_author</code>,
+      <code>depart_authors</code>,
+      <code>depart_block_quote</code>,
+      <code>depart_bullet_list</code>,
+      <code>depart_caption</code>,
+      <code>depart_citation</code>,
+      <code>depart_citation_reference</code>,
+      <code>depart_classifier</code>,
+      <code>depart_colspec</code>,
+      <code>depart_compound</code>,
+      <code>depart_contact</code>,
+      <code>depart_container</code>,
+      <code>depart_copyright</code>,
+      <code>depart_date</code>,
+      <code>depart_decoration</code>,
+      <code>depart_definition</code>,
+      <code>depart_definition_list</code>,
+      <code>depart_definition_list_item</code>,
+      <code>depart_description</code>,
+      <code>depart_docinfo</code>,
+      <code>depart_docinfo_item</code>,
+      <code>depart_doctest_block</code>,
+      <code>depart_emphasis</code>,
+      <code>depart_entry</code>,
+      <code>depart_enumerated_list</code>,
+      <code>depart_field</code>,
+      <code>depart_field_body</code>,
+      <code>depart_field_list</code>,
+      <code>depart_field_name</code>,
+      <code>depart_figure</code>,
+      <code>depart_footer</code>,
+      <code>depart_footnote</code>,
+      <code>depart_footnote_reference</code>,
+      <code>depart_generated</code>,
+      <code>depart_header</code>,
+      <code>depart_image</code>,
+      <code>depart_inline</code>,
+      <code>depart_label</code>,
+      <code>depart_legend</code>,
+      <code>depart_line</code>,
+      <code>depart_line_block</code>,
+      <code>depart_list_item</code>,
+      <code>depart_literal_block</code>,
+      <code>depart_meta</code>,
+      <code>depart_option</code>,
+      <code>depart_option_argument</code>,
+      <code>depart_option_group</code>,
+      <code>depart_option_list</code>,
+      <code>depart_option_list_item</code>,
+      <code>depart_option_string</code>,
+      <code>depart_organization</code>,
+      <code>depart_paragraph</code>,
+      <code>depart_problematic</code>,
+      <code>depart_reference</code>,
+      <code>depart_revision</code>,
+      <code>depart_row</code>,
+      <code>depart_rubric</code>,
+      <code>depart_section</code>,
+      <code>depart_sidebar</code>,
+      <code>depart_status</code>,
+      <code>depart_strong</code>,
+      <code>depart_subscript</code>,
+      <code>depart_subtitle</code>,
+      <code>depart_superscript</code>,
+      <code>depart_system_message</code>,
+      <code>depart_table</code>,
+      <code>depart_target</code>,
+      <code>depart_tbody</code>,
+      <code>depart_term</code>,
+      <code>depart_tgroup</code>,
+      <code>depart_thead</code>,
+      <code>depart_title</code>,
+      <code>depart_title_reference</code>,
+      <code>depart_topic</code>,
+      <code>depart_transition</code>,
+      <code>depart_version</code>,
+      <code>emptytag</code>,
+      <code>encode</code>,
+      <code>footnote_backrefs</code>,
+      <code>is_compactable</code>,
+      <code>set_class_on_child</code>,
+      <code>set_first_last</code>,
+      <code>unimplemented_visit</code>,
+      <code>visit_Text</code>,
+      <code>visit_abbreviation</code>,
+      <code>visit_acronym</code>,
+      <code>visit_address</code>,
+      <code>visit_admonition</code>,
+      <code>visit_attribution</code>,
+      <code>visit_author</code>,
+      <code>visit_authors</code>,
+      <code>visit_block_quote</code>,
+      <code>visit_bullet_list</code>,
+      <code>visit_caption</code>,
+      <code>visit_citation</code>,
+      <code>visit_citation_reference</code>,
+      <code>visit_classifier</code>,
+      <code>visit_colspec</code>,
+      <code>visit_comment</code>,
+      <code>visit_compound</code>,
+      <code>visit_contact</code>,
+      <code>visit_container</code>,
+      <code>visit_copyright</code>,
+      <code>visit_date</code>,
+      <code>visit_decoration</code>,
+      <code>visit_definition</code>,
+      <code>visit_definition_list</code>,
+      <code>visit_definition_list_item</code>,
+      <code>visit_description</code>,
+      <code>visit_docinfo</code>,
+      <code>visit_docinfo_item</code>,
+      <code>visit_emphasis</code>,
+      <code>visit_entry</code>,
+      <code>visit_enumerated_list</code>,
+      <code>visit_field</code>,
+      <code>visit_field_body</code>,
+      <code>visit_field_list</code>,
+      <code>visit_field_name</code>,
+      <code>visit_figure</code>,
+      <code>visit_footer</code>,
+      <code>visit_footnote</code>,
+      <code>visit_footnote_reference</code>,
+      <code>visit_generated</code>,
+      <code>visit_header</code>,
+      <code>visit_image</code>,
+      <code>visit_inline</code>,
+      <code>visit_label</code>,
+      <code>visit_legend</code>,
+      <code>visit_line</code>,
+      <code>visit_line_block</code>,
+      <code>visit_list_item</code>,
+      <code>visit_literal</code>,
+      <code>visit_literal_block</code>,
+      <code>visit_meta</code>,
+      <code>visit_option</code>,
+      <code>visit_option_argument</code>,
+      <code>visit_option_group</code>,
+      <code>visit_option_list</code>,
+      <code>visit_option_list_item</code>,
+      <code>visit_option_string</code>,
+      <code>visit_organization</code>,
+      <code>visit_paragraph</code>,
+      <code>visit_problematic</code>,
+      <code>visit_raw</code>,
+      <code>visit_reference</code>,
+      <code>visit_revision</code>,
+      <code>visit_row</code>,
+      <code>visit_rubric</code>,
+      <code>visit_section</code>,
+      <code>visit_sidebar</code>,
+      <code>visit_status</code>,
+      <code>visit_strong</code>,
+      <code>visit_subscript</code>,
+      <code>visit_substitution_definition</code>,
+      <code>visit_substitution_reference</code>,
+      <code>visit_subtitle</code>,
+      <code>visit_superscript</code>,
+      <code>visit_system_message</code>,
+      <code>visit_table</code>,
+      <code>visit_target</code>,
+      <code>visit_tbody</code>,
+      <code>visit_term</code>,
+      <code>visit_tgroup</code>,
+      <code>visit_thead</code>,
+      <code>visit_title</code>,
+      <code>visit_topic</code>,
+      <code>visit_transition</code>,
+      <code>visit_version</code>,
+      <code>write_colspecs</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.nodes.NodeVisitor</code></b>:
+      <code>dispatch_departure</code>,
+      <code>dispatch_visit</code>,
+      <code>unknown_departure</code>,
+      <code>unknown_visit</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="settings"></a><span class="summary-name">settings</span> = <code title="True">True</code>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.writers.html4css1.HTMLTranslator</code></b>:
+      <code>attribution_formats</code>,
+      <code>content_type</code>,
+      <code>doctype</code>,
+      <code>embedded_stylesheet</code>,
+      <code>generator</code>,
+      <code>head_prefix_template</code>,
+      <code>stylesheet_link</code>,
+      <code>words_and_spaces</code>,
+      <code>xml_declaration</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.nodes.NodeVisitor</code></b>:
+      <code>optional</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">document</span>,
+        <span class="sig-arg">docstring_linker</span>,
+        <span class="sig-arg">directory</span>,
+        <span class="sig-arg">docindex</span>,
+        <span class="sig-arg">context</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator.__init__">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___44-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for___init___44-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___44" name="call_graph_for___init___44">
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.__init__()" alt="" coords="447,6,876,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#to_html" title="ParsedRstDocstring.to_html()" alt="" coords="7,6,250,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#__init__" title="__init__()" alt="" coords="300,6,396,38" />
+</map>
+  <img src="call_graph_for___init___44.gif" alt='' usemap="#call_graph_for___init___44" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.writers.html4css1.HTMLTranslator.__init__
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="visit_title_reference"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">visit_title_reference</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">node</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator.visit_title_reference">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_visit_title_ref-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_visit_title_ref-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_visit_title_ref" name="call_graph_for_visit_title_ref">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.astext()" alt="" coords="764,6,1020,38" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="5,62,352,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#visit_title_reference" title="visit_title_reference()" alt="" coords="401,62,583,94" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.encode()" alt="" coords="681,62,1103,94" />
+<area shape="rect" href="epydoc.docwriter.html._HTMLDocstringLinker&#45;class.html#translate_identifier_xref" title="docwriter.html._HTMLDocstringLinker.translate_identifier_xref()" alt="" coords="633,118,1151,150" />
+</map>
+  <img src="call_graph_for_visit_title_ref.gif" alt='' usemap="#call_graph_for_visit_title_ref" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.writers.html4css1.HTMLTranslator.visit_title_reference
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="should_be_compact_paragraph"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">should_be_compact_paragraph</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">node</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator.should_be_compact_paragraph">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_should_be_compa-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_should_be_compa-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_should_be_compa" name="call_graph_for_should_be_compa">
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.should_be_compact_paragraph()" alt="" coords="855,6,1455,38" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_paragraph()" alt="" coords="7,6,489,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#should_be_compact_paragraph" title="should_be_compact_paragraph()" alt="" coords="539,6,805,38" />
+</map>
+  <img src="call_graph_for_should_be_compa.gif" alt='' usemap="#call_graph_for_should_be_compa" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Determine if the &lt;p&gt; tags around paragraph <tt class="rst-rst-docutils literal rst-docutils literal"><span class="pre">node</span></tt> can be omitted.
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.writers.html4css1.HTMLTranslator.should_be_compact_paragraph
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="visit_document"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">visit_document</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">node</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator.visit_document">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_visit_document-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_visit_document-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_visit_document" name="call_graph_for_visit_document">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="6,6,352,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#visit_document" title="visit_document()" alt="" coords="400,6,550,38" />
+</map>
+  <img src="call_graph_for_visit_document.gif" alt='' usemap="#call_graph_for_visit_document" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.writers.html4css1.HTMLTranslator.visit_document
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="depart_document"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">depart_document</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">node</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator.depart_document">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_depart_document-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_depart_document-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_depart_document" name="call_graph_for_depart_document">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_departure()" alt="" coords="5,6,389,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#depart_document" title="depart_document()" alt="" coords="437,6,600,38" />
+</map>
+  <img src="call_graph_for_depart_document.gif" alt='' usemap="#call_graph_for_depart_document" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.writers.html4css1.HTMLTranslator.depart_document
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="starttag"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">starttag</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">node</span>,
+        <span class="sig-arg">tagname</span>,
+        <span class="sig-arg">suffix</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string">\n</code><code class="variable-quote">'</code></span>,
+        <span class="sig-arg">**attributes</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator.starttag">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_starttag-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_starttag-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_starttag" name="call_graph_for_starttag">
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.starttag()" alt="" coords="736,370,1160,402" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_block_quote()" alt="" coords="27,6,528,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#starttag" title="starttag()" alt="" coords="599,370,687,402" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_bullet_list()" alt="" coords="36,62,519,94" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_citation_reference()" alt="" coords="5,118,549,150" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_definition()" alt="" coords="36,174,519,206" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_definition_list()" alt="" coords="20,230,535,262" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_enumerated_list()" alt="" coords="13,286,541,318" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_list_item()" alt="" coords="40,342,515,374" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_literal()" alt="" coords="51,398,504,430" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_literal_block()" alt="" coords="25,454,529,486" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_paragraph()" alt="" coords="36,510,519,542" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_reference()" alt="" coords="37,566,517,598" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_section()" alt="" coords="47,622,508,654" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_term()" alt="" coords="56,678,499,710" />
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.html4css1.HTMLTranslator.visit_title()" alt="" coords="59,734,496,766" />
+</map>
+  <img src="call_graph_for_starttag.gif" alt='' usemap="#call_graph_for_starttag" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  This modified version of starttag makes a few changes to HTML tags, to
+  prevent them from conflicting with epydoc.  In particular:
+  <ul>
+    <li>
+      existing class attributes are prefixed with 
+      <code>'rst-'</code>
+    </li>
+    <li>
+      existing names are prefixed with <code>'rst-'</code>
+    </li>
+    <li>
+      hrefs starting with <code>'#'</code> are prefixed with 
+      <code>'rst-'</code>
+    </li>
+    <li>
+      hrefs not starting with <code>'#'</code> are given 
+      target='_top'
+    </li>
+    <li>
+      all headings (<code>&lt;h<i class="math">n</i>&gt;</code>) are 
+      given the css class <code>'heading'</code>
+    </li>
+  </ul>
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.writers.html4css1.HTMLTranslator.starttag
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="visit_doctest_block"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">visit_doctest_block</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">node</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_EpydocHTMLTranslator.visit_doctest_block">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.writers.html4css1.HTMLTranslator.visit_doctest_block
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:05:19 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

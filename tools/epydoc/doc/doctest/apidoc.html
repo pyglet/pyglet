@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>Regression Testing for epydoc.apidoc</title>
+<link rel="stylesheet" href="../custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="regression-testing-for-epydoc-apidoc">
+<h1 class="title">Regression Testing for epydoc.apidoc</h1>
+
+<p>This file serves to provide both documentation and regression tests
+for the epydoc.apidoc module.  The main purpose of this module is to
+define the <cite>APIDoc</cite> class hierarchy, which is used to encode API
+documentation about Python programs.  The API documentation for a
+Python program is encoded using a graph of <cite>APIDoc</cite> objects, each of
+which encodes information about a single Python variable or value.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.apidoc <span class="py-keyword">import</span> *</pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.test.util <span class="py-keyword">import</span> print_warnings
+<span class="py-prompt">&gt;&gt;&gt; </span>print_warnings()</pre>
+</blockquote>
+<div class="section" id="unknown-value">
+<h1>Unknown Value</h1>
+<p>Epydoc defines a special object, epydoc.apidoc.UNKNOWN, which is used
+as the value of attributes when their real value is not (yet) known.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>UNKNOWN
+<span class="py-output">&lt;UNKNOWN&gt;</span></pre>
+</blockquote>
+<p>This object only compares equal to itself:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>UNKNOWN == False
+<span class="py-output">False</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>UNKNOWN == True
+<span class="py-output">False</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>UNKNOWN == <span class="py-string">'UNKNOWN'</span>
+<span class="py-output">False</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>UNKNOWN == 0
+<span class="py-output">False</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>UNKNOWN == []
+<span class="py-output">False</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>UNKNOWN == object()
+<span class="py-output">False</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>UNKNOWN == UNKNOWN
+<span class="py-output">True</span></pre>
+</blockquote>
+<p>If UNKNOWN is used in a context where it is cast to bool, then it will
+raise an exception.  This helps prevent acidentally interpreting an
+UNKNOWN value as true or false:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">if</span> UNKNOWN:
+<span class="py-more">... </span>    <span class="py-keyword">print</span> <span class="py-string">'ok'</span>
+<span class="py-except">Traceback (most recent call last):</span>
+<span class="py-except">ValueError: Sentinel value &lt;UNKNOWN&gt; can not be used as a boolean</span></pre>
+</blockquote>
+<p>To test an attribute whose value might be UNKNOWN, you should
+explicitly compare that value to True or False.  E.g.:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>x = UNKNOWN
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">if</span> x <span class="py-keyword">is</span> True:
+<span class="py-more">... </span>    <span class="py-keyword">print</span> <span class="py-string">'we know x is true, and not unknown'</span>
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">if</span> x <span class="py-keyword">is</span> <span class="py-keyword">not</span> False:
+<span class="py-more">... </span>    <span class="py-keyword">print</span> <span class="py-string">'x might be true or unknown.'</span>
+<span class="py-output">x might be true or unknown.</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">if</span> x <span class="py-keyword">in</span> (True, UNKNOWN):
+<span class="py-more">... </span>    <span class="py-keyword">print</span> <span class="py-string">'x might be true or unknown.'</span>
+<span class="py-output">x might be true or unknown.</span></pre>
+</blockquote>
+</div>
+<div class="section" id="dotted-names">
+<h1>Dotted Names</h1>
+<p>The DottedName class is used to encode dotted names, such as
+'epydoc.apidoc.DottedName', and make them easier to work with.
+Conceptually, a dotted name consists of a sequence of identifiers,
+separated by periods.</p>
+<p>Dotted names can be constructed from strings:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>name1 = DottedName(<span class="py-string">'foo.bar'</span>)
+<span class="py-prompt">&gt;&gt;&gt; </span>name1
+<span class="py-output">DottedName('foo', 'bar')</span></pre>
+</blockquote>
+<p>Note that the given name is split on periods.  You may also pass
+multiple strings to the constructor; they will be combined together
+into a single sequence:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>name2 = DottedName(<span class="py-string">'x.y'</span>, <span class="py-string">'z'</span>)
+<span class="py-prompt">&gt;&gt;&gt; </span>name2
+<span class="py-output">DottedName('x', 'y', 'z')</span></pre>
+</blockquote>
+<p>Each string can be a single identifier or a sequence of identifiers
+joined py periods.  You may also pass DottedName objects to the
+constructor; their sequence of identifiers will be used:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>name3 = DottedName(name1, name2)
+<span class="py-prompt">&gt;&gt;&gt; </span>name3
+<span class="py-output">DottedName('foo', 'bar', 'x', 'y', 'z')</span></pre>
+</blockquote>
+<p>The string representation of a dotted name is formed by joining the
+identifiers with periods:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>str(name1)
+<span class="py-output">'foo.bar'</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>str(name2)
+<span class="py-output">'x.y.z'</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>str(name3)
+<span class="py-output">'foo.bar.x.y.z'</span></pre>
+</blockquote>
+<p>The individual identifiers of a dotted name can be accessed via
+indexing; and the number of identifiers is returned by the len
+operator:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>name1[0], name1[1]
+<span class="py-output">('foo', 'bar')</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>name3[-1]
+<span class="py-output">'z'</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>name3[1:3]
+<span class="py-output">DottedName('bar', 'x')</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>len(name2)
+<span class="py-output">3</span></pre>
+</blockquote>
+<p>As a result, you can iterate over the identifiers in a dotted name:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">for</span> ident <span class="py-keyword">in</span> name1:
+<span class="py-more">... </span>    <span class="py-keyword">print</span> ident
+<span class="py-output">foo</span>
+<span class="py-output">bar</span></pre>
+</blockquote>
+<p>Two dotted names compare equal if they have the same number of
+identifies and they are pairwise equal:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>DottedName(<span class="py-string">'foo.bar'</span>) == DottedName(<span class="py-string">'foo'</span>, <span class="py-string">'bar'</span>)
+<span class="py-output">True</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>DottedName(<span class="py-string">'foo.bar'</span>) == DottedName(<span class="py-string">'foo.baz'</span>)
+<span class="py-output">False</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>DottedName(<span class="py-string">'foo.bar'</span>) == DottedName(<span class="py-string">'foo.bar.baz'</span>)
+<span class="py-output">False</span></pre>
+</blockquote>
+<p>Dotted names may be combined with the addition operator:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>name1 + name2
+<span class="py-output">DottedName('foo', 'bar', 'x', 'y', 'z')</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>name1 + name2 == name3
+<span class="py-output">True</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>name2 + name1 == name3
+<span class="py-output">False</span></pre>
+</blockquote>
+<p>The container method may be used to construct a new dotted name with the
+last identifier stripped off:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>name1.container()
+<span class="py-output">DottedName('foo')</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>name3.container()
+<span class="py-output">DottedName('foo', 'bar', 'x', 'y')</span></pre>
+</blockquote>
+<p>If a dotted name has only one identifier, then its container is None:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> DottedName(<span class="py-string">'baz'</span>).container()
+<span class="py-output">None</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> name1.container().container()
+<span class="py-output">None</span></pre>
+</blockquote>
+<p>It is an error to create an empty dotted name; or a dotted name that
+contains a string that's not a valid python identifier:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>DottedName()
+<span class="py-except">Traceback (most recent call last):</span>
+<span class="py-except">InvalidDottedName: Empty DottedName</span>
+<span class="py-except"></span><span class="py-prompt">&gt;&gt;&gt; </span>DottedName(<span class="py-string">'1+2'</span>)
+<span class="py-except">Traceback (most recent call last):</span>
+<span class="py-except">InvalidDottedName: Bad identifier '1+2'</span>
+<span class="py-except"></span><span class="py-prompt">&gt;&gt;&gt; </span>DottedName({})
+<span class="py-except">Traceback (most recent call last):</span>
+<span class="py-except">TypeError: Bad identifier {}: expected DottedName or str</span></pre>
+</blockquote>
+<p>The one exception is that '??' is treated as if it were a valid python
+identifier:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>DottedName(<span class="py-string">'??'</span>, <span class="py-string">'foo'</span>)
+<span class="py-output">DottedName('??', 'foo')</span></pre>
+</blockquote>
+<p>This is used when we can't find any name for an object (e.g., if
+there's a class that was used as the base class, but is not contained
+in any module or class).</p>
+<p>A dotted name can be queried into a context to obtain a reduced version:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>DottedName(<span class="py-string">'foo.bar'</span>).contextualize(DottedName(<span class="py-string">'foo'</span>))
+<span class="py-output">DottedName('bar')</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>DottedName(<span class="py-string">'foo.bar.baz.qux'</span>).contextualize(DottedName(<span class="py-string">'foo.bar'</span>))
+<span class="py-output">DottedName('baz', 'qux')</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>DottedName(<span class="py-string">'foo.bar'</span>).contextualize(DottedName(<span class="py-string">'baz'</span>))
+<span class="py-output">DottedName('foo', 'bar')</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>DottedName(<span class="py-string">'foo.bar'</span>).contextualize(DottedName(<span class="py-string">'foo'</span>).container())
+<span class="py-output">DottedName('foo', 'bar')</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>DottedName(<span class="py-string">'foo.bar'</span>).contextualize(UNKNOWN)
+<span class="py-output">DottedName('foo', 'bar')</span></pre>
+</blockquote>
+<p>But a contextualization can't reduce to an empty DottedName:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>DottedName(<span class="py-string">'foo'</span>).contextualize(DottedName(<span class="py-string">'foo'</span>))
+<span class="py-output">DottedName('foo')</span></pre>
+</blockquote>
+</div>
+<div class="section" id="apidoc-objects">
+<h1>APIDoc Objects</h1>
+<p>API documentation about Python programs is broken into small pieces,
+each of which is encoded using a single APIDoc object.  Each APIDoc
+object describes a single value, variable, or function argument.</p>
+<p>The APIDoc base class has 2 direct subclasses, for the 2 basic types
+of entity that it can record information about: ValueDoc and
+VariableDoc.  ValueDoc is further subclassed to specify the different
+pieces of information that should be recorded about each value type.</p>
+<p>APIDoc objects record information about each entity using attributes.
+Attribute values may be specified in the constructor.  Any attributes
+that are not specified will be given a default value (usually
+UNKNOWN).  The APIDoc base class defines the attributes shared by all
+APIDoc objects: docstring, docstring_lineno, descr, summary, metadata,
+and extra_docstring_fields.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>api_doc = APIDoc(docstring=<span class="py-string">'foo'</span>)
+<span class="py-prompt">&gt;&gt;&gt; </span>api_doc.docstring
+<span class="py-output">'foo'</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>api_doc.summary
+<span class="py-output">&lt;UNKNOWN&gt;</span></pre>
+</blockquote>
+<p>The constructor does not accept positional arguments; and any keyword
+argument that does not correspond to a valid attribute will generate a
+TypeError (but only if epydoc.DEBUG is true):</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>APIDoc(<span class="py-string">'foo'</span>)
+<span class="py-except">Traceback (most recent call last):</span>
+<span class="py-except">TypeError: __init__() takes exactly 1 argument (2 given)</span>
+<span class="py-except"></span><span class="py-prompt">&gt;&gt;&gt; </span>APIDoc(foo=<span class="py-string">'foo'</span>)
+<span class="py-except">Traceback (most recent call last):</span>
+<span class="py-except">TypeError: APIDoc got unexpected arg 'foo'</span></pre>
+</blockquote>
+<p>Any assignment to an attribute that's not valid will also generate a
+TypeError (but only if epydoc.DEBUG is true):</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>api_doc = APIDoc(docstring=<span class="py-string">'ds'</span>)
+<span class="py-prompt">&gt;&gt;&gt; </span>api_doc.foo = 0
+<span class="py-except">Traceback (most recent call last):</span>
+<span class="py-except">AttributeError: APIDoc does not define attribute 'foo'</span></pre>
+</blockquote>
+<p>APIDoc defines a pretty-print method, pp(), which can be used to
+display the information that an APIDoc contains:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>val_doc = ValueDoc(pyval=3)
+<span class="py-prompt">&gt;&gt;&gt; </span>var_doc = VariableDoc(name=<span class="py-string">'x'</span>, value=val_doc)
+<span class="py-prompt">&gt;&gt;&gt; </span>class_doc = ClassDoc(bases=(), variables={<span class="py-string">'x'</span>:var_doc})
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> class_doc.pp()
+<span class="py-output">ClassDoc [0]</span>
+<span class="py-output"> +- bases = ()</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- x =&gt; VariableDoc for x [1]</span>
+<span class="py-output">       +- is_public = True</span>
+<span class="py-output">       +- name = 'x'</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- ValueDoc [2]</span>
+<span class="py-output">             +- pyval = 3</span></pre>
+</blockquote>
+<p>This is mainly intended to be used as a debugging and testing tool.
+The attributes that will be pretty-printed for an APIDoc object are
+determined by its class's _STR_FIELDS variable.  (But any attribute
+whose value is UNKNOWN will not be displayed.)  Attributes are listed
+in alphabetical order.</p>
+</div>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="../index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../index.html">
+    Home</a></td></a>
+  <a class="nav" href="../installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="../using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="../epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="../sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

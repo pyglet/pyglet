@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>Regression Testing for plaintext</title>
+<link rel="stylesheet" href="../custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="regression-testing-for-plaintext">
+<h1 class="title">Regression Testing for plaintext</h1>
+
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.test.util <span class="py-keyword">import</span> print_warnings
+<span class="py-prompt">&gt;&gt;&gt; </span>print_warnings()</pre>
+</blockquote>
+<div class="section" id="summary">
+<h1>Summary</h1>
+<p>The implementation of the summaization function works as expected.</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.markup <span class="py-keyword">import</span> plaintext
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">getsummary</span>(s):
+<span class="py-more">... </span>    p = plaintext.parse_docstring(s, [])
+<span class="py-more">... </span>    s, o = p.summary()
+<span class="py-more">... </span>    s = s.to_plaintext(None).strip()
+<span class="py-more">... </span>    return s, o</pre>
+<p>Let's not lose anything!</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;Single line&quot;</span>)
+<span class="py-output">('Single line', False)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;Single line.&quot;</span>)
+<span class="py-output">('Single line.', False)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Single line with period.</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">('Single line with period.', False)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Other lines with period.</span>
+<span class="py-more">... </span><span class="py-string">This is attached</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">('Other lines with period.', True)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Other lines with period.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">This is detached</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">('Other lines with period.', True)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Other lines without period</span>
+<span class="py-more">... </span><span class="py-string">This is attached</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">('Other lines without period...', True)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Other lines without period</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">This is detached</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">('Other lines without period...', True)</span></pre>
+</div>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="../index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../index.html">
+    Home</a></td></a>
+  <a class="nav" href="../installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="../using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="../epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="../sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

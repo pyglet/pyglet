@@ -1,0 +1,150 @@
+/*
+:Author: Edward Loper
+:Copyright: This stylesheet has been placed in the public domain.
+
+Stylesheet for use with Docutils.
+*/
+
+@import url("docutils.css");
+
+/*===================================================================*/
+/* Navigation box */
+
+table.navbox {
+  border-right: 1px solid black;
+  border-left: 1px solid black;
+  border-bottom: 1px solid black;
+}
+td.nav {
+  border: 2px outset #70b0ff;
+  background: #70b0ff; color: black;
+  font-weight: bold;
+}
+td.navselect {
+  background: #4888d8; color: white;
+}
+
+a.nav:link    { text-decoration: none; }
+a.nav:visited { text-decoration: none; }
+
+/*======================================================================*/
+/* Source code colorization */
+pre.py-doctest              { padding: .5em; margin: 1em;
+                              background: #e8f0f8; color: #000000;
+                              border: 1px solid #708890; }
+table.docutils pre.py-doctest { background: #dce4ec;
+                                color: #000000; 
+                                border: 1px solid #708890; }
+.py-prompt                  { color: #005050; font-weight: bold;}
+.py-string                  { color: #006030; }
+.py-comment                 { color: #003060; }
+.py-keyword                 { color: #600000; }
+.py-output                  { color: #404040; }
+.py-name                    { color: #000050; }
+.py-name:link               { color: #000050; }
+.py-name:visited            { color: #000050; }
+.py-number                  { color: #005000; }
+.py-def-name                { color: #000060; font-weight: bold; }
+.py-base-class              { color: #000060; }
+.py-param                   { color: #000060; }
+.py-docstring               { color: #006030; }
+.py-decorator               { color: #804020; }
+
+/*======================================================================*/
+/* Document formatting */
+
+@media screen {
+  body    { background: #204060; color: #000000; }
+  div.document { 
+    background: white; color: black;
+    padding: 0 1em 0 1em;
+    border: 2px solid black;
+  }
+}
+
+h1.title { font-size: 180%; font-weight: bold; text-align: center;
+           padding: .1em; margin: 0; border-bottom: 2px solid black;}
+
+h2.subtitle { font-size: 100%; text-align: center; 
+              font-style: italic; font-weight: normal; margin-top: 0; }
+
+pre.literal-block           { padding: .5em; margin: 1em;
+                              background: #e8f0f8; color: #000000;
+                              border: 1px solid #708890; }
+
+table.docutils {
+  border: 1px solid black; background: #e8f0f8; 
+  margin-top: 6px; border-collapse: collapse;
+}
+table.docutils th, table.docutils td {
+  border: 1px solid black;
+  padding: 0 .5em 0 .5em; }
+table.docutils th       { background: #70b0ff; }
+
+div.epydoc-usage { border: 1px solid #708890; 
+                   background: #e8f0f8; margin: 1em; padding: 0.5em}
+table.option-list { background: none !important;
+                    border: 0px solid black; }
+table.option-list td { border: none !important; }
+
+div.note {  
+  border: 1px solid black; background: #e8f0f8; 
+  margin-top: 6px; 
+  border-collapse: collapse;
+  padding: 0 10px 10px 10px;
+}
+div.note p.admonition-title { 
+  background: #a0f0c0; margin: 0 -10px; padding: 6px 6px 3px 6px;
+  border-bottom: 1px solid black; 
+ }
+
+#the-epytext-markup-language table.docutils { width: 95%; }
+
+table.docutils pre { border: 0px solid black; }
+
+div.note {  }
+
+
+
+/* For the "Sections" example in the manual */
+p.h1                    { font-size: 150%; font-weight: bold;  }
+p.h2                    { font-size: 125%; font-weight: bold;  }
+
+table.docinfo { margin: 0 0 0.5em 0; font-size: 90%; }
+
+div.abstract { margin: 0; padding: 0.5em 1em; 
+               border: 1px solid black; 
+               background: #e8f0f8; color: black; }
+div.abstract p { margin: 0; }
+div.abstract p.topic-title { display: none; }
+
+#contents { 
+    background: #e8f0f8; color: black; 
+    border: 1px solid #000000;
+    margin: 1em 0 1em 0;
+    padding: 0 10px 0 10px;
+}
+
+#contents p.topic-title {
+    background: #70b0ff;
+    text-align: center;
+    font-weight: bold;
+    font-size: 125%;
+    margin: 0 -10px 0 -10px;
+    padding: 0 10px 0 10px;
+    border-bottom: 1px solid black;
+}
+
+/*
+
+<table class="docinfo" frame="void" rules="none">
+<col class="docinfo-name" />
+<col class="docinfo-content" />
+<tbody valign="top">
+<tr><th class="docinfo-name">Author:</th>
+<td><a class="first last reference" href="mailto:edloper&#64;gradient.cis.upenn.edu">Edward Loper</a></td></tr>
+<tr><th class="docinfo-name">Version:</th>
+<td>3.0b1</td></tr>
+</tbody>
+</table>
+<div class="abstract topic">*/

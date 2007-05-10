@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>Regression Testing for Zope 2 support</title>
+<link rel="stylesheet" href="../custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="regression-testing-for-zope-2-support">
+<h1 class="title">Regression Testing for Zope 2 support</h1>
+<table class="docinfo" frame="void" rules="none">
+<col class="docinfo-name" />
+<col class="docinfo-content" />
+<tbody valign="top">
+<tr class="field"><th class="docinfo-name">RequireModule:</th><td class="field-body"><p class="first">ExtensionClass</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.test.util <span class="py-keyword">import</span> runintrospecter</pre>
+</td>
+</tr>
+</tbody>
+</table>
+<p>We treat extension classes as if they were classes:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> ExtensionClass <span class="py-keyword">import</span> ExtensionClass</pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">'''</span>
+<span class="py-more">... </span><span class="py-string">    from ExtensionClass import ExtensionClass</span>
+<span class="py-more">... </span><span class="py-string">    '''</span>, attribs=<span class="py-string">'variables value pyval'</span>,
+<span class="py-more">... </span>    introspect=<span class="py-string">'ExtensionClass'</span>)
+<span class="py-output">ClassDoc [0]</span>
+<span class="py-output"> +- pyval = &lt;extension class ExtensionClass at 40...</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- __basicnew__ =&gt; VariableDoc for __basicnew__ [1]</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc [2]</span>
+<span class="py-output">    |        +- pyval = &lt;CMethod object at ...&gt;</span>
+<span class="py-output">    +- __call__ =&gt; VariableDoc for __call__ [3]</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc [4]</span>
+<span class="py-output">    |        +- pyval = &lt;CMethod object at ...&gt;</span>
+<span class="py-output">    +- __delattr__ =&gt; VariableDoc for __delattr__ [5]</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc [6]</span>
+<span class="py-output">    |        +- pyval = &lt;CMethod object at ...&gt;</span>
+<span class="py-output">    +- __getattr__ =&gt; VariableDoc for __getattr__ [7]</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc [8]</span>
+<span class="py-output">    |        +- pyval = &lt;CMethod object at ...&gt;</span>
+<span class="py-output">    +- __init__ =&gt; VariableDoc for __init__ [9]</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc [10]</span>
+<span class="py-output">    |        +- pyval = &lt;CMethod object at ...&gt;</span>
+<span class="py-output">    +- __reduce__ =&gt; VariableDoc for __reduce__ [11]</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc [12]</span>
+<span class="py-output">    |        +- pyval = &lt;CMethod object at ...&gt;</span>
+<span class="py-output">    +- __repr__ =&gt; VariableDoc for __repr__ [13]</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc [14]</span>
+<span class="py-output">    |        +- pyval = &lt;CMethod object at ...&gt;</span>
+<span class="py-output">    +- __setattr__ =&gt; VariableDoc for __setattr__ [15]</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc [16]</span>
+<span class="py-output">    |        +- pyval = &lt;CMethod object at ...&gt;</span>
+<span class="py-output">    +- inheritedAttribute =&gt; VariableDoc for inheritedAttribute [17]</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- RoutineDoc [18]</span>
+<span class="py-output">             +- pyval = &lt;CMethod object at ...&gt;</span></pre>
+</blockquote>
+<p>(If we didn't add special support, <tt class="docutils literal"><span class="pre">ExtensionClass</span></tt> would be a
+<cite>GenericValueDoc</cite>.)</p>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="../index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../index.html">
+    Home</a></td></a>
+  <a class="nav" href="../installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="../using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="../epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="../sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

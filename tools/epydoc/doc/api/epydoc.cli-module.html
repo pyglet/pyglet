@@ -1,0 +1,803 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.cli</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        Module&nbsp;cli
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.cli-module.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== MODULE DESCRIPTION ==================== -->
+<h1 class="epydoc">Module cli</h1><span class="codelink"><a href="epydoc.cli-pysrc.html">source&nbsp;code</a></span><br /><br />
+Command-line interface for epydoc.  Abbreviated Usage:
+<pre class="literalblock">
+epydoc [options] NAMES...
+
+    NAMES...                  The Python modules to document.
+    --html                    Generate HTML output (default).
+    --latex                   Generate LaTeX output.
+    --pdf                     Generate pdf output, via LaTeX.
+    -o DIR, --output DIR      The output directory.
+    --inheritance STYLE       The format for showing inherited objects.
+    -V, --version             Print the version of epydoc.
+    -h, --help                Display a usage message.
+</pre>
+  Run &quot;epydoc --help&quot; for a complete option list.  See the 
+  epydoc(1) man page for more information.
+  <h1 class="heading">Config Files</h1>
+    Configuration files can be specified with the <code>--config</code> 
+    option. These files are read using <a 
+    href="http://docs.python.org/lib/module-ConfigParser.html" 
+    target="_top">ConfigParser</a>.  Configuration files may set options or
+    add names of modules to document.  Option names are (usually) identical
+    to the long names of command line options.  To specify names to 
+    document, use any of the following option names:
+<pre class="literalblock">
+ module modules value values object objects
+</pre>
+    A simple example of a config file is:
+<pre class="literalblock">
+ [epydoc]
+ modules: sys, os, os.path, re, %(MYSANDBOXPATH)/utilities.py
+ name: Example
+ graph: classtree
+ introspect: no
+</pre>
+    All ConfigParser interpolations are done using local values and the 
+    environment variables.
+  <h1 class="heading">Verbosity Levels</h1>
+    The <code>-v</code> and <code>-q</code> options increase and 
+    decrease verbosity, respectively.  The default verbosity level is zero.
+    The verbosity levels are currently defined as follows:
+<pre class="literalblock">
+               Progress    Markup warnings   Warnings   Errors
+-3               none            no             no        no
+-2               none            no             no        yes
+-1               none            no             yes       yes
+ 0 (default)     bar             no             yes       yes
+ 1               bar             yes            yes       yes
+ 2               list            yes            yes       yes
+</pre><br /><br />
+
+<!-- ==================== CLASSES ==================== -->
+<a name="section-Classes"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Classes"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Logging</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.cli.TerminalController-class.html" class="summary-name">TerminalController</a><br />
+      A class that can be used to portably generate formatted output 
+        to a terminal.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.cli.ConsoleLogger-class.html" class="summary-name">ConsoleLogger</a>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.cli.UnifiedProgressConsoleLogger-class.html" class="summary-name">UnifiedProgressConsoleLogger</a>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.cli.HTMLLogger-class.html" class="summary-name">HTMLLogger</a><br />
+      A logger used to generate a log of all warnings and messages to 
+        an HTML file.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTIONS ==================== -->
+<a name="section-Functions"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Functions</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Functions"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Argument &amp; Config File Parsing</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="parse_arguments"></a><span class="summary-sig-name">parse_arguments</span>()</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#parse_arguments">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="parse_configfiles"></a><span class="summary-sig-name">parse_configfiles</span>(<span class="summary-sig-arg">configfiles</span>,
+        <span class="summary-sig-arg">options</span>,
+        <span class="summary-sig-arg">names</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#parse_configfiles">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_str_to_bool"></a><span class="summary-sig-name">_str_to_bool</span>(<span class="summary-sig-arg">val</span>,
+        <span class="summary-sig-arg">optname</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#_str_to_bool">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_str_to_int"></a><span class="summary-sig-name">_str_to_int</span>(<span class="summary-sig-arg">val</span>,
+        <span class="summary-sig-arg">optname</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#_str_to_int">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Interface</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="main"></a><span class="summary-sig-name">main</span>(<span class="summary-sig-arg">options</span>,
+        <span class="summary-sig-arg">names</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#main">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="write_html"></a><span class="summary-sig-name">write_html</span>(<span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">options</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#write_html">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.cli-module.html#write_pickle" class="summary-sig-name">write_pickle</a>(<span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">options</span>)</span><br />
+      Helper for writing output to a pickle file, which can then be read
+      in at a later time.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#write_pickle">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="pickle_persistent_id"></a><span class="summary-sig-name">pickle_persistent_id</span>(<span class="summary-sig-arg">obj</span>)</span><br />
+      Helper for pickling, which allows us to save and restore UNKNOWN, 
+      which is required to be identical to apidoc.UNKNOWN.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#pickle_persistent_id">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="pickle_persistent_load"></a><span class="summary-sig-name">pickle_persistent_load</span>(<span class="summary-sig-arg">identifier</span>)</span><br />
+      Helper for pickling, which allows us to save and restore UNKNOWN, 
+      which is required to be identical to apidoc.UNKNOWN.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#pickle_persistent_load">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="write_latex"></a><span class="summary-sig-name">write_latex</span>(<span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">options</span>,
+        <span class="summary-sig-arg">format</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#write_latex">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="write_text"></a><span class="summary-sig-name">write_text</span>(<span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">options</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#write_text">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="check_docs"></a><span class="summary-sig-name">check_docs</span>(<span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">options</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#check_docs">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="cli"></a><span class="summary-sig-name">cli</span>()</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#cli">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_profile"></a><span class="summary-sig-name">_profile</span>()</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#_profile">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== VARIABLES ==================== -->
+<a name="section-Variables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Variables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="INHERITANCE_STYLES"></a><span class="summary-name">INHERITANCE_STYLES</span> = <code title="('grouped', 'listed', 'included')"><code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">grouped</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">listed</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">included</code><code class="variable-quote">'</code><code class="variable-group">)</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="GRAPH_TYPES"></a><span class="summary-name">GRAPH_TYPES</span> = <code title="('classtree', 'callgraph', 'umlclasstree')"><code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">classtree</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">callgraph</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">umlclasstree</code><code class="variable-quote">'</code><code class="variable-group">)</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="ACTIONS"></a><span class="summary-name">ACTIONS</span> = <code title="('html', 'text', 'latex', 'dvi', 'ps', 'pdf', 'check')"><code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">html</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">text</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">latex</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">dvi</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">ps</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">pdf</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">check</code><code class="variable-quote">'</code><code class="variable-group">)</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="DEFAULT_DOCFORMAT"></a><span class="summary-name">DEFAULT_DOCFORMAT</span> = <code title="'epytext'"><code class="variable-quote">'</code><code class="variable-string">epytext</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="PROFILER"></a><span class="summary-name">PROFILER</span> = <code title="'hotshot'"><code class="variable-quote">'</code><code class="variable-string">hotshot</code><code class="variable-quote">'</code></code><br />
+      Which profiler to use: 'hotshot' or 'profile'
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="descr"></a><span class="summary-name">descr</span> = <code title="'Black on white, with blue highlights'"><code class="variable-quote">'</code><code class="variable-string">Black on white, with blue highlights</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="key"></a><span class="summary-name">key</span> = <code title="'white'"><code class="variable-quote">'</code><code class="variable-string">white</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.cli-module.html#sheet" class="summary-name">sheet</a> = <code title="'''
+
+/* Epydoc CSS Stylesheet
+ *
+ * This stylesheet can be used to customize the appearance of epydoc\'\
+s
+ * HTML output.
+ *
+..."><code class="variable-quote">'</code><code class="variable-string">\n\n/* Epydoc CSS Stylesheet\n *\n * This stylesheet </code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="topic"></a><span class="summary-name">topic</span> = <code title="'inheritance'"><code class="variable-quote">'</code><code class="variable-string">inheritance</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Help Topics</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.cli-module.html#DOCFORMATS" class="summary-name">DOCFORMATS</a> = <code title="('epytext', 'plaintext', 'restructuredtext', 'javadoc')"><code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">epytext</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">plaintext</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">restructuredtext</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">jav</code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.cli-module.html#HELP_TOPICS" class="summary-name">HELP_TOPICS</a> = <code title="{'css': '''The following built-in CSS stylesheets are available:
+        blue: Black on steel blue
+     default: Default stylesheet (=white)
+   grayscale: Grayscale black on white
+       black: White on black, with blue highlights
+       green: Black on green
+       white: Black on white, with blue highlights''',
+ 'docformat': '''__docformat__ is a module variable that specifies the\
+..."><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">css</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">The following built-in CSS stylesheets </code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Argument &amp; Config File Parsing</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.cli-module.html#OPTION_DEFAULTS" class="summary-name">OPTION_DEFAULTS</a> = <code title="{'action': 'html',
+ 'debug': True,
+ 'docformat': 'epytext',
+ 'exclude': [],
+ 'exclude_introspect': [],
+ 'exclude_parse': [],
+ 'external_api': [],
+ 'external_api_file': [],
+..."><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">action</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">html</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">debug</code><code class="variable-quote">'</code><code class="variable-op">: </code>True<code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">docformat</code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8"  class="private">
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Interface</th></tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.cli-module.html#_RERUN_LATEX_RE" class="summary-name">_RERUN_LATEX_RE</a> = <code title="re.compile(r'(?im)^LaTeX\s+Warning:\s+Label\(s\)\s+may\s+have\s+change\
+d.\s+Rerun')">re.compile(r'<code class="re-flags">(?im)</code>^LaTeX\s<code class="re-op">+</code>Warning:\s<code class="re-op">+</code>Label\<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTION DETAILS ==================== -->
+<a name="section-FunctionDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Function Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-FunctionDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="write_pickle"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">write_pickle</span>(<span class="sig-arg">docindex</span>,
+        <span class="sig-arg">options</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.cli-pysrc.html#write_pickle">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Helper for writing output to a pickle file, which can then be read in 
+  at a later time.  But loading the pickle is only marginally faster than 
+  building the docs from scratch, so this has pretty limited 
+  application.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== VARIABLES DETAILS ==================== -->
+<a name="section-VariablesDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-VariablesDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="DOCFORMATS"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">DOCFORMATS</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">epytext</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">plaintext</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">restructuredtext</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">javadoc</code><code class="variable-quote">'</code><code class="variable-group">)</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="HELP_TOPICS"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">HELP_TOPICS</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">css</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'''</code><code class="variable-string">The following built-in CSS stylesheets are available:</code>
+<code class="variable-string">        blue: Black on steel blue</code>
+<code class="variable-string">     default: Default stylesheet (=white)</code>
+<code class="variable-string">   grayscale: Grayscale black on white</code>
+<code class="variable-string">       black: White on black, with blue highlights</code>
+<code class="variable-string">       green: Black on green</code>
+<code class="variable-string">       white: Black on white, with blue highlights</code><code class="variable-quote">'''</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">docformat</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'''</code><code class="variable-string">__docformat__ is a module variable that specifies the</code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="OPTION_DEFAULTS"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">OPTION_DEFAULTS</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">action</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">html</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">debug</code><code class="variable-quote">'</code><code class="variable-op">: </code>True<code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">docformat</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">epytext</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">exclude</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-group">]</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">exclude_introspect</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-group">]</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">exclude_parse</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-group">]</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">external_api</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-group">]</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">external_api_file</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-group">]</code><code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_RERUN_LATEX_RE"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_RERUN_LATEX_RE</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+re.compile(r'<code class="re-flags">(?im)</code>^LaTeX\s<code class="re-op">+</code>Warning:\s<code class="re-op">+</code>Label\(s\)\s<code class="re-op">+</code>may\s<code class="re-op">+</code>have\s<code class="re-op">+</code>change<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+d.\s<code class="re-op">+</code>Rerun')
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="sheet"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">sheet</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-quote">'''</code><code class="variable-string"></code>
+<code class="variable-string"></code>
+<code class="variable-string">/* Epydoc CSS Stylesheet</code>
+<code class="variable-string"> *</code>
+<code class="variable-string"> * This stylesheet can be used to customize the appearance of epydoc\'</code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="variable-string">s</code>
+<code class="variable-string"> * HTML output.</code>
+<code class="variable-string"> *</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:02:14 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

@@ -1,0 +1,998 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.apidoc.DocIndex</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.apidoc-module.html">Module&nbsp;apidoc</a> ::
+        Class&nbsp;DocIndex
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.apidoc.DocIndex-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class DocIndex</h1><span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex">source&nbsp;code</a></span><br /><br />
+<p>[xx] out of date.</p>
+  An index that .. hmm...  it *can't* be used to access some things, cuz
+  they're not at the root level.  Do I want to add them or what? And if so,
+  then I have a sort of a new top level.  hmm..  so basically the question 
+  is what to do with a name that's not in the root var's name space.  2 
+  types:
+  <ul>
+    <li>
+      entirely outside (eg os.path)
+    </li>
+    <li>
+      inside but not known (eg a submodule that we didn't look at?)
+    </li>
+    <li>
+      container of current thing not examined?
+    </li>
+  </ul>
+  <p>An index of all the <code>APIDoc</code> objects that can be reached 
+  from a root set of <code>ValueDoc</code>s.</p>
+  <p>The members of this index can be accessed by dotted name.  In 
+  particular, <code>DocIndex</code> defines two mappings, accessed via the 
+  <a href="epydoc.apidoc.DocIndex-class.html#get_vardoc" 
+  class="link">get_vardoc()</a> and <a 
+  href="epydoc.apidoc.DocIndex-class.html#get_valdoc" 
+  class="link">get_valdoc()</a> methods, which can be used to access 
+  <code>VariableDoc</code>s or <code>ValueDoc</code>s respectively by name.
+  (Two separate mappings are necessary because a single name can be used to
+  refer to both a variable and to the value contained by that 
+  variable.)</p>
+  Additionally, the index defines two sets of <code>ValueDoc</code>s: 
+  &quot;reachable <code>ValueDoc</code>s&quot; and &quot;contained 
+  <code>ValueDoc</code>s&quot;.  The <a 
+  name="index-reachable_ValueDocs"></a><i class="indexterm">reachable 
+  <code>ValueDoc</code>s</i> are defined as the set of all 
+  <code>ValueDoc</code>s that can be reached from the root set by following
+  <i>any</i> sequence of pointers to <code>ValueDoc</code>s or 
+  <code>VariableDoc</code>s. The <a name="index-contained_ValueDocs"></a><i
+  class="indexterm">contained <code>ValueDoc</code>s</i> are defined as the
+  set of all <code>ValueDoc</code>s that can be reached from the root set 
+  by following only the <code>ValueDoc</code> pointers defined by 
+  non-imported <code>VariableDoc</code>s.  For example, if the root set 
+  contains a module <code>m</code>, then the contained 
+  <code>ValueDoc</code>s includes the <code>ValueDoc</code>s for any 
+  functions, variables, or classes defined in that module, as well as 
+  methods and variables defined in classes defined in the module.  The 
+  reachable <code>ValueDoc</code>s includes all of those 
+  <code>ValueDoc</code>s, as well as <code>ValueDoc</code>s for any values 
+  imported into the module, and base classes for classes defined in the 
+  module.<br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc.DocIndex-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">root</span>)</span><br />
+      Create a new documentation index, based on the given root set of 
+      <code>ValueDoc</code>s.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex.__init__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___init___2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___2" name="call_graph_for___init___2">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#__init__" title="__init__()" alt="" coords="297,34,393,66" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get_module_classes" title="_get_module_classes()" alt="" coords="448,6,643,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="DottedName.__cmp__()" alt="" coords="444,62,647,94" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="docbuilder.build_doc_index()" alt="" coords="5,34,248,66" />
+</map>
+  <img src="call_graph_for___init___2.gif" alt='' usemap="#call_graph_for___init___2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_vardoc"></a><span class="summary-sig-name">get_vardoc</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">name</span>)</span><br />
+      Return the <code>VariableDoc</code> with the given name, or 
+      <code>None</code> if this index does not contain a 
+      <code>VariableDoc</code> with the given name.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex.get_vardoc">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_get_vardoc-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_get_vardoc-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_get_vardoc" name="call_graph_for_get_vardoc">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get" title="_get()" alt="" coords="740,62,807,94" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#find" title="find()" alt="" coords="233,6,297,38" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#get_vardoc" title="get_vardoc()" alt="" coords="573,62,691,94" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_doc_or_ancestor_is_private" title="docwriter.html.HTMLWriter._doc_or_ancestor_is_private()" alt="" coords="31,62,500,94" />
+<area shape="rect" href="epydoc.docwriter.html._HTMLDocstringLinker&#45;class.html#translate_identifier_xref" title="docwriter.html._HTMLDocstringLinker.translate_identifier_xref()" alt="" coords="7,118,524,150" />
+</map>
+  <img src="call_graph_for_get_vardoc.gif" alt='' usemap="#call_graph_for_get_vardoc" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_valdoc"></a><span class="summary-sig-name">get_valdoc</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">name</span>)</span><br />
+      Return the <code>ValueDoc</code> with the given name, or 
+      <code>None</code> if this index does not contain a 
+      <code>ValueDoc</code> with the given name.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex.get_valdoc">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_get_valdoc-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_get_valdoc-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_get_valdoc" name="call_graph_for_get_valdoc">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get" title="_get()" alt="" coords="690,146,756,178" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#container" title="container()" alt="" coords="188,6,292,38" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#get_valdoc" title="get_valdoc()" alt="" coords="524,146,639,178" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#find" title="find()" alt="" coords="208,62,272,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#user_docfields" title="docstringparser.user_docfields()" alt="" coords="110,118,371,150" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#import_graph" title="docwriter.dotgraph.import_graph()" alt="" coords="100,174,380,206" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_doc_or_ancestor_is_private" title="docwriter.html.HTMLWriter._doc_or_ancestor_is_private()" alt="" coords="6,230,475,262" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_url" title="docwriter.html.HTMLWriter._url()" alt="" coords="98,286,383,318" />
+</map>
+  <img src="call_graph_for_get_valdoc.gif" alt='' usemap="#call_graph_for_get_valdoc" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_get"></a><span class="summary-sig-name">_get</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">name</span>)</span><br />
+      A helper function that's used to implement <a 
+      href="epydoc.apidoc.DocIndex-class.html#get_vardoc" 
+      class="link">get_vardoc()</a> and <a 
+      href="epydoc.apidoc.DocIndex-class.html#get_valdoc" 
+      class="link">get_valdoc()</a>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex._get">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__get-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__get-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__get" name="call_graph_for__get">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get" title="_get()" alt="" coords="172,146,239,178" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get_from" title="_get_from()" alt="" coords="347,6,459,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="DottedName.__cmp__()" alt="" coords="302,62,504,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="DottedName.__getitem__()" alt="" coords="290,118,516,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__hash__" title="DottedName.__hash__()" alt="" coords="300,174,506,206" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__len__" title="DottedName.__len__()" alt="" coords="306,230,500,262" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#dominates" title="DottedName.dominates()" alt="" coords="298,286,508,318" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#get_valdoc" title="get_valdoc()" alt="" coords="7,118,122,150" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#get_vardoc" title="get_vardoc()" alt="" coords="6,174,123,206" />
+</map>
+  <img src="call_graph_for__get.gif" alt='' usemap="#call_graph_for__get" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_get_from"></a><span class="summary-sig-name">_get_from</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">val_doc</span>,
+        <span class="summary-sig-arg">identifier</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex._get_from">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__get_from-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__get_from-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__get_from" name="call_graph_for__get_from">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get" title="_get()" alt="" coords="7,6,73,38" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get_from" title="_get_from()" alt="" coords="124,6,236,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="DottedName.__getitem__()" alt="" coords="287,6,513,38" />
+</map>
+  <img src="call_graph_for__get_from.gif" alt='' usemap="#call_graph_for__get_from" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc.DocIndex-class.html#find" class="summary-sig-name">find</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">context</span>)</span><br />
+      Look for an <code>APIDoc</code> named <code>name</code>, relative 
+      to <code>context</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex.find">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_find-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_find-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_find" name="call_graph_for_find">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#find" title="find()" alt="" coords="579,202,643,234" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#get_valdoc" title="get_valdoc()" alt="" coords="748,6,863,38" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#get_vardoc" title="get_vardoc()" alt="" coords="747,62,864,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__add__" title="DottedName.__add__()" alt="" coords="705,118,905,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="DottedName.__getitem__()" alt="" coords="692,174,919,206" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="DottedName.__init__()" alt="" coords="707,230,904,262" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__len__" title="DottedName.__len__()" alt="" coords="708,286,903,318" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__radd__" title="DottedName.__radd__()" alt="" coords="703,342,908,374" />
+<area shape="rect" href="epydoc.apidoc.RoutineDoc&#45;class.html#all_args" title="RoutineDoc.all_args()" alt="" coords="712,398,899,430" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#_add_attribute_edge" title="docwriter.dotgraph.DotGraphUmlClassNode._add_attribute_edge()" alt="" coords="5,62,531,94" />
+<area shape="rect" href="epydoc.docwriter.html._HTMLDocstringLinker&#45;class.html#translate_identifier_xref" title="docwriter.html._HTMLDocstringLinker.translate_identifier_xref()" alt="" coords="9,118,527,150" />
+<area shape="rect" href="epydoc.docwriter.html._HTMLDocstringLinker&#45;class.html#url_for" title="docwriter.html._HTMLDocstringLinker.url_for()" alt="" coords="73,174,463,206" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#_build_graph" title="markup.epytext.ParsedEpytextDocstring._build_graph()" alt="" coords="48,230,488,262" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_classtree" title="markup.restructuredtext._construct_classtree()" alt="" coords="84,286,452,318" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_packagetree" title="markup.restructuredtext._construct_packagetree()" alt="" coords="72,342,464,374" />
+</map>
+  <img src="call_graph_for_find.gif" alt='' usemap="#call_graph_for_find" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>dict</code> from <code>str</code> to <a 
+      href="epydoc.apidoc.ClassDoc-class.html" class="link">ClassDoc</a> or
+      <code>list</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc.DocIndex-class.html#_get_module_classes" class="summary-sig-name">_get_module_classes</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">docs</span>)</span><br />
+      Gather all the classes defined in a list of modules.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex._get_module_classes">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__get_module_cla-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__get_module_cla-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__get_module_cla" name="call_graph_for__get_module_cla">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="APIDoc.__cmp__()" alt="" coords="424,6,595,38" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#__init__" title="__init__()" alt="" coords="7,62,103,94" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get_module_classes" title="_get_module_classes()" alt="" coords="152,62,347,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="DottedName.__cmp__()" alt="" coords="408,62,611,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="DottedName.__getitem__()" alt="" coords="396,118,623,150" />
+</map>
+  <img src="call_graph_for__get_module_cla.gif" alt='' usemap="#call_graph_for__get_module_cla" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc.DocIndex-class.html#reachable_valdocs" class="summary-sig-name">reachable_valdocs</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">**filters</span>)</span><br />
+      Return a list of all <code>ValueDoc</code>s that can be reached, 
+      directly or indirectly from this <code>DocIndex</code>'s root 
+      set.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex.reachable_valdocs">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_reachable_valdo_2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_reachable_valdo_2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_reachable_valdo_2" name="call_graph_for_reachable_valdo_2">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#reachable_valdocs" title="reachable_valdocs()" alt="" coords="371,34,544,66" />
+<area shape="rect" href="epydoc.apidoc&#45;module.html#reachable_valdocs" title="reachable_valdocs()" alt="" coords="592,34,766,66" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="docbuilder.build_doc_index()" alt="" coords="43,6,286,38" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#__init__" title="docwriter.html.HTMLWriter.__init__()" alt="" coords="6,62,323,94" />
+</map>
+  <img src="call_graph_for_reachable_valdo_2.gif" alt='' usemap="#call_graph_for_reachable_valdo_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="container"></a><span class="summary-sig-name">container</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">api_doc</span>)</span><br />
+      Return the <code>ValueDoc</code> that contains the given 
+      <code>APIDoc</code>, or <code>None</code> if its container is not in 
+      the index.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex.container">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_container-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_container-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_container" name="call_graph_for_container">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="APIDoc.__cmp__()" alt="" coords="690,6,860,38" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__hash__" title="APIDoc.__hash__()" alt="" coords="690,62,860,94" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#container" title="container()" alt="" coords="520,118,624,150" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#get_valdoc" title="get_valdoc()" alt="" coords="718,118,832,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__len__" title="DottedName.__len__()" alt="" coords="678,174,872,206" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#container" title="DottedName.container()" alt="" coords="674,230,876,262" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_url" title="docwriter.html.HTMLWriter._url()" alt="" coords="96,6,382,38" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#breadcrumbs" title="docwriter.html.HTMLWriter.breadcrumbs()" alt="" coords="64,62,414,94" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#build_identifier_index" title="docwriter.html.HTMLWriter.build_identifier_index()" alt="" coords="28,118,450,150" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_project_toc" title="docwriter.html.HTMLWriter.write_project_toc()" alt="" coords="46,174,432,206" />
+<area shape="rect" href="epydoc.docwriter.html_colorize.PythonSourceColorizer&#45;class.html#doc_kind" title="docwriter.html_colorize.PythonSourceColorizer.doc_kind()" alt="" coords="6,230,472,262" />
+</map>
+  <img src="call_graph_for_container.gif" alt='' usemap="#call_graph_for_container" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc.DocIndex-class.html#read_profiling_info" class="summary-sig-name">read_profiling_info</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">profile_stats</span>)</span><br />
+      Initialize the <a href="epydoc.apidoc.DocIndex-class.html#callers"
+      class="link">callers</a> and <a 
+      href="epydoc.apidoc.DocIndex-class.html#callees" 
+      class="link">callees</a> variables, given a <code>Stat</code> object 
+      from the <code>pstats</code> module.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex.read_profiling_info">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc.DocIndex-class.html#_update_funcid_to_doc" class="summary-sig-name">_update_funcid_to_doc</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">profile_stats</span>)</span><br />
+      Update the dictionary mapping from <code>pstat.Stat</code> 
+      funciton ids to <code>RoutineDoc</code>s.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex._update_funcid_to_doc">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>list</code></span>
+    </td><td class="summary">
+        <a name="root"></a><span class="summary-name">root</span><br />
+      The list of <code>ValueDoc</code>s to document.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>dict</code> from <code>str</code> to <a 
+      href="epydoc.apidoc.ClassDoc-class.html" class="link">ClassDoc</a> or
+      <code>list</code></span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.DocIndex-class.html#mlclasses" class="summary-name">mlclasses</a><br />
+      A mapping from class names to <a 
+      href="epydoc.apidoc.ClassDoc-class.html" 
+      class="link">ClassDoc</a>.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>list</code> of <a href="epydoc.apidoc.RoutineDoc-class.html"
+      class="link">RoutineDoc</a></span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.DocIndex-class.html#callers" class="summary-name">callers</a><br />
+      A dictionary mapping from <code>RoutineDoc</code>s in this index 
+      to lists of <code>RoutineDoc</code>s for the routine's callers.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>list</code> of <a href="epydoc.apidoc.RoutineDoc-class.html"
+      class="link">RoutineDoc</a></span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.DocIndex-class.html#callees" class="summary-name">callees</a><br />
+      A dictionary mapping from <code>RoutineDoc</code>s in this index 
+      to lists of <code>RoutineDoc</code>s for the routine's callees.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.apidoc.DocIndex-class.html#_funcid_to_doc" class="summary-name">_funcid_to_doc</a><br />
+      A mapping from <code>profile</code> function ids to corresponding 
+      <code>APIDoc</code> objects.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_container_cache"></a><span class="summary-name">_container_cache</span><br />
+      A cache for the <a 
+      href="epydoc.apidoc.DocIndex-class.html#container" 
+      class="link">container()</a> method, to increase speed.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_get_cache"></a><span class="summary-name">_get_cache</span><br />
+      A cache for the <a 
+      href="epydoc.apidoc.DocIndex-class.html#get_vardoc" 
+      class="link">get_vardoc()</a> and <a 
+      href="epydoc.apidoc.DocIndex-class.html#get_valdoc" 
+      class="link">get_valdoc()</a> methods, to increase speed.
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">root</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex.__init__">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___2-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for___init___2-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___2" name="call_graph_for___init___2">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#__init__" title="__init__()" alt="" coords="297,34,393,66" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get_module_classes" title="_get_module_classes()" alt="" coords="448,6,643,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="DottedName.__cmp__()" alt="" coords="444,62,647,94" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="docbuilder.build_doc_index()" alt="" coords="5,34,248,66" />
+</map>
+  <img src="call_graph_for___init___2.gif" alt='' usemap="#call_graph_for___init___2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Create a new documentation index, based on the given root set of 
+  <code>ValueDoc</code>s.  If any <code>APIDoc</code>s reachable from the 
+  root set does not have a canonical name, then it will be assigned one.  
+  etc.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>root</code></strong> - A list of <code>ValueDoc</code>s.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="find"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">find</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">name</span>,
+        <span class="sig-arg">context</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex.find">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_find-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_find-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_find" name="call_graph_for_find">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#find" title="find()" alt="" coords="579,202,643,234" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#get_valdoc" title="get_valdoc()" alt="" coords="748,6,863,38" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#get_vardoc" title="get_vardoc()" alt="" coords="747,62,864,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__add__" title="DottedName.__add__()" alt="" coords="705,118,905,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="DottedName.__getitem__()" alt="" coords="692,174,919,206" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="DottedName.__init__()" alt="" coords="707,230,904,262" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__len__" title="DottedName.__len__()" alt="" coords="708,286,903,318" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__radd__" title="DottedName.__radd__()" alt="" coords="703,342,908,374" />
+<area shape="rect" href="epydoc.apidoc.RoutineDoc&#45;class.html#all_args" title="RoutineDoc.all_args()" alt="" coords="712,398,899,430" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#_add_attribute_edge" title="docwriter.dotgraph.DotGraphUmlClassNode._add_attribute_edge()" alt="" coords="5,62,531,94" />
+<area shape="rect" href="epydoc.docwriter.html._HTMLDocstringLinker&#45;class.html#translate_identifier_xref" title="docwriter.html._HTMLDocstringLinker.translate_identifier_xref()" alt="" coords="9,118,527,150" />
+<area shape="rect" href="epydoc.docwriter.html._HTMLDocstringLinker&#45;class.html#url_for" title="docwriter.html._HTMLDocstringLinker.url_for()" alt="" coords="73,174,463,206" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#_build_graph" title="markup.epytext.ParsedEpytextDocstring._build_graph()" alt="" coords="48,230,488,262" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_classtree" title="markup.restructuredtext._construct_classtree()" alt="" coords="84,286,452,318" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_packagetree" title="markup.restructuredtext._construct_packagetree()" alt="" coords="72,342,464,374" />
+</map>
+  <img src="call_graph_for_find.gif" alt='' usemap="#call_graph_for_find" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Look for an <code>APIDoc</code> named <code>name</code>, relative to 
+  <code>context</code>. Return the <code>APIDoc</code> if one is found; 
+  otherwise, return <code>None</code>.  <code>find</code> looks in the 
+  following places, in order:
+  <ul>
+    <li>
+      Function parameters (if one matches, return <code>None</code>)
+    </li>
+    <li>
+      All enclosing namespaces, from closest to furthest.
+    </li>
+    <li>
+      If <code>name</code> starts with <code>'self'</code>, then strip 
+      it off and look for the remaining part of the name using 
+      <code>find</code>
+    </li>
+    <li>
+      Builtins
+    </li>
+    <li>
+      Parameter attributes
+    </li>
+    <li>
+      Classes at module level (if the name is not ambiguous)
+    </li>
+  </ul>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="_get_module_classes"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_get_module_classes</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">docs</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex._get_module_classes">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__get_module_cla-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for__get_module_cla-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__get_module_cla" name="call_graph_for__get_module_cla">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="APIDoc.__cmp__()" alt="" coords="424,6,595,38" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#__init__" title="__init__()" alt="" coords="7,62,103,94" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#_get_module_classes" title="_get_module_classes()" alt="" coords="152,62,347,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="DottedName.__cmp__()" alt="" coords="408,62,611,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="DottedName.__getitem__()" alt="" coords="396,118,623,150" />
+</map>
+  <img src="call_graph_for__get_module_cla.gif" alt='' usemap="#call_graph_for__get_module_cla" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  <p>Gather all the classes defined in a list of modules.</p>
+  Very often people refers to classes only by class name, even if they 
+  are not imported in the namespace. Linking to such classes will fail if 
+  we look for them only in nested namespaces. Allow them to retrieve only 
+  by name.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>docs</code></strong> (<code>list</code> of <code>APIDoc</code>) - containers of the objects to collect</li>
+    </ul></dd>
+    <dt>Returns: <code>dict</code> from <code>str</code> to <a 
+      href="epydoc.apidoc.ClassDoc-class.html" class="link">ClassDoc</a> or
+      <code>list</code></dt>
+        <dd>mapping from objects name to the object(s) with that name</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="reachable_valdocs"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">reachable_valdocs</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">**filters</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex.reachable_valdocs">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_reachable_valdo_2-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_reachable_valdo_2-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_reachable_valdo_2" name="call_graph_for_reachable_valdo_2">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#reachable_valdocs" title="reachable_valdocs()" alt="" coords="371,34,544,66" />
+<area shape="rect" href="epydoc.apidoc&#45;module.html#reachable_valdocs" title="reachable_valdocs()" alt="" coords="592,34,766,66" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="docbuilder.build_doc_index()" alt="" coords="43,6,286,38" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#__init__" title="docwriter.html.HTMLWriter.__init__()" alt="" coords="6,62,323,94" />
+</map>
+  <img src="call_graph_for_reachable_valdo_2.gif" alt='' usemap="#call_graph_for_reachable_valdo_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Return a list of all <code>ValueDoc</code>s that can be reached, 
+  directly or indirectly from this <code>DocIndex</code>'s root set.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>filters</code></strong> - A set of filters that can be used to prevent 
+          <code>reachable_valdocs</code> from following specific link types
+          when looking for <code>ValueDoc</code>s that can be reached from 
+          the root set.  See <code>APIDoc.apidoc_links</code> for a more 
+          complete description.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="read_profiling_info"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">read_profiling_info</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">profile_stats</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex.read_profiling_info">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Initialize the <a href="epydoc.apidoc.DocIndex-class.html#callers" 
+  class="link">callers</a> and <a 
+  href="epydoc.apidoc.DocIndex-class.html#callees" class="link">callees</a>
+  variables, given a <code>Stat</code> object from the <code>pstats</code> 
+  module.
+  <dl class="fields">
+  </dl>
+<div class="fields">      <p><strong>Warning:</strong>
+        This method uses undocumented data structures inside of 
+        <code>profile_stats</code>.
+      </p>
+</div></td></tr></table>
+</div>
+<a name="_update_funcid_to_doc"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_update_funcid_to_doc</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">profile_stats</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#DocIndex._update_funcid_to_doc">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Update the dictionary mapping from <code>pstat.Stat</code> funciton 
+  ids to <code>RoutineDoc</code>s.  <code>pstat.Stat</code> function ids 
+  are tuples of <code>(filename, lineno, funcname)</code>.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== INSTANCE VARIABLE DETAILS ==================== -->
+<a name="section-InstanceVariableDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="mlclasses"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">mlclasses</h3>
+  A mapping from class names to <a 
+  href="epydoc.apidoc.ClassDoc-class.html" class="link">ClassDoc</a>. 
+  Contains classes defined at module level for modules in <a 
+  href="epydoc.apidoc.DocIndex-class.html#root" class="link">root</a> and 
+  which can be used as fallback by <a 
+  href="epydoc.apidoc.DocIndex-class.html#find" class="link">find()</a> if 
+  looking in containing namespaces fails.
+  <dl class="fields">
+    <dt>Type:</dt>
+      <dd><code>dict</code> from <code>str</code> to <a 
+      href="epydoc.apidoc.ClassDoc-class.html" class="link">ClassDoc</a> or
+      <code>list</code></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="callers"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">callers</h3>
+  A dictionary mapping from <code>RoutineDoc</code>s in this index to 
+  lists of <code>RoutineDoc</code>s for the routine's callers. This 
+  dictionary is initialized by calling <a 
+  href="epydoc.apidoc.DocIndex-class.html#read_profiling_info" 
+  class="link">read_profiling_info()</a>.
+  <dl class="fields">
+    <dt>Type:</dt>
+      <dd><code>list</code> of <a href="epydoc.apidoc.RoutineDoc-class.html"
+      class="link">RoutineDoc</a></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="callees"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">callees</h3>
+  A dictionary mapping from <code>RoutineDoc</code>s in this index to 
+  lists of <code>RoutineDoc</code>s for the routine's callees. This 
+  dictionary is initialized by calling <a 
+  href="epydoc.apidoc.DocIndex-class.html#read_profiling_info" 
+  class="link">read_profiling_info()</a>.
+  <dl class="fields">
+    <dt>Type:</dt>
+      <dd><code>list</code> of <a href="epydoc.apidoc.RoutineDoc-class.html"
+      class="link">RoutineDoc</a></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_funcid_to_doc"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_funcid_to_doc</h3>
+  A mapping from <code>profile</code> function ids to corresponding 
+  <code>APIDoc</code> objects.  A function id is a tuple of the form 
+  <code>(filename, lineno, funcname)</code>.  This is used to update the <a
+  href="epydoc.apidoc.DocIndex-class.html#callers" class="link">callers</a>
+  and <a href="epydoc.apidoc.DocIndex-class.html#callees" 
+  class="link">callees</a> variables.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:03:33 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

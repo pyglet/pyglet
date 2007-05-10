@@ -1,0 +1,541 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.docwriter.xlink.ApiLinkReader</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.docwriter-module.html">Package&nbsp;docwriter</a> ::
+        <a href="epydoc.docwriter.xlink-module.html">Module&nbsp;xlink</a> ::
+        Class&nbsp;ApiLinkReader
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.docwriter.xlink.ApiLinkReader-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class ApiLinkReader</h1><span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#ApiLinkReader">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_d_7" name="uml_class_diagram_for_epydoc_d_7">
+<area shape="rect" href="javascript: void(0);" title="Names for this component." alt="" coords="118,340,328,359" />
+<area shape="rect" href="javascript: void(0);" title="The name of the config file section specific to this component (lowercase, no brackets)." alt="" coords="118,359,328,377" />
+<area shape="rect" href="javascript: void(0);" title="A list of names of config file sections that are to be applied before config_section, in order (from general to specific)." alt="" coords="118,377,328,396" />
+<area shape="rect" href="javascript: void(0);" title="docutils.readers.standalone.Reader.document" alt="" coords="118,396,328,415" />
+<area shape="rect" href="javascript: void(0);" title="Transforms required by this class." alt="" coords="118,417,328,436" />
+<area shape="rect" href="javascript: void(0);" title="docutils.readers.standalone.Reader" alt="" coords="106,317,340,443" />
+<area shape="rect" href="epydoc.docwriter.xlink.ApiLinkReader&#45;class.html#settings_spec" title="The option parser configuration." alt="" coords="67,484,379,503" />
+<area shape="rect" href="epydoc.docwriter.xlink.ApiLinkReader&#45;class.html#read" title="epydoc.docwriter.xlink.ApiLinkReader.read" alt="" coords="67,505,379,524" />
+<area shape="rect" href="epydoc.docwriter.xlink.ApiLinkReader&#45;class.html#read_configuration" title="Read the configuration for the configured URL resolver." alt="" coords="67,524,379,543" />
+<area shape="rect" href="epydoc.docwriter.xlink.ApiLinkReader&#45;class.html#__init__" title="Initialize the Reader instance." alt="" coords="67,543,379,561" />
+<area shape="rect" href="epydoc.docwriter.xlink.ApiLinkReader&#45;class.html" title="A Docutils standalone reader allowing external documentation links." alt="" coords="55,461,391,568" />
+<area shape="rect" href="javascript: void(0);" title="Name of the component type (&#39;reader&#39;, &#39;parser&#39;, &#39;writer&#39;)." alt="" coords="130,215,316,233" />
+<area shape="rect" href="javascript: void(0);" title="Set self.parser by name." alt="" coords="130,236,316,255" />
+<area shape="rect" href="javascript: void(0);" title="Parse self.input into a document tree." alt="" coords="130,255,316,273" />
+<area shape="rect" href="javascript: void(0);" title="Create and return a new empty document tree (root node)." alt="" coords="130,273,316,292" />
+<area shape="rect" href="javascript: void(0);" title="Abstract base class for docutils Readers." alt="" coords="118,192,328,299" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocReader&#45;class.html" title="A reader that captures all errors that are generated by parsing, and appends them to a list." alt="" coords="84,587,362,624" />
+<area shape="rect" href="javascript: void(0);" title="docutils.TransformSpec.default_transforms" alt="" coords="18,37,202,56" />
+<area shape="rect" href="javascript: void(0);" title="List of functions to try to resolve unknown references." alt="" coords="18,56,202,75" />
+<area shape="rect" href="javascript: void(0);" title="Runtime transform specification base class." alt="" coords="6,15,214,89" />
+<area shape="rect" href="javascript: void(0);" title="Is format supported by this component?" alt="" coords="156,148,290,167" />
+<area shape="rect" href="javascript: void(0);" title="Base class for Docutils components." alt="" coords="144,117,302,173" />
+<area shape="rect" href="javascript: void(0);" title="Settings containing filesystem paths." alt="" coords="255,28,418,47" />
+<area shape="rect" href="javascript: void(0);" title="A dictionary of defaults for settings not in settings_spec (internal settings, intended to be inaccessible by command&#45;line and config file)." alt="" coords="255,47,418,65" />
+<area shape="rect" href="javascript: void(0);" title="A dictionary of auxiliary defaults, to override defaults for settings defined in other components." alt="" coords="255,65,418,84" />
+<area shape="rect" href="javascript: void(0);" title="Runtime setting specification base class." alt="" coords="243,5,430,99" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_d_7.gif" alt='' usemap="#uml_class_diagram_for_epydoc_d_7" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+<p>A Docutils standalone reader allowing external documentation links.</p>
+<p>The reader configure the url resolvers at the time <a href="epydoc.docwriter.xlink.ApiLinkReader-class.html#read" class="link">read()</a> is invoked the
+first time.</p><br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.xlink.ApiLinkReader-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">*args</span>,
+        <span class="summary-sig-arg">**kwargs</span>)</span><br />
+      Initialize the Reader instance.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#ApiLinkReader.__init__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___25-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___init___25-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___25" name="call_graph_for___init___25">
+<area shape="rect" href="javascript: void(0);" title="docutils.readers.Reader.__init__()" alt="" coords="604,6,879,38" />
+<area shape="rect" href="epydoc.docwriter.xlink.ApiLinkReader&#45;class.html#__init__" title="__init__()" alt="" coords="457,6,553,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocReader&#45;class.html#__init__" title="markup.restructuredtext._EpydocReader.__init__()" alt="" coords="5,6,408,38" />
+</map>
+  <img src="call_graph_for___init___25.gif" alt='' usemap="#call_graph_for___init___25" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.xlink.ApiLinkReader-class.html#read" class="summary-sig-name">read</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">source</span>,
+        <span class="summary-sig-arg">parser</span>,
+        <span class="summary-sig-arg">settings</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#ApiLinkReader.read">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_read_2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_read_2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_read_2" name="call_graph_for_read_2">
+<area shape="rect" href="javascript: void(0);" title="docutils.readers.Reader.read()" alt="" coords="124,6,369,38" />
+<area shape="rect" href="epydoc.docwriter.xlink.ApiLinkReader&#45;class.html#read" title="read()" alt="" coords="7,34,73,66" />
+<area shape="rect" href="epydoc.docwriter.xlink.ApiLinkReader&#45;class.html#read_configuration" title="read_configuration()" alt="" coords="159,62,335,94" />
+</map>
+  <img src="call_graph_for_read_2.gif" alt='' usemap="#call_graph_for_read_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.readers.standalone.Reader</code></b>:
+      <code>get_transforms</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.readers.Reader</code></b>:
+      <code>new_document</code>,
+      <code>parse</code>,
+      <code>set_parser</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.Component</code></b>:
+      <code>supports</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS METHODS ==================== -->
+<a name="section-ClassMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.xlink.ApiLinkReader-class.html#read_configuration" class="summary-sig-name">read_configuration</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">settings</span>,
+        <span class="summary-sig-arg">problematic</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Read the configuration for the configured URL resolver.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#ApiLinkReader.read_configuration">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_read_configurat-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_read_configurat-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_read_configurat" name="call_graph_for_read_configurat">
+<area shape="rect" href="epydoc.docwriter.xlink.ApiLinkReader&#45;class.html#read" title="read()" alt="" coords="7,6,74,38" />
+<area shape="rect" href="epydoc.docwriter.xlink.ApiLinkReader&#45;class.html#read_configuration" title="read_configuration()" alt="" coords="124,6,300,38" />
+</map>
+  <img src="call_graph_for_read_configurat.gif" alt='' usemap="#call_graph_for_read_configurat" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.xlink.ApiLinkReader-class.html#settings_spec" class="summary-name">settings_spec</a> = <code title="('API Linking Options',
+ None,
+ (('Define a new API document.  A new interpreted text role NAME will \
+be added.',
+   ['--external-api'],
+   {'action': 'append', 'metavar': 'NAME'}),
+  ('Use records in FILENAME to resolve objects in the API named NAME.'\
+,
+..."><code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">API Linking Options</code><code class="variable-quote">'</code><code class="variable-op">, </code>None<code class="variable-op">, </code><code class="variable-group">(</code><code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">Define a new </code><code class="variable-ellipsis">...</code></code><br />
+      The option parser configuration.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_conf"></a><span class="summary-name">_conf</span> = <code title="True">True</code>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.readers.standalone.Reader</code></b>:
+      <code>config_section</code>,
+      <code>config_section_dependencies</code>,
+      <code>document</code>,
+      <code>supported</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.readers.Reader</code></b>:
+      <code>component_type</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.SettingsSpec</code></b>:
+      <code>relative_path_settings</code>,
+      <code>settings_default_overrides</code>,
+      <code>settings_defaults</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.TransformSpec</code></b>:
+      <code>default_transforms</code>,
+      <code>unknown_reference_resolvers</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">*args</span>,
+        <span class="sig-arg">**kwargs</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#ApiLinkReader.__init__">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___25-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for___init___25-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___25" name="call_graph_for___init___25">
+<area shape="rect" href="javascript: void(0);" title="docutils.readers.Reader.__init__()" alt="" coords="604,6,879,38" />
+<area shape="rect" href="epydoc.docwriter.xlink.ApiLinkReader&#45;class.html#__init__" title="__init__()" alt="" coords="457,6,553,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocReader&#45;class.html#__init__" title="markup.restructuredtext._EpydocReader.__init__()" alt="" coords="5,6,408,38" />
+</map>
+  <img src="call_graph_for___init___25.gif" alt='' usemap="#call_graph_for___init___25" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  <p>Initialize the Reader instance.</p>
+<p>Several instance attributes are defined with dummy initial values.
+Subclasses may use these attributes as they wish.</p>
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.readers.Reader.__init__
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="read"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">read</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">source</span>,
+        <span class="sig-arg">parser</span>,
+        <span class="sig-arg">settings</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#ApiLinkReader.read">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_read_2-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_read_2-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_read_2" name="call_graph_for_read_2">
+<area shape="rect" href="javascript: void(0);" title="docutils.readers.Reader.read()" alt="" coords="124,6,369,38" />
+<area shape="rect" href="epydoc.docwriter.xlink.ApiLinkReader&#45;class.html#read" title="read()" alt="" coords="7,34,73,66" />
+<area shape="rect" href="epydoc.docwriter.xlink.ApiLinkReader&#45;class.html#read_configuration" title="read_configuration()" alt="" coords="159,62,335,94" />
+</map>
+  <img src="call_graph_for_read_2.gif" alt='' usemap="#call_graph_for_read_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.readers.Reader.read
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="read_configuration"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">read_configuration</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">settings</span>,
+        <span class="sig-arg">problematic</span>=<span class="sig-default">True</span>)</span>
+    <br /><em class="fname">Class Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#ApiLinkReader.read_configuration">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_read_configurat-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_read_configurat-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_read_configurat" name="call_graph_for_read_configurat">
+<area shape="rect" href="epydoc.docwriter.xlink.ApiLinkReader&#45;class.html#read" title="read()" alt="" coords="7,6,74,38" />
+<area shape="rect" href="epydoc.docwriter.xlink.ApiLinkReader&#45;class.html#read_configuration" title="read_configuration()" alt="" coords="124,6,300,38" />
+</map>
+  <img src="call_graph_for_read_configurat.gif" alt='' usemap="#call_graph_for_read_configurat" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  <p>Read the configuration for the configured URL resolver.</p>
+<p>Register a new role for each configured API.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>settings</code></strong> - the settings structure containing the options to read.</li>
+        <li><strong class="pname"><code>problematic</code></strong> (<code class="link">bool</code>) - if True, the registered role will create problematic nodes in
+case of failed references. If False, a warning will be raised
+anyway, but the output will appear as an ordinary literal.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== CLASS VARIABLE DETAILS ==================== -->
+<a name="section-ClassVariableDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="settings_spec"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">settings_spec</h3>
+  The option parser configuration.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">API Linking Options</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ None<code class="variable-op">,</code>
+ <code class="variable-group">(</code><code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">Define a new API document.  A new interpreted text role NAME will </code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="variable-string">be added.</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+   <code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">--external-api</code><code class="variable-quote">'</code><code class="variable-group">]</code><code class="variable-op">,</code>
+   <code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">action</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">append</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">metavar</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">NAME</code><code class="variable-quote">'</code><code class="variable-group">}</code><code class="variable-group">)</code><code class="variable-op">,</code>
+  <code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">Use records in FILENAME to resolve objects in the API named NAME.</code><code class="variable-quote">'</code><code class="variable-op"></code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:04:44 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

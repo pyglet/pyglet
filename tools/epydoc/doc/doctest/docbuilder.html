@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>Regression Testing for epydoc.docbuilder</title>
+<link rel="stylesheet" href="../custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="regression-testing-for-epydoc-docbuilder">
+<h1 class="title">Regression Testing for epydoc.docbuilder</h1>
+
+<div class="section" id="test-function">
+<h1>Test Function</h1>
+<p>This test function takes a string containing the contents of a module.
+It writes the string contents to a file, imports the file as a module,
+and uses build_doc to build documentation, and pretty prints the resulting
+ModuleDoc object.  The <tt class="docutils literal"><span class="pre">attribs</span></tt> argument specifies which attributes
+of the <cite>APIDoc</cite> s should be displayed.  The <cite>build</cite> argument gives the
+name of a variable in the module whose documentation should be built,
+instead of bilding docs for the whole module.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.test.util <span class="py-keyword">import</span> runbuilder</pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.test.util <span class="py-keyword">import</span> print_warnings
+<span class="py-prompt">&gt;&gt;&gt; </span>print_warnings()</pre>
+</blockquote>
+</div>
+<div class="section" id="docformat-selection">
+<h1>Docformat selection</h1>
+<p>The docstrings format can be selected using the <tt class="docutils literal"><span class="pre">__docformat__</span></tt> module
+variable.  In the second example below, where docformat='plaintext',
+the string &quot;&#64;ivar x: ...&quot; will not be treated as a field, since the
+docstring format is plaintext.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runbuilder(s=<span class="py-string">'''</span>
+<span class="py-more">... </span><span class="py-string">    __docformat__ = 'epytext'</span>
+<span class="py-more">... </span><span class="py-string">    class Foo:</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;@ivar x: description...&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    '''</span>,
+<span class="py-more">... </span>    build=<span class="py-string">'Foo'</span>, attribs=<span class="py-string">'descr variables'</span>)
+<span class="py-output">ClassDoc for epydoc_test.Foo [0]</span>
+<span class="py-output"> +- descr = None</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- x =&gt; VariableDoc for epydoc_test.Foo.x [1]</span>
+<span class="py-output">       +- descr = u'description...\n\n'</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runbuilder(s=<span class="py-string">'''</span>
+<span class="py-more">... </span><span class="py-string">    __docformat__ = 'plaintext'</span>
+<span class="py-more">... </span><span class="py-string">    class Foo:</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;@var x: description...&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    '''</span>,
+<span class="py-more">... </span>    build=<span class="py-string">'Foo'</span>, attribs=<span class="py-string">'descr variables'</span>)
+<span class="py-output">ClassDoc for epydoc_test.Foo [0]</span>
+<span class="py-output"> +- descr = u'@var x: description...\n'</span>
+<span class="py-output"> +- variables = {}</span></pre>
+</blockquote>
+<p>Stuff from future doesn't appear as variable.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runbuilder(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    from __future__ import division</span>
+<span class="py-more">... </span><span class="py-string">    from pickle import dump</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">'variables value'</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- dump =&gt; VariableDoc for epydoc_test.dump [1]</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- ValueDoc for pickle.dump [2]</span></pre>
+</blockquote>
+</div>
+<div class="section" id="specifying-constructor-signature-in-class-docstring">
+<h1>Specifying constructor signature in class docstring</h1>
+<p>The class signature can be specified in the class docstring instead of __init__</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runbuilder(s=<span class="py-string">'''</span>
+<span class="py-more">... </span><span class="py-string">    class Foo:</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;This is the object docstring</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        @param a: init param.</span>
+<span class="py-more">... </span><span class="py-string">        @ivar a: instance var.</span>
+<span class="py-more">... </span><span class="py-string">        @type a: date</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">        def __init__(self, a):</span>
+<span class="py-more">... </span><span class="py-string">            &quot;&quot;&quot;The ctor docstring.&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    '''</span>,
+<span class="py-more">... </span>    build=<span class="py-string">&quot;Foo&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">&quot;variables name value &quot;</span>
+<span class="py-more">... </span>        <span class="py-string">&quot;posargs vararg kwarg type arg_types arg_descrs&quot;</span>)
+<span class="py-output">ClassDoc for epydoc_test.Foo [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- __init__ =&gt; VariableDoc for epydoc_test.Foo.__init__ [1]</span>
+<span class="py-output">    |  +- name = '__init__'</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc for epydoc_test.Foo.__init__ [2]</span>
+<span class="py-output">    |        +- arg_descrs = [([u'a'], ...</span>
+<span class="py-output">    |        +- arg_types = {u'a': ...</span>
+<span class="py-output">    |        +- kwarg = None</span>
+<span class="py-output">    |        +- posargs = ['self', 'a']</span>
+<span class="py-output">    |        +- vararg = None</span>
+<span class="py-output">    +- a =&gt; VariableDoc for epydoc_test.Foo.a [3]</span>
+<span class="py-output">       +- name = u'a'</span>
+<span class="py-output">       +- value = &lt;UNKNOWN&gt;</span></pre>
+</blockquote>
+<p>Also keywords arguments can be put in the constructor</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runbuilder(s=<span class="py-string">'''</span>
+<span class="py-more">... </span><span class="py-string">    class Foo:</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;This is the object docstring</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        @keyword a: a kwarg.</span>
+<span class="py-more">... </span><span class="py-string">        @type a: str</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">        def __init__(self, **kwargs):</span>
+<span class="py-more">... </span><span class="py-string">            &quot;&quot;&quot;The ctor docstring.&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    '''</span>,
+<span class="py-more">... </span>    build=<span class="py-string">&quot;Foo&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">&quot;variables name value &quot;</span>
+<span class="py-more">... </span>        <span class="py-string">&quot;posargs vararg kwarg type arg_types arg_descrs&quot;</span>)
+<span class="py-output">ClassDoc for epydoc_test.Foo [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- __init__ =&gt; VariableDoc for epydoc_test.Foo.__init__ [1]</span>
+<span class="py-output">       +- name = '__init__'</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- RoutineDoc for epydoc_test.Foo.__init__ [2]</span>
+<span class="py-output">             +- arg_descrs = [([u'a'], ...</span>
+<span class="py-output">             +- arg_types = {u'a': ...</span>
+<span class="py-output">             +- kwarg = 'kwargs'</span>
+<span class="py-output">             +- posargs = ['self']</span>
+<span class="py-output">             +- vararg = None</span></pre>
+</blockquote>
+<p>A missing docstring on the __init__ is not an issue.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runbuilder(s=<span class="py-string">'''</span>
+<span class="py-more">... </span><span class="py-string">    class Foo:</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;This is the object docstring</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        @param a: a param.</span>
+<span class="py-more">... </span><span class="py-string">        @type a: str</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">        def __init__(self, a):</span>
+<span class="py-more">... </span><span class="py-string">            pass</span>
+<span class="py-more">... </span><span class="py-string">    '''</span>,
+<span class="py-more">... </span>    build=<span class="py-string">&quot;Foo&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">&quot;variables name value &quot;</span>
+<span class="py-more">... </span>        <span class="py-string">&quot;posargs vararg kwarg type arg_types arg_descrs&quot;</span>)
+<span class="py-output">ClassDoc for epydoc_test.Foo [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- __init__ =&gt; VariableDoc for epydoc_test.Foo.__init__ [1]</span>
+<span class="py-output">       +- name = '__init__'</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- RoutineDoc for epydoc_test.Foo.__init__ [2]</span>
+<span class="py-output">             +- arg_descrs = [([u'a'], ...</span>
+<span class="py-output">             +- arg_types = {u'a': ...</span>
+<span class="py-output">             +- kwarg = None</span>
+<span class="py-output">             +- posargs = ['self', 'a']</span>
+<span class="py-output">             +- vararg = None</span></pre>
+</blockquote>
+<p>Exceptions can be put in the docstring class, and they are assigned to the
+constructor too.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runbuilder(s=<span class="py-string">'''</span>
+<span class="py-more">... </span><span class="py-string">    class Foo:</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;Foo(x, y)</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        A class to ship rockets in outer space.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        @param x: first param</span>
+<span class="py-more">... </span><span class="py-string">        @param y: second param</span>
+<span class="py-more">... </span><span class="py-string">        @except ValueError: frobnication error</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">        def __init__(self, a, b):</span>
+<span class="py-more">... </span><span class="py-string">            &quot;&quot;&quot;__init__ doc&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">            pass</span>
+<span class="py-more">... </span><span class="py-string">    '''</span>,
+<span class="py-more">... </span>    build=<span class="py-string">&quot;Foo&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">&quot;variables name value exception_descrs &quot;</span>
+<span class="py-more">... </span>        <span class="py-string">&quot;posargs vararg kwarg type arg_types arg_descrs docstring&quot;</span>)
+<span class="py-output">ClassDoc for epydoc_test.Foo [0]</span>
+<span class="py-output"> +- docstring = u'A class to ship rockets in outer sp...</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- __init__ =&gt; VariableDoc for epydoc_test.Foo.__init__ [1]</span>
+<span class="py-output">       +- docstring = &lt;UNKNOWN&gt;</span>
+<span class="py-output">       +- name = '__init__'</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- RoutineDoc for epydoc_test.Foo.__init__ [2]</span>
+<span class="py-output">             +- arg_descrs = [([u'x'], u'first param'), ([u'y'], u...</span>
+<span class="py-output">             +- arg_types = {}</span>
+<span class="py-output">             +- docstring = u'__init__ doc'</span>
+<span class="py-output">             +- exception_descrs = [(DottedName(u'ValueError'), &lt;epydoc....</span>
+<span class="py-output">             +- kwarg = None</span>
+<span class="py-output">             +- posargs = [u'x', u'y']</span>
+<span class="py-output">             +- vararg = None</span></pre>
+</blockquote>
+<p>Epydoc can also grok the constructor signature from the class docstring</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runbuilder(s=<span class="py-string">'''</span>
+<span class="py-more">... </span><span class="py-string">    class Foo:</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;Foo(x, y)</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        A class to ship rockets in outer space.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        @param x: first param</span>
+<span class="py-more">... </span><span class="py-string">        @param y: second param</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">        def __init__(self, a, b):</span>
+<span class="py-more">... </span><span class="py-string">            &quot;&quot;&quot;__init__ doc&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">            pass</span>
+<span class="py-more">... </span><span class="py-string">    '''</span>,
+<span class="py-more">... </span>    build=<span class="py-string">&quot;Foo&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">&quot;variables name value &quot;</span>
+<span class="py-more">... </span>        <span class="py-string">&quot;posargs vararg kwarg type arg_types arg_descrs docstring&quot;</span>)
+<span class="py-output">ClassDoc for epydoc_test.Foo [0]</span>
+<span class="py-output"> +- docstring = u'A class to ship rockets ...</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- __init__ =&gt; VariableDoc for epydoc_test.Foo.__init__ [1]</span>
+<span class="py-output">       +- docstring = &lt;UNKNOWN&gt;</span>
+<span class="py-output">       +- name = '__init__'</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- RoutineDoc for epydoc_test.Foo.__init__ [2]</span>
+<span class="py-output">             +- arg_descrs = [([u'x'], ...</span>
+<span class="py-output">             +- arg_types = {}</span>
+<span class="py-output">             +- docstring = u'__init__ doc'</span>
+<span class="py-output">             +- kwarg = None</span>
+<span class="py-output">             +- posargs = [u'x', u'y']</span>
+<span class="py-output">             +- vararg = None</span></pre>
+</blockquote>
+<p>A type can apply to both a param and a variable</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runbuilder(s=<span class="py-string">'''</span>
+<span class="py-more">... </span><span class="py-string">    class Foo:</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;This is the object docstring</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        @param a: init param.</span>
+<span class="py-more">... </span><span class="py-string">        @ivar a: instance var.</span>
+<span class="py-more">... </span><span class="py-string">        @type a: date</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">        def __init__(self, a):</span>
+<span class="py-more">... </span><span class="py-string">            pass</span>
+<span class="py-more">... </span><span class="py-string">    '''</span>,
+<span class="py-more">... </span>    build=<span class="py-string">&quot;Foo&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">&quot;variables name value &quot;</span>
+<span class="py-more">... </span>        <span class="py-string">&quot;posargs vararg kwarg type_descr arg_types arg_descrs&quot;</span>)
+<span class="py-output">ClassDoc for epydoc_test.Foo [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- __init__ =&gt; VariableDoc for epydoc_test.Foo.__init__ [1]</span>
+<span class="py-output">    |  +- name = '__init__'</span>
+<span class="py-output">    |  +- type_descr = None</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc for epydoc_test.Foo.__init__ [2]</span>
+<span class="py-output">    |        +- arg_descrs = [([u'a'], u'init param.')]</span>
+<span class="py-output">    |        +- arg_types = {u'a': u'date'}</span>
+<span class="py-output">    |        +- kwarg = None</span>
+<span class="py-output">    |        +- posargs = ['self', 'a']</span>
+<span class="py-output">    |        +- vararg = None</span>
+<span class="py-output">    +- a =&gt; VariableDoc for epydoc_test.Foo.a [3]</span>
+<span class="py-output">       +- name = u'a'</span>
+<span class="py-output">       +- type_descr = u'date\n\n'</span>
+<span class="py-output">       +- value = &lt;UNKNOWN&gt;</span></pre>
+</blockquote>
+<p>But there can also be two different types</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runbuilder(s=<span class="py-string">'''</span>
+<span class="py-more">... </span><span class="py-string">    class Foo:</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;This is the object docstring</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        @param a: init param.</span>
+<span class="py-more">... </span><span class="py-string">        @type a: string</span>
+<span class="py-more">... </span><span class="py-string">        @ivar a: instance var.</span>
+<span class="py-more">... </span><span class="py-string">        @type a: date</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">        def __init__(self, a):</span>
+<span class="py-more">... </span><span class="py-string">            pass</span>
+<span class="py-more">... </span><span class="py-string">    '''</span>,
+<span class="py-more">... </span>    build=<span class="py-string">&quot;Foo&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">&quot;variables name value &quot;</span>
+<span class="py-more">... </span>        <span class="py-string">&quot;posargs vararg kwarg type_descr arg_types arg_descrs&quot;</span>)
+<span class="py-output">ClassDoc for epydoc_test.Foo [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- __init__ =&gt; VariableDoc for epydoc_test.Foo.__init__ [1]</span>
+<span class="py-output">    |  +- name = '__init__'</span>
+<span class="py-output">    |  +- type_descr = None</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc for epydoc_test.Foo.__init__ [2]</span>
+<span class="py-output">    |        +- arg_descrs = [([u'a'], u'init param.')]</span>
+<span class="py-output">    |        +- arg_types = {u'a': u'string'}</span>
+<span class="py-output">    |        +- kwarg = None</span>
+<span class="py-output">    |        +- posargs = ['self', 'a']</span>
+<span class="py-output">    |        +- vararg = None</span>
+<span class="py-output">    +- a =&gt; VariableDoc for epydoc_test.Foo.a [3]</span>
+<span class="py-output">       +- name = u'a'</span>
+<span class="py-output">       +- type_descr = u'date\n\n'</span>
+<span class="py-output">       +- value = &lt;UNKNOWN&gt;</span></pre>
+</blockquote>
+</div>
+<div class="section" id="value-representation">
+<h1>Value Representation</h1>
+<p>Currently, many variable reprs use the introspected form where it
+would really be better to use the parsed version.  See SF bug
+#1653577.  We intend to improve on this.  This test documents the
+current behavior; but should be replaced when we change the behavior.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.test.util <span class="py-keyword">import</span> buildvaluedoc
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.compat <span class="py-keyword">import</span> *
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">print_py_reprs</span>(s):
+<span class="py-more">... </span>    value_doc = buildvaluedoc(s)
+<span class="py-more">... </span>    <span class="py-keyword">print</span> <span class="py-string">'Var  Score  Repr\n'</span>+<span class="py-string">'-'</span>*50
+<span class="py-more">... </span>    <span class="py-keyword">for</span> (name, var_doc) <span class="py-keyword">in</span> sorted(value_doc.variables.items()):
+<span class="py-more">... </span>        <span class="py-keyword">if</span> len(name) &gt; 1: continue
+<span class="py-more">... </span>        var_repr =  var_doc.value.pyval_repr()
+<span class="py-more">... </span>        <span class="py-keyword">print</span> <span class="py-string">&quot; %s   %4s   %r&quot;</span> % (name, var_repr.score,
+<span class="py-more">... </span>                                 var_repr.to_plaintext(None))</pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>print_py_reprs(<span class="py-string">'''</span>
+<span class="py-more">... </span><span class="py-string">    import re</span>
+<span class="py-more">... </span><span class="py-string">    class Foo: pass</span>
+<span class="py-more">... </span><span class="py-string">    class Bar:</span>
+<span class="py-more">... </span><span class="py-string">        def __repr__(self): return &quot;&lt;specialized repr&gt;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    class Baz:</span>
+<span class="py-more">... </span><span class="py-string">        def __repr__(self): raise ValueError()</span>
+<span class="py-more">... </span><span class="py-string">    a = Foo()                  # pyval score &lt; 0; use parse repr.</span>
+<span class="py-more">... </span><span class="py-string">    b = Bar()                  # pyval score &gt; 0; use pyval repr.</span>
+<span class="py-more">... </span><span class="py-string">    c = Baz()                  # pyval score &lt; 0; use parse repr.</span>
+<span class="py-more">... </span><span class="py-string">    d = [1, 2, 3]              # pyval score &gt; 0; use pyval repr.</span>
+<span class="py-more">... </span><span class="py-string">    d.append(99)</span>
+<span class="py-more">... </span><span class="py-string">    e = 3+5                    # pyval score &gt; 0; use pyval repr.</span>
+<span class="py-more">... </span><span class="py-string">    f = re.compile('hi+')      # pyval score &gt; 0; use pyval repr.</span>
+<span class="py-more">... </span><span class="py-string">    globals()['h'] = Baz()     # pyval score &lt; 0; can't be parsed.</span>
+<span class="py-more">... </span><span class="py-string">    i = [Foo(), 1, 2]          # pyval score &lt; 0; use parse repr.</span>
+<span class="py-more">... </span><span class="py-string">    j = [Foo(), 1, 2, 3]       # pyval score = 0; use pyval repr.</span>
+<span class="py-more">... </span><span class="py-string">    '''</span>)
+<span class="py-output">Var  Score  Repr</span>
+<span class="py-output">--------------------------------------------------</span>
+<span class="py-output"> a      0   u'Foo()'</span>
+<span class="py-output"> b      1   u'&lt;specialized repr&gt;'</span>
+<span class="py-output"> c      0   u'Baz()'</span>
+<span class="py-output"> d      5   u'[1, 2, 3, 99]'</span>
+<span class="py-output"> e      1   u'8'</span>
+<span class="py-output"> f      1   u&quot;re.compile(r'hi+')&quot;</span>
+<span class="py-output"> h    -99   u'??'</span>
+<span class="py-output"> i      0   u'[Foo(), 1, 2]'</span>
+<span class="py-output"> j      0   u'[&lt;epydoc_test.Foo instance at ...&gt;, 1, 2, 3]'</span></pre>
+</blockquote>
+</div>
+<div class="section" id="merging-is-imported">
+<h1>Merging is_imported</h1>
+<p>When we do both parsing &amp; introspection, and merge the result, we
+should trust the introspected APIDoc's is_imported value more than the
+parsed APIDoc.  In particular, in the following example, <tt class="docutils literal"><span class="pre">x</span></tt> should
+have <cite>is_imported=True</cite>.  But if we can't tell from introspection,
+then use parse info -- so <tt class="docutils literal"><span class="pre">y</span></tt> should be imported, but <tt class="docutils literal"><span class="pre">z</span></tt> should not.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">import</span> epydoc.docintrospecter
+<span class="py-prompt">&gt;&gt;&gt; </span>epydoc.docintrospecter.clear_cache()
+<span class="py-prompt">&gt;&gt;&gt; </span>runbuilder(s=<span class="py-string">'''</span>
+<span class="py-more">... </span><span class="py-string">    import cStringIO</span>
+<span class="py-more">... </span><span class="py-string">    from re import MULTILINE as y</span>
+<span class="py-more">... </span><span class="py-string">    x = cStringIO</span>
+<span class="py-more">... </span><span class="py-string">    z = y</span>
+<span class="py-more">... </span><span class="py-string">    '''</span>, attribs=(<span class="py-string">&quot;variables is_imported &quot;</span>))
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- cStringIO =&gt; VariableDoc for epydoc_test.cStringIO [1]</span>
+<span class="py-output">    |  +- is_imported = True</span>
+<span class="py-output">    +- x =&gt; VariableDoc for epydoc_test.x [2]</span>
+<span class="py-output">    |  +- is_imported = True</span>
+<span class="py-output">    +- y =&gt; VariableDoc for epydoc_test.y [3]</span>
+<span class="py-output">    |  +- is_imported = True</span>
+<span class="py-output">    +- z =&gt; VariableDoc for epydoc_test.z [4]</span>
+<span class="py-output">       +- is_imported = False</span></pre>
+</blockquote>
+</div>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="../index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../index.html">
+    Home</a></td></a>
+  <a class="nav" href="../installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="../using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="../epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="../sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

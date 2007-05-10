@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.restructuredtext._DocumentPseudoWriter</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        <a href="epydoc.markup.restructuredtext-module.html">Module&nbsp;restructuredtext</a> ::
+        Class&nbsp;_DocumentPseudoWriter
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.restructuredtext._DocumentPseudoWriter-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class _DocumentPseudoWriter</h1><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_DocumentPseudoWriter">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_m_19" name="uml_class_diagram_for_epydoc_m_19">
+<area shape="rect" href="javascript: void(0);" title="Names for this component." alt="" coords="160,178,293,196" />
+<area shape="rect" href="javascript: void(0);" title="Is format supported by this component?" alt="" coords="160,199,293,218" />
+<area shape="rect" href="javascript: void(0);" title="Base class for Docutils components." alt="" coords="148,155,305,224" />
+<area shape="rect" href="javascript: void(0);" title="Language module for the document; set by write." alt="" coords="124,266,329,284" />
+<area shape="rect" href="javascript: void(0);" title="Name of the component type (&#39;reader&#39;, &#39;parser&#39;, &#39;writer&#39;)." alt="" coords="124,284,329,303" />
+<area shape="rect" href="javascript: void(0);" title="docutils.io Output object; where to write the document." alt="" coords="124,303,329,322" />
+<area shape="rect" href="javascript: void(0);" title="The name of the config file section specific to this component (lowercase, no brackets)." alt="" coords="124,322,329,340" />
+<area shape="rect" href="javascript: void(0);" title="Mapping of document part names to fragments of self.output." alt="" coords="124,340,329,359" />
+<area shape="rect" href="javascript: void(0);" title="Final translated form of document (Unicode string for text, binary string for other forms); set by translate." alt="" coords="124,359,329,378" />
+<area shape="rect" href="javascript: void(0);" title="Process a document into its final form." alt="" coords="124,380,329,399" />
+<area shape="rect" href="javascript: void(0);" title="Assemble the self.parts dictionary." alt="" coords="124,399,329,418" />
+<area shape="rect" href="javascript: void(0);" title="Transforms required by this class." alt="" coords="124,418,329,436" />
+<area shape="rect" href="javascript: void(0);" title="Abstract base class for docutils Writers." alt="" coords="112,243,341,443" />
+<area shape="rect" href="epydoc.markup.restructuredtext._DocumentPseudoWriter&#45;class.html#document" title="The document to write (Docutils doctree); set by write." alt="" coords="116,484,337,503" />
+<area shape="rect" href="epydoc.markup.restructuredtext._DocumentPseudoWriter&#45;class.html#translate" title="Do final translation of self.document into self.output." alt="" coords="116,506,337,524" />
+<area shape="rect" href="epydoc.markup.restructuredtext._DocumentPseudoWriter&#45;class.html#__init__" title="epydoc.markup.restructuredtext._DocumentPseudoWriter.__init__" alt="" coords="116,524,337,543" />
+<area shape="rect" href="epydoc.markup.restructuredtext._DocumentPseudoWriter&#45;class.html" title="A pseudo&#45;writer for the docutils framework, that can be used to access the document itself." alt="" coords="104,462,349,550" />
+<area shape="rect" href="javascript: void(0);" title="docutils.TransformSpec.default_transforms" alt="" coords="17,56,201,75" />
+<area shape="rect" href="javascript: void(0);" title="List of functions to try to resolve unknown references." alt="" coords="17,75,201,94" />
+<area shape="rect" href="javascript: void(0);" title="Runtime transform specification base class." alt="" coords="5,34,213,108" />
+<area shape="rect" href="javascript: void(0);" title="Settings containing filesystem paths." alt="" coords="255,28,436,47" />
+<area shape="rect" href="javascript: void(0);" title="Runtime settings specification." alt="" coords="255,47,436,66" />
+<area shape="rect" href="javascript: void(0);" title="A dictionary of defaults for settings not in settings_spec (internal settings, intended to be inaccessible by command&#45;line and config file)." alt="" coords="255,66,436,84" />
+<area shape="rect" href="javascript: void(0);" title="A dictionary of auxiliary defaults, to override defaults for settings defined in other components." alt="" coords="255,84,436,103" />
+<area shape="rect" href="javascript: void(0);" title="A list of names of config file sections that are to be applied before config_section, in order (from general to specific)." alt="" coords="255,103,436,122" />
+<area shape="rect" href="javascript: void(0);" title="Runtime setting specification base class." alt="" coords="243,6,448,136" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_m_19.gif" alt='' usemap="#uml_class_diagram_for_epydoc_m_19" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+A pseudo-writer for the docutils framework, that can be used to access
+  the document itself.  The output of <code>_DocumentPseudoWriter</code> is
+  just an empty string; but after it has been used, the most recently 
+  processed document is available as the instance variable 
+  <code>document</code><br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._DocumentPseudoWriter-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_DocumentPseudoWriter.__init__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___43-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___init___43-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___43" name="call_graph_for___init___43">
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.Writer.__init__()" alt="" coords="355,6,624,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._DocumentPseudoWriter&#45;class.html#__init__" title="__init__()" alt="" coords="209,6,305,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,6,159,38" />
+</map>
+  <img src="call_graph_for___init___43.gif" alt='' usemap="#call_graph_for___init___43" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._DocumentPseudoWriter-class.html#translate" class="summary-sig-name">translate</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Do final translation of <a href="epydoc.markup.restructuredtext._DocumentPseudoWriter-class.html#document" class="link">self.document</a> into self.output.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_DocumentPseudoWriter.translate">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_translate-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_translate-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_translate" name="call_graph_for_translate">
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.Writer.write()" alt="" coords="6,6,251,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._DocumentPseudoWriter&#45;class.html#translate" title="translate()" alt="" coords="299,6,398,38" />
+</map>
+  <img src="call_graph_for_translate.gif" alt='' usemap="#call_graph_for_translate" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.writers.Writer</code></b>:
+      <code>assemble_parts</code>,
+      <code>get_transforms</code>,
+      <code>write</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.Component</code></b>:
+      <code>supports</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.writers.Writer</code></b>:
+      <code>component_type</code>,
+      <code>config_section</code>,
+      <code>destination</code>,
+      <code>language</code>,
+      <code>output</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.Component</code></b>:
+      <code>supported</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.SettingsSpec</code></b>:
+      <code>config_section_dependencies</code>,
+      <code>relative_path_settings</code>,
+      <code>settings_default_overrides</code>,
+      <code>settings_defaults</code>,
+      <code>settings_spec</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.TransformSpec</code></b>:
+      <code>default_transforms</code>,
+      <code>unknown_reference_resolvers</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>docutils.nodes.document</code></span>
+    </td><td class="summary">
+        <a name="document"></a><span class="summary-name">document</span><br />
+      The document to write (Docutils doctree); set by write.
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.writers.Writer</code></b>:
+      <code>parts</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_DocumentPseudoWriter.__init__">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___43-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for___init___43-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___43" name="call_graph_for___init___43">
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.Writer.__init__()" alt="" coords="355,6,624,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._DocumentPseudoWriter&#45;class.html#__init__" title="__init__()" alt="" coords="209,6,305,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,6,159,38" />
+</map>
+  <img src="call_graph_for___init___43.gif" alt='' usemap="#call_graph_for___init___43" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.writers.Writer.__init__
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="translate"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">translate</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_DocumentPseudoWriter.translate">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_translate-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_translate-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_translate" name="call_graph_for_translate">
+<area shape="rect" href="javascript: void(0);" title="docutils.writers.Writer.write()" alt="" coords="6,6,251,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._DocumentPseudoWriter&#45;class.html#translate" title="translate()" alt="" coords="299,6,398,38" />
+</map>
+  <img src="call_graph_for_translate.gif" alt='' usemap="#call_graph_for_translate" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  <p>Do final translation of <a href="epydoc.markup.restructuredtext._DocumentPseudoWriter-class.html#document" class="link">self.document</a> into self.output.  Called
+from write.  Override in subclasses.</p>
+<p>Usually done with a <code class="link">docutils.nodes.NodeVisitor</code> subclass, in
+combination with a call to <code class="link">docutils.nodes.Node.walk()</code> or
+<code class="link">docutils.nodes.Node.walkabout()</code>.  The <tt class="rst-docutils literal"><span class="pre">NodeVisitor</span></tt> subclass must
+support all standard elements (listed in
+<code class="link">docutils.nodes.node_class_names</code>) and possibly non-standard elements
+used by the current Reader as well.</p>
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.writers.Writer.translate
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:05:14 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

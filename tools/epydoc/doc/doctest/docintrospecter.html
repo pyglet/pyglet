@@ -1,0 +1,691 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>Regression Testing for epydoc.docintrospecter</title>
+<link rel="stylesheet" href="../custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="regression-testing-for-epydoc-docintrospecter">
+<h1 class="title">Regression Testing for epydoc.docintrospecter</h1>
+
+<p>The <cite>epydoc.docintrospecter</cite> module is used to extract API documentation
+by introspecting Python objects directy.  Its primary interface is
+<cite>docintrospecter.introspect_docs()</cite>, which takes a Python object, and returns a
+<cite>ValueDoc</cite> describing that value.</p>
+<div class="section" id="test-function">
+<h1>Test Function</h1>
+<p>This test function takes a string containing the contents of a module.
+It writes the string contents to a file, imports the file as a module,
+and uses <cite>docintrospecter.introspect_docs</cite> to introspect it, and pretty prints the resulting
+<cite>ModuleDoc</cite> object.  The <tt class="docutils literal"><span class="pre">attribs</span></tt> argument specifies which attributes
+of the <cite>APIDoc`s should be displayed.  The ``introspect`</cite> argument gives the
+name of a variable in the module whose value should be introspected,
+instead of introspecting the whole module.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.test.util <span class="py-keyword">import</span> runintrospecter</pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.test.util <span class="py-keyword">import</span> print_warnings
+<span class="py-prompt">&gt;&gt;&gt; </span>print_warnings()</pre>
+</blockquote>
+</div>
+<div class="section" id="module-variables">
+<h1>Module Variables</h1>
+<p>Each variable defined by a module is encoded as a <cite>VariableDoc</cite>, whose
+value contains information about the variable's value.  This includes
+any classes, functions, imported variables, and anything else that has
+an entry in a module's dictionary.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    x = 12</span>
+<span class="py-more">... </span><span class="py-string">    def f(x): pass</span>
+<span class="py-more">... </span><span class="py-string">    class A: pass</span>
+<span class="py-more">... </span><span class="py-string">    from os import listdir, mkdir</span>
+<span class="py-more">... </span><span class="py-string">    exec(&quot;y = 22&quot;)</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, attribs=<span class="py-string">&quot;variables&quot;</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- A =&gt; VariableDoc for epydoc_test.A [1]</span>
+<span class="py-output">    +- f =&gt; VariableDoc for epydoc_test.f [2]</span>
+<span class="py-output">    +- listdir =&gt; VariableDoc for epydoc_test.listdir [3]</span>
+<span class="py-output">    +- mkdir =&gt; VariableDoc for epydoc_test.mkdir [4]</span>
+<span class="py-output">    +- x =&gt; VariableDoc for epydoc_test.x [5]</span>
+<span class="py-output">    +- y =&gt; VariableDoc for epydoc_test.y [6]</span></pre>
+</blockquote>
+<p>If two variables share the same value, then their <cite>VariableDoc</cite>s will
+share a <cite>ValueDoc</cite>:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    def f(x): pass</span>
+<span class="py-more">... </span><span class="py-string">    alias = f</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, attribs=<span class="py-string">&quot;variables value&quot;</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- alias =&gt; VariableDoc for epydoc_test.alias [1]</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc for epydoc_test.f [2]</span>
+<span class="py-output">    +- f =&gt; VariableDoc for epydoc_test.f [3]</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- RoutineDoc for epydoc_test.f [2] (defined above)</span></pre>
+</blockquote>
+<p>Importing a dotted name creates a variable for the top-level component
+of the dotted name:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    import os.path</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, attribs=<span class="py-string">&quot;variables&quot;</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- os =&gt; VariableDoc for epydoc_test.os [1]</span></pre>
+</blockquote>
+<p>Since variables are extracted by introspection, only those variables that
+exist when the module finishes running will be seen.  (This is
+potentially different from <cite>epydoc.docparser</cite>, which has to guess
+about which code paths are taken).</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    x = 22</span>
+<span class="py-more">... </span><span class="py-string">    if x&lt;13: y = 32</span>
+<span class="py-more">... </span><span class="py-string">    else: z = 14</span>
+<span class="py-more">... </span><span class="py-string">    del x</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, attribs=<span class="py-string">&quot;variables&quot;</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- z =&gt; VariableDoc for epydoc_test.z [1]</span></pre>
+</blockquote>
+<p>Unlike the parser, arbitrary computed values can be extracted:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    def f(x):</span>
+<span class="py-more">... </span><span class="py-string">        if x&gt;100: return x</span>
+<span class="py-more">... </span><span class="py-string">        else: return f((x+2)*8/7)</span>
+<span class="py-more">... </span><span class="py-string">    x = f(12)</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, attribs=<span class="py-string">&quot;variables value pyval&quot;</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- pyval = &lt;module 'epydoc_test' from ...</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- f =&gt; VariableDoc for epydoc_test.f [1]</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc for epydoc_test.f [2]</span>
+<span class="py-output">    |        +- pyval = &lt;function f at ...&gt;</span>
+<span class="py-output">    +- x =&gt; VariableDoc for epydoc_test.x [3]</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- GenericValueDoc [4]</span>
+<span class="py-output">             +- pyval = 112</span></pre>
+</blockquote>
+<p>The introspecter is unable to determine when variables are aliases for
+other variables, so it always sets <cite>is_alias</cite> to <cite>UNKNOWN</cite>:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    x = 22</span>
+<span class="py-more">... </span><span class="py-string">    y = x</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, attribs=<span class="py-string">&quot;variables is_alias&quot;</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- x =&gt; VariableDoc for epydoc_test.x [1]</span>
+<span class="py-output">    |  +- is_alias = &lt;UNKNOWN&gt;</span>
+<span class="py-output">    +- y =&gt; VariableDoc for epydoc_test.y [2]</span>
+<span class="py-output">       +- is_alias = &lt;UNKNOWN&gt;</span></pre>
+</blockquote>
+<p>Similarly, the introspecter can't always tell if a variable was imported
+or not, so it sets <cite>is_imported</cite> to <cite>UNKNOWN</cite> when it can't decide:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    from pickle import dump       # definitely imported</span>
+<span class="py-more">... </span><span class="py-string">    from pickle import Pickler    # definitely imported</span>
+<span class="py-more">... </span><span class="py-string">    from pickle import HIGHEST_PROTOCOL   # might be imported</span>
+<span class="py-more">... </span><span class="py-string">    class A: pass              # definitely not imported</span>
+<span class="py-more">... </span><span class="py-string">    def f(x): pass             # definitely not imported</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, attribs=<span class="py-string">&quot;variables is_imported&quot;</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- A =&gt; VariableDoc for epydoc_test.A [1]</span>
+<span class="py-output">    |  +- is_imported = False</span>
+<span class="py-output">    +- HIGHEST_PROTOCOL =&gt; VariableDoc for epydoc_test.HIGHEST_PROTOCOL [2]</span>
+<span class="py-output">    |  +- is_imported = &lt;UNKNOWN&gt;</span>
+<span class="py-output">    +- Pickler =&gt; VariableDoc for epydoc_test.Pickler [3]</span>
+<span class="py-output">    |  +- is_imported = True</span>
+<span class="py-output">    +- dump =&gt; VariableDoc for epydoc_test.dump [4]</span>
+<span class="py-output">    |  +- is_imported = True</span>
+<span class="py-output">    +- f =&gt; VariableDoc for epydoc_test.f [5]</span>
+<span class="py-output">       +- is_imported = False</span></pre>
+</blockquote>
+</div>
+<div class="section" id="variable-docstrings">
+<h1>Variable Docstrings</h1>
+<p>The <cite>docintrospecter</cite> is unable extract docstrings for variables.  These
+docstrings can only be detected if the <cite>docparser</cite> is used.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    x = 12</span>
+<span class="py-more">... </span><span class="py-string">    '''docstring for x.</span>
+<span class="py-more">... </span><span class="py-string">    (can be multiline)'''&quot;&quot;&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">&quot;variables name docstring&quot;</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- docstring = None</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- x =&gt; VariableDoc for epydoc_test.x [1]</span>
+<span class="py-output">       +- docstring = &lt;UNKNOWN&gt;</span>
+<span class="py-output">       +- name = 'x'</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    x = 12 #: comment docstring for x&quot;&quot;&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">&quot;variables name docstring&quot;</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- docstring = None</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- x =&gt; VariableDoc for epydoc_test.x [1]</span>
+<span class="py-output">       +- docstring = &lt;UNKNOWN&gt;</span>
+<span class="py-output">       +- name = 'x'</span></pre>
+</blockquote>
+</div>
+<div class="section" id="functions">
+<h1>Functions</h1>
+<p>Introspected functions are represented by <cite>RoutineDoc</cite> objects:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    def f(x):</span>
+<span class="py-more">... </span><span class="py-string">        'docstring for f'</span>
+<span class="py-more">... </span><span class="py-string">        print 'inside f'</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, introspect=<span class="py-string">&quot;f&quot;</span>, exclude=<span class="py-string">'defining_module'</span>)
+<span class="py-output">RoutineDoc for epydoc_test.f [0]</span>
+<span class="py-output"> +- canonical_name = DottedName('epydoc_test', 'f')</span>
+<span class="py-output"> +- docs_extracted_by = 'introspecter'</span>
+<span class="py-output"> +- docstring = u'docstring for f'</span>
+<span class="py-output"> +- kwarg = None</span>
+<span class="py-output"> +- lineno = 2</span>
+<span class="py-output"> +- posarg_defaults = [None]</span>
+<span class="py-output"> +- posargs = ['x']</span>
+<span class="py-output"> +- pyval = &lt;function f at ...&gt;</span>
+<span class="py-output"> +- vararg = None</span></pre>
+</blockquote>
+<p>The function's arguments are described by the properties <tt class="docutils literal"><span class="pre">posargs</span></tt>,
+<tt class="docutils literal"><span class="pre">posarg_defaults</span></tt>, <tt class="docutils literal"><span class="pre">kwarg</span></tt>, and <tt class="docutils literal"><span class="pre">vararg</span></tt>.  <tt class="docutils literal"><span class="pre">posargs</span></tt> is a list of
+argument names (or nested tuples of names, for tuple-unpacking args).
+<tt class="docutils literal"><span class="pre">posarg_defaults</span></tt> is a list of <cite>ValueDoc</cite>s for default values,
+corresponding 1:1 with <tt class="docutils literal"><span class="pre">posargs</span></tt>.  <tt class="docutils literal"><span class="pre">posarg_defaults</span></tt> is None for
+arguments with no default value.  <tt class="docutils literal"><span class="pre">vararg</span></tt> and <tt class="docutils literal"><span class="pre">kwarg</span></tt> are the names
+of the variable argument and keyword argument, respectively:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    def f(x, y=22, z=(1,), *v, **kw):</span>
+<span class="py-more">... </span><span class="py-string">        'docstring for f'</span>
+<span class="py-more">... </span><span class="py-string">        print 'inside f'</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, introspect=<span class="py-string">&quot;f&quot;</span>, exclude=<span class="py-string">'defining_module'</span>)
+<span class="py-output">RoutineDoc for epydoc_test.f [0]</span>
+<span class="py-output"> +- canonical_name = DottedName('epydoc_test', 'f')</span>
+<span class="py-output"> +- docs_extracted_by = 'introspecter'</span>
+<span class="py-output"> +- docstring = u'docstring for f'</span>
+<span class="py-output"> +- kwarg = 'kw'</span>
+<span class="py-output"> +- lineno = 2</span>
+<span class="py-output"> +- posarg_defaults = [None, &lt;GenericValueDoc 22&gt;, &lt;Generic...</span>
+<span class="py-output"> +- posargs = ['x', 'y', 'z']</span>
+<span class="py-output"> +- pyval = &lt;function f at ...&gt;</span>
+<span class="py-output"> +- vararg = 'v'</span></pre>
+</blockquote>
+<p>Tuple arguments are encoded as a single ArgDoc with a complex name:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    def f( (x, (y,z)) ): pass&quot;&quot;&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">'variables value posargs posarg_defaults vararg kwarg'</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- f =&gt; VariableDoc for epydoc_test.f [1]</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- RoutineDoc for epydoc_test.f [2]</span>
+<span class="py-output">             +- kwarg = None</span>
+<span class="py-output">             +- posarg_defaults = [None]</span>
+<span class="py-output">             +- posargs = [['x', ['y', 'z']]]</span>
+<span class="py-output">             +- vararg = None</span></pre>
+</blockquote>
+</div>
+<div class="section" id="methods">
+<h1>Methods</h1>
+<p>Note that the first argument (self) is not listed in the description
+of g(), since it's a bound
+instance method:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    class A:</span>
+<span class="py-more">... </span><span class="py-string">        def f(self, x): 'docstring'</span>
+<span class="py-more">... </span><span class="py-string">    g=A().f</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, introspect=<span class="py-string">&quot;g&quot;</span>, exclude=<span class="py-string">'defining_module'</span>)
+<span class="py-output">RoutineDoc [0]</span>
+<span class="py-output"> +- docs_extracted_by = 'introspecter'</span>
+<span class="py-output"> +- docstring = u'docstring'</span>
+<span class="py-output"> +- kwarg = None</span>
+<span class="py-output"> +- lineno = 3</span>
+<span class="py-output"> +- posarg_defaults = [None]</span>
+<span class="py-output"> +- posargs = ['x']</span>
+<span class="py-output"> +- pyval = &lt;bound method A.f of &lt;epydoc_test.A i...</span>
+<span class="py-output"> +- vararg = None</span></pre>
+</blockquote>
+</div>
+<div class="section" id="decorators-wrapper-assignments">
+<h1>Decorators &amp; Wrapper Assignments</h1>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter( <span class="py-comment"># doctest: +PYTHON2.4</span>
+<span class="py-more">... </span>    s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    @classmethod</span>
+<span class="py-more">... </span><span class="py-string">    def f(cls, x): 'docstring for f'</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, introspect=<span class="py-string">&quot;f&quot;</span>)
+<span class="py-output">ClassMethodDoc [0]</span>
+<span class="py-output"> +- docs_extracted_by = 'introspecter'</span>
+<span class="py-output"> +- docstring = u'docstring for f'</span>
+<span class="py-output"> +- kwarg = None</span>
+<span class="py-output"> +- lineno = 2</span>
+<span class="py-output"> +- posarg_defaults = [None, None]</span>
+<span class="py-output"> +- posargs = ['cls', 'x']</span>
+<span class="py-output"> +- pyval = &lt;classmethod object at ...&gt;</span>
+<span class="py-output"> +- vararg = None</span></pre>
+</blockquote>
+</div>
+<div class="section" id="classes">
+<h1>Classes</h1>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    class A:</span>
+<span class="py-more">... </span><span class="py-string">        &quot;no bases&quot;</span>
+<span class="py-more">... </span><span class="py-string">        class Nested: &quot;nested class&quot;</span>
+<span class="py-more">... </span><span class="py-string">    class B(A): &quot;single base&quot;</span>
+<span class="py-more">... </span><span class="py-string">    class C(A,B): &quot;multiple bases&quot;</span>
+<span class="py-more">... </span><span class="py-string">    class D( ((A)) ): &quot;extra parens around base&quot;</span>
+<span class="py-more">... </span><span class="py-string">    class E(A.Nested): &quot;dotted name&quot;</span>
+<span class="py-more">... </span><span class="py-string">    class F(((A).Nested)): &quot;parens with dotted name&quot;</span>
+<span class="py-more">... </span><span class="py-string">    class Z(B.__bases__[0]): &quot;calculated base&quot; # not handled!</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">'variables value bases docstring'</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- docstring = None</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- A =&gt; VariableDoc for epydoc_test.A [1]</span>
+<span class="py-output">    |  +- docstring = &lt;UNKNOWN&gt;</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- ClassDoc for epydoc_test.A [2]</span>
+<span class="py-output">    |        +- bases = []</span>
+<span class="py-output">    |        +- docstring = u'no bases'</span>
+<span class="py-output">    |        +- variables</span>
+<span class="py-output">    |           +- Nested =&gt; VariableDoc for epydoc_test.A.Nested [3]</span>
+<span class="py-output">    |              +- docstring = &lt;UNKNOWN&gt;</span>
+<span class="py-output">    |              +- value</span>
+<span class="py-output">    |                 +- ClassDoc [4]</span>
+<span class="py-output">    |                    +- bases = []</span>
+<span class="py-output">    |                    +- docstring = u'nested class'</span>
+<span class="py-output">    |                    +- variables = {}</span>
+<span class="py-output">    +- B =&gt; VariableDoc for epydoc_test.B [5]</span>
+<span class="py-output">    |  +- docstring = &lt;UNKNOWN&gt;</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- ClassDoc for epydoc_test.B [6]</span>
+<span class="py-output">    |        +- bases</span>
+<span class="py-output">    |        |  +- ClassDoc for epydoc_test.A [2] (defined above)</span>
+<span class="py-output">    |        +- docstring = u'single base'</span>
+<span class="py-output">    |        +- variables = {}</span>
+<span class="py-output">    +- C =&gt; VariableDoc for epydoc_test.C [7]</span>
+<span class="py-output">    |  +- docstring = &lt;UNKNOWN&gt;</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- ClassDoc for epydoc_test.C [8]</span>
+<span class="py-output">    |        +- bases</span>
+<span class="py-output">    |        |  +- ClassDoc for epydoc_test.A [2] (defined above)</span>
+<span class="py-output">    |        |  +- ClassDoc for epydoc_test.B [6] (defined above)</span>
+<span class="py-output">    |        +- docstring = u'multiple bases'</span>
+<span class="py-output">    |        +- variables = {}</span>
+<span class="py-output">    +- D =&gt; VariableDoc for epydoc_test.D [9]</span>
+<span class="py-output">    |  +- docstring = &lt;UNKNOWN&gt;</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- ClassDoc for epydoc_test.D [10]</span>
+<span class="py-output">    |        +- bases</span>
+<span class="py-output">    |        |  +- ClassDoc for epydoc_test.A [2] (defined above)</span>
+<span class="py-output">    |        +- docstring = u'extra parens around base'</span>
+<span class="py-output">    |        +- variables = {}</span>
+<span class="py-output">    +- E =&gt; VariableDoc for epydoc_test.E [11]</span>
+<span class="py-output">    |  +- docstring = &lt;UNKNOWN&gt;</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- ClassDoc for epydoc_test.E [12]</span>
+<span class="py-output">    |        +- bases</span>
+<span class="py-output">    |        |  +- ClassDoc [4] (defined above)</span>
+<span class="py-output">    |        +- docstring = u'dotted name'</span>
+<span class="py-output">    |        +- variables = {}</span>
+<span class="py-output">    +- F =&gt; VariableDoc for epydoc_test.F [13]</span>
+<span class="py-output">    |  +- docstring = &lt;UNKNOWN&gt;</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- ClassDoc for epydoc_test.F [14]</span>
+<span class="py-output">    |        +- bases</span>
+<span class="py-output">    |        |  +- ClassDoc [4] (defined above)</span>
+<span class="py-output">    |        +- docstring = u'parens with dotted name'</span>
+<span class="py-output">    |        +- variables = {}</span>
+<span class="py-output">    +- Z =&gt; VariableDoc for epydoc_test.Z [15]</span>
+<span class="py-output">       +- docstring = &lt;UNKNOWN&gt;</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- ClassDoc for epydoc_test.Z [16]</span>
+<span class="py-output">             +- bases</span>
+<span class="py-output">             |  +- ClassDoc for epydoc_test.A [2] (defined above)</span>
+<span class="py-output">             +- docstring = u'calculated base'</span>
+<span class="py-output">             +- variables = {}</span></pre>
+</blockquote>
+<p>Some class variable have a special meaning. The <tt class="docutils literal"><span class="pre">__slots__</span></tt> variable isn't
+very useful and should be discarded.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    class Foo:</span>
+<span class="py-more">... </span><span class="py-string">        __slots__ = ['bar']</span>
+<span class="py-more">... </span><span class="py-string">        def __init__(self):</span>
+<span class="py-more">... </span><span class="py-string">            self.bar = 0</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">&quot;variables name value&quot;</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- Foo =&gt; VariableDoc for epydoc_test.Foo [1]</span>
+<span class="py-output">       +- name = 'Foo'</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- ClassDoc for epydoc_test.Foo [2]</span>
+<span class="py-output">             +- variables</span>
+<span class="py-output">                +- __init__ =&gt; VariableDoc for epydoc_test.Foo.__init__ [3]</span>
+<span class="py-output">                   +- name = '__init__'</span>
+<span class="py-output">                   +- value</span>
+<span class="py-output">                      +- RoutineDoc [4]</span></pre>
+</blockquote>
+</div>
+<div class="section" id="delete-statements">
+<h1>Delete Statements</h1>
+<p>Deleting variables:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    x = y = 12</span>
+<span class="py-more">... </span><span class="py-string">    del y</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">'variables value repr is_alias'</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- x =&gt; VariableDoc for epydoc_test.x [1]</span>
+<span class="py-output">       +- is_alias = &lt;UNKNOWN&gt;</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- GenericValueDoc [2]</span></pre>
+</blockquote>
+<p>The right-hand side of a <tt class="docutils literal"><span class="pre">del</span></tt> statement may contain a nested
+combination of lists, tuples, and parenthases.  All variables found
+anywhere in this nested structure should be deleted:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    a=b=c=d=e=f=g=1</span>
+<span class="py-more">... </span><span class="py-string">    del a</span>
+<span class="py-more">... </span><span class="py-string">    del (b)</span>
+<span class="py-more">... </span><span class="py-string">    del [c]</span>
+<span class="py-more">... </span><span class="py-string">    del (d,)</span>
+<span class="py-more">... </span><span class="py-string">    del (((e,)),)</span>
+<span class="py-more">... </span><span class="py-string">    del [[[[f]]]]</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">'variables'</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- g =&gt; VariableDoc for epydoc_test.g [1]</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    a=b=c=d=e=f=g=1</span>
+<span class="py-more">... </span><span class="py-string">    del a,b</span>
+<span class="py-more">... </span><span class="py-string">    del (c,d)</span>
+<span class="py-more">... </span><span class="py-string">    del [e,f]</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">'variables'</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- g =&gt; VariableDoc for epydoc_test.g [1]</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    a=b=c=d=e=f=g=1</span>
+<span class="py-more">... </span><span class="py-string">    del ((a, (((((b, c)), d), [e]))), f)</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">'variables'</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- g =&gt; VariableDoc for epydoc_test.g [1]</span></pre>
+</blockquote>
+<p>The right-hand side of a <tt class="docutils literal"><span class="pre">del</span></tt> statement may contain a dotted name, in
+which case the named variable should be deleted from its containing
+namespace.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    class A: a = b = 1</span>
+<span class="py-more">... </span><span class="py-string">    del A.a</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">'variables value local_variables'</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- A =&gt; VariableDoc for epydoc_test.A [1]</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- ClassDoc for epydoc_test.A [2]</span>
+<span class="py-output">             +- variables</span>
+<span class="py-output">                +- b =&gt; VariableDoc for epydoc_test.A.b [3]</span>
+<span class="py-output">                   +- value</span>
+<span class="py-output">                      +- GenericValueDoc [4]</span></pre>
+</blockquote>
+<p>Slice deletes:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    a = b = [1,2,3,4]</span>
+<span class="py-more">... </span><span class="py-string">    del a[2]</span>
+<span class="py-more">... </span><span class="py-string">    del a[2:]</span>
+<span class="py-more">... </span><span class="py-string">    del ([b], a[1])</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">'variables'</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- a =&gt; VariableDoc for epydoc_test.a [1]</span></pre>
+</blockquote>
+</div>
+<div class="section" id="single-line-blocks">
+<h1>Single-Line Blocks</h1>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    class A: 'docstring for A'</span>
+<span class="py-more">...</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">'variables value docstring'</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- docstring = None</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- A =&gt; VariableDoc for epydoc_test.A [1]</span>
+<span class="py-output">       +- docstring = &lt;UNKNOWN&gt;</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- ClassDoc for epydoc_test.A [2]</span>
+<span class="py-output">             +- docstring = u'docstring for A'</span>
+<span class="py-output">             +- variables = {}</span></pre>
+</blockquote>
+</div>
+<div class="section" id="imports">
+<h1>Imports</h1>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    import pickle</span>
+<span class="py-more">... </span><span class="py-string">    from pickle import dump</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">'variables value is_imported'</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- dump =&gt; VariableDoc for epydoc_test.dump [1]</span>
+<span class="py-output">    |  +- is_imported = True</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- ValueDoc for pickle.dump [2]</span>
+<span class="py-output">    +- pickle =&gt; VariableDoc for epydoc_test.pickle [3]</span>
+<span class="py-output">       +- is_imported = True</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- ModuleDoc for pickle [4]</span>
+<span class="py-output">             +- variables = {}</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    from __future__ import division</span>
+<span class="py-more">... </span><span class="py-string">    from pickle import dump</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">'variables value'</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- dump =&gt; VariableDoc for epydoc_test.dump [1]</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- ValueDoc for pickle.dump [2]</span></pre>
+</blockquote>
+</div>
+<div class="section" id="unicode">
+<h1>Unicode</h1>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    def f(x):</span>
+<span class="py-more">... </span><span class="py-string">        u&quot;unicode in docstring: \u1000&quot;</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, introspect=<span class="py-string">&quot;f&quot;</span>, attribs=<span class="py-string">&quot;docstring&quot;</span>)
+<span class="py-output">RoutineDoc for epydoc_test.f [0]</span>
+<span class="py-output"> +- docstring = u'unicode in docstring: \u1000'</span></pre>
+</blockquote>
+</div>
+<div class="section" id="instance-variables">
+<h1>Instance Variables</h1>
+<p>DocIntrospecter is unable to discover instance variables:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    class A:</span>
+<span class="py-more">... </span><span class="py-string">        def __init__(self, x, y):</span>
+<span class="py-more">... </span><span class="py-string">            self.x = 10</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">            self.y = 20 #: docstring for y</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">            self.z = 30</span>
+<span class="py-more">... </span><span class="py-string">            '''docstring for z'''</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, introspect=<span class="py-string">&quot;A&quot;</span>, attribs=<span class="py-string">&quot;variables&quot;</span>)
+<span class="py-output">ClassDoc for epydoc_test.A [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- __init__ =&gt; VariableDoc for epydoc_test.A.__init__ [1]</span></pre>
+</blockquote>
+</div>
+<div class="section" id="assignments-into-namespaces">
+<h1>Assignments Into Namespaces</h1>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    class A: pass</span>
+<span class="py-more">... </span><span class="py-string">    A.x = 22</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, introspect=<span class="py-string">&quot;A&quot;</span>, attribs=<span class="py-string">'variables value local_variables'</span>)
+<span class="py-output">ClassDoc for epydoc_test.A [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- x =&gt; VariableDoc for epydoc_test.A.x [1]</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- GenericValueDoc [2]</span></pre>
+</blockquote>
+</div>
+<div class="section" id="recursive-objects">
+<h1>Recursive objects</h1>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>x = runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    class A:</span>
+<span class="py-more">... </span><span class="py-string">        &quot;A base referring to a child&quot;</span>
+<span class="py-more">... </span><span class="py-string">        b = None</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">    class B(A):</span>
+<span class="py-more">... </span><span class="py-string">        &quot;Its child.&quot;</span>
+<span class="py-more">... </span><span class="py-string">        pass</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">    A.b = B</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, introspect=<span class="py-string">&quot;A&quot;</span>, exclude=<span class="py-string">'defining_module'</span>)
+<span class="py-more">... </span>    <span class="py-comment"># doctest: +ELLIPSIS</span>
+<span class="py-output">ClassDoc for epydoc_test.A [0]</span>
+<span class="py-output"> +- bases = []</span>
+<span class="py-output"> +- canonical_name = DottedName('epydoc_test', 'A')</span>
+<span class="py-output"> +- docs_extracted_by = 'introspecter'</span>
+<span class="py-output"> +- docstring = u'A base referring to a child'</span>
+<span class="py-output"> +- pyval = &lt;class epydoc_test.A at ...&gt;</span>
+<span class="py-output"> +- subclasses</span>
+<span class="py-output"> |  +- ClassDoc for epydoc_test.B [1]</span>
+<span class="py-output"> |     +- bases</span>
+<span class="py-output"> |     |  +- ClassDoc for epydoc_test.A [0] (defined above)</span>
+<span class="py-output"> |     +- canonical_name = DottedName('epydoc_test', 'B')</span>
+<span class="py-output"> |     +- docs_extracted_by = 'introspecter'</span>
+<span class="py-output"> |     +- docstring = u'Its child.'</span>
+<span class="py-output"> |     +- pyval = &lt;class epydoc_test.B at ...&gt;</span>
+<span class="py-output"> |     +- subclasses = []</span>
+<span class="py-output"> |     +- variables = {}</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- b =&gt; VariableDoc for epydoc_test.A.b [2]</span>
+<span class="py-output">       +- container</span>
+<span class="py-output">       |  +- ClassDoc for epydoc_test.A [0] (defined above)</span>
+<span class="py-output">       +- docs_extracted_by = 'introspecter'</span>
+<span class="py-output">       +- is_public = True</span>
+<span class="py-output">       +- name = 'b'</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- ClassDoc for epydoc_test.B [1] (defined above)</span></pre>
+</blockquote>
+</div>
+<div class="section" id="closed-bugs">
+<h1>Closed Bugs</h1>
+<div class="section" id="sf-bug-1657050-builtins-not-resolved-in-os">
+<h2>SF Bug [ 1657050 ] Builtins not resolved in &quot;os&quot;</h2>
+<p>If a variable is listed in <tt class="docutils literal"><span class="pre">__all__</span></tt>, then we need to introspect it,
+even if we know for certain that it's imported.  Before this bug
+was fixed, the following test generated a generic <cite>ValueDoc</cite> value
+instead of a <cite>RoutineDoc</cite> value, because it didn't introspect the
+value of getcwd.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>x = runintrospecter(s=<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    __all__ = ['getcwd']</span>
+<span class="py-more">... </span><span class="py-string">    from os import getcwd</span>
+<span class="py-more">... </span><span class="py-string">    &quot;&quot;&quot;</span>, attribs=<span class="py-string">'variables value'</span>)
+<span class="py-output">ModuleDoc for epydoc_test [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- getcwd =&gt; VariableDoc for epydoc_test.getcwd [1]</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- RoutineDoc [2]</span></pre>
+</blockquote>
+</div>
+</div>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="../index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../index.html">
+    Home</a></td></a>
+  <a class="nav" href="../installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="../using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="../epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="../sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

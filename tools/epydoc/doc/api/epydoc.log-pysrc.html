@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.log</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        Module&nbsp;log
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.log-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="epydoc.log-module.html">Module epydoc.log</a></h1>
+<pre class="py-src">
+<a name="L1"></a><tt class="py-lineno">  1</tt>  <tt class="py-line"><tt class="py-comment"># epydoc -- Logging</tt> </tt>
+<a name="L2"></a><tt class="py-lineno">  2</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L3"></a><tt class="py-lineno">  3</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Copyright (C) 2005 Edward Loper</tt> </tt>
+<a name="L4"></a><tt class="py-lineno">  4</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Author: Edward Loper &lt;edloper@loper.org&gt;</tt> </tt>
+<a name="L5"></a><tt class="py-lineno">  5</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># URL: &lt;http://epydoc.sf.net&gt;</tt> </tt>
+<a name="L6"></a><tt class="py-lineno">  6</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L7"></a><tt class="py-lineno">  7</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># $Id: log.py 1488 2007-02-14 00:34:27Z edloper $</tt> </tt>
+<a name="L8"></a><tt class="py-lineno">  8</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L9"></a><tt class="py-lineno">  9</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L10"></a><tt class="py-lineno"> 10</tt>  <tt class="py-line"><tt class="py-docstring">Functions used to report messages and progress updates to the user.</tt> </tt>
+<a name="L11"></a><tt class="py-lineno"> 11</tt>  <tt class="py-line"><tt class="py-docstring">These functions are delegated to zero or more registered L{Logger}</tt> </tt>
+<a name="L12"></a><tt class="py-lineno"> 12</tt>  <tt class="py-line"><tt class="py-docstring">objects, which are responsible for actually presenting the information</tt> </tt>
+<a name="L13"></a><tt class="py-lineno"> 13</tt>  <tt class="py-line"><tt class="py-docstring">to the user.  Different interfaces are free to create and register</tt> </tt>
+<a name="L14"></a><tt class="py-lineno"> 14</tt>  <tt class="py-line"><tt class="py-docstring">their own C{Logger}s, allowing them to present this information in the</tt> </tt>
+<a name="L15"></a><tt class="py-lineno"> 15</tt>  <tt class="py-line"><tt class="py-docstring">manner that is best suited to each interface.</tt> </tt>
+<a name="L16"></a><tt class="py-lineno"> 16</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L17"></a><tt class="py-lineno"> 17</tt>  <tt class="py-line"><tt class="py-docstring">@note: I considered using the standard C{logging} package to provide</tt> </tt>
+<a name="L18"></a><tt class="py-lineno"> 18</tt>  <tt class="py-line"><tt class="py-docstring">this functionality.  However, I found that it would be too difficult</tt> </tt>
+<a name="L19"></a><tt class="py-lineno"> 19</tt>  <tt class="py-line"><tt class="py-docstring">to get that package to provide the behavior I want (esp. with respect</tt> </tt>
+<a name="L20"></a><tt class="py-lineno"> 20</tt>  <tt class="py-line"><tt class="py-docstring">to progress displays; but also with respect to message blocks).</tt> </tt>
+<a name="L21"></a><tt class="py-lineno"> 21</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L22"></a><tt class="py-lineno"> 22</tt>  <tt class="py-line"><tt class="py-docstring">@group Message Severity Levels: DEBUG, INFO, WARNING, ERROR, FATAL</tt> </tt>
+<a name="L23"></a><tt class="py-lineno"> 23</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L24"></a><tt class="py-lineno"> 24</tt>  <tt class="py-line"><tt class="py-name">__docformat__</tt> <tt class="py-op">=</tt> <tt class="py-string">'epytext en'</tt> </tt>
+<a name="L25"></a><tt class="py-lineno"> 25</tt>  <tt class="py-line"> </tt>
+<a name="L26"></a><tt class="py-lineno"> 26</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt class="py-name">sys</tt><tt class="py-op">,</tt> <tt class="py-name">os</tt> </tt>
+<a name="L27"></a><tt class="py-lineno"> 27</tt>  <tt class="py-line"> </tt>
+<a name="L28"></a><tt class="py-lineno"> 28</tt>  <tt class="py-line"><tt id="link-0" class="py-name" targets="Variable epydoc.DEBUG=epydoc-module.html#DEBUG,Variable epydoc.gui.DEBUG=epydoc.gui-module.html#DEBUG,Variable epydoc.log.DEBUG=epydoc.log-module.html#DEBUG"><a title="epydoc.DEBUG
+epydoc.gui.DEBUG
+epydoc.log.DEBUG" class="py-name" href="#" onclick="return doclink('link-0', 'DEBUG', 'link-0');">DEBUG</a></tt> <tt class="py-op">=</tt> <tt class="py-number">10</tt> </tt>
+<a name="L29"></a><tt class="py-lineno"> 29</tt>  <tt class="py-line"><tt id="link-1" class="py-name" targets="Variable epydoc.log.INFO=epydoc.log-module.html#INFO"><a title="epydoc.log.INFO" class="py-name" href="#" onclick="return doclink('link-1', 'INFO', 'link-1');">INFO</a></tt> <tt class="py-op">=</tt> <tt class="py-number">20</tt> </tt>
+<a name="L30"></a><tt class="py-lineno"> 30</tt>  <tt class="py-line"><tt id="link-2" class="py-name" targets="Variable epydoc.log.DOCSTRING_WARNING=epydoc.log-module.html#DOCSTRING_WARNING"><a title="epydoc.log.DOCSTRING_WARNING" class="py-name" href="#" onclick="return doclink('link-2', 'DOCSTRING_WARNING', 'link-2');">DOCSTRING_WARNING</a></tt> <tt class="py-op">=</tt> <tt class="py-number">25</tt> </tt>
+<a name="L31"></a><tt class="py-lineno"> 31</tt>  <tt class="py-line"><tt id="link-3" class="py-name" targets="Variable epydoc.log.WARNING=epydoc.log-module.html#WARNING"><a title="epydoc.log.WARNING" class="py-name" href="#" onclick="return doclink('link-3', 'WARNING', 'link-3');">WARNING</a></tt> <tt class="py-op">=</tt> <tt class="py-number">30</tt> </tt>
+<a name="L32"></a><tt class="py-lineno"> 32</tt>  <tt class="py-line"><tt id="link-4" class="py-name" targets="Variable epydoc.log.ERROR=epydoc.log-module.html#ERROR"><a title="epydoc.log.ERROR" class="py-name" href="#" onclick="return doclink('link-4', 'ERROR', 'link-4');">ERROR</a></tt> <tt class="py-op">=</tt> <tt class="py-number">40</tt> </tt>
+<a name="L33"></a><tt class="py-lineno"> 33</tt>  <tt class="py-line"><tt id="link-5" class="py-name" targets="Variable epydoc.log.FATAL=epydoc.log-module.html#FATAL"><a title="epydoc.log.FATAL" class="py-name" href="#" onclick="return doclink('link-5', 'FATAL', 'link-5');">FATAL</a></tt> <tt class="py-op">=</tt> <tt class="py-number">40</tt> </tt>
+<a name="L34"></a><tt class="py-lineno"> 34</tt>  <tt class="py-line"> </tt>
+<a name="L35"></a><tt class="py-lineno"> 35</tt>  <tt class="py-line"><tt class="py-comment">######################################################################</tt> </tt>
+<a name="L36"></a><tt class="py-lineno"> 36</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Logger Base Class</tt> </tt>
+<a name="L37"></a><tt class="py-lineno"> 37</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">######################################################################</tt> </tt>
+<a name="Logger"></a><div id="Logger-def"><a name="L38"></a><tt class="py-lineno"> 38</tt> <a class="py-toggle" href="#" id="Logger-toggle" onclick="return toggle('Logger');">-</a><tt class="py-line"><tt class="py-comment"></tt><tt class="py-keyword">class</tt> <a class="py-def-name" href="epydoc.log.Logger-class.html">Logger</a><tt class="py-op">:</tt> </tt>
+</div><div id="Logger-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="Logger-expanded"><a name="L39"></a><tt class="py-lineno"> 39</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L40"></a><tt class="py-lineno"> 40</tt>  <tt class="py-line"><tt class="py-docstring">    An abstract base class that defines the interface for X{loggers},</tt> </tt>
+<a name="L41"></a><tt class="py-lineno"> 41</tt>  <tt class="py-line"><tt class="py-docstring">    which are used by epydoc to report information back to the user.</tt> </tt>
+<a name="L42"></a><tt class="py-lineno"> 42</tt>  <tt class="py-line"><tt class="py-docstring">    Loggers are responsible for tracking two types of information:</tt> </tt>
+<a name="L43"></a><tt class="py-lineno"> 43</tt>  <tt class="py-line"><tt class="py-docstring">    </tt> </tt>
+<a name="L44"></a><tt class="py-lineno"> 44</tt>  <tt class="py-line"><tt class="py-docstring">        - Messages, such as warnings and errors.</tt> </tt>
+<a name="L45"></a><tt class="py-lineno"> 45</tt>  <tt class="py-line"><tt class="py-docstring">        - Progress on the current task.</tt> </tt>
+<a name="L46"></a><tt class="py-lineno"> 46</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L47"></a><tt class="py-lineno"> 47</tt>  <tt class="py-line"><tt class="py-docstring">    This abstract class allows the command-line interface and the</tt> </tt>
+<a name="L48"></a><tt class="py-lineno"> 48</tt>  <tt class="py-line"><tt class="py-docstring">    graphical interface to each present this information to the user</tt> </tt>
+<a name="L49"></a><tt class="py-lineno"> 49</tt>  <tt class="py-line"><tt class="py-docstring">    in the way that's most natural for each interface.  To set up a</tt> </tt>
+<a name="L50"></a><tt class="py-lineno"> 50</tt>  <tt class="py-line"><tt class="py-docstring">    logger, create a subclass of C{Logger} that overrides all methods,</tt> </tt>
+<a name="L51"></a><tt class="py-lineno"> 51</tt>  <tt class="py-line"><tt class="py-docstring">    and register it using L{register_logger}.</tt> </tt>
+<a name="L52"></a><tt class="py-lineno"> 52</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L53"></a><tt class="py-lineno"> 53</tt>  <tt class="py-line">    <tt class="py-comment">#////////////////////////////////////////////////////////////</tt> </tt>
+<a name="L54"></a><tt class="py-lineno"> 54</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-comment"># Messages</tt> </tt>
+<a name="L55"></a><tt class="py-lineno"> 55</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-comment">#////////////////////////////////////////////////////////////</tt> </tt>
+<a name="L56"></a><tt class="py-lineno"> 56</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="Logger.log"></a><div id="Logger.log-def"><a name="L57"></a><tt class="py-lineno"> 57</tt> <a class="py-toggle" href="#" id="Logger.log-toggle" onclick="return toggle('Logger.log');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log.Logger-class.html#log">log</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">level</tt><tt class="py-op">,</tt> <tt class="py-param">message</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Logger.log-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Logger.log-expanded"><a name="L58"></a><tt class="py-lineno"> 58</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L59"></a><tt class="py-lineno"> 59</tt>  <tt class="py-line"><tt class="py-docstring">        Display a message.</tt> </tt>
+<a name="L60"></a><tt class="py-lineno"> 60</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L61"></a><tt class="py-lineno"> 61</tt>  <tt class="py-line"><tt class="py-docstring">        @param message: The message string to display.  C{message} may</tt> </tt>
+<a name="L62"></a><tt class="py-lineno"> 62</tt>  <tt class="py-line"><tt class="py-docstring">        contain newlines, but does not need to end in a newline.</tt> </tt>
+<a name="L63"></a><tt class="py-lineno"> 63</tt>  <tt class="py-line"><tt class="py-docstring">        @param level: An integer value indicating the severity of the</tt> </tt>
+<a name="L64"></a><tt class="py-lineno"> 64</tt>  <tt class="py-line"><tt class="py-docstring">        message.</tt> </tt>
+<a name="L65"></a><tt class="py-lineno"> 65</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L66"></a><tt class="py-lineno"> 66</tt>  <tt class="py-line"> </tt>
+<a name="Logger.close"></a><div id="Logger.close-def"><a name="L67"></a><tt class="py-lineno"> 67</tt> <a class="py-toggle" href="#" id="Logger.close-toggle" onclick="return toggle('Logger.close');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log.Logger-class.html#close">close</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Logger.close-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Logger.close-expanded"><a name="L68"></a><tt class="py-lineno"> 68</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L69"></a><tt class="py-lineno"> 69</tt>  <tt class="py-line"><tt class="py-docstring">        Perform any tasks needed to close this logger.</tt> </tt>
+<a name="L70"></a><tt class="py-lineno"> 70</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L71"></a><tt class="py-lineno"> 71</tt>  <tt class="py-line"> </tt>
+<a name="L72"></a><tt class="py-lineno"> 72</tt>  <tt class="py-line">    <tt class="py-comment">#////////////////////////////////////////////////////////////</tt> </tt>
+<a name="L73"></a><tt class="py-lineno"> 73</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-comment"># Message blocks</tt> </tt>
+<a name="L74"></a><tt class="py-lineno"> 74</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-comment">#////////////////////////////////////////////////////////////</tt> </tt>
+<a name="L75"></a><tt class="py-lineno"> 75</tt>  <tt class="py-line"><tt class="py-comment"></tt>     </tt>
+<a name="Logger.start_block"></a><div id="Logger.start_block-def"><a name="L76"></a><tt class="py-lineno"> 76</tt> <a class="py-toggle" href="#" id="Logger.start_block-toggle" onclick="return toggle('Logger.start_block');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log.Logger-class.html#start_block">start_block</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">header</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Logger.start_block-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Logger.start_block-expanded"><a name="L77"></a><tt class="py-lineno"> 77</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L78"></a><tt class="py-lineno"> 78</tt>  <tt class="py-line"><tt class="py-docstring">        Start a new message block.  Any calls to L{info()},</tt> </tt>
+<a name="L79"></a><tt class="py-lineno"> 79</tt>  <tt class="py-line"><tt class="py-docstring">        L{warning()}, or L{error()} that occur between a call to</tt> </tt>
+<a name="L80"></a><tt class="py-lineno"> 80</tt>  <tt class="py-line"><tt class="py-docstring">        C{start_block} and a corresponding call to C{end_block} will</tt> </tt>
+<a name="L81"></a><tt class="py-lineno"> 81</tt>  <tt class="py-line"><tt class="py-docstring">        be grouped together, and displayed with a common header.</tt> </tt>
+<a name="L82"></a><tt class="py-lineno"> 82</tt>  <tt class="py-line"><tt class="py-docstring">        C{start_block} can be called multiple times (to form nested</tt> </tt>
+<a name="L83"></a><tt class="py-lineno"> 83</tt>  <tt class="py-line"><tt class="py-docstring">        blocks), but every call to C{start_block} I{must} be balanced</tt> </tt>
+<a name="L84"></a><tt class="py-lineno"> 84</tt>  <tt class="py-line"><tt class="py-docstring">        by a call to C{end_block}.</tt> </tt>
+<a name="L85"></a><tt class="py-lineno"> 85</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L86"></a><tt class="py-lineno"> 86</tt>  <tt class="py-line">         </tt>
+<a name="Logger.end_block"></a><div id="Logger.end_block-def"><a name="L87"></a><tt class="py-lineno"> 87</tt> <a class="py-toggle" href="#" id="Logger.end_block-toggle" onclick="return toggle('Logger.end_block');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log.Logger-class.html#end_block">end_block</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Logger.end_block-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Logger.end_block-expanded"><a name="L88"></a><tt class="py-lineno"> 88</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L89"></a><tt class="py-lineno"> 89</tt>  <tt class="py-line"><tt class="py-docstring">        End a warning block.  See L{start_block} for details.</tt> </tt>
+<a name="L90"></a><tt class="py-lineno"> 90</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L91"></a><tt class="py-lineno"> 91</tt>  <tt class="py-line"> </tt>
+<a name="L92"></a><tt class="py-lineno"> 92</tt>  <tt class="py-line">    <tt class="py-comment">#////////////////////////////////////////////////////////////</tt> </tt>
+<a name="L93"></a><tt class="py-lineno"> 93</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-comment"># Progress bar</tt> </tt>
+<a name="L94"></a><tt class="py-lineno"> 94</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-comment">#////////////////////////////////////////////////////////////</tt> </tt>
+<a name="L95"></a><tt class="py-lineno"> 95</tt>  <tt class="py-line"><tt class="py-comment"></tt>     </tt>
+<a name="Logger.start_progress"></a><div id="Logger.start_progress-def"><a name="L96"></a><tt class="py-lineno"> 96</tt> <a class="py-toggle" href="#" id="Logger.start_progress-toggle" onclick="return toggle('Logger.start_progress');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log.Logger-class.html#start_progress">start_progress</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">header</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Logger.start_progress-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Logger.start_progress-expanded"><a name="L97"></a><tt class="py-lineno"> 97</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L98"></a><tt class="py-lineno"> 98</tt>  <tt class="py-line"><tt class="py-docstring">        Begin displaying progress for a new task.  C{header} is a</tt> </tt>
+<a name="L99"></a><tt class="py-lineno"> 99</tt>  <tt class="py-line"><tt class="py-docstring">        description of the task for which progress is being reported.</tt> </tt>
+<a name="L100"></a><tt class="py-lineno">100</tt>  <tt class="py-line"><tt class="py-docstring">        Each call to C{start_progress} must be followed by a call to</tt> </tt>
+<a name="L101"></a><tt class="py-lineno">101</tt>  <tt class="py-line"><tt class="py-docstring">        C{end_progress} (with no intervening calls to</tt> </tt>
+<a name="L102"></a><tt class="py-lineno">102</tt>  <tt class="py-line"><tt class="py-docstring">        C{start_progress}).</tt> </tt>
+<a name="L103"></a><tt class="py-lineno">103</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L104"></a><tt class="py-lineno">104</tt>  <tt class="py-line"> </tt>
+<a name="Logger.end_progress"></a><div id="Logger.end_progress-def"><a name="L105"></a><tt class="py-lineno">105</tt> <a class="py-toggle" href="#" id="Logger.end_progress-toggle" onclick="return toggle('Logger.end_progress');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log.Logger-class.html#end_progress">end_progress</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Logger.end_progress-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Logger.end_progress-expanded"><a name="L106"></a><tt class="py-lineno">106</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L107"></a><tt class="py-lineno">107</tt>  <tt class="py-line"><tt class="py-docstring">        Finish off the display of progress for the current task.  See</tt> </tt>
+<a name="L108"></a><tt class="py-lineno">108</tt>  <tt class="py-line"><tt class="py-docstring">        L{start_progress} for more information.</tt> </tt>
+<a name="L109"></a><tt class="py-lineno">109</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L110"></a><tt class="py-lineno">110</tt>  <tt class="py-line"> </tt>
+<a name="Logger.progress"></a><div id="Logger.progress-def"><a name="L111"></a><tt class="py-lineno">111</tt> <a class="py-toggle" href="#" id="Logger.progress-toggle" onclick="return toggle('Logger.progress');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log.Logger-class.html#progress">progress</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">percent</tt><tt class="py-op">,</tt> <tt class="py-param">message</tt><tt class="py-op">=</tt><tt class="py-string">''</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Logger.progress-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Logger.progress-expanded"><a name="L112"></a><tt class="py-lineno">112</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L113"></a><tt class="py-lineno">113</tt>  <tt class="py-line"><tt class="py-docstring">        Update the progress display.</tt> </tt>
+<a name="L114"></a><tt class="py-lineno">114</tt>  <tt class="py-line"><tt class="py-docstring">        </tt> </tt>
+<a name="L115"></a><tt class="py-lineno">115</tt>  <tt class="py-line"><tt class="py-docstring">        @param percent: A float from 0.0 to 1.0, indicating how much</tt> </tt>
+<a name="L116"></a><tt class="py-lineno">116</tt>  <tt class="py-line"><tt class="py-docstring">            progress has been made.</tt> </tt>
+<a name="L117"></a><tt class="py-lineno">117</tt>  <tt class="py-line"><tt class="py-docstring">        @param message: A message indicating the most recent action</tt> </tt>
+<a name="L118"></a><tt class="py-lineno">118</tt>  <tt class="py-line"><tt class="py-docstring">            that contributed towards that progress.</tt> </tt>
+<a name="L119"></a><tt class="py-lineno">119</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div></div><a name="L120"></a><tt class="py-lineno">120</tt>  <tt class="py-line"> </tt>
+<a name="SimpleLogger"></a><div id="SimpleLogger-def"><a name="L121"></a><tt class="py-lineno">121</tt> <a class="py-toggle" href="#" id="SimpleLogger-toggle" onclick="return toggle('SimpleLogger');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="epydoc.log.SimpleLogger-class.html">SimpleLogger</a><tt class="py-op">(</tt><tt class="py-base-class">Logger</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="SimpleLogger-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="SimpleLogger-expanded"><a name="SimpleLogger.__init__"></a><div id="SimpleLogger.__init__-def"><a name="L122"></a><tt class="py-lineno">122</tt> <a class="py-toggle" href="#" id="SimpleLogger.__init__-toggle" onclick="return toggle('SimpleLogger.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log.SimpleLogger-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">threshold</tt><tt class="py-op">=</tt><tt id="link-6" class="py-name"><a title="epydoc.log.WARNING" class="py-name" href="#" onclick="return doclink('link-6', 'WARNING', 'link-3');">WARNING</a></tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="SimpleLogger.__init__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="SimpleLogger.__init__-expanded"><a name="L123"></a><tt class="py-lineno">123</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">threshold</tt> <tt class="py-op">=</tt> <tt class="py-name">threshold</tt> </tt>
+</div><a name="SimpleLogger.log"></a><div id="SimpleLogger.log-def"><a name="L124"></a><tt class="py-lineno">124</tt> <a class="py-toggle" href="#" id="SimpleLogger.log-toggle" onclick="return toggle('SimpleLogger.log');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log.SimpleLogger-class.html#log">log</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">level</tt><tt class="py-op">,</tt> <tt class="py-param">message</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="SimpleLogger.log-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="SimpleLogger.log-expanded"><a name="L125"></a><tt class="py-lineno">125</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">level</tt> <tt class="py-op">&gt;=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">threshold</tt><tt class="py-op">:</tt> <tt class="py-keyword">print</tt> <tt class="py-name">message</tt> </tt>
+</div></div><a name="L126"></a><tt class="py-lineno">126</tt>  <tt class="py-line">         </tt>
+<a name="L127"></a><tt class="py-lineno">127</tt>  <tt class="py-line"><tt class="py-comment">######################################################################</tt> </tt>
+<a name="L128"></a><tt class="py-lineno">128</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Logger Registry</tt> </tt>
+<a name="L129"></a><tt class="py-lineno">129</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">######################################################################</tt> </tt>
+<a name="L130"></a><tt class="py-lineno">130</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L131"></a><tt class="py-lineno">131</tt>  <tt class="py-line"><tt id="link-7" class="py-name" targets="Variable epydoc.log._loggers=epydoc.log-module.html#_loggers"><a title="epydoc.log._loggers" class="py-name" href="#" onclick="return doclink('link-7', '_loggers', 'link-7');">_loggers</a></tt> <tt class="py-op">=</tt> <tt class="py-op">[</tt><tt class="py-op">]</tt> </tt>
+<a name="L132"></a><tt class="py-lineno">132</tt>  <tt class="py-line"><tt class="py-string">"""</tt> </tt>
+<a name="L133"></a><tt class="py-lineno">133</tt>  <tt class="py-line"><tt class="py-string">The list of registered logging functions.</tt> </tt>
+<a name="L134"></a><tt class="py-lineno">134</tt>  <tt class="py-line"><tt class="py-string">"""</tt> </tt>
+<a name="L135"></a><tt class="py-lineno">135</tt>  <tt class="py-line"> </tt>
+<a name="register_logger"></a><div id="register_logger-def"><a name="L136"></a><tt class="py-lineno">136</tt> <a class="py-toggle" href="#" id="register_logger-toggle" onclick="return toggle('register_logger');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log-module.html#register_logger">register_logger</a><tt class="py-op">(</tt><tt class="py-param">logger</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="register_logger-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="register_logger-expanded"><a name="L137"></a><tt class="py-lineno">137</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L138"></a><tt class="py-lineno">138</tt>  <tt class="py-line"><tt class="py-docstring">    Register a logger.  Each call to one of the logging functions</tt> </tt>
+<a name="L139"></a><tt class="py-lineno">139</tt>  <tt class="py-line"><tt class="py-docstring">    defined by this module will be delegated to each registered</tt> </tt>
+<a name="L140"></a><tt class="py-lineno">140</tt>  <tt class="py-line"><tt class="py-docstring">    logger.</tt> </tt>
+<a name="L141"></a><tt class="py-lineno">141</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L142"></a><tt class="py-lineno">142</tt>  <tt class="py-line">    <tt id="link-8" class="py-name"><a title="epydoc.log._loggers" class="py-name" href="#" onclick="return doclink('link-8', '_loggers', 'link-7');">_loggers</a></tt><tt class="py-op">.</tt><tt class="py-name">append</tt><tt class="py-op">(</tt><tt class="py-name">logger</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L143"></a><tt class="py-lineno">143</tt>  <tt class="py-line"> </tt>
+<a name="remove_logger"></a><div id="remove_logger-def"><a name="L144"></a><tt class="py-lineno">144</tt> <a class="py-toggle" href="#" id="remove_logger-toggle" onclick="return toggle('remove_logger');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log-module.html#remove_logger">remove_logger</a><tt class="py-op">(</tt><tt class="py-param">logger</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="remove_logger-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="remove_logger-expanded"><a name="L145"></a><tt class="py-lineno">145</tt>  <tt class="py-line">    <tt id="link-9" class="py-name"><a title="epydoc.log._loggers" class="py-name" href="#" onclick="return doclink('link-9', '_loggers', 'link-7');">_loggers</a></tt><tt class="py-op">.</tt><tt class="py-name">remove</tt><tt class="py-op">(</tt><tt class="py-name">logger</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L146"></a><tt class="py-lineno">146</tt>  <tt class="py-line"> </tt>
+<a name="L147"></a><tt class="py-lineno">147</tt>  <tt class="py-line"><tt class="py-comment">######################################################################</tt> </tt>
+<a name="L148"></a><tt class="py-lineno">148</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Logging Functions</tt> </tt>
+<a name="L149"></a><tt class="py-lineno">149</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">######################################################################</tt> </tt>
+<a name="L150"></a><tt class="py-lineno">150</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># The following methods all just delegate to the corresponding </tt> </tt>
+<a name="L151"></a><tt class="py-lineno">151</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># methods in the Logger class (above) for each registered logger.</tt> </tt>
+<a name="L152"></a><tt class="py-lineno">152</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="fatal"></a><div id="fatal-def"><a name="L153"></a><tt class="py-lineno">153</tt> <a class="py-toggle" href="#" id="fatal-toggle" onclick="return toggle('fatal');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log-module.html#fatal">fatal</a><tt class="py-op">(</tt><tt class="py-op">*</tt><tt class="py-param">messages</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="fatal-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="fatal-expanded"><a name="L154"></a><tt class="py-lineno">154</tt>  <tt class="py-line">    <tt class="py-docstring">"""Display the given fatal message."""</tt> </tt>
+<a name="L155"></a><tt class="py-lineno">155</tt>  <tt class="py-line">    <tt class="py-name">message</tt> <tt class="py-op">=</tt> <tt class="py-string">' '</tt><tt class="py-op">.</tt><tt class="py-name">join</tt><tt class="py-op">(</tt><tt class="py-op">[</tt><tt class="py-string">'%s'</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">m</tt><tt class="py-op">,</tt><tt class="py-op">)</tt> <tt class="py-keyword">for</tt> <tt class="py-name">m</tt> <tt class="py-keyword">in</tt> <tt class="py-name">messages</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L156"></a><tt class="py-lineno">156</tt>  <tt class="py-line">    <tt class="py-keyword">for</tt> <tt class="py-name">logger</tt> <tt class="py-keyword">in</tt> <tt id="link-10" class="py-name"><a title="epydoc.log._loggers" class="py-name" href="#" onclick="return doclink('link-10', '_loggers', 'link-7');">_loggers</a></tt><tt class="py-op">:</tt> <tt class="py-name">logger</tt><tt class="py-op">.</tt><tt id="link-11" class="py-name" targets="Method epydoc.cli.ConsoleLogger.log()=epydoc.cli.ConsoleLogger-class.html#log,Method epydoc.cli.HTMLLogger.log()=epydoc.cli.HTMLLogger-class.html#log,Method epydoc.gui.GUILogger.log()=epydoc.gui.GUILogger-class.html#log,Module epydoc.log=epydoc.log-module.html,Method epydoc.log.Logger.log()=epydoc.log.Logger-class.html#log,Method epydoc.log.SimpleLogger.log()=epydoc.log.SimpleLogger-class.html#log"><a title="epydoc.cli.ConsoleLogger.log
+epydoc.cli.HTMLLogger.log
+epydoc.gui.GUILogger.log
+epydoc.log
+epydoc.log.Logger.log
+epydoc.log.SimpleLogger.log" class="py-name" href="#" onclick="return doclink('link-11', 'log', 'link-11');">log</a></tt><tt class="py-op">(</tt><tt id="link-12" class="py-name"><a title="epydoc.log.FATAL" class="py-name" href="#" onclick="return doclink('link-12', 'FATAL', 'link-5');">FATAL</a></tt><tt class="py-op">,</tt> <tt class="py-name">message</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L157"></a><tt class="py-lineno">157</tt>  <tt class="py-line">     </tt>
+<a name="error"></a><div id="error-def"><a name="L158"></a><tt class="py-lineno">158</tt> <a class="py-toggle" href="#" id="error-toggle" onclick="return toggle('error');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log-module.html#error">error</a><tt class="py-op">(</tt><tt class="py-op">*</tt><tt class="py-param">messages</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="error-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="error-expanded"><a name="L159"></a><tt class="py-lineno">159</tt>  <tt class="py-line">    <tt class="py-docstring">"""Display the given error message."""</tt> </tt>
+<a name="L160"></a><tt class="py-lineno">160</tt>  <tt class="py-line">    <tt class="py-name">message</tt> <tt class="py-op">=</tt> <tt class="py-string">' '</tt><tt class="py-op">.</tt><tt class="py-name">join</tt><tt class="py-op">(</tt><tt class="py-op">[</tt><tt class="py-string">'%s'</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">m</tt><tt class="py-op">,</tt><tt class="py-op">)</tt> <tt class="py-keyword">for</tt> <tt class="py-name">m</tt> <tt class="py-keyword">in</tt> <tt class="py-name">messages</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L161"></a><tt class="py-lineno">161</tt>  <tt class="py-line">    <tt class="py-keyword">for</tt> <tt class="py-name">logger</tt> <tt class="py-keyword">in</tt> <tt id="link-13" class="py-name"><a title="epydoc.log._loggers" class="py-name" href="#" onclick="return doclink('link-13', '_loggers', 'link-7');">_loggers</a></tt><tt class="py-op">:</tt> <tt class="py-name">logger</tt><tt class="py-op">.</tt><tt id="link-14" class="py-name"><a title="epydoc.cli.ConsoleLogger.log
+epydoc.cli.HTMLLogger.log
+epydoc.gui.GUILogger.log
+epydoc.log
+epydoc.log.Logger.log
+epydoc.log.SimpleLogger.log" class="py-name" href="#" onclick="return doclink('link-14', 'log', 'link-11');">log</a></tt><tt class="py-op">(</tt><tt id="link-15" class="py-name"><a title="epydoc.log.ERROR" class="py-name" href="#" onclick="return doclink('link-15', 'ERROR', 'link-4');">ERROR</a></tt><tt class="py-op">,</tt> <tt class="py-name">message</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L162"></a><tt class="py-lineno">162</tt>  <tt class="py-line">     </tt>
+<a name="warning"></a><div id="warning-def"><a name="L163"></a><tt class="py-lineno">163</tt> <a class="py-toggle" href="#" id="warning-toggle" onclick="return toggle('warning');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log-module.html#warning">warning</a><tt class="py-op">(</tt><tt class="py-op">*</tt><tt class="py-param">messages</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="warning-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="warning-expanded"><a name="L164"></a><tt class="py-lineno">164</tt>  <tt class="py-line">    <tt class="py-docstring">"""Display the given warning message."""</tt> </tt>
+<a name="L165"></a><tt class="py-lineno">165</tt>  <tt class="py-line">    <tt class="py-name">message</tt> <tt class="py-op">=</tt> <tt class="py-string">' '</tt><tt class="py-op">.</tt><tt class="py-name">join</tt><tt class="py-op">(</tt><tt class="py-op">[</tt><tt class="py-string">'%s'</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">m</tt><tt class="py-op">,</tt><tt class="py-op">)</tt> <tt class="py-keyword">for</tt> <tt class="py-name">m</tt> <tt class="py-keyword">in</tt> <tt class="py-name">messages</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L166"></a><tt class="py-lineno">166</tt>  <tt class="py-line">    <tt class="py-keyword">for</tt> <tt class="py-name">logger</tt> <tt class="py-keyword">in</tt> <tt id="link-16" class="py-name"><a title="epydoc.log._loggers" class="py-name" href="#" onclick="return doclink('link-16', '_loggers', 'link-7');">_loggers</a></tt><tt class="py-op">:</tt> <tt class="py-name">logger</tt><tt class="py-op">.</tt><tt id="link-17" class="py-name"><a title="epydoc.cli.ConsoleLogger.log
+epydoc.cli.HTMLLogger.log
+epydoc.gui.GUILogger.log
+epydoc.log
+epydoc.log.Logger.log
+epydoc.log.SimpleLogger.log" class="py-name" href="#" onclick="return doclink('link-17', 'log', 'link-11');">log</a></tt><tt class="py-op">(</tt><tt id="link-18" class="py-name"><a title="epydoc.log.WARNING" class="py-name" href="#" onclick="return doclink('link-18', 'WARNING', 'link-3');">WARNING</a></tt><tt class="py-op">,</tt> <tt class="py-name">message</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L167"></a><tt class="py-lineno">167</tt>  <tt class="py-line">     </tt>
+<a name="docstring_warning"></a><div id="docstring_warning-def"><a name="L168"></a><tt class="py-lineno">168</tt> <a class="py-toggle" href="#" id="docstring_warning-toggle" onclick="return toggle('docstring_warning');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log-module.html#docstring_warning">docstring_warning</a><tt class="py-op">(</tt><tt class="py-op">*</tt><tt class="py-param">messages</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="docstring_warning-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="docstring_warning-expanded"><a name="L169"></a><tt class="py-lineno">169</tt>  <tt class="py-line">    <tt class="py-docstring">"""Display the given docstring warning message."""</tt> </tt>
+<a name="L170"></a><tt class="py-lineno">170</tt>  <tt class="py-line">    <tt class="py-name">message</tt> <tt class="py-op">=</tt> <tt class="py-string">' '</tt><tt class="py-op">.</tt><tt class="py-name">join</tt><tt class="py-op">(</tt><tt class="py-op">[</tt><tt class="py-string">'%s'</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">m</tt><tt class="py-op">,</tt><tt class="py-op">)</tt> <tt class="py-keyword">for</tt> <tt class="py-name">m</tt> <tt class="py-keyword">in</tt> <tt class="py-name">messages</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L171"></a><tt class="py-lineno">171</tt>  <tt class="py-line">    <tt class="py-keyword">for</tt> <tt class="py-name">logger</tt> <tt class="py-keyword">in</tt> <tt id="link-19" class="py-name"><a title="epydoc.log._loggers" class="py-name" href="#" onclick="return doclink('link-19', '_loggers', 'link-7');">_loggers</a></tt><tt class="py-op">:</tt> <tt class="py-name">logger</tt><tt class="py-op">.</tt><tt id="link-20" class="py-name"><a title="epydoc.cli.ConsoleLogger.log
+epydoc.cli.HTMLLogger.log
+epydoc.gui.GUILogger.log
+epydoc.log
+epydoc.log.Logger.log
+epydoc.log.SimpleLogger.log" class="py-name" href="#" onclick="return doclink('link-20', 'log', 'link-11');">log</a></tt><tt class="py-op">(</tt><tt id="link-21" class="py-name"><a title="epydoc.log.DOCSTRING_WARNING" class="py-name" href="#" onclick="return doclink('link-21', 'DOCSTRING_WARNING', 'link-2');">DOCSTRING_WARNING</a></tt><tt class="py-op">,</tt> <tt class="py-name">message</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L172"></a><tt class="py-lineno">172</tt>  <tt class="py-line">     </tt>
+<a name="info"></a><div id="info-def"><a name="L173"></a><tt class="py-lineno">173</tt> <a class="py-toggle" href="#" id="info-toggle" onclick="return toggle('info');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log-module.html#info">info</a><tt class="py-op">(</tt><tt class="py-op">*</tt><tt class="py-param">messages</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="info-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="info-expanded"><a name="L174"></a><tt class="py-lineno">174</tt>  <tt class="py-line">    <tt class="py-docstring">"""Display the given informational message."""</tt> </tt>
+<a name="L175"></a><tt class="py-lineno">175</tt>  <tt class="py-line">    <tt class="py-name">message</tt> <tt class="py-op">=</tt> <tt class="py-string">' '</tt><tt class="py-op">.</tt><tt class="py-name">join</tt><tt class="py-op">(</tt><tt class="py-op">[</tt><tt class="py-string">'%s'</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">m</tt><tt class="py-op">,</tt><tt class="py-op">)</tt> <tt class="py-keyword">for</tt> <tt class="py-name">m</tt> <tt class="py-keyword">in</tt> <tt class="py-name">messages</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L176"></a><tt class="py-lineno">176</tt>  <tt class="py-line">    <tt class="py-keyword">for</tt> <tt class="py-name">logger</tt> <tt class="py-keyword">in</tt> <tt id="link-22" class="py-name"><a title="epydoc.log._loggers" class="py-name" href="#" onclick="return doclink('link-22', '_loggers', 'link-7');">_loggers</a></tt><tt class="py-op">:</tt> <tt class="py-name">logger</tt><tt class="py-op">.</tt><tt id="link-23" class="py-name"><a title="epydoc.cli.ConsoleLogger.log
+epydoc.cli.HTMLLogger.log
+epydoc.gui.GUILogger.log
+epydoc.log
+epydoc.log.Logger.log
+epydoc.log.SimpleLogger.log" class="py-name" href="#" onclick="return doclink('link-23', 'log', 'link-11');">log</a></tt><tt class="py-op">(</tt><tt id="link-24" class="py-name"><a title="epydoc.log.INFO" class="py-name" href="#" onclick="return doclink('link-24', 'INFO', 'link-1');">INFO</a></tt><tt class="py-op">,</tt> <tt class="py-name">message</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L177"></a><tt class="py-lineno">177</tt>  <tt class="py-line">     </tt>
+<a name="debug"></a><div id="debug-def"><a name="L178"></a><tt class="py-lineno">178</tt> <a class="py-toggle" href="#" id="debug-toggle" onclick="return toggle('debug');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log-module.html#debug">debug</a><tt class="py-op">(</tt><tt class="py-op">*</tt><tt class="py-param">messages</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="debug-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="debug-expanded"><a name="L179"></a><tt class="py-lineno">179</tt>  <tt class="py-line">    <tt class="py-docstring">"""Display the given debugging message."""</tt> </tt>
+<a name="L180"></a><tt class="py-lineno">180</tt>  <tt class="py-line">    <tt class="py-name">message</tt> <tt class="py-op">=</tt> <tt class="py-string">' '</tt><tt class="py-op">.</tt><tt class="py-name">join</tt><tt class="py-op">(</tt><tt class="py-op">[</tt><tt class="py-string">'%s'</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">m</tt><tt class="py-op">,</tt><tt class="py-op">)</tt> <tt class="py-keyword">for</tt> <tt class="py-name">m</tt> <tt class="py-keyword">in</tt> <tt class="py-name">messages</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L181"></a><tt class="py-lineno">181</tt>  <tt class="py-line">    <tt class="py-keyword">for</tt> <tt class="py-name">logger</tt> <tt class="py-keyword">in</tt> <tt id="link-25" class="py-name"><a title="epydoc.log._loggers" class="py-name" href="#" onclick="return doclink('link-25', '_loggers', 'link-7');">_loggers</a></tt><tt class="py-op">:</tt> <tt class="py-name">logger</tt><tt class="py-op">.</tt><tt id="link-26" class="py-name"><a title="epydoc.cli.ConsoleLogger.log
+epydoc.cli.HTMLLogger.log
+epydoc.gui.GUILogger.log
+epydoc.log
+epydoc.log.Logger.log
+epydoc.log.SimpleLogger.log" class="py-name" href="#" onclick="return doclink('link-26', 'log', 'link-11');">log</a></tt><tt class="py-op">(</tt><tt id="link-27" class="py-name"><a title="epydoc.DEBUG
+epydoc.gui.DEBUG
+epydoc.log.DEBUG" class="py-name" href="#" onclick="return doclink('link-27', 'DEBUG', 'link-0');">DEBUG</a></tt><tt class="py-op">,</tt> <tt class="py-name">message</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L182"></a><tt class="py-lineno">182</tt>  <tt class="py-line">     </tt>
+<a name="start_block"></a><div id="start_block-def"><a name="L183"></a><tt class="py-lineno">183</tt> <a class="py-toggle" href="#" id="start_block-toggle" onclick="return toggle('start_block');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log-module.html#start_block">start_block</a><tt class="py-op">(</tt><tt class="py-param">header</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="start_block-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="start_block-expanded"><a name="L184"></a><tt class="py-lineno">184</tt>  <tt class="py-line">    <tt class="py-keyword">for</tt> <tt class="py-name">logger</tt> <tt class="py-keyword">in</tt> <tt id="link-28" class="py-name"><a title="epydoc.log._loggers" class="py-name" href="#" onclick="return doclink('link-28', '_loggers', 'link-7');">_loggers</a></tt><tt class="py-op">:</tt> <tt class="py-name">logger</tt><tt class="py-op">.</tt><tt id="link-29" class="py-name" targets="Method epydoc.cli.ConsoleLogger.start_block()=epydoc.cli.ConsoleLogger-class.html#start_block,Method epydoc.cli.HTMLLogger.start_block()=epydoc.cli.HTMLLogger-class.html#start_block,Method epydoc.gui.GUILogger.start_block()=epydoc.gui.GUILogger-class.html#start_block,Method epydoc.log.Logger.start_block()=epydoc.log.Logger-class.html#start_block,Function epydoc.log.start_block()=epydoc.log-module.html#start_block"><a title="epydoc.cli.ConsoleLogger.start_block
+epydoc.cli.HTMLLogger.start_block
+epydoc.gui.GUILogger.start_block
+epydoc.log.Logger.start_block
+epydoc.log.start_block" class="py-name" href="#" onclick="return doclink('link-29', 'start_block', 'link-29');">start_block</a></tt><tt class="py-op">(</tt><tt class="py-name">header</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L185"></a><tt class="py-lineno">185</tt>  <tt class="py-line"><tt id="link-30" class="py-name"><a title="epydoc.cli.ConsoleLogger.start_block
+epydoc.cli.HTMLLogger.start_block
+epydoc.gui.GUILogger.start_block
+epydoc.log.Logger.start_block
+epydoc.log.start_block" class="py-name" href="#" onclick="return doclink('link-30', 'start_block', 'link-29');">start_block</a></tt><tt class="py-op">.</tt><tt id="link-31" class="py-name" targets="Variable epydoc.markup.epytext.__doc__=epydoc.markup.epytext-module.html#__doc__"><a title="epydoc.markup.epytext.__doc__" class="py-name" href="#" onclick="return doclink('link-31', '__doc__', 'link-31');">__doc__</a></tt> <tt class="py-op">=</tt> <tt id="link-32" class="py-name" targets="Class epydoc.log.Logger=epydoc.log.Logger-class.html"><a title="epydoc.log.Logger" class="py-name" href="#" onclick="return doclink('link-32', 'Logger', 'link-32');">Logger</a></tt><tt class="py-op">.</tt><tt id="link-33" class="py-name"><a title="epydoc.cli.ConsoleLogger.start_block
+epydoc.cli.HTMLLogger.start_block
+epydoc.gui.GUILogger.start_block
+epydoc.log.Logger.start_block
+epydoc.log.start_block" class="py-name" href="#" onclick="return doclink('link-33', 'start_block', 'link-29');">start_block</a></tt><tt class="py-op">.</tt><tt id="link-34" class="py-name"><a title="epydoc.markup.epytext.__doc__" class="py-name" href="#" onclick="return doclink('link-34', '__doc__', 'link-31');">__doc__</a></tt> </tt>
+<a name="L186"></a><tt class="py-lineno">186</tt>  <tt class="py-line">     </tt>
+<a name="end_block"></a><div id="end_block-def"><a name="L187"></a><tt class="py-lineno">187</tt> <a class="py-toggle" href="#" id="end_block-toggle" onclick="return toggle('end_block');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log-module.html#end_block">end_block</a><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="end_block-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="end_block-expanded"><a name="L188"></a><tt class="py-lineno">188</tt>  <tt class="py-line">    <tt class="py-keyword">for</tt> <tt class="py-name">logger</tt> <tt class="py-keyword">in</tt> <tt id="link-35" class="py-name"><a title="epydoc.log._loggers" class="py-name" href="#" onclick="return doclink('link-35', '_loggers', 'link-7');">_loggers</a></tt><tt class="py-op">:</tt> <tt class="py-name">logger</tt><tt class="py-op">.</tt><tt id="link-36" class="py-name" targets="Method epydoc.cli.ConsoleLogger.end_block()=epydoc.cli.ConsoleLogger-class.html#end_block,Method epydoc.cli.HTMLLogger.end_block()=epydoc.cli.HTMLLogger-class.html#end_block,Method epydoc.gui.GUILogger.end_block()=epydoc.gui.GUILogger-class.html#end_block,Method epydoc.log.Logger.end_block()=epydoc.log.Logger-class.html#end_block,Function epydoc.log.end_block()=epydoc.log-module.html#end_block"><a title="epydoc.cli.ConsoleLogger.end_block
+epydoc.cli.HTMLLogger.end_block
+epydoc.gui.GUILogger.end_block
+epydoc.log.Logger.end_block
+epydoc.log.end_block" class="py-name" href="#" onclick="return doclink('link-36', 'end_block', 'link-36');">end_block</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L189"></a><tt class="py-lineno">189</tt>  <tt class="py-line"><tt id="link-37" class="py-name"><a title="epydoc.cli.ConsoleLogger.end_block
+epydoc.cli.HTMLLogger.end_block
+epydoc.gui.GUILogger.end_block
+epydoc.log.Logger.end_block
+epydoc.log.end_block" class="py-name" href="#" onclick="return doclink('link-37', 'end_block', 'link-36');">end_block</a></tt><tt class="py-op">.</tt><tt id="link-38" class="py-name"><a title="epydoc.markup.epytext.__doc__" class="py-name" href="#" onclick="return doclink('link-38', '__doc__', 'link-31');">__doc__</a></tt> <tt class="py-op">=</tt> <tt id="link-39" class="py-name"><a title="epydoc.log.Logger" class="py-name" href="#" onclick="return doclink('link-39', 'Logger', 'link-32');">Logger</a></tt><tt class="py-op">.</tt><tt id="link-40" class="py-name"><a title="epydoc.cli.ConsoleLogger.end_block
+epydoc.cli.HTMLLogger.end_block
+epydoc.gui.GUILogger.end_block
+epydoc.log.Logger.end_block
+epydoc.log.end_block" class="py-name" href="#" onclick="return doclink('link-40', 'end_block', 'link-36');">end_block</a></tt><tt class="py-op">.</tt><tt id="link-41" class="py-name"><a title="epydoc.markup.epytext.__doc__" class="py-name" href="#" onclick="return doclink('link-41', '__doc__', 'link-31');">__doc__</a></tt> </tt>
+<a name="L190"></a><tt class="py-lineno">190</tt>  <tt class="py-line">     </tt>
+<a name="start_progress"></a><div id="start_progress-def"><a name="L191"></a><tt class="py-lineno">191</tt> <a class="py-toggle" href="#" id="start_progress-toggle" onclick="return toggle('start_progress');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log-module.html#start_progress">start_progress</a><tt class="py-op">(</tt><tt class="py-param">header</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="start_progress-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="start_progress-expanded"><a name="L192"></a><tt class="py-lineno">192</tt>  <tt class="py-line">    <tt class="py-keyword">for</tt> <tt class="py-name">logger</tt> <tt class="py-keyword">in</tt> <tt id="link-42" class="py-name"><a title="epydoc.log._loggers" class="py-name" href="#" onclick="return doclink('link-42', '_loggers', 'link-7');">_loggers</a></tt><tt class="py-op">:</tt> <tt class="py-name">logger</tt><tt class="py-op">.</tt><tt id="link-43" class="py-name" targets="Method epydoc.cli.ConsoleLogger.start_progress()=epydoc.cli.ConsoleLogger-class.html#start_progress,Method epydoc.cli.UnifiedProgressConsoleLogger.start_progress()=epydoc.cli.UnifiedProgressConsoleLogger-class.html#start_progress,Method epydoc.gui.GUILogger.start_progress()=epydoc.gui.GUILogger-class.html#start_progress,Method epydoc.log.Logger.start_progress()=epydoc.log.Logger-class.html#start_progress,Function epydoc.log.start_progress()=epydoc.log-module.html#start_progress"><a title="epydoc.cli.ConsoleLogger.start_progress
+epydoc.cli.UnifiedProgressConsoleLogger.start_progress
+epydoc.gui.GUILogger.start_progress
+epydoc.log.Logger.start_progress
+epydoc.log.start_progress" class="py-name" href="#" onclick="return doclink('link-43', 'start_progress', 'link-43');">start_progress</a></tt><tt class="py-op">(</tt><tt class="py-name">header</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L193"></a><tt class="py-lineno">193</tt>  <tt class="py-line"><tt id="link-44" class="py-name"><a title="epydoc.cli.ConsoleLogger.start_progress
+epydoc.cli.UnifiedProgressConsoleLogger.start_progress
+epydoc.gui.GUILogger.start_progress
+epydoc.log.Logger.start_progress
+epydoc.log.start_progress" class="py-name" href="#" onclick="return doclink('link-44', 'start_progress', 'link-43');">start_progress</a></tt><tt class="py-op">.</tt><tt id="link-45" class="py-name"><a title="epydoc.markup.epytext.__doc__" class="py-name" href="#" onclick="return doclink('link-45', '__doc__', 'link-31');">__doc__</a></tt> <tt class="py-op">=</tt> <tt id="link-46" class="py-name"><a title="epydoc.log.Logger" class="py-name" href="#" onclick="return doclink('link-46', 'Logger', 'link-32');">Logger</a></tt><tt class="py-op">.</tt><tt id="link-47" class="py-name"><a title="epydoc.cli.ConsoleLogger.start_progress
+epydoc.cli.UnifiedProgressConsoleLogger.start_progress
+epydoc.gui.GUILogger.start_progress
+epydoc.log.Logger.start_progress
+epydoc.log.start_progress" class="py-name" href="#" onclick="return doclink('link-47', 'start_progress', 'link-43');">start_progress</a></tt><tt class="py-op">.</tt><tt id="link-48" class="py-name"><a title="epydoc.markup.epytext.__doc__" class="py-name" href="#" onclick="return doclink('link-48', '__doc__', 'link-31');">__doc__</a></tt> </tt>
+<a name="L194"></a><tt class="py-lineno">194</tt>  <tt class="py-line">     </tt>
+<a name="end_progress"></a><div id="end_progress-def"><a name="L195"></a><tt class="py-lineno">195</tt> <a class="py-toggle" href="#" id="end_progress-toggle" onclick="return toggle('end_progress');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log-module.html#end_progress">end_progress</a><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="end_progress-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="end_progress-expanded"><a name="L196"></a><tt class="py-lineno">196</tt>  <tt class="py-line">    <tt class="py-keyword">for</tt> <tt class="py-name">logger</tt> <tt class="py-keyword">in</tt> <tt id="link-49" class="py-name"><a title="epydoc.log._loggers" class="py-name" href="#" onclick="return doclink('link-49', '_loggers', 'link-7');">_loggers</a></tt><tt class="py-op">:</tt> <tt class="py-name">logger</tt><tt class="py-op">.</tt><tt id="link-50" class="py-name" targets="Method epydoc.cli.ConsoleLogger.end_progress()=epydoc.cli.ConsoleLogger-class.html#end_progress,Method epydoc.cli.UnifiedProgressConsoleLogger.end_progress()=epydoc.cli.UnifiedProgressConsoleLogger-class.html#end_progress,Method epydoc.gui.GUILogger.end_progress()=epydoc.gui.GUILogger-class.html#end_progress,Method epydoc.log.Logger.end_progress()=epydoc.log.Logger-class.html#end_progress,Function epydoc.log.end_progress()=epydoc.log-module.html#end_progress"><a title="epydoc.cli.ConsoleLogger.end_progress
+epydoc.cli.UnifiedProgressConsoleLogger.end_progress
+epydoc.gui.GUILogger.end_progress
+epydoc.log.Logger.end_progress
+epydoc.log.end_progress" class="py-name" href="#" onclick="return doclink('link-50', 'end_progress', 'link-50');">end_progress</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L197"></a><tt class="py-lineno">197</tt>  <tt class="py-line"><tt id="link-51" class="py-name"><a title="epydoc.cli.ConsoleLogger.end_progress
+epydoc.cli.UnifiedProgressConsoleLogger.end_progress
+epydoc.gui.GUILogger.end_progress
+epydoc.log.Logger.end_progress
+epydoc.log.end_progress" class="py-name" href="#" onclick="return doclink('link-51', 'end_progress', 'link-50');">end_progress</a></tt><tt class="py-op">.</tt><tt id="link-52" class="py-name"><a title="epydoc.markup.epytext.__doc__" class="py-name" href="#" onclick="return doclink('link-52', '__doc__', 'link-31');">__doc__</a></tt> <tt class="py-op">=</tt> <tt id="link-53" class="py-name"><a title="epydoc.log.Logger" class="py-name" href="#" onclick="return doclink('link-53', 'Logger', 'link-32');">Logger</a></tt><tt class="py-op">.</tt><tt id="link-54" class="py-name"><a title="epydoc.cli.ConsoleLogger.end_progress
+epydoc.cli.UnifiedProgressConsoleLogger.end_progress
+epydoc.gui.GUILogger.end_progress
+epydoc.log.Logger.end_progress
+epydoc.log.end_progress" class="py-name" href="#" onclick="return doclink('link-54', 'end_progress', 'link-50');">end_progress</a></tt><tt class="py-op">.</tt><tt id="link-55" class="py-name"><a title="epydoc.markup.epytext.__doc__" class="py-name" href="#" onclick="return doclink('link-55', '__doc__', 'link-31');">__doc__</a></tt> </tt>
+<a name="L198"></a><tt class="py-lineno">198</tt>  <tt class="py-line">     </tt>
+<a name="progress"></a><div id="progress-def"><a name="L199"></a><tt class="py-lineno">199</tt> <a class="py-toggle" href="#" id="progress-toggle" onclick="return toggle('progress');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log-module.html#progress">progress</a><tt class="py-op">(</tt><tt class="py-param">percent</tt><tt class="py-op">,</tt> <tt class="py-param">message</tt><tt class="py-op">=</tt><tt class="py-string">''</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="progress-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="progress-expanded"><a name="L200"></a><tt class="py-lineno">200</tt>  <tt class="py-line">    <tt class="py-keyword">for</tt> <tt class="py-name">logger</tt> <tt class="py-keyword">in</tt> <tt id="link-56" class="py-name"><a title="epydoc.log._loggers" class="py-name" href="#" onclick="return doclink('link-56', '_loggers', 'link-7');">_loggers</a></tt><tt class="py-op">:</tt> <tt class="py-name">logger</tt><tt class="py-op">.</tt><tt id="link-57" class="py-name" targets="Method epydoc.cli.ConsoleLogger.progress()=epydoc.cli.ConsoleLogger-class.html#progress,Method epydoc.cli.UnifiedProgressConsoleLogger.progress()=epydoc.cli.UnifiedProgressConsoleLogger-class.html#progress,Method epydoc.docbuilder._ProgressEstimator.progress()=epydoc.docbuilder._ProgressEstimator-class.html#progress,Method epydoc.gui.GUILogger.progress()=epydoc.gui.GUILogger-class.html#progress,Method epydoc.log.Logger.progress()=epydoc.log.Logger-class.html#progress,Function epydoc.log.progress()=epydoc.log-module.html#progress"><a title="epydoc.cli.ConsoleLogger.progress
+epydoc.cli.UnifiedProgressConsoleLogger.progress
+epydoc.docbuilder._ProgressEstimator.progress
+epydoc.gui.GUILogger.progress
+epydoc.log.Logger.progress
+epydoc.log.progress" class="py-name" href="#" onclick="return doclink('link-57', 'progress', 'link-57');">progress</a></tt><tt class="py-op">(</tt><tt class="py-name">percent</tt><tt class="py-op">,</tt> <tt class="py-string">'%s'</tt> <tt class="py-op">%</tt> <tt class="py-name">message</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L201"></a><tt class="py-lineno">201</tt>  <tt class="py-line"><tt id="link-58" class="py-name"><a title="epydoc.cli.ConsoleLogger.progress
+epydoc.cli.UnifiedProgressConsoleLogger.progress
+epydoc.docbuilder._ProgressEstimator.progress
+epydoc.gui.GUILogger.progress
+epydoc.log.Logger.progress
+epydoc.log.progress" class="py-name" href="#" onclick="return doclink('link-58', 'progress', 'link-57');">progress</a></tt><tt class="py-op">.</tt><tt id="link-59" class="py-name"><a title="epydoc.markup.epytext.__doc__" class="py-name" href="#" onclick="return doclink('link-59', '__doc__', 'link-31');">__doc__</a></tt> <tt class="py-op">=</tt> <tt id="link-60" class="py-name"><a title="epydoc.log.Logger" class="py-name" href="#" onclick="return doclink('link-60', 'Logger', 'link-32');">Logger</a></tt><tt class="py-op">.</tt><tt id="link-61" class="py-name"><a title="epydoc.cli.ConsoleLogger.progress
+epydoc.cli.UnifiedProgressConsoleLogger.progress
+epydoc.docbuilder._ProgressEstimator.progress
+epydoc.gui.GUILogger.progress
+epydoc.log.Logger.progress
+epydoc.log.progress" class="py-name" href="#" onclick="return doclink('link-61', 'progress', 'link-57');">progress</a></tt><tt class="py-op">.</tt><tt id="link-62" class="py-name"><a title="epydoc.markup.epytext.__doc__" class="py-name" href="#" onclick="return doclink('link-62', '__doc__', 'link-31');">__doc__</a></tt> </tt>
+<a name="L202"></a><tt class="py-lineno">202</tt>  <tt class="py-line"> </tt>
+<a name="close"></a><div id="close-def"><a name="L203"></a><tt class="py-lineno">203</tt> <a class="py-toggle" href="#" id="close-toggle" onclick="return toggle('close');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.log-module.html#close">close</a><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="close-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="close-expanded"><a name="L204"></a><tt class="py-lineno">204</tt>  <tt class="py-line">    <tt class="py-keyword">for</tt> <tt class="py-name">logger</tt> <tt class="py-keyword">in</tt> <tt id="link-63" class="py-name"><a title="epydoc.log._loggers" class="py-name" href="#" onclick="return doclink('link-63', '_loggers', 'link-7');">_loggers</a></tt><tt class="py-op">:</tt> <tt class="py-name">logger</tt><tt class="py-op">.</tt><tt id="link-64" class="py-name" targets="Method epydoc.cli.HTMLLogger.close()=epydoc.cli.HTMLLogger-class.html#close,Method epydoc.docintrospecter._DevNull.close()=epydoc.docintrospecter._DevNull-class.html#close,Method epydoc.log.Logger.close()=epydoc.log.Logger-class.html#close,Function epydoc.log.close()=epydoc.log-module.html#close"><a title="epydoc.cli.HTMLLogger.close
+epydoc.docintrospecter._DevNull.close
+epydoc.log.Logger.close
+epydoc.log.close" class="py-name" href="#" onclick="return doclink('link-64', 'close', 'link-64');">close</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L205"></a><tt class="py-lineno">205</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:06:04 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

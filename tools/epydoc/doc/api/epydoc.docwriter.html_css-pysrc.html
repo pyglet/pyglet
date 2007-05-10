@@ -1,0 +1,663 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.docwriter.html_css</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.docwriter-module.html">Package&nbsp;docwriter</a> ::
+        Module&nbsp;html_css
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.docwriter.html_css-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="epydoc.docwriter.html_css-module.html">Module epydoc.docwriter.html_css</a></h1>
+<pre class="py-src">
+<a name="L1"></a><tt class="py-lineno">  1</tt>  <tt class="py-line"><tt class="py-comment">#</tt> </tt>
+<a name="L2"></a><tt class="py-lineno">  2</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># epydoc.css: default epydoc CSS stylesheets</tt> </tt>
+<a name="L3"></a><tt class="py-lineno">  3</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Edward Loper</tt> </tt>
+<a name="L4"></a><tt class="py-lineno">  4</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L5"></a><tt class="py-lineno">  5</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Created [01/30/01 05:18 PM]</tt> </tt>
+<a name="L6"></a><tt class="py-lineno">  6</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># $Id: html_css.py 1517 2007-02-16 06:13:56Z edloper $</tt> </tt>
+<a name="L7"></a><tt class="py-lineno">  7</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L8"></a><tt class="py-lineno">  8</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L9"></a><tt class="py-lineno">  9</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L10"></a><tt class="py-lineno"> 10</tt>  <tt class="py-line"><tt class="py-docstring">Predefined CSS stylesheets for the HTML outputter (L{epydoc.docwriter.html}).</tt> </tt>
+<a name="L11"></a><tt class="py-lineno"> 11</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L12"></a><tt class="py-lineno"> 12</tt>  <tt class="py-line"><tt class="py-docstring">@type STYLESHEETS: C{dictionary} from C{string} to C{(string, string)}</tt> </tt>
+<a name="L13"></a><tt class="py-lineno"> 13</tt>  <tt class="py-line"><tt class="py-docstring">@var STYLESHEETS: A dictionary mapping from stylesheet names to CSS</tt> </tt>
+<a name="L14"></a><tt class="py-lineno"> 14</tt>  <tt class="py-line"><tt class="py-docstring">    stylesheets and descriptions.  A single stylesheet may have</tt> </tt>
+<a name="L15"></a><tt class="py-lineno"> 15</tt>  <tt class="py-line"><tt class="py-docstring">    multiple names.  Currently, the following stylesheets are defined:</tt> </tt>
+<a name="L16"></a><tt class="py-lineno"> 16</tt>  <tt class="py-line"><tt class="py-docstring">      - C{default}: The default stylesheet (synonym for C{white}).</tt> </tt>
+<a name="L17"></a><tt class="py-lineno"> 17</tt>  <tt class="py-line"><tt class="py-docstring">      - C{white}: Black on white, with blue highlights (similar to</tt> </tt>
+<a name="L18"></a><tt class="py-lineno"> 18</tt>  <tt class="py-line"><tt class="py-docstring">        javadoc).</tt> </tt>
+<a name="L19"></a><tt class="py-lineno"> 19</tt>  <tt class="py-line"><tt class="py-docstring">      - C{blue}: Black on steel blue.</tt> </tt>
+<a name="L20"></a><tt class="py-lineno"> 20</tt>  <tt class="py-line"><tt class="py-docstring">      - C{green}: Black on green.</tt> </tt>
+<a name="L21"></a><tt class="py-lineno"> 21</tt>  <tt class="py-line"><tt class="py-docstring">      - C{black}: White on black, with blue highlights</tt> </tt>
+<a name="L22"></a><tt class="py-lineno"> 22</tt>  <tt class="py-line"><tt class="py-docstring">      - C{grayscale}: Grayscale black on white.</tt> </tt>
+<a name="L23"></a><tt class="py-lineno"> 23</tt>  <tt class="py-line"><tt class="py-docstring">      - C{none}: An empty stylesheet.</tt> </tt>
+<a name="L24"></a><tt class="py-lineno"> 24</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L25"></a><tt class="py-lineno"> 25</tt>  <tt class="py-line"><tt class="py-name">__docformat__</tt> <tt class="py-op">=</tt> <tt class="py-string">'epytext en'</tt> </tt>
+<a name="L26"></a><tt class="py-lineno"> 26</tt>  <tt class="py-line"> </tt>
+<a name="L27"></a><tt class="py-lineno"> 27</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt class="py-name">re</tt> </tt>
+<a name="L28"></a><tt class="py-lineno"> 28</tt>  <tt class="py-line"> </tt>
+<a name="L29"></a><tt class="py-lineno"> 29</tt>  <tt class="py-line"><tt class="py-comment">############################################################</tt> </tt>
+<a name="L30"></a><tt class="py-lineno"> 30</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">## Basic stylesheets</tt> </tt>
+<a name="L31"></a><tt class="py-lineno"> 31</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">############################################################</tt> </tt>
+<a name="L32"></a><tt class="py-lineno"> 32</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L33"></a><tt class="py-lineno"> 33</tt>  <tt class="py-line"><tt class="py-comment"># [xx] Should I do something like:</tt> </tt>
+<a name="L34"></a><tt class="py-lineno"> 34</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L35"></a><tt class="py-lineno"> 35</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#    @import url(html4css1.css);</tt> </tt>
+<a name="L36"></a><tt class="py-lineno"> 36</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L37"></a><tt class="py-lineno"> 37</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># But then where do I get that css file from?  Hm.</tt> </tt>
+<a name="L38"></a><tt class="py-lineno"> 38</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Also, in principle I'm mangling classes, but it looks like I'm</tt> </tt>
+<a name="L39"></a><tt class="py-lineno"> 39</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># failing.</tt> </tt>
+<a name="L40"></a><tt class="py-lineno"> 40</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L41"></a><tt class="py-lineno"> 41</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L42"></a><tt class="py-lineno"> 42</tt>  <tt class="py-line"><tt class="py-comment"># Black on white, with blue highlights.  This is similar to how</tt> </tt>
+<a name="L43"></a><tt class="py-lineno"> 43</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># javadoc looks.</tt> </tt>
+<a name="L44"></a><tt class="py-lineno"> 44</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt id="link-0" class="py-name" targets="Variable epydoc.docwriter.html_css.TEMPLATE=epydoc.docwriter.html_css-module.html#TEMPLATE"><a title="epydoc.docwriter.html_css.TEMPLATE" class="py-name" href="#" onclick="return doclink('link-0', 'TEMPLATE', 'link-0');">TEMPLATE</a></tt> <tt class="py-op">=</tt> <tt class="py-string">"""</tt> </tt>
+<a name="L45"></a><tt class="py-lineno"> 45</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L46"></a><tt class="py-lineno"> 46</tt>  <tt class="py-line"><tt class="py-string">/* Epydoc CSS Stylesheet</tt> </tt>
+<a name="L47"></a><tt class="py-lineno"> 47</tt>  <tt class="py-line"><tt class="py-string"> *</tt> </tt>
+<a name="L48"></a><tt class="py-lineno"> 48</tt>  <tt class="py-line"><tt class="py-string"> * This stylesheet can be used to customize the appearance of epydoc's</tt> </tt>
+<a name="L49"></a><tt class="py-lineno"> 49</tt>  <tt class="py-line"><tt class="py-string"> * HTML output.</tt> </tt>
+<a name="L50"></a><tt class="py-lineno"> 50</tt>  <tt class="py-line"><tt class="py-string"> *</tt> </tt>
+<a name="L51"></a><tt class="py-lineno"> 51</tt>  <tt class="py-line"><tt class="py-string"> */</tt> </tt>
+<a name="L52"></a><tt class="py-lineno"> 52</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L53"></a><tt class="py-lineno"> 53</tt>  <tt class="py-line"><tt class="py-string">/* Default Colors &amp; Styles</tt> </tt>
+<a name="L54"></a><tt class="py-lineno"> 54</tt>  <tt class="py-line"><tt class="py-string"> *   - Set the default foreground &amp; background color with 'body'; and </tt> </tt>
+<a name="L55"></a><tt class="py-lineno"> 55</tt>  <tt class="py-line"><tt class="py-string"> *     link colors with 'a:link' and 'a:visited'.</tt> </tt>
+<a name="L56"></a><tt class="py-lineno"> 56</tt>  <tt class="py-line"><tt class="py-string"> *   - Use bold for decision list terms.</tt> </tt>
+<a name="L57"></a><tt class="py-lineno"> 57</tt>  <tt class="py-line"><tt class="py-string"> *   - The heading styles defined here are used for headings *within*</tt> </tt>
+<a name="L58"></a><tt class="py-lineno"> 58</tt>  <tt class="py-line"><tt class="py-string"> *     docstring descriptions.  All headings used by epydoc itself use</tt> </tt>
+<a name="L59"></a><tt class="py-lineno"> 59</tt>  <tt class="py-line"><tt class="py-string"> *     either class='epydoc' or class='toc' (CSS styles for both</tt> </tt>
+<a name="L60"></a><tt class="py-lineno"> 60</tt>  <tt class="py-line"><tt class="py-string"> *     defined below).</tt> </tt>
+<a name="L61"></a><tt class="py-lineno"> 61</tt>  <tt class="py-line"><tt class="py-string"> */</tt> </tt>
+<a name="L62"></a><tt class="py-lineno"> 62</tt>  <tt class="py-line"><tt class="py-string">body                        { background: $body_bg; color: $body_fg; }</tt> </tt>
+<a name="L63"></a><tt class="py-lineno"> 63</tt>  <tt class="py-line"><tt class="py-string">a:link                      { color: $body_link; }</tt> </tt>
+<a name="L64"></a><tt class="py-lineno"> 64</tt>  <tt class="py-line"><tt class="py-string">a:visited                   { color: $body_visited_link; }</tt> </tt>
+<a name="L65"></a><tt class="py-lineno"> 65</tt>  <tt class="py-line"><tt class="py-string">dt                          { font-weight: bold; }</tt> </tt>
+<a name="L66"></a><tt class="py-lineno"> 66</tt>  <tt class="py-line"><tt class="py-string">h1                          { font-size: +140%; font-style: italic;</tt> </tt>
+<a name="L67"></a><tt class="py-lineno"> 67</tt>  <tt class="py-line"><tt class="py-string">                              font-weight: bold; }</tt> </tt>
+<a name="L68"></a><tt class="py-lineno"> 68</tt>  <tt class="py-line"><tt class="py-string">h2                          { font-size: +125%; font-style: italic;</tt> </tt>
+<a name="L69"></a><tt class="py-lineno"> 69</tt>  <tt class="py-line"><tt class="py-string">                              font-weight: bold; }</tt> </tt>
+<a name="L70"></a><tt class="py-lineno"> 70</tt>  <tt class="py-line"><tt class="py-string">h3                          { font-size: +110%; font-style: italic;</tt> </tt>
+<a name="L71"></a><tt class="py-lineno"> 71</tt>  <tt class="py-line"><tt class="py-string">                              font-weight: normal; }</tt> </tt>
+<a name="L72"></a><tt class="py-lineno"> 72</tt>  <tt class="py-line"><tt class="py-string">code                        { font-size: 100%; }</tt> </tt>
+<a name="L73"></a><tt class="py-lineno"> 73</tt>  <tt class="py-line"><tt class="py-string"> </tt> </tt>
+<a name="L74"></a><tt class="py-lineno"> 74</tt>  <tt class="py-line"><tt class="py-string">/* Page Header &amp; Footer</tt> </tt>
+<a name="L75"></a><tt class="py-lineno"> 75</tt>  <tt class="py-line"><tt class="py-string"> *   - The standard page header consists of a navigation bar (with</tt> </tt>
+<a name="L76"></a><tt class="py-lineno"> 76</tt>  <tt class="py-line"><tt class="py-string"> *     pointers to standard pages such as 'home' and 'trees'); a</tt> </tt>
+<a name="L77"></a><tt class="py-lineno"> 77</tt>  <tt class="py-line"><tt class="py-string"> *     breadcrumbs list, which can be used to navigate to containing</tt> </tt>
+<a name="L78"></a><tt class="py-lineno"> 78</tt>  <tt class="py-line"><tt class="py-string"> *     classes or modules; options links, to show/hide private</tt> </tt>
+<a name="L79"></a><tt class="py-lineno"> 79</tt>  <tt class="py-line"><tt class="py-string"> *     variables and to show/hide frames; and a page title (using</tt> </tt>
+<a name="L80"></a><tt class="py-lineno"> 80</tt>  <tt class="py-line"><tt class="py-string"> *     &lt;h1&gt;).  The page title may be followed by a link to the</tt> </tt>
+<a name="L81"></a><tt class="py-lineno"> 81</tt>  <tt class="py-line"><tt class="py-string"> *     corresponding source code (using 'span.codelink').</tt> </tt>
+<a name="L82"></a><tt class="py-lineno"> 82</tt>  <tt class="py-line"><tt class="py-string"> *   - The footer consists of a navigation bar, a timestamp, and a</tt> </tt>
+<a name="L83"></a><tt class="py-lineno"> 83</tt>  <tt class="py-line"><tt class="py-string"> *     pointer to epydoc's homepage.</tt> </tt>
+<a name="L84"></a><tt class="py-lineno"> 84</tt>  <tt class="py-line"><tt class="py-string"> */ </tt> </tt>
+<a name="L85"></a><tt class="py-lineno"> 85</tt>  <tt class="py-line"><tt class="py-string">h1.epydoc                   { margin: 0; font-size: +140%; font-weight: bold; }</tt> </tt>
+<a name="L86"></a><tt class="py-lineno"> 86</tt>  <tt class="py-line"><tt class="py-string">h2.epydoc                   { font-size: +130%; font-weight: bold; }</tt> </tt>
+<a name="L87"></a><tt class="py-lineno"> 87</tt>  <tt class="py-line"><tt class="py-string">h3.epydoc                   { font-size: +115%; font-weight: bold; }</tt> </tt>
+<a name="L88"></a><tt class="py-lineno"> 88</tt>  <tt class="py-line"><tt class="py-string">td h3.epydoc                { font-size: +115%; font-weight: bold;</tt> </tt>
+<a name="L89"></a><tt class="py-lineno"> 89</tt>  <tt class="py-line"><tt class="py-string">                              margin-bottom: 0; }</tt> </tt>
+<a name="L90"></a><tt class="py-lineno"> 90</tt>  <tt class="py-line"><tt class="py-string">table.navbar                { background: $navbar_bg; color: $navbar_fg;</tt> </tt>
+<a name="L91"></a><tt class="py-lineno"> 91</tt>  <tt class="py-line"><tt class="py-string">                              border: $navbar_border; }</tt> </tt>
+<a name="L92"></a><tt class="py-lineno"> 92</tt>  <tt class="py-line"><tt class="py-string">table.navbar table          { color: $navbar_fg; }</tt> </tt>
+<a name="L93"></a><tt class="py-lineno"> 93</tt>  <tt class="py-line"><tt class="py-string">th.navbar-select            { background: $navbar_select_bg;</tt> </tt>
+<a name="L94"></a><tt class="py-lineno"> 94</tt>  <tt class="py-line"><tt class="py-string">                              color: $navbar_select_fg; } </tt> </tt>
+<a name="L95"></a><tt class="py-lineno"> 95</tt>  <tt class="py-line"><tt class="py-string">table.navbar a              { text-decoration: none; }  </tt> </tt>
+<a name="L96"></a><tt class="py-lineno"> 96</tt>  <tt class="py-line"><tt class="py-string">table.navbar a:link         { color: $navbar_link; }</tt> </tt>
+<a name="L97"></a><tt class="py-lineno"> 97</tt>  <tt class="py-line"><tt class="py-string">table.navbar a:visited      { color: $navbar_visited_link; }</tt> </tt>
+<a name="L98"></a><tt class="py-lineno"> 98</tt>  <tt class="py-line"><tt class="py-string">span.breadcrumbs            { font-size: 85%; font-weight: bold; }</tt> </tt>
+<a name="L99"></a><tt class="py-lineno"> 99</tt>  <tt class="py-line"><tt class="py-string">span.options                { font-size: 70%; }</tt> </tt>
+<a name="L100"></a><tt class="py-lineno">100</tt>  <tt class="py-line"><tt class="py-string">span.codelink               { font-size: 85%; }</tt> </tt>
+<a name="L101"></a><tt class="py-lineno">101</tt>  <tt class="py-line"><tt class="py-string">td.footer                   { font-size: 85%; }</tt> </tt>
+<a name="L102"></a><tt class="py-lineno">102</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L103"></a><tt class="py-lineno">103</tt>  <tt class="py-line"><tt class="py-string">/* Table Headers</tt> </tt>
+<a name="L104"></a><tt class="py-lineno">104</tt>  <tt class="py-line"><tt class="py-string"> *   - Each summary table and details section begins with a 'header'</tt> </tt>
+<a name="L105"></a><tt class="py-lineno">105</tt>  <tt class="py-line"><tt class="py-string"> *     row.  This row contains a section title (marked by</tt> </tt>
+<a name="L106"></a><tt class="py-lineno">106</tt>  <tt class="py-line"><tt class="py-string"> *     'span.table-header') as well as a show/hide private link</tt> </tt>
+<a name="L107"></a><tt class="py-lineno">107</tt>  <tt class="py-line"><tt class="py-string"> *     (marked by 'span.options', defined above).</tt> </tt>
+<a name="L108"></a><tt class="py-lineno">108</tt>  <tt class="py-line"><tt class="py-string"> *   - Summary tables that contain user-defined groups mark those</tt> </tt>
+<a name="L109"></a><tt class="py-lineno">109</tt>  <tt class="py-line"><tt class="py-string"> *     groups using 'group header' rows.</tt> </tt>
+<a name="L110"></a><tt class="py-lineno">110</tt>  <tt class="py-line"><tt class="py-string"> */</tt> </tt>
+<a name="L111"></a><tt class="py-lineno">111</tt>  <tt class="py-line"><tt class="py-string">td.table-header             { background: $table_hdr_bg; color: $table_hdr_fg;</tt> </tt>
+<a name="L112"></a><tt class="py-lineno">112</tt>  <tt class="py-line"><tt class="py-string">                              border: $table_border; }</tt> </tt>
+<a name="L113"></a><tt class="py-lineno">113</tt>  <tt class="py-line"><tt class="py-string">td.table-header table       { color: $table_hdr_fg; }</tt> </tt>
+<a name="L114"></a><tt class="py-lineno">114</tt>  <tt class="py-line"><tt class="py-string">td.table-header table a:link      { color: $table_hdr_link; }</tt> </tt>
+<a name="L115"></a><tt class="py-lineno">115</tt>  <tt class="py-line"><tt class="py-string">td.table-header table a:visited   { color: $table_hdr_visited_link; }</tt> </tt>
+<a name="L116"></a><tt class="py-lineno">116</tt>  <tt class="py-line"><tt class="py-string">span.table-header           { font-size: 120%; font-weight: bold; }</tt> </tt>
+<a name="L117"></a><tt class="py-lineno">117</tt>  <tt class="py-line"><tt class="py-string">th.group-header             { background: $group_hdr_bg; color: $group_hdr_fg;</tt> </tt>
+<a name="L118"></a><tt class="py-lineno">118</tt>  <tt class="py-line"><tt class="py-string">                              text-align: left; font-style: italic; </tt> </tt>
+<a name="L119"></a><tt class="py-lineno">119</tt>  <tt class="py-line"><tt class="py-string">                              font-size: 115%; </tt> </tt>
+<a name="L120"></a><tt class="py-lineno">120</tt>  <tt class="py-line"><tt class="py-string">                              border: $table_border; }</tt> </tt>
+<a name="L121"></a><tt class="py-lineno">121</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L122"></a><tt class="py-lineno">122</tt>  <tt class="py-line"><tt class="py-string">/* Summary Tables (functions, variables, etc)</tt> </tt>
+<a name="L123"></a><tt class="py-lineno">123</tt>  <tt class="py-line"><tt class="py-string"> *   - Each object is described by a single row of the table with</tt> </tt>
+<a name="L124"></a><tt class="py-lineno">124</tt>  <tt class="py-line"><tt class="py-string"> *     two cells.  The left cell gives the object's type, and is</tt> </tt>
+<a name="L125"></a><tt class="py-lineno">125</tt>  <tt class="py-line"><tt class="py-string"> *     marked with 'code.summary-type'.  The right cell gives the</tt> </tt>
+<a name="L126"></a><tt class="py-lineno">126</tt>  <tt class="py-line"><tt class="py-string"> *     object's name and a summary description.</tt> </tt>
+<a name="L127"></a><tt class="py-lineno">127</tt>  <tt class="py-line"><tt class="py-string"> *   - CSS styles for the table's header and group headers are</tt> </tt>
+<a name="L128"></a><tt class="py-lineno">128</tt>  <tt class="py-line"><tt class="py-string"> *     defined above, under 'Table Headers'</tt> </tt>
+<a name="L129"></a><tt class="py-lineno">129</tt>  <tt class="py-line"><tt class="py-string"> */</tt> </tt>
+<a name="L130"></a><tt class="py-lineno">130</tt>  <tt class="py-line"><tt class="py-string">table.summary               { border-collapse: collapse;</tt> </tt>
+<a name="L131"></a><tt class="py-lineno">131</tt>  <tt class="py-line"><tt class="py-string">                              background: $table_bg; color: $table_fg;</tt> </tt>
+<a name="L132"></a><tt class="py-lineno">132</tt>  <tt class="py-line"><tt class="py-string">                              border: $table_border;</tt> </tt>
+<a name="L133"></a><tt class="py-lineno">133</tt>  <tt class="py-line"><tt class="py-string">                              margin-bottom: 0.5em; }</tt> </tt>
+<a name="L134"></a><tt class="py-lineno">134</tt>  <tt class="py-line"><tt class="py-string">td.summary                  { border: $table_border; }</tt> </tt>
+<a name="L135"></a><tt class="py-lineno">135</tt>  <tt class="py-line"><tt class="py-string">code.summary-type           { font-size: 85%; }</tt> </tt>
+<a name="L136"></a><tt class="py-lineno">136</tt>  <tt class="py-line"><tt class="py-string">table.summary a:link        { color: $table_link; }</tt> </tt>
+<a name="L137"></a><tt class="py-lineno">137</tt>  <tt class="py-line"><tt class="py-string">table.summary a:visited     { color: $table_visited_link; }</tt> </tt>
+<a name="L138"></a><tt class="py-lineno">138</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L139"></a><tt class="py-lineno">139</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L140"></a><tt class="py-lineno">140</tt>  <tt class="py-line"><tt class="py-string">/* Details Tables (functions, variables, etc)</tt> </tt>
+<a name="L141"></a><tt class="py-lineno">141</tt>  <tt class="py-line"><tt class="py-string"> *   - Each object is described in its own div.</tt> </tt>
+<a name="L142"></a><tt class="py-lineno">142</tt>  <tt class="py-line"><tt class="py-string"> *   - A single-row summary table w/ table-header is used as</tt> </tt>
+<a name="L143"></a><tt class="py-lineno">143</tt>  <tt class="py-line"><tt class="py-string"> *     a header for each details section (CSS style for table-header</tt> </tt>
+<a name="L144"></a><tt class="py-lineno">144</tt>  <tt class="py-line"><tt class="py-string"> *     is defined above, under 'Table Headers').</tt> </tt>
+<a name="L145"></a><tt class="py-lineno">145</tt>  <tt class="py-line"><tt class="py-string"> */</tt> </tt>
+<a name="L146"></a><tt class="py-lineno">146</tt>  <tt class="py-line"><tt class="py-string">table.details               { border-collapse: collapse;</tt> </tt>
+<a name="L147"></a><tt class="py-lineno">147</tt>  <tt class="py-line"><tt class="py-string">                              background: $table_bg; color: $table_fg;</tt> </tt>
+<a name="L148"></a><tt class="py-lineno">148</tt>  <tt class="py-line"><tt class="py-string">                              border: $table_border;</tt> </tt>
+<a name="L149"></a><tt class="py-lineno">149</tt>  <tt class="py-line"><tt class="py-string">                              margin: .2em 0 0 0; }</tt> </tt>
+<a name="L150"></a><tt class="py-lineno">150</tt>  <tt class="py-line"><tt class="py-string">table.details table         { color: $table_fg; }</tt> </tt>
+<a name="L151"></a><tt class="py-lineno">151</tt>  <tt class="py-line"><tt class="py-string">table.details a:link        { color: $table_link; }</tt> </tt>
+<a name="L152"></a><tt class="py-lineno">152</tt>  <tt class="py-line"><tt class="py-string">table.details a:visited     { color: $table_visited_link; }</tt> </tt>
+<a name="L153"></a><tt class="py-lineno">153</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L154"></a><tt class="py-lineno">154</tt>  <tt class="py-line"><tt class="py-string">/* Fields */</tt> </tt>
+<a name="L155"></a><tt class="py-lineno">155</tt>  <tt class="py-line"><tt class="py-string">dl.fields                   { margin-left: 2em; margin-top: 1em;</tt> </tt>
+<a name="L156"></a><tt class="py-lineno">156</tt>  <tt class="py-line"><tt class="py-string">                              margin-bottom: 1em; }</tt> </tt>
+<a name="L157"></a><tt class="py-lineno">157</tt>  <tt class="py-line"><tt class="py-string">dl.fields dd ul             { margin-left: 0em; padding-left: 0em; }</tt> </tt>
+<a name="L158"></a><tt class="py-lineno">158</tt>  <tt class="py-line"><tt class="py-string">div.fields                  { margin-left: 2em; }</tt> </tt>
+<a name="L159"></a><tt class="py-lineno">159</tt>  <tt class="py-line"><tt class="py-string">div.fields p                { margin-bottom: 0.5em; }</tt> </tt>
+<a name="L160"></a><tt class="py-lineno">160</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L161"></a><tt class="py-lineno">161</tt>  <tt class="py-line"><tt class="py-string">/* Index tables (identifier index, term index, etc)</tt> </tt>
+<a name="L162"></a><tt class="py-lineno">162</tt>  <tt class="py-line"><tt class="py-string"> *   - link-index is used for indices containing lists of links</tt> </tt>
+<a name="L163"></a><tt class="py-lineno">163</tt>  <tt class="py-line"><tt class="py-string"> *     (namely, the identifier index &amp; term index).</tt> </tt>
+<a name="L164"></a><tt class="py-lineno">164</tt>  <tt class="py-line"><tt class="py-string"> *   - index-where is used in link indices for the text indicating</tt> </tt>
+<a name="L165"></a><tt class="py-lineno">165</tt>  <tt class="py-line"><tt class="py-string"> *     the container/source for each link.</tt> </tt>
+<a name="L166"></a><tt class="py-lineno">166</tt>  <tt class="py-line"><tt class="py-string"> *   - metadata-index is used for indices containing metadata</tt> </tt>
+<a name="L167"></a><tt class="py-lineno">167</tt>  <tt class="py-line"><tt class="py-string"> *     extracted from fields (namely, the bug index &amp; todo index).</tt> </tt>
+<a name="L168"></a><tt class="py-lineno">168</tt>  <tt class="py-line"><tt class="py-string"> */</tt> </tt>
+<a name="L169"></a><tt class="py-lineno">169</tt>  <tt class="py-line"><tt class="py-string">table.link-index            { border-collapse: collapse;</tt> </tt>
+<a name="L170"></a><tt class="py-lineno">170</tt>  <tt class="py-line"><tt class="py-string">                              background: $table_bg; color: $table_fg;</tt> </tt>
+<a name="L171"></a><tt class="py-lineno">171</tt>  <tt class="py-line"><tt class="py-string">                              border: $table_border; }</tt> </tt>
+<a name="L172"></a><tt class="py-lineno">172</tt>  <tt class="py-line"><tt class="py-string">td.link-index               { border-width: 0px; }</tt> </tt>
+<a name="L173"></a><tt class="py-lineno">173</tt>  <tt class="py-line"><tt class="py-string">table.link-index a:link     { color: $table_link; }</tt> </tt>
+<a name="L174"></a><tt class="py-lineno">174</tt>  <tt class="py-line"><tt class="py-string">table.link-index a:visited  { color: $table_visited_link; }</tt> </tt>
+<a name="L175"></a><tt class="py-lineno">175</tt>  <tt class="py-line"><tt class="py-string">span.index-where            { font-size: 70%; }</tt> </tt>
+<a name="L176"></a><tt class="py-lineno">176</tt>  <tt class="py-line"><tt class="py-string">table.metadata-index        { border-collapse: collapse;</tt> </tt>
+<a name="L177"></a><tt class="py-lineno">177</tt>  <tt class="py-line"><tt class="py-string">                              background: $table_bg; color: $table_fg;</tt> </tt>
+<a name="L178"></a><tt class="py-lineno">178</tt>  <tt class="py-line"><tt class="py-string">                              border: $table_border; </tt> </tt>
+<a name="L179"></a><tt class="py-lineno">179</tt>  <tt class="py-line"><tt class="py-string">                              margin: .2em 0 0 0; }</tt> </tt>
+<a name="L180"></a><tt class="py-lineno">180</tt>  <tt class="py-line"><tt class="py-string">td.metadata-index           { border-width: 1px; border-style: solid; }</tt> </tt>
+<a name="L181"></a><tt class="py-lineno">181</tt>  <tt class="py-line"><tt class="py-string">table.metadata-index a:link { color: $table_link; }</tt> </tt>
+<a name="L182"></a><tt class="py-lineno">182</tt>  <tt class="py-line"><tt class="py-string">table.metadata-index a:visited  { color: $table_visited_link; }</tt> </tt>
+<a name="L183"></a><tt class="py-lineno">183</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L184"></a><tt class="py-lineno">184</tt>  <tt class="py-line"><tt class="py-string">/* Function signatures</tt> </tt>
+<a name="L185"></a><tt class="py-lineno">185</tt>  <tt class="py-line"><tt class="py-string"> *   - sig* is used for the signature in the details section.</tt> </tt>
+<a name="L186"></a><tt class="py-lineno">186</tt>  <tt class="py-line"><tt class="py-string"> *   - .summary-sig* is used for the signature in the summary </tt> </tt>
+<a name="L187"></a><tt class="py-lineno">187</tt>  <tt class="py-line"><tt class="py-string"> *     table, and when listing property accessor functions.</tt> </tt>
+<a name="L188"></a><tt class="py-lineno">188</tt>  <tt class="py-line"><tt class="py-string"> * */</tt> </tt>
+<a name="L189"></a><tt class="py-lineno">189</tt>  <tt class="py-line"><tt class="py-string">.sig-name                   { color: $sig_name; }</tt> </tt>
+<a name="L190"></a><tt class="py-lineno">190</tt>  <tt class="py-line"><tt class="py-string">.sig-arg                    { color: $sig_arg; }</tt> </tt>
+<a name="L191"></a><tt class="py-lineno">191</tt>  <tt class="py-line"><tt class="py-string">.sig-default                { color: $sig_default; }</tt> </tt>
+<a name="L192"></a><tt class="py-lineno">192</tt>  <tt class="py-line"><tt class="py-string">.summary-sig                { font-family: monospace; }</tt> </tt>
+<a name="L193"></a><tt class="py-lineno">193</tt>  <tt class="py-line"><tt class="py-string">.summary-sig-name           { color: $summary_sig_name; font-weight: bold; }</tt> </tt>
+<a name="L194"></a><tt class="py-lineno">194</tt>  <tt class="py-line"><tt class="py-string">table.summary a.summary-sig-name:link</tt> </tt>
+<a name="L195"></a><tt class="py-lineno">195</tt>  <tt class="py-line"><tt class="py-string">                            { color: $summary_sig_name; font-weight: bold; }</tt> </tt>
+<a name="L196"></a><tt class="py-lineno">196</tt>  <tt class="py-line"><tt class="py-string">table.summary a.summary-sig-name:visited</tt> </tt>
+<a name="L197"></a><tt class="py-lineno">197</tt>  <tt class="py-line"><tt class="py-string">                            { color: $summary_sig_name; font-weight: bold; }</tt> </tt>
+<a name="L198"></a><tt class="py-lineno">198</tt>  <tt class="py-line"><tt class="py-string">.summary-sig-arg            { color: $summary_sig_arg; }</tt> </tt>
+<a name="L199"></a><tt class="py-lineno">199</tt>  <tt class="py-line"><tt class="py-string">.summary-sig-default        { color: $summary_sig_default; }</tt> </tt>
+<a name="L200"></a><tt class="py-lineno">200</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L201"></a><tt class="py-lineno">201</tt>  <tt class="py-line"><tt class="py-string">/* To render variables, classes etc. like functions */</tt> </tt>
+<a name="L202"></a><tt class="py-lineno">202</tt>  <tt class="py-line"><tt class="py-string">table.summary .summary-name { color: $summary_sig_name; font-weight: bold;</tt> </tt>
+<a name="L203"></a><tt class="py-lineno">203</tt>  <tt class="py-line"><tt class="py-string">                              font-family: monospace; }</tt> </tt>
+<a name="L204"></a><tt class="py-lineno">204</tt>  <tt class="py-line"><tt class="py-string">table.summary</tt> </tt>
+<a name="L205"></a><tt class="py-lineno">205</tt>  <tt class="py-line"><tt class="py-string">     a.summary-name:link    { color: $summary_sig_name; font-weight: bold;</tt> </tt>
+<a name="L206"></a><tt class="py-lineno">206</tt>  <tt class="py-line"><tt class="py-string">                              font-family: monospace; }</tt> </tt>
+<a name="L207"></a><tt class="py-lineno">207</tt>  <tt class="py-line"><tt class="py-string">table.summary</tt> </tt>
+<a name="L208"></a><tt class="py-lineno">208</tt>  <tt class="py-line"><tt class="py-string">    a.summary-name:visited  { color: $summary_sig_name; font-weight: bold;</tt> </tt>
+<a name="L209"></a><tt class="py-lineno">209</tt>  <tt class="py-line"><tt class="py-string">                              font-family: monospace; }</tt> </tt>
+<a name="L210"></a><tt class="py-lineno">210</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L211"></a><tt class="py-lineno">211</tt>  <tt class="py-line"><tt class="py-string">/* Variable values</tt> </tt>
+<a name="L212"></a><tt class="py-lineno">212</tt>  <tt class="py-line"><tt class="py-string"> *   - In the 'variable details' sections, each varaible's value is</tt> </tt>
+<a name="L213"></a><tt class="py-lineno">213</tt>  <tt class="py-line"><tt class="py-string"> *     listed in a 'pre.variable' box.  The width of this box is</tt> </tt>
+<a name="L214"></a><tt class="py-lineno">214</tt>  <tt class="py-line"><tt class="py-string"> *     restricted to 80 chars; if the value's repr is longer than</tt> </tt>
+<a name="L215"></a><tt class="py-lineno">215</tt>  <tt class="py-line"><tt class="py-string"> *     this it will be wrapped, using a backslash marked with</tt> </tt>
+<a name="L216"></a><tt class="py-lineno">216</tt>  <tt class="py-line"><tt class="py-string"> *     class 'variable-linewrap'.  If the value's repr is longer</tt> </tt>
+<a name="L217"></a><tt class="py-lineno">217</tt>  <tt class="py-line"><tt class="py-string"> *     than 3 lines, the rest will be ellided; and an ellipsis</tt> </tt>
+<a name="L218"></a><tt class="py-lineno">218</tt>  <tt class="py-line"><tt class="py-string"> *     marker ('...' marked with 'variable-ellipsis') will be used.</tt> </tt>
+<a name="L219"></a><tt class="py-lineno">219</tt>  <tt class="py-line"><tt class="py-string"> *   - If the value is a string, its quote marks will be marked</tt> </tt>
+<a name="L220"></a><tt class="py-lineno">220</tt>  <tt class="py-line"><tt class="py-string"> *     with 'variable-quote'.</tt> </tt>
+<a name="L221"></a><tt class="py-lineno">221</tt>  <tt class="py-line"><tt class="py-string"> *   - If the variable is a regexp, it is syntax-highlighted using</tt> </tt>
+<a name="L222"></a><tt class="py-lineno">222</tt>  <tt class="py-line"><tt class="py-string"> *     the re* CSS classes.</tt> </tt>
+<a name="L223"></a><tt class="py-lineno">223</tt>  <tt class="py-line"><tt class="py-string"> */</tt> </tt>
+<a name="L224"></a><tt class="py-lineno">224</tt>  <tt class="py-line"><tt class="py-string">pre.variable                { padding: .5em; margin: 0;</tt> </tt>
+<a name="L225"></a><tt class="py-lineno">225</tt>  <tt class="py-line"><tt class="py-string">                              background: $variable_bg; color: $variable_fg;</tt> </tt>
+<a name="L226"></a><tt class="py-lineno">226</tt>  <tt class="py-line"><tt class="py-string">                              border: $variable_border; }</tt> </tt>
+<a name="L227"></a><tt class="py-lineno">227</tt>  <tt class="py-line"><tt class="py-string">.variable-linewrap          { color: $variable_linewrap; font-weight: bold; }</tt> </tt>
+<a name="L228"></a><tt class="py-lineno">228</tt>  <tt class="py-line"><tt class="py-string">.variable-ellipsis          { color: $variable_ellipsis; font-weight: bold; }</tt> </tt>
+<a name="L229"></a><tt class="py-lineno">229</tt>  <tt class="py-line"><tt class="py-string">.variable-quote             { color: $variable_quote; font-weight: bold; }</tt> </tt>
+<a name="L230"></a><tt class="py-lineno">230</tt>  <tt class="py-line"><tt class="py-string">.variable-group             { color: $variable_group; font-weight: bold; }</tt> </tt>
+<a name="L231"></a><tt class="py-lineno">231</tt>  <tt class="py-line"><tt class="py-string">.variable-op                { color: $variable_op; font-weight: bold; }</tt> </tt>
+<a name="L232"></a><tt class="py-lineno">232</tt>  <tt class="py-line"><tt class="py-string">.variable-string            { color: $variable_string; }</tt> </tt>
+<a name="L233"></a><tt class="py-lineno">233</tt>  <tt class="py-line"><tt class="py-string">.variable-unknown           { color: $variable_unknown; font-weight: bold; }</tt> </tt>
+<a name="L234"></a><tt class="py-lineno">234</tt>  <tt class="py-line"><tt class="py-string">.re                         { color: $re; }</tt> </tt>
+<a name="L235"></a><tt class="py-lineno">235</tt>  <tt class="py-line"><tt class="py-string">.re-char                    { color: $re_char; }</tt> </tt>
+<a name="L236"></a><tt class="py-lineno">236</tt>  <tt class="py-line"><tt class="py-string">.re-op                      { color: $re_op; }</tt> </tt>
+<a name="L237"></a><tt class="py-lineno">237</tt>  <tt class="py-line"><tt class="py-string">.re-group                   { color: $re_group; }</tt> </tt>
+<a name="L238"></a><tt class="py-lineno">238</tt>  <tt class="py-line"><tt class="py-string">.re-ref                     { color: $re_ref; }</tt> </tt>
+<a name="L239"></a><tt class="py-lineno">239</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L240"></a><tt class="py-lineno">240</tt>  <tt class="py-line"><tt class="py-string">/* Base tree</tt> </tt>
+<a name="L241"></a><tt class="py-lineno">241</tt>  <tt class="py-line"><tt class="py-string"> *   - Used by class pages to display the base class hierarchy.</tt> </tt>
+<a name="L242"></a><tt class="py-lineno">242</tt>  <tt class="py-line"><tt class="py-string"> */</tt> </tt>
+<a name="L243"></a><tt class="py-lineno">243</tt>  <tt class="py-line"><tt class="py-string">pre.base-tree               { font-size: 80%; margin: 0; }</tt> </tt>
+<a name="L244"></a><tt class="py-lineno">244</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L245"></a><tt class="py-lineno">245</tt>  <tt class="py-line"><tt class="py-string">/* Frames-based table of contents headers</tt> </tt>
+<a name="L246"></a><tt class="py-lineno">246</tt>  <tt class="py-line"><tt class="py-string"> *   - Consists of two frames: one for selecting modules; and</tt> </tt>
+<a name="L247"></a><tt class="py-lineno">247</tt>  <tt class="py-line"><tt class="py-string"> *     the other listing the contents of the selected module.</tt> </tt>
+<a name="L248"></a><tt class="py-lineno">248</tt>  <tt class="py-line"><tt class="py-string"> *   - h1.toc is used for each frame's heading</tt> </tt>
+<a name="L249"></a><tt class="py-lineno">249</tt>  <tt class="py-line"><tt class="py-string"> *   - h2.toc is used for subheadings within each frame.</tt> </tt>
+<a name="L250"></a><tt class="py-lineno">250</tt>  <tt class="py-line"><tt class="py-string"> */</tt> </tt>
+<a name="L251"></a><tt class="py-lineno">251</tt>  <tt class="py-line"><tt class="py-string">h1.toc                      { text-align: center; font-size: 105%;</tt> </tt>
+<a name="L252"></a><tt class="py-lineno">252</tt>  <tt class="py-line"><tt class="py-string">                              margin: 0; font-weight: bold;</tt> </tt>
+<a name="L253"></a><tt class="py-lineno">253</tt>  <tt class="py-line"><tt class="py-string">                              padding: 0; }</tt> </tt>
+<a name="L254"></a><tt class="py-lineno">254</tt>  <tt class="py-line"><tt class="py-string">h2.toc                      { font-size: 100%; font-weight: bold; </tt> </tt>
+<a name="L255"></a><tt class="py-lineno">255</tt>  <tt class="py-line"><tt class="py-string">                              margin: 0.5em 0 0 -0.3em; }</tt> </tt>
+<a name="L256"></a><tt class="py-lineno">256</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L257"></a><tt class="py-lineno">257</tt>  <tt class="py-line"><tt class="py-string">/* Syntax Highlighting for Source Code</tt> </tt>
+<a name="L258"></a><tt class="py-lineno">258</tt>  <tt class="py-line"><tt class="py-string"> *   - doctest examples are displayed in a 'pre.py-doctest' block.</tt> </tt>
+<a name="L259"></a><tt class="py-lineno">259</tt>  <tt class="py-line"><tt class="py-string"> *     If the example is in a details table entry, then it will use</tt> </tt>
+<a name="L260"></a><tt class="py-lineno">260</tt>  <tt class="py-line"><tt class="py-string"> *     the colors specified by the 'table pre.py-doctest' line.</tt> </tt>
+<a name="L261"></a><tt class="py-lineno">261</tt>  <tt class="py-line"><tt class="py-string"> *   - Source code listings are displayed in a 'pre.py-src' block.</tt> </tt>
+<a name="L262"></a><tt class="py-lineno">262</tt>  <tt class="py-line"><tt class="py-string"> *     Each line is marked with 'span.py-line' (used to draw a line</tt> </tt>
+<a name="L263"></a><tt class="py-lineno">263</tt>  <tt class="py-line"><tt class="py-string"> *     down the left margin, separating the code from the line</tt> </tt>
+<a name="L264"></a><tt class="py-lineno">264</tt>  <tt class="py-line"><tt class="py-string"> *     numbers).  Line numbers are displayed with 'span.py-lineno'.</tt> </tt>
+<a name="L265"></a><tt class="py-lineno">265</tt>  <tt class="py-line"><tt class="py-string"> *     The expand/collapse block toggle button is displayed with</tt> </tt>
+<a name="L266"></a><tt class="py-lineno">266</tt>  <tt class="py-line"><tt class="py-string"> *     'a.py-toggle' (Note: the CSS style for 'a.py-toggle' should not</tt> </tt>
+<a name="L267"></a><tt class="py-lineno">267</tt>  <tt class="py-line"><tt class="py-string"> *     modify the font size of the text.)</tt> </tt>
+<a name="L268"></a><tt class="py-lineno">268</tt>  <tt class="py-line"><tt class="py-string"> *   - If a source code page is opened with an anchor, then the</tt> </tt>
+<a name="L269"></a><tt class="py-lineno">269</tt>  <tt class="py-line"><tt class="py-string"> *     corresponding code block will be highlighted.  The code</tt> </tt>
+<a name="L270"></a><tt class="py-lineno">270</tt>  <tt class="py-line"><tt class="py-string"> *     block's header is highlighted with 'py-highlight-hdr'; and</tt> </tt>
+<a name="L271"></a><tt class="py-lineno">271</tt>  <tt class="py-line"><tt class="py-string"> *     the code block's body is highlighted with 'py-highlight'.</tt> </tt>
+<a name="L272"></a><tt class="py-lineno">272</tt>  <tt class="py-line"><tt class="py-string"> *   - The remaining py-* classes are used to perform syntax</tt> </tt>
+<a name="L273"></a><tt class="py-lineno">273</tt>  <tt class="py-line"><tt class="py-string"> *     highlighting (py-string for string literals, py-name for names,</tt> </tt>
+<a name="L274"></a><tt class="py-lineno">274</tt>  <tt class="py-line"><tt class="py-string"> *     etc.)</tt> </tt>
+<a name="L275"></a><tt class="py-lineno">275</tt>  <tt class="py-line"><tt class="py-string"> */</tt> </tt>
+<a name="L276"></a><tt class="py-lineno">276</tt>  <tt class="py-line"><tt class="py-string">pre.py-doctest              { padding: .5em; margin: 1em;</tt> </tt>
+<a name="L277"></a><tt class="py-lineno">277</tt>  <tt class="py-line"><tt class="py-string">                              background: $doctest_bg; color: $doctest_fg;</tt> </tt>
+<a name="L278"></a><tt class="py-lineno">278</tt>  <tt class="py-line"><tt class="py-string">                              border: $doctest_border; }</tt> </tt>
+<a name="L279"></a><tt class="py-lineno">279</tt>  <tt class="py-line"><tt class="py-string">table pre.py-doctest        { background: $doctest_in_table_bg;</tt> </tt>
+<a name="L280"></a><tt class="py-lineno">280</tt>  <tt class="py-line"><tt class="py-string">                              color: $doctest_in_table_fg; }</tt> </tt>
+<a name="L281"></a><tt class="py-lineno">281</tt>  <tt class="py-line"><tt class="py-string">pre.py-src                  { border: $pysrc_border; </tt> </tt>
+<a name="L282"></a><tt class="py-lineno">282</tt>  <tt class="py-line"><tt class="py-string">                              background: $pysrc_bg; color: $pysrc_fg; }</tt> </tt>
+<a name="L283"></a><tt class="py-lineno">283</tt>  <tt class="py-line"><tt class="py-string">.py-line                    { border-left: $pysrc_sep_border; </tt> </tt>
+<a name="L284"></a><tt class="py-lineno">284</tt>  <tt class="py-line"><tt class="py-string">                              margin-left: .2em; padding-left: .4em; }</tt> </tt>
+<a name="L285"></a><tt class="py-lineno">285</tt>  <tt class="py-line"><tt class="py-string">.py-lineno                  { font-style: italic; font-size: 90%;</tt> </tt>
+<a name="L286"></a><tt class="py-lineno">286</tt>  <tt class="py-line"><tt class="py-string">                              padding-left: .5em; }</tt> </tt>
+<a name="L287"></a><tt class="py-lineno">287</tt>  <tt class="py-line"><tt class="py-string">a.py-toggle                 { text-decoration: none; }</tt> </tt>
+<a name="L288"></a><tt class="py-lineno">288</tt>  <tt class="py-line"><tt class="py-string">div.py-highlight-hdr        { border-top: $pysrc_border;</tt> </tt>
+<a name="L289"></a><tt class="py-lineno">289</tt>  <tt class="py-line"><tt class="py-string">                              border-bottom: $pysrc_border;</tt> </tt>
+<a name="L290"></a><tt class="py-lineno">290</tt>  <tt class="py-line"><tt class="py-string">                              background: $pysrc_highlight_hdr_bg; }</tt> </tt>
+<a name="L291"></a><tt class="py-lineno">291</tt>  <tt class="py-line"><tt class="py-string">div.py-highlight            { border-bottom: $pysrc_border;</tt> </tt>
+<a name="L292"></a><tt class="py-lineno">292</tt>  <tt class="py-line"><tt class="py-string">                              background: $pysrc_highlight_bg; }</tt> </tt>
+<a name="L293"></a><tt class="py-lineno">293</tt>  <tt class="py-line"><tt class="py-string">.py-prompt                  { color: $py_prompt; font-weight: bold;}</tt> </tt>
+<a name="L294"></a><tt class="py-lineno">294</tt>  <tt class="py-line"><tt class="py-string">.py-more                    { color: $py_more; font-weight: bold;}</tt> </tt>
+<a name="L295"></a><tt class="py-lineno">295</tt>  <tt class="py-line"><tt class="py-string">.py-string                  { color: $py_string; }</tt> </tt>
+<a name="L296"></a><tt class="py-lineno">296</tt>  <tt class="py-line"><tt class="py-string">.py-comment                 { color: $py_comment; }</tt> </tt>
+<a name="L297"></a><tt class="py-lineno">297</tt>  <tt class="py-line"><tt class="py-string">.py-keyword                 { color: $py_keyword; }</tt> </tt>
+<a name="L298"></a><tt class="py-lineno">298</tt>  <tt class="py-line"><tt class="py-string">.py-output                  { color: $py_output; }</tt> </tt>
+<a name="L299"></a><tt class="py-lineno">299</tt>  <tt class="py-line"><tt class="py-string">.py-name                    { color: $py_name; }</tt> </tt>
+<a name="L300"></a><tt class="py-lineno">300</tt>  <tt class="py-line"><tt class="py-string">.py-name:link               { color: $py_name !important; }</tt> </tt>
+<a name="L301"></a><tt class="py-lineno">301</tt>  <tt class="py-line"><tt class="py-string">.py-name:visited            { color: $py_name !important; }</tt> </tt>
+<a name="L302"></a><tt class="py-lineno">302</tt>  <tt class="py-line"><tt class="py-string">.py-number                  { color: $py_number; }</tt> </tt>
+<a name="L303"></a><tt class="py-lineno">303</tt>  <tt class="py-line"><tt class="py-string">.py-defname                 { color: $py_def_name; font-weight: bold; }</tt> </tt>
+<a name="L304"></a><tt class="py-lineno">304</tt>  <tt class="py-line"><tt class="py-string">.py-def-name                { color: $py_def_name; font-weight: bold; }</tt> </tt>
+<a name="L305"></a><tt class="py-lineno">305</tt>  <tt class="py-line"><tt class="py-string">.py-base-class              { color: $py_base_class; }</tt> </tt>
+<a name="L306"></a><tt class="py-lineno">306</tt>  <tt class="py-line"><tt class="py-string">.py-param                   { color: $py_param; }</tt> </tt>
+<a name="L307"></a><tt class="py-lineno">307</tt>  <tt class="py-line"><tt class="py-string">.py-docstring               { color: $py_docstring; }</tt> </tt>
+<a name="L308"></a><tt class="py-lineno">308</tt>  <tt class="py-line"><tt class="py-string">.py-decorator               { color: $py_decorator; }</tt> </tt>
+<a name="L309"></a><tt class="py-lineno">309</tt>  <tt class="py-line"><tt class="py-string">/* Use this if you don't want links to names underlined: */</tt> </tt>
+<a name="L310"></a><tt class="py-lineno">310</tt>  <tt class="py-line"><tt class="py-string">/*a.py-name                   { text-decoration: none; }*/</tt> </tt>
+<a name="L311"></a><tt class="py-lineno">311</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L312"></a><tt class="py-lineno">312</tt>  <tt class="py-line"><tt class="py-string">/* Graphs &amp; Diagrams</tt> </tt>
+<a name="L313"></a><tt class="py-lineno">313</tt>  <tt class="py-line"><tt class="py-string"> *   - These CSS styles are used for graphs &amp; diagrams generated using</tt> </tt>
+<a name="L314"></a><tt class="py-lineno">314</tt>  <tt class="py-line"><tt class="py-string"> *     Graphviz dot.  'img.graph-without-title' is used for bare</tt> </tt>
+<a name="L315"></a><tt class="py-lineno">315</tt>  <tt class="py-line"><tt class="py-string"> *     diagrams (to remove the border created by making the image</tt> </tt>
+<a name="L316"></a><tt class="py-lineno">316</tt>  <tt class="py-line"><tt class="py-string"> *     clickable).</tt> </tt>
+<a name="L317"></a><tt class="py-lineno">317</tt>  <tt class="py-line"><tt class="py-string"> */</tt> </tt>
+<a name="L318"></a><tt class="py-lineno">318</tt>  <tt class="py-line"><tt class="py-string">img.graph-without-title     { border: none; }</tt> </tt>
+<a name="L319"></a><tt class="py-lineno">319</tt>  <tt class="py-line"><tt class="py-string">img.graph-with-title        { border: $graph_border; }</tt> </tt>
+<a name="L320"></a><tt class="py-lineno">320</tt>  <tt class="py-line"><tt class="py-string">span.graph-title            { font-weight: bold; }</tt> </tt>
+<a name="L321"></a><tt class="py-lineno">321</tt>  <tt class="py-line"><tt class="py-string">span.graph-caption          { }</tt> </tt>
+<a name="L322"></a><tt class="py-lineno">322</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L323"></a><tt class="py-lineno">323</tt>  <tt class="py-line"><tt class="py-string">/* General-purpose classes</tt> </tt>
+<a name="L324"></a><tt class="py-lineno">324</tt>  <tt class="py-line"><tt class="py-string"> *   - 'p.indent-wrapped-lines' defines a paragraph whose first line</tt> </tt>
+<a name="L325"></a><tt class="py-lineno">325</tt>  <tt class="py-line"><tt class="py-string"> *     is not indented, but whose subsequent lines are.</tt> </tt>
+<a name="L326"></a><tt class="py-lineno">326</tt>  <tt class="py-line"><tt class="py-string"> *   - The 'nomargin-top' class is used to remove the top margin (e.g.</tt> </tt>
+<a name="L327"></a><tt class="py-lineno">327</tt>  <tt class="py-line"><tt class="py-string"> *     from lists).  The 'nomargin' class is used to remove both the</tt> </tt>
+<a name="L328"></a><tt class="py-lineno">328</tt>  <tt class="py-line"><tt class="py-string"> *     top and bottom margin (but not the left or right margin --</tt> </tt>
+<a name="L329"></a><tt class="py-lineno">329</tt>  <tt class="py-line"><tt class="py-string"> *     for lists, that would cause the bullets to disappear.)</tt> </tt>
+<a name="L330"></a><tt class="py-lineno">330</tt>  <tt class="py-line"><tt class="py-string"> */</tt> </tt>
+<a name="L331"></a><tt class="py-lineno">331</tt>  <tt class="py-line"><tt class="py-string">p.indent-wrapped-lines      { padding: 0 0 0 7em; text-indent: -7em; </tt> </tt>
+<a name="L332"></a><tt class="py-lineno">332</tt>  <tt class="py-line"><tt class="py-string">                              margin: 0; }</tt> </tt>
+<a name="L333"></a><tt class="py-lineno">333</tt>  <tt class="py-line"><tt class="py-string">.nomargin-top               { margin-top: 0; }</tt> </tt>
+<a name="L334"></a><tt class="py-lineno">334</tt>  <tt class="py-line"><tt class="py-string">.nomargin                   { margin-top: 0; margin-bottom: 0; }</tt> </tt>
+<a name="L335"></a><tt class="py-lineno">335</tt>  <tt class="py-line"><tt class="py-string"></tt> </tt>
+<a name="L336"></a><tt class="py-lineno">336</tt>  <tt class="py-line"><tt class="py-string">/* HTML Log */</tt> </tt>
+<a name="L337"></a><tt class="py-lineno">337</tt>  <tt class="py-line"><tt class="py-string">div.log-block               { padding: 0; margin: .5em 0 .5em 0;</tt> </tt>
+<a name="L338"></a><tt class="py-lineno">338</tt>  <tt class="py-line"><tt class="py-string">                              background: $log_bg; color: $log_fg;</tt> </tt>
+<a name="L339"></a><tt class="py-lineno">339</tt>  <tt class="py-line"><tt class="py-string">                              border: $log_border; }</tt> </tt>
+<a name="L340"></a><tt class="py-lineno">340</tt>  <tt class="py-line"><tt class="py-string">div.log-error               { padding: .1em .3em .1em .3em; margin: 4px;</tt> </tt>
+<a name="L341"></a><tt class="py-lineno">341</tt>  <tt class="py-line"><tt class="py-string">                              background: $log_error_bg; color: $log_error_fg;</tt> </tt>
+<a name="L342"></a><tt class="py-lineno">342</tt>  <tt class="py-line"><tt class="py-string">                              border: $log_error_border; }</tt> </tt>
+<a name="L343"></a><tt class="py-lineno">343</tt>  <tt class="py-line"><tt class="py-string">div.log-warning             { padding: .1em .3em .1em .3em; margin: 4px;</tt> </tt>
+<a name="L344"></a><tt class="py-lineno">344</tt>  <tt class="py-line"><tt class="py-string">                              background: $log_warn_bg; color: $log_warn_fg;</tt> </tt>
+<a name="L345"></a><tt class="py-lineno">345</tt>  <tt class="py-line"><tt class="py-string">                              border: $log_warn_border; }</tt> </tt>
+<a name="L346"></a><tt class="py-lineno">346</tt>  <tt class="py-line"><tt class="py-string">div.log-info               { padding: .1em .3em .1em .3em; margin: 4px;</tt> </tt>
+<a name="L347"></a><tt class="py-lineno">347</tt>  <tt class="py-line"><tt class="py-string">                              background: $log_info_bg; color: $log_info_fg;</tt> </tt>
+<a name="L348"></a><tt class="py-lineno">348</tt>  <tt class="py-line"><tt class="py-string">                              border: $log_info_border; }</tt> </tt>
+<a name="L349"></a><tt class="py-lineno">349</tt>  <tt class="py-line"><tt class="py-string">h2.log-hdr                  { background: $log_hdr_bg; color: $log_hdr_fg;</tt> </tt>
+<a name="L350"></a><tt class="py-lineno">350</tt>  <tt class="py-line"><tt class="py-string">                              margin: 0; padding: 0em 0.5em 0em 0.5em;</tt> </tt>
+<a name="L351"></a><tt class="py-lineno">351</tt>  <tt class="py-line"><tt class="py-string">                              border-bottom: $log_border; font-size: 110%; }</tt> </tt>
+<a name="L352"></a><tt class="py-lineno">352</tt>  <tt class="py-line"><tt class="py-string">p.log                       { font-weight: bold; margin: .5em 0 .5em 0; }</tt> </tt>
+<a name="L353"></a><tt class="py-lineno">353</tt>  <tt class="py-line"><tt class="py-string">tr.opt-changed              { color: $opt_changed_fg; font-weight: bold; }</tt> </tt>
+<a name="L354"></a><tt class="py-lineno">354</tt>  <tt class="py-line"><tt class="py-string">tr.opt-default              { color: $opt_default_fg; }</tt> </tt>
+<a name="L355"></a><tt class="py-lineno">355</tt>  <tt class="py-line"><tt class="py-string">pre.log                     { margin: 0; padding: 0; padding-left: 1em; }</tt> </tt>
+<a name="L356"></a><tt class="py-lineno">356</tt>  <tt class="py-line"><tt class="py-string">"""</tt>  </tt>
+<a name="L357"></a><tt class="py-lineno">357</tt>  <tt class="py-line"> </tt>
+<a name="L358"></a><tt class="py-lineno">358</tt>  <tt class="py-line"><tt class="py-comment">############################################################</tt> </tt>
+<a name="L359"></a><tt class="py-lineno">359</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">## Derived stylesheets</tt> </tt>
+<a name="L360"></a><tt class="py-lineno">360</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">############################################################</tt> </tt>
+<a name="L361"></a><tt class="py-lineno">361</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Use some simple manipulations to produce a wide variety of color</tt> </tt>
+<a name="L362"></a><tt class="py-lineno">362</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># schemes.  In particular, use th _COLOR_RE regular expression to</tt> </tt>
+<a name="L363"></a><tt class="py-lineno">363</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># search for colors, and to transform them in various ways.</tt> </tt>
+<a name="L364"></a><tt class="py-lineno">364</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L365"></a><tt class="py-lineno">365</tt>  <tt class="py-line"><tt id="link-1" class="py-name" targets="Variable epydoc.docwriter.html_css._COLOR_RE=epydoc.docwriter.html_css-module.html#_COLOR_RE"><a title="epydoc.docwriter.html_css._COLOR_RE" class="py-name" href="#" onclick="return doclink('link-1', '_COLOR_RE', 'link-1');">_COLOR_RE</a></tt> <tt class="py-op">=</tt> <tt class="py-name">re</tt><tt class="py-op">.</tt><tt class="py-name">compile</tt><tt class="py-op">(</tt><tt class="py-string">r'#(..)(..)(..)'</tt><tt class="py-op">)</tt> </tt>
+<a name="L366"></a><tt class="py-lineno">366</tt>  <tt class="py-line"> </tt>
+<a name="_set_colors"></a><div id="_set_colors-def"><a name="L367"></a><tt class="py-lineno">367</tt> <a class="py-toggle" href="#" id="_set_colors-toggle" onclick="return toggle('_set_colors');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.docwriter.html_css-module.html#_set_colors">_set_colors</a><tt class="py-op">(</tt><tt class="py-param">template</tt><tt class="py-op">,</tt> <tt class="py-op">*</tt><tt class="py-param">dicts</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="_set_colors-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="_set_colors-expanded"><a name="L368"></a><tt class="py-lineno">368</tt>  <tt class="py-line">    <tt class="py-name">colors</tt> <tt class="py-op">=</tt> <tt class="py-name">dicts</tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt><tt class="py-op">.</tt><tt class="py-name">copy</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L369"></a><tt class="py-lineno">369</tt>  <tt class="py-line">    <tt class="py-keyword">for</tt> <tt class="py-name">d</tt> <tt class="py-keyword">in</tt> <tt class="py-name">dicts</tt><tt class="py-op">[</tt><tt class="py-number">1</tt><tt class="py-op">:</tt><tt class="py-op">]</tt><tt class="py-op">:</tt> <tt class="py-name">colors</tt><tt class="py-op">.</tt><tt class="py-name">update</tt><tt class="py-op">(</tt><tt class="py-name">d</tt><tt class="py-op">)</tt> </tt>
+<a name="L370"></a><tt class="py-lineno">370</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-name">re</tt><tt class="py-op">.</tt><tt class="py-name">sub</tt><tt class="py-op">(</tt><tt class="py-string">r'\$(\w+)'</tt><tt class="py-op">,</tt> <tt class="py-keyword">lambda</tt> <tt class="py-name">m</tt><tt class="py-op">:</tt><tt class="py-name">colors</tt><tt class="py-op">[</tt><tt class="py-name">m</tt><tt class="py-op">.</tt><tt class="py-name">group</tt><tt class="py-op">(</tt><tt class="py-number">1</tt><tt class="py-op">)</tt><tt class="py-op">]</tt><tt class="py-op">,</tt> <tt class="py-name">template</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L371"></a><tt class="py-lineno">371</tt>  <tt class="py-line">     </tt>
+<a name="_rv"></a><div id="_rv-def"><a name="L372"></a><tt class="py-lineno">372</tt> <a class="py-toggle" href="#" id="_rv-toggle" onclick="return toggle('_rv');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.docwriter.html_css-module.html#_rv">_rv</a><tt class="py-op">(</tt><tt class="py-param">match</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="_rv-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="_rv-expanded"><a name="L373"></a><tt class="py-lineno">373</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L374"></a><tt class="py-lineno">374</tt>  <tt class="py-line"><tt class="py-docstring">    Given a regexp match for a color, return the reverse-video version</tt> </tt>
+<a name="L375"></a><tt class="py-lineno">375</tt>  <tt class="py-line"><tt class="py-docstring">    of that color.</tt> </tt>
+<a name="L376"></a><tt class="py-lineno">376</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L377"></a><tt class="py-lineno">377</tt>  <tt class="py-line"><tt class="py-docstring">    @param match: A regular expression match.</tt> </tt>
+<a name="L378"></a><tt class="py-lineno">378</tt>  <tt class="py-line"><tt class="py-docstring">    @type match: C{Match}</tt> </tt>
+<a name="L379"></a><tt class="py-lineno">379</tt>  <tt class="py-line"><tt class="py-docstring">    @return: The reverse-video color.</tt> </tt>
+<a name="L380"></a><tt class="py-lineno">380</tt>  <tt class="py-line"><tt class="py-docstring">    @rtype: C{string}</tt> </tt>
+<a name="L381"></a><tt class="py-lineno">381</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L382"></a><tt class="py-lineno">382</tt>  <tt class="py-line">    <tt class="py-name">rgb</tt> <tt class="py-op">=</tt> <tt class="py-op">[</tt><tt class="py-name">int</tt><tt class="py-op">(</tt><tt class="py-name">grp</tt><tt class="py-op">,</tt> <tt class="py-number">16</tt><tt class="py-op">)</tt> <tt class="py-keyword">for</tt> <tt class="py-name">grp</tt> <tt class="py-keyword">in</tt> <tt class="py-name">match</tt><tt class="py-op">.</tt><tt class="py-name">groups</tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">]</tt> </tt>
+<a name="L383"></a><tt class="py-lineno">383</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-string">'#'</tt> <tt class="py-op">+</tt> <tt class="py-string">''</tt><tt class="py-op">.</tt><tt class="py-name">join</tt><tt class="py-op">(</tt><tt class="py-op">[</tt><tt class="py-string">'%02x'</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-number">255</tt><tt class="py-op">-</tt><tt class="py-name">c</tt><tt class="py-op">)</tt> <tt class="py-keyword">for</tt> <tt class="py-name">c</tt> <tt class="py-keyword">in</tt> <tt class="py-name">rgb</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L384"></a><tt class="py-lineno">384</tt>  <tt class="py-line"> </tt>
+<a name="_darken_darks"></a><div id="_darken_darks-def"><a name="L385"></a><tt class="py-lineno">385</tt> <a class="py-toggle" href="#" id="_darken_darks-toggle" onclick="return toggle('_darken_darks');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.docwriter.html_css-module.html#_darken_darks">_darken_darks</a><tt class="py-op">(</tt><tt class="py-param">match</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="_darken_darks-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="_darken_darks-expanded"><a name="L386"></a><tt class="py-lineno">386</tt>  <tt class="py-line">    <tt class="py-name">rgb</tt> <tt class="py-op">=</tt> <tt class="py-op">[</tt><tt class="py-name">int</tt><tt class="py-op">(</tt><tt class="py-name">grp</tt><tt class="py-op">,</tt> <tt class="py-number">16</tt><tt class="py-op">)</tt> <tt class="py-keyword">for</tt> <tt class="py-name">grp</tt> <tt class="py-keyword">in</tt> <tt class="py-name">match</tt><tt class="py-op">.</tt><tt class="py-name">groups</tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">]</tt> </tt>
+<a name="L387"></a><tt class="py-lineno">387</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-string">'#'</tt> <tt class="py-op">+</tt> <tt class="py-string">''</tt><tt class="py-op">.</tt><tt class="py-name">join</tt><tt class="py-op">(</tt><tt class="py-op">[</tt><tt class="py-string">'%02x'</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-op">(</tt><tt class="py-op">(</tt><tt class="py-name">c</tt><tt class="py-op">/</tt><tt class="py-number">255.</tt><tt class="py-op">)</tt><tt class="py-op">**</tt><tt class="py-number">2</tt><tt class="py-op">)</tt> <tt class="py-op">*</tt> <tt class="py-number">255</tt><tt class="py-op">)</tt> <tt class="py-keyword">for</tt> <tt class="py-name">c</tt> <tt class="py-keyword">in</tt> <tt class="py-name">rgb</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L388"></a><tt class="py-lineno">388</tt>  <tt class="py-line"> </tt>
+<a name="L389"></a><tt class="py-lineno">389</tt>  <tt class="py-line"><tt id="link-2" class="py-name" targets="Variable epydoc.docwriter.html_css._WHITE_COLORS=epydoc.docwriter.html_css-module.html#_WHITE_COLORS"><a title="epydoc.docwriter.html_css._WHITE_COLORS" class="py-name" href="#" onclick="return doclink('link-2', '_WHITE_COLORS', 'link-2');">_WHITE_COLORS</a></tt> <tt class="py-op">=</tt> <tt class="py-name">dict</tt><tt class="py-op">(</tt> </tt>
+<a name="L390"></a><tt class="py-lineno">390</tt>  <tt class="py-line">    <tt class="py-comment"># Defaults:</tt> </tt>
+<a name="L391"></a><tt class="py-lineno">391</tt>  <tt class="py-line">    <tt class="py-name">body_bg</tt>                 <tt class="py-op">=</tt>  <tt class="py-string">'#ffffff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L392"></a><tt class="py-lineno">392</tt>  <tt class="py-line">    <tt class="py-name">body_fg</tt>                 <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L393"></a><tt class="py-lineno">393</tt>  <tt class="py-line">    <tt class="py-name">body_link</tt>               <tt class="py-op">=</tt>  <tt class="py-string">'#0000ff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L394"></a><tt class="py-lineno">394</tt>  <tt class="py-line">    <tt class="py-name">body_visited_link</tt>       <tt class="py-op">=</tt>  <tt class="py-string">'#204080'</tt><tt class="py-op">,</tt> </tt>
+<a name="L395"></a><tt class="py-lineno">395</tt>  <tt class="py-line">    <tt class="py-comment"># Navigation bar:</tt> </tt>
+<a name="L396"></a><tt class="py-lineno">396</tt>  <tt class="py-line">    <tt class="py-name">navbar_bg</tt>               <tt class="py-op">=</tt>  <tt class="py-string">'#a0c0ff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L397"></a><tt class="py-lineno">397</tt>  <tt class="py-line">    <tt class="py-name">navbar_fg</tt>               <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L398"></a><tt class="py-lineno">398</tt>  <tt class="py-line">    <tt class="py-name">navbar_border</tt>           <tt class="py-op">=</tt>  <tt class="py-string">'2px groove #c0d0d0'</tt><tt class="py-op">,</tt> </tt>
+<a name="L399"></a><tt class="py-lineno">399</tt>  <tt class="py-line">    <tt class="py-name">navbar_select_bg</tt>        <tt class="py-op">=</tt>  <tt class="py-string">'#70b0ff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L400"></a><tt class="py-lineno">400</tt>  <tt class="py-line">    <tt class="py-name">navbar_select_fg</tt>        <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L401"></a><tt class="py-lineno">401</tt>  <tt class="py-line">    <tt class="py-name">navbar_link</tt>             <tt class="py-op">=</tt>  <tt class="py-string">'#0000ff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L402"></a><tt class="py-lineno">402</tt>  <tt class="py-line">    <tt class="py-name">navbar_visited_link</tt>     <tt class="py-op">=</tt>  <tt class="py-string">'#204080'</tt><tt class="py-op">,</tt> </tt>
+<a name="L403"></a><tt class="py-lineno">403</tt>  <tt class="py-line">    <tt class="py-comment"># Tables (summary tables, details tables, indices):</tt> </tt>
+<a name="L404"></a><tt class="py-lineno">404</tt>  <tt class="py-line">    <tt class="py-name">table_bg</tt>                <tt class="py-op">=</tt>  <tt class="py-string">'#e8f0f8'</tt><tt class="py-op">,</tt> </tt>
+<a name="L405"></a><tt class="py-lineno">405</tt>  <tt class="py-line">    <tt class="py-name">table_fg</tt>                <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L406"></a><tt class="py-lineno">406</tt>  <tt class="py-line">    <tt class="py-name">table_link</tt>              <tt class="py-op">=</tt>  <tt class="py-string">'#0000ff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L407"></a><tt class="py-lineno">407</tt>  <tt class="py-line">    <tt class="py-name">table_visited_link</tt>      <tt class="py-op">=</tt>  <tt class="py-string">'#204080'</tt><tt class="py-op">,</tt> </tt>
+<a name="L408"></a><tt class="py-lineno">408</tt>  <tt class="py-line">    <tt class="py-name">table_border</tt>            <tt class="py-op">=</tt>  <tt class="py-string">'1px solid #608090'</tt><tt class="py-op">,</tt> </tt>
+<a name="L409"></a><tt class="py-lineno">409</tt>  <tt class="py-line">    <tt class="py-name">table_hdr_bg</tt>            <tt class="py-op">=</tt>  <tt class="py-string">'#70b0ff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L410"></a><tt class="py-lineno">410</tt>  <tt class="py-line">    <tt class="py-name">table_hdr_fg</tt>            <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt>  </tt>
+<a name="L411"></a><tt class="py-lineno">411</tt>  <tt class="py-line">    <tt class="py-name">table_hdr_link</tt>          <tt class="py-op">=</tt>  <tt class="py-string">'#0000ff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L412"></a><tt class="py-lineno">412</tt>  <tt class="py-line">    <tt class="py-name">table_hdr_visited_link</tt>  <tt class="py-op">=</tt>  <tt class="py-string">'#204080'</tt><tt class="py-op">,</tt> </tt>
+<a name="L413"></a><tt class="py-lineno">413</tt>  <tt class="py-line">    <tt class="py-name">group_hdr_bg</tt>            <tt class="py-op">=</tt>  <tt class="py-string">'#c0e0f8'</tt><tt class="py-op">,</tt> </tt>
+<a name="L414"></a><tt class="py-lineno">414</tt>  <tt class="py-line">    <tt class="py-name">group_hdr_fg</tt>            <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L415"></a><tt class="py-lineno">415</tt>  <tt class="py-line">    <tt class="py-comment"># Function signatures:</tt> </tt>
+<a name="L416"></a><tt class="py-lineno">416</tt>  <tt class="py-line">    <tt class="py-name">sig_name</tt>                <tt class="py-op">=</tt>  <tt class="py-string">'#006080'</tt><tt class="py-op">,</tt> </tt>
+<a name="L417"></a><tt class="py-lineno">417</tt>  <tt class="py-line">    <tt class="py-name">sig_arg</tt>                 <tt class="py-op">=</tt>  <tt class="py-string">'#008060'</tt><tt class="py-op">,</tt> </tt>
+<a name="L418"></a><tt class="py-lineno">418</tt>  <tt class="py-line">    <tt class="py-name">sig_default</tt>             <tt class="py-op">=</tt>  <tt class="py-string">'#602000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L419"></a><tt class="py-lineno">419</tt>  <tt class="py-line">    <tt class="py-name">summary_sig_name</tt>        <tt class="py-op">=</tt>  <tt class="py-string">'#006080'</tt><tt class="py-op">,</tt> </tt>
+<a name="L420"></a><tt class="py-lineno">420</tt>  <tt class="py-line">    <tt class="py-name">summary_sig_arg</tt>         <tt class="py-op">=</tt>  <tt class="py-string">'#006040'</tt><tt class="py-op">,</tt> </tt>
+<a name="L421"></a><tt class="py-lineno">421</tt>  <tt class="py-line">    <tt class="py-name">summary_sig_default</tt>     <tt class="py-op">=</tt>  <tt class="py-string">'#501800'</tt><tt class="py-op">,</tt> </tt>
+<a name="L422"></a><tt class="py-lineno">422</tt>  <tt class="py-line">    <tt class="py-comment"># Variable values:</tt> </tt>
+<a name="L423"></a><tt class="py-lineno">423</tt>  <tt class="py-line">    <tt class="py-name">variable_bg</tt>             <tt class="py-op">=</tt>  <tt class="py-string">'#dce4ec'</tt><tt class="py-op">,</tt> </tt>
+<a name="L424"></a><tt class="py-lineno">424</tt>  <tt class="py-line">    <tt class="py-name">variable_fg</tt>             <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L425"></a><tt class="py-lineno">425</tt>  <tt class="py-line">    <tt class="py-name">variable_border</tt>         <tt class="py-op">=</tt>  <tt class="py-string">'1px solid #708890'</tt><tt class="py-op">,</tt> </tt>
+<a name="L426"></a><tt class="py-lineno">426</tt>  <tt class="py-line">    <tt class="py-name">variable_linewrap</tt>       <tt class="py-op">=</tt>  <tt class="py-string">'#604000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L427"></a><tt class="py-lineno">427</tt>  <tt class="py-line">    <tt class="py-name">variable_ellipsis</tt>       <tt class="py-op">=</tt>  <tt class="py-string">'#604000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L428"></a><tt class="py-lineno">428</tt>  <tt class="py-line">    <tt class="py-name">variable_quote</tt>          <tt class="py-op">=</tt>  <tt class="py-string">'#604000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L429"></a><tt class="py-lineno">429</tt>  <tt class="py-line">    <tt class="py-name">variable_group</tt>          <tt class="py-op">=</tt>  <tt class="py-string">'#008000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L430"></a><tt class="py-lineno">430</tt>  <tt class="py-line">    <tt class="py-name">variable_string</tt>         <tt class="py-op">=</tt>  <tt class="py-string">'#006030'</tt><tt class="py-op">,</tt> </tt>
+<a name="L431"></a><tt class="py-lineno">431</tt>  <tt class="py-line">    <tt class="py-name">variable_op</tt>             <tt class="py-op">=</tt>  <tt class="py-string">'#604000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L432"></a><tt class="py-lineno">432</tt>  <tt class="py-line">    <tt class="py-name">variable_unknown</tt>        <tt class="py-op">=</tt>  <tt class="py-string">'#a00000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L433"></a><tt class="py-lineno">433</tt>  <tt class="py-line">    <tt class="py-name">re</tt>                      <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L434"></a><tt class="py-lineno">434</tt>  <tt class="py-line">    <tt class="py-name">re_char</tt>                 <tt class="py-op">=</tt>  <tt class="py-string">'#006030'</tt><tt class="py-op">,</tt> </tt>
+<a name="L435"></a><tt class="py-lineno">435</tt>  <tt class="py-line">    <tt class="py-name">re_op</tt>                   <tt class="py-op">=</tt>  <tt class="py-string">'#600000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L436"></a><tt class="py-lineno">436</tt>  <tt class="py-line">    <tt class="py-name">re_group</tt>                <tt class="py-op">=</tt>  <tt class="py-string">'#003060'</tt><tt class="py-op">,</tt> </tt>
+<a name="L437"></a><tt class="py-lineno">437</tt>  <tt class="py-line">    <tt class="py-name">re_ref</tt>                  <tt class="py-op">=</tt>  <tt class="py-string">'#404040'</tt><tt class="py-op">,</tt> </tt>
+<a name="L438"></a><tt class="py-lineno">438</tt>  <tt class="py-line">    <tt class="py-comment"># Python source code:</tt> </tt>
+<a name="L439"></a><tt class="py-lineno">439</tt>  <tt class="py-line">    <tt class="py-name">doctest_bg</tt>              <tt class="py-op">=</tt>  <tt class="py-string">'#e8f0f8'</tt><tt class="py-op">,</tt> </tt>
+<a name="L440"></a><tt class="py-lineno">440</tt>  <tt class="py-line">    <tt class="py-name">doctest_fg</tt>              <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L441"></a><tt class="py-lineno">441</tt>  <tt class="py-line">    <tt class="py-name">doctest_border</tt>          <tt class="py-op">=</tt>  <tt class="py-string">'1px solid #708890'</tt><tt class="py-op">,</tt> </tt>
+<a name="L442"></a><tt class="py-lineno">442</tt>  <tt class="py-line">    <tt class="py-name">doctest_in_table_bg</tt>     <tt class="py-op">=</tt>  <tt class="py-string">'#dce4ec'</tt><tt class="py-op">,</tt> </tt>
+<a name="L443"></a><tt class="py-lineno">443</tt>  <tt class="py-line">    <tt class="py-name">doctest_in_table_fg</tt>     <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L444"></a><tt class="py-lineno">444</tt>  <tt class="py-line">    <tt class="py-name">pysrc_border</tt>            <tt class="py-op">=</tt>  <tt class="py-string">'2px solid #000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L445"></a><tt class="py-lineno">445</tt>  <tt class="py-line">    <tt class="py-name">pysrc_sep_border</tt>        <tt class="py-op">=</tt>  <tt class="py-string">'2px solid #000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L446"></a><tt class="py-lineno">446</tt>  <tt class="py-line">    <tt class="py-name">pysrc_bg</tt>                <tt class="py-op">=</tt>  <tt class="py-string">'#f0f0f0'</tt><tt class="py-op">,</tt> </tt>
+<a name="L447"></a><tt class="py-lineno">447</tt>  <tt class="py-line">    <tt class="py-name">pysrc_fg</tt>                <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L448"></a><tt class="py-lineno">448</tt>  <tt class="py-line">    <tt class="py-name">pysrc_highlight_hdr_bg</tt>  <tt class="py-op">=</tt>  <tt class="py-string">'#d8e8e8'</tt><tt class="py-op">,</tt> </tt>
+<a name="L449"></a><tt class="py-lineno">449</tt>  <tt class="py-line">    <tt class="py-name">pysrc_highlight_bg</tt>      <tt class="py-op">=</tt>  <tt class="py-string">'#d0e0e0'</tt><tt class="py-op">,</tt> </tt>
+<a name="L450"></a><tt class="py-lineno">450</tt>  <tt class="py-line">    <tt class="py-name">py_prompt</tt>               <tt class="py-op">=</tt>  <tt class="py-string">'#005050'</tt><tt class="py-op">,</tt> </tt>
+<a name="L451"></a><tt class="py-lineno">451</tt>  <tt class="py-line">    <tt class="py-name">py_more</tt>                 <tt class="py-op">=</tt>  <tt class="py-string">'#005050'</tt><tt class="py-op">,</tt> </tt>
+<a name="L452"></a><tt class="py-lineno">452</tt>  <tt class="py-line">    <tt class="py-name">py_string</tt>               <tt class="py-op">=</tt>  <tt class="py-string">'#006030'</tt><tt class="py-op">,</tt> </tt>
+<a name="L453"></a><tt class="py-lineno">453</tt>  <tt class="py-line">    <tt class="py-name">py_comment</tt>              <tt class="py-op">=</tt>  <tt class="py-string">'#003060'</tt><tt class="py-op">,</tt> </tt>
+<a name="L454"></a><tt class="py-lineno">454</tt>  <tt class="py-line">    <tt class="py-name">py_keyword</tt>              <tt class="py-op">=</tt>  <tt class="py-string">'#600000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L455"></a><tt class="py-lineno">455</tt>  <tt class="py-line">    <tt class="py-name">py_output</tt>               <tt class="py-op">=</tt>  <tt class="py-string">'#404040'</tt><tt class="py-op">,</tt> </tt>
+<a name="L456"></a><tt class="py-lineno">456</tt>  <tt class="py-line">    <tt class="py-name">py_name</tt>                 <tt class="py-op">=</tt>  <tt class="py-string">'#000050'</tt><tt class="py-op">,</tt> </tt>
+<a name="L457"></a><tt class="py-lineno">457</tt>  <tt class="py-line">    <tt class="py-name">py_number</tt>               <tt class="py-op">=</tt>  <tt class="py-string">'#005000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L458"></a><tt class="py-lineno">458</tt>  <tt class="py-line">    <tt class="py-name">py_def_name</tt>             <tt class="py-op">=</tt>  <tt class="py-string">'#000060'</tt><tt class="py-op">,</tt> </tt>
+<a name="L459"></a><tt class="py-lineno">459</tt>  <tt class="py-line">    <tt class="py-name">py_base_class</tt>           <tt class="py-op">=</tt>  <tt class="py-string">'#000060'</tt><tt class="py-op">,</tt> </tt>
+<a name="L460"></a><tt class="py-lineno">460</tt>  <tt class="py-line">    <tt class="py-name">py_param</tt>                <tt class="py-op">=</tt>  <tt class="py-string">'#000060'</tt><tt class="py-op">,</tt> </tt>
+<a name="L461"></a><tt class="py-lineno">461</tt>  <tt class="py-line">    <tt class="py-name">py_docstring</tt>            <tt class="py-op">=</tt>  <tt class="py-string">'#006030'</tt><tt class="py-op">,</tt> </tt>
+<a name="L462"></a><tt class="py-lineno">462</tt>  <tt class="py-line">    <tt class="py-name">py_decorator</tt>            <tt class="py-op">=</tt>  <tt class="py-string">'#804020'</tt><tt class="py-op">,</tt> </tt>
+<a name="L463"></a><tt class="py-lineno">463</tt>  <tt class="py-line">    <tt class="py-comment"># Graphs</tt> </tt>
+<a name="L464"></a><tt class="py-lineno">464</tt>  <tt class="py-line">    <tt class="py-name">graph_border</tt>            <tt class="py-op">=</tt>  <tt class="py-string">'1px solid #000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L465"></a><tt class="py-lineno">465</tt>  <tt class="py-line">    <tt class="py-comment"># Log block</tt> </tt>
+<a name="L466"></a><tt class="py-lineno">466</tt>  <tt class="py-line">    <tt class="py-name">log_bg</tt>                  <tt class="py-op">=</tt>  <tt class="py-string">'#e8f0f8'</tt><tt class="py-op">,</tt> </tt>
+<a name="L467"></a><tt class="py-lineno">467</tt>  <tt class="py-line">    <tt class="py-name">log_fg</tt>                  <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L468"></a><tt class="py-lineno">468</tt>  <tt class="py-line">    <tt class="py-name">log_border</tt>              <tt class="py-op">=</tt>  <tt class="py-string">'1px solid #000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L469"></a><tt class="py-lineno">469</tt>  <tt class="py-line">    <tt class="py-name">log_hdr_bg</tt>              <tt class="py-op">=</tt>  <tt class="py-string">'#70b0ff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L470"></a><tt class="py-lineno">470</tt>  <tt class="py-line">    <tt class="py-name">log_hdr_fg</tt>              <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L471"></a><tt class="py-lineno">471</tt>  <tt class="py-line">    <tt class="py-name">log_error_bg</tt>            <tt class="py-op">=</tt>  <tt class="py-string">'#ffb0b0'</tt><tt class="py-op">,</tt> </tt>
+<a name="L472"></a><tt class="py-lineno">472</tt>  <tt class="py-line">    <tt class="py-name">log_error_fg</tt>            <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L473"></a><tt class="py-lineno">473</tt>  <tt class="py-line">    <tt class="py-name">log_error_border</tt>        <tt class="py-op">=</tt>  <tt class="py-string">'1px solid #000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L474"></a><tt class="py-lineno">474</tt>  <tt class="py-line">    <tt class="py-name">log_warn_bg</tt>             <tt class="py-op">=</tt>  <tt class="py-string">'#ffffb0'</tt><tt class="py-op">,</tt> </tt>
+<a name="L475"></a><tt class="py-lineno">475</tt>  <tt class="py-line">    <tt class="py-name">log_warn_fg</tt>             <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L476"></a><tt class="py-lineno">476</tt>  <tt class="py-line">    <tt class="py-name">log_warn_border</tt>         <tt class="py-op">=</tt>  <tt class="py-string">'1px solid #000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L477"></a><tt class="py-lineno">477</tt>  <tt class="py-line">    <tt class="py-name">log_info_bg</tt>             <tt class="py-op">=</tt>  <tt class="py-string">'#b0ffb0'</tt><tt class="py-op">,</tt> </tt>
+<a name="L478"></a><tt class="py-lineno">478</tt>  <tt class="py-line">    <tt class="py-name">log_info_fg</tt>             <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L479"></a><tt class="py-lineno">479</tt>  <tt class="py-line">    <tt class="py-name">log_info_border</tt>         <tt class="py-op">=</tt>  <tt class="py-string">'1px solid #000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L480"></a><tt class="py-lineno">480</tt>  <tt class="py-line">    <tt class="py-name">opt_changed_fg</tt>          <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L481"></a><tt class="py-lineno">481</tt>  <tt class="py-line">    <tt class="py-name">opt_default_fg</tt>          <tt class="py-op">=</tt>  <tt class="py-string">'#606060'</tt><tt class="py-op">,</tt> </tt>
+<a name="L482"></a><tt class="py-lineno">482</tt>  <tt class="py-line">    <tt class="py-op">)</tt> </tt>
+<a name="L483"></a><tt class="py-lineno">483</tt>  <tt class="py-line"> </tt>
+<a name="L484"></a><tt class="py-lineno">484</tt>  <tt class="py-line"><tt id="link-3" class="py-name" targets="Variable epydoc.docwriter.html_css._BLUE_COLORS=epydoc.docwriter.html_css-module.html#_BLUE_COLORS"><a title="epydoc.docwriter.html_css._BLUE_COLORS" class="py-name" href="#" onclick="return doclink('link-3', '_BLUE_COLORS', 'link-3');">_BLUE_COLORS</a></tt> <tt class="py-op">=</tt> <tt id="link-4" class="py-name"><a title="epydoc.docwriter.html_css._WHITE_COLORS" class="py-name" href="#" onclick="return doclink('link-4', '_WHITE_COLORS', 'link-2');">_WHITE_COLORS</a></tt><tt class="py-op">.</tt><tt class="py-name">copy</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L485"></a><tt class="py-lineno">485</tt>  <tt class="py-line"><tt id="link-5" class="py-name"><a title="epydoc.docwriter.html_css._BLUE_COLORS" class="py-name" href="#" onclick="return doclink('link-5', '_BLUE_COLORS', 'link-3');">_BLUE_COLORS</a></tt><tt class="py-op">.</tt><tt class="py-name">update</tt><tt class="py-op">(</tt><tt class="py-name">dict</tt><tt class="py-op">(</tt> </tt>
+<a name="L486"></a><tt class="py-lineno">486</tt>  <tt class="py-line">    <tt class="py-comment"># Body: white text on a dark blue background</tt> </tt>
+<a name="L487"></a><tt class="py-lineno">487</tt>  <tt class="py-line">    <tt class="py-name">body_bg</tt>                 <tt class="py-op">=</tt>  <tt class="py-string">'#000070'</tt><tt class="py-op">,</tt> </tt>
+<a name="L488"></a><tt class="py-lineno">488</tt>  <tt class="py-line">    <tt class="py-name">body_fg</tt>                 <tt class="py-op">=</tt>  <tt class="py-string">'#ffffff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L489"></a><tt class="py-lineno">489</tt>  <tt class="py-line">    <tt class="py-name">body_link</tt>               <tt class="py-op">=</tt>  <tt class="py-string">'#ffffff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L490"></a><tt class="py-lineno">490</tt>  <tt class="py-line">    <tt class="py-name">body_visited_link</tt>       <tt class="py-op">=</tt>  <tt class="py-string">'#d0d0ff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L491"></a><tt class="py-lineno">491</tt>  <tt class="py-line">    <tt class="py-comment"># Tables: cyan headers, black on white bodies</tt> </tt>
+<a name="L492"></a><tt class="py-lineno">492</tt>  <tt class="py-line">    <tt class="py-name">table_bg</tt>                <tt class="py-op">=</tt>   <tt class="py-string">'#ffffff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L493"></a><tt class="py-lineno">493</tt>  <tt class="py-line">    <tt class="py-name">table_fg</tt>                <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L494"></a><tt class="py-lineno">494</tt>  <tt class="py-line">    <tt class="py-name">table_hdr_bg</tt>            <tt class="py-op">=</tt>  <tt class="py-string">'#70b0ff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L495"></a><tt class="py-lineno">495</tt>  <tt class="py-line">    <tt class="py-name">table_hdr_fg</tt>            <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L496"></a><tt class="py-lineno">496</tt>  <tt class="py-line">    <tt class="py-name">table_hdr_link</tt>          <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L497"></a><tt class="py-lineno">497</tt>  <tt class="py-line">    <tt class="py-name">table_hdr_visited_link</tt>  <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L498"></a><tt class="py-lineno">498</tt>  <tt class="py-line">    <tt class="py-name">table_border</tt>            <tt class="py-op">=</tt>  <tt class="py-string">'1px solid #000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L499"></a><tt class="py-lineno">499</tt>  <tt class="py-line">    <tt class="py-comment"># Navigation bar: blue w/ cyan selection</tt> </tt>
+<a name="L500"></a><tt class="py-lineno">500</tt>  <tt class="py-line">    <tt class="py-name">navbar_bg</tt>               <tt class="py-op">=</tt>  <tt class="py-string">'#0000ff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L501"></a><tt class="py-lineno">501</tt>  <tt class="py-line">    <tt class="py-name">navbar_fg</tt>               <tt class="py-op">=</tt>  <tt class="py-string">'#ffffff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L502"></a><tt class="py-lineno">502</tt>  <tt class="py-line">    <tt class="py-name">navbar_link</tt>             <tt class="py-op">=</tt>  <tt class="py-string">'#ffffff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L503"></a><tt class="py-lineno">503</tt>  <tt class="py-line">    <tt class="py-name">navbar_visited_link</tt>     <tt class="py-op">=</tt>  <tt class="py-string">'#ffffff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L504"></a><tt class="py-lineno">504</tt>  <tt class="py-line">    <tt class="py-name">navbar_select_bg</tt>        <tt class="py-op">=</tt>   <tt class="py-string">'#70b0ff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L505"></a><tt class="py-lineno">505</tt>  <tt class="py-line">    <tt class="py-name">navbar_select_fg</tt>        <tt class="py-op">=</tt>   <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L506"></a><tt class="py-lineno">506</tt>  <tt class="py-line">    <tt class="py-name">navbar_border</tt>           <tt class="py-op">=</tt>  <tt class="py-string">'1px solid #70b0ff'</tt><tt class="py-op">,</tt> </tt>
+<a name="L507"></a><tt class="py-lineno">507</tt>  <tt class="py-line">    <tt class="py-comment"># Variable values &amp; doctest blocks: cyan</tt> </tt>
+<a name="L508"></a><tt class="py-lineno">508</tt>  <tt class="py-line">    <tt class="py-name">variable_bg</tt>             <tt class="py-op">=</tt>   <tt class="py-string">'#c0e0f8'</tt><tt class="py-op">,</tt> </tt>
+<a name="L509"></a><tt class="py-lineno">509</tt>  <tt class="py-line">    <tt class="py-name">variable_fg</tt>             <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L510"></a><tt class="py-lineno">510</tt>  <tt class="py-line">    <tt class="py-name">doctest_bg</tt>              <tt class="py-op">=</tt>   <tt class="py-string">'#c0e0f8'</tt><tt class="py-op">,</tt> </tt>
+<a name="L511"></a><tt class="py-lineno">511</tt>  <tt class="py-line">    <tt class="py-name">doctest_fg</tt>              <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L512"></a><tt class="py-lineno">512</tt>  <tt class="py-line">    <tt class="py-name">doctest_in_table_bg</tt>     <tt class="py-op">=</tt>   <tt class="py-string">'#c0e0f8'</tt><tt class="py-op">,</tt> </tt>
+<a name="L513"></a><tt class="py-lineno">513</tt>  <tt class="py-line">    <tt class="py-name">doctest_in_table_fg</tt>     <tt class="py-op">=</tt>  <tt class="py-string">'#000000'</tt><tt class="py-op">,</tt> </tt>
+<a name="L514"></a><tt class="py-lineno">514</tt>  <tt class="py-line">    <tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L515"></a><tt class="py-lineno">515</tt>  <tt class="py-line"> </tt>
+<a name="L516"></a><tt class="py-lineno">516</tt>  <tt class="py-line"><tt id="link-6" class="py-name" targets="Variable epydoc.docwriter.html_css._WHITE=epydoc.docwriter.html_css-module.html#_WHITE"><a title="epydoc.docwriter.html_css._WHITE" class="py-name" href="#" onclick="return doclink('link-6', '_WHITE', 'link-6');">_WHITE</a></tt> <tt class="py-op">=</tt> <tt id="link-7" class="py-name" targets="Function epydoc.docwriter.html_css._set_colors()=epydoc.docwriter.html_css-module.html#_set_colors"><a title="epydoc.docwriter.html_css._set_colors" class="py-name" href="#" onclick="return doclink('link-7', '_set_colors', 'link-7');">_set_colors</a></tt><tt class="py-op">(</tt><tt id="link-8" class="py-name"><a title="epydoc.docwriter.html_css.TEMPLATE" class="py-name" href="#" onclick="return doclink('link-8', 'TEMPLATE', 'link-0');">TEMPLATE</a></tt><tt class="py-op">,</tt> <tt id="link-9" class="py-name"><a title="epydoc.docwriter.html_css._WHITE_COLORS" class="py-name" href="#" onclick="return doclink('link-9', '_WHITE_COLORS', 'link-2');">_WHITE_COLORS</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L517"></a><tt class="py-lineno">517</tt>  <tt class="py-line"><tt id="link-10" class="py-name" targets="Variable epydoc.docwriter.html_css._BLUE=epydoc.docwriter.html_css-module.html#_BLUE"><a title="epydoc.docwriter.html_css._BLUE" class="py-name" href="#" onclick="return doclink('link-10', '_BLUE', 'link-10');">_BLUE</a></tt> <tt class="py-op">=</tt> <tt id="link-11" class="py-name"><a title="epydoc.docwriter.html_css._set_colors" class="py-name" href="#" onclick="return doclink('link-11', '_set_colors', 'link-7');">_set_colors</a></tt><tt class="py-op">(</tt><tt id="link-12" class="py-name"><a title="epydoc.docwriter.html_css.TEMPLATE" class="py-name" href="#" onclick="return doclink('link-12', 'TEMPLATE', 'link-0');">TEMPLATE</a></tt><tt class="py-op">,</tt> <tt id="link-13" class="py-name"><a title="epydoc.docwriter.html_css._BLUE_COLORS" class="py-name" href="#" onclick="return doclink('link-13', '_BLUE_COLORS', 'link-3');">_BLUE_COLORS</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L518"></a><tt class="py-lineno">518</tt>  <tt class="py-line"> </tt>
+<a name="L519"></a><tt class="py-lineno">519</tt>  <tt class="py-line">    <tt class="py-comment"># Black-on-green</tt> </tt>
+<a name="L520"></a><tt class="py-lineno">520</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt id="link-14" class="py-name" targets="Variable epydoc.docwriter.html_css._GREEN=epydoc.docwriter.html_css-module.html#_GREEN"><a title="epydoc.docwriter.html_css._GREEN" class="py-name" href="#" onclick="return doclink('link-14', '_GREEN', 'link-14');">_GREEN</a></tt> <tt class="py-op">=</tt> <tt id="link-15" class="py-name"><a title="epydoc.docwriter.html_css._COLOR_RE" class="py-name" href="#" onclick="return doclink('link-15', '_COLOR_RE', 'link-1');">_COLOR_RE</a></tt><tt class="py-op">.</tt><tt class="py-name">sub</tt><tt class="py-op">(</tt><tt id="link-16" class="py-name" targets="Function epydoc.docwriter.html_css._darken_darks()=epydoc.docwriter.html_css-module.html#_darken_darks"><a title="epydoc.docwriter.html_css._darken_darks" class="py-name" href="#" onclick="return doclink('link-16', '_darken_darks', 'link-16');">_darken_darks</a></tt><tt class="py-op">,</tt> <tt id="link-17" class="py-name"><a title="epydoc.docwriter.html_css._COLOR_RE" class="py-name" href="#" onclick="return doclink('link-17', '_COLOR_RE', 'link-1');">_COLOR_RE</a></tt><tt class="py-op">.</tt><tt class="py-name">sub</tt><tt class="py-op">(</tt><tt class="py-string">r'#\1\3\2'</tt><tt class="py-op">,</tt> <tt id="link-18" class="py-name"><a title="epydoc.docwriter.html_css._BLUE" class="py-name" href="#" onclick="return doclink('link-18', '_BLUE', 'link-10');">_BLUE</a></tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L521"></a><tt class="py-lineno">521</tt>  <tt class="py-line"> </tt>
+<a name="L522"></a><tt class="py-lineno">522</tt>  <tt class="py-line"><tt class="py-comment"># White-on-black, with blue highlights.</tt> </tt>
+<a name="L523"></a><tt class="py-lineno">523</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt id="link-19" class="py-name" targets="Variable epydoc.docwriter.html_css._BLACK=epydoc.docwriter.html_css-module.html#_BLACK"><a title="epydoc.docwriter.html_css._BLACK" class="py-name" href="#" onclick="return doclink('link-19', '_BLACK', 'link-19');">_BLACK</a></tt> <tt class="py-op">=</tt> <tt id="link-20" class="py-name"><a title="epydoc.docwriter.html_css._COLOR_RE" class="py-name" href="#" onclick="return doclink('link-20', '_COLOR_RE', 'link-1');">_COLOR_RE</a></tt><tt class="py-op">.</tt><tt class="py-name">sub</tt><tt class="py-op">(</tt><tt class="py-string">r'#\3\2\1'</tt><tt class="py-op">,</tt> <tt id="link-21" class="py-name"><a title="epydoc.docwriter.html_css._COLOR_RE" class="py-name" href="#" onclick="return doclink('link-21', '_COLOR_RE', 'link-1');">_COLOR_RE</a></tt><tt class="py-op">.</tt><tt class="py-name">sub</tt><tt class="py-op">(</tt><tt id="link-22" class="py-name" targets="Function epydoc.docwriter.html_css._rv()=epydoc.docwriter.html_css-module.html#_rv"><a title="epydoc.docwriter.html_css._rv" class="py-name" href="#" onclick="return doclink('link-22', '_rv', 'link-22');">_rv</a></tt><tt class="py-op">,</tt> <tt id="link-23" class="py-name"><a title="epydoc.docwriter.html_css._WHITE" class="py-name" href="#" onclick="return doclink('link-23', '_WHITE', 'link-6');">_WHITE</a></tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L524"></a><tt class="py-lineno">524</tt>  <tt class="py-line"> </tt>
+<a name="L525"></a><tt class="py-lineno">525</tt>  <tt class="py-line"><tt class="py-comment"># Grayscale</tt> </tt>
+<a name="L526"></a><tt class="py-lineno">526</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt id="link-24" class="py-name" targets="Variable epydoc.docwriter.html_css._GRAYSCALE=epydoc.docwriter.html_css-module.html#_GRAYSCALE"><a title="epydoc.docwriter.html_css._GRAYSCALE" class="py-name" href="#" onclick="return doclink('link-24', '_GRAYSCALE', 'link-24');">_GRAYSCALE</a></tt> <tt class="py-op">=</tt> <tt id="link-25" class="py-name"><a title="epydoc.docwriter.html_css._COLOR_RE" class="py-name" href="#" onclick="return doclink('link-25', '_COLOR_RE', 'link-1');">_COLOR_RE</a></tt><tt class="py-op">.</tt><tt class="py-name">sub</tt><tt class="py-op">(</tt><tt class="py-string">r'#\2\2\2'</tt><tt class="py-op">,</tt> <tt id="link-26" class="py-name"><a title="epydoc.docwriter.html_css._WHITE" class="py-name" href="#" onclick="return doclink('link-26', '_WHITE', 'link-6');">_WHITE</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L527"></a><tt class="py-lineno">527</tt>  <tt class="py-line"> </tt>
+<a name="L528"></a><tt class="py-lineno">528</tt>  <tt class="py-line"><tt class="py-comment">############################################################</tt> </tt>
+<a name="L529"></a><tt class="py-lineno">529</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">## Stylesheet table</tt> </tt>
+<a name="L530"></a><tt class="py-lineno">530</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">############################################################</tt> </tt>
+<a name="L531"></a><tt class="py-lineno">531</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L532"></a><tt class="py-lineno">532</tt>  <tt class="py-line"><tt id="link-27" class="py-name" targets="Variable epydoc.docwriter.html_css.STYLESHEETS=epydoc.docwriter.html_css-module.html#STYLESHEETS"><a title="epydoc.docwriter.html_css.STYLESHEETS" class="py-name" href="#" onclick="return doclink('link-27', 'STYLESHEETS', 'link-27');">STYLESHEETS</a></tt> <tt class="py-op">=</tt> <tt class="py-op">{</tt> </tt>
+<a name="L533"></a><tt class="py-lineno">533</tt>  <tt class="py-line">    <tt class="py-string">'white'</tt><tt class="py-op">:</tt> <tt class="py-op">(</tt><tt id="link-28" class="py-name"><a title="epydoc.docwriter.html_css._WHITE" class="py-name" href="#" onclick="return doclink('link-28', '_WHITE', 'link-6');">_WHITE</a></tt><tt class="py-op">,</tt> <tt class="py-string">"Black on white, with blue highlights"</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> </tt>
+<a name="L534"></a><tt class="py-lineno">534</tt>  <tt class="py-line">    <tt class="py-string">'blue'</tt><tt class="py-op">:</tt> <tt class="py-op">(</tt><tt id="link-29" class="py-name"><a title="epydoc.docwriter.html_css._BLUE" class="py-name" href="#" onclick="return doclink('link-29', '_BLUE', 'link-10');">_BLUE</a></tt><tt class="py-op">,</tt> <tt class="py-string">"Black on steel blue"</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> </tt>
+<a name="L535"></a><tt class="py-lineno">535</tt>  <tt class="py-line">    <tt class="py-string">'green'</tt><tt class="py-op">:</tt> <tt class="py-op">(</tt><tt id="link-30" class="py-name"><a title="epydoc.docwriter.html_css._GREEN" class="py-name" href="#" onclick="return doclink('link-30', '_GREEN', 'link-14');">_GREEN</a></tt><tt class="py-op">,</tt> <tt class="py-string">"Black on green"</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> </tt>
+<a name="L536"></a><tt class="py-lineno">536</tt>  <tt class="py-line">    <tt class="py-string">'black'</tt><tt class="py-op">:</tt> <tt class="py-op">(</tt><tt id="link-31" class="py-name"><a title="epydoc.docwriter.html_css._BLACK" class="py-name" href="#" onclick="return doclink('link-31', '_BLACK', 'link-19');">_BLACK</a></tt><tt class="py-op">,</tt> <tt class="py-string">"White on black, with blue highlights"</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> </tt>
+<a name="L537"></a><tt class="py-lineno">537</tt>  <tt class="py-line">    <tt class="py-string">'grayscale'</tt><tt class="py-op">:</tt> <tt class="py-op">(</tt><tt id="link-32" class="py-name"><a title="epydoc.docwriter.html_css._GRAYSCALE" class="py-name" href="#" onclick="return doclink('link-32', '_GRAYSCALE', 'link-24');">_GRAYSCALE</a></tt><tt class="py-op">,</tt> <tt class="py-string">"Grayscale black on white"</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> </tt>
+<a name="L538"></a><tt class="py-lineno">538</tt>  <tt class="py-line">    <tt class="py-string">'default'</tt><tt class="py-op">:</tt> <tt class="py-op">(</tt><tt id="link-33" class="py-name"><a title="epydoc.docwriter.html_css._WHITE" class="py-name" href="#" onclick="return doclink('link-33', '_WHITE', 'link-6');">_WHITE</a></tt><tt class="py-op">,</tt> <tt class="py-string">"Default stylesheet (=white)"</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> </tt>
+<a name="L539"></a><tt class="py-lineno">539</tt>  <tt class="py-line"><tt class="py-comment">#    'none': (_LAYOUT, "A base stylesheet (no color modifications)"),</tt> </tt>
+<a name="L540"></a><tt class="py-lineno">540</tt>  <tt class="py-line">    <tt class="py-op">}</tt> </tt>
+<a name="L541"></a><tt class="py-lineno">541</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:05:34 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

@@ -1,0 +1,904 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.doctest.DoctestColorizer</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        <a href="epydoc.markup.doctest-module.html">Module&nbsp;doctest</a> ::
+        Class&nbsp;DoctestColorizer
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.doctest.DoctestColorizer-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class DoctestColorizer</h1><span class="codelink"><a href="epydoc.markup.doctest-pysrc.html#DoctestColorizer">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_m_4" name="uml_class_diagram_for_epydoc_m_4">
+<area shape="rect" href="epydoc.markup.doctest.LaTeXDoctestColorizer&#45;class.html" title="A subclass of DoctestColorizer that generates LaTeX output." alt="" coords="5,299,179,336" />
+<area shape="rect" href="epydoc.markup.doctest.HTMLDoctestColorizer&#45;class.html" title="A subclass of DoctestColorizer that generates HTML output." alt="" coords="208,299,379,336" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#SUFFIX" title="A string that is added to the end of the strings returned by  colorize_codeblock and colorize_doctest." alt="" coords="153,28,433,47" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#PROMPT_RE" title="A regexp that matches Python prompts" alt="" coords="153,47,433,65" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#DOCTEST_DIRECTIVE_RE" title="A regexp that matches doctest directives." alt="" coords="153,65,433,84" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#DOCTEST_EXAMPLE_RE" title="This regular expression is used to find doctest examples in a string." alt="" coords="153,84,433,103" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#DOCTEST_RE" title="A regexp that matches all of the regions of a doctest block that should be  colored." alt="" coords="153,103,433,121" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#EXCEPT_RE" title="A regexp that matches doctest exception blocks." alt="" coords="153,121,433,140" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#PROMPT2_RE" title="A regexp that matches Python &quot;...&quot; prompts." alt="" coords="153,140,433,159" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#PREFIX" title="A string that is added to the beginning of the strings returned by  colorize_codeblock and colorize_doctest." alt="" coords="153,159,433,177" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#colorize_doctest" title="Colorize a string containing one or more doctest examples." alt="" coords="153,180,433,199" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#colorize_inline" title="Colorize a string containing Python code." alt="" coords="153,199,433,217" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#colorize_codeblock" title="Colorize a string containing only Python code." alt="" coords="153,217,433,236" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#markup" title="Apply syntax highlighting to a single substring from a doctest block." alt="" coords="153,236,433,255" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#subfunc" title="epydoc.markup.doctest.DoctestColorizer.subfunc" alt="" coords="153,255,433,273" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html" title="An abstract base class for performing syntax highlighting on doctest blocks and other bits of Python code." alt="" coords="141,5,445,280" />
+<area shape="rect" href="epydoc.markup.doctest.XMLDoctestColorizer&#45;class.html" title="A subclass of DoctestColorizer that generates XML&#45;like output." alt="" coords="408,299,571,336" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_m_4.gif" alt='' usemap="#uml_class_diagram_for_epydoc_m_4" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+An abstract base class for performing syntax highlighting on doctest 
+  blocks and other bits of Python code.  Subclasses should provide 
+  definitions for:
+  <ul>
+    <li>
+      The <a 
+      href="epydoc.markup.doctest.DoctestColorizer-class.html#markup" 
+      class="link">markup()</a> method, which takes a substring and a tag, 
+      and returns a colorized version of the substring.
+    </li>
+    <li>
+      The <a 
+      href="epydoc.markup.doctest.DoctestColorizer-class.html#PREFIX" 
+      class="link">PREFIX</a> and <a 
+      href="epydoc.markup.doctest.DoctestColorizer-class.html#SUFFIX" 
+      class="link">SUFFIX</a> variables, which will be added to the 
+      beginning and end of the strings returned by <a 
+      href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_codeblock"
+      class="link">colorize_codeblock</a> and <a 
+      href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_doctest"
+      class="link">colorize_doctest</a>.
+    </li>
+  </ul><br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_inline" class="summary-sig-name">colorize_inline</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">s</span>)</span><br />
+      Colorize a string containing Python code.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.doctest-pysrc.html#DoctestColorizer.colorize_inline">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_codeblock" class="summary-sig-name">colorize_codeblock</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">s</span>)</span><br />
+      Colorize a string containing only Python code.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.doctest-pysrc.html#DoctestColorizer.colorize_codeblock">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="colorize_doctest"></a><span class="summary-sig-name">colorize_doctest</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">s</span>,
+        <span class="summary-sig-arg">strip_directives</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Colorize a string containing one or more doctest examples.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.doctest-pysrc.html#DoctestColorizer.colorize_doctest">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_colorize_doctes-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_colorize_doctes-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_colorize_doctes" name="call_graph_for_colorize_doctes">
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#colorize_doctest" title="colorize_doctest()" alt="" coords="209,34,364,66" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#subfunc" title="subfunc()" alt="" coords="505,6,599,38" />
+<area shape="rect" href="epydoc.markup.doctest.HTMLDoctestColorizer&#45;class.html#markup" title="HTMLDoctestColorizer.markup()" alt="" coords="413,62,691,94" />
+<area shape="rect" href="epydoc.markup.doctest&#45;module.html#doctest_to_html" title="doctest_to_html()" alt="" coords="5,34,160,66" />
+</map>
+  <img src="call_graph_for_colorize_doctes.gif" alt='' usemap="#call_graph_for_colorize_doctes" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="subfunc"></a><span class="summary-sig-name">subfunc</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">match</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.doctest-pysrc.html#DoctestColorizer.subfunc">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_subfunc-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_subfunc-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_subfunc" name="call_graph_for_subfunc">
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#colorize_doctest" title="colorize_doctest()" alt="" coords="7,6,162,38" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#subfunc" title="subfunc()" alt="" coords="211,6,304,38" />
+<area shape="rect" href="epydoc.markup.doctest.HTMLDoctestColorizer&#45;class.html#markup" title="HTMLDoctestColorizer.markup()" alt="" coords="352,6,630,38" />
+</map>
+  <img src="call_graph_for_subfunc.gif" alt='' usemap="#call_graph_for_subfunc" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.doctest.DoctestColorizer-class.html#markup" class="summary-sig-name">markup</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">s</span>,
+        <span class="summary-sig-arg">tag</span>)</span><br />
+      Apply syntax highlighting to a single substring from a doctest 
+      block.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.doctest-pysrc.html#DoctestColorizer.markup">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.doctest.DoctestColorizer-class.html#PREFIX" class="summary-name">PREFIX</a> = <code title="True">True</code><br />
+      A string that is added to the beginning of the strings returned by
+      <a 
+      href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_codeblock"
+      class="link">colorize_codeblock</a> and <a 
+      href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_doctest"
+      class="link">colorize_doctest</a>.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.doctest.DoctestColorizer-class.html#SUFFIX" class="summary-name">SUFFIX</a> = <code title="True">True</code><br />
+      A string that is added to the end of the strings returned by <a 
+      href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_codeblock"
+      class="link">colorize_codeblock</a> and <a 
+      href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_doctest"
+      class="link">colorize_doctest</a>.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.doctest.DoctestColorizer-class.html#_KEYWORDS" class="summary-name">_KEYWORDS</a> = <code title="['and',
+ 'del',
+ 'for',
+ 'is',
+ 'raiseassert',
+ 'elif',
+ 'from',
+ 'lambda',
+..."><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">and</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">del</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">for</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">is</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">raiseassert</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">elif</code><code class="variable-quote">'</code><code class="variable-op">,</code><code class="variable-ellipsis">...</code></code><br />
+      A list of the names of all Python keywords.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.doctest.DoctestColorizer-class.html#_BUILTINS" class="summary-name">_BUILTINS</a> = <code title="['clear',
+ 'copy',
+ 'fromkeys',
+ 'get',
+ 'has_key',
+ 'items',
+ 'iteritems',
+ 'iterkeys',
+..."><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">clear</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">copy</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">fromkeys</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">get</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">has_key</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">i</code><code class="variable-ellipsis">...</code></code><br />
+      A list of all Python builtins.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.doctest.DoctestColorizer-class.html#_KEYWORD_GRP" class="summary-name">_KEYWORD_GRP</a> = <code title="'\\band\\b|\\bdel\\b|\\bfor\\b|\\bis\\b|\\braiseassert\\b|\\belif\\b|\\
+\bfrom\\b|\\blambda\\b|\\breturnbreak\\b|\\belse\\b|\\bglobal\\b|\\bno\
+t\\b|\\btryclass\\b|\\bexcept\\b|\\bif\\b|\\bor\\b|\\bwhilecontinue\\b\
+|\\bexec\\b|\\bimport\\b|\\bpass\\b|\\byielddef\\b|\\bfinally\\b|\\bin\
+\\b|\\bprint\\b|\\bas\\b'"><code class="variable-quote">'</code><code class="variable-string">\\band\\b|\\bdel\\b|\\bfor\\b|\\bis\\b|\\brais</code><code class="variable-ellipsis">...</code></code><br />
+      A regexp group that matches keywords.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.doctest.DoctestColorizer-class.html#_BUILTIN_GRP" class="summary-name">_BUILTIN_GRP</a> = <code title="'(?&lt;!\\.)(?:\\bclear\\b|\\bcopy\\b|\\bfromkeys\\b|\\bget\\b|\\bhas_key\
+\\b|\\bitems\\b|\\biteritems\\b|\\biterkeys\\b|\\bitervalues\\b|\\bkey\
+s\\b|\\bpop\\b|\\bpopitem\\b|\\bsetdefault\\b|\\bupdate\\b|\\bvalues\\\
+b)'"><code class="variable-quote">'</code><code class="variable-string">(?&lt;!\\.)(?:\\bclear\\b|\\bcopy\\b|\\bfromkeys\</code><code class="variable-ellipsis">...</code></code><br />
+      A regexp group that matches Python builtins.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.doctest.DoctestColorizer-class.html#_STRING_GRP" class="summary-name">_STRING_GRP</a> = <code title="'(&quot;&quot;&quot;(&quot;&quot;&quot;|.*?((?!&quot;).)&quot;&quot;&quot;))|(&quot;(&quot;|.*?((?!&quot;).)&quot;))|(\'\'\'(\'\'\'|.*?[^\\\\
+\\']\'\'\'))|(\'(\'|.*?[^\\\\\']\'))'"><code class="variable-quote">'</code><code class="variable-string">(&quot;&quot;&quot;(&quot;&quot;&quot;|.*?((?!&quot;).)&quot;&quot;&quot;))|(&quot;(&quot;|.*?((?!&quot;).)&quot;))|(</code><code class="variable-ellipsis">...</code></code><br />
+      A regexp group that matches Python strings.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_COMMENT_GRP"></a><span class="summary-name">_COMMENT_GRP</span> = <code title="'(#.*?$)'"><code class="variable-quote">'</code><code class="variable-string">(#.*?$)</code><code class="variable-quote">'</code></code><br />
+      A regexp group that matches Python comments.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_PROMPT1_GRP"></a><span class="summary-name">_PROMPT1_GRP</span> = <code title="'^[ \\t]*&gt;&gt;&gt;(?:[ \\t]|$)'"><code class="variable-quote">'</code><code class="variable-string">^[ \\t]*&gt;&gt;&gt;(?:[ \\t]|$)</code><code class="variable-quote">'</code></code><br />
+      A regexp group that matches Python &quot;&gt;&gt;&gt;&quot; 
+      prompts.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_PROMPT2_GRP"></a><span class="summary-name">_PROMPT2_GRP</span> = <code title="'^[ \\t]*\\.\\.\\.(?:[ \\t]|$)'"><code class="variable-quote">'</code><code class="variable-string">^[ \\t]*\\.\\.\\.(?:[ \\t]|$)</code><code class="variable-quote">'</code></code><br />
+      A regexp group that matches Python &quot;...&quot; prompts.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_DEFINE_GRP"></a><span class="summary-name">_DEFINE_GRP</span> = <code title="'\\b(?:def|class)[ \\t]+\\w+'"><code class="variable-quote">'</code><code class="variable-string">\\b(?:def|class)[ \\t]+\\w+</code><code class="variable-quote">'</code></code><br />
+      A regexp group that matches function and class definitions.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.doctest.DoctestColorizer-class.html#PROMPT_RE" class="summary-name">PROMPT_RE</a> = <code title="re.compile(r'(?ms)(^[ \t]*&gt;&gt;&gt;(?:[ \t]|$)|[ \t]*\.\.\.(?:[ \t]|$))')">re.compile(r'<code class="re-flags">(?ms)</code><code class="re-group">(</code>^<code class="re-group">[</code> \t<code class="re-group">]</code><code class="re-op">*</code>&gt;&gt;&gt;<code class="re-group">(?:</code><code class="re-group">[</code> \t<code class="re-group">]</code><code class="re-op">|</code>$<code class="re-group">)</code><code class="re-op">|</code><code class="re-group">[</code> \t<code class="re-group">]</code><code class="re-op">*</code>\.\<code class="variable-ellipsis">...</code></code><br />
+      A regexp that matches Python prompts
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="PROMPT2_RE"></a><span class="summary-name">PROMPT2_RE</span> = <code title="re.compile(r'(?ms)(^[ \t]*\.\.\.(?:[ \t]|$))')">re.compile(r'<code class="re-flags">(?ms)</code><code class="re-group">(</code>^<code class="re-group">[</code> \t<code class="re-group">]</code><code class="re-op">*</code>\.\.\.<code class="re-group">(?:</code><code class="re-group">[</code> \t<code class="re-group">]</code><code class="re-op">|</code>$<code class="re-group">)</code><code class="re-group">)</code>')</code><br />
+      A regexp that matches Python &quot;...&quot; prompts.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.doctest.DoctestColorizer-class.html#EXCEPT_RE" class="summary-name">EXCEPT_RE</a> = <code title="re.compile(r'(?ms)^[ \t]*Traceback \(most recent call last\):.*')">re.compile(r'<code class="re-flags">(?ms)</code>^<code class="re-group">[</code> \t<code class="re-group">]</code><code class="re-op">*</code>Traceback \(most recent c<code class="variable-ellipsis">...</code></code><br />
+      A regexp that matches doctest exception blocks.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="DOCTEST_DIRECTIVE_RE"></a><span class="summary-name">DOCTEST_DIRECTIVE_RE</span> = <code title="re.compile(r'#[ \t]*doctest:.*')">re.compile(r'#<code class="re-group">[</code> \t<code class="re-group">]</code><code class="re-op">*</code>doctest:.<code class="re-op">*</code>')</code><br />
+      A regexp that matches doctest directives.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.doctest.DoctestColorizer-class.html#DOCTEST_RE" class="summary-name">DOCTEST_RE</a> = <code title="re.compile(r'(?ms)(.*?)((?P&lt;STRING&gt;(&quot;&quot;&quot;(&quot;&quot;&quot;|.*?((?!&quot;).)&quot;&quot;&quot;))|(&quot;(&quot;|.*?(\
+(?!&quot;).)&quot;))|(\'\'\'(\'\'\'|.*?[^\\\']\'\'\'))|(\'(\'|.*?[^\\\']\')))|(?\
+P&lt;COMMENT&gt;(#.*?$))|(?P&lt;DEFINE&gt;\b(?:def|class)[ \t]+\w+)|(?P&lt;KEYWORD&gt;\b\
+and\b|del\b|for\b|is\b|raiseassert\b|elif\b|from\b|lambda\b|returnbrea\
+k\b|else\b|global\b|not\b|tryclass\b|except\b|if\b|or\b|whilecontinue\\
+b|exec\b|import\b|pass\b|yielddef\b|finally\b|in\b|print\b|as\b)|(?P&lt;B\
+UILTIN&gt;(?&lt;!\.)(?:\bclear\b|copy\b|fromkeys\b|get\b|has_key\b|items\b|i\
+teritems\b|iterkeys\b|itervalues\b|keys\b|pop\b|popitem\b|setdefault\b\
+...">re.compile(r'<code class="re-flags">(?ms)</code><code class="re-group">(</code>.<code class="re-op">*?</code><code class="re-group">)</code><code class="re-group">(</code><code class="re-group">(?P&lt;</code><code class="re-ref">STRING</code><code class="re-group">&gt;</code><code class="re-group">(</code>&quot;&quot;&quot;<code class="re-group">(</code>&quot;&quot;&quot;<code class="re-op">|</code>.<code class="re-op">*?</code><code class="re-group">(</code><code class="re-group">(</code><code class="variable-ellipsis">...</code></code><br />
+      A regexp that matches all of the regions of a doctest block that 
+      should be colored.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.doctest.DoctestColorizer-class.html#DOCTEST_EXAMPLE_RE" class="summary-name">DOCTEST_EXAMPLE_RE</a> = <code title="re.compile(r'(?mx)(?P&lt;source&gt;(?:^(?P&lt;indent&gt; *)&gt;&gt;&gt;.*)(?:\n *\.\.\..*)*\
+\n?)(?P&lt;want&gt;(?:(?! *$)(?! *&gt;&gt;&gt;).*$\n?)*)')">re.compile(r'<code class="re-flags">(?mx)</code><code class="re-group">(?P&lt;</code><code class="re-ref">source</code><code class="re-group">&gt;</code><code class="re-group">(?:</code>^<code class="re-group">(?P&lt;</code><code class="re-ref">inde</code><code class="variable-ellipsis">...</code></code><br />
+      This regular expression is used to find doctest examples in a 
+      string.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_BI"></a><span class="summary-name">_BI</span> = <code title="'values'"><code class="variable-quote">'</code><code class="variable-string">values</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_KW"></a><span class="summary-name">_KW</span> = <code title="'as'"><code class="variable-quote">'</code><code class="variable-string">as</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="colorize_inline"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">colorize_inline</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">s</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.doctest-pysrc.html#DoctestColorizer.colorize_inline">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Colorize a string containing Python code.  Do not add the <a 
+  href="epydoc.markup.doctest.DoctestColorizer-class.html#PREFIX" 
+  class="link">PREFIX</a> and <a 
+  href="epydoc.markup.doctest.DoctestColorizer-class.html#SUFFIX" 
+  class="link">SUFFIX</a> strings to the returned value.  This method is 
+  intended for generating syntax-highlighted strings that are appropriate 
+  for inclusion as inline expressions.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="colorize_codeblock"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">colorize_codeblock</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">s</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.doctest-pysrc.html#DoctestColorizer.colorize_codeblock">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Colorize a string containing only Python code.  This method differs 
+  from <a 
+  href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_doctest"
+  class="link">colorize_doctest</a> in that it will not search for doctest 
+  prompts when deciding how to colorize the string.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="markup"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">markup</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">s</span>,
+        <span class="sig-arg">tag</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.doctest-pysrc.html#DoctestColorizer.markup">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Apply syntax highlighting to a single substring from a doctest block.
+  <code>s</code> is the substring, and <code>tag</code> is the tag that 
+  should be applied to the substring.  <code>tag</code> will be one of the 
+  following strings:
+  <ul>
+    <li>
+      <code>prompt</code> -- the Python PS1 prompt (&gt;&gt;&gt;)
+    </li>
+    <li>
+      <code>more</code> -- the Python PS2 prompt (...)
+    </li>
+    <li>
+      <code>keyword</code> -- a Python keyword (for, if, etc.)
+    </li>
+    <li>
+      <code>builtin</code> -- a Python builtin name (abs, dir, etc.)
+    </li>
+    <li>
+      <code>string</code> -- a string literal
+    </li>
+    <li>
+      <code>comment</code> -- a comment
+    </li>
+    <li>
+      <code>except</code> -- an exception traceback (up to the next 
+      &gt;&gt;&gt;)
+    </li>
+    <li>
+      <code>output</code> -- the output from a doctest block.
+    </li>
+    <li>
+      <code>defname</code> -- the name of a function or class defined by
+      a <code>def</code> or <code>class</code> statement.
+    </li>
+    <li>
+      <code>other</code> -- anything else (does *not* include 
+      output.)
+    </li>
+  </ul>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== CLASS VARIABLE DETAILS ==================== -->
+<a name="section-ClassVariableDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="PREFIX"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">PREFIX</h3>
+  A string that is added to the beginning of the strings returned by <a 
+  href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_codeblock"
+  class="link">colorize_codeblock</a> and <a 
+  href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_doctest"
+  class="link">colorize_doctest</a>. Typically, this string begins a 
+  preformatted area.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+True
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="SUFFIX"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">SUFFIX</h3>
+  A string that is added to the end of the strings returned by <a 
+  href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_codeblock"
+  class="link">colorize_codeblock</a> and <a 
+  href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_doctest"
+  class="link">colorize_doctest</a>. Typically, this string ends a 
+  preformatted area.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+True
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_KEYWORDS"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_KEYWORDS</h3>
+  A list of the names of all Python keywords.  ('as' is included even 
+  though it is technically not a keyword.)
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">and</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">del</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">for</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">is</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">raiseassert</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">elif</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">from</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">lambda</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_BUILTINS"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_BUILTINS</h3>
+  A list of all Python builtins.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">clear</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">copy</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">fromkeys</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">get</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">has_key</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">items</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">iteritems</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">iterkeys</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_KEYWORD_GRP"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_KEYWORD_GRP</h3>
+  A regexp group that matches keywords.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-quote">'</code><code class="variable-string">\\band\\b|\\bdel\\b|\\bfor\\b|\\bis\\b|\\braiseassert\\b|\\belif\\b|\</code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="variable-string">\bfrom\\b|\\blambda\\b|\\breturnbreak\\b|\\belse\\b|\\bglobal\\b|\\bno</code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="variable-string">t\\b|\\btryclass\\b|\\bexcept\\b|\\bif\\b|\\bor\\b|\\bwhilecontinue\\b</code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="variable-string">|\\bexec\\b|\\bimport\\b|\\bpass\\b|\\byielddef\\b|\\bfinally\\b|\\bin</code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="variable-string">\\b|\\bprint\\b|\\bas\\b</code><code class="variable-quote">'</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_BUILTIN_GRP"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_BUILTIN_GRP</h3>
+  A regexp group that matches Python builtins.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-quote">'</code><code class="variable-string">(?&lt;!\\.)(?:\\bclear\\b|\\bcopy\\b|\\bfromkeys\\b|\\bget\\b|\\bhas_key</code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="variable-string">\\b|\\bitems\\b|\\biteritems\\b|\\biterkeys\\b|\\bitervalues\\b|\\bkey</code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="variable-string">s\\b|\\bpop\\b|\\bpopitem\\b|\\bsetdefault\\b|\\bupdate\\b|\\bvalues\\</code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="variable-string">b)</code><code class="variable-quote">'</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_STRING_GRP"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_STRING_GRP</h3>
+  A regexp group that matches Python strings.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-quote">'</code><code class="variable-string">(&quot;&quot;&quot;(&quot;&quot;&quot;|.*?((?!&quot;).)&quot;&quot;&quot;))|(&quot;(&quot;|.*?((?!&quot;).)&quot;))|(\'\'\'(\'\'\'|.*?[^\\\</code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="variable-string">\\']\'\'\'))|(\'(\'|.*?[^\\\\\']\'))</code><code class="variable-quote">'</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="PROMPT_RE"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">PROMPT_RE</h3>
+  A regexp that matches Python prompts
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+re.compile(r'<code class="re-flags">(?ms)</code><code class="re-group">(</code>^<code class="re-group">[</code> \t<code class="re-group">]</code><code class="re-op">*</code>&gt;&gt;&gt;<code class="re-group">(?:</code><code class="re-group">[</code> \t<code class="re-group">]</code><code class="re-op">|</code>$<code class="re-group">)</code><code class="re-op">|</code><code class="re-group">[</code> \t<code class="re-group">]</code><code class="re-op">*</code>\.\.\.<code class="re-group">(?:</code><code class="re-group">[</code> \t<code class="re-group">]</code><code class="re-op">|</code>$<code class="re-group">)</code><code class="re-group">)</code>')
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="EXCEPT_RE"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">EXCEPT_RE</h3>
+  A regexp that matches doctest exception blocks.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+re.compile(r'<code class="re-flags">(?ms)</code>^<code class="re-group">[</code> \t<code class="re-group">]</code><code class="re-op">*</code>Traceback \(most recent call last\):.<code class="re-op">*</code>')
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="DOCTEST_RE"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">DOCTEST_RE</h3>
+  A regexp that matches all of the regions of a doctest block that 
+  should be colored.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+re.compile(r'<code class="re-flags">(?ms)</code><code class="re-group">(</code>.<code class="re-op">*?</code><code class="re-group">)</code><code class="re-group">(</code><code class="re-group">(?P&lt;</code><code class="re-ref">STRING</code><code class="re-group">&gt;</code><code class="re-group">(</code>&quot;&quot;&quot;<code class="re-group">(</code>&quot;&quot;&quot;<code class="re-op">|</code>.<code class="re-op">*?</code><code class="re-group">(</code><code class="re-group">(?!</code>&quot;<code class="re-group">)</code>.<code class="re-group">)</code>&quot;&quot;&quot;<code class="re-group">)</code><code class="re-group">)</code><code class="re-op">|</code><code class="re-group">(</code>&quot;<code class="re-group">(</code>&quot;<code class="re-op">|</code>.<code class="re-op">*?</code><code class="re-group">(</code><code class="re-group"></code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="re-group">(?!</code>&quot;<code class="re-group">)</code>.<code class="re-group">)</code>&quot;<code class="re-group">)</code><code class="re-group">)</code><code class="re-op">|</code><code class="re-group">(</code>\'\'\'<code class="re-group">(</code>\'\'\'<code class="re-op">|</code>.<code class="re-op">*?</code><code class="re-group">[</code><code class="re-op">^</code>\\\'<code class="re-group">]</code>\'\'\'<code class="re-group">)</code><code class="re-group">)</code><code class="re-op">|</code><code class="re-group">(</code>\'<code class="re-group">(</code>\'<code class="re-op">|</code>.<code class="re-op">*?</code><code class="re-group">[</code><code class="re-op">^</code>\\\'<code class="re-group">]</code>\'<code class="re-group">)</code><code class="re-group">)</code><code class="re-group">)</code><code class="re-op">|</code><code class="re-group">(?</code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="re-group">P&lt;</code><code class="re-ref">COMMENT</code><code class="re-group">&gt;</code><code class="re-group">(</code>#.<code class="re-op">*?</code>$<code class="re-group">)</code><code class="re-group">)</code><code class="re-op">|</code><code class="re-group">(?P&lt;</code><code class="re-ref">DEFINE</code><code class="re-group">&gt;</code>\b<code class="re-group">(?:</code>def<code class="re-op">|</code>class<code class="re-group">)</code><code class="re-group">[</code> \t<code class="re-group">]</code><code class="re-op">+</code>\w<code class="re-op">+</code><code class="re-group">)</code><code class="re-op">|</code><code class="re-group">(?P&lt;</code><code class="re-ref">KEYWORD</code><code class="re-group">&gt;</code>\b<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+and\b<code class="re-op">|</code>del\b<code class="re-op">|</code>for\b<code class="re-op">|</code>is\b<code class="re-op">|</code>raiseassert\b<code class="re-op">|</code>elif\b<code class="re-op">|</code>from\b<code class="re-op">|</code>lambda\b<code class="re-op">|</code>returnbrea<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+k\b<code class="re-op">|</code>else\b<code class="re-op">|</code>global\b<code class="re-op">|</code>not\b<code class="re-op">|</code>tryclass\b<code class="re-op">|</code>except\b<code class="re-op">|</code>if\b<code class="re-op">|</code>or\b<code class="re-op">|</code>whilecontinue\<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+b<code class="re-op">|</code>exec\b<code class="re-op">|</code>import\b<code class="re-op">|</code>pass\b<code class="re-op">|</code>yielddef\b<code class="re-op">|</code>finally\b<code class="re-op">|</code>in\b<code class="re-op">|</code>print\b<code class="re-op">|</code>as\b<code class="re-group">)</code><code class="re-op">|</code><code class="re-group">(?P&lt;</code><code class="re-ref">B</code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="re-ref">UILTIN</code><code class="re-group">&gt;</code><code class="re-group">(?&lt;!</code>\.<code class="re-group">)</code><code class="re-group">(?:</code>\bclear\b<code class="re-op">|</code>copy\b<code class="re-op">|</code>fromkeys\b<code class="re-op">|</code>get\b<code class="re-op">|</code>has_key\b<code class="re-op">|</code>items\b<code class="re-op">|</code>i<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+teritems\b<code class="re-op">|</code>iterkeys\b<code class="re-op">|</code>itervalues\b<code class="re-op">|</code>keys\b<code class="re-op">|</code>pop\b<code class="re-op">|</code>popitem\b<code class="re-op">|</code>setdefault\b<code class="re-op"></code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="DOCTEST_EXAMPLE_RE"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">DOCTEST_EXAMPLE_RE</h3>
+  This regular expression is used to find doctest examples in a string.
+  This is copied from the standard Python doctest.py module (after the 
+  refactoring in Python 2.4+).
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+re.compile(r'<code class="re-flags">(?mx)</code><code class="re-group">(?P&lt;</code><code class="re-ref">source</code><code class="re-group">&gt;</code><code class="re-group">(?:</code>^<code class="re-group">(?P&lt;</code><code class="re-ref">indent</code><code class="re-group">&gt;</code> <code class="re-op">*</code><code class="re-group">)</code>&gt;&gt;&gt;.<code class="re-op">*</code><code class="re-group">)</code><code class="re-group">(?:</code>\n <code class="re-op">*</code>\.\.\..<code class="re-op">*</code><code class="re-group">)</code><code class="re-op">*</code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+\n<code class="re-op">?</code><code class="re-group">)</code><code class="re-group">(?P&lt;</code><code class="re-ref">want</code><code class="re-group">&gt;</code><code class="re-group">(?:</code><code class="re-group">(?!</code> <code class="re-op">*</code>$<code class="re-group">)</code><code class="re-group">(?!</code> <code class="re-op">*</code>&gt;&gt;&gt;<code class="re-group">)</code>.<code class="re-op">*</code>$\n<code class="re-op">?</code><code class="re-group">)</code><code class="re-op">*</code><code class="re-group">)</code>')
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:04:54 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

@@ -1,0 +1,1927 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.docstringparser</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        Module&nbsp;docstringparser
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.docstringparser-module.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== MODULE DESCRIPTION ==================== -->
+<h1 class="epydoc">Module docstringparser</h1><span class="codelink"><a href="epydoc.docstringparser-pysrc.html">source&nbsp;code</a></span><br /><br />
+<p>Parse docstrings and handle any fields it defines, such as 
+  <code>@type</code> and <code>@author</code>.  Fields are used to describe
+  specific information about an object.  There are two classes of fields: 
+  <a name="index-simple_fields"></a><i class="indexterm">simple fields</i> 
+  and <a name="index-special_fields"></a><i class="indexterm">special 
+  fields</i>.</p>
+  <p>Simple fields are fields that get stored directly in an 
+  <code>APIDoc</code>'s metadata dictionary, without any special 
+  processing.  The set of simple fields is defined by the list <a 
+  href="epydoc.docstringparser-module.html#STANDARD_FIELDS" 
+  class="link">STANDARD_FIELDS</a>, whose elements are <a 
+  href="epydoc.docstringparser.DocstringField-class.html" 
+  class="link">DocstringField</a>s.</p>
+  Special fields are fields that perform some sort of processing on the 
+  <code>APIDoc</code>, or add information to attributes other than the 
+  metadata dictionary.  Special fields are are handled by field handler 
+  functions, which are registered using <a 
+  href="epydoc.docstringparser-module.html#register_field_handler" 
+  class="link">register_field_handler</a>.<br /><br />
+
+<!-- ==================== CLASSES ==================== -->
+<a name="section-Classes"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Classes"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docstringparser.DocstringField-class.html" class="summary-name">DocstringField</a><br />
+      A simple docstring field, which can be used to describe specific
+        information about an object, such as its author or its version.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTIONS ==================== -->
+<a name="section-Functions"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Functions</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Functions"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Docstring Parsing</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docstringparser-module.html#parse_docstring" class="summary-sig-name">parse_docstring</a>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>)</span><br />
+      Process the given <code>APIDoc</code>'s docstring.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#parse_docstring">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_parse_docstring-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_parse_docstring-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_parse_docstring" name="call_graph_for_parse_docstring">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="613,6,837,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="apidoc.DottedName.__getitem__()" alt="" coords="585,62,865,94" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="docbuilder.build_doc_index()" alt="" coords="5,622,248,654" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="297,622,449,654" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#add_metadata_from_var" title="add_metadata_from_var()" alt="" coords="617,118,833,150" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#check_type_fields" title="check_type_fields()" alt="" coords="641,174,809,206" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#get_docformat" title="get_docformat()" alt="" coords="655,230,796,262" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#initialize_api_doc" title="initialize_api_doc()" alt="" coords="641,286,809,318" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_function_signature" title="parse_function_signature()" alt="" coords="613,342,837,374" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="659,398,792,430" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#report_errors" title="report_errors()" alt="" coords="660,454,791,486" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#split_init_fields" title="split_init_fields()" alt="" coords="651,510,800,542" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#unindent_docstring" title="unindent_docstring()" alt="" coords="636,566,815,598" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#user_docfields" title="user_docfields()" alt="" coords="653,622,797,654" />
+<area shape="rect" href="epydoc.markup.Field&#45;class.html#arg" title="markup.Field.arg()" alt="" coords="644,678,807,710" />
+<area shape="rect" href="epydoc.markup.Field&#45;class.html#body" title="markup.Field.body()" alt="" coords="637,734,813,766" />
+<area shape="rect" href="epydoc.markup.Field&#45;class.html#tag" title="markup.Field.tag()" alt="" coords="645,790,805,822" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#__add__" title="markup.ParsedDocstring.__add__()" alt="" coords="581,846,869,878" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#split_fields" title="markup.ParsedDocstring.split_fields()" alt="" coords="572,902,879,934" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#split_fields" title="markup.epytext.ParsedEpytextDocstring.split_fields()" alt="" coords="513,958,937,990" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#summary" title="markup.epytext.ParsedEpytextDocstring.summary()" alt="" coords="520,1014,931,1046" />
+<area shape="rect" href="epydoc.markup&#45;module.html#parse" title="markup.parse()" alt="" coords="659,1070,792,1102" />
+<area shape="rect" href="epydoc.markup.plaintext.ParsedPlaintextDocstring&#45;class.html#summary" title="markup.plaintext.ParsedPlaintextDocstring.summary()" alt="" coords="512,1126,939,1158" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#split_fields" title="markup.restructuredtext.ParsedRstDocstring.split_fields()" alt="" coords="500,1182,951,1214" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#summary" title="markup.restructuredtext.ParsedRstDocstring.summary()" alt="" coords="507,1238,944,1270" />
+</map>
+  <img src="call_graph_for_parse_docstring.gif" alt='' usemap="#call_graph_for_parse_docstring" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="add_metadata_from_var"></a><span class="summary-sig-name">add_metadata_from_var</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">field</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#add_metadata_from_var">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_add_metadata_fr-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_add_metadata_fr-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_add_metadata_fr" name="call_graph_for_add_metadata_fr">
+<area shape="rect" href="epydoc.docstringparser.DocstringField&#45;class.html#__cmp__" title="DocstringField.__cmp__()" alt="" coords="563,6,784,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#add_metadata_from_var" title="add_metadata_from_var()" alt="" coords="208,90,424,122" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#__init__" title="markup.epytext.ParsedEpytextDocstring.__init__()" alt="" coords="472,62,875,94" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse_as_para" title="markup.epytext.parse_as_para()" alt="" coords="543,118,804,150" />
+<area shape="rect" href="epydoc.util&#45;module.html#decode_with_backslashreplace" title="util.decode_with_backslashreplace()" alt="" coords="525,174,821,206" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,90,159,122" />
+</map>
+  <img src="call_graph_for_add_metadata_fr.gif" alt='' usemap="#call_graph_for_add_metadata_fr" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="initialize_api_doc"></a><span class="summary-sig-name">initialize_api_doc</span>(<span class="summary-sig-arg">api_doc</span>)</span><br />
+      A helper function for <a 
+      href="epydoc.docstringparser-module.html#parse_docstring" 
+      class="link">parse_docstring()</a> that initializes the attributes 
+      that <code>parse_docstring()</code> will write to.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#initialize_api_doc">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_initialize_api_-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_initialize_api_-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_initialize_api_" name="call_graph_for_initialize_api_">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#initialize_api_doc" title="initialize_api_doc()" alt="" coords="209,6,377,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,6,159,38" />
+</map>
+  <img src="call_graph_for_initialize_api_.gif" alt='' usemap="#call_graph_for_initialize_api_" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>list</code> of <a href="epydoc.markup.Field-class.html" 
+      class="link">markup.Field</a></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docstringparser-module.html#split_init_fields" class="summary-sig-name">split_init_fields</a>(<span class="summary-sig-arg">fields</span>,
+        <span class="summary-sig-arg">warnings</span>)</span><br />
+      Remove the fields related to the constructor from a class 
+      docstring fields list.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#split_init_fields">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_split_init_fiel-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_split_init_fiel-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_split_init_fiel" name="call_graph_for_split_init_fiel">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,34,159,66" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#split_init_fields" title="split_init_fields()" alt="" coords="209,34,359,66" />
+<area shape="rect" href="epydoc.markup.Field&#45;class.html#arg" title="markup.Field.arg()" alt="" coords="408,6,571,38" />
+<area shape="rect" href="epydoc.markup.Field&#45;class.html#tag" title="markup.Field.tag()" alt="" coords="409,62,569,94" />
+</map>
+  <img src="call_graph_for_split_init_fiel.gif" alt='' usemap="#call_graph_for_split_init_fiel" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="report_errors"></a><span class="summary-sig-name">report_errors</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">parse_errors</span>,
+        <span class="summary-sig-arg">field_warnings</span>)</span><br />
+      A helper function for <a 
+      href="epydoc.docstringparser-module.html#parse_docstring" 
+      class="link">parse_docstring()</a> that reports any markup warnings 
+      and field warnings that we encountered while processing 
+      <code>api_doc</code>'s docstring.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#report_errors">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_report_errors-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_report_errors-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_report_errors" name="call_graph_for_report_errors">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,6,159,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#report_errors" title="report_errors()" alt="" coords="210,6,340,38" />
+</map>
+  <img src="call_graph_for_report_errors.gif" alt='' usemap="#call_graph_for_report_errors" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Field Processing</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docstringparser-module.html#process_field" class="summary-sig-name">process_field</a>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span><br />
+      Process a single field, and use it to update 
+      <code>api_doc</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_process_field-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_process_field-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_process_field" name="call_graph_for_process_field">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_check" title="_check()" alt="" coords="449,6,537,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,370,159,402" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="209,370,343,402" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_arg_field" title="process_arg_field()" alt="" coords="409,62,577,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_cvar_field" title="process_cvar_field()" alt="" coords="405,118,581,150" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_deffield_field" title="process_deffield_field()" alt="" coords="393,174,593,206" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_group_field" title="process_group_field()" alt="" coords="400,230,587,262" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_ivar_field" title="process_ivar_field()" alt="" coords="407,286,580,318" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_kwarg_field" title="process_kwarg_field()" alt="" coords="399,342,588,374" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_raise_field" title="process_raise_field()" alt="" coords="404,398,583,430" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_return_field" title="process_return_field()" alt="" coords="400,454,587,486" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_rtype_field" title="process_rtype_field()" alt="" coords="403,510,584,542" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_sort_field" title="process_sort_field()" alt="" coords="408,566,579,598" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_type_field" title="process_type_field()" alt="" coords="405,622,581,654" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_var_field" title="process_var_field()" alt="" coords="409,678,577,710" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#user_docfields" title="user_docfields()" alt="" coords="421,734,565,766" />
+</map>
+  <img src="call_graph_for_process_field.gif" alt='' usemap="#call_graph_for_process_field" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docstringparser-module.html#user_docfields" class="summary-sig-name">user_docfields</a>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>)</span><br />
+      Return a list of user defined fields that can be used for the 
+      given object.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#user_docfields">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_user_docfields-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_user_docfields-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_user_docfields" name="call_graph_for_user_docfields">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#get_valdoc" title="apidoc.DocIndex.get_valdoc()" alt="" coords="405,6,653,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__len__" title="apidoc.DottedName.__len__()" alt="" coords="405,62,653,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#container" title="apidoc.DottedName.container()" alt="" coords="401,118,657,150" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,34,159,66" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#user_docfields" title="user_docfields()" alt="" coords="208,62,352,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="16,90,149,122" />
+</map>
+  <img src="call_graph_for_user_docfields.gif" alt='' usemap="#call_graph_for_user_docfields" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docstringparser-module.html#register_field_handler" class="summary-sig-name">register_field_handler</a>(<span class="summary-sig-arg">handler</span>,
+        <span class="summary-sig-arg">*field_tags</span>)</span><br />
+      Register the given field handler function for processing any of 
+      the given field tags.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#register_field_handler">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Field Handler Functions</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="process_summary_field"></a><span class="summary-sig-name">process_summary_field</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span><br />
+      Store <code>descr</code> in <code>api_doc.summary</code></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_summary_field">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="process_include_field"></a><span class="summary-sig-name">process_include_field</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span><br />
+      Copy the docstring contents from the object named in 
+      <code>descr</code></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_include_field">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="process_undocumented_field"></a><span class="summary-sig-name">process_undocumented_field</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span><br />
+      Remove any documentation for the variables named in 
+      <code>descr</code></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_undocumented_field">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="process_group_field"></a><span class="summary-sig-name">process_group_field</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span><br />
+      Define a group named <code>arg</code> containing the variables 
+      whose names are listed in <code>descr</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_group_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_process_group_f-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_process_group_f-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_process_group_f" name="call_graph_for_process_group_f">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_check" title="_check()" alt="" coords="479,6,567,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_descr_to_identifiers" title="_descr_to_identifiers()" alt="" coords="427,62,619,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="7,34,140,66" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_group_field" title="process_group_field()" alt="" coords="191,34,377,66" />
+</map>
+  <img src="call_graph_for_process_group_f.gif" alt='' usemap="#call_graph_for_process_group_f" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="process_deffield_field"></a><span class="summary-sig-name">process_deffield_field</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span><br />
+      Define a new custom field.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_deffield_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_process_deffiel-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_process_deffiel-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_process_deffiel" name="call_graph_for_process_deffiel">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_check" title="_check()" alt="" coords="511,6,599,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_descr_to_docstring_field" title="_descr_to_docstring_field()" alt="" coords="440,62,670,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_deffield_field" title="process_deffield_field()" alt="" coords="191,34,391,66" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="7,34,140,66" />
+</map>
+  <img src="call_graph_for_process_deffiel.gif" alt='' usemap="#call_graph_for_process_deffiel" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="process_raise_field"></a><span class="summary-sig-name">process_raise_field</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span><br />
+      Record the fact that <code>api_doc</code> can raise the exception 
+      named <code>tag</code> in <code>api_doc.exception_descrs</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_raise_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_process_raise_f-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_process_raise_f-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_process_raise_f" name="call_graph_for_process_raise_f">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="apidoc.DottedName.__init__()" alt="" coords="419,6,670,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_check" title="_check()" alt="" coords="500,62,588,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="7,34,140,66" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_raise_field" title="process_raise_field()" alt="" coords="191,34,370,66" />
+</map>
+  <img src="call_graph_for_process_raise_f.gif" alt='' usemap="#call_graph_for_process_raise_f" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="process_sort_field"></a><span class="summary-sig-name">process_sort_field</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_sort_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_process_sort_fi-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_process_sort_fi-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_process_sort_fi" name="call_graph_for_process_sort_fi">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_check" title="_check()" alt="" coords="463,6,551,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_descr_to_identifiers" title="_descr_to_identifiers()" alt="" coords="411,62,603,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="7,34,140,66" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_sort_field" title="process_sort_field()" alt="" coords="191,34,361,66" />
+</map>
+  <img src="call_graph_for_process_sort_fi.gif" alt='' usemap="#call_graph_for_process_sort_fi" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="process_type_field"></a><span class="summary-sig-name">process_type_field</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_type_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_process_type_fi-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_process_type_fi-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_process_type_fi" name="call_graph_for_process_type_fi">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_check" title="_check()" alt="" coords="435,6,523,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="7,34,140,66" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_type_field" title="process_type_field()" alt="" coords="189,34,365,66" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#set_var_type" title="set_var_type()" alt="" coords="415,62,543,94" />
+</map>
+  <img src="call_graph_for_process_type_fi.gif" alt='' usemap="#call_graph_for_process_type_fi" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="process_var_field"></a><span class="summary-sig-name">process_var_field</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_var_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_process_var_fie-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_process_var_fie-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_process_var_fie" name="call_graph_for_process_var_fie">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_check" title="_check()" alt="" coords="431,6,519,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="7,34,140,66" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_var_field" title="process_var_field()" alt="" coords="189,34,357,66" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#set_var_descr" title="set_var_descr()" alt="" coords="407,62,543,94" />
+</map>
+  <img src="call_graph_for_process_var_fie.gif" alt='' usemap="#call_graph_for_process_var_fie" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="process_cvar_field"></a><span class="summary-sig-name">process_cvar_field</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_cvar_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_process_cvar_fi-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_process_cvar_fi-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_process_cvar_fi" name="call_graph_for_process_cvar_fi">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_check" title="_check()" alt="" coords="575,6,663,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_cvar_field" title="process_cvar_field()" alt="" coords="189,90,365,122" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#set_var_descr" title="set_var_descr()" alt="" coords="551,62,687,94" />
+<area shape="rect" href="epydoc.markup.ConcatenatedDocstring&#45;class.html#__init__" title="markup.ConcatenatedDocstring.__init__()" alt="" coords="451,118,787,150" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#summary" title="markup.epytext.ParsedEpytextDocstring.summary()" alt="" coords="413,174,824,206" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="7,90,140,122" />
+</map>
+  <img src="call_graph_for_process_cvar_fi.gif" alt='' usemap="#call_graph_for_process_cvar_fi" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="process_ivar_field"></a><span class="summary-sig-name">process_ivar_field</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_ivar_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_process_ivar_fi-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_process_ivar_fi-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_process_ivar_fi" name="call_graph_for_process_ivar_fi">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_check" title="_check()" alt="" coords="572,6,660,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="7,90,140,122" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_ivar_field" title="process_ivar_field()" alt="" coords="190,90,363,122" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#set_var_descr" title="set_var_descr()" alt="" coords="548,62,684,94" />
+<area shape="rect" href="epydoc.markup.ConcatenatedDocstring&#45;class.html#__init__" title="markup.ConcatenatedDocstring.__init__()" alt="" coords="448,118,784,150" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#summary" title="markup.epytext.ParsedEpytextDocstring.summary()" alt="" coords="411,174,822,206" />
+</map>
+  <img src="call_graph_for_process_ivar_fi.gif" alt='' usemap="#call_graph_for_process_ivar_fi" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="process_return_field"></a><span class="summary-sig-name">process_return_field</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_return_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_process_return_-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_process_return_-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_process_return_" name="call_graph_for_process_return_">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_check" title="_check()" alt="" coords="427,6,515,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="7,6,140,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_return_field" title="process_return_field()" alt="" coords="191,6,377,38" />
+</map>
+  <img src="call_graph_for_process_return_.gif" alt='' usemap="#call_graph_for_process_return_" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="process_rtype_field"></a><span class="summary-sig-name">process_rtype_field</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_rtype_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_process_rtype_f-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_process_rtype_f-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_process_rtype_f" name="call_graph_for_process_rtype_f">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_check" title="_check()" alt="" coords="422,6,510,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="7,6,140,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_rtype_field" title="process_rtype_field()" alt="" coords="191,6,372,38" />
+</map>
+  <img src="call_graph_for_process_rtype_f.gif" alt='' usemap="#call_graph_for_process_rtype_f" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="process_arg_field"></a><span class="summary-sig-name">process_arg_field</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_arg_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_process_arg_fie-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_process_arg_fie-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_process_arg_fie" name="call_graph_for_process_arg_fie">
+<area shape="rect" href="epydoc.apidoc.RoutineDoc&#45;class.html#all_args" title="apidoc.RoutineDoc.all_args()" alt="" coords="405,6,648,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_check" title="_check()" alt="" coords="483,62,571,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_arg_field" title="process_arg_field()" alt="" coords="189,34,357,66" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="7,34,140,66" />
+</map>
+  <img src="call_graph_for_process_arg_fie.gif" alt='' usemap="#call_graph_for_process_arg_fie" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="process_kwarg_field"></a><span class="summary-sig-name">process_kwarg_field</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_kwarg_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_process_kwarg_f-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_process_kwarg_f-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_process_kwarg_f" name="call_graph_for_process_kwarg_f">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_check" title="_check()" alt="" coords="430,6,518,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="7,6,140,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_kwarg_field" title="process_kwarg_field()" alt="" coords="191,6,380,38" />
+</map>
+  <img src="call_graph_for_process_kwarg_f.gif" alt='' usemap="#call_graph_for_process_kwarg_f" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Helper Functions</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="check_type_fields"></a><span class="summary-sig-name">check_type_fields</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">field_warnings</span>)</span><br />
+      Check to make sure that all type fields correspond to some 
+      documented parameter; if not, append a warning to field_warnings.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#check_type_fields">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_check_type_fiel-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_check_type_fiel-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_check_type_fiel" name="call_graph_for_check_type_fiel">
+<area shape="rect" href="epydoc.apidoc.RoutineDoc&#45;class.html#all_args" title="apidoc.RoutineDoc.all_args()" alt="" coords="427,6,670,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#check_type_fields" title="check_type_fields()" alt="" coords="210,6,378,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,6,159,38" />
+</map>
+  <img src="call_graph_for_check_type_fiel.gif" alt='' usemap="#call_graph_for_check_type_fiel" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="set_var_descr"></a><span class="summary-sig-name">set_var_descr</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">ident</span>,
+        <span class="summary-sig-arg">descr</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#set_var_descr">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_set_var_descr-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_set_var_descr-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_set_var_descr" name="call_graph_for_set_var_descr">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__add__" title="apidoc.DottedName.__add__()" alt="" coords="496,6,747,38" />
+<area shape="rect" href="epydoc.apidoc.VariableDoc&#45;class.html#__init__" title="apidoc.VariableDoc.__init__()" alt="" coords="496,62,747,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_cvar_field" title="process_cvar_field()" alt="" coords="5,6,181,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#set_var_descr" title="set_var_descr()" alt="" coords="231,62,367,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_ivar_field" title="process_ivar_field()" alt="" coords="7,62,180,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_var_field" title="process_var_field()" alt="" coords="9,118,177,150" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#summary" title="markup.epytext.ParsedEpytextDocstring.summary()" alt="" coords="416,118,827,150" />
+</map>
+  <img src="call_graph_for_set_var_descr.gif" alt='' usemap="#call_graph_for_set_var_descr" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="set_var_type"></a><span class="summary-sig-name">set_var_type</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">ident</span>,
+        <span class="summary-sig-arg">descr</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#set_var_type">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_set_var_type-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_set_var_type-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_set_var_type" name="call_graph_for_set_var_type">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_type_field" title="process_type_field()" alt="" coords="5,6,181,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#set_var_type" title="set_var_type()" alt="" coords="231,6,359,38" />
+</map>
+  <img src="call_graph_for_set_var_type.gif" alt='' usemap="#call_graph_for_set_var_type" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_check"></a><span class="summary-sig-name">_check</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">context</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">expect_arg</span>=<span class="summary-sig-default">True</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#_check">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__check-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__check-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__check" name="call_graph_for__check">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_check" title="_check()" alt="" coords="256,342,344,374" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_arg_field" title="process_arg_field()" alt="" coords="23,6,191,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_cvar_field" title="process_cvar_field()" alt="" coords="19,62,195,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_deffield_field" title="process_deffield_field()" alt="" coords="7,118,207,150" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="40,174,173,206" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_group_field" title="process_group_field()" alt="" coords="13,230,200,262" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_ivar_field" title="process_ivar_field()" alt="" coords="20,286,193,318" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_kwarg_field" title="process_kwarg_field()" alt="" coords="12,342,201,374" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_raise_field" title="process_raise_field()" alt="" coords="17,398,196,430" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_return_field" title="process_return_field()" alt="" coords="13,454,200,486" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_rtype_field" title="process_rtype_field()" alt="" coords="16,510,197,542" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_sort_field" title="process_sort_field()" alt="" coords="21,566,192,598" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_type_field" title="process_type_field()" alt="" coords="19,622,195,654" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_var_field" title="process_var_field()" alt="" coords="23,678,191,710" />
+</map>
+  <img src="call_graph_for__check.gif" alt='' usemap="#call_graph_for__check" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_docformat"></a><span class="summary-sig-name">get_docformat</span>(<span class="summary-sig-arg">api_doc</span>,
+        <span class="summary-sig-arg">docindex</span>)</span><br />
+      Return the name of the markup language that should be used to 
+      parse the API documentation for the given object.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#get_docformat">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_get_docformat-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_get_docformat-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_get_docformat" name="call_graph_for_get_docformat">
+<area shape="rect" href="epydoc.apidoc.VariableDoc&#45;class.html#_get_defining_module" title="apidoc.VariableDoc._get_defining_module()" alt="" coords="402,6,756,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#get_docformat" title="get_docformat()" alt="" coords="210,6,351,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,6,159,38" />
+</map>
+  <img src="call_graph_for_get_docformat.gif" alt='' usemap="#call_graph_for_get_docformat" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="unindent_docstring"></a><span class="summary-sig-name">unindent_docstring</span>(<span class="summary-sig-arg">docstring</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#unindent_docstring">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_unindent_docstr-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_unindent_docstr-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_unindent_docstr" name="call_graph_for_unindent_docstr">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,6,159,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#unindent_docstring" title="unindent_docstring()" alt="" coords="208,6,387,38" />
+</map>
+  <img src="call_graph_for_unindent_docstr.gif" alt='' usemap="#call_graph_for_unindent_docstr" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>list</code> of <code>string</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docstringparser-module.html#_descr_to_identifiers" class="summary-sig-name">_descr_to_identifiers</a>(<span class="summary-sig-arg">descr</span>)</span><br />
+      Given a <code>ParsedDocstring</code> that contains a list of 
+      identifiers, return a list of those identifiers.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#_descr_to_identifiers">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__descr_to_ident-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__descr_to_ident-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__descr_to_ident" name="call_graph_for__descr_to_ident">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_descr_to_identifiers" title="_descr_to_identifiers()" alt="" coords="243,34,435,66" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#to_plaintext" title="markup.epytext.ParsedEpytextDocstring.to_plaintext()" alt="" coords="498,6,927,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#to_plaintext" title="markup.restructuredtext.ParsedRstDocstring.to_plaintext()" alt="" coords="483,62,942,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_group_field" title="process_group_field()" alt="" coords="7,6,194,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_sort_field" title="process_sort_field()" alt="" coords="15,62,186,94" />
+</map>
+  <img src="call_graph_for__descr_to_ident.gif" alt='' usemap="#call_graph_for__descr_to_ident" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_descr_to_docstring_field"></a><span class="summary-sig-name">_descr_to_docstring_field</span>(<span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">descr</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#_descr_to_docstring_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__descr_to_docst-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__descr_to_docst-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__descr_to_docst" name="call_graph_for__descr_to_docst">
+<area shape="rect" href="epydoc.docstringparser.DocstringField&#45;class.html#__init__" title="DocstringField.__init__()" alt="" coords="656,6,869,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_descr_to_docstring_field" title="_descr_to_docstring_field()" alt="" coords="256,62,485,94" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#to_plaintext" title="markup.epytext.ParsedEpytextDocstring.to_plaintext()" alt="" coords="548,62,977,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#to_plaintext" title="markup.restructuredtext.ParsedRstDocstring.to_plaintext()" alt="" coords="533,118,992,150" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_deffield_field" title="process_deffield_field()" alt="" coords="7,62,207,94" />
+</map>
+  <img src="call_graph_for__descr_to_docst.gif" alt='' usemap="#call_graph_for__descr_to_docst" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Function Signature Extraction</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>None</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docstringparser-module.html#parse_function_signature" class="summary-sig-name">parse_function_signature</a>(<span class="summary-sig-arg">func_doc</span>,
+        <span class="summary-sig-arg">doc_source</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Construct the signature for a builtin function or method from its 
+      docstring.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docstringparser-pysrc.html#parse_function_signature">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_parse_function_-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_parse_function_-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_parse_function_" name="call_graph_for_parse_function_">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__init__" title="apidoc.APIDoc.__init__()" alt="" coords="480,6,696,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,34,159,66" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_function_signature" title="parse_function_signature()" alt="" coords="208,34,432,66" />
+<area shape="rect" href="epydoc.markup&#45;module.html#parse" title="markup.parse()" alt="" coords="521,62,655,94" />
+</map>
+  <img src="call_graph_for_parse_function_.gif" alt='' usemap="#call_graph_for_parse_function_" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+</table>
+<!-- ==================== VARIABLES ==================== -->
+<a name="section-Variables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Variables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docstringparser-module.html#STANDARD_FIELDS" class="summary-name">STANDARD_FIELDS</a> = <code title="[&lt;Field: deprecated&gt;,
+ &lt;Field: version&gt;,
+ &lt;Field: date&gt;,
+ &lt;Field: status&gt;,
+ &lt;Field: author&gt;,
+ &lt;Field: contact&gt;,
+ &lt;Field: organization&gt;,
+ &lt;Field: copyright&gt;,
+..."><code class="variable-group">[</code>&lt;Field: deprecated&gt;<code class="variable-op">, </code>&lt;Field: version&gt;<code class="variable-op">, </code>&lt;Fie<code class="variable-ellipsis">...</code></code><br />
+      A list of the standard simple fields accepted by epydoc.
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Docstring Parsing</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="DEFAULT_DOCFORMAT"></a><span class="summary-name">DEFAULT_DOCFORMAT</span> = <code title="'plaintext'"><code class="variable-quote">'</code><code class="variable-string">plaintext</code><code class="variable-quote">'</code></code><br />
+      The name of the default markup languge used to process 
+      docstrings.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docstringparser-module.html#RETURN_PDS" class="summary-name">RETURN_PDS</a> = <code title="markup.parse('Returns:', markup= 'epytext')">&lt;epydoc.markup.epytext.ParsedEpytextDocstring ins<code class="variable-ellipsis">...</code></code><br />
+      A ParsedDocstring containing the text 'Returns'.
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Field Processing Error Messages</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="UNEXPECTED_ARG"></a><span class="summary-name">UNEXPECTED_ARG</span> = <code title="'%r did not expect an argument'"><code class="variable-quote">'</code><code class="variable-string">%r did not expect an argument</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="EXPECTED_ARG"></a><span class="summary-name">EXPECTED_ARG</span> = <code title="'%r expected an argument'"><code class="variable-quote">'</code><code class="variable-string">%r expected an argument</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="EXPECTED_SINGLE_ARG"></a><span class="summary-name">EXPECTED_SINGLE_ARG</span> = <code title="'%r expected a single argument'"><code class="variable-quote">'</code><code class="variable-string">%r expected a single argument</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="BAD_CONTEXT"></a><span class="summary-name">BAD_CONTEXT</span> = <code title="'Invalid context for %r'"><code class="variable-quote">'</code><code class="variable-string">Invalid context for %r</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="REDEFINED"></a><span class="summary-name">REDEFINED</span> = <code title="'Redefinition of %s'"><code class="variable-quote">'</code><code class="variable-string">Redefinition of %s</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="UNKNOWN_TAG"></a><span class="summary-name">UNKNOWN_TAG</span> = <code title="'Unknown field tag %r'"><code class="variable-quote">'</code><code class="variable-string">Unknown field tag %r</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="BAD_PARAM"></a><span class="summary-name">BAD_PARAM</span> = <code title="'@%s for unknown parameter %s'"><code class="variable-quote">'</code><code class="variable-string">@%s for unknown parameter %s</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8"  class="private">
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Field Processing</th></tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docstringparser-module.html#_field_dispatch_table" class="summary-name">_field_dispatch_table</a> = <code title="{}"><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">arg</code><code class="variable-quote">'</code><code class="variable-op">: </code>&lt;function process_arg_field at<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Field Handler Functions</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docstringparser-module.html#PARAMETER_TAGS" class="summary-name">PARAMETER_TAGS</a> = <code title="('arg',
+ 'argument',
+ 'parameter',
+ 'param',
+ 'kwarg',
+ 'keyword',
+ 'kwparam')"><code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">arg</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">argument</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">parameter</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">param</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">kw</code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="VARIABLE_TAGS"></a><span class="summary-name">VARIABLE_TAGS</span> = <code title="('cvar', 'cvariable', 'ivar', 'ivariable')"><code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">cvar</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">cvariable</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">ivar</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">ivariable</code><code class="variable-quote">'</code><code class="variable-group">)</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="EXCEPTION_TAGS"></a><span class="summary-name">EXCEPTION_TAGS</span> = <code title="('raise', 'raises', 'except', 'exception')"><code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">raise</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">raises</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">except</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">exception</code><code class="variable-quote">'</code><code class="variable-group">)</code></code>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8"  class="private">
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Helper Functions</th></tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docstringparser-module.html#_IDENTIFIER_LIST_REGEXP" class="summary-name">_IDENTIFIER_LIST_REGEXP</a> = <code title="re.compile(r'^[\w\.\*]+([\s,:;]\s*[\w\.\*]+)*$')">re.compile(r'^<code class="re-group">[</code>\w\.\*<code class="re-group">]</code><code class="re-op">+</code><code class="re-group">(</code><code class="re-group">[</code>\s,:;<code class="re-group">]</code>\s<code class="re-op">*</code><code class="re-group">[</code>\<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8"  class="private">
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Function Signature Extraction</th></tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docstringparser-module.html#_SIGNATURE_RE" class="summary-name">_SIGNATURE_RE</a> = <code title="re.compile(r'^\s*((?P&lt;self&gt;\w+)\.)?(?P&lt;func&gt;\w+)\((?P&lt;params&gt;(\s*\[?\s\
+*\*{,2}[\w-\.]+(=.+?)?(\s*\[?\s*,\s*\]?\s*\*{,2}[\w-\.]+(=.+?)?)*\]*)?\
+)\s*\)(\s*(-&gt;)\s*(?P&lt;return&gt;\S.*?))?\s*(\n|\s+(--|&lt;=+&gt;)\s+|$|\.\s+|\.\\
+n)')">re.compile(r'^\s<code class="re-op">*</code><code class="re-group">(</code><code class="re-group">(?P&lt;</code><code class="re-ref">self</code><code class="re-group">&gt;</code>\w<code class="re-op">+</code><code class="re-group">)</code>\.<code class="re-group">)</code><code class="re-op">?</code><code class="re-group">(?P&lt;</code><code class="re-ref">func</code><code class="re-group">&gt;</code>\w<code class="variable-ellipsis">...</code></code><br />
+      A regular expression that is used to extract signatures from 
+      docstrings.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTION DETAILS ==================== -->
+<a name="section-FunctionDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Function Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-FunctionDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="parse_docstring"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">parse_docstring</span>(<span class="sig-arg">api_doc</span>,
+        <span class="sig-arg">docindex</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docstringparser-pysrc.html#parse_docstring">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_parse_docstring-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_parse_docstring-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_parse_docstring" name="call_graph_for_parse_docstring">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="613,6,837,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="apidoc.DottedName.__getitem__()" alt="" coords="585,62,865,94" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="docbuilder.build_doc_index()" alt="" coords="5,622,248,654" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="297,622,449,654" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#add_metadata_from_var" title="add_metadata_from_var()" alt="" coords="617,118,833,150" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#check_type_fields" title="check_type_fields()" alt="" coords="641,174,809,206" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#get_docformat" title="get_docformat()" alt="" coords="655,230,796,262" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#initialize_api_doc" title="initialize_api_doc()" alt="" coords="641,286,809,318" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_function_signature" title="parse_function_signature()" alt="" coords="613,342,837,374" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="659,398,792,430" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#report_errors" title="report_errors()" alt="" coords="660,454,791,486" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#split_init_fields" title="split_init_fields()" alt="" coords="651,510,800,542" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#unindent_docstring" title="unindent_docstring()" alt="" coords="636,566,815,598" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#user_docfields" title="user_docfields()" alt="" coords="653,622,797,654" />
+<area shape="rect" href="epydoc.markup.Field&#45;class.html#arg" title="markup.Field.arg()" alt="" coords="644,678,807,710" />
+<area shape="rect" href="epydoc.markup.Field&#45;class.html#body" title="markup.Field.body()" alt="" coords="637,734,813,766" />
+<area shape="rect" href="epydoc.markup.Field&#45;class.html#tag" title="markup.Field.tag()" alt="" coords="645,790,805,822" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#__add__" title="markup.ParsedDocstring.__add__()" alt="" coords="581,846,869,878" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#split_fields" title="markup.ParsedDocstring.split_fields()" alt="" coords="572,902,879,934" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#split_fields" title="markup.epytext.ParsedEpytextDocstring.split_fields()" alt="" coords="513,958,937,990" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#summary" title="markup.epytext.ParsedEpytextDocstring.summary()" alt="" coords="520,1014,931,1046" />
+<area shape="rect" href="epydoc.markup&#45;module.html#parse" title="markup.parse()" alt="" coords="659,1070,792,1102" />
+<area shape="rect" href="epydoc.markup.plaintext.ParsedPlaintextDocstring&#45;class.html#summary" title="markup.plaintext.ParsedPlaintextDocstring.summary()" alt="" coords="512,1126,939,1158" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#split_fields" title="markup.restructuredtext.ParsedRstDocstring.split_fields()" alt="" coords="500,1182,951,1214" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#summary" title="markup.restructuredtext.ParsedRstDocstring.summary()" alt="" coords="507,1238,944,1270" />
+</map>
+  <img src="call_graph_for_parse_docstring.gif" alt='' usemap="#call_graph_for_parse_docstring" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Process the given <code>APIDoc</code>'s docstring.  In particular, 
+  populate the <code>APIDoc</code>'s <code>descr</code> and 
+  <code>summary</code> attributes, and add any information provided by 
+  fields in the docstring.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>docindex</code></strong> - A DocIndex, used to find the containing module (to look up the
+          docformat); and to find any user docfields defined by containing 
+          objects.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="split_init_fields"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">split_init_fields</span>(<span class="sig-arg">fields</span>,
+        <span class="sig-arg">warnings</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docstringparser-pysrc.html#split_init_fields">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_split_init_fiel-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_split_init_fiel-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_split_init_fiel" name="call_graph_for_split_init_fiel">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,34,159,66" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#split_init_fields" title="split_init_fields()" alt="" coords="209,34,359,66" />
+<area shape="rect" href="epydoc.markup.Field&#45;class.html#arg" title="markup.Field.arg()" alt="" coords="408,6,571,38" />
+<area shape="rect" href="epydoc.markup.Field&#45;class.html#tag" title="markup.Field.tag()" alt="" coords="409,62,569,94" />
+</map>
+  <img src="call_graph_for_split_init_fiel.gif" alt='' usemap="#call_graph_for_split_init_fiel" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Remove the fields related to the constructor from a class docstring 
+  fields list.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>fields</code></strong> (<code>list</code> of <a href="epydoc.markup.Field-class.html" 
+          class="link">markup.Field</a>) - The fields to process. The list will be modified in place</li>
+        <li><strong class="pname"><code>warnings</code></strong> (<code>list</code>) - A list to emit processing warnings</li>
+    </ul></dd>
+    <dt>Returns: <code>list</code> of <a href="epydoc.markup.Field-class.html" 
+      class="link">markup.Field</a></dt>
+        <dd>The <code>fields</code> items to be applied to the 
+          <code>__init__</code> method</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="process_field"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">process_field</span>(<span class="sig-arg">api_doc</span>,
+        <span class="sig-arg">docindex</span>,
+        <span class="sig-arg">tag</span>,
+        <span class="sig-arg">arg</span>,
+        <span class="sig-arg">descr</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docstringparser-pysrc.html#process_field">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_process_field-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_process_field-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_process_field" name="call_graph_for_process_field">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_check" title="_check()" alt="" coords="449,6,537,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,370,159,402" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="209,370,343,402" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_arg_field" title="process_arg_field()" alt="" coords="409,62,577,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_cvar_field" title="process_cvar_field()" alt="" coords="405,118,581,150" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_deffield_field" title="process_deffield_field()" alt="" coords="393,174,593,206" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_group_field" title="process_group_field()" alt="" coords="400,230,587,262" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_ivar_field" title="process_ivar_field()" alt="" coords="407,286,580,318" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_kwarg_field" title="process_kwarg_field()" alt="" coords="399,342,588,374" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_raise_field" title="process_raise_field()" alt="" coords="404,398,583,430" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_return_field" title="process_return_field()" alt="" coords="400,454,587,486" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_rtype_field" title="process_rtype_field()" alt="" coords="403,510,584,542" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_sort_field" title="process_sort_field()" alt="" coords="408,566,579,598" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_type_field" title="process_type_field()" alt="" coords="405,622,581,654" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_var_field" title="process_var_field()" alt="" coords="409,678,577,710" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#user_docfields" title="user_docfields()" alt="" coords="421,734,565,766" />
+</map>
+  <img src="call_graph_for_process_field.gif" alt='' usemap="#call_graph_for_process_field" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Process a single field, and use it to update <code>api_doc</code>.  If
+  <code>tag</code> is the name of a special field, then call its handler 
+  function.  If <code>tag</code> is the name of a simple field, then use 
+  <code>process_simple_field</code> to process it.  Otherwise, check if 
+  it's a user-defined field, defined in this docstring or the docstring of 
+  a containing object; and if so, process it with 
+  <code>process_simple_field</code>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>tag</code></strong> - The field's tag, such as <code>'author'</code></li>
+        <li><strong class="pname"><code>arg</code></strong> - The field's optional argument</li>
+        <li><strong class="pname"><code>descr</code></strong> - The description following the field tag and argument.</li>
+    </ul></dd>
+    <dt>Raises:</dt>
+    <dd><ul class="nomargin-top">
+        <li><code><strong class='fraise'>ValueError</strong></code> - If a problem was encountered while processing the field.  The 
+        <code>ValueError</code>'s string argument is an explanation of the 
+        problem, which should be displayed as a warning message.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="user_docfields"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">user_docfields</span>(<span class="sig-arg">api_doc</span>,
+        <span class="sig-arg">docindex</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docstringparser-pysrc.html#user_docfields">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_user_docfields-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_user_docfields-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_user_docfields" name="call_graph_for_user_docfields">
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#get_valdoc" title="apidoc.DocIndex.get_valdoc()" alt="" coords="405,6,653,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__len__" title="apidoc.DottedName.__len__()" alt="" coords="405,62,653,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#container" title="apidoc.DottedName.container()" alt="" coords="401,118,657,150" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,34,159,66" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#user_docfields" title="user_docfields()" alt="" coords="208,62,352,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_field" title="process_field()" alt="" coords="16,90,149,122" />
+</map>
+  <img src="call_graph_for_user_docfields.gif" alt='' usemap="#call_graph_for_user_docfields" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Return a list of user defined fields that can be used for the given 
+  object.  This list is taken from the given <code>api_doc</code>, and any 
+  of its containing <code>NamepaceDoc</code>s.
+  <dl class="fields">
+  </dl>
+<div class="fields">      <p><strong>Note:</strong>
+        We assume here that a parent's docstring will always be parsed 
+        before its childrens'.  This is indeed the case when we are called 
+        via <a href="epydoc.docbuilder-module.html#build_doc_index" 
+        class="link">docbuilder.build_doc_index()</a>.  If a child's 
+        docstring is parsed before its parents, then its parent won't yet 
+        have had its <code>extra_docstring_fields</code> attribute 
+        initialized.
+      </p>
+</div></td></tr></table>
+</div>
+<a name="register_field_handler"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">register_field_handler</span>(<span class="sig-arg">handler</span>,
+        <span class="sig-arg">*field_tags</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docstringparser-pysrc.html#register_field_handler">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Register the given field handler function for processing any of the 
+  given field tags.  Field handler functions should have the following 
+  signature:
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">field_handler</span>(api_doc, docindex, tag, arg, descr):
+<span class="py-more">... </span>    <span class="py-string">'''update api_doc in response to the field.'''</span></pre>
+  Where <code>api_doc</code> is the documentation object to update; 
+  <code>docindex</code> is a <a href="epydoc.apidoc.DocIndex-class.html" 
+  class="link">DocIndex</a> that can be used to look up the documentation 
+  for related objects; <code>tag</code> is the field tag that was used; 
+  <code>arg</code> is the optional argument; and <code>descr</code> is the 
+  description following the field tag and argument.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="_descr_to_identifiers"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_descr_to_identifiers</span>(<span class="sig-arg">descr</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docstringparser-pysrc.html#_descr_to_identifiers">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__descr_to_ident-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for__descr_to_ident-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__descr_to_ident" name="call_graph_for__descr_to_ident">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#_descr_to_identifiers" title="_descr_to_identifiers()" alt="" coords="243,34,435,66" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#to_plaintext" title="markup.epytext.ParsedEpytextDocstring.to_plaintext()" alt="" coords="498,6,927,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#to_plaintext" title="markup.restructuredtext.ParsedRstDocstring.to_plaintext()" alt="" coords="483,62,942,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_group_field" title="process_group_field()" alt="" coords="7,6,194,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#process_sort_field" title="process_sort_field()" alt="" coords="15,62,186,94" />
+</map>
+  <img src="call_graph_for__descr_to_ident.gif" alt='' usemap="#call_graph_for__descr_to_ident" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Given a <code>ParsedDocstring</code> that contains a list of 
+  identifiers, return a list of those identifiers.  This is used by fields 
+  such as <code>@group</code> and <code>@sort</code>, which expect lists of
+  identifiers as their values.  To extract the identifiers, the docstring 
+  is first converted to plaintext, and then split.  The plaintext content 
+  of the docstring must be a a list of identifiers, separated by spaces, 
+  commas, colons, or semicolons.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>descr</code></strong> (<a href="epydoc.markup.ParsedDocstring-class.html" 
+          class="link">markup.ParsedDocstring</a>) - A <code>ParsedDocstring</code> containing a list of 
+          identifiers.</li>
+    </ul></dd>
+    <dt>Returns: <code>list</code> of <code>string</code></dt>
+        <dd>A list of the identifier names contained in 
+          <code>descr</code>.</dd>
+    <dt>Raises:</dt>
+    <dd><ul class="nomargin-top">
+        <li><code><strong class='fraise'>ValueError</strong></code> - If <code>descr</code> does not contain a valid list of 
+        identifiers.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="parse_function_signature"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">parse_function_signature</span>(<span class="sig-arg">func_doc</span>,
+        <span class="sig-arg">doc_source</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docstringparser-pysrc.html#parse_function_signature">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_parse_function_-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_parse_function_-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_parse_function_" name="call_graph_for_parse_function_">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__init__" title="apidoc.APIDoc.__init__()" alt="" coords="480,6,696,38" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,34,159,66" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_function_signature" title="parse_function_signature()" alt="" coords="208,34,432,66" />
+<area shape="rect" href="epydoc.markup&#45;module.html#parse" title="markup.parse()" alt="" coords="521,62,655,94" />
+</map>
+  <img src="call_graph_for_parse_function_.gif" alt='' usemap="#call_graph_for_parse_function_" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Construct the signature for a builtin function or method from its 
+  docstring.  If the docstring uses the standard convention of including a 
+  signature in the first line of the docstring (and formats that signature 
+  according to standard conventions), then it will be used to extract a 
+  signature. Otherwise, the signature will be set to a single varargs 
+  variable named <code>&quot;...&quot;</code>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>func_doc</code></strong> (<a href="epydoc.apidoc.RoutineDoc-class.html" 
+          class="link">RoutineDoc</a>) - The target object where to store parsed signature. Also 
+          container of the docstring to parse if doc_source is 
+          <code>None</code></li>
+        <li><strong class="pname"><code>doc_source</code></strong> (<a href="epydoc.apidoc.APIDoc-class.html" 
+          class="link">APIDoc</a>) - Contains the docstring to parse. If <code>None</code>, parse 
+          <code class="link">func_doc</code> docstring instead</li>
+    </ul></dd>
+    <dt>Returns: <code>None</code></dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== VARIABLES DETAILS ==================== -->
+<a name="section-VariablesDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-VariablesDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="STANDARD_FIELDS"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">STANDARD_FIELDS</h3>
+  A list of the standard simple fields accepted by epydoc.  This list 
+  can be augmented at run-time by a docstring with the special 
+  <code>@deffield</code> field.  The order in which fields are listed here 
+  determines the order in which they will be displayed in the output.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">[</code>&lt;Field: deprecated&gt;<code class="variable-op">,</code>
+ &lt;Field: version&gt;<code class="variable-op">,</code>
+ &lt;Field: date&gt;<code class="variable-op">,</code>
+ &lt;Field: status&gt;<code class="variable-op">,</code>
+ &lt;Field: author&gt;<code class="variable-op">,</code>
+ &lt;Field: contact&gt;<code class="variable-op">,</code>
+ &lt;Field: organization&gt;<code class="variable-op">,</code>
+ &lt;Field: copyright&gt;<code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="RETURN_PDS"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">RETURN_PDS</h3>
+  A ParsedDocstring containing the text 'Returns'.  This is used to 
+  construct summary descriptions for routines that have empty 
+  <code>descr</code>, but non-empty <code>return_descr</code>.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+markup.parse('Returns:', markup= 'epytext')
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_field_dispatch_table"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_field_dispatch_table</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+{}
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="PARAMETER_TAGS"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">PARAMETER_TAGS</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">arg</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">argument</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">parameter</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">param</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">kwarg</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">keyword</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">kwparam</code><code class="variable-quote">'</code><code class="variable-group">)</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_IDENTIFIER_LIST_REGEXP"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_IDENTIFIER_LIST_REGEXP</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+re.compile(r'^<code class="re-group">[</code>\w\.\*<code class="re-group">]</code><code class="re-op">+</code><code class="re-group">(</code><code class="re-group">[</code>\s,:;<code class="re-group">]</code>\s<code class="re-op">*</code><code class="re-group">[</code>\w\.\*<code class="re-group">]</code><code class="re-op">+</code><code class="re-group">)</code><code class="re-op">*</code>$')
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_SIGNATURE_RE"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_SIGNATURE_RE</h3>
+  A regular expression that is used to extract signatures from 
+  docstrings.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+re.compile(r'^\s<code class="re-op">*</code><code class="re-group">(</code><code class="re-group">(?P&lt;</code><code class="re-ref">self</code><code class="re-group">&gt;</code>\w<code class="re-op">+</code><code class="re-group">)</code>\.<code class="re-group">)</code><code class="re-op">?</code><code class="re-group">(?P&lt;</code><code class="re-ref">func</code><code class="re-group">&gt;</code>\w<code class="re-op">+</code><code class="re-group">)</code>\(<code class="re-group">(?P&lt;</code><code class="re-ref">params</code><code class="re-group">&gt;</code><code class="re-group">(</code>\s<code class="re-op">*</code>\[<code class="re-op">?</code>\s<code class="re-op"></code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="re-op">*</code>\*<code class="re-op">{,2}</code><code class="re-group">[</code>\w-\.<code class="re-group">]</code><code class="re-op">+</code><code class="re-group">(</code>=.<code class="re-op">+?</code><code class="re-group">)</code><code class="re-op">?</code><code class="re-group">(</code>\s<code class="re-op">*</code>\[<code class="re-op">?</code>\s<code class="re-op">*</code>,\s<code class="re-op">*</code>\]<code class="re-op">?</code>\s<code class="re-op">*</code>\*<code class="re-op">{,2}</code><code class="re-group">[</code>\w-\.<code class="re-group">]</code><code class="re-op">+</code><code class="re-group">(</code>=.<code class="re-op">+?</code><code class="re-group">)</code><code class="re-op">?</code><code class="re-group">)</code><code class="re-op">*</code>\]<code class="re-op">*</code><code class="re-group">)</code><code class="re-op">?</code><code class="re-group"></code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="re-group">)</code>\s<code class="re-op">*</code>\)<code class="re-group">(</code>\s<code class="re-op">*</code><code class="re-group">(</code>-&gt;<code class="re-group">)</code>\s<code class="re-op">*</code><code class="re-group">(?P&lt;</code><code class="re-ref">return</code><code class="re-group">&gt;</code>\S.<code class="re-op">*?</code><code class="re-group">)</code><code class="re-group">)</code><code class="re-op">?</code>\s<code class="re-op">*</code><code class="re-group">(</code>\n<code class="re-op">|</code>\s<code class="re-op">+</code><code class="re-group">(</code>--<code class="re-op">|</code>&lt;=<code class="re-op">+</code>&gt;<code class="re-group">)</code>\s<code class="re-op">+</code><code class="re-op">|</code>$<code class="re-op">|</code>\.\s<code class="re-op">+</code><code class="re-op">|</code>\.\<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+n<code class="re-group">)</code>')
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:02:57 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

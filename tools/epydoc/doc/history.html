@@ -1,0 +1,81 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title>Epydoc History</title>
+<link rel="stylesheet" href="epydoc.css" type="text/css"/>
+</head>
+<!-- $Id: history.html 1211 2006-04-10 19:38:37Z edloper $ -->
+
+<body>
+<div class="body">
+<h1> Epydoc History </h1>
+
+<p> I originally became interested in automatic API documentation
+extraction tools for Python in March 2002.  At the time, there were
+several such tools available, including <a
+href="http://web.lfw.org/python/pydoc.html">pydoc</a> and <a
+href="http://happydoc.sourceforge.net/">HappyDoc</a>.  However, none
+were widely used.  I joined the <a
+href="http://mail.python.org/pipermail/doc-sig/">doc-sig mailing
+list</a>, and started working with its members on creating standards
+for API documentation tools in Python. </p>
+
+<p> I created epydoc as a tool for exploring the issues involved in
+writing an automatic API documentation extraction tool.  I also
+decided to use epydoc to document the <a
+href="http://nltk.sourceforge.net/">Natural Language Toolkit</a>, so
+that I would have a fairly large project with which to test out my
+system.  The markup language and the output of epydoc have changed
+many times, and epydoc itself has undergone at least 3 complete
+rewrites.  But eventually epydoc matured into a more stable
+system. </p>
+
+<!--
+<p> Over the past year, I haven't had much time to participate in the
+discussion of API documentation tool standards on the doc-sig mailing
+list.  However, I've been adding features to epydoc as I need them for
+the Natural Language Toolkit.  If there are any features that you're
+interested in seeing added to epydoc, please let me know. </p>
+-->
+
+<p> Significant portions of epydoc were written for version 3.0.  This
+has allowed me to increase epydoc's functionality in several
+significant ways.  The most significant change has to do with the way
+that epydoc extracts documentation information about python modules.
+In previous versions, epydoc extracted information about each module
+by importing it, and using introspection to examine its contents.  The
+new version of epydoc still supports introspection, but is also
+capable of extracting information about python modules by parsing
+their source code.  Furthermore, the new version of epydoc can combine
+these two sources of information (introspection & parsing).  This is
+important because each source has its own advantages and disadvantages
+with respect to the other.  
+
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="index.html">
+    Home</a></td></a>
+  <a class="nav" href="installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

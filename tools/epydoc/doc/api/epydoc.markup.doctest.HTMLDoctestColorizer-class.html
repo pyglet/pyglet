@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.doctest.HTMLDoctestColorizer</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        <a href="epydoc.markup.doctest-module.html">Module&nbsp;doctest</a> ::
+        Class&nbsp;HTMLDoctestColorizer
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.doctest.HTMLDoctestColorizer-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class HTMLDoctestColorizer</h1><span class="codelink"><a href="epydoc.markup.doctest-pysrc.html#HTMLDoctestColorizer">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_m_5" name="uml_class_diagram_for_epydoc_m_5">
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#PROMPT_RE" title="A regexp that matches Python prompts" alt="" coords="18,28,298,47" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#DOCTEST_DIRECTIVE_RE" title="A regexp that matches doctest directives." alt="" coords="18,47,298,65" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#DOCTEST_EXAMPLE_RE" title="This regular expression is used to find doctest examples in a string." alt="" coords="18,65,298,84" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#DOCTEST_RE" title="A regexp that matches all of the regions of a doctest block that should be  colored." alt="" coords="18,84,298,103" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#EXCEPT_RE" title="A regexp that matches doctest exception blocks." alt="" coords="18,103,298,121" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#PROMPT2_RE" title="A regexp that matches Python &quot;...&quot; prompts." alt="" coords="18,121,298,140" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#colorize_doctest" title="Colorize a string containing one or more doctest examples." alt="" coords="18,143,298,161" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#colorize_inline" title="Colorize a string containing Python code." alt="" coords="18,161,298,180" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#colorize_codeblock" title="Colorize a string containing only Python code." alt="" coords="18,180,298,199" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#subfunc" title="epydoc.markup.doctest.DoctestColorizer.subfunc" alt="" coords="18,199,298,217" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html" title="An abstract base class for performing syntax highlighting on doctest blocks and other bits of Python code." alt="" coords="6,5,310,224" />
+<area shape="rect" href="epydoc.markup.doctest.HTMLDoctestColorizer&#45;class.html#SUFFIX" title="A string that is added to the end of the strings returned by  colorize_codeblock and colorize_doctest." alt="" coords="90,265,226,284" />
+<area shape="rect" href="epydoc.markup.doctest.HTMLDoctestColorizer&#45;class.html#PREFIX" title="A string that is added to the beginning of the strings returned by  colorize_codeblock and colorize_doctest." alt="" coords="90,284,226,303" />
+<area shape="rect" href="epydoc.markup.doctest.HTMLDoctestColorizer&#45;class.html#markup" title="Apply syntax highlighting to a single substring from a doctest block." alt="" coords="90,305,226,324" />
+<area shape="rect" href="epydoc.markup.doctest.HTMLDoctestColorizer&#45;class.html" title="A subclass of DoctestColorizer that generates HTML output." alt="" coords="78,243,238,331" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_m_5.gif" alt='' usemap="#uml_class_diagram_for_epydoc_m_5" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+A subclass of DoctestColorizer that generates HTML output.<br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.doctest.HTMLDoctestColorizer-class.html#markup" class="summary-sig-name">markup</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">s</span>,
+        <span class="summary-sig-arg">tag</span>)</span><br />
+      Apply syntax highlighting to a single substring from a doctest 
+      block.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.doctest-pysrc.html#HTMLDoctestColorizer.markup">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_markup_2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_markup_2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_markup_2" name="call_graph_for_markup_2">
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#colorize_doctest" title="DoctestColorizer.colorize_doctest()" alt="" coords="7,6,295,38" />
+<area shape="rect" href="epydoc.markup.doctest.HTMLDoctestColorizer&#45;class.html#markup" title="markup()" alt="" coords="344,34,435,66" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#subfunc" title="DoctestColorizer.subfunc()" alt="" coords="37,62,264,94" />
+<area shape="rect" href="epydoc.util&#45;module.html#plaintext_to_html" title="util.plaintext_to_html()" alt="" coords="483,34,680,66" />
+</map>
+  <img src="call_graph_for_markup_2.gif" alt='' usemap="#call_graph_for_markup_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html">DoctestColorizer</a></code></b>:
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_codeblock">colorize_codeblock</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_doctest">colorize_doctest</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_inline">colorize_inline</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#subfunc">subfunc</a></code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="PREFIX"></a><span class="summary-name">PREFIX</span> = <code title="'''&lt;pre class=&quot;py-doctest&quot;&gt;
+'''"><code class="variable-quote">'</code><code class="variable-string">&lt;pre class=&quot;py-doctest&quot;&gt;\n</code><code class="variable-quote">'</code></code><br />
+      A string that is added to the beginning of the strings returned by
+      <a 
+      href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_codeblock"
+      class="link">colorize_codeblock</a> and <a 
+      href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_doctest"
+      class="link">colorize_doctest</a>.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="SUFFIX"></a><span class="summary-name">SUFFIX</span> = <code title="'''&lt;/pre&gt;
+'''"><code class="variable-quote">'</code><code class="variable-string">&lt;/pre&gt;\n</code><code class="variable-quote">'</code></code><br />
+      A string that is added to the end of the strings returned by <a 
+      href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_codeblock"
+      class="link">colorize_codeblock</a> and <a 
+      href="epydoc.markup.doctest.DoctestColorizer-class.html#colorize_doctest"
+      class="link">colorize_doctest</a>.
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html">DoctestColorizer</a></code></b>:
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#DOCTEST_DIRECTIVE_RE">DOCTEST_DIRECTIVE_RE</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#DOCTEST_EXAMPLE_RE">DOCTEST_EXAMPLE_RE</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#DOCTEST_RE">DOCTEST_RE</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#EXCEPT_RE">EXCEPT_RE</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#PROMPT2_RE">PROMPT2_RE</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#PROMPT_RE">PROMPT_RE</a></code>
+      </p>
+    <div class="private">    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html">DoctestColorizer</a></code></b> (private):
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#_BI">_BI</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#_BUILTINS">_BUILTINS</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#_BUILTIN_GRP">_BUILTIN_GRP</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#_COMMENT_GRP">_COMMENT_GRP</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#_DEFINE_GRP">_DEFINE_GRP</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#_KEYWORDS">_KEYWORDS</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#_KEYWORD_GRP">_KEYWORD_GRP</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#_KW">_KW</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#_PROMPT1_GRP">_PROMPT1_GRP</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#_PROMPT2_GRP">_PROMPT2_GRP</a></code>,
+      <code><a href="epydoc.markup.doctest.DoctestColorizer-class.html#_STRING_GRP">_STRING_GRP</a></code>
+      </p></div>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="markup"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">markup</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">s</span>,
+        <span class="sig-arg">tag</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.doctest-pysrc.html#HTMLDoctestColorizer.markup">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_markup_2-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_markup_2-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_markup_2" name="call_graph_for_markup_2">
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#colorize_doctest" title="DoctestColorizer.colorize_doctest()" alt="" coords="7,6,295,38" />
+<area shape="rect" href="epydoc.markup.doctest.HTMLDoctestColorizer&#45;class.html#markup" title="markup()" alt="" coords="344,34,435,66" />
+<area shape="rect" href="epydoc.markup.doctest.DoctestColorizer&#45;class.html#subfunc" title="DoctestColorizer.subfunc()" alt="" coords="37,62,264,94" />
+<area shape="rect" href="epydoc.util&#45;module.html#plaintext_to_html" title="util.plaintext_to_html()" alt="" coords="483,34,680,66" />
+</map>
+  <img src="call_graph_for_markup_2.gif" alt='' usemap="#call_graph_for_markup_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Apply syntax highlighting to a single substring from a doctest block.
+  <code>s</code> is the substring, and <code>tag</code> is the tag that 
+  should be applied to the substring.  <code>tag</code> will be one of the 
+  following strings:
+  <ul>
+    <li>
+      <code>prompt</code> -- the Python PS1 prompt (&gt;&gt;&gt;)
+    </li>
+    <li>
+      <code>more</code> -- the Python PS2 prompt (...)
+    </li>
+    <li>
+      <code>keyword</code> -- a Python keyword (for, if, etc.)
+    </li>
+    <li>
+      <code>builtin</code> -- a Python builtin name (abs, dir, etc.)
+    </li>
+    <li>
+      <code>string</code> -- a string literal
+    </li>
+    <li>
+      <code>comment</code> -- a comment
+    </li>
+    <li>
+      <code>except</code> -- an exception traceback (up to the next 
+      &gt;&gt;&gt;)
+    </li>
+    <li>
+      <code>output</code> -- the output from a doctest block.
+    </li>
+    <li>
+      <code>defname</code> -- the name of a function or class defined by
+      a <code>def</code> or <code>class</code> statement.
+    </li>
+    <li>
+      <code>other</code> -- anything else (does *not* include 
+      output.)
+    </li>
+  </ul>
+  <dl class="fields">
+    <dt>Overrides:
+      <a href="epydoc.markup.doctest.DoctestColorizer-class.html#markup">DoctestColorizer.markup</a>
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:04:55 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

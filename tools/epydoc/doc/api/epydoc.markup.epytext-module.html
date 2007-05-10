@@ -1,0 +1,2336 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.epytext</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        Module&nbsp;epytext
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.epytext-module.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== MODULE DESCRIPTION ==================== -->
+<h1 class="epydoc">Module epytext</h1><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html">source&nbsp;code</a></span><br /><br />
+Parser for epytext strings.  Epytext is a lightweight markup whose 
+  primary intended application is Python documentation strings.  This 
+  parser converts Epytext strings to a simple DOM-like representation 
+  (encoded as a tree of <a href="epydoc.markup.epytext.Element-class.html" 
+  class="link">Element</a> objects and strings).  Epytext strings can 
+  contain the following <a name="index-structural_blocks"></a><i 
+  class="indexterm">structural blocks</i>:
+  <ul>
+    <li>
+      <a name="index-epytext"></a><i class="indexterm">epytext</i>: The 
+      top-level element of the DOM tree.
+    </li>
+    <li>
+      <a name="index-para"></a><i class="indexterm">para</i>: A 
+      paragraph of text.  Paragraphs contain no newlines, and all spaces 
+      are soft.
+    </li>
+    <li>
+      <a name="index-section"></a><i class="indexterm">section</i>: A 
+      section or subsection.
+    </li>
+    <li>
+      <a name="index-field"></a><i class="indexterm">field</i>: A tagged
+      field.  These fields provide information about specific aspects of a 
+      Python object, such as the description of a function's parameter, or 
+      the author of a module.
+    </li>
+    <li>
+      <a name="index-literalblock"></a><i 
+      class="indexterm">literalblock</i>: A block of literal text.  This 
+      text should be displayed as it would be displayed in plaintext.  The 
+      parser removes the appropriate amount of leading whitespace from each
+      line in the literal block.
+    </li>
+    <li>
+      <a name="index-doctestblock"></a><i 
+      class="indexterm">doctestblock</i>: A block containing sample python 
+      code, formatted according to the specifications of the 
+      <code>doctest</code> module.
+    </li>
+    <li>
+      <a name="index-ulist"></a><i class="indexterm">ulist</i>: An 
+      unordered list.
+    </li>
+    <li>
+      <a name="index-olist"></a><i class="indexterm">olist</i>: An 
+      ordered list.
+    </li>
+    <li>
+      <a name="index-li"></a><i class="indexterm">li</i>: A list item.  
+      This tag is used both for unordered list items and for ordered list 
+      items.
+    </li>
+  </ul>
+  Additionally, the following <a name="index-inline_regions"></a><i 
+  class="indexterm">inline regions</i> may be used within <code>para</code>
+  blocks:
+  <ul>
+    <li>
+      <a name="index-code"></a><i class="indexterm">code</i>:   Source 
+      code and identifiers.
+    </li>
+    <li>
+      <a name="index-math"></a><i class="indexterm">math</i>:   
+      Mathematical expressions.
+    </li>
+    <li>
+      <a name="index-index"></a><i class="indexterm">index</i>:  A term 
+      which should be included in an index, if one is generated.
+    </li>
+    <li>
+      <a name="index-italic"></a><i class="indexterm">italic</i>: 
+      Italicized text.
+    </li>
+    <li>
+      <a name="index-bold"></a><i class="indexterm">bold</i>:   
+      Bold-faced text.
+    </li>
+    <li>
+      <a name="index-uri"></a><i class="indexterm">uri</i>:    A 
+      Universal Resource Indicator (URI) or Universal Resource Locator 
+      (URL)
+    </li>
+    <li>
+      <a name="index-link"></a><i class="indexterm">link</i>:   A Python
+      identifier which should be hyperlinked to the named object's 
+      documentation, when possible.
+    </li>
+  </ul>
+  The returned DOM tree will conform to the the following Document Type 
+  Description:
+<pre class="literalblock">
+  &lt;!ENTITY % colorized '(code | math | index | italic |
+                         bold | uri | link | symbol)*'&gt;
+
+  &lt;!ELEMENT epytext ((para | literalblock | doctestblock |
+                     section | ulist | olist)*, fieldlist?)&gt;
+
+  &lt;!ELEMENT para (#PCDATA | %colorized;)*&gt;
+
+  &lt;!ELEMENT section (para | listblock | doctestblock |
+                     section | ulist | olist)+&gt;
+
+  &lt;!ELEMENT fieldlist (field+)&gt;
+  &lt;!ELEMENT field (tag, arg?, (para | listblock | doctestblock)
+                               ulist | olist)+)&gt;
+  &lt;!ELEMENT tag (#PCDATA)&gt;
+  &lt;!ELEMENT arg (#PCDATA)&gt;
+  
+  &lt;!ELEMENT literalblock (#PCDATA | %colorized;)*&gt;
+  &lt;!ELEMENT doctestblock (#PCDATA)&gt;
+
+  &lt;!ELEMENT ulist (li+)&gt;
+  &lt;!ELEMENT olist (li+)&gt;
+  &lt;!ELEMENT li (para | literalblock | doctestblock | ulist | olist)+&gt;
+  &lt;!ATTLIST li bullet NMTOKEN #IMPLIED&gt;
+  &lt;!ATTLIST olist start NMTOKEN #IMPLIED&gt;
+
+  &lt;!ELEMENT uri     (name, target)&gt;
+  &lt;!ELEMENT link    (name, target)&gt;
+  &lt;!ELEMENT name    (#PCDATA | %colorized;)*&gt;
+  &lt;!ELEMENT target  (#PCDATA)&gt;
+  
+  &lt;!ELEMENT code    (#PCDATA | %colorized;)*&gt;
+  &lt;!ELEMENT math    (#PCDATA | %colorized;)*&gt;
+  &lt;!ELEMENT italic  (#PCDATA | %colorized;)*&gt;
+  &lt;!ELEMENT bold    (#PCDATA | %colorized;)*&gt;
+  &lt;!ELEMENT indexed (#PCDATA | %colorized;)&gt;
+  &lt;!ATTLIST code style CDATA #IMPLIED&gt;
+
+  &lt;!ELEMENT symbol (#PCDATA)&gt;
+</pre><br /><br />
+
+<!-- ==================== CLASSES ==================== -->
+<a name="section-Classes"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Classes"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext.Element-class.html" class="summary-name">Element</a><br />
+      A very simple DOM-like representation for parsed epytext 
+        documents.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext.Token-class.html" class="summary-name">Token</a><br />
+      <code>Token</code>s are an intermediate data structure used 
+        while constructing the structuring DOM tree for a formatted 
+        docstring.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext.TokenizationError-class.html" class="summary-name">TokenizationError</a><br />
+      An error generated while tokenizing a formatted documentation 
+        string.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext.StructuringError-class.html" class="summary-name">StructuringError</a><br />
+      An error generated while structuring a formatted documentation 
+        string.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext.ColorizingError-class.html" class="summary-name">ColorizingError</a><br />
+      An error generated while colorizing a paragraph.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html" class="summary-name">ParsedEpytextDocstring</a>
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTIONS ==================== -->
+<a name="section-Functions"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Functions</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Functions"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>Element</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#parse" class="summary-sig-name">parse</a>(<span class="summary-sig-arg">str</span>,
+        <span class="summary-sig-arg">errors</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Return a DOM tree encoding the contents of an epytext string.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#parse">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_parse_2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_parse_2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_parse_2" name="call_graph_for_parse_2">
+<area shape="rect" href="epydoc.markup.epytext.Element&#45;class.html#__init__" title="Element.__init__()" alt="" coords="359,6,522,38" />
+<area shape="rect" href="epydoc.markup.epytext.Token&#45;class.html#to_dom" title="Token.to_dom()" alt="" coords="368,62,512,94" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_add_list" title="_add_list()" alt="" coords="388,118,492,150" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_add_para" title="_add_para()" alt="" coords="384,174,496,206" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_add_section" title="_add_section()" alt="" coords="374,230,507,262" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_pop_completed_blocks" title="_pop_completed_blocks()" alt="" coords="332,286,548,318" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize" title="_tokenize()" alt="" coords="387,342,494,374" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse" title="parse()" alt="" coords="208,174,283,206" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,174,159,206" />
+</map>
+  <img src="call_graph_for_parse_2.gif" alt='' usemap="#call_graph_for_parse_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#_pop_completed_blocks" class="summary-sig-name">_pop_completed_blocks</a>(<span class="summary-sig-arg">token</span>,
+        <span class="summary-sig-arg">stack</span>,
+        <span class="summary-sig-arg">indent_stack</span>)</span><br />
+      Pop any completed blocks off the stack.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_pop_completed_blocks">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__pop_completed_-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__pop_completed_-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__pop_completed_" name="call_graph_for__pop_completed_">
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_pop_completed_blocks" title="_pop_completed_blocks()" alt="" coords="129,6,345,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse" title="parse()" alt="" coords="5,6,80,38" />
+</map>
+  <img src="call_graph_for__pop_completed_.gif" alt='' usemap="#call_graph_for__pop_completed_" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_add_para"></a><span class="summary-sig-name">_add_para</span>(<span class="summary-sig-arg">doc</span>,
+        <span class="summary-sig-arg">para_token</span>,
+        <span class="summary-sig-arg">stack</span>,
+        <span class="summary-sig-arg">indent_stack</span>,
+        <span class="summary-sig-arg">errors</span>)</span><br />
+      Colorize the given paragraph, and add it to the DOM tree.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_add_para">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__add_para-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__add_para-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__add_para" name="call_graph_for__add_para">
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_add_para" title="_add_para()" alt="" coords="130,6,242,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_colorize" title="_colorize()" alt="" coords="292,6,396,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse" title="parse()" alt="" coords="6,6,80,38" />
+</map>
+  <img src="call_graph_for__add_para.gif" alt='' usemap="#call_graph_for__add_para" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_add_section"></a><span class="summary-sig-name">_add_section</span>(<span class="summary-sig-arg">doc</span>,
+        <span class="summary-sig-arg">heading_token</span>,
+        <span class="summary-sig-arg">stack</span>,
+        <span class="summary-sig-arg">indent_stack</span>,
+        <span class="summary-sig-arg">errors</span>)</span><br />
+      Add a new section to the DOM tree, with the given heading.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_add_section">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__add_section-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__add_section-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__add_section" name="call_graph_for__add_section">
+<area shape="rect" href="epydoc.markup.epytext.Element&#45;class.html#__init__" title="Element.__init__()" alt="" coords="309,6,472,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_add_section" title="_add_section()" alt="" coords="128,34,261,66" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_colorize" title="_colorize()" alt="" coords="339,62,443,94" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse" title="parse()" alt="" coords="5,34,80,66" />
+</map>
+  <img src="call_graph_for__add_section.gif" alt='' usemap="#call_graph_for__add_section" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#_add_list" class="summary-sig-name">_add_list</a>(<span class="summary-sig-arg">doc</span>,
+        <span class="summary-sig-arg">bullet_token</span>,
+        <span class="summary-sig-arg">stack</span>,
+        <span class="summary-sig-arg">indent_stack</span>,
+        <span class="summary-sig-arg">errors</span>)</span><br />
+      Add a new list item or field to the DOM tree, with the given 
+      bullet or field tag.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_add_list">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__add_list-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__add_list-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__add_list" name="call_graph_for__add_list">
+<area shape="rect" href="epydoc.markup.epytext.Element&#45;class.html#__init__" title="Element.__init__()" alt="" coords="280,6,443,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_add_list" title="_add_list()" alt="" coords="128,6,232,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse" title="parse()" alt="" coords="5,6,80,38" />
+</map>
+  <img src="call_graph_for__add_list.gif" alt='' usemap="#call_graph_for__add_list" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#_tokenize_doctest" class="summary-sig-name">_tokenize_doctest</a>(<span class="summary-sig-arg">lines</span>,
+        <span class="summary-sig-arg">start</span>,
+        <span class="summary-sig-arg">block_indent</span>,
+        <span class="summary-sig-arg">tokens</span>,
+        <span class="summary-sig-arg">errors</span>)</span><br />
+      Construct a <a href="epydoc.markup.epytext.Token-class.html" 
+      class="link">Token</a> containing the doctest block starting at 
+      <code>lines[start]</code>, and append it to <code>tokens</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_tokenize_doctest">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__tokenize_docte-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__tokenize_docte-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__tokenize_docte" name="call_graph_for__tokenize_docte">
+<area shape="rect" href="epydoc.markup.epytext.Token&#45;class.html#__init__" title="Token.__init__()" alt="" coords="383,6,529,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize" title="_tokenize()" alt="" coords="7,6,113,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_doctest" title="_tokenize_doctest()" alt="" coords="163,6,333,38" />
+</map>
+  <img src="call_graph_for__tokenize_docte.gif" alt='' usemap="#call_graph_for__tokenize_docte" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#_tokenize_literal" class="summary-sig-name">_tokenize_literal</a>(<span class="summary-sig-arg">lines</span>,
+        <span class="summary-sig-arg">start</span>,
+        <span class="summary-sig-arg">block_indent</span>,
+        <span class="summary-sig-arg">tokens</span>,
+        <span class="summary-sig-arg">errors</span>)</span><br />
+      Construct a <a href="epydoc.markup.epytext.Token-class.html" 
+      class="link">Token</a> containing the literal block starting at 
+      <code>lines[start]</code>, and append it to <code>tokens</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_tokenize_literal">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__tokenize_liter-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__tokenize_liter-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__tokenize_liter" name="call_graph_for__tokenize_liter">
+<area shape="rect" href="epydoc.markup.epytext.Token&#45;class.html#__init__" title="Token.__init__()" alt="" coords="372,6,519,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize" title="_tokenize()" alt="" coords="7,6,113,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_literal" title="_tokenize_literal()" alt="" coords="163,6,323,38" />
+</map>
+  <img src="call_graph_for__tokenize_liter.gif" alt='' usemap="#call_graph_for__tokenize_liter" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#_tokenize_listart" class="summary-sig-name">_tokenize_listart</a>(<span class="summary-sig-arg">lines</span>,
+        <span class="summary-sig-arg">start</span>,
+        <span class="summary-sig-arg">bullet_indent</span>,
+        <span class="summary-sig-arg">tokens</span>,
+        <span class="summary-sig-arg">errors</span>)</span><br />
+      Construct <a href="epydoc.markup.epytext.Token-class.html" 
+      class="link">Token</a>s for the bullet and the first paragraph of the
+      list item (or field) starting at <code>lines[start]</code>, and 
+      append them to <code>tokens</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_tokenize_listart">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__tokenize_lista-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__tokenize_lista-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__tokenize_lista" name="call_graph_for__tokenize_lista">
+<area shape="rect" href="epydoc.markup.epytext.Token&#45;class.html#__init__" title="Token.__init__()" alt="" coords="372,6,519,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize" title="_tokenize()" alt="" coords="7,6,113,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_listart" title="_tokenize_listart()" alt="" coords="163,6,323,38" />
+</map>
+  <img src="call_graph_for__tokenize_lista.gif" alt='' usemap="#call_graph_for__tokenize_lista" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#_tokenize_para" class="summary-sig-name">_tokenize_para</a>(<span class="summary-sig-arg">lines</span>,
+        <span class="summary-sig-arg">start</span>,
+        <span class="summary-sig-arg">para_indent</span>,
+        <span class="summary-sig-arg">tokens</span>,
+        <span class="summary-sig-arg">errors</span>)</span><br />
+      Construct a <a href="epydoc.markup.epytext.Token-class.html" 
+      class="link">Token</a> containing the paragraph starting at 
+      <code>lines[start]</code>, and append it to <code>tokens</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_tokenize_para">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__tokenize_para-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__tokenize_para-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__tokenize_para" name="call_graph_for__tokenize_para">
+<area shape="rect" href="epydoc.markup.epytext.Token&#45;class.html#__init__" title="Token.__init__()" alt="" coords="362,6,508,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize" title="_tokenize()" alt="" coords="7,6,114,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_para" title="_tokenize_para()" alt="" coords="163,6,312,38" />
+</map>
+  <img src="call_graph_for__tokenize_para.gif" alt='' usemap="#call_graph_for__tokenize_para" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>list</code> of <a 
+      href="epydoc.markup.epytext.Token-class.html" 
+      class="link">Token</a></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#_tokenize" class="summary-sig-name">_tokenize</a>(<span class="summary-sig-arg">str</span>,
+        <span class="summary-sig-arg">errors</span>)</span><br />
+      Split a given formatted docstring into an ordered list of 
+      <code>Token</code>s, according to the epytext markup rules.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_tokenize">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__tokenize-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__tokenize-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__tokenize" name="call_graph_for__tokenize">
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize" title="_tokenize()" alt="" coords="129,90,236,122" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_doctest" title="_tokenize_doctest()" alt="" coords="285,6,456,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_listart" title="_tokenize_listart()" alt="" coords="291,62,451,94" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_literal" title="_tokenize_literal()" alt="" coords="291,118,451,150" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_para" title="_tokenize_para()" alt="" coords="296,174,445,206" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse" title="parse()" alt="" coords="5,90,80,122" />
+</map>
+  <img src="call_graph_for__tokenize.gif" alt='' usemap="#call_graph_for__tokenize" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>Element</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#_colorize" class="summary-sig-name">_colorize</a>(<span class="summary-sig-arg">doc</span>,
+        <span class="summary-sig-arg">token</span>,
+        <span class="summary-sig-arg">errors</span>,
+        <span class="summary-sig-arg">tagName</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string">para</code><code class="variable-quote">'</code></span>)</span><br />
+      Given a string containing the contents of a paragraph, produce a 
+      DOM <code>Element</code> encoding that paragraph.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_colorize">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__colorize-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__colorize-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__colorize" name="call_graph_for__colorize">
+<area shape="rect" href="epydoc.markup.epytext.Element&#45;class.html#__init__" title="Element.__init__()" alt="" coords="341,6,504,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_add_para" title="_add_para()" alt="" coords="16,34,128,66" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_colorize" title="_colorize()" alt="" coords="188,62,292,94" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_add_section" title="_add_section()" alt="" coords="5,90,139,122" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_colorize_graph" title="_colorize_graph()" alt="" coords="345,62,500,94" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_colorize_link" title="_colorize_link()" alt="" coords="352,118,493,150" />
+</map>
+  <img src="call_graph_for__colorize.gif" alt='' usemap="#call_graph_for__colorize" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#_colorize_graph" class="summary-sig-name">_colorize_graph</a>(<span class="summary-sig-arg">doc</span>,
+        <span class="summary-sig-arg">graph</span>,
+        <span class="summary-sig-arg">token</span>,
+        <span class="summary-sig-arg">end</span>,
+        <span class="summary-sig-arg">errors</span>)</span><br />
+      Eg:</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_colorize_graph">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__colorize_graph-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__colorize_graph-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__colorize_graph" name="call_graph_for__colorize_graph">
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_colorize" title="_colorize()" alt="" coords="7,6,111,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_colorize_graph" title="_colorize_graph()" alt="" coords="162,6,316,38" />
+</map>
+  <img src="call_graph_for__colorize_graph.gif" alt='' usemap="#call_graph_for__colorize_graph" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_colorize_link"></a><span class="summary-sig-name">_colorize_link</span>(<span class="summary-sig-arg">doc</span>,
+        <span class="summary-sig-arg">link</span>,
+        <span class="summary-sig-arg">token</span>,
+        <span class="summary-sig-arg">end</span>,
+        <span class="summary-sig-arg">errors</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_colorize_link">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__colorize_link-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__colorize_link-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__colorize_link" name="call_graph_for__colorize_link">
+<area shape="rect" href="epydoc.markup.epytext.Element&#45;class.html#__init__" title="Element.__init__()" alt="" coords="352,6,515,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_colorize" title="_colorize()" alt="" coords="7,6,111,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_colorize_link" title="_colorize_link()" alt="" coords="161,6,303,38" />
+</map>
+  <img src="call_graph_for__colorize_link.gif" alt='' usemap="#call_graph_for__colorize_link" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#to_epytext" class="summary-sig-name">to_epytext</a>(<span class="summary-sig-arg">tree</span>,
+        <span class="summary-sig-arg">indent</span>=<span class="summary-sig-default">0</span>,
+        <span class="summary-sig-arg">seclevel</span>=<span class="summary-sig-default">0</span>)</span><br />
+      Convert a DOM document encoding epytext back to an epytext 
+      string.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#to_epytext">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#to_plaintext" class="summary-sig-name">to_plaintext</a>(<span class="summary-sig-arg">tree</span>,
+        <span class="summary-sig-arg">indent</span>=<span class="summary-sig-default">0</span>,
+        <span class="summary-sig-arg">seclevel</span>=<span class="summary-sig-default">0</span>)</span><br />
+      Convert a DOM document encoding epytext to a string 
+      representation.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#to_plaintext">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_to_plaintext-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_to_plaintext-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_to_plaintext" name="call_graph_for_to_plaintext">
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#to_plaintext" title="ParsedEpytextDocstring.to_plaintext()" alt="" coords="7,30,314,62" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#to_plaintext" title="to_plaintext()" alt="" coords="364,30,487,62" />
+<area shape="rect" href="epydoc.util&#45;module.html#wordwrap" title="util.wordwrap()" alt="" coords="538,30,676,62" />
+</map>
+  <img src="call_graph_for_to_plaintext.gif" alt='' usemap="#call_graph_for_to_plaintext" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#to_debug" class="summary-sig-name">to_debug</a>(<span class="summary-sig-arg">tree</span>,
+        <span class="summary-sig-arg">indent</span>=<span class="summary-sig-default">4</span>,
+        <span class="summary-sig-arg">seclevel</span>=<span class="summary-sig-default">0</span>)</span><br />
+      Convert a DOM document encoding epytext back to an epytext string,
+      annotated with extra debugging information.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#to_debug">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>Element</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#pparse" class="summary-sig-name">pparse</a>(<span class="summary-sig-arg">str</span>,
+        <span class="summary-sig-arg">show_warnings</span>=<span class="summary-sig-default">1</span>,
+        <span class="summary-sig-arg">show_errors</span>=<span class="summary-sig-default">1</span>,
+        <span class="summary-sig-arg">stream</span>=<span class="summary-sig-default">sys.stderr</span>)</span><br />
+      Pretty-parse the string.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#pparse">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>Element</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#parse_as_literal" class="summary-sig-name">parse_as_literal</a>(<span class="summary-sig-arg">str</span>)</span><br />
+      Return a DOM document matching the epytext DTD, containing a 
+      single literal block.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#parse_as_literal">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>Element</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#parse_as_para" class="summary-sig-name">parse_as_para</a>(<span class="summary-sig-arg">str</span>)</span><br />
+      Return a DOM document matching the epytext DTD, containing a 
+      single paragraph.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#parse_as_para">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_parse_as_para-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_parse_as_para-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_parse_as_para" name="call_graph_for_parse_as_para">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#add_metadata_from_var" title="docstringparser.add_metadata_from_var()" alt="" coords="7,6,340,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse_as_para" title="parse_as_para()" alt="" coords="390,6,531,38" />
+<area shape="rect" href="epydoc.markup.epytext.Element&#45;class.html#__init__" title="Element.__init__()" alt="" coords="579,6,742,38" />
+</map>
+  <img src="call_graph_for_parse_as_para.gif" alt='' usemap="#call_graph_for_parse_as_para" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext-module.html#parse_docstring" class="summary-sig-name">parse_docstring</a>(<span class="summary-sig-arg">docstring</span>,
+        <span class="summary-sig-arg">errors</span>,
+        <span class="summary-sig-arg">**options</span>)</span><br />
+      Parse the given docstring, which is formatted using epytext; and 
+      return a <code>ParsedDocstring</code> representation of its 
+      contents.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#parse_docstring">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_parse_docstring_2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_parse_docstring_2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_parse_docstring_2" name="call_graph_for_parse_docstring_2">
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#__init__" title="ParsedEpytextDocstring.__init__()" alt="" coords="332,6,612,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse" title="parse()" alt="" coords="435,62,510,94" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="130,34,282,66" />
+<area shape="rect" href="epydoc.markup&#45;module.html#parse" title="parse()" alt="" coords="6,34,80,66" />
+</map>
+  <img src="call_graph_for_parse_docstring_2.gif" alt='' usemap="#call_graph_for_parse_docstring_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+</table>
+<!-- ==================== VARIABLES ==================== -->
+<a name="section-Variables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Variables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_HEADING_CHARS"></a><span class="summary-name">_HEADING_CHARS</span> = <code title="'=-~'"><code class="variable-quote">'</code><code class="variable-string">=-~</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_ESCAPES"></a><span class="summary-name">_ESCAPES</span> = <code title="{'lb': '{', 'rb': '}'}"><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">lb</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">{</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">rb</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">}</code><code class="variable-quote">'</code><code class="variable-group">}</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext-module.html#SYMBOLS" class="summary-name">SYMBOLS</a> = <code title="['&lt;-',
+ '-&gt;',
+ '^',
+ 'v',
+ 'alpha',
+ 'beta',
+ 'gamma',
+ 'delta',
+..."><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">&lt;-</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">-&gt;</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">^</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">v</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">alpha</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">beta</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">gamma</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">de</code><code class="variable-ellipsis">...</code></code><br />
+      A list of the of escape symbols that are supported by epydoc.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext-module.html#_SYMBOLS" class="summary-name">_SYMBOLS</a> = <code title="{'-&gt;': 1,
+ '&lt;-': 1,
+ '&lt;=': 1,
+ '&gt;=': 1,
+ 'Alpha': 1,
+ 'Beta': 1,
+ 'Chi': 1,
+ 'Delta': 1,
+..."><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">-&gt;</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">&lt;-</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">&lt;=</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">&gt;=</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">Alpha</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">B</code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="__doc__"></a><span class="summary-name">__doc__</span> = <code title="__doc__.replace('&lt;&lt;&lt;SYMBOLS&gt;&gt;&gt;', symblist)">__doc__.replace('&lt;&lt;&lt;SYMBOLS&gt;&gt;&gt;', symblist)</code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext-module.html#_COLORIZING_TAGS" class="summary-name">_COLORIZING_TAGS</a> = <code title="{'B': 'bold',
+ 'C': 'code',
+ 'E': 'escape',
+ 'G': 'graph',
+ 'I': 'italic',
+ 'L': 'link',
+ 'M': 'math',
+ 'S': 'symbol',
+..."><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">B</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">bold</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">C</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">code</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">E</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">escape</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_LINK_COLORIZING_TAGS"></a><span class="summary-name">_LINK_COLORIZING_TAGS</span> = <code title="['link', 'uri']"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">link</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">uri</code><code class="variable-quote">'</code><code class="variable-group">]</code></code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext-module.html#_BULLET_RE" class="summary-name">_BULLET_RE</a> = <code title="re.compile(r'-( +|$)|(\d+\.)+( +|$)|@\w+( [^\{\}:\n]+)?:')">re.compile(r'-<code class="re-group">(</code> <code class="re-op">+</code><code class="re-op">|</code>$<code class="re-group">)</code><code class="re-op">|</code><code class="re-group">(</code>\d<code class="re-op">+</code>\.<code class="re-group">)</code><code class="re-op">+</code><code class="re-group">(</code> <code class="re-op">+</code><code class="re-op">|</code>$<code class="re-group">)</code><code class="re-op">|</code>@\w<code class="re-op">+</code><code class="re-group">(</code> <code class="re-group">[</code><code class="re-op">^</code>\{\}:<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_LIST_BULLET_RE"></a><span class="summary-name">_LIST_BULLET_RE</span> = <code title="re.compile(r'-( +|$)|(\d+\.)+( +|$)')">re.compile(r'-<code class="re-group">(</code> <code class="re-op">+</code><code class="re-op">|</code>$<code class="re-group">)</code><code class="re-op">|</code><code class="re-group">(</code>\d<code class="re-op">+</code>\.<code class="re-group">)</code><code class="re-op">+</code><code class="re-group">(</code> <code class="re-op">+</code><code class="re-op">|</code>$<code class="re-group">)</code>')</code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_FIELD_BULLET_RE"></a><span class="summary-name">_FIELD_BULLET_RE</span> = <code title="re.compile(r'@\w+( [^\{\}:\n]+)?:')">re.compile(r'@\w<code class="re-op">+</code><code class="re-group">(</code> <code class="re-group">[</code><code class="re-op">^</code>\{\}:\n<code class="re-group">]</code><code class="re-op">+</code><code class="re-group">)</code><code class="re-op">?</code>:')</code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_BRACE_RE"></a><span class="summary-name">_BRACE_RE</span> = <code title="re.compile(r'[\{\}]')">re.compile(r'<code class="re-group">[</code>\{\}<code class="re-group">]</code>')</code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_TARGET_RE"></a><span class="summary-name">_TARGET_RE</span> = <code title="re.compile(r'^(.*?)\s*&lt;(?:URI:|L:)?([^&lt;&gt;]+)&gt;$')">re.compile(r'^<code class="re-group">(</code>.<code class="re-op">*?</code><code class="re-group">)</code>\s<code class="re-op">*</code>&lt;<code class="re-group">(?:</code>URI:<code class="re-op">|</code>L:<code class="re-group">)</code><code class="re-op">?</code><code class="re-group">(</code><code class="re-group">[</code><code class="re-op">^</code>&lt;&gt;<code class="re-group">]</code><code class="re-op">+</code><code class="re-group">)</code>&gt;$')</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext-module.html#GRAPH_TYPES" class="summary-name">GRAPH_TYPES</a> = <code title="['classtree', 'packagetree', 'importgraph', 'callgraph']"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">classtree</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">packagetree</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">importgraph</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">cal</code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="SYMBOL_TO_PLAINTEXT"></a><span class="summary-name">SYMBOL_TO_PLAINTEXT</span> = <code title="{'crarr': '\\'}"><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">crarr</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">\\</code><code class="variable-quote">'</code><code class="variable-group">}</code></code>
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTION DETAILS ==================== -->
+<a name="section-FunctionDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Function Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-FunctionDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="parse"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">parse</span>(<span class="sig-arg">str</span>,
+        <span class="sig-arg">errors</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#parse">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_parse_2-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_parse_2-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_parse_2" name="call_graph_for_parse_2">
+<area shape="rect" href="epydoc.markup.epytext.Element&#45;class.html#__init__" title="Element.__init__()" alt="" coords="359,6,522,38" />
+<area shape="rect" href="epydoc.markup.epytext.Token&#45;class.html#to_dom" title="Token.to_dom()" alt="" coords="368,62,512,94" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_add_list" title="_add_list()" alt="" coords="388,118,492,150" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_add_para" title="_add_para()" alt="" coords="384,174,496,206" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_add_section" title="_add_section()" alt="" coords="374,230,507,262" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_pop_completed_blocks" title="_pop_completed_blocks()" alt="" coords="332,286,548,318" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize" title="_tokenize()" alt="" coords="387,342,494,374" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse" title="parse()" alt="" coords="208,174,283,206" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="7,174,159,206" />
+</map>
+  <img src="call_graph_for_parse_2.gif" alt='' usemap="#call_graph_for_parse_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Return a DOM tree encoding the contents of an epytext string.  Any 
+  errors generated during parsing will be stored in 
+  <code>errors</code>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>str</code></strong> (<code>string</code>) - The epytext string to parse.</li>
+        <li><strong class="pname"><code>errors</code></strong> (<code>list</code> of <a 
+          href="epydoc.markup.ParseError-class.html" 
+          class="link">ParseError</a>) - A list where any errors generated during parsing will be 
+          stored.  If no list is specified, then fatal errors will generate
+          exceptions, and non-fatal errors will be ignored.</li>
+    </ul></dd>
+    <dt>Returns: <code>Element</code></dt>
+        <dd>a DOM tree encoding the contents of an epytext string.</dd>
+    <dt>Raises:</dt>
+    <dd><ul class="nomargin-top">
+        <li><code><strong class='fraise'><a href="epydoc.markup.ParseError-class.html">ParseError</a></strong></code> - If <code>errors</code> is <code>None</code> and an error is 
+        encountered while parsing.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_pop_completed_blocks"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_pop_completed_blocks</span>(<span class="sig-arg">token</span>,
+        <span class="sig-arg">stack</span>,
+        <span class="sig-arg">indent_stack</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_pop_completed_blocks">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__pop_completed_-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for__pop_completed_-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__pop_completed_" name="call_graph_for__pop_completed_">
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_pop_completed_blocks" title="_pop_completed_blocks()" alt="" coords="129,6,345,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse" title="parse()" alt="" coords="5,6,80,38" />
+</map>
+  <img src="call_graph_for__pop_completed_.gif" alt='' usemap="#call_graph_for__pop_completed_" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Pop any completed blocks off the stack.  This includes any blocks that
+  we have dedented past, as well as any list item blocks that we've 
+  dedented to.  The top element on the stack should only be a list if we're
+  about to start a new list item (i.e., if the next token is a bullet).
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="_add_list"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_add_list</span>(<span class="sig-arg">doc</span>,
+        <span class="sig-arg">bullet_token</span>,
+        <span class="sig-arg">stack</span>,
+        <span class="sig-arg">indent_stack</span>,
+        <span class="sig-arg">errors</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_add_list">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__add_list-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for__add_list-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__add_list" name="call_graph_for__add_list">
+<area shape="rect" href="epydoc.markup.epytext.Element&#45;class.html#__init__" title="Element.__init__()" alt="" coords="280,6,443,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_add_list" title="_add_list()" alt="" coords="128,6,232,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse" title="parse()" alt="" coords="5,6,80,38" />
+</map>
+  <img src="call_graph_for__add_list.gif" alt='' usemap="#call_graph_for__add_list" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Add a new list item or field to the DOM tree, with the given bullet or
+  field tag.  When necessary, create the associated list.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="_tokenize_doctest"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_tokenize_doctest</span>(<span class="sig-arg">lines</span>,
+        <span class="sig-arg">start</span>,
+        <span class="sig-arg">block_indent</span>,
+        <span class="sig-arg">tokens</span>,
+        <span class="sig-arg">errors</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_tokenize_doctest">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__tokenize_docte-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for__tokenize_docte-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__tokenize_docte" name="call_graph_for__tokenize_docte">
+<area shape="rect" href="epydoc.markup.epytext.Token&#45;class.html#__init__" title="Token.__init__()" alt="" coords="383,6,529,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize" title="_tokenize()" alt="" coords="7,6,113,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_doctest" title="_tokenize_doctest()" alt="" coords="163,6,333,38" />
+</map>
+  <img src="call_graph_for__tokenize_docte.gif" alt='' usemap="#call_graph_for__tokenize_docte" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Construct a <a href="epydoc.markup.epytext.Token-class.html" 
+  class="link">Token</a> containing the doctest block starting at 
+  <code>lines[start]</code>, and append it to <code>tokens</code>.  
+  <code>block_indent</code> should be the indentation of the doctest block.
+  Any errors generated while tokenizing the doctest block will be appended 
+  to <code>errors</code>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>lines</code></strong> (<code>list</code> of <code>string</code>) - The list of lines to be tokenized</li>
+        <li><strong class="pname"><code>start</code></strong> (<code>int</code>) - The index into <code>lines</code> of the first line of the 
+          doctest block to be tokenized.</li>
+        <li><strong class="pname"><code>block_indent</code></strong> (<code>int</code>) - The indentation of <code>lines[start]</code>.  This is the 
+          indentation of the doctest block.</li>
+        <li><strong class="pname"><code>errors</code></strong> (<code>list</code> of <a 
+          href="epydoc.markup.ParseError-class.html" 
+          class="link">ParseError</a>) - A list where any errors generated during parsing will be 
+          stored.  If no list is specified, then errors will generate 
+          exceptions.</li>
+    </ul></dd>
+    <dt>Returns: <code>int</code></dt>
+        <dd>The line number of the first line following the doctest 
+          block.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_tokenize_literal"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_tokenize_literal</span>(<span class="sig-arg">lines</span>,
+        <span class="sig-arg">start</span>,
+        <span class="sig-arg">block_indent</span>,
+        <span class="sig-arg">tokens</span>,
+        <span class="sig-arg">errors</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_tokenize_literal">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__tokenize_liter-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for__tokenize_liter-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__tokenize_liter" name="call_graph_for__tokenize_liter">
+<area shape="rect" href="epydoc.markup.epytext.Token&#45;class.html#__init__" title="Token.__init__()" alt="" coords="372,6,519,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize" title="_tokenize()" alt="" coords="7,6,113,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_literal" title="_tokenize_literal()" alt="" coords="163,6,323,38" />
+</map>
+  <img src="call_graph_for__tokenize_liter.gif" alt='' usemap="#call_graph_for__tokenize_liter" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Construct a <a href="epydoc.markup.epytext.Token-class.html" 
+  class="link">Token</a> containing the literal block starting at 
+  <code>lines[start]</code>, and append it to <code>tokens</code>.  
+  <code>block_indent</code> should be the indentation of the literal block.
+  Any errors generated while tokenizing the literal block will be appended 
+  to <code>errors</code>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>lines</code></strong> (<code>list</code> of <code>string</code>) - The list of lines to be tokenized</li>
+        <li><strong class="pname"><code>start</code></strong> (<code>int</code>) - The index into <code>lines</code> of the first line of the 
+          literal block to be tokenized.</li>
+        <li><strong class="pname"><code>block_indent</code></strong> (<code>int</code>) - The indentation of <code>lines[start]</code>.  This is the 
+          indentation of the literal block.</li>
+        <li><strong class="pname"><code>errors</code></strong> (<code>list</code> of <a 
+          href="epydoc.markup.ParseError-class.html" 
+          class="link">ParseError</a>) - A list of the errors generated by parsing.  Any new errors 
+          generated while will tokenizing this paragraph will be appended 
+          to this list.</li>
+    </ul></dd>
+    <dt>Returns: <code>int</code></dt>
+        <dd>The line number of the first line following the literal 
+          block.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_tokenize_listart"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_tokenize_listart</span>(<span class="sig-arg">lines</span>,
+        <span class="sig-arg">start</span>,
+        <span class="sig-arg">bullet_indent</span>,
+        <span class="sig-arg">tokens</span>,
+        <span class="sig-arg">errors</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_tokenize_listart">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__tokenize_lista-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for__tokenize_lista-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__tokenize_lista" name="call_graph_for__tokenize_lista">
+<area shape="rect" href="epydoc.markup.epytext.Token&#45;class.html#__init__" title="Token.__init__()" alt="" coords="372,6,519,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize" title="_tokenize()" alt="" coords="7,6,113,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_listart" title="_tokenize_listart()" alt="" coords="163,6,323,38" />
+</map>
+  <img src="call_graph_for__tokenize_lista.gif" alt='' usemap="#call_graph_for__tokenize_lista" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Construct <a href="epydoc.markup.epytext.Token-class.html" 
+  class="link">Token</a>s for the bullet and the first paragraph of the 
+  list item (or field) starting at <code>lines[start]</code>, and append 
+  them to <code>tokens</code>.  <code>bullet_indent</code> should be the 
+  indentation of the list item.  Any errors generated while tokenizing will
+  be appended to <code>errors</code>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>lines</code></strong> (<code>list</code> of <code>string</code>) - The list of lines to be tokenized</li>
+        <li><strong class="pname"><code>start</code></strong> (<code>int</code>) - The index into <code>lines</code> of the first line of the 
+          list item to be tokenized.</li>
+        <li><strong class="pname"><code>bullet_indent</code></strong> (<code>int</code>) - The indentation of <code>lines[start]</code>.  This is the 
+          indentation of the list item.</li>
+        <li><strong class="pname"><code>errors</code></strong> (<code>list</code> of <a 
+          href="epydoc.markup.ParseError-class.html" 
+          class="link">ParseError</a>) - A list of the errors generated by parsing.  Any new errors 
+          generated while will tokenizing this paragraph will be appended 
+          to this list.</li>
+    </ul></dd>
+    <dt>Returns: <code>int</code></dt>
+        <dd>The line number of the first line following the list item's 
+          first paragraph.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_tokenize_para"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_tokenize_para</span>(<span class="sig-arg">lines</span>,
+        <span class="sig-arg">start</span>,
+        <span class="sig-arg">para_indent</span>,
+        <span class="sig-arg">tokens</span>,
+        <span class="sig-arg">errors</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_tokenize_para">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__tokenize_para-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for__tokenize_para-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__tokenize_para" name="call_graph_for__tokenize_para">
+<area shape="rect" href="epydoc.markup.epytext.Token&#45;class.html#__init__" title="Token.__init__()" alt="" coords="362,6,508,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize" title="_tokenize()" alt="" coords="7,6,114,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_para" title="_tokenize_para()" alt="" coords="163,6,312,38" />
+</map>
+  <img src="call_graph_for__tokenize_para.gif" alt='' usemap="#call_graph_for__tokenize_para" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Construct a <a href="epydoc.markup.epytext.Token-class.html" 
+  class="link">Token</a> containing the paragraph starting at 
+  <code>lines[start]</code>, and append it to <code>tokens</code>.  
+  <code>para_indent</code> should be the indentation of the paragraph .  
+  Any errors generated while tokenizing the paragraph will be appended to 
+  <code>errors</code>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>lines</code></strong> (<code>list</code> of <code>string</code>) - The list of lines to be tokenized</li>
+        <li><strong class="pname"><code>start</code></strong> (<code>int</code>) - The index into <code>lines</code> of the first line of the 
+          paragraph to be tokenized.</li>
+        <li><strong class="pname"><code>para_indent</code></strong> (<code>int</code>) - The indentation of <code>lines[start]</code>.  This is the 
+          indentation of the paragraph.</li>
+        <li><strong class="pname"><code>errors</code></strong> (<code>list</code> of <a 
+          href="epydoc.markup.ParseError-class.html" 
+          class="link">ParseError</a>) - A list of the errors generated by parsing.  Any new errors 
+          generated while will tokenizing this paragraph will be appended 
+          to this list.</li>
+    </ul></dd>
+    <dt>Returns: <code>int</code></dt>
+        <dd>The line number of the first line following the paragraph.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_tokenize"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_tokenize</span>(<span class="sig-arg">str</span>,
+        <span class="sig-arg">errors</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_tokenize">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__tokenize-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for__tokenize-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__tokenize" name="call_graph_for__tokenize">
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize" title="_tokenize()" alt="" coords="129,90,236,122" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_doctest" title="_tokenize_doctest()" alt="" coords="285,6,456,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_listart" title="_tokenize_listart()" alt="" coords="291,62,451,94" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_literal" title="_tokenize_literal()" alt="" coords="291,118,451,150" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_para" title="_tokenize_para()" alt="" coords="296,174,445,206" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse" title="parse()" alt="" coords="5,90,80,122" />
+</map>
+  <img src="call_graph_for__tokenize.gif" alt='' usemap="#call_graph_for__tokenize" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Split a given formatted docstring into an ordered list of 
+  <code>Token</code>s, according to the epytext markup rules.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>str</code></strong> (<code>string</code>) - The epytext string</li>
+        <li><strong class="pname"><code>errors</code></strong> (<code>list</code> of <a 
+          href="epydoc.markup.ParseError-class.html" 
+          class="link">ParseError</a>) - A list where any errors generated during parsing will be 
+          stored.  If no list is specified, then errors will generate 
+          exceptions.</li>
+    </ul></dd>
+    <dt>Returns: <code>list</code> of <a 
+      href="epydoc.markup.epytext.Token-class.html" 
+      class="link">Token</a></dt>
+        <dd>a list of the <code>Token</code>s that make up the given 
+          string.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_colorize"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_colorize</span>(<span class="sig-arg">doc</span>,
+        <span class="sig-arg">token</span>,
+        <span class="sig-arg">errors</span>,
+        <span class="sig-arg">tagName</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string">para</code><code class="variable-quote">'</code></span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_colorize">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__colorize-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for__colorize-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__colorize" name="call_graph_for__colorize">
+<area shape="rect" href="epydoc.markup.epytext.Element&#45;class.html#__init__" title="Element.__init__()" alt="" coords="341,6,504,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_add_para" title="_add_para()" alt="" coords="16,34,128,66" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_colorize" title="_colorize()" alt="" coords="188,62,292,94" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_add_section" title="_add_section()" alt="" coords="5,90,139,122" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_colorize_graph" title="_colorize_graph()" alt="" coords="345,62,500,94" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_colorize_link" title="_colorize_link()" alt="" coords="352,118,493,150" />
+</map>
+  <img src="call_graph_for__colorize.gif" alt='' usemap="#call_graph_for__colorize" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Given a string containing the contents of a paragraph, produce a DOM 
+  <code>Element</code> encoding that paragraph.  Colorized regions are 
+  represented using DOM <code>Element</code>s, and text is represented 
+  using DOM <code>Text</code>s.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>errors</code></strong> (<code>list</code> of <code>string</code>) - A list of errors.  Any newly generated errors will be appended
+          to this list.</li>
+        <li><strong class="pname"><code>tagName</code></strong> (<code>string</code>) - The element tag for the DOM <code>Element</code> that should 
+          be generated.</li>
+    </ul></dd>
+    <dt>Returns: <code>Element</code></dt>
+        <dd>a DOM <code>Element</code> encoding the given paragraph.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_colorize_graph"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_colorize_graph</span>(<span class="sig-arg">doc</span>,
+        <span class="sig-arg">graph</span>,
+        <span class="sig-arg">token</span>,
+        <span class="sig-arg">end</span>,
+        <span class="sig-arg">errors</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#_colorize_graph">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__colorize_graph-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for__colorize_graph-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__colorize_graph" name="call_graph_for__colorize_graph">
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_colorize" title="_colorize()" alt="" coords="7,6,111,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_colorize_graph" title="_colorize_graph()" alt="" coords="162,6,316,38" />
+</map>
+  <img src="call_graph_for__colorize_graph.gif" alt='' usemap="#call_graph_for__colorize_graph" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Eg:
+<pre class="literalblock">
+ G{classtree}
+ G{classtree x, y, z}
+ G{importgraph}
+</pre>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="to_epytext"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">to_epytext</span>(<span class="sig-arg">tree</span>,
+        <span class="sig-arg">indent</span>=<span class="sig-default">0</span>,
+        <span class="sig-arg">seclevel</span>=<span class="sig-default">0</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#to_epytext">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Convert a DOM document encoding epytext back to an epytext string. 
+  This is the inverse operation from <a 
+  href="epydoc.markup.epytext-module.html#parse" class="link">parse</a>.  
+  I.e., assuming there are no errors, the following is true:
+  <ul>
+    <li>
+      <code>parse(to_epytext(tree)) == tree</code>
+    </li>
+  </ul>
+  The inverse is true, except that whitespace, line wrapping, and 
+  character escaping may be done differently.
+  <ul>
+    <li>
+      <code>to_epytext(parse(str)) == str</code> (approximately)
+    </li>
+  </ul>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>tree</code></strong> (<code>Element</code>) - A DOM document encoding of an epytext string.</li>
+        <li><strong class="pname"><code>indent</code></strong> (<code>int</code>) - The indentation for the string representation of 
+          <code>tree</code>.  Each line of the returned string will begin 
+          with <code>indent</code> space characters.</li>
+        <li><strong class="pname"><code>seclevel</code></strong> (<code>int</code>) - The section level that <code>tree</code> appears at.  This is 
+          used to generate section headings.</li>
+    </ul></dd>
+    <dt>Returns: <code>string</code></dt>
+        <dd>The epytext string corresponding to <code>tree</code>.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="to_plaintext"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">to_plaintext</span>(<span class="sig-arg">tree</span>,
+        <span class="sig-arg">indent</span>=<span class="sig-default">0</span>,
+        <span class="sig-arg">seclevel</span>=<span class="sig-default">0</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#to_plaintext">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_to_plaintext-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_to_plaintext-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_to_plaintext" name="call_graph_for_to_plaintext">
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#to_plaintext" title="ParsedEpytextDocstring.to_plaintext()" alt="" coords="7,30,314,62" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#to_plaintext" title="to_plaintext()" alt="" coords="364,30,487,62" />
+<area shape="rect" href="epydoc.util&#45;module.html#wordwrap" title="util.wordwrap()" alt="" coords="538,30,676,62" />
+</map>
+  <img src="call_graph_for_to_plaintext.gif" alt='' usemap="#call_graph_for_to_plaintext" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Convert a DOM document encoding epytext to a string representation. 
+  This representation is similar to the string generated by 
+  <code>to_epytext</code>, but <code>to_plaintext</code> removes inline 
+  markup, prints escaped characters in unescaped form, etc.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>tree</code></strong> (<code>Element</code>) - A DOM document encoding of an epytext string.</li>
+        <li><strong class="pname"><code>indent</code></strong> (<code>int</code>) - The indentation for the string representation of 
+          <code>tree</code>.  Each line of the returned string will begin 
+          with <code>indent</code> space characters.</li>
+        <li><strong class="pname"><code>seclevel</code></strong> (<code>int</code>) - The section level that <code>tree</code> appears at.  This is 
+          used to generate section headings.</li>
+    </ul></dd>
+    <dt>Returns: <code>string</code></dt>
+        <dd>The epytext string corresponding to <code>tree</code>.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="to_debug"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">to_debug</span>(<span class="sig-arg">tree</span>,
+        <span class="sig-arg">indent</span>=<span class="sig-default">4</span>,
+        <span class="sig-arg">seclevel</span>=<span class="sig-default">0</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#to_debug">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Convert a DOM document encoding epytext back to an epytext string, 
+  annotated with extra debugging information.  This function is similar to 
+  <a href="epydoc.markup.epytext-module.html#to_epytext" 
+  class="link">to_epytext</a>, but it adds explicit information about where
+  different blocks begin, along the left margin.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>tree</code></strong> (<code>Element</code>) - A DOM document encoding of an epytext string.</li>
+        <li><strong class="pname"><code>indent</code></strong> (<code>int</code>) - The indentation for the string representation of 
+          <code>tree</code>.  Each line of the returned string will begin 
+          with <code>indent</code> space characters.</li>
+        <li><strong class="pname"><code>seclevel</code></strong> (<code>int</code>) - The section level that <code>tree</code> appears at.  This is 
+          used to generate section headings.</li>
+    </ul></dd>
+    <dt>Returns: <code>string</code></dt>
+        <dd>The epytext string corresponding to <code>tree</code>.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="pparse"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">pparse</span>(<span class="sig-arg">str</span>,
+        <span class="sig-arg">show_warnings</span>=<span class="sig-default">1</span>,
+        <span class="sig-arg">show_errors</span>=<span class="sig-default">1</span>,
+        <span class="sig-arg">stream</span>=<span class="sig-default">sys.stderr</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#pparse">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Pretty-parse the string.  This parses the string, and catches any 
+  warnings or errors produced.  Any warnings and errors are displayed, and 
+  the resulting DOM parse structure is returned.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>str</code></strong> (<code>string</code>) - The string to parse.</li>
+        <li><strong class="pname"><code>show_warnings</code></strong> (<code>boolean</code>) - Whether or not to display non-fatal errors generated by 
+          parsing <code>str</code>.</li>
+        <li><strong class="pname"><code>show_errors</code></strong> (<code>boolean</code>) - Whether or not to display fatal errors generated by parsing 
+          <code>str</code>.</li>
+        <li><strong class="pname"><code>stream</code></strong> (<code>stream</code>) - The stream that warnings and errors should be written to.</li>
+    </ul></dd>
+    <dt>Returns: <code>Element</code></dt>
+        <dd>a DOM document encoding the contents of <code>str</code>.</dd>
+    <dt>Raises:</dt>
+    <dd><ul class="nomargin-top">
+        <li><code><strong class='fraise'>SyntaxError</strong></code> - If any fatal errors were encountered.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="parse_as_literal"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">parse_as_literal</span>(<span class="sig-arg">str</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#parse_as_literal">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Return a DOM document matching the epytext DTD, containing a single 
+  literal block.  That literal block will include the contents of the given
+  string.  This method is typically used as a fall-back when the parser 
+  fails.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>str</code></strong> (<code>string</code>) - The string which should be enclosed in a literal block.</li>
+    </ul></dd>
+    <dt>Returns: <code>Element</code></dt>
+        <dd>A DOM document containing <code>str</code> in a single literal
+          block.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="parse_as_para"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">parse_as_para</span>(<span class="sig-arg">str</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#parse_as_para">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_parse_as_para-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_parse_as_para-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_parse_as_para" name="call_graph_for_parse_as_para">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#add_metadata_from_var" title="docstringparser.add_metadata_from_var()" alt="" coords="7,6,340,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse_as_para" title="parse_as_para()" alt="" coords="390,6,531,38" />
+<area shape="rect" href="epydoc.markup.epytext.Element&#45;class.html#__init__" title="Element.__init__()" alt="" coords="579,6,742,38" />
+</map>
+  <img src="call_graph_for_parse_as_para.gif" alt='' usemap="#call_graph_for_parse_as_para" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Return a DOM document matching the epytext DTD, containing a single 
+  paragraph.  That paragraph will include the contents of the given string.
+  This can be used to wrap some forms of automatically generated 
+  information (such as type names) in paragraphs.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>str</code></strong> (<code>string</code>) - The string which should be enclosed in a paragraph.</li>
+    </ul></dd>
+    <dt>Returns: <code>Element</code></dt>
+        <dd>A DOM document containing <code>str</code> in a single 
+          paragraph.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="parse_docstring"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">parse_docstring</span>(<span class="sig-arg">docstring</span>,
+        <span class="sig-arg">errors</span>,
+        <span class="sig-arg">**options</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#parse_docstring">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_parse_docstring_2-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_parse_docstring_2-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_parse_docstring_2" name="call_graph_for_parse_docstring_2">
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#__init__" title="ParsedEpytextDocstring.__init__()" alt="" coords="332,6,612,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse" title="parse()" alt="" coords="435,62,510,94" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse_docstring" title="parse_docstring()" alt="" coords="130,34,282,66" />
+<area shape="rect" href="epydoc.markup&#45;module.html#parse" title="parse()" alt="" coords="6,34,80,66" />
+</map>
+  <img src="call_graph_for_parse_docstring_2.gif" alt='' usemap="#call_graph_for_parse_docstring_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Parse the given docstring, which is formatted using epytext; and 
+  return a <code>ParsedDocstring</code> representation of its contents.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>docstring</code></strong> (<code>string</code>) - The docstring to parse</li>
+        <li><strong class="pname"><code>errors</code></strong> (<code>list</code> of <a 
+          href="epydoc.markup.ParseError-class.html" 
+          class="link">ParseError</a>) - A list where any errors generated during parsing will be 
+          stored.</li>
+        <li><strong class="pname"><code>options</code></strong> - Extra options.  Unknown options are ignored. Currently, no 
+          extra options are defined.</li>
+    </ul></dd>
+    <dt>Returns: <a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a></dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== VARIABLES DETAILS ==================== -->
+<a name="section-VariablesDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-VariablesDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="SYMBOLS"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">SYMBOLS</h3>
+  A list of the of escape symbols that are supported by epydoc.  
+  Currently the following symbols are supported:
+  <ul>
+    <li>
+      <code>S{&lt;-}</code>=&larr;;
+    </li>
+    <li>
+      <code>S{-&gt;}</code>=&rarr;;
+    </li>
+    <li>
+      <code>S{^}</code>=&uarr;;
+    </li>
+    <li>
+      <code>S{v}</code>=&darr;;
+    </li>
+    <li>
+      <code>S{alpha}</code>=&alpha;;
+    </li>
+    <li>
+      <code>S{beta}</code>=&beta;;
+    </li>
+    <li>
+      <code>S{gamma}</code>=&gamma;;
+    </li>
+    <li>
+      <code>S{delta}</code>=&delta;;
+    </li>
+    <li>
+      <code>S{epsilon}</code>=&epsilon;;
+    </li>
+    <li>
+      <code>S{zeta}</code>=&zeta;;
+    </li>
+    <li>
+      <code>S{eta}</code>=&eta;;
+    </li>
+    <li>
+      <code>S{theta}</code>=&theta;;
+    </li>
+    <li>
+      <code>S{iota}</code>=&iota;;
+    </li>
+    <li>
+      <code>S{kappa}</code>=&kappa;;
+    </li>
+    <li>
+      <code>S{lambda}</code>=&lambda;;
+    </li>
+    <li>
+      <code>S{mu}</code>=&mu;;
+    </li>
+    <li>
+      <code>S{nu}</code>=&nu;;
+    </li>
+    <li>
+      <code>S{xi}</code>=&xi;;
+    </li>
+    <li>
+      <code>S{omicron}</code>=&omicron;;
+    </li>
+    <li>
+      <code>S{pi}</code>=&pi;;
+    </li>
+    <li>
+      <code>S{rho}</code>=&rho;;
+    </li>
+    <li>
+      <code>S{sigma}</code>=&sigma;;
+    </li>
+    <li>
+      <code>S{tau}</code>=&tau;;
+    </li>
+    <li>
+      <code>S{upsilon}</code>=&upsilon;;
+    </li>
+    <li>
+      <code>S{phi}</code>=&phi;;
+    </li>
+    <li>
+      <code>S{chi}</code>=&chi;;
+    </li>
+    <li>
+      <code>S{psi}</code>=&psi;;
+    </li>
+    <li>
+      <code>S{omega}</code>=&omega;;
+    </li>
+    <li>
+      <code>S{Alpha}</code>=&Alpha;;
+    </li>
+    <li>
+      <code>S{Beta}</code>=&Beta;;
+    </li>
+    <li>
+      <code>S{Gamma}</code>=&Gamma;;
+    </li>
+    <li>
+      <code>S{Delta}</code>=&Delta;;
+    </li>
+    <li>
+      <code>S{Epsilon}</code>=&Epsilon;;
+    </li>
+    <li>
+      <code>S{Zeta}</code>=&Zeta;;
+    </li>
+    <li>
+      <code>S{Eta}</code>=&Eta;;
+    </li>
+    <li>
+      <code>S{Theta}</code>=&Theta;;
+    </li>
+    <li>
+      <code>S{Iota}</code>=&Iota;;
+    </li>
+    <li>
+      <code>S{Kappa}</code>=&Kappa;;
+    </li>
+    <li>
+      <code>S{Lambda}</code>=&Lambda;;
+    </li>
+    <li>
+      <code>S{Mu}</code>=&Mu;;
+    </li>
+    <li>
+      <code>S{Nu}</code>=&Nu;;
+    </li>
+    <li>
+      <code>S{Xi}</code>=&Xi;;
+    </li>
+    <li>
+      <code>S{Omicron}</code>=&Omicron;;
+    </li>
+    <li>
+      <code>S{Pi}</code>=&Pi;;
+    </li>
+    <li>
+      <code>S{Rho}</code>=&Rho;;
+    </li>
+    <li>
+      <code>S{Sigma}</code>=&Sigma;;
+    </li>
+    <li>
+      <code>S{Tau}</code>=&Tau;;
+    </li>
+    <li>
+      <code>S{Upsilon}</code>=&Upsilon;;
+    </li>
+    <li>
+      <code>S{Phi}</code>=&Phi;;
+    </li>
+    <li>
+      <code>S{Chi}</code>=&Chi;;
+    </li>
+    <li>
+      <code>S{Psi}</code>=&Psi;;
+    </li>
+    <li>
+      <code>S{Omega}</code>=&Omega;;
+    </li>
+    <li>
+      <code>S{larr}</code>=&larr;;
+    </li>
+    <li>
+      <code>S{rarr}</code>=&rarr;;
+    </li>
+    <li>
+      <code>S{uarr}</code>=&uarr;;
+    </li>
+    <li>
+      <code>S{darr}</code>=&darr;;
+    </li>
+    <li>
+      <code>S{harr}</code>=&harr;;
+    </li>
+    <li>
+      <code>S{crarr}</code>=<span class="variable-linewrap"><img 
+      src="crarr.png" alt="\" /></span>;
+    </li>
+    <li>
+      <code>S{lArr}</code>=&lArr;;
+    </li>
+    <li>
+      <code>S{rArr}</code>=&rArr;;
+    </li>
+    <li>
+      <code>S{uArr}</code>=&uArr;;
+    </li>
+    <li>
+      <code>S{dArr}</code>=&dArr;;
+    </li>
+    <li>
+      <code>S{hArr}</code>=&hArr;;
+    </li>
+    <li>
+      <code>S{copy}</code>=&copy;;
+    </li>
+    <li>
+      <code>S{times}</code>=&times;;
+    </li>
+    <li>
+      <code>S{forall}</code>=&forall;;
+    </li>
+    <li>
+      <code>S{exist}</code>=&exist;;
+    </li>
+    <li>
+      <code>S{part}</code>=&part;;
+    </li>
+    <li>
+      <code>S{empty}</code>=&empty;;
+    </li>
+    <li>
+      <code>S{isin}</code>=&isin;;
+    </li>
+    <li>
+      <code>S{notin}</code>=&notin;;
+    </li>
+    <li>
+      <code>S{ni}</code>=&ni;;
+    </li>
+    <li>
+      <code>S{prod}</code>=&prod;;
+    </li>
+    <li>
+      <code>S{sum}</code>=&sum;;
+    </li>
+    <li>
+      <code>S{prop}</code>=&prop;;
+    </li>
+    <li>
+      <code>S{infin}</code>=&infin;;
+    </li>
+    <li>
+      <code>S{ang}</code>=&ang;;
+    </li>
+    <li>
+      <code>S{and}</code>=&and;;
+    </li>
+    <li>
+      <code>S{or}</code>=&or;;
+    </li>
+    <li>
+      <code>S{cap}</code>=&cap;;
+    </li>
+    <li>
+      <code>S{cup}</code>=&cup;;
+    </li>
+    <li>
+      <code>S{int}</code>=&int;;
+    </li>
+    <li>
+      <code>S{there4}</code>=&there4;;
+    </li>
+    <li>
+      <code>S{sim}</code>=&sim;;
+    </li>
+    <li>
+      <code>S{cong}</code>=&cong;;
+    </li>
+    <li>
+      <code>S{asymp}</code>=&asymp;;
+    </li>
+    <li>
+      <code>S{ne}</code>=&ne;;
+    </li>
+    <li>
+      <code>S{equiv}</code>=&equiv;;
+    </li>
+    <li>
+      <code>S{le}</code>=&le;;
+    </li>
+    <li>
+      <code>S{ge}</code>=&ge;;
+    </li>
+    <li>
+      <code>S{sub}</code>=&sub;;
+    </li>
+    <li>
+      <code>S{sup}</code>=&sup;;
+    </li>
+    <li>
+      <code>S{nsub}</code>=&nsub;;
+    </li>
+    <li>
+      <code>S{sube}</code>=&sube;;
+    </li>
+    <li>
+      <code>S{supe}</code>=&supe;;
+    </li>
+    <li>
+      <code>S{oplus}</code>=&oplus;;
+    </li>
+    <li>
+      <code>S{otimes}</code>=&otimes;;
+    </li>
+    <li>
+      <code>S{perp}</code>=&perp;;
+    </li>
+    <li>
+      <code>S{infinity}</code>=&infin;;
+    </li>
+    <li>
+      <code>S{integral}</code>=&int;;
+    </li>
+    <li>
+      <code>S{product}</code>=&prod;;
+    </li>
+    <li>
+      <code>S{&gt;=}</code>=&ge;;
+    </li>
+    <li>
+      <code>S{&lt;=}</code>=&le;
+    </li>
+  </ul>
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">&lt;-</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">-&gt;</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">^</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">v</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">alpha</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">beta</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">gamma</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">delta</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_SYMBOLS"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_SYMBOLS</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">-&gt;</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">&lt;-</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">&lt;=</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">&gt;=</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">Alpha</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">Beta</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">Chi</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">Delta</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_COLORIZING_TAGS"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_COLORIZING_TAGS</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">B</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">bold</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">C</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">code</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">E</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">escape</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">G</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">graph</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">I</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">italic</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">L</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">link</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">M</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">math</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">S</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">symbol</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_BULLET_RE"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_BULLET_RE</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+re.compile(r'-<code class="re-group">(</code> <code class="re-op">+</code><code class="re-op">|</code>$<code class="re-group">)</code><code class="re-op">|</code><code class="re-group">(</code>\d<code class="re-op">+</code>\.<code class="re-group">)</code><code class="re-op">+</code><code class="re-group">(</code> <code class="re-op">+</code><code class="re-op">|</code>$<code class="re-group">)</code><code class="re-op">|</code>@\w<code class="re-op">+</code><code class="re-group">(</code> <code class="re-group">[</code><code class="re-op">^</code>\{\}:\n<code class="re-group">]</code><code class="re-op">+</code><code class="re-group">)</code><code class="re-op">?</code>:')
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="GRAPH_TYPES"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">GRAPH_TYPES</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">classtree</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">packagetree</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">importgraph</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">callgraph</code><code class="variable-quote">'</code><code class="variable-group">]</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:03:11 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title>Related Projects</title>
+<link rel="stylesheet" href="epydoc.css" type="text/css"/>
+</head>
+<!-- $Id: relatedprojects.html 1211 2006-04-10 19:38:37Z edloper $ -->
+
+<body>
+<div class="body">
+<h1> Related Projects</h1>
+
+<h2> 1. Doc-sig </h2>
+
+<p> <a href="http://www.python.org/sigs/doc-sig/">Doc-sig</a> is a
+Python special interest group dedicated to producing documentation and
+documentation tools for Python.  Much of my work on epydoc was
+influenced by conversations on the <a
+href="http://mail.python.org/pipermail/doc-sig/">doc-sig mailing
+list</a>.
+
+<h2> 2. Python API Extraction Tools </h2>
+
+<p> Several tools have been created to extract API documentation from
+Python.  This section describes the tools that I have looked at, and
+compares them to epydoc.  If I left out any tools, please let me know.
+
+<h3> 2.1. Pydoc </h3>
+
+<p> <a href="http://web.lfw.org/python/pydoc.html">Pydoc</a> is the
+only widely accepted API documentation tool for Python.  It became
+part of the standard library in Python 2.1.  Pydoc defines three basic
+modes of operation: </p>
+
+<ul>
+  <li> The a command line interface that creates output that is
+  similar to the manual pages shown by the unix man command.
+  It can also be used to search for keywords, like the unix
+  apropos command. </li>
+
+  <li> Pydoc can be used to create formatted HTML pages.  For an
+  example of the html output of pydoc, see the <a
+  href="http://web.lfw.org/python/pydoc.html">pydoc homepage</a>,
+  which was created using pydoc. </li>
+
+  <li> Pydoc provides interactive help from the Python interpreter,
+  via the <code>help</code> function:
+  
+  <div class="screen"><pre>
+<code class="prompt">&gt;&gt;&gt;</code> <code class="user"><code class="keyword">from</code> pydoc <code class="keyword">import</code> help</code>
+
+<code class="prompt">&gt;&gt;&gt;</code> <code class="user">help(x_intercept)</code>
+<code class="output">Help on function x_intercept in module __main__:
+
+<b>x_intercept</b>(m, b)
+    Return the x intercept of the line y=m*x+b.  The x intercept of a
+    line is the point at which it crosses the x axis (y=0).</code>
+</pre></div>
+  </li>
+</ul>
+
+<p> One limitation of pydoc (and perhaps one of the reasons that it
+was able to become widely accepted) is that it does make any
+assumptions about how docstrings are formatted; it simply displays
+them as they are, with a fixed-width font.  As a result, no special
+formatting can be applied to the text; and there is no way to let
+pydoc know what parts of the docstring describe specific fields, like
+parameters or variables.  On the other hand, this lack of assumptions
+about formatting guarantees that pydoc can be used with any Python
+code. </p>
+
+<p> Like epydoc, pydoc derives information about Python objects by
+using introspection.  This allows pydoc to be used on both Python and
+builtin (C) modules; but it also means that pydoc does not have access
+to some types of information (such as where objects are imported
+from), and it means that pydoc can only document modules that can be
+safely imported. </p>
+
+<p> Pydoc fills a very useful niche, and I use it on a regular basis
+to check the documentation of Python objects.  But for documenting my
+own projects, I prefer to use a tool that can make use of formatting
+conventions in the docstrings. </p>
+
+<h3> 2.2. HappyDoc </h3>
+
+<p> Aside from pydoc, <a
+href="http://happydoc.sourceforge.net/">HappyDoc</a> is probably the
+most widely used API documentation tool for Python.  It is used by at
+least 5 major projects, including Numerical Python.  For an example of
+the HTML output produced by happydoc, see the <a
+href="http://happydoc.sourceforge.net/">HappyDoc homepage</a>, which
+was created using HappyDoc. </p>
+
+<p> HappyDoc is the most flexible API documentation tool currently
+available.  It supports several different docstring markup languages,
+including StructuredText; StructuredTextNG; plain text; raw text; and
+MML.  It can produce a wide variety of output formats, including HTML,
+text files, DocBook, and Dia. </p>
+
+<p> Unlike epydoc, HappyDoc derives information about Python objects
+by parsing the Python source files.  This means that HappyDoc can be
+used to document modules that cannot be safely imported, and that it
+has access to some types of information that are difficult to retrieve
+via introspection.  This also allows HappyDoc objects to be documented
+using comments as well as docstrings.  However, since HappyDoc gets
+information about Python objects by parsing Python source files, it
+cannot be used on builtin (C) modules. </p>
+
+<p> I considered integrating epydoc with HappyDoc (as a docstring
+converter for epytext and a formatter for epydoc's html output), but I
+decided that it would be too difficult.  In particular, it would
+require signifigant work to port epydoc's html output code, because of
+the differences in how epydoc and HappyDoc derive and store
+information about Python objects.  Also, HappyDoc does not appear to
+have a mechanism for associating descriptions with specific fields
+(such as paremeters of a function).  However, I may decided at some
+point to implement a docstring converter for epytext, since that would
+at least allow me to use HappyDoc to generate DocBook and pdf versions
+of API documentation. </p>
+
+<h3> 2.3. Docutils </h3>
+
+<p> <a href="http://docutils.sourceforge.net/">Docutils</a> is a
+project to create a modular framework for Python API documentation
+generation.  The project looks promising, but it is still under
+construction.  Once it is completed, it may become the standard
+framework for Python API documentation tools.  If it does, then I may
+decide to integrate epydoc with it. </p>
+
+<p> The markup language of choice for Docutils is reStructuredText.
+reStructuredText is a fairly powerful markup language, with some of
+the same goals as epytext.  However, it is designed to be used for a
+wide variety of tasks, and some of its features may not be very useful
+for API documentation.  The markup language itself is too complicated
+for my taste, using a wide variety of context-dependant rules to try
+to "guess" what you mean.  In comparison, epytext is much simpler,
+with six simple block structure constructs, and one inline markup
+construct.  If Docutils becomes the standard framework for API
+documentation generation, epytext might provide a simpler markup
+language for people who find reStructuredText too complex. </p>
+
+<p> Porting the epydoc HTML output system to Docutils may prove
+difficult, for some of the same reasons mentioned above for HappyDoc.
+However, if Docutils becomes the standard framework for API
+documentation tools, then I may try to port it. </p>
+
+<h3> 2.4. Pythondoc </h3>
+
+<p> <a
+href="http://starship.python.net/crew/danilo/pythondoc/">Pythondoc</a>
+is a Python API documentation tool that uses StructuredText for
+markup, and can produce HTML and XML output.  It uses XML as an
+intermediate representation, to simplify the addition of new output
+formats. </a>
+
+<h3> 2.5. Crystal </h3>
+
+<p> <a
+href="http://www.btinternet.com/~tratt/comp/python/crystal/">Crystal</a>
+is a Python API documentation tool that produces output that is
+similar to Javadoc.  Its homepage includes <a
+href="http://www.btinternet.com/~tratt/comp/python/crystal/sample/index.html">a
+sample of the output it generates</a>. </p>
+
+<h3> 2.6. Easydoc </h3>
+
+<p> <a href="http://htmltmpl.sourceforge.net/easydoc.html">Easydoc</a>
+is a Python API documentation tool based on <a
+href="http://htmltmpl.sourceforge.net/">htmltmpl</a>.  It uses an
+HTML-like markup language, similar to the language used by Javadoc;
+and produces HTML output. </p>
+
+<h3> 2.7. Teud </h3>
+
+<p> <a
+href="http://twistedmatrix.com/users/jh.twistd/python/moin.cgi/TeudProject">Teud</a>
+is a Python API documentation tool that does not apply any formatting
+to docstrings (like pydoc).  It produces XML output, which can then be
+transformed to HTML using an XSLT stylesheet.  Its homepage includes
+<a
+href="http://twistedmatrix.com/users/jh/teud/Twisted/twisted.html">a
+sample of the output it generates</a>. </p>
+
+<h3> 2.8. XIST </h3>
+
+<p> <a href="http://www.livinglogic.de/Python/xist/index.html">XIST</a>
+is an XML based extensible HTML generator written in Python.  It can
+be used to produce API documentation in HTML. </p>
+
+<h3> 2.9. HTMLgen </h3>
+
+<p> <a
+href="http://starship.python.net/crew/friedrich/HTMLgen/html/main.html">HTMLgen</a>
+is a Python library for generating HTML documents.  It can be used to
+produce API documentation; for an example of its output, see the <a
+href="http://starship.python.net/crew/friedrich/HTMLgen/html/index.html">HTMLgen
+Manual</a> </p>
+
+<h3> 2.10. doc.py </h3>
+
+<a
+href="http://www.lemburg.com/files/python/SoftwareDescriptions.html#doc.py">doc.py</a>
+is a Python API documentation tool that is no longer under active
+development.  It uses an unspecified markup langauge, and produces
+HTML output.  For an example of its output, see its <a
+href="http://www.lemburg.com/files/python/PythonStuff.html">API
+documentation</a>. </p>
+
+<h2> 3. API Extraction Tools for Other Languages </h2>
+
+<h3> 3.1. Javadoc </h3>
+
+<p> <a href="http://java.sun.com/j2se/javadoc/">Javadoc</a> is the
+standard API documentation tool for Java.  It uses special comments to
+document classes, interfaces, methods, and variables.  Its markup
+language consists of HTML, extended with a few special constructs such
+as fields.  The javadoc program extracts the API documentation, and
+converts it into a set of HTML pages.  For an example of the HTML
+output produced by javadoc, see the <a
+href="http://java.sun.com/j2se/1.4/docs/api/index.html">j2se 1.4 API
+specification</a>. </p>
+
+<p> The use of HTML as a markup language for API documentation has two
+major disadvantages.  First, HTML is quite verbose, which makes it
+inconvenient to write and read the documentation.  Second, it means
+that the only supported output format is HTML; API documentation
+cannot be rendered in other formats, such as pdf.  </p>
+
+<p> On the other hand, the use of HTML has some significant
+advantages.  First, HTML is widely used and widely known, so most
+programmers don't need to learn a new markup language.  Second, the
+use of HTML simplifies the construction of documentation formatting
+tools.  And finally, HTML provides a great deal of freedom for
+including complex constructs in the API documentation, such as tables,
+charts, and images.  </p>
+
+<p> Javadoc was the original inspiration for epydoc, and I adopted its
+use of fields.  However, I decided that HTML was too verbose and
+complex of a markup language, and decided to create a simpler markup
+language instead. </p>
+
+<h3> 3.2. Doxygen </h3>
+
+<p> <a href="http://www.doxygen.org/">Doxygen</a> is an API
+documentation tool for for C++, C, Java, and IDL.  It is the most
+commonly used API documentation tool for C and C++.  It uses a fairly
+complex markup language, which can handle everything from lists to
+crossreferences to mathematical formulas.  It can output the API
+documentation as HTML, LaTeX, Postscript, PDF, RTF, and Unix man
+pages.  It also has a number of advanced features that are not
+supported by any other API documentation tools that I know of, such as
+producing call graphs using dot; and rendering LaTeX-style
+mathematical formulas. </p>
+
+<h3> 3.3. POD </h3>
+
+<p> <a
+href="http://www.perldoc.com/perl5.8.0/pod/perlpod.html">POD</a>
+(Plain Old Documentation) is the standard API documentation tool for
+Perl.  POD defines a simple low-level markup language that integrates
+well with the Perl parser.  Tools exist to convert POD documentation
+into a variety of formats, including HTML and man pages.  For an
+example of the HTML output produced for POD, see the <a
+href="http://www.perldoc.com/perl5.6.1/pod.html">Perldoc POD Page</a>
+</p>
+
+<p> The inline markup construct (<code>x{...}</code>) used by epydoc
+was partially inspired by the POD inline markup construct
+(<code>x&lt;...&gt;</code>).  However, I decided to use curly braces
+instead of angle braces, because it significantly reduces the need for
+escaping.  A matching pair of curly braces is only interpreted as
+markup if the left brace is immediately preceeded by a capital letter;
+thus, you only need to use escaping if: </p>
+
+<ol>
+  <li> You want to include a single (un-matched) curly brace.
+  <li> You want to preceed a matched pair of curly braces with a
+  capital letter. </li>
+</ol>
+
+<p> Note that there is no valid Python expression where a pair of
+matched curly braces is immediately preceeded by a capital letter
+(except within string literals); so case (2) is unlikely to cause any
+problems. </p>
+
+<h3> 3.4. Other Tools </h3>
+
+<p> The Doxygen page includes a fairly extensive list of <a
+href="http://www.stack.nl/~dimitri/doxygen/links.html">API
+documentation extraction tools</a>. </p>
+
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="index.html">
+    Home</a></td></a>
+  <a class="nav" href="installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

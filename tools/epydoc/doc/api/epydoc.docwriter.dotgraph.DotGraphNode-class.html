@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.docwriter.dotgraph.DotGraphNode</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.docwriter-module.html">Package&nbsp;docwriter</a> ::
+        <a href="epydoc.docwriter.dotgraph-module.html">Module&nbsp;dotgraph</a> ::
+        Class&nbsp;DotGraphNode
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.docwriter.dotgraph.DotGraphNode-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class DotGraphNode</h1><span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraphNode">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_d_2" name="uml_class_diagram_for_epydoc_d_2">
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html" title="A specialized dot graph node used to display ClassDocs using UML notation." alt="" coords="5,136,187,174" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html#__setitem__" title="epydoc.docwriter.dotgraph.DotGraphNode.__setitem__" alt="" coords="48,36,360,55" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html#__init__" title="epydoc.docwriter.dotgraph.DotGraphNode.__init__" alt="" coords="48,55,360,74" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html#__getitem__" title="epydoc.docwriter.dotgraph.DotGraphNode.__getitem__" alt="" coords="48,74,360,92" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html#to_dotfile" title="Return the dot commands that should be used to render this node." alt="" coords="48,92,360,111" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html" title="epydoc.docwriter.dotgraph.DotGraphNode" alt="" coords="36,6,372,118" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlModuleNode&#45;class.html" title="A specialized dot grah node used to display ModuleDocs using UML notation." alt="" coords="216,136,408,174" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_d_2.gif" alt='' usemap="#uml_class_diagram_for_epydoc_d_2" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="__init__"></a><span class="summary-sig-name">__init__</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">label</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">html_label</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">**attribs</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraphNode.__init__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___18-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___init___18-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___18" name="call_graph_for___init___18">
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html#__init__" title="__init__()" alt="" coords="364,62,460,94" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#__init__" title="DotGraphUmlClassNode.__init__()" alt="" coords="15,6,306,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlModuleNode&#45;class.html#__init__" title="DotGraphUmlModuleNode.__init__()" alt="" coords="7,62,314,94" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#add_valdoc_nodes" title="add_valdoc_nodes()" alt="" coords="74,118,247,150" />
+</map>
+  <img src="call_graph_for___init___18.gif" alt='' usemap="#call_graph_for___init___18" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="__getitem__"></a><span class="summary-sig-name">__getitem__</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">attr</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraphNode.__getitem__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___getitem___3-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___getitem___3-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___getitem___3" name="call_graph_for___getitem___3">
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html#__getitem__" title="__getitem__()" alt="" coords="267,6,395,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#specialize_valdoc_node" title="specialize_valdoc_node()" alt="" coords="7,6,217,38" />
+</map>
+  <img src="call_graph_for___getitem___3.gif" alt='' usemap="#call_graph_for___getitem___3" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="__setitem__"></a><span class="summary-sig-name">__setitem__</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">attr</span>,
+        <span class="summary-sig-arg">val</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraphNode.__setitem__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___setitem___2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___setitem___2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___setitem___2" name="call_graph_for___setitem___2">
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html#__setitem__" title="__setitem__()" alt="" coords="268,6,393,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#specialize_valdoc_node" title="specialize_valdoc_node()" alt="" coords="7,6,217,38" />
+</map>
+  <img src="call_graph_for___setitem___2.gif" alt='' usemap="#call_graph_for___setitem___2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="to_dotfile"></a><span class="summary-sig-name">to_dotfile</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return the dot commands that should be used to render this node.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraphNode.to_dotfile">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_to_dotfile_3-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_to_dotfile_3-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_to_dotfile_3" name="call_graph_for_to_dotfile_3">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="399,6,641,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#to_dotfile" title="DotGraph.to_dotfile()" alt="" coords="5,6,192,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html#to_dotfile" title="to_dotfile()" alt="" coords="241,6,348,38" />
+</map>
+  <img src="call_graph_for_to_dotfile_3.gif" alt='' usemap="#call_graph_for_to_dotfile_3" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_next_id"></a><span class="summary-name">_next_id</span> = <code title="0">0</code>
+    </td>
+  </tr>
+</table>
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:04:10 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

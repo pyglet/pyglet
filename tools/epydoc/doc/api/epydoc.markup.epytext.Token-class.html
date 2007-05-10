@@ -1,0 +1,619 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.epytext.Token</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        <a href="epydoc.markup.epytext-module.html">Module&nbsp;epytext</a> ::
+        Class&nbsp;Token
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.epytext.Token-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class Token</h1><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#Token">source&nbsp;code</a></span><br /><br />
+<code>Token</code>s are an intermediate data structure used while 
+  constructing the structuring DOM tree for a formatted docstring. There 
+  are five types of <code>Token</code>:
+  <ul>
+    <li>
+      Paragraphs
+    </li>
+    <li>
+      Literal blocks
+    </li>
+    <li>
+      Doctest blocks
+    </li>
+    <li>
+      Headings
+    </li>
+    <li>
+      Bullets
+    </li>
+  </ul>
+  <p>The text contained in each <code>Token</code> is stored in the 
+  <code>contents</code> variable.  The string in this variable has been 
+  normalized.  For paragraphs, this means that it has been converted into a
+  single line of text, with newline/indentation replaced by single spaces.
+  For literal blocks and doctest blocks, this means that the appropriate 
+  amount of leading whitespace has been removed from each line.</p>
+  Each <code>Token</code> has an indentation level associated with it, 
+  stored in the <code>indent</code> variable.  This indentation level is 
+  used by the structuring procedure to assemble hierarchical blocks.<br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext.Token-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">tag</span>,
+        <span class="summary-sig-arg">startline</span>,
+        <span class="summary-sig-arg">contents</span>,
+        <span class="summary-sig-arg">indent</span>,
+        <span class="summary-sig-arg">level</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Create a new <code>Token</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#Token.__init__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___36-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___init___36-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___36" name="call_graph_for___init___36">
+<area shape="rect" href="epydoc.markup.epytext.Token&#45;class.html#__init__" title="__init__()" alt="" coords="225,90,321,122" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_doctest" title="_tokenize_doctest()" alt="" coords="5,6,176,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_listart" title="_tokenize_listart()" alt="" coords="11,62,171,94" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_literal" title="_tokenize_literal()" alt="" coords="11,118,171,150" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_para" title="_tokenize_para()" alt="" coords="16,174,165,206" />
+</map>
+  <img src="call_graph_for___init___36.gif" alt='' usemap="#call_graph_for___init___36" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext.Token-class.html#__repr__" class="summary-sig-name">__repr__</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Returns:
+      the formal representation of this <code>Token</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#Token.__repr__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><a href="epydoc.markup.epytext.Element-class.html" 
+      class="link">Element</a></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.epytext.Token-class.html#to_dom" class="summary-sig-name">to_dom</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">doc</span>)</span><br />
+      Returns:
+      a DOM representation of this <code>Token</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#Token.to_dom">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_to_dom-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_to_dom-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_to_dom" name="call_graph_for_to_dom">
+<area shape="rect" href="epydoc.markup.epytext.Element&#45;class.html#__init__" title="Element.__init__()" alt="" coords="269,6,432,38" />
+<area shape="rect" href="epydoc.markup.epytext.Token&#45;class.html#to_dom" title="to_dom()" alt="" coords="129,6,220,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse" title="parse()" alt="" coords="5,6,80,38" />
+</map>
+  <img src="call_graph_for_to_dom.gif" alt='' usemap="#call_graph_for_to_dom" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+        <a name="PARA"></a><span class="summary-name">PARA</span> = <code title="'para'"><code class="variable-quote">'</code><code class="variable-string">para</code><code class="variable-quote">'</code></code><br />
+      The <code>tag</code> value for paragraph <code>Token</code>s.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+        <a name="LBLOCK"></a><span class="summary-name">LBLOCK</span> = <code title="'literalblock'"><code class="variable-quote">'</code><code class="variable-string">literalblock</code><code class="variable-quote">'</code></code><br />
+      The <code>tag</code> value for literal <code>Token</code>s.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+        <a name="DTBLOCK"></a><span class="summary-name">DTBLOCK</span> = <code title="'doctestblock'"><code class="variable-quote">'</code><code class="variable-string">doctestblock</code><code class="variable-quote">'</code></code><br />
+      The <code>tag</code> value for doctest <code>Token</code>s.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+        <a name="HEADING"></a><span class="summary-name">HEADING</span> = <code title="'heading'"><code class="variable-quote">'</code><code class="variable-string">heading</code><code class="variable-quote">'</code></code><br />
+      The <code>tag</code> value for heading <code>Token</code>s.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext.Token-class.html#BULLET" class="summary-name">BULLET</a> = <code title="'bullet'"><code class="variable-quote">'</code><code class="variable-string">bullet</code><code class="variable-quote">'</code></code><br />
+      The <code>tag</code> value for bullet <code>Token</code>s.
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+        <a name="contents"></a><span class="summary-name">contents</span><br />
+      The normalized text contained in this <code>Token</code>.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code> or <code>None</code></span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext.Token-class.html#indent" class="summary-name">indent</a><br />
+      The indentation level of this <code>Token</code> (in number of 
+      leading spaces).
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code> or <code>None</code></span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext.Token-class.html#level" class="summary-name">level</a><br />
+      The heading-level of this <code>Token</code> if it is a heading; 
+      <code>None</code>, otherwise.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext.Token-class.html#startline" class="summary-name">startline</a><br />
+      The line on which this <code>Token</code> begins.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+        <a href="epydoc.markup.epytext.Token-class.html#tag" class="summary-name">tag</a><br />
+      This <code>Token</code>'s type.
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">tag</span>,
+        <span class="sig-arg">startline</span>,
+        <span class="sig-arg">contents</span>,
+        <span class="sig-arg">indent</span>,
+        <span class="sig-arg">level</span>=<span class="sig-default">True</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#Token.__init__">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___36-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for___init___36-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___36" name="call_graph_for___init___36">
+<area shape="rect" href="epydoc.markup.epytext.Token&#45;class.html#__init__" title="__init__()" alt="" coords="225,90,321,122" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_doctest" title="_tokenize_doctest()" alt="" coords="5,6,176,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_listart" title="_tokenize_listart()" alt="" coords="11,62,171,94" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_literal" title="_tokenize_literal()" alt="" coords="11,118,171,150" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#_tokenize_para" title="_tokenize_para()" alt="" coords="16,174,165,206" />
+</map>
+  <img src="call_graph_for___init___36.gif" alt='' usemap="#call_graph_for___init___36" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Create a new <code>Token</code>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>tag</code></strong> (<code>string</code>) - The type of the new <code>Token</code>.</li>
+        <li><strong class="pname"><code>startline</code></strong> (<code>int</code>) - The line on which the new <code>Token</code> begins.</li>
+        <li><strong class="pname"><code>contents</code></strong> (<code>string</code>) - The normalized contents of the new <code>Token</code>.</li>
+        <li><strong class="pname"><code>indent</code></strong> (<code>int</code> or <code>None</code>) - The indentation of the new <code>Token</code> (in number of 
+          leading spaces).  A value of <code>None</code> indicates an 
+          unknown indentation.</li>
+        <li><strong class="pname"><code>level</code></strong> (<code>int</code> or <code>None</code>) - The heading-level of this <code>Token</code> if it is a 
+          heading; <code>None</code>, otherwise.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="__repr__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__repr__</span>(<span class="sig-arg">self</span>)</span>
+    <br /><em class="fname">(Representation operator)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#Token.__repr__">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  
+  <dl class="fields">
+    <dt>Returns: <code>string</code></dt>
+        <dd>the formal representation of this <code>Token</code>. 
+          <code>Token</code>s have formal representaitons of the form:
+<pre class="literalblock">
+   &lt;Token: para at line 12&gt;
+</pre></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="to_dom"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">to_dom</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">doc</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.epytext-pysrc.html#Token.to_dom">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_to_dom-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_to_dom-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_to_dom" name="call_graph_for_to_dom">
+<area shape="rect" href="epydoc.markup.epytext.Element&#45;class.html#__init__" title="Element.__init__()" alt="" coords="269,6,432,38" />
+<area shape="rect" href="epydoc.markup.epytext.Token&#45;class.html#to_dom" title="to_dom()" alt="" coords="129,6,220,38" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse" title="parse()" alt="" coords="5,6,80,38" />
+</map>
+  <img src="call_graph_for_to_dom.gif" alt='' usemap="#call_graph_for_to_dom" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+    <dt>Returns: <a href="epydoc.markup.epytext.Element-class.html" 
+      class="link">Element</a></dt>
+        <dd>a DOM representation of this <code>Token</code>.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== CLASS VARIABLE DETAILS ==================== -->
+<a name="section-ClassVariableDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="BULLET"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">BULLET</h3>
+  The <code>tag</code> value for bullet <code>Token</code>s.  This 
+  <code>tag</code> value is also used for field tag <code>Token</code>s, 
+  since fields function syntactically the same as list items.
+  <dl class="fields">
+    <dt>Type:</dt>
+      <dd><code>string</code></dd>
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-quote">'</code><code class="variable-string">bullet</code><code class="variable-quote">'</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== INSTANCE VARIABLE DETAILS ==================== -->
+<a name="section-InstanceVariableDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="indent"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">indent</h3>
+  The indentation level of this <code>Token</code> (in number of leading
+  spaces).  A value of <code>None</code> indicates an unknown indentation; 
+  this is used for list items and fields that begin with one-line 
+  paragraphs.
+  <dl class="fields">
+    <dt>Type:</dt>
+      <dd><code>int</code> or <code>None</code></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="level"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">level</h3>
+  The heading-level of this <code>Token</code> if it is a heading; 
+  <code>None</code>, otherwise.  Valid heading levels are 0, 1, and 2.
+  <dl class="fields">
+    <dt>Type:</dt>
+      <dd><code>int</code> or <code>None</code></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="startline"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">startline</h3>
+  The line on which this <code>Token</code> begins.  This line number is
+  only used for issuing errors.
+  <dl class="fields">
+    <dt>Type:</dt>
+      <dd><code>int</code></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="tag"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">tag</h3>
+  This <code>Token</code>'s type.  Possible values are 
+  <code>Token.PARA</code> (paragraph), <code>Token.LBLOCK</code> (literal 
+  block), <code>Token.DTBLOCK</code> (doctest block), 
+  <code>Token.HEADINGC</code>, and <code>Token.BULLETC</code>.
+  <dl class="fields">
+    <dt>Type:</dt>
+      <dd><code>string</code></dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:05:02 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

@@ -1,0 +1,651 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.restructuredtext._SplitFieldsTranslator</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        <a href="epydoc.markup.restructuredtext-module.html">Module&nbsp;restructuredtext</a> ::
+        Class&nbsp;_SplitFieldsTranslator
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.restructuredtext._SplitFieldsTranslator-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class _SplitFieldsTranslator</h1><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SplitFieldsTranslator">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_m_23" name="uml_class_diagram_for_epydoc_m_23">
+<area shape="rect" href="javascript: void(0);" title="Tuple containing node class names (as strings)." alt="" coords="98,28,290,47" />
+<area shape="rect" href="javascript: void(0);" title="Call self.&quot;visit_ + node class name&quot; with node as parameter." alt="" coords="98,49,290,68" />
+<area shape="rect" href="javascript: void(0);" title="Called before exiting unknown Node types." alt="" coords="98,68,290,87" />
+<area shape="rect" href="javascript: void(0);" title="Call self.&quot;depart_ + node class name&quot; with node as parameter." alt="" coords="98,87,290,105" />
+<area shape="rect" href="javascript: void(0);" title="&quot;Visitor&quot; pattern GoF95 abstract superclass implementation for document tree traversals." alt="" coords="86,5,302,112" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#ALLOW_UNMARKED_ARG_IN_CONSOLIDATED_FIELD" title="If true, then consolidated fields are not required to mark arguments with  `backticks`." alt="" coords="18,159,370,177" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#visit_document" title="epydoc.markup.restructuredtext._SplitFieldsTranslator.visit_document" alt="" coords="18,180,370,199" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#visit_field" title="epydoc.markup.restructuredtext._SplitFieldsTranslator.visit_field" alt="" coords="18,199,370,217" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#handle_consolidated_definition_list" title="epydoc.markup.restructuredtext._SplitFieldsTranslator.handle_consolidated_definition_list" alt="" coords="18,217,370,236" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#handle_consolidated_bullet_list" title="epydoc.markup.restructuredtext._SplitFieldsTranslator.handle_consolidated_bullet_list" alt="" coords="18,236,370,255" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#unknown_visit" title="Ignore all unknown nodes" alt="" coords="18,255,370,273" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#visit_field_list" title="epydoc.markup.restructuredtext._SplitFieldsTranslator.visit_field_list" alt="" coords="18,273,370,292" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#handle_consolidated_field" title="Attempt to handle a consolidated section." alt="" coords="18,292,370,311" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#__init__" title="epydoc.markup.restructuredtext._SplitFieldsTranslator.__init__" alt="" coords="18,311,370,329" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html" title="A docutils translator that removes all fields from a document, and collects them into the instance variable fields" alt="" coords="6,136,382,336" />
+<area shape="rect" href="epydoc.markup.Field&#45;class.html" title="The contents of a docstring&#39;s field." alt="" coords="162,373,226,411" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#fields" title="epydoc.markup.restructuredtext._SplitFieldsTranslator.fields" alt="" coords="194,347,226,362" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#fields" title="*" alt="" coords="199,353,204,367" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#fields" title="fields" alt="" coords="190,327,198,335" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#fields" title="*" alt="" coords="190,375,198,383" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_m_23.gif" alt='' usemap="#uml_class_diagram_for_epydoc_m_23" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+A docutils translator that removes all fields from a document, and 
+  collects them into the instance variable <code>fields</code><br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._SplitFieldsTranslator-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">document</span>,
+        <span class="summary-sig-arg">errors</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SplitFieldsTranslator.__init__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___47-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___init___47-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___47" name="call_graph_for___init___47">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.__init__()" alt="" coords="471,6,775,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#split_fields" title="ParsedRstDocstring.split_fields()" alt="" coords="5,6,275,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#__init__" title="__init__()" alt="" coords="324,6,420,38" />
+</map>
+  <img src="call_graph_for___init___47.gif" alt='' usemap="#call_graph_for___init___47" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="visit_document"></a><span class="summary-sig-name">visit_document</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SplitFieldsTranslator.visit_document">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_visit_document_3-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_visit_document_3-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_visit_document_3" name="call_graph_for_visit_document_3">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="6,6,352,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#visit_document" title="visit_document()" alt="" coords="400,6,550,38" />
+</map>
+  <img src="call_graph_for_visit_document_3.gif" alt='' usemap="#call_graph_for_visit_document_3" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="visit_field"></a><span class="summary-sig-name">visit_field</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SplitFieldsTranslator.visit_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_visit_field-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_visit_field-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_visit_field" name="call_graph_for_visit_field">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__getitem__()" alt="" coords="557,6,864,38" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.astext()" alt="" coords="583,62,839,94" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.remove()" alt="" coords="576,118,845,150" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="5,118,352,150" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#visit_field" title="visit_field()" alt="" coords="400,118,509,150" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#_add_field" title="_add_field()" alt="" coords="653,174,768,206" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#handle_consolidated_field" title="handle_consolidated_field()" alt="" coords="595,230,827,262" />
+</map>
+  <img src="call_graph_for_visit_field.gif" alt='' usemap="#call_graph_for_visit_field" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_add_field"></a><span class="summary-sig-name">_add_field</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">tagname</span>,
+        <span class="summary-sig-arg">arg</span>,
+        <span class="summary-sig-arg">fbody</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SplitFieldsTranslator._add_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__add_field-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__add_field-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__add_field" name="call_graph_for__add_field">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__getitem__()" alt="" coords="517,6,824,38" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.append()" alt="" coords="537,62,804,94" />
+<area shape="rect" href="epydoc.markup.Field&#45;class.html#__init__" title="Field.__init__()" alt="" coords="601,118,740,150" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#__init__" title="ParsedRstDocstring.__init__()" alt="" coords="547,174,795,206" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#_add_field" title="_add_field()" alt="" coords="355,90,469,122" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#handle_consolidated_bullet_list" title="handle_consolidated_bullet_list()" alt="" coords="20,34,292,66" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#handle_consolidated_definition_list" title="handle_consolidated_definition_list()" alt="" coords="5,90,307,122" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#visit_field" title="visit_field()" alt="" coords="101,146,211,178" />
+</map>
+  <img src="call_graph_for__add_field.gif" alt='' usemap="#call_graph_for__add_field" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="visit_field_list"></a><span class="summary-sig-name">visit_field_list</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SplitFieldsTranslator.visit_field_list">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_visit_field_lis-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_visit_field_lis-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_visit_field_lis" name="call_graph_for_visit_field_lis">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.remove()" alt="" coords="589,6,859,38" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="5,6,352,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#visit_field_list" title="visit_field_list()" alt="" coords="400,6,541,38" />
+</map>
+  <img src="call_graph_for_visit_field_lis.gif" alt='' usemap="#call_graph_for_visit_field_lis" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="handle_consolidated_field"></a><span class="summary-sig-name">handle_consolidated_field</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">body</span>,
+        <span class="summary-sig-arg">tagname</span>)</span><br />
+      Attempt to handle a consolidated section.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SplitFieldsTranslator.handle_consolidated_field">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_handle_consolid-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_handle_consolid-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_handle_consolid" name="call_graph_for_handle_consolid">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__getitem__()" alt="" coords="443,6,750,38" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__len__()" alt="" coords="460,62,732,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#handle_consolidated_bullet_list" title="handle_consolidated_bullet_list()" alt="" coords="460,118,732,150" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#handle_consolidated_definition_list" title="handle_consolidated_definition_list()" alt="" coords="446,174,747,206" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#handle_consolidated_field" title="handle_consolidated_field()" alt="" coords="163,90,395,122" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#visit_field" title="visit_field()" alt="" coords="6,90,115,122" />
+</map>
+  <img src="call_graph_for_handle_consolid.gif" alt='' usemap="#call_graph_for_handle_consolid" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="handle_consolidated_bullet_list"></a><span class="summary-sig-name">handle_consolidated_bullet_list</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">items</span>,
+        <span class="summary-sig-arg">tagname</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SplitFieldsTranslator.handle_consolidated_bullet_list">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_handle_consolid_2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_handle_consolid_2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_handle_consolid_2" name="call_graph_for_handle_consolid_2">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__getitem__()" alt="" coords="605,6,912,38" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__len__()" alt="" coords="623,62,895,94" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__setitem__()" alt="" coords="607,118,911,150" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.astext()" alt="" coords="631,174,887,206" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.copy()" alt="" coords="635,230,883,262" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#_add_field" title="_add_field()" alt="" coords="701,286,816,318" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#handle_consolidated_bullet_list" title="handle_consolidated_bullet_list()" alt="" coords="285,146,557,178" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#handle_consolidated_field" title="handle_consolidated_field()" alt="" coords="5,146,237,178" />
+</map>
+  <img src="call_graph_for_handle_consolid_2.gif" alt='' usemap="#call_graph_for_handle_consolid_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="handle_consolidated_definition_list"></a><span class="summary-sig-name">handle_consolidated_definition_list</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">items</span>,
+        <span class="summary-sig-arg">tagname</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SplitFieldsTranslator.handle_consolidated_definition_list">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_handle_consolid_3-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_handle_consolid_3-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_handle_consolid_3" name="call_graph_for_handle_consolid_3">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__getitem__()" alt="" coords="635,6,942,38" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__len__()" alt="" coords="652,62,924,94" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.astext()" alt="" coords="660,118,916,150" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#_add_field" title="_add_field()" alt="" coords="731,174,846,206" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#handle_consolidated_definition_list" title="handle_consolidated_definition_list()" alt="" coords="286,90,587,122" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#handle_consolidated_field" title="handle_consolidated_field()" alt="" coords="6,90,238,122" />
+</map>
+  <img src="call_graph_for_handle_consolid_3.gif" alt='' usemap="#call_graph_for_handle_consolid_3" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._SplitFieldsTranslator-class.html#unknown_visit" class="summary-sig-name">unknown_visit</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span><br />
+      Ignore all unknown nodes</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SplitFieldsTranslator.unknown_visit">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_unknown_visit-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_unknown_visit-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_unknown_visit" name="call_graph_for_unknown_visit">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="5,6,352,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#unknown_visit" title="unknown_visit()" alt="" coords="400,6,547,38" />
+</map>
+  <img src="call_graph_for_unknown_visit.gif" alt='' usemap="#call_graph_for_unknown_visit" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.nodes.NodeVisitor</code></b>:
+      <code>dispatch_departure</code>,
+      <code>dispatch_visit</code>,
+      <code>unknown_departure</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.restructuredtext._SplitFieldsTranslator-class.html#ALLOW_UNMARKED_ARG_IN_CONSOLIDATED_FIELD" class="summary-name">ALLOW_UNMARKED_ARG_IN_CONSOLIDATED_FIELD</a> = <code title="True">True</code><br />
+      If true, then consolidated fields are not required to mark 
+      arguments with <code>`backticks`</code>.
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.nodes.NodeVisitor</code></b>:
+      <code>optional</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>list</code> of <a href="epydoc.markup.Field-class.html" 
+      class="link">Field</a></span>
+    </td><td class="summary">
+        <a name="fields"></a><span class="summary-name">fields</span><br />
+      The fields of the most recently walked document.
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">document</span>,
+        <span class="sig-arg">errors</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SplitFieldsTranslator.__init__">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___47-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for___init___47-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___47" name="call_graph_for___init___47">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.__init__()" alt="" coords="471,6,775,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#split_fields" title="ParsedRstDocstring.split_fields()" alt="" coords="5,6,275,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#__init__" title="__init__()" alt="" coords="324,6,420,38" />
+</map>
+  <img src="call_graph_for___init___47.gif" alt='' usemap="#call_graph_for___init___47" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.nodes.NodeVisitor.__init__
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="unknown_visit"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">unknown_visit</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">node</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SplitFieldsTranslator.unknown_visit">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_unknown_visit-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_unknown_visit-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_unknown_visit" name="call_graph_for_unknown_visit">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="5,6,352,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SplitFieldsTranslator&#45;class.html#unknown_visit" title="unknown_visit()" alt="" coords="400,6,547,38" />
+</map>
+  <img src="call_graph_for_unknown_visit.gif" alt='' usemap="#call_graph_for_unknown_visit" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Ignore all unknown nodes
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.nodes.NodeVisitor.unknown_visit
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== CLASS VARIABLE DETAILS ==================== -->
+<a name="section-ClassVariableDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="ALLOW_UNMARKED_ARG_IN_CONSOLIDATED_FIELD"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">ALLOW_UNMARKED_ARG_IN_CONSOLIDATED_FIELD</h3>
+  If true, then consolidated fields are not required to mark arguments 
+  with <code>`backticks`</code>.  (This is currently only implemented for 
+  consolidated fields expressed as definition lists; consolidated fields 
+  expressed as unordered lists still require backticks for now.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+True
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:05:25 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

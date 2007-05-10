@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.docwriter.html</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.docwriter-module.html">Package&nbsp;docwriter</a> ::
+        Module&nbsp;html
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.docwriter.html-module.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== MODULE DESCRIPTION ==================== -->
+<h1 class="epydoc">Module html</h1><span class="codelink"><a href="epydoc.docwriter.html-pysrc.html">source&nbsp;code</a></span><br /><br />
+The HTML output generator for epydoc.  The main interface provided by 
+  this module is the <a href="epydoc.docwriter.html.HTMLWriter-class.html" 
+  class="link">HTMLWriter</a> class.<br /><br />
+
+<hr />
+<div class="fields">      <p><strong>To Do:</strong>
+        Add a cache to <a 
+    href="epydoc.docwriter.html.HTMLWriter-class.html#url" 
+    class="link">HTMLWriter.url()</a>?
+      </p>
+</div><!-- ==================== CLASSES ==================== -->
+<a name="section-Classes"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Classes"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.html.HTMLWriter-class.html" class="summary-name">HTMLWriter</a>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.html._HTMLDocstringLinker-class.html" class="summary-name">_HTMLDocstringLinker</a>
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTIONS ==================== -->
+<a name="section-Functions"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Functions</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Functions"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.html-module.html#compile_template" class="summary-sig-name">compile_template</a>(<span class="summary-sig-arg">docstring</span>,
+        <span class="summary-sig-arg">template_string</span>,
+        <span class="summary-sig-arg">output_function</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string">out</code><code class="variable-quote">'</code></span>,
+        <span class="summary-sig-arg">debug</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Given a template string containing inline python source code, 
+      return a python function that will fill in the template, and output 
+      the result.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.html-pysrc.html#compile_template">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_compile_templat-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_compile_templat-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_compile_templat" name="call_graph_for_compile_templat">
+<area shape="rect" href="epydoc.docwriter.html&#45;module.html#compile_template" title="compile_template()" alt="" coords="5,6,173,38" />
+<area shape="rect" href="epydoc.docwriter.html&#45;module.html#strip_indent" title="strip_indent()" alt="" coords="221,6,344,38" />
+</map>
+  <img src="call_graph_for_compile_templat.gif" alt='' usemap="#call_graph_for_compile_templat" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="strip_indent"></a><span class="summary-sig-name">strip_indent</span>(<span class="summary-sig-arg">s</span>)</span><br />
+      Given a multiline string <code>s</code>, find the minimum 
+      indentation for all non-blank lines, and return a new string formed 
+      by stripping that amount of indentation from all lines in 
+      <code>s</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.html-pysrc.html#strip_indent">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_strip_indent-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_strip_indent-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_strip_indent" name="call_graph_for_strip_indent">
+<area shape="rect" href="epydoc.docwriter.html&#45;module.html#compile_template" title="compile_template()" alt="" coords="5,6,173,38" />
+<area shape="rect" href="epydoc.docwriter.html&#45;module.html#strip_indent" title="strip_indent()" alt="" coords="221,6,344,38" />
+</map>
+  <img src="call_graph_for_strip_indent.gif" alt='' usemap="#call_graph_for_strip_indent" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTION DETAILS ==================== -->
+<a name="section-FunctionDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Function Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-FunctionDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="compile_template"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">compile_template</span>(<span class="sig-arg">docstring</span>,
+        <span class="sig-arg">template_string</span>,
+        <span class="sig-arg">output_function</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string">out</code><code class="variable-quote">'</code></span>,
+        <span class="sig-arg">debug</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.html-pysrc.html#compile_template">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_compile_templat-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_compile_templat-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_compile_templat" name="call_graph_for_compile_templat">
+<area shape="rect" href="epydoc.docwriter.html&#45;module.html#compile_template" title="compile_template()" alt="" coords="5,6,173,38" />
+<area shape="rect" href="epydoc.docwriter.html&#45;module.html#strip_indent" title="strip_indent()" alt="" coords="221,6,344,38" />
+</map>
+  <img src="call_graph_for_compile_templat.gif" alt='' usemap="#call_graph_for_compile_templat" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  <p>Given a template string containing inline python source code, return a
+  python function that will fill in the template, and output the result.  
+  The signature for this function is taken from the first line of 
+  <code>docstring</code>.  Output is generated by making repeated calls to 
+  the output function with the given name (which is typically one of the 
+  function's parameters).</p>
+  The templating language used by this function passes through all text 
+  as-is, with three exceptions:
+  <ul>
+    <li>
+      If every line in the template string is indented by at least <i 
+      class="math">x</i> spaces, then the first <i class="math">x</i> 
+      spaces are stripped from each line.
+    </li>
+    <li>
+      Any line that begins with '&gt;&gt;&gt;' (with no indentation) 
+      should contain python code, and will be inserted as-is into the 
+      template-filling function.  If the line begins a control block (such 
+      as 'if' or 'for'), then the control block will be closed by the first
+      '&gt;&gt;&gt;'-marked line whose indentation is less than or equal to
+      the line's own indentation (including lines that only contain 
+      comments.)
+    </li>
+    <li>
+      In any other line, any expression between two '$' signs will be 
+      evaluated and inserted into the line (using <code>str()</code> to 
+      convert the result to a string).
+    </li>
+  </ul>
+  Here is a simple example:
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>TEMPLATE = <span class="py-string">''</span>'
+<span class="py-more">... </span>&lt;book&gt;
+<span class="py-more">... </span>  &lt;title&gt;$book.title$&lt;/title&gt;
+<span class="py-more">... </span>  &lt;pages&gt;$book.count_pages()$&lt;/pages&gt;
+<span class="py-more">... </span>&gt;&gt;&gt; <span class="py-keyword">for</span> chapter <span class="py-keyword">in</span> book.chapters:
+<span class="py-more">... </span>    &lt;chaptername&gt;$chapter.name$&lt;/chaptername&gt;
+<span class="py-more">... </span>&gt;&gt;&gt; <span class="py-comment">#endfor</span>
+<span class="py-more">... </span>&lt;/book&gt;
+<span class="py-prompt">&gt;&gt;&gt; </span>write_book = compile_template(<span class="py-string">'write_book(out, book)'</span>, TEMPLATE)</pre>
+  <dl class="fields">
+  </dl>
+<div class="fields">      <p><strong>Acknowledgements:</strong>
+        The syntax used by <code>compile_template</code> is loosely 
+        based on Cheetah.
+      </p>
+</div></td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:03:03 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

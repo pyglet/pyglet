@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>Regression Testing for epydoc.markup.pyval_repr</title>
+<link rel="stylesheet" href="../custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="regression-testing-for-epydoc-markup-pyval-repr">
+<h1 class="title">Regression Testing for epydoc.markup.pyval_repr</h1>
+
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.markup.pyval_repr <span class="py-keyword">import</span> *
+<span class="py-prompt">&gt;&gt;&gt; </span>colorizer = PyvalColorizer(linelen=40)
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">color</span>(v, linebreakok=True):
+<span class="py-more">... </span>    colorizer = PyvalColorizer(linelen=40, linebreakok=linebreakok)
+<span class="py-more">... </span>    pds = colorizer.colorize(v, None)
+<span class="py-more">... </span>    <span class="py-keyword">print</span> pds.to_html(None).rstrip()</pre>
+</blockquote>
+<div class="section" id="simple-types">
+<h1>Simple Types</h1>
+<p>Integers, floats, None, and complex numbers get printed using str,
+with no syntax highlighting:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>color(10)
+<span class="py-output">10</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color(1./4)
+<span class="py-output">0.25</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color(None)
+<span class="py-output">None</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color(100)
+<span class="py-output">100</span></pre>
+</blockquote>
+<p>Long ints will get wrapped if they're big enough:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>color(10000000)
+<span class="py-output">10000000</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color(10**90)
+<span class="py-output">1000000000000000000000000000000000000000&amp;crarr;</span>
+<span class="py-output">0000000000000000000000000000000000000000&amp;crarr;</span>
+<span class="py-output">00000000000</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>colorizer = PyvalColorizer(linelen=40)
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> <span class="py-string">'-'</span>*40+<span class="py-string">'\n'</span>+colorizer.colorize(10**90).to_plaintext(None)
+<span class="py-output">----------------------------------------</span>
+<span class="py-output">1000000000000000000000000000000000000000\</span>
+<span class="py-output">0000000000000000000000000000000000000000\</span>
+<span class="py-output">00000000000</span></pre>
+</blockquote>
+</div>
+<div class="section" id="strings">
+<h1>Strings</h1>
+<p>Strings have their quotation marks tagged as 'quote'.  Characters are
+escaped using the 'string-escape' encoding.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>color(<span class="py-string">''</span>.join([chr(i) <span class="py-keyword">for</span> i <span class="py-keyword">in</span> range(256)]))
+<span class="py-output">&lt;code class=&quot;variable-quote&quot;&gt;'''&lt;/code&gt;&lt;code class=&quot;variable-string&quot;&gt;\x00\x01\x02\x03\x04\x05\x06\x07\x08\&lt;/code&gt;&amp;crarr;</span>
+<span class="py-output">&lt;code class=&quot;variable-string&quot;&gt;t&lt;/code&gt;</span>
+<span class="py-output">&lt;code class=&quot;variable-string&quot;&gt;\x0b\x0c\r\x0e\x0f\x10\x11\x12\x13\x14\x&lt;/code&gt;&amp;crarr;</span>
+<span class="py-output">&lt;code class=&quot;variable-string&quot;&gt;15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x&lt;/code&gt;&amp;crarr;</span>
+<span class="py-output">&lt;code class=&quot;variable-string&quot;&gt;1f !&amp;quot;#$%&amp;amp;\'()*+,-./0123456789:;&amp;lt;=&amp;gt;?@ABCD&lt;/code&gt;&amp;crarr;</span>
+<span class="py-output">&lt;code class=&quot;variable-ellipsis&quot;&gt;...&lt;/code&gt;</span></pre>
+</blockquote>
+<p>Currently, the &quot;'&quot; quote is always used, because that's what the
+'string-escape' encoding expects.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>color(<span class="py-string">'Hello'</span>)
+<span class="py-output">&lt;code class=&quot;variable-quote&quot;&gt;'&lt;/code&gt;&lt;code class=&quot;variable-string&quot;&gt;Hello&lt;/code&gt;&lt;code class=&quot;variable-quote&quot;&gt;'&lt;/code&gt;</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color(<span class="py-string">'&quot;Hello&quot;'</span>)
+<span class="py-output">&lt;code class=&quot;variable-quote&quot;&gt;'&lt;/code&gt;&lt;code class=&quot;variable-string&quot;&gt;&amp;quot;Hello&amp;quot;&lt;/code&gt;&lt;code class=&quot;variable-quote&quot;&gt;'&lt;/code&gt;</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color(<span class="py-string">&quot;'Hello'&quot;</span>)
+<span class="py-output">&lt;code class=&quot;variable-quote&quot;&gt;'&lt;/code&gt;&lt;code class=&quot;variable-string&quot;&gt;\'Hello\'&lt;/code&gt;&lt;code class=&quot;variable-quote&quot;&gt;'&lt;/code&gt;</span></pre>
+</blockquote>
+<p>Strings containing newlines are automatically rendered as multiline
+strings.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>color(<span class="py-string">&quot;This\n  is a multiline\n string!&quot;</span>)
+<span class="py-output">&lt;code class=&quot;variable-quote&quot;&gt;'''&lt;/code&gt;&lt;code class=&quot;variable-string&quot;&gt;This&lt;/code&gt;</span>
+<span class="py-output">&lt;code class=&quot;variable-string&quot;&gt;  is a multiline&lt;/code&gt;</span>
+<span class="py-output">&lt;code class=&quot;variable-string&quot;&gt; string!&lt;/code&gt;&lt;code class=&quot;variable-quote&quot;&gt;'''&lt;/code&gt;</span></pre>
+</blockquote>
+<p>Unless we ask for them not to be:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>color(<span class="py-string">&quot;This\n  is a multiline\n string!&quot;</span>, linebreakok=False)
+<span class="py-output">&lt;code class=&quot;variable-quote&quot;&gt;'&lt;/code&gt;&lt;code class=&quot;variable-string&quot;&gt;This\n  is a multiline\n string!&lt;/code&gt;&lt;code class=&quot;variable-quote&quot;&gt;'&lt;/code&gt;</span></pre>
+</blockquote>
+<p>Unicode strings are handled properly.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>color(u<span class="py-string">&quot;Hello world&quot;</span>)
+<span class="py-output">&lt;code class=&quot;variable-quote&quot;&gt;u'&lt;/code&gt;&lt;code class=&quot;variable-string&quot;&gt;Hello world&lt;/code&gt;&lt;code class=&quot;variable-quote&quot;&gt;'&lt;/code&gt;</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color(u<span class="py-string">&quot;\uaaaa And \ubbbb&quot;</span>)
+<span class="py-output">&lt;code class=&quot;variable-quote&quot;&gt;u'&lt;/code&gt;&lt;code class=&quot;variable-string&quot;&gt;\uaaaa And \ubbbb&lt;/code&gt;&lt;code class=&quot;variable-quote&quot;&gt;'&lt;/code&gt;</span></pre>
+</blockquote>
+</div>
+<div class="section" id="lists-tuples-etc">
+<h1>Lists, Tuples, etc.</h1>
+<p>Lists, tuples, and sets are all colorized using the same method.  The
+braces and commas are tagged with &quot;op&quot;.  If the value can fit on the
+current line, it is displayed on one line.  Otherwise, each value is
+listed on a separate line, indented by the size of the open-bracket.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>color(range(10))
+<span class="py-output">&lt;code class=&quot;variable-group&quot;&gt;[&lt;/code&gt;0&lt;code class=&quot;variable-op&quot;&gt;, &lt;/code&gt;1&lt;code class=&quot;variable-op&quot;&gt;, &lt;/code&gt;2&lt;code class=&quot;variable-op&quot;&gt;, &lt;/code&gt;3&lt;code class=&quot;variable-op&quot;&gt;, &lt;/code&gt;4&lt;code class=&quot;variable-op&quot;&gt;, &lt;/code&gt;5&lt;code class=&quot;variable-op&quot;&gt;, &lt;/code&gt;6&lt;code class=&quot;variable-op&quot;&gt;, &lt;/code&gt;7&lt;code class=&quot;variable-op&quot;&gt;, &lt;/code&gt;8&lt;code class=&quot;variable-op&quot;&gt;, &lt;/code&gt;9&lt;code class=&quot;variable-group&quot;&gt;]&lt;/code&gt;</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color(range(100))
+<span class="py-output">&lt;code class=&quot;variable-group&quot;&gt;[&lt;/code&gt;0&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output"> 1&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output"> 2&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output"> 3&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output"> 4&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output">&lt;code class=&quot;variable-ellipsis&quot;&gt;...&lt;/code&gt;</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color([1,2,[5,6,[(11,22,33),9],10],11]+[99,98,97,96,95])
+<span class="py-output">&lt;code class=&quot;variable-group&quot;&gt;[&lt;/code&gt;1&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output"> 2&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output"> &lt;code class=&quot;variable-group&quot;&gt;[&lt;/code&gt;5&lt;code class=&quot;variable-op&quot;&gt;, &lt;/code&gt;6&lt;code class=&quot;variable-op&quot;&gt;, &lt;/code&gt;&lt;code class=&quot;variable-group&quot;&gt;[&lt;/code&gt;&lt;code class=&quot;variable-group&quot;&gt;(&lt;/code&gt;11&lt;code class=&quot;variable-op&quot;&gt;, &lt;/code&gt;22&lt;code class=&quot;variable-op&quot;&gt;, &lt;/code&gt;33&lt;code class=&quot;variable-group&quot;&gt;)&lt;/code&gt;&lt;code class=&quot;variable-op&quot;&gt;, &lt;/code&gt;9&lt;code class=&quot;variable-group&quot;&gt;]&lt;/code&gt;&lt;code class=&quot;variable-op&quot;&gt;, &lt;/code&gt;10&lt;code class=&quot;variable-group&quot;&gt;]&lt;/code&gt;&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output"> 11&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output"> 99&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output">&lt;code class=&quot;variable-ellipsis&quot;&gt;...&lt;/code&gt;</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color(set(range(20)))
+<span class="py-output">&lt;code class=&quot;variable-group&quot;&gt;set([&lt;/code&gt;0&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output">     1&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output">     2&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output">     3&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output">     4&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output">&lt;code class=&quot;variable-ellipsis&quot;&gt;...&lt;/code&gt;</span></pre>
+</blockquote>
+</div>
+<div class="section" id="dictionaries">
+<h1>Dictionaries</h1>
+<p>Dicts are treated just like lists, except that the &quot;:&quot; is also tagged as
+&quot;op&quot;.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>color({1:33, 2:[1,2,3,{7:<span class="py-string">'oo'</span>*20}]})
+<span class="py-output">&lt;code class=&quot;variable-group&quot;&gt;{&lt;/code&gt;1&lt;code class=&quot;variable-op&quot;&gt;: &lt;/code&gt;33&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output"> 2&lt;code class=&quot;variable-op&quot;&gt;: &lt;/code&gt;&lt;code class=&quot;variable-group&quot;&gt;[&lt;/code&gt;1&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output">     2&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output">     3&lt;code class=&quot;variable-op&quot;&gt;,&lt;/code&gt;</span>
+<span class="py-output">     &lt;code class=&quot;variable-group&quot;&gt;{&lt;/code&gt;7&lt;code class=&quot;variable-op&quot;&gt;: &lt;/code&gt;&lt;code class=&quot;variable-quote&quot;&gt;'&lt;/code&gt;&lt;code class=&quot;variable-string&quot;&gt;oooooooooooooooooooooooooooooo&lt;/code&gt;&amp;crarr;</span>
+<span class="py-output">&lt;code class=&quot;variable-ellipsis&quot;&gt;...&lt;/code&gt;</span></pre>
+</blockquote>
+</div>
+<div class="section" id="regular-expressions">
+<h1>Regular Expressions</h1>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">textcontent</span>(elt):
+<span class="py-more">... </span>    <span class="py-keyword">if</span> isinstance(elt, basestring): return elt
+<span class="py-more">... </span>    <span class="py-keyword">else</span>: return <span class="py-string">''</span>.join([textcontent(c) <span class="py-keyword">for</span> c <span class="py-keyword">in</span> elt.children])</pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">import</span> re
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">color_re</span>(s, check_roundtrip=True):
+<span class="py-more">... </span>    colorizer = PyvalColorizer(linelen=55)
+<span class="py-more">... </span>    val = colorizer.colorize(re.compile(s))
+<span class="py-more">... </span>    <span class="py-keyword">if</span> check_roundtrip:
+<span class="py-more">... </span>        assert textcontent(val._tree)[13:-2] == s, val._tree
+<span class="py-more">... </span>    <span class="py-keyword">print</span> val.to_html(None).rstrip()[13:-2]</pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-comment"># Literal characters</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>color_re(u<span class="py-string">'abc \t\r\n\f\v \xff \uffff'</span>, False)
+<span class="py-output">abc \t\r\n\f\v \xff \uffff</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color_re(r'\.\^\$\\\*\+\?\{\}\[\]\|\(\)\<span class="py-string">''</span>)
+<span class="py-output">\.\^\$\\\*\+\?\{\}\[\]\|\(\)\'</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-comment"># Any character &amp; character classes</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;.\d\D\s\S\w\W\A^$\b\B\Z&quot;</span>)
+<span class="py-output">.\d\D\s\S\w\W\A^$\b\B\Z</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-comment"># Branching</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;foo|bar&quot;</span>)
+<span class="py-output">foo&lt;code class=&quot;re-op&quot;&gt;|&lt;/code&gt;bar</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-comment"># Character classes</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;[abcd]&quot;</span>)
+<span class="py-output">&lt;code class=&quot;re-group&quot;&gt;[&lt;/code&gt;abcd&lt;code class=&quot;re-group&quot;&gt;]&lt;/code&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-comment"># Repeats</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;a*b+c{4,}d{,5}e{3,9}f?&quot;</span>)
+<span class="py-output">a&lt;code class=&quot;re-op&quot;&gt;*&lt;/code&gt;b&lt;code class=&quot;re-op&quot;&gt;+&lt;/code&gt;c&lt;code class=&quot;re-op&quot;&gt;{4,}&lt;/code&gt;d&lt;code class=&quot;re-op&quot;&gt;{,5}&lt;/code&gt;e&lt;code class=&quot;re-op&quot;&gt;{3,9}&lt;/code&gt;f&lt;code class=&quot;re-op&quot;&gt;?&lt;/code&gt;</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;a*?b+?c{4,}?d{,5}?e{3,9}?f??&quot;</span>)
+<span class="py-output">a&lt;code class=&quot;re-op&quot;&gt;*?&lt;/code&gt;b&lt;code class=&quot;re-op&quot;&gt;+?&lt;/code&gt;c&lt;code class=&quot;re-op&quot;&gt;{4,}?&lt;/code&gt;d&lt;code class=&quot;re-op&quot;&gt;{,5}?&lt;/code&gt;e&lt;code class=&quot;re-op&quot;&gt;{3,9}?&lt;/code&gt;f&lt;code class=&quot;re-op&quot;&gt;??&lt;/code&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-comment"># Subpatterns</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;(foo (bar) | (baz))&quot;</span>)
+<span class="py-output">&lt;code class=&quot;re-group&quot;&gt;(&lt;/code&gt;foo &lt;code class=&quot;re-group&quot;&gt;(&lt;/code&gt;bar&lt;code class=&quot;re-group&quot;&gt;)&lt;/code&gt; &lt;code class=&quot;re-op&quot;&gt;|&lt;/code&gt; &lt;code class=&quot;re-group&quot;&gt;(&lt;/code&gt;baz&lt;code class=&quot;re-group&quot;&gt;)&lt;/code&gt;&lt;code class=&quot;re-group&quot;&gt;)&lt;/code&gt;</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;(?:foo (?:bar) | (?:baz))&quot;</span>)
+<span class="py-output">&lt;code class=&quot;re-group&quot;&gt;(?:&lt;/code&gt;foo &lt;code class=&quot;re-group&quot;&gt;(?:&lt;/code&gt;bar&lt;code class=&quot;re-group&quot;&gt;)&lt;/code&gt; &lt;code class=&quot;re-op&quot;&gt;|&lt;/code&gt; &lt;code class=&quot;re-group&quot;&gt;(?:&lt;/code&gt;baz&lt;code class=&quot;re-group&quot;&gt;)&lt;/code&gt;&lt;code class=&quot;re-group&quot;&gt;)&lt;/code&gt;</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color_re(<span class="py-string">&quot;(foo (?P&lt;a&gt;bar) | (?P&lt;boop&gt;baz))&quot;</span>)
+<span class="py-output">&lt;code class=&quot;re-group&quot;&gt;(&lt;/code&gt;foo &lt;code class=&quot;re-group&quot;&gt;(?P&amp;lt;&lt;/code&gt;&lt;code class=&quot;re-ref&quot;&gt;a&lt;/code&gt;&lt;code class=&quot;re-group&quot;&gt;&amp;gt;&lt;/code&gt;bar&lt;code class=&quot;re-group&quot;&gt;)&lt;/code&gt; &lt;code class=&quot;re-op&quot;&gt;|&lt;/code&gt; &lt;code class=&quot;re-group&quot;&gt;(?P&amp;lt;&lt;/code&gt;&lt;code class=&quot;re-ref&quot;&gt;boop&lt;/code&gt;&lt;code class=&quot;re-group&quot;&gt;&amp;gt;&lt;/code&gt;baz&lt;code class=&quot;re-group&quot;&gt;)&lt;/code&gt;&lt;code class=&quot;re-group&quot;&gt;)&lt;/code&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-comment"># Group References</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;(...) and (\1)&quot;</span>)
+<span class="py-output">&lt;code class=&quot;re-group&quot;&gt;(&lt;/code&gt;...&lt;code class=&quot;re-group&quot;&gt;)&lt;/code&gt; and &lt;code class=&quot;re-group&quot;&gt;(&lt;/code&gt;&lt;code class=&quot;re-ref&quot;&gt;\1&lt;/code&gt;&lt;code class=&quot;re-group&quot;&gt;)&lt;/code&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-comment"># Ranges</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;[a-bp-z]&quot;</span>)
+<span class="py-output">&lt;code class=&quot;re-group&quot;&gt;[&lt;/code&gt;a&lt;code class=&quot;re-op&quot;&gt;-&lt;/code&gt;bp&lt;code class=&quot;re-op&quot;&gt;-&lt;/code&gt;z&lt;code class=&quot;re-group&quot;&gt;]&lt;/code&gt;</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;[^a-bp-z]&quot;</span>)
+<span class="py-output">&lt;code class=&quot;re-group&quot;&gt;[&lt;/code&gt;&lt;code class=&quot;re-op&quot;&gt;^&lt;/code&gt;a&lt;code class=&quot;re-op&quot;&gt;-&lt;/code&gt;bp&lt;code class=&quot;re-op&quot;&gt;-&lt;/code&gt;z&lt;code class=&quot;re-group&quot;&gt;]&lt;/code&gt;</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;[^abc]&quot;</span>)
+<span class="py-output">&lt;code class=&quot;re-group&quot;&gt;[&lt;/code&gt;&lt;code class=&quot;re-op&quot;&gt;^&lt;/code&gt;abc&lt;code class=&quot;re-group&quot;&gt;]&lt;/code&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-comment"># Lookahead/behinds</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;foo(?=bar)&quot;</span>)
+<span class="py-output">foo&lt;code class=&quot;re-group&quot;&gt;(?=&lt;/code&gt;bar&lt;code class=&quot;re-group&quot;&gt;)&lt;/code&gt;</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;foo(?!bar)&quot;</span>)
+<span class="py-output">foo&lt;code class=&quot;re-group&quot;&gt;(?!&lt;/code&gt;bar&lt;code class=&quot;re-group&quot;&gt;)&lt;/code&gt;</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;(?&lt;=bar)foo&quot;</span>)
+<span class="py-output">&lt;code class=&quot;re-group&quot;&gt;(?&amp;lt;=&lt;/code&gt;bar&lt;code class=&quot;re-group&quot;&gt;)&lt;/code&gt;foo</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;(?&lt;!bar)foo&quot;</span>)
+<span class="py-output">&lt;code class=&quot;re-group&quot;&gt;(?&amp;lt;!&lt;/code&gt;bar&lt;code class=&quot;re-group&quot;&gt;)&lt;/code&gt;foo</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-comment"># Flags</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;(?im)^Food&quot;</span>)
+<span class="py-output">&lt;code class=&quot;re-flags&quot;&gt;(?im)&lt;/code&gt;^Food</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;(?Limsx)^Food&quot;</span>)
+<span class="py-output">&lt;code class=&quot;re-flags&quot;&gt;(?Limsx)&lt;/code&gt;^Food</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;(?Limstux)^Food&quot;</span>)
+<span class="py-output">&lt;code class=&quot;re-flags&quot;&gt;(?Limstux)&lt;/code&gt;^Food</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>color_re(r<span class="py-string">&quot;(?x)This   is   verbose&quot;</span>, False)
+<span class="py-output">&lt;code class=&quot;re-flags&quot;&gt;(?x)&lt;/code&gt;Thisisverbose</span></pre>
+</blockquote>
+</div>
+<div class="section" id="line-wrapping">
+<h1>Line Wrapping</h1>
+<p>If a line goes beyond linelen, it is wrapped using <tt class="docutils literal"><span class="pre">&amp;crarr;</span></tt> (which
+gets translated to <tt class="docutils literal"><span class="pre">\\</span></tt> by <cite>ParsedEpytextDocstring.to_plaintext()</cite>).</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>colorizer = PyvalColorizer(linelen=40)
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> colorizer.colorize(<span class="py-string">'x'</span>*100).to_plaintext(None)
+<span class="py-output">'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\</span>
+<span class="py-output">xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\</span>
+<span class="py-output">xxxxxxxxxxxxxxxxxxxxx'</span></pre>
+</blockquote>
+<p>Check that the last line gets a <tt class="docutils literal"><span class="pre">&amp;crarr;</span></tt> when maxlines is exceeded:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> colorizer.colorize(<span class="py-string">'x'</span>*1000).to_plaintext(None)
+<span class="py-output">'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\</span>
+<span class="py-output">xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\</span>
+<span class="py-output">xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\</span>
+<span class="py-output">xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\</span>
+<span class="py-output">xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\</span>
+<span class="py-output">...</span></pre>
+</blockquote>
+<p>If linebreakok is False, then line wrapping gives an ellipsis instead:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>colorizer = PyvalColorizer(linelen=40, linebreakok=False)
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> colorizer.colorize(<span class="py-string">'x'</span>*100).to_plaintext(None)
+<span class="py-output">'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...</span></pre>
+</blockquote>
+</div>
+<div class="section" id="representation-scores">
+<h1>Representation Scores</h1>
+<p>When colorized representations are built, a score is computed
+evaluating how helpful the repr is.  E.g., unhelpful values like <tt class="docutils literal"><span class="pre">&lt;Foo</span>
+<span class="pre">instance</span> <span class="pre">at</span> <span class="pre">0x12345&gt;</span></tt> get low scores.  Currently, the scoring
+algorithm is:</p>
+<ul class="simple">
+<li>[+1] for each object colorized.  When the colorizer recurses into
+a structure, this will add one for each element contained.</li>
+<li>[-5] when repr(obj) looks like &lt;xyz instance at ...&gt;, for any
+colorized object (including objects in structures).</li>
+<li>[-100] if repr(obj) raises an exception, for any colorized object
+(including objects in structures).</li>
+</ul>
+<p>The <tt class="docutils literal"><span class="pre">min_score</span></tt> arg to colorize can be used to set a cutoff-point for
+scores; if the score is too low, then <cite>PyvalColorizer.colorize</cite> will return <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">color2</span>(v):
+<span class="py-more">... </span>    colorizer = PyvalColorizer(linelen=40)
+<span class="py-more">... </span>    pds = colorizer.colorize(v)
+<span class="py-more">... </span>    <span class="py-keyword">print</span> <span class="py-string">'repr: %s'</span> % pds.to_plaintext(None)
+<span class="py-more">... </span>    <span class="py-keyword">print</span> <span class="py-string">'score: %s (%s)'</span> % (pds.score, pds.score&gt;0 <span class="py-keyword">and</span> <span class="py-string">'ok'</span> <span class="py-keyword">or</span> <span class="py-string">'bad'</span>)</pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">class</span> <span class="py-defname">A</span>: <span class="py-keyword">pass</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>color2(<span class="py-string">'hello'</span>)
+<span class="py-output">repr: 'hello'</span>
+<span class="py-output">score: 1 (ok)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>color2([<span class="py-string">&quot;hello&quot;</span>, 123])
+<span class="py-output">repr: ['hello', 123]</span>
+<span class="py-output">score: 3 (ok)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>color2(A())
+<span class="py-output">repr: &lt;__builtin__.A instance at ...&gt;</span>
+<span class="py-output">score: -4 (bad)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>color2([A()])
+<span class="py-output">repr: [&lt;__builtin__.A instance at ...&gt;]</span>
+<span class="py-output">score: -3 (bad)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>color2([A(),1,2,3,4,5,6])
+<span class="py-output">repr: [&lt;__builtin__.A instance at ...&gt;,</span>
+<span class="py-output"> 1,</span>
+<span class="py-output"> 2,</span>
+<span class="py-output"> 3,</span>
+<span class="py-output"> 4,</span>
+<span class="py-output">...</span>
+<span class="py-output">score: 1 (ok)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.test.util <span class="py-keyword">import</span> print_warnings
+<span class="py-prompt">&gt;&gt;&gt; </span>print_warnings()</pre>
+</blockquote>
+</div>
+<div class="section" id="summary">
+<h1>Summary</h1>
+<p>To generate summary-reprs, use maxlines=1 and linebreakok=False:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>summarizer = PyvalColorizer(linelen=60, maxlines=1, linebreakok=False)
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">summarize</span>(v):
+<span class="py-more">... </span>    <span class="py-keyword">print</span> summarizer.colorize(v).to_plaintext(None)</pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>summarize(range(100))
+<span class="py-output">[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16...</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>summarize(<span class="py-string">'hello\nworld'</span>)
+<span class="py-output">'hello\nworld'</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span>summarize(<span class="py-string">'hello\nworld'</span>*100)
+<span class="py-output">'hello\nworldhello\nworldhello\nworldhello\nworldhello\nw...</span></pre>
+</blockquote>
+</div>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="../index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../index.html">
+    Home</a></td></a>
+  <a class="nav" href="../installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="../using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="../epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="../sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

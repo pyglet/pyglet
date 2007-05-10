@@ -1,0 +1,1076 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title>The Epytext Markup Language</title>
+<link rel="stylesheet" href="epydoc.css" type="text/css"/>
+</head>
+<!-- $Id: epytext.html 1211 2006-04-10 19:38:37Z edloper $ -->
+
+<body>
+<div class="body">
+<h1>The Epytext Markup Language</h1>
+
+<a name="overview"/>
+<h2> 1. Overview </h2>
+
+<p> Epytext is a lightweight markup language for Python docstrings.
+The epytext markup language is used by epydoc to parse docstrings and
+create structured API documentation.  Epytext markup is broken up into
+the following categories: </p>
+
+<ul>
+  <li> <b><i>Block Structure</i></b> divides the docstring into nested
+  blocks of text, such as paragraphs and lists.
+  <ul>
+    <li> <b><i>Basic Blocks</i></b> are the basic unit of block structure. </li>
+    <li> <b><i>Hierarchical blocks</i></b> represent the nesting structure
+    of the docstring. </li>
+  </ul> </li>
+  <li> <b><i>Inline Markup</i></b> marks regions of text within a basic block
+  with properties, such as italics and hyperlinks. </li>
+</ul>
+
+<!-- =========== BLOCK STRUCTURE ============= -->
+<a name="block_structure"/>
+<h2> 2. Block Structure </h2>
+
+<p> Block structure is encoded using indentation, blank lines, and a
+handful of special character sequences. </p>
+
+<ul>
+  <li> Indentation is used to encode the nesting structure of
+  hierarchical blocks.  The indentation of a line is defined as the
+  number of leading spaces on that line; and the indentation of a
+  block is typically the indentation of its first line. </li>
+
+  <li> Blank lines are used to separate blocks.  A blank line is a
+  line that only contains whitespace. </li>
+
+  <li> Special character sequences are used to mark the beginnings of
+  some blocks.  For example, "<code>-</code>" is used as a bullet for
+  unordered list items, and "<code>&gt;&gt;&gt;</code>" is used to
+  mark doctest blocks. </li>
+</ul>
+  
+<p> The following sections describe how to use each type of block
+structure. </p>
+
+<a name="paragraph"/>
+<h3> 2.1. Paragraphs </h3>
+
+<p> A paragraph is the simplest type of basic block.  It consists of
+one or more lines of text.  Paragraphs must be left justified (i.e.,
+every line must have the same indentation).  The following example
+illustrates how paragraphs can be used: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td>
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    This is a paragraph.  Paragraphs can
+    span multiple lines, and can contain
+    I{inline markup}.
+    
+
+    This is another paragraph.  Paragraphs
+    are separated by blank lines.
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+  <p> This is a paragraph.  Paragraphs can span multiple lines, and
+  contain <i>inline markup</i>. </p>
+  <p> This is another paragraph.  Paragraphs are separated from each
+  other by blank lines. </p>
+  </td></tr>
+</table>
+  
+<a name="list"/> 
+<h3> 2.2. Lists </h3>
+
+<p> Epytext supports both ordered and unordered lists.  A list
+consists of one or more consecutive <i>list items</i> of the same type
+(ordered or unordered), with the same indentation.  Each list item is
+marked by a <i>bullet</i>.  The bullet for unordered list items is a
+single dash character ("<code>-</code>").  Bullets for ordered list
+items consist of a series of numbers followed by periods, such as
+"<code>12.</code>" or "<code>1.2.8.</code>". </p>
+
+<p> List items typically consist of a bullet followed by a space and a
+single paragraph.  The paragraph may be indented more than the list
+item's bullet; often, the paragraph is intended two or three
+characters, so that its left margin lines up with the right side of
+the bullet.  The following example illustrates a simple ordered
+list. </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td>
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    1. This is an ordered list item.
+
+    2. This is a another ordered list
+    item.
+
+    3. This is a third list item.  Note that
+       the paragraph may be indented more
+       than the bullet.
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+  <ol>
+    <li> This is an ordered list item. </li>
+    <li> This is another ordered list item. </li>
+    <li> This is a third list item.  Note that the paragraph may be
+    indented more than the bullet.</li>
+  </td></tr>
+</table>
+
+<p> List items can contain more than one paragraph; and they can also
+contain sublists, literal blocks, and doctest blocks.  All of the
+blocks contained by a list item must all have equal indentation, and
+that indentation must be greater than or equal to the indentation of
+the list item's bullet.  If the first contained block is a paragraph,
+it may appear on the same line as the bullet, separated from the
+bullet by one or more spaces, as shown in the previous example.  All
+other block types must follow on separate lines. </p>
+
+<p> Every list must be separated from surrounding blocks by
+indentation: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td>
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    This is a paragraph.
+      1. This is a list item.
+      2. This a second list
+         item.
+           - This is a sublist
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+  This is a paragraph. 
+  <ol>
+    <li> This is a list item. </li>
+    <li> This is a second list item. 
+    <ul><li>This is a sublist.</li></ul></li>
+  </ol>
+  </td></tr>
+</table>
+
+<p> Note that sublists must be separated from the blocks in their
+parent list item by indentation.  In particular, the following
+docstring generates an error, since the sublist is not separated from
+the paragraph in its parent list item by indentation: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td>
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    1. This is a list item.  Its
+       paragraph is indented 7 spaces.
+       - This is a sublist.  It is
+         indented 7 spaces.
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+   <b>L5: Error: Lists must be indented.</b>
+  </td></tr>
+</table>
+
+<p> The following example illustrates how lists can be used: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td>
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    This is a paragraph.
+      1. This is a list item.
+        - This is a sublist.
+        - The sublist contains two
+          items.
+            - The second item of the 
+              sublist has its own sublist.
+
+      2. This list item contains two
+         paragraphs and a doctest block.
+
+         &gt;&gt;&gt; print 'This is a doctest block'
+         This is a doctest block
+
+         This is the second paragraph.
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+  This is a paragraph. 
+  <ol>
+    <li> This is a list item. </li>
+    <ul>
+      <li> This is a sublist. </li>
+      <li> The sublist contains two items. </li>
+      <ul>
+        <li> The second item of the sublist has its own own sublist. </li>
+      </ul>
+    </ul>
+    <li> This list item contains two paragraphs and a doctest block.
+    <pre>
+<code class="prompt">&gt;&gt;&gt;</code> <code class="keyword">print</code> <code class="string">'This is a doctest block'</code>
+<code class="output">This is a doctest block</code></pre>
+    <p> This is the second paragraph. </p> </li>
+  </ol>
+  </td></tr>
+</table>
+
+<p> Epytext will treat any line that begins with a bullet as a list
+item.  If you want to include bullet-like text in a paragraph, then
+you must either ensure that it is not at the beginning of the line,
+or use <a href="#escaping">escaping</a> to prevent epytext from
+treating it as markup: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td>
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    This sentence ends with the number
+    1.  Epytext can't tell if the "1."
+    is a bullet or part of the paragraph,
+    so it generates an error.
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+<b> L4: Error: Lists must be indented. </b>
+</td></tr>
+  <tr valign="top"><td>
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    This sentence ends with the number 1.
+
+    This sentence ends with the number
+    E{1}.
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+    This sentence ends with the number 1.
+    <p> This sentence ends with the number 1.</p>
+</td></tr>
+</table>
+
+<a name="section"/>
+<h3> 2.3. Sections </h3>
+
+<p> A section consists of a heading followed by one or more
+child blocks. </p>
+
+<ul>
+  <li> The heading is a single underlined line of text.  Top-level
+  section headings are underlined with the "=" character; subsection
+  headings are underlined with the "-" character; and subsubsection
+  headings are underlined with the "~" character.  The length of the
+  underline must exactly match the length of the heading.</li>
+
+  <li> The child blocks can be paragraphs, lists, literal blocks,
+  doctest blocks, or sections.  Each child must have equal
+  indentation, and that indentation must be greater than or equal to
+  the heading's indentation. </li>
+</ul>
+
+<p> The following example illustrates how sections can be used: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td>
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    This paragraph is not in any section.
+
+    Section 1
+    =========
+      This is a paragraph in section 1.
+
+      Section 1.1
+      -----------
+      This is a paragraph in section 1.1.
+
+    Section 2
+    =========
+      This is a paragraph in section 2.
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+  <b><font size="+2">Section 1</font></b><br>
+  This is a paragraph in section 1. <br><br>
+  <b><font size="+1">Section 1.1</font></b><br>
+  This is a paragraph in section 1.1. <br><br>
+  <b><font size="+2">Section 2</font></b><br>
+  This is a paragraph in section 2.
+</table>
+
+<a name="literal"/>
+<h3> 2.4. Literal Blocks </h3>
+
+<p> Literal blocks are used to represent "preformatted" text.
+Everything within a literal block should be displayed exactly as it
+appears in plaintext.  In particular: </p>
+
+<ul>
+  <li> Spaces and newlines are preserved. </li>
+  <li> Text is shown in a monospaced font. </li>
+  <li> Inline markup is not detected. </li>
+</ul>
+
+<p> Literal blocks are introduced by paragraphs ending in the special
+sequence "<code>::</code>".  Literal blocks end at the first line
+whose indentation is equal to or less than that of the paragraph that
+introduces them.  The following example shows how literal blocks can
+be used: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td>
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    The following is a literal block::
+    
+        Literal /
+               / Block
+
+    This is a paragraph following the
+    literal block.
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+  <p>The following is a literal block:</p>
+<pre>
+    Literal /
+           / Block
+</pre>
+  <p>This is a paragraph following the literal block.</p>
+</table>
+
+<p> Literal blocks are indented relative to the paragraphs that
+introduce them; for example, in the previous example, the word
+"Literal" is displayed with four leading spaces, not eight.  Also,
+note that the double colon ("<code>::</code>") that introduces the
+literal block is rendered as a single colon. </p>
+
+<a name="doctest"/>
+<h3> 2.5. Doctest Blocks </h3>
+
+<p> Doctest blocks contain examples consisting of Python expressions
+and their output.  Doctest blocks can be used by the <a
+href="http://www.python.org/doc/current/lib/module-doctest.html">doctest</a>
+module to test the documented object.  Doctest blocks begin with the
+special sequence "<code>&gt;&gt;&gt;</code>".  Doctest blocks are
+delimited from surrounding blocks by blank lines.  Doctest blocks may
+not contain blank lines.  The following example shows how doctest
+blocks can be used: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td>
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    The following is a doctest block:
+    
+        &gt;&gt;&gt; print (1+3,
+        ...        3+5)
+        (4, 8)
+        &gt;&gt;&gt; 'a-b-c-d-e'.split('-')
+        ['a', 'b', 'c', 'd', 'e']
+
+    This is a paragraph following the
+    doctest block.
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+<p> The following is a doctest block: </p>
+<pre>
+<code class="prompt">&gt;&gt;&gt;</code> <code class="keyword">print</code> <code class="pycode">(1+3,</code>
+<code class="prompt">...</code>        <code class="pycode">3+5)</code>
+<code class="output">(4, 8)</code>
+<code class="prompt">&gt;&gt;&gt;</code> <code class="string">'a-b-c-d-e'</code><code class="pycode">.split('-')</code>
+<code class="output">['a', 'b', 'c', 'd', 'e']</code>
+</pre>
+  <p>This is a paragraph following the doctest block.</p>
+</table>
+
+<a name="fieldlist"/>
+<h3> 2.6. Fields </h3>
+
+<p> Fields are used to describe specific properties of a documented
+object.  For example, fields can be used to define the parameters and
+return value of a function; the instance variables of a class; and the
+author of a module.  Each field is marked by a <i>field tag</i>, which
+consist of an at sign ("<code>@</code>") followed by a <i>field
+name</i>, optionally followed by a space and a <i>field argument</i>,
+followed by a colon ("<code>:</code>").  For example,
+"<code>@return:</code>" and "<code>@param&nbsp;x:</code>" are field
+tags. </p>
+
+<p> Fields can contain paragraphs, lists, literal blocks, and doctest
+blocks.  All of the blocks contained by a field must all have equal
+indentation, and that indentation must be greater than or equal to the
+indentation of the field's tag.  If the first contained block is a
+paragraph, it may appear on the same line as the field tag, separated
+from the field tag by one or more spaces.  All other block types must
+follow on separate lines. </p>
+
+<p> Fields must be placed at the end of the docstring, after the
+description of the object.  Fields may be included in any order. </p>
+
+<p> Fields do not need to be separated from other blocks by a blank
+line.  Any line that begins with a field tag followed by a space or
+newline is considered a field. </p>
+
+<p> The following example illustrates how fields can be
+used: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td>
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    <code class="field">@param x:</code> This is a description of
+        the parameter x to a function.
+        Note that the description is
+        indented four spaces.
+    <code class="field">@type x:</code> This is a description of
+        x's type.
+    <code class="field">@return:</code> This is a description of
+        the function's return value.
+
+        It contains two paragraphs.
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+    <dl><dt><b>Parameters:</b></dt>
+      <dd><code><b>x</b></code> -
+         This is a description of the parameter x to a function. Note that the 
+        description is indented four spaces.
+        <br><i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        (type=This is a description of x's type.)</i>
+      </dd>
+    </dl>
+    <dl><dt><b>Returns:</b></dt>
+      <dd>
+        This is a description of the function's return value.
+        <p>It contains two paragraphs.</p>
+      </dd>
+</td></tr>
+</table>
+
+<p> For a list of the fields that are supported by epydoc, see
+the <a href="fields.html#fields">epydoc fields page</a>.
+
+<!-- =========== INLINE MARKUP ============= -->
+<a name="inline"/>
+<h2> 3. Inline Markup </h2>
+
+<p> Inline markup has the form
+"<i>x</i><code>{</code>...<code>}</code>", where "<i>x</i>" is a
+single capital letter that specifies how the text between the braces
+should be rendered.  Inline markup is recognized within paragraphs and
+section headings.  It is <i>not</i> recognized within literal and
+doctest blocks.  Inline markup can contain multiple words, and can
+span multiple lines.  Inline markup may be nested. </p>
+
+<p> A matching pair of curly braces is only interpreted as inline
+markup if the left brace is immediately preceeded by a capital letter.
+So in most cases, you can use curly braces in your text without any
+form of escaping.  However, you <i>do</i> need to escape curly braces
+when: </p>
+
+<ol>
+  <li> You want to include a single (un-matched) curly brace.
+  <li> You want to preceed a matched pair of curly braces with a
+  capital letter. </li>
+</ol>
+
+<p> Note that there is no valid Python expression where a pair of
+matched curly braces is immediately preceeded by a capital letter
+(except within string literals).  In particular, you never need to
+escape braces when writing Python dictionaries.  See <a
+href="#escaping">section 3.5</a> for a discussion of escaping.  </p>
+
+<a name="basic_inline"/>
+<h3> 3.1. Basic Inline Markup </h3>
+
+<p> Epytext defines four types of inline markup that specify how text
+should be displayed: </p>
+
+<ul>
+  <li> <code>I{</code>...<code>}</code>: Italicized text. </li>
+  <li> <code>B{</code>...<code>}</code>: Bold-faced text. </li>
+  <li> <code>C{</code>...<code>}</code>: Source code or a Python
+  identifier. </li>
+  <li> <code>M{</code>...<code>}</code>: A mathematical
+  expression. </li>
+</ul>
+
+<p> By default, source code is rendered in a fixed width font; and
+mathematical expressions are rendered in italics.  But those defaults
+may be changed by modifying the CSS stylesheet.  The following example
+illustrates how the four basic markup types can be used: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td>
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    I{B{Inline markup} may be nested; and
+    it may span} multiple lines.
+
+      - I{Italicized text}
+      - B{Bold-faced text}
+      - C{Source code}
+      - M{Math}
+
+    Without the capital letter, matching
+    braces are not interpreted as markup:
+    C{my_dict={1:2, 3:4}}.
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+  <i><b>Inline markup</b> may be nested; and it may span</i>
+  multiple lines.
+  <ul>
+    <li> <i>Italicized text</i> </li> 
+    <li> <b>Bold-faced text</b> </li> 
+    <li> <code>Source code</code> </li> 
+    <li> Math: <i>m*x+b</i> </li> 
+  </ul>
+  Without the capital letter, matching
+  braces are not interpreted as markup:
+  <code>my_dict={1:2, 3:4}</code>.
+</td></tr>
+</table>
+
+<a name="urls"/>
+<h3> 3.2. URLs </h3>
+
+<p> The inline markup construct
+"<code>U{</code><i>text</i><code>&lt;</code><i>url</i><code>&gt;}</code>"
+is used to create links to external URLs and URIs.  "<i>Text</i>" is
+the text that should be displayed for the link, and "<i>url</i>" is
+the target of the link.  If you wish to use the URL as the text for
+the link, you can simply write
+"<code>U{</code><i>url</i><code>}</code>".  Whitespace within URL
+targets is ignored.  In particular, URL targets may be split over
+multiple lines.  The following example illustrates how URLs can be
+used: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td rowspan="2">
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    - U{www.python.org}
+    - U{http://www.python.org}
+    - U{The epydoc homepage&lt;http://
+      epydoc.sourceforge.net&gt;}
+    - U{The B{I{Python}} homepage
+      &lt;www.python.org&gt;}
+    - U{Edward Loper&lt;mailto:edloper@
+      gradient.cis.upenn.edu&gt;}
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+  <ul>
+    <li> <a href="http://www.python.org">www.python.org</a> </li>
+    <li> <a href="http://www.python.org">http://www.python.org</a> </li>
+    <li> <a href="http://epydoc.sourceforge.net">The epydoc homepage</a> </li>
+    <li> <a href="http://www.python.org">The <b><i>Python</i></b> homepage</a> </li>
+    <li> <a href="mailto:edloper@gradient.cis.upenn.edu">Edward Loper</a> </li>
+  </ul>
+</td></tr>
+</table>
+
+<a name="links"/>
+<h3> 3.3. Documentation Crossreference Links </h3>
+
+<p> The inline markup construct
+"<code>L{</code><i>text</i><code>&lt;</code><i>object</i><code>&gt;}</code>"
+is used to create links to the documentation for other Python objects.
+"<i>Text</i>" is the text that should be displayed for the link, and
+"<i>object</i>" is the name of the Python object that should be linked
+to.  If you wish to use the name of the Python object as the text for
+the link, you can simply write
+"<code>L{</code><i>object</i><code>}</code>".  Whitespace within
+object names is ignored.  In particular, object names may be split
+over multiple lines.  The following example illustrates how
+documentation crossreference links can be used: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td rowspan="2">
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    - L{x_transform}
+    - L{search&lt;re.search&gt;}
+    - L{The I{x-transform} function
+      &lt;x_transform&gt;}
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+  <ul>
+    <li> <a href="examples/example.html#x_intercept"
+    ><code>x_transform</code></a></li>
+    <li> <a href="examples/sre.html#search"
+    ><code>search</code></a></li>
+    <li> <a href="examples/example.html#x_intercept"
+    ><code>The <i>x-transform</i> function</code></a></li>
+    </ul>
+
+</td></tr>
+</table>
+
+<p> In order to find the object that corresponds to a given name,
+epydoc checks the following locations, in order: </p>
+
+<ol>
+  <li> If the link is made from a class or method docstring, then
+  epydoc checks for a method, instance variable, or class variable
+  with the given name. </li>
+  <li> Next, epydoc looks for an object with the given name in the
+  current module. </li>
+  <li> Epydoc then tries to import the given name as a module.  If
+  the current module is contained in a package, then epydoc will also
+  try importing the given name from all packages containing the
+  current module. </li>
+  <li> Finally, epydoc tries to divide the given name into a module
+  name and an object name, and to import the object from the module.
+  If the current module is contained in a package, then epydoc will
+  also try importing the module name from all packages containing the
+  current module. </li> </ol>
+
+<p> If no object is found that corresponds with the given name, then
+epydoc issues a warning. </p>
+
+<a name="indexed"/>
+<h3> 3.4. Indexed Terms </h3>
+
+<p> Epydoc automatically creates an index of term definitions for the
+API documentation.  The inline markup construct
+"<code>X{</code>...<code>}</code>" is used to mark terms for inclusion
+in the index.  The term itself will be italicized; and a link will be
+created from the index page to the location of the term in the text.
+The following example illustrates how index terms can be used: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td rowspan="2">
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    An X{index term} is a term that
+    should be included in the index.
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+  An <a name="index-index_term"/><i>index term</i> is a term that
+  should be included in the index.
+
+</td></tr><tr><td>
+
+  <table border="1" cellpadding="3" cellspacing="0" width="95%" class="grayf">
+    <tr>
+      <th colspan="2" class="grayc">Index</th></tr>
+      <tr><td width="15%">index&nbsp;term</td>
+      <td><i><a href="#index-index_term">example</a></i></tr></td>
+      <tr><td width="15%">x&nbsp;intercept</td>
+      <td><i><a href="examples/example.html#index-x_intercept">x_intercept</a></i></tr></td>
+      <tr><td width="15%">y&nbsp;intercept</td>
+      <td><i><a href="examples/example.html#index-y_intercept">x_intercept</a></i></tr></td>
+    </table>
+
+</td></tr>
+</table>
+
+<a name="symbols"/>
+<h3> 3.5. Symbols </h3>
+
+<p> Symbols are used to insert special characters in your
+documentation.  A symbol has the form
+"<code>S{</code><i>code</i><code>}</code>", where <i>code</i> is a
+symbol code that specifies what character should be produced.  The
+following example illustrates how symbols can be used to generate
+special characters: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td rowspan="2">
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    Symbols can be used in equations:
+      - S{sum}S{alpha}/x S{<=} S{beta}
+
+    S{<-} and S{larr} both give left
+    arrows.  Some other arrows are
+    S{rarr}, S{uarr}, and S{darr}.
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+  <p>Symbols can be used in equations:</p>
+  <ul><li>&sum;&alpha;/x &le; &beta;</li></ul>
+  <p>&larr; and &larr; both give left arrows.  Some other arrows are
+  &rarr;, &uarr;, and &darr;.</p>
+</td></tr>
+</table>
+
+<p> Although symbols can be quite useful, you should keep in mind that
+they can make it harder to read your docstring in plaintext.  In
+general, symbols should be used sparingly.  For a complete list of the
+symbols that are currently supported, see the reference documentation
+for <a href="api/public/epydoc.markup.epytext-module.html#SYMBOLS"
+>epydoc.epytext.SYMBOLS</a>. </p>
+
+<a name="escaping"/>
+<h3> 3.6. Escaping </h3>
+
+<p> Escaping is used to write text that would otherwise be interpreted
+as epytext markup.  Epytext was carefully constructed to minimize the
+need for this type of escaping; but sometimes, it is unavoidable.
+Escaped text has the form "<code>E{</code><i>code</i><code>}</code>",
+where <i>code</i> is an escape code that specifies what character
+should be produced.  If the escape code is a single character (other
+than "<code>{</code>" or "<code>}</code>"), then that character is
+produced.  For example, to begin a paragraph with a dash (which would
+normally signal a list item), write "<code>E{-}</code>".  In addition,
+two special escape codes are defined: "<code>E{lb}</code>" produces a
+left curly brace ("<code>{</code>"); and "<code>E{rb}</code>" produces
+a right curly brace ("<code>}</code>").  The following example
+illustrates how escaping can be used: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td rowspan="2">
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    This paragraph ends with two
+    colons, but does not introduce
+    a literal blockE{:}E{:}
+
+    E{-} This is not a list item.
+
+    Escapes can be used to write
+    unmatched curly braces:
+    E{rb}E{lb}
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+  <p>This paragraph ends with two colons, but does not introduce
+  a literal block::</p>
+  <p>- This is not a list item.</p>
+  <p>Escapes can be used to write unmatched curly braces: }{</p>
+</td></tr>
+</table>
+
+<a name="graphs"/>
+<h3> 3.7. Graphs </h3>
+
+<p> The inline markup construct "<code>G{</code><i>graphtype</i>
+<i>args...</i>}</code>" is used to insert automatically generated
+graphs.  The following graphs generation constructions are currently
+defines:</p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+<tr><th width="10%">Markup</th><th width="90%">Description</th></tr>
+
+  <tr valign="top">
+    <td><pre>G{classtree <code class="user">classes...</code>}</pre></td>
+    <td> Display a class hierarchy for the given class or classes
+    (including all superclasses &amp; subclasses).  If no class is
+    specified, and the directive is used in a class's docstring, then
+    that class's class hierarchy will be displayed.  </td></tr>
+
+  <tr valign="top">
+    <td><pre>G{packagetree <code class="user">modules...</code>}</pre></td>
+    <td> Display a package hierarchy for the given module or modules
+    (including all subpackages and submodules).  If no module is
+    specified, and the directive is used in a module's docstring, then
+    that module's package hierarchy will be displayed.  </td></tr>
+
+  <tr valign="top">
+    <td><pre>G{impotgraph <code class="user">modules...</code>}</pre></td>
+    <td> Display an import graph for the given module or modules.  If
+    no module is specified, and the directive is used in a module's
+    docstring, then that module's import graph will be displayed.
+    </td></tr>
+
+  <tr valign="top">
+    <td><pre>G{callgraph <code class="user">functions...</code>}</pre></td>
+    <td> Display a call graph for the given function or functions.  If
+    no function is specified, and the directive is used in a
+    function's docstring, then that function's call graph will be
+    displayed.  </td></tr>
+</table>
+
+<!-- =========== CHARACTERS ============= -->
+<a name="characters"/>
+<h2> 4. Characters </h2>
+
+<a name="valid_characters"/>
+<h3> 4.1. Valid Characters </h3>
+
+<p> Valid characters for an epytext docstring are space ("\040");
+newline ("\012"); and any letter, digit, or punctuation, as defined by
+the current locale.  Control characters ("\000"-"\010" and
+"\013"-"\037") are not valid content characters.  Tabs ("\011") are
+expanded to spaces, using the same algorithm used by the Python
+parser.  Carridge-return/newline pairs ("\015\012") are converted to
+newlines. </p>
+
+<a name="content_characters"/>
+<h3> 4.2. Content Characters </h3>
+
+<p> Characters in a docstring that are not involved in markup are
+called <i>content characters</i>.  Content characters are always
+displayed as-is.  In particular, HTML codes are <i>not</i> passed
+through.  For example, consider the following example: </p>
+
+<table border="1" cellspacing="0" cellpadding="3" width="95%">
+  <tr><th width="50%">Docstring Input</th><th width="50%">Rendered Output</th>
+  <tr valign="top"><td>
+<pre>
+<code class="keyword">def</code> <code class="function">example</code>():
+    <code class="string">"""
+    &lt;B&gt;test&lt;/B&gt;
+    """</code>
+    <i>[...]</i>
+</pre>
+</td><td>
+  &lt;B&gt;test&lt;/B&gt;
+</table>
+
+<p> The docstring is rendered as "&lt;B&gt;test&lt;/B&gt;", and not
+as the word "test" in bold face. </p>
+
+<a name="whitespace"/>
+<h3> 4.3. Spaces and Newlines </h3>
+
+<p> In general, spaces and newlines within docstrings are treated as
+<i>soft spaces</i>.  In other words, sequences of spaces and newlines
+(that do not contain a blank line) are rendered as a single space, and
+words may wrapped at spaces.  However, within literal blocks and
+doctest blocks, spaces and newlines are preserved, and no
+word-wrapping occurs; and within URL targets and documentation link
+targets, whitespace is ignored. </p>
+
+<!-- =========== WARNINGS ============= -->
+<!-- (make sure this is consistant w/ the man page!!) -->
+<a name="warnings"/>
+<h2> 5. Warnings and Errors </h2>
+
+<p>If epydoc encounters an error while processing a docstring, it
+issues a warning message that describes the error, and attempts to
+continue generating documentation.  Errors related to epytext are
+divided into three categories: </p>
+
+<ul>
+  <li> <b>Epytext Warnings</b> are caused by epytext docstrings that
+  contain questionable or suspicious markup.  Epytext warnings do
+  not prevent the docstring in question from being parsed. </li>
+  <li> <b> Field Warnings</b> are caused by epytext docstrings
+  containing invalid fields.  The contents of the invalid field are
+  generally ignored. </li>
+  <li> <b>Epytext Errors</b> are caused by epytext docstrings that
+  contain invalid markup.  Whenever an epytext error is detected,
+  the docstring in question is treated as a plaintext docstring. </li>
+</ul>
+
+<p> The following sections list and describe the warning messages that
+epydoc can generate.  They are intended as a reference resource, which
+you can search for more information and possible causes if you
+encounter an error and do not understand it.  These descriptions are
+also available in the <a
+href="epydoc-man.html#lbAH"><code>epydoc(1)</code> man page</a>. </p>
+
+<h3> 5.1. Epytext Warnings </h3>
+<ul>
+  
+<li><b class="error">Possible mal-formatted field item.</b> <br />
+  Epytext detected a line that looks like a field item, but is not
+  correctly formatted.  This typically occurs when the trailing colon
+  (<b>":"</b>) is not included in the field tag.
+
+<li><b class="error">Possible heading typo.</b> <br />
+  Epytext detected a pair of lines that looks like a heading, but the
+  number of underline characters does not match the number of
+  characters in the heading.  The number of characters in these two
+  lines must match exactly for them to be considered a
+  heading.
+
+</ul>
+<h3> 5.2. Field Warnings </h3>
+<ul>
+  
+<li><b class="error"><code>@param</code> for unknown parameter <i>param</i>.</b> <br />
+  A <code>@param</code> field was used to specify the type for a parameter that is
+  not included in the function's signature.  This is typically caused
+  by a typo in the parameter name.
+
+<li><b class="error"><i>tag</i> did not expect an argument.</b> <br />
+  The field tag <i>tag</i> was used with an argument, but it does not
+  take one.
+
+<li><b class="error"><i>tag</i> expected an argument.</b> <br />
+  The field tag <i>tag</i> was used without an argument, but it
+  requires one.
+
+<li><b class="error"><code>@type</code> for unknown parameter <i>param</i>.</b> <br />
+  A <code>@type</code> field was used to specify the type for a parameter that is
+  not included in the function's signature.  This is typically caused
+  by a typo in the parameter name.
+
+<li><b class="error"><code>@type</code> for unknown variable <i>var</i>.</b> <br />
+  A <code>@type</code> field was used to specify the type for a variable, but no
+  other information is known about the variable.  This is typically
+  caused by a typo in the variable name.
+
+<li><b class="error">Unknown field tag <i>tag</i>.</b> <br />
+  A docstring contains a field with the unknown tag <i>tag</i>.
+
+<li><b class="error">Redefinition of <i>field</i>.</b> <br />
+  Multiple field tags define the value of <i>field</i> in the same
+  docstring, but <i>field</i> can only take a single value.
+  
+</ul>
+<h3> 5.3. Epytext Errors </h3> 
+<ul>
+
+<li><b class="error">Bad link target.</b> <br />
+  The target specified for an inline link contruction (<code>L{...}</code>)
+  is not well-formed.  Link targets must be valid python identifiers.
+
+<li><b class="error">Bad uri target.</b> <br />
+  The target specified for an inline uri contruction (<code>U{...}</code>)
+  is not well-formed.  This typically occurs if inline markup is
+  nested inside the URI target.
+
+<li><b class="error">Fields must be at the top level.</b> <br />
+  The list of fields (<code>@param</code>, etc.) is contained by some other
+  block structure (such as a list or a section).
+
+<li><b class="error">Fields must be the final elements in an epytext
+string.</b> <br />
+  The list of fields (<code>@param</code>, etc.) is not at the end of a
+  docstring.
+
+<li><b class="error">Headings must occur at top level.</b> <br />
+  The heading is contianed in some other block structure (such as a
+  list).
+
+<li><b class="error">Improper doctest block indentation.</b> <br />
+  The doctest block dedents past the indentation of its initial prompt
+  line.
+
+<li><b class="error">Improper heading indentation.</b> <br />
+  The heading for a section is not left-aligned with the paragraphs in
+  the section that contains it.
+
+<li><b class="error">Improper paragraph indentation.</b> <br />
+  The paragraphs within a block are not left-aligned.  This error is
+  often generated when plaintext docstrings are parsed using epytext.
+
+<li><b class="error">Invalid escape.</b> <br />
+  An unknown escape sequence was used with the inline escape
+  construction (<code>E{...}</code>).
+
+<li><b class="error">Lists must be indented.</b> <br />
+  An unindented line immediately following a paragraph starts with a
+  list bullet.  Epydoc is not sure whether you meant to start a new
+  list item, or meant for a paragraph to include a word that looks
+  like a bullet.  If you intended the former, then indent the list.
+  If you intended the latter, then change the word-wrapping of the
+  paragraph, or escape the first character of the word that looks like
+  a bullet.
+  
+<li><b class="error">Unbalanced '{'.</b> <br />
+  The docstring contains unbalanced braces.  Epytext requires that all
+  braces must be balanced.  To include a single unbalanced brace, use
+  the escape sequences <code>E{lb}</code> (left brace) and <code>E{rb}</code> (right brace).
+
+<li><b class="error">Unbalanced '}'.</b> <br />
+  The docstring contains unbalanced braces.  Epytext requires that all
+  braces must be balanced.  To include a single unbalanced brace, use
+  the escape sequences <code>E{lb}</code> (left brace) and <code>E{rb}</code> (right brace).
+
+<li><b class="error">Unknown inline markup tag.</b> <br />
+  An unknown tag was used with the inline markup construction
+  (<code><i>x</i>{...}</code>).
+
+<li><b class="error">Wrong underline character for heading.</b> <br />
+  The underline character used for this section heading does not
+  indicate an appopriate section level.  The "<code>=</code>" character
+  should be used to underline sections; "<code>-</code>" for subsections;
+  and "<code>~</code>" for subsubsections.
+
+</ul>
+
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="index.html">
+    Home</a></td></a>
+  <a class="nav" href="installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="epytext.html">
+    <td align="center" width="20%" class="navselect" class="nav">
+    <a class="nav" href="epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

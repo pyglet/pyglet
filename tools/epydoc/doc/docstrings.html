@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title>Python Docstrings</title>
+<link rel="stylesheet" href="epydoc.css" type="text/css"/>
+</head>
+<!-- $Id: docstrings.html 1211 2006-04-10 19:38:37Z edloper $ -->
+<body>
+
+<div class="body">
+<h1> Python Docstrings </h1>
+
+<p> Python documentation strings (or <i>docstrings</i>) provide a
+convenient way of associating documentation with Python modules,
+functions, classes, and methods.  An object's docsting is defined by
+including a string constant as the first statement in the object's
+definition.  For example, the following function defines a docstring:
+</p>
+
+<div class="screen"><pre>
+<code class="keyword">def</code> <code class="function">x_intercept</code>(m, b):
+    <code class="string">"""
+    Return the x intercept of the line y=m*x+b.  The x intercept of a
+    line is the point at which it crosses the x axis (y=0).
+    """</code>
+    <code class="keyword">return</code> -b/m
+</pre></div>
+
+<p> Docstrings can be accessed from the interpreter and from Python
+programs using the "<code>__doc__</code>" attribute: </p>
+
+<div class="screen"><pre>
+<code class="prompt">&gt;&gt;&gt;</code> <code class="user"><code class="keyword">print</code> x_intercept.__doc__</code><code class="output">
+    Return the x intercept of the line y=m*x+b.  The x intercept of a
+    line is the point at which it crosses the x axis (y=0).</code>
+</pre></div>
+
+<p> The <a href="http://web.lfw.org/python/pydoc.html">pydoc</a>
+module, which became part of <a
+href="http://www.python.org/doc/current/lib/module-pydoc.html">
+the standard library</a> in Python 2.1, can be used to display
+information about a Python object, including its docstring: </p>
+
+<div class="screen"><pre>
+<code class="prompt">&gt;&gt;&gt;</code> <code class="user"><code class="keyword">from</code> pydoc <code class="keyword">import</code> help</code>
+
+<code class="prompt">&gt;&gt;&gt;</code> <code class="user">help(x_intercept)</code>
+<code class="output">Help on function x_intercept in module __main__:
+
+<b>x_intercept</b>(m, b)
+    Return the x intercept of the line y=m*x+b.  The x intercept of a
+    line is the point at which it crosses the x axis (y=0).</code>
+</pre></div>
+
+<p> For more information about Python docstrings, see the <a
+href="http://www.python.org/doc/current/tut/node6.html#SECTION006750000000000000000">Python
+Tutorial</a> or the Oreilly Network article <a
+href="http://www.onlamp.com/lpt/a/python/2001/05/17/docstrings.html">Python
+Documentation Tips and Tricks</a>. </p>
+
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="index.html">
+    Home</a></td></a>
+  <a class="nav" href="installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

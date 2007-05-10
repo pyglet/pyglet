@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title>Default Epydoc CSS Stylesheet</title>
+<link rel="stylesheet" href="epydoc.css" type="text/css"/>
+</head>
+<!-- $Id: stylesheet.html 1211 2006-04-10 19:38:37Z edloper $ -->
+
+<body>
+<div class="body">
+<h1>Default Epydoc CSS Stylesheet</h1>
+
+<p> Note: this is not up-to-date. </p>
+
+<div class="screen"><pre>
+<code class="comment">/* Body color */</code> 
+<code class="function">body               </code>{ <code class="field">background</code>: #ffffff; <code class="field">color</code>: #000000; } 
+ 
+<code class="comment">/* Tables */</code> 
+<code class="function">table.summary, table.details, table.index
+                   </code>{ <code class="field">background</code>: #e8f0f8; <code class="field">color</code>: #000000; } 
+<code class="function">tr.summary, tr.details, tr.index 
+                   </code>{ <code class="field">background</code>: #70b0f0; <code class="field">color</code>: #000000;  
+                     <code class="field">text-align</code>: left; <code class="field">font-size</code>: 120%; } 
+ 
+<code class="comment">/* Headings */</code>
+<code class="function">h1.heading         </code>{ <code class="field">font-size</code>: +140%; <code class="field">font-style</code>: italic;
+                     <code class="field">font-weight</code>: bold; }
+<code class="function">h2.heading         </code>{ <code class="field">font-size</code>: +125%; <code class="field">font-style</code>: italic;
+                     <code class="field">font-weight</code>: bold; }
+<code class="function">h3.heading         </code>{ <code class="field">font-size</code>: +110%; <code class="field">font-style</code>: italic;
+                     <code class="field">font-weight</code>: normal; }
+                     
+<code class="comment">/* Base tree */</code>
+<code class="function">pre.base-tree      </code>{ <code class="field">font-size</code>: 80%; }
+
+<code class="comment">/* Details Sections */</code>
+<code class="function">table.func-details </code>{ <code class="field">background</code>: #e8f0f8; <code class="field">color</code>: #000000;
+                     <code class="field">border</code>: 2px groove #c0d0d0;
+                     <code class="field">padding</code>: 0 1em 0 1em; <code class="field">margin</code>: 0.4em 0 0 0; }
+<code class="function">h3.func-detail     </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #000000;
+                     <code class="field">margin</code>: 0 0 1em 0; }
+
+<code class="function">table.var-details  </code>{ <code class="field">background</code>: #e8f0f8; <code class="field">color</code>: #000000;
+                     <code class="field">border</code>: 2px groove #c0d0d0;
+                     <code class="field">padding</code>: 0 1em 0 1em; <code class="field">margin</code>: 0.4em 0 0 0; }
+<code class="function">h3.var-details     </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #000000;
+                     <code class="field">margin</code>: 0 0 1em 0; }
+
+<code class="comment">/* Function signatures */</code>
+<code class="function">.sig               </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #000000;
+                     <code class="field">font-weight</code>: bold; }  
+<code class="function">.sig-name          </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #006080; }  
+<code class="function">.sig-arg, .sig-kwarg, .sig-vararg
+                   </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #008060; }  
+<code class="function">.sig-default       </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #602000; }  
+<code class="function">.summary-sig       </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #000000; }  
+<code class="function">.summary-sig-name  </code>{ <code class="field">background</code>: transparent; <code class="field">font-weight</code>: bold; }  
+<code class="function">.summary-sig-arg, .summary-sig-kwarg, .summary-sig-vararg
+                   </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #008060; }  
+
+<code class="comment">/* Doctest blocks */</code>
+<code class="function">.pysrc             </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #000000; }
+<code class="function">.pyprompt          </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #003030;
+                     <code class="field">font-weight</code>: bold;}
+<code class="function">.pystring          </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #006030; }
+<code class="function">.pycomment         </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #003060; }
+<code class="function">.pykeyword         </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #402000; }
+<code class="function">.pyoutput          </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #404040; }
+ 
+<code class="comment">/* Navigation bar */</code> 
+<code class="function">table.navbar       </code>{ <code class="field">background</code>: #a0c0ff; <code class="field">color</code>: #000000;
+                     <code class="field">border</code>: 2px groove #c0d0d0; }
+<code class="function">th.navbar          </code>{ <code class="field">background</code>: #a0c0ff; <code class="field">color</code>: #6090d0; <code class="field">font-size</code>: 110% } 
+<code class="function">th.navselect       </code>{ <code class="field">background</code>: #70b0ff; <code class="field">color</code>: #000000; <code class="field">font-size</code>: 110% } 
+
+<code class="comment">/* Links */</code> 
+<code class="function">a:link             </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #0000ff; }  
+<code class="function">a:visited          </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #204080; }  
+<code class="function">a.navbar:link      </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #0000ff; 
+                     <code class="field">text-decoration</code>: none; }  
+<code class="function">a.navbar:visited   </code>{ <code class="field">background</code>: transparent; <code class="field">color</code>: #204080; 
+                     <code class="field">text-decoration</code>: none; }  
+</pre></div>
+
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="index.html">
+    Home</a></td></a>
+  <a class="nav" href="installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,553 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>Epydoc Fields</title>
+<link rel="stylesheet" href="custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="epydoc-fields">
+<h1 class="title">Epydoc Fields</h1>
+
+<!-- $Id: manual-fields.txt 1554 2007-02-27 03:31:56Z edloper $ -->
+<p>Fields are used to describe specific properties of a documented object. For
+example, fields can be used to define the parameters and return value of a
+function; the instance variables of a class; and the author of a module. Each
+field consists of a <em>tag</em>, an optional <em>argument</em>, and a <em>body</em>.</p>
+<ul class="simple">
+<li>The <em>tag</em> is a case-insensitive word that indicates what kind of
+documentation is given by the field.</li>
+<li>The optional <em>argument</em> specifies what object, parameter, or group is
+documented by the field.</li>
+<li>The <em>body</em> contains the main contents of the field.</li>
+</ul>
+<div class="section" id="field-markup">
+<h1>Field Markup</h1>
+<p>Each docstring markup langauge marks fields differently. The following table
+shows the basic fields syntax for each markup language. For more information,
+see the definition of field syntax for each markup language.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Epytext</th>
+<th class="head">reStructuredText</th>
+<th class="head">Javadoc</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="first last literal-block">
+&#64;<em>tag</em>: <em>body</em>...
+&#64;<em>tag</em> <em>arg</em>: <em>body</em>...
+</pre>
+</td>
+<td><pre class="first last literal-block">
+:<em>tag</em>: <em>body</em>...
+:<em>tag</em> <em>arg</em>: <em>body</em>...
+</pre>
+</td>
+<td><pre class="first last literal-block">
+&#64;<em>tag</em> <em>body</em>...
+&#64;<em>tag</em> <em>arg</em> <em>body</em>...
+</pre>
+</td>
+</tr>
+<tr><td><a class="reference" href="manual-epytext.html#fields">Definition of epytext fields</a></td>
+<td><a class="reference" href="http://docutils.sourceforge.net/spec/rst/reStructuredText.html#field-lists">Definition of ReStructuredText fields</a></td>
+<td><a class="reference" href="http://java.sun.com/j2se/1.4.2/docs/tooldocs/solaris/javadoc.html#javadoctags">Definition of Javadoc fields</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="supported-fields">
+<h1>Supported Fields</h1>
+<p>The following table lists the fields that epydoc currently recognizes. Field
+tags are written using epytext markup; if you are using a different markup
+language, then you should adjust the markup accordingly.</p>
+<div class="section" id="functions-and-methods-parameters">
+<h2>Functions and Methods parameters</h2>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;param</span></tt> <em>p</em>: ...</dt>
+<dd>A description of the parameter <em>p</em> for a function or method.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;type</span></tt> <em>p</em>: ...</dt>
+<dd>The expected type for the parameter <em>p</em>.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;return</span></tt>: ...</dt>
+<dd>The return value for a function or method.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;rtype</span></tt>: ...</dt>
+<dd>The type of the return value for a function or method.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;keyword</span></tt> <em>p</em>: ...</dt>
+<dd>A description of the keyword parameter <em>p</em>.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;raise</span></tt> <em>e</em>: ...</dt>
+<dd>A description of the circumstances under which a function or method
+raises exception <em>e</em>.</dd>
+</dl>
+<p>These tags can be used to specify attributes of parameters and return value
+of function and methods. These tags are usually put in the the docstring of the
+function to be documented.</p>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p><strong>constructor parameters</strong></p>
+<p class="last">In C extension modules, extension classes cannot have a docstring attached
+to the <tt class="docutils literal"><span class="pre">__init__</span></tt> function; consequently it is not possible to document
+parameters and exceptions raised by the class constructor. To overcome this
+shortcoming, the tags <tt class="docutils literal"><span class="pre">&#64;param</span></tt>, <tt class="docutils literal"><span class="pre">&#64;keyword</span></tt>, <tt class="docutils literal"><span class="pre">&#64;type</span></tt>, <tt class="docutils literal"><span class="pre">&#64;exception</span></tt>
+are also allowed to appear in the class docstring. In this case they refer
+to constructor parameters.</p>
+</div>
+<p><tt class="docutils literal"><span class="pre">&#64;param</span></tt> fields should be used to document any explicit parameter
+(including the keyword parameter). <tt class="docutils literal"><span class="pre">&#64;keyword</span></tt> fields should only be used
+for non-explicit keyword parameters:</p>
+<pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">plant</span>(seed, *tools, **options):
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    @param seed: The seed that should be planted.</span>
+<span class="py-string">    @param tools: Tools that should be used to plant the seed.</span>
+<span class="py-string">    @param options: Any extra options for the planting.</span>
+
+<span class="py-string">    @keyword dig_deep: Plant the seed deep under ground.</span>
+<span class="py-string">    @keyword soak: Soak the seed before planting it.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+<p>Since the <tt class="docutils literal"><span class="pre">&#64;type</span></tt> field allows for arbitrary text, it does not
+automatically create a crossreference link to the specified type, and is
+not written in fixed-width font by default. If you want to create a
+crossreference link to the type, or to write the type in a fixed-width
+font, then you must use inline markup:</p>
+<pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">ponder</span>(person, time):
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    @param person: Who should think.</span>
+<span class="py-string">    @type person: L{Person} or L{Animal}</span>
+<span class="py-string">    @param time: How long they should think.</span>
+<span class="py-string">    @type time: C{int} or C{float}</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</div>
+<div class="section" id="variables-parameters">
+<h2>Variables parameters</h2>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;ivar</span></tt> <em>v</em>: ...</dt>
+<dd>A description of the class instance variable <em>v</em>.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;cvar</span></tt> <em>v</em>: ...</dt>
+<dd>A description of the static class variable <em>v</em>.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;var</span></tt> <em>v</em>: ...</dt>
+<dd>A description of the module variable <em>v</em>.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;type</span></tt> <em>v</em>: ...</dt>
+<dd>The type of the variable <em>v</em>.</dd>
+</dl>
+<p>These tags are usually put in a module or class docstring. If the sources can
+be parsed by Epydoc it is also possible to document the variable in their own
+docstrings: see <a class="reference" href="manual-docstring.html#variable-docstrings">variable docstrings</a></p>
+<p>Epydoc considers class variables the ones defined directly defined in the
+class body. A common Python idiom is to create instance variables settings
+their default value in the class instead of the constructor (hopefully if the
+default is immutable...).</p>
+<p>If you want to force Epydoc to classify as instance variable one whose default
+value is set at class level, you can describe it using the tag <tt class="docutils literal"><span class="pre">&#64;ivar</span></tt> in the
+context of a variable docstring:</p>
+<pre class="py-doctest">
+<span class="py-keyword">class</span> <span class="py-defname">B</span>:
+    y = 42
+    <span class="py-string">&quot;&quot;&quot;@ivar: This is an instance variable.&quot;&quot;&quot;</span></pre>
+</div>
+<div class="section" id="properties-parameters">
+<h2>Properties parameters</h2>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;type</span></tt>: ...</dt>
+<dd>The type of the property.</dd>
+</dl>
+<p>The <tt class="docutils literal"><span class="pre">&#64;type</span></tt> tag can be attached toa property docstring to specify its type.</p>
+</div>
+<div class="section" id="grouping-and-sorting">
+<h2>Grouping and Sorting</h2>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;group</span></tt> <em>g</em>: <em>c1,...,cn</em></dt>
+<dd>Organizes a set of related children of a module or class into a group.
+<em>g</em> is the name of the group; and <em>c1,...,cn</em> are the names of the
+children in the group. To define multiple groups, use multiple group
+fields.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;sort</span></tt>: <em>c1,...,cn</em></dt>
+<dd>Specifies the sort order for the children of a module or class.
+<em>c1,...,cn</em> are the names of the children, in the order in which they
+should appear. Any children that are not included in this list will
+appear after the children from this list, in alphabetical order.</dd>
+</dl>
+<p>These tags can be used to present groups of related items in a logical way.
+They apply to modules and classes docstrings.</p>
+<p>For the <tt class="docutils literal"><span class="pre">&#64;group</span></tt> and <tt class="docutils literal"><span class="pre">&#64;sort</span></tt> tags, asterisks (<tt class="docutils literal"><span class="pre">*</span></tt>) can be used to
+specify multiple children at once. An asterisk in a child name will match
+any substring:</p>
+<pre class="py-doctest">
+<span class="py-keyword">class</span> <span class="py-defname">widget</span>(size, weight, age):
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    @group Tools: zip, zap, *_tool</span>
+<span class="py-string">    @group Accessors: get_*</span>
+<span class="py-string">    @sort: get_*, set_*, unpack_*, cut</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p><strong>group markers</strong></p>
+<p>It is also possible to group set of related items enclosing them
+into special comment starting with the <em>group markers</em> '<tt class="docutils literal"><span class="pre">#{</span></tt>' and '<tt class="docutils literal"><span class="pre">#}</span></tt>'
+The group title can be specified after the opening group marker. Example:</p>
+<pre class="py-doctest">
+<span class="py-comment">#{ Database access functions</span>
+
+<span class="py-keyword">def</span> <span class="py-defname">read</span>(id):
+    <span class="py-comment">#[...]</span>
+
+<span class="py-keyword">def</span> <span class="py-defname">store</span>(item):
+    <span class="py-comment">#[...]</span>
+
+<span class="py-keyword">def</span> <span class="py-defname">delete</span>(id):
+    <span class="py-comment">#[...]</span>
+
+<span class="py-comment"># groups can't be nested, so a closing marker is not required here.</span>
+
+<span class="py-comment">#{ Web publish functions</span>
+
+<span class="py-keyword">def</span> <span class="py-defname">get</span>(request):
+    <span class="py-comment">#[...]</span>
+
+<span class="py-keyword">def</span> <span class="py-defname">post</span>(request):
+    <span class="py-comment">#[...]</span>
+
+<span class="py-comment">#}</span></pre>
+</div>
+</div>
+<div class="section" id="notes-and-warnings">
+<h2>Notes and Warnings</h2>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;note</span></tt>: ...</dt>
+<dd>A note about an object. Multiple note fields may be used to list
+separate notes.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;attention</span></tt>: ...</dt>
+<dd>An important note about an object. Multiple attention fields may be
+used to list separate notes.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;bug</span></tt>: ...</dt>
+<dd><p class="first">A description of a bug in an object. Multiple bug fields may be used to
+report separate bugs.</p>
+<div class="note last">
+<p class="first admonition-title">Note</p>
+<p class="last">If any <tt class="docutils literal"><span class="pre">&#64;bug</span></tt> field is used, the HTML writer will generate a the page
+<tt class="docutils literal"><span class="pre">bug-index.html</span></tt>, containing links to all the items tagged with
+the field.</p>
+</div>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;warning</span></tt>: ...</dt>
+<dd>A warning about an object. Multiple warning fields may be used to
+report separate warnings.</dd>
+</dl>
+</div>
+<div class="section" id="status">
+<h2>Status</h2>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;version</span></tt>: ...</dt>
+<dd>The current version of an object.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;todo</span></tt> [<em>ver</em>]: ...</dt>
+<dd><p class="first">A planned change to an object. If the optional argument ver is given,
+then it specifies the version for which the change will be made.
+Multiple todo fields may be used if multiple changes are planned.</p>
+<div class="note last">
+<p class="first admonition-title">Note</p>
+<p class="last">If any <tt class="docutils literal"><span class="pre">&#64;todo</span></tt> field is used, the HTML writer will generate a the
+page <tt class="docutils literal"><span class="pre">todo-index.html</span></tt>, containing links to all the items tagged
+with the field.</p>
+</div>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;deprecated</span></tt>: ...</dt>
+<dd>Indicates that an object is deprecated. The body of the field describe
+the reason why the object is deprecated.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;since</span></tt>: ...</dt>
+<dd>The date or version when an object was first introduced.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;status</span></tt>: ...</dt>
+<dd>The current status of an object.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;change</span></tt>: ...</dt>
+<dd>A change log entry for this object.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;permission</span></tt>: ...</dt>
+<dd>The object access permission, for systems such Zope/Plone supporting
+this concept. It may be used more than once to specify multiple
+permissions.</dd>
+</dl>
+</div>
+<div class="section" id="formal-conditions">
+<h2>Formal Conditions</h2>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;requires</span></tt>: ...</dt>
+<dd>A requirement for using an object. Multiple requires fields may be
+used if an object has multiple requirements.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;precondition</span></tt>: ...</dt>
+<dd>A condition that must be true before an object is used. Multiple
+precondition fields may be used if an object has multiple preconditions.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;postcondition</span></tt>: ...</dt>
+<dd>A condition that is guaranteed to be true after an object is used.
+Multiple postcondition fields may be used if an object has multiple
+postconditions.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;invariant</span></tt>: ...</dt>
+<dd>A condition which should always be true for an object. Multiple
+invariant fields may be used if an object has multiple invariants.</dd>
+</dl>
+</div>
+<div class="section" id="bibliographic-information">
+<h2>Bibliographic Information</h2>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;author</span></tt>: ...</dt>
+<dd>The author(s) of an object. Multiple author fields may be used if an
+object has multiple authors.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;organization</span></tt>: ...</dt>
+<dd>The organization that created or maintains an object.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;copyright</span></tt>: ...</dt>
+<dd>The copyright information for an object.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;license</span></tt>: ...</dt>
+<dd>The licensing information for an object.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;contact</span></tt>: ...</dt>
+<dd>Contact information for the author or maintainer of a module, class,
+function, or method. Multiple contact fields may be used if an object
+has multiple contacts.</dd>
+</dl>
+</div>
+<div class="section" id="other-fields">
+<h2>Other fields</h2>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;summary</span></tt>: ...</dt>
+<dd>A summary description for an object. This description overrides the
+default summary (which is constructed from the first sentence of the
+object's description).</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;see</span></tt>: ...</dt>
+<dd>A description of a related topic. see fields typically use
+documentation crossreference links or external hyperlinks that link to
+the related topic.</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="fields-synonyms">
+<h1>Fields synonyms</h1>
+<p>Several fields have <em>synonyms</em>, or alternate tags. The following table lists
+all field synonyms. Field tags are written using epytext markup; if you are
+using a different markup language, then you should adjust the markup
+accordingly.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Name</th>
+<th class="head">Synonims</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal"><span class="pre">&#64;param</span></tt> <em>p</em>: ...</td>
+<td><div class="first last line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;parameter</span></tt> <em>p</em>: ...</div>
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;arg</span></tt> <em>p</em>: ...</div>
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;argument</span></tt> <em>p</em>: ...</div>
+</div>
+</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;return</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;returns</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;rtype</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;returntype</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;raise</span></tt> <em>e</em>: ...</td>
+<td><div class="first last line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;raises</span></tt> <em>e</em>: ...</div>
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;except</span></tt> <em>e</em>: ...</div>
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;exception</span></tt> <em>e</em>: ...</div>
+</div>
+</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;keyword</span></tt> <em>p</em>: ...</td>
+<td><div class="first last line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;kwarg</span></tt> <em>p</em>: ...</div>
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;kwparam</span></tt> <em>p</em>: ...</div>
+</div>
+</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;ivar</span></tt> <em>v</em>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;ivariable</span></tt> <em>v</em>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;cvar</span></tt> <em>v</em>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;cvariable</span></tt> <em>v</em>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;var</span></tt> <em>v</em>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;variable</span></tt> <em>v</em>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;see</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;seealso</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;warning</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;warn</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;requires</span></tt>: ...</td>
+<td><div class="first last line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;require</span></tt>: ...</div>
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;requirement</span></tt>: ...</div>
+</div>
+</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;precondition</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;precond</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;postcondition</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;postcond</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;organization</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;org</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;copyright</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;(c)</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;change</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;changed</span></tt>: ...</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="module-metadata-variables">
+<h1>Module metadata variables</h1>
+<p>Some module variables are commonly used as module metadata. Epydoc can use the
+value provided by these variables as alternate form for tags. The following
+table lists the recognized variables and the tag they replace. Customized
+metadata variables can be added using the method described in <a class="reference" href="manual-fields.html#adding-new-fields">Adding New
+Fields</a>.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Tag</th>
+<th class="head">Variable</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal"><span class="pre">&#64;author</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__author__</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;authors</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__authors__</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;contact</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__contact__</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;copyright</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__copyright__</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;license</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__license__</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;deprecated</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__deprecated__</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;date</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__date__</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;version</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__version__</span></tt></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="adding-new-fields">
+<h1>Adding New Fields</h1>
+<p>New fields can be defined for the docstrings in a module using the special
+<tt class="docutils literal"><span class="pre">&#64;newfield</span></tt> tag (or its synonym, <tt class="docutils literal"><span class="pre">&#64;deffield</span></tt>). This tag has the following
+syntax:</p>
+<blockquote>
+<pre class="literal-block">
+&#64;newfield <em>tag</em>: <em>label</em> [, <em>plural</em> ]
+</pre>
+</blockquote>
+<p>Where <em>tag</em> is the new tag that's being defined; <em>label</em> is a string that will
+be used to mark this field in the generated output; and plural is the plural form
+of label, if different.</p>
+<p>New fields can be defined in any Python module. If they are defined in a
+package, it will be possible to use the newly defined tag from every package
+submodule.</p>
+<p>Each new field will also define a <a class="reference" href="manual-fields.html#module-metadata-variables">metadata variable</a> which can be used
+to set the field value instead of the tag. For example, if a <em>revision</em>
+tag has been defined with:</p>
+<pre class="literal-block">
+&#64;newfield revision: Revision
+</pre>
+<p>then it will be possible to set a value for the field using a module variable:</p>
+<pre class="py-doctest">
+__revision__ = <span class="py-string">&quot;1234&quot;</span></pre>
+<p>The following example illustrates how the &#64;newfield can be used:
+Docstring Input Rendered Output</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">@newfield corpus: Corpus, Corpora</span>
+<span class="py-string">&quot;&quot;&quot;</span>
+
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    @corpus: Bob's wordlist.</span>
+<span class="py-string">    @corpus: The British National Corpus.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    [...]</pre>
+</td>
+<td><p class="first"><strong>Corpora:</strong></p>
+<ul class="last simple">
+<li>Bob's wordlist.</li>
+<li>The British National Corpus.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">The module-level variable <tt class="docutils literal"><span class="pre">__extra_epydoc_fields__</span></tt> is deprecated;
+use <tt class="docutils literal"><span class="pre">&#64;newfield</span></tt> instead.</p>
+</div>
+</div>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="index.html">
+    Home</a></td></a>
+  <a class="nav" href="installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

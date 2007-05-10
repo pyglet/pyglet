@@ -1,0 +1,612 @@
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of EPYDOCGUI</TITLE>
+<link rel="stylesheet" href="epydoc.css" type="text/css"/></HEAD><BODY><DIV CLASS="BODY">
+<H1>epydocgui (1)</H1>
+
+
+
+<A NAME="lbAB">
+<H2>NAME</H2></A>
+
+epydocgui - graphical interface to epydoc
+
+<A NAME="lbAC">
+<H2>SYNOPSIS</H2></A>
+
+<P>
+
+<B>epydocgui</B>
+
+[<I>project.prj</I> | <I>modules</I>...]
+
+<P>
+
+<B>epydoc -h</B>
+
+<P>
+
+<B>epydoc -V</B>
+
+
+<A NAME="lbAD">
+<H2>DESCRIPTION</H2></A>
+
+<B>epydocgui</B>
+
+is a graphical interface to epydoc, which generates API documentation
+for Python modules and packages, based on their docstrings.  A
+lightweight markup language called
+<B>epytext</B>
+
+can be used to format docstrings, and to add information about
+specific fields, such as parameters and instance variables.
+<P>
+
+The API documentation produced by 
+<B>epydocgui</B>
+
+consists of a set of HTML files.  Two subdirectories are created for
+the public and private documentation.  Within each subdirectories,
+every class and module is documented in its own file.  An index file,
+a trees file, and a help file are also created.  If you select the
+<B>frames</B>
+
+option, then a frames-based table of contents is also produced.
+
+<A NAME="lbAE">
+<H2>OPTIONS</H2></A>
+
+<DL COMPACT>
+<DT><I>project.prj</I>
+
+
+The name of a project file that was saved with
+<B>epydocgui</B>.
+
+Project files record a list of related modules, and the options that
+should be used to generate the documentation for those modules.
+<DT><I>modules</I>...
+
+<DD>
+The list of the modules that should be documented.  Modules can be
+specified using module names (such as
+<B>os.path</B>),
+
+filenames (such as
+<B>epydoc/epytext.py</B>),
+
+or directory names (such as
+<B>epydoc/</B>).
+
+Directory names specify packages, and are expanded to include
+all sub-modules and sub-packages.
+<DT><B>-h, --help, --usage, -?</B>
+
+<DD>
+Display a usage message.
+<DT><B>-V, --version</B>
+
+<DD>
+Print the version of Epydoc.
+
+
+</DL>
+<A NAME="lbAF">
+<H2>HTML FILES</H2></A>
+
+The API documentation produced by 
+<B>epydoc</B>
+
+consists of the following files:
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT><B>index.html</B>
+
+<DD>
+The standard entry point for the documentation.  Normally,
+<B>index.html</B>
+
+is a frame index file, which defines three frames: two frames on
+the left side of the browser contain a table of contents, and the main
+frame on the right side of the window contains documentation pages.
+But if the 
+<B>--no-frames</B>
+
+option is used, then
+<B>index.html</B>
+
+will redirect the user to the project's top page.
+<DT><B>m-</B><I>module</I><B>.html</B>
+
+<DD>
+The API documentation for a module.  
+<I>module</I>
+
+is the complete dotted name of the module, such as 
+<B>sys</B>
+
+or
+<B>epydoc.epytext</B>.
+
+<DT><B>c-</B><I>class</I><B>.html</B>
+
+<DD>
+The API documentation for a class, exception, or type.
+<I>class</I>
+
+is the complete dotted name of the class, such as
+<B>epydoc.epytext.Token</B>
+
+or
+<B>array.ArrayType</B>.
+
+<DT><B>trees.html</B>
+
+<DD>
+The module and class hierarchies.
+<DT><B>indices.html</B>
+
+<DD>
+The term  and identifier indices.
+<DT><B>help.html</B>
+
+<DD>
+The help page for the project.  This page explains how to use and
+navigate the webpage produced by epydoc.
+<DT><B>toc.html</B>
+
+<DD>
+The top-level table of contents page.  This page is displayed in the
+upper-left frame, and provides links to
+<B>toc-everything.html</B>
+
+and the
+<B>toc-m-</B><I>module</I><B>.html</B>
+
+files.
+<B>toc.html</B>
+
+is not generated if the
+<B>--no-frames</B>
+
+option is used.
+<DT><B>toc-everything.html</B>
+
+<DD>
+The table of contents for the entire project.  This page is displayed
+in the lower-left frame, and provides links to every class, type,
+exception, function, and variable defined by the project.
+<B>toc-everything.html</B>
+
+is not generated if the
+<B>--no-frames</B>
+
+option is used.
+<DT><B>toc-m-</B><I>module</I><B>.html</B>
+
+<DD>
+The table of contents for a module.  This page is displayed in the
+lower-left frame, and provides links to every class, type, exception,
+function, and variable defined by the module.
+<I>module</I>
+
+is the complete dotted name of the module, such as 
+<B>sys</B>
+
+or
+<B>epydoc.epytext</B>.
+
+<B>toc-m-</B><I>module</I><B>.html</B>
+
+is not generated if the
+<B>--no-frames</B>
+
+option is used.
+<DT><B>epydoc.css</B>
+
+<DD>
+The CSS stylesheet used to display all HTML pages.
+</DL>
+</DL>
+
+<P>
+
+By default,
+<B>epydoc</B>
+
+creates two subdirectories in the output directory:
+<B>public</B>
+
+and
+<B>private</B>.
+
+Each directory contains all of the files specified above.
+But if the
+<B>--no-private</B>
+
+option is used, then no subdirectories are created, and the public
+documentation is written directly to the output directory.
+
+
+ivided into five categories: import errors; epytext
+errors; epytext warnings; field warnings; and inspection errors.
+Whenver epydoc encounters an error, it issues a warning message that
+describes the error, and attempts to continue generating
+documentation.
+<P>
+
+Import errors indicate that epydoc was unable to import a module.
+Import errors typically prevent epydoc from generating documentation
+for the module in question.  Epydoc can generate the following import
+errors:
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT><B>Bad module name </B><I>module</I>
+
+<DD>
+Epydoc attempted to import
+<I>module</I>,
+
+but
+<I>module</I>
+
+is not a valid name for a Python module.
+<DT><B>Could not find a UID for </B><I>link-target</I>
+
+<DD>
+Epydoc was unable to find the object referred to by an inline link
+construction
+(<B>L{...}</B>).
+
+This is usually caused by a typo in the link.
+<DT><B>Could not import </B><I>module</I>
+
+<DD>
+Epydoc attempted to import
+<I>module</I>,
+
+but it failed.  This typically occurs when
+<I>module</I>
+
+raises an exception.
+<DT><I>file</I><B> does not exist</B>
+
+<DD>
+Epydoc attempted to import the module contained in
+<I>file</I>,
+
+but
+<I>file</I>
+
+does not exist.
+</DL>
+</DL>
+
+<P>
+
+Epytext errors are caused by epytext docstrings that contain invalid
+markup.  Whenever an epytext error is detected, the docstring in
+question is treated as a plaintext docstring.  Epydoc can generate the
+following epytext errors:
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT><B>Bad link target.</B>
+
+<DD>
+The target specified for an inline link contruction
+(<B>L{...}</B>)
+
+is not well-formed.  Link targets must be valid python identifiers.
+<DT><B>Bad uri target.</B>
+
+<DD>
+The target specified for an inline uri contruction
+(<B>U{...}</B>)
+
+is not well-formed.  This typically occurs if inline markup is nested
+inside the URI target.  
+<DT><B>Fields must be at the top level.</B>
+
+<DD>
+The list of fields
+(<B>@param</B>, etc.)
+
+is contained by some other
+block structure (such as a list or a section).
+<DT><B>Fields must be the final elements.</B>
+
+<DD>
+The list of fields
+(<B>@param</B>, etc.)
+
+is not at the end of a docstring.
+<DT><B>Headings must occur at top level.</B>
+
+<DD>
+The heading is contianed in some other block structure (such as a
+list).
+<DT><B>Improper doctest block indentation.</B>
+
+<DD>
+The doctest block dedents past the indentation of its initial prompt
+line.
+<DT><B>Improper heading indentation.</B>
+
+<DD>
+The heading for a section is not left-aligned with the paragraphs in
+the section that contains it.
+<DT><B>Improper paragraph indentation.</B>
+
+<DD>
+The paragraphs within a block are not left-aligned.  This error is
+often generated when plaintext docstrings are parsed using epytext.
+<DT><B>Invalid escape.</B>
+
+<DD>
+An unknown escape sequence was used with the inline escape construction
+(<B>E{...}</B>).
+
+<DT><B>Lists must be indented.</B>
+
+<DD>
+An unindented line immediately following a paragraph starts with a
+list bullet.  Epydoc is not sure whether you meant to start a new list
+item, or meant for a paragraph to include a word that looks like a
+bullet.  If you intended the former, then indent the list.  If you
+intended the latter, then change the word-wrapping of the paragraph,
+or escape the first character of the word that looks like a bullet.
+<DT><B>Unbalanced '{'.</B>
+
+<DD>
+The docstring contains unbalanced braces.  Epytext requires that all
+braces must be balanced.  To include a single unbalanced brace, use
+the escape sequences E{lb} (left brace) and E{rb} (right brace).
+<DT><B>Unbalanced '}'.</B>
+
+<DD>
+The docstring contains unbalanced braces.  Epytext requires that all
+braces must be balanced.  To include a single unbalanced brace, use
+the escape sequences E{lb} (left brace) and E{rb} (right brace).
+<DT><B>Unknown inline markup tag.</B>
+
+<DD>
+An unknown tag was used with the inline markup construction (
+<I>x</I><B>{...}</B>
+
+).
+<DT><B>Wrong underline character for heading.</B>
+
+<DD>
+The underline character used for this section heading does not
+indicate an appopriate section level.  The &quot;=&quot; character should be
+used to underline sections; &quot;-&quot; for subsections; and &quot;~&quot; for
+subsubsections.
+</DL>
+</DL>
+
+<P>
+
+Epytext warnings are caused by epytext docstrings that contain
+questionable or suspicious markup.  Epytext warnings do
+<B>not</B>
+
+prevent the docstring in question from being parsed.  Epydoc can
+generate the following epytext warnings:
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT><B>Possible mal-formatted field item.</B>
+
+<DD>
+Epytext detected a line that looks like a field item, but is not
+correctly formatted.  This typically occurs when the trailing colon
+(&quot;:&quot;) is not included in the field tag.
+<DT><B>Possible heading typo.</B>
+
+<DD>
+Epytext detected a pair of lines that looks like a heading, but the
+number of underline characters does not match the number of characters
+in the heading.  The number of characters in these two lines must
+match exactly for them to be considered a heading.
+</DL>
+</DL>
+
+<P>
+
+Field warnings are caused by epytext docstrings containing invalid
+fields.  The contents of the invalid field are generally ignored.  
+Epydoc can generate the following field warnings:
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT><B>@param for unknown parameter </B><I>param</I><B>.</B>
+
+<DD>
+A @param field was used to specify the type for a parameter that is
+not included in the function's signature.  This is typically caused by
+a typo in the parameter name.
+<DT><I>tag</I><B> did not expect an argument.</B>
+
+<DD>
+The field tag
+<I>tag</I>
+
+was used with an argument, but it does not take one.
+<DT><I>tag</I><B> expected an argument.</B>
+
+<DD>
+The field tag
+<I>tag</I>
+
+was used without an argument, but it requires one.
+<DT><B>@type for unknown parameter </B><I>param</I><B>.</B>
+
+<DD>
+A @type field was used to specify the type for a parameter that is not
+included in the function's signature.  This is typically
+caused by a typo in the parameter name.
+<DT><B>@type for unknown variable </B><I>var</I><B>.</B>
+
+<DD>
+A @type field was used to specify the type for a variable, but no
+other information is known about the variable.  This is typically
+caused by a typo in the variable name.
+<DT><B>Unknown field tag </B><I>tag</I><B>.</B>
+
+<DD>
+A docstring contains a field with the unknown tag
+<I>tag</I>.
+
+<DT><B>Redefinition of </B><I>field</I><B>.</B>
+
+<DD>
+Multiple field tags define the value of
+<I>field</I>
+
+in the same docstring, but
+<I>field</I>
+
+can only take a single value.
+</DL>
+</DL>
+
+<P>
+
+Inspection errors are generated if epydoc encounters problems while
+attempting to inspect the properties of a documented object.  Most of
+inspection errors do not prevent epydoc from documenting the object in
+question.  Epydoc can generate the following inspection errors:
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT><B>The parameters of </B><I>inhmethod</I><B> do not match </B><I>basemethod</I><B>.</B>
+
+<DD>
+The parameters of the undocumented method
+<I>inhmethod </I>
+
+do not match the parameters of the base class method
+<I>basemethod</I>
+
+that it overrides.  As a result,
+<I>inhmethod</I>
+
+does not inherit documentation from
+<I>basemethod</I>.
+
+If the difference in parameters is intentional, then you can eliminate
+the warning by adding a (possibly empty) docstring to
+<I>inhmethod</I>.
+
+<DT><B>Docmap cannot add a </B><I>type</I>
+
+<DD>
+Epydoc attempted to document an object with an unknown type.  This
+error is typically generated by packages and modules that manipulate
+the import mechanism, such that importing a module produces some other
+type of object.
+<DT><B>UID conflict detected: </B><I>uid</I>
+
+<DD>
+Two different objects were assigned the same unique identifier by
+epydoc.  This can cause epydoc to substitute the documentation of one
+object with the documentation of another object that is assigned the
+same unique identifier.  However, this will usually only cause
+problems if the two objects with the same unique identifiers are both
+modules or classes, in which case the API documentation page for one
+object will overwrite the API documentation page for the other object.
+<DT><I>object</I><B> appears in multiple builtin modules</B>
+
+<DD>
+While attempting to determine which module defines the builtin object
+<I>object</I>,
+
+epydoc encountered multiple candidates, and was unable to decide which
+candidate was correct.  In this case, epydoc arbitrarily chooses the
+first candidate that it finds.
+<DT><I>object</I><B> appears in multiple .py modules</B>
+
+<DD>
+While attempting to determine which module defines the builtin object
+<I>object</I>,
+
+epydoc encountered multiple candidates, and was unable to decide which
+candidate was correct.  In this case, epydoc arbitrarily chooses the
+first candidate that it finds.
+<DT><I>object</I><B> appears in multiple .so modules</B>
+
+<DD>
+While attempting to determine which module defines the builtin object
+<I>object</I>,
+
+epydoc encountered multiple candidates, and was unable to decide which
+candidate was correct.  In this case, epydoc arbitrarily chooses the
+first candidate that it finds.
+<DT><B>Could not find a module for </B><I>object</I>
+
+<DD>
+Epydoc was unable to determine which module defines 
+<I>object</I>.
+
+If
+<I>object</I>
+
+is a function, then this will prevent epydoc from generating any
+documentation for
+<I>object</I>,
+
+since it does not know what page to put the documentation on.
+Otherwise, this will prevent the documentation for
+<I>object</I>
+
+from including a link to its containing module.
+</DL>
+</DL>
+
+
+<A NAME="lbAG">
+<H2>AUTHOR</H2></A>
+
+Epydoc was written by Edward Loper.  This man page was originally
+written by Moshe Zadka, and is currently maintained by Edward Loper.
+
+<A NAME="lbAH">
+<H2>BUGS</H2></A>
+
+Report bugs to &lt;<A HREF="mailto:edloper@gradient.cis.upenn.edu">edloper@gradient.cis.upenn.edu</A>&gt;.
+
+<A NAME="lbAI">
+<H2>SEE ALSO</H2></A>
+
+<B><A HREF="/cgi-bin/man/man2html?1+epydoc">epydoc</A></B>(1)
+
+<DL COMPACT>
+<DT><B>The epydoc webpage</B>
+
+<DD>
+&lt;<A HREF="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</A>&gt;
+<DT><B>The epytext markup language manual</B>
+
+<DD>
+&lt;<A HREF="http://epydoc.sourceforge.net/epytext.html">http://epydoc.sourceforge.net/epytext.html</A>&gt;
+<P>
+</DL>
+
+<HR>
+<A NAME="index"><H2>Index</H2></A>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">HTML FILES</A><DD>
+<DT><A HREF="#lbAG">AUTHOR</A><DD>
+<DT><A HREF="#lbAH">BUGS</A><DD>
+<DT><A HREF="#lbAI">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 22:35:26 GMT, April 06, 2006
+</DIV></BODY>
+</HTML>

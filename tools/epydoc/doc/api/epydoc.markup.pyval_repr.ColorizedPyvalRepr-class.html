@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.pyval_repr.ColorizedPyvalRepr</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        <a href="epydoc.markup.pyval_repr-module.html">Module&nbsp;pyval_repr</a> ::
+        Class&nbsp;ColorizedPyvalRepr
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.pyval_repr.ColorizedPyvalRepr-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class ColorizedPyvalRepr</h1><span class="codelink"><a href="epydoc.markup.pyval_repr-pysrc.html#ColorizedPyvalRepr">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_m_14" name="uml_class_diagram_for_epydoc_m_14">
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#SYMBOL_TO_HTML" title="epydoc.markup.epytext.ParsedEpytextDocstring.SYMBOL_TO_HTML" alt="" coords="17,122,535,140" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#SYMBOL_TO_LATEX" title="epydoc.markup.epytext.ParsedEpytextDocstring.SYMBOL_TO_LATEX" alt="" coords="17,140,535,159" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#split_fields" title="Split this docstring into its body and its fields." alt="" coords="17,162,535,180" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#to_html" title="Translate this docstring to HTML." alt="" coords="17,180,535,199" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#to_plaintext" title="Translate this docstring to plaintext." alt="" coords="17,199,535,218" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#__str__" title="epydoc.markup.epytext.ParsedEpytextDocstring.__str__" alt="" coords="17,218,535,236" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#index_terms" title="Returns:  The list of index terms that are defined in this docstring." alt="" coords="17,236,535,255" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#to_latex" title="Translate this docstring to LaTeX." alt="" coords="17,255,535,274" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#summary" title="Returns:  A pair consisting of a short summary of this docstring and a boolean value  indicating whether there is further documentation in addition to the  summary." alt="" coords="17,274,535,292" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html" title="epydoc.markup.epytext.ParsedEpytextDocstring" alt="" coords="5,99,547,299" />
+<area shape="rect" href="epydoc.markup.pyval_repr.ColorizedPyvalRepr&#45;class.html#score" title="A score, evaluating how good this repr is." alt="" coords="159,340,393,359" />
+<area shape="rect" href="epydoc.markup.pyval_repr.ColorizedPyvalRepr&#45;class.html#is_complete" title="True if this colorized repr completely describes the object." alt="" coords="159,359,393,378" />
+<area shape="rect" href="epydoc.markup.pyval_repr.ColorizedPyvalRepr&#45;class.html#__init__" title="epydoc.markup.pyval_repr.ColorizedPyvalRepr.__init__" alt="" coords="159,380,393,399" />
+<area shape="rect" href="epydoc.markup.pyval_repr.ColorizedPyvalRepr&#45;class.html" title="epydoc.markup.pyval_repr.ColorizedPyvalRepr" alt="" coords="147,318,405,406" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#concatenate" title="Returns:  A new parsed docstring containing the concatination of this docstring and  other." alt="" coords="203,36,349,55" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#__add__" title="epydoc.markup.ParsedDocstring.__add__" alt="" coords="203,55,349,74" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html" title="A standard intermediate representation for parsed docstrings that can be used to generate output." alt="" coords="191,6,361,80" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_m_14.gif" alt='' usemap="#uml_class_diagram_for_epydoc_m_14" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.pyval_repr.ColorizedPyvalRepr-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">tree</span>,
+        <span class="summary-sig-arg">score</span>,
+        <span class="summary-sig-arg">is_complete</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.pyval_repr-pysrc.html#ColorizedPyvalRepr.__init__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___39-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___init___39-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___39" name="call_graph_for___init___39">
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#__init__" title="epytext.ParsedEpytextDocstring.__init__()" alt="" coords="411,6,752,38" />
+<area shape="rect" href="epydoc.markup.pyval_repr.ColorizedPyvalRepr&#45;class.html#__init__" title="__init__()" alt="" coords="265,6,361,38" />
+<area shape="rect" href="epydoc.markup.pyval_repr.PyvalColorizer&#45;class.html#colorize" title="PyvalColorizer.colorize()" alt="" coords="5,6,216,38" />
+</map>
+  <img src="call_graph_for___init___39.gif" alt='' usemap="#call_graph_for___init___39" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html">epytext.ParsedEpytextDocstring</a></code></b>:
+      <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html#__str__">__str__</a></code>,
+      <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html#index_terms">index_terms</a></code>,
+      <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html#split_fields">split_fields</a></code>,
+      <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html#summary">summary</a></code>,
+      <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html#to_html">to_html</a></code>,
+      <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html#to_latex">to_latex</a></code>,
+      <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html#to_plaintext">to_plaintext</a></code>
+      </p>
+    <div class="private">    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html">epytext.ParsedEpytextDocstring</a></code></b> (private):
+      <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html#_build_graph">_build_graph</a></code>,
+      <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html#_index_term_key">_index_term_key</a></code>,
+      <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html#_index_terms">_index_terms</a></code>,
+      <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html#_to_html">_to_html</a></code>,
+      <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html#_to_latex">_to_latex</a></code>
+      </p></div>
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.markup.ParsedDocstring-class.html">ParsedDocstring</a></code></b>:
+      <code><a href="epydoc.markup.ParsedDocstring-class.html#__add__">__add__</a></code>,
+      <code><a href="epydoc.markup.ParsedDocstring-class.html#concatenate">concatenate</a></code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html">epytext.ParsedEpytextDocstring</a></code></b>:
+      <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html#SYMBOL_TO_HTML">SYMBOL_TO_HTML</a></code>,
+      <code><a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html#SYMBOL_TO_LATEX">SYMBOL_TO_LATEX</a></code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="is_complete"></a><span class="summary-name">is_complete</span><br />
+      True if this colorized repr completely describes the object.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="score"></a><span class="summary-name">score</span><br />
+      A score, evaluating how good this repr is.
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">tree</span>,
+        <span class="sig-arg">score</span>,
+        <span class="sig-arg">is_complete</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.pyval_repr-pysrc.html#ColorizedPyvalRepr.__init__">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___39-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for___init___39-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___39" name="call_graph_for___init___39">
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#__init__" title="epytext.ParsedEpytextDocstring.__init__()" alt="" coords="411,6,752,38" />
+<area shape="rect" href="epydoc.markup.pyval_repr.ColorizedPyvalRepr&#45;class.html#__init__" title="__init__()" alt="" coords="265,6,361,38" />
+<area shape="rect" href="epydoc.markup.pyval_repr.PyvalColorizer&#45;class.html#colorize" title="PyvalColorizer.colorize()" alt="" coords="5,6,216,38" />
+</map>
+  <img src="call_graph_for___init___39.gif" alt='' usemap="#call_graph_for___init___39" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+    <dt>Overrides:
+      <a href="epydoc.markup.epytext.ParsedEpytextDocstring-class.html#__init__">epytext.ParsedEpytextDocstring.__init__</a>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:05:06 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

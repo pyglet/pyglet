@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>Python Docstrings</title>
+<link rel="stylesheet" href="custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="python-docstrings">
+<h1 class="title">Python Docstrings</h1>
+
+<!-- $Id: manual-docstring.txt 1548 2007-02-22 00:25:40Z dvarrazzo $ -->
+<p>Python documentation strings (or <em>docstrings</em>) provide a convenient way of
+associating documentation with Python modules, functions, classes, and methods.
+An object's docsting is defined by including a string constant as the first
+statement in the object's definition. For example, the following function
+defines a docstring:</p>
+<pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">x_intercept</span>(m, b):
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    Return the x intercept of the line y=m*x+b.  The x intercept of a</span>
+<span class="py-string">    line is the point at which it crosses the x axis (y=0).</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    return -b/m</pre>
+<p>Docstrings can be accessed from the interpreter and from Python programs
+using the &quot;<tt class="docutils literal"><span class="pre">__doc__</span></tt>&quot; attribute:</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> x_intercept.__doc__
+    Return the x intercept of the line y=m*x+b.  The x intercept of a
+    line <span class="py-keyword">is</span> the point at which it crosses the x axis (y=0).</pre>
+<p>The <a class="reference" href="http://web.lfw.org/python/pydoc.html">pydoc</a> module, which became part of <a class="reference" href="http://www.python.org/doc/current/lib/module-pydoc.html">the standard library</a> in Python 2.1,
+can be used to display information about a Python object, including its
+docstring:</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> pydoc <span class="py-keyword">import</span> help
+
+<span class="py-prompt">&gt;&gt;&gt; </span>help(x_intercept)
+Help on function x_intercept <span class="py-keyword">in</span> module __main__:
+
+x_intercept(m, b)
+    Return the x intercept of the line y=m*x+b.  The x intercept of a
+    line <span class="py-keyword">is</span> the point at which it crosses the x axis (y=0).</pre>
+<p>For more information about Python docstrings, see the <a class="reference" href="http://www.python.org/doc/current/tut/node6.html#docstrings">Python Tutorial</a> or
+the O'Reilly Network article <a class="reference" href="http://www.onlamp.com/lpt/a/python/2001/05/17/docstrings.html">Python Documentation Tips and Tricks</a>.</p>
+<div class="section" id="variable-docstrings">
+<h1>Variable docstrings</h1>
+<!-- [xx] this should be somewhere else, i guess... -->
+<p>Python don't support directly docstrings on variables: there is no attribute
+that can be attached to variables and retrieved interactively like the
+<tt class="docutils literal"><span class="pre">__doc__</span></tt> attribute on modules, classes and functions.</p>
+<p>While the language doesn't directly provides for them, Epydoc supports
+<em>variable docstrings</em>: if a variable assignment statement is immediately
+followed by a bare string literal, then that assignment is treated as a
+docstring for that variable. In classes, variable assignments at the class
+definition level are considered class variables; and assignments to instance
+variables in the constructor (<tt class="docutils literal"><span class="pre">__init__</span></tt>) are considered instance variables:</p>
+<pre class="py-doctest">
+<span class="py-keyword">class</span> <span class="py-defname">A</span>:
+    x = 22
+    <span class="py-string">&quot;&quot;&quot;Docstring for class variable A.x&quot;&quot;&quot;</span>
+
+    <span class="py-keyword">def</span> <span class="py-defname">__init__</span>(self, a):
+        self.y = a
+        <span class="py-string">&quot;&quot;</span>&quot;Docstring <span class="py-keyword">for</span> instance variable A.y</pre>
+<p>Variables may also be documented using <em>comment docstrings</em>. If a variable
+assignment is immediately preceeded by a comment whose lines begin with the
+special marker '<tt class="docutils literal"><span class="pre">#:</span></tt>', or is followed on the same line by such a comment,
+then it is treated as a docstring for that variable:</p>
+<pre class="py-doctest">
+<span class="py-comment">#: docstring for x</span>
+x = 22
+x = 22 <span class="py-comment">#: docstring for x</span></pre>
+<p>Notice that variable docstrings are only available for documentation when the
+source code is available for <em>parsing</em>: it is not possible to retrieve variable</p>
+</div>
+<div class="section" id="items-visibility">
+<h1>Items visibility</h1>
+<p>Any Python object (modules, classes, functions, variables...) can be <em>public</em>
+or <em>private</em>. Usually the object name decides the object visibility: objects
+whose name starts with an underscore and doesn't end with an underscore are
+considered private. All the other objects (including the &quot;magic functions&quot; such
+as <tt class="docutils literal"><span class="pre">__add__</span></tt>) are public.</p>
+<p>For each module and class, Epydoc generates pages with both public and private
+methods. A Javascript snippet allows to toggle the visibility of private
+objects.</p>
+<p>If a module wants to hide some of the objects it contains (either defined in
+the module itself or imported from other modules), it can explicitly list the
+names if its <a class="reference" href="http://www.python.org/doc/2.4.3/ref/import.html">public names</a> in the <tt class="docutils literal"><span class="pre">__all__</span></tt> variable.</p>
+<p>If a module defines the <tt class="docutils literal"><span class="pre">__all__</span></tt> variable, Epydoc uses its content to decide
+if the module objects are public or private.</p>
+</div>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="index.html">
+    Home</a></td></a>
+  <a class="nav" href="installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

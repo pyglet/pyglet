@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.javadoc</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        Module&nbsp;javadoc
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.javadoc-module.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== MODULE DESCRIPTION ==================== -->
+<h1 class="epydoc">Module javadoc</h1><span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html">source&nbsp;code</a></span><br /><br />
+Epydoc parser for <a href="http://java.sun.com/j2se/javadoc/" 
+  target="_top">Javadoc</a> docstrings.  Javadoc is an HTML-based markup 
+  language that was developed for documenting Java APIs with inline 
+  comments.  It consists of raw HTML, augmented by Javadoc tags.  There are
+  two types of Javadoc tag:
+  <ul>
+    <li>
+      <a name="index-Javadoc_block_tags"></a><i 
+      class="indexterm">Javadoc block tags</i> correspond to Epydoc fields.
+      They are marked by starting a line with a string of the form 
+      &quot;<code>@<i class="math">tag</i> [<i 
+      class="math">arg</i>]</code>&quot;, where <code><i 
+      class="math">tag</i></code> indicates the type of block, and <code><i
+      class="math">arg</i></code> is an optional argument.  (For fields 
+      that take arguments, Javadoc assumes that the single word immediately
+      following the tag is an argument; multi-word arguments cannot be used
+      with javadoc.)
+    </li>
+    <li>
+      <a name="index-inline_Javadoc_tags"></a><i 
+      class="indexterm">inline Javadoc tags</i> are used for inline markup.
+      In particular, epydoc uses them for crossreference links between 
+      documentation. Inline tags may appear anywhere in the text, and have 
+      the form &quot;<code>{@<i class="math">tag</i> <i 
+      class="math">[args...]</i>}</code>&quot;, where <code><i 
+      class="math">tag</i></code> indicates the type of inline markup, and 
+      <code><i class="math">args</i></code> are optional arguments.
+    </li>
+  </ul>
+  Epydoc supports all Javadoc tags, <i>except</i>:
+  <ul>
+    <li>
+      <code>{@docRoot}</code>, which gives the (relative) URL of the 
+      generated documentation's root.
+    </li>
+    <li>
+      <code>{@inheritDoc}</code>, which copies the documentation of the 
+      nearest overridden object.  This can be used to combine the 
+      documentation of the overridden object with the documentation of the 
+      overridding object.
+    </li>
+    <li>
+      <code>@serial</code>, <code>@serialField</code>, and 
+      <code>@serialData</code> which describe the serialization (pickling) 
+      of an object.
+    </li>
+    <li>
+      <code>{@value}</code>, which copies the value of a constant.
+    </li>
+  </ul><br /><br />
+
+<hr />
+<div class="fields">      <p><strong>Warning:</strong>
+        Epydoc only supports HTML output for Javadoc docstrings.
+      </p>
+</div><!-- ==================== CLASSES ==================== -->
+<a name="section-Classes"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Classes"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html" class="summary-name">ParsedJavadocDocstring</a><br />
+      An encoded version of a Javadoc docstring.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTIONS ==================== -->
+<a name="section-Functions"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Functions</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Functions"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.javadoc-module.html#parse_docstring" class="summary-sig-name">parse_docstring</a>(<span class="summary-sig-arg">docstring</span>,
+        <span class="summary-sig-arg">errors</span>,
+        <span class="summary-sig-arg">**options</span>)</span><br />
+      Parse the given docstring, which is formatted using Javadoc; and 
+      return a <code>ParsedDocstring</code> representation of its 
+      contents.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html#parse_docstring">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTION DETAILS ==================== -->
+<a name="section-FunctionDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Function Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-FunctionDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="parse_docstring"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">parse_docstring</span>(<span class="sig-arg">docstring</span>,
+        <span class="sig-arg">errors</span>,
+        <span class="sig-arg">**options</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html#parse_docstring">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Parse the given docstring, which is formatted using Javadoc; and 
+  return a <code>ParsedDocstring</code> representation of its contents.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>docstring</code></strong> (<code>string</code>) - The docstring to parse</li>
+        <li><strong class="pname"><code>errors</code></strong> (<code>list</code> of <a 
+          href="epydoc.markup.ParseError-class.html" 
+          class="link">ParseError</a>) - A list where any errors generated during parsing will be 
+          stored.</li>
+        <li><strong class="pname"><code>options</code></strong> - Extra options.  Unknown options are ignored. Currently, no 
+          extra options are defined.</li>
+    </ul></dd>
+    <dt>Returns: <a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a></dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:03:11 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

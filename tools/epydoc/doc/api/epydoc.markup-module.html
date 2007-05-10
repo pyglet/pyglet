@@ -1,0 +1,676 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        Package&nbsp;markup
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup-module.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== PACKAGE DESCRIPTION ==================== -->
+<h1 class="epydoc">Package markup</h1><span class="codelink"><a href="epydoc.markup-pysrc.html">source&nbsp;code</a></span><br /><br />
+Markup language support for docstrings.  Each submodule defines a 
+  parser for a single markup language.  These parsers convert an object's 
+  docstring to a <a href="epydoc.markup.ParsedDocstring-class.html" 
+  class="link">ParsedDocstring</a>, a standard intermediate representation 
+  that can be used to generate output. <code>ParsedDocstring</code>s 
+  support the following operations:
+  <ul>
+    <li>
+      output generation (<a 
+      href="epydoc.markup.ParsedDocstring-class.html#to_plaintext" 
+      class="link">to_plaintext()</a>, <a 
+      href="epydoc.markup.ParsedDocstring-class.html#to_html" 
+      class="link">to_html()</a>, and <a 
+      href="epydoc.markup.ParsedDocstring-class.html#to_latex" 
+      class="link">to_latex()</a>).
+    </li>
+    <li>
+      Summarization (<a 
+      href="epydoc.markup.ParsedDocstring-class.html#summary" 
+      class="link">summary()</a>).
+    </li>
+    <li>
+      Field extraction (<a 
+      href="epydoc.markup.ParsedDocstring-class.html#split_fields" 
+      class="link">split_fields()</a>).
+    </li>
+    <li>
+      Index term extraction (<a 
+      href="epydoc.markup.ParsedDocstring-class.html#index_terms" 
+      class="link">index_terms()</a>.
+    </li>
+  </ul>
+  <p>The <a href="epydoc.markup-module.html#parse" class="link">parse()</a>
+  function provides a single interface to the <code>epydoc.markup</code> 
+  package: it takes a docstring and the name of a markup language; 
+  delegates to the appropriate parser; and returns the parsed docstring 
+  (along with any errors or warnings that were generated).</p>
+  The <code>ParsedDocstring</code> output generation methods 
+  (<code>to_<i class="math">format</i>()</code>) use a <a 
+  href="epydoc.markup.DocstringLinker-class.html" 
+  class="link">DocstringLinker</a> to link the docstring output with the 
+  rest of the documentation that epydoc generates.  
+  <code>DocstringLinker</code>s are currently responsible for translating 
+  two kinds of crossreference:
+  <ul>
+    <li>
+      index terms (<a 
+      href="epydoc.markup.DocstringLinker-class.html#translate_indexterm" 
+      class="link">translate_indexterm()</a>).
+    </li>
+    <li>
+      identifier crossreferences (<a 
+      href="epydoc.markup.DocstringLinker-class.html#translate_identifier_xref"
+      class="link">translate_identifier_xref()</a>).
+    </li>
+  </ul>
+  <p>A parsed docstring's fields can be extracted using the <a 
+  href="epydoc.markup.ParsedDocstring-class.html#split_fields" 
+  class="link">ParsedDocstring.split_fields()</a> method.  This method 
+  divides a docstring into its main body and a list of <a 
+  href="epydoc.markup.Field-class.html" class="link">Field</a>s, each of 
+  which encodes a single field.  The field's bodies are encoded as 
+  <code>ParsedDocstring</code>s.</p>
+  Markup errors are represented using <a 
+  href="epydoc.markup.ParseError-class.html" class="link">ParseError</a>s.
+  These exception classes record information about the cause, location, and
+  severity of each error.<br /><br />
+
+<!-- ==================== SUBMODULES ==================== -->
+<a name="section-Submodules"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Submodules</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Submodules"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+  <tr><td class="summary">
+  <ul class="nomargin">
+    <li> <strong class="uidlink"><a href="epydoc.markup.doctest-module.html">epydoc.markup.doctest</a></strong>: <em class="summary">Syntax highlighting for doctest blocks.</em>    </li>
+    <li> <strong class="uidlink"><a href="epydoc.markup.epytext-module.html">epydoc.markup.epytext</a></strong>: <em class="summary">Parser for epytext strings.</em>    </li>
+    <li> <strong class="uidlink"><a href="epydoc.markup.javadoc-module.html">epydoc.markup.javadoc</a></strong>: <em class="summary">Epydoc parser for <a href="http://java.sun.com/j2se/javadoc/" 
+        target="_top">Javadoc</a> docstrings.</em>    </li>
+    <li> <strong class="uidlink"><a href="epydoc.markup.plaintext-module.html">epydoc.markup.plaintext</a></strong>: <em class="summary">Parser for plaintext docstrings.</em>    </li>
+    <li> <strong class="uidlink"><a href="epydoc.markup.pyval_repr-module.html">epydoc.markup.pyval_repr</a></strong>: <em class="summary">Syntax highlighter for Python values.</em>    </li>
+    <li> <strong class="uidlink"><a href="epydoc.markup.restructuredtext-module.html">epydoc.markup.restructuredtext</a></strong>: <em class="summary">Epydoc parser for ReStructuredText strings.</em>    </li>
+  </ul></td></tr>
+</table>
+
+<br />
+<!-- ==================== CLASSES ==================== -->
+<a name="section-Classes"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Classes"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.ParsedDocstring-class.html" class="summary-name">ParsedDocstring</a><br />
+      A standard intermediate representation for parsed docstrings 
+        that can be used to generate output.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.Field-class.html" class="summary-name">Field</a><br />
+      The contents of a docstring's field.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.DocstringLinker-class.html" class="summary-name">DocstringLinker</a><br />
+      A translator for crossreference links into and out of a 
+        <code>ParsedDocstring</code>.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.ConcatenatedDocstring-class.html" class="summary-name">ConcatenatedDocstring</a>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Errors and Warnings</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.ParseError-class.html" class="summary-name">ParseError</a><br />
+      The base class for errors generated while parsing 
+        docstrings.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTIONS ==================== -->
+<a name="section-Functions"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Functions</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Functions"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup-module.html#parse" class="summary-sig-name">parse</a>(<span class="summary-sig-arg">docstring</span>,
+        <span class="summary-sig-arg">markup</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string">plaintext</code><code class="variable-quote">'</code></span>,
+        <span class="summary-sig-arg">errors</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">**options</span>)</span><br />
+      Parse the given docstring, and use it to construct a 
+      <code>ParsedDocstring</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup-pysrc.html#parse">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_parse-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_parse-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_parse" name="call_graph_for_parse">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="docstringparser.parse_docstring()" alt="" coords="40,34,312,66" />
+<area shape="rect" href="epydoc.markup&#45;module.html#parse" title="parse()" alt="" coords="395,62,469,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_function_signature" title="docstringparser.parse_function_signature()" alt="" coords="5,90,347,122" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse_docstring" title="epytext.parse_docstring()" alt="" coords="549,6,760,38" />
+<area shape="rect" href="epydoc.markup.plaintext&#45;module.html#parse_docstring" title="plaintext.parse_docstring()" alt="" coords="544,62,765,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#parse_docstring" title="restructuredtext.parse_docstring()" alt="" coords="517,118,792,150" />
+</map>
+  <img src="call_graph_for_parse.gif" alt='' usemap="#call_graph_for_parse" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup-module.html#register_markup_language" class="summary-sig-name">register_markup_language</a>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">parse_function</span>)</span><br />
+      Register a new markup language named <code>name</code>, which can 
+      be parsed by the function <code>parse_function</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup-pysrc.html#register_markup_language">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup-module.html#_parse_warn" class="summary-sig-name">_parse_warn</a>(<span class="summary-sig-arg">estr</span>)</span><br />
+      Print a warning message.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup-pysrc.html#_parse_warn">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Utility Functions</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup-module.html#parse_type_of" class="summary-sig-name">parse_type_of</a>(<span class="summary-sig-arg">obj</span>)</span><br />
+      Returns:
+      A <code>ParsedDocstring</code> that encodes the type of the given 
+      object.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup-pysrc.html#parse_type_of">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== VARIABLES ==================== -->
+<a name="section-Variables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Variables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup-module.html#_markup_language_registry" class="summary-name">_markup_language_registry</a> = <code title="{'restructuredtext': 'epydoc.markup.restructuredtext', 'epytext': 'epy\
+doc.markup.epytext', 'plaintext': 'epydoc.markup.plaintext', 'javadoc'\
+: 'epydoc.markup.javadoc',}"><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">epytext</code><code class="variable-quote">'</code><code class="variable-op">: </code>&lt;function parse_docstr<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup-module.html#MARKUP_LANGUAGES_USED" class="summary-name">MARKUP_LANGUAGES_USED</a> = <code title="set(['epytext', 'plaintext', u'restructuredtext'])"><code class="variable-group">set([</code><code class="variable-quote">'</code><code class="variable-string">epytext</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">plaintext</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">u'</code><code class="variable-string">restruc</code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_parse_warnings"></a><span class="summary-name">_parse_warnings</span> = <code title="{}"><code class="variable-group">{</code><code class="variable-group">}</code></code><br />
+      Used by <a href="epydoc.markup-module.html#_parse_warn" 
+      class="link">_parse_warn</a>.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>int</code></span>
+    </td><td class="summary">
+        <a name="SCRWIDTH"></a><span class="summary-name">SCRWIDTH</span><br />
+      The default width with which text will be wrapped when formatting 
+      the output of the parser.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTION DETAILS ==================== -->
+<a name="section-FunctionDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Function Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-FunctionDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="parse"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">parse</span>(<span class="sig-arg">docstring</span>,
+        <span class="sig-arg">markup</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string">plaintext</code><code class="variable-quote">'</code></span>,
+        <span class="sig-arg">errors</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">**options</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup-pysrc.html#parse">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_parse-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_parse-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_parse" name="call_graph_for_parse">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="docstringparser.parse_docstring()" alt="" coords="40,34,312,66" />
+<area shape="rect" href="epydoc.markup&#45;module.html#parse" title="parse()" alt="" coords="395,62,469,94" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_function_signature" title="docstringparser.parse_function_signature()" alt="" coords="5,90,347,122" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html#parse_docstring" title="epytext.parse_docstring()" alt="" coords="549,6,760,38" />
+<area shape="rect" href="epydoc.markup.plaintext&#45;module.html#parse_docstring" title="plaintext.parse_docstring()" alt="" coords="544,62,765,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#parse_docstring" title="restructuredtext.parse_docstring()" alt="" coords="517,118,792,150" />
+</map>
+  <img src="call_graph_for_parse.gif" alt='' usemap="#call_graph_for_parse" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Parse the given docstring, and use it to construct a 
+  <code>ParsedDocstring</code>.  If any fatal <code>ParseError</code>s are 
+  encountered while parsing the docstring, then the docstring will be 
+  rendered as plaintext, instead.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>docstring</code></strong> (<code>string</code>) - The docstring to encode.</li>
+        <li><strong class="pname"><code>markup</code></strong> (<code>string</code>) - The name of the markup language that is used by the docstring.
+          If the markup language is not supported, then the docstring will 
+          be treated as plaintext.  The markup name is 
+          case-insensitive.</li>
+        <li><strong class="pname"><code>errors</code></strong> (<code>list</code> of <a 
+          href="epydoc.markup.ParseError-class.html" 
+          class="link">ParseError</a>) - A list where any errors generated during parsing will be 
+          stored.  If no list is specified, then fatal errors will generate
+          exceptions, and non-fatal errors will be ignored.</li>
+    </ul></dd>
+    <dt>Returns: <a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a></dt>
+        <dd>A <a href="epydoc.markup.ParsedDocstring-class.html" 
+          class="link">ParsedDocstring</a> that encodes the contents of 
+          <code>docstring</code>.</dd>
+    <dt>Raises:</dt>
+    <dd><ul class="nomargin-top">
+        <li><code><strong class='fraise'><a href="epydoc.markup.ParseError-class.html">ParseError</a></strong></code> - If <code>errors</code> is <code>None</code> and an error is 
+        encountered while parsing.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="register_markup_language"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">register_markup_language</span>(<span class="sig-arg">name</span>,
+        <span class="sig-arg">parse_function</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup-pysrc.html#register_markup_language">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Register a new markup language named <code>name</code>, which can be 
+  parsed by the function <code>parse_function</code>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>name</code></strong> - The name of the markup language.  <code>name</code> should be 
+          a simple identifier, such as <code>'epytext'</code> or 
+          <code>'restructuredtext'</code>. Markup language names are case 
+          insensitive.</li>
+        <li><strong class="pname"><code>parse_function</code></strong> - A function which can be used to parse the markup language, and
+          returns a <a href="epydoc.markup.ParsedDocstring-class.html" 
+          class="link">ParsedDocstring</a>.  It should have the following 
+          signature:
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">parse</span>(s, errors):
+<span class="py-more">... </span>    <span class="py-string">'returns a ParsedDocstring'</span></pre>
+          Where:
+          <ul>
+            <li>
+              <code>s</code> is the string to parse.  (<code>s</code> 
+              will be a unicode string.)
+            </li>
+            <li>
+              <code>errors</code> is a list; any errors that are 
+              generated during docstring parsing should be appended to this
+              list (as <a href="epydoc.markup.ParseError-class.html" 
+              class="link">ParseError</a> objects).
+            </li>
+          </ul></li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_parse_warn"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_parse_warn</span>(<span class="sig-arg">estr</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup-pysrc.html#_parse_warn">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Print a warning message.  If the given error has already been printed,
+  then do nothing.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="parse_type_of"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">parse_type_of</span>(<span class="sig-arg">obj</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup-pysrc.html#parse_type_of">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>obj</code></strong> (any) - The object whose type should be returned as DOM document.</li>
+    </ul></dd>
+    <dt>Returns: <a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a></dt>
+        <dd>A <code>ParsedDocstring</code> that encodes the type of the 
+          given object.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== VARIABLES DETAILS ==================== -->
+<a name="section-VariablesDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-VariablesDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="_markup_language_registry"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_markup_language_registry</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+{'restructuredtext': 'epydoc.markup.restructuredtext', 'epytext': 'epy<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+doc.markup.epytext', 'plaintext': 'epydoc.markup.plaintext', 'javadoc'<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+: 'epydoc.markup.javadoc',}
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="MARKUP_LANGUAGES_USED"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">MARKUP_LANGUAGES_USED</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">set([</code><code class="variable-quote">'</code><code class="variable-string">epytext</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">plaintext</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">u'</code><code class="variable-string">restructuredtext</code><code class="variable-quote">'</code><code class="variable-group">])</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:03:07 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

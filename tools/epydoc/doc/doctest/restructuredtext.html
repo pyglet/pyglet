@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>Regression Testing for restructuredtext</title>
+<link rel="stylesheet" href="../custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="regression-testing-for-restructuredtext">
+<h1 class="title">Regression Testing for restructuredtext</h1>
+<table class="docinfo" frame="void" rules="none">
+<col class="docinfo-name" />
+<col class="docinfo-content" />
+<tbody valign="top">
+<tr class="field"><th class="docinfo-name">RequireModule:</th><td class="field-body"><p class="first">docutils</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.test.util <span class="py-keyword">import</span> print_warnings
+<span class="py-prompt">&gt;&gt;&gt; </span>print_warnings()</pre>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="summary">
+<h1>Summary</h1>
+<p>The implementation of the summaization function works as expected.</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.markup <span class="py-keyword">import</span> restructuredtext
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">getsummary</span>(s):
+<span class="py-more">... </span>    p = restructuredtext.parse_docstring(s, [])
+<span class="py-more">... </span>    s, o = p.summary()
+<span class="py-more">... </span>    s = s.to_plaintext(None).strip()
+<span class="py-more">... </span>    return s, o</pre>
+<p>#Let's not lose anything!</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;Single line&quot;</span>)
+<span class="py-output">(u'Single line', False)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;Single line.&quot;</span>)
+<span class="py-output">(u'Single line.', False)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Single line *with* period.</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">(u'Single line with period.', False)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Single line `with` period.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">:type: Also with a tag.</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">(u'Single line with period.', False)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Other lines **with** period.</span>
+<span class="py-more">... </span><span class="py-string">This is attached</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">(u'Other lines with period.', True)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Other lines *with* period.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">This is detached</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">:type: Also with a tag.</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">(u'Other lines with period.', True)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Other lines without period</span>
+<span class="py-more">... </span><span class="py-string">This is attached</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">(u'Other lines without period\nThis is attached', False)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Other lines without period</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">This is detached</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">(u'Other lines without period...', True)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Single line *without* period</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">:type: Also with a tag.</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">(u'Single line without period', False)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">This is the first line.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">:type: Also with a tag.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">Other stuff after a tag.</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">(u'This is the first line.', True)</span></pre>
+</div>
+<div class="section" id="python-code">
+<h1>Python code</h1>
+<p>reStructuredText markup defines a <tt class="docutils literal"><span class="pre">python</span></tt> directive to represent a block
+as colorized Python code.</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>err = []
+<span class="py-prompt">&gt;&gt;&gt; </span>p = restructuredtext.parse_docstring(
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;A test module</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">.. python::</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">    # This is some Python code</span>
+<span class="py-more">... </span><span class="py-string">    def foo():</span>
+<span class="py-more">... </span><span class="py-string">        pass</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">    class Foo:</span>
+<span class="py-more">... </span><span class="py-string">        def __init__(self):</span>
+<span class="py-more">... </span><span class="py-string">            pass</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>, err)
+<span class="py-prompt">&gt;&gt;&gt; </span>err
+<span class="py-output">[]</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> p.to_html(None)
+<span class="py-output">&lt;p&gt;A test module&lt;/p&gt;</span>
+<span class="py-output">&lt;pre class=&quot;py-doctest&quot;&gt;</span>
+<span class="py-output">&lt;span class=&quot;py-comment&quot;&gt;# This is some Python code&lt;/span&gt;</span>
+<span class="py-output">&lt;span class=&quot;py-keyword&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;py-defname&quot;&gt;foo&lt;/span&gt;():</span>
+<span class="py-output">    &lt;span class=&quot;py-keyword&quot;&gt;pass&lt;/span&gt;</span>
+<span class="py-output">&lt;BLANKLINE&gt;</span>
+<span class="py-output">&lt;span class=&quot;py-keyword&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;py-defname&quot;&gt;Foo&lt;/span&gt;:</span>
+<span class="py-output">    &lt;span class=&quot;py-keyword&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;py-defname&quot;&gt;__init__&lt;/span&gt;(self):</span>
+<span class="py-output">        &lt;span class=&quot;py-keyword&quot;&gt;pass&lt;/span&gt;&lt;/pre&gt;</span>
+<span class="py-output">&lt;BLANKLINE&gt;</span></pre>
+</div>
+<div class="section" id="consolidated-fields">
+<h1>Consolidated Fields</h1>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.test.util <span class="py-keyword">import</span> runbuilder</pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runbuilder(s=<span class="py-string">'''</span>
+<span class="py-more">... </span><span class="py-string">    __docformat__ = 'restructuredtext'</span>
+<span class="py-more">... </span><span class="py-string">    class Foo:</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;This is the object docstring</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        :Parameters:</span>
+<span class="py-more">... </span><span class="py-string">          `a` : string</span>
+<span class="py-more">... </span><span class="py-string">            init param.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        :Exceptions:</span>
+<span class="py-more">... </span><span class="py-string">          * `ValueError`: frobnication error</span>
+<span class="py-more">... </span><span class="py-string">            init param.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        :IVariables:</span>
+<span class="py-more">... </span><span class="py-string">          `a` : date</span>
+<span class="py-more">... </span><span class="py-string">            instance var.</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">        def __init__(self, a):</span>
+<span class="py-more">... </span><span class="py-string">            pass</span>
+<span class="py-more">... </span><span class="py-string">    '''</span>,
+<span class="py-more">... </span>    build=<span class="py-string">&quot;Foo&quot;</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">&quot;variables name value exception_descrs &quot;</span>
+<span class="py-more">... </span>        <span class="py-string">&quot;posargs vararg kwarg type_descr arg_types arg_descrs&quot;</span>)
+<span class="py-output">ClassDoc for epydoc_test.Foo [0]</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- __init__ =&gt; VariableDoc for epydoc_test.Foo.__init__ [1]</span>
+<span class="py-output">    |  +- name = '__init__'</span>
+<span class="py-output">    |  +- type_descr = None</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc for epydoc_test.Foo.__init__ [2]</span>
+<span class="py-output">    |        +- arg_descrs = [([u'a'], u'init param.')]</span>
+<span class="py-output">    |        +- arg_types = {u'a': u'string'}</span>
+<span class="py-output">    |        +- exception_descrs = [(DottedName(u'ValueError'), ...</span>
+<span class="py-output">    |        +- kwarg = None</span>
+<span class="py-output">    |        +- posargs = ['self', 'a']</span>
+<span class="py-output">    |        +- vararg = None</span>
+<span class="py-output">    +- a =&gt; VariableDoc for epydoc_test.Foo.a [3]</span>
+<span class="py-output">       +- name = u'a'</span>
+<span class="py-output">       +- type_descr = u'date'</span>
+<span class="py-output">       +- value = &lt;UNKNOWN&gt;</span></pre>
+</blockquote>
+</div>
+<div class="section" id="misc-rst-constructs">
+<h1>Misc rst constructs</h1>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runbuilder(s=<span class="py-string">'''</span>
+<span class="py-more">... </span><span class="py-string">    __docformat__ = 'restructuredtext'</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">    class Foo:</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;Testing defining_module</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        :cvar `c`: class var in class docstring</span>
+<span class="py-more">... </span><span class="py-string">        :type `c`: str</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">        c = 'abc'</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        def __init__(self):</span>
+<span class="py-more">... </span><span class="py-string">            #: A funny number</span>
+<span class="py-more">... </span><span class="py-string">            #:</span>
+<span class="py-more">... </span><span class="py-string">            #: :type: float</span>
+<span class="py-more">... </span><span class="py-string">            self.x = 108.0</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        y = property(</span>
+<span class="py-more">... </span><span class="py-string">            fget=lambda self: 42,</span>
+<span class="py-more">... </span><span class="py-string">            doc=&quot;&quot;&quot;A property has no defining module</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">            :type: int</span>
+<span class="py-more">... </span><span class="py-string">            &quot;&quot;&quot;)</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        def f(self):</span>
+<span class="py-more">... </span><span class="py-string">            &quot;&quot;&quot;A function has a defining module</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">            :rtype: int</span>
+<span class="py-more">... </span><span class="py-string">            &quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">            return 42</span>
+<span class="py-more">... </span><span class="py-string">    '''</span>,
+<span class="py-more">... </span>    build=<span class="py-string">'Foo'</span>,
+<span class="py-more">... </span>    attribs=<span class="py-string">&quot;variables name value type_descr return_type descr&quot;</span>)
+<span class="py-output">ClassDoc for epydoc_test.Foo [0]</span>
+<span class="py-output"> +- descr = u'Testing defining_module'</span>
+<span class="py-output"> +- variables</span>
+<span class="py-output">    +- __init__ =&gt; VariableDoc for epydoc_test.Foo.__init__ [1]</span>
+<span class="py-output">    |  +- descr = None</span>
+<span class="py-output">    |  +- name = '__init__'</span>
+<span class="py-output">    |  +- type_descr = None</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc for epydoc_test.Foo.__init__ [2]</span>
+<span class="py-output">    |        +- descr = None</span>
+<span class="py-output">    |        +- return_type = None</span>
+<span class="py-output">    +- c =&gt; VariableDoc for epydoc_test.Foo.c [3]</span>
+<span class="py-output">    |  +- descr = u'class var in class docstring'</span>
+<span class="py-output">    |  +- name = 'c'</span>
+<span class="py-output">    |  +- type_descr = u'str'</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- GenericValueDoc [4]</span>
+<span class="py-output">    |        +- descr = None</span>
+<span class="py-output">    +- f =&gt; VariableDoc for epydoc_test.Foo.f [5]</span>
+<span class="py-output">    |  +- descr = None</span>
+<span class="py-output">    |  +- name = 'f'</span>
+<span class="py-output">    |  +- type_descr = None</span>
+<span class="py-output">    |  +- value</span>
+<span class="py-output">    |     +- RoutineDoc for epydoc_test.Foo.f [6]</span>
+<span class="py-output">    |        +- descr = u'A function has a defining module'</span>
+<span class="py-output">    |        +- return_type = u'int'</span>
+<span class="py-output">    +- x =&gt; VariableDoc for epydoc_test.Foo.x [7]</span>
+<span class="py-output">    |  +- descr = u'A funny number'</span>
+<span class="py-output">    |  +- name = u'x'</span>
+<span class="py-output">    |  +- type_descr = u'float'</span>
+<span class="py-output">    |  +- value = &lt;UNKNOWN&gt;</span>
+<span class="py-output">    +- y =&gt; VariableDoc for epydoc_test.Foo.y [8]</span>
+<span class="py-output">       +- descr = None</span>
+<span class="py-output">       +- name = 'y'</span>
+<span class="py-output">       +- type_descr = None</span>
+<span class="py-output">       +- value</span>
+<span class="py-output">          +- PropertyDoc for epydoc_test.Foo.y [9]</span>
+<span class="py-output">             +- descr = u'A property has no defining module'</span>
+<span class="py-output">             +- type_descr = u'int'</span></pre>
+</blockquote>
+</div>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="../index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../index.html">
+    Home</a></td></a>
+  <a class="nav" href="../installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="../using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="../epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="../sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

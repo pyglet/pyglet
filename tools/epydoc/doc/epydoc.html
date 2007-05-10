@@ -1,0 +1,3104 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>Epydoc</title>
+<meta name="author" content="Edward Loper" />
+<link rel="stylesheet" href="custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="epydoc">
+<h1 class="title">Epydoc</h1>
+<h2 class="subtitle" id="automatic-api-documentation-generation-for-python">Automatic API Documentation Generation for Python</h2>
+<table class="docinfo" frame="void" rules="none">
+<col class="docinfo-name" />
+<col class="docinfo-content" />
+<tbody valign="top">
+<tr><th class="docinfo-name">Author:</th>
+<td><a class="first last reference" href="mailto:edloper&#64;gradient.cis.upenn.edu">Edward Loper</a></td></tr>
+<tr><th class="docinfo-name">Version:</th>
+<td>3.0b1</td></tr>
+</tbody>
+</table>
+<div class="abstract topic">
+<p class="topic-title first">Abstract</p>
+<p>Epydoc is a tool for generating API documentation for Python modules,
+based on their docstrings. For an example of epydoc's output, see the API
+documentation for epydoc itself (<a class="reference" href="http://epydoc.sourceforge.net/api/">html</a>, <a class="reference" href="http://epydoc.sourceforge.net/epydoc.pdf">pdf</a>). A lightweight markup language
+called <a class="reference" href="#the-epytext-markup-language">epytext</a> can be used to format docstrings, and to add information
+about specific fields, such as parameters and instance variables. Epydoc
+also understands docstrings written in <a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a>, <a class="reference" href="http://java.sun.com/j2se/javadoc/">Javadoc</a>, and
+plaintext. For a more extensive example of epydoc's output, see the <a class="reference" href="http://epydoc.sourceforge.net/stdlib/">API
+documentation for Python 2.4</a>.</p>
+</div>
+<!-- $Id: manual.txt 1559 2007-02-27 06:42:46Z edloper $ -->
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="auto-toc simple">
+<li><a class="reference" href="#installing-epydoc" id="id19">1&nbsp;&nbsp;&nbsp;Installing Epydoc</a><ul class="auto-toc">
+<li><a class="reference" href="#downloading-epydoc" id="id20">1.1&nbsp;&nbsp;&nbsp;Downloading Epydoc</a></li>
+<li><a class="reference" href="#getting-epydoc-from-subversion" id="id21">1.2&nbsp;&nbsp;&nbsp;Getting Epydoc from Subversion</a></li>
+<li><a class="reference" href="#installing-from-the-rpm-file" id="id22">1.3&nbsp;&nbsp;&nbsp;Installing from the RPM File</a></li>
+<li><a class="reference" href="#installing-from-the-windows-installer" id="id23">1.4&nbsp;&nbsp;&nbsp;Installing from the Windows Installer</a></li>
+<li><a class="reference" href="#installing-from-the-source-distribution-using-make" id="id24">1.5&nbsp;&nbsp;&nbsp;Installing from the Source Distribution (using make)</a></li>
+<li><a class="reference" href="#installing-from-the-source-distribution-without-make" id="id25">1.6&nbsp;&nbsp;&nbsp;Installing from the Source Distribution (without make)</a></li>
+<li><a class="reference" href="#installing-on-debian" id="id26">1.7&nbsp;&nbsp;&nbsp;Installing on Debian</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#using-epydoc" id="id27">2&nbsp;&nbsp;&nbsp;Using Epydoc</a><ul class="auto-toc">
+<li><a class="reference" href="#the-command-line-interface" id="id28">2.1&nbsp;&nbsp;&nbsp;The Command Line Interface</a><ul class="auto-toc">
+<li><a class="reference" href="#command-line-usage-abbreviated" id="id29">2.1.1&nbsp;&nbsp;&nbsp;Command Line Usage (Abbreviated)</a></li>
+<li><a class="reference" href="#examples" id="id30">2.1.2&nbsp;&nbsp;&nbsp;Examples</a></li>
+<li><a class="reference" href="#configuration-files" id="id31">2.1.3&nbsp;&nbsp;&nbsp;Configuration Files</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#the-graphical-interface" id="id32">2.2&nbsp;&nbsp;&nbsp;The Graphical Interface</a></li>
+<li><a class="reference" href="#documentation-completeness-checks" id="id33">2.3&nbsp;&nbsp;&nbsp;Documentation Completeness Checks</a></li>
+<li><a class="reference" href="#html-files" id="id34">2.4&nbsp;&nbsp;&nbsp;HTML Files</a></li>
+<li><a class="reference" href="#css-stylesheets" id="id35">2.5&nbsp;&nbsp;&nbsp;CSS Stylesheets</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#python-docstrings" id="id36">3&nbsp;&nbsp;&nbsp;Python Docstrings</a><ul class="auto-toc">
+<li><a class="reference" href="#variable-docstrings" id="id37">3.1&nbsp;&nbsp;&nbsp;Variable docstrings</a></li>
+<li><a class="reference" href="#items-visibility" id="id38">3.2&nbsp;&nbsp;&nbsp;Items visibility</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#the-epytext-markup-language" id="id39">4&nbsp;&nbsp;&nbsp;The Epytext Markup Language</a><ul class="auto-toc">
+<li><a class="reference" href="#a-brief-introduction" id="id40">4.1&nbsp;&nbsp;&nbsp;A Brief Introduction</a></li>
+<li><a class="reference" href="#epytext-language-overview" id="id41">4.2&nbsp;&nbsp;&nbsp;Epytext Language Overview</a></li>
+<li><a class="reference" href="#block-structure" id="id42">4.3&nbsp;&nbsp;&nbsp;Block Structure</a><ul class="auto-toc">
+<li><a class="reference" href="#paragraphs" id="id43">4.3.1&nbsp;&nbsp;&nbsp;Paragraphs</a></li>
+<li><a class="reference" href="#lists" id="id44">4.3.2&nbsp;&nbsp;&nbsp;Lists</a></li>
+<li><a class="reference" href="#sections" id="id45">4.3.3&nbsp;&nbsp;&nbsp;Sections</a></li>
+<li><a class="reference" href="#literal-blocks" id="id46">4.3.4&nbsp;&nbsp;&nbsp;Literal Blocks</a></li>
+<li><a class="reference" href="#doctest-blocks" id="id47">4.3.5&nbsp;&nbsp;&nbsp;Doctest Blocks</a></li>
+<li><a class="reference" href="#fields" id="id48">4.3.6&nbsp;&nbsp;&nbsp;Fields</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#inline-markup" id="id49">4.4&nbsp;&nbsp;&nbsp;Inline Markup</a><ul class="auto-toc">
+<li><a class="reference" href="#basic-inline-markup" id="id50">4.4.1&nbsp;&nbsp;&nbsp;Basic Inline Markup</a></li>
+<li><a class="reference" href="#urls" id="id51">4.4.2&nbsp;&nbsp;&nbsp;URLs</a></li>
+<li><a class="reference" href="#documentation-crossreference-links" id="id52">4.4.3&nbsp;&nbsp;&nbsp;Documentation Crossreference Links</a></li>
+<li><a class="reference" href="#indexed-terms" id="id53">4.4.4&nbsp;&nbsp;&nbsp;Indexed Terms</a></li>
+<li><a class="reference" href="#symbols" id="id54">4.4.5&nbsp;&nbsp;&nbsp;Symbols</a></li>
+<li><a class="reference" href="#escaping" id="id55">4.4.6&nbsp;&nbsp;&nbsp;Escaping</a></li>
+<li><a class="reference" href="#graphs" id="id56">4.4.7&nbsp;&nbsp;&nbsp;Graphs</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#characters" id="id57">4.5&nbsp;&nbsp;&nbsp;Characters</a><ul class="auto-toc">
+<li><a class="reference" href="#valid-characters" id="id58">4.5.1&nbsp;&nbsp;&nbsp;Valid Characters</a></li>
+<li><a class="reference" href="#content-characters" id="id59">4.5.2&nbsp;&nbsp;&nbsp;Content Characters</a></li>
+<li><a class="reference" href="#spaces-and-newlines" id="id60">4.5.3&nbsp;&nbsp;&nbsp;Spaces and Newlines</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference" href="#epydoc-fields" id="id61">5&nbsp;&nbsp;&nbsp;Epydoc Fields</a><ul class="auto-toc">
+<li><a class="reference" href="#field-markup" id="id62">5.1&nbsp;&nbsp;&nbsp;Field Markup</a></li>
+<li><a class="reference" href="#supported-fields" id="id63">5.2&nbsp;&nbsp;&nbsp;Supported Fields</a><ul class="auto-toc">
+<li><a class="reference" href="#functions-and-methods-parameters" id="id64">5.2.1&nbsp;&nbsp;&nbsp;Functions and Methods parameters</a></li>
+<li><a class="reference" href="#variables-parameters" id="id65">5.2.2&nbsp;&nbsp;&nbsp;Variables parameters</a></li>
+<li><a class="reference" href="#properties-parameters" id="id66">5.2.3&nbsp;&nbsp;&nbsp;Properties parameters</a></li>
+<li><a class="reference" href="#grouping-and-sorting" id="id67">5.2.4&nbsp;&nbsp;&nbsp;Grouping and Sorting</a></li>
+<li><a class="reference" href="#notes-and-warnings" id="id68">5.2.5&nbsp;&nbsp;&nbsp;Notes and Warnings</a></li>
+<li><a class="reference" href="#status" id="id69">5.2.6&nbsp;&nbsp;&nbsp;Status</a></li>
+<li><a class="reference" href="#formal-conditions" id="id70">5.2.7&nbsp;&nbsp;&nbsp;Formal Conditions</a></li>
+<li><a class="reference" href="#bibliographic-information" id="id71">5.2.8&nbsp;&nbsp;&nbsp;Bibliographic Information</a></li>
+<li><a class="reference" href="#other-fields" id="id72">5.2.9&nbsp;&nbsp;&nbsp;Other fields</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#fields-synonyms" id="id73">5.3&nbsp;&nbsp;&nbsp;Fields synonyms</a></li>
+<li><a class="reference" href="#module-metadata-variables" id="id74">5.4&nbsp;&nbsp;&nbsp;Module metadata variables</a></li>
+<li><a class="reference" href="#adding-new-fields" id="id75">5.5&nbsp;&nbsp;&nbsp;Adding New Fields</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#alternate-markup-languages" id="id76">6&nbsp;&nbsp;&nbsp;Alternate Markup Languages</a><ul class="auto-toc">
+<li><a class="reference" href="#id13" id="id77">6.1&nbsp;&nbsp;&nbsp;reStructuredText</a><ul class="auto-toc">
+<li><a class="reference" href="#default-role" id="id78">6.1.1&nbsp;&nbsp;&nbsp;Default role</a></li>
+<li><a class="reference" href="#consolidated-fields" id="id79">6.1.2&nbsp;&nbsp;&nbsp;Consolidated Fields</a></li>
+<li><a class="reference" href="#graph-directives" id="id80">6.1.3&nbsp;&nbsp;&nbsp;Graph directives</a></li>
+<li><a class="reference" href="#colorized-snippets-directive" id="id81">6.1.4&nbsp;&nbsp;&nbsp;Colorized snippets directive</a></li>
+<li><a class="reference" href="#external-api-links" id="id82">6.1.5&nbsp;&nbsp;&nbsp;External API links</a><ul class="auto-toc">
+<li><a class="reference" href="#names-resolution" id="id83">6.1.5.1&nbsp;&nbsp;&nbsp;Names resolution</a></li>
+<li><a class="reference" href="#linking-from-standalone-documents" id="id84">6.1.5.2&nbsp;&nbsp;&nbsp;Linking from standalone documents</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#indexed-terms-in-restructuredtext" id="id85">6.1.6&nbsp;&nbsp;&nbsp;Indexed Terms in reStructuredText</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#id15" id="id86">6.2&nbsp;&nbsp;&nbsp;Javadoc</a><ul class="auto-toc">
+<li><a class="reference" href="#javadoc-fields" id="id87">6.2.1&nbsp;&nbsp;&nbsp;Javadoc Fields</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference" href="#references" id="id88">7&nbsp;&nbsp;&nbsp;References</a><ul class="auto-toc">
+<li><a class="reference" href="#command-line-usage" id="id89">7.1&nbsp;&nbsp;&nbsp;Command Line Usage</a></li>
+<li><a class="reference" href="#sample-configuration-file" id="id90">7.2&nbsp;&nbsp;&nbsp;Sample Configuration File</a></li>
+<li><a class="reference" href="#warnings-and-errors" id="id91">7.3&nbsp;&nbsp;&nbsp;Warnings and Errors</a><ul class="auto-toc">
+<li><a class="reference" href="#epytext-warnings" id="id92">7.3.1&nbsp;&nbsp;&nbsp;Epytext Warnings</a></li>
+<li><a class="reference" href="#field-warnings" id="id93">7.3.2&nbsp;&nbsp;&nbsp;Field Warnings</a></li>
+<li><a class="reference" href="#epytext-errors" id="id94">7.3.3&nbsp;&nbsp;&nbsp;Epytext Errors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<!-- Include the document chapters -->
+<div class="section" id="installing-epydoc">
+<h1><a class="toc-backref" href="#id19">1&nbsp;&nbsp;&nbsp;Installing Epydoc</a></h1>
+<!-- $Id: manual-install.txt 1541 2007-02-20 09:49:56Z dvarrazzo $ -->
+<div class="section" id="downloading-epydoc">
+<h2><a class="toc-backref" href="#id20">1.1&nbsp;&nbsp;&nbsp;Downloading Epydoc</a></h2>
+<p>Epydoc can be downloaded from the <a class="reference" href="http://sourceforge.net/project/showfiles.php?group_id=32455">SourceForge download page</a>. Epydoc is
+available in five formats:</p>
+<ul class="simple">
+<li>RPM (<tt class="docutils literal"><span class="pre">.noarch.rpm</span></tt>)</li>
+<li>Windows installer (<tt class="docutils literal"><span class="pre">.win32.exe</span></tt>)</li>
+<li>Source install (<tt class="docutils literal"><span class="pre">.tar.gz</span></tt>)</li>
+<li>Source install (<tt class="docutils literal"><span class="pre">.zip</span></tt>)</li>
+<li>Source RPM (<tt class="docutils literal"><span class="pre">.src.rpm</span></tt>)</li>
+</ul>
+<p>If you are installing on RedHat, I recommend that you use the RPM file. If you
+are installing on Windows, I recommended that you use the windows installer.
+Otherwise, you should use one of the source install files.</p>
+</div>
+<div class="section" id="getting-epydoc-from-subversion">
+<h2><a class="toc-backref" href="#id21">1.2&nbsp;&nbsp;&nbsp;Getting Epydoc from Subversion</a></h2>
+<p>If you wish to keep up on the latest developments, you can get the latest
+version of epydoc from the <a class="reference" href="http://sourceforge.net/svn/?group_id=32455">subversion repository</a>:</p>
+<pre class="literal-block">
+[/home/edloper]$ svn co https://svn.sourceforge.net/svnroot/epydoc/trunk/epydoc epydoc
+[/home/edloper]$ ls epydoc
+Makefile  doc  man  sandbox  src
+</pre>
+<p>This will create a directory named <tt class="docutils literal"><span class="pre">epydoc</span></tt> containing the latest version of
+epydoc. The <tt class="docutils literal"><span class="pre">epydoc</span></tt> package itself is in <tt class="docutils literal"><span class="pre">epydoc/src/epydoc</span></tt> (so adding
+<tt class="docutils literal"><span class="pre">epydoc/src</span></tt> to your <tt class="docutils literal"><span class="pre">PYTHONPATH</span></tt> will let you use it). You should
+periodically update your copy of the subversion repository, to make sure you
+have all the latest changes:</p>
+<pre class="literal-block">
+[/home/edloper/epydoc]$ svn up
+</pre>
+<p>You can browse the subversion repository <a class="reference" href="http://svn.sourceforge.net/viewcvs.cgi/epydoc/trunk/epydoc/">here</a>.</p>
+</div>
+<div class="section" id="installing-from-the-rpm-file">
+<h2><a class="toc-backref" href="#id22">1.3&nbsp;&nbsp;&nbsp;Installing from the RPM File</a></h2>
+<ol class="arabic">
+<li><p class="first">Download the RPM file to a directory of your choice.</p>
+</li>
+<li><p class="first">Use rpm to install the new package.</p>
+<pre class="literal-block">
+[/tmp]$ su
+Password:
+[/tmp]# rpm -i epydoc-3.0beta1.noarch.rpm
+</pre>
+</li>
+<li><p class="first">Once epydoc is installed, you can delete the RPM file.</p>
+<pre class="literal-block">
+[/tmp]# rm epydoc-3.0beta1.rpm
+</pre>
+</li>
+</ol>
+</div>
+<div class="section" id="installing-from-the-windows-installer">
+<h2><a class="toc-backref" href="#id23">1.4&nbsp;&nbsp;&nbsp;Installing from the Windows Installer</a></h2>
+<ol class="arabic simple">
+<li>Download and run <tt class="docutils literal"><span class="pre">epydoc-3.0beta1.win32.exe</span></tt>.</li>
+<li>Follow the on-screen instructions. Epydoc will be installed in the epydoc
+subdirectory of your Python installation directory (typically
+<tt class="docutils literal"><span class="pre">C:\Python24\</span></tt>).</li>
+<li>The Windows installer creates two scripts in the <tt class="docutils literal"><span class="pre">Scripts</span></tt> subdirectory of
+your Python installation directory: <tt class="docutils literal"><span class="pre">epydoc.pyw</span></tt> opens the graphical user
+interface, and <tt class="docutils literal"><span class="pre">epydoc.py</span></tt> calls the command line interface. If you'd
+like, you can create shortcuts from these scripts to more convenient
+locations (such as your desktop or start menu).</li>
+<li>Once epydoc is installed, you can delete <tt class="docutils literal"><span class="pre">epydoc-3.0beta1.win32.exe</span></tt>.</li>
+</ol>
+</div>
+<div class="section" id="installing-from-the-source-distribution-using-make">
+<h2><a class="toc-backref" href="#id24">1.5&nbsp;&nbsp;&nbsp;Installing from the Source Distribution (using make)</a></h2>
+<ol class="arabic">
+<li><p class="first">Download an epydoc source distribution to a directory of your choice, and
+uncompress it.</p>
+<pre class="literal-block">
+[/tmp]$ wget -q http://prdownloads.sourceforge.net/epydoc/epydoc-3.0beta1.tar.gz
+[/tmp]$ gunzip epydoc-3.0beta1.tar.gz
+[/tmp]$ tar -xvf epydoc-3.0beta1.tar
+</pre>
+</li>
+<li><p class="first">Use <tt class="docutils literal"><span class="pre">make</span> <span class="pre">install</span></tt> in the <tt class="docutils literal"><span class="pre">eydoc-3.0beta1/</span></tt> directory to install
+epydoc.</p>
+<pre class="literal-block">
+[/tmp]$ cd epydoc-3.0beta1/
+[/tmp/epydoc-3.0beta1]$ su
+Password:
+[/tmp/epydoc-3.0beta1]# make install
+running install
+running build
+[...]
+copying build/scripts/epydoc -&gt; /usr/bin
+changing mode of /usr/bin/epydoc to 100775
+</pre>
+</li>
+<li><p class="first">If you'd like to keep a local copy of the documentation, then use <tt class="docutils literal"><span class="pre">make</span>
+<span class="pre">installdocs</span></tt>. By default, this will install the documentation to
+<tt class="docutils literal"><span class="pre">/usr/share/doc/</span></tt> and the man pages to <tt class="docutils literal"><span class="pre">/usr/share/man/</span></tt>. If you would
+prefer to install documentation to different directories (such as
+<tt class="docutils literal"><span class="pre">/usr/lib/doc</span></tt>), then edit the <tt class="docutils literal"><span class="pre">MAN</span></tt> and <tt class="docutils literal"><span class="pre">DOC</span></tt> variables at the top of
+<tt class="docutils literal"><span class="pre">Makefile</span></tt> before running <tt class="docutils literal"><span class="pre">make</span> <span class="pre">installdocs</span></tt>.</p>
+<pre class="literal-block">
+[/tmp/epydoc-3.0beta1]# make installdocs
+</pre>
+</li>
+<li><p class="first">Once epydoc is installed, you can delete the installation directory and the
+source distribution file.</p>
+<pre class="literal-block">
+[/tmp/epydoc-3.0beta1]# cd ..
+[/tmp]# rm -r epydoc-3.0beta1
+[/tmp]# rm epydoc-3.0beta1.tar
+</pre>
+</li>
+</ol>
+</div>
+<div class="section" id="installing-from-the-source-distribution-without-make">
+<h2><a class="toc-backref" href="#id25">1.6&nbsp;&nbsp;&nbsp;Installing from the Source Distribution (without make)</a></h2>
+<ol class="arabic">
+<li><p class="first">Download an epydoc source distribution to a directory of your choice, and
+uncompress it.</p>
+<pre class="literal-block">
+[/tmp]$ wget -q http://prdownloads.sourceforge.net/epydoc/epydoc-3.0beta1.tar.gz
+[/tmp]$ gunzip epydoc-3.0beta1.tar.gz
+[/tmp]$ tar -xvf epydoc-3.0beta1.tar
+</pre>
+</li>
+<li><p class="first">Use the <tt class="docutils literal"><span class="pre">setup.py</span></tt> script in the <tt class="docutils literal"><span class="pre">eydoc-3.0beta1/</span></tt> directory to install
+epydoc.</p>
+<pre class="literal-block">
+[/tmp]$ cd epydoc-3.0beta1/
+[/tmp/epydoc-3.0beta1]$ su
+Password:
+[/tmp/epydoc-3.0beta1]# python setup.py install
+running install
+running build
+[...]
+copying build/scripts/epydoc -&gt; /usr/bin
+changing mode of /usr/bin/epydoc to 100775
+[/tmp/epydoc-3.0beta1]# cd ..
+[/tmp]#
+</pre>
+</li>
+<li><p class="first">If you'd like to keep a local copy of the documentation, then copy it to a
+permanant location, such as <tt class="docutils literal"><span class="pre">/usr/share/doc/</span></tt>. You may also want to copy
+the man pages to a permanant location, such as <tt class="docutils literal"><span class="pre">/usr/share/man/</span></tt>.</p>
+<pre class="literal-block">
+[/tmp]# cp -r epydoc-3.0beta1/doc/ /usr/share/doc/epydoc/
+[/tmp]# cp epydoc-3.0beta1/man/* /usr/share/man/
+</pre>
+</li>
+<li><p class="first">Once epydoc is installed, you can delete the installation directory and the
+source distribution file.</p>
+<pre class="literal-block">
+[/tmp]# rm -r epydoc-3.0beta1
+[/tmp]# rm epydoc-3.0beta1.tar
+</pre>
+</li>
+</ol>
+</div>
+<div class="section" id="installing-on-debian">
+<h2><a class="toc-backref" href="#id26">1.7&nbsp;&nbsp;&nbsp;Installing on Debian</a></h2>
+<p>Epydoc 2.1 is available as a testing debian package (<tt class="docutils literal"><span class="pre">python-epydoc</span></tt>). The
+epydoc documentation is also available as a package (<tt class="docutils literal"><span class="pre">epydoc-doc</span></tt>).</p>
+</div>
+</div>
+<div class="section" id="using-epydoc">
+<h1><a class="toc-backref" href="#id27">2&nbsp;&nbsp;&nbsp;Using Epydoc</a></h1>
+<!-- $Id: manual-usage.txt 1554 2007-02-27 03:31:56Z edloper $ -->
+<p>Epydoc provides two user interfaces:</p>
+<ul class="simple">
+<li>The command line interface, which is accessed via a script named <tt class="docutils literal"><span class="pre">epydoc</span></tt>
+(or <tt class="docutils literal"><span class="pre">epydoc.py</span></tt> on Windows)</li>
+<li>The graphical interface, which is accessed via a script named <tt class="docutils literal"><span class="pre">epydocgui</span></tt>
+(or <tt class="docutils literal"><span class="pre">epydoc.pyw</span></tt> on Windows).</li>
+</ul>
+<p>Epydoc can also be accessed programmatically; see <tt class="docutils literal"><span class="pre">epydoc's</span> <span class="pre">API</span>
+<span class="pre">documentation</span></tt> for more information.</p>
+<div class="section" id="the-command-line-interface">
+<h2><a class="toc-backref" href="#id28">2.1&nbsp;&nbsp;&nbsp;The Command Line Interface</a></h2>
+<p>The <tt class="docutils literal"><span class="pre">epydoc</span></tt> script extracts API documentation for a set of Python objects,
+and writes it using a selected output format. Objects can be named using dotted
+names, module filenames, or package directory names. (On Windows, this script
+is named <tt class="docutils literal"><span class="pre">epydoc.py</span></tt>.)</p>
+<div class="section" id="command-line-usage-abbreviated">
+<h3><a class="toc-backref" href="#id29">2.1.1&nbsp;&nbsp;&nbsp;Command Line Usage (Abbreviated)</a></h3>
+<pre class="literal-block">
+epydoc [--html|--pdf] [-o <em>DIR</em>] [--parse-only|--introspect-only] [-v|-q]
+       [--name <em>NAME</em>] [--url <em>URL</em>] [--docformat <em>NAME</em>] [--graph <em>GRAPHTYPE</em>]
+       [--inheritance <em>STYLE</em>] [--config <em>FILE</em>] <em>OBJECTS...</em>
+</pre>
+<dl class="docutils">
+<dt><em>OBJECTS...</em></dt>
+<dd>A list of the Python objects that should be documented. Objects can be
+specified using dotted names (such as <tt class="docutils literal"><span class="pre">os.path</span></tt>), module filenames (such
+as <tt class="docutils literal"><span class="pre">epydoc/epytext.py</span></tt>), or package directory names (such as <tt class="docutils literal"><span class="pre">epydoc/</span></tt>).
+Packages are expanded to include all sub-modules and sub-packages.</dd>
+</dl>
+<div class="epydoc-usage container">
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">--html</span></kbd></td>
+<td>Generate HTML output. (default)</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--pdf</span></kbd></td>
+<td>Generate Adobe Acrobat (PDF) output, using LaTeX.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-o <var>DIR</var></span>, <span class="option">--output <var>DIR</var></span>, <span class="option">--target <var>DIR</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>The output directory.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--parse-only</span>, <span class="option">--introspect-only</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>By default, epydoc will gather information about each Python object using
+two methods: parsing the object's source code; and importing the object and
+directly introspecting it. Epydoc combines the information obtained from
+these two methods to provide more complete and accurate documentation.
+However, if you wish, you can tell epydoc to use only one or the other of
+these methods. For example, if you are running epydoc on untrusted code,
+you should use the <tt class="docutils literal"><span class="pre">--parse-only</span></tt> option.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-v</span>, <span class="option">-q</span></kbd></td>
+<td>Increase (<tt class="docutils literal"><span class="pre">-v</span></tt>) or decrease (<tt class="docutils literal"><span class="pre">-q</span></tt>) the verbosity of the output. These
+options may be repeated to further increase or decrease verbosity.
+Docstring markup warnings are supressed unless <tt class="docutils literal"><span class="pre">-v</span></tt> is used at least once.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--name <var>NAME</var></span></kbd></td>
+<td>The documented project's name.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--url <var>URL</var></span></kbd></td>
+<td>The documented project's URL.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--docformat <var>NAME</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>The markup language that should be used by default to process modules'
+docstrings. This is only used for modules that do not define the special
+<tt class="docutils literal"><span class="pre">__docformat__</span></tt> variable; it is recommended that you explicitly specify
+<tt class="docutils literal"><span class="pre">__docformat__</span></tt> in all your modules.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--graph <var>GRAPHTYPE</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td><p class="first">Include graphs of type <em>GRAPHTYPE</em> in the generated output. Graphs are
+generated using the Graphviz <tt class="docutils literal"><span class="pre">dot</span></tt> executable. If this executable is not
+on the path, then use <tt class="docutils literal"><span class="pre">--dotpath</span></tt> to specify its location. This option
+may be repeated to include multiple graph types in the output. To include
+all graphs, use <tt class="docutils literal"><span class="pre">--graph</span> <span class="pre">all</span></tt>. The available graph types are:</p>
+<ul class="last simple">
+<li><strong>classtree</strong>: displays each class's base classes and subclasses;</li>
+<li><strong>callgraph</strong>: displays the callers and callees of each function or
+method. These graphs are based on profiling information, which must be
+specified using the <tt class="docutils literal"><span class="pre">--pstate</span></tt> option.</li>
+<li><strong>umlclass</strong>: displays each class's base classes and subclasses, using
+UML style. Methods and attributes are listed in the classes where they
+are defined. If type information is available about attributes (via the
+<tt class="docutils literal"><span class="pre">&#64;type</span></tt> field), then those types are displayed as separate classes, and
+the attributes are displayed as associations.</li>
+</ul>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--inheritance <var>STYLE</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td><p class="first">The format that should be used to display inherited methods, variables, and
+properties. Currently, three styles are supported. To see an example of each style,
+click on it:</p>
+<ul class="last simple">
+<li><a class="reference" href="http://epydoc.sourceforge.net/examples/grouped/inh_example.Programmer-class.html">grouped</a>: Inherited objects are gathered into groups, based on which
+class they are inherited from.</li>
+<li><a class="reference" href="http://epydoc.sourceforge.net/examples/listed/inh_example.Programmer-class.html">listed</a>: Inherited objects are listed in a short list at the end of the
+summary table.</li>
+<li><a class="reference" href="http://epydoc.sourceforge.net/examples/included/inh_example.Programmer-class.html">included</a>: Inherited objects are mixed in with non-inherited objects.</li>
+</ul>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--config <var>FILE</var></span></kbd></td>
+<td>Read the given configuration file, which can contain both options and
+Python object names. This option may be used multiple times, if you wish
+to use multiple configuration files. See <a class="reference" href="#configuration-files">Configuration Files</a> for more
+information.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The complete list of command line options is available in the <a class="reference" href="#command-line-usage">Command Line
+Usage</a> section.</p>
+</div>
+<div class="section" id="examples">
+<h3><a class="toc-backref" href="#id30">2.1.2&nbsp;&nbsp;&nbsp;Examples</a></h3>
+<p>The following command will generate HTML documentation for the <tt class="docutils literal"><span class="pre">sys</span></tt> module,
+and write it to the directory <tt class="docutils literal"><span class="pre">sys_docs</span></tt>:</p>
+<pre class="literal-block">
+[epydoc]$ epydoc --html sys -o sys_docs
+</pre>
+<p>The following commands are used to produce the API documentation for epydoc
+itself. The first command writes html output to the directory <tt class="docutils literal"><span class="pre">html/api</span></tt>,
+using <tt class="docutils literal"><span class="pre">epydoc</span></tt> as the project name and <tt class="docutils literal"><span class="pre">http://epydoc.sourcforge.net</span></tt> as
+the project URL. The <tt class="docutils literal"><span class="pre">white</span></tt> CSS style is used; inheritance is displayed
+using the listed style; and all graphs are included in the output. The second
+command writes pdf output to the file <tt class="docutils literal"><span class="pre">api.pdf</span></tt> in the directory
+<tt class="docutils literal"><span class="pre">latex/api</span></tt>, using <tt class="docutils literal"><span class="pre">Epydoc</span></tt> as the project name.</p>
+<pre class="literal-block">
+[epydoc]$ epydoc -v -o html/api --name epydoc --css white \
+                 --url http://epydoc.sourceforge.net \
+                 --inheritance listed --graph all src/epydoc
+[epydoc]$ epydoc -v -o latex/api --pdf --name &quot;Epydoc&quot; src/epydoc
+</pre>
+</div>
+<div class="section" id="configuration-files">
+<h3><a class="toc-backref" href="#id31">2.1.3&nbsp;&nbsp;&nbsp;Configuration Files</a></h3>
+<p>Configuration files, specified using the <tt class="docutils literal"><span class="pre">--config</span></tt> option, may be used to
+specify both the list of objects to document, and the options that should be
+used to document them. Configuration files are read using the standard
+<a class="reference" href="http://docs.python.org/lib/module-ConfigParser.html">ConfigParser</a> module. The following is a simple example of a configuration
+file.</p>
+<pre class="literal-block">
+<strong>[epydoc]</strong> <em># Epydoc section marker (required by ConfigParser)</em>
+
+<em># Information about the project.</em>
+<strong>name: My Cool Project</strong>
+<strong>url: http://cool.project/</strong>
+
+<em># The list of modules to document.  Modules can be named using</em>
+<em># dotted names, module filenames, or package directory names.</em>
+<em># This option may be repeated.</em>
+<strong>modules: sys, os.path, re</strong>
+<strong>modules: my/project/driver.py</strong>
+
+<em># Write html output to the directory &quot;apidocs&quot;</em>
+<strong>output: html</strong>
+<strong>target: apidocs/</strong>
+
+<em># Include all automatically generated graphs.  These graphs are</em>
+<em># generated using Graphviz dot.</em>
+<strong>graph: all</strong>
+<strong>dotpath: /usr/local/bin/dot</strong>
+</pre>
+<p>A <a class="reference" href="#sample-configuration-file">more complete example</a>, including all of the supported options, is also
+available.</p>
+</div>
+</div>
+<div class="section" id="the-graphical-interface">
+<h2><a class="toc-backref" href="#id32">2.2&nbsp;&nbsp;&nbsp;The Graphical Interface</a></h2>
+<p>Epydoc also includes a graphical interface, for systems where command line
+interfaces are not convenient (such as Windows). The graphical interface can
+be invoked with the <tt class="docutils literal"><span class="pre">epydocgui</span></tt> command, or with <tt class="docutils literal"><span class="pre">epydoc.pyw</span></tt> in the
+<tt class="docutils literal"><span class="pre">Scripts</span></tt> subdirectory of the Python installation directory under Windows.
+Currently, the graphical interface can only generate HTML output.</p>
+<div align="center" class="align-center"><img alt="epydoc_gui.png" class="align-center" src="epydoc_gui.png" /></div>
+<p>Use the <strong>Add</strong> box to specify what objects you wish to document. Objects can
+be specified using dotted names (such as <tt class="docutils literal"><span class="pre">os.path</span></tt>), module filenames (such
+as <tt class="docutils literal"><span class="pre">epydoc/epytext.py</span></tt>), or package directory names (such as <tt class="docutils literal"><span class="pre">epydoc/</span></tt>).
+Packages are expanded to include all sub-modules and sub-packages. Once you
+have added all of the modules that you wish to document, press the <strong>Start</strong>
+button. Epydoc's progress will be displayed on the progress bar.</p>
+<p>To customize the output, click on the <strong>Options</strong> arrow at the bottom of the
+window. This opens the options pane, which contains fields corresponding to
+each command line option.</p>
+<div align="center" class="align-center"><img alt="epydoc_guiconfig.png" class="align-center" src="epydoc_guiconfig.png" /></div>
+<p>The epydoc graphical interface can save and load <em>project files</em>, which record
+the set of modules and the options that you have selected. Select
+<strong>File-&gt;Save</strong> to save the current modules and options to a project file; and
+<strong>File-&gt;Open</strong> to open a previously saved project file. (These project files do
+not currently use the same format as the configuration files used by the
+command line interface.)</p>
+<p>For more information, see the <tt class="docutils literal"><span class="pre">epydocgui(1)</span></tt> man page.</p>
+</div>
+<div class="section" id="documentation-completeness-checks">
+<h2><a class="toc-backref" href="#id33">2.3&nbsp;&nbsp;&nbsp;Documentation Completeness Checks</a></h2>
+<p>The <tt class="docutils literal"><span class="pre">epydoc</span></tt> script can be used to check the completeness of the reference
+documentation. In particular, it will check that every module, class, method,
+and function has a description; that every parameter has a description and a
+type; and that every variable has a type. If the <tt class="docutils literal"><span class="pre">-p</span></tt> option is used, then
+these checks are run on both public and private objects; otherwise, the checks
+are only run on public objects.</p>
+<p><tt class="docutils literal"><span class="pre">epydoc</span></tt> <tt class="docutils literal"><span class="pre">--check</span></tt> [<tt class="docutils literal"><span class="pre">-p</span></tt>] <em>MODULES...</em></p>
+<dl class="docutils">
+<dt><em>MODULES...</em></dt>
+<dd>A list of the modules that should be checked. Modules may be specified
+using either filenames (such as <tt class="docutils literal"><span class="pre">epydoc/epytext.py</span></tt>) or module names
+(such as <tt class="docutils literal"><span class="pre">os.path</span></tt>). The filename for a package is its <tt class="docutils literal"><span class="pre">__init__.py</span></tt>
+file.</dd>
+</dl>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-p</span></kbd></td>
+<td>Run documentation completeness checks on private objects.</td></tr>
+</tbody>
+</table>
+<p>For each object that fails a check, epydoc will print a warning. For example,
+some of the warnings generated when checking the completeness of the
+documentation for epydoc's private objects are:</p>
+<pre class="literal-block">
+epydoc.html.HTML_Doc._dom_link_to_html........No docs
+epydoc.html.HTML_Doc._module..................No type
+epydoc.html.HTML_Doc._link_to_html.link.......No descr
+epydoc.html.HTML_Doc._author.return...........No type
+epydoc.html.HTML_Doc._author.authors..........No descr, No type
+epydoc.html.HTML_Doc._author.container........No descr, No type
+epydoc.html.HTML_Doc._base_tree.uid...........No descr, No type
+epydoc.html.HTML_Doc._base_tree.width.........No descr, No type
+epydoc.html.HTML_Doc._base_tree.postfix.......No descr, No type
+</pre>
+<p>If you'd like more fine-grained control over what gets checked, or you would
+like to check other fields (such as the author or version), then you should
+use the <a class="reference" href="http://epydoc.sourceforge.net/api/epydoc.checker.DocChecker-class.html"><tt class="docutils literal"><span class="pre">DocChecker</span></tt></a> class directly.</p>
+</div>
+<div class="section" id="html-files">
+<h2><a class="toc-backref" href="#id34">2.4&nbsp;&nbsp;&nbsp;HTML Files</a></h2>
+<p>Every Python module and class is documented in its own file. Index files, tree
+files, a help file, and a frames-based table of contents are also created.
+The following list describes each of the files generated by epydoc:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">index.html</span></tt></dt>
+<dd>The standard entry point for the documentation. Normally, <tt class="docutils literal"><span class="pre">index.html</span></tt>
+is a copy of the frames file (<tt class="docutils literal"><span class="pre">frames.html</span></tt>). But if the <tt class="docutils literal"><span class="pre">--no-frames</span></tt>
+option is used, then <tt class="docutils literal"><span class="pre">index.html</span></tt> is a copy of the API documentation home
+page, which is normally the documentation page for the top-level package or
+module (or the trees page if there is no top-level package or module).</dd>
+<dt><em>module</em><tt class="docutils literal"><span class="pre">-module.html</span></tt></dt>
+<dd>The API documentation for a module. <em>module</em> is the complete dotted name of
+the module, such as <cite>sys</cite> or <cite>epydoc.epytext</cite>.</dd>
+<dt><em>class</em><tt class="docutils literal"><span class="pre">-class.html</span></tt></dt>
+<dd>The API documentation for a class, exception, or type. <em>class</em> is the
+complete dotted name of the class, such as <tt class="docutils literal"><span class="pre">epydoc.epytext.Token</span></tt> or
+<tt class="docutils literal"><span class="pre">array.ArrayType</span></tt>.</dd>
+<dt><em>module</em><tt class="docutils literal"><span class="pre">-pysrc.html</span></tt></dt>
+<dd><p class="first last">A page with the module colorized source code, with links back to the
+objects main documentation pages. The creation of the colorized source
+pages can be controlled using the <a class="reference" href="CommandLineUsage_">options</a> <tt class="docutils literal"><span class="pre">--show-sourcecode</span></tt> and
+<tt class="docutils literal"><span class="pre">--no-sourcecode</span></tt>.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">module-tree.html</span></tt></dt>
+<dd>The documented module hierarchy.</dd>
+<dt><tt class="docutils literal"><span class="pre">class-tree.html</span></tt></dt>
+<dd>The documented classes hierarchy.</dd>
+<dt><tt class="docutils literal"><span class="pre">identifier-index.html</span></tt></dt>
+<dd>The index of all the identifiers found in the documented items.</dd>
+<dt><tt class="docutils literal"><span class="pre">term-index.html</span></tt></dt>
+<dd>The index of all the term definition found in the docstrings. Term
+definitions are created using the <a class="reference" href="#indexed-terms">Indexed Terms</a> markup.</dd>
+<dt><tt class="docutils literal"><span class="pre">bug-index.html</span></tt></dt>
+<dd>The index of all the known bug in the documented sources. Bugs are marked
+using the <tt class="docutils literal"><span class="pre">&#64;bug</span></tt> tag.</dd>
+<dt><tt class="docutils literal"><span class="pre">todo-index.html</span></tt></dt>
+<dd>The index of all the to-do items in the documented sources. They are
+marked using the <tt class="docutils literal"><span class="pre">&#64;todo</span></tt> tag.</dd>
+<dt><tt class="docutils literal"><span class="pre">help.html</span></tt></dt>
+<dd>The help page for the project. This page explains how to use and navigate
+the webpage produced by epydoc.</dd>
+<dt><tt class="docutils literal"><span class="pre">epydoc-log.html</span></tt></dt>
+<dd>A page with the log of the epydoc execution. It is available clicking on
+the timestamp below each page, if the documentation was created using the
+<tt class="docutils literal"><span class="pre">--include-log</span></tt> option. The page also contains the list of the options
+enabled when the documentation was created.</dd>
+<dt><tt class="docutils literal"><span class="pre">api-objects.txt</span></tt></dt>
+<dd>A text file containing each available item and the URL where it is
+documented. Each item takes a file line and it is separated by the URL by
+a <tt class="docutils literal"><span class="pre">tab</span></tt> charecter. Such file can be used to create <a class="reference" href="#external-api-links">external API links</a>.</dd>
+<dt><tt class="docutils literal"><span class="pre">redirect.html</span></tt></dt>
+<dd>A page containing Javascript code that redirect the browser to the
+documentation page indicated by the accessed fragment. For example
+opening the page <tt class="docutils literal"><span class="pre">redirect.html#epydoc.apidoc.DottedName</span></tt> the browser
+will be redirected to the page <tt class="docutils literal"><span class="pre">epydoc.apidoc.DottedName-class.html</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">frames.html</span></tt></dt>
+<dd>The main frames file. Two frames on the left side of the window contain a
+table of contents, and the main frame on the right side of the window
+contains API documentation pages.</dd>
+<dt><tt class="docutils literal"><span class="pre">toc.html</span></tt></dt>
+<dd>The top-level table of contents page. This page is displayed in the
+upper-left frame of frames.html, and provides links to the
+<tt class="docutils literal"><span class="pre">toc-everything.html</span></tt> and <tt class="docutils literal"><span class="pre">toc-module-module.html</span></tt> pages.</dd>
+<dt><tt class="docutils literal"><span class="pre">toc-everything.html</span></tt></dt>
+<dd>The table of contents for the entire project. This page is displayed in
+the lower-left frame of frames.html, and provides links to every class,
+type, exception, function, and variable defined by the project.</dd>
+<dt><tt class="docutils literal"><span class="pre">toc-</span></tt><em>module</em><tt class="docutils literal"><span class="pre">-module.html</span></tt></dt>
+<dd>The table of contents for a module. This page is displayed in the
+lower-left frame of frames.html, and provides links to every class, type,
+exception, function, and variable defined by the module. module is the
+complete dotted name of the module, such as <tt class="docutils literal"><span class="pre">sys</span></tt> or <tt class="docutils literal"><span class="pre">epydoc.epytext</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">epydoc.css</span></tt></dt>
+<dd>The CSS stylesheet used to display all HTML pages.</dd>
+</dl>
+</div>
+<div class="section" id="css-stylesheets">
+<h2><a class="toc-backref" href="#id35">2.5&nbsp;&nbsp;&nbsp;CSS Stylesheets</a></h2>
+<p>Epydoc creates a CSS stylesheet (<tt class="docutils literal"><span class="pre">epydoc.css</span></tt>) when it builds the API
+documentation for a project. You can specify which stylesheet should be used
+using the <tt class="docutils literal"><span class="pre">--css</span></tt> command-line option. If you do not specify a stylesheet,
+and one is already present, epydoc will use that stylesheet; otherwise, it will
+use the default stylesheet.</p>
+</div>
+</div>
+<div class="section" id="python-docstrings">
+<h1><a class="toc-backref" href="#id36">3&nbsp;&nbsp;&nbsp;Python Docstrings</a></h1>
+<!-- $Id: manual-docstring.txt 1548 2007-02-22 00:25:40Z dvarrazzo $ -->
+<p>Python documentation strings (or <em>docstrings</em>) provide a convenient way of
+associating documentation with Python modules, functions, classes, and methods.
+An object's docsting is defined by including a string constant as the first
+statement in the object's definition. For example, the following function
+defines a docstring:</p>
+<pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">x_intercept</span>(m, b):
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    Return the x intercept of the line y=m*x+b.  The x intercept of a</span>
+<span class="py-string">    line is the point at which it crosses the x axis (y=0).</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    return -b/m</pre>
+<p>Docstrings can be accessed from the interpreter and from Python programs
+using the &quot;<tt class="docutils literal"><span class="pre">__doc__</span></tt>&quot; attribute:</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> x_intercept.__doc__
+    Return the x intercept of the line y=m*x+b.  The x intercept of a
+    line <span class="py-keyword">is</span> the point at which it crosses the x axis (y=0).</pre>
+<p>The <a class="reference" href="http://web.lfw.org/python/pydoc.html">pydoc</a> module, which became part of <a class="reference" href="http://www.python.org/doc/current/lib/module-pydoc.html">the standard library</a> in Python 2.1,
+can be used to display information about a Python object, including its
+docstring:</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> pydoc <span class="py-keyword">import</span> help
+
+<span class="py-prompt">&gt;&gt;&gt; </span>help(x_intercept)
+Help on function x_intercept <span class="py-keyword">in</span> module __main__:
+
+x_intercept(m, b)
+    Return the x intercept of the line y=m*x+b.  The x intercept of a
+    line <span class="py-keyword">is</span> the point at which it crosses the x axis (y=0).</pre>
+<p>For more information about Python docstrings, see the <a class="reference" href="http://www.python.org/doc/current/tut/node6.html#docstrings">Python Tutorial</a> or
+the O'Reilly Network article <a class="reference" href="http://www.onlamp.com/lpt/a/python/2001/05/17/docstrings.html">Python Documentation Tips and Tricks</a>.</p>
+<div class="section" id="variable-docstrings">
+<h2><a class="toc-backref" href="#id37">3.1&nbsp;&nbsp;&nbsp;Variable docstrings</a></h2>
+<!-- [xx] this should be somewhere else, i guess... -->
+<p>Python don't support directly docstrings on variables: there is no attribute
+that can be attached to variables and retrieved interactively like the
+<tt class="docutils literal"><span class="pre">__doc__</span></tt> attribute on modules, classes and functions.</p>
+<p>While the language doesn't directly provides for them, Epydoc supports
+<em>variable docstrings</em>: if a variable assignment statement is immediately
+followed by a bare string literal, then that assignment is treated as a
+docstring for that variable. In classes, variable assignments at the class
+definition level are considered class variables; and assignments to instance
+variables in the constructor (<tt class="docutils literal"><span class="pre">__init__</span></tt>) are considered instance variables:</p>
+<pre class="py-doctest">
+<span class="py-keyword">class</span> <span class="py-defname">A</span>:
+    x = 22
+    <span class="py-string">&quot;&quot;&quot;Docstring for class variable A.x&quot;&quot;&quot;</span>
+
+    <span class="py-keyword">def</span> <span class="py-defname">__init__</span>(self, a):
+        self.y = a
+        <span class="py-string">&quot;&quot;</span>&quot;Docstring <span class="py-keyword">for</span> instance variable A.y</pre>
+<p>Variables may also be documented using <em>comment docstrings</em>. If a variable
+assignment is immediately preceeded by a comment whose lines begin with the
+special marker '<tt class="docutils literal"><span class="pre">#:</span></tt>', or is followed on the same line by such a comment,
+then it is treated as a docstring for that variable:</p>
+<pre class="py-doctest">
+<span class="py-comment">#: docstring for x</span>
+x = 22
+x = 22 <span class="py-comment">#: docstring for x</span></pre>
+<p>Notice that variable docstrings are only available for documentation when the
+source code is available for <em>parsing</em>: it is not possible to retrieve variable</p>
+</div>
+<div class="section" id="items-visibility">
+<h2><a class="toc-backref" href="#id38">3.2&nbsp;&nbsp;&nbsp;Items visibility</a></h2>
+<p>Any Python object (modules, classes, functions, variables...) can be <em>public</em>
+or <em>private</em>. Usually the object name decides the object visibility: objects
+whose name starts with an underscore and doesn't end with an underscore are
+considered private. All the other objects (including the &quot;magic functions&quot; such
+as <tt class="docutils literal"><span class="pre">__add__</span></tt>) are public.</p>
+<p>For each module and class, Epydoc generates pages with both public and private
+methods. A Javascript snippet allows to toggle the visibility of private
+objects.</p>
+<p>If a module wants to hide some of the objects it contains (either defined in
+the module itself or imported from other modules), it can explicitly list the
+names if its <a class="reference" href="http://www.python.org/doc/2.4.3/ref/import.html">public names</a> in the <tt class="docutils literal"><span class="pre">__all__</span></tt> variable.</p>
+<p>If a module defines the <tt class="docutils literal"><span class="pre">__all__</span></tt> variable, Epydoc uses its content to decide
+if the module objects are public or private.</p>
+</div>
+</div>
+<div class="section" id="the-epytext-markup-language">
+<h1><a class="toc-backref" href="#id39">4&nbsp;&nbsp;&nbsp;The Epytext Markup Language</a></h1>
+<!-- $Id: manual-epytext.txt 1547 2007-02-21 17:34:54Z dvarrazzo $ -->
+<div class="section" id="a-brief-introduction">
+<h2><a class="toc-backref" href="#id40">4.1&nbsp;&nbsp;&nbsp;A Brief Introduction</a></h2>
+<p>Epytext is a simple lightweight markup language that lets you add formatting
+and structue to docstrings. Epydoc uses that formatting and structure to
+produce nicely formatted API documentation. The following example (which has
+an unusually high ratio of documentaiton to code) illustrates some of the
+basic features of epytext:</p>
+<pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">x_intercept</span>(m, b):
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    Return the x intercept of the line M{y=m*x+b}.  The X{x intercept}</span>
+<span class="py-string">    of a line is the point at which it crosses the x axis (M{y=0}).</span>
+
+<span class="py-string">    This function can be used in conjuction with L{z_transform} to</span>
+<span class="py-string">    find an arbitrary function's zeros.</span>
+
+<span class="py-string">    @type  m: number</span>
+<span class="py-string">    @param m: The slope of the line.</span>
+<span class="py-string">    @type  b: number</span>
+<span class="py-string">    @param b: The y intercept of the line.  The X{y intercept} of a</span>
+<span class="py-string">              line is the point at which it crosses the y axis (M{x=0}).</span>
+<span class="py-string">    @rtype:   number</span>
+<span class="py-string">    @return:  the x intercept of the line M{y=m*x+b}.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    return -b/m</pre>
+<p>You can compare this function definition with the <a class="reference" href="http://epydoc.sourceforge.net/examples/epytext_example-module.html#x_intercept">API documentation</a>
+generated by epydoc. Note that:</p>
+<ul class="simple">
+<li>Paragraphs are separated by blank lines.</li>
+<li>Inline markup has the form &quot;<em>x</em><tt class="docutils literal"><span class="pre">{</span></tt>...<tt class="docutils literal"><span class="pre">}</span></tt>&quot;, where &quot;<em>x</em>&quot; is a
+single capital letter. This example uses inline markup to mark mathematical
+expressions (&quot;<tt class="docutils literal"><span class="pre">M{...}</span></tt>&quot;); terms that should be indexed (&quot;<tt class="docutils literal"><span class="pre">X{...}</span></tt>&quot;);
+and links to the documentation of other objects (&quot;<tt class="docutils literal"><span class="pre">L{...}</span></tt>&quot;).</li>
+<li>Descriptions of parameters, return values, and types are marked with
+&quot;<tt class="docutils literal"><span class="pre">&#64;</span></tt><em>field</em><tt class="docutils literal"><span class="pre">:</span></tt>&quot; or &quot;<tt class="docutils literal"><span class="pre">&#64;</span></tt><em>field arg</em><tt class="docutils literal"><span class="pre">:</span></tt>&quot;, where &quot;<em>field</em>&quot;
+identifies the kind of description, and &quot;<em>arg</em>&quot; specifies what object is
+described.</li>
+</ul>
+<p>Epytext is intentionally very lightweight. If you wish to use a more
+expressive markup language, I recommend <a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a>.</p>
+</div>
+<div class="section" id="epytext-language-overview">
+<h2><a class="toc-backref" href="#id41">4.2&nbsp;&nbsp;&nbsp;Epytext Language Overview</a></h2>
+<p>Epytext is a lightweight markup language for Python docstrings. The epytext
+markup language is used by epydoc to parse docstrings and create structured API
+documentation. Epytext markup is broken up into the following categories:</p>
+<ul>
+<li><p class="first"><strong>Block Structure</strong> divides the docstring into nested blocks of text, such
+as <em>paragraphs</em> and <em>lists</em>.</p>
+<blockquote>
+<p>o <strong>Basic Blocks</strong> are the basic unit of block structure.</p>
+<p>o <strong>Hierarchical blocks</strong> represent the nesting structure of the docstring.</p>
+</blockquote>
+</li>
+<li><p class="first"><strong>Inline Markup</strong> marks regions of text within a basic block with properties,
+such as italics and hyperlinks.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="block-structure">
+<h2><a class="toc-backref" href="#id42">4.3&nbsp;&nbsp;&nbsp;Block Structure</a></h2>
+<p>Block structure is encoded using indentation, blank lines, and a handful of
+special character sequences.</p>
+<ul class="simple">
+<li>Indentation is used to encode the nesting structure of hierarchical blocks.
+The indentation of a line is defined as the number of leading spaces on that
+line; and the indentation of a block is typically the indentation of its
+first line.</li>
+<li>Blank lines are used to separate blocks. A blank line is a line that only
+contains whitespace.</li>
+<li>Special character sequences are used to mark the beginnings of some blocks.
+For example, '<tt class="docutils literal"><span class="pre">-</span></tt>' is used as a bullet for unordered list items, and
+'<tt class="docutils literal"><span class="pre">&gt;&gt;&gt;</span></tt>' is used to mark <a class="reference" href="#doctest-blocks">doctest blocks</a>.</li>
+</ul>
+<p>The following sections describe how to use each type of block structure.</p>
+<div class="section" id="paragraphs">
+<h3><a class="toc-backref" href="#id43">4.3.1&nbsp;&nbsp;&nbsp;Paragraphs</a></h3>
+<p>A paragraph is the simplest type of basic block. It consists of one or more
+lines of text. Paragraphs must be left justified (i.e., every line must have
+the same indentation). The following example illustrates how paragraphs can be
+used:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    This is a paragraph.  Paragraphs can</span>
+<span class="py-string">    span multiple lines, and can contain</span>
+<span class="py-string">    I{inline markup}.</span>
+
+<span class="py-string">    This is another paragraph.  Paragraphs</span>
+<span class="py-string">    are separated by blank lines.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    *[...]*</pre>
+</td>
+<td><p class="first">This is a paragraph. Paragraphs can span multiple lines,
+and contain <em>inline markup</em>.</p>
+<p class="last">This is another paragraph. Paragraphs are separated from each
+other by blank lines.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="lists">
+<h3><a class="toc-backref" href="#id44">4.3.2&nbsp;&nbsp;&nbsp;Lists</a></h3>
+<p>Epytext supports both ordered and unordered lists. A list consists of one or
+more consecutive <em>list items</em> of the same type (ordered or unordered), with the
+same indentation. Each list item is marked by a <em>bullet</em>. The bullet for
+unordered list items is a single dash character (<tt class="docutils literal"><span class="pre">-</span></tt>). Bullets for ordered
+list items consist of a series of numbers followed by periods, such as
+<tt class="docutils literal"><span class="pre">12.</span></tt> or <tt class="docutils literal"><span class="pre">1.2.8.</span></tt>.</p>
+<p>List items typically consist of a bullet followed by a space and a single
+paragraph. The paragraph may be indented more than the list item's bullet;
+often, the paragraph is intended two or three characters, so that its left
+margin lines up with the right side of the bullet. The following example
+illustrates a simple ordered list.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    1. This is an ordered list item.</span>
+
+<span class="py-string">    2. This is a another ordered list</span>
+<span class="py-string">    item.</span>
+
+<span class="py-string">    3. This is a third list item.  Note that</span>
+<span class="py-string">       the paragraph may be indented more</span>
+<span class="py-string">       than the bullet.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    *[...]*</pre>
+</td>
+<td><ol class="first last arabic simple">
+<li>This is an ordered list item.</li>
+<li>This is another ordered list item.</li>
+<li>This is a third list item. Note that the paragraph may be
+indented more than the bullet.</li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+<p>List items can contain more than one paragraph; and they can also contain
+sublists, <cite>literal blocks</cite>, and <cite>doctest blocks</cite>. All of the blocks contained
+by a list item must all have equal indentation, and that indentation must be
+greater than or equal to the indentation of the list item's bullet. If the
+first contained block is a paragraph, it may appear on the same line as the
+bullet, separated from the bullet by one or more spaces, as shown in the
+previous example. All other block types must follow on separate lines.</p>
+<p>Every list must be separated from surrounding blocks by indentation:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    This is a paragraph.</span>
+<span class="py-string">      1. This is a list item.</span>
+<span class="py-string">      2. This a second list</span>
+<span class="py-string">         item.</span>
+<span class="py-string">           - This is a sublist</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    [...]</pre>
+</td>
+<td><p class="first">This is a paragraph.</p>
+<ol class="last arabic simple">
+<li>This is a list item.</li>
+<li>This is a second list item.<ul>
+<li>This is a sublist.</li>
+</ul>
+</li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Note that sublists must be separated from the blocks in their parent list
+item by indentation. In particular, the following docstring generates an error,
+since the sublist is not separated from the paragraph in its parent list item
+by indentation:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    1. This is a list item.  Its</span>
+<span class="py-string">    paragraph is indented 7 spaces.</span>
+<span class="py-string">    - This is a sublist.  It is</span>
+<span class="py-string">      indented 7 spaces.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><strong>L5: Error: Lists must be indented.</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The following example illustrates how lists can be used:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    This is a paragraph.</span>
+<span class="py-string">      1. This is a list item.</span>
+<span class="py-string">        - This is a sublist.</span>
+<span class="py-string">        - The sublist contains two</span>
+<span class="py-string">          items.</span>
+<span class="py-string">            - The second item of the</span>
+<span class="py-string">              sublist has its own sublist.</span>
+
+<span class="py-string">      2. This list item contains two</span>
+<span class="py-string">         paragraphs and a doctest block.</span>
+
+<span class="py-string">         &gt;&gt;&gt; print 'This is a doctest block'</span>
+<span class="py-string">         This is a doctest block</span>
+
+<span class="py-string">         This is the second paragraph.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><p class="first">This is a paragraph.</p>
+<ol class="last arabic">
+<li><p class="first">This is a list item.</p>
+<ul class="simple">
+<li>This is a sublist.</li>
+<li>The sublist contains two items.<ul>
+<li>The second item of the sublist has its own own sublist.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p class="first">This list item contains two paragraphs and a doctest block.</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> <span class="py-string">'This is a doctest block'</span>
+<span class="py-output">This is a doctest block</span></pre>
+<p>This is the second paragraph.</p>
+</li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Epytext will treat any line that begins with a bullet as a list item. If you
+want to include bullet-like text in a paragraph, then you must either ensure
+that it is not at the beginning of the line, or use <a class="reference" href="#escaping">escaping</a> to prevent
+epytext from treating it as markup:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    This sentence ends with the number</span>
+<span class="py-string">    1.  Epytext can't tell if the &quot;1.&quot;</span>
+<span class="py-string">    is a bullet or part of the paragraph,</span>
+<span class="py-string">    so it generates an error.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><strong>L4: Error: Lists must be indented.</strong></td>
+</tr>
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    This sentence ends with the number 1.</span>
+
+<span class="py-string">    This sentence ends with the number</span>
+<span class="py-string">    E{1}.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><p class="first">This sentence ends with the number 1.</p>
+<p class="last">This sentence ends with the number 1.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="sections">
+<h3><a class="toc-backref" href="#id45">4.3.3&nbsp;&nbsp;&nbsp;Sections</a></h3>
+<p>A section consists of a heading followed by one or more child blocks.</p>
+<ul class="simple">
+<li>The heading is a single underlined line of text. Top-level section headings
+are underlined with the '<tt class="docutils literal"><span class="pre">=</span></tt>' character; subsection headings are
+underlined with the '<tt class="docutils literal"><span class="pre">-</span></tt>' character; and subsubsection headings are
+underlined with the '<tt class="docutils literal"><span class="pre">~</span></tt>' character. The length of the underline must
+exactly match the length of the heading.</li>
+<li>The child blocks can be paragraphs, lists, literal blocks, doctest blocks,
+or sections. Each child must have equal indentation, and that indentation
+must be greater than or equal to the heading's indentation.</li>
+</ul>
+<p>The following example illustrates how sections can be used:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    This paragraph is not in any section.</span>
+
+<span class="py-string">    Section 1</span>
+<span class="py-string">    =========</span>
+<span class="py-string">      This is a paragraph in section 1.</span>
+
+<span class="py-string">      Section 1.1</span>
+<span class="py-string">      -----------</span>
+<span class="py-string">      This is a paragraph in section 1.1.</span>
+
+<span class="py-string">    Section 2</span>
+<span class="py-string">    =========</span>
+<span class="py-string">      This is a paragraph in section 2.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><p class="h1 first">Section 1</p>
+<p>This is a paragraph in section 1.</p>
+<p class="h2">Section 1.1</p>
+<p>This is a paragraph in section 1.1.</p>
+<p class="h1">Section 2</p>
+<p class="last">This is a paragraph in section 2.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="literal-blocks">
+<h3><a class="toc-backref" href="#id46">4.3.4&nbsp;&nbsp;&nbsp;Literal Blocks</a></h3>
+<p>Literal blocks are used to represent &quot;preformatted&quot; text. Everything within a
+literal block should be displayed exactly as it appears in plaintext. In
+particular:</p>
+<ul class="simple">
+<li>Spaces and newlines are preserved.</li>
+<li>Text is shown in a monospaced font.</li>
+<li>Inline markup is not detected.</li>
+</ul>
+<p>Literal blocks are introduced by paragraphs ending in the special sequence
+&quot;<tt class="docutils literal"><span class="pre">::</span></tt>&quot;. Literal blocks end at the first line whose indentation is equal to
+or less than that of the paragraph that introduces them. The following example
+shows how literal blocks can be used:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    The following is a literal block::</span>
+
+<span class="py-string">        Literal /</span>
+<span class="py-string">               / Block</span>
+
+<span class="py-string">    This is a paragraph following the</span>
+<span class="py-string">    literal block.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><p class="first">The following is a literal block:</p>
+<pre class="literal-block">
+Literal /
+       / Block
+</pre>
+<p class="last">This is a paragraph following the literal block.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Literal blocks are indented relative to the paragraphs that introduce them;
+for example, in the previous example, the word &quot;Literal&quot; is displayed with four
+leading spaces, not eight. Also, note that the double colon (&quot;<tt class="docutils literal"><span class="pre">::</span></tt>&quot;) that
+introduces the literal block is rendered as a single colon.</p>
+</div>
+<div class="section" id="doctest-blocks">
+<h3><a class="toc-backref" href="#id47">4.3.5&nbsp;&nbsp;&nbsp;Doctest Blocks</a></h3>
+<p>Doctest blocks contain examples consisting of Python expressions and their
+output. Doctest blocks can be used by the doctest module to test the
+documented object. Doctest blocks begin with the special sequence
+&quot;<tt class="docutils literal"><span class="pre">&gt;&gt;&gt;</span></tt>&quot;. Doctest blocks are delimited from surrounding blocks by blank lines.
+Doctest blocks may not contain blank lines. The following example shows how
+doctest blocks can be used:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    The following is a doctest block:</span>
+
+<span class="py-string">        &gt;&gt;&gt; print (1+3,</span>
+<span class="py-more">    </span><span class="py-string">    ...        3+5)</span>
+<span class="py-string">        (4, 8)</span>
+<span class="py-string">        &gt;&gt;&gt; 'a-b-c-d-e'.split('-')</span>
+<span class="py-string">        ['a', 'b', 'c', 'd', 'e']</span>
+
+<span class="py-string">    This is a paragraph following the</span>
+<span class="py-string">    doctest block.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><p class="first">The following is a doctest block:</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> (1+3,
+<span class="py-more">... </span>       3+5)
+<span class="py-output">(4, 8)</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span><span class="py-string">'a-b-c-d-e'</span>.split(<span class="py-string">'-'</span>)
+<span class="py-output">['a', 'b', 'c', 'd', 'e']</span></pre>
+<p class="last">This is a paragraph following the doctest block.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="fields">
+<h3><a class="toc-backref" href="#id48">4.3.6&nbsp;&nbsp;&nbsp;Fields</a></h3>
+<p>Fields are used to describe specific properties of a documented object. For
+example, fields can be used to define the parameters and return value of a
+function; the instance variables of a class; and the author of a module. Each
+field is marked by a <em>field tag</em>, which consist of an at sign ('<tt class="docutils literal"><span class="pre">&#64;</span></tt>')
+followed by a <em>field name</em>, optionally followed by a space and a <em>field
+argument</em>, followed by a colon ('<tt class="docutils literal"><span class="pre">:</span></tt>'). For example, '<tt class="docutils literal"><span class="pre">&#64;return:</span></tt>' and
+'<tt class="docutils literal"><span class="pre">&#64;param</span> <span class="pre">x:</span></tt>' are field tags.</p>
+<p>Fields can contain paragraphs, lists, literal blocks, and doctest blocks.
+All of the blocks contained by a field must all have equal indentation, and
+that indentation must be greater than or equal to the indentation of the
+field's tag. If the first contained block is a paragraph, it may appear on the
+same line as the field tag, separated from the field tag by one or more spaces.
+All other block types must follow on separate lines.</p>
+<p>Fields must be placed at the end of the docstring, after the description of
+the object. Fields may be included in any order.</p>
+<p>Fields do not need to be separated from other blocks by a blank line. Any line
+that begins with a field tag followed by a space or newline is considered a
+field.</p>
+<p>The following example illustrates how fields can be used:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    @param x: This is a description of</span>
+<span class="py-string">        the parameter x to a function.</span>
+<span class="py-string">        Note that the description is</span>
+<span class="py-string">        indented four spaces.</span>
+<span class="py-string">    @type x: This is a description of</span>
+<span class="py-string">        x's type.</span>
+<span class="py-string">    @return: This is a description of</span>
+<span class="py-string">        the function's return value.</span>
+
+<span class="py-string">        It contains two paragraphs.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><dl class="first last docutils">
+<dt><strong>Parameters:</strong></dt>
+<dd><p class="first"><strong>x</strong> - This is a description of the parameter x to a function.
+Note that the description is indented four spaces.</p>
+<blockquote class="last">
+<em>(type=This is a description of x's type.)</em></blockquote>
+</dd>
+<dt><strong>Returns:</strong></dt>
+<dd><p class="first">This is a description of the function's return value.</p>
+<p class="last">It contains two paragraphs.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p>For a list of the fields that are supported by epydoc, see the <cite>epydoc fields</cite>
+chapter.</p>
+</div>
+</div>
+<div class="section" id="inline-markup">
+<h2><a class="toc-backref" href="#id49">4.4&nbsp;&nbsp;&nbsp;Inline Markup</a></h2>
+<p>Inline markup has the form '<tt class="docutils literal"><span class="pre">x{...}</span></tt>', where <tt class="docutils literal"><span class="pre">x</span></tt> is a single capital letter
+that specifies how the text between the braces should be rendered. Inline
+markup is recognized within paragraphs and section headings. It is <em>not</em>
+recognized within literal and doctest blocks. Inline markup can contain
+multiple words, and can span multiple lines. Inline markup may be nested.</p>
+<p>A matching pair of curly braces is only interpreted as inline markup if the
+left brace is immediately preceeded by a capital letter. So in most cases, you
+can use curly braces in your text without any form of escaping. However, you do
+need to escape curly braces when:</p>
+<ol class="arabic simple">
+<li>You want to include a single (un-matched) curly brace.</li>
+<li>You want to preceed a matched pair of curly braces with a capital letter.</li>
+</ol>
+<p>Note that there is no valid Python expression where a pair of matched curly
+braces is immediately preceeded by a capital letter (except within string
+literals). In particular, you never need to escape braces when writing Python
+dictionaries. See also <a class="reference" href="#escaping">escaping</a>.</p>
+<div class="section" id="basic-inline-markup">
+<h3><a class="toc-backref" href="#id50">4.4.1&nbsp;&nbsp;&nbsp;Basic Inline Markup</a></h3>
+<blockquote>
+Epytext defines four types of inline markup that specify how text should be
+displayed:</blockquote>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">I{...}</span></tt>: Italicized text.</li>
+<li><tt class="docutils literal"><span class="pre">B{...}</span></tt>: Bold-faced text.</li>
+<li><tt class="docutils literal"><span class="pre">C{...}</span></tt>: Source code or a Python identifier.</li>
+<li><tt class="docutils literal"><span class="pre">M{...}</span></tt>: A mathematical expression.</li>
+</ul>
+<p>By default, source code is rendered in a fixed width font; and mathematical
+expressions are rendered in italics. But those defaults may be changed by
+modifying the CSS stylesheet. The following example illustrates how the four
+basic markup types can be used:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    I{B{Inline markup} may be nested; and</span>
+<span class="py-string">    it may span} multiple lines.</span>
+
+<span class="py-string">      - I{Italicized text}</span>
+<span class="py-string">      - B{Bold-faced text}</span>
+<span class="py-string">      - C{Source code}</span>
+<span class="py-string">      - M{Math}</span>
+
+<span class="py-string">    Without the capital letter, matching</span>
+<span class="py-string">    braces are not interpreted as markup:</span>
+<span class="py-string">    C{my_dict={1:2, 3:4}}.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><p class="first"><strong>Inline markup</strong> <em>may be nested</em>; and it may span  multiple lines.</p>
+<ul class="simple">
+<li><em>Italicized text</em></li>
+<li><strong>Bold-faced text</strong></li>
+<li><tt class="docutils literal"><span class="pre">Source</span> <span class="pre">code</span></tt></li>
+<li>Math: <em>m*x+b</em></li>
+</ul>
+<p class="last">Without the capital letter, matching braces are not interpreted as
+markup: <tt class="docutils literal"><span class="pre">my_dict={1:2,</span> <span class="pre">3:4}</span></tt>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="urls">
+<h3><a class="toc-backref" href="#id51">4.4.2&nbsp;&nbsp;&nbsp;URLs</a></h3>
+<p>The inline markup construct <tt class="docutils literal"><span class="pre">U{</span></tt><em>text&lt;url&gt;</em><tt class="docutils literal"><span class="pre">}</span></tt> is used to create links
+to external URLs and URIs. '<em>text</em>' is the text that should be displayed for
+the link, and '<em>url</em>' is the target of the link. If you wish to use the URL as
+the text for the link, you can simply write &quot;<tt class="docutils literal"><span class="pre">U{</span></tt><em>url</em><tt class="docutils literal"><span class="pre">}</span></tt>&quot;. Whitespace
+within URL targets is ignored. In particular, URL targets may be split over
+multiple lines. The following example illustrates how URLs can be used:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    - U{www.python.org}</span>
+<span class="py-string">    - U{http://www.python.org}</span>
+<span class="py-string">    - U{The epydoc homepage&lt;http://</span>
+<span class="py-string">    epydoc.sourceforge.net&gt;}</span>
+<span class="py-string">    - U{The B{Python} homepage</span>
+<span class="py-string">    &lt;www.python.org&gt;}</span>
+<span class="py-string">    - U{Edward Loper&lt;mailto:edloper@</span>
+<span class="py-string">    gradient.cis.upenn.edu&gt;}</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><ul class="first last simple">
+<li><a class="reference" href="http://www.python.org">www.python.org</a></li>
+<li><a class="reference" href="http://www.python.org">http://www.python.org</a></li>
+<li><a class="reference" href="http://epydoc.sourceforge.net">The epydoc homepage</a></li>
+<li><a class="reference" href="http://www.python.org">The <strong>Python</strong> homepage</a></li>
+<li><a class="reference" href="mailto:edloper&#64;gradient.cis.upenn.edu">Edward Loper</a></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="documentation-crossreference-links">
+<h3><a class="toc-backref" href="#id52">4.4.3&nbsp;&nbsp;&nbsp;Documentation Crossreference Links</a></h3>
+<p>The inline markup construct '<tt class="docutils literal"><span class="pre">L{</span></tt><em>text&lt;object&gt;</em><tt class="docutils literal"><span class="pre">}</span></tt>' is used to create
+links to the documentation for other Python objects. '<em>text</em>' is the text that
+should be displayed for the link, and '<em>object</em>' is the name of the Python
+object that should be linked to. If you wish to use the name of the Python
+object as the text for the link, you can simply write <tt class="docutils literal"><span class="pre">L{</span></tt><em>object</em>}``.
+Whitespace within object names is ignored. In particular, object names may be
+split over multiple lines. The following example illustrates how documentation
+crossreference links can be used:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    - L{x_transform}</span>
+<span class="py-string">    - L{search&lt;re.search&gt;}</span>
+<span class="py-string">    - L{The I{x-transform} function</span>
+<span class="py-string">    &lt;x_transform&gt;}</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><ul class="first last simple">
+<li><a class="reference" href="http://www.example.com">x_transform</a></li>
+<li><a class="reference" href="http://www.example.com">search</a></li>
+<li><a class="reference" href="http://www.example.com">The x-transform function</a></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>In order to find the object that corresponds to a given name, epydoc checks the
+following locations, in order:</p>
+<ol class="arabic simple">
+<li>If the link is made from a class or method docstring, then epydoc checks for
+a method, instance variable, or class variable with the given name.</li>
+<li>Next, epydoc looks for an object with the given name in the current module.</li>
+<li>Epydoc then tries to import the given name as a module. If the current
+module is contained in a package, then epydoc will also try importing the
+given name from all packages containing the current module.</li>
+<li>Epydoc then tries to divide the given name into a module name and an
+object name, and to import the object from the module. If the current module
+is contained in a package, then epydoc will also try importing the module
+name from all packages containing the current module.</li>
+<li>Finally, epydoc looks for a class name in any module with the given name.
+This is only returned if there is a single class with such name.</li>
+</ol>
+<p>If no object is found that corresponds with the given name, then epydoc
+issues a warning.</p>
+</div>
+<div class="section" id="indexed-terms">
+<h3><a class="toc-backref" href="#id53">4.4.4&nbsp;&nbsp;&nbsp;Indexed Terms</a></h3>
+<p>Epydoc automatically creates an index of term definitions for the API
+documentation. The inline markup construct '<tt class="docutils literal"><span class="pre">X{...}</span></tt>' is used to mark terms
+for inclusion in the index. The term itself will be italicized; and a link will
+be created from the index page to the location of the term in the text. The
+following example illustrates how index terms can be used:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    An X{index term} is a term that</span>
+<span class="py-string">    should be included in the index.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><p class="first">An <em>index term</em> is a term that should be included in the index.</p>
+<blockquote class="last">
+<table border="1" class="docutils">
+<colgroup>
+<col width="46%" />
+<col width="54%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head" colspan="2">Index</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>index term</td>
+<td><em>example</em></td>
+</tr>
+<tr><td>x intercept</td>
+<td><em>x_intercept</em></td>
+</tr>
+<tr><td>y intercept</td>
+<td><em>x_intercept</em></td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="symbols">
+<h3><a class="toc-backref" href="#id54">4.4.5&nbsp;&nbsp;&nbsp;Symbols</a></h3>
+<p>Symbols are used to insert special characters in your documentation. A symbol
+has the form '<tt class="docutils literal"><span class="pre">S{code}</span></tt>', where code is a symbol code that specifies what
+character should be produced. The following example illustrates how symbols can
+be used to generate special characters:</p>
+<!-- This data file has been placed in the public domain. -->
+<!-- Derived from the Unicode character mappings available from
+<http://www.w3.org/2003/entities/xml/>.
+Processed by unicode2rstsubs.py, part of Docutils:
+<http://docutils.sourceforge.net>. -->
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    Symbols can be used in equations:</span>
+
+<span class="py-string">      - S{sum}S{alpha}/x S{&lt;=} S{beta}</span>
+
+<span class="py-string">    S{&lt;-} and S{larr} both give left</span>
+<span class="py-string">    arrows.  Some other arrows are</span>
+<span class="py-string">    S{rarr}, S{uarr}, and S{darr}.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><p class="first">Symbols can be used in equations:</p>
+<ul class="simple">
+<li>&#8721; &#945;/<em>x</em> &#8804; &#946;</li>
+</ul>
+<p class="last">&#8592; and &#8592; both give left
+arrows.  Some other arrows are
+&#8594;, &#8593;, and &#8595;.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Although symbols can be quite useful, you should keep in mind that they can
+make it harder to read your docstring in plaintext. In general, symbols should
+be used sparingly. For a complete list of the symbols that are currently
+supported, see the reference documentation for <a class="reference" href="http://epydoc.sourceforge.net/api/epydoc.markup.epytext-module.html#SYMBOLS"><tt class="docutils literal"><span class="pre">epytext.SYMBOLS</span></tt></a>.</p>
+</div>
+<div class="section" id="escaping">
+<h3><a class="toc-backref" href="#id55">4.4.6&nbsp;&nbsp;&nbsp;Escaping</a></h3>
+<p>Escaping is used to write text that would otherwise be interpreted as epytext
+markup. Epytext was carefully constructed to minimize the need for this type
+of escaping; but sometimes, it is unavoidable. Escaped text has the form
+'<tt class="docutils literal"><span class="pre">E{</span></tt><em>code</em><tt class="docutils literal"><span class="pre">}</span></tt>', where code is an escape code that specifies what
+character should be produced. If the escape code is a single character (other
+than '<tt class="docutils literal"><span class="pre">{</span></tt>' or '<tt class="docutils literal"><span class="pre">}</span></tt>'), then that character is produced. For example, to
+begin a paragraph with a dash (which would normally signal a list item), write
+'<tt class="docutils literal"><span class="pre">E{-}</span></tt>'. In addition, two special escape codes are defined: '<tt class="docutils literal"><span class="pre">E{lb}</span></tt>'
+produces a left curly brace ('<tt class="docutils literal"><span class="pre">{</span></tt>'); and '<tt class="docutils literal"><span class="pre">E{rb}</span></tt>' produces a right curly
+brace ('<tt class="docutils literal"><span class="pre">}</span></tt>'). The following example illustrates how escaping can be used:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    This paragraph ends with two</span>
+<span class="py-string">    colons, but does not introduce</span>
+<span class="py-string">    a literal blockE{:}E{:}</span>
+
+<span class="py-string">    E{-} This is not a list item.</span>
+
+<span class="py-string">    Escapes can be used to write</span>
+<span class="py-string">    unmatched curly braces:</span>
+<span class="py-string">    E{rb}E{lb}</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><p class="first">This paragraph ends with two colons, but does not introduce a literal
+block::</p>
+<p>- This is not a list item.</p>
+<p class="last">Escapes can be used to write unmatched curly braces: }{</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="graphs">
+<h3><a class="toc-backref" href="#id56">4.4.7&nbsp;&nbsp;&nbsp;Graphs</a></h3>
+<p>The inline markup construct '<tt class="docutils literal"><span class="pre">G{</span></tt><em>graphtype args...</em><tt class="docutils literal"><span class="pre">}</span></tt>' is used to
+insert automatically generated graphs. The following graphs generation
+constructions are currently defines:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Markup</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal"><span class="pre">G{classtree</span></tt>  <em>classes...</em><tt class="docutils literal"><span class="pre">}</span></tt></td>
+<td>Display a class hierarchy for the given
+class or classes (including all
+superclasses &amp; subclasses). If no class
+is specified, and the directive is used
+in a class's docstring, then that
+class's class hierarchy will be
+displayed.</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">G{packagetree</span></tt>  <em>modules...</em><tt class="docutils literal"><span class="pre">}</span></tt></td>
+<td>Display a package hierarchy for the
+given module or modules (including all
+subpackages and submodules). If no
+module is specified, and the directive
+is used in a module's docstring, then
+that module's package hierarchy will be
+displayed.</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">G{importgraph</span></tt>  <em>modules...</em><tt class="docutils literal"><span class="pre">}</span></tt></td>
+<td>Display an import graph for the given
+module or modules. If no module is
+specified, and the directive is used in
+a module's docstring, then that
+module's import graph will be
+displayed.</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">G{callgraph</span></tt>  <em>functions...</em><tt class="docutils literal"><span class="pre">}</span></tt></td>
+<td>Display a call graph for the given
+function or functions. If no function
+is specified, and the directive is used
+in a function's docstring, then that
+function's call graph will be
+displayed.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="characters">
+<h2><a class="toc-backref" href="#id57">4.5&nbsp;&nbsp;&nbsp;Characters</a></h2>
+<div class="section" id="valid-characters">
+<h3><a class="toc-backref" href="#id58">4.5.1&nbsp;&nbsp;&nbsp;Valid Characters</a></h3>
+<p>Valid characters for an epytext docstring are space (<tt class="docutils literal"><span class="pre">\040</span></tt>); newline
+(<tt class="docutils literal"><span class="pre">\012</span></tt>); and any letter, digit, or punctuation, as defined by the current
+locale. Control characters (<tt class="docutils literal"><span class="pre">\000</span></tt>-<tt class="docutils literal"><span class="pre">\010`</span> <span class="pre">and</span> <span class="pre">``\013</span></tt>-<tt class="docutils literal"><span class="pre">\037</span></tt>) are not
+valid content characters. Tabs (<tt class="docutils literal"><span class="pre">\011</span></tt>) are expanded to spaces, using the
+same algorithm used by the Python parser. Carridge-return/newline pairs
+(<tt class="docutils literal"><span class="pre">\015\012</span></tt>) are converted to newlines.</p>
+</div>
+<div class="section" id="content-characters">
+<h3><a class="toc-backref" href="#id59">4.5.2&nbsp;&nbsp;&nbsp;Content Characters</a></h3>
+<p>Characters in a docstring that are not involved in markup are called <em>content characters</em>. Content characters are always displayed as-is. In particular, HTML
+codes are not passed through. For example, consider the following example:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    &lt;B&gt;test&lt;/B&gt;</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td>&lt;B&gt;test&lt;/B&gt;</td>
+</tr>
+</tbody>
+</table>
+<p>The docstring is rendered as <tt class="docutils literal"><span class="pre">&lt;B&gt;test&lt;/B&gt;</span></tt>, and not as the word &quot;test&quot; in
+bold face.</p>
+</div>
+<div class="section" id="spaces-and-newlines">
+<h3><a class="toc-backref" href="#id60">4.5.3&nbsp;&nbsp;&nbsp;Spaces and Newlines</a></h3>
+<p>In general, spaces and newlines within docstrings are treated as soft spaces.
+In other words, sequences of spaces and newlines (that do not contain a blank
+line) are rendered as a single space, and words may wrapped at spaces. However,
+within literal blocks and doctest blocks, spaces and newlines are preserved,
+and no word-wrapping occurs; and within URL targets and documentation link
+targets, whitespace is ignored.</p>
+</div>
+</div>
+</div>
+<div class="section" id="epydoc-fields">
+<h1><a class="toc-backref" href="#id61">5&nbsp;&nbsp;&nbsp;Epydoc Fields</a></h1>
+<!-- $Id: manual-fields.txt 1554 2007-02-27 03:31:56Z edloper $ -->
+<p>Fields are used to describe specific properties of a documented object. For
+example, fields can be used to define the parameters and return value of a
+function; the instance variables of a class; and the author of a module. Each
+field consists of a <em>tag</em>, an optional <em>argument</em>, and a <em>body</em>.</p>
+<ul class="simple">
+<li>The <em>tag</em> is a case-insensitive word that indicates what kind of
+documentation is given by the field.</li>
+<li>The optional <em>argument</em> specifies what object, parameter, or group is
+documented by the field.</li>
+<li>The <em>body</em> contains the main contents of the field.</li>
+</ul>
+<div class="section" id="field-markup">
+<h2><a class="toc-backref" href="#id62">5.1&nbsp;&nbsp;&nbsp;Field Markup</a></h2>
+<p>Each docstring markup langauge marks fields differently. The following table
+shows the basic fields syntax for each markup language. For more information,
+see the definition of field syntax for each markup language.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Epytext</th>
+<th class="head">reStructuredText</th>
+<th class="head">Javadoc</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="first last literal-block">
+&#64;<em>tag</em>: <em>body</em>...
+&#64;<em>tag</em> <em>arg</em>: <em>body</em>...
+</pre>
+</td>
+<td><pre class="first last literal-block">
+:<em>tag</em>: <em>body</em>...
+:<em>tag</em> <em>arg</em>: <em>body</em>...
+</pre>
+</td>
+<td><pre class="first last literal-block">
+&#64;<em>tag</em> <em>body</em>...
+&#64;<em>tag</em> <em>arg</em> <em>body</em>...
+</pre>
+</td>
+</tr>
+<tr><td><a class="reference" href="#fields">Definition of epytext fields</a></td>
+<td><a class="reference" href="http://docutils.sourceforge.net/spec/rst/reStructuredText.html#field-lists">Definition of ReStructuredText fields</a></td>
+<td><a class="reference" href="http://java.sun.com/j2se/1.4.2/docs/tooldocs/solaris/javadoc.html#javadoctags">Definition of Javadoc fields</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="supported-fields">
+<h2><a class="toc-backref" href="#id63">5.2&nbsp;&nbsp;&nbsp;Supported Fields</a></h2>
+<p>The following table lists the fields that epydoc currently recognizes. Field
+tags are written using epytext markup; if you are using a different markup
+language, then you should adjust the markup accordingly.</p>
+<div class="section" id="functions-and-methods-parameters">
+<h3><a class="toc-backref" href="#id64">5.2.1&nbsp;&nbsp;&nbsp;Functions and Methods parameters</a></h3>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;param</span></tt> <em>p</em>: ...</dt>
+<dd>A description of the parameter <em>p</em> for a function or method.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;type</span></tt> <em>p</em>: ...</dt>
+<dd>The expected type for the parameter <em>p</em>.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;return</span></tt>: ...</dt>
+<dd>The return value for a function or method.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;rtype</span></tt>: ...</dt>
+<dd>The type of the return value for a function or method.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;keyword</span></tt> <em>p</em>: ...</dt>
+<dd>A description of the keyword parameter <em>p</em>.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;raise</span></tt> <em>e</em>: ...</dt>
+<dd>A description of the circumstances under which a function or method
+raises exception <em>e</em>.</dd>
+</dl>
+<p>These tags can be used to specify attributes of parameters and return value
+of function and methods. These tags are usually put in the the docstring of the
+function to be documented.</p>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p><strong>constructor parameters</strong></p>
+<p class="last">In C extension modules, extension classes cannot have a docstring attached
+to the <tt class="docutils literal"><span class="pre">__init__</span></tt> function; consequently it is not possible to document
+parameters and exceptions raised by the class constructor. To overcome this
+shortcoming, the tags <tt class="docutils literal"><span class="pre">&#64;param</span></tt>, <tt class="docutils literal"><span class="pre">&#64;keyword</span></tt>, <tt class="docutils literal"><span class="pre">&#64;type</span></tt>, <tt class="docutils literal"><span class="pre">&#64;exception</span></tt>
+are also allowed to appear in the class docstring. In this case they refer
+to constructor parameters.</p>
+</div>
+<p><tt class="docutils literal"><span class="pre">&#64;param</span></tt> fields should be used to document any explicit parameter
+(including the keyword parameter). <tt class="docutils literal"><span class="pre">&#64;keyword</span></tt> fields should only be used
+for non-explicit keyword parameters:</p>
+<pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">plant</span>(seed, *tools, **options):
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    @param seed: The seed that should be planted.</span>
+<span class="py-string">    @param tools: Tools that should be used to plant the seed.</span>
+<span class="py-string">    @param options: Any extra options for the planting.</span>
+
+<span class="py-string">    @keyword dig_deep: Plant the seed deep under ground.</span>
+<span class="py-string">    @keyword soak: Soak the seed before planting it.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+<p>Since the <tt class="docutils literal"><span class="pre">&#64;type</span></tt> field allows for arbitrary text, it does not
+automatically create a crossreference link to the specified type, and is
+not written in fixed-width font by default. If you want to create a
+crossreference link to the type, or to write the type in a fixed-width
+font, then you must use inline markup:</p>
+<pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">ponder</span>(person, time):
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    @param person: Who should think.</span>
+<span class="py-string">    @type person: L{Person} or L{Animal}</span>
+<span class="py-string">    @param time: How long they should think.</span>
+<span class="py-string">    @type time: C{int} or C{float}</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</div>
+<div class="section" id="variables-parameters">
+<h3><a class="toc-backref" href="#id65">5.2.2&nbsp;&nbsp;&nbsp;Variables parameters</a></h3>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;ivar</span></tt> <em>v</em>: ...</dt>
+<dd>A description of the class instance variable <em>v</em>.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;cvar</span></tt> <em>v</em>: ...</dt>
+<dd>A description of the static class variable <em>v</em>.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;var</span></tt> <em>v</em>: ...</dt>
+<dd>A description of the module variable <em>v</em>.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;type</span></tt> <em>v</em>: ...</dt>
+<dd>The type of the variable <em>v</em>.</dd>
+</dl>
+<p>These tags are usually put in a module or class docstring. If the sources can
+be parsed by Epydoc it is also possible to document the variable in their own
+docstrings: see <a class="reference" href="#variable-docstrings">variable docstrings</a></p>
+<p>Epydoc considers class variables the ones defined directly defined in the
+class body. A common Python idiom is to create instance variables settings
+their default value in the class instead of the constructor (hopefully if the
+default is immutable...).</p>
+<p>If you want to force Epydoc to classify as instance variable one whose default
+value is set at class level, you can describe it using the tag <tt class="docutils literal"><span class="pre">&#64;ivar</span></tt> in the
+context of a variable docstring:</p>
+<pre class="py-doctest">
+<span class="py-keyword">class</span> <span class="py-defname">B</span>:
+    y = 42
+    <span class="py-string">&quot;&quot;&quot;@ivar: This is an instance variable.&quot;&quot;&quot;</span></pre>
+</div>
+<div class="section" id="properties-parameters">
+<h3><a class="toc-backref" href="#id66">5.2.3&nbsp;&nbsp;&nbsp;Properties parameters</a></h3>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;type</span></tt>: ...</dt>
+<dd>The type of the property.</dd>
+</dl>
+<p>The <tt class="docutils literal"><span class="pre">&#64;type</span></tt> tag can be attached toa property docstring to specify its type.</p>
+</div>
+<div class="section" id="grouping-and-sorting">
+<h3><a class="toc-backref" href="#id67">5.2.4&nbsp;&nbsp;&nbsp;Grouping and Sorting</a></h3>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;group</span></tt> <em>g</em>: <em>c1,...,cn</em></dt>
+<dd>Organizes a set of related children of a module or class into a group.
+<em>g</em> is the name of the group; and <em>c1,...,cn</em> are the names of the
+children in the group. To define multiple groups, use multiple group
+fields.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;sort</span></tt>: <em>c1,...,cn</em></dt>
+<dd>Specifies the sort order for the children of a module or class.
+<em>c1,...,cn</em> are the names of the children, in the order in which they
+should appear. Any children that are not included in this list will
+appear after the children from this list, in alphabetical order.</dd>
+</dl>
+<p>These tags can be used to present groups of related items in a logical way.
+They apply to modules and classes docstrings.</p>
+<p>For the <tt class="docutils literal"><span class="pre">&#64;group</span></tt> and <tt class="docutils literal"><span class="pre">&#64;sort</span></tt> tags, asterisks (<tt class="docutils literal"><span class="pre">*</span></tt>) can be used to
+specify multiple children at once. An asterisk in a child name will match
+any substring:</p>
+<pre class="py-doctest">
+<span class="py-keyword">class</span> <span class="py-defname">widget</span>(size, weight, age):
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    @group Tools: zip, zap, *_tool</span>
+<span class="py-string">    @group Accessors: get_*</span>
+<span class="py-string">    @sort: get_*, set_*, unpack_*, cut</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p><strong>group markers</strong></p>
+<p>It is also possible to group set of related items enclosing them
+into special comment starting with the <em>group markers</em> '<tt class="docutils literal"><span class="pre">#{</span></tt>' and '<tt class="docutils literal"><span class="pre">#}</span></tt>'
+The group title can be specified after the opening group marker. Example:</p>
+<pre class="py-doctest">
+<span class="py-comment">#{ Database access functions</span>
+
+<span class="py-keyword">def</span> <span class="py-defname">read</span>(id):
+    <span class="py-comment">#[...]</span>
+
+<span class="py-keyword">def</span> <span class="py-defname">store</span>(item):
+    <span class="py-comment">#[...]</span>
+
+<span class="py-keyword">def</span> <span class="py-defname">delete</span>(id):
+    <span class="py-comment">#[...]</span>
+
+<span class="py-comment"># groups can't be nested, so a closing marker is not required here.</span>
+
+<span class="py-comment">#{ Web publish functions</span>
+
+<span class="py-keyword">def</span> <span class="py-defname">get</span>(request):
+    <span class="py-comment">#[...]</span>
+
+<span class="py-keyword">def</span> <span class="py-defname">post</span>(request):
+    <span class="py-comment">#[...]</span>
+
+<span class="py-comment">#}</span></pre>
+</div>
+</div>
+<div class="section" id="notes-and-warnings">
+<h3><a class="toc-backref" href="#id68">5.2.5&nbsp;&nbsp;&nbsp;Notes and Warnings</a></h3>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;note</span></tt>: ...</dt>
+<dd>A note about an object. Multiple note fields may be used to list
+separate notes.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;attention</span></tt>: ...</dt>
+<dd>An important note about an object. Multiple attention fields may be
+used to list separate notes.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;bug</span></tt>: ...</dt>
+<dd><p class="first">A description of a bug in an object. Multiple bug fields may be used to
+report separate bugs.</p>
+<div class="note last">
+<p class="first admonition-title">Note</p>
+<p class="last">If any <tt class="docutils literal"><span class="pre">&#64;bug</span></tt> field is used, the HTML writer will generate a the page
+<tt class="docutils literal"><span class="pre">bug-index.html</span></tt>, containing links to all the items tagged with
+the field.</p>
+</div>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;warning</span></tt>: ...</dt>
+<dd>A warning about an object. Multiple warning fields may be used to
+report separate warnings.</dd>
+</dl>
+</div>
+<div class="section" id="status">
+<h3><a class="toc-backref" href="#id69">5.2.6&nbsp;&nbsp;&nbsp;Status</a></h3>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;version</span></tt>: ...</dt>
+<dd>The current version of an object.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;todo</span></tt> [<em>ver</em>]: ...</dt>
+<dd><p class="first">A planned change to an object. If the optional argument ver is given,
+then it specifies the version for which the change will be made.
+Multiple todo fields may be used if multiple changes are planned.</p>
+<div class="note last">
+<p class="first admonition-title">Note</p>
+<p class="last">If any <tt class="docutils literal"><span class="pre">&#64;todo</span></tt> field is used, the HTML writer will generate a the
+page <tt class="docutils literal"><span class="pre">todo-index.html</span></tt>, containing links to all the items tagged
+with the field.</p>
+</div>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;deprecated</span></tt>: ...</dt>
+<dd>Indicates that an object is deprecated. The body of the field describe
+the reason why the object is deprecated.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;since</span></tt>: ...</dt>
+<dd>The date or version when an object was first introduced.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;status</span></tt>: ...</dt>
+<dd>The current status of an object.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;change</span></tt>: ...</dt>
+<dd>A change log entry for this object.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;permission</span></tt>: ...</dt>
+<dd>The object access permission, for systems such Zope/Plone supporting
+this concept. It may be used more than once to specify multiple
+permissions.</dd>
+</dl>
+</div>
+<div class="section" id="formal-conditions">
+<h3><a class="toc-backref" href="#id70">5.2.7&nbsp;&nbsp;&nbsp;Formal Conditions</a></h3>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;requires</span></tt>: ...</dt>
+<dd>A requirement for using an object. Multiple requires fields may be
+used if an object has multiple requirements.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;precondition</span></tt>: ...</dt>
+<dd>A condition that must be true before an object is used. Multiple
+precondition fields may be used if an object has multiple preconditions.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;postcondition</span></tt>: ...</dt>
+<dd>A condition that is guaranteed to be true after an object is used.
+Multiple postcondition fields may be used if an object has multiple
+postconditions.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;invariant</span></tt>: ...</dt>
+<dd>A condition which should always be true for an object. Multiple
+invariant fields may be used if an object has multiple invariants.</dd>
+</dl>
+</div>
+<div class="section" id="bibliographic-information">
+<h3><a class="toc-backref" href="#id71">5.2.8&nbsp;&nbsp;&nbsp;Bibliographic Information</a></h3>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;author</span></tt>: ...</dt>
+<dd>The author(s) of an object. Multiple author fields may be used if an
+object has multiple authors.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;organization</span></tt>: ...</dt>
+<dd>The organization that created or maintains an object.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;copyright</span></tt>: ...</dt>
+<dd>The copyright information for an object.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;license</span></tt>: ...</dt>
+<dd>The licensing information for an object.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;contact</span></tt>: ...</dt>
+<dd>Contact information for the author or maintainer of a module, class,
+function, or method. Multiple contact fields may be used if an object
+has multiple contacts.</dd>
+</dl>
+</div>
+<div class="section" id="other-fields">
+<h3><a class="toc-backref" href="#id72">5.2.9&nbsp;&nbsp;&nbsp;Other fields</a></h3>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;summary</span></tt>: ...</dt>
+<dd>A summary description for an object. This description overrides the
+default summary (which is constructed from the first sentence of the
+object's description).</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;see</span></tt>: ...</dt>
+<dd>A description of a related topic. see fields typically use
+documentation crossreference links or external hyperlinks that link to
+the related topic.</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="fields-synonyms">
+<h2><a class="toc-backref" href="#id73">5.3&nbsp;&nbsp;&nbsp;Fields synonyms</a></h2>
+<p>Several fields have <em>synonyms</em>, or alternate tags. The following table lists
+all field synonyms. Field tags are written using epytext markup; if you are
+using a different markup language, then you should adjust the markup
+accordingly.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Name</th>
+<th class="head">Synonims</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal"><span class="pre">&#64;param</span></tt> <em>p</em>: ...</td>
+<td><div class="first last line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;parameter</span></tt> <em>p</em>: ...</div>
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;arg</span></tt> <em>p</em>: ...</div>
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;argument</span></tt> <em>p</em>: ...</div>
+</div>
+</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;return</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;returns</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;rtype</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;returntype</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;raise</span></tt> <em>e</em>: ...</td>
+<td><div class="first last line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;raises</span></tt> <em>e</em>: ...</div>
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;except</span></tt> <em>e</em>: ...</div>
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;exception</span></tt> <em>e</em>: ...</div>
+</div>
+</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;keyword</span></tt> <em>p</em>: ...</td>
+<td><div class="first last line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;kwarg</span></tt> <em>p</em>: ...</div>
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;kwparam</span></tt> <em>p</em>: ...</div>
+</div>
+</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;ivar</span></tt> <em>v</em>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;ivariable</span></tt> <em>v</em>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;cvar</span></tt> <em>v</em>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;cvariable</span></tt> <em>v</em>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;var</span></tt> <em>v</em>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;variable</span></tt> <em>v</em>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;see</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;seealso</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;warning</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;warn</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;requires</span></tt>: ...</td>
+<td><div class="first last line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;require</span></tt>: ...</div>
+<div class="line"><tt class="docutils literal"><span class="pre">&#64;requirement</span></tt>: ...</div>
+</div>
+</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;precondition</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;precond</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;postcondition</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;postcond</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;organization</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;org</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;copyright</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;(c)</span></tt>: ...</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;change</span></tt>: ...</td>
+<td><tt class="docutils literal"><span class="pre">&#64;changed</span></tt>: ...</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="module-metadata-variables">
+<h2><a class="toc-backref" href="#id74">5.4&nbsp;&nbsp;&nbsp;Module metadata variables</a></h2>
+<p>Some module variables are commonly used as module metadata. Epydoc can use the
+value provided by these variables as alternate form for tags. The following
+table lists the recognized variables and the tag they replace. Customized
+metadata variables can be added using the method described in <a class="reference" href="#adding-new-fields">Adding New
+Fields</a>.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Tag</th>
+<th class="head">Variable</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal"><span class="pre">&#64;author</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__author__</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;authors</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__authors__</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;contact</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__contact__</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;copyright</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__copyright__</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;license</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__license__</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;deprecated</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__deprecated__</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;date</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__date__</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&#64;version</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">__version__</span></tt></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="adding-new-fields">
+<h2><a class="toc-backref" href="#id75">5.5&nbsp;&nbsp;&nbsp;Adding New Fields</a></h2>
+<p>New fields can be defined for the docstrings in a module using the special
+<tt class="docutils literal"><span class="pre">&#64;newfield</span></tt> tag (or its synonym, <tt class="docutils literal"><span class="pre">&#64;deffield</span></tt>). This tag has the following
+syntax:</p>
+<blockquote>
+<pre class="literal-block">
+&#64;newfield <em>tag</em>: <em>label</em> [, <em>plural</em> ]
+</pre>
+</blockquote>
+<p>Where <em>tag</em> is the new tag that's being defined; <em>label</em> is a string that will
+be used to mark this field in the generated output; and plural is the plural form
+of label, if different.</p>
+<p>New fields can be defined in any Python module. If they are defined in a
+package, it will be possible to use the newly defined tag from every package
+submodule.</p>
+<p>Each new field will also define a <a class="reference" href="#module-metadata-variables">metadata variable</a> which can be used
+to set the field value instead of the tag. For example, if a <em>revision</em>
+tag has been defined with:</p>
+<pre class="literal-block">
+&#64;newfield revision: Revision
+</pre>
+<p>then it will be possible to set a value for the field using a module variable:</p>
+<pre class="py-doctest">
+__revision__ = <span class="py-string">&quot;1234&quot;</span></pre>
+<p>The following example illustrates how the &#64;newfield can be used:
+Docstring Input Rendered Output</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">@newfield corpus: Corpus, Corpora</span>
+<span class="py-string">&quot;&quot;&quot;</span>
+
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    @corpus: Bob's wordlist.</span>
+<span class="py-string">    @corpus: The British National Corpus.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    [...]</pre>
+</td>
+<td><p class="first"><strong>Corpora:</strong></p>
+<ul class="last simple">
+<li>Bob's wordlist.</li>
+<li>The British National Corpus.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">The module-level variable <tt class="docutils literal"><span class="pre">__extra_epydoc_fields__</span></tt> is deprecated;
+use <tt class="docutils literal"><span class="pre">&#64;newfield</span></tt> instead.</p>
+</div>
+</div>
+</div>
+<div class="section" id="alternate-markup-languages">
+<h1><a class="toc-backref" href="#id76">6&nbsp;&nbsp;&nbsp;Alternate Markup Languages</a></h1>
+<!-- $Id: manual-othermarkup.txt 1551 2007-02-25 16:13:17Z dvarrazzo $ -->
+<p>Epydoc's default markup language is <a class="reference" href="#the-epytext-markup-language">epytext</a>, a lightweight markup language
+that's easy to write and to understand. But if epytext is not powerful enough
+for you, or doesn't suit your needs, epydoc also supports three alternate
+markup languages:</p>
+<dl class="docutils">
+<dt><a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a></dt>
+<dd><p class="first last">is an &quot;easy-to-read, what-you-see-is-what-you-get plaintext markup syntax&quot;.
+It is more powerful than epytext (e.g., it includes markup for tables and
+footnotes); but it is also more complex, and sometimes harder to read.</p>
+</dd>
+<dt><a class="reference" href="http://java.sun.com/j2se/javadoc/">Javadoc</a></dt>
+<dd><p class="first last">is a documentation markup language that was developed for Java. It consists
+of HTML, augmented by a set of special tagged fields.</p>
+</dd>
+<dt>Plaintext docstrings</dt>
+<dd>are rendered verbatim (preserving whitespace).</dd>
+</dl>
+<p>To specify the markup language for a module, you should define a module-level
+string variable <tt class="docutils literal"><span class="pre">__docformat__</span></tt>, containing the name of the module's markup
+language. The name of the markup language may optionally be followed by a
+language code (such as <tt class="docutils literal"><span class="pre">en</span></tt> for English). Conventionally, the definition of
+the <tt class="docutils literal"><span class="pre">__docformat__</span></tt> variable immediately follows the module's docstring:</p>
+<pre class="py-doctest">
+<span class="py-comment"># widget.py</span>
+<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">Graphical support for `gizmos` and `widgets`.</span>
+<span class="py-string">&quot;&quot;&quot;</span>
+__docformat__ = <span class="py-string">&quot;restructuredtext en&quot;</span>
+<span class="py-comment">#[...]</span></pre>
+<p>To change the default markup language from the command line, use the
+<tt class="docutils literal"><span class="pre">--docformat</span></tt> option. For example, the following command generates API
+documentation for the existing regular expression package <tt class="docutils literal"><span class="pre">re</span></tt>, which uses
+plaintext markup:</p>
+<pre class="literal-block">
+[epydoc]$ epydoc --docformat plaintext re
+</pre>
+<div class="section" id="id13">
+<h2><a class="toc-backref" href="#id77">6.1&nbsp;&nbsp;&nbsp;reStructuredText</a></h2>
+<p>reStructuredText is a markup language that was developed in conjunction with
+<a class="reference" href="http://docutils.sourceforge.net/">Docutils</a>. In order to parse reStructuredText docstrings, Docutils 0.3 or
+higher must be installed. If Docutils is not installed, then reStructuredText
+docstrings will be rendered as plaintext. Docutils can be downloaded from the
+<a class="reference" href="http://sourceforge.net/project/showfiles.php?group_id=38414">Docutils SourceForge page</a>.</p>
+<div class="section" id="default-role">
+<h3><a class="toc-backref" href="#id78">6.1.1&nbsp;&nbsp;&nbsp;Default role</a></h3>
+<p>Epydoc replaces the Docutils' default <a class="reference" href="http://docutils.sourceforge.net/docs/ref/rst/roles.html">interpreted text role</a> with
+the creation of  <a class="reference" href="#documentation-crossreference-links">documentation crossreference links</a>. If you want to create
+a crossreference link to the <tt class="docutils literal"><span class="pre">somemod.Example</span></tt> class, you can put backquotes
+around your test, typing:</p>
+<pre class="literal-block">
+`somemod.Example`
+</pre>
+</div>
+<div class="section" id="consolidated-fields">
+<h3><a class="toc-backref" href="#id79">6.1.2&nbsp;&nbsp;&nbsp;Consolidated Fields</a></h3>
+<p>In addition to the <a class="reference" href="#epydoc-fields">standard set of fields</a>, the reStructruedText parser also
+supports <em>consolidated fields</em>, which combine the documentation for several
+objects into a single field. For example, a single <tt class="docutils literal"><span class="pre">:Parameters:</span></tt> field is
+often used to describe all of the parameters for a function or method:</p>
+<pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">fox_speed</span>(size, weight, age):
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    Return the maximum speed for a fox.</span>
+
+<span class="py-string">    :Parameters:</span>
+<span class="py-string">    - `size`: The size of the fox (in meters)</span>
+<span class="py-string">    - `weight`: The weight of the fox (in stones)</span>
+<span class="py-string">    - `age`: The age of the fox (in years)</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+<p>Epydoc will automatically extract information about each parameter from this
+list. These <em>consolidated fields</em> may be written using either a <a class="reference" href="http://docutils.sourceforge.net/docs/user/rst/quickref.html#bullet-lists">bulleted
+list</a> or a <a class="reference" href="http://docutils.sourceforge.net/docs/user/rst/quickref.html#definition-lists">definition list</a>.</p>
+<ul class="simple">
+<li>If a consolidated field is written as a <em>bulleted list</em>, then each list item
+must begin with the field's argument, marked as <a class="reference" href="http://docutils.sourceforge.net/docs/user/rst/quickref.html#inline-markup">interpreted text</a>, and
+followed by a colon or dash.</li>
+<li>If a consolidated field is written as a <em>definition list</em>, then each
+definition item's term should contain the field's argument, (it is not
+mandatory for it being marked as interpreted text).</li>
+</ul>
+<p>The term classifier, if present, is used to specify the associated type. The
+following example shows the use of a definition list to define a consolidated
+field (note that docutils requires a space before and after the '<tt class="docutils literal"><span class="pre">:</span></tt>' used
+to mark classifiers).</p>
+<pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">fox_speed</span>(size, weight, age):
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    Return the maximum speed for a fox.</span>
+
+<span class="py-string">    :Parameters:</span>
+<span class="py-string">      size</span>
+<span class="py-string">        The size of the fox (in meters)</span>
+<span class="py-string">      weight : float</span>
+<span class="py-string">        The weight of the fox (in stones)</span>
+<span class="py-string">      age : int</span>
+<span class="py-string">        The age of the fox (in years)</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+<p>The following consolidated fields are currently supported by epydoc:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Consolidated Field Tag</th>
+<th class="head">Corresponding Base Field Tag</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal"><span class="pre">:Parameters:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:param:</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">:Exception:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:except:</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">:Groups:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:group:</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">:Keywords:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:keyword:</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">:Variables:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:var:</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">:IVariables:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:ivar:</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">:CVariables:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:cvar:</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">:Types:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:type:</span></tt></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="graph-directives">
+<h3><a class="toc-backref" href="#id80">6.1.3&nbsp;&nbsp;&nbsp;Graph directives</a></h3>
+<p>The epydoc reStructuredText reader defines several custom <cite>directives</cite>, which
+can be used to automatically generate a variety of graphs. The following custom
+directives are currently defined:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="30%" />
+<col width="70%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Directive</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="first last literal-block">
+.. classtree:: [<em>classes...</em>]
+    :dir: <em>up|down|left|right</em>
+</pre>
+</td>
+<td>Display a class hierarchy for the given class or classes (including all
+superclasses &amp; subclasses). If no class is specified, and the directive
+is used in a class's docstring, then that class's class hierarchy will
+be displayed. The <tt class="docutils literal"><span class="pre">dir</span></tt> option specifies the orientation for the graph
+(default=<tt class="docutils literal"><span class="pre">down</span></tt>).</td>
+</tr>
+<tr><td><pre class="first last literal-block">
+.. packagetree:: [<em>modules...</em>]
+    :dir: <em>up|down|left|right</em>
+    :style: <em>uml|tree</em>
+</pre>
+</td>
+<td>Display a package hierarchy for the given module or modules (including
+all subpackages and submodules). If no module is specified, and the
+directive is used in a module's docstring, then that module's package
+hierarchy will be displayed. The <tt class="docutils literal"><span class="pre">dir</span></tt> option specifies the
+orientation for the graph (default=<tt class="docutils literal"><span class="pre">down</span></tt>). The <tt class="docutils literal"><span class="pre">style</span></tt> option
+specifies whether packages should be displayed in a tree, or using
+nested UML symbols.</td>
+</tr>
+<tr><td><pre class="first last literal-block">
+.. importgraph:: [<em>modules...</em>]
+    :dir: <em>up|down|left|right</em>
+</pre>
+</td>
+<td>Display an import graph for the given module or modules. If no module
+is specified, and the directive is used in a module's docstring, then
+that module's import graph will be displayed. The <tt class="docutils literal"><span class="pre">dir</span></tt> option
+specifies the orientation for the graph (default=<tt class="docutils literal"><span class="pre">left</span></tt>).</td>
+</tr>
+<tr><td><pre class="first last literal-block">
+.. callgraph:: [<em>functions...</em>]
+    :dir: <em>up|down|left|right</em>
+</pre>
+</td>
+<td>Display a call graph for the given function or functions. If no
+function is specified, and the directive is used in a function's
+docstring, then that function's call graph will be displayed. The
+<tt class="docutils literal"><span class="pre">dir</span></tt> option specifies the orientation for the graph (default=<tt class="docutils literal"><span class="pre">right</span></tt>).</td>
+</tr>
+<tr><td><pre class="first last literal-block">
+.. dotgraph:: [<em>title...</em>]
+    :caption: <em>text...</em>
+    <em>graph...</em>
+</pre>
+</td>
+<td>Display a custom Graphviz dot graph. The body of the directive
+(<tt class="docutils literal"><span class="pre">graph...</span></tt>) should contain the body of a dot graph. The optional
+<tt class="docutils literal"><span class="pre">title</span></tt> argument, if specified, is used as the title of the graph.
+The optional <tt class="docutils literal"><span class="pre">caption</span></tt> option can be used to provide a caption for
+the graph.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="colorized-snippets-directive">
+<h3><a class="toc-backref" href="#id81">6.1.4&nbsp;&nbsp;&nbsp;Colorized snippets directive</a></h3>
+<p>Using reStructuredText markup it is possible to specify Python snippets in a
+<a class="reference" href="http://docutils.sourceforge.net/docs/user/rst/quickref.html#bullet-lists">doctest block</a>. SUch block will be colorized as in epytext <a class="reference" href="#doctest-blocks">Doctest Blocks</a>.</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">double</span>(x):
+<span class="py-more">... </span>    return x * 2
+<span class="py-more">...</span>
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> double(8)
+<span class="py-output">16</span></pre>
+<p>Doctest block are mostly useful to be run as a part of automatized test suite
+using the <a class="reference" href="http://docs.python.org/lib/module-doctest.html">doctest</a> module. If the Python prompt gets in your way when you try
+to copy and paste and you are not interested in self-testing docstrings, the
+<tt class="docutils literal"><span class="pre">python</span></tt> directive will let you obtain a simple block of colorized text:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="first last literal-block">
+.. python::
+
+    def fib(n):
+        &quot;&quot;&quot;Print a Fibonacci series.&quot;&quot;&quot;
+        a, b = 0, 1
+        while b &lt; n:
+            print b,
+            a, b = b, a+b
+</pre>
+</td>
+<td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">fib</span>(n):
+    <span class="py-string">&quot;&quot;&quot;Print a Fibonacci series.&quot;&quot;&quot;</span>
+    a, b = 0, 1
+    while b &lt; n:
+        <span class="py-keyword">print</span> b,
+        a, b = b, a+b</pre>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="external-api-links">
+<h3><a class="toc-backref" href="#id82">6.1.5&nbsp;&nbsp;&nbsp;External API links</a></h3>
+<p>Epydoc can be used to create hyperlinks from your package documentation towards
+objects defined in the API of other packages. Such links are similar to
+ordinary <a class="reference" href="#documentation-crossreference-links">documentation crossreference links</a>, but it is required to configure
+Epydoc setting up a new <a class="reference" href="http://docutils.sourceforge.net/docs/ref/rst/roles.html">interpreted text role</a>, binding it to an external API.</p>
+<p>To create a new role, the command line option <tt class="docutils literal"><span class="pre">--external-api=</span></tt><em>NAME</em> must
+be used. This option introduces a new interpreted text role called <tt class="docutils literal"><span class="pre">NAME</span></tt>,
+which can be used to refer to objects defined in an external API.</p>
+<p>You can alternatively use a configuration file for this and all the other
+options: see the <a class="reference" href="#sample-configuration-file">sample configuration file</a> for a comprehensive example.</p>
+<p>For example, if your program needs to programmatically use the Epydoc package
+itself, your docstrings may refer to functions described by Epydoc API:</p>
+<pre class="literal-block">
+If you want to print a value, you can use
+the :epydoc:`apidoc.pp_apidoc()` function.
+</pre>
+<p>When you will generate the API documentation for such program, you will
+need the option <tt class="docutils literal"><span class="pre">--external-api=epydoc</span></tt> or you will get parsing errors due
+to the unknown role.</p>
+<p>Of course this doesn't help to really create cross references: the
+<tt class="docutils literal"><span class="pre">--external-api</span></tt> option suffices to stop Epydoc complaining about unknown
+roles, but the text is simply rendered in a monotype font and no link is
+created.</p>
+<p>What Epydoc requires to create external API links is a mapping from the names
+of the objects exposed by the API and the URL where such objects are actually
+described. Such mapping must be provided as a text file, with an object name
+and its URL on each line, separated by a <tt class="docutils literal"><span class="pre">tab</span></tt> character. For example the
+Epydoc API documentation may be represented by a file names <tt class="docutils literal"><span class="pre">api-objects.txt</span></tt>
+containing:</p>
+<pre class="literal-block">
+epydoc                          -&gt;  epydoc-module.html
+epydoc.apidoc                   -&gt;  epydoc.apidoc-module.html
+epydoc.apidoc.UNKNOWN           -&gt;  epydoc.apidoc-module.html#UNKNOWN
+epydoc.apidoc._pp_val           -&gt;  epydoc.apidoc-module.html#_pp_val
+epydoc.apidoc.py_src_filename   -&gt;  epydoc.util-module.html#py_src_filename
+epydoc.apidoc.pp_apidoc         -&gt;  epydoc.apidoc-module.html#pp_apidoc
+epydoc.apidoc._pp_list          -&gt;  epydoc.apidoc-module.html#_pp_list
+...                                 ...
+...                                 ...
+</pre>
+<p>Epydoc's HTML writer indeed includes such file in its output: see <a class="reference" href="#html-files">HTML
+Files</a> for details.</p>
+<p>You can bind the definition file to the interpreted text role name using
+the command line option <tt class="docutils literal"><span class="pre">--external-api-file=</span></tt><em>NAME:FILENAME</em>.In the
+previous example you can use:</p>
+<pre class="literal-block">
+--external-api-file=epydoc:api-objects.txt
+</pre>
+<p>This helps Epydoc to create relative urls: in the previous example the
+<tt class="docutils literal"><span class="pre">apidoc.pp_apidoc()</span></tt> label will be linked with the
+<tt class="docutils literal"><span class="pre">epydoc.apidoc-module.html#_pp_val</span></tt> URL.</p>
+<p>You can specify a new root for the generated links using the last command line
+option: <tt class="docutils literal"><span class="pre">--external-api-root=</span></tt><em>NAME:STRING</em>. <em>STRING</em> will be attached
+in front of any URL returned by the <em>NAME</em> text role. For example, to let your
+program refer to Epydoc API whose documentation is published at
+<a class="reference" href="http://epydoc.sourceforge.net/api/">http://epydoc.sourceforge.net/api/</a> you can use the options:</p>
+<pre class="literal-block">
+--external-api-root=epydoc:http://epydoc.sourceforge.net/api/
+</pre>
+<p>this will let your reference <a class="reference" href="http://epydoc.sourceforge.net/api/epydoc.apidoc-module.html#pp_apidoc"><tt class="docutils literal"><span class="pre">apidoc.pp_apidoc()</span></tt></a> point at the
+right documentation.</p>
+<p>The three options can be used any number of time, effectively allowing to link
+towards all the required external packages.</p>
+<div class="section" id="names-resolution">
+<h4><a class="toc-backref" href="#id83">6.1.5.1&nbsp;&nbsp;&nbsp;Names resolution</a></h4>
+<p>When an external API link is to be created, the required name is split along
+any separator ('<tt class="docutils literal"><span class="pre">.</span></tt>', '<tt class="docutils literal"><span class="pre">::</span></tt>', '<tt class="docutils literal"><span class="pre">-&gt;</span></tt>'). Everything after the first noise
+character (for example after an '<tt class="docutils literal"><span class="pre">(</span></tt>') is discarded.</p>
+<p>The name fragment is looked for in the names defined in the description file:
+first an exact match is attempted; if no name exactly matches the required
+name, a partial match is attempted: the required name is compared with the
+<em>trailing parts</em> of the names in the file.</p>
+<p>If a single name is found in this lookup, then its URL is returned. If the
+name is not found, or if it matches with the trailing part of many defined
+names, a warning is raised and the name is rendered as literal text.</p>
+</div>
+<div class="section" id="linking-from-standalone-documents">
+<h4><a class="toc-backref" href="#id84">6.1.5.2&nbsp;&nbsp;&nbsp;Linking from standalone documents</a></h4>
+<p>Epydoc provides the script <tt class="docutils literal"><span class="pre">apirst2html.py</span></tt> which allows to use the
+previously described interpreted text roles from any reST document. The script
+exposes the same interface of the standard Docutils script <tt class="docutils literal"><span class="pre">rst2html.py</span></tt> but
+provides the extra command line options described in <a class="reference" href="#external-api-links">External API links</a>.</p>
+<p>With such tool you will be able to create hypertextual documentation of your
+package with direct links to its API.</p>
+</div>
+</div>
+<div class="section" id="indexed-terms-in-restructuredtext">
+<h3><a class="toc-backref" href="#id85">6.1.6&nbsp;&nbsp;&nbsp;Indexed Terms in reStructuredText</a></h3>
+<p>Epydoc uses <a class="reference" href="#indexed-terms">indexed terms</a> to create a table of terms definitions. Indexed
+terms are created using the epytext markup <tt class="docutils literal"><span class="pre">X{...}</span></tt>.</p>
+<p>If you want to create indexed terms in reStructuredText modules,
+you can use the <tt class="docutils literal"><span class="pre">term</span></tt> <a class="reference" href="http://docutils.sourceforge.net/docs/ref/rst/roles.html">interpreted text role</a>. For example:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    An :term:`index term` is a term that</span>
+<span class="py-string">    should be included in the index.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><p class="first">An <em>index term</em> is a term that should be included in the index.</p>
+<blockquote class="last">
+<table border="1" class="docutils">
+<colgroup>
+<col width="46%" />
+<col width="54%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head" colspan="2">Index</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>index term</td>
+<td><em>example</em></td>
+</tr>
+<tr><td>x intercept</td>
+<td><em>x_intercept</em></td>
+</tr>
+<tr><td>y intercept</td>
+<td><em>x_intercept</em></td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="id15">
+<h2><a class="toc-backref" href="#id86">6.2&nbsp;&nbsp;&nbsp;Javadoc</a></h2>
+<p><a class="reference" href="http://java.sun.com/j2se/javadoc/">Javadoc</a> is a markup language developed by Sun Microsystems for documenting
+Java APIs. The epydoc implementation of Javadoc is based on the <a class="reference" href="http://java.sun.com/j2se/1.4.2/docs/tooldocs/solaris/javadoc.html">Javadoc 1.4.2
+reference documentation</a>. However, there are likely to be some minor incompatibilities between Sun's implementation and epydoc's. Known incompatibilities include:</p>
+<ul class="simple">
+<li>Epydoc does not support the Javadoc block tag <tt class="docutils literal"><span class="pre">&#64;serial</span></tt>.</li>
+<li>Epydoc does not support the following Javadoc inline tags: <tt class="docutils literal"><span class="pre">{&#64;docroot}</span></tt>,
+<tt class="docutils literal"><span class="pre">{&#64;inheritdoc}</span></tt>, <tt class="docutils literal"><span class="pre">{&#64;value}</span></tt>.</li>
+<li>Epydoc adds many field tags that Sun does not include, such as <tt class="docutils literal"><span class="pre">&#64;var</span></tt>,
+<tt class="docutils literal"><span class="pre">&#64;type</span></tt>, and <tt class="docutils literal"><span class="pre">&#64;group</span></tt>.</li>
+</ul>
+<div class="section" id="javadoc-fields">
+<h3><a class="toc-backref" href="#id87">6.2.1&nbsp;&nbsp;&nbsp;Javadoc Fields</a></h3>
+<p>For compatibility with Javadoc, every <tt class="docutils literal"><span class="pre">&#64;see</span></tt> field is assumed to contain a
+single crossreference link, unless its body is quoted, or it starts with an
+HTML tag. See the <a class="reference" href="http://java.sun.com/j2se/1.4.2/docs/tooldocs/solaris/javadoc.html#&#64;see">Javadoc reference manual</a> for more information about how the
+<tt class="docutils literal"><span class="pre">&#64;see</span></tt> field is encoded in Javadoc.</p>
+<p>Because Javadoc does not mark end of the optional argument, field arguments
+must contain exactly one word. Thus, multi-word arguments are not available
+in Javadoc. In particular, all group names must be single words.</p>
+</div>
+</div>
+</div>
+<div class="section" id="references">
+<h1><a class="toc-backref" href="#id88">7&nbsp;&nbsp;&nbsp;References</a></h1>
+<!-- $Id: manual-reference.txt 1549 2007-02-24 16:23:49Z dvarrazzo $ -->
+<div class="section" id="command-line-usage">
+<h2><a class="toc-backref" href="#id89">7.1&nbsp;&nbsp;&nbsp;Command Line Usage</a></h2>
+<p>Usage: <tt class="docutils literal"><span class="pre">epydoc.py</span></tt> [<em>ACTION</em>] [<em>options</em>] <em>NAMES...</em></p>
+<dl class="docutils">
+<dt>NAMES...</dt>
+<dd>A list of the Python objects that should be documented. Objects can be
+specified using dotted names (such as <tt class="docutils literal"><span class="pre">os.path</span></tt>), module filenames (such
+as <tt class="docutils literal"><span class="pre">epydoc/epytext.py</span></tt>), or package directory names (such as
+<tt class="docutils literal"><span class="pre">epydoc/</span></tt>). Packages are expanded to include all sub-modules and
+sub-packages.</dd>
+<dt>options</dt>
+<dd><pre class="first last literal-block">
+--config=FILE         A configuration file, specifying additional OPTIONS
+                      and/or NAMES.  This option may be repeated.
+-o PATH, --output=PATH
+                      The output directory.  If PATH does not exist, then it
+                      will be created.
+-q, --quiet           Decrease the verbosity.
+-v, --verbose         Increase the verbosity.
+--debug               Show full tracebacks for internal errors.
+--simple-term         Do not try to use color or cursor control when
+                      displaying the progress bar, warnings, or errors.
+
+Actions:
+  --html              Write HTML output.
+  --text              Write plaintext output. (not implemented yet)
+  --latex             Write LaTeX output.
+  --dvi               Write DVI output.
+  --ps                Write Postscript output.
+  --pdf               Write PDF output.
+  --check             Check completeness of docs.
+  --pickle            Write the documentation to a pickle file.
+  --version           Show epydoc's version number and exit.
+  -h, --help          Show this message and exit.  For help on specific
+                      topics, use &quot;--help TOPIC&quot;.  Use &quot;--help topics&quot; for a
+                      list of available help topics
+
+Generation Options:
+  --docformat=NAME    The default markup language for docstrings.  Defaults
+                      to &quot;epytext&quot;.
+  --parse-only        Get all information from parsing (don't introspect)
+  --introspect-only   Get all information from introspecting (don't parse)
+  --exclude=PATTERN   Exclude modules whose dotted name matches the regular
+                      expression PATTERN
+  --exclude-introspect=PATTERN
+                      Exclude introspection of modules whose dotted name
+                      matches the regular expression PATTERN
+  --exclude-parse=PATTERN
+                      Exclude parsing of modules whose dotted name matches
+                      the regular expression PATTERN
+  --inheritance=STYLE
+                      The format for showing inheritance objects.  STYLE
+                      should be one of: grouped, listed, included.
+  --show-private      Include private variables in the output. (default)
+  --no-private        Do not include private variables in the output.
+  --show-imports      List each module's imports.
+  --no-imports        Do not list each module's imports. (default)
+  --show-sourcecode   Include source code with syntax highlighting in the
+                      HTML output. (default)
+  --no-sourcecode     Do not include source code with syntax highlighting in
+                      the HTML output.
+  --include-log       Include a page with the process log (epydoc-log.html)
+
+Output Options:
+  --name=NAME         The documented project's name (for the navigation
+                      bar).
+  --css=STYLESHEET    The CSS stylesheet.  STYLESHEET can be either a
+                      builtin stylesheet or the name of a CSS file.
+  --url=URL           The documented project's URL (for the navigation bar).
+  --navlink=HTML      HTML code for a navigation link to place in the
+                      navigation bar.
+  --top=PAGE          The &quot;top&quot; page for the HTML documentation.  PAGE can
+                      be a URL, the name of a module or class, or one of the
+                      special names &quot;trees.html&quot;, &quot;indices.html&quot;, or
+                      &quot;help.html&quot;
+  --help-file=FILE    An alternate help file.  FILE should contain the body
+                      of an HTML file -- navigation bars will be added to
+                      it.
+  --show-frames       Include frames in the HTML output. (default)
+  --no-frames         Do not include frames in the HTML output.
+  --separate-classes  When generating LaTeX or PDF output, list each class
+                      in its own section, instead of listing them under
+                      their containing module.
+
+API Linking Options:
+  --external-api=NAME
+                      Define a new API document.  A new interpreted text
+                      role NAME will be added.
+  --external-api-file=NAME:FILENAME
+                      Use records in FILENAME to resolve objects in the API
+                      named NAME.
+  --external-api-root=NAME:STRING
+                      Use STRING as prefix for the URL generated from the
+                      API NAME.
+
+Graph Options:
+  --graph=GRAPHTYPE   Include graphs of type GRAPHTYPE in the generated
+                      output.  Graphs are generated using the Graphviz dot
+                      executable.  If this executable is not on the path,
+                      then use --dotpath to specify its location.  This
+                      option may be repeated to include multiple graph types
+                      in the output.  GRAPHTYPE should be one of: all,
+                      classtree, callgraph, umlclasstree.
+  --dotpath=PATH      The path to the Graphviz 'dot' executable.
+  --graph-font=FONT   Specify the font used to generate Graphviz graphs.
+                      (e.g., helvetica or times).
+  --graph-font-size=SIZE
+                      Specify the font size used to generate Graphviz
+                      graphs, in points.
+  --pstat=FILE        A pstat output file, to be used in generating call
+                      graphs.
+
+Return Value Options:
+  --fail-on-error     Return a non-zero exit status, indicating failure, if
+                      any errors are encountered.
+  --fail-on-warning   Return a non-zero exit status, indicating failure, if
+                      any errors or warnings are encountered (not including
+                      docstring warnings).
+  --fail-on-docstring-warning
+                      Return a non-zero exit status, indicating failure, if
+                      any errors or warnings are encountered (including
+                      docstring warnings).
+</pre>
+</dd>
+</dl>
+</div>
+<div class="section" id="sample-configuration-file">
+<h2><a class="toc-backref" href="#id90">7.2&nbsp;&nbsp;&nbsp;Sample Configuration File</a></h2>
+<p>Configuration files, specified using the <tt class="docutils literal"><span class="pre">--config</span></tt> option, may be used to
+specify both the list of objects to document, and the options that should be
+used to document them. Configuration files are read using the standard
+<a class="reference" href="http://docs.python.org/lib/module-ConfigParser.html">ConfigParser</a> module. The following example configuration file demonstrates the
+various options that you can set. Lines beginning with <tt class="docutils literal"><span class="pre">#</span></tt> or <tt class="docutils literal"><span class="pre">;</span></tt> are
+treated as comments.</p>
+<pre class="literal-block">
+<strong>[epydoc]</strong> <em># Epydoc section marker (required by ConfigParser)</em>
+
+<em># The list of objects to document.  Objects can be named using</em>
+<em># dotted names, module filenames, or package directory names.</em>
+<em># Alases for this option include &quot;objects&quot; and &quot;values&quot;.</em>
+<strong>modules: sys, os.path, re</strong>
+
+<em># The type of output that should be generated.  Should be one</em>
+<em># of: html, text, latex, dvi, ps, pdf.</em>
+<strong>output: html</strong>
+
+<em># The path to the output directory.  May be relative or absolute.</em>
+<strong>target: html/</strong>
+
+<em># An integer indicating how verbose epydoc should be.  The default</em>
+<em># value is 0; negative values will supress warnings and errors;</em>
+<em># positive values will give more verbose output.</em>
+<strong>verbosity: 0</strong>
+
+<em># A boolean value indicating that Epydoc should show a tracaback</em>
+<em># in case of unexpected error. By default don't show tracebacks</em>
+<strong>debug: 0</strong>
+
+<em># If True, don't try to use colors or cursor control when doing</em>
+<em># textual output. The default False assumes a rich text prompt</em>
+<strong>simple-term: 0</strong>
+
+
+<strong>### Generation options</strong>
+
+<em># The default markup language for docstrings, for modules that do</em>
+<em># not define __docformat__.  Defaults to epytext.</em>
+<strong>docformat: epytext</strong>
+
+<em># Whether or not parsing should be used to examine objects.</em>
+<strong>parse: yes</strong>
+
+<em># Whether or not introspection should be used to examine objects.</em>
+<strong>introspect: yes</strong>
+
+<em># Don't examine in any way the modules whose dotted name match this</em>
+<em># regular expression pattern.</em>
+<strong>#exclude</strong>
+
+<em># Don't perform introspection on the modules whose dotted name match this</em>
+<em># regular expression pattern.</em>
+<strong>#exclude-introspect</strong>
+
+<em># Don't perform parsing on the modules whose dotted name match this</em>
+<em># regular expression pattern.</em>
+<strong>#exclude-parse</strong>
+
+<em># The format for showing inheritance objects.</em>
+<em># It should be one of: 'grouped', 'listed', 'included'.</em>
+<strong>inheritance: listed</strong>
+
+<em># Whether or not to inclue private variables.  (Even if included,</em>
+<em># private variables will be hidden by default.)</em>
+<strong>private: yes</strong>
+
+<em># Whether or not to list each module's imports.</em>
+<strong>imports: no</strong>
+
+<em># Whether or not to include syntax highlighted source code in</em>
+<em># the output (HTML only).</em>
+<strong>sourcecode: yes</strong>
+
+<em># Whether or not to includea a page with Epydoc log, containing</em>
+<em># effective option at the time of generation and the reported logs.</em>
+<strong>include-log: no</strong>
+
+
+<strong>### Output options</strong>
+
+<em># The documented project's name.</em>
+<strong>#name: Example</strong>
+
+<em># The CSS stylesheet for HTML output.  Can be the name of a builtin</em>
+<em># stylesheet, or the name of a file.</em>
+<strong>css: white</strong>
+
+<em># The documented project's URL.</em>
+<strong>#url: http://some.project/</strong>
+
+<em># HTML code for the project link in the navigation bar.  If left</em>
+<em># unspecified, the project link will be generated based on the</em>
+<em># project's name and URL.</em>
+<strong>#link: &lt;a href=&quot;somewhere&quot;&gt;My Cool Project&lt;/a&gt;</strong>
+
+<em># The &quot;top&quot; page for the documentation.  Can be a URL, the name</em>
+<em># of a module or class, or one of the special names &quot;trees.html&quot;,</em>
+<em># &quot;indices.html&quot;, or &quot;help.html&quot;</em>
+<strong>#top: os.path</strong>
+
+<em># An alternative help file.  The named file should contain the</em>
+<em># body of an HTML file; navigation bars will be added to it.</em>
+<strong>#help: my_helpfile.html</strong>
+
+<em># Whether or not to include a frames-based table of contents.</em>
+<strong>frames: yes</strong>
+
+<em># Whether each class should be listed in its own section when</em>
+<em># generating LaTeX or PDF output.</em>
+<strong>separate-classes: no</strong>
+
+
+<strong>### API linking options</strong>
+
+<em># Define a new API document.  A new interpreted text role</em>
+<em># will be created</em>
+<strong>#external-api: epydoc</strong>
+
+<em># Use the records in this file to resolve objects in the API named NAME.</em>
+<strong>#external-api-file: epydoc:api-objects.txt</strong>
+
+<em># Use this URL prefix to configure the string returned for external API.</em>
+<strong>#external-api-root: epydoc:http://epydoc.sourceforge.net/api</strong>
+
+
+<strong>### Graph options</strong>
+
+<em># The list of graph types that should be automatically included</em>
+<em># in the output.  Graphs are generated using the Graphviz &quot;dot&quot;</em>
+<em># executable.  Graph types include: &quot;classtree&quot;, &quot;callgraph&quot;,</em>
+<em># &quot;umlclass&quot;.  Use &quot;all&quot; to include all graph types</em>
+<strong>graph: all</strong>
+
+<em># The path to the Graphviz &quot;dot&quot; executable, used to generate</em>
+<em># graphs.</em>
+<strong>dotpath: /usr/local/bin/dot</strong>
+
+<em># The name of one or more pstat files (generated by the profile</em>
+<em># or hotshot module).  These are used to generate call graphs.</em>
+<strong>pstat: profile.out</strong>
+
+<em># Specify the font used to generate Graphviz graphs.</em>
+<em># (e.g., helvetica or times).</em>
+<strong>graph-font: Helvetica</strong>
+
+<em># Specify the font size used to generate Graphviz graphs.</em>
+<strong>graph-font-size: 10</strong>
+
+
+<strong>### Return value options</strong>
+
+<em># The condition upon which Epydoc should exit with a non-zero</em>
+<em># exit status. Possible values are error, warning, docstring_warning</em>
+<strong>#fail-on: error</strong>
+</pre>
+</div>
+<div class="section" id="warnings-and-errors">
+<h2><a class="toc-backref" href="#id91">7.3&nbsp;&nbsp;&nbsp;Warnings and Errors</a></h2>
+<p>If epydoc encounters an error while processing a docstring, it issues a warning
+message that describes the error, and attempts to continue generating
+documentation. Errors related to epytext are divided into three categories:</p>
+<dl class="docutils">
+<dt>Epytext Warnings</dt>
+<dd>are caused by epytext docstrings that contain questionable or suspicious
+markup. Epytext warnings do not prevent the docstring in question from
+being parsed.</dd>
+<dt>Field Warnings</dt>
+<dd>are caused by epytext docstrings containing invalid fields. The contents of
+the invalid field are generally ignored.</dd>
+<dt>Epytext Errors</dt>
+<dd>are caused by epytext docstrings that contain invalid markup. Whenever an
+epytext error is detected, the docstring in question is treated as a
+plaintext docstring.</dd>
+</dl>
+<p>The following sections list and describe the warning messages that epydoc can
+generate. They are intended as a reference resource, which you can search for
+more information and possible causes if you encounter an error and do not
+understand it. These descriptions are also available in the <tt class="docutils literal"><span class="pre">epydoc(1)</span></tt> man
+page.</p>
+<div class="section" id="epytext-warnings">
+<h3><a class="toc-backref" href="#id92">7.3.1&nbsp;&nbsp;&nbsp;Epytext Warnings</a></h3>
+<dl class="docutils">
+<dt>Possible mal-formatted field item.</dt>
+<dd>Epytext detected a line that looks like a field item, but is not correctly
+formatted. This typically occurs when the trailing colon (<tt class="docutils literal"><span class="pre">:</span></tt>) is not
+included in the field tag.</dd>
+<dt>Possible heading typo.</dt>
+<dd>Epytext detected a pair of lines that looks like a heading, but the number
+of underline characters does not match the number of characters in the
+heading. The number of characters in these two lines must match exactly for
+them to be considered a heading.</dd>
+</dl>
+</div>
+<div class="section" id="field-warnings">
+<h3><a class="toc-backref" href="#id93">7.3.2&nbsp;&nbsp;&nbsp;Field Warnings</a></h3>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">&#64;param</span></tt> for unknown parameter <em>param</em>.</dt>
+<dd>A <tt class="docutils literal"><span class="pre">&#64;param</span></tt> field was used to specify the type for a parameter that is not
+included in the function's signature. This is typically caused by a typo in
+the parameter name.</dd>
+<dt><em>tag</em> did not expect an argument.</dt>
+<dd>The field tag <em>tag</em> was used with an argument, but it does not take one.</dd>
+<dt><em>tag</em> expected an argument.</dt>
+<dd>The field tag <em>tag</em> was used without an argument, but it requires one.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;type</span></tt> for unknown parameter <em>param</em>.</dt>
+<dd>A <tt class="docutils literal"><span class="pre">&#64;type</span></tt> field was used to specify the type for a parameter that is not
+included in the function's signature. This is typically caused by a typo in
+the parameter name.</dd>
+<dt><tt class="docutils literal"><span class="pre">&#64;type</span></tt> for unknown variable <em>var</em>.</dt>
+<dd>A <tt class="docutils literal"><span class="pre">&#64;type</span></tt> field was used to specify the type for a variable, but no
+other information is known about the variable. This is typically caused
+by a typo in the variable name.</dd>
+<dt>Unknown field tag <em>tag</em>.</dt>
+<dd>A docstring contains a field with the unknown tag <em>tag</em>.</dd>
+<dt>Redefinition of <em>field</em>.</dt>
+<dd>Multiple field tags define the value of field in the same docstring, but
+field can only take a single value.</dd>
+</dl>
+</div>
+<div class="section" id="epytext-errors">
+<h3><a class="toc-backref" href="#id94">7.3.3&nbsp;&nbsp;&nbsp;Epytext Errors</a></h3>
+<dl class="docutils">
+<dt>Bad link target.</dt>
+<dd>The target specified for an inline link contruction (L{...}) is not
+well-formed. Link targets must be valid Python identifiers.</dd>
+<dt>Bad uri target.</dt>
+<dd>The target specified for an inline uri contruction (<tt class="docutils literal"><span class="pre">U{...}</span></tt>) is not
+well-formed. This typically occurs if inline markup is nested inside the
+URI target.</dd>
+<dt>Fields must be at the top level.</dt>
+<dd>The list of fields (<tt class="docutils literal"><span class="pre">&#64;param</span></tt>, etc.) is contained by some other block
+structure (such as a list or a section).</dd>
+<dt>Fields must be the final elements in an epytext string.</dt>
+<dd>The list of fields (<tt class="docutils literal"><span class="pre">&#64;param</span></tt>, etc.) is not at the end of a docstring.</dd>
+<dt>Headings must occur at top level.</dt>
+<dd>The heading is contianed in some other block structure (such as a list).</dd>
+<dt>Improper doctest block indentation.</dt>
+<dd>The doctest block dedents past the indentation of its initial prompt line.</dd>
+<dt>Improper heading indentation.</dt>
+<dd>The heading for a section is not left-aligned with the paragraphs in the
+section that contains it.</dd>
+<dt>Improper paragraph indentation.</dt>
+<dd>The paragraphs within a block are not left-aligned. This error is often
+generated when plaintext docstrings are parsed using epytext.</dd>
+<dt>Invalid escape.</dt>
+<dd>An unknown escape sequence was used with the inline escape construction
+(<tt class="docutils literal"><span class="pre">E{...}</span></tt>).</dd>
+<dt>Lists must be indented.</dt>
+<dd>An unindented line immediately following a paragraph starts with a list
+bullet. Epydoc is not sure whether you meant to start a new list item, or
+meant for a paragraph to include a word that looks like a bullet. If you
+intended the former, then indent the list. If you intended the latter, then
+change the word-wrapping of the paragraph, or escape the first character of
+the word that looks like a bullet.</dd>
+<dt>Unbalanced '<tt class="docutils literal"><span class="pre">{</span></tt>'.</dt>
+<dd>The docstring contains unbalanced braces. Epytext requires that all braces
+must be balanced. To include a single unbalanced brace, use the escape
+sequences <tt class="docutils literal"><span class="pre">E{lb}</span></tt> (left brace) and <tt class="docutils literal"><span class="pre">E{rb}</span></tt> (right brace).</dd>
+<dt>Unbalanced '<tt class="docutils literal"><span class="pre">}</span></tt>'.</dt>
+<dd>The docstring contains unbalanced braces. Epytext requires that all braces
+must be balanced. To include a single unbalanced brace, use the escape
+sequences <tt class="docutils literal"><span class="pre">E{lb}</span></tt> (left brace) and <tt class="docutils literal"><span class="pre">E{rb}</span></tt> (right brace).</dd>
+<dt>Unknown inline markup tag.</dt>
+<dd>An unknown tag was used with the inline markup construction (<tt class="docutils literal"><span class="pre">x{...}</span></tt>).</dd>
+<dt>Wrong underline character for heading.</dt>
+<dd>The underline character used for this section heading does not indicate an
+appopriate section level. The '<tt class="docutils literal"><span class="pre">=</span></tt>' character should be used to underline
+sections; '<tt class="docutils literal"><span class="pre">-</span></tt>' for subsections; and '<tt class="docutils literal"><span class="pre">~</span></tt>' for subsubsections.</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="index.html">
+    Home</a></td></a>
+  <a class="nav" href="installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

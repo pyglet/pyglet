@@ -1,0 +1,1929 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.docbuilder</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        Module&nbsp;docbuilder
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.docbuilder-module.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== MODULE DESCRIPTION ==================== -->
+<h1 class="epydoc">Module docbuilder</h1><span class="codelink"><a href="epydoc.docbuilder-pysrc.html">source&nbsp;code</a></span><br /><br />
+Construct data structures that encode the API documentation for Python
+  objects.  These data structures are created using a series of steps:
+  <ol start="1">
+    <li>
+      <b>Building docs</b>: Extract basic information about the objects,
+      and objects that are related to them.  This can be done by 
+      introspecting the objects' values (with <a 
+      href="epydoc.docintrospecter-module.html" 
+      class="link">epydoc.docintrospecter</a>; or by parsing their source 
+      code (with <a href="epydoc.docparser-module.html" 
+      class="link">epydoc.docparser</a>.
+    </li>
+    <li>
+      <b>Merging</b>: Combine the information obtained from 
+      introspection &amp; parsing each object into a single structure.
+    </li>
+    <li>
+      <b>Linking</b>: Replace any 'pointers' that were created for 
+      imported variables by their target (if it's available).
+    </li>
+    <li>
+      <b>Naming</b>: Chose a unique 'canonical name' for each 
+      object.
+    </li>
+    <li>
+      <b>Docstring Parsing</b>: Parse the docstring of each object, and 
+      extract any pertinant information.
+    </li>
+    <li>
+      <b>Inheritance</b>: Add information about variables that classes 
+      inherit from their base classes.
+    </li>
+  </ol>
+  <p>The documentation information for each individual object is 
+  represented using an <a href="epydoc.apidoc.APIDoc-class.html" 
+  class="link">APIDoc</a>; and the documentation for a collection of 
+  objects is represented using a <a 
+  href="epydoc.apidoc.DocIndex-class.html" class="link">DocIndex</a>.</p>
+  The main interface to <code>epydoc.docbuilder</code> consists of two 
+  functions:
+  <ul>
+    <li>
+      <a href="epydoc.docbuilder-module.html#build_doc" 
+      class="link">build_doc()</a> -- Builds documentation for a single 
+      item, and returns it as an <a href="epydoc.apidoc.APIDoc-class.html" 
+      class="link">APIDoc</a> object.
+    </li>
+    <li>
+      <a href="epydoc.docbuilder-module.html#build_doc_index" 
+      class="link">build_doc_index()</a> -- Builds documentation for a 
+      collection of items, and returns it as a <a 
+      href="epydoc.apidoc.DocIndex-class.html" class="link">DocIndex</a> 
+      object.
+    </li>
+  </ul>
+  The remaining functions are used by these two main functions to 
+  perform individual steps in the creation of the documentation.<br /><br />
+
+<!-- ==================== CLASSES ==================== -->
+<a name="section-Classes"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Classes"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docbuilder.BuildOptions-class.html" class="summary-name">BuildOptions</a><br />
+      Holds the parameters for a documentation building process.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docbuilder._ProgressEstimator-class.html" class="summary-name">_ProgressEstimator</a><br />
+      Used to keep track of progress when generating the initial docs 
+        for the given items.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTIONS ==================== -->
+<a name="section-Functions"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Functions</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Functions"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_report_errors"></a><span class="summary-sig-name">_report_errors</span>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">introspect_doc</span>,
+        <span class="summary-sig-arg">parse_doc</span>,
+        <span class="summary-sig-arg">introspect_error</span>,
+        <span class="summary-sig-arg">parse_error</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#_report_errors">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__report_errors-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__report_errors-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__report_errors" name="call_graph_for__report_errors">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="499,6,723,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_module_file" title="_get_docs_from_module_file()" alt="" coords="7,90,260,122" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_report_errors" title="_report_errors()" alt="" coords="309,90,451,122" />
+<area shape="rect" href="epydoc.log&#45;module.html#end_block" title="log.end_block()" alt="" coords="541,62,680,94" />
+<area shape="rect" href="epydoc.log&#45;module.html#error" title="log.error()" alt="" coords="561,118,660,150" />
+<area shape="rect" href="epydoc.log&#45;module.html#start_block" title="log.start_block()" alt="" coords="539,174,683,206" />
+</map>
+  <img src="call_graph_for__report_errors.gif" alt='' usemap="#call_graph_for__report_errors" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Documentation Construction</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><a href="epydoc.apidoc.APIDoc-class.html" 
+      class="link">APIDoc</a></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docbuilder-module.html#build_doc" class="summary-sig-name">build_doc</a>(<span class="summary-sig-arg">item</span>,
+        <span class="summary-sig-arg">introspect</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">parse</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">add_submodules</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">exclude_introspect</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">exclude_parse</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Build API documentation for a given item, and return it as an <a 
+      href="epydoc.apidoc.APIDoc-class.html" class="link">APIDoc</a> 
+      object.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#build_doc">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><a href="epydoc.apidoc.DocIndex-class.html" 
+      class="link">DocIndex</a></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docbuilder-module.html#build_doc_index" class="summary-sig-name">build_doc_index</a>(<span class="summary-sig-arg">items</span>,
+        <span class="summary-sig-arg">introspect</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">parse</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">add_submodules</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">exclude_introspect</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">exclude_parse</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Build API documentation for the given list of items, and return it
+      in the form of a <a href="epydoc.apidoc.DocIndex-class.html" 
+      class="link">DocIndex</a>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#build_doc_index">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_build_doc_index-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_build_doc_index-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_build_doc_index" name="call_graph_for_build_doc_index">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="286,6,510,38" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#__init__" title="apidoc.DocIndex.__init__()" alt="" coords="284,62,511,94" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#reachable_valdocs" title="apidoc.DocIndex.reachable_valdocs()" alt="" coords="246,118,550,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="apidoc.DottedName.__cmp__()" alt="" coords="270,174,526,206" />
+<area shape="rect" href="epydoc.apidoc.ModuleDoc&#45;class.html#init_submodule_groups" title="apidoc.ModuleDoc.init_submodule_groups()" alt="" coords="219,230,576,262" />
+<area shape="rect" href="epydoc.apidoc.NamespaceDoc&#45;class.html#init_sorted_variables" title="apidoc.NamespaceDoc.init_sorted_variables()" alt="" coords="215,286,580,318" />
+<area shape="rect" href="epydoc.apidoc.NamespaceDoc&#45;class.html#init_variable_groups" title="apidoc.NamespaceDoc.init_variable_groups()" alt="" coords="216,342,579,374" />
+<area shape="rect" href="epydoc.docbuilder.BuildOptions&#45;class.html#__init__" title="BuildOptions.__init__()" alt="" coords="296,398,499,430" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_items" title="_get_docs_from_items()" alt="" coords="295,454,500,486" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_report_valdoc_progress" title="_report_valdoc_progress()" alt="" coords="288,510,507,542" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#assign_canonical_names" title="assign_canonical_names()" alt="" coords="288,566,507,598" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="build_doc_index()" alt="" coords="6,482,166,514" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#inherit_docs" title="inherit_docs()" alt="" coords="334,622,462,654" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#link_imports" title="link_imports()" alt="" coords="334,678,462,710" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs" title="merge_docs()" alt="" coords="336,734,459,766" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="docstringparser.parse_docstring()" alt="" coords="262,790,534,822" />
+<area shape="rect" href="epydoc.log&#45;module.html#end_progress" title="log.end_progress()" alt="" coords="316,846,479,878" />
+<area shape="rect" href="epydoc.log&#45;module.html#progress" title="log.progress()" alt="" coords="335,902,460,934" />
+<area shape="rect" href="epydoc.log&#45;module.html#start_progress" title="log.start_progress()" alt="" coords="315,958,480,990" />
+</map>
+  <img src="call_graph_for_build_doc_index.gif" alt='' usemap="#call_graph_for_build_doc_index" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_report_valdoc_progress"></a><span class="summary-sig-name">_report_valdoc_progress</span>(<span class="summary-sig-arg">i</span>,
+        <span class="summary-sig-arg">val_doc</span>,
+        <span class="summary-sig-arg">val_docs</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#_report_valdoc_progress">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__report_valdoc_-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__report_valdoc_-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__report_valdoc_" name="call_graph_for__report_valdoc_">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="apidoc.DottedName.__getitem__()" alt="" coords="484,6,764,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_report_valdoc_progress" title="_report_valdoc_progress()" alt="" coords="215,34,434,66" />
+<area shape="rect" href="epydoc.log&#45;module.html#progress" title="log.progress()" alt="" coords="562,62,687,94" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="build_doc_index()" alt="" coords="6,34,166,66" />
+</map>
+  <img src="call_graph_for__report_valdoc_.gif" alt='' usemap="#call_graph_for__report_valdoc_" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_get_docs_from_items"></a><span class="summary-sig-name">_get_docs_from_items</span>(<span class="summary-sig-arg">items</span>,
+        <span class="summary-sig-arg">options</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#_get_docs_from_items">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__get_docs_from_-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__get_docs_from_-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__get_docs_from_" name="call_graph_for__get_docs_from_">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__hash__" title="apidoc.DottedName.__hash__()" alt="" coords="468,6,727,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__len__" title="apidoc.DottedName.__len__()" alt="" coords="473,62,721,94" />
+<area shape="rect" href="epydoc.docbuilder._ProgressEstimator&#45;class.html#__init__" title="_ProgressEstimator.__init__()" alt="" coords="473,118,721,150" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_items" title="_get_docs_from_items()" alt="" coords="213,230,419,262" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_module_file" title="_get_docs_from_module_file()" alt="" coords="471,174,724,206" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_submodules" title="_get_docs_from_submodules()" alt="" coords="471,230,724,262" />
+<area shape="rect" href="epydoc.log&#45;module.html#end_progress" title="log.end_progress()" alt="" coords="516,286,679,318" />
+<area shape="rect" href="epydoc.log&#45;module.html#start_progress" title="log.start_progress()" alt="" coords="515,342,680,374" />
+<area shape="rect" href="epydoc.util&#45;module.html#is_module_file" title="util.is_module_file()" alt="" coords="509,398,685,430" />
+<area shape="rect" href="epydoc.util&#45;module.html#is_package_dir" title="util.is_package_dir()" alt="" coords="509,454,685,486" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="build_doc_index()" alt="" coords="5,230,165,262" />
+</map>
+  <img src="call_graph_for__get_docs_from_.gif" alt='' usemap="#call_graph_for__get_docs_from_" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_get_docs_from_pyobject"></a><span class="summary-sig-name">_get_docs_from_pyobject</span>(<span class="summary-sig-arg">obj</span>,
+        <span class="summary-sig-arg">options</span>,
+        <span class="summary-sig-arg">progress_estimator</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#_get_docs_from_pyobject">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_get_docs_from_pyname"></a><span class="summary-sig-name">_get_docs_from_pyname</span>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">options</span>,
+        <span class="summary-sig-arg">progress_estimator</span>,
+        <span class="summary-sig-arg">supress_warnings</span>=<span class="summary-sig-default">True</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#_get_docs_from_pyname">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_get_docs_from_pyscript"></a><span class="summary-sig-name">_get_docs_from_pyscript</span>(<span class="summary-sig-arg">filename</span>,
+        <span class="summary-sig-arg">options</span>,
+        <span class="summary-sig-arg">progress_estimator</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#_get_docs_from_pyscript">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docbuilder-module.html#_get_docs_from_module_file" class="summary-sig-name">_get_docs_from_module_file</a>(<span class="summary-sig-arg">filename</span>,
+        <span class="summary-sig-arg">options</span>,
+        <span class="summary-sig-arg">progress_estimator</span>,
+        <span class="summary-sig-arg">parent_docs</span>=<span class="summary-sig-default"><code class="variable-group">(</code>None<code class="variable-op">, </code>None<code class="variable-group">)</code></span>)</span><br />
+      Construct and return the API documentation for the python module 
+      with the given filename.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#_get_docs_from_module_file">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__get_docs_from__5-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__get_docs_from__5-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__get_docs_from__5" name="call_graph_for__get_docs_from__5">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="apidoc.DottedName.__init__()" alt="" coords="624,6,875,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="628,62,871,94" />
+<area shape="rect" href="epydoc.docbuilder.BuildOptions&#45;class.html#must_introspect" title="BuildOptions.must_introspect()" alt="" coords="620,118,879,150" />
+<area shape="rect" href="epydoc.docbuilder.BuildOptions&#45;class.html#must_parse" title="BuildOptions.must_parse()" alt="" coords="638,174,862,206" />
+<area shape="rect" href="epydoc.docbuilder._ProgressEstimator&#45;class.html#progress" title="_ProgressEstimator.progress()" alt="" coords="626,230,874,262" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_items" title="_get_docs_from_items()" alt="" coords="31,230,236,262" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_module_file" title="_get_docs_from_module_file()" alt="" coords="311,258,564,290" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_report_errors" title="_report_errors()" alt="" coords="679,286,820,318" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_docs" title="docintrospecter.introspect_docs()" alt="" coords="615,342,884,374" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#parse_docs" title="docparser.parse_docs()" alt="" coords="652,398,847,430" />
+<area shape="rect" href="epydoc.log&#45;module.html#progress" title="log.progress()" alt="" coords="687,454,812,486" />
+<area shape="rect" href="epydoc.util&#45;module.html#py_src_filename" title="util.py_src_filename()" alt="" coords="655,510,844,542" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_submodules" title="_get_docs_from_submodules()" alt="" coords="7,286,260,318" />
+</map>
+  <img src="call_graph_for__get_docs_from__5.gif" alt='' usemap="#call_graph_for__get_docs_from__5" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_get_docs_from_submodules"></a><span class="summary-sig-name">_get_docs_from_submodules</span>(<span class="summary-sig-arg">item</span>,
+        <span class="summary-sig-arg">pkg_docs</span>,
+        <span class="summary-sig-arg">options</span>,
+        <span class="summary-sig-arg">progress_estimator</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#_get_docs_from_submodules">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__get_docs_from__6-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__get_docs_from__6-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__get_docs_from__6" name="call_graph_for__get_docs_from__6">
+<area shape="rect" href="epydoc.docbuilder._ProgressEstimator&#45;class.html#revise_estimate" title="_ProgressEstimator.revise_estimate()" alt="" coords="563,6,864,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_items" title="_get_docs_from_items()" alt="" coords="5,90,211,122" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_submodules" title="_get_docs_from_submodules()" alt="" coords="260,90,513,122" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_module_file" title="_get_docs_from_module_file()" alt="" coords="587,62,840,94" />
+<area shape="rect" href="epydoc.util&#45;module.html#is_module_file" title="util.is_module_file()" alt="" coords="625,118,801,150" />
+<area shape="rect" href="epydoc.util&#45;module.html#is_package_dir" title="util.is_package_dir()" alt="" coords="625,174,801,206" />
+</map>
+  <img src="call_graph_for__get_docs_from__6.gif" alt='' usemap="#call_graph_for__get_docs_from__6" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Merging</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docbuilder-module.html#register_attribute_mergefunc" class="summary-sig-name">register_attribute_mergefunc</a>(<span class="summary-sig-arg">attrib</span>,
+        <span class="summary-sig-arg">mergefunc</span>)</span><br />
+      Register an attribute merge function.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#register_attribute_mergefunc">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docbuilder-module.html#merge_docs" class="summary-sig-name">merge_docs</a>(<span class="summary-sig-arg">introspect_doc</span>,
+        <span class="summary-sig-arg">parse_doc</span>,
+        <span class="summary-sig-arg">cyclecheck</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">path</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Merge the API documentation information that was obtained from 
+      introspection with information that was obtained from parsing.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_docs">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_merge_docs-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_merge_docs-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_merge_docs" name="call_graph_for_merge_docs">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="481,6,705,38" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#merge_and_overwrite" title="apidoc.APIDoc.merge_and_overwrite()" alt="" coords="435,62,752,94" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#specialize_to" title="apidoc.APIDoc.specialize_to()" alt="" coords="468,118,719,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="apidoc.DottedName.__cmp__()" alt="" coords="465,174,721,206" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="472,230,715,262" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_merge_posargs_and_defaults" title="_merge_posargs_and_defaults()" alt="" coords="463,286,724,318" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="build_doc_index()" alt="" coords="29,90,189,122" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs" title="merge_docs()" alt="" coords="263,202,385,234" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_attribute" title="merge_attribute()" alt="" coords="517,342,669,374" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_bases" title="merge_bases()" alt="" coords="44,146,175,178" />
+<area shape="rect" href="epydoc.log&#45;module.html#info" title="log.info()" alt="" coords="548,398,639,430" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_posarg_defaults" title="merge_posarg_defaults()" alt="" coords="5,202,213,234" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_value" title="merge_value()" alt="" coords="44,258,175,290" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_variables" title="merge_variables()" alt="" coords="31,314,188,346" />
+</map>
+  <img src="call_graph_for_merge_docs.gif" alt='' usemap="#call_graph_for_merge_docs" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_merge_posargs_and_defaults"></a><span class="summary-sig-name">_merge_posargs_and_defaults</span>(<span class="summary-sig-arg">introspect_doc</span>,
+        <span class="summary-sig-arg">parse_doc</span>,
+        <span class="summary-sig-arg">path</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#_merge_posargs_and_defaults">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__merge_posargs_-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__merge_posargs_-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__merge_posargs_" name="call_graph_for__merge_posargs_">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_merge_posargs_and_defaults" title="_merge_posargs_and_defaults()" alt="" coords="179,6,440,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs" title="merge_docs()" alt="" coords="7,6,129,38" />
+</map>
+  <img src="call_graph_for__merge_posargs_.gif" alt='' usemap="#call_graph_for__merge_posargs_" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="merge_attribute"></a><span class="summary-sig-name">merge_attribute</span>(<span class="summary-sig-arg">attrib</span>,
+        <span class="summary-sig-arg">introspect_doc</span>,
+        <span class="summary-sig-arg">parse_doc</span>,
+        <span class="summary-sig-arg">cyclecheck</span>,
+        <span class="summary-sig-arg">path</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_attribute">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_merge_attribute-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_merge_attribute-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_merge_attribute" name="call_graph_for_merge_attribute">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_attribute" title="merge_attribute()" alt="" coords="179,174,331,206" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_bases" title="merge_bases()" alt="" coords="428,6,559,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs_extracted_by" title="merge_docs_extracted_by()" alt="" coords="379,62,608,94" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docstring" title="merge_docstring()" alt="" coords="415,118,572,150" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_posarg_defaults" title="merge_posarg_defaults()" alt="" coords="389,174,597,206" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_proxy_for" title="merge_proxy_for()" alt="" coords="412,230,575,262" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_value" title="merge_value()" alt="" coords="428,286,559,318" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_variables" title="merge_variables()" alt="" coords="415,342,572,374" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs" title="merge_docs()" alt="" coords="7,174,129,206" />
+</map>
+  <img src="call_graph_for_merge_attribute.gif" alt='' usemap="#call_graph_for_merge_attribute" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="merge_variables"></a><span class="summary-sig-name">merge_variables</span>(<span class="summary-sig-arg">varlist1</span>,
+        <span class="summary-sig-arg">varlist2</span>,
+        <span class="summary-sig-arg">precedence</span>,
+        <span class="summary-sig-arg">cyclecheck</span>,
+        <span class="summary-sig-arg">path</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_variables">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_merge_variables-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_merge_variables-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_merge_variables" name="call_graph_for_merge_variables">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_attribute" title="merge_attribute()" alt="" coords="5,6,157,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_variables" title="merge_variables()" alt="" coords="205,6,363,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs" title="merge_docs()" alt="" coords="412,6,535,38" />
+</map>
+  <img src="call_graph_for_merge_variables.gif" alt='' usemap="#call_graph_for_merge_variables" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="merge_value"></a><span class="summary-sig-name">merge_value</span>(<span class="summary-sig-arg">value1</span>,
+        <span class="summary-sig-arg">value2</span>,
+        <span class="summary-sig-arg">precedence</span>,
+        <span class="summary-sig-arg">cyclecheck</span>,
+        <span class="summary-sig-arg">path</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_value">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_merge_value-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_merge_value-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_merge_value" name="call_graph_for_merge_value">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_attribute" title="merge_attribute()" alt="" coords="6,6,158,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_value" title="merge_value()" alt="" coords="206,6,336,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs" title="merge_docs()" alt="" coords="386,6,508,38" />
+</map>
+  <img src="call_graph_for_merge_value.gif" alt='' usemap="#call_graph_for_merge_value" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="merge_package"></a><span class="summary-sig-name">merge_package</span>(<span class="summary-sig-arg">v1</span>,
+        <span class="summary-sig-arg">v2</span>,
+        <span class="summary-sig-arg">precedence</span>,
+        <span class="summary-sig-arg">cyclecheck</span>,
+        <span class="summary-sig-arg">path</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_package">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="merge_container"></a><span class="summary-sig-name">merge_container</span>(<span class="summary-sig-arg">v1</span>,
+        <span class="summary-sig-arg">v2</span>,
+        <span class="summary-sig-arg">precedence</span>,
+        <span class="summary-sig-arg">cyclecheck</span>,
+        <span class="summary-sig-arg">path</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_container">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="merge_overrides"></a><span class="summary-sig-name">merge_overrides</span>(<span class="summary-sig-arg">v1</span>,
+        <span class="summary-sig-arg">v2</span>,
+        <span class="summary-sig-arg">precedence</span>,
+        <span class="summary-sig-arg">cyclecheck</span>,
+        <span class="summary-sig-arg">path</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_overrides">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="merge_fget"></a><span class="summary-sig-name">merge_fget</span>(<span class="summary-sig-arg">v1</span>,
+        <span class="summary-sig-arg">v2</span>,
+        <span class="summary-sig-arg">precedence</span>,
+        <span class="summary-sig-arg">cyclecheck</span>,
+        <span class="summary-sig-arg">path</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_fget">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="merge_fset"></a><span class="summary-sig-name">merge_fset</span>(<span class="summary-sig-arg">v1</span>,
+        <span class="summary-sig-arg">v2</span>,
+        <span class="summary-sig-arg">precedence</span>,
+        <span class="summary-sig-arg">cyclecheck</span>,
+        <span class="summary-sig-arg">path</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_fset">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="merge_fdel"></a><span class="summary-sig-name">merge_fdel</span>(<span class="summary-sig-arg">v1</span>,
+        <span class="summary-sig-arg">v2</span>,
+        <span class="summary-sig-arg">precedence</span>,
+        <span class="summary-sig-arg">cyclecheck</span>,
+        <span class="summary-sig-arg">path</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_fdel">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="merge_proxy_for"></a><span class="summary-sig-name">merge_proxy_for</span>(<span class="summary-sig-arg">v1</span>,
+        <span class="summary-sig-arg">v2</span>,
+        <span class="summary-sig-arg">precedence</span>,
+        <span class="summary-sig-arg">cyclecheck</span>,
+        <span class="summary-sig-arg">path</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_proxy_for">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_merge_proxy_for-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_merge_proxy_for-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_merge_proxy_for" name="call_graph_for_merge_proxy_for">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_attribute" title="merge_attribute()" alt="" coords="5,6,157,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_proxy_for" title="merge_proxy_for()" alt="" coords="207,6,369,38" />
+</map>
+  <img src="call_graph_for_merge_proxy_for.gif" alt='' usemap="#call_graph_for_merge_proxy_for" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="merge_bases"></a><span class="summary-sig-name">merge_bases</span>(<span class="summary-sig-arg">baselist1</span>,
+        <span class="summary-sig-arg">baselist2</span>,
+        <span class="summary-sig-arg">precedence</span>,
+        <span class="summary-sig-arg">cyclecheck</span>,
+        <span class="summary-sig-arg">path</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_bases">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_merge_bases-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_merge_bases-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_merge_bases" name="call_graph_for_merge_bases">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="apidoc.DottedName.__cmp__()" alt="" coords="385,6,641,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="392,62,635,94" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_attribute" title="merge_attribute()" alt="" coords="5,90,157,122" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_bases" title="merge_bases()" alt="" coords="205,90,336,122" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs" title="merge_docs()" alt="" coords="452,118,575,150" />
+<area shape="rect" href="epydoc.log&#45;module.html#info" title="log.info()" alt="" coords="468,174,559,206" />
+</map>
+  <img src="call_graph_for_merge_bases.gif" alt='' usemap="#call_graph_for_merge_bases" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="merge_posarg_defaults"></a><span class="summary-sig-name">merge_posarg_defaults</span>(<span class="summary-sig-arg">defaults1</span>,
+        <span class="summary-sig-arg">defaults2</span>,
+        <span class="summary-sig-arg">precedence</span>,
+        <span class="summary-sig-arg">cyclecheck</span>,
+        <span class="summary-sig-arg">path</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_posarg_defaults">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_merge_posarg_de-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_merge_posarg_de-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_merge_posarg_de" name="call_graph_for_merge_posarg_de">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_attribute" title="merge_attribute()" alt="" coords="5,6,157,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_posarg_defaults" title="merge_posarg_defaults()" alt="" coords="205,6,413,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs" title="merge_docs()" alt="" coords="463,6,585,38" />
+</map>
+  <img src="call_graph_for_merge_posarg_de.gif" alt='' usemap="#call_graph_for_merge_posarg_de" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="merge_docstring"></a><span class="summary-sig-name">merge_docstring</span>(<span class="summary-sig-arg">docstring1</span>,
+        <span class="summary-sig-arg">docstring2</span>,
+        <span class="summary-sig-arg">precedence</span>,
+        <span class="summary-sig-arg">cyclecheck</span>,
+        <span class="summary-sig-arg">path</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_docstring">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_merge_docstring-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_merge_docstring-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_merge_docstring" name="call_graph_for_merge_docstring">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_attribute" title="merge_attribute()" alt="" coords="6,6,158,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docstring" title="merge_docstring()" alt="" coords="207,6,364,38" />
+</map>
+  <img src="call_graph_for_merge_docstring.gif" alt='' usemap="#call_graph_for_merge_docstring" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="merge_docs_extracted_by"></a><span class="summary-sig-name">merge_docs_extracted_by</span>(<span class="summary-sig-arg">v1</span>,
+        <span class="summary-sig-arg">v2</span>,
+        <span class="summary-sig-arg">precedence</span>,
+        <span class="summary-sig-arg">cyclecheck</span>,
+        <span class="summary-sig-arg">path</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_docs_extracted_by">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_merge_docs_extr-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_merge_docs_extr-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_merge_docs_extr" name="call_graph_for_merge_docs_extr">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_attribute" title="merge_attribute()" alt="" coords="5,6,157,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs_extracted_by" title="merge_docs_extracted_by()" alt="" coords="205,6,435,38" />
+</map>
+  <img src="call_graph_for_merge_docs_extr.gif" alt='' usemap="#call_graph_for_merge_docs_extr" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Linking</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="link_imports"></a><span class="summary-sig-name">link_imports</span>(<span class="summary-sig-arg">val_doc</span>,
+        <span class="summary-sig-arg">docindex</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#link_imports">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_link_imports-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_link_imports-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_link_imports" name="call_graph_for_link_imports">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="build_doc_index()" alt="" coords="5,6,165,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#link_imports" title="link_imports()" alt="" coords="215,6,343,38" />
+</map>
+  <img src="call_graph_for_link_imports.gif" alt='' usemap="#call_graph_for_link_imports" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Naming</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docbuilder-module.html#assign_canonical_names" class="summary-sig-name">assign_canonical_names</a>(<span class="summary-sig-arg">val_doc</span>,
+        <span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">score</span>=<span class="summary-sig-default">0</span>)</span><br />
+      Assign a canonical name to <code>val_doc</code> (if it doesn't 
+      have one already), and (recursively) to each variable in 
+      <code>val_doc</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#assign_canonical_names">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_assign_canonica-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_assign_canonica-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_assign_canonica" name="call_graph_for_assign_canonica">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="509,6,733,38" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__hash__" title="apidoc.APIDoc.__hash__()" alt="" coords="509,62,733,94" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#apidoc_links" title="apidoc.ClassDoc.apidoc_links()" alt="" coords="492,118,751,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="apidoc.DottedName.__init__()" alt="" coords="496,174,747,206" />
+<area shape="rect" href="epydoc.apidoc.ModuleDoc&#45;class.html#apidoc_links" title="apidoc.ModuleDoc.apidoc_links()" alt="" coords="483,230,760,262" />
+<area shape="rect" href="epydoc.apidoc.PropertyDoc&#45;class.html#apidoc_links" title="apidoc.PropertyDoc.apidoc_links()" alt="" coords="480,286,763,318" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#apidoc_links" title="apidoc.ValueDoc.apidoc_links()" alt="" coords="489,342,753,374" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_unreachable_name_for" title="_unreachable_name_for()" alt="" coords="515,398,728,430" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_var_shadows_self" title="_var_shadows_self()" alt="" coords="532,454,711,486" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#assign_canonical_names" title="assign_canonical_names()" alt="" coords="213,230,432,262" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="build_doc_index()" alt="" coords="5,230,165,262" />
+</map>
+  <img src="call_graph_for_assign_canonica.gif" alt='' usemap="#call_graph_for_assign_canonica" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_var_shadows_self"></a><span class="summary-sig-name">_var_shadows_self</span>(<span class="summary-sig-arg">var_doc</span>,
+        <span class="summary-sig-arg">varname</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#_var_shadows_self">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__var_shadows_se-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__var_shadows_se-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__var_shadows_se" name="call_graph_for__var_shadows_se">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="520,6,744,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="apidoc.DottedName.__cmp__()" alt="" coords="504,62,760,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#dominates" title="apidoc.DottedName.dominates()" alt="" coords="500,118,764,150" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_var_shadows_self" title="_var_shadows_self()" alt="" coords="272,62,451,94" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#assign_canonical_names" title="assign_canonical_names()" alt="" coords="6,62,224,94" />
+</map>
+  <img src="call_graph_for__var_shadows_se.gif" alt='' usemap="#call_graph_for__var_shadows_se" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_fix_self_shadowing_var"></a><span class="summary-sig-name">_fix_self_shadowing_var</span>(<span class="summary-sig-arg">var_doc</span>,
+        <span class="summary-sig-arg">varname</span>,
+        <span class="summary-sig-arg">docindex</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#_fix_self_shadowing_var">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_unreachable_name_for"></a><span class="summary-sig-name">_unreachable_name_for</span>(<span class="summary-sig-arg">val_doc</span>,
+        <span class="summary-sig-arg">docindex</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#_unreachable_name_for">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__unreachable_na-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__unreachable_na-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__unreachable_na" name="call_graph_for__unreachable_na">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="555,6,779,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="apidoc.DottedName.__cmp__()" alt="" coords="539,62,795,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__hash__" title="apidoc.DottedName.__hash__()" alt="" coords="538,118,796,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="apidoc.DottedName.__init__()" alt="" coords="542,174,792,206" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__len__" title="apidoc.DottedName.__len__()" alt="" coords="543,230,791,262" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="546,286,788,318" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_unreachable_name_for" title="_unreachable_name_for()" alt="" coords="274,146,487,178" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#assign_canonical_names" title="assign_canonical_names()" alt="" coords="6,146,224,178" />
+</map>
+  <img src="call_graph_for__unreachable_na.gif" alt='' usemap="#call_graph_for__unreachable_na" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Inheritance</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="inherit_docs"></a><span class="summary-sig-name">inherit_docs</span>(<span class="summary-sig-arg">class_doc</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#inherit_docs">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_inherit_docs-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_inherit_docs-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_inherit_docs" name="call_graph_for_inherit_docs">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="390,6,614,38" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#mro" title="apidoc.ClassDoc.mro()" alt="" coords="404,62,599,94" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_inherit_info" title="_inherit_info()" alt="" coords="436,118,567,150" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="build_doc_index()" alt="" coords="6,62,166,94" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#inherit_docs" title="inherit_docs()" alt="" coords="214,62,342,94" />
+</map>
+  <img src="call_graph_for_inherit_docs.gif" alt='' usemap="#call_graph_for_inherit_docs" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_inherit_info"></a><span class="summary-sig-name">_inherit_info</span>(<span class="summary-sig-arg">var_doc</span>)</span><br />
+      Copy any relevant documentation information from the variable that
+      <code>var_doc</code> overrides into <code>var_doc</code> itself.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docbuilder-pysrc.html#_inherit_info">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__inherit_info-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__inherit_info-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__inherit_info" name="call_graph_for__inherit_info">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_inherit_info" title="_inherit_info()" alt="" coords="183,6,313,38" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#inherit_docs" title="inherit_docs()" alt="" coords="5,6,133,38" />
+</map>
+  <img src="call_graph_for__inherit_info.gif" alt='' usemap="#call_graph_for__inherit_info" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+</table>
+<!-- ==================== VARIABLES ==================== -->
+<a name="section-Variables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Variables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docbuilder-module.html#_INHERITED_ATTRIBS" class="summary-name">_INHERITED_ATTRIBS</a> = <code title="['descr',
+ 'summary',
+ 'metadata',
+ 'extra_docstring_fields',
+ 'type_descr',
+ 'arg_descrs',
+ 'arg_types',
+ 'return_descr',
+..."><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">descr</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">summary</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">metadata</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">extra_d</code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Merging</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docbuilder-module.html#MERGE_PRECEDENCE" class="summary-name">MERGE_PRECEDENCE</a> = <code title="{'canonical_name': 'introspect',
+ 'docformat': 'parse',
+ 'docstring': 'introspect',
+ 'filename': 'parse',
+ 'is_alias': 'parse',
+ 'is_imported': 'introspect',
+ 'is_package': 'parse',
+ 'repr': 'parse',
+..."><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">canonical_name</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">introspect</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">docformat</code><code class="variable-ellipsis">...</code></code><br />
+      Indicates whether information from introspection or parsing should
+      be given precedence, for specific attributes.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docbuilder-module.html#DEFAULT_MERGE_PRECEDENCE" class="summary-name">DEFAULT_MERGE_PRECEDENCE</a> = <code title="'introspect'"><code class="variable-quote">'</code><code class="variable-string">introspect</code><code class="variable-quote">'</code></code><br />
+      Indicates whether information from introspection or parsing should
+      be given precedence.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docbuilder-module.html#_attribute_mergefunc_registry" class="summary-name">_attribute_mergefunc_registry</a> = <code title="{}"><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">bases</code><code class="variable-quote">'</code><code class="variable-op">: </code>&lt;function merge_base<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8"  class="private">
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Naming</th></tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docbuilder-module.html#_name_scores" class="summary-name">_name_scores</a> = <code title="{&lt;ModuleDoc ConfigParser&gt;: 2147483647,
+ &lt;ClassDoc UnicodeEncodeError&gt;: 2147483647,
+ &lt;RoutineDoc UnicodeEncodeError.__init__&gt;: -21,
+ &lt;RoutineDoc UnicodeEncodeError.__new__&gt;: -21,
+ &lt;RoutineDoc UnicodeEncodeError.__str__&gt;: -21,
+ &lt;PropertyDoc UnicodeEncodeError.encoding&gt;: -21,
+ &lt;PropertyDoc UnicodeEncodeError.end&gt;: -21,
+ &lt;PropertyDoc UnicodeEncodeError.message&gt;: -21,
+..."><code class="variable-group">{</code>&lt;ModuleDoc ConfigParser&gt;<code class="variable-op">: </code>2147483647<code class="variable-op">, </code>&lt;ClassDo<code class="variable-ellipsis">...</code></code><br />
+      A dictionary mapping from each <code>ValueDoc</code> to the score 
+      that has been assigned to its current cannonical name.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docbuilder-module.html#_unreachable_names" class="summary-name">_unreachable_names</a> = <code title="{DottedName('??'): 12,
+ DottedName('??', 'APIDoc'): 4,
+ DottedName('??', 'ApiLinkReader'): 2,
+ DottedName('??', 'ArithmeticError'): 4,
+ DottedName('??', 'AssertionError'): 1,
+ DottedName('??', 'AttributeError'): 1,
+ DottedName('??', 'BaseException'): 4,
+ DottedName('??', 'Body'): 1,
+..."><code class="variable-group">{</code>DottedName('??')<code class="variable-op">: </code>12<code class="variable-op">, </code>DottedName('??', '<code class="variable-ellipsis">...</code></code><br />
+      The set of names that have been used for unreachable objects.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTION DETAILS ==================== -->
+<a name="section-FunctionDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Function Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-FunctionDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="build_doc"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">build_doc</span>(<span class="sig-arg">item</span>,
+        <span class="sig-arg">introspect</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">parse</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">add_submodules</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">exclude_introspect</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">exclude_parse</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docbuilder-pysrc.html#build_doc">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Build API documentation for a given item, and return it as an <a 
+  href="epydoc.apidoc.APIDoc-class.html" class="link">APIDoc</a> 
+  object.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>item</code></strong> - The item to document, specified using any of the 
+          following:
+          <ul>
+            <li>
+              A string, naming a python package directory (e.g., 
+              <code>'epydoc/markup'</code>)
+            </li>
+            <li>
+              A string, naming a python file (e.g., 
+              <code>'epydoc/docparser.py'</code>)
+            </li>
+            <li>
+              A string, naming a python object (e.g., 
+              <code>'epydoc.docparser.DocParser'</code>)
+            </li>
+            <li>
+              Any (non-string) python object (e.g., 
+              <code>list.append</code>)
+            </li>
+          </ul></li>
+        <li><strong class="pname"><code>introspect</code></strong> - If true, then use introspection to examine the specified 
+          items.  Otherwise, just use parsing.</li>
+        <li><strong class="pname"><code>parse</code></strong> - If true, then use parsing to examine the specified items.  
+          Otherwise, just use introspection.</li>
+    </ul></dd>
+    <dt>Returns: <a href="epydoc.apidoc.APIDoc-class.html" 
+      class="link">APIDoc</a></dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="build_doc_index"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">build_doc_index</span>(<span class="sig-arg">items</span>,
+        <span class="sig-arg">introspect</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">parse</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">add_submodules</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">exclude_introspect</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">exclude_parse</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docbuilder-pysrc.html#build_doc_index">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_build_doc_index-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_build_doc_index-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_build_doc_index" name="call_graph_for_build_doc_index">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="286,6,510,38" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#__init__" title="apidoc.DocIndex.__init__()" alt="" coords="284,62,511,94" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#reachable_valdocs" title="apidoc.DocIndex.reachable_valdocs()" alt="" coords="246,118,550,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="apidoc.DottedName.__cmp__()" alt="" coords="270,174,526,206" />
+<area shape="rect" href="epydoc.apidoc.ModuleDoc&#45;class.html#init_submodule_groups" title="apidoc.ModuleDoc.init_submodule_groups()" alt="" coords="219,230,576,262" />
+<area shape="rect" href="epydoc.apidoc.NamespaceDoc&#45;class.html#init_sorted_variables" title="apidoc.NamespaceDoc.init_sorted_variables()" alt="" coords="215,286,580,318" />
+<area shape="rect" href="epydoc.apidoc.NamespaceDoc&#45;class.html#init_variable_groups" title="apidoc.NamespaceDoc.init_variable_groups()" alt="" coords="216,342,579,374" />
+<area shape="rect" href="epydoc.docbuilder.BuildOptions&#45;class.html#__init__" title="BuildOptions.__init__()" alt="" coords="296,398,499,430" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_items" title="_get_docs_from_items()" alt="" coords="295,454,500,486" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_report_valdoc_progress" title="_report_valdoc_progress()" alt="" coords="288,510,507,542" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#assign_canonical_names" title="assign_canonical_names()" alt="" coords="288,566,507,598" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="build_doc_index()" alt="" coords="6,482,166,514" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#inherit_docs" title="inherit_docs()" alt="" coords="334,622,462,654" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#link_imports" title="link_imports()" alt="" coords="334,678,462,710" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs" title="merge_docs()" alt="" coords="336,734,459,766" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="docstringparser.parse_docstring()" alt="" coords="262,790,534,822" />
+<area shape="rect" href="epydoc.log&#45;module.html#end_progress" title="log.end_progress()" alt="" coords="316,846,479,878" />
+<area shape="rect" href="epydoc.log&#45;module.html#progress" title="log.progress()" alt="" coords="335,902,460,934" />
+<area shape="rect" href="epydoc.log&#45;module.html#start_progress" title="log.start_progress()" alt="" coords="315,958,480,990" />
+</map>
+  <img src="call_graph_for_build_doc_index.gif" alt='' usemap="#call_graph_for_build_doc_index" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Build API documentation for the given list of items, and return it in 
+  the form of a <a href="epydoc.apidoc.DocIndex-class.html" 
+  class="link">DocIndex</a>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>items</code></strong> - The items to document, specified using any of the 
+          following:
+          <ul>
+            <li>
+              A string, naming a python package directory (e.g., 
+              <code>'epydoc/markup'</code>)
+            </li>
+            <li>
+              A string, naming a python file (e.g., 
+              <code>'epydoc/docparser.py'</code>)
+            </li>
+            <li>
+              A string, naming a python object (e.g., 
+              <code>'epydoc.docparser.DocParser'</code>)
+            </li>
+            <li>
+              Any (non-string) python object (e.g., 
+              <code>list.append</code>)
+            </li>
+          </ul></li>
+        <li><strong class="pname"><code>introspect</code></strong> - If true, then use introspection to examine the specified 
+          items.  Otherwise, just use parsing.</li>
+        <li><strong class="pname"><code>parse</code></strong> - If true, then use parsing to examine the specified items.  
+          Otherwise, just use introspection.</li>
+    </ul></dd>
+    <dt>Returns: <a href="epydoc.apidoc.DocIndex-class.html" 
+      class="link">DocIndex</a></dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_get_docs_from_module_file"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_get_docs_from_module_file</span>(<span class="sig-arg">filename</span>,
+        <span class="sig-arg">options</span>,
+        <span class="sig-arg">progress_estimator</span>,
+        <span class="sig-arg">parent_docs</span>=<span class="sig-default"><code class="variable-group">(</code>None<code class="variable-op">, </code>None<code class="variable-group">)</code></span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docbuilder-pysrc.html#_get_docs_from_module_file">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__get_docs_from__5-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for__get_docs_from__5-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__get_docs_from__5" name="call_graph_for__get_docs_from__5">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="apidoc.DottedName.__init__()" alt="" coords="624,6,875,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="628,62,871,94" />
+<area shape="rect" href="epydoc.docbuilder.BuildOptions&#45;class.html#must_introspect" title="BuildOptions.must_introspect()" alt="" coords="620,118,879,150" />
+<area shape="rect" href="epydoc.docbuilder.BuildOptions&#45;class.html#must_parse" title="BuildOptions.must_parse()" alt="" coords="638,174,862,206" />
+<area shape="rect" href="epydoc.docbuilder._ProgressEstimator&#45;class.html#progress" title="_ProgressEstimator.progress()" alt="" coords="626,230,874,262" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_items" title="_get_docs_from_items()" alt="" coords="31,230,236,262" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_module_file" title="_get_docs_from_module_file()" alt="" coords="311,258,564,290" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_report_errors" title="_report_errors()" alt="" coords="679,286,820,318" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_docs" title="docintrospecter.introspect_docs()" alt="" coords="615,342,884,374" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#parse_docs" title="docparser.parse_docs()" alt="" coords="652,398,847,430" />
+<area shape="rect" href="epydoc.log&#45;module.html#progress" title="log.progress()" alt="" coords="687,454,812,486" />
+<area shape="rect" href="epydoc.util&#45;module.html#py_src_filename" title="util.py_src_filename()" alt="" coords="655,510,844,542" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_submodules" title="_get_docs_from_submodules()" alt="" coords="7,286,260,318" />
+</map>
+  <img src="call_graph_for__get_docs_from__5.gif" alt='' usemap="#call_graph_for__get_docs_from__5" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Construct and return the API documentation for the python module with 
+  the given filename.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>parent_docs</code></strong> - The <code>ModuleDoc</code> of the containing package. If 
+          <code>parent_docs</code> is not provided, then this method will 
+          check if the given filename is contained in a package; and if so,
+          it will construct a stub <code>ModuleDoc</code> for the 
+          containing package(s).  <code>parent_docs</code> is a tuple, 
+          where the first element is the parent from introspection, and the
+          second element is the parent from parsing.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="register_attribute_mergefunc"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">register_attribute_mergefunc</span>(<span class="sig-arg">attrib</span>,
+        <span class="sig-arg">mergefunc</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docbuilder-pysrc.html#register_attribute_mergefunc">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Register an attribute merge function.  This function will be called by
+  <a href="epydoc.docbuilder-module.html#merge_docs" 
+  class="link">merge_docs()</a> when it needs to merge the attribute values
+  of two <code>APIDoc</code>s.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>attrib</code></strong> - The name of the attribute whose values are merged by 
+          <code>mergefunc</code>.</li>
+        <li><strong class="pname"><code>mergefunc</code></strong> - The merge function, whose sinature is:
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">mergefunc</span>(introspect_val, parse_val, precedence, cyclecheck, path):
+<span class="py-more">... </span>    return calculate_merged_value(introspect_val, parse_val)</pre>
+          <p>Where <code>introspect_val</code> and <code>parse_val</code> 
+          are the two values to combine; <code>precedence</code> is a 
+          string indicating which value takes precedence for this attribute
+          (<code>'introspect'</code> or <code>'parse'</code>); 
+          <code>cyclecheck</code> is a value used by 
+          <code>merge_docs()</code> to make sure that it only visits each 
+          pair of docs once; and <code>path</code> is a string describing 
+          the path that was taken from the root to this attribute (used to 
+          generate log messages).</p>
+          If the merge function needs to call <code>merge_docs</code>, 
+          then it should pass <code>cyclecheck</code> and <code>path</code>
+          back in.  (When appropriate, a suffix should be added to 
+          <code>path</code> to describe the path taken to the merged 
+          values.)</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="merge_docs"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">merge_docs</span>(<span class="sig-arg">introspect_doc</span>,
+        <span class="sig-arg">parse_doc</span>,
+        <span class="sig-arg">cyclecheck</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">path</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docbuilder-pysrc.html#merge_docs">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_merge_docs-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_merge_docs-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_merge_docs" name="call_graph_for_merge_docs">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="481,6,705,38" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#merge_and_overwrite" title="apidoc.APIDoc.merge_and_overwrite()" alt="" coords="435,62,752,94" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#specialize_to" title="apidoc.APIDoc.specialize_to()" alt="" coords="468,118,719,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="apidoc.DottedName.__cmp__()" alt="" coords="465,174,721,206" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="472,230,715,262" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_merge_posargs_and_defaults" title="_merge_posargs_and_defaults()" alt="" coords="463,286,724,318" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="build_doc_index()" alt="" coords="29,90,189,122" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs" title="merge_docs()" alt="" coords="263,202,385,234" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_attribute" title="merge_attribute()" alt="" coords="517,342,669,374" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_bases" title="merge_bases()" alt="" coords="44,146,175,178" />
+<area shape="rect" href="epydoc.log&#45;module.html#info" title="log.info()" alt="" coords="548,398,639,430" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_posarg_defaults" title="merge_posarg_defaults()" alt="" coords="5,202,213,234" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_value" title="merge_value()" alt="" coords="44,258,175,290" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_variables" title="merge_variables()" alt="" coords="31,314,188,346" />
+</map>
+  <img src="call_graph_for_merge_docs.gif" alt='' usemap="#call_graph_for_merge_docs" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  <p>Merge the API documentation information that was obtained from 
+  introspection with information that was obtained from parsing. 
+  <code>introspect_doc</code> and <code>parse_doc</code> should be two 
+  <code>APIDoc</code> instances that describe the same object.  
+  <code>merge_docs</code> combines the information from these two 
+  instances, and returns the merged <code>APIDoc</code>.</p>
+  If <code>introspect_doc</code> and <code>parse_doc</code> are 
+  compatible, then they will be <i>merged</i> -- i.e., they will be coerced
+  to a common class, and their state will be stored in a shared dictionary.
+  Once they have been merged, any change made to the attributes of one will
+  affect the other.  The value for the each of the merged 
+  <code>APIDoc</code>'s attributes is formed by combining the values of the
+  source <code>APIDoc</code>s' attributes, as follows:
+  <ul>
+    <li>
+      If either of the source attributes' value is <code>UNKNOWN</code>,
+      then use the other source attribute's value.
+    </li>
+    <li>
+      Otherwise, if an attribute merge function has been registered for 
+      the attribute, then use that function to calculate the merged value 
+      from the two source attribute values.
+    </li>
+    <li>
+      Otherwise, if <a 
+      href="epydoc.docbuilder-module.html#MERGE_PRECEDENCE" 
+      class="link">MERGE_PRECEDENCE</a> is defined for the attribute, then 
+      use the attribute value from the source that it indicates.
+    </li>
+    <li>
+      Otherwise, use the attribute value from the source indicated by <a
+      href="epydoc.docbuilder-module.html#DEFAULT_MERGE_PRECEDENCE" 
+      class="link">DEFAULT_MERGE_PRECEDENCE</a>.
+    </li>
+  </ul>
+  If <code>introspect_doc</code> and <code>parse_doc</code> are 
+  <i>not</i> compatible (e.g., if their values have incompatible types), 
+  then <code>merge_docs()</code> will simply return either 
+  <code>introspect_doc</code> or <code>parse_doc</code>, depending on the 
+  value of <a href="epydoc.docbuilder-module.html#DEFAULT_MERGE_PRECEDENCE"
+  class="link">DEFAULT_MERGE_PRECEDENCE</a>.  The two input 
+  <code>APIDoc</code>s will not be merged or modified in any way.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>cyclecheck</code></strong>, <strong class="pname"><code>path</code></strong> - These arguments should only be provided when 
+          <code>merge_docs()</code> is called by an attribute merge 
+          function.  See <a 
+          href="epydoc.docbuilder-module.html#register_attribute_mergefunc"
+          class="link">register_attribute_mergefunc()</a> for more 
+          details.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="assign_canonical_names"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">assign_canonical_names</span>(<span class="sig-arg">val_doc</span>,
+        <span class="sig-arg">name</span>,
+        <span class="sig-arg">docindex</span>,
+        <span class="sig-arg">score</span>=<span class="sig-default">0</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docbuilder-pysrc.html#assign_canonical_names">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_assign_canonica-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_assign_canonica-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_assign_canonica" name="call_graph_for_assign_canonica">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="509,6,733,38" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__hash__" title="apidoc.APIDoc.__hash__()" alt="" coords="509,62,733,94" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#apidoc_links" title="apidoc.ClassDoc.apidoc_links()" alt="" coords="492,118,751,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="apidoc.DottedName.__init__()" alt="" coords="496,174,747,206" />
+<area shape="rect" href="epydoc.apidoc.ModuleDoc&#45;class.html#apidoc_links" title="apidoc.ModuleDoc.apidoc_links()" alt="" coords="483,230,760,262" />
+<area shape="rect" href="epydoc.apidoc.PropertyDoc&#45;class.html#apidoc_links" title="apidoc.PropertyDoc.apidoc_links()" alt="" coords="480,286,763,318" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#apidoc_links" title="apidoc.ValueDoc.apidoc_links()" alt="" coords="489,342,753,374" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_unreachable_name_for" title="_unreachable_name_for()" alt="" coords="515,398,728,430" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_var_shadows_self" title="_var_shadows_self()" alt="" coords="532,454,711,486" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#assign_canonical_names" title="assign_canonical_names()" alt="" coords="213,230,432,262" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="build_doc_index()" alt="" coords="5,230,165,262" />
+</map>
+  <img src="call_graph_for_assign_canonica.gif" alt='' usemap="#call_graph_for_assign_canonica" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Assign a canonical name to <code>val_doc</code> (if it doesn't have 
+  one already), and (recursively) to each variable in <code>val_doc</code>.
+  In particular, <code>val_doc</code> will be assigned the canonical name 
+  <code>name</code> iff either:
+  <ul>
+    <li>
+      <code>val_doc</code>'s canonical name is <code>UNKNOWN</code>; 
+      or
+    </li>
+    <li>
+      <code>val_doc</code>'s current canonical name was assigned by this
+      method; but the score of the new name (<code>score</code>) is higher 
+      than the score of the current name 
+      (<code>score_dict[val_doc]</code>).
+    </li>
+  </ul>
+  Note that canonical names will even be assigned to values like 
+  integers and <code>None</code>; but these should be harmless.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== VARIABLES DETAILS ==================== -->
+<a name="section-VariablesDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-VariablesDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="MERGE_PRECEDENCE"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">MERGE_PRECEDENCE</h3>
+  Indicates whether information from introspection or parsing should be 
+  given precedence, for specific attributes.  This dictionary maps from 
+  attribute names to either <code>'introspect'</code> or 
+  <code>'parse'</code>.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">canonical_name</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">introspect</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">docformat</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">parse</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">docstring</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">introspect</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">filename</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">parse</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">is_alias</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">parse</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">is_imported</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">introspect</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">is_package</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">parse</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">repr</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">parse</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="DEFAULT_MERGE_PRECEDENCE"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">DEFAULT_MERGE_PRECEDENCE</h3>
+  Indicates whether information from introspection or parsing should be 
+  given precedence.  Should be either <code>'introspect'</code> or 
+  <code>'parse'</code>
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-quote">'</code><code class="variable-string">introspect</code><code class="variable-quote">'</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_attribute_mergefunc_registry"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_attribute_mergefunc_registry</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+{}
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_name_scores"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_name_scores</h3>
+  A dictionary mapping from each <code>ValueDoc</code> to the score that
+  has been assigned to its current cannonical name.  If <a 
+  href="epydoc.docbuilder-module.html#assign_canonical_names" 
+  class="link">assign_canonical_names()</a> finds a canonical name with a 
+  better score, then it will replace the old name.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">{</code>&lt;ModuleDoc ConfigParser&gt;<code class="variable-op">: </code>2147483647<code class="variable-op">,</code>
+ &lt;ClassDoc UnicodeEncodeError&gt;<code class="variable-op">: </code>2147483647<code class="variable-op">,</code>
+ &lt;RoutineDoc UnicodeEncodeError.__init__&gt;<code class="variable-op">: </code>-21<code class="variable-op">,</code>
+ &lt;RoutineDoc UnicodeEncodeError.__new__&gt;<code class="variable-op">: </code>-21<code class="variable-op">,</code>
+ &lt;RoutineDoc UnicodeEncodeError.__str__&gt;<code class="variable-op">: </code>-21<code class="variable-op">,</code>
+ &lt;PropertyDoc UnicodeEncodeError.encoding&gt;<code class="variable-op">: </code>-21<code class="variable-op">,</code>
+ &lt;PropertyDoc UnicodeEncodeError.end&gt;<code class="variable-op">: </code>-21<code class="variable-op">,</code>
+ &lt;PropertyDoc UnicodeEncodeError.message&gt;<code class="variable-op">: </code>-21<code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_unreachable_names"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_unreachable_names</h3>
+  The set of names that have been used for unreachable objects.  This is
+  used to ensure there are no duplicate cannonical names assigned. 
+  <code>_unreachable_names</code> is a dictionary mapping from dotted names
+  to integer ids, where the next unused unreachable name derived from 
+  dotted name <code>n</code> is <code>DottedName('%s-%s' % (n, 
+  str(_unreachable_names[n]+1))</code>
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">{</code>DottedName('??')<code class="variable-op">: </code>12<code class="variable-op">,</code>
+ DottedName('??', 'APIDoc')<code class="variable-op">: </code>4<code class="variable-op">,</code>
+ DottedName('??', 'ApiLinkReader')<code class="variable-op">: </code>2<code class="variable-op">,</code>
+ DottedName('??', 'ArithmeticError')<code class="variable-op">: </code>4<code class="variable-op">,</code>
+ DottedName('??', 'AssertionError')<code class="variable-op">: </code>1<code class="variable-op">,</code>
+ DottedName('??', 'AttributeError')<code class="variable-op">: </code>1<code class="variable-op">,</code>
+ DottedName('??', 'BaseException')<code class="variable-op">: </code>4<code class="variable-op">,</code>
+ DottedName('??', 'Body')<code class="variable-op">: </code>1<code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_INHERITED_ATTRIBS"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_INHERITED_ATTRIBS</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">descr</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">summary</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">metadata</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">extra_docstring_fields</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">type_descr</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">arg_descrs</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">arg_types</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">return_descr</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:02:28 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

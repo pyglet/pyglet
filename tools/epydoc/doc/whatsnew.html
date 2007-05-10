@@ -1,0 +1,301 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title>Epydoc: What's New</title>
+<link rel="stylesheet" href="epydoc.css" type="text/css"/>
+</head>
+<!-- $Id: faq.html 602 2003-09-07 23:49:56Z edloper $ -->
+
+<body>
+<div class="body">
+<h1> What's New in Epydoc </h1>
+
+<div class="box">
+<h2 class="box-title">Epydoc 3.0 (beta)</h2>
+<center><i>Beta 1 released February, 2007</i></center>
+
+<h3>Support for Parsing &amp; Introspection</h3>
+
+<p> In previous versions, epydoc extracted information about each
+module by importing it, and using introspection to examine its
+contents.  Epydoc 3.0 still supports introspection, but is also
+capable of extracting information about python modules by parsing
+their source code.  Furthermore, the new version of epydoc can combine
+these two sources of information (introspection &amp; parsing).  This is
+important because each source has its own advantages and disadvantages
+with respect to the other.  See the <a
+href="faq.html#introspect_vs_parse">FAQ</a> for more information about
+the relative benefits of introspection and parsing, and why it's good
+to merge information from both sources. </p>
+
+<h3>Docstrings for variables</h3>
+
+<p>Epydoc now supports <i>variable docstrings</i>.  If a variable
+assignment statement is immediately followed by a bare string literal,
+then that assignment is treated as a docstring for that variable.  In
+classes, variable assignments at the class definition level are
+considered class variables; and assignments to instance variables in
+the constructor (__init__) are considered instance variables:<p>
+
+<div class="screen2"><pre>
+<code class="prompt">&gt;&gt;&gt;</code> <code class="keyword">class</code> A:
+<code class="prompt">...</code>     x = 22
+<code class="prompt">...</code>     <code class="string">"""Docstring for class variable A.x"""</code>
+<code class="prompt">...</code>
+<code class="prompt">...</code>     <code class="keyword">def</code> <code class="function">__init__</code>(self, a):
+<code class="prompt">...</code>         self.y = a
+<code class="prompt">...</code>         <code class="string">"""Docstring for instance variable A.y</code>
+</pre></div>
+
+<p>Variables may also be documented using <i>comment docstrings</i>.
+If a variable assignment is immediately preceeded by a comment whose
+lines begin with the special marker "<code><b>#:</b></code>", or is
+followed on the same line by such a comment, then it is treated as a
+docstring for that variable: </p>
+
+<div class="screen2"><pre>
+<code class="prompt">&gt;&gt;&gt;</code> <code class="comment">#: docstring for x</code>
+<code class="prompt">...</code> x = 22
+<code class="prompt">&gt;&gt;&gt;</code> x = 22 <code class="comment">#: docstring for x</code>
+</pre></div> <!-- " -->
+
+<h3> Graphs &amp; Diagrams </h3>
+
+<p>Epydoc can automatically generate a variety of graphs, including
+class tress, package trees, uml class graphs, and import graphs.
+These graphs may be included in the generated output in one of two
+ways: </p>
+
+  <ul>
+     <li> The <code>--graph</code> option causes epydoc to
+     automatically generate a given type of graph for all applicable
+     modules, classes, or functions.  For example, using
+     <code>--graph&nbsp;classtree</code> will replace the text-based
+     class tree with a graphical class tree on all module pages.  See
+     the <a href="using.html#cli">command line interface</a>
+     documentation for more information.</li>
+
+     <li> Graphs may be explicitly created by docstrings, using
+     appropriate markup.  In epytext, graphs are created using the
+     "<code>G</code>" colorization marker (i.e.,
+     "<code>G{<i>graphname</i>}</code>", or "<code>G{<i>graphname</i>
+     <i>options...</i>}</code>" for graphs with options).  In
+     reStructuredText, graphs are created using custom <a
+     href="http://docutils.sourceforge.net/docs/user/rst/quickref.html#directives">directives</a>.
+     For more information, see the <a
+     href="epytext.html#graphs">epytext manual</a> or the notes on <a
+     href="othermarkup.html#restructuredtext">using reStructuredText
+     with epydoc. </a>.</li>
+  </ul>
+
+  <p> Epydoc can also generate <i>function call graphs</i>, showing the callers
+  and the callees for each function. To generate call graphs, Epydoc uses
+  data produced by a <a href="http://docs.python.org/lib/profile.html">Python
+  profiler</a> such <code>Profile</code> or <code>hotshot</code>. </p>
+
+  <p> For some examples of automatically generated graphs, see the <a
+  href="api/">API Documentation</a> for epydoc (including the page
+  for the <a href="api/epydoc.docwriter.dotgraph-module.html"
+  ><code>epydoc.docwriter.dotgraph</code> module</a>). </p>
+
+  <p> Graph generation requires the <a
+  href="http://www.graphviz.org/">Graphviz package</a>
+  [<a href="http://www.graphviz.org/Download..php">download</a>]. </p>
+
+<h3> Syntax Highlighted Source Code </h3>
+
+<p> The HTML output now includes source code listings with syntax
+higlighting, including links from identifiers back into the
+documentation.  For examples of source code pages, see the <a
+href="api/">API Documentation</a> for epydoc (follow the <i>show
+source</i> link from any documented module, class, or function).
+</p>
+
+<h3> Improved Output </h3>
+
+<ul>
+  <li> Methods that are inherited from "external" base classes are
+  listed, but no longer described in detail.  E.g., if "object" is
+  used as a base class, then the methods inherited from "object" will
+  be listed at the bottom of the method summary table, but not
+  described in detail. Furthermore methods and variables not very detailed
+  (with at most a short docstring) are only shown in the summary, while
+  most detailed items also appear in a full detailed box. </li>
+
+  <li> The HTML output no longer contains separate pages for including
+  and excluding private variables.  Instead, it uses CSS to
+  dynamically hide or display private variables.  A cookie is used to
+  record the user's preference.  (By default, private variables are
+  hidden.) </li>
+
+  <li> Additional pages are created, listing identifiers, documented
+  definitions, bugs and to-do items. An optional log page can also be
+  generated, reporting all the errors and warning raised during documentation
+  generation. </li>
+
+  <li> Improved variable values representation, using the parsed
+  values if the standard representation is not informative (such
+  as <code>&lt;Foo instance at 0x...&gt;</code>).  Syntax highlighting
+  is used for introspected values, including colorization for regular
+  expressions. </li>
+
+  <li> Improved support for adding links into the generated
+  documentation.  A new API,
+  <a href="api/epydoc.docwriter.xlink-module.html"
+  ><code>epydoc.docwriter.xlink</code></a>, can be used to determine
+  the correct URL for any object name; and a new redirect page named 
+  named "<code>redirect.html"</code> uses javascript to automatically
+  redirect the user to the correct URL for any given object name.  See
+  the <a href="faq.html#redirect">FAQ</a> for more information.
+</ul>
+
+<h3>Improved Documentation Extraction</h3>
+
+<ul>
+  <li> Proper support for nested classes.</li>
+  <li> Full unicode support, including support for the <a href="http://www.python.org/peps/pep-0263.html">encoding directive</a>.</li>
+  <li> Variables conventionally used for modules metadata such as
+  <code>__version__</code> are recognized as modules fields.</li>
+  <li>The <code>__all__</code> attribute is used to decide whether objects
+  are public or private. If an object is listed in an <code>__all__</code>
+  list, it will appear defined in that module even if imported from elsewhere,
+  keeping the API safe from implementation changes.</li>
+  <li> Increased robustness in the face of a variety of "magic"
+  manipulations of namespaces.</li>
+  <li> Fine-grained control over exactly which modules should be parsed,
+  introspected, or both. </li>
+  <li> Support for Zope 3.x InterfaceClass and Zope 2.x ExtensionClass
+  objects. </li>
+</ul>
+
+</div>
+
+<div class="box">
+<h2 class="box-title">Epydoc 2.1</h2>
+<center><i>Released March 20, 2004</i></center>
+
+<h3>New Features</h3>
+<ul>
+  <li> Support for Zope ExtensionClasses 
+  <li> Updated graphical user interface 
+  <li> Added support for modules that define __path__. 
+  <li> New documentation fields: 
+  <ul> 
+    <li> @include: Imports the documentation from another object. 
+    <li> @undocumented: Don't document the given object(s) 
+  </ul> 
+  <li> Various bug fixes 
+</ul>
+</div>
+
+<div class="box">
+<h2 class="box-title">Epydoc 2.0</h2>
+<center><i>Released July 22, 2003</i></center>
+
+<h3>New Features</h3>
+
+<b>Improvements to Docstring processing</b>
+<ul> 
+  <li> Support for ReStructuredText docstrings.</li> 
+  <li> Support for Javadoc docstrings.</li> 
+  <li> Many new documentation fields for docstrings.</li> 
+  <li> More robust crossreference link resolving.</li>
+</ul>
+
+<b>Improvements to Output Generation</b> 
+<ul> 
+  <li> New output formats: LaTeX, DVI, PostScript, and PDF.</li> 
+  <li> Three new formats for displaying inherited methods and variables: listed, grouped, and included.</li> 
+</ul> 
+
+<b>Improvements to Inspection</b> <ul> 
+  <li> Support for new Python 2.2+ objects, including class methods, static methods, properties, and metaclasses.</li> 
+  <li> Automatic detection of imported variables.</li> 
+  <li> Documentation inheritance for inherited methods and variables.</li> 
+</ul> 
+
+<b>Improvements to Efficiency</b> <ul> 
+  <li> Epydoc 2.0 runs 50%-200% faster than epydoc 1.1. (e.g., it runs 160% faster when documenting the Python standard library).</li> 
+</ul>
+
+<h3>Changes</h3>
+
+<ul> 
+  <li> Support for ReStructuredText docstrings.</li> 
+  <li> Support for Javadoc docstrings.</li> 
+  <li> Many new documentation fields for docstrings.</li> 
+  <li> More robust crossreference link resolving.</li> 
+  <li> New output formats: LaTeX, DVI, PostScript, and PDF.</li> 
+  <li> Three new formats for displaying inherited methods and variables: listed, grouped, and included.</li> 
+  <li> Support for new Python 2.2+ objects, including class methods, static methods, properties, and metaclasses.</li> 
+  <li> Automatic detection of imported variables.</li> 
+  <li> Documentation inheritance for inherited methods and variables.</li> 
+  <li> Epydoc 2.0 runs 50%-200% faster than epydoc 1.1. (e.g., it runs 160% faster when documenting the Python standard library).</li> 
+  <li> The new "markup" package provides a simple interface makes it easy to add support for additional markup languages. </li> 
+  <li> __extra_epydoc_fields__ and @newfield can be used to define new fields. </li> 
+  <li> If the directory for a package is specified, then automatically document all of its contents. </li> 
+  <li> Increased contrast of "blue" and "green" stylesheet </li> 
+  <li> Added --test option, to control what tests are run for --check. </li> 
+  <li> Consolidated error reporting for failed crossreference links and overridden parameter mismatches. </li> 
+  <li> Added --ignore-param-mismatch option, which supresses warnings about parameter mismatches </li> 
+  <li> Fixed bug in path magic for epydoc.py and epydoc.pyw scripts </li> 
+  <li> Replaced __epydoc_sort__ with @sort </li> 
+  <li> Changes to epytext:
+  <ul> 
+    <li> Epytext now supports symbols (S{...}) </li> 
+    <li> Epydoc allows multi-word values for field arguments (eg for group names) </li> 
+    <li> Fixeded several minor bugs</li> 
+  </ul>
+  </li> 
+  <li> --show-imports now lists imported vars &amp; modules </li>
+  <li> Improvements to error reporting </li> 
+  <li> Improved sorting </li> 
+  <li> Many bug fixes </li> 
+  <li> General code clean-up </li> 
+  <li> Added preliminary and partial implementation for man-style output (like pydoc) </li> 
+  <li> Changed the definition of the --navlink parameter, to allow for more flexible encoding of the homepage link. </li> 
+  <li> Improvements to HTML output. 
+  <ul> 
+    <li> Display variable values in variable summary table </li> 
+    <li> Added tooltips for variable values, that show a more complete value (up to 600 characters) </li> 
+    <li> Minor tweaks &amp; improvements </li>
+    <li> In the table of contents, only list objects from modules that were explicitly documented (don't list base classes from imported modules, etc)</li>
+  </ul>
+</li>
+</ul>
+</div>
+
+<div class="box"><h2 class="box-title">Older Releases</h2>
+<p>See the <a
+href="http://sourceforge.net/project/showfiles.php?group_id=32455&amp;package_id=24617">Release
+Notes</a> on SourceForge.</p>
+</div>
+
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="index.html">
+    Home</a></td></a>
+  <a class="nav" href="installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

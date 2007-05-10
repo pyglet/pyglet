@@ -1,0 +1,181 @@
+/* 
+ * Cascading Style Sheet for edloper's webpage
+ * Copyright (C) 2002 Edward Loper
+ *
+ * This stylesheet is used to give my webpage a consistant feel.
+ * My webpage currently resides at <http://www.cis.upenn.edu/~edloper>
+ */
+
+/*===================================================================*/
+/* Default body appearance */
+
+body    { background: #b4ccd4; color: #000000; }
+
+@media print {
+  body { font-family: times,serif; font-size: 10pt; }
+}
+
+@media screen {
+  body    { background: #204060; color: #000000; }
+  div.body { 
+    background: white; color: black;
+/*    background: #c8e0e8; color: #000000;*/
+    padding: 0 1em 0 1em;
+    border: 2px solid black;
+/*    border: 2px groove #c0d0d0;*/
+  }
+}
+
+/*===================================================================*/
+/* Headlines. */
+
+h1 { font-size: 180%; font-weight: bold; text-align: center;
+     padding: .1em; margin: 0; border-bottom: 2px solid black;}
+h2 { font-size: 150%; font-weight: bold; }
+h3 { font-size: 140%; font-weight: bold; font-style: italic; }
+h4 { font-size: 130%; font-weight: bold; font-style: italic; }
+
+/*===================================================================*/
+/* Font alignment. */
+
+.left { text-align: left; }
+.center { text-align: center; }
+.right { text-align: right; }
+
+/*===================================================================*/
+/* Tables */
+
+table        { background: #ffffff; color: #000000; border: 1px solid black;}
+th           { background: #70b0ff; color: #000000;
+               font-weight: bold; border: 1px solid black; }
+td { border: 1px solid black; background: #e8f0f8; color: #000000; }
+th.secondary { background: #ffffff; color: #000000;
+               font-weight: bold; font-style: italic; }
+
+/* Tables used for placement */
+table.transparent { background: transparent; border-width: 0; }
+td.transparent    { background: transparent; border-width: 0; }
+
+/* Tables used for screenshots */
+.screenshot  { background: #c8e0e8; color: #000000; }
+
+th.index { background: red; }
+
+/*===================================================================*/
+/* Lists. */
+
+ul.nomargin { margin-top: 0; margin-bottom: 0; }
+
+/*===================================================================*/
+/* Index page. */
+
+#documentation-box table { margin-top: 0.7em; }
+#documentation-box ul, #documentation-box ol
+  { margin: 0; padding: 0 0 0 2em; font-size: 90%;}
+#documentation-box td { padding: 0 0 1em 0; }
+#documentation-box p { margin: 0; padding: 0; }
+#feedback-box ul
+  { margin: 0.5em 0 0.7em 2em; padding: 0; }
+
+/*===================================================================*/
+/* Link colors. */
+
+a:link        { background: transparent; color: #104060; } 
+a:visited     { background: transparent; color: #082840; } 
+
+/*===================================================================*/
+/* Date stamp. */
+
+.datestamp { font-size: 70%; color: #e0f0ff; }
+
+/*===================================================================*/
+/* Generic box.  Usually used with DIV. */
+
+.box {
+    background: #e8f0f8; color: black; 
+    border: 2px solid #000000;
+    margin: 1em 0 1em 0;
+    padding: 0 10px 0 10px;
+}
+
+.box-title {
+    background: #70b0ff;
+    text-align: center;
+    font-weight: bold;
+    font-size: 125%;
+    margin: 0 -10px 0 -10px;
+    padding: 0 10px 0 10px;
+    border-bottom: 2px solid black;
+}
+
+.doclist { padding: 0; margin: 0 0 0 1em; }
+
+.caption { font-style: italic; text-align: center; }
+
+dl.faq dt { font-weight: bold; }
+
+/*===================================================================*/
+/* Screen output. */
+/*     - prompt: a command prompt or program prompt */
+/*     - user: user input */
+/*     - (more will be added as I use them) */
+
+.screen {
+    background: #e8f0f8; color: black; 
+    border: 2px solid #000000;
+    margin: 1em 0 1em 0;
+    padding: 0 1em 0 1em;
+    font-family: monospace;
+}
+
+.screen2 {
+    background: #c8d8e0; color: black; 
+    border: 2px solid #000000;
+    margin: 1em 0 1em 0;
+    padding: 0 1em 0 1em;
+    font-family: monospace;
+}
+
+code.prompt { font-weight: bold; }
+code.user { 
+    background: transparent; color: #305040;
+    font-style: italic; font-weight: bold;
+}
+code.string   { background: transparent; color: #007000; }
+code.keyword  { background: transparent; color: #705000; }
+code.function { background: transparent; color: #000080; }
+code.output   { background: transparent; color: #505060; }
+code.field    { background: transparent; color: #007060; }
+code.comment  { background: transparent; color: #005080;
+                font-style: italic; }
+code.pycode   { background: transparent; color: #305040; }
+
+b.error { background: transparent; color: #700000; }
+b.error i { background: transparent; color: #604000; }
+
+/*===================================================================*/
+/* Navigation box */
+
+table.navbox {
+  border-right: 1px solid black;
+  border-left: 1px solid black;
+  border-bottom: 1px solid black;
+}
+td.nav {
+  border: 2px outset #70b0ff;
+  background: #70b0ff; color: black;
+  font-weight: bold;
+}
+td.navselect {
+  background: #4888d8; color: white;
+}
+
+a.nav:link    { text-decoration: none; }
+a.nav:visited { text-decoration: none; }
+
+/*===================================================================*/
+/* End of stylesheet */
+
+
+
+

@@ -1,0 +1,854 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.log</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        Module&nbsp;log
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.log-module.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== MODULE DESCRIPTION ==================== -->
+<h1 class="epydoc">Module log</h1><span class="codelink"><a href="epydoc.log-pysrc.html">source&nbsp;code</a></span><br /><br />
+Functions used to report messages and progress updates to the user. 
+  These functions are delegated to zero or more registered <a 
+  href="epydoc.log.Logger-class.html" class="link">Logger</a> objects, 
+  which are responsible for actually presenting the information to the 
+  user.  Different interfaces are free to create and register their own 
+  <code>Logger</code>s, allowing them to present this information in the 
+  manner that is best suited to each interface.<br /><br />
+
+<hr />
+<div class="fields">      <p><strong>Note:</strong>
+        I considered using the standard <code>logging</code> package to 
+        provide this functionality.  However, I found that it would be too 
+        difficult to get that package to provide the behavior I want (esp. 
+        with respect to progress displays; but also with respect to message
+        blocks).
+      </p>
+</div><!-- ==================== CLASSES ==================== -->
+<a name="section-Classes"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Classes"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.log.Logger-class.html" class="summary-name">Logger</a><br />
+      An abstract base class that defines the interface for <a 
+        name="index-loggers"></a><i class="indexterm">loggers</i>, which 
+        are used by epydoc to report information back to the user.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.log.SimpleLogger-class.html" class="summary-name">SimpleLogger</a>
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTIONS ==================== -->
+<a name="section-Functions"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Functions</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Functions"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.log-module.html#register_logger" class="summary-sig-name">register_logger</a>(<span class="summary-sig-arg">logger</span>)</span><br />
+      Register a logger.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.log-pysrc.html#register_logger">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="remove_logger"></a><span class="summary-sig-name">remove_logger</span>(<span class="summary-sig-arg">logger</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.log-pysrc.html#remove_logger">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="fatal"></a><span class="summary-sig-name">fatal</span>(<span class="summary-sig-arg">*messages</span>)</span><br />
+      Display the given fatal message.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.log-pysrc.html#fatal">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="error"></a><span class="summary-sig-name">error</span>(<span class="summary-sig-arg">*messages</span>)</span><br />
+      Display the given error message.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.log-pysrc.html#error">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_error-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_error-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_error" name="call_graph_for_error">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_report_errors" title="docbuilder._report_errors()" alt="" coords="6,6,230,38" />
+<area shape="rect" href="epydoc.log&#45;module.html#error" title="error()" alt="" coords="279,6,348,38" />
+</map>
+  <img src="call_graph_for_error.gif" alt='' usemap="#call_graph_for_error" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="warning"></a><span class="summary-sig-name">warning</span>(<span class="summary-sig-arg">*messages</span>)</span><br />
+      Display the given warning message.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.log-pysrc.html#warning">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="docstring_warning"></a><span class="summary-sig-name">docstring_warning</span>(<span class="summary-sig-arg">*messages</span>)</span><br />
+      Display the given docstring warning message.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.log-pysrc.html#docstring_warning">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_docstring_warni-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_docstring_warni-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_docstring_warni" name="call_graph_for_docstring_warni">
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write" title="docwriter.html.HTMLWriter.write()" alt="" coords="5,6,299,38" />
+<area shape="rect" href="epydoc.log&#45;module.html#docstring_warning" title="docstring_warning()" alt="" coords="347,6,520,38" />
+</map>
+  <img src="call_graph_for_docstring_warni.gif" alt='' usemap="#call_graph_for_docstring_warni" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="info"></a><span class="summary-sig-name">info</span>(<span class="summary-sig-arg">*messages</span>)</span><br />
+      Display the given informational message.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.log-pysrc.html#info">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_info-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_info-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_info" name="call_graph_for_info">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="471,118,713,150" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_bases" title="docbuilder.merge_bases()" alt="" coords="49,6,263,38" />
+<area shape="rect" href="epydoc.log&#45;module.html#info" title="info()" alt="" coords="356,118,420,150" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#merge_docs" title="docbuilder.merge_docs()" alt="" coords="52,62,260,94" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#find_base" title="docparser.find_base()" alt="" coords="64,118,248,150" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#parse_docs" title="docparser.parse_docs()" alt="" coords="59,174,253,206" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#get_dot_version" title="docwriter.dotgraph.get_dot_version()" alt="" coords="7,230,305,262" />
+</map>
+  <img src="call_graph_for_info.gif" alt='' usemap="#call_graph_for_info" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="debug"></a><span class="summary-sig-name">debug</span>(<span class="summary-sig-arg">*messages</span>)</span><br />
+      Display the given debugging message.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.log-pysrc.html#debug">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.log-module.html#start_block" class="summary-sig-name">start_block</a>(<span class="summary-sig-arg">header</span>)</span><br />
+      Start a new message block.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.log-pysrc.html#start_block">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_start_block-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_start_block-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_start_block" name="call_graph_for_start_block">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_report_errors" title="docbuilder._report_errors()" alt="" coords="5,6,229,38" />
+<area shape="rect" href="epydoc.log&#45;module.html#start_block" title="start_block()" alt="" coords="277,6,395,38" />
+</map>
+  <img src="call_graph_for_start_block.gif" alt='' usemap="#call_graph_for_start_block" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.log-module.html#end_block" class="summary-sig-name">end_block</a>()</span><br />
+      End a warning block.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.log-pysrc.html#end_block">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_end_block-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_end_block-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_end_block" name="call_graph_for_end_block">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_report_errors" title="docbuilder._report_errors()" alt="" coords="6,6,230,38" />
+<area shape="rect" href="epydoc.log&#45;module.html#end_block" title="end_block()" alt="" coords="278,6,390,38" />
+</map>
+  <img src="call_graph_for_end_block.gif" alt='' usemap="#call_graph_for_end_block" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.log-module.html#start_progress" class="summary-sig-name">start_progress</a>(<span class="summary-sig-arg">header</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Begin displaying progress for a new task.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.log-pysrc.html#start_progress">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_start_progress-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_start_progress-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_start_progress" name="call_graph_for_start_progress">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_items" title="docbuilder._get_docs_from_items()" alt="" coords="7,6,295,38" />
+<area shape="rect" href="epydoc.log&#45;module.html#start_progress" title="start_progress()" alt="" coords="344,34,483,66" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="docbuilder.build_doc_index()" alt="" coords="29,62,272,94" />
+<area shape="rect" href="epydoc.log.Logger&#45;class.html#start_progress" title="Logger.start_progress()" alt="" coords="531,34,728,66" />
+</map>
+  <img src="call_graph_for_start_progress.gif" alt='' usemap="#call_graph_for_start_progress" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.log-module.html#end_progress" class="summary-sig-name">end_progress</a>()</span><br />
+      Finish off the display of progress for the current task.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.log-pysrc.html#end_progress">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_end_progress-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_end_progress-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_end_progress" name="call_graph_for_end_progress">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_items" title="docbuilder._get_docs_from_items()" alt="" coords="7,6,295,38" />
+<area shape="rect" href="epydoc.log&#45;module.html#end_progress" title="end_progress()" alt="" coords="344,34,478,66" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="docbuilder.build_doc_index()" alt="" coords="30,62,272,94" />
+<area shape="rect" href="epydoc.log.Logger&#45;class.html#end_progress" title="Logger.end_progress()" alt="" coords="526,34,718,66" />
+</map>
+  <img src="call_graph_for_end_progress.gif" alt='' usemap="#call_graph_for_end_progress" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.log-module.html#progress" class="summary-sig-name">progress</a>(<span class="summary-sig-arg">percent</span>,
+        <span class="summary-sig-arg">message</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>)</span><br />
+      Update the progress display.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.log-pysrc.html#progress">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_progress-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_progress-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_progress" name="call_graph_for_progress">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="540,90,783,122" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_module_file" title="docbuilder._get_docs_from_module_file()" alt="" coords="5,6,344,38" />
+<area shape="rect" href="epydoc.log&#45;module.html#progress" title="progress()" alt="" coords="392,118,491,150" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_report_valdoc_progress" title="docbuilder._report_valdoc_progress()" alt="" coords="24,62,325,94" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="docbuilder.build_doc_index()" alt="" coords="53,118,296,150" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_write" title="docwriter.html.HTMLWriter._write()" alt="" coords="24,174,325,206" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write" title="docwriter.html.HTMLWriter.write()" alt="" coords="28,230,321,262" />
+<area shape="rect" href="epydoc.log.Logger&#45;class.html#progress" title="Logger.progress()" alt="" coords="584,146,739,178" />
+</map>
+  <img src="call_graph_for_progress.gif" alt='' usemap="#call_graph_for_progress" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="close"></a><span class="summary-sig-name">close</span>()</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.log-pysrc.html#close">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== VARIABLES ==================== -->
+<a name="section-Variables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Variables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="DOCSTRING_WARNING"></a><span class="summary-name">DOCSTRING_WARNING</span> = <code title="25">25</code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.log-module.html#_loggers" class="summary-name">_loggers</a> = <code title="[]"><code class="variable-group">[</code>&lt;__main__.UnifiedProgressConsoleLogger instance at<code class="variable-ellipsis">...</code></code><br />
+      The list of registered logging functions.
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Message Severity Levels</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="DEBUG"></a><span class="summary-name">DEBUG</span> = <code title="10">10</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="INFO"></a><span class="summary-name">INFO</span> = <code title="20">20</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="WARNING"></a><span class="summary-name">WARNING</span> = <code title="30">30</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="ERROR"></a><span class="summary-name">ERROR</span> = <code title="40">40</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="FATAL"></a><span class="summary-name">FATAL</span> = <code title="40">40</code>
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTION DETAILS ==================== -->
+<a name="section-FunctionDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Function Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-FunctionDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="register_logger"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">register_logger</span>(<span class="sig-arg">logger</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.log-pysrc.html#register_logger">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Register a logger.  Each call to one of the logging functions defined 
+  by this module will be delegated to each registered logger.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="start_block"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">start_block</span>(<span class="sig-arg">header</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.log-pysrc.html#start_block">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_start_block-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_start_block-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_start_block" name="call_graph_for_start_block">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_report_errors" title="docbuilder._report_errors()" alt="" coords="5,6,229,38" />
+<area shape="rect" href="epydoc.log&#45;module.html#start_block" title="start_block()" alt="" coords="277,6,395,38" />
+</map>
+  <img src="call_graph_for_start_block.gif" alt='' usemap="#call_graph_for_start_block" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Start a new message block.  Any calls to <a 
+  href="epydoc.log-module.html#info" class="link">info()</a>, <a 
+  href="epydoc.log-module.html#warning" class="link">warning()</a>, or <a 
+  href="epydoc.log-module.html#error" class="link">error()</a> that occur 
+  between a call to <code>start_block</code> and a corresponding call to 
+  <code>end_block</code> will be grouped together, and displayed with a 
+  common header. <code>start_block</code> can be called multiple times (to 
+  form nested blocks), but every call to <code>start_block</code> 
+  <i>must</i> be balanced by a call to <code>end_block</code>.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="end_block"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">end_block</span>()</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.log-pysrc.html#end_block">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_end_block-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_end_block-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_end_block" name="call_graph_for_end_block">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_report_errors" title="docbuilder._report_errors()" alt="" coords="6,6,230,38" />
+<area shape="rect" href="epydoc.log&#45;module.html#end_block" title="end_block()" alt="" coords="278,6,390,38" />
+</map>
+  <img src="call_graph_for_end_block.gif" alt='' usemap="#call_graph_for_end_block" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  End a warning block.  See <a href="epydoc.log-module.html#start_block"
+  class="link">start_block</a> for details.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="start_progress"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">start_progress</span>(<span class="sig-arg">header</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.log-pysrc.html#start_progress">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_start_progress-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_start_progress-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_start_progress" name="call_graph_for_start_progress">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_items" title="docbuilder._get_docs_from_items()" alt="" coords="7,6,295,38" />
+<area shape="rect" href="epydoc.log&#45;module.html#start_progress" title="start_progress()" alt="" coords="344,34,483,66" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="docbuilder.build_doc_index()" alt="" coords="29,62,272,94" />
+<area shape="rect" href="epydoc.log.Logger&#45;class.html#start_progress" title="Logger.start_progress()" alt="" coords="531,34,728,66" />
+</map>
+  <img src="call_graph_for_start_progress.gif" alt='' usemap="#call_graph_for_start_progress" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Begin displaying progress for a new task.  <code>header</code> is a 
+  description of the task for which progress is being reported. Each call 
+  to <code>start_progress</code> must be followed by a call to 
+  <code>end_progress</code> (with no intervening calls to 
+  <code>start_progress</code>).
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="end_progress"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">end_progress</span>()</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.log-pysrc.html#end_progress">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_end_progress-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_end_progress-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_end_progress" name="call_graph_for_end_progress">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_items" title="docbuilder._get_docs_from_items()" alt="" coords="7,6,295,38" />
+<area shape="rect" href="epydoc.log&#45;module.html#end_progress" title="end_progress()" alt="" coords="344,34,478,66" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="docbuilder.build_doc_index()" alt="" coords="30,62,272,94" />
+<area shape="rect" href="epydoc.log.Logger&#45;class.html#end_progress" title="Logger.end_progress()" alt="" coords="526,34,718,66" />
+</map>
+  <img src="call_graph_for_end_progress.gif" alt='' usemap="#call_graph_for_end_progress" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Finish off the display of progress for the current task.  See <a 
+  href="epydoc.log-module.html#start_progress" 
+  class="link">start_progress</a> for more information.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="progress"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">progress</span>(<span class="sig-arg">percent</span>,
+        <span class="sig-arg">message</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.log-pysrc.html#progress">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_progress-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_progress-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_progress" name="call_graph_for_progress">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="540,90,783,122" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_module_file" title="docbuilder._get_docs_from_module_file()" alt="" coords="5,6,344,38" />
+<area shape="rect" href="epydoc.log&#45;module.html#progress" title="progress()" alt="" coords="392,118,491,150" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_report_valdoc_progress" title="docbuilder._report_valdoc_progress()" alt="" coords="24,62,325,94" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#build_doc_index" title="docbuilder.build_doc_index()" alt="" coords="53,118,296,150" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_write" title="docwriter.html.HTMLWriter._write()" alt="" coords="24,174,325,206" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write" title="docwriter.html.HTMLWriter.write()" alt="" coords="28,230,321,262" />
+<area shape="rect" href="epydoc.log.Logger&#45;class.html#progress" title="Logger.progress()" alt="" coords="584,146,739,178" />
+</map>
+  <img src="call_graph_for_progress.gif" alt='' usemap="#call_graph_for_progress" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Update the progress display.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>percent</code></strong> - A float from 0.0 to 1.0, indicating how much progress has been
+          made.</li>
+        <li><strong class="pname"><code>message</code></strong> - A message indicating the most recent action that contributed 
+          towards that progress.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== VARIABLES DETAILS ==================== -->
+<a name="section-VariablesDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-VariablesDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="_loggers"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_loggers</h3>
+  The list of registered logging functions.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+[]
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:03:06 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

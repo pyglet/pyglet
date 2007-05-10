@@ -1,0 +1,420 @@
+.\"
+.\" Epydoc graphical interface man page.
+.\" $Id: epydocgui.1 405 2002-11-07 10:52:37Z edloper $
+.\"
+.TH EPYDOCGUI 1 
+.SH NAME
+epydocgui \- graphical interface to epydoc
+.\" ================== SYNOPSIS ====================
+.SH SYNOPSIS
+.PP
+.B epydocgui
+.RI [ project.prj " | " modules ...]
+.PP
+.B epydoc \-h
+.PP
+.B epydoc \-V
+.\" ================== DESCRIPTION ====================
+.SH DESCRIPTION
+.B epydocgui
+is a graphical interface to epydoc, which generates API documentation
+for Python modules and packages, based on their docstrings.  A
+lightweight markup language called
+.B epytext
+can be used to format docstrings, and to add information about
+specific fields, such as parameters and instance variables.
+.PP
+The API documentation produced by 
+.B epydocgui
+consists of a set of HTML files.  Two subdirectories are created for
+the public and private documentation.  Within each subdirectories,
+every class and module is documented in its own file.  An index file,
+a trees file, and a help file are also created.  If you select the
+.B frames
+option, then a frames\-based table of contents is also produced.
+.\" ================== OPTIONS ====================
+.SH OPTIONS
+.TP
+.I project.prj
+The name of a project file that was saved with
+.BR epydocgui .
+Project files record a list of related modules, and the options that
+should be used to generate the documentation for those modules.
+.TP
+.IR modules ...
+The list of the modules that should be documented.  Modules can be
+specified using module names (such as
+.BR os.path ),
+filenames (such as
+.BR epydoc/epytext.py ),
+or directory names (such as
+.BR epydoc/ ).
+Directory names specify packages, and are expanded to include
+all sub-modules and sub-packages.
+.TP
+.B \-h, \-\-help, \-\-usage, \-?
+Display a usage message.
+.TP
+.B \-V, \-\-version
+Print the version of Epydoc.
+.\" ================== HTML FILES ====================
+.\" (this was copied from epydoc.1)
+.SH HTML FILES
+The API documentation produced by 
+.B epydoc
+consists of the following files:
+.RS 4
+.TP
+.B index.html
+The standard entry point for the documentation.  Normally,
+.B index.html
+is a frame index file, which defines three frames: two frames on
+the left side of the browser contain a table of contents, and the main
+frame on the right side of the window contains documentation pages.
+But if the 
+.B \-\-no\-frames
+option is used, then
+.B index.html
+will redirect the user to the project's top page.
+.TP
+.BI m- module .html
+The API documentation for a module.  
+.I module
+is the complete dotted name of the module, such as 
+.B sys
+or
+.BR epydoc.epytext .
+.TP
+.BI c- class .html
+The API documentation for a class, exception, or type.
+.I class
+is the complete dotted name of the class, such as
+.B epydoc.epytext.Token
+or
+.BR array.ArrayType .
+.TP
+.B trees.html
+The module and class hierarchies.
+.TP
+.B indices.html
+The term  and identifier indices.
+.TP
+.B help.html
+The help page for the project.  This page explains how to use and
+navigate the webpage produced by epydoc.
+.TP
+.B toc.html
+The top\-level table of contents page.  This page is displayed in the
+upper\-left frame, and provides links to
+.B toc\-everything.html
+and the
+.BI toc\-m\- module .html
+files.
+.B toc.html
+is not generated if the
+.B \-\-no\-frames
+option is used.
+.TP
+.B toc\-everything.html
+The table of contents for the entire project.  This page is displayed
+in the lower\-left frame, and provides links to every class, type,
+exception, function, and variable defined by the project.
+.B toc\-everything.html
+is not generated if the
+.B \-\-no\-frames
+option is used.
+.TP
+.BI toc\-m\- module .html
+The table of contents for a module.  This page is displayed in the
+lower\-left frame, and provides links to every class, type, exception,
+function, and variable defined by the module.
+.I module
+is the complete dotted name of the module, such as 
+.B sys
+or
+.BR epydoc.epytext .
+.BI toc\-m\- module .html
+is not generated if the
+.B \-\-no\-frames
+option is used.
+.TP
+.B epydoc.css
+The CSS stylesheet used to display all HTML pages.
+.RE
+.PP
+By default,
+.B epydoc
+creates two subdirectories in the output directory:
+.B public
+and
+.BR private .
+Each directory contains all of the files specified above.
+But if the
+.B \-\-no\-private
+option is used, then no subdirectories are created, and the public
+documentation is written directly to the output directory.
+.\" ================== DIAGNOSTICS ====================
+.\" (this was copied from epydoc.1)
+ivided into five categories: import errors; epytext
+errors; epytext warnings; field warnings; and inspection errors.
+Whenver epydoc encounters an error, it issues a warning message that
+describes the error, and attempts to continue generating
+documentation.
+.PP
+Import errors indicate that epydoc was unable to import a module.
+Import errors typically prevent epydoc from generating documentation
+for the module in question.  Epydoc can generate the following import
+errors:
+.RS 4
+.TP
+.BI "Bad module name " module
+Epydoc attempted to import
+.IR module ,
+but
+.I module
+is not a valid name for a Python module.
+.TP
+.BI "Could not find a UID for " link-target
+Epydoc was unable to find the object referred to by an inline link
+construction
+.RB ( "L{...}" ).
+This is usually caused by a typo in the link.
+.TP
+.BI "Could not import " module
+Epydoc attempted to import
+.IR module ,
+but it failed.  This typically occurs when
+.I module
+raises an exception.
+.TP
+.IB file " does not exist"
+Epydoc attempted to import the module contained in
+.IR file ,
+but
+.I file
+does not exist.
+.RE
+.PP
+Epytext errors are caused by epytext docstrings that contain invalid
+markup.  Whenever an epytext error is detected, the docstring in
+question is treated as a plaintext docstring.  Epydoc can generate the
+following epytext errors:
+.RS 4
+.TP
+.B Bad link target.
+The target specified for an inline link contruction
+.RB ( "L{...}" )
+is not well-formed.  Link targets must be valid python identifiers.
+.TP
+.B Bad uri target.
+The target specified for an inline uri contruction
+.RB ( "U{...}" )
+is not well-formed.  This typically occurs if inline markup is nested
+inside the URI target.  
+.TP
+.B Fields must be at the top level.
+The list of fields
+.RB "(" @param ", etc.)"
+is contained by some other
+block structure (such as a list or a section).
+.TP
+.B Fields must be the final elements.
+The list of fields
+.RB "(" @param ", etc.)"
+is not at the end of a docstring.
+.TP
+.B Headings must occur at top level.
+The heading is contianed in some other block structure (such as a
+list).
+.TP
+.B Improper doctest block indentation.
+The doctest block dedents past the indentation of its initial prompt
+line.
+.TP
+.B Improper heading indentation.
+The heading for a section is not left-aligned with the paragraphs in
+the section that contains it.
+.TP
+.B Improper paragraph indentation.
+The paragraphs within a block are not left-aligned.  This error is
+often generated when plaintext docstrings are parsed using epytext.
+.TP
+.B Invalid escape.
+An unknown escape sequence was used with the inline escape construction
+.RB ( "E{...}" ).
+.TP
+.B Lists must be indented.
+An unindented line immediately following a paragraph starts with a
+list bullet.  Epydoc is not sure whether you meant to start a new list
+item, or meant for a paragraph to include a word that looks like a
+bullet.  If you intended the former, then indent the list.  If you
+intended the latter, then change the word-wrapping of the paragraph,
+or escape the first character of the word that looks like a bullet.
+.TP
+.B Unbalanced '{'.
+The docstring contains unbalanced braces.  Epytext requires that all
+braces must be balanced.  To include a single unbalanced brace, use
+the escape sequences E{lb} (left brace) and E{rb} (right brace).
+.TP
+.B Unbalanced '}'.
+The docstring contains unbalanced braces.  Epytext requires that all
+braces must be balanced.  To include a single unbalanced brace, use
+the escape sequences E{lb} (left brace) and E{rb} (right brace).
+.TP
+.B Unknown inline markup tag.
+An unknown tag was used with the inline markup construction (
+.IB x {...}
+).
+.TP
+.B Wrong underline character for heading.
+The underline character used for this section heading does not
+indicate an appopriate section level.  The "=" character should be
+used to underline sections; "-" for subsections; and "~" for
+subsubsections.
+.RE
+.PP
+Epytext warnings are caused by epytext docstrings that contain
+questionable or suspicious markup.  Epytext warnings do
+.B not
+prevent the docstring in question from being parsed.  Epydoc can
+generate the following epytext warnings:
+.RS 4
+.TP
+.B Possible mal-formatted field item.
+Epytext detected a line that looks like a field item, but is not
+correctly formatted.  This typically occurs when the trailing colon
+(":") is not included in the field tag.
+.TP
+.B Possible heading typo.
+Epytext detected a pair of lines that looks like a heading, but the
+number of underline characters does not match the number of characters
+in the heading.  The number of characters in these two lines must
+match exactly for them to be considered a heading.
+.RE
+.PP
+Field warnings are caused by epytext docstrings containing invalid
+fields.  The contents of the invalid field are generally ignored.  
+Epydoc can generate the following field warnings:
+.RS 4
+.TP
+.BI "@param for unknown parameter " param .
+A @param field was used to specify the type for a parameter that is
+not included in the function's signature.  This is typically caused by
+a typo in the parameter name.
+.TP
+.IB tag " did not expect an argument."
+The field tag
+.I tag
+was used with an argument, but it does not take one.
+.TP
+.IB tag " expected an argument."
+The field tag
+.I tag
+was used without an argument, but it requires one.
+.TP
+.BI "@type for unknown parameter " param .
+A @type field was used to specify the type for a parameter that is not
+included in the function's signature.  This is typically
+caused by a typo in the parameter name.
+.TP
+.BI "@type for unknown variable " var .
+A @type field was used to specify the type for a variable, but no
+other information is known about the variable.  This is typically
+caused by a typo in the variable name.
+.TP
+.BI "Unknown field tag " tag .
+A docstring contains a field with the unknown tag
+.IR tag .
+.TP
+.BI "Redefinition of " field .
+Multiple field tags define the value of
+.I field
+in the same docstring, but
+.I field
+can only take a single value.
+.RE
+.PP
+Inspection errors are generated if epydoc encounters problems while
+attempting to inspect the properties of a documented object.  Most of
+inspection errors do not prevent epydoc from documenting the object in
+question.  Epydoc can generate the following inspection errors:
+.RS 4
+.TP
+.BI "The parameters of " inhmethod " do not match " basemethod .
+The parameters of the undocumented method
+.I inhmethod 
+do not match the parameters of the base class method
+.I basemethod
+that it overrides.  As a result,
+.I inhmethod
+does not inherit documentation from
+.IR basemethod .
+If the difference in parameters is intentional, then you can eliminate
+the warning by adding a (possibly empty) docstring to
+.IR inhmethod .
+.TP
+.BI "Docmap cannot add a " type
+Epydoc attempted to document an object with an unknown type.  This
+error is typically generated by packages and modules that manipulate
+the import mechanism, such that importing a module produces some other
+type of object.
+.TP
+.BI "UID conflict detected: " uid
+Two different objects were assigned the same unique identifier by
+epydoc.  This can cause epydoc to substitute the documentation of one
+object with the documentation of another object that is assigned the
+same unique identifier.  However, this will usually only cause
+problems if the two objects with the same unique identifiers are both
+modules or classes, in which case the API documentation page for one
+object will overwrite the API documentation page for the other object.
+.TP
+.IB object " appears in multiple builtin modules"
+While attempting to determine which module defines the builtin object
+.IR object ,
+epydoc encountered multiple candidates, and was unable to decide which
+candidate was correct.  In this case, epydoc arbitrarily chooses the
+first candidate that it finds.
+.TP
+.IB object " appears in multiple .py modules"
+While attempting to determine which module defines the builtin object
+.IR object ,
+epydoc encountered multiple candidates, and was unable to decide which
+candidate was correct.  In this case, epydoc arbitrarily chooses the
+first candidate that it finds.
+.TP
+.IB object " appears in multiple .so modules"
+While attempting to determine which module defines the builtin object
+.IR object ,
+epydoc encountered multiple candidates, and was unable to decide which
+candidate was correct.  In this case, epydoc arbitrarily chooses the
+first candidate that it finds.
+.TP
+.BI "Could not find a module for " object
+Epydoc was unable to determine which module defines 
+.IR object .
+If
+.I object
+is a function, then this will prevent epydoc from generating any
+documentation for
+.IR object ,
+since it does not know what page to put the documentation on.
+Otherwise, this will prevent the documentation for
+.I object
+from including a link to its containing module.
+.RE
+.\" ================== AUTHOR ====================
+.SH AUTHOR
+Epydoc was written by Edward Loper.  This man page was originally
+written by Moshe Zadka, and is currently maintained by Edward Loper.
+.\" ================== BUGS ====================
+.SH BUGS
+Report bugs to <edloper@gradient.cis.upenn.edu>.
+.\" ================== SEE ALSO ====================
+.SH SEE ALSO
+.BR epydoc (1)
+.TP
+.B The epydoc webpage
+<http://epydoc.sourceforge.net>
+.TP
+.B The epytext markup language manual
+<http://epydoc.sourceforge.net/epytext.html>

@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.apidoc.GenericValueDoc</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.apidoc-module.html">Module&nbsp;apidoc</a> ::
+        Class&nbsp;GenericValueDoc
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.apidoc.GenericValueDoc-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class GenericValueDoc</h1><span class="codelink"><a href="epydoc.apidoc-pysrc.html#GenericValueDoc">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_a_5" name="uml_class_diagram_for_epydoc_a_5">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#docs_extracted_by" title="Information about where the information contained by this APIDoc came from." alt="" coords="416,28,790,47" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#docstring_lineno" title="The line number on which the documented item&#39;s docstring begins." alt="" coords="416,47,790,65" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#other_docs" title="A flag indicating if the entire docstring body (except tags if any) is  entirely included in the summary." alt="" coords="416,65,790,84" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#metadata" title="Metadata about the documented item, extracted from fields in its docstring." alt="" coords="416,84,790,103" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#docstring" title="The documented item&#39;s docstring." alt="" coords="416,103,790,121" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__str__" title="Return a pretty&#45;printed string representation for the information contained in this APIDoc." alt="" coords="416,124,790,143" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__init__" title="Construct a new APIDoc object." alt="" coords="416,143,790,161" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#pp" title="Return a pretty&#45;printed string representation for the information contained in this APIDoc." alt="" coords="416,161,790,180" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="epydoc.apidoc.APIDoc.__cmp__" alt="" coords="416,180,790,199" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__setattr__" title="Modify an APIDoc&#39;s attribute." alt="" coords="416,199,790,217" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#merge_and_overwrite" title="Combine self and other into a merged object, such that any changes made to  one will affect the other." alt="" coords="416,217,790,236" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#specialize_to" title="Change self&#39;s class to cls." alt="" coords="416,236,790,255" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__hash__" title="hash(x)" alt="" coords="416,255,790,273" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html" title="API documentation information for a single element of a Python program." alt="" coords="404,5,802,280" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html" title="A standard intermediate representation for parsed docstrings that can be used to generate output." alt="" coords="6,436,190,473" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#descr" title="epydoc.apidoc.APIDoc.descr" alt="" coords="148,291,181,306" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#descr" title="descr" alt="" coords="411,181,419,189" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#descr" title="descr" alt="" coords="94,437,102,445" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#summary" title="epydoc.apidoc.APIDoc.summary" alt="" coords="240,291,296,306" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#summary" title="summary" alt="" coords="411,199,419,207" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#summary" title="summary" alt="" coords="100,437,108,445" />
+<area shape="rect" href="epydoc.docstringparser.DocstringField&#45;class.html" title="A simple docstring field, which can be used to describe specific information about an object, such as its author or its version." alt="" coords="219,436,435,473" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#extra_docstring_fields" title="epydoc.apidoc.APIDoc.extra_docstring_fields" alt="" coords="466,291,596,306" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#extra_docstring_fields" title="extra_docstring_fields" alt="" coords="476,271,484,279" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#extra_docstring_fields" title="extra_docstring_fields" alt="" coords="334,437,342,445" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#REPR_LINELEN" title="The maximum number of characters for lines of text that should be generated by pyval_repr()." alt="" coords="476,340,730,359" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#REPR_MAXLINES" title="The maximum number of lines of text that should be generated by  pyval_repr()." alt="" coords="476,359,730,377" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#SUMMARY_REPR_LINELEN" title="The maximum number of characters for the single&#45;line text representation  generated by summary_pyval_repr()." alt="" coords="476,377,730,396" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#REPR_MIN_SCORE" title="The minimum score that a value representation based on pyval should have in order to be used instead of parse_repr as the canonical representation for  this ValueDoc&#39;s value." alt="" coords="476,396,730,415" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#parse_repr" title="A text representation of this value, extracted from parsing its source  code." alt="" coords="476,415,730,433" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#toktree" title="This is currently used to extract values from __all__, etc, in the  docparser module; maybe I should specialize process_assignment and extract  it there?  Although, for __all__, it&#39;s not clear where I&#39;d put the value,  since I just use it to set private/public/imported attribs on other vars  (that might not exist yet at the time.)" alt="" coords="476,433,730,452" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#pyval" title="A pointer to the actual Python object described by this ValueDoc." alt="" coords="476,452,730,471" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#pyval_repr" title="Return a formatted representation of the Python object described by this  ValueDoc." alt="" coords="476,473,730,492" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#summary_pyval_repr" title="Return a single&#45;line formatted representation of the Python object  described by this ValueDoc." alt="" coords="476,492,730,511" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#__getstate__" title="State serializer for the pickle module." alt="" coords="476,511,730,529" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#__setstate__" title="epydoc.apidoc.ValueDoc.__setstate__" alt="" coords="476,529,730,548" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#apidoc_links" title="Return a list of all APIDocs that are directly linked from this APIDoc  (i.e., are contained or pointed to by one or more of this APIDoc&#39;s  attributes.)" alt="" coords="476,548,730,567" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#__repr__" title="repr(x)" alt="" coords="476,567,730,585" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html" title="API documentation information about a single Python value." alt="" coords="464,317,742,592" />
+<area shape="rect" href="epydoc.apidoc.ModuleDoc&#45;class.html" title="API documentation information about a single module." alt="" coords="279,639,383,676" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#defining_module" title="epydoc.apidoc.ValueDoc.defining_module" alt="" coords="332,603,431,618" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#defining_module" title="defining_module" alt="" coords="471,575,479,583" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#defining_module" title="defining_module" alt="" coords="322,640,330,648" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html" title="A sequence of identifiers, separated by periods, used to name a Python variable, value, or argument." alt="" coords="447,723,559,760" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#proxy_for" title="epydoc.apidoc.ValueDoc.proxy_for" alt="" coords="467,650,523,665" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#proxy_for" title="proxy_for" alt="" coords="482,583,490,591" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html#proxy_for" title="proxy_for" alt="" coords="487,724,495,732" />
+<area shape="rect" href="epydoc.apidoc.GenericValueDoc&#45;class.html#is_detailed" title="Does this object deserve a box with extra details?" alt="" coords="550,660,656,679" />
+<area shape="rect" href="epydoc.apidoc.GenericValueDoc&#45;class.html" title="API documentation about a &#39;generic&#39; value, i.e., one that does not have its own docstring or any information other than its value and parse representation." alt="" coords="538,629,668,685" />
+<area shape="rect" href="epydoc.apidoc.GenericValueDoc&#45;class.html#canonical_name" title="epydoc.apidoc.GenericValueDoc.canonical_name" alt="" coords="556,697,653,711" />
+<area shape="rect" href="epydoc.apidoc.GenericValueDoc&#45;class.html#canonical_name" title="canonical_name" alt="" coords="572,676,580,684" />
+<area shape="rect" href="epydoc.apidoc.GenericValueDoc&#45;class.html#canonical_name" title="canonical_name" alt="" coords="515,724,523,732" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_a_5.gif" alt='' usemap="#uml_class_diagram_for_epydoc_a_5" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+API documentation about a 'generic' value, i.e., one that does not 
+  have its own docstring or any information other than its value and parse 
+  representation.  <code>GenericValueDoc</code>s do not get assigned 
+  cannonical names.<br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>bool</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.apidoc.GenericValueDoc-class.html#is_detailed" class="summary-sig-name">is_detailed</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Does this object deserve a box with extra details?</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.apidoc-pysrc.html#GenericValueDoc.is_detailed">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.apidoc.ValueDoc-class.html">ValueDoc</a></code></b>:
+      <code><a href="epydoc.apidoc.ValueDoc-class.html#__getstate__">__getstate__</a></code>,
+      <code><a href="epydoc.apidoc.ValueDoc-class.html#__repr__">__repr__</a></code>,
+      <code><a href="epydoc.apidoc.ValueDoc-class.html#__setstate__">__setstate__</a></code>,
+      <code><a href="epydoc.apidoc.ValueDoc-class.html#apidoc_links">apidoc_links</a></code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.apidoc.APIDoc-class.html">APIDoc</a></code></b>:
+      <code><a href="epydoc.apidoc.APIDoc-class.html#__cmp__">__cmp__</a></code>,
+      <code><a href="epydoc.apidoc.APIDoc-class.html#__hash__">__hash__</a></code>,
+      <code><a href="epydoc.apidoc.APIDoc-class.html#__init__">__init__</a></code>,
+      <code><a href="epydoc.apidoc.APIDoc-class.html#__setattr__">__setattr__</a></code>,
+      <code><a href="epydoc.apidoc.APIDoc-class.html#__str__">__str__</a></code>,
+      <code><a href="epydoc.apidoc.APIDoc-class.html#merge_and_overwrite">merge_and_overwrite</a></code>,
+      <code><a href="epydoc.apidoc.APIDoc-class.html#pp">pp</a></code>,
+      <code><a href="epydoc.apidoc.APIDoc-class.html#specialize_to">specialize_to</a></code>
+      </p>
+    <div class="private">    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.apidoc.APIDoc-class.html">APIDoc</a></code></b> (private):
+      <code><a href="epydoc.apidoc.APIDoc-class.html#_debug_setattr">_debug_setattr</a></code>
+      </p></div>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>object</code></b>:
+      <code>__delattr__</code>,
+      <code>__getattribute__</code>,
+      <code>__new__</code>,
+      <code>__reduce__</code>,
+      <code>__reduce_ex__</code>
+      </p>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Value Representation</th></tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.apidoc.ValueDoc-class.html">ValueDoc</a></code></b>:
+      <code><a href="epydoc.apidoc.ValueDoc-class.html#pyval_repr">pyval_repr</a></code>,
+      <code><a href="epydoc.apidoc.ValueDoc-class.html#summary_pyval_repr">summary_pyval_repr</a></code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><a href="epydoc.apidoc.DottedName-class.html" 
+      class="link">DottedName</a></span>
+    </td><td class="summary">
+        <a name="canonical_name"></a><span class="summary-name">canonical_name</span> = <code title="True">True</code><br />
+      A dotted name that serves as a unique identifier for this 
+      <code>ValueDoc</code>'s value.
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Value Representation</th></tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.apidoc.ValueDoc-class.html">ValueDoc</a></code></b>:
+      <code><a href="epydoc.apidoc.ValueDoc-class.html#REPR_LINELEN">REPR_LINELEN</a></code>,
+      <code><a href="epydoc.apidoc.ValueDoc-class.html#REPR_MAXLINES">REPR_MAXLINES</a></code>,
+      <code><a href="epydoc.apidoc.ValueDoc-class.html#REPR_MIN_SCORE">REPR_MIN_SCORE</a></code>,
+      <code><a href="epydoc.apidoc.ValueDoc-class.html#SUMMARY_REPR_LINELEN">SUMMARY_REPR_LINELEN</a></code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.apidoc.ValueDoc-class.html">ValueDoc</a></code></b>:
+      <code><a href="epydoc.apidoc.ValueDoc-class.html#toktree">toktree</a></code>
+      </p>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Value Representation</th></tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.apidoc.ValueDoc-class.html">ValueDoc</a></code></b>:
+      <code><a href="epydoc.apidoc.ValueDoc-class.html#parse_repr">parse_repr</a></code>,
+      <code><a href="epydoc.apidoc.ValueDoc-class.html#pyval">pyval</a></code>
+      </p>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Context</th></tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.apidoc.ValueDoc-class.html">ValueDoc</a></code></b>:
+      <code><a href="epydoc.apidoc.ValueDoc-class.html#defining_module">defining_module</a></code>
+      </p>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Information about Imported Variables</th></tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.apidoc.ValueDoc-class.html">ValueDoc</a></code></b>:
+      <code><a href="epydoc.apidoc.ValueDoc-class.html#proxy_for">proxy_for</a></code>
+      </p>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Docstrings</th></tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.apidoc.APIDoc-class.html">APIDoc</a></code></b>:
+      <code><a href="epydoc.apidoc.APIDoc-class.html#docstring">docstring</a></code>,
+      <code><a href="epydoc.apidoc.APIDoc-class.html#docstring_lineno">docstring_lineno</a></code>
+      </p>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Information Extracted from Docstrings</th></tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.apidoc.APIDoc-class.html">APIDoc</a></code></b>:
+      <code><a href="epydoc.apidoc.APIDoc-class.html#descr">descr</a></code>,
+      <code><a href="epydoc.apidoc.APIDoc-class.html#extra_docstring_fields">extra_docstring_fields</a></code>,
+      <code><a href="epydoc.apidoc.APIDoc-class.html#metadata">metadata</a></code>,
+      <code><a href="epydoc.apidoc.APIDoc-class.html#other_docs">other_docs</a></code>,
+      <code><a href="epydoc.apidoc.APIDoc-class.html#summary">summary</a></code>
+      </p>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Source Information</th></tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.apidoc.APIDoc-class.html">APIDoc</a></code></b>:
+      <code><a href="epydoc.apidoc.APIDoc-class.html#docs_extracted_by">docs_extracted_by</a></code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== PROPERTIES ==================== -->
+<a name="section-Properties"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Properties</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Properties"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>object</code></b>:
+      <code>__class__</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="is_detailed"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">is_detailed</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.apidoc-pysrc.html#GenericValueDoc.is_detailed">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Does this object deserve a box with extra details?
+  <dl class="fields">
+    <dt>Returns: <code>bool</code></dt>
+        <dd>True if the object needs extra details, else False.</dd>
+    <dt>Overrides:
+      <a href="epydoc.apidoc.APIDoc-class.html#is_detailed">APIDoc.is_detailed</a>
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:03:45 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

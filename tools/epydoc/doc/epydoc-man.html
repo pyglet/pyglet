@@ -1,0 +1,1101 @@
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of EPYDOC</TITLE>
+<link rel="stylesheet" href="epydoc.css" type="text/css"/></HEAD><BODY><DIV CLASS="BODY">
+<H1>epydoc (1)</H1>
+
+
+
+<A NAME="lbAB">
+<H2>NAME</H2></A>
+
+epydoc - generate API documentation from Python docstrings
+
+<A NAME="lbAC">
+<H2>SYNOPSIS</H2></A>
+
+<DL COMPACT>
+<DT>
+<B>epydoc</B>
+
+[<B>action</B>]
+
+[<B>options</B>]
+
+<I>names...</I>
+
+
+</DL>
+<A NAME="lbAD">
+<H2>DESCRIPTION</H2></A>
+
+<B>epydoc</B>
+
+generates API documentation for Python modules and packages, based on
+their docstrings.  A lightweight markup language called
+<B>epytext</B>
+
+can be used to format docstrings, and to add information about
+specific fields, such as parameters and instance variables.  Epydoc
+also understands docstrings written in ReStructuredText, Javadoc, and
+plaintext.  Currently, epydoc supports two basic output formats: HTML
+and LaTeX.
+<P>
+
+The HTML API documentation produced by 
+<B>epydoc</B>
+
+consists of a set of HTML files, including: an API documentation page
+for each class and module; a syntax-highlighted source code page for
+each module; an identifier index page; a help page; and a frames-based
+table of contents.  When appropriate,
+<B>epydoc</B>
+
+will also generate
+index pages for bugs, defined terms, and to-do items; 
+a class hierarchy page; and a package hierarchy page.
+<P>
+
+The LaTeX API documentation produced by
+<B>epydoc</B>
+
+consists of a main LaTeX file, and a LaTeX file for each module.  If
+you use 
+<B>--dvi</B>,
+
+<B>--ps</B>,
+
+or
+<B>--pdf ,</B>
+
+then
+<B>epydoc</B>
+
+will invoke external commands to convert the LaTeX output to the
+requested format.  Note that the LaTeX files containing the
+documentation for individual modules can be included as chapters or
+sections of other LaTeX documents, using the LaTeX
+<B>\\include</B>
+
+command.  If you wish to include individual classes in other LaTeX
+documents, then use the
+<B>--separate-classes</B>
+
+option to produce a separate LaTeX file for each class.
+<P>
+
+<B>epydoc</B>
+
+can also be used to check the completeness of the API documentation.
+By default, it checks that every public package, module, class,
+method, and function has a docstring description.  The
+<B>--tests</B>
+
+option can be used to specify additional tests to perform.
+<P>
+
+
+<A NAME="lbAE">
+<H2>OPTIONS</H2></A>
+
+Epydoc's options are divided into six categories: basic options,
+actions, generation options, output options, graph options, and return
+value options.
+<P>
+
+
+<B>BASIC OPTIONS</B>
+
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT><I>names</I>...
+
+<DD>
+The list of objects that should be documented.  Objects can be
+specified using Python dotted names (such as
+<B>os.path</B>),
+
+filenames (such as
+<B>epydoc/epytext.py</B>),
+
+or directory names (such as
+<B>epydoc/</B>).
+
+Directory names specify packages, and are expanded to include
+all sub-modules and sub-packages.  If you wish to exclude
+certain sub-modules or sub-packages, use the 
+<B>--exclude</B>
+
+option (described below).
+
+<DT><B>--config </B><I>file</I>
+
+<DD>
+A configuration file, specifying additional
+<B>options</B>and/or<B>names</B>.
+
+This option may be repeated.
+
+<DT><B>--q, --quiet, --v, --verbose</B>
+
+<DD>
+Produce quite (or verbose) output.  If used multiple times, this
+option produces successively more quiet (or verbose) output.
+
+<DT><B>--debug</B>
+
+<DD>
+Show full tracebacks for internal errors.
+
+<DT><B>--simple-term</B>
+
+<DD>
+Do not try to use color or cursor control when displaying the progress
+bar, warnings, or errors.
+</DL>
+</DL>
+
+<P>
+
+
+<B>ACTIONS</B>
+
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT><B>--html</B>
+
+<DD>
+Write HTML output.
+<B>[default]</B>
+
+<DT><B>--latex</B>
+
+<DD>
+Write LaTeX output.
+<DT><B>--dvi</B>
+
+<DD>
+Write DVI output.
+<DT><B>--ps</B>
+
+<DD>
+Write Postscript output.
+<DT><B>--pdf</B>
+
+<DD>
+Write Adobe Acrobat (pdf) output. 
+<DT><B>--check</B>
+
+<DD>
+Perform completeness checks on the documentation.
+<DT><B>--pickle</B>
+
+<DD>
+Write the documentation to a pickle file.
+</DL>
+</DL>
+
+<P>
+
+
+<B>GENERATION OPTIONS</B>
+
+<DL COMPACT><DT><DD>
+
+<DL COMPACT>
+<DT><B>--docformat </B><I>format</I>
+
+<DD>
+Set the default value for
+<B>__docformat__</B>
+
+to
+<I>format</I>.
+
+<B>__docformat__</B>
+
+is a module variable that specifies the markup language for the
+docstrings in a module.  Its value consists of the name of a markup
+language, optionally followed by a language code (such as
+<B>en</B>
+
+for English).  For a list of the markup languages currently recognized
+by epydoc, run
+<B>epydoc --help docformat</B>.
+
+
+<DT><B>--parse-only</B>
+
+<DD>
+Gather all information about the documented objects by parsing the
+relevant Python source code; in particular, do
+<I>not</I>
+
+use introspection to gather information about the documented objects.
+This option should be used when epydoc is run on untrusted code; or on
+code that can not be introspected because of missing dependencies, or
+because importing it would cause undesired side-effects.
+
+<DT><B>--introspect-only</B>
+
+<DD>
+Gather all information about the documented objects by introspection;
+in particular, do
+<I>not</I>
+
+gather information by parsing the object's Python source code.
+
+<DT><B>--exclude </B><I>PATTERN</I>
+
+<DD>
+Do not document any object whose name matches the given regular
+expression pattern.
+
+<DT><B>--exclude-introspect </B><I>PATTERN</I>
+
+<DD>
+Do not use introspection to gather information about any object whose
+name matches the given regular expression.  
+
+<DT><B>--exclude-parse </B><I>PATTERN</I>
+
+<DD>
+Do not use Python source code parsing to gather information about any
+object whose name matches the given regular expression.
+
+<DT><B>--inheritance </B><I>format</I>
+
+<DD>
+The format that should be used to display inherited methods,
+variables, and properties in the generated &quot;summary&quot; tables.
+If
+<I>format</I>
+
+is &quot;grouped,&quot; then inherited objects are gathered into groups, based
+on which class that they are inherited from.  If
+<I>format</I>
+
+is &quot;listed,&quot; then inherited objects are listed in a short list at the
+end of the summary table.  If
+<I>format</I>
+
+is &quot;included,&quot; then inherited objects are mixed in with non-inherited
+objects.  The default format for HTML output is &quot;grouped.&quot;
+
+<DT><B>--show-private, --no-private</B>
+
+<DD>
+These options control whether documentation is generated for private
+objects.  By default, the generated documentation includes private
+objects, and users can choose whether to view private objects or not,
+by clicking on &quot;show private&quot; and &quot;hide private&quot; links.  But if you
+want to discourage users from directly accessing private objects, then
+you may prefer not to generate documentation for private objects.
+
+<DT><B>--show-imports, --no-imports</B>
+
+<DD>
+These options control whether module imports are included in the
+generated documentation.  By default, imports are not included.
+
+<DT><B>--show-sourcecode, --no-sourcecode</B>
+
+<DD>
+These options control whether or not epydoc should generate
+syntax-highlighted pages containing the souce code of each module in
+the HTML output.  By default, the sourcecode pages are generated.
+
+<DT><B>--include-log</B>
+
+<DD>
+Generate an HTML page
+<B>epydoc-log.html</B>
+
+containing all error and warning messages that are generated by
+epydoc, and include it in the generated output.
+</DL>
+</DL>
+
+<P>
+
+
+<B>OUTPUT OPTIONS</B>
+
+<DL COMPACT><DT><DD>
+
+<DL COMPACT>
+<DT><B>-o </B><I>dir</I><B>, --output </B><I>dir</I>
+
+<DD>
+The output directory.  If
+<B>dir</B>
+
+does not exist, then it will be created.  If no output directory is
+specified, then the action name (e.g.,
+<B>html</B> or <B>pdf</B>).
+
+<B>html</B>
+
+
+<DT><B>-c </B><I>sheet</I><B>, --css </B><I>sheet</I>
+
+<DD>
+CSS stylesheet for HTML output files.  If
+<I>sheet</I>
+
+is a file, then the stylesheet is copied from that file; otherwise,
+<I>sheet</I>
+
+is taken to be the name of a built-in stylesheet.  For a list of
+the built-in stylesheets, run
+<B>epydoc --help css</B>.
+
+If a CSS stylesheet is not specified, then the default stylesheet is
+used.
+
+<DT><B>--name </B><I>name</I>
+
+<DD>
+The name of the project whose documentation is being generated.  
+
+<DT><B>-u </B><I>url</I><B>, --url </B><I>url</I>
+
+<DD>
+The URL of the project's homepage.
+<DT>
+<DD>
+<DT><B>--navlink </B><I>html</I>
+
+<DD>
+HTML code for the homepage link on the HTML navigation bar.  If this
+HTML code contains any hyperlinks
+(<B>&lt;a href=...&gt;</B>),
+
+then it will be inserted verbatim.  If
+it does not contain any hyperlinks, and a project url is specified
+(with
+<B>--url</B>),
+
+then a hyperlink to the specified URL is added to the link.
+
+<DT><B>--help-file </B><I>file</I>
+
+<DD>
+An alternate help file.
+<B>file</B>
+
+should contain the body of an HTML file -- navigation bars will be
+added to it.
+
+<DT><B>--show-frames, --no-frames</B>
+
+<DD>
+These options control whether HMTL output will include a frames-base
+table of contents page.  By default, the frames-based table of
+contents is included.
+
+<DT><B>--separate-classes</B>
+
+<DD>
+In the LaTeX output, describe each class in a separate section of the
+documentation, instead of including them in the documentation for
+their modules.  This creates a separate LaTeX file for each class, so
+it can also be useful if you want to include the documentation for one
+or two classes as sections of your own LaTeX document.
+</DL>
+</DL>
+
+<P>
+
+
+<B>GRAPH OPTIONS</B>
+
+<DL COMPACT><DT><DD>
+
+<DL COMPACT>
+<DT><B>--graph </B><I>graphtype</I>
+
+<DD>
+Include graphs of type
+<B>graphtype</B>
+
+in the generated output.  Graphs are generated using the Graphviz dot
+executable.  If this executable is not on the path, then use
+<B>--dotpath</B>
+
+to specify its location.  This option may be repeated to include
+multiple graph types in the output.
+<B>graphtype</B>
+
+should be one of:
+<B>all</B>, <B>classtree</B>, <B>callgraph</B>, or <B>umlclasstree</B>.
+
+
+<DT><B>--dotpath </B><I>path</I>
+
+<DD>
+The path to the Graphviz
+<B>dot</B>
+
+executable.
+
+<DT><B>--graph-font </B><I>font</I>
+
+<DD>
+The name of the font used to generate Graphviz graphs.  (e.g.,
+helvetica or times).
+
+<DT><B>--graph-font-size </B><I>size</I>
+
+<DD>
+The size of the font used to generate Graphviz graphs, in points.
+
+<DT><B>--pstat </B><I>file</I>
+
+<DD>
+A pstat output file, to be used in generating call graphs.
+</DL>
+</DL>
+
+<P>
+
+
+<B>RETURN VALUE OPTIONS</B>
+
+<DL COMPACT><DT><DD>
+
+<DL COMPACT>
+<DT><B>--fail-on-error</B>
+
+<DD>
+Return a non-zero exit status, indicating failure, if any errors are
+encountered.
+
+<DT><B>--fail-on-warning</B>
+
+<DD>
+Return a non-zero exit status, indicating failure, if any errors or
+warnings are encountered (not including docstring warnings).
+
+<DT><B>--fail-on-docstring-warning</B>
+
+<DD>
+Return a non-zero exit status, indicating failure, if any errors or
+warnings are encountered (including docstring warnings).
+</DL>
+</DL>
+
+
+<A NAME="lbAF">
+<H2>HTML FILES</H2></A>
+
+The HTML API documentation produced by 
+<B>epydoc</B>
+
+consists of the following files:
+<P>
+
+<B>OBJECT DOCUMENTATION PAGES</B>
+
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT><B>index.html</B>
+
+<DD>
+The standard entry point for the documentation.  Normally,
+<B>index.html</B>
+
+is a copy of the frames file
+(<B>frames.html</B>).
+
+But if the
+<B>--no-frames</B>
+
+option is used, then
+<B>index.html</B>
+
+is a copy of the API documentation home page, which is normally the
+documentation page for the top-level package or module (or the trees
+page if there is no top-level package or module).
+<DT><I>module</I><B>-module.html</B>
+
+<DD>
+The API documentation for a module.  
+<I>module</I>
+
+is the complete dotted name of the module, such as 
+<B>sys</B>
+
+or
+<B>epydoc.epytext</B>.
+
+<DT><I>class</I><B>-class.html</B>
+
+<DD>
+The API documentation for a class, exception, or type.
+<I>class</I>
+
+is the complete dotted name of the class, such as
+<B>epydoc.epytext.Token</B>
+
+or
+<B>array.ArrayType</B>.
+
+<DT><I>module</I><B>-pysrc.html</B>
+
+<DD>
+A syntax-highlighted page containing the Python source code for
+<I>module</I>.
+
+This page includes links back to the API documentation pages.
+<DT><B>module-tree.html</B>
+
+<DD>
+The module hierarchy.
+<DT><B>class-tree.html</B>
+
+<DD>
+The class hierarchy.  This page is only generated if at least one
+class is documented.
+</DL>
+<P>
+
+</DL>
+
+<B>INDICES</B>
+
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT><B>identifier-index.html</B>
+
+<DD>
+An index of all documented identifiers.  If the identifier index
+contains more than 3,000 entries, then it will be split into separate
+pages for each letter, named
+<B>identifier-index-a.html</B>,
+
+<B>identifier-index-b.html</B>, etc.
+
+<DT><B>term-index.html</B>
+
+<DD>
+An index of all explicitly marked definitional terms.  This page is
+only generated if at least one definition term is marked in a
+formatted docstring.
+<DT><B>bug-index.html</B>
+
+<DD>
+An index of all explicitly marked
+<B>@bug</B>
+
+fields.  This page is only
+generated if at least one
+<B>@bug</B>
+
+field is listed in a formatted docstring.
+<DT><B>todo-index.html</B>
+
+<DD>
+An index of all explicitly marked
+<B>@todo</B>
+
+fields.  This page is only
+generated if at least one
+<B>@todo</B>
+
+field is listed in a formatted docstring.
+<DT><B>changed-index.html</B>
+
+<DD>
+An index of all explicitly marked
+<B>@changed</B>
+
+fields.  This page is only
+generated if at least one
+<B>@changed</B>
+
+field is listed in a formatted docstring.
+<DT><B>deprecated-index.html</B>
+
+<DD>
+An index of all explicitly marked
+<B>@deprecated</B>
+
+fields.  This page is only
+generated if at least one
+<B>@deprecated</B>
+
+field is listed in a formatted docstring.
+<DT><B>since-index.html</B>
+
+<DD>
+An index of all explicitly marked
+<B>@since</B>
+
+fields.  This page is only
+generated if at least one
+<B>@since</B>
+
+field is listed in a formatted docstring.
+</DL>
+</DL>
+
+<P>
+
+<B>FRAMES-BASED TABLE OF CONTENTS</B>
+
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT><B>frames.html</B>
+
+<DD>
+The main frames file.  Two frames on the left side of the window
+contain a table of contents, and the main frame on the right side of
+the window contains API documentation pages.
+<DT><B>toc.html</B>
+
+<DD>
+The top-level table of contents page.  This page is displayed in the
+upper-left frame of
+<B>frames.html</B>,
+
+and provides links to the
+<B>toc-everything.html</B>
+
+and 
+<B>toc-</B><I>module</I><B>-module.html</B>
+
+pages.
+<DT><B>toc-everything.html</B>
+
+<DD>
+The table of contents for the entire project.  This page is displayed
+in the lower-left frame of
+<B>frames.html</B>,
+
+and provides links to every class, type, exception, function, and
+variable defined by the project.
+<DT><B>toc-</B><I>module</I><B>-module.html</B>
+
+<DD>
+The table of contents for a module.  This page is displayed in the
+lower-left frame of
+<B>frames.html</B>,
+
+and provides links to every class, type, exception, function, and
+variable defined by the module.
+<I>module</I>
+
+is the complete dotted name of the module, such as 
+<B>sys</B>
+
+or
+<B>epydoc.epytext</B>.
+
+</DL>
+</DL>
+
+<P>
+
+<B>OTHER PAGES</B>
+
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT><B>help.html</B>
+
+<DD>
+The help page for the project.  This page explains how to use and
+navigate the webpage produced by epydoc.
+<DT><B>redirect.html</B>
+
+<DD>
+This page uses javascript to translate dotted names to their
+corresponding URLs.  For example, in epydoc's documentation,
+loading the page
+<B>&lt;redirect.html#epydoc.apidoc.DottedName&gt;</B>
+
+will automatically redirect the browser to
+<B>&lt;epydoc.apidoc-module.html#DottedName&gt;</B>.
+
+<DT><B>epydoc.css</B>
+
+<DD>
+The CSS stylesheet used to display all HTML pages.
+<DT><B>epydoc.js</B>
+
+<DD>
+A javascript file used to define javascript functions used by epydoc.
+<DT><B>epydoc-log.html</B>
+
+<DD>
+A page containing a log of all warnings and errors that were generated
+by epydoc, along with a table listing all of the options that were
+used.
+
+</DL>
+</DL>
+<A NAME="lbAG">
+<H2>LATEX FILES</H2></A>
+
+The LaTeX API documentation produced by
+<B>epydoc</B>
+
+consists of the following files:
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT><B>api.pdf</B>
+
+<DD>
+An Adobe Acrobat (pdf) file containing the complete API documentation.
+This file is only generated if you use the
+<B>--pdf</B>
+
+option.
+<DT><B>api.tex</B>
+
+<DD>
+The top-level LaTeX file.  This file imports the other LaTeX files, to
+create a single unified document.
+<DT><B>api.dvi</B>
+
+<DD>
+A dvi file containing the complete API documentation.  This file is
+only generated if you use the 
+<B>--dvi</B>
+
+option, the
+<B>--ps</B>
+
+option, or the
+<B>--pdf</B>
+
+option.
+<DT><B>api.ps</B>
+
+<DD>
+A postscript file containing the complete API documentation.  This
+file is only generated if you use the
+<B>--ps</B>
+
+option or the
+<B>--pdf</B>
+
+option.
+<DT><I>module</I><B>-module.tex</B>
+
+<DD>
+The API documentation for a module.
+<I>module</I>
+
+is the complete dotted name of the module, such as
+<B>sys or</B>
+
+<B>epydoc.epytext</B>.
+
+<DT><I>class</I><B>-class.tex</B>
+
+<DD>
+The API documentation for a class, exception, or type.
+<I>class</I>
+
+is the complete dotted name of the class, such as
+<B>epydoc.epytext.Token</B>
+
+or array.ArrayType.  These class documentation files are only created
+if the
+<B>--separate-classes</B>
+
+option is used; otherwise, the documentation for each class is
+included in its module's documentation file.
+</DL>
+</DL>
+
+
+<A NAME="lbAH">
+<H2>DIAGNOSTICS</H2></A>
+
+<B>EPYTEXT MARKUP WARNING MESSAGES</B>
+
+<DL COMPACT><DT><DD>
+Epytext errors are caused by epytext docstrings that contain invalid
+markup.  Whenever an epytext error is detected, the docstring in
+question is treated as a plaintext docstring.  Epydoc can generate the
+following epytext errors:
+<DL COMPACT>
+<DT><B>Bad link target.</B>
+
+<DD>
+The target specified for an inline link contruction
+(<B>L{...}</B>)
+
+is not well-formed.  Link targets must be valid python identifiers.
+<DT><B>Bad uri target.</B>
+
+<DD>
+The target specified for an inline uri contruction
+(<B>U{...}</B>)
+
+is not well-formed.  This typically occurs if inline markup is nested
+inside the URI target.  
+<DT><B>Fields must be at the top level.</B>
+
+<DD>
+The list of fields
+(<B>@param</B>, etc.)
+
+is contained by some other
+block structure (such as a list or a section).
+<DT><B>Fields must be the final elements.</B>
+
+<DD>
+The list of fields
+(<B>@param</B>, etc.)
+
+is not at the end of a docstring.
+<DT><B>Headings must occur at top level.</B>
+
+<DD>
+The heading is contianed in some other block structure (such as a
+list).
+<DT><B>Improper doctest block indentation.</B>
+
+<DD>
+The doctest block dedents past the indentation of its initial prompt
+line.
+<DT><B>Improper heading indentation.</B>
+
+<DD>
+The heading for a section is not left-aligned with the paragraphs in
+the section that contains it.
+<DT><B>Improper paragraph indentation.</B>
+
+<DD>
+The paragraphs within a block are not left-aligned.  This error is
+often generated when plaintext docstrings are parsed using epytext.
+<DT><B>Invalid escape.</B>
+
+<DD>
+An unknown escape sequence was used with the inline escape construction
+(<B>E{...}</B>).
+
+<DT><B>Lists must be indented.</B>
+
+<DD>
+An unindented line immediately following a paragraph starts with a
+list bullet.  Epydoc is not sure whether you meant to start a new list
+item, or meant for a paragraph to include a word that looks like a
+bullet.  If you intended the former, then indent the list.  If you
+intended the latter, then change the word-wrapping of the paragraph,
+or escape the first character of the word that looks like a bullet.
+<DT><B>Unbalanced '{'.</B>
+
+<DD>
+The docstring contains unbalanced braces.  Epytext requires that all
+braces must be balanced.  To include a single unbalanced brace, use
+the escape sequences E{lb} (left brace) and E{rb} (right brace).
+<DT><B>Unbalanced '}'.</B>
+
+<DD>
+The docstring contains unbalanced braces.  Epytext requires that all
+braces must be balanced.  To include a single unbalanced brace, use
+the escape sequences E{lb} (left brace) and E{rb} (right brace).
+<DT><B>Unknown inline markup tag.</B>
+
+<DD>
+An unknown tag was used with the inline markup construction (
+<I>x</I><B>{...}</B>
+
+).
+<DT><B>Wrong underline character for heading.</B>
+
+<DD>
+The underline character used for this section heading does not
+indicate an appopriate section level.  The &quot;=&quot; character should be
+used to underline sections; &quot;-&quot; for subsections; and &quot;~&quot; for
+subsubsections.
+<DT><B>Possible mal-formatted field item.</B>
+
+<DD>
+Epytext detected a line that looks like a field item, but is not
+correctly formatted.  This typically occurs when the trailing colon
+(&quot;:&quot;) is not included in the field tag.
+<DT><B>Possible heading typo.</B>
+
+<DD>
+Epytext detected a pair of lines that looks like a heading, but the
+number of underline characters does not match the number of characters
+in the heading.  The number of characters in these two lines must
+match exactly for them to be considered a heading.
+</DL>
+</DL>
+
+<P>
+
+<B>FIELD WARNINGS</B>
+
+<DL COMPACT><DT><DD>
+Field warnings are caused by docstrings containing invalid fields.
+The contents of the invalid field are generally ignored.  Epydoc can
+generate the following field warnings:
+<DL COMPACT>
+<DT><B>@param for unknown parameter </B><I>param</I><B>.</B>
+
+<DD>
+A @param field was used to specify the type for a parameter that is
+not included in the function's signature.  This is typically caused by
+a typo in the parameter name.
+<DT><I>tag</I><B> did not expect an argument.</B>
+
+<DD>
+The field tag
+<I>tag</I>
+
+was used with an argument, but it does not take one.
+<DT><I>tag</I><B> expected an argument.</B>
+
+<DD>
+The field tag
+<I>tag</I>
+
+was used without an argument, but it requires one.
+<DT><B>@type for unknown parameter </B><I>param</I><B>.</B>
+
+<DD>
+A @type field was used to specify the type for a parameter that is not
+included in the function's signature.  This is typically
+caused by a typo in the parameter name.
+<DT><B>@type for unknown variable </B><I>var</I><B>.</B>
+
+<DD>
+A @type field was used to specify the type for a variable, but no
+other information is known about the variable.  This is typically
+caused by a typo in the variable name.
+<DT><B>Unknown field tag </B><I>tag</I><B>.</B>
+
+<DD>
+A docstring contains a field with the unknown tag
+<I>tag</I>.
+
+<DT><B>Redefinition of </B><I>field</I><B>.</B>
+
+<DD>
+Multiple field tags define the value of
+<I>field</I>
+
+in the same docstring, but
+<I>field</I>
+
+can only take a single value.
+</DL>
+</DL>
+
+
+<A NAME="lbAI">
+<H2>EXAMPLES</H2></A>
+
+<DL COMPACT>
+<DT><B>epydoc -n </B>epydoc<B> -u </B><A HREF="http://epydoc.sf.net">http://epydoc.sf.net</A> epydoc/
+
+<DD>
+Generate the HTML API documentation for the epydoc package and all of
+its submodules, and write the output to the
+<B>html</B>
+
+directory.  In the headers and footers, use
+<B>epydoc</B>
+
+as the project name, and
+<B><A HREF="http://epydoc.sf.net">http://epydoc.sf.net</A></B>
+
+as the project URL.
+<DT><B>epydoc --pdf -n </B>epydoc<B> epydoc/</B>
+
+<DD>
+Generate the LaTeX API documentation for the epydoc package and all of
+its submodules, and write the output to the
+<B>latex</B>
+
+directory.
+
+</DL>
+<A NAME="lbAJ">
+<H2>EXIT STATUS</H2></A>
+
+<DL COMPACT>
+<DT><B>0</B>
+
+<DD>
+Successful program execution.
+<DT><B>1</B>
+
+<DD>
+Usage error.
+<DT><B>2</B>
+
+<DD>
+Epydoc generated an error or warning, and one of the options
+<B>--fail-on-error</B><I>,</I>
+
+<B>--fail-on-warning</B><I>, or</I>
+
+<B>--fail-on-docstring-warning</B>
+
+was specified.
+<DT><B>other</B>
+
+<DD>
+Internal error (Python exception).
+
+</DL>
+<A NAME="lbAK">
+<H2>AUTHOR</H2></A>
+
+Epydoc was written by Edward Loper.  This man page was originally
+written by Moshe Zadka, and is currently maintained by Edward Loper.
+
+<A NAME="lbAL">
+<H2>BUGS</H2></A>
+
+Report bugs to &lt;<A HREF="mailto:edloper@users.sourceforge.net">edloper@users.sourceforge.net</A>&gt;.
+
+<A NAME="lbAM">
+<H2>SEE ALSO</H2></A>
+
+<B><A HREF="/cgi-bin/man/man2html?1+epydocgui">epydocgui</A></B>(1)
+
+<DL COMPACT>
+<DT><B>The epydoc webpage</B>
+
+<DD>
+&lt;<A HREF="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</A>&gt;
+<DT><B>The epytext markup language manual</B>
+
+<DD>
+&lt;<A HREF="http://epydoc.sourceforge.net/epytext.html">http://epydoc.sourceforge.net/epytext.html</A>&gt;
+<P>
+</DL>
+
+<HR>
+<A NAME="index"><H2>Index</H2></A>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">HTML FILES</A><DD>
+<DT><A HREF="#lbAG">LATEX FILES</A><DD>
+<DT><A HREF="#lbAH">DIAGNOSTICS</A><DD>
+<DT><A HREF="#lbAI">EXAMPLES</A><DD>
+<DT><A HREF="#lbAJ">EXIT STATUS</A><DD>
+<DT><A HREF="#lbAK">AUTHOR</A><DD>
+<DT><A HREF="#lbAL">BUGS</A><DD>
+<DT><A HREF="#lbAM">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 02:45:14 GMT, February 26, 2007
+</DIV></BODY>
+</HTML>

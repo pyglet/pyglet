@@ -1,0 +1,998 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.docwriter.dotgraph</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.docwriter-module.html">Package&nbsp;docwriter</a> ::
+        Module&nbsp;dotgraph
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.docwriter.dotgraph-module.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== MODULE DESCRIPTION ==================== -->
+<h1 class="epydoc">Module dotgraph</h1><span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html">source&nbsp;code</a></span><br /><br />
+<p>Render Graphviz directed graphs as images.  Below are some examples.</p>
+<center><table border="0" cellpadding="0" cellspacing="0" class="graph">
+  <tr><td align="center">
+  <map id="import_graph" name="import_graph">
+<area shape="rect" href="epydoc&#45;module.html" title="epydoc" alt="" coords="878,2243,926,2259" />
+<area shape="rect" href="epydoc&#45;module.html" title="epydoc" alt="" coords="867,2227,936,2264" />
+<area shape="rect" href="epydoc.apidoc&#45;module.html" title="epydoc.apidoc" alt="" coords="752,1410,795,1426" />
+<area shape="rect" href="epydoc.apidoc&#45;module.html" title="apidoc" alt="" coords="742,1394,806,1431" />
+<area shape="rect" href="epydoc.cli&#45;module.html" title="epydoc.cli" alt="" coords="614,2210,635,2226" />
+<area shape="rect" href="epydoc.cli&#45;module.html" title="cli" alt="" coords="603,2194,646,2231" />
+<area shape="rect" href="epydoc.docwriter.html&#45;module.html" title="epydoc.docwriter.html" alt="" coords="132,1951,162,1967" />
+<area shape="rect" href="epydoc.docwriter.html&#45;module.html" title="html" alt="" coords="122,1935,172,1972" />
+<area shape="rect" href="epydoc.docwriter.latex&#45;module.html" title="epydoc.docwriter.latex" alt="" coords="608,1356,640,1372" />
+<area shape="rect" href="epydoc.docwriter.latex&#45;module.html" title="latex" alt="" coords="598,1340,651,1378" />
+<area shape="rect" href="epydoc.markup&#45;module.html" title="epydoc.markup" alt="" coords="750,1042,798,1058" />
+<area shape="rect" href="epydoc.markup&#45;module.html" title="markup" alt="" coords="739,1026,808,1063" />
+<area shape="rect" href="epydoc.test&#45;module.html" title="epydoc.test" alt="" coords="760,2596,787,2612" />
+<area shape="rect" href="epydoc.test&#45;module.html" title="test" alt="" coords="750,2580,798,2618" />
+<area shape="rect" href="epydoc.checker&#45;module.html" title="epydoc.checker" alt="" coords="599,1703,650,1719" />
+<area shape="rect" href="epydoc.checker&#45;module.html" title="checker" alt="" coords="588,1687,660,1724" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html" title="epydoc.docbuilder" alt="" coords="115,414,179,430" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html" title="docbuilder" alt="" coords="104,398,190,435" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html" title="epydoc.docintrospecter" alt="" coords="576,354,672,370" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html" title="docintrospecter" alt="" coords="566,338,683,375" />
+<area shape="rect" href="epydoc.docparser&#45;module.html" title="epydoc.docparser" alt="" coords="418,324,482,340" />
+<area shape="rect" href="epydoc.docparser&#45;module.html" title="docparser" alt="" coords="407,308,492,346" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html" title="epydoc.docstringparser" alt="" coords="230,743,326,759" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html" title="docstringparser" alt="" coords="219,727,336,764" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html" title="epydoc.docwriter.dotgraph" alt="" coords="596,1892,652,1908" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html" title="dotgraph" alt="" coords="586,1876,663,1914" />
+<area shape="rect" href="epydoc.docwriter.html_colorize&#45;module.html" title="epydoc.docwriter.html_colorize" alt="" coords="583,2082,666,2098" />
+<area shape="rect" href="epydoc.docwriter.html_colorize&#45;module.html" title="html_colorize" alt="" coords="572,2066,676,2103" />
+<area shape="rect" href="epydoc.docwriter.plaintext&#45;module.html" title="epydoc.docwriter.plaintext" alt="" coords="598,1636,651,1652" />
+<area shape="rect" href="epydoc.docwriter.plaintext&#45;module.html" title="plaintext" alt="" coords="587,1620,662,1658" />
+<area shape="rect" href="epydoc.markup.pyval_repr&#45;module.html" title="epydoc.markup.pyval_repr" alt="" coords="392,684,507,700" />
+<area shape="rect" href="epydoc.markup.pyval_repr&#45;module.html" title="markup.pyval_repr" alt="" coords="382,668,518,706" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html" title="epydoc.markup.restructuredtext" alt="" coords="376,1396,523,1412" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html" title="markup.restructuredtext" alt="" coords="366,1380,534,1418" />
+<area shape="rect" href="epydoc.test.util&#45;module.html" title="epydoc.test.util" alt="" coords="16,728,64,744" />
+<area shape="rect" href="epydoc.test.util&#45;module.html" title="test.util" alt="" coords="6,712,75,750" />
+<area shape="rect" href="epydoc.compat&#45;module.html" title="epydoc.compat" alt="" coords="878,975,926,991" />
+<area shape="rect" href="epydoc.compat&#45;module.html" title="compat" alt="" coords="867,959,936,996" />
+<area shape="rect" href="epydoc.docwriter&#45;module.html" title="epydoc.docwriter" alt="" coords="872,908,931,924" />
+<area shape="rect" href="epydoc.docwriter&#45;module.html" title="docwriter" alt="" coords="862,892,942,930" />
+<area shape="rect" href="epydoc.docwriter.html_css&#45;module.html" title="epydoc.docwriter.html_css" alt="" coords="746,2407,802,2423" />
+<area shape="rect" href="epydoc.docwriter.html_css&#45;module.html" title="html_css" alt="" coords="735,2391,812,2428" />
+<area shape="rect" href="epydoc.docwriter.html_help&#45;module.html" title="epydoc.docwriter.html_help" alt="" coords="247,2306,308,2322" />
+<area shape="rect" href="epydoc.docwriter.html_help&#45;module.html" title="html_help" alt="" coords="236,2290,319,2327" />
+<area shape="rect" href="epydoc.docwriter.xlink&#45;module.html" title="epydoc.docwriter.xlink" alt="" coords="758,2279,790,2295" />
+<area shape="rect" href="epydoc.docwriter.xlink&#45;module.html" title="xlink" alt="" coords="747,2263,800,2300" />
+<area shape="rect" href="epydoc.gui&#45;module.html" title="epydoc.gui" alt="" coords="763,1906,784,1922" />
+<area shape="rect" href="epydoc.gui&#45;module.html" title="gui" alt="" coords="752,1890,795,1927" />
+<area shape="rect" href="epydoc.log&#45;module.html" title="epydoc.log" alt="" coords="891,1935,912,1951" />
+<area shape="rect" href="epydoc.log&#45;module.html" title="log" alt="" coords="880,1919,923,1956" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html" title="epydoc.markup.epytext" alt="" coords="576,727,672,743" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html" title="markup.epytext" alt="" coords="566,711,683,748" />
+<area shape="rect" href="epydoc.markup.javadoc&#45;module.html" title="epydoc.markup.javadoc" alt="" coords="575,983,674,999" />
+<area shape="rect" href="epydoc.markup.javadoc&#45;module.html" title="markup.javadoc" alt="" coords="564,967,684,1004" />
+<area shape="rect" href="epydoc.markup.plaintext&#45;module.html" title="epydoc.markup.plaintext" alt="" coords="574,855,675,871" />
+<area shape="rect" href="epydoc.markup.plaintext&#45;module.html" title="markup.plaintext" alt="" coords="563,839,686,876" />
+<area shape="rect" href="epydoc.markup.doctest&#45;module.html" title="epydoc.markup.doctest" alt="" coords="726,911,822,927" />
+<area shape="rect" href="epydoc.markup.doctest&#45;module.html" title="markup.doctest" alt="" coords="715,895,832,932" />
+<area shape="rect" href="epydoc.util&#45;module.html" title="epydoc.util" alt="" coords="891,1042,912,1058" />
+<area shape="rect" href="epydoc.util&#45;module.html" title="util" alt="" coords="880,1026,923,1063" />
+</map>
+  <img src="import_graph.gif" alt='Import Graph' usemap="#import_graph" ismap="ismap" class="graph-with-title" />
+  </td></tr>
+  <tr><td align='center'>
+<span class="graph-title">Import Graph</span>
+  </td></tr>
+</table><br/></center><center><table border="0" cellpadding="0" cellspacing="0" class="graph">
+  <tr><td align="center">
+  <map id="class_hierarchy_for_apidoc_api" name="class_hierarchy_for_apidoc_api">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html" title="apidoc.APIDoc" alt="" coords="386,7,495,31" />
+<area shape="rect" href="epydoc.apidoc.ValueDoc&#45;class.html" title="apidoc.ValueDoc" alt="" coords="303,63,426,87" />
+<area shape="rect" href="epydoc.apidoc.VariableDoc&#45;class.html" title="apidoc.VariableDoc" alt="" coords="450,63,586,87" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html" title="apidoc.ClassDoc" alt="" coords="106,175,228,199" />
+<area shape="rect" href="epydoc.apidoc.ClassMethodDoc&#45;class.html" title="apidoc.ClassMethodDoc" alt="" coords="487,175,652,199" />
+<area shape="rect" href="epydoc.apidoc.GenericValueDoc&#45;class.html" title="apidoc.GenericValueDoc" alt="" coords="6,119,174,143" />
+<area shape="rect" href="epydoc.apidoc.ModuleDoc&#45;class.html" title="apidoc.ModuleDoc" alt="" coords="252,175,383,199" />
+<area shape="rect" href="epydoc.apidoc.NamespaceDoc&#45;class.html" title="apidoc.NamespaceDoc" alt="" coords="198,119,358,143" />
+<area shape="rect" href="epydoc.apidoc.PropertyDoc&#45;class.html" title="apidoc.PropertyDoc" alt="" coords="382,119,520,143" />
+<area shape="rect" href="epydoc.apidoc.RoutineDoc&#45;class.html" title="apidoc.RoutineDoc" alt="" coords="544,119,678,143" />
+<area shape="rect" href="epydoc.apidoc.StaticMethodDoc&#45;class.html" title="apidoc.StaticMethodDoc" alt="" coords="676,175,842,199" />
+</map>
+  <img src="class_hierarchy_for_apidoc_api.gif" alt='Class Hierarchy for apidoc.APIDoc' usemap="#class_hierarchy_for_apidoc_api" ismap="ismap" class="graph-with-title" />
+  </td></tr>
+  <tr><td align='center'>
+<span class="graph-title">Class Hierarchy for apidoc.APIDoc</span>
+  </td></tr>
+</table><br/></center><center><table border="0" cellpadding="0" cellspacing="0" class="graph">
+  <tr><td align="center">
+  <map id="package_tree_for_epydoc_2" name="package_tree_for_epydoc_2">
+<area shape="rect" href="epydoc.apidoc&#45;module.html" title="epydoc.apidoc" alt="" coords="25,55,76,76" />
+<area shape="rect" href="epydoc.checker&#45;module.html" title="epydoc.checker" alt="" coords="84,55,143,76" />
+<area shape="rect" href="epydoc.cli&#45;module.html" title="epydoc.cli" alt="" coords="151,55,180,76" />
+<area shape="rect" href="epydoc.compat&#45;module.html" title="epydoc.compat" alt="" coords="188,55,244,76" />
+<area shape="rect" href="epydoc.docbuilder&#45;module.html" title="epydoc.docbuilder" alt="" coords="252,55,324,76" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html" title="epydoc.docintrospecter" alt="" coords="332,55,433,76" />
+<area shape="rect" href="epydoc.docparser&#45;module.html" title="epydoc.docparser" alt="" coords="441,55,511,76" />
+<area shape="rect" href="epydoc.docstringparser&#45;module.html" title="epydoc.docstringparser" alt="" coords="25,97,511,119" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html" title="epydoc.docwriter.dotgraph" alt="" coords="35,173,99,195" />
+<area shape="rect" href="epydoc.docwriter.html&#45;module.html" title="epydoc.docwriter.html" alt="" coords="107,173,144,195" />
+<area shape="rect" href="epydoc.docwriter.html_colorize&#45;module.html" title="epydoc.docwriter.html_colorize" alt="" coords="152,173,240,195" />
+<area shape="rect" href="epydoc.docwriter.html_css&#45;module.html" title="epydoc.docwriter.html_css" alt="" coords="248,173,311,195" />
+<area shape="rect" href="epydoc.docwriter.html_help&#45;module.html" title="epydoc.docwriter.html_help" alt="" coords="319,173,387,195" />
+<area shape="rect" href="epydoc.docwriter.latex&#45;module.html" title="epydoc.docwriter.latex" alt="" coords="395,173,433,195" />
+<area shape="rect" href="epydoc.docwriter.plaintext&#45;module.html" title="epydoc.docwriter.plaintext" alt="" coords="441,173,501,195" />
+<area shape="rect" href="epydoc.docwriter.xlink&#45;module.html" title="epydoc.docwriter.xlink" alt="" coords="35,216,501,237" />
+<area shape="rect" href="epydoc.docwriter&#45;module.html" title="epydoc.docwriter" alt="" coords="25,140,511,247" />
+<area shape="rect" href="epydoc.log&#45;module.html" title="epydoc.log" alt="" coords="25,289,53,332" />
+<area shape="rect" href="epydoc.markup.doctest&#45;module.html" title="epydoc.markup.doctest" alt="" coords="71,301,123,323" />
+<area shape="rect" href="epydoc.markup.epytext&#45;module.html" title="epydoc.markup.epytext" alt="" coords="131,301,183,323" />
+<area shape="rect" href="epydoc.markup.javadoc&#45;module.html" title="epydoc.markup.javadoc" alt="" coords="191,301,247,323" />
+<area shape="rect" href="epydoc.markup.plaintext&#45;module.html" title="epydoc.markup.plaintext" alt="" coords="255,301,313,323" />
+<area shape="rect" href="epydoc.markup.pyval_repr&#45;module.html" title="epydoc.markup.pyval_repr" alt="" coords="321,301,392,323" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html" title="epydoc.markup.restructuredtext" alt="" coords="400,301,501,323" />
+<area shape="rect" href="epydoc.markup&#45;module.html" title="epydoc.markup" alt="" coords="61,268,511,332" />
+<area shape="rect" href="epydoc.test.util&#45;module.html" title="epydoc.test.util" alt="" coords="35,387,280,408" />
+<area shape="rect" href="epydoc.test&#45;module.html" title="epydoc.test" alt="" coords="25,353,289,417" />
+<area shape="rect" href="epydoc.util&#45;module.html" title="epydoc.util" alt="" coords="297,375,511,417" />
+<area shape="rect" href="epydoc&#45;module.html" title="epydoc" alt="" coords="16,21,520,427" />
+<area shape="rect" href="epydoc&#45;module.html" title="epydoc" alt="" coords="5,5,531,432" />
+</map>
+  <img src="package_tree_for_epydoc_2.gif" alt='Package Tree for epydoc' usemap="#package_tree_for_epydoc_2" ismap="ismap" class="graph-with-title" />
+  </td></tr>
+  <tr><td align='center'>
+<span class="graph-title">Package Tree for epydoc</span>
+  </td></tr>
+</table><br/></center><br /><br />
+
+<hr />
+<div class="fields">      <p><strong>See Also:</strong>
+        <a class="rst-reference" href="http://www.research.att.com/sw/tools/graphviz/" target="_top">The Graphviz Homepage</a>
+      </p>
+</div><!-- ==================== CLASSES ==================== -->
+<a name="section-Classes"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Classes"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Dot Graphs</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.dotgraph.DotGraph-class.html" class="summary-name">DotGraph</a><br />
+      A <tt class="rst-rst-docutils literal rst-docutils literal"><span class="pre">dot</span></tt> directed graph.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.dotgraph.DotGraphNode-class.html" class="summary-name">DotGraphNode</a>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.dotgraph.DotGraphEdge-class.html" class="summary-name">DotGraphEdge</a>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Specialized Nodes for UML Graphs</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode-class.html" class="summary-name">DotGraphUmlClassNode</a><br />
+      A specialized dot graph node used to display <a href="epydoc.apidoc.ClassDoc-class.html" class="link">ClassDoc</a>s using
+UML notation.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.dotgraph.DotGraphUmlModuleNode-class.html" class="summary-name">DotGraphUmlModuleNode</a><br />
+      A specialized dot grah node used to display <a href="epydoc.apidoc.ModuleDoc-class.html" class="link">ModuleDoc</a>s using
+UML notation.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTIONS ==================== -->
+<a name="section-Functions"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Functions</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Functions"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Graph Generation Functions</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="package_tree_graph"></a><span class="summary-sig-name">package_tree_graph</span>(<span class="summary-sig-arg">packages</span>,
+        <span class="summary-sig-arg">linker</span>,
+        <span class="summary-sig-arg">context</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">**options</span>)</span><br />
+      Return a <a href="epydoc.docwriter.dotgraph.DotGraph-class.html" class="link">DotGraph</a> that graphically displays the package
+hierarchies for the given packages.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#package_tree_graph">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_package_tree_gr-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_package_tree_gr-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_package_tree_gr" name="call_graph_for_package_tree_gr">
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#get_dot_version" title="get_dot_version()" alt="" coords="717,6,872,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#package_tree_graph" title="package_tree_graph()" alt="" coords="449,34,633,66" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#uml_package_tree_graph" title="uml_package_tree_graph()" alt="" coords="683,62,907,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_packagetree" title="markup.restructuredtext._construct_packagetree()" alt="" coords="7,34,399,66" />
+</map>
+  <img src="call_graph_for_package_tree_gr.gif" alt='' usemap="#call_graph_for_package_tree_gr" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="uml_package_tree_graph"></a><span class="summary-sig-name">uml_package_tree_graph</span>(<span class="summary-sig-arg">packages</span>,
+        <span class="summary-sig-arg">linker</span>,
+        <span class="summary-sig-arg">context</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">**options</span>)</span><br />
+      Return a <a href="epydoc.docwriter.dotgraph.DotGraph-class.html" class="link">DotGraph</a> that graphically displays the package
+hierarchies for the given packages as a nested set of UML
+symbols.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#uml_package_tree_graph">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_uml_package_tre-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_uml_package_tre-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_uml_package_tre" name="call_graph_for_uml_package_tre">
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#__init__" title="DotGraph.__init__()" alt="" coords="579,6,755,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlModuleNode&#45;class.html#__init__" title="DotGraphUmlModuleNode.__init__()" alt="" coords="514,62,820,94" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#name_list" title="name_list()" alt="" coords="614,118,720,150" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#package_tree_graph" title="package_tree_graph()" alt="" coords="7,62,191,94" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#uml_package_tree_graph" title="uml_package_tree_graph()" alt="" coords="240,62,464,94" />
+</map>
+  <img src="call_graph_for_uml_package_tre.gif" alt='' usemap="#call_graph_for_uml_package_tre" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="class_tree_graph"></a><span class="summary-sig-name">class_tree_graph</span>(<span class="summary-sig-arg">bases</span>,
+        <span class="summary-sig-arg">linker</span>,
+        <span class="summary-sig-arg">context</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">**options</span>)</span><br />
+      Return a <a href="epydoc.docwriter.dotgraph.DotGraph-class.html" class="link">DotGraph</a> that graphically displays the package
+hierarchies for the given packages.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#class_tree_graph">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_class_tree_grap-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_class_tree_grap-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_class_tree_grap" name="call_graph_for_class_tree_grap">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__hash__" title="apidoc.APIDoc.__hash__()" alt="" coords="703,6,927,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#__init__" title="DotGraph.__init__()" alt="" coords="727,62,903,94" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphEdge&#45;class.html#__init__" title="DotGraphEdge.__init__()" alt="" coords="708,118,921,150" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#add_valdoc_nodes" title="add_valdoc_nodes()" alt="" coords="728,174,901,206" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#class_tree_graph" title="class_tree_graph()" alt="" coords="493,118,653,150" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#name_list" title="name_list()" alt="" coords="761,230,868,262" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#_build_graph" title="markup.epytext.ParsedEpytextDocstring._build_graph()" alt="" coords="5,90,445,122" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_classtree" title="markup.restructuredtext._construct_classtree()" alt="" coords="41,146,409,178" />
+</map>
+  <img src="call_graph_for_class_tree_grap.gif" alt='' usemap="#call_graph_for_class_tree_grap" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.dotgraph-module.html#uml_class_tree_graph" class="summary-sig-name">uml_class_tree_graph</a>(<span class="summary-sig-arg">class_doc</span>,
+        <span class="summary-sig-arg">linker</span>,
+        <span class="summary-sig-arg">context</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">**options</span>)</span><br />
+      Return a <a href="epydoc.docwriter.dotgraph.DotGraph-class.html" class="link">DotGraph</a> that graphically displays the class hierarchy
+for the given class, using UML notation.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#uml_class_tree_graph">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_uml_class_tree_-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_uml_class_tree_-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_uml_class_tree_" name="call_graph_for_uml_class_tree_">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="622,6,846,38" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__hash__" title="apidoc.APIDoc.__hash__()" alt="" coords="622,62,846,94" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#mro" title="apidoc.ClassDoc.mro()" alt="" coords="636,118,831,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="612,174,855,206" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#__init__" title="DotGraph.__init__()" alt="" coords="646,230,822,262" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphEdge&#45;class.html#__init__" title="DotGraphEdge.__init__()" alt="" coords="627,286,840,318" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphEdge&#45;class.html#__setitem__" title="DotGraphEdge.__setitem__()" alt="" coords="612,342,855,374" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#__init__" title="DotGraphUmlClassNode.__init__()" alt="" coords="588,398,879,430" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#link_attributes" title="DotGraphUmlClassNode.link_attributes()" alt="" coords="566,454,902,486" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#uml_class_tree_graph" title="uml_class_tree_graph()" alt="" coords="319,230,516,262" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_class" title="html.HTMLWriter.write_class()" alt="" coords="6,230,270,262" />
+</map>
+  <img src="call_graph_for_uml_class_tree_.gif" alt='' usemap="#call_graph_for_uml_class_tree_" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="import_graph"></a><span class="summary-sig-name">import_graph</span>(<span class="summary-sig-arg">modules</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">linker</span>,
+        <span class="summary-sig-arg">context</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">**options</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#import_graph">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_import_graph-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_import_graph-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_import_graph" name="call_graph_for_import_graph">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__hash__" title="apidoc.APIDoc.__hash__()" alt="" coords="661,6,885,38" />
+<area shape="rect" href="epydoc.apidoc.DocIndex&#45;class.html#get_valdoc" title="apidoc.DocIndex.get_valdoc()" alt="" coords="649,62,897,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="apidoc.DottedName.__getitem__()" alt="" coords="633,118,913,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__len__" title="apidoc.DottedName.__len__()" alt="" coords="649,174,897,206" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#__init__" title="DotGraph.__init__()" alt="" coords="685,230,861,262" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphEdge&#45;class.html#__init__" title="DotGraphEdge.__init__()" alt="" coords="667,286,880,318" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#add_valdoc_nodes" title="add_valdoc_nodes()" alt="" coords="687,342,860,374" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#import_graph" title="import_graph()" alt="" coords="448,174,584,206" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_importgraph" title="markup.restructuredtext._construct_importgraph()" alt="" coords="5,174,400,206" />
+</map>
+  <img src="call_graph_for_import_graph.gif" alt='' usemap="#call_graph_for_import_graph" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.dotgraph-module.html#call_graph" class="summary-sig-name">call_graph</a>(<span class="summary-sig-arg">api_docs</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">linker</span>,
+        <span class="summary-sig-arg">context</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">**options</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#call_graph">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Dot Version</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_dot_version"></a><span class="summary-sig-name">get_dot_version</span>()</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#get_dot_version">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_get_dot_version-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_get_dot_version-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_get_dot_version" name="call_graph_for_get_dot_version">
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#to_html" title="DotGraph.to_html()" alt="" coords="27,6,197,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#get_dot_version" title="get_dot_version()" alt="" coords="267,62,421,94" />
+<area shape="rect" href="epydoc.log&#45;module.html#info" title="log.info()" alt="" coords="515,34,605,66" />
+<area shape="rect" href="epydoc.util&#45;module.html#run_subprocess" title="util.run_subprocess()" alt="" coords="469,90,651,122" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#package_tree_graph" title="package_tree_graph()" alt="" coords="20,62,204,94" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#specialize_valdoc_node" title="specialize_valdoc_node()" alt="" coords="7,118,217,150" />
+</map>
+  <img src="call_graph_for_get_dot_version.gif" alt='' usemap="#call_graph_for_get_dot_version" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Helper Functions</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.dotgraph-module.html#add_valdoc_nodes" class="summary-sig-name">add_valdoc_nodes</a>(<span class="summary-sig-arg">graph</span>,
+        <span class="summary-sig-arg">val_docs</span>,
+        <span class="summary-sig-arg">linker</span>,
+        <span class="summary-sig-arg">context</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#add_valdoc_nodes">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_add_valdoc_node-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_add_valdoc_node-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_add_valdoc_node" name="call_graph_for_add_valdoc_node">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__hash__" title="apidoc.APIDoc.__hash__()" alt="" coords="481,6,705,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="apidoc.DottedName.__cmp__()" alt="" coords="465,62,721,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#contextualize" title="apidoc.DottedName.contextualize()" alt="" coords="449,118,737,150" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html#__init__" title="DotGraphNode.__init__()" alt="" coords="485,174,701,206" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#add_valdoc_nodes" title="add_valdoc_nodes()" alt="" coords="213,146,387,178" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#specialize_valdoc_node" title="specialize_valdoc_node()" alt="" coords="488,230,699,262" />
+<area shape="rect" href="epydoc.docwriter.html._HTMLDocstringLinker&#45;class.html#url_for" title="html._HTMLDocstringLinker.url_for()" alt="" coords="436,286,751,318" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#class_tree_graph" title="class_tree_graph()" alt="" coords="5,118,165,150" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#import_graph" title="import_graph()" alt="" coords="17,174,153,206" />
+</map>
+  <img src="call_graph_for_add_valdoc_node.gif" alt='' usemap="#call_graph_for_add_valdoc_node" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="specialize_valdoc_node"></a><span class="summary-sig-name">specialize_valdoc_node</span>(<span class="summary-sig-arg">node</span>,
+        <span class="summary-sig-arg">val_doc</span>,
+        <span class="summary-sig-arg">context</span>,
+        <span class="summary-sig-arg">url</span>)</span><br />
+      Update the style attributes of <code class="link">node</code> to reflext its type
+and context.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#specialize_valdoc_node">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_specialize_vald-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_specialize_vald-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_specialize_vald" name="call_graph_for_specialize_vald">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="500,6,724,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="491,62,733,94" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html#__getitem__" title="DotGraphNode.__getitem__()" alt="" coords="488,118,736,150" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html#__setitem__" title="DotGraphNode.__setitem__()" alt="" coords="489,174,735,206" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#add_valdoc_nodes" title="add_valdoc_nodes()" alt="" coords="5,118,179,150" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#specialize_valdoc_node" title="specialize_valdoc_node()" alt="" coords="228,118,439,150" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#get_dot_version" title="get_dot_version()" alt="" coords="535,230,689,262" />
+</map>
+  <img src="call_graph_for_specialize_vald.gif" alt='' usemap="#call_graph_for_specialize_vald" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="name_list"></a><span class="summary-sig-name">name_list</span>(<span class="summary-sig-arg">api_docs</span>,
+        <span class="summary-sig-arg">context</span>=<span class="summary-sig-default">True</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#name_list">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_name_list-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_name_list-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_name_list" name="call_graph_for_name_list">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="455,6,697,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#contextualize" title="apidoc.DottedName.contextualize()" alt="" coords="432,62,720,94" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#class_tree_graph" title="class_tree_graph()" alt="" coords="37,6,197,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#name_list" title="name_list()" alt="" coords="277,34,384,66" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#uml_package_tree_graph" title="uml_package_tree_graph()" alt="" coords="5,62,229,94" />
+</map>
+  <img src="call_graph_for_name_list.gif" alt='' usemap="#call_graph_for_name_list" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+</table>
+<!-- ==================== VARIABLES ==================== -->
+<a name="section-Variables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Variables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="MODULE_BG"></a><span class="summary-name">MODULE_BG</span> = <code title="'#d8e8ff'"><code class="variable-quote">'</code><code class="variable-string">#d8e8ff</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="CLASS_BG"></a><span class="summary-name">CLASS_BG</span> = <code title="'#d8ffe8'"><code class="variable-quote">'</code><code class="variable-string">#d8ffe8</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="SELECTED_BG"></a><span class="summary-name">SELECTED_BG</span> = <code title="'#ffd0d0'"><code class="variable-quote">'</code><code class="variable-string">#ffd0d0</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="BASECLASS_BG"></a><span class="summary-name">BASECLASS_BG</span> = <code title="'#e0b0a0'"><code class="variable-quote">'</code><code class="variable-string">#e0b0a0</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="SUBCLASS_BG"></a><span class="summary-name">SUBCLASS_BG</span> = <code title="'#e0b0a0'"><code class="variable-quote">'</code><code class="variable-string">#e0b0a0</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="ROUTINE_BG"></a><span class="summary-name">ROUTINE_BG</span> = <code title="'#e8d0b0'"><code class="variable-quote">'</code><code class="variable-string">#e8d0b0</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="INH_LINK_COLOR"></a><span class="summary-name">INH_LINK_COLOR</span> = <code title="'#800000'"><code class="variable-quote">'</code><code class="variable-string">#800000</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Dot Graphs</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="DOT_COMMAND"></a><span class="summary-name">DOT_COMMAND</span> = <code title="'dot'"><code class="variable-quote">'</code><code class="variable-string">dot</code><code class="variable-quote">'</code></code><br />
+      The command that should be used to spawn dot
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8"  class="private">
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Dot Version</th></tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_dot_version"></a><span class="summary-name">_dot_version</span> = <code title="True">True</code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_DOT_VERSION_RE"></a><span class="summary-name">_DOT_VERSION_RE</span> = <code title="re.compile(r'dot version ([\d\.]+)')">re.compile(r'dot version <code class="re-group">(</code><code class="re-group">[</code>\d\.<code class="re-group">]</code><code class="re-op">+</code><code class="re-group">)</code>')</code>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Helper Functions</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="NOOP_URL"></a><span class="summary-name">NOOP_URL</span> = <code title="'javascript: void(0);'"><code class="variable-quote">'</code><code class="variable-string">javascript: void(0);</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.dotgraph-module.html#MODULE_NODE_HTML" class="summary-name">MODULE_NODE_HTML</a> = <code title="'''&lt;TABLE BORDER=&quot;0&quot; CELLBORDER=&quot;0&quot; CELLSPACING=&quot;0&quot;
+         CELLPADDING=&quot;0&quot; PORT=&quot;table&quot; ALIGN=&quot;LEFT&quot;&gt;
+  &lt;TR&gt;&lt;TD ALIGN=&quot;LEFT&quot; VALIGN=&quot;BOTTOM&quot; HEIGHT=&quot;8&quot; WIDTH=&quot;16&quot; FIXEDSIZE\
+=&quot;true&quot;
+          BGCOLOR=&quot;%s&quot; BORDER=&quot;1&quot; PORT=&quot;tab&quot;&gt;&lt;/TD&gt;&lt;/TR&gt;
+  &lt;TR&gt;&lt;TD ALIGN=&quot;LEFT&quot; VALIGN=&quot;TOP&quot; BGCOLOR=&quot;%s&quot; BORDER=&quot;1&quot;
+          PORT=&quot;body&quot; HREF=&quot;%s&quot; TOOLTIP=&quot;%s&quot;&gt;%s&lt;/TD&gt;&lt;/TR&gt;
+  &lt;/TABLE&gt;'''"><code class="variable-quote">'</code><code class="variable-string">&lt;TABLE BORDER=&quot;0&quot; CELLBORDER=&quot;0&quot; CELLSPACI</code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTION DETAILS ==================== -->
+<a name="section-FunctionDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Function Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-FunctionDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="uml_class_tree_graph"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">uml_class_tree_graph</span>(<span class="sig-arg">class_doc</span>,
+        <span class="sig-arg">linker</span>,
+        <span class="sig-arg">context</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">**options</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#uml_class_tree_graph">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_uml_class_tree_-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_uml_class_tree_-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_uml_class_tree_" name="call_graph_for_uml_class_tree_">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="622,6,846,38" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__hash__" title="apidoc.APIDoc.__hash__()" alt="" coords="622,62,846,94" />
+<area shape="rect" href="epydoc.apidoc.ClassDoc&#45;class.html#mro" title="apidoc.ClassDoc.mro()" alt="" coords="636,118,831,150" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="612,174,855,206" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#__init__" title="DotGraph.__init__()" alt="" coords="646,230,822,262" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphEdge&#45;class.html#__init__" title="DotGraphEdge.__init__()" alt="" coords="627,286,840,318" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphEdge&#45;class.html#__setitem__" title="DotGraphEdge.__setitem__()" alt="" coords="612,342,855,374" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#__init__" title="DotGraphUmlClassNode.__init__()" alt="" coords="588,398,879,430" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#link_attributes" title="DotGraphUmlClassNode.link_attributes()" alt="" coords="566,454,902,486" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#uml_class_tree_graph" title="uml_class_tree_graph()" alt="" coords="319,230,516,262" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#write_class" title="html.HTMLWriter.write_class()" alt="" coords="6,230,270,262" />
+</map>
+  <img src="call_graph_for_uml_class_tree_.gif" alt='' usemap="#call_graph_for_uml_class_tree_" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  <p>Return a <a href="epydoc.docwriter.dotgraph.DotGraph-class.html" class="link">DotGraph</a> that graphically displays the class hierarchy
+for the given class, using UML notation.  Options:</p>
+<blockquote>
+<ul class="rst-simple">
+<li>max_attributes</li>
+<li>max_operations</li>
+<li>show_private_vars</li>
+<li>show_magic_vars</li>
+<li>link_attributes</li>
+</ul>
+</blockquote>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="call_graph"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">call_graph</span>(<span class="sig-arg">api_docs</span>,
+        <span class="sig-arg">docindex</span>,
+        <span class="sig-arg">linker</span>,
+        <span class="sig-arg">context</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">**options</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#call_graph">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>options</code></strong> - <ul class="rst-simple">
+<li><tt class="rst-docutils literal"><span class="pre">dir</span></tt>: rankdir for the graph.  (default=LR)</li>
+<li><tt class="rst-docutils literal"><span class="pre">add_callers</span></tt>: also include callers for any of the
+routines in <tt class="rst-docutils literal"><span class="pre">api_docs</span></tt>.  (default=False)</li>
+<li><tt class="rst-docutils literal"><span class="pre">add_callees</span></tt>: also include callees for any of the
+routines in <tt class="rst-docutils literal"><span class="pre">api_docs</span></tt>.  (default=False)</li>
+</ul></li>
+    </ul></dd>
+  </dl>
+<div class="fields">      <p><strong>To Do:</strong>
+        Add an <tt class="rst-rst-docutils literal rst-docutils literal"><span class="pre">exclude</span></tt> option?
+      </p>
+</div></td></tr></table>
+</div>
+<a name="add_valdoc_nodes"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">add_valdoc_nodes</span>(<span class="sig-arg">graph</span>,
+        <span class="sig-arg">val_docs</span>,
+        <span class="sig-arg">linker</span>,
+        <span class="sig-arg">context</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#add_valdoc_nodes">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_add_valdoc_node-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_add_valdoc_node-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_add_valdoc_node" name="call_graph_for_add_valdoc_node">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__hash__" title="apidoc.APIDoc.__hash__()" alt="" coords="481,6,705,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="apidoc.DottedName.__cmp__()" alt="" coords="465,62,721,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#contextualize" title="apidoc.DottedName.contextualize()" alt="" coords="449,118,737,150" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html#__init__" title="DotGraphNode.__init__()" alt="" coords="485,174,701,206" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#add_valdoc_nodes" title="add_valdoc_nodes()" alt="" coords="213,146,387,178" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#specialize_valdoc_node" title="specialize_valdoc_node()" alt="" coords="488,230,699,262" />
+<area shape="rect" href="epydoc.docwriter.html._HTMLDocstringLinker&#45;class.html#url_for" title="html._HTMLDocstringLinker.url_for()" alt="" coords="436,286,751,318" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#class_tree_graph" title="class_tree_graph()" alt="" coords="5,118,165,150" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#import_graph" title="import_graph()" alt="" coords="17,174,153,206" />
+</map>
+  <img src="call_graph_for_add_valdoc_node.gif" alt='' usemap="#call_graph_for_add_valdoc_node" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+  </dl>
+<div class="fields">      <p><strong>To Do:</strong>
+        Use different node styles for different subclasses of APIDoc
+      </p>
+</div></td></tr></table>
+</div>
+<br />
+<!-- ==================== VARIABLES DETAILS ==================== -->
+<a name="section-VariablesDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-VariablesDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="MODULE_NODE_HTML"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">MODULE_NODE_HTML</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-quote">'''</code><code class="variable-string">&lt;TABLE BORDER=&quot;0&quot; CELLBORDER=&quot;0&quot; CELLSPACING=&quot;0&quot;</code>
+<code class="variable-string">         CELLPADDING=&quot;0&quot; PORT=&quot;table&quot; ALIGN=&quot;LEFT&quot;&gt;</code>
+<code class="variable-string">  &lt;TR&gt;&lt;TD ALIGN=&quot;LEFT&quot; VALIGN=&quot;BOTTOM&quot; HEIGHT=&quot;8&quot; WIDTH=&quot;16&quot; FIXEDSIZE</code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="variable-string">=&quot;true&quot;</code>
+<code class="variable-string">          BGCOLOR=&quot;%s&quot; BORDER=&quot;1&quot; PORT=&quot;tab&quot;&gt;&lt;/TD&gt;&lt;/TR&gt;</code>
+<code class="variable-string">  &lt;TR&gt;&lt;TD ALIGN=&quot;LEFT&quot; VALIGN=&quot;TOP&quot; BGCOLOR=&quot;%s&quot; BORDER=&quot;1&quot;</code>
+<code class="variable-string">          PORT=&quot;body&quot; HREF=&quot;%s&quot; TOOLTIP=&quot;%s&quot;&gt;%s&lt;/TD&gt;&lt;/TR&gt;</code>
+<code class="variable-string">  &lt;/TABLE&gt;</code><code class="variable-quote">'''</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:03:03 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

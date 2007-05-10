@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>Regression Testing for epytext</title>
+<link rel="stylesheet" href="../custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="regression-testing-for-epytext">
+<h1 class="title">Regression Testing for epytext</h1>
+
+<p>These tests were taken pretty much verbatim out of the old unittests
+from epydoc 2.1.  They could use some serious updating, when I get the
+time, esp. given that it's so much easier to write tests with doctest
+than it was with unittest.</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.test.util <span class="py-keyword">import</span> print_warnings
+<span class="py-prompt">&gt;&gt;&gt; </span>print_warnings()</pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.markup <span class="py-keyword">import</span> epytext
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">import</span> re
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">testparse</span>(s):
+<span class="py-more">... </span>    <span class="py-comment"># this strips off the &lt;epytext&gt;...&lt;/epytext&gt;</span>
+<span class="py-more">... </span>    out = <span class="py-string">''</span>.join([str(n) <span class="py-keyword">for</span> n <span class="py-keyword">in</span>
+<span class="py-more">... </span>                   epytext.parse(s).children])
+<span class="py-more">... </span>    <span class="py-comment"># This is basically word-wrapping:</span>
+<span class="py-more">... </span>    out = re.sub(r<span class="py-string">'((&lt;/\w+&gt;)+)'</span>, r<span class="py-string">'\1\n'</span>, out).rstrip()
+<span class="py-more">... </span>    out = re.sub(r<span class="py-string">'(?m)^(.{50,70}&gt;)(.)'</span>, r<span class="py-string">'\1\n\2'</span>, out).rstrip()
+<span class="py-more">... </span>    return out
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">checkparse</span>(s, expect):
+<span class="py-more">... </span>    <span class="py-comment"># this strips off the &lt;epytext&gt;...&lt;/epytext&gt;</span>
+<span class="py-more">... </span>    got = <span class="py-string">''</span>.join([str(n) <span class="py-keyword">for</span> n <span class="py-keyword">in</span> epytext.parse(s).children])
+<span class="py-more">... </span>    <span class="py-keyword">if</span> got != expect:
+<span class="py-more">... </span>        raise ValueError(<span class="py-string">'mismatch: %r %r'</span> % (expect, got))</pre>
+</blockquote>
+<p>Paragraphs:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    this is one paragraph.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">    This is</span>
+<span class="py-more">... </span><span class="py-string">    another.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">    This is a third&quot;&quot;&quot;</span>)
+<span class="py-output">&lt;para&gt;this is one paragraph.&lt;/para&gt;</span>
+<span class="py-output">&lt;para&gt;This is another.&lt;/para&gt;</span>
+<span class="py-output">&lt;para&gt;This is a third&lt;/para&gt;</span></pre>
+</blockquote>
+<p>Make sure that unindented fields are allowed:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    This is a paragraph.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">    @foo: This is a field.&quot;&quot;&quot;</span>)
+<span class="py-output">&lt;para&gt;This is a paragraph.&lt;/para&gt;</span>
+<span class="py-output">&lt;fieldlist&gt;&lt;field&gt;&lt;tag&gt;foo&lt;/tag&gt;</span>
+<span class="py-output">&lt;para&gt;This is a field.&lt;/para&gt;&lt;/field&gt;&lt;/fieldlist&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    This is a paragraph.</span>
+<span class="py-more">... </span><span class="py-string">    @foo: This is a field.&quot;&quot;&quot;</span>)
+<span class="py-output">&lt;para&gt;This is a paragraph.&lt;/para&gt;</span>
+<span class="py-output">&lt;fieldlist&gt;&lt;field&gt;&lt;tag&gt;foo&lt;/tag&gt;</span>
+<span class="py-output">&lt;para&gt;This is a field.&lt;/para&gt;&lt;/field&gt;&lt;/fieldlist&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    This is a paragraph.</span>
+<span class="py-more">... </span><span class="py-string">      @foo: This is a field.</span>
+<span class="py-more">... </span><span class="py-string">        Hello.&quot;&quot;&quot;</span>)
+<span class="py-output">&lt;para&gt;This is a paragraph.&lt;/para&gt;</span>
+<span class="py-output">&lt;fieldlist&gt;&lt;field&gt;&lt;tag&gt;foo&lt;/tag&gt;</span>
+<span class="py-output">&lt;para&gt;This is a field. Hello.&lt;/para&gt;&lt;/field&gt;&lt;/fieldlist&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;Paragraph\n@foo: field&quot;&quot;&quot;</span>)
+<span class="py-output">&lt;para&gt;Paragraph&lt;/para&gt;</span>
+<span class="py-output">&lt;fieldlist&gt;&lt;field&gt;&lt;tag&gt;foo&lt;/tag&gt;</span>
+<span class="py-output">&lt;para&gt;field&lt;/para&gt;&lt;/field&gt;&lt;/fieldlist&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;Paragraph\n\n@foo: field&quot;&quot;&quot;</span>)
+<span class="py-output">&lt;para&gt;Paragraph&lt;/para&gt;</span>
+<span class="py-output">&lt;fieldlist&gt;&lt;field&gt;&lt;tag&gt;foo&lt;/tag&gt;</span>
+<span class="py-output">&lt;para&gt;field&lt;/para&gt;&lt;/field&gt;&lt;/fieldlist&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;\nParagraph\n@foo: field&quot;&quot;&quot;</span>)
+<span class="py-output">&lt;para&gt;Paragraph&lt;/para&gt;</span>
+<span class="py-output">&lt;fieldlist&gt;&lt;field&gt;&lt;tag&gt;foo&lt;/tag&gt;</span>
+<span class="py-output">&lt;para&gt;field&lt;/para&gt;&lt;/field&gt;&lt;/fieldlist&gt;</span></pre>
+</blockquote>
+<p>Make sure thta unindented lists are not allowed:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    This is a paragraph.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">    - This is a list item.&quot;&quot;&quot;</span>)
+<span class="py-except">Traceback (most recent call last):</span>
+<span class="py-except">StructuringError: Line 4: Lists must be indented.</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    This is a paragraph.</span>
+<span class="py-more">... </span><span class="py-string">    - This is a list item.&quot;&quot;&quot;</span>)
+<span class="py-except">Traceback (most recent call last):</span>
+<span class="py-except">StructuringError: Line 3: Lists must be indented.</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    This is a paragraph.</span>
+<span class="py-more">... </span><span class="py-string">      - This is a list item.</span>
+<span class="py-more">... </span><span class="py-string">        Hello.</span>
+<span class="py-more">... </span><span class="py-string">        - Sublist item&quot;&quot;&quot;</span>)
+<span class="py-except">Traceback (most recent call last):</span>
+<span class="py-except">StructuringError: Line 5: Lists must be indented.</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    This is a paragraph.</span>
+<span class="py-more">... </span><span class="py-string">      - This is a list item.</span>
+<span class="py-more">... </span><span class="py-string">        Hello.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        - Sublist item&quot;&quot;&quot;</span>)
+<span class="py-except">Traceback (most recent call last):</span>
+<span class="py-except">StructuringError: Line 6: Lists must be indented.</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;Paragraph\n\n- list item&quot;&quot;&quot;</span>)
+<span class="py-except">Traceback (most recent call last):</span>
+<span class="py-except">StructuringError: Line 3: Lists must be indented.</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;\nParagraph\n- list item&quot;&quot;&quot;</span>)
+<span class="py-except">Traceback (most recent call last):</span>
+<span class="py-except">StructuringError: Line 3: Lists must be indented.</span></pre>
+</blockquote>
+<p>Special case if there's text on the same line as the opening quote:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;Paragraph\n- list item&quot;&quot;&quot;</span>)
+<span class="py-output">&lt;para&gt;Paragraph&lt;/para&gt;</span>
+<span class="py-output">&lt;ulist&gt;&lt;li&gt;&lt;para&gt;list item&lt;/para&gt;&lt;/li&gt;&lt;/ulist&gt;</span></pre>
+</blockquote>
+<p>Make sure that indented lists are allowed:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">'This is a paragraph.\n  - This is a list item.\n'</span>+
+<span class="py-more">... </span>          <span class="py-string">'This is a paragraph'</span>)
+<span class="py-output">&lt;para&gt;This is a paragraph.&lt;/para&gt;</span>
+<span class="py-output">&lt;ulist&gt;&lt;li&gt;&lt;para&gt;This is a list item.&lt;/para&gt;&lt;/li&gt;&lt;/ulist&gt;</span>
+<span class="py-output">&lt;para&gt;This is a paragraph&lt;/para&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">'This is a paragraph.\n\n  - This is a list item.'</span>+
+<span class="py-more">... </span>          <span class="py-string">'\n\nThis is a paragraph'</span>)
+<span class="py-output">&lt;para&gt;This is a paragraph.&lt;/para&gt;</span>
+<span class="py-output">&lt;ulist&gt;&lt;li&gt;&lt;para&gt;This is a list item.&lt;/para&gt;&lt;/li&gt;&lt;/ulist&gt;</span>
+<span class="py-output">&lt;para&gt;This is a paragraph&lt;/para&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    This is a paragraph.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">      - This is a list item.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">    This is a paragraph&quot;&quot;&quot;</span>)
+<span class="py-output">&lt;para&gt;This is a paragraph.&lt;/para&gt;</span>
+<span class="py-output">&lt;ulist&gt;&lt;li&gt;&lt;para&gt;This is a list item.&lt;/para&gt;&lt;/li&gt;&lt;/ulist&gt;</span>
+<span class="py-output">&lt;para&gt;This is a paragraph&lt;/para&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">    This is a paragraph.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">          - This is a list item.</span>
+<span class="py-more">... </span><span class="py-string">    This is a paragraph&quot;&quot;&quot;</span>)
+<span class="py-output">&lt;para&gt;This is a paragraph.&lt;/para&gt;</span>
+<span class="py-output">&lt;ulist&gt;&lt;li&gt;&lt;para&gt;This is a list item.&lt;/para&gt;&lt;/li&gt;&lt;/ulist&gt;</span>
+<span class="py-output">&lt;para&gt;This is a paragraph&lt;/para&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">      - This is a list item.&quot;&quot;&quot;</span>)
+<span class="py-output">&lt;ulist&gt;&lt;li&gt;&lt;para&gt;This is a list item.&lt;/para&gt;&lt;/li&gt;&lt;/ulist&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;- This is a list item.&quot;&quot;&quot;</span>)
+<span class="py-output">&lt;ulist&gt;&lt;li&gt;&lt;para&gt;This is a list item.&lt;/para&gt;&lt;/li&gt;&lt;/ulist&gt;</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> testparse(<span class="py-string">&quot;&quot;&quot;\n- This is a list item.&quot;&quot;&quot;</span>)
+<span class="py-output">&lt;ulist&gt;&lt;li&gt;&lt;para&gt;This is a list item.&lt;/para&gt;&lt;/li&gt;&lt;/ulist&gt;</span></pre>
+</blockquote>
+<p>Basic list tests:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>P1 = <span class="py-string">&quot;This is a paragraph.&quot;</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>P2 = <span class="py-string">&quot;This is a \nparagraph.&quot;</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>LI1 = <span class="py-string">&quot;  - This is a list item.&quot;</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>LI2 = <span class="py-string">&quot;\n  - This is a list item.&quot;</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>LI3 = <span class="py-string">&quot;  - This is a list\n  item.&quot;</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>LI4 = <span class="py-string">&quot;\n  - This is a list\n  item.&quot;</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>PARA = (<span class="py-string">'&lt;para&gt;This is a paragraph.&lt;/para&gt;'</span>)
+<span class="py-prompt">&gt;&gt;&gt; </span>ONELIST = (<span class="py-string">'&lt;ulist&gt;&lt;li&gt;&lt;para&gt;This is a '</span>+
+<span class="py-more">... </span>           <span class="py-string">'list item.&lt;/para&gt;&lt;/li&gt;&lt;/ulist&gt;'</span>)
+<span class="py-prompt">&gt;&gt;&gt; </span>TWOLIST = (<span class="py-string">'&lt;ulist&gt;&lt;li&gt;&lt;para&gt;This is a '</span>+
+<span class="py-more">... </span>           <span class="py-string">'list item.&lt;/para&gt;&lt;/li&gt;&lt;li&gt;&lt;para&gt;This is a '</span>+
+<span class="py-more">... </span>           <span class="py-string">'list item.&lt;/para&gt;&lt;/li&gt;&lt;/ulist&gt;'</span>)</pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">for</span> p <span class="py-keyword">in</span> (P1, P2):
+<span class="py-more">... </span>    <span class="py-keyword">for</span> li1 <span class="py-keyword">in</span> (LI1, LI2, LI3, LI4):
+<span class="py-more">... </span>        checkparse(li1, ONELIST)
+<span class="py-more">... </span>        checkparse(<span class="py-string">'%s\n%s'</span> % (p, li1), PARA+ONELIST)
+<span class="py-more">... </span>        checkparse(<span class="py-string">'%s\n%s'</span> % (li1, p), ONELIST+PARA)
+<span class="py-more">... </span>        checkparse(<span class="py-string">'%s\n%s\n%s'</span> % (p, li1, p),
+<span class="py-more">... </span>                        PARA+ONELIST+PARA)
+<span class="py-more">...</span>
+<span class="py-more">... </span>        <span class="py-keyword">for</span> li2 <span class="py-keyword">in</span> (LI1, LI2, LI3, LI4):
+<span class="py-more">... </span>            checkparse(<span class="py-string">'%s\n%s'</span> % (li1, li2), TWOLIST)
+<span class="py-more">... </span>            checkparse(<span class="py-string">'%s\n%s\n%s'</span> % (p, li1, li2), PARA+TWOLIST)
+<span class="py-more">... </span>            checkparse(<span class="py-string">'%s\n%s\n%s'</span> % (li1, li2, p), TWOLIST+PARA)
+<span class="py-more">... </span>            checkparse(<span class="py-string">'%s\n%s\n%s\n%s'</span> % (p, li1, li2, p),
+<span class="py-more">... </span>                            PARA+TWOLIST+PARA)</pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>LI5 = <span class="py-string">&quot;  - This is a list item.\n\n    It contains two paragraphs.&quot;</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>LI5LIST = (<span class="py-string">'&lt;ulist&gt;&lt;li&gt;&lt;para&gt;This is a list item.&lt;/para&gt;'</span>+
+<span class="py-more">... </span>           <span class="py-string">'&lt;para&gt;It contains two paragraphs.&lt;/para&gt;&lt;/li&gt;&lt;/ulist&gt;'</span>)
+<span class="py-prompt">&gt;&gt;&gt; </span>checkparse(LI5, LI5LIST)
+<span class="py-prompt">&gt;&gt;&gt; </span>checkparse(<span class="py-string">'%s\n%s'</span> % (P1, LI5), PARA+LI5LIST)
+<span class="py-prompt">&gt;&gt;&gt; </span>checkparse(<span class="py-string">'%s\n%s\n%s'</span> % (P2, LI5, P1), PARA+LI5LIST+PARA)</pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>LI6 = (<span class="py-string">&quot;  - This is a list item with a literal block::\n&quot;</span> +
+<span class="py-more">... </span>       <span class="py-string">&quot;    hello\n      there&quot;</span>)
+<span class="py-prompt">&gt;&gt;&gt; </span>LI6LIST = (<span class="py-string">'&lt;ulist&gt;&lt;li&gt;&lt;para&gt;This is a list item with a literal '</span>+
+<span class="py-more">... </span>           <span class="py-string">'block:&lt;/para&gt;&lt;literalblock&gt; hello\n   there'</span>+
+<span class="py-more">... </span>           <span class="py-string">'&lt;/literalblock&gt;&lt;/li&gt;&lt;/ulist&gt;'</span>)
+<span class="py-prompt">&gt;&gt;&gt; </span>checkparse(LI6, LI6LIST)
+<span class="py-prompt">&gt;&gt;&gt; </span>checkparse(<span class="py-string">'%s\n%s'</span> % (P1, LI6), PARA+LI6LIST)
+<span class="py-prompt">&gt;&gt;&gt; </span>checkparse(<span class="py-string">'%s\n%s\n%s'</span> % (P2, LI6, P1), PARA+LI6LIST+PARA)</pre>
+</blockquote>
+<p>Item wrap tests:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>LI = <span class="py-string">&quot;- This is a list\n  item.&quot;</span>
+<span class="py-prompt">&gt;&gt;&gt; </span>ONELIST = (<span class="py-string">'&lt;ulist&gt;&lt;li&gt;&lt;para&gt;This is a '</span>+
+<span class="py-more">... </span>           <span class="py-string">'list item.&lt;/para&gt;&lt;/li&gt;&lt;/ulist&gt;'</span>)
+<span class="py-prompt">&gt;&gt;&gt; </span>TWOLIST = (<span class="py-string">'&lt;ulist&gt;&lt;li&gt;&lt;para&gt;This is a '</span>+
+<span class="py-more">... </span>           <span class="py-string">'list item.&lt;/para&gt;&lt;/li&gt;&lt;li&gt;&lt;para&gt;This is a '</span>+
+<span class="py-more">... </span>           <span class="py-string">'list item.&lt;/para&gt;&lt;/li&gt;&lt;/ulist&gt;'</span>)
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">for</span> indent <span class="py-keyword">in</span> (<span class="py-string">''</span>, <span class="py-string">'  '</span>):
+<span class="py-more">... </span>    <span class="py-keyword">for</span> nl1 <span class="py-keyword">in</span> (<span class="py-string">''</span>, <span class="py-string">'\n'</span>):
+<span class="py-more">... </span>        checkparse(nl1+indent+LI, ONELIST)
+<span class="py-more">... </span>        <span class="py-keyword">for</span> nl2 <span class="py-keyword">in</span> (<span class="py-string">'\n'</span>, <span class="py-string">'\n\n'</span>):
+<span class="py-more">... </span>            checkparse(nl1+indent+LI+nl2+indent+LI, TWOLIST)</pre>
+</blockquote>
+<div class="section" id="summary">
+<h1>Summary</h1>
+<p>The implementation of the summaization function works as expected.</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.markup <span class="py-keyword">import</span> epytext
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">getsummary</span>(s):
+<span class="py-more">... </span>    p = epytext.parse_docstring(s, [])
+<span class="py-more">... </span>    s, o = p.summary()
+<span class="py-more">... </span>    s = s.to_plaintext(None).strip()
+<span class="py-more">... </span>    return s, o</pre>
+<p>Let's not lose anything!</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;Single line&quot;</span>)
+<span class="py-output">('Single line', False)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;Single line.&quot;</span>)
+<span class="py-output">('Single line.', False)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Single line C{with} period.</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">('Single line with period.', False)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Single line C{with }period.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">@type: Also with a tag.</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">('Single line with period.', False)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Other lines C{with} period.</span>
+<span class="py-more">... </span><span class="py-string">This is attached</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">('Other lines with period.', True)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Other lines C{with} period.</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">This is detached</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">@type: Also with a tag.</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">('Other lines with period.', True)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Other lines without period</span>
+<span class="py-more">... </span><span class="py-string">This is attached</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">('Other lines without period This is attached', False)</span></pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>getsummary(<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-more">... </span><span class="py-string">Other lines without period</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">This is detached</span>
+<span class="py-more">... </span><span class="py-string">&quot;&quot;&quot;</span>)
+<span class="py-output">('Other lines without period...', True)</span></pre>
+</div>
+<div class="section" id="literal-braces">
+<h1>Literal Braces</h1>
+<p>SF bug #1562530 reported some trouble with literal braces.  These
+tests make sure that braces are getting rendered as desired.</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">epytext2html</span>(s):
+<span class="py-more">... </span>    errs = []
+<span class="py-more">... </span>    v = epytext.parse_docstring(s, errs).to_html(None)
+<span class="py-more">... </span>    <span class="py-keyword">for</span> err <span class="py-keyword">in</span> errs: <span class="py-keyword">print</span> err
+<span class="py-more">... </span>    return (v <span class="py-keyword">or</span> <span class="py-string">''</span>).rstrip()</pre>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> epytext2html(<span class="py-string">&quot;{1:{2:3}}&quot;</span>)
+<span class="py-output">{1:{2:3}}</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> epytext2html(<span class="py-string">&quot;C{{1:{2:3}}}&quot;</span>)
+<span class="py-output">&lt;code&gt;{1:{2:3}}&lt;/code&gt;</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> epytext2html(<span class="py-string">&quot;{1:C{{2:3}}}&quot;</span>)
+<span class="py-output">{1:&lt;code&gt;{2:3}&lt;/code&gt;}</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> epytext2html(<span class="py-string">&quot;{{{}{}}{}}&quot;</span>)
+<span class="py-output">{{{}{}}{}}</span>
+<span class="py-output"></span><span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> epytext2html(<span class="py-string">&quot;{{E{lb}E{lb}E{lb}}}&quot;</span>)
+<span class="py-output">{{{{{}}</span></pre>
+</div>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="../index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../index.html">
+    Home</a></td></a>
+  <a class="nav" href="../installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="../using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="../epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="../sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

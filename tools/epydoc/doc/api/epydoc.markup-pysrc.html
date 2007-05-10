@@ -1,0 +1,945 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        Package&nbsp;markup
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="epydoc.markup-module.html">Package epydoc.markup</a></h1>
+<pre class="py-src">
+<a name="L1"></a><tt class="py-lineno">  1</tt>  <tt class="py-line"><tt class="py-comment">#</tt> </tt>
+<a name="L2"></a><tt class="py-lineno">  2</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># epydoc package file</tt> </tt>
+<a name="L3"></a><tt class="py-lineno">  3</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L4"></a><tt class="py-lineno">  4</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># A python documentation Module</tt> </tt>
+<a name="L5"></a><tt class="py-lineno">  5</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Edward Loper</tt> </tt>
+<a name="L6"></a><tt class="py-lineno">  6</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L7"></a><tt class="py-lineno">  7</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># $Id: __init__.py 1444 2007-02-10 19:26:54Z dvarrazzo $</tt> </tt>
+<a name="L8"></a><tt class="py-lineno">  8</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L9"></a><tt class="py-lineno">  9</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L10"></a><tt class="py-lineno"> 10</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L11"></a><tt class="py-lineno"> 11</tt>  <tt class="py-line"><tt class="py-docstring">Markup language support for docstrings.  Each submodule defines a</tt> </tt>
+<a name="L12"></a><tt class="py-lineno"> 12</tt>  <tt class="py-line"><tt class="py-docstring">parser for a single markup language.  These parsers convert an</tt> </tt>
+<a name="L13"></a><tt class="py-lineno"> 13</tt>  <tt class="py-line"><tt class="py-docstring">object's docstring to a L{ParsedDocstring}, a standard intermediate</tt> </tt>
+<a name="L14"></a><tt class="py-lineno"> 14</tt>  <tt class="py-line"><tt class="py-docstring">representation that can be used to generate output.</tt> </tt>
+<a name="L15"></a><tt class="py-lineno"> 15</tt>  <tt class="py-line"><tt class="py-docstring">C{ParsedDocstring}s support the following operations:</tt> </tt>
+<a name="L16"></a><tt class="py-lineno"> 16</tt>  <tt class="py-line"><tt class="py-docstring">  - output generation (L{to_plaintext()&lt;ParsedDocstring.to_plaintext&gt;},</tt> </tt>
+<a name="L17"></a><tt class="py-lineno"> 17</tt>  <tt class="py-line"><tt class="py-docstring">    L{to_html()&lt;ParsedDocstring.to_html&gt;}, and</tt> </tt>
+<a name="L18"></a><tt class="py-lineno"> 18</tt>  <tt class="py-line"><tt class="py-docstring">    L{to_latex()&lt;ParsedDocstring.to_latex&gt;}).</tt> </tt>
+<a name="L19"></a><tt class="py-lineno"> 19</tt>  <tt class="py-line"><tt class="py-docstring">  - Summarization (L{summary()&lt;ParsedDocstring.summary&gt;}).</tt> </tt>
+<a name="L20"></a><tt class="py-lineno"> 20</tt>  <tt class="py-line"><tt class="py-docstring">  - Field extraction (L{split_fields()&lt;ParsedDocstring.split_fields&gt;}).</tt> </tt>
+<a name="L21"></a><tt class="py-lineno"> 21</tt>  <tt class="py-line"><tt class="py-docstring">  - Index term extraction (L{index_terms()&lt;ParsedDocstring.index_terms&gt;}.</tt> </tt>
+<a name="L22"></a><tt class="py-lineno"> 22</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L23"></a><tt class="py-lineno"> 23</tt>  <tt class="py-line"><tt class="py-docstring">The L{parse()} function provides a single interface to the</tt> </tt>
+<a name="L24"></a><tt class="py-lineno"> 24</tt>  <tt class="py-line"><tt class="py-docstring">C{epydoc.markup} package: it takes a docstring and the name of a</tt> </tt>
+<a name="L25"></a><tt class="py-lineno"> 25</tt>  <tt class="py-line"><tt class="py-docstring">markup language; delegates to the appropriate parser; and returns the</tt> </tt>
+<a name="L26"></a><tt class="py-lineno"> 26</tt>  <tt class="py-line"><tt class="py-docstring">parsed docstring (along with any errors or warnings that were</tt> </tt>
+<a name="L27"></a><tt class="py-lineno"> 27</tt>  <tt class="py-line"><tt class="py-docstring">generated).</tt> </tt>
+<a name="L28"></a><tt class="py-lineno"> 28</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L29"></a><tt class="py-lineno"> 29</tt>  <tt class="py-line"><tt class="py-docstring">The C{ParsedDocstring} output generation methods (C{to_M{format}()})</tt> </tt>
+<a name="L30"></a><tt class="py-lineno"> 30</tt>  <tt class="py-line"><tt class="py-docstring">use a L{DocstringLinker} to link the docstring output with the rest of</tt> </tt>
+<a name="L31"></a><tt class="py-lineno"> 31</tt>  <tt class="py-line"><tt class="py-docstring">the documentation that epydoc generates.  C{DocstringLinker}s are</tt> </tt>
+<a name="L32"></a><tt class="py-lineno"> 32</tt>  <tt class="py-line"><tt class="py-docstring">currently responsible for translating two kinds of crossreference:</tt> </tt>
+<a name="L33"></a><tt class="py-lineno"> 33</tt>  <tt class="py-line"><tt class="py-docstring">  - index terms (L{translate_indexterm()</tt> </tt>
+<a name="L34"></a><tt class="py-lineno"> 34</tt>  <tt class="py-line"><tt class="py-docstring">    &lt;DocstringLinker.translate_indexterm&gt;}).</tt> </tt>
+<a name="L35"></a><tt class="py-lineno"> 35</tt>  <tt class="py-line"><tt class="py-docstring">  - identifier crossreferences (L{translate_identifier_xref()</tt> </tt>
+<a name="L36"></a><tt class="py-lineno"> 36</tt>  <tt class="py-line"><tt class="py-docstring">    &lt;DocstringLinker.translate_identifier_xref&gt;}).</tt> </tt>
+<a name="L37"></a><tt class="py-lineno"> 37</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L38"></a><tt class="py-lineno"> 38</tt>  <tt class="py-line"><tt class="py-docstring">A parsed docstring's fields can be extracted using the</tt> </tt>
+<a name="L39"></a><tt class="py-lineno"> 39</tt>  <tt class="py-line"><tt class="py-docstring">L{ParsedDocstring.split_fields()} method.  This method divides a</tt> </tt>
+<a name="L40"></a><tt class="py-lineno"> 40</tt>  <tt class="py-line"><tt class="py-docstring">docstring into its main body and a list of L{Field}s, each of which</tt> </tt>
+<a name="L41"></a><tt class="py-lineno"> 41</tt>  <tt class="py-line"><tt class="py-docstring">encodes a single field.  The field's bodies are encoded as</tt> </tt>
+<a name="L42"></a><tt class="py-lineno"> 42</tt>  <tt class="py-line"><tt class="py-docstring">C{ParsedDocstring}s.</tt> </tt>
+<a name="L43"></a><tt class="py-lineno"> 43</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L44"></a><tt class="py-lineno"> 44</tt>  <tt class="py-line"><tt class="py-docstring">Markup errors are represented using L{ParseError}s.  These exception</tt> </tt>
+<a name="L45"></a><tt class="py-lineno"> 45</tt>  <tt class="py-line"><tt class="py-docstring">classes record information about the cause, location, and severity of</tt> </tt>
+<a name="L46"></a><tt class="py-lineno"> 46</tt>  <tt class="py-line"><tt class="py-docstring">each error.</tt> </tt>
+<a name="L47"></a><tt class="py-lineno"> 47</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L48"></a><tt class="py-lineno"> 48</tt>  <tt class="py-line"><tt class="py-docstring">@sort: parse, ParsedDocstring, Field, DocstringLinker</tt> </tt>
+<a name="L49"></a><tt class="py-lineno"> 49</tt>  <tt class="py-line"><tt class="py-docstring">@group Errors and Warnings: ParseError</tt> </tt>
+<a name="L50"></a><tt class="py-lineno"> 50</tt>  <tt class="py-line"><tt class="py-docstring">@group Utility Functions: parse_type_of</tt> </tt>
+<a name="L51"></a><tt class="py-lineno"> 51</tt>  <tt class="py-line"><tt class="py-docstring">@var SCRWIDTH: The default width with which text will be wrapped</tt> </tt>
+<a name="L52"></a><tt class="py-lineno"> 52</tt>  <tt class="py-line"><tt class="py-docstring">      when formatting the output of the parser.</tt> </tt>
+<a name="L53"></a><tt class="py-lineno"> 53</tt>  <tt class="py-line"><tt class="py-docstring">@type SCRWIDTH: C{int}</tt> </tt>
+<a name="L54"></a><tt class="py-lineno"> 54</tt>  <tt class="py-line"><tt class="py-docstring">@var _parse_warnings: Used by L{_parse_warn}.</tt> </tt>
+<a name="L55"></a><tt class="py-lineno"> 55</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L56"></a><tt class="py-lineno"> 56</tt>  <tt class="py-line"><tt class="py-name">__docformat__</tt> <tt class="py-op">=</tt> <tt class="py-string">'epytext en'</tt> </tt>
+<a name="L57"></a><tt class="py-lineno"> 57</tt>  <tt class="py-line"> </tt>
+<a name="L58"></a><tt class="py-lineno"> 58</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt class="py-name">re</tt><tt class="py-op">,</tt> <tt class="py-name">types</tt><tt class="py-op">,</tt> <tt class="py-name">sys</tt> </tt>
+<a name="L59"></a><tt class="py-lineno"> 59</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-0" class="py-name" targets="Package epydoc=epydoc-module.html"><a title="epydoc" class="py-name" href="#" onclick="return doclink('link-0', 'epydoc', 'link-0');">epydoc</a></tt> <tt class="py-keyword">import</tt> <tt id="link-1" class="py-name" targets="Method epydoc.cli.ConsoleLogger.log()=epydoc.cli.ConsoleLogger-class.html#log,Method epydoc.cli.HTMLLogger.log()=epydoc.cli.HTMLLogger-class.html#log,Method epydoc.gui.GUILogger.log()=epydoc.gui.GUILogger-class.html#log,Module epydoc.log=epydoc.log-module.html,Method epydoc.log.Logger.log()=epydoc.log.Logger-class.html#log,Method epydoc.log.SimpleLogger.log()=epydoc.log.SimpleLogger-class.html#log"><a title="epydoc.cli.ConsoleLogger.log
+epydoc.cli.HTMLLogger.log
+epydoc.gui.GUILogger.log
+epydoc.log
+epydoc.log.Logger.log
+epydoc.log.SimpleLogger.log" class="py-name" href="#" onclick="return doclink('link-1', 'log', 'link-1');">log</a></tt> </tt>
+<a name="L60"></a><tt class="py-lineno"> 60</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-2" class="py-name"><a title="epydoc" class="py-name" href="#" onclick="return doclink('link-2', 'epydoc', 'link-0');">epydoc</a></tt><tt class="py-op">.</tt><tt id="link-3" class="py-name" targets="Module epydoc.test.util=epydoc.test.util-module.html,Module epydoc.util=epydoc.util-module.html"><a title="epydoc.test.util
+epydoc.util" class="py-name" href="#" onclick="return doclink('link-3', 'util', 'link-3');">util</a></tt> <tt class="py-keyword">import</tt> <tt id="link-4" class="py-name" targets="Function epydoc.util.plaintext_to_html()=epydoc.util-module.html#plaintext_to_html"><a title="epydoc.util.plaintext_to_html" class="py-name" href="#" onclick="return doclink('link-4', 'plaintext_to_html', 'link-4');">plaintext_to_html</a></tt><tt class="py-op">,</tt> <tt id="link-5" class="py-name" targets="Function epydoc.util.plaintext_to_latex()=epydoc.util-module.html#plaintext_to_latex"><a title="epydoc.util.plaintext_to_latex" class="py-name" href="#" onclick="return doclink('link-5', 'plaintext_to_latex', 'link-5');">plaintext_to_latex</a></tt> </tt>
+<a name="L61"></a><tt class="py-lineno"> 61</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt id="link-6" class="py-name"><a title="epydoc" class="py-name" href="#" onclick="return doclink('link-6', 'epydoc', 'link-0');">epydoc</a></tt> </tt>
+<a name="L62"></a><tt class="py-lineno"> 62</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-7" class="py-name"><a title="epydoc" class="py-name" href="#" onclick="return doclink('link-7', 'epydoc', 'link-0');">epydoc</a></tt><tt class="py-op">.</tt><tt id="link-8" class="py-name" targets="Module epydoc.compat=epydoc.compat-module.html"><a title="epydoc.compat" class="py-name" href="#" onclick="return doclink('link-8', 'compat', 'link-8');">compat</a></tt> <tt class="py-keyword">import</tt> <tt class="py-op">*</tt> </tt>
+<a name="L63"></a><tt class="py-lineno"> 63</tt>  <tt class="py-line"> </tt>
+<a name="L64"></a><tt class="py-lineno"> 64</tt>  <tt class="py-line"><tt class="py-comment">##################################################</tt> </tt>
+<a name="L65"></a><tt class="py-lineno"> 65</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">## Contents</tt> </tt>
+<a name="L66"></a><tt class="py-lineno"> 66</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">##################################################</tt> </tt>
+<a name="L67"></a><tt class="py-lineno"> 67</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L68"></a><tt class="py-lineno"> 68</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># 1. parse() dispatcher</tt> </tt>
+<a name="L69"></a><tt class="py-lineno"> 69</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># 2. ParsedDocstring abstract base class</tt> </tt>
+<a name="L70"></a><tt class="py-lineno"> 70</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># 3. Field class</tt> </tt>
+<a name="L71"></a><tt class="py-lineno"> 71</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># 4. Docstring Linker</tt> </tt>
+<a name="L72"></a><tt class="py-lineno"> 72</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># 5. ParseError exceptions</tt> </tt>
+<a name="L73"></a><tt class="py-lineno"> 73</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># 6. Misc helpers</tt> </tt>
+<a name="L74"></a><tt class="py-lineno"> 74</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L75"></a><tt class="py-lineno"> 75</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L76"></a><tt class="py-lineno"> 76</tt>  <tt class="py-line"><tt class="py-comment">##################################################</tt> </tt>
+<a name="L77"></a><tt class="py-lineno"> 77</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">## Dispatcher</tt> </tt>
+<a name="L78"></a><tt class="py-lineno"> 78</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">##################################################</tt> </tt>
+<a name="L79"></a><tt class="py-lineno"> 79</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L80"></a><tt class="py-lineno"> 80</tt>  <tt class="py-line"><tt id="link-9" class="py-name" targets="Variable epydoc.markup._markup_language_registry=epydoc.markup-module.html#_markup_language_registry"><a title="epydoc.markup._markup_language_registry" class="py-name" href="#" onclick="return doclink('link-9', '_markup_language_registry', 'link-9');">_markup_language_registry</a></tt> <tt class="py-op">=</tt> <tt class="py-op">{</tt> </tt>
+<a name="L81"></a><tt class="py-lineno"> 81</tt>  <tt class="py-line">    <tt class="py-string">'restructuredtext'</tt><tt class="py-op">:</tt> <tt class="py-string">'epydoc.markup.restructuredtext'</tt><tt class="py-op">,</tt> </tt>
+<a name="L82"></a><tt class="py-lineno"> 82</tt>  <tt class="py-line">    <tt class="py-string">'epytext'</tt><tt class="py-op">:</tt> <tt class="py-string">'epydoc.markup.epytext'</tt><tt class="py-op">,</tt> </tt>
+<a name="L83"></a><tt class="py-lineno"> 83</tt>  <tt class="py-line">    <tt class="py-string">'plaintext'</tt><tt class="py-op">:</tt> <tt class="py-string">'epydoc.markup.plaintext'</tt><tt class="py-op">,</tt> </tt>
+<a name="L84"></a><tt class="py-lineno"> 84</tt>  <tt class="py-line">    <tt class="py-string">'javadoc'</tt><tt class="py-op">:</tt> <tt class="py-string">'epydoc.markup.javadoc'</tt><tt class="py-op">,</tt> </tt>
+<a name="L85"></a><tt class="py-lineno"> 85</tt>  <tt class="py-line">    <tt class="py-op">}</tt> </tt>
+<a name="L86"></a><tt class="py-lineno"> 86</tt>  <tt class="py-line"> </tt>
+<a name="register_markup_language"></a><div id="register_markup_language-def"><a name="L87"></a><tt class="py-lineno"> 87</tt> <a class="py-toggle" href="#" id="register_markup_language-toggle" onclick="return toggle('register_markup_language');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup-module.html#register_markup_language">register_markup_language</a><tt class="py-op">(</tt><tt class="py-param">name</tt><tt class="py-op">,</tt> <tt class="py-param">parse_function</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="register_markup_language-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="register_markup_language-expanded"><a name="L88"></a><tt class="py-lineno"> 88</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L89"></a><tt class="py-lineno"> 89</tt>  <tt class="py-line"><tt class="py-docstring">    Register a new markup language named C{name}, which can be parsed</tt> </tt>
+<a name="L90"></a><tt class="py-lineno"> 90</tt>  <tt class="py-line"><tt class="py-docstring">    by the function C{parse_function}.</tt> </tt>
+<a name="L91"></a><tt class="py-lineno"> 91</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L92"></a><tt class="py-lineno"> 92</tt>  <tt class="py-line"><tt class="py-docstring">    @param name: The name of the markup language.  C{name} should be a</tt> </tt>
+<a name="L93"></a><tt class="py-lineno"> 93</tt>  <tt class="py-line"><tt class="py-docstring">    simple identifier, such as C{'epytext'} or C{'restructuredtext'}.</tt> </tt>
+<a name="L94"></a><tt class="py-lineno"> 94</tt>  <tt class="py-line"><tt class="py-docstring">    Markup language names are case insensitive.</tt> </tt>
+<a name="L95"></a><tt class="py-lineno"> 95</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L96"></a><tt class="py-lineno"> 96</tt>  <tt class="py-line"><tt class="py-docstring">    @param parse_function: A function which can be used to parse the</tt> </tt>
+<a name="L97"></a><tt class="py-lineno"> 97</tt>  <tt class="py-line"><tt class="py-docstring">        markup language, and returns a L{ParsedDocstring}.  It should</tt> </tt>
+<a name="L98"></a><tt class="py-lineno"> 98</tt>  <tt class="py-line"><tt class="py-docstring">        have the following signature:</tt> </tt>
+<a name="L99"></a><tt class="py-lineno"> 99</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L100"></a><tt class="py-lineno">100</tt>  <tt class="py-line"><tt class="py-docstring">            &gt;&gt;&gt; def parse(s, errors):</tt> </tt>
+<a name="L101"></a><tt class="py-lineno">101</tt>  <tt class="py-line"><tt class="py-docstring">            ...     'returns a ParsedDocstring'</tt> </tt>
+<a name="L102"></a><tt class="py-lineno">102</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L103"></a><tt class="py-lineno">103</tt>  <tt class="py-line"><tt class="py-docstring">        Where:</tt> </tt>
+<a name="L104"></a><tt class="py-lineno">104</tt>  <tt class="py-line"><tt class="py-docstring">            - C{s} is the string to parse.  (C{s} will be a unicode</tt> </tt>
+<a name="L105"></a><tt class="py-lineno">105</tt>  <tt class="py-line"><tt class="py-docstring">              string.)</tt> </tt>
+<a name="L106"></a><tt class="py-lineno">106</tt>  <tt class="py-line"><tt class="py-docstring">            - C{errors} is a list; any errors that are generated</tt> </tt>
+<a name="L107"></a><tt class="py-lineno">107</tt>  <tt class="py-line"><tt class="py-docstring">              during docstring parsing should be appended to this</tt> </tt>
+<a name="L108"></a><tt class="py-lineno">108</tt>  <tt class="py-line"><tt class="py-docstring">              list (as L{ParseError} objects).</tt> </tt>
+<a name="L109"></a><tt class="py-lineno">109</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L110"></a><tt class="py-lineno">110</tt>  <tt class="py-line">    <tt id="link-10" class="py-name"><a title="epydoc.markup._markup_language_registry" class="py-name" href="#" onclick="return doclink('link-10', '_markup_language_registry', 'link-9');">_markup_language_registry</a></tt><tt class="py-op">[</tt><tt id="link-11" class="py-name" targets="Variable epydoc.apidoc.VariableDoc.name=epydoc.apidoc.VariableDoc-class.html#name"><a title="epydoc.apidoc.VariableDoc.name" class="py-name" href="#" onclick="return doclink('link-11', 'name', 'link-11');">name</a></tt><tt class="py-op">.</tt><tt class="py-name">lower</tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">]</tt> <tt class="py-op">=</tt> <tt class="py-name">parse_function</tt> </tt>
+</div><a name="L111"></a><tt class="py-lineno">111</tt>  <tt class="py-line"> </tt>
+<a name="L112"></a><tt class="py-lineno">112</tt>  <tt class="py-line"><tt id="link-12" class="py-name" targets="Variable epydoc.markup.MARKUP_LANGUAGES_USED=epydoc.markup-module.html#MARKUP_LANGUAGES_USED"><a title="epydoc.markup.MARKUP_LANGUAGES_USED" class="py-name" href="#" onclick="return doclink('link-12', 'MARKUP_LANGUAGES_USED', 'link-12');">MARKUP_LANGUAGES_USED</a></tt> <tt class="py-op">=</tt> <tt class="py-name">set</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L113"></a><tt class="py-lineno">113</tt>  <tt class="py-line"> </tt>
+<a name="parse"></a><div id="parse-def"><a name="L114"></a><tt class="py-lineno">114</tt> <a class="py-toggle" href="#" id="parse-toggle" onclick="return toggle('parse');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup-module.html#parse">parse</a><tt class="py-op">(</tt><tt class="py-param">docstring</tt><tt class="py-op">,</tt> <tt class="py-param">markup</tt><tt class="py-op">=</tt><tt class="py-string">'plaintext'</tt><tt class="py-op">,</tt> <tt class="py-param">errors</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-param">options</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="parse-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="parse-expanded"><a name="L115"></a><tt class="py-lineno">115</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L116"></a><tt class="py-lineno">116</tt>  <tt class="py-line"><tt class="py-docstring">    Parse the given docstring, and use it to construct a</tt> </tt>
+<a name="L117"></a><tt class="py-lineno">117</tt>  <tt class="py-line"><tt class="py-docstring">    C{ParsedDocstring}.  If any fatal C{ParseError}s are encountered</tt> </tt>
+<a name="L118"></a><tt class="py-lineno">118</tt>  <tt class="py-line"><tt class="py-docstring">    while parsing the docstring, then the docstring will be rendered</tt> </tt>
+<a name="L119"></a><tt class="py-lineno">119</tt>  <tt class="py-line"><tt class="py-docstring">    as plaintext, instead.</tt> </tt>
+<a name="L120"></a><tt class="py-lineno">120</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L121"></a><tt class="py-lineno">121</tt>  <tt class="py-line"><tt class="py-docstring">    @type docstring: C{string}</tt> </tt>
+<a name="L122"></a><tt class="py-lineno">122</tt>  <tt class="py-line"><tt class="py-docstring">    @param docstring: The docstring to encode.</tt> </tt>
+<a name="L123"></a><tt class="py-lineno">123</tt>  <tt class="py-line"><tt class="py-docstring">    @type markup: C{string}</tt> </tt>
+<a name="L124"></a><tt class="py-lineno">124</tt>  <tt class="py-line"><tt class="py-docstring">    @param markup: The name of the markup language that is used by</tt> </tt>
+<a name="L125"></a><tt class="py-lineno">125</tt>  <tt class="py-line"><tt class="py-docstring">        the docstring.  If the markup language is not supported, then</tt> </tt>
+<a name="L126"></a><tt class="py-lineno">126</tt>  <tt class="py-line"><tt class="py-docstring">        the docstring will be treated as plaintext.  The markup name</tt> </tt>
+<a name="L127"></a><tt class="py-lineno">127</tt>  <tt class="py-line"><tt class="py-docstring">        is case-insensitive.</tt> </tt>
+<a name="L128"></a><tt class="py-lineno">128</tt>  <tt class="py-line"><tt class="py-docstring">    @param errors: A list where any errors generated during parsing</tt> </tt>
+<a name="L129"></a><tt class="py-lineno">129</tt>  <tt class="py-line"><tt class="py-docstring">        will be stored.  If no list is specified, then fatal errors</tt> </tt>
+<a name="L130"></a><tt class="py-lineno">130</tt>  <tt class="py-line"><tt class="py-docstring">        will generate exceptions, and non-fatal errors will be</tt> </tt>
+<a name="L131"></a><tt class="py-lineno">131</tt>  <tt class="py-line"><tt class="py-docstring">        ignored.</tt> </tt>
+<a name="L132"></a><tt class="py-lineno">132</tt>  <tt class="py-line"><tt class="py-docstring">    @type errors: C{list} of L{ParseError}</tt> </tt>
+<a name="L133"></a><tt class="py-lineno">133</tt>  <tt class="py-line"><tt class="py-docstring">    @rtype: L{ParsedDocstring}</tt> </tt>
+<a name="L134"></a><tt class="py-lineno">134</tt>  <tt class="py-line"><tt class="py-docstring">    @return: A L{ParsedDocstring} that encodes the contents of</tt> </tt>
+<a name="L135"></a><tt class="py-lineno">135</tt>  <tt class="py-line"><tt class="py-docstring">        C{docstring}.</tt> </tt>
+<a name="L136"></a><tt class="py-lineno">136</tt>  <tt class="py-line"><tt class="py-docstring">    @raise ParseError: If C{errors} is C{None} and an error is</tt> </tt>
+<a name="L137"></a><tt class="py-lineno">137</tt>  <tt class="py-line"><tt class="py-docstring">        encountered while parsing.</tt> </tt>
+<a name="L138"></a><tt class="py-lineno">138</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L139"></a><tt class="py-lineno">139</tt>  <tt class="py-line">    <tt class="py-comment"># Initialize errors list.</tt> </tt>
+<a name="L140"></a><tt class="py-lineno">140</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-name">raise_on_error</tt> <tt class="py-op">=</tt> <tt class="py-op">(</tt><tt class="py-name">errors</tt> <tt class="py-keyword">is</tt> <tt class="py-name">None</tt><tt class="py-op">)</tt> </tt>
+<a name="L141"></a><tt class="py-lineno">141</tt>  <tt class="py-line">    <tt class="py-keyword">if</tt> <tt class="py-name">errors</tt> <tt class="py-op">==</tt> <tt class="py-name">None</tt><tt class="py-op">:</tt> <tt class="py-name">errors</tt> <tt class="py-op">=</tt> <tt class="py-op">[</tt><tt class="py-op">]</tt> </tt>
+<a name="L142"></a><tt class="py-lineno">142</tt>  <tt class="py-line"> </tt>
+<a name="L143"></a><tt class="py-lineno">143</tt>  <tt class="py-line">    <tt class="py-comment"># Normalize the markup language name.</tt> </tt>
+<a name="L144"></a><tt class="py-lineno">144</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt id="link-13" class="py-name" targets="Package epydoc.markup=epydoc.markup-module.html,Method epydoc.markup.doctest.DoctestColorizer.markup()=epydoc.markup.doctest.DoctestColorizer-class.html#markup,Method epydoc.markup.doctest.HTMLDoctestColorizer.markup()=epydoc.markup.doctest.HTMLDoctestColorizer-class.html#markup,Method epydoc.markup.doctest.LaTeXDoctestColorizer.markup()=epydoc.markup.doctest.LaTeXDoctestColorizer-class.html#markup,Method epydoc.markup.doctest.XMLDoctestColorizer.markup()=epydoc.markup.doctest.XMLDoctestColorizer-class.html#markup"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-13', 'markup', 'link-13');">markup</a></tt> <tt class="py-op">=</tt> <tt id="link-14" class="py-name"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-14', 'markup', 'link-13');">markup</a></tt><tt class="py-op">.</tt><tt class="py-name">lower</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L145"></a><tt class="py-lineno">145</tt>  <tt class="py-line"> </tt>
+<a name="L146"></a><tt class="py-lineno">146</tt>  <tt class="py-line">    <tt class="py-comment"># Is the markup language valid?</tt> </tt>
+<a name="L147"></a><tt class="py-lineno">147</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-keyword">if</tt> <tt class="py-keyword">not</tt> <tt class="py-name">re</tt><tt class="py-op">.</tt><tt class="py-name">match</tt><tt class="py-op">(</tt><tt class="py-string">r'\w+'</tt><tt class="py-op">,</tt> <tt id="link-15" class="py-name"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-15', 'markup', 'link-13');">markup</a></tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L148"></a><tt class="py-lineno">148</tt>  <tt class="py-line">        <tt id="link-16" class="py-name" targets="Function epydoc.markup._parse_warn()=epydoc.markup-module.html#_parse_warn"><a title="epydoc.markup._parse_warn" class="py-name" href="#" onclick="return doclink('link-16', '_parse_warn', 'link-16');">_parse_warn</a></tt><tt class="py-op">(</tt><tt class="py-string">'Bad markup language name %r.  Treating '</tt> </tt>
+<a name="L149"></a><tt class="py-lineno">149</tt>  <tt class="py-line">                    <tt class="py-string">'docstrings as plaintext.'</tt> <tt class="py-op">%</tt> <tt id="link-17" class="py-name"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-17', 'markup', 'link-13');">markup</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L150"></a><tt class="py-lineno">150</tt>  <tt class="py-line">        <tt class="py-keyword">import</tt> <tt id="link-18" class="py-name"><a title="epydoc" class="py-name" href="#" onclick="return doclink('link-18', 'epydoc', 'link-0');">epydoc</a></tt><tt class="py-op">.</tt><tt id="link-19" class="py-name"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-19', 'markup', 'link-13');">markup</a></tt><tt class="py-op">.</tt><tt id="link-20" class="py-name" targets="Module epydoc.docwriter.plaintext=epydoc.docwriter.plaintext-module.html,Module epydoc.markup.plaintext=epydoc.markup.plaintext-module.html"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-20', 'plaintext', 'link-20');">plaintext</a></tt> <tt class="py-keyword">as</tt> <tt id="link-21" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-21', 'plaintext', 'link-20');">plaintext</a></tt> </tt>
+<a name="L151"></a><tt class="py-lineno">151</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt id="link-22" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-22', 'plaintext', 'link-20');">plaintext</a></tt><tt class="py-op">.</tt><tt id="link-23" class="py-name" targets="Function epydoc.docstringparser.parse_docstring()=epydoc.docstringparser-module.html#parse_docstring,Function epydoc.markup.epytext.parse_docstring()=epydoc.markup.epytext-module.html#parse_docstring,Function epydoc.markup.javadoc.parse_docstring()=epydoc.markup.javadoc-module.html#parse_docstring,Function epydoc.markup.plaintext.parse_docstring()=epydoc.markup.plaintext-module.html#parse_docstring,Function epydoc.markup.restructuredtext.parse_docstring()=epydoc.markup.restructuredtext-module.html#parse_docstring"><a title="epydoc.docstringparser.parse_docstring
+epydoc.markup.epytext.parse_docstring
+epydoc.markup.javadoc.parse_docstring
+epydoc.markup.plaintext.parse_docstring
+epydoc.markup.restructuredtext.parse_docstring" class="py-name" href="#" onclick="return doclink('link-23', 'parse_docstring', 'link-23');">parse_docstring</a></tt><tt class="py-op">(</tt><tt id="link-24" class="py-name" targets="Variable epydoc.apidoc.APIDoc.docstring=epydoc.apidoc.APIDoc-class.html#docstring"><a title="epydoc.apidoc.APIDoc.docstring" class="py-name" href="#" onclick="return doclink('link-24', 'docstring', 'link-24');">docstring</a></tt><tt class="py-op">,</tt> <tt class="py-name">errors</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-name">options</tt><tt class="py-op">)</tt> </tt>
+<a name="L152"></a><tt class="py-lineno">152</tt>  <tt class="py-line"> </tt>
+<a name="L153"></a><tt class="py-lineno">153</tt>  <tt class="py-line">    <tt class="py-comment"># Is the markup language supported?</tt> </tt>
+<a name="L154"></a><tt class="py-lineno">154</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-keyword">if</tt> <tt id="link-25" class="py-name"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-25', 'markup', 'link-13');">markup</a></tt> <tt class="py-keyword">not</tt> <tt class="py-keyword">in</tt> <tt id="link-26" class="py-name"><a title="epydoc.markup._markup_language_registry" class="py-name" href="#" onclick="return doclink('link-26', '_markup_language_registry', 'link-9');">_markup_language_registry</a></tt><tt class="py-op">:</tt> </tt>
+<a name="L155"></a><tt class="py-lineno">155</tt>  <tt class="py-line">        <tt id="link-27" class="py-name"><a title="epydoc.markup._parse_warn" class="py-name" href="#" onclick="return doclink('link-27', '_parse_warn', 'link-16');">_parse_warn</a></tt><tt class="py-op">(</tt><tt class="py-string">'Unsupported markup language %r.  Treating '</tt> </tt>
+<a name="L156"></a><tt class="py-lineno">156</tt>  <tt class="py-line">                    <tt class="py-string">'docstrings as plaintext.'</tt> <tt class="py-op">%</tt> <tt id="link-28" class="py-name"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-28', 'markup', 'link-13');">markup</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L157"></a><tt class="py-lineno">157</tt>  <tt class="py-line">        <tt class="py-keyword">import</tt> <tt id="link-29" class="py-name"><a title="epydoc" class="py-name" href="#" onclick="return doclink('link-29', 'epydoc', 'link-0');">epydoc</a></tt><tt class="py-op">.</tt><tt id="link-30" class="py-name"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-30', 'markup', 'link-13');">markup</a></tt><tt class="py-op">.</tt><tt id="link-31" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-31', 'plaintext', 'link-20');">plaintext</a></tt> <tt class="py-keyword">as</tt> <tt id="link-32" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-32', 'plaintext', 'link-20');">plaintext</a></tt> </tt>
+<a name="L158"></a><tt class="py-lineno">158</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt id="link-33" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-33', 'plaintext', 'link-20');">plaintext</a></tt><tt class="py-op">.</tt><tt id="link-34" class="py-name"><a title="epydoc.docstringparser.parse_docstring
+epydoc.markup.epytext.parse_docstring
+epydoc.markup.javadoc.parse_docstring
+epydoc.markup.plaintext.parse_docstring
+epydoc.markup.restructuredtext.parse_docstring" class="py-name" href="#" onclick="return doclink('link-34', 'parse_docstring', 'link-23');">parse_docstring</a></tt><tt class="py-op">(</tt><tt id="link-35" class="py-name"><a title="epydoc.apidoc.APIDoc.docstring" class="py-name" href="#" onclick="return doclink('link-35', 'docstring', 'link-24');">docstring</a></tt><tt class="py-op">,</tt> <tt class="py-name">errors</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-name">options</tt><tt class="py-op">)</tt> </tt>
+<a name="L159"></a><tt class="py-lineno">159</tt>  <tt class="py-line"> </tt>
+<a name="L160"></a><tt class="py-lineno">160</tt>  <tt class="py-line">    <tt class="py-comment"># Get the parse function.</tt> </tt>
+<a name="L161"></a><tt class="py-lineno">161</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt id="link-36" class="py-name"><a title="epydoc.docstringparser.parse_docstring
+epydoc.markup.epytext.parse_docstring
+epydoc.markup.javadoc.parse_docstring
+epydoc.markup.plaintext.parse_docstring
+epydoc.markup.restructuredtext.parse_docstring" class="py-name" href="#" onclick="return doclink('link-36', 'parse_docstring', 'link-23');">parse_docstring</a></tt> <tt class="py-op">=</tt> <tt id="link-37" class="py-name"><a title="epydoc.markup._markup_language_registry" class="py-name" href="#" onclick="return doclink('link-37', '_markup_language_registry', 'link-9');">_markup_language_registry</a></tt><tt class="py-op">[</tt><tt id="link-38" class="py-name"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-38', 'markup', 'link-13');">markup</a></tt><tt class="py-op">]</tt> </tt>
+<a name="L162"></a><tt class="py-lineno">162</tt>  <tt class="py-line"> </tt>
+<a name="L163"></a><tt class="py-lineno">163</tt>  <tt class="py-line">    <tt class="py-comment"># If it's a string, then it names a function to import.</tt> </tt>
+<a name="L164"></a><tt class="py-lineno">164</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-keyword">if</tt> <tt class="py-name">isinstance</tt><tt class="py-op">(</tt><tt id="link-39" class="py-name"><a title="epydoc.docstringparser.parse_docstring
+epydoc.markup.epytext.parse_docstring
+epydoc.markup.javadoc.parse_docstring
+epydoc.markup.plaintext.parse_docstring
+epydoc.markup.restructuredtext.parse_docstring" class="py-name" href="#" onclick="return doclink('link-39', 'parse_docstring', 'link-23');">parse_docstring</a></tt><tt class="py-op">,</tt> <tt class="py-name">basestring</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L165"></a><tt class="py-lineno">165</tt>  <tt class="py-line">        <tt class="py-keyword">try</tt><tt class="py-op">:</tt> <tt class="py-keyword">exec</tt><tt class="py-op">(</tt><tt class="py-string">'from %s import parse_docstring'</tt> <tt class="py-op">%</tt> <tt id="link-40" class="py-name"><a title="epydoc.docstringparser.parse_docstring
+epydoc.markup.epytext.parse_docstring
+epydoc.markup.javadoc.parse_docstring
+epydoc.markup.plaintext.parse_docstring
+epydoc.markup.restructuredtext.parse_docstring" class="py-name" href="#" onclick="return doclink('link-40', 'parse_docstring', 'link-23');">parse_docstring</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L166"></a><tt class="py-lineno">166</tt>  <tt class="py-line">        <tt class="py-keyword">except</tt> <tt class="py-name">ImportError</tt><tt class="py-op">,</tt> <tt class="py-name">e</tt><tt class="py-op">:</tt> </tt>
+<a name="L167"></a><tt class="py-lineno">167</tt>  <tt class="py-line">            <tt id="link-41" class="py-name"><a title="epydoc.markup._parse_warn" class="py-name" href="#" onclick="return doclink('link-41', '_parse_warn', 'link-16');">_parse_warn</a></tt><tt class="py-op">(</tt><tt class="py-string">'Error importing %s for markup language %s: %s'</tt> <tt class="py-op">%</tt> </tt>
+<a name="L168"></a><tt class="py-lineno">168</tt>  <tt class="py-line">                        <tt class="py-op">(</tt><tt id="link-42" class="py-name"><a title="epydoc.docstringparser.parse_docstring
+epydoc.markup.epytext.parse_docstring
+epydoc.markup.javadoc.parse_docstring
+epydoc.markup.plaintext.parse_docstring
+epydoc.markup.restructuredtext.parse_docstring" class="py-name" href="#" onclick="return doclink('link-42', 'parse_docstring', 'link-23');">parse_docstring</a></tt><tt class="py-op">,</tt> <tt id="link-43" class="py-name"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-43', 'markup', 'link-13');">markup</a></tt><tt class="py-op">,</tt> <tt class="py-name">e</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L169"></a><tt class="py-lineno">169</tt>  <tt class="py-line">            <tt class="py-keyword">import</tt> <tt id="link-44" class="py-name"><a title="epydoc" class="py-name" href="#" onclick="return doclink('link-44', 'epydoc', 'link-0');">epydoc</a></tt><tt class="py-op">.</tt><tt id="link-45" class="py-name"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-45', 'markup', 'link-13');">markup</a></tt><tt class="py-op">.</tt><tt id="link-46" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-46', 'plaintext', 'link-20');">plaintext</a></tt> <tt class="py-keyword">as</tt> <tt id="link-47" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-47', 'plaintext', 'link-20');">plaintext</a></tt> </tt>
+<a name="L170"></a><tt class="py-lineno">170</tt>  <tt class="py-line">            <tt class="py-keyword">return</tt> <tt id="link-48" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-48', 'plaintext', 'link-20');">plaintext</a></tt><tt class="py-op">.</tt><tt id="link-49" class="py-name"><a title="epydoc.docstringparser.parse_docstring
+epydoc.markup.epytext.parse_docstring
+epydoc.markup.javadoc.parse_docstring
+epydoc.markup.plaintext.parse_docstring
+epydoc.markup.restructuredtext.parse_docstring" class="py-name" href="#" onclick="return doclink('link-49', 'parse_docstring', 'link-23');">parse_docstring</a></tt><tt class="py-op">(</tt><tt id="link-50" class="py-name"><a title="epydoc.apidoc.APIDoc.docstring" class="py-name" href="#" onclick="return doclink('link-50', 'docstring', 'link-24');">docstring</a></tt><tt class="py-op">,</tt> <tt class="py-name">errors</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-name">options</tt><tt class="py-op">)</tt> </tt>
+<a name="L171"></a><tt class="py-lineno">171</tt>  <tt class="py-line">        <tt id="link-51" class="py-name"><a title="epydoc.markup._markup_language_registry" class="py-name" href="#" onclick="return doclink('link-51', '_markup_language_registry', 'link-9');">_markup_language_registry</a></tt><tt class="py-op">[</tt><tt id="link-52" class="py-name"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-52', 'markup', 'link-13');">markup</a></tt><tt class="py-op">]</tt> <tt class="py-op">=</tt> <tt id="link-53" class="py-name"><a title="epydoc.docstringparser.parse_docstring
+epydoc.markup.epytext.parse_docstring
+epydoc.markup.javadoc.parse_docstring
+epydoc.markup.plaintext.parse_docstring
+epydoc.markup.restructuredtext.parse_docstring" class="py-name" href="#" onclick="return doclink('link-53', 'parse_docstring', 'link-23');">parse_docstring</a></tt> </tt>
+<a name="L172"></a><tt class="py-lineno">172</tt>  <tt class="py-line"> </tt>
+<a name="L173"></a><tt class="py-lineno">173</tt>  <tt class="py-line">    <tt class="py-comment"># Keep track of which markup languages have been used so far.</tt> </tt>
+<a name="L174"></a><tt class="py-lineno">174</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt id="link-54" class="py-name"><a title="epydoc.markup.MARKUP_LANGUAGES_USED" class="py-name" href="#" onclick="return doclink('link-54', 'MARKUP_LANGUAGES_USED', 'link-12');">MARKUP_LANGUAGES_USED</a></tt><tt class="py-op">.</tt><tt class="py-name">add</tt><tt class="py-op">(</tt><tt id="link-55" class="py-name"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-55', 'markup', 'link-13');">markup</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L175"></a><tt class="py-lineno">175</tt>  <tt class="py-line"> </tt>
+<a name="L176"></a><tt class="py-lineno">176</tt>  <tt class="py-line">    <tt class="py-comment"># Parse the docstring.</tt> </tt>
+<a name="L177"></a><tt class="py-lineno">177</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-keyword">try</tt><tt class="py-op">:</tt> <tt class="py-name">parsed_docstring</tt> <tt class="py-op">=</tt> <tt id="link-56" class="py-name"><a title="epydoc.docstringparser.parse_docstring
+epydoc.markup.epytext.parse_docstring
+epydoc.markup.javadoc.parse_docstring
+epydoc.markup.plaintext.parse_docstring
+epydoc.markup.restructuredtext.parse_docstring" class="py-name" href="#" onclick="return doclink('link-56', 'parse_docstring', 'link-23');">parse_docstring</a></tt><tt class="py-op">(</tt><tt id="link-57" class="py-name"><a title="epydoc.apidoc.APIDoc.docstring" class="py-name" href="#" onclick="return doclink('link-57', 'docstring', 'link-24');">docstring</a></tt><tt class="py-op">,</tt> <tt class="py-name">errors</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-name">options</tt><tt class="py-op">)</tt> </tt>
+<a name="L178"></a><tt class="py-lineno">178</tt>  <tt class="py-line">    <tt class="py-keyword">except</tt> <tt class="py-name">KeyboardInterrupt</tt><tt class="py-op">:</tt> <tt class="py-keyword">raise</tt> </tt>
+<a name="L179"></a><tt class="py-lineno">179</tt>  <tt class="py-line">    <tt class="py-keyword">except</tt> <tt class="py-name">Exception</tt><tt class="py-op">,</tt> <tt class="py-name">e</tt><tt class="py-op">:</tt> </tt>
+<a name="L180"></a><tt class="py-lineno">180</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt id="link-58" class="py-name"><a title="epydoc" class="py-name" href="#" onclick="return doclink('link-58', 'epydoc', 'link-0');">epydoc</a></tt><tt class="py-op">.</tt><tt id="link-59" class="py-name" targets="Variable epydoc.DEBUG=epydoc-module.html#DEBUG,Variable epydoc.gui.DEBUG=epydoc.gui-module.html#DEBUG,Variable epydoc.log.DEBUG=epydoc.log-module.html#DEBUG"><a title="epydoc.DEBUG
+epydoc.gui.DEBUG
+epydoc.log.DEBUG" class="py-name" href="#" onclick="return doclink('link-59', 'DEBUG', 'link-59');">DEBUG</a></tt><tt class="py-op">:</tt> <tt class="py-keyword">raise</tt> </tt>
+<a name="L181"></a><tt class="py-lineno">181</tt>  <tt class="py-line">        <tt id="link-60" class="py-name"><a title="epydoc.cli.ConsoleLogger.log
+epydoc.cli.HTMLLogger.log
+epydoc.gui.GUILogger.log
+epydoc.log
+epydoc.log.Logger.log
+epydoc.log.SimpleLogger.log" class="py-name" href="#" onclick="return doclink('link-60', 'log', 'link-1');">log</a></tt><tt class="py-op">.</tt><tt id="link-61" class="py-name" targets="Function epydoc.log.error()=epydoc.log-module.html#error"><a title="epydoc.log.error" class="py-name" href="#" onclick="return doclink('link-61', 'error', 'link-61');">error</a></tt><tt class="py-op">(</tt><tt class="py-string">'Internal error while parsing a docstring: %s; '</tt> </tt>
+<a name="L182"></a><tt class="py-lineno">182</tt>  <tt class="py-line">                  <tt class="py-string">'treating docstring as plaintext'</tt> <tt class="py-op">%</tt> <tt class="py-name">e</tt><tt class="py-op">)</tt> </tt>
+<a name="L183"></a><tt class="py-lineno">183</tt>  <tt class="py-line">        <tt class="py-keyword">import</tt> <tt id="link-62" class="py-name"><a title="epydoc" class="py-name" href="#" onclick="return doclink('link-62', 'epydoc', 'link-0');">epydoc</a></tt><tt class="py-op">.</tt><tt id="link-63" class="py-name"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-63', 'markup', 'link-13');">markup</a></tt><tt class="py-op">.</tt><tt id="link-64" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-64', 'plaintext', 'link-20');">plaintext</a></tt> <tt class="py-keyword">as</tt> <tt id="link-65" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-65', 'plaintext', 'link-20');">plaintext</a></tt> </tt>
+<a name="L184"></a><tt class="py-lineno">184</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt id="link-66" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-66', 'plaintext', 'link-20');">plaintext</a></tt><tt class="py-op">.</tt><tt id="link-67" class="py-name"><a title="epydoc.docstringparser.parse_docstring
+epydoc.markup.epytext.parse_docstring
+epydoc.markup.javadoc.parse_docstring
+epydoc.markup.plaintext.parse_docstring
+epydoc.markup.restructuredtext.parse_docstring" class="py-name" href="#" onclick="return doclink('link-67', 'parse_docstring', 'link-23');">parse_docstring</a></tt><tt class="py-op">(</tt><tt id="link-68" class="py-name"><a title="epydoc.apidoc.APIDoc.docstring" class="py-name" href="#" onclick="return doclink('link-68', 'docstring', 'link-24');">docstring</a></tt><tt class="py-op">,</tt> <tt class="py-name">errors</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-name">options</tt><tt class="py-op">)</tt> </tt>
+<a name="L185"></a><tt class="py-lineno">185</tt>  <tt class="py-line"> </tt>
+<a name="L186"></a><tt class="py-lineno">186</tt>  <tt class="py-line">    <tt class="py-comment"># Check for fatal errors.</tt> </tt>
+<a name="L187"></a><tt class="py-lineno">187</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-name">fatal_errors</tt> <tt class="py-op">=</tt> <tt class="py-op">[</tt><tt class="py-name">e</tt> <tt class="py-keyword">for</tt> <tt class="py-name">e</tt> <tt class="py-keyword">in</tt> <tt class="py-name">errors</tt> <tt class="py-keyword">if</tt> <tt class="py-name">e</tt><tt class="py-op">.</tt><tt id="link-69" class="py-name" targets="Method epydoc.markup.ParseError.is_fatal()=epydoc.markup.ParseError-class.html#is_fatal"><a title="epydoc.markup.ParseError.is_fatal" class="py-name" href="#" onclick="return doclink('link-69', 'is_fatal', 'link-69');">is_fatal</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">]</tt> </tt>
+<a name="L188"></a><tt class="py-lineno">188</tt>  <tt class="py-line">    <tt class="py-keyword">if</tt> <tt class="py-name">fatal_errors</tt> <tt class="py-keyword">and</tt> <tt class="py-name">raise_on_error</tt><tt class="py-op">:</tt> <tt class="py-keyword">raise</tt> <tt class="py-name">fatal_errors</tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt> </tt>
+<a name="L189"></a><tt class="py-lineno">189</tt>  <tt class="py-line">    <tt class="py-keyword">if</tt> <tt class="py-name">fatal_errors</tt><tt class="py-op">:</tt> </tt>
+<a name="L190"></a><tt class="py-lineno">190</tt>  <tt class="py-line">        <tt class="py-keyword">import</tt> <tt id="link-70" class="py-name"><a title="epydoc" class="py-name" href="#" onclick="return doclink('link-70', 'epydoc', 'link-0');">epydoc</a></tt><tt class="py-op">.</tt><tt id="link-71" class="py-name"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-71', 'markup', 'link-13');">markup</a></tt><tt class="py-op">.</tt><tt id="link-72" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-72', 'plaintext', 'link-20');">plaintext</a></tt> <tt class="py-keyword">as</tt> <tt id="link-73" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-73', 'plaintext', 'link-20');">plaintext</a></tt> </tt>
+<a name="L191"></a><tt class="py-lineno">191</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt id="link-74" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-74', 'plaintext', 'link-20');">plaintext</a></tt><tt class="py-op">.</tt><tt id="link-75" class="py-name"><a title="epydoc.docstringparser.parse_docstring
+epydoc.markup.epytext.parse_docstring
+epydoc.markup.javadoc.parse_docstring
+epydoc.markup.plaintext.parse_docstring
+epydoc.markup.restructuredtext.parse_docstring" class="py-name" href="#" onclick="return doclink('link-75', 'parse_docstring', 'link-23');">parse_docstring</a></tt><tt class="py-op">(</tt><tt id="link-76" class="py-name"><a title="epydoc.apidoc.APIDoc.docstring" class="py-name" href="#" onclick="return doclink('link-76', 'docstring', 'link-24');">docstring</a></tt><tt class="py-op">,</tt> <tt class="py-name">errors</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-name">options</tt><tt class="py-op">)</tt> </tt>
+<a name="L192"></a><tt class="py-lineno">192</tt>  <tt class="py-line"> </tt>
+<a name="L193"></a><tt class="py-lineno">193</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-name">parsed_docstring</tt> </tt>
+</div><a name="L194"></a><tt class="py-lineno">194</tt>  <tt class="py-line"> </tt>
+<a name="L195"></a><tt class="py-lineno">195</tt>  <tt class="py-line"><tt class="py-comment"># only issue each warning once:</tt> </tt>
+<a name="L196"></a><tt class="py-lineno">196</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt id="link-77" class="py-name" targets="Variable epydoc.markup._parse_warnings=epydoc.markup-module.html#_parse_warnings"><a title="epydoc.markup._parse_warnings" class="py-name" href="#" onclick="return doclink('link-77', '_parse_warnings', 'link-77');">_parse_warnings</a></tt> <tt class="py-op">=</tt> <tt class="py-op">{</tt><tt class="py-op">}</tt> </tt>
+<a name="_parse_warn"></a><div id="_parse_warn-def"><a name="L197"></a><tt class="py-lineno">197</tt> <a class="py-toggle" href="#" id="_parse_warn-toggle" onclick="return toggle('_parse_warn');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup-module.html#_parse_warn">_parse_warn</a><tt class="py-op">(</tt><tt class="py-param">estr</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="_parse_warn-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="_parse_warn-expanded"><a name="L198"></a><tt class="py-lineno">198</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L199"></a><tt class="py-lineno">199</tt>  <tt class="py-line"><tt class="py-docstring">    Print a warning message.  If the given error has already been</tt> </tt>
+<a name="L200"></a><tt class="py-lineno">200</tt>  <tt class="py-line"><tt class="py-docstring">    printed, then do nothing.</tt> </tt>
+<a name="L201"></a><tt class="py-lineno">201</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L202"></a><tt class="py-lineno">202</tt>  <tt class="py-line">    <tt class="py-keyword">global</tt> <tt id="link-78" class="py-name"><a title="epydoc.markup._parse_warnings" class="py-name" href="#" onclick="return doclink('link-78', '_parse_warnings', 'link-77');">_parse_warnings</a></tt> </tt>
+<a name="L203"></a><tt class="py-lineno">203</tt>  <tt class="py-line">    <tt class="py-keyword">if</tt> <tt id="link-79" class="py-name"><a title="epydoc.markup._parse_warnings" class="py-name" href="#" onclick="return doclink('link-79', '_parse_warnings', 'link-77');">_parse_warnings</a></tt><tt class="py-op">.</tt><tt class="py-name">has_key</tt><tt class="py-op">(</tt><tt class="py-name">estr</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> <tt class="py-keyword">return</tt> </tt>
+<a name="L204"></a><tt class="py-lineno">204</tt>  <tt class="py-line">    <tt id="link-80" class="py-name"><a title="epydoc.markup._parse_warnings" class="py-name" href="#" onclick="return doclink('link-80', '_parse_warnings', 'link-77');">_parse_warnings</a></tt><tt class="py-op">[</tt><tt class="py-name">estr</tt><tt class="py-op">]</tt> <tt class="py-op">=</tt> <tt class="py-number">1</tt> </tt>
+<a name="L205"></a><tt class="py-lineno">205</tt>  <tt class="py-line">    <tt id="link-81" class="py-name"><a title="epydoc.cli.ConsoleLogger.log
+epydoc.cli.HTMLLogger.log
+epydoc.gui.GUILogger.log
+epydoc.log
+epydoc.log.Logger.log
+epydoc.log.SimpleLogger.log" class="py-name" href="#" onclick="return doclink('link-81', 'log', 'link-1');">log</a></tt><tt class="py-op">.</tt><tt id="link-82" class="py-name" targets="Method epydoc.checker.DocChecker.warning()=epydoc.checker.DocChecker-class.html#warning,Function epydoc.log.warning()=epydoc.log-module.html#warning"><a title="epydoc.checker.DocChecker.warning
+epydoc.log.warning" class="py-name" href="#" onclick="return doclink('link-82', 'warning', 'link-82');">warning</a></tt><tt class="py-op">(</tt><tt class="py-name">estr</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L206"></a><tt class="py-lineno">206</tt>  <tt class="py-line"> </tt>
+<a name="L207"></a><tt class="py-lineno">207</tt>  <tt class="py-line"><tt class="py-comment">##################################################</tt> </tt>
+<a name="L208"></a><tt class="py-lineno">208</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">## ParsedDocstring</tt> </tt>
+<a name="L209"></a><tt class="py-lineno">209</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">##################################################</tt> </tt>
+<a name="ParsedDocstring"></a><div id="ParsedDocstring-def"><a name="L210"></a><tt class="py-lineno">210</tt> <a class="py-toggle" href="#" id="ParsedDocstring-toggle" onclick="return toggle('ParsedDocstring');">-</a><tt class="py-line"><tt class="py-comment"></tt><tt class="py-keyword">class</tt> <a class="py-def-name" href="epydoc.markup.ParsedDocstring-class.html">ParsedDocstring</a><tt class="py-op">:</tt> </tt>
+</div><div id="ParsedDocstring-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="ParsedDocstring-expanded"><a name="L211"></a><tt class="py-lineno">211</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L212"></a><tt class="py-lineno">212</tt>  <tt class="py-line"><tt class="py-docstring">    A standard intermediate representation for parsed docstrings that</tt> </tt>
+<a name="L213"></a><tt class="py-lineno">213</tt>  <tt class="py-line"><tt class="py-docstring">    can be used to generate output.  Parsed docstrings are produced by</tt> </tt>
+<a name="L214"></a><tt class="py-lineno">214</tt>  <tt class="py-line"><tt class="py-docstring">    markup parsers (such as L{epytext.parse} or L{javadoc.parse}).</tt> </tt>
+<a name="L215"></a><tt class="py-lineno">215</tt>  <tt class="py-line"><tt class="py-docstring">    C{ParsedDocstring}s support several kinds of operation:    </tt> </tt>
+<a name="L216"></a><tt class="py-lineno">216</tt>  <tt class="py-line"><tt class="py-docstring">      - output generation (L{to_plaintext()}, L{to_html()}, and</tt> </tt>
+<a name="L217"></a><tt class="py-lineno">217</tt>  <tt class="py-line"><tt class="py-docstring">        L{to_latex()}).</tt> </tt>
+<a name="L218"></a><tt class="py-lineno">218</tt>  <tt class="py-line"><tt class="py-docstring">      - Summarization (L{summary()}).</tt> </tt>
+<a name="L219"></a><tt class="py-lineno">219</tt>  <tt class="py-line"><tt class="py-docstring">      - Field extraction (L{split_fields()}).</tt> </tt>
+<a name="L220"></a><tt class="py-lineno">220</tt>  <tt class="py-line"><tt class="py-docstring">      - Index term extraction (L{index_terms()}.</tt> </tt>
+<a name="L221"></a><tt class="py-lineno">221</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L222"></a><tt class="py-lineno">222</tt>  <tt class="py-line"><tt class="py-docstring">    The output generation methods (C{to_M{format}()}) use a</tt> </tt>
+<a name="L223"></a><tt class="py-lineno">223</tt>  <tt class="py-line"><tt class="py-docstring">    L{DocstringLinker} to link the docstring output with the rest</tt> </tt>
+<a name="L224"></a><tt class="py-lineno">224</tt>  <tt class="py-line"><tt class="py-docstring">    of the documentation that epydoc generates.</tt> </tt>
+<a name="L225"></a><tt class="py-lineno">225</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L226"></a><tt class="py-lineno">226</tt>  <tt class="py-line"><tt class="py-docstring">    Subclassing</tt> </tt>
+<a name="L227"></a><tt class="py-lineno">227</tt>  <tt class="py-line"><tt class="py-docstring">    ===========</tt> </tt>
+<a name="L228"></a><tt class="py-lineno">228</tt>  <tt class="py-line"><tt class="py-docstring">    The only method that a subclass is I{required} to implement is</tt> </tt>
+<a name="L229"></a><tt class="py-lineno">229</tt>  <tt class="py-line"><tt class="py-docstring">    L{to_plaintext()}; but it is often useful to override the other</tt> </tt>
+<a name="L230"></a><tt class="py-lineno">230</tt>  <tt class="py-line"><tt class="py-docstring">    methods.  The default behavior of each method is described below:</tt> </tt>
+<a name="L231"></a><tt class="py-lineno">231</tt>  <tt class="py-line"><tt class="py-docstring">      - C{to_I{format}}: Calls C{to_plaintext}, and uses the string it</tt> </tt>
+<a name="L232"></a><tt class="py-lineno">232</tt>  <tt class="py-line"><tt class="py-docstring">        returns to generate verbatim output.</tt> </tt>
+<a name="L233"></a><tt class="py-lineno">233</tt>  <tt class="py-line"><tt class="py-docstring">      - C{summary}: Returns C{self} (i.e., the entire docstring).</tt> </tt>
+<a name="L234"></a><tt class="py-lineno">234</tt>  <tt class="py-line"><tt class="py-docstring">      - C{split_fields}: Returns C{(self, [])} (i.e., extracts no</tt> </tt>
+<a name="L235"></a><tt class="py-lineno">235</tt>  <tt class="py-line"><tt class="py-docstring">        fields).</tt> </tt>
+<a name="L236"></a><tt class="py-lineno">236</tt>  <tt class="py-line"><tt class="py-docstring">      - C{index_terms}: Returns C{[]} (i.e., extracts no index terms).</tt> </tt>
+<a name="L237"></a><tt class="py-lineno">237</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L238"></a><tt class="py-lineno">238</tt>  <tt class="py-line"><tt class="py-docstring">    If and when epydoc adds more output formats, new C{to_I{format}}</tt> </tt>
+<a name="L239"></a><tt class="py-lineno">239</tt>  <tt class="py-line"><tt class="py-docstring">    methods will be added to this base class; but they will always</tt> </tt>
+<a name="L240"></a><tt class="py-lineno">240</tt>  <tt class="py-line"><tt class="py-docstring">    be given a default implementation.</tt> </tt>
+<a name="L241"></a><tt class="py-lineno">241</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="ParsedDocstring.split_fields"></a><div id="ParsedDocstring.split_fields-def"><a name="L242"></a><tt class="py-lineno">242</tt> <a class="py-toggle" href="#" id="ParsedDocstring.split_fields-toggle" onclick="return toggle('ParsedDocstring.split_fields');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParsedDocstring-class.html#split_fields">split_fields</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">errors</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParsedDocstring.split_fields-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParsedDocstring.split_fields-expanded"><a name="L243"></a><tt class="py-lineno">243</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L244"></a><tt class="py-lineno">244</tt>  <tt class="py-line"><tt class="py-docstring">        Split this docstring into its body and its fields.</tt> </tt>
+<a name="L245"></a><tt class="py-lineno">245</tt>  <tt class="py-line"><tt class="py-docstring">        </tt> </tt>
+<a name="L246"></a><tt class="py-lineno">246</tt>  <tt class="py-line"><tt class="py-docstring">        @return: A tuple C{(M{body}, M{fields})}, where C{M{body}} is</tt> </tt>
+<a name="L247"></a><tt class="py-lineno">247</tt>  <tt class="py-line"><tt class="py-docstring">            the main body of this docstring, and C{M{fields}} is a list</tt> </tt>
+<a name="L248"></a><tt class="py-lineno">248</tt>  <tt class="py-line"><tt class="py-docstring">            of its fields.  If the resulting body is empty, return</tt> </tt>
+<a name="L249"></a><tt class="py-lineno">249</tt>  <tt class="py-line"><tt class="py-docstring">            C{None} for the body.</tt> </tt>
+<a name="L250"></a><tt class="py-lineno">250</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: C{(L{ParsedDocstring}, list of L{Field})}</tt> </tt>
+<a name="L251"></a><tt class="py-lineno">251</tt>  <tt class="py-line"><tt class="py-docstring">        @param errors: A list where any errors generated during</tt> </tt>
+<a name="L252"></a><tt class="py-lineno">252</tt>  <tt class="py-line"><tt class="py-docstring">            splitting will be stored.  If no list is specified, then</tt> </tt>
+<a name="L253"></a><tt class="py-lineno">253</tt>  <tt class="py-line"><tt class="py-docstring">            errors will be ignored.</tt> </tt>
+<a name="L254"></a><tt class="py-lineno">254</tt>  <tt class="py-line"><tt class="py-docstring">        @type errors: C{list} of L{ParseError}</tt> </tt>
+<a name="L255"></a><tt class="py-lineno">255</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L256"></a><tt class="py-lineno">256</tt>  <tt class="py-line">        <tt class="py-comment"># Default behavior:</tt> </tt>
+<a name="L257"></a><tt class="py-lineno">257</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">,</tt> <tt class="py-op">[</tt><tt class="py-op">]</tt> </tt>
+</div><a name="L258"></a><tt class="py-lineno">258</tt>  <tt class="py-line"> </tt>
+<a name="ParsedDocstring.summary"></a><div id="ParsedDocstring.summary-def"><a name="L259"></a><tt class="py-lineno">259</tt> <a class="py-toggle" href="#" id="ParsedDocstring.summary-toggle" onclick="return toggle('ParsedDocstring.summary');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParsedDocstring-class.html#summary">summary</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParsedDocstring.summary-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParsedDocstring.summary-expanded"><a name="L260"></a><tt class="py-lineno">260</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L261"></a><tt class="py-lineno">261</tt>  <tt class="py-line"><tt class="py-docstring">        @return: A pair consisting of a short summary of this docstring and a</tt> </tt>
+<a name="L262"></a><tt class="py-lineno">262</tt>  <tt class="py-line"><tt class="py-docstring">            boolean value indicating whether there is further documentation</tt> </tt>
+<a name="L263"></a><tt class="py-lineno">263</tt>  <tt class="py-line"><tt class="py-docstring">            in addition to the summary. Typically, the summary consists of the</tt> </tt>
+<a name="L264"></a><tt class="py-lineno">264</tt>  <tt class="py-line"><tt class="py-docstring">            first sentence of the docstring.</tt> </tt>
+<a name="L265"></a><tt class="py-lineno">265</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: (L{ParsedDocstring}, C{bool})</tt> </tt>
+<a name="L266"></a><tt class="py-lineno">266</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L267"></a><tt class="py-lineno">267</tt>  <tt class="py-line">        <tt class="py-comment"># Default behavior:</tt> </tt>
+<a name="L268"></a><tt class="py-lineno">268</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">,</tt> <tt class="py-name">False</tt> </tt>
+</div><a name="L269"></a><tt class="py-lineno">269</tt>  <tt class="py-line"> </tt>
+<a name="ParsedDocstring.concatenate"></a><div id="ParsedDocstring.concatenate-def"><a name="L270"></a><tt class="py-lineno">270</tt> <a class="py-toggle" href="#" id="ParsedDocstring.concatenate-toggle" onclick="return toggle('ParsedDocstring.concatenate');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParsedDocstring-class.html#concatenate">concatenate</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">other</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParsedDocstring.concatenate-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParsedDocstring.concatenate-expanded"><a name="L271"></a><tt class="py-lineno">271</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L272"></a><tt class="py-lineno">272</tt>  <tt class="py-line"><tt class="py-docstring">        @return: A new parsed docstring containing the concatination</tt> </tt>
+<a name="L273"></a><tt class="py-lineno">273</tt>  <tt class="py-line"><tt class="py-docstring">            of this docstring and C{other}.</tt> </tt>
+<a name="L274"></a><tt class="py-lineno">274</tt>  <tt class="py-line"><tt class="py-docstring">        @raise ValueError: If the two parsed docstrings are</tt> </tt>
+<a name="L275"></a><tt class="py-lineno">275</tt>  <tt class="py-line"><tt class="py-docstring">            incompatible.</tt> </tt>
+<a name="L276"></a><tt class="py-lineno">276</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L277"></a><tt class="py-lineno">277</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt id="link-83" class="py-name" targets="Class epydoc.markup.ConcatenatedDocstring=epydoc.markup.ConcatenatedDocstring-class.html"><a title="epydoc.markup.ConcatenatedDocstring" class="py-name" href="#" onclick="return doclink('link-83', 'ConcatenatedDocstring', 'link-83');">ConcatenatedDocstring</a></tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">,</tt> <tt class="py-name">other</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L278"></a><tt class="py-lineno">278</tt>  <tt class="py-line"> </tt>
+<a name="ParsedDocstring.__add__"></a><div id="ParsedDocstring.__add__-def"><a name="L279"></a><tt class="py-lineno">279</tt> <a class="py-toggle" href="#" id="ParsedDocstring.__add__-toggle" onclick="return toggle('ParsedDocstring.__add__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParsedDocstring-class.html#__add__">__add__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">other</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-84" class="py-name" targets="Method epydoc.markup.ParsedDocstring.concatenate()=epydoc.markup.ParsedDocstring-class.html#concatenate"><a title="epydoc.markup.ParsedDocstring.concatenate" class="py-name" href="#" onclick="return doclink('link-84', 'concatenate', 'link-84');">concatenate</a></tt><tt class="py-op">(</tt><tt class="py-name">other</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L280"></a><tt class="py-lineno">280</tt>  <tt class="py-line"> </tt>
+<a name="ParsedDocstring.to_html"></a><div id="ParsedDocstring.to_html-def"><a name="L281"></a><tt class="py-lineno">281</tt> <a class="py-toggle" href="#" id="ParsedDocstring.to_html-toggle" onclick="return toggle('ParsedDocstring.to_html');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParsedDocstring-class.html#to_html">to_html</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">docstring_linker</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-param">options</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParsedDocstring.to_html-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParsedDocstring.to_html-expanded"><a name="L282"></a><tt class="py-lineno">282</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L283"></a><tt class="py-lineno">283</tt>  <tt class="py-line"><tt class="py-docstring">        Translate this docstring to HTML.</tt> </tt>
+<a name="L284"></a><tt class="py-lineno">284</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L285"></a><tt class="py-lineno">285</tt>  <tt class="py-line"><tt class="py-docstring">        @param docstring_linker: An HTML translator for crossreference</tt> </tt>
+<a name="L286"></a><tt class="py-lineno">286</tt>  <tt class="py-line"><tt class="py-docstring">            links into and out of the docstring.</tt> </tt>
+<a name="L287"></a><tt class="py-lineno">287</tt>  <tt class="py-line"><tt class="py-docstring">        @type docstring_linker: L{DocstringLinker}</tt> </tt>
+<a name="L288"></a><tt class="py-lineno">288</tt>  <tt class="py-line"><tt class="py-docstring">        @param options: Any extra options for the output.  Unknown</tt> </tt>
+<a name="L289"></a><tt class="py-lineno">289</tt>  <tt class="py-line"><tt class="py-docstring">            options are ignored.</tt> </tt>
+<a name="L290"></a><tt class="py-lineno">290</tt>  <tt class="py-line"><tt class="py-docstring">        @return: An HTML fragment that encodes this docstring.</tt> </tt>
+<a name="L291"></a><tt class="py-lineno">291</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: C{string}</tt> </tt>
+<a name="L292"></a><tt class="py-lineno">292</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L293"></a><tt class="py-lineno">293</tt>  <tt class="py-line">        <tt class="py-comment"># Default behavior:</tt> </tt>
+<a name="L294"></a><tt class="py-lineno">294</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt id="link-85" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-85', 'plaintext', 'link-20');">plaintext</a></tt> <tt class="py-op">=</tt> <tt id="link-86" class="py-name"><a title="epydoc.util.plaintext_to_html" class="py-name" href="#" onclick="return doclink('link-86', 'plaintext_to_html', 'link-4');">plaintext_to_html</a></tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-87" class="py-name" targets="Method epydoc.markup.ConcatenatedDocstring.to_plaintext()=epydoc.markup.ConcatenatedDocstring-class.html#to_plaintext,Method epydoc.markup.ParsedDocstring.to_plaintext()=epydoc.markup.ParsedDocstring-class.html#to_plaintext,Method epydoc.markup.epytext.ParsedEpytextDocstring.to_plaintext()=epydoc.markup.epytext.ParsedEpytextDocstring-class.html#to_plaintext,Function epydoc.markup.epytext.to_plaintext()=epydoc.markup.epytext-module.html#to_plaintext,Method epydoc.markup.javadoc.ParsedJavadocDocstring.to_plaintext()=epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#to_plaintext,Method epydoc.markup.plaintext.ParsedPlaintextDocstring.to_plaintext()=epydoc.markup.plaintext.ParsedPlaintextDocstring-class.html#to_plaintext,Method epydoc.markup.restructuredtext.ParsedRstDocstring.to_plaintext()=epydoc.markup.restructuredtext.ParsedRstDocstring-class.html#to_plaintext"><a title="epydoc.markup.ConcatenatedDocstring.to_plaintext
+epydoc.markup.ParsedDocstring.to_plaintext
+epydoc.markup.epytext.ParsedEpytextDocstring.to_plaintext
+epydoc.markup.epytext.to_plaintext
+epydoc.markup.javadoc.ParsedJavadocDocstring.to_plaintext
+epydoc.markup.plaintext.ParsedPlaintextDocstring.to_plaintext
+epydoc.markup.restructuredtext.ParsedRstDocstring.to_plaintext" class="py-name" href="#" onclick="return doclink('link-87', 'to_plaintext', 'link-87');">to_plaintext</a></tt><tt class="py-op">(</tt><tt class="py-name">docstring_linker</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L295"></a><tt class="py-lineno">295</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-string">'&lt;pre class="literalblock"&gt;\n%s\n&lt;/pre&gt;\n'</tt> <tt class="py-op">%</tt> <tt id="link-88" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-88', 'plaintext', 'link-20');">plaintext</a></tt> </tt>
+</div><a name="L296"></a><tt class="py-lineno">296</tt>  <tt class="py-line"> </tt>
+<a name="ParsedDocstring.to_latex"></a><div id="ParsedDocstring.to_latex-def"><a name="L297"></a><tt class="py-lineno">297</tt> <a class="py-toggle" href="#" id="ParsedDocstring.to_latex-toggle" onclick="return toggle('ParsedDocstring.to_latex');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParsedDocstring-class.html#to_latex">to_latex</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">docstring_linker</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-param">options</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParsedDocstring.to_latex-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParsedDocstring.to_latex-expanded"><a name="L298"></a><tt class="py-lineno">298</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L299"></a><tt class="py-lineno">299</tt>  <tt class="py-line"><tt class="py-docstring">        Translate this docstring to LaTeX.</tt> </tt>
+<a name="L300"></a><tt class="py-lineno">300</tt>  <tt class="py-line"><tt class="py-docstring">        </tt> </tt>
+<a name="L301"></a><tt class="py-lineno">301</tt>  <tt class="py-line"><tt class="py-docstring">        @param docstring_linker: A LaTeX translator for crossreference</tt> </tt>
+<a name="L302"></a><tt class="py-lineno">302</tt>  <tt class="py-line"><tt class="py-docstring">            links into and out of the docstring.</tt> </tt>
+<a name="L303"></a><tt class="py-lineno">303</tt>  <tt class="py-line"><tt class="py-docstring">        @type docstring_linker: L{DocstringLinker}</tt> </tt>
+<a name="L304"></a><tt class="py-lineno">304</tt>  <tt class="py-line"><tt class="py-docstring">        @param options: Any extra options for the output.  Unknown</tt> </tt>
+<a name="L305"></a><tt class="py-lineno">305</tt>  <tt class="py-line"><tt class="py-docstring">            options are ignored.</tt> </tt>
+<a name="L306"></a><tt class="py-lineno">306</tt>  <tt class="py-line"><tt class="py-docstring">        @return: A LaTeX fragment that encodes this docstring.</tt> </tt>
+<a name="L307"></a><tt class="py-lineno">307</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: C{string}</tt> </tt>
+<a name="L308"></a><tt class="py-lineno">308</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L309"></a><tt class="py-lineno">309</tt>  <tt class="py-line">        <tt class="py-comment"># Default behavior:</tt> </tt>
+<a name="L310"></a><tt class="py-lineno">310</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt id="link-89" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-89', 'plaintext', 'link-20');">plaintext</a></tt> <tt class="py-op">=</tt> <tt id="link-90" class="py-name"><a title="epydoc.util.plaintext_to_latex" class="py-name" href="#" onclick="return doclink('link-90', 'plaintext_to_latex', 'link-5');">plaintext_to_latex</a></tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-91" class="py-name"><a title="epydoc.markup.ConcatenatedDocstring.to_plaintext
+epydoc.markup.ParsedDocstring.to_plaintext
+epydoc.markup.epytext.ParsedEpytextDocstring.to_plaintext
+epydoc.markup.epytext.to_plaintext
+epydoc.markup.javadoc.ParsedJavadocDocstring.to_plaintext
+epydoc.markup.plaintext.ParsedPlaintextDocstring.to_plaintext
+epydoc.markup.restructuredtext.ParsedRstDocstring.to_plaintext" class="py-name" href="#" onclick="return doclink('link-91', 'to_plaintext', 'link-87');">to_plaintext</a></tt><tt class="py-op">(</tt><tt class="py-name">docstring_linker</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L311"></a><tt class="py-lineno">311</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-string">'\\begin{alltt}\n%s\\end{alltt}\n\n'</tt> <tt class="py-op">%</tt> <tt id="link-92" class="py-name"><a title="epydoc.docwriter.plaintext
+epydoc.markup.plaintext" class="py-name" href="#" onclick="return doclink('link-92', 'plaintext', 'link-20');">plaintext</a></tt> </tt>
+</div><a name="L312"></a><tt class="py-lineno">312</tt>  <tt class="py-line"> </tt>
+<a name="ParsedDocstring.to_plaintext"></a><div id="ParsedDocstring.to_plaintext-def"><a name="L313"></a><tt class="py-lineno">313</tt> <a class="py-toggle" href="#" id="ParsedDocstring.to_plaintext-toggle" onclick="return toggle('ParsedDocstring.to_plaintext');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParsedDocstring-class.html#to_plaintext">to_plaintext</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">docstring_linker</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-param">options</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParsedDocstring.to_plaintext-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParsedDocstring.to_plaintext-expanded"><a name="L314"></a><tt class="py-lineno">314</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L315"></a><tt class="py-lineno">315</tt>  <tt class="py-line"><tt class="py-docstring">        Translate this docstring to plaintext.</tt> </tt>
+<a name="L316"></a><tt class="py-lineno">316</tt>  <tt class="py-line"><tt class="py-docstring">        </tt> </tt>
+<a name="L317"></a><tt class="py-lineno">317</tt>  <tt class="py-line"><tt class="py-docstring">        @param docstring_linker: A plaintext translator for</tt> </tt>
+<a name="L318"></a><tt class="py-lineno">318</tt>  <tt class="py-line"><tt class="py-docstring">            crossreference links into and out of the docstring.</tt> </tt>
+<a name="L319"></a><tt class="py-lineno">319</tt>  <tt class="py-line"><tt class="py-docstring">        @type docstring_linker: L{DocstringLinker}</tt> </tt>
+<a name="L320"></a><tt class="py-lineno">320</tt>  <tt class="py-line"><tt class="py-docstring">        @param options: Any extra options for the output.  Unknown</tt> </tt>
+<a name="L321"></a><tt class="py-lineno">321</tt>  <tt class="py-line"><tt class="py-docstring">            options are ignored.</tt> </tt>
+<a name="L322"></a><tt class="py-lineno">322</tt>  <tt class="py-line"><tt class="py-docstring">        @return: A plaintext fragment that encodes this docstring.</tt> </tt>
+<a name="L323"></a><tt class="py-lineno">323</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: C{string}</tt> </tt>
+<a name="L324"></a><tt class="py-lineno">324</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L325"></a><tt class="py-lineno">325</tt>  <tt class="py-line">        <tt class="py-keyword">raise</tt> <tt class="py-name">NotImplementedError</tt><tt class="py-op">,</tt> <tt class="py-string">'ParsedDocstring.to_plaintext()'</tt> </tt>
+</div><a name="L326"></a><tt class="py-lineno">326</tt>  <tt class="py-line"> </tt>
+<a name="ParsedDocstring.index_terms"></a><div id="ParsedDocstring.index_terms-def"><a name="L327"></a><tt class="py-lineno">327</tt> <a class="py-toggle" href="#" id="ParsedDocstring.index_terms-toggle" onclick="return toggle('ParsedDocstring.index_terms');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParsedDocstring-class.html#index_terms">index_terms</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParsedDocstring.index_terms-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParsedDocstring.index_terms-expanded"><a name="L328"></a><tt class="py-lineno">328</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L329"></a><tt class="py-lineno">329</tt>  <tt class="py-line"><tt class="py-docstring">        @return: The list of index terms that are defined in this</tt> </tt>
+<a name="L330"></a><tt class="py-lineno">330</tt>  <tt class="py-line"><tt class="py-docstring">            docstring.  Each of these items will be added to the index</tt> </tt>
+<a name="L331"></a><tt class="py-lineno">331</tt>  <tt class="py-line"><tt class="py-docstring">            page of the documentation.</tt> </tt>
+<a name="L332"></a><tt class="py-lineno">332</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: C{list} of C{ParsedDocstring}</tt> </tt>
+<a name="L333"></a><tt class="py-lineno">333</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L334"></a><tt class="py-lineno">334</tt>  <tt class="py-line">        <tt class="py-comment"># Default behavior:</tt> </tt>
+<a name="L335"></a><tt class="py-lineno">335</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-keyword">return</tt> <tt class="py-op">[</tt><tt class="py-op">]</tt> </tt>
+</div></div><a name="L336"></a><tt class="py-lineno">336</tt>  <tt class="py-line"> </tt>
+<a name="L337"></a><tt class="py-lineno">337</tt>  <tt class="py-line"><tt class="py-comment">##################################################</tt> </tt>
+<a name="L338"></a><tt class="py-lineno">338</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">## Concatenated Docstring</tt> </tt>
+<a name="L339"></a><tt class="py-lineno">339</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">##################################################</tt> </tt>
+<a name="ConcatenatedDocstring"></a><div id="ConcatenatedDocstring-def"><a name="L340"></a><tt class="py-lineno">340</tt> <a class="py-toggle" href="#" id="ConcatenatedDocstring-toggle" onclick="return toggle('ConcatenatedDocstring');">-</a><tt class="py-line"><tt class="py-comment"></tt><tt class="py-keyword">class</tt> <a class="py-def-name" href="epydoc.markup.ConcatenatedDocstring-class.html">ConcatenatedDocstring</a><tt class="py-op">:</tt> </tt>
+</div><div id="ConcatenatedDocstring-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="ConcatenatedDocstring-expanded"><a name="ConcatenatedDocstring.__init__"></a><div id="ConcatenatedDocstring.__init__-def"><a name="L341"></a><tt class="py-lineno">341</tt> <a class="py-toggle" href="#" id="ConcatenatedDocstring.__init__-toggle" onclick="return toggle('ConcatenatedDocstring.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ConcatenatedDocstring-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-op">*</tt><tt class="py-param">parsed_docstrings</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ConcatenatedDocstring.__init__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ConcatenatedDocstring.__init__-expanded"><a name="L342"></a><tt class="py-lineno">342</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_parsed_docstrings</tt> <tt class="py-op">=</tt> <tt class="py-op">[</tt><tt class="py-name">pds</tt> <tt class="py-keyword">for</tt> <tt class="py-name">pds</tt> <tt class="py-keyword">in</tt> <tt class="py-name">parsed_docstrings</tt> </tt>
+<a name="L343"></a><tt class="py-lineno">343</tt>  <tt class="py-line">                                   <tt class="py-keyword">if</tt> <tt class="py-name">pds</tt> <tt class="py-keyword">is</tt> <tt class="py-keyword">not</tt> <tt class="py-name">None</tt><tt class="py-op">]</tt> </tt>
+</div><a name="L344"></a><tt class="py-lineno">344</tt>  <tt class="py-line">         </tt>
+<a name="ConcatenatedDocstring.split_fields"></a><div id="ConcatenatedDocstring.split_fields-def"><a name="L345"></a><tt class="py-lineno">345</tt> <a class="py-toggle" href="#" id="ConcatenatedDocstring.split_fields-toggle" onclick="return toggle('ConcatenatedDocstring.split_fields');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ConcatenatedDocstring-class.html#split_fields">split_fields</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">errors</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ConcatenatedDocstring.split_fields-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ConcatenatedDocstring.split_fields-expanded"><a name="L346"></a><tt class="py-lineno">346</tt>  <tt class="py-line">        <tt class="py-name">bodies</tt> <tt class="py-op">=</tt> <tt class="py-op">[</tt><tt class="py-op">]</tt> </tt>
+<a name="L347"></a><tt class="py-lineno">347</tt>  <tt class="py-line">        <tt class="py-name">fields</tt> <tt class="py-op">=</tt> <tt class="py-op">[</tt><tt class="py-op">]</tt> </tt>
+<a name="L348"></a><tt class="py-lineno">348</tt>  <tt class="py-line">        <tt class="py-keyword">for</tt> <tt class="py-name">doc</tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_parsed_docstrings</tt><tt class="py-op">:</tt> </tt>
+<a name="L349"></a><tt class="py-lineno">349</tt>  <tt class="py-line">            <tt class="py-name">b</tt><tt class="py-op">,</tt><tt class="py-name">f</tt> <tt class="py-op">=</tt> <tt class="py-name">doc</tt><tt class="py-op">.</tt><tt id="link-93" class="py-name" targets="Method epydoc.markup.ConcatenatedDocstring.split_fields()=epydoc.markup.ConcatenatedDocstring-class.html#split_fields,Method epydoc.markup.ParsedDocstring.split_fields()=epydoc.markup.ParsedDocstring-class.html#split_fields,Method epydoc.markup.epytext.ParsedEpytextDocstring.split_fields()=epydoc.markup.epytext.ParsedEpytextDocstring-class.html#split_fields,Method epydoc.markup.javadoc.ParsedJavadocDocstring.split_fields()=epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#split_fields,Method epydoc.markup.restructuredtext.ParsedRstDocstring.split_fields()=epydoc.markup.restructuredtext.ParsedRstDocstring-class.html#split_fields"><a title="epydoc.markup.ConcatenatedDocstring.split_fields
+epydoc.markup.ParsedDocstring.split_fields
+epydoc.markup.epytext.ParsedEpytextDocstring.split_fields
+epydoc.markup.javadoc.ParsedJavadocDocstring.split_fields
+epydoc.markup.restructuredtext.ParsedRstDocstring.split_fields" class="py-name" href="#" onclick="return doclink('link-93', 'split_fields', 'link-93');">split_fields</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L350"></a><tt class="py-lineno">350</tt>  <tt class="py-line">            <tt class="py-name">bodies</tt><tt class="py-op">.</tt><tt class="py-name">append</tt><tt class="py-op">(</tt><tt class="py-name">b</tt><tt class="py-op">)</tt> </tt>
+<a name="L351"></a><tt class="py-lineno">351</tt>  <tt class="py-line">            <tt class="py-name">fields</tt><tt class="py-op">.</tt><tt class="py-name">extend</tt><tt class="py-op">(</tt><tt class="py-name">f</tt><tt class="py-op">)</tt> </tt>
+<a name="L352"></a><tt class="py-lineno">352</tt>  <tt class="py-line"> </tt>
+<a name="L353"></a><tt class="py-lineno">353</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt id="link-94" class="py-name"><a title="epydoc.markup.ConcatenatedDocstring" class="py-name" href="#" onclick="return doclink('link-94', 'ConcatenatedDocstring', 'link-83');">ConcatenatedDocstring</a></tt><tt class="py-op">(</tt><tt class="py-op">*</tt><tt class="py-name">bodies</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> <tt class="py-name">fields</tt> </tt>
+</div><a name="L354"></a><tt class="py-lineno">354</tt>  <tt class="py-line"> </tt>
+<a name="ConcatenatedDocstring.summary"></a><div id="ConcatenatedDocstring.summary-def"><a name="L355"></a><tt class="py-lineno">355</tt> <a class="py-toggle" href="#" id="ConcatenatedDocstring.summary-toggle" onclick="return toggle('ConcatenatedDocstring.summary');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ConcatenatedDocstring-class.html#summary">summary</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ConcatenatedDocstring.summary-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ConcatenatedDocstring.summary-expanded"><a name="L356"></a><tt class="py-lineno">356</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_parsed_docstrings</tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt><tt class="py-op">.</tt><tt id="link-95" class="py-name" targets="Variable epydoc.apidoc.APIDoc.summary=epydoc.apidoc.APIDoc-class.html#summary,Method epydoc.docwriter.html.HTMLWriter.summary()=epydoc.docwriter.html.HTMLWriter-class.html#summary,Method epydoc.markup.ConcatenatedDocstring.summary()=epydoc.markup.ConcatenatedDocstring-class.html#summary,Method epydoc.markup.ParsedDocstring.summary()=epydoc.markup.ParsedDocstring-class.html#summary,Method epydoc.markup.epytext.ParsedEpytextDocstring.summary()=epydoc.markup.epytext.ParsedEpytextDocstring-class.html#summary,Method epydoc.markup.javadoc.ParsedJavadocDocstring.summary()=epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#summary,Method epydoc.markup.plaintext.ParsedPlaintextDocstring.summary()=epydoc.markup.plaintext.ParsedPlaintextDocstring-class.html#summary,Method epydoc.markup.restructuredtext.ParsedRstDocstring.summary()=epydoc.markup.restructuredtext.ParsedRstDocstring-class.html#summary"><a title="epydoc.apidoc.APIDoc.summary
+epydoc.docwriter.html.HTMLWriter.summary
+epydoc.markup.ConcatenatedDocstring.summary
+epydoc.markup.ParsedDocstring.summary
+epydoc.markup.epytext.ParsedEpytextDocstring.summary
+epydoc.markup.javadoc.ParsedJavadocDocstring.summary
+epydoc.markup.plaintext.ParsedPlaintextDocstring.summary
+epydoc.markup.restructuredtext.ParsedRstDocstring.summary" class="py-name" href="#" onclick="return doclink('link-95', 'summary', 'link-95');">summary</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L357"></a><tt class="py-lineno">357</tt>  <tt class="py-line"> </tt>
+<a name="ConcatenatedDocstring.to_html"></a><div id="ConcatenatedDocstring.to_html-def"><a name="L358"></a><tt class="py-lineno">358</tt> <a class="py-toggle" href="#" id="ConcatenatedDocstring.to_html-toggle" onclick="return toggle('ConcatenatedDocstring.to_html');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ConcatenatedDocstring-class.html#to_html">to_html</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">docstring_linker</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-param">options</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ConcatenatedDocstring.to_html-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ConcatenatedDocstring.to_html-expanded"><a name="L359"></a><tt class="py-lineno">359</tt>  <tt class="py-line">        <tt class="py-name">htmlstring</tt> <tt class="py-op">=</tt> <tt class="py-string">''</tt> </tt>
+<a name="L360"></a><tt class="py-lineno">360</tt>  <tt class="py-line">        <tt class="py-keyword">for</tt> <tt class="py-name">doc</tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_parsed_docstrings</tt><tt class="py-op">:</tt> </tt>
+<a name="L361"></a><tt class="py-lineno">361</tt>  <tt class="py-line">            <tt class="py-name">htmlstring</tt> <tt class="py-op">+=</tt> <tt class="py-name">doc</tt><tt class="py-op">.</tt><tt id="link-96" class="py-name" targets="Method epydoc.docwriter.dotgraph.DotGraph.to_html()=epydoc.docwriter.dotgraph.DotGraph-class.html#to_html,Method epydoc.markup.ConcatenatedDocstring.to_html()=epydoc.markup.ConcatenatedDocstring-class.html#to_html,Method epydoc.markup.ParsedDocstring.to_html()=epydoc.markup.ParsedDocstring-class.html#to_html,Method epydoc.markup.epytext.ParsedEpytextDocstring.to_html()=epydoc.markup.epytext.ParsedEpytextDocstring-class.html#to_html,Method epydoc.markup.javadoc.ParsedJavadocDocstring.to_html()=epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#to_html,Method epydoc.markup.plaintext.ParsedPlaintextDocstring.to_html()=epydoc.markup.plaintext.ParsedPlaintextDocstring-class.html#to_html,Method epydoc.markup.restructuredtext.ParsedRstDocstring.to_html()=epydoc.markup.restructuredtext.ParsedRstDocstring-class.html#to_html"><a title="epydoc.docwriter.dotgraph.DotGraph.to_html
+epydoc.markup.ConcatenatedDocstring.to_html
+epydoc.markup.ParsedDocstring.to_html
+epydoc.markup.epytext.ParsedEpytextDocstring.to_html
+epydoc.markup.javadoc.ParsedJavadocDocstring.to_html
+epydoc.markup.plaintext.ParsedPlaintextDocstring.to_html
+epydoc.markup.restructuredtext.ParsedRstDocstring.to_html" class="py-name" href="#" onclick="return doclink('link-96', 'to_html', 'link-96');">to_html</a></tt><tt class="py-op">(</tt><tt class="py-name">docstring_linker</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-name">options</tt><tt class="py-op">)</tt> </tt>
+<a name="L362"></a><tt class="py-lineno">362</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">htmlstring</tt> </tt>
+</div><a name="L363"></a><tt class="py-lineno">363</tt>  <tt class="py-line"> </tt>
+<a name="ConcatenatedDocstring.to_latex"></a><div id="ConcatenatedDocstring.to_latex-def"><a name="L364"></a><tt class="py-lineno">364</tt> <a class="py-toggle" href="#" id="ConcatenatedDocstring.to_latex-toggle" onclick="return toggle('ConcatenatedDocstring.to_latex');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ConcatenatedDocstring-class.html#to_latex">to_latex</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">docstring_linker</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-param">options</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ConcatenatedDocstring.to_latex-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ConcatenatedDocstring.to_latex-expanded"><a name="L365"></a><tt class="py-lineno">365</tt>  <tt class="py-line">        <tt class="py-name">latexstring</tt> <tt class="py-op">=</tt> <tt class="py-string">''</tt> </tt>
+<a name="L366"></a><tt class="py-lineno">366</tt>  <tt class="py-line">        <tt class="py-keyword">for</tt> <tt class="py-name">doc</tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_parsed_docstrings</tt><tt class="py-op">:</tt> </tt>
+<a name="L367"></a><tt class="py-lineno">367</tt>  <tt class="py-line">            <tt class="py-name">latexstring</tt> <tt class="py-op">+=</tt> <tt class="py-name">doc</tt><tt class="py-op">.</tt><tt id="link-97" class="py-name" targets="Method epydoc.markup.ConcatenatedDocstring.to_latex()=epydoc.markup.ConcatenatedDocstring-class.html#to_latex,Method epydoc.markup.ParsedDocstring.to_latex()=epydoc.markup.ParsedDocstring-class.html#to_latex,Method epydoc.markup.epytext.ParsedEpytextDocstring.to_latex()=epydoc.markup.epytext.ParsedEpytextDocstring-class.html#to_latex,Method epydoc.markup.plaintext.ParsedPlaintextDocstring.to_latex()=epydoc.markup.plaintext.ParsedPlaintextDocstring-class.html#to_latex,Method epydoc.markup.restructuredtext.ParsedRstDocstring.to_latex()=epydoc.markup.restructuredtext.ParsedRstDocstring-class.html#to_latex"><a title="epydoc.markup.ConcatenatedDocstring.to_latex
+epydoc.markup.ParsedDocstring.to_latex
+epydoc.markup.epytext.ParsedEpytextDocstring.to_latex
+epydoc.markup.plaintext.ParsedPlaintextDocstring.to_latex
+epydoc.markup.restructuredtext.ParsedRstDocstring.to_latex" class="py-name" href="#" onclick="return doclink('link-97', 'to_latex', 'link-97');">to_latex</a></tt><tt class="py-op">(</tt><tt class="py-name">docstring_linker</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-name">options</tt><tt class="py-op">)</tt> </tt>
+<a name="L368"></a><tt class="py-lineno">368</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">latexstring</tt> </tt>
+</div><a name="L369"></a><tt class="py-lineno">369</tt>  <tt class="py-line"> </tt>
+<a name="ConcatenatedDocstring.to_plaintext"></a><div id="ConcatenatedDocstring.to_plaintext-def"><a name="L370"></a><tt class="py-lineno">370</tt> <a class="py-toggle" href="#" id="ConcatenatedDocstring.to_plaintext-toggle" onclick="return toggle('ConcatenatedDocstring.to_plaintext');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ConcatenatedDocstring-class.html#to_plaintext">to_plaintext</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">docstring_linker</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-param">options</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ConcatenatedDocstring.to_plaintext-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ConcatenatedDocstring.to_plaintext-expanded"><a name="L371"></a><tt class="py-lineno">371</tt>  <tt class="py-line">        <tt class="py-name">textstring</tt> <tt class="py-op">=</tt> <tt class="py-string">''</tt> </tt>
+<a name="L372"></a><tt class="py-lineno">372</tt>  <tt class="py-line">        <tt class="py-keyword">for</tt> <tt class="py-name">doc</tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_parsed_docstrings</tt><tt class="py-op">:</tt> </tt>
+<a name="L373"></a><tt class="py-lineno">373</tt>  <tt class="py-line">            <tt class="py-name">textstring</tt> <tt class="py-op">+=</tt> <tt class="py-name">doc</tt><tt class="py-op">.</tt><tt id="link-98" class="py-name"><a title="epydoc.markup.ConcatenatedDocstring.to_plaintext
+epydoc.markup.ParsedDocstring.to_plaintext
+epydoc.markup.epytext.ParsedEpytextDocstring.to_plaintext
+epydoc.markup.epytext.to_plaintext
+epydoc.markup.javadoc.ParsedJavadocDocstring.to_plaintext
+epydoc.markup.plaintext.ParsedPlaintextDocstring.to_plaintext
+epydoc.markup.restructuredtext.ParsedRstDocstring.to_plaintext" class="py-name" href="#" onclick="return doclink('link-98', 'to_plaintext', 'link-87');">to_plaintext</a></tt><tt class="py-op">(</tt><tt class="py-name">docstring_linker</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-name">options</tt><tt class="py-op">)</tt> </tt>
+<a name="L374"></a><tt class="py-lineno">374</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">textstring</tt> </tt>
+</div><a name="L375"></a><tt class="py-lineno">375</tt>  <tt class="py-line"> </tt>
+<a name="ConcatenatedDocstring.index_terms"></a><div id="ConcatenatedDocstring.index_terms-def"><a name="L376"></a><tt class="py-lineno">376</tt> <a class="py-toggle" href="#" id="ConcatenatedDocstring.index_terms-toggle" onclick="return toggle('ConcatenatedDocstring.index_terms');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ConcatenatedDocstring-class.html#index_terms">index_terms</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ConcatenatedDocstring.index_terms-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ConcatenatedDocstring.index_terms-expanded"><a name="L377"></a><tt class="py-lineno">377</tt>  <tt class="py-line">        <tt class="py-name">terms</tt> <tt class="py-op">=</tt> <tt class="py-op">[</tt><tt class="py-op">]</tt> </tt>
+<a name="L378"></a><tt class="py-lineno">378</tt>  <tt class="py-line">        <tt class="py-keyword">for</tt> <tt class="py-name">doc</tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_parsed_docstrings</tt><tt class="py-op">:</tt> </tt>
+<a name="L379"></a><tt class="py-lineno">379</tt>  <tt class="py-line">            <tt class="py-name">terms</tt> <tt class="py-op">+=</tt> <tt class="py-name">doc</tt><tt class="py-op">.</tt><tt id="link-99" class="py-name" targets="Method epydoc.markup.ConcatenatedDocstring.index_terms()=epydoc.markup.ConcatenatedDocstring-class.html#index_terms,Method epydoc.markup.ParsedDocstring.index_terms()=epydoc.markup.ParsedDocstring-class.html#index_terms,Method epydoc.markup.epytext.ParsedEpytextDocstring.index_terms()=epydoc.markup.epytext.ParsedEpytextDocstring-class.html#index_terms,Method epydoc.markup.restructuredtext.ParsedRstDocstring.index_terms()=epydoc.markup.restructuredtext.ParsedRstDocstring-class.html#index_terms"><a title="epydoc.markup.ConcatenatedDocstring.index_terms
+epydoc.markup.ParsedDocstring.index_terms
+epydoc.markup.epytext.ParsedEpytextDocstring.index_terms
+epydoc.markup.restructuredtext.ParsedRstDocstring.index_terms" class="py-name" href="#" onclick="return doclink('link-99', 'index_terms', 'link-99');">index_terms</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L380"></a><tt class="py-lineno">380</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">terms</tt> </tt>
+</div></div><a name="L381"></a><tt class="py-lineno">381</tt>  <tt class="py-line">     </tt>
+<a name="L382"></a><tt class="py-lineno">382</tt>  <tt class="py-line"><tt class="py-comment">##################################################</tt> </tt>
+<a name="L383"></a><tt class="py-lineno">383</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">## Fields</tt> </tt>
+<a name="L384"></a><tt class="py-lineno">384</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">##################################################</tt> </tt>
+<a name="Field"></a><div id="Field-def"><a name="L385"></a><tt class="py-lineno">385</tt> <a class="py-toggle" href="#" id="Field-toggle" onclick="return toggle('Field');">-</a><tt class="py-line"><tt class="py-comment"></tt><tt class="py-keyword">class</tt> <a class="py-def-name" href="epydoc.markup.Field-class.html">Field</a><tt class="py-op">:</tt> </tt>
+</div><div id="Field-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="Field-expanded"><a name="L386"></a><tt class="py-lineno">386</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L387"></a><tt class="py-lineno">387</tt>  <tt class="py-line"><tt class="py-docstring">    The contents of a docstring's field.  Docstring fields are used</tt> </tt>
+<a name="L388"></a><tt class="py-lineno">388</tt>  <tt class="py-line"><tt class="py-docstring">    to describe specific aspects of an object, such as a parameter of</tt> </tt>
+<a name="L389"></a><tt class="py-lineno">389</tt>  <tt class="py-line"><tt class="py-docstring">    a function or the author of a module.  Each field consists of a</tt> </tt>
+<a name="L390"></a><tt class="py-lineno">390</tt>  <tt class="py-line"><tt class="py-docstring">    tag, an optional argument, and a body:</tt> </tt>
+<a name="L391"></a><tt class="py-lineno">391</tt>  <tt class="py-line"><tt class="py-docstring">      - The tag specifies the type of information that the field</tt> </tt>
+<a name="L392"></a><tt class="py-lineno">392</tt>  <tt class="py-line"><tt class="py-docstring">        encodes.</tt> </tt>
+<a name="L393"></a><tt class="py-lineno">393</tt>  <tt class="py-line"><tt class="py-docstring">      - The argument specifies the object that the field describes.</tt> </tt>
+<a name="L394"></a><tt class="py-lineno">394</tt>  <tt class="py-line"><tt class="py-docstring">        The argument may be C{None} or a C{string}.</tt> </tt>
+<a name="L395"></a><tt class="py-lineno">395</tt>  <tt class="py-line"><tt class="py-docstring">      - The body contains the field's information.</tt> </tt>
+<a name="L396"></a><tt class="py-lineno">396</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L397"></a><tt class="py-lineno">397</tt>  <tt class="py-line"><tt class="py-docstring">    Tags are automatically downcased and stripped; and arguments are</tt> </tt>
+<a name="L398"></a><tt class="py-lineno">398</tt>  <tt class="py-line"><tt class="py-docstring">    automatically stripped.</tt> </tt>
+<a name="L399"></a><tt class="py-lineno">399</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="Field.__init__"></a><div id="Field.__init__-def"><a name="L400"></a><tt class="py-lineno">400</tt> <a class="py-toggle" href="#" id="Field.__init__-toggle" onclick="return toggle('Field.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.Field-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">tag</tt><tt class="py-op">,</tt> <tt class="py-param">arg</tt><tt class="py-op">,</tt> <tt class="py-param">body</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Field.__init__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Field.__init__-expanded"><a name="L401"></a><tt class="py-lineno">401</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_tag</tt> <tt class="py-op">=</tt> <tt id="link-100" class="py-name" targets="Method epydoc.markup.Field.tag()=epydoc.markup.Field-class.html#tag"><a title="epydoc.markup.Field.tag" class="py-name" href="#" onclick="return doclink('link-100', 'tag', 'link-100');">tag</a></tt><tt class="py-op">.</tt><tt class="py-name">lower</tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">.</tt><tt class="py-name">strip</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L402"></a><tt class="py-lineno">402</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt id="link-101" class="py-name" targets="Method epydoc.markup.Field.arg()=epydoc.markup.Field-class.html#arg"><a title="epydoc.markup.Field.arg" class="py-name" href="#" onclick="return doclink('link-101', 'arg', 'link-101');">arg</a></tt> <tt class="py-keyword">is</tt> <tt class="py-name">None</tt><tt class="py-op">:</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_arg</tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L403"></a><tt class="py-lineno">403</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_arg</tt> <tt class="py-op">=</tt> <tt id="link-102" class="py-name"><a title="epydoc.markup.Field.arg" class="py-name" href="#" onclick="return doclink('link-102', 'arg', 'link-101');">arg</a></tt><tt class="py-op">.</tt><tt class="py-name">strip</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L404"></a><tt class="py-lineno">404</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_body</tt> <tt class="py-op">=</tt> <tt id="link-103" class="py-name" targets="Method epydoc.markup.Field.body()=epydoc.markup.Field-class.html#body"><a title="epydoc.markup.Field.body" class="py-name" href="#" onclick="return doclink('link-103', 'body', 'link-103');">body</a></tt> </tt>
+</div><a name="L405"></a><tt class="py-lineno">405</tt>  <tt class="py-line"> </tt>
+<a name="Field.tag"></a><div id="Field.tag-def"><a name="L406"></a><tt class="py-lineno">406</tt> <a class="py-toggle" href="#" id="Field.tag-toggle" onclick="return toggle('Field.tag');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.Field-class.html#tag">tag</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Field.tag-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Field.tag-expanded"><a name="L407"></a><tt class="py-lineno">407</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L408"></a><tt class="py-lineno">408</tt>  <tt class="py-line"><tt class="py-docstring">        @return: This field's tag.</tt> </tt>
+<a name="L409"></a><tt class="py-lineno">409</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: C{string}</tt> </tt>
+<a name="L410"></a><tt class="py-lineno">410</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L411"></a><tt class="py-lineno">411</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_tag</tt> </tt>
+</div><a name="L412"></a><tt class="py-lineno">412</tt>  <tt class="py-line"> </tt>
+<a name="Field.arg"></a><div id="Field.arg-def"><a name="L413"></a><tt class="py-lineno">413</tt> <a class="py-toggle" href="#" id="Field.arg-toggle" onclick="return toggle('Field.arg');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.Field-class.html#arg">arg</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Field.arg-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Field.arg-expanded"><a name="L414"></a><tt class="py-lineno">414</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L415"></a><tt class="py-lineno">415</tt>  <tt class="py-line"><tt class="py-docstring">        @return: This field's argument, or C{None} if this field has</tt> </tt>
+<a name="L416"></a><tt class="py-lineno">416</tt>  <tt class="py-line"><tt class="py-docstring">            no argument.</tt> </tt>
+<a name="L417"></a><tt class="py-lineno">417</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: C{string} or C{None}</tt> </tt>
+<a name="L418"></a><tt class="py-lineno">418</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L419"></a><tt class="py-lineno">419</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_arg</tt> </tt>
+</div><a name="L420"></a><tt class="py-lineno">420</tt>  <tt class="py-line"> </tt>
+<a name="Field.body"></a><div id="Field.body-def"><a name="L421"></a><tt class="py-lineno">421</tt> <a class="py-toggle" href="#" id="Field.body-toggle" onclick="return toggle('Field.body');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.Field-class.html#body">body</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Field.body-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Field.body-expanded"><a name="L422"></a><tt class="py-lineno">422</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L423"></a><tt class="py-lineno">423</tt>  <tt class="py-line"><tt class="py-docstring">        @return: This field's body.</tt> </tt>
+<a name="L424"></a><tt class="py-lineno">424</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: L{ParsedDocstring}</tt> </tt>
+<a name="L425"></a><tt class="py-lineno">425</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L426"></a><tt class="py-lineno">426</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_body</tt> </tt>
+</div><a name="L427"></a><tt class="py-lineno">427</tt>  <tt class="py-line"> </tt>
+<a name="Field.__repr__"></a><div id="Field.__repr__-def"><a name="L428"></a><tt class="py-lineno">428</tt> <a class="py-toggle" href="#" id="Field.__repr__-toggle" onclick="return toggle('Field.__repr__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.Field-class.html#__repr__">__repr__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Field.__repr__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Field.__repr__-expanded"><a name="L429"></a><tt class="py-lineno">429</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_arg</tt> <tt class="py-keyword">is</tt> <tt class="py-name">None</tt><tt class="py-op">:</tt> </tt>
+<a name="L430"></a><tt class="py-lineno">430</tt>  <tt class="py-line">            <tt class="py-keyword">return</tt> <tt class="py-string">'&lt;Field @%s: ...&gt;'</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_tag</tt> </tt>
+<a name="L431"></a><tt class="py-lineno">431</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L432"></a><tt class="py-lineno">432</tt>  <tt class="py-line">            <tt class="py-keyword">return</tt> <tt class="py-string">'&lt;Field @%s %s: ...&gt;'</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_tag</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_arg</tt><tt class="py-op">)</tt> </tt>
+</div></div><a name="L433"></a><tt class="py-lineno">433</tt>  <tt class="py-line"> </tt>
+<a name="L434"></a><tt class="py-lineno">434</tt>  <tt class="py-line"><tt class="py-comment">##################################################</tt> </tt>
+<a name="L435"></a><tt class="py-lineno">435</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">## Docstring Linker (resolves crossreferences)</tt> </tt>
+<a name="L436"></a><tt class="py-lineno">436</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">##################################################</tt> </tt>
+<a name="DocstringLinker"></a><div id="DocstringLinker-def"><a name="L437"></a><tt class="py-lineno">437</tt> <a class="py-toggle" href="#" id="DocstringLinker-toggle" onclick="return toggle('DocstringLinker');">-</a><tt class="py-line"><tt class="py-comment"></tt><tt class="py-keyword">class</tt> <a class="py-def-name" href="epydoc.markup.DocstringLinker-class.html">DocstringLinker</a><tt class="py-op">:</tt>  </tt>
+</div><a name="L438"></a><tt class="py-lineno">438</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L439"></a><tt class="py-lineno">439</tt>  <tt class="py-line"><tt class="py-docstring">    A translator for crossreference links into and out of a</tt> </tt>
+<a name="L440"></a><tt class="py-lineno">440</tt>  <tt class="py-line"><tt class="py-docstring">    C{ParsedDocstring}.  C{DocstringLinker} is used by</tt> </tt>
+<a name="L441"></a><tt class="py-lineno">441</tt>  <tt class="py-line"><tt class="py-docstring">    C{ParsedDocstring} to convert these crossreference links into</tt> </tt>
+<a name="L442"></a><tt class="py-lineno">442</tt>  <tt class="py-line"><tt class="py-docstring">    appropriate output formats.  For example,</tt> </tt>
+<a name="L443"></a><tt class="py-lineno">443</tt>  <tt class="py-line"><tt class="py-docstring">    C{DocstringLinker.to_html} expects a C{DocstringLinker} that</tt> </tt>
+<a name="L444"></a><tt class="py-lineno">444</tt>  <tt class="py-line"><tt class="py-docstring">    converts crossreference links to HTML.</tt> </tt>
+<a name="L445"></a><tt class="py-lineno">445</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="DocstringLinker.translate_indexterm"></a><div id="DocstringLinker.translate_indexterm-def"><a name="L446"></a><tt class="py-lineno">446</tt> <a class="py-toggle" href="#" id="DocstringLinker.translate_indexterm-toggle" onclick="return toggle('DocstringLinker.translate_indexterm');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.DocstringLinker-class.html#translate_indexterm">translate_indexterm</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">indexterm</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="DocstringLinker.translate_indexterm-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="DocstringLinker.translate_indexterm-expanded"><a name="L447"></a><tt class="py-lineno">447</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L448"></a><tt class="py-lineno">448</tt>  <tt class="py-line"><tt class="py-docstring">        Translate an index term to the appropriate output format.  The</tt> </tt>
+<a name="L449"></a><tt class="py-lineno">449</tt>  <tt class="py-line"><tt class="py-docstring">        output will typically include a crossreference anchor.</tt> </tt>
+<a name="L450"></a><tt class="py-lineno">450</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L451"></a><tt class="py-lineno">451</tt>  <tt class="py-line"><tt class="py-docstring">        @type indexterm: L{ParsedDocstring}</tt> </tt>
+<a name="L452"></a><tt class="py-lineno">452</tt>  <tt class="py-line"><tt class="py-docstring">        @param indexterm: The index term to translate.</tt> </tt>
+<a name="L453"></a><tt class="py-lineno">453</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: C{string}</tt> </tt>
+<a name="L454"></a><tt class="py-lineno">454</tt>  <tt class="py-line"><tt class="py-docstring">        @return: The translated index term.</tt> </tt>
+<a name="L455"></a><tt class="py-lineno">455</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L456"></a><tt class="py-lineno">456</tt>  <tt class="py-line">        <tt class="py-keyword">raise</tt> <tt class="py-name">NotImplementedError</tt><tt class="py-op">,</tt> <tt class="py-string">'DocstringLinker.translate_indexterm()'</tt> </tt>
+</div><a name="L457"></a><tt class="py-lineno">457</tt>  <tt class="py-line"> </tt>
+<a name="DocstringLinker.translate_identifier_xref"></a><div id="DocstringLinker.translate_identifier_xref-def"><a name="L458"></a><tt class="py-lineno">458</tt> <a class="py-toggle" href="#" id="DocstringLinker.translate_identifier_xref-toggle" onclick="return toggle('DocstringLinker.translate_identifier_xref');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.DocstringLinker-class.html#translate_identifier_xref">translate_identifier_xref</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">identifier</tt><tt class="py-op">,</tt> <tt class="py-param">label</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="DocstringLinker.translate_identifier_xref-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="DocstringLinker.translate_identifier_xref-expanded"><a name="L459"></a><tt class="py-lineno">459</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L460"></a><tt class="py-lineno">460</tt>  <tt class="py-line"><tt class="py-docstring">        Translate a crossreference link to a Python identifier to the</tt> </tt>
+<a name="L461"></a><tt class="py-lineno">461</tt>  <tt class="py-line"><tt class="py-docstring">        appropriate output format.  The output will typically include</tt> </tt>
+<a name="L462"></a><tt class="py-lineno">462</tt>  <tt class="py-line"><tt class="py-docstring">        a reference or pointer to the crossreference target.</tt> </tt>
+<a name="L463"></a><tt class="py-lineno">463</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L464"></a><tt class="py-lineno">464</tt>  <tt class="py-line"><tt class="py-docstring">        @type identifier: C{string}</tt> </tt>
+<a name="L465"></a><tt class="py-lineno">465</tt>  <tt class="py-line"><tt class="py-docstring">        @param identifier: The name of the Python identifier that</tt> </tt>
+<a name="L466"></a><tt class="py-lineno">466</tt>  <tt class="py-line"><tt class="py-docstring">            should be linked to.</tt> </tt>
+<a name="L467"></a><tt class="py-lineno">467</tt>  <tt class="py-line"><tt class="py-docstring">        @type label: C{string} or C{None}</tt> </tt>
+<a name="L468"></a><tt class="py-lineno">468</tt>  <tt class="py-line"><tt class="py-docstring">        @param label: The label that should be used for the identifier,</tt> </tt>
+<a name="L469"></a><tt class="py-lineno">469</tt>  <tt class="py-line"><tt class="py-docstring">            if it's different from the name of the identifier.</tt> </tt>
+<a name="L470"></a><tt class="py-lineno">470</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: C{string}</tt> </tt>
+<a name="L471"></a><tt class="py-lineno">471</tt>  <tt class="py-line"><tt class="py-docstring">        @return: The translated crossreference link.</tt> </tt>
+<a name="L472"></a><tt class="py-lineno">472</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L473"></a><tt class="py-lineno">473</tt>  <tt class="py-line">        <tt class="py-keyword">raise</tt> <tt class="py-name">NotImplementedError</tt><tt class="py-op">,</tt> <tt class="py-string">'DocstringLinker.translate_xref()'</tt> </tt>
+</div></div><a name="L474"></a><tt class="py-lineno">474</tt>  <tt class="py-line"> </tt>
+<a name="L475"></a><tt class="py-lineno">475</tt>  <tt class="py-line"><tt class="py-comment">##################################################</tt> </tt>
+<a name="L476"></a><tt class="py-lineno">476</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">## ParseError exceptions</tt> </tt>
+<a name="L477"></a><tt class="py-lineno">477</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">##################################################</tt> </tt>
+<a name="L478"></a><tt class="py-lineno">478</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="ParseError"></a><div id="ParseError-def"><a name="L479"></a><tt class="py-lineno">479</tt> <a class="py-toggle" href="#" id="ParseError-toggle" onclick="return toggle('ParseError');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="epydoc.markup.ParseError-class.html">ParseError</a><tt class="py-op">(</tt><tt class="py-base-class">Exception</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParseError-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="ParseError-expanded"><a name="L480"></a><tt class="py-lineno">480</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L481"></a><tt class="py-lineno">481</tt>  <tt class="py-line"><tt class="py-docstring">    The base class for errors generated while parsing docstrings.</tt> </tt>
+<a name="L482"></a><tt class="py-lineno">482</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L483"></a><tt class="py-lineno">483</tt>  <tt class="py-line"><tt class="py-docstring">    @ivar _linenum: The line on which the error occured within the</tt> </tt>
+<a name="L484"></a><tt class="py-lineno">484</tt>  <tt class="py-line"><tt class="py-docstring">        docstring.  The linenum of the first line is 0.</tt> </tt>
+<a name="L485"></a><tt class="py-lineno">485</tt>  <tt class="py-line"><tt class="py-docstring">    @type _linenum: C{int}</tt> </tt>
+<a name="L486"></a><tt class="py-lineno">486</tt>  <tt class="py-line"><tt class="py-docstring">    @ivar _offset: The line number where the docstring begins.  This</tt> </tt>
+<a name="L487"></a><tt class="py-lineno">487</tt>  <tt class="py-line"><tt class="py-docstring">        offset is added to C{_linenum} when displaying the line number</tt> </tt>
+<a name="L488"></a><tt class="py-lineno">488</tt>  <tt class="py-line"><tt class="py-docstring">        of the error.  Default value: 1.</tt> </tt>
+<a name="L489"></a><tt class="py-lineno">489</tt>  <tt class="py-line"><tt class="py-docstring">    @type _offset: C{int}</tt> </tt>
+<a name="L490"></a><tt class="py-lineno">490</tt>  <tt class="py-line"><tt class="py-docstring">    @ivar _descr: A description of the error.</tt> </tt>
+<a name="L491"></a><tt class="py-lineno">491</tt>  <tt class="py-line"><tt class="py-docstring">    @type _descr: C{string}</tt> </tt>
+<a name="L492"></a><tt class="py-lineno">492</tt>  <tt class="py-line"><tt class="py-docstring">    @ivar _fatal: True if this is a fatal error.</tt> </tt>
+<a name="L493"></a><tt class="py-lineno">493</tt>  <tt class="py-line"><tt class="py-docstring">    @type _fatal: C{boolean}</tt> </tt>
+<a name="L494"></a><tt class="py-lineno">494</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="ParseError.__init__"></a><div id="ParseError.__init__-def"><a name="L495"></a><tt class="py-lineno">495</tt> <a class="py-toggle" href="#" id="ParseError.__init__-toggle" onclick="return toggle('ParseError.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParseError-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">descr</tt><tt class="py-op">,</tt> <tt class="py-param">linenum</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">,</tt> <tt class="py-param">is_fatal</tt><tt class="py-op">=</tt><tt class="py-number">1</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParseError.__init__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParseError.__init__-expanded"><a name="L496"></a><tt class="py-lineno">496</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L497"></a><tt class="py-lineno">497</tt>  <tt class="py-line"><tt class="py-docstring">        @type descr: C{string}</tt> </tt>
+<a name="L498"></a><tt class="py-lineno">498</tt>  <tt class="py-line"><tt class="py-docstring">        @param descr: A description of the error.</tt> </tt>
+<a name="L499"></a><tt class="py-lineno">499</tt>  <tt class="py-line"><tt class="py-docstring">        @type linenum: C{int}</tt> </tt>
+<a name="L500"></a><tt class="py-lineno">500</tt>  <tt class="py-line"><tt class="py-docstring">        @param linenum: The line on which the error occured within</tt> </tt>
+<a name="L501"></a><tt class="py-lineno">501</tt>  <tt class="py-line"><tt class="py-docstring">            the docstring.  The linenum of the first line is 0.</tt> </tt>
+<a name="L502"></a><tt class="py-lineno">502</tt>  <tt class="py-line"><tt class="py-docstring">        @type is_fatal: C{boolean}</tt> </tt>
+<a name="L503"></a><tt class="py-lineno">503</tt>  <tt class="py-line"><tt class="py-docstring">        @param is_fatal: True if this is a fatal error.</tt> </tt>
+<a name="L504"></a><tt class="py-lineno">504</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L505"></a><tt class="py-lineno">505</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-104" class="py-name" targets="Method epydoc.docwriter.plaintext.PlaintextWriter._descr()=epydoc.docwriter.plaintext.PlaintextWriter-class.html#_descr"><a title="epydoc.docwriter.plaintext.PlaintextWriter._descr" class="py-name" href="#" onclick="return doclink('link-104', '_descr', 'link-104');">_descr</a></tt> <tt class="py-op">=</tt> <tt id="link-105" class="py-name" targets="Variable epydoc.apidoc.APIDoc.descr=epydoc.apidoc.APIDoc-class.html#descr,Variable epydoc.cli.descr=epydoc.cli-module.html#descr,Method epydoc.docwriter.html.HTMLWriter.descr()=epydoc.docwriter.html.HTMLWriter-class.html#descr,Method epydoc.markup.ParseError.descr()=epydoc.markup.ParseError-class.html#descr,Method epydoc.markup.epytext.ColorizingError.descr()=epydoc.markup.epytext.ColorizingError-class.html#descr"><a title="epydoc.apidoc.APIDoc.descr
+epydoc.cli.descr
+epydoc.docwriter.html.HTMLWriter.descr
+epydoc.markup.ParseError.descr
+epydoc.markup.epytext.ColorizingError.descr" class="py-name" href="#" onclick="return doclink('link-105', 'descr', 'link-105');">descr</a></tt> </tt>
+<a name="L506"></a><tt class="py-lineno">506</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_linenum</tt> <tt class="py-op">=</tt> <tt id="link-106" class="py-name" targets="Method epydoc.markup.ParseError.linenum()=epydoc.markup.ParseError-class.html#linenum"><a title="epydoc.markup.ParseError.linenum" class="py-name" href="#" onclick="return doclink('link-106', 'linenum', 'link-106');">linenum</a></tt> </tt>
+<a name="L507"></a><tt class="py-lineno">507</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_fatal</tt> <tt class="py-op">=</tt> <tt id="link-107" class="py-name"><a title="epydoc.markup.ParseError.is_fatal" class="py-name" href="#" onclick="return doclink('link-107', 'is_fatal', 'link-69');">is_fatal</a></tt> </tt>
+<a name="L508"></a><tt class="py-lineno">508</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_offset</tt> <tt class="py-op">=</tt> <tt class="py-number">1</tt> </tt>
+</div><a name="L509"></a><tt class="py-lineno">509</tt>  <tt class="py-line">                  </tt>
+<a name="ParseError.is_fatal"></a><div id="ParseError.is_fatal-def"><a name="L510"></a><tt class="py-lineno">510</tt> <a class="py-toggle" href="#" id="ParseError.is_fatal-toggle" onclick="return toggle('ParseError.is_fatal');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParseError-class.html#is_fatal">is_fatal</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParseError.is_fatal-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParseError.is_fatal-expanded"><a name="L511"></a><tt class="py-lineno">511</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L512"></a><tt class="py-lineno">512</tt>  <tt class="py-line"><tt class="py-docstring">        @return: true if this is a fatal error.  If an error is fatal,</tt> </tt>
+<a name="L513"></a><tt class="py-lineno">513</tt>  <tt class="py-line"><tt class="py-docstring">            then epydoc should ignore the output of the parser, and</tt> </tt>
+<a name="L514"></a><tt class="py-lineno">514</tt>  <tt class="py-line"><tt class="py-docstring">            parse the docstring as plaintext.</tt> </tt>
+<a name="L515"></a><tt class="py-lineno">515</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: C{boolean}</tt> </tt>
+<a name="L516"></a><tt class="py-lineno">516</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L517"></a><tt class="py-lineno">517</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_fatal</tt> </tt>
+</div><a name="L518"></a><tt class="py-lineno">518</tt>  <tt class="py-line"> </tt>
+<a name="ParseError.linenum"></a><div id="ParseError.linenum-def"><a name="L519"></a><tt class="py-lineno">519</tt> <a class="py-toggle" href="#" id="ParseError.linenum-toggle" onclick="return toggle('ParseError.linenum');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParseError-class.html#linenum">linenum</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParseError.linenum-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParseError.linenum-expanded"><a name="L520"></a><tt class="py-lineno">520</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L521"></a><tt class="py-lineno">521</tt>  <tt class="py-line"><tt class="py-docstring">        @return: The line number on which the error occured (including</tt> </tt>
+<a name="L522"></a><tt class="py-lineno">522</tt>  <tt class="py-line"><tt class="py-docstring">        any offset).  If the line number is unknown, then return</tt> </tt>
+<a name="L523"></a><tt class="py-lineno">523</tt>  <tt class="py-line"><tt class="py-docstring">        C{None}.</tt> </tt>
+<a name="L524"></a><tt class="py-lineno">524</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: C{int} or C{None}</tt> </tt>
+<a name="L525"></a><tt class="py-lineno">525</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L526"></a><tt class="py-lineno">526</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_linenum</tt> <tt class="py-keyword">is</tt> <tt class="py-name">None</tt><tt class="py-op">:</tt> <tt class="py-keyword">return</tt> <tt class="py-name">None</tt> </tt>
+<a name="L527"></a><tt class="py-lineno">527</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_offset</tt> <tt class="py-op">+</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_linenum</tt> </tt>
+</div><a name="L528"></a><tt class="py-lineno">528</tt>  <tt class="py-line"> </tt>
+<a name="ParseError.set_linenum_offset"></a><div id="ParseError.set_linenum_offset-def"><a name="L529"></a><tt class="py-lineno">529</tt> <a class="py-toggle" href="#" id="ParseError.set_linenum_offset-toggle" onclick="return toggle('ParseError.set_linenum_offset');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParseError-class.html#set_linenum_offset">set_linenum_offset</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">offset</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParseError.set_linenum_offset-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParseError.set_linenum_offset-expanded"><a name="L530"></a><tt class="py-lineno">530</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L531"></a><tt class="py-lineno">531</tt>  <tt class="py-line"><tt class="py-docstring">        Set the line number offset for this error.  This offset is the</tt> </tt>
+<a name="L532"></a><tt class="py-lineno">532</tt>  <tt class="py-line"><tt class="py-docstring">        line number where the docstring begins.  This offset is added</tt> </tt>
+<a name="L533"></a><tt class="py-lineno">533</tt>  <tt class="py-line"><tt class="py-docstring">        to C{_linenum} when displaying the line number of the error.</tt> </tt>
+<a name="L534"></a><tt class="py-lineno">534</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L535"></a><tt class="py-lineno">535</tt>  <tt class="py-line"><tt class="py-docstring">        @param offset: The new line number offset.</tt> </tt>
+<a name="L536"></a><tt class="py-lineno">536</tt>  <tt class="py-line"><tt class="py-docstring">        @type offset: C{int}</tt> </tt>
+<a name="L537"></a><tt class="py-lineno">537</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: C{None}</tt> </tt>
+<a name="L538"></a><tt class="py-lineno">538</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L539"></a><tt class="py-lineno">539</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_offset</tt> <tt class="py-op">=</tt> <tt class="py-name">offset</tt> </tt>
+</div><a name="L540"></a><tt class="py-lineno">540</tt>  <tt class="py-line"> </tt>
+<a name="ParseError.descr"></a><div id="ParseError.descr-def"><a name="L541"></a><tt class="py-lineno">541</tt> <a class="py-toggle" href="#" id="ParseError.descr-toggle" onclick="return toggle('ParseError.descr');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParseError-class.html#descr">descr</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParseError.descr-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParseError.descr-expanded"><a name="L542"></a><tt class="py-lineno">542</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-108" class="py-name"><a title="epydoc.docwriter.plaintext.PlaintextWriter._descr" class="py-name" href="#" onclick="return doclink('link-108', '_descr', 'link-104');">_descr</a></tt> </tt>
+</div><a name="L543"></a><tt class="py-lineno">543</tt>  <tt class="py-line">     </tt>
+<a name="ParseError.__str__"></a><div id="ParseError.__str__-def"><a name="L544"></a><tt class="py-lineno">544</tt> <a class="py-toggle" href="#" id="ParseError.__str__-toggle" onclick="return toggle('ParseError.__str__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParseError-class.html#__str__">__str__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParseError.__str__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParseError.__str__-expanded"><a name="L545"></a><tt class="py-lineno">545</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L546"></a><tt class="py-lineno">546</tt>  <tt class="py-line"><tt class="py-docstring">        Return a string representation of this C{ParseError}.  This</tt> </tt>
+<a name="L547"></a><tt class="py-lineno">547</tt>  <tt class="py-line"><tt class="py-docstring">        multi-line string contains a description of the error, and</tt> </tt>
+<a name="L548"></a><tt class="py-lineno">548</tt>  <tt class="py-line"><tt class="py-docstring">        specifies where it occured.</tt> </tt>
+<a name="L549"></a><tt class="py-lineno">549</tt>  <tt class="py-line"><tt class="py-docstring">        </tt> </tt>
+<a name="L550"></a><tt class="py-lineno">550</tt>  <tt class="py-line"><tt class="py-docstring">        @return: the informal representation of this C{ParseError}.</tt> </tt>
+<a name="L551"></a><tt class="py-lineno">551</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: C{string}</tt> </tt>
+<a name="L552"></a><tt class="py-lineno">552</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L553"></a><tt class="py-lineno">553</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_linenum</tt> <tt class="py-keyword">is</tt> <tt class="py-keyword">not</tt> <tt class="py-name">None</tt><tt class="py-op">:</tt> </tt>
+<a name="L554"></a><tt class="py-lineno">554</tt>  <tt class="py-line">            <tt class="py-keyword">return</tt> <tt class="py-string">'Line %s: %s'</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_linenum</tt><tt class="py-op">+</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_offset</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-109" class="py-name"><a title="epydoc.apidoc.APIDoc.descr
+epydoc.cli.descr
+epydoc.docwriter.html.HTMLWriter.descr
+epydoc.markup.ParseError.descr
+epydoc.markup.epytext.ColorizingError.descr" class="py-name" href="#" onclick="return doclink('link-109', 'descr', 'link-105');">descr</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L555"></a><tt class="py-lineno">555</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L556"></a><tt class="py-lineno">556</tt>  <tt class="py-line">            <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-110" class="py-name"><a title="epydoc.apidoc.APIDoc.descr
+epydoc.cli.descr
+epydoc.docwriter.html.HTMLWriter.descr
+epydoc.markup.ParseError.descr
+epydoc.markup.epytext.ColorizingError.descr" class="py-name" href="#" onclick="return doclink('link-110', 'descr', 'link-105');">descr</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L557"></a><tt class="py-lineno">557</tt>  <tt class="py-line">     </tt>
+<a name="ParseError.__repr__"></a><div id="ParseError.__repr__-def"><a name="L558"></a><tt class="py-lineno">558</tt> <a class="py-toggle" href="#" id="ParseError.__repr__-toggle" onclick="return toggle('ParseError.__repr__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParseError-class.html#__repr__">__repr__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParseError.__repr__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParseError.__repr__-expanded"><a name="L559"></a><tt class="py-lineno">559</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L560"></a><tt class="py-lineno">560</tt>  <tt class="py-line"><tt class="py-docstring">        Return the formal representation of this C{ParseError}.</tt> </tt>
+<a name="L561"></a><tt class="py-lineno">561</tt>  <tt class="py-line"><tt class="py-docstring">        C{ParseError}s have formal representations of the form::</tt> </tt>
+<a name="L562"></a><tt class="py-lineno">562</tt>  <tt class="py-line"><tt class="py-docstring">           &lt;ParseError on line 12&gt;</tt> </tt>
+<a name="L563"></a><tt class="py-lineno">563</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L564"></a><tt class="py-lineno">564</tt>  <tt class="py-line"><tt class="py-docstring">        @return: the formal representation of this C{ParseError}.</tt> </tt>
+<a name="L565"></a><tt class="py-lineno">565</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: C{string}</tt> </tt>
+<a name="L566"></a><tt class="py-lineno">566</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L567"></a><tt class="py-lineno">567</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_linenum</tt> <tt class="py-keyword">is</tt> <tt class="py-name">None</tt><tt class="py-op">:</tt> </tt>
+<a name="L568"></a><tt class="py-lineno">568</tt>  <tt class="py-line">            <tt class="py-keyword">return</tt> <tt class="py-string">'&lt;ParseError on line %d'</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_offset</tt> </tt>
+<a name="L569"></a><tt class="py-lineno">569</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L570"></a><tt class="py-lineno">570</tt>  <tt class="py-line">            <tt class="py-keyword">return</tt> <tt class="py-string">'&lt;ParseError on line %d&gt;'</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_linenum</tt><tt class="py-op">+</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_offset</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L571"></a><tt class="py-lineno">571</tt>  <tt class="py-line"> </tt>
+<a name="ParseError.__cmp__"></a><div id="ParseError.__cmp__-def"><a name="L572"></a><tt class="py-lineno">572</tt> <a class="py-toggle" href="#" id="ParseError.__cmp__-toggle" onclick="return toggle('ParseError.__cmp__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.ParseError-class.html#__cmp__">__cmp__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">other</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParseError.__cmp__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParseError.__cmp__-expanded"><a name="L573"></a><tt class="py-lineno">573</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L574"></a><tt class="py-lineno">574</tt>  <tt class="py-line"><tt class="py-docstring">        Compare two C{ParseError}s, based on their line number.</tt> </tt>
+<a name="L575"></a><tt class="py-lineno">575</tt>  <tt class="py-line"><tt class="py-docstring">          - Return -1 if C{self.linenum&lt;other.linenum}</tt> </tt>
+<a name="L576"></a><tt class="py-lineno">576</tt>  <tt class="py-line"><tt class="py-docstring">          - Return +1 if C{self.linenum&gt;other.linenum}</tt> </tt>
+<a name="L577"></a><tt class="py-lineno">577</tt>  <tt class="py-line"><tt class="py-docstring">          - Return 0 if C{self.linenum==other.linenum}.</tt> </tt>
+<a name="L578"></a><tt class="py-lineno">578</tt>  <tt class="py-line"><tt class="py-docstring">        The return value is undefined if C{other} is not a</tt> </tt>
+<a name="L579"></a><tt class="py-lineno">579</tt>  <tt class="py-line"><tt class="py-docstring">        ParseError.</tt> </tt>
+<a name="L580"></a><tt class="py-lineno">580</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L581"></a><tt class="py-lineno">581</tt>  <tt class="py-line"><tt class="py-docstring">        @rtype: C{int}</tt> </tt>
+<a name="L582"></a><tt class="py-lineno">582</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L583"></a><tt class="py-lineno">583</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-keyword">not</tt> <tt class="py-name">isinstance</tt><tt class="py-op">(</tt><tt class="py-name">other</tt><tt class="py-op">,</tt> <tt id="link-111" class="py-name" targets="Class epydoc.docparser.ParseError=epydoc.docparser.ParseError-class.html,Class epydoc.markup.ParseError=epydoc.markup.ParseError-class.html"><a title="epydoc.docparser.ParseError
+epydoc.markup.ParseError" class="py-name" href="#" onclick="return doclink('link-111', 'ParseError', 'link-111');">ParseError</a></tt><tt class="py-op">)</tt><tt class="py-op">:</tt> <tt class="py-keyword">return</tt> <tt class="py-op">-</tt><tt class="py-number">1000</tt> </tt>
+<a name="L584"></a><tt class="py-lineno">584</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">cmp</tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_linenum</tt><tt class="py-op">+</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_offset</tt><tt class="py-op">,</tt> </tt>
+<a name="L585"></a><tt class="py-lineno">585</tt>  <tt class="py-line">                   <tt class="py-name">other</tt><tt class="py-op">.</tt><tt class="py-name">_linenum</tt><tt class="py-op">+</tt><tt class="py-name">other</tt><tt class="py-op">.</tt><tt class="py-name">_offset</tt><tt class="py-op">)</tt> </tt>
+</div></div><a name="L586"></a><tt class="py-lineno">586</tt>  <tt class="py-line"> </tt>
+<a name="L587"></a><tt class="py-lineno">587</tt>  <tt class="py-line"><tt class="py-comment">##################################################</tt> </tt>
+<a name="L588"></a><tt class="py-lineno">588</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">## Misc helpers</tt> </tt>
+<a name="L589"></a><tt class="py-lineno">589</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">##################################################</tt> </tt>
+<a name="L590"></a><tt class="py-lineno">590</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># These are used by multiple markup parsers</tt> </tt>
+<a name="L591"></a><tt class="py-lineno">591</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="parse_type_of"></a><div id="parse_type_of-def"><a name="L592"></a><tt class="py-lineno">592</tt> <a class="py-toggle" href="#" id="parse_type_of-toggle" onclick="return toggle('parse_type_of');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup-module.html#parse_type_of">parse_type_of</a><tt class="py-op">(</tt><tt class="py-param">obj</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="parse_type_of-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="parse_type_of-expanded"><a name="L593"></a><tt class="py-lineno">593</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L594"></a><tt class="py-lineno">594</tt>  <tt class="py-line"><tt class="py-docstring">    @return: A C{ParsedDocstring} that encodes the type of the given</tt> </tt>
+<a name="L595"></a><tt class="py-lineno">595</tt>  <tt class="py-line"><tt class="py-docstring">    object.</tt> </tt>
+<a name="L596"></a><tt class="py-lineno">596</tt>  <tt class="py-line"><tt class="py-docstring">    @rtype: L{ParsedDocstring}</tt> </tt>
+<a name="L597"></a><tt class="py-lineno">597</tt>  <tt class="py-line"><tt class="py-docstring">    @param obj: The object whose type should be returned as DOM document.</tt> </tt>
+<a name="L598"></a><tt class="py-lineno">598</tt>  <tt class="py-line"><tt class="py-docstring">    @type obj: any</tt> </tt>
+<a name="L599"></a><tt class="py-lineno">599</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L600"></a><tt class="py-lineno">600</tt>  <tt class="py-line">    <tt class="py-comment"># This is a bit hackish; oh well. :)</tt> </tt>
+<a name="L601"></a><tt class="py-lineno">601</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-keyword">from</tt> <tt id="link-112" class="py-name"><a title="epydoc" class="py-name" href="#" onclick="return doclink('link-112', 'epydoc', 'link-0');">epydoc</a></tt><tt class="py-op">.</tt><tt id="link-113" class="py-name"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-113', 'markup', 'link-13');">markup</a></tt><tt class="py-op">.</tt><tt id="link-114" class="py-name" targets="Module epydoc.markup.epytext=epydoc.markup.epytext-module.html"><a title="epydoc.markup.epytext" class="py-name" href="#" onclick="return doclink('link-114', 'epytext', 'link-114');">epytext</a></tt> <tt class="py-keyword">import</tt> <tt id="link-115" class="py-name" targets="Class epydoc.markup.epytext.ParsedEpytextDocstring=epydoc.markup.epytext.ParsedEpytextDocstring-class.html"><a title="epydoc.markup.epytext.ParsedEpytextDocstring" class="py-name" href="#" onclick="return doclink('link-115', 'ParsedEpytextDocstring', 'link-115');">ParsedEpytextDocstring</a></tt> </tt>
+<a name="L602"></a><tt class="py-lineno">602</tt>  <tt class="py-line">    <tt class="py-keyword">from</tt> <tt class="py-name">xml</tt><tt class="py-op">.</tt><tt class="py-name">dom</tt><tt class="py-op">.</tt><tt class="py-name">minidom</tt> <tt class="py-keyword">import</tt> <tt class="py-name">Document</tt> </tt>
+<a name="L603"></a><tt class="py-lineno">603</tt>  <tt class="py-line">    <tt class="py-name">doc</tt> <tt class="py-op">=</tt> <tt class="py-name">Document</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L604"></a><tt class="py-lineno">604</tt>  <tt class="py-line">    <tt id="link-116" class="py-name"><a title="epydoc.markup.epytext" class="py-name" href="#" onclick="return doclink('link-116', 'epytext', 'link-114');">epytext</a></tt> <tt class="py-op">=</tt> <tt class="py-name">doc</tt><tt class="py-op">.</tt><tt class="py-name">createElement</tt><tt class="py-op">(</tt><tt class="py-string">'epytext'</tt><tt class="py-op">)</tt> </tt>
+<a name="L605"></a><tt class="py-lineno">605</tt>  <tt class="py-line">    <tt class="py-name">para</tt> <tt class="py-op">=</tt> <tt class="py-name">doc</tt><tt class="py-op">.</tt><tt class="py-name">createElement</tt><tt class="py-op">(</tt><tt class="py-string">'para'</tt><tt class="py-op">)</tt> </tt>
+<a name="L606"></a><tt class="py-lineno">606</tt>  <tt class="py-line">    <tt class="py-name">doc</tt><tt class="py-op">.</tt><tt class="py-name">appendChild</tt><tt class="py-op">(</tt><tt id="link-117" class="py-name"><a title="epydoc.markup.epytext" class="py-name" href="#" onclick="return doclink('link-117', 'epytext', 'link-114');">epytext</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L607"></a><tt class="py-lineno">607</tt>  <tt class="py-line">    <tt id="link-118" class="py-name"><a title="epydoc.markup.epytext" class="py-name" href="#" onclick="return doclink('link-118', 'epytext', 'link-114');">epytext</a></tt><tt class="py-op">.</tt><tt class="py-name">appendChild</tt><tt class="py-op">(</tt><tt class="py-name">para</tt><tt class="py-op">)</tt> </tt>
+<a name="L608"></a><tt class="py-lineno">608</tt>  <tt class="py-line">     </tt>
+<a name="L609"></a><tt class="py-lineno">609</tt>  <tt class="py-line">    <tt class="py-keyword">if</tt> <tt class="py-name">type</tt><tt class="py-op">(</tt><tt class="py-name">obj</tt><tt class="py-op">)</tt> <tt class="py-keyword">is</tt> <tt class="py-name">types</tt><tt class="py-op">.</tt><tt class="py-name">InstanceType</tt><tt class="py-op">:</tt> </tt>
+<a name="L610"></a><tt class="py-lineno">610</tt>  <tt class="py-line">        <tt id="link-119" class="py-name" targets="Method epydoc.docwriter.dotgraph.DotGraph.link()=epydoc.docwriter.dotgraph.DotGraph-class.html#link"><a title="epydoc.docwriter.dotgraph.DotGraph.link" class="py-name" href="#" onclick="return doclink('link-119', 'link', 'link-119');">link</a></tt> <tt class="py-op">=</tt> <tt class="py-name">doc</tt><tt class="py-op">.</tt><tt class="py-name">createElement</tt><tt class="py-op">(</tt><tt class="py-string">'link'</tt><tt class="py-op">)</tt> </tt>
+<a name="L611"></a><tt class="py-lineno">611</tt>  <tt class="py-line">        <tt id="link-120" class="py-name"><a title="epydoc.apidoc.VariableDoc.name" class="py-name" href="#" onclick="return doclink('link-120', 'name', 'link-11');">name</a></tt> <tt class="py-op">=</tt> <tt class="py-name">doc</tt><tt class="py-op">.</tt><tt class="py-name">createElement</tt><tt class="py-op">(</tt><tt class="py-string">'name'</tt><tt class="py-op">)</tt> </tt>
+<a name="L612"></a><tt class="py-lineno">612</tt>  <tt class="py-line">        <tt class="py-name">target</tt> <tt class="py-op">=</tt> <tt class="py-name">doc</tt><tt class="py-op">.</tt><tt class="py-name">createElement</tt><tt class="py-op">(</tt><tt class="py-string">'target'</tt><tt class="py-op">)</tt> </tt>
+<a name="L613"></a><tt class="py-lineno">613</tt>  <tt class="py-line">        <tt class="py-name">para</tt><tt class="py-op">.</tt><tt class="py-name">appendChild</tt><tt class="py-op">(</tt><tt id="link-121" class="py-name"><a title="epydoc.docwriter.dotgraph.DotGraph.link" class="py-name" href="#" onclick="return doclink('link-121', 'link', 'link-119');">link</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L614"></a><tt class="py-lineno">614</tt>  <tt class="py-line">        <tt id="link-122" class="py-name"><a title="epydoc.docwriter.dotgraph.DotGraph.link" class="py-name" href="#" onclick="return doclink('link-122', 'link', 'link-119');">link</a></tt><tt class="py-op">.</tt><tt class="py-name">appendChild</tt><tt class="py-op">(</tt><tt id="link-123" class="py-name"><a title="epydoc.apidoc.VariableDoc.name" class="py-name" href="#" onclick="return doclink('link-123', 'name', 'link-11');">name</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L615"></a><tt class="py-lineno">615</tt>  <tt class="py-line">        <tt id="link-124" class="py-name"><a title="epydoc.docwriter.dotgraph.DotGraph.link" class="py-name" href="#" onclick="return doclink('link-124', 'link', 'link-119');">link</a></tt><tt class="py-op">.</tt><tt class="py-name">appendChild</tt><tt class="py-op">(</tt><tt class="py-name">target</tt><tt class="py-op">)</tt> </tt>
+<a name="L616"></a><tt class="py-lineno">616</tt>  <tt class="py-line">        <tt id="link-125" class="py-name"><a title="epydoc.apidoc.VariableDoc.name" class="py-name" href="#" onclick="return doclink('link-125', 'name', 'link-11');">name</a></tt><tt class="py-op">.</tt><tt class="py-name">appendChild</tt><tt class="py-op">(</tt><tt class="py-name">doc</tt><tt class="py-op">.</tt><tt class="py-name">createTextNode</tt><tt class="py-op">(</tt><tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">obj</tt><tt class="py-op">.</tt><tt class="py-name">__class__</tt><tt class="py-op">.</tt><tt class="py-name">__name__</tt><tt class="py-op">)</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L617"></a><tt class="py-lineno">617</tt>  <tt class="py-line">        <tt class="py-name">target</tt><tt class="py-op">.</tt><tt class="py-name">appendChild</tt><tt class="py-op">(</tt><tt class="py-name">doc</tt><tt class="py-op">.</tt><tt class="py-name">createTextNode</tt><tt class="py-op">(</tt><tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">obj</tt><tt class="py-op">.</tt><tt class="py-name">__class__</tt><tt class="py-op">)</tt><tt class="py-op">)</tt><tt class="py-op">)</tt>         </tt>
+<a name="L618"></a><tt class="py-lineno">618</tt>  <tt class="py-line">    <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L619"></a><tt class="py-lineno">619</tt>  <tt class="py-line">        <tt class="py-name">code</tt> <tt class="py-op">=</tt> <tt class="py-name">doc</tt><tt class="py-op">.</tt><tt class="py-name">createElement</tt><tt class="py-op">(</tt><tt class="py-string">'code'</tt><tt class="py-op">)</tt> </tt>
+<a name="L620"></a><tt class="py-lineno">620</tt>  <tt class="py-line">        <tt class="py-name">para</tt><tt class="py-op">.</tt><tt class="py-name">appendChild</tt><tt class="py-op">(</tt><tt class="py-name">code</tt><tt class="py-op">)</tt> </tt>
+<a name="L621"></a><tt class="py-lineno">621</tt>  <tt class="py-line">        <tt class="py-name">code</tt><tt class="py-op">.</tt><tt class="py-name">appendChild</tt><tt class="py-op">(</tt><tt class="py-name">doc</tt><tt class="py-op">.</tt><tt class="py-name">createTextNode</tt><tt class="py-op">(</tt><tt class="py-name">type</tt><tt class="py-op">(</tt><tt class="py-name">obj</tt><tt class="py-op">)</tt><tt class="py-op">.</tt><tt class="py-name">__name__</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L622"></a><tt class="py-lineno">622</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt id="link-126" class="py-name"><a title="epydoc.markup.epytext.ParsedEpytextDocstring" class="py-name" href="#" onclick="return doclink('link-126', 'ParsedEpytextDocstring', 'link-115');">ParsedEpytextDocstring</a></tt><tt class="py-op">(</tt><tt class="py-name">doc</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L623"></a><tt class="py-lineno">623</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:06:18 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

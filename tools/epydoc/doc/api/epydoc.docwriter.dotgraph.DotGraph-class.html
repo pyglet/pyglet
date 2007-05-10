@@ -1,0 +1,716 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.docwriter.dotgraph.DotGraph</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.docwriter-module.html">Package&nbsp;docwriter</a> ::
+        <a href="epydoc.docwriter.dotgraph-module.html">Module&nbsp;dotgraph</a> ::
+        Class&nbsp;DotGraph
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.docwriter.dotgraph.DotGraph-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class DotGraph</h1><span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraph">source&nbsp;code</a></span><br /><br />
+<p>A <tt class="rst-rst-rst-docutils literal rst-rst-docutils literal rst-docutils literal"><span class="pre">dot</span></tt> directed graph.  The contents of the graph are
+constructed from the following instance variables:</p>
+<blockquote>
+<ul class="rst-simple">
+<li><a href="epydoc.docwriter.dotgraph.DotGraph-class.html#nodes" class="link">nodes</a>: A list of <a href="epydoc.docwriter.dotgraph.DotGraphNode-class.html" class="link">DotGraphNode</a>s, encoding the nodes
+that are present in the graph.  Each node is characterized
+a set of attributes, including an optional label.</li>
+<li><a href="epydoc.docwriter.dotgraph.DotGraph-class.html#edges" class="link">edges</a>: A list of <a href="epydoc.docwriter.dotgraph.DotGraphEdge-class.html" class="link">DotGraphEdge</a>s, encoding the edges
+that are present in the graph.  Each edge is characterized
+by a set of attributes, including an optional label.</li>
+<li><a href="epydoc.docwriter.dotgraph.DotGraph-class.html#node_defaults" class="link">node_defaults</a>: Default attributes for nodes.</li>
+<li><a href="epydoc.docwriter.dotgraph.DotGraph-class.html#edge_defaults" class="link">edge_defaults</a>: Default attributes for edges.</li>
+<li><a href="epydoc.docwriter.dotgraph.DotGraph-class.html#body" class="link">body</a>: A string that is appended as-is in the body of
+the graph.  This can be used to build more complex dot
+graphs.</li>
+</ul>
+</blockquote>
+<p>The <a href="epydoc.docwriter.dotgraph.DotGraph-class.html#link" class="link">link()</a> method can be used to resolve crossreference links
+within the graph.  In particular, if the 'href' attribute of any
+node or edge is assigned a value of the form <tt class="rst-docutils literal"><span class="pre">&lt;name&gt;</span></tt>, then it
+will be replaced by the URL of the object with that name.  This
+applies to the <a href="epydoc.docwriter.dotgraph.DotGraph-class.html#body" class="link">body</a> as well as the <a href="epydoc.docwriter.dotgraph.DotGraph-class.html#nodes" class="link">nodes</a> and <a href="epydoc.docwriter.dotgraph.DotGraph-class.html#edges" class="link">edges</a>.</p>
+<p>To render the graph, use the methods <a href="epydoc.docwriter.dotgraph.DotGraph-class.html#write" class="link">write()</a> and <a href="epydoc.docwriter.dotgraph.DotGraph-class.html#render" class="link">render()</a>.
+Usually, you should call <a href="epydoc.docwriter.dotgraph.DotGraph-class.html#link" class="link">link()</a> before you render the graph.</p><br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="__init__"></a><span class="summary-sig-name">__init__</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">title</span>,
+        <span class="summary-sig-arg">body</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>,
+        <span class="summary-sig-arg">node_defaults</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">edge_defaults</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">caption</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Create a new <a href="epydoc.docwriter.dotgraph.DotGraph-class.html" class="link">DotGraph</a>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraph.__init__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___16-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___init___16-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___16" name="call_graph_for___init___16">
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#__init__" title="__init__()" alt="" coords="415,118,511,150" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#class_tree_graph" title="class_tree_graph()" alt="" coords="105,6,265,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#import_graph" title="import_graph()" alt="" coords="117,62,253,94" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#uml_class_tree_graph" title="uml_class_tree_graph()" alt="" coords="87,118,284,150" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#uml_package_tree_graph" title="uml_package_tree_graph()" alt="" coords="73,174,297,206" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_digraph" title="markup.restructuredtext._construct_digraph()" alt="" coords="5,230,365,262" />
+</map>
+  <img src="call_graph_for___init___16.gif" alt='' usemap="#call_graph_for___init___16" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.dotgraph.DotGraph-class.html#to_html" class="summary-sig-name">to_html</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">image_file</span>,
+        <span class="summary-sig-arg">image_url</span>,
+        <span class="summary-sig-arg">center</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Return the HTML code that should be uesd to display this graph
+(including a client-side image map).</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraph.to_html">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_to_html-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_to_html-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_to_html" name="call_graph_for_to_html">
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#_run_dot" title="_run_dot()" alt="" coords="768,6,870,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#to_html" title="to_html()" alt="" coords="579,62,672,94" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#get_dot_version" title="get_dot_version()" alt="" coords="742,62,896,94" />
+<area shape="rect" href="epydoc.util&#45;module.html#plaintext_to_html" title="util.plaintext_to_html()" alt="" coords="720,118,918,150" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#render_graph" title="html.HTMLWriter.render_graph()" alt="" coords="128,6,408,38" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#_to_html" title="markup.epytext.ParsedEpytextDocstring._to_html()" alt="" coords="64,62,472,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#visit_dotgraph" title="markup.restructuredtext._EpydocHTMLTranslator.visit_dotgraph()" alt="" coords="6,118,531,150" />
+</map>
+  <img src="call_graph_for_to_html.gif" alt='' usemap="#call_graph_for_to_html" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="link"></a><span class="summary-sig-name">link</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">docstring_linker</span>)</span><br />
+      Replace any href attributes whose value is <tt class="rst-docutils literal"><span class="pre">&lt;name&gt;</span></tt> with
+the url of the object whose name is <tt class="rst-docutils literal"><span class="pre">&lt;name&gt;</span></tt>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraph.link">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_link-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_link-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_link" name="call_graph_for_link">
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#_link_href" title="_link_href()" alt="" coords="527,6,639,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#link" title="link()" alt="" coords="415,6,476,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_digraph" title="markup.restructuredtext._construct_digraph()" alt="" coords="5,6,365,38" />
+</map>
+  <img src="call_graph_for_link.gif" alt='' usemap="#call_graph_for_link" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_link_href"></a><span class="summary-sig-name">_link_href</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">attribs</span>,
+        <span class="summary-sig-arg">docstring_linker</span>)</span><br />
+      Helper for <a href="epydoc.docwriter.dotgraph.DotGraph-class.html#link" class="link">link()</a></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraph._link_href">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__link_href-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__link_href-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__link_href" name="call_graph_for__link_href">
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#_link_href" title="_link_href()" alt="" coords="119,6,231,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#link" title="link()" alt="" coords="7,6,68,38" />
+</map>
+  <img src="call_graph_for__link_href.gif" alt='' usemap="#call_graph_for__link_href" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.dotgraph.DotGraph-class.html#write" class="summary-sig-name">write</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">filename</span>,
+        <span class="summary-sig-arg">language</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string">gif</code><code class="variable-quote">'</code></span>)</span><br />
+      Render the graph using the output format <code class="link">language</code>, and write
+the result to <code class="link">filename</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraph.write">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.dotgraph.DotGraph-class.html#render" class="summary-sig-name">render</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">language</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string">gif</code><code class="variable-quote">'</code></span>)</span><br />
+      Use the <tt class="rst-docutils literal"><span class="pre">dot</span></tt> command to render this graph, using the output
+format <code class="link">language</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraph.render">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_run_dot"></a><span class="summary-sig-name">_run_dot</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">*options</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraph._run_dot">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__run_dot-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__run_dot-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__run_dot" name="call_graph_for__run_dot">
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#_run_dot" title="_run_dot()" alt="" coords="148,34,249,66" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#to_dotfile" title="to_dotfile()" alt="" coords="336,6,443,38" />
+<area shape="rect" href="epydoc.util&#45;module.html#run_subprocess" title="util.run_subprocess()" alt="" coords="299,62,480,94" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#to_html" title="to_html()" alt="" coords="5,34,99,66" />
+</map>
+  <img src="call_graph_for__run_dot.gif" alt='' usemap="#call_graph_for__run_dot" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="to_dotfile"></a><span class="summary-sig-name">to_dotfile</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return the string contents of the dot file that should be used
+to render this graph.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraph.to_dotfile">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_to_dotfile-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_to_dotfile-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_to_dotfile" name="call_graph_for_to_dotfile">
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#_run_dot" title="_run_dot()" alt="" coords="7,90,108,122" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#to_dotfile" title="to_dotfile()" alt="" coords="159,90,265,122" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphEdge&#45;class.html#to_dotfile" title="DotGraphEdge.to_dotfile()" alt="" coords="361,6,585,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphNode&#45;class.html#to_dotfile" title="DotGraphNode.to_dotfile()" alt="" coords="360,62,587,94" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode&#45;class.html#to_dotfile" title="DotGraphUmlClassNode.to_dotfile()" alt="" coords="324,118,623,150" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraphUmlModuleNode&#45;class.html#to_dotfile" title="DotGraphUmlModuleNode.to_dotfile()" alt="" coords="315,174,632,206" />
+</map>
+  <img src="call_graph_for_to_dotfile.gif" alt='' usemap="#call_graph_for_to_dotfile" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.dotgraph.DotGraph-class.html#_uids" class="summary-name">_uids</a> = <code title="set(['call_graph_for___add__',
+     'call_graph_for___cmp__',
+     'call_graph_for___cmp___2',
+     'call_graph_for___cmp___3',
+     'call_graph_for___getitem__',
+     'call_graph_for___getstate__',
+     'call_graph_for___hash__',
+     'call_graph_for___hash___2',
+..."><code class="variable-group">set([</code><code class="variable-quote">'</code><code class="variable-string">call_graph_for___add__</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">call_graph_for___cmp__</code><code class="variable-ellipsis">...</code></code><br />
+      A set of all uids that that have been generated, used to ensure
+that each new graph has a unique uid.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="DEFAULT_NODE_DEFAULTS"></a><span class="summary-name">DEFAULT_NODE_DEFAULTS</span> = <code title="{'fontname': 'Helvetica', 'fontsize': 10}"><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">fontname</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">Helvetica</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">fontsize</code><code class="variable-quote">'</code><code class="variable-op">: </code>10<code class="variable-group">}</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="DEFAULT_EDGE_DEFAULTS"></a><span class="summary-name">DEFAULT_EDGE_DEFAULTS</span> = <code title="{'fontname': 'Helvetica', 'fontsize': 10}"><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">fontname</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">Helvetica</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">fontsize</code><code class="variable-quote">'</code><code class="variable-op">: </code>10<code class="variable-group">}</code></code>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="title"></a><span class="summary-name">title</span><br />
+      The title of the graph.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="caption"></a><span class="summary-name">caption</span><br />
+      A caption for the graph.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><tt class="rst-docutils literal"><span class="pre">list</span></tt> of <a href="epydoc.docwriter.dotgraph.DotGraphNode-class.html" class="link">DotGraphNode</a></span>
+    </td><td class="summary">
+        <a name="nodes"></a><span class="summary-name">nodes</span><br />
+      A list of the nodes that are present in the graph.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><tt class="rst-docutils literal"><span class="pre">list</span></tt> of <a href="epydoc.docwriter.dotgraph.DotGraphEdge-class.html" class="link">DotGraphEdge</a></span>
+    </td><td class="summary">
+        <a name="edges"></a><span class="summary-name">edges</span><br />
+      A list of the edges that are present in the graph.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><tt class="rst-docutils literal"><span class="pre">str</span></tt></span>
+    </td><td class="summary">
+        <a name="body"></a><span class="summary-name">body</span><br />
+      A string that should be included as-is in the body of the
+graph.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="node_defaults"></a><span class="summary-name">node_defaults</span><br />
+      Default attribute values for nodes.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="edge_defaults"></a><span class="summary-name">edge_defaults</span><br />
+      Default attribute values for edges.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.dotgraph.DotGraph-class.html#uid" class="summary-name">uid</a><br />
+      A unique identifier for this graph.
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="to_html"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">to_html</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">image_file</span>,
+        <span class="sig-arg">image_url</span>,
+        <span class="sig-arg">center</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraph.to_html">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_to_html-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_to_html-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_to_html" name="call_graph_for_to_html">
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#_run_dot" title="_run_dot()" alt="" coords="768,6,870,38" />
+<area shape="rect" href="epydoc.docwriter.dotgraph.DotGraph&#45;class.html#to_html" title="to_html()" alt="" coords="579,62,672,94" />
+<area shape="rect" href="epydoc.docwriter.dotgraph&#45;module.html#get_dot_version" title="get_dot_version()" alt="" coords="742,62,896,94" />
+<area shape="rect" href="epydoc.util&#45;module.html#plaintext_to_html" title="util.plaintext_to_html()" alt="" coords="720,118,918,150" />
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#render_graph" title="html.HTMLWriter.render_graph()" alt="" coords="128,6,408,38" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html#_to_html" title="markup.epytext.ParsedEpytextDocstring._to_html()" alt="" coords="64,62,472,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#visit_dotgraph" title="markup.restructuredtext._EpydocHTMLTranslator.visit_dotgraph()" alt="" coords="6,118,531,150" />
+</map>
+  <img src="call_graph_for_to_html.gif" alt='' usemap="#call_graph_for_to_html" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Return the HTML code that should be uesd to display this graph
+(including a client-side image map).
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>image_url</code></strong> - The URL of the image file for this graph;
+this should be generated separately with the <a href="epydoc.docwriter.dotgraph.DotGraph-class.html#write" class="link">write()</a> method.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="write"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">write</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">filename</span>,
+        <span class="sig-arg">language</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string">gif</code><code class="variable-quote">'</code></span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraph.write">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Render the graph using the output format <code class="link">language</code>, and write
+the result to <code class="link">filename</code>.
+  <dl class="fields">
+    <dt>Returns:</dt>
+        <dd>True if rendering was successful.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="render"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">render</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">language</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string">gif</code><code class="variable-quote">'</code></span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.dotgraph-pysrc.html#DotGraph.render">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Use the <tt class="rst-rst-docutils literal rst-docutils literal"><span class="pre">dot</span></tt> command to render this graph, using the output
+format <code class="link">language</code>.  Return the result as a string, or <tt class="rst-docutils literal"><span class="pre">None</span></tt>
+if the rendering failed.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== CLASS VARIABLE DETAILS ==================== -->
+<a name="section-ClassVariableDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="_uids"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_uids</h3>
+  A set of all uids that that have been generated, used to ensure
+that each new graph has a unique uid.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">set([</code><code class="variable-quote">'</code><code class="variable-string">call_graph_for___add__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+     <code class="variable-quote">'</code><code class="variable-string">call_graph_for___cmp__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+     <code class="variable-quote">'</code><code class="variable-string">call_graph_for___cmp___2</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+     <code class="variable-quote">'</code><code class="variable-string">call_graph_for___cmp___3</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+     <code class="variable-quote">'</code><code class="variable-string">call_graph_for___getitem__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+     <code class="variable-quote">'</code><code class="variable-string">call_graph_for___getstate__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+     <code class="variable-quote">'</code><code class="variable-string">call_graph_for___hash__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+     <code class="variable-quote">'</code><code class="variable-string">call_graph_for___hash___2</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== INSTANCE VARIABLE DETAILS ==================== -->
+<a name="section-InstanceVariableDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="uid"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">uid</h3>
+  A unique identifier for this graph.  This can be used as a
+filename when rendering the graph.  No two <a href="epydoc.docwriter.dotgraph.DotGraph-class.html" class="link">DotGraph</a>s will
+have the same uid.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:04:08 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

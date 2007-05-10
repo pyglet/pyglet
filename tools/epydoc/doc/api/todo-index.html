@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>To Do List</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th bgcolor="#70b0f0" class="navbar-select"
+          >&nbsp;&nbsp;&nbsp;Indices&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">&nbsp;</td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="todo-index.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<center><b>[
+ <a href="identifier-index.html">Identifiers</a>
+| <a href="term-index.html">Term Definitions</a>
+| <a href="bug-index.html">Bugs</a>
+| <a href="todo-index.html">To Do</a>
+]</b></center><br />
+<a name="todo"><h1 class="epydoc">To Do List</h1></a>
+<br />
+<div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="epydoc-module.html">epydoc</a></b>    <ul class="nomargin">
+      <li>Create a better default top_page than trees.html.</li>
+      <li>Fix trees.html to work when documenting non-top-level
+modules/packages</li>
+      <li>Implement &#64;include</li>
+      <li>Optimize epytext</li>
+      <li>More doctests</li>
+      <li>When introspecting, limit how much introspection you do (eg,
+don't construct docs for imported modules' vars if it's
+not necessary)</li>
+    </ul>
+</table></div>
+<div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="epydoc.apidoc-module.html">epydoc.apidoc</a></b>    <ul class="nomargin">
+      <li>Add a cache to canonical name lookup?</li>
+    </ul>
+</table></div>
+<div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="epydoc.docparser-module.html">epydoc.docparser</a></b>    <ul class="nomargin">
+      <li>Make it possible to extend the functionality of 
+    <code>parse_docs()</code>, by replacing process_line with a dispatch 
+    table that can be customized (similarly to 
+    <code>docintrospector.register_introspector()</code>).</li>
+    </ul>
+</table></div>
+<div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode-class.html">epydoc.docwriter.dotgraph.DotGraphUmlClassNode</a></b>    <ul class="nomargin">
+      <li>Add more options?
+- show/hide operation signature
+- show/hide operation signature types
+- show/hide operation signature return type
+- show/hide attribute types
+- use qualifiers</li>
+    </ul>
+</table></div>
+<div class="private">
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode-class.html#_operation_arg">epydoc.docwriter.dotgraph.DotGraphUmlClassNode._operation_arg</a></b>    <ul class="nomargin">
+      <li>Handle tuple args better</li>
+      <li>Optionally add type info?</li>
+    </ul>
+</table></div>
+<div class="private">
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="epydoc.docwriter.dotgraph.DotGraphUmlClassNode-class.html#_operation_cell">epydoc.docwriter.dotgraph.DotGraphUmlClassNode._operation_cell</a></b>    <ul class="nomargin">
+      <li>do 'word wrapping' on the signature, by starting a new
+row in the table, if necessary.  How to indent the new
+line?  Maybe use align=right?  I don't think dot has a
+&amp;nbsp;.</li>
+      <li>Optionally add return type info?</li>
+    </ul>
+</table></div>
+<div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="epydoc.docwriter.dotgraph-module.html#add_valdoc_nodes">epydoc.docwriter.dotgraph.add_valdoc_nodes</a></b>    <ul class="nomargin">
+      <li>Use different node styles for different subclasses of APIDoc</li>
+    </ul>
+</table></div>
+<div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="epydoc.docwriter.dotgraph-module.html#call_graph">epydoc.docwriter.dotgraph.call_graph</a></b>    <ul class="nomargin">
+      <li>Add an <tt class="rst-docutils literal"><span class="pre">exclude</span></tt> option?</li>
+    </ul>
+</table></div>
+<div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="epydoc.docwriter.html-module.html">epydoc.docwriter.html</a></b>    <ul class="nomargin">
+      <li>Add a cache to <a 
+    href="epydoc.docwriter.html.HTMLWriter-class.html#url" 
+    class="link">HTMLWriter.url()</a>?</li>
+    </ul>
+</table></div>
+<div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="epydoc.docwriter.html.HTMLWriter-class.html#write_class_tree">epydoc.docwriter.html.HTMLWriter.write_class_tree</a></b>    <ul class="nomargin">
+      <li>For multiple inheritance, don't repeat subclasses the second time a 
+    class is mentioned; instead, link to the first mention.</li>
+    </ul>
+</table></div>
+<div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="epydoc.docwriter.latex-module.html">epydoc.docwriter.latex</a></b>    <ul class="nomargin">
+      <li>Inheritance=listed</li>
+    </ul>
+</table></div>
+<div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="epydoc.gui-module.html">epydoc.gui</a></b>    <ul class="nomargin">
+      <li>Use ini-style project files, rather than pickles (using the same 
+    format as the CLI).</li>
+    </ul>
+</table></div>
+<div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="epydoc.markup.restructuredtext-module.html">epydoc.markup.restructuredtext</a></b>    <ul class="nomargin">
+      <li>Add ParsedRstDocstring.to_latex()</li>
+    </ul>
+</table></div>
+</dl>
+<br /><!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th bgcolor="#70b0f0" class="navbar-select"
+          >&nbsp;&nbsp;&nbsp;Indices&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:02:09 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.restructuredtext.dotgraph</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        <a href="epydoc.markup.restructuredtext-module.html">Module&nbsp;restructuredtext</a> ::
+        Class&nbsp;dotgraph
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.restructuredtext.dotgraph-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class dotgraph</h1><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#dotgraph">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_m_26" name="uml_class_diagram_for_epydoc_m_26">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.image.astext" alt="" coords="208,735,334,754" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.image" alt="" coords="196,704,346,760" />
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#graph" title="epydoc.markup.restructuredtext.dotgraph.graph" alt="" coords="92,810,450,828" />
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#__init__" title="epydoc.markup.restructuredtext.dotgraph.__init__" alt="" coords="92,828,450,847" />
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html" title="A custom docutils node that should be rendered using Graphviz dot." alt="" coords="80,779,462,854" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.General" alt="" coords="6,452,168,495" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Inline" alt="" coords="198,452,344,495" />
+<area shape="rect" href="javascript: void(0);" title="List of child nodes (elements and/or Text)." alt="" coords="386,284,828,303" />
+<area shape="rect" href="javascript: void(0);" title="The raw text from which this element was constructed." alt="" coords="386,303,828,322" />
+<area shape="rect" href="javascript: void(0);" title="The element generic identifier." alt="" coords="386,322,828,340" />
+<area shape="rect" href="javascript: void(0);" title="List attributes, automatically initialized to empty lists for all nodes." alt="" coords="386,340,828,359" />
+<area shape="rect" href="javascript: void(0);" title="Separator for child nodes, used by astext() method." alt="" coords="386,359,828,378" />
+<area shape="rect" href="javascript: void(0);" title="Dictionary of attribute {name: value}." alt="" coords="386,378,828,396" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__add__" alt="" coords="386,399,828,418" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__str__" alt="" coords="386,418,828,436" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__getitem__" alt="" coords="386,436,828,455" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.pop" alt="" coords="386,455,828,474" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__radd__" alt="" coords="386,474,828,492" />
+<area shape="rect" href="javascript: void(0);" title="Note that this Element has been referenced by its name name or id id." alt="" coords="386,492,828,511" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.has_key" alt="" coords="386,511,828,530" />
+<area shape="rect" href="javascript: void(0);" title="Append a node or a list of nodes to self.children." alt="" coords="386,530,828,548" />
+<area shape="rect" href="javascript: void(0);" title="Return a deep copy of self (also copying children)." alt="" coords="386,548,828,567" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.non_default_attributes" alt="" coords="386,567,828,586" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.attlist" alt="" coords="386,586,828,604" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.index" alt="" coords="386,604,828,623" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.starttag" alt="" coords="386,623,828,642" />
+<area shape="rect" href="javascript: void(0);" title="Return the index of the first child whose class does not match." alt="" coords="386,660,828,679" />
+<area shape="rect" href="javascript: void(0);" title="Element is the superclass to all specific elements." alt="" coords="374,262,840,686" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Body" alt="" coords="15,103,159,146" />
+<area shape="rect" href="javascript: void(0);" title="Back&#45;reference to the Node immediately containing this Node." alt="" coords="360,28,854,47" />
+<area shape="rect" href="javascript: void(0);" title="Path or description of the input source which generated this Node." alt="" coords="360,47,854,66" />
+<area shape="rect" href="javascript: void(0);" title="The line number (1&#45;based) of the beginning of this Node in source." alt="" coords="360,66,854,84" />
+<area shape="rect" href="javascript: void(0);" title="The document node at the root of the tree containing this Node." alt="" coords="360,84,854,103" />
+<area shape="rect" href="javascript: void(0);" title="Return an iterable containing" alt="" coords="360,106,854,124" />
+<area shape="rect" href="javascript: void(0);" title="Return the first node in the iterable returned by traverse(), or None if the iterable is empty." alt="" coords="360,124,854,143" />
+<area shape="rect" href="javascript: void(0);" title="Node instances are always true, even if they&#39;re empty." alt="" coords="360,143,854,162" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Node.setup_child" alt="" coords="360,162,854,180" />
+<area shape="rect" href="javascript: void(0);" title="Traverse a tree of Node objects, calling the dispatch_visit() method of visitor when entering each node." alt="" coords="360,180,854,199" />
+<area shape="rect" href="javascript: void(0);" title="Return a DOM fragment representation of this Node." alt="" coords="360,199,854,218" />
+<area shape="rect" href="javascript: void(0);" title="Perform a tree traversal similarly to Node.walk() (which see), except also call the dispatch_departure() method before exiting each node." alt="" coords="360,218,854,236" />
+<area shape="rect" href="javascript: void(0);" title="Abstract base class of nodes in a document tree." alt="" coords="348,6,866,243" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_m_26.gif" alt='' usemap="#uml_class_diagram_for_epydoc_m_26" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+A custom docutils node that should be rendered using Graphviz dot. 
+  This node does not directly store the graph; instead, it stores a pointer
+  to a function that can be used to generate the graph. This allows the 
+  graph to be built based on information that might not be available yet at
+  parse time.  This graph generation function has the following 
+  signature:
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">generate_graph</span>(docindex, context, linker, *args):
+<span class="py-more">... </span>    <span class="py-string">'generates and returns a new DotGraph'</span></pre>
+  Where <code>docindex</code> is a docindex containing the documentation
+  that epydoc has built; <code>context</code> is the <code>APIDoc</code> 
+  whose docstring contains this dotgraph node; <code>linker</code> is a <a 
+  href="epydoc.markup.DocstringLinker-class.html" 
+  class="link">DocstringLinker</a> that can be used to resolve 
+  crossreferences; and <code>args</code> is any extra arguments that are 
+  passed to the <code>dotgraph</code> constructor.<br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext.dotgraph-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">generate_graph_func</span>,
+        <span class="summary-sig-arg">*generate_graph_args</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#dotgraph.__init__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___50-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___init___50-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___50" name="call_graph_for___init___50">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__init__()" alt="" coords="403,90,678,122" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#classtree_directive" title="classtree_directive()" alt="" coords="20,6,194,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#__init__" title="__init__()" alt="" coords="258,90,354,122" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#digraph_directive" title="digraph_directive()" alt="" coords="24,62,190,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#importgraph_directive" title="importgraph_directive()" alt="" coords="7,118,207,150" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#packagetree_directive" title="packagetree_directive()" alt="" coords="8,174,206,206" />
+</map>
+  <img src="call_graph_for___init___50.gif" alt='' usemap="#call_graph_for___init___50" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="graph"></a><span class="summary-sig-name">graph</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">docindex</span>,
+        <span class="summary-sig-arg">context</span>,
+        <span class="summary-sig-arg">linker</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#dotgraph.graph">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_graph-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_graph-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_graph" name="call_graph_for_graph">
+<area shape="rect" href="epydoc.markup.restructuredtext._EpydocHTMLTranslator&#45;class.html#visit_dotgraph" title="_EpydocHTMLTranslator.visit_dotgraph()" alt="" coords="5,90,349,122" />
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#graph" title="graph()" alt="" coords="399,90,473,122" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_classtree" title="_construct_classtree()" alt="" coords="536,6,723,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_digraph" title="_construct_digraph()" alt="" coords="540,62,719,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_importgraph" title="_construct_importgraph()" alt="" coords="523,118,736,150" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#_construct_packagetree" title="_construct_packagetree()" alt="" coords="524,174,735,206" />
+</map>
+  <img src="call_graph_for_graph.gif" alt='' usemap="#call_graph_for_graph" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.nodes.image</code></b>:
+      <code>astext</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.nodes.Element</code></b>:
+      <code>__add__</code>,
+      <code>__delitem__</code>,
+      <code>__getitem__</code>,
+      <code>__iadd__</code>,
+      <code>__len__</code>,
+      <code>__radd__</code>,
+      <code>__repr__</code>,
+      <code>__setitem__</code>,
+      <code>__str__</code>,
+      <code>__unicode__</code>,
+      <code>append</code>,
+      <code>attlist</code>,
+      <code>clear</code>,
+      <code>copy</code>,
+      <code>deepcopy</code>,
+      <code>delattr</code>,
+      <code>emptytag</code>,
+      <code>endtag</code>,
+      <code>extend</code>,
+      <code>first_child_matching_class</code>,
+      <code>first_child_not_matching_class</code>,
+      <code>get</code>,
+      <code>has_key</code>,
+      <code>hasattr</code>,
+      <code>index</code>,
+      <code>insert</code>,
+      <code>is_not_default</code>,
+      <code>non_default_attributes</code>,
+      <code>note_referenced_by</code>,
+      <code>pformat</code>,
+      <code>pop</code>,
+      <code>remove</code>,
+      <code>replace</code>,
+      <code>replace_self</code>,
+      <code>set_class</code>,
+      <code>setdefault</code>,
+      <code>shortrepr</code>,
+      <code>starttag</code>,
+      <code>update_basic_atts</code>
+      </p>
+    <div class="private">    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.nodes.Element</code></b> (private):
+      <code>_dom_node</code>
+      </p></div>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.nodes.Node</code></b>:
+      <code>__nonzero__</code>,
+      <code>asdom</code>,
+      <code>next_node</code>,
+      <code>setup_child</code>,
+      <code>traverse</code>,
+      <code>walk</code>,
+      <code>walkabout</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.nodes.Element</code></b>:
+      <code>child_text_separator</code>,
+      <code>list_attributes</code>,
+      <code>tagname</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.nodes.Node</code></b>:
+      <code>document</code>,
+      <code>line</code>,
+      <code>parent</code>,
+      <code>source</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.nodes.Element</code></b>:
+      <code>attributes</code>,
+      <code>children</code>,
+      <code>rawsource</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">generate_graph_func</span>,
+        <span class="sig-arg">*generate_graph_args</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#dotgraph.__init__">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___50-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for___init___50-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___50" name="call_graph_for___init___50">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__init__()" alt="" coords="403,90,678,122" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#classtree_directive" title="classtree_directive()" alt="" coords="20,6,194,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.dotgraph&#45;class.html#__init__" title="__init__()" alt="" coords="258,90,354,122" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#digraph_directive" title="digraph_directive()" alt="" coords="24,62,190,94" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#importgraph_directive" title="importgraph_directive()" alt="" coords="7,118,207,150" />
+<area shape="rect" href="epydoc.markup.restructuredtext&#45;module.html#packagetree_directive" title="packagetree_directive()" alt="" coords="8,174,206,206" />
+</map>
+  <img src="call_graph_for___init___50.gif" alt='' usemap="#call_graph_for___init___50" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.nodes.Element.__init__
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:05:30 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

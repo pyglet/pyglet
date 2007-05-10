@@ -1,0 +1,428 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.cli.UnifiedProgressConsoleLogger</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.cli-module.html">Module&nbsp;cli</a> ::
+        Class&nbsp;UnifiedProgressConsoleLogger
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.cli.UnifiedProgressConsoleLogger-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class UnifiedProgressConsoleLogger</h1><span class="codelink"><a href="epydoc.cli-pysrc.html#UnifiedProgressConsoleLogger">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_c_3" name="uml_class_diagram_for_epydoc_c_3">
+<area shape="rect" href="epydoc.cli.ConsoleLogger&#45;class.html#supressed_docstring_warning" title="This variable will be incremented once every time a docstring warning is  reported tothe logger, but the verbosity level is too low for it to be  displayed." alt="" coords="90,103,274,121" />
+<area shape="rect" href="epydoc.cli.ConsoleLogger&#45;class.html#reported_message_levels" title="This set contains all the message levels (WARNING, ERROR, etc) that have  been reported." alt="" coords="90,121,274,140" />
+<area shape="rect" href="epydoc.cli.ConsoleLogger&#45;class.html#end_block" title="End a warning block." alt="" coords="90,143,274,161" />
+<area shape="rect" href="epydoc.cli.ConsoleLogger&#45;class.html#log" title="Display a message." alt="" coords="90,161,274,180" />
+<area shape="rect" href="epydoc.cli.ConsoleLogger&#45;class.html#start_block" title="Start a new message block." alt="" coords="90,180,274,199" />
+<area shape="rect" href="epydoc.cli.ConsoleLogger&#45;class.html" title="epydoc.cli.ConsoleLogger" alt="" coords="78,80,286,205" />
+<area shape="rect" href="epydoc.cli.UnifiedProgressConsoleLogger&#45;class.html#end_progress" title="Finish off the display of progress for the current task." alt="" coords="18,255,346,273" />
+<area shape="rect" href="epydoc.cli.UnifiedProgressConsoleLogger&#45;class.html#start_progress" title="Begin displaying progress for a new task." alt="" coords="18,273,346,292" />
+<area shape="rect" href="epydoc.cli.UnifiedProgressConsoleLogger&#45;class.html#print_times" title="epydoc.cli.UnifiedProgressConsoleLogger.print_times" alt="" coords="18,292,346,311" />
+<area shape="rect" href="epydoc.cli.UnifiedProgressConsoleLogger&#45;class.html#progress" title="Update the progress display." alt="" coords="18,311,346,329" />
+<area shape="rect" href="epydoc.cli.UnifiedProgressConsoleLogger&#45;class.html#__init__" title="epydoc.cli.UnifiedProgressConsoleLogger.__init__" alt="" coords="18,329,346,348" />
+<area shape="rect" href="epydoc.cli.UnifiedProgressConsoleLogger&#45;class.html" title="epydoc.cli.UnifiedProgressConsoleLogger" alt="" coords="6,224,358,355" />
+<area shape="rect" href="epydoc.log.Logger&#45;class.html#close" title="Perform any tasks needed to close this logger." alt="" coords="148,36,215,55" />
+<area shape="rect" href="epydoc.log.Logger&#45;class.html" title="An abstract base class that defines the interface for loggers, which are used by epydoc to report information back to the user." alt="" coords="136,5,227,61" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_c_3.gif" alt='' usemap="#uml_class_diagram_for_epydoc_c_3" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.cli.UnifiedProgressConsoleLogger-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">verbosity</span>,
+        <span class="summary-sig-arg">stages</span>,
+        <span class="summary-sig-arg">progress_mode</span>=<span class="summary-sig-default">True</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#UnifiedProgressConsoleLogger.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.cli.UnifiedProgressConsoleLogger-class.html#progress" class="summary-sig-name">progress</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">percent</span>,
+        <span class="summary-sig-arg">message</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>)</span><br />
+      Update the progress display.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#UnifiedProgressConsoleLogger.progress">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.cli.UnifiedProgressConsoleLogger-class.html#start_progress" class="summary-sig-name">start_progress</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">header</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Begin displaying progress for a new task.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#UnifiedProgressConsoleLogger.start_progress">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.cli.UnifiedProgressConsoleLogger-class.html#end_progress" class="summary-sig-name">end_progress</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Finish off the display of progress for the current task.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#UnifiedProgressConsoleLogger.end_progress">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.cli.UnifiedProgressConsoleLogger-class.html#print_times" class="summary-sig-name">print_times</a>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.cli-pysrc.html#UnifiedProgressConsoleLogger.print_times">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.cli.ConsoleLogger-class.html">ConsoleLogger</a></code></b>:
+      <code><a href="epydoc.cli.ConsoleLogger-class.html#end_block">end_block</a></code>,
+      <code><a href="epydoc.cli.ConsoleLogger-class.html#log">log</a></code>,
+      <code><a href="epydoc.cli.ConsoleLogger-class.html#start_block">start_block</a></code>
+      </p>
+    <div class="private">    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.cli.ConsoleLogger-class.html">ConsoleLogger</a></code></b> (private):
+      <code><a href="epydoc.cli.ConsoleLogger-class.html#_format">_format</a></code>,
+      <code><a href="epydoc.cli.ConsoleLogger-class.html#_report">_report</a></code>,
+      <code><a href="epydoc.cli.ConsoleLogger-class.html#_timestr">_timestr</a></code>
+      </p></div>
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.log.Logger-class.html">log.Logger</a></code></b>:
+      <code><a href="epydoc.log.Logger-class.html#close">close</a></code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.cli.ConsoleLogger-class.html">ConsoleLogger</a></code></b>:
+      <code><a href="epydoc.cli.ConsoleLogger-class.html#reported_message_levels">reported_message_levels</a></code>,
+      <code><a href="epydoc.cli.ConsoleLogger-class.html#supressed_docstring_warning">supressed_docstring_warning</a></code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">verbosity</span>,
+        <span class="sig-arg">stages</span>,
+        <span class="sig-arg">progress_mode</span>=<span class="sig-default">True</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.cli-pysrc.html#UnifiedProgressConsoleLogger.__init__">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  
+  <dl class="fields">
+    <dt>Overrides:
+      <a href="epydoc.cli.ConsoleLogger-class.html#__init__">ConsoleLogger.__init__</a>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="progress"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">progress</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">percent</span>,
+        <span class="sig-arg">message</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.cli-pysrc.html#UnifiedProgressConsoleLogger.progress">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Update the progress display.
+  <dl class="fields">
+    <dt>Overrides:
+      <a href="epydoc.cli.ConsoleLogger-class.html#progress">ConsoleLogger.progress</a>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="start_progress"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">start_progress</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">header</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.cli-pysrc.html#UnifiedProgressConsoleLogger.start_progress">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Begin displaying progress for a new task.  <code>header</code> is a 
+  description of the task for which progress is being reported. Each call 
+  to <code>start_progress</code> must be followed by a call to 
+  <code>end_progress</code> (with no intervening calls to 
+  <code>start_progress</code>).
+  <dl class="fields">
+    <dt>Overrides:
+      <a href="epydoc.cli.ConsoleLogger-class.html#start_progress">ConsoleLogger.start_progress</a>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="end_progress"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">end_progress</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.cli-pysrc.html#UnifiedProgressConsoleLogger.end_progress">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Finish off the display of progress for the current task.  See <a 
+  href="epydoc.cli.ConsoleLogger-class.html#start_progress" 
+  class="link">start_progress</a> for more information.
+  <dl class="fields">
+    <dt>Overrides:
+      <a href="epydoc.cli.ConsoleLogger-class.html#end_progress">ConsoleLogger.end_progress</a>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="print_times"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">print_times</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.cli-pysrc.html#UnifiedProgressConsoleLogger.print_times">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  
+  <dl class="fields">
+    <dt>Overrides:
+      <a href="epydoc.cli.ConsoleLogger-class.html#print_times">ConsoleLogger.print_times</a>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:04:04 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

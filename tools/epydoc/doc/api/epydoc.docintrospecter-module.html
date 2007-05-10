@@ -1,0 +1,1720 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.docintrospecter</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        Module&nbsp;docintrospecter
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.docintrospecter-module.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== MODULE DESCRIPTION ==================== -->
+<h1 class="epydoc">Module docintrospecter</h1><span class="codelink"><a href="epydoc.docintrospecter-pysrc.html">source&nbsp;code</a></span><br /><br />
+<p>Extract API documentation about python objects by directly 
+  introspecting their values.</p>
+  <p>The function <a 
+  href="epydoc.docintrospecter-module.html#introspect_docs" 
+  class="link">introspect_docs()</a>, which provides the main interface of 
+  this module, examines a Python objects via introspection, and uses the 
+  information it finds to create an <a 
+  href="epydoc.apidoc.APIDoc-class.html" class="link">APIDoc</a> objects 
+  containing the API documentation for that objects.</p>
+  The <a href="epydoc.docintrospecter-module.html#register_introspecter"
+  class="link">register_introspecter()</a> method can be used to extend the
+  functionality of <code>docintrospector</code>, by providing methods that 
+  handle special value types.<br /><br />
+
+<!-- ==================== CLASSES ==================== -->
+<a name="section-Classes"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Classes"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docintrospecter._DevNull-class.html" class="summary-name">_DevNull</a><br />
+      A &quot;file-like&quot; object that discards anything that is 
+        written and always reports end-of-file when read.
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTIONS ==================== -->
+<a name="section-Functions"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Functions</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Functions"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="clear_cache"></a><span class="summary-sig-name">clear_cache</span>()</span><br />
+      Discard any cached <code>APIDoc</code> values that have been 
+      computed for introspected values.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#clear_cache">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docintrospecter-module.html#introspect_docs" class="summary-sig-name">introspect_docs</a>(<span class="summary-sig-arg">value</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">name</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">filename</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">context</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">is_script</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">module_name</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Generate the API documentation for a specified object by 
+      introspecting Python values, and return it as a <a 
+      href="epydoc.apidoc.ValueDoc-class.html" 
+      class="link">ValueDoc</a>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#introspect_docs">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_introspect_docs-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_introspect_docs-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_introspect_docs" name="call_graph_for_introspect_docs">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_module_file" title="docbuilder._get_docs_from_module_file()" alt="" coords="5,174,344,206" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_docs" title="introspect_docs()" alt="" coords="392,230,544,262" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_introspecter" title="_get_introspecter()" alt="" coords="624,62,787,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_valuedoc" title="_get_valuedoc()" alt="" coords="633,118,777,150" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_value_from_filename" title="get_value_from_filename()" alt="" coords="592,174,819,206" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_class" title="introspect_class()" alt="" coords="628,6,783,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_module" title="introspect_module()" alt="" coords="619,230,792,262" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_other" title="introspect_other()" alt="" coords="628,286,783,318" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_property" title="introspect_property()" alt="" coords="615,342,796,374" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_routine" title="introspect_routine()" alt="" coords="620,398,791,430" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#lookup_name" title="docparser.lookup_name()" alt="" coords="69,230,280,262" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#parse_docs" title="docparser.parse_docs()" alt="" coords="77,286,272,318" />
+</map>
+  <img src="call_graph_for_introspect_docs.gif" alt='' usemap="#call_graph_for_introspect_docs" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docintrospecter-module.html#_get_valuedoc" class="summary-sig-name">_get_valuedoc</a>(<span class="summary-sig-arg">value</span>)</span><br />
+      If a <code>ValueDoc</code> for the given value exists in the 
+      valuedoc cache, then return it; otherwise, create a new 
+      <code>ValueDoc</code>, add it to the cache, and return it.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#_get_valuedoc">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__get_valuedoc-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__get_valuedoc-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__get_valuedoc" name="call_graph_for__get_valuedoc">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__init__" title="apidoc.APIDoc.__init__()" alt="" coords="412,6,628,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="399,62,641,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_valuedoc" title="_get_valuedoc()" alt="" coords="205,146,349,178" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_canonical_name" title="get_canonical_name()" alt="" coords="427,118,613,150" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_containing_module" title="get_containing_module()" alt="" coords="416,174,624,206" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_module" title="introspect_module()" alt="" coords="433,230,607,262" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_docs" title="introspect_docs()" alt="" coords="5,146,157,178" />
+</map>
+  <img src="call_graph_for__get_valuedoc.gif" alt='' usemap="#call_graph_for__get_valuedoc" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="introspect_module"></a><span class="summary-sig-name">introspect_module</span>(<span class="summary-sig-arg">module</span>,
+        <span class="summary-sig-arg">module_doc</span>,
+        <span class="summary-sig-arg">module_name</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">preliminary</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Add API documentation information about the module 
+      <code>module</code> to <code>module_doc</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#introspect_module">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_introspect_modu-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_introspect_modu-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_introspect_modu" name="call_graph_for_introspect_modu">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="244,118,468,150" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#specialize_to" title="apidoc.APIDoc.specialize_to()" alt="" coords="231,174,482,206" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__cmp__" title="apidoc.DottedName.__cmp__()" alt="" coords="228,230,484,262" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__len__" title="apidoc.DottedName.__len__()" alt="" coords="232,286,480,318" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="235,342,478,374" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#container" title="apidoc.DottedName.container()" alt="" coords="228,398,484,430" />
+<area shape="rect" href="epydoc.apidoc.VariableDoc&#45;class.html#__init__" title="apidoc.VariableDoc.__init__()" alt="" coords="231,454,482,486" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_valuedoc" title="_get_valuedoc()" alt="" coords="284,6,428,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_module" title="introspect_module()" alt="" coords="6,286,179,318" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_containing_module" title="get_containing_module()" alt="" coords="252,510,460,542" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_docstring" title="get_docstring()" alt="" coords="288,566,424,598" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_docs" title="introspect_docs()" alt="" coords="280,62,432,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#is_future_feature" title="is_future_feature()" alt="" coords="275,622,438,654" />
+<area shape="rect" href="epydoc.util&#45;module.html#py_src_filename" title="util.py_src_filename()" alt="" coords="262,678,451,710" />
+</map>
+  <img src="call_graph_for_introspect_modu.gif" alt='' usemap="#call_graph_for_introspect_modu" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="introspect_class"></a><span class="summary-sig-name">introspect_class</span>(<span class="summary-sig-arg">cls</span>,
+        <span class="summary-sig-arg">class_doc</span>,
+        <span class="summary-sig-arg">module_name</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Add API documentation information about the class <code>cls</code>
+      to <code>class_doc</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#introspect_class">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_introspect_clas-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_introspect_clas-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_introspect_clas" name="call_graph_for_introspect_clas">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="223,6,447,38" />
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#specialize_to" title="apidoc.APIDoc.specialize_to()" alt="" coords="210,62,460,94" />
+<area shape="rect" href="epydoc.apidoc.VariableDoc&#45;class.html#__init__" title="apidoc.VariableDoc.__init__()" alt="" coords="210,118,460,150" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_docstring" title="get_docstring()" alt="" coords="267,174,403,206" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_class" title="introspect_class()" alt="" coords="6,146,160,178" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_docs" title="introspect_docs()" alt="" coords="259,230,411,262" />
+</map>
+  <img src="call_graph_for_introspect_clas.gif" alt='' usemap="#call_graph_for_introspect_clas" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="introspect_routine"></a><span class="summary-sig-name">introspect_routine</span>(<span class="summary-sig-arg">routine</span>,
+        <span class="summary-sig-arg">routine_doc</span>,
+        <span class="summary-sig-arg">module_name</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Add API documentation information about the function 
+      <code>routine</code> to <code>routine_doc</code> (specializing it to 
+      <code>Routine_doc</code>).</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#introspect_routine">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_introspect_rout-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_introspect_rout-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_introspect_rout" name="call_graph_for_introspect_rout">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#specialize_to" title="apidoc.APIDoc.specialize_to()" alt="" coords="226,62,476,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_docstring" title="get_docstring()" alt="" coords="283,118,419,150" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_docs" title="introspect_docs()" alt="" coords="275,6,427,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_routine" title="introspect_routine()" alt="" coords="6,34,176,66" />
+</map>
+  <img src="call_graph_for_introspect_rout.gif" alt='' usemap="#call_graph_for_introspect_rout" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="introspect_property"></a><span class="summary-sig-name">introspect_property</span>(<span class="summary-sig-arg">prop</span>,
+        <span class="summary-sig-arg">prop_doc</span>,
+        <span class="summary-sig-arg">module_name</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Add API documentation information about the property 
+      <code>prop</code> to <code>prop_doc</code> (specializing it to 
+      <code>PropertyDoc</code>).</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#introspect_property">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_introspect_prop-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_introspect_prop-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_introspect_prop" name="call_graph_for_introspect_prop">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#specialize_to" title="apidoc.APIDoc.specialize_to()" alt="" coords="236,62,487,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_docstring" title="get_docstring()" alt="" coords="293,118,429,150" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_docs" title="introspect_docs()" alt="" coords="285,6,437,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_property" title="introspect_property()" alt="" coords="5,34,187,66" />
+</map>
+  <img src="call_graph_for_introspect_prop.gif" alt='' usemap="#call_graph_for_introspect_prop" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="introspect_other"></a><span class="summary-sig-name">introspect_other</span>(<span class="summary-sig-arg">val</span>,
+        <span class="summary-sig-arg">val_doc</span>,
+        <span class="summary-sig-arg">module_name</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Specialize val_doc to a <code>GenericValueDoc</code> and return 
+      it.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#introspect_other">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_introspect_othe-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_introspect_othe-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_introspect_othe" name="call_graph_for_introspect_othe">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#specialize_to" title="apidoc.APIDoc.specialize_to()" alt="" coords="412,6,663,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_docs" title="introspect_docs()" alt="" coords="5,6,157,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_other" title="introspect_other()" alt="" coords="207,6,361,38" />
+</map>
+  <img src="call_graph_for_introspect_othe.gif" alt='' usemap="#call_graph_for_introspect_othe" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docintrospecter-module.html#isclass" class="summary-sig-name">isclass</a>(<span class="summary-sig-arg">object</span>)</span><br />
+      Return true if the given object is a class.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#isclass">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_isclass-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_isclass-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_isclass" name="call_graph_for_isclass">
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_introspecter" title="_get_introspecter()" alt="" coords="30,6,192,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#isclass" title="isclass()" alt="" coords="266,62,348,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_canonical_name" title="get_canonical_name()" alt="" coords="18,62,204,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_containing_module" title="get_containing_module()" alt="" coords="7,118,215,150" />
+</map>
+  <img src="call_graph_for_isclass.gif" alt='' usemap="#call_graph_for_isclass" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docintrospecter-module.html#register_class_type" class="summary-sig-name">register_class_type</a>(<span class="summary-sig-arg">typ</span>)</span><br />
+      Add a type to the lists of types that should be treated as 
+      classes.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#register_class_type">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="is_future_feature"></a><span class="summary-sig-name">is_future_feature</span>(<span class="summary-sig-arg">object</span>)</span><br />
+      Return True if <code>object</code> results from a <code>from 
+      __future__ import feature</code> statement.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#is_future_feature">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_is_future_featu-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_is_future_featu-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_is_future_featu" name="call_graph_for_is_future_featu">
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_module" title="introspect_module()" alt="" coords="6,30,179,62" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#is_future_feature" title="is_future_feature()" alt="" coords="227,30,390,62" />
+</map>
+  <img src="call_graph_for_is_future_featu.gif" alt='' usemap="#call_graph_for_is_future_featu" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>unicode</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_docstring"></a><span class="summary-sig-name">get_docstring</span>(<span class="summary-sig-arg">value</span>,
+        <span class="summary-sig-arg">module_name</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Return the docstring for the given value; or <code>None</code> if 
+      it does not have a docstring.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#get_docstring">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_get_docstring-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_get_docstring-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_get_docstring" name="call_graph_for_get_docstring">
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_docstring" title="get_docstring()" alt="" coords="235,90,371,122" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_class" title="introspect_class()" alt="" coords="19,6,173,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_module" title="introspect_module()" alt="" coords="9,62,183,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_property" title="introspect_property()" alt="" coords="5,118,187,150" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_routine" title="introspect_routine()" alt="" coords="11,174,181,206" />
+</map>
+  <img src="call_graph_for_get_docstring.gif" alt='' usemap="#call_graph_for_get_docstring" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><a href="epydoc.apidoc.DottedName-class.html" 
+      class="link">DottedName</a> or <code>UNKNOWN</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docintrospecter-module.html#get_canonical_name" class="summary-sig-name">get_canonical_name</a>(<span class="summary-sig-arg">value</span>)</span><br />
+      Returns:
+      the canonical name for <code>value</code>, or <code>UNKNOWN</code>
+      if no canonical name can be found.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#get_canonical_name">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_get_canonical_n-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_get_canonical_n-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_get_canonical_n" name="call_graph_for_get_canonical_n">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="apidoc.DottedName.__init__()" alt="" coords="432,6,683,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_find_function_module" title="_find_function_module()" alt="" coords="452,62,663,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_valuedoc" title="_get_valuedoc()" alt="" coords="5,90,149,122" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_canonical_name" title="get_canonical_name()" alt="" coords="197,90,384,122" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#isclass" title="isclass()" alt="" coords="516,118,599,150" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#verify_name" title="verify_name()" alt="" coords="493,174,621,206" />
+</map>
+  <img src="call_graph_for_get_canonical_n.gif" alt='' usemap="#call_graph_for_get_canonical_n" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docintrospecter-module.html#verify_name" class="summary-sig-name">verify_name</a>(<span class="summary-sig-arg">value</span>,
+        <span class="summary-sig-arg">dotted_name</span>)</span><br />
+      Verify the name.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#verify_name">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_verify_name-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_verify_name-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_verify_name" name="call_graph_for_verify_name">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="apidoc.DottedName.__getitem__()" alt="" coords="417,6,697,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__len__" title="apidoc.DottedName.__len__()" alt="" coords="433,62,681,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_canonical_name" title="get_canonical_name()" alt="" coords="5,34,192,66" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#verify_name" title="verify_name()" alt="" coords="240,34,368,66" />
+</map>
+  <img src="call_graph_for_verify_name.gif" alt='' usemap="#call_graph_for_verify_name" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="value_repr"></a><span class="summary-sig-name">value_repr</span>(<span class="summary-sig-arg">value</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#value_repr">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><a href="epydoc.apidoc.DottedName-class.html" 
+      class="link">DottedName</a></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_containing_module"></a><span class="summary-sig-name">get_containing_module</span>(<span class="summary-sig-arg">value</span>)</span><br />
+      Return the name of the module containing the given value, or 
+      <code>None</code> if the module name can't be determined.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#get_containing_module">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_get_containing_-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_get_containing_-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_get_containing_" name="call_graph_for_get_containing_">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="apidoc.DottedName.__init__()" alt="" coords="485,6,736,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_find_function_module" title="_find_function_module()" alt="" coords="505,62,716,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_valuedoc" title="_get_valuedoc()" alt="" coords="20,34,164,66" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_containing_module" title="get_containing_module()" alt="" coords="228,62,436,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#isclass" title="isclass()" alt="" coords="569,118,652,150" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_module" title="introspect_module()" alt="" coords="5,90,179,122" />
+</map>
+  <img src="call_graph_for_get_containing_.gif" alt='' usemap="#call_graph_for_get_containing_" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>module</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docintrospecter-module.html#_find_function_module" class="summary-sig-name">_find_function_module</a>(<span class="summary-sig-arg">func</span>)</span><br />
+      Returns:
+      The module that defines the given function.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#_find_function_module">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__find_function_-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__find_function_-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__find_function_" name="call_graph_for__find_function_">
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_find_function_module" title="_find_function_module()" alt="" coords="264,34,475,66" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_canonical_name" title="get_canonical_name()" alt="" coords="17,6,204,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_containing_module" title="get_containing_module()" alt="" coords="7,62,215,94" />
+</map>
+  <img src="call_graph_for__find_function_.gif" alt='' usemap="#call_graph_for__find_function_" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docintrospecter-module.html#register_introspecter" class="summary-sig-name">register_introspecter</a>(<span class="summary-sig-arg">applicability_test</span>,
+        <span class="summary-sig-arg">introspecter</span>,
+        <span class="summary-sig-arg">priority</span>=<span class="summary-sig-default">10</span>)</span><br />
+      Register an introspecter function.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#register_introspecter">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_get_introspecter"></a><span class="summary-sig-name">_get_introspecter</span>(<span class="summary-sig-arg">value</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#_get_introspecter">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__get_introspect-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__get_introspect-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__get_introspect" name="call_graph_for__get_introspect">
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_introspecter" title="_get_introspecter()" alt="" coords="207,90,369,122" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#is_getset" title="is_getset()" alt="" coords="428,6,529,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#is_member" title="is_member()" alt="" coords="420,62,537,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#is_property" title="is_property()" alt="" coords="419,118,539,150" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#isclass" title="isclass()" alt="" coords="437,174,520,206" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_docs" title="introspect_docs()" alt="" coords="5,90,157,122" />
+</map>
+  <img src="call_graph_for__get_introspect.gif" alt='' usemap="#call_graph_for__get_introspect" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="is_classmethod"></a><span class="summary-sig-name">is_classmethod</span>(<span class="summary-sig-arg">v</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#is_classmethod">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="is_staticmethod"></a><span class="summary-sig-name">is_staticmethod</span>(<span class="summary-sig-arg">v</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#is_staticmethod">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="is_property"></a><span class="summary-sig-name">is_property</span>(<span class="summary-sig-arg">v</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#is_property">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_is_property-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_is_property-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_is_property" name="call_graph_for_is_property">
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_introspecter" title="_get_introspecter()" alt="" coords="7,6,169,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#is_property" title="is_property()" alt="" coords="219,6,339,38" />
+</map>
+  <img src="call_graph_for_is_property.gif" alt='' usemap="#call_graph_for_is_property" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="is_getset"></a><span class="summary-sig-name">is_getset</span>(<span class="summary-sig-arg">v</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#is_getset">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_is_getset-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_is_getset-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_is_getset" name="call_graph_for_is_getset">
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_introspecter" title="_get_introspecter()" alt="" coords="7,6,169,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#is_getset" title="is_getset()" alt="" coords="219,6,320,38" />
+</map>
+  <img src="call_graph_for_is_getset.gif" alt='' usemap="#call_graph_for_is_getset" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="is_member"></a><span class="summary-sig-name">is_member</span>(<span class="summary-sig-arg">v</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#is_member">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_is_member-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_is_member-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_is_member" name="call_graph_for_is_member">
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_introspecter" title="_get_introspecter()" alt="" coords="7,6,169,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#is_member" title="is_member()" alt="" coords="220,6,337,38" />
+</map>
+  <img src="call_graph_for_is_member.gif" alt='' usemap="#call_graph_for_is_member" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_value_from_filename"></a><span class="summary-sig-name">get_value_from_filename</span>(<span class="summary-sig-arg">filename</span>,
+        <span class="summary-sig-arg">context</span>=<span class="summary-sig-default">True</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#get_value_from_filename">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_get_value_from_-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_get_value_from_-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_get_value_from_" name="call_graph_for_get_value_from_">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__cmp__" title="apidoc.APIDoc.__cmp__()" alt="" coords="493,6,717,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="apidoc.DottedName.__init__()" alt="" coords="480,62,731,94" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="484,118,727,150" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_import" title="_import()" alt="" coords="559,174,652,206" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_value_from_filename" title="get_value_from_filename()" alt="" coords="205,118,432,150" />
+<area shape="rect" href="epydoc.util&#45;module.html#is_package_dir" title="util.is_package_dir()" alt="" coords="517,230,693,262" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_docs" title="introspect_docs()" alt="" coords="5,118,157,150" />
+</map>
+  <img src="call_graph_for_get_value_from_.gif" alt='' usemap="#call_graph_for_get_value_from_" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_value_from_scriptname"></a><span class="summary-sig-name">get_value_from_scriptname</span>(<span class="summary-sig-arg">filename</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#get_value_from_scriptname">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docintrospecter-module.html#get_value_from_name" class="summary-sig-name">get_value_from_name</a>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">globs</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Given a name, return the corresponding value.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#get_value_from_name">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_lookup"></a><span class="summary-sig-name">_lookup</span>(<span class="summary-sig-arg">module</span>,
+        <span class="summary-sig-arg">name</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#_lookup">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docintrospecter-module.html#_import" class="summary-sig-name">_import</a>(<span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">filename</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Run the given callable in a 'sandboxed' environment.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#_import">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__import-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for__import-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__import" name="call_graph_for__import">
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_import" title="_import()" alt="" coords="281,6,375,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_value_from_filename" title="get_value_from_filename()" alt="" coords="5,6,232,38" />
+</map>
+  <img src="call_graph_for__import.gif" alt='' usemap="#call_graph_for__import" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docintrospecter-module.html#introspect_docstring_lineno" class="summary-sig-name">introspect_docstring_lineno</a>(<span class="summary-sig-arg">api_doc</span>)</span><br />
+      Try to determine the line number on which the given item's 
+      docstring begins.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#introspect_docstring_lineno">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_is_zope_type"></a><span class="summary-sig-name">_is_zope_type</span>(<span class="summary-sig-arg">val</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#_is_zope_type">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_is_zope_method"></a><span class="summary-sig-name">_is_zope_method</span>(<span class="summary-sig-arg">val</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#_is_zope_method">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== VARIABLES ==================== -->
+<a name="section-Variables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Variables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docintrospecter-module.html#_valuedoc_cache" class="summary-name">_valuedoc_cache</a> = <code title="{135484864: &lt;ClassDoc bool&gt;,
+ 135485056: &lt;GenericValueDoc None&gt;,
+ 135485068: &lt;GenericValueDoc None&gt;,
+ 135485248: &lt;ValueDoc epydoc.docintrospecter.ClassType&gt;,
+ 135485856: &lt;ValueDoc epydoc.docintrospecter.InstanceType&gt;,
+ 135486304: &lt;ValueDoc epydoc.docintrospecter.MethodType&gt;,
+ 135487072: &lt;ClassDoc exceptions.BaseException&gt;,
+ 135487296: &lt;ClassDoc exceptions.Exception&gt;,
+..."><code class="variable-group">{</code>135484864<code class="variable-op">: </code>&lt;ClassDoc bool&gt;<code class="variable-op">, </code>135485056<code class="variable-op">: </code>&lt;Gen<code class="variable-ellipsis">...</code></code><br />
+      A cache containing the API documentation for values that we've 
+      already seen.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docintrospecter-module.html#_introspected_values" class="summary-name">_introspected_values</a> = <code title="{135484864: True,
+ 135485056: True,
+ 135485068: True,
+ 135487072: True,
+ 135487296: True,
+ 135487520: True,
+ 135487744: True,
+ 135487968: True,
+..."><code class="variable-group">{</code>135484864<code class="variable-op">: </code>True<code class="variable-op">, </code>135485056<code class="variable-op">: </code>True<code class="variable-op">, </code>1354<code class="variable-ellipsis">...</code></code><br />
+      A record which values we've introspected, encoded as a dictionary 
+      from pyid to <code>bool</code>.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docintrospecter-module.html#UNDOCUMENTED_MODULE_VARS" class="summary-name">UNDOCUMENTED_MODULE_VARS</a> = <code title="('__builtins__',
+ '__doc__',
+ '__all__',
+ '__file__',
+ '__path__',
+ '__name__',
+ '__extra_epydoc_fields__',
+ '__docformat__')"><code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">__builtins__</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">__doc__</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">__all_</code><code class="variable-ellipsis">...</code></code><br />
+      A list of module variables that should not be included in a 
+      module's API documentation.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docintrospecter-module.html#UNDOCUMENTED_CLASS_VARS" class="summary-name">UNDOCUMENTED_CLASS_VARS</a> = <code title="('__doc__',
+ '__module__',
+ '__dict__',
+ '__weakref__',
+ '__slots__',
+ '__pyx_vtable__')"><code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">__doc__</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">__module__</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">__dict__</code><code class="variable-quote">'</code><code class="variable-ellipsis">...</code></code><br />
+      A list of class variables that should not be included in a class's
+      API documentation.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_CLASS_TYPES"></a><span class="summary-name">_CLASS_TYPES</span> = <code title="set([&lt;type 'classobj'&gt;, &lt;type 'type'&gt;])"><code class="variable-group">set([</code>&lt;type 'classobj'&gt;<code class="variable-op">, </code>&lt;type 'type'&gt;<code class="variable-group">])</code></code><br />
+      A list of types that should be treated as classes.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="__future_check_works"></a><span class="summary-name">__future_check_works</span> = <code title="True">True</code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_introspecter_registry"></a><span class="summary-name">_introspecter_registry</span> = <code title="[]">[]</code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docintrospecter-module.html#_dev_null" class="summary-name">_dev_null</a> = <code title="sys.stdout">&lt;epydoc.docintrospecter._DevNull instance at 0x404<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_ZopeType"></a><span class="summary-name">_ZopeType</span> = <code title="type(_ExtensionClass)">type(_ExtensionClass)</code>
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTION DETAILS ==================== -->
+<a name="section-FunctionDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Function Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-FunctionDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="introspect_docs"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">introspect_docs</span>(<span class="sig-arg">value</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">name</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">filename</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">context</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">is_script</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">module_name</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#introspect_docs">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_introspect_docs-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_introspect_docs-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_introspect_docs" name="call_graph_for_introspect_docs">
+<area shape="rect" href="epydoc.docbuilder&#45;module.html#_get_docs_from_module_file" title="docbuilder._get_docs_from_module_file()" alt="" coords="5,174,344,206" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_docs" title="introspect_docs()" alt="" coords="392,230,544,262" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_introspecter" title="_get_introspecter()" alt="" coords="624,62,787,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_valuedoc" title="_get_valuedoc()" alt="" coords="633,118,777,150" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_value_from_filename" title="get_value_from_filename()" alt="" coords="592,174,819,206" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_class" title="introspect_class()" alt="" coords="628,6,783,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_module" title="introspect_module()" alt="" coords="619,230,792,262" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_other" title="introspect_other()" alt="" coords="628,286,783,318" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_property" title="introspect_property()" alt="" coords="615,342,796,374" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_routine" title="introspect_routine()" alt="" coords="620,398,791,430" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#lookup_name" title="docparser.lookup_name()" alt="" coords="69,230,280,262" />
+<area shape="rect" href="epydoc.docparser&#45;module.html#parse_docs" title="docparser.parse_docs()" alt="" coords="77,286,272,318" />
+</map>
+  <img src="call_graph_for_introspect_docs.gif" alt='' usemap="#call_graph_for_introspect_docs" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Generate the API documentation for a specified object by introspecting
+  Python values, and return it as a <a 
+  href="epydoc.apidoc.ValueDoc-class.html" class="link">ValueDoc</a>.  The 
+  object to generate documentation for may be specified using the 
+  <code>value</code> parameter, the <code>filename</code> parameter, 
+  <i>or</i> the <code>name</code> parameter.  (It is an error to specify 
+  more than one of these three parameters, or to not specify any of 
+  them.)
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>value</code></strong> - The python object that should be documented.</li>
+        <li><strong class="pname"><code>filename</code></strong> - The name of the file that contains the python source code for 
+          a package, module, or script.  If <code>filename</code> is 
+          specified, then <code>introspect</code> will return a 
+          <code>ModuleDoc</code> describing its contents.</li>
+        <li><strong class="pname"><code>name</code></strong> - The fully-qualified python dotted name of any value (including
+          packages, modules, classes, and functions).  
+          <code>DocParser</code> will automatically figure out which 
+          module(s) it needs to import in order to find the documentation 
+          for the specified object.</li>
+        <li><strong class="pname"><code>context</code></strong> - The API documentation for the class of module that contains 
+          <code>value</code> (if available).</li>
+        <li><strong class="pname"><code>module_name</code></strong> - The name of the module where the value is defined. Useful to 
+          retrieve the docstring encoding if there is no way to detect the 
+          module by introspection (such as in properties)</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_get_valuedoc"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_get_valuedoc</span>(<span class="sig-arg">value</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#_get_valuedoc">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__get_valuedoc-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for__get_valuedoc-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__get_valuedoc" name="call_graph_for__get_valuedoc">
+<area shape="rect" href="epydoc.apidoc.APIDoc&#45;class.html#__init__" title="apidoc.APIDoc.__init__()" alt="" coords="412,6,628,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__str__" title="apidoc.DottedName.__str__()" alt="" coords="399,62,641,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_valuedoc" title="_get_valuedoc()" alt="" coords="205,146,349,178" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_canonical_name" title="get_canonical_name()" alt="" coords="427,118,613,150" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_containing_module" title="get_containing_module()" alt="" coords="416,174,624,206" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_module" title="introspect_module()" alt="" coords="433,230,607,262" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#introspect_docs" title="introspect_docs()" alt="" coords="5,146,157,178" />
+</map>
+  <img src="call_graph_for__get_valuedoc.gif" alt='' usemap="#call_graph_for__get_valuedoc" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  If a <code>ValueDoc</code> for the given value exists in the valuedoc 
+  cache, then return it; otherwise, create a new <code>ValueDoc</code>, add
+  it to the cache, and return it.  When possible, the new 
+  <code>ValueDoc</code>'s <code>pyval</code>, <code>repr</code>, and 
+  <code>canonical_name</code> attributes will be set appropriately.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="isclass"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">isclass</span>(<span class="sig-arg">object</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#isclass">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_isclass-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_isclass-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_isclass" name="call_graph_for_isclass">
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_introspecter" title="_get_introspecter()" alt="" coords="30,6,192,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#isclass" title="isclass()" alt="" coords="266,62,348,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_canonical_name" title="get_canonical_name()" alt="" coords="18,62,204,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_containing_module" title="get_containing_module()" alt="" coords="7,118,215,150" />
+</map>
+  <img src="call_graph_for_isclass.gif" alt='' usemap="#call_graph_for_isclass" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Return true if the given object is a class.  In particular, return 
+  true if object is an instance of <code>types.TypeType</code> or of 
+  <code>types.ClassType</code>.  This is used instead of 
+  <code>inspect.isclass()</code>, because the latter returns true for 
+  objects that are not classes (in particular, it returns true for any 
+  object that has a <code>__bases__</code> attribute, including objects 
+  that define <code>__getattr__</code> to always return a value).
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="register_class_type"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">register_class_type</span>(<span class="sig-arg">typ</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#register_class_type">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Add a type to the lists of types that should be treated as classes.  
+  By default, this list contains <code>TypeType</code> and 
+  <code>ClassType</code>.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="get_canonical_name"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_canonical_name</span>(<span class="sig-arg">value</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#get_canonical_name">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_get_canonical_n-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_get_canonical_n-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_get_canonical_n" name="call_graph_for_get_canonical_n">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__init__" title="apidoc.DottedName.__init__()" alt="" coords="432,6,683,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_find_function_module" title="_find_function_module()" alt="" coords="452,62,663,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_get_valuedoc" title="_get_valuedoc()" alt="" coords="5,90,149,122" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_canonical_name" title="get_canonical_name()" alt="" coords="197,90,384,122" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#isclass" title="isclass()" alt="" coords="516,118,599,150" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#verify_name" title="verify_name()" alt="" coords="493,174,621,206" />
+</map>
+  <img src="call_graph_for_get_canonical_n.gif" alt='' usemap="#call_graph_for_get_canonical_n" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+    <dt>Returns: <a href="epydoc.apidoc.DottedName-class.html" 
+      class="link">DottedName</a> or <code>UNKNOWN</code></dt>
+        <dd>the canonical name for <code>value</code>, or 
+          <code>UNKNOWN</code> if no canonical name can be found.  
+          Currently, <code>get_canonical_name</code> can find canonical 
+          names for: modules; functions; non-nested classes; methods of 
+          non-nested classes; and some class methods of non-nested 
+          classes.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="verify_name"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">verify_name</span>(<span class="sig-arg">value</span>,
+        <span class="sig-arg">dotted_name</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#verify_name">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_verify_name-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_verify_name-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_verify_name" name="call_graph_for_verify_name">
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__getitem__" title="apidoc.DottedName.__getitem__()" alt="" coords="417,6,697,38" />
+<area shape="rect" href="epydoc.apidoc.DottedName&#45;class.html#__len__" title="apidoc.DottedName.__len__()" alt="" coords="433,62,681,94" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_canonical_name" title="get_canonical_name()" alt="" coords="5,34,192,66" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#verify_name" title="verify_name()" alt="" coords="240,34,368,66" />
+</map>
+  <img src="call_graph_for_verify_name.gif" alt='' usemap="#call_graph_for_verify_name" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Verify the name.  E.g., if it's a nested class, then we won't be able 
+  to find it with the name we constructed.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="_find_function_module"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_find_function_module</span>(<span class="sig-arg">func</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#_find_function_module">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__find_function_-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for__find_function_-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__find_function_" name="call_graph_for__find_function_">
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_find_function_module" title="_find_function_module()" alt="" coords="264,34,475,66" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_canonical_name" title="get_canonical_name()" alt="" coords="17,6,204,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_containing_module" title="get_containing_module()" alt="" coords="7,62,215,94" />
+</map>
+  <img src="call_graph_for__find_function_.gif" alt='' usemap="#call_graph_for__find_function_" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>func</code></strong> (<code>function</code>) - The function whose module should be found.</li>
+    </ul></dd>
+    <dt>Returns: <code>module</code></dt>
+        <dd>The module that defines the given function.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="register_introspecter"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">register_introspecter</span>(<span class="sig-arg">applicability_test</span>,
+        <span class="sig-arg">introspecter</span>,
+        <span class="sig-arg">priority</span>=<span class="sig-default">10</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#register_introspecter">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Register an introspecter function.  Introspecter functions take two 
+  arguments, a python value and a <code>ValueDoc</code> object, and should 
+  add information about the given value to the the <code>ValueDoc</code>. 
+  Usually, the first line of an inspecter function will specialize it to a 
+  sublass of <code>ValueDoc</code>, using <a 
+  href="epydoc.apidoc.APIDoc-class.html#specialize_to" 
+  class="link">ValueDoc.specialize_to()</a>:
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">typical_introspecter</span>(value, value_doc):
+<span class="py-more">... </span>    value_doc.specialize_to(SomeSubclassOfValueDoc)
+<span class="py-more">... </span>    &lt;add info to value_doc&gt;</pre>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>priority</code></strong> - The priority of this introspecter, which determines the order 
+          in which introspecters are tried -- introspecters with lower 
+          numbers are tried first.  The standard introspecters have 
+          priorities ranging from 20 to 30.  The default priority (10) will
+          place new introspecters before standard introspecters.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="get_value_from_name"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_value_from_name</span>(<span class="sig-arg">name</span>,
+        <span class="sig-arg">globs</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#get_value_from_name">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Given a name, return the corresponding value.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>globs</code></strong> - A namespace to check for the value, if there is no module 
+          containing the named value.  Defaults to __builtin__.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_import"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_import</span>(<span class="sig-arg">name</span>,
+        <span class="sig-arg">filename</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#_import">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for__import-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for__import-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for__import" name="call_graph_for__import">
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#_import" title="_import()" alt="" coords="281,6,375,38" />
+<area shape="rect" href="epydoc.docintrospecter&#45;module.html#get_value_from_filename" title="get_value_from_filename()" alt="" coords="5,6,232,38" />
+</map>
+  <img src="call_graph_for__import.gif" alt='' usemap="#call_graph_for__import" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Run the given callable in a 'sandboxed' environment. Currently, this 
+  includes saving and restoring the contents of sys and __builtins__; and 
+  supressing stdin, stdout, and stderr.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="introspect_docstring_lineno"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">introspect_docstring_lineno</span>(<span class="sig-arg">api_doc</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docintrospecter-pysrc.html#introspect_docstring_lineno">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Try to determine the line number on which the given item's docstring 
+  begins.  Return the line number, or <code>None</code> if the line number 
+  can't be determined.  The line number of the first line in the file is 
+  1.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== VARIABLES DETAILS ==================== -->
+<a name="section-VariablesDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-VariablesDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="_valuedoc_cache"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_valuedoc_cache</h3>
+  <p>A cache containing the API documentation for values that we've already
+  seen.  This cache is implemented as a dictionary that maps a value's pyid
+  to its <a href="epydoc.apidoc.ValueDoc-class.html" 
+  class="link">ValueDoc</a>.</p>
+  Note that if we encounter a value but decide not to introspect it 
+  (because it's imported from another module), then 
+  <code>_valuedoc_cache</code> will contain an entry for the value, but the
+  value will not be listed in <a 
+  href="epydoc.docintrospecter-module.html#_introspected_values" 
+  class="link">_introspected_values</a>.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">{</code>135484864<code class="variable-op">: </code>&lt;ClassDoc bool&gt;<code class="variable-op">,</code>
+ 135485056<code class="variable-op">: </code>&lt;GenericValueDoc None&gt;<code class="variable-op">,</code>
+ 135485068<code class="variable-op">: </code>&lt;GenericValueDoc None&gt;<code class="variable-op">,</code>
+ 135485248<code class="variable-op">: </code>&lt;ValueDoc epydoc.docintrospecter.ClassType&gt;<code class="variable-op">,</code>
+ 135485856<code class="variable-op">: </code>&lt;ValueDoc epydoc.docintrospecter.InstanceType&gt;<code class="variable-op">,</code>
+ 135486304<code class="variable-op">: </code>&lt;ValueDoc epydoc.docintrospecter.MethodType&gt;<code class="variable-op">,</code>
+ 135487072<code class="variable-op">: </code>&lt;ClassDoc exceptions.BaseException&gt;<code class="variable-op">,</code>
+ 135487296<code class="variable-op">: </code>&lt;ClassDoc exceptions.Exception&gt;<code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_introspected_values"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_introspected_values</h3>
+  A record which values we've introspected, encoded as a dictionary from
+  pyid to <code>bool</code>.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">{</code>135484864<code class="variable-op">: </code>True<code class="variable-op">,</code>
+ 135485056<code class="variable-op">: </code>True<code class="variable-op">,</code>
+ 135485068<code class="variable-op">: </code>True<code class="variable-op">,</code>
+ 135487072<code class="variable-op">: </code>True<code class="variable-op">,</code>
+ 135487296<code class="variable-op">: </code>True<code class="variable-op">,</code>
+ 135487520<code class="variable-op">: </code>True<code class="variable-op">,</code>
+ 135487744<code class="variable-op">: </code>True<code class="variable-op">,</code>
+ 135487968<code class="variable-op">: </code>True<code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="UNDOCUMENTED_MODULE_VARS"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">UNDOCUMENTED_MODULE_VARS</h3>
+  A list of module variables that should not be included in a module's 
+  API documentation.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">__builtins__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">__doc__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">__all__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">__file__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">__path__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">__name__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">__extra_epydoc_fields__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">__docformat__</code><code class="variable-quote">'</code><code class="variable-group">)</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="UNDOCUMENTED_CLASS_VARS"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">UNDOCUMENTED_CLASS_VARS</h3>
+  A list of class variables that should not be included in a class's API
+  documentation.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">(</code><code class="variable-quote">'</code><code class="variable-string">__doc__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">__module__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">__dict__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">__weakref__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">__slots__</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">__pyx_vtable__</code><code class="variable-quote">'</code><code class="variable-group">)</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_dev_null"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_dev_null</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+sys.stdout
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:02:34 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

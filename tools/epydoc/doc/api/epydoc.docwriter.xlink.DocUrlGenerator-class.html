@@ -1,0 +1,518 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.docwriter.xlink.DocUrlGenerator</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.docwriter-module.html">Package&nbsp;docwriter</a> ::
+        <a href="epydoc.docwriter.xlink-module.html">Module&nbsp;xlink</a> ::
+        Class&nbsp;DocUrlGenerator
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.docwriter.xlink.DocUrlGenerator-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class DocUrlGenerator</h1><span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#DocUrlGenerator">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_d_8" name="uml_class_diagram_for_epydoc_d_8">
+<area shape="rect" href="epydoc.docwriter.xlink.UrlGenerator.IndexAmbiguous&#45;class.html" title="The name looked for is ambiguous" alt="" coords="18,28,218,47" />
+<area shape="rect" href="epydoc.docwriter.xlink.UrlGenerator&#45;class.html#get_canonical_name" title="Convert an object name into a canonical name." alt="" coords="18,50,218,68" />
+<area shape="rect" href="epydoc.docwriter.xlink.UrlGenerator&#45;class.html" title="Generate URL from an object name." alt="" coords="6,6,230,75" />
+<area shape="rect" href="epydoc.docwriter.xlink.DocUrlGenerator&#45;class.html#prefix" title="Prefix portion for the URL&#39;s returned by get_url()." alt="" coords="35,116,200,135" />
+<area shape="rect" href="epydoc.docwriter.xlink.DocUrlGenerator&#45;class.html#clear" title="Clear the current class content." alt="" coords="35,138,200,156" />
+<area shape="rect" href="epydoc.docwriter.xlink.DocUrlGenerator&#45;class.html#load_records" title="Read a sequence of pairs name &#45;&gt; url and populate the internal maps." alt="" coords="35,156,200,175" />
+<area shape="rect" href="epydoc.docwriter.xlink.DocUrlGenerator&#45;class.html#load_index" title="Read the content of an index file." alt="" coords="35,175,200,194" />
+<area shape="rect" href="epydoc.docwriter.xlink.DocUrlGenerator&#45;class.html#get_url" title="Look for a name and return the matching URL documentation." alt="" coords="35,194,200,212" />
+<area shape="rect" href="epydoc.docwriter.xlink.DocUrlGenerator&#45;class.html#__init__" title="epydoc.docwriter.xlink.DocUrlGenerator.__init__" alt="" coords="35,212,200,231" />
+<area shape="rect" href="epydoc.docwriter.xlink.DocUrlGenerator&#45;class.html" title="Read a documentation index and generate URL&#39;s for it." alt="" coords="23,94,212,238" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_d_8.gif" alt='' usemap="#uml_class_diagram_for_epydoc_d_8" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+Read a <em>documentation index</em> and generate URL's for it.<br /><br />
+
+<!-- ==================== NESTED CLASSES ==================== -->
+<a name="section-NestedClasses"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Nested Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-NestedClasses"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.docwriter.xlink.UrlGenerator-class.html">UrlGenerator</a></code></b>:
+      <code><a href="epydoc.docwriter.xlink.UrlGenerator.IndexAmbiguous-class.html">IndexAmbiguous</a></code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="__init__"></a><span class="summary-sig-name">__init__</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#DocUrlGenerator.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code class="link">str</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.xlink.DocUrlGenerator-class.html#get_url" class="summary-sig-name">get_url</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">name</span>)</span><br />
+      Look for a name and return the matching URL documentation.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#DocUrlGenerator.get_url">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.docwriter.xlink.UrlGenerator-class.html">UrlGenerator</a></code></b>:
+      <code><a href="epydoc.docwriter.xlink.UrlGenerator-class.html#get_canonical_name">get_canonical_name</a></code>
+      </p>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Content loading</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="clear"></a><span class="summary-sig-name">clear</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Clear the current class content.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#DocUrlGenerator.clear">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.xlink.DocUrlGenerator-class.html#load_index" class="summary-sig-name">load_index</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">f</span>)</span><br />
+      Read the content of an index file.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#DocUrlGenerator.load_index">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_iter_tuples"></a><span class="summary-sig-name">_iter_tuples</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">f</span>)</span><br />
+      Iterate on a file returning 2-tuples.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#DocUrlGenerator._iter_tuples">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.docwriter.xlink.DocUrlGenerator-class.html#load_records" class="summary-sig-name">load_records</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">records</span>)</span><br />
+      Read a sequence of pairs name -&gt; url and populate the internal maps.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#DocUrlGenerator.load_records">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <div class="private">    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.docwriter.xlink.UrlGenerator-class.html">UrlGenerator</a></code></b> (private):
+      <code><a href="epydoc.docwriter.xlink.UrlGenerator-class.html#_SEP_RE">_SEP_RE</a></code>
+      </p></div>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.xlink.DocUrlGenerator-class.html#_exact_matches" class="summary-name">_exact_matches</a><br />
+      A map from an object fully qualified name to its URL.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.docwriter.xlink.DocUrlGenerator-class.html#_partial_names" class="summary-name">_partial_names</a><br />
+      A map from partial names to the fully qualified names they may refer.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="prefix"></a><span class="summary-name">prefix</span><br />
+      Prefix portion for the URL's returned by <a href="epydoc.docwriter.xlink.DocUrlGenerator-class.html#get_url" class="link">get_url()</a>.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_filename"></a><span class="summary-name">_filename</span><br />
+      Not very important: only for logging.
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="get_url"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_url</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">name</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#DocUrlGenerator.get_url">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  <p>Look for a name and return the matching URL documentation.</p>
+<p>First look for a fully qualified name. If not found, try with partial
+name.</p>
+<p>If no url exists for the given object, return <code class="link">None</code>.</p>
+  <dl class="fields">
+    <dt>Returns: <code class="link">str</code></dt>
+        <dd>the URL that can be used to reach the <code class="link">name</code> documentation.
+<code class="link">None</code> if no such URL exists.</dd>
+    <dt>Overrides:
+      <a href="epydoc.docwriter.xlink.UrlGenerator-class.html#get_url">UrlGenerator.get_url</a>
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="load_index"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">load_index</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">f</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#DocUrlGenerator.load_index">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  <p>Read the content of an index file.</p>
+<p>Populate the internal maps with the file content using <a href="epydoc.docwriter.xlink.DocUrlGenerator-class.html#load_records" class="link">load_records()</a>.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>f</code></strong> (<code class="link">str</code> or file) - a file name or file-like object fron which read the index.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="load_records"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">load_records</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">records</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.docwriter.xlink-pysrc.html#DocUrlGenerator.load_records">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Read a sequence of pairs name -&gt; url and populate the internal maps.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>records</code></strong> (iterable) - the sequence of pairs (<em>name</em>, <em>url</em>) to add to the maps.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== INSTANCE VARIABLE DETAILS ==================== -->
+<a name="section-InstanceVariableDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="_exact_matches"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_exact_matches</h3>
+  <p>A map from an object fully qualified name to its URL.</p>
+<p>Values are both the name as tuple of fragments and as read from the
+records (see <a href="epydoc.docwriter.xlink.DocUrlGenerator-class.html#load_records" class="link">load_records()</a>), mostly to help <a href="epydoc.docwriter.xlink.DocUrlGenerator-class.html#_partial_names" class="link">_partial_names</a> to
+perform lookup for unambiguous names.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="_partial_names"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_partial_names</h3>
+  <p>A map from partial names to the fully qualified names they may refer.</p>
+<p>The keys are the possible left sub-tuples of fully qualified names,
+the values are list of strings as provided by the index.</p>
+<p>If the list for a given tuple contains a single item, the partial
+match is not ambuguous. In this case the string can be looked up in
+<a href="epydoc.docwriter.xlink.DocUrlGenerator-class.html#_exact_matches" class="link">_exact_matches</a>.</p>
+<p>If the name fragment is ambiguous, a warning may be issued to the user.
+The items can be used to provide an informative message to the user,
+to help him qualifying the name in a unambiguous manner.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:04:44 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

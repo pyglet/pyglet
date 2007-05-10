@@ -1,0 +1,608 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.javadoc.ParsedJavadocDocstring</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        <a href="epydoc.markup.javadoc-module.html">Module&nbsp;javadoc</a> ::
+        Class&nbsp;ParsedJavadocDocstring
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class ParsedJavadocDocstring</h1><span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html#ParsedJavadocDocstring">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_m_12" name="uml_class_diagram_for_epydoc_m_12">
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#concatenate" title="Returns:  A new parsed docstring containing the concatination of this docstring and  other." alt="" coords="28,36,273,55" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#index_terms" title="Returns:  The list of index terms that are defined in this docstring." alt="" coords="28,55,273,73" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#to_latex" title="Translate this docstring to LaTeX." alt="" coords="28,73,273,92" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#__add__" title="epydoc.markup.ParsedDocstring.__add__" alt="" coords="28,92,273,111" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html" title="A standard intermediate representation for parsed docstrings that can be used to generate output." alt="" coords="16,5,285,117" />
+<area shape="rect" href="epydoc.markup.javadoc.ParsedJavadocDocstring&#45;class.html#split_fields" title="Split this docstring into its body and its fields." alt="" coords="17,167,284,185" />
+<area shape="rect" href="epydoc.markup.javadoc.ParsedJavadocDocstring&#45;class.html#to_html" title="Translate this docstring to HTML." alt="" coords="17,185,284,204" />
+<area shape="rect" href="epydoc.markup.javadoc.ParsedJavadocDocstring&#45;class.html#to_plaintext" title="Translate this docstring to plaintext." alt="" coords="17,204,284,223" />
+<area shape="rect" href="epydoc.markup.javadoc.ParsedJavadocDocstring&#45;class.html#summary" title="Returns:  A pair consisting of a short summary of this docstring and a boolean value  indicating whether there is further documentation in addition to the  summary." alt="" coords="17,223,284,241" />
+<area shape="rect" href="epydoc.markup.javadoc.ParsedJavadocDocstring&#45;class.html#__init__" title="Create a new ParsedJavadocDocstring." alt="" coords="17,241,284,260" />
+<area shape="rect" href="epydoc.markup.javadoc.ParsedJavadocDocstring&#45;class.html" title="An encoded version of a Javadoc docstring." alt="" coords="5,136,296,267" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_m_12.gif" alt='' usemap="#uml_class_diagram_for_epydoc_m_12" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+An encoded version of a Javadoc docstring.  Since Javadoc is a fairly 
+  simple markup language, we don't do any processing in advance; instead, 
+  we wait to split fields or resolve crossreference links until we need 
+  to.<br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">docstring</span>,
+        <span class="summary-sig-arg">errors</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Create a new <code>ParsedJavadocDocstring</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html#ParsedJavadocDocstring.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#_check_links" class="summary-sig-name">_check_links</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">errors</span>)</span><br />
+      Make sure that all @{link}s are valid.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html#ParsedJavadocDocstring._check_links">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#to_plaintext" class="summary-sig-name">to_plaintext</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">docstring_linker</span>,
+        <span class="summary-sig-arg">**options</span>)</span><br />
+      Translate this docstring to plaintext.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html#ParsedJavadocDocstring.to_plaintext">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">(<a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a>, <code>bool</code>)</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#summary" class="summary-sig-name">summary</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Returns:
+      A pair consisting of a short summary of this docstring and a 
+      boolean value indicating whether there is further documentation in 
+      addition to the summary.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html#ParsedJavadocDocstring.summary">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="epydoc.markup.ParsedDocstring-class.html">ParsedDocstring</a></code></b>:
+      <code><a href="epydoc.markup.ParsedDocstring-class.html#__add__">__add__</a></code>,
+      <code><a href="epydoc.markup.ParsedDocstring-class.html#concatenate">concatenate</a></code>,
+      <code><a href="epydoc.markup.ParsedDocstring-class.html#index_terms">index_terms</a></code>,
+      <code><a href="epydoc.markup.ParsedDocstring-class.html#to_latex">to_latex</a></code>
+      </p>
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Field Splitting</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>(<a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a>, list of <a 
+      href="epydoc.markup.Field-class.html" 
+      class="link">Field</a>)</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#split_fields" class="summary-sig-name">split_fields</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">errors</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Split this docstring into its body and its fields.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html#ParsedJavadocDocstring.split_fields">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8" >
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;HTML Output</th></tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#to_html" class="summary-sig-name">to_html</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">docstring_linker</span>,
+        <span class="summary-sig-arg">**options</span>)</span><br />
+      Translate this docstring to HTML.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html#ParsedJavadocDocstring.to_html">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr bgcolor="#e8f0f8"  class="private">
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;Field Splitting</th></tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#_ARG_FIELDS" class="summary-name">_ARG_FIELDS</a> = <code title="['group',
+ 'variable',
+ 'var',
+ 'type',
+ 'cvariable',
+ 'cvar',
+ 'ivariable',
+ 'ivar',
+..."><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">group</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">variable</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">var</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">type</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">cvariable</code><code class="variable-quote">'</code><code class="variable-ellipsis">...</code></code><br />
+      A list of the fields that take arguments.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_FIELD_RE"></a><span class="summary-name">_FIELD_RE</span> = <code title="re.compile(r'(?m)(^\s*@\w+[\s\$])')">re.compile(r'<code class="re-flags">(?m)</code><code class="re-group">(</code>^\s<code class="re-op">*</code>@\w<code class="re-op">+</code><code class="re-group">[</code>\s\$<code class="re-group">]</code><code class="re-group">)</code>')</code><br />
+      A regular expression used to search for Javadoc block tags.
+    </td>
+  </tr>
+<tr bgcolor="#e8f0f8"  class="private">
+  <th colspan="2" class="group-header"
+    >&nbsp;&nbsp;&nbsp;&nbsp;HTML Output</th></tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_LINK_SPLIT_RE"></a><span class="summary-name">_LINK_SPLIT_RE</span> = <code title="re.compile(r'(\{@link(?:plain)?\s[^\}]+\})')">re.compile(r'<code class="re-group">(</code>\{@link<code class="re-group">(?:</code>plain<code class="re-group">)</code><code class="re-op">?</code>\s<code class="re-group">[^</code>\}<code class="re-group">]</code><code class="re-op">+</code>\}<code class="re-group">)</code>')</code><br />
+      A regular expression used to search for Javadoc inline tags.
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#_LINK_RE" class="summary-name">_LINK_RE</a> = <code title="re.compile(r'\{@link(?:plain)?\s+([\w#\.]+)(?:\([^\)]*\))?(\s+.*)?\}')">re.compile(r'\{@link<code class="re-group">(?:</code>plain<code class="re-group">)</code><code class="re-op">?</code>\s<code class="re-op">+</code><code class="re-group">(</code><code class="re-group">[</code>\w#\.<code class="re-group">]</code><code class="re-op">+</code><code class="re-group">)</code><code class="re-group">(?:</code>\(<code class="re-group">[^</code>\<code class="variable-ellipsis">...</code></code><br />
+      A regular expression used to process Javadoc inline tags.
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">docstring</span>,
+        <span class="sig-arg">errors</span>=<span class="sig-default">True</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html#ParsedJavadocDocstring.__init__">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Create a new <code>ParsedJavadocDocstring</code>.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>docstring</code></strong> (<code>string</code>) - The docstring that should be used to construct this 
+          <code>ParsedJavadocDocstring</code>.</li>
+        <li><strong class="pname"><code>errors</code></strong> (<code>list</code> of <a 
+          href="epydoc.markup.ParseError-class.html" 
+          class="link">ParseError</a>) - A list where any errors generated during parsing will be 
+          stored.  If no list is given, then all errors are ignored.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="split_fields"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">split_fields</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">errors</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html#ParsedJavadocDocstring.split_fields">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Split this docstring into its body and its fields.
+  <dl class="fields">
+    <dt>Returns: <code>(<a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a>, list of <a 
+      href="epydoc.markup.Field-class.html" 
+      class="link">Field</a>)</code></dt>
+        <dd>A tuple <code>(<i class="math">body</i>, <i 
+          class="math">fields</i>)</code>, where <code><i 
+          class="math">body</i></code> is the main body of this docstring, 
+          and <code><i class="math">fields</i></code> is a list of its 
+          fields.  If the resulting body is empty, return <code>None</code>
+          for the body.</dd>
+    <dt>Overrides:
+      <a href="epydoc.markup.ParsedDocstring-class.html#split_fields">ParsedDocstring.split_fields</a>
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="to_html"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">to_html</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">docstring_linker</span>,
+        <span class="sig-arg">**options</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html#ParsedJavadocDocstring.to_html">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Translate this docstring to HTML.
+  <dl class="fields">
+    <dt>Returns: <code>string</code></dt>
+        <dd>An HTML fragment that encodes this docstring.</dd>
+    <dt>Overrides:
+      <a href="epydoc.markup.ParsedDocstring-class.html#to_html">ParsedDocstring.to_html</a>
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_check_links"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_check_links</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">errors</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html#ParsedJavadocDocstring._check_links">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Make sure that all @{link}s are valid.  We need a separate method for 
+  ths because we want to do this at parse time, not html output time.  Any 
+  errors found are appended to <code>errors</code>.
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="to_plaintext"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">to_plaintext</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">docstring_linker</span>,
+        <span class="sig-arg">**options</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html#ParsedJavadocDocstring.to_plaintext">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Translate this docstring to plaintext.
+  <dl class="fields">
+    <dt>Returns: <code>string</code></dt>
+        <dd>A plaintext fragment that encodes this docstring.</dd>
+    <dt>Overrides:
+      <a href="epydoc.markup.ParsedDocstring-class.html#to_plaintext">ParsedDocstring.to_plaintext</a>
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="summary"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">summary</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.javadoc-pysrc.html#ParsedJavadocDocstring.summary">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  
+  <dl class="fields">
+    <dt>Returns: (<a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a>, <code>bool</code>)</dt>
+        <dd>A pair consisting of a short summary of this docstring and a 
+          boolean value indicating whether there is further documentation 
+          in addition to the summary. Typically, the summary consists of 
+          the first sentence of the docstring.</dd>
+    <dt>Overrides:
+      <a href="epydoc.markup.ParsedDocstring-class.html#summary">ParsedDocstring.summary</a>
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== CLASS VARIABLE DETAILS ==================== -->
+<a name="section-ClassVariableDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="_ARG_FIELDS"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_ARG_FIELDS</h3>
+  A list of the fields that take arguments. Since Javadoc doesn't mark 
+  arguments in any special way, we must consult this list to decide whether
+  the first word of a field is an argument or not.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">group</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">variable</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">var</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">type</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">cvariable</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">cvar</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">ivariable</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">ivar</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_LINK_RE"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">_LINK_RE</h3>
+  A regular expression used to process Javadoc inline tags.
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+re.compile(r'\{@link<code class="re-group">(?:</code>plain<code class="re-group">)</code><code class="re-op">?</code>\s<code class="re-op">+</code><code class="re-group">(</code><code class="re-group">[</code>\w#\.<code class="re-group">]</code><code class="re-op">+</code><code class="re-group">)</code><code class="re-group">(?:</code>\(<code class="re-group">[^</code>\)<code class="re-group">]</code><code class="re-op">*</code>\)<code class="re-group">)</code><code class="re-op">?</code><code class="re-group">(</code>\s<code class="re-op">+</code>.<code class="re-op">*</code><code class="re-group">)</code><code class="re-op">?</code>\}')
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:05:03 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

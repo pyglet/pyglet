@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>Using Epydoc</title>
+<link rel="stylesheet" href="custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="using-epydoc">
+<h1 class="title">Using Epydoc</h1>
+
+<!-- $Id: manual-usage.txt 1554 2007-02-27 03:31:56Z edloper $ -->
+<p>Epydoc provides two user interfaces:</p>
+<ul class="simple">
+<li>The command line interface, which is accessed via a script named <tt class="docutils literal"><span class="pre">epydoc</span></tt>
+(or <tt class="docutils literal"><span class="pre">epydoc.py</span></tt> on Windows)</li>
+<li>The graphical interface, which is accessed via a script named <tt class="docutils literal"><span class="pre">epydocgui</span></tt>
+(or <tt class="docutils literal"><span class="pre">epydoc.pyw</span></tt> on Windows).</li>
+</ul>
+<p>Epydoc can also be accessed programmatically; see <tt class="docutils literal"><span class="pre">epydoc's</span> <span class="pre">API</span>
+<span class="pre">documentation</span></tt> for more information.</p>
+<div class="section" id="the-command-line-interface">
+<h1>The Command Line Interface</h1>
+<p>The <tt class="docutils literal"><span class="pre">epydoc</span></tt> script extracts API documentation for a set of Python objects,
+and writes it using a selected output format. Objects can be named using dotted
+names, module filenames, or package directory names. (On Windows, this script
+is named <tt class="docutils literal"><span class="pre">epydoc.py</span></tt>.)</p>
+<div class="section" id="command-line-usage-abbreviated">
+<h2>Command Line Usage (Abbreviated)</h2>
+<pre class="literal-block">
+epydoc [--html|--pdf] [-o <em>DIR</em>] [--parse-only|--introspect-only] [-v|-q]
+       [--name <em>NAME</em>] [--url <em>URL</em>] [--docformat <em>NAME</em>] [--graph <em>GRAPHTYPE</em>]
+       [--inheritance <em>STYLE</em>] [--config <em>FILE</em>] <em>OBJECTS...</em>
+</pre>
+<dl class="docutils">
+<dt><em>OBJECTS...</em></dt>
+<dd>A list of the Python objects that should be documented. Objects can be
+specified using dotted names (such as <tt class="docutils literal"><span class="pre">os.path</span></tt>), module filenames (such
+as <tt class="docutils literal"><span class="pre">epydoc/epytext.py</span></tt>), or package directory names (such as <tt class="docutils literal"><span class="pre">epydoc/</span></tt>).
+Packages are expanded to include all sub-modules and sub-packages.</dd>
+</dl>
+<div class="epydoc-usage container">
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">--html</span></kbd></td>
+<td>Generate HTML output. (default)</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--pdf</span></kbd></td>
+<td>Generate Adobe Acrobat (PDF) output, using LaTeX.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-o <var>DIR</var></span>, <span class="option">--output <var>DIR</var></span>, <span class="option">--target <var>DIR</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>The output directory.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--parse-only</span>, <span class="option">--introspect-only</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>By default, epydoc will gather information about each Python object using
+two methods: parsing the object's source code; and importing the object and
+directly introspecting it. Epydoc combines the information obtained from
+these two methods to provide more complete and accurate documentation.
+However, if you wish, you can tell epydoc to use only one or the other of
+these methods. For example, if you are running epydoc on untrusted code,
+you should use the <tt class="docutils literal"><span class="pre">--parse-only</span></tt> option.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-v</span>, <span class="option">-q</span></kbd></td>
+<td>Increase (<tt class="docutils literal"><span class="pre">-v</span></tt>) or decrease (<tt class="docutils literal"><span class="pre">-q</span></tt>) the verbosity of the output. These
+options may be repeated to further increase or decrease verbosity.
+Docstring markup warnings are supressed unless <tt class="docutils literal"><span class="pre">-v</span></tt> is used at least once.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--name <var>NAME</var></span></kbd></td>
+<td>The documented project's name.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--url <var>URL</var></span></kbd></td>
+<td>The documented project's URL.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--docformat <var>NAME</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>The markup language that should be used by default to process modules'
+docstrings. This is only used for modules that do not define the special
+<tt class="docutils literal"><span class="pre">__docformat__</span></tt> variable; it is recommended that you explicitly specify
+<tt class="docutils literal"><span class="pre">__docformat__</span></tt> in all your modules.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--graph <var>GRAPHTYPE</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td><p class="first">Include graphs of type <em>GRAPHTYPE</em> in the generated output. Graphs are
+generated using the Graphviz <tt class="docutils literal"><span class="pre">dot</span></tt> executable. If this executable is not
+on the path, then use <tt class="docutils literal"><span class="pre">--dotpath</span></tt> to specify its location. This option
+may be repeated to include multiple graph types in the output. To include
+all graphs, use <tt class="docutils literal"><span class="pre">--graph</span> <span class="pre">all</span></tt>. The available graph types are:</p>
+<ul class="last simple">
+<li><strong>classtree</strong>: displays each class's base classes and subclasses;</li>
+<li><strong>callgraph</strong>: displays the callers and callees of each function or
+method. These graphs are based on profiling information, which must be
+specified using the <tt class="docutils literal"><span class="pre">--pstate</span></tt> option.</li>
+<li><strong>umlclass</strong>: displays each class's base classes and subclasses, using
+UML style. Methods and attributes are listed in the classes where they
+are defined. If type information is available about attributes (via the
+<tt class="docutils literal"><span class="pre">&#64;type</span></tt> field), then those types are displayed as separate classes, and
+the attributes are displayed as associations.</li>
+</ul>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--inheritance <var>STYLE</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td><p class="first">The format that should be used to display inherited methods, variables, and
+properties. Currently, three styles are supported. To see an example of each style,
+click on it:</p>
+<ul class="last simple">
+<li><a class="reference" href="http://epydoc.sourceforge.net/examples/grouped/inh_example.Programmer-class.html">grouped</a>: Inherited objects are gathered into groups, based on which
+class they are inherited from.</li>
+<li><a class="reference" href="http://epydoc.sourceforge.net/examples/listed/inh_example.Programmer-class.html">listed</a>: Inherited objects are listed in a short list at the end of the
+summary table.</li>
+<li><a class="reference" href="http://epydoc.sourceforge.net/examples/included/inh_example.Programmer-class.html">included</a>: Inherited objects are mixed in with non-inherited objects.</li>
+</ul>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--config <var>FILE</var></span></kbd></td>
+<td>Read the given configuration file, which can contain both options and
+Python object names. This option may be used multiple times, if you wish
+to use multiple configuration files. See <a class="reference" href="manual-usage.html#configuration-files">Configuration Files</a> for more
+information.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The complete list of command line options is available in the <a class="reference" href="manual-reference.html#command-line-usage">Command Line
+Usage</a> section.</p>
+</div>
+<div class="section" id="examples">
+<h2>Examples</h2>
+<p>The following command will generate HTML documentation for the <tt class="docutils literal"><span class="pre">sys</span></tt> module,
+and write it to the directory <tt class="docutils literal"><span class="pre">sys_docs</span></tt>:</p>
+<pre class="literal-block">
+[epydoc]$ epydoc --html sys -o sys_docs
+</pre>
+<p>The following commands are used to produce the API documentation for epydoc
+itself. The first command writes html output to the directory <tt class="docutils literal"><span class="pre">html/api</span></tt>,
+using <tt class="docutils literal"><span class="pre">epydoc</span></tt> as the project name and <tt class="docutils literal"><span class="pre">http://epydoc.sourcforge.net</span></tt> as
+the project URL. The <tt class="docutils literal"><span class="pre">white</span></tt> CSS style is used; inheritance is displayed
+using the listed style; and all graphs are included in the output. The second
+command writes pdf output to the file <tt class="docutils literal"><span class="pre">api.pdf</span></tt> in the directory
+<tt class="docutils literal"><span class="pre">latex/api</span></tt>, using <tt class="docutils literal"><span class="pre">Epydoc</span></tt> as the project name.</p>
+<pre class="literal-block">
+[epydoc]$ epydoc -v -o html/api --name epydoc --css white \
+                 --url http://epydoc.sourceforge.net \
+                 --inheritance listed --graph all src/epydoc
+[epydoc]$ epydoc -v -o latex/api --pdf --name &quot;Epydoc&quot; src/epydoc
+</pre>
+</div>
+<div class="section" id="configuration-files">
+<h2>Configuration Files</h2>
+<p>Configuration files, specified using the <tt class="docutils literal"><span class="pre">--config</span></tt> option, may be used to
+specify both the list of objects to document, and the options that should be
+used to document them. Configuration files are read using the standard
+<a class="reference" href="http://docs.python.org/lib/module-ConfigParser.html">ConfigParser</a> module. The following is a simple example of a configuration
+file.</p>
+<pre class="literal-block">
+<strong>[epydoc]</strong> <em># Epydoc section marker (required by ConfigParser)</em>
+
+<em># Information about the project.</em>
+<strong>name: My Cool Project</strong>
+<strong>url: http://cool.project/</strong>
+
+<em># The list of modules to document.  Modules can be named using</em>
+<em># dotted names, module filenames, or package directory names.</em>
+<em># This option may be repeated.</em>
+<strong>modules: sys, os.path, re</strong>
+<strong>modules: my/project/driver.py</strong>
+
+<em># Write html output to the directory &quot;apidocs&quot;</em>
+<strong>output: html</strong>
+<strong>target: apidocs/</strong>
+
+<em># Include all automatically generated graphs.  These graphs are</em>
+<em># generated using Graphviz dot.</em>
+<strong>graph: all</strong>
+<strong>dotpath: /usr/local/bin/dot</strong>
+</pre>
+<p>A <a class="reference" href="manual-reference.html#sample-configuration-file">more complete example</a>, including all of the supported options, is also
+available.</p>
+</div>
+</div>
+<div class="section" id="the-graphical-interface">
+<h1>The Graphical Interface</h1>
+<p>Epydoc also includes a graphical interface, for systems where command line
+interfaces are not convenient (such as Windows). The graphical interface can
+be invoked with the <tt class="docutils literal"><span class="pre">epydocgui</span></tt> command, or with <tt class="docutils literal"><span class="pre">epydoc.pyw</span></tt> in the
+<tt class="docutils literal"><span class="pre">Scripts</span></tt> subdirectory of the Python installation directory under Windows.
+Currently, the graphical interface can only generate HTML output.</p>
+<div align="center" class="align-center"><img alt="epydoc_gui.png" class="align-center" src="epydoc_gui.png" /></div>
+<p>Use the <strong>Add</strong> box to specify what objects you wish to document. Objects can
+be specified using dotted names (such as <tt class="docutils literal"><span class="pre">os.path</span></tt>), module filenames (such
+as <tt class="docutils literal"><span class="pre">epydoc/epytext.py</span></tt>), or package directory names (such as <tt class="docutils literal"><span class="pre">epydoc/</span></tt>).
+Packages are expanded to include all sub-modules and sub-packages. Once you
+have added all of the modules that you wish to document, press the <strong>Start</strong>
+button. Epydoc's progress will be displayed on the progress bar.</p>
+<p>To customize the output, click on the <strong>Options</strong> arrow at the bottom of the
+window. This opens the options pane, which contains fields corresponding to
+each command line option.</p>
+<div align="center" class="align-center"><img alt="epydoc_guiconfig.png" class="align-center" src="epydoc_guiconfig.png" /></div>
+<p>The epydoc graphical interface can save and load <em>project files</em>, which record
+the set of modules and the options that you have selected. Select
+<strong>File-&gt;Save</strong> to save the current modules and options to a project file; and
+<strong>File-&gt;Open</strong> to open a previously saved project file. (These project files do
+not currently use the same format as the configuration files used by the
+command line interface.)</p>
+<p>For more information, see the <tt class="docutils literal"><span class="pre">epydocgui(1)</span></tt> man page.</p>
+</div>
+<div class="section" id="documentation-completeness-checks">
+<h1>Documentation Completeness Checks</h1>
+<p>The <tt class="docutils literal"><span class="pre">epydoc</span></tt> script can be used to check the completeness of the reference
+documentation. In particular, it will check that every module, class, method,
+and function has a description; that every parameter has a description and a
+type; and that every variable has a type. If the <tt class="docutils literal"><span class="pre">-p</span></tt> option is used, then
+these checks are run on both public and private objects; otherwise, the checks
+are only run on public objects.</p>
+<p><tt class="docutils literal"><span class="pre">epydoc</span></tt> <tt class="docutils literal"><span class="pre">--check</span></tt> [<tt class="docutils literal"><span class="pre">-p</span></tt>] <em>MODULES...</em></p>
+<dl class="docutils">
+<dt><em>MODULES...</em></dt>
+<dd>A list of the modules that should be checked. Modules may be specified
+using either filenames (such as <tt class="docutils literal"><span class="pre">epydoc/epytext.py</span></tt>) or module names
+(such as <tt class="docutils literal"><span class="pre">os.path</span></tt>). The filename for a package is its <tt class="docutils literal"><span class="pre">__init__.py</span></tt>
+file.</dd>
+</dl>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-p</span></kbd></td>
+<td>Run documentation completeness checks on private objects.</td></tr>
+</tbody>
+</table>
+<p>For each object that fails a check, epydoc will print a warning. For example,
+some of the warnings generated when checking the completeness of the
+documentation for epydoc's private objects are:</p>
+<pre class="literal-block">
+epydoc.html.HTML_Doc._dom_link_to_html........No docs
+epydoc.html.HTML_Doc._module..................No type
+epydoc.html.HTML_Doc._link_to_html.link.......No descr
+epydoc.html.HTML_Doc._author.return...........No type
+epydoc.html.HTML_Doc._author.authors..........No descr, No type
+epydoc.html.HTML_Doc._author.container........No descr, No type
+epydoc.html.HTML_Doc._base_tree.uid...........No descr, No type
+epydoc.html.HTML_Doc._base_tree.width.........No descr, No type
+epydoc.html.HTML_Doc._base_tree.postfix.......No descr, No type
+</pre>
+<p>If you'd like more fine-grained control over what gets checked, or you would
+like to check other fields (such as the author or version), then you should
+use the <a class="reference" href="http://epydoc.sourceforge.net/api/epydoc.checker.DocChecker-class.html"><tt class="docutils literal"><span class="pre">DocChecker</span></tt></a> class directly.</p>
+</div>
+<div class="section" id="html-files">
+<h1>HTML Files</h1>
+<p>Every Python module and class is documented in its own file. Index files, tree
+files, a help file, and a frames-based table of contents are also created.
+The following list describes each of the files generated by epydoc:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">index.html</span></tt></dt>
+<dd>The standard entry point for the documentation. Normally, <tt class="docutils literal"><span class="pre">index.html</span></tt>
+is a copy of the frames file (<tt class="docutils literal"><span class="pre">frames.html</span></tt>). But if the <tt class="docutils literal"><span class="pre">--no-frames</span></tt>
+option is used, then <tt class="docutils literal"><span class="pre">index.html</span></tt> is a copy of the API documentation home
+page, which is normally the documentation page for the top-level package or
+module (or the trees page if there is no top-level package or module).</dd>
+<dt><em>module</em><tt class="docutils literal"><span class="pre">-module.html</span></tt></dt>
+<dd>The API documentation for a module. <em>module</em> is the complete dotted name of
+the module, such as <cite>sys</cite> or <cite>epydoc.epytext</cite>.</dd>
+<dt><em>class</em><tt class="docutils literal"><span class="pre">-class.html</span></tt></dt>
+<dd>The API documentation for a class, exception, or type. <em>class</em> is the
+complete dotted name of the class, such as <tt class="docutils literal"><span class="pre">epydoc.epytext.Token</span></tt> or
+<tt class="docutils literal"><span class="pre">array.ArrayType</span></tt>.</dd>
+<dt><em>module</em><tt class="docutils literal"><span class="pre">-pysrc.html</span></tt></dt>
+<dd><p class="first last">A page with the module colorized source code, with links back to the
+objects main documentation pages. The creation of the colorized source
+pages can be controlled using the <a class="reference" href="CommandLineUsage_">options</a> <tt class="docutils literal"><span class="pre">--show-sourcecode</span></tt> and
+<tt class="docutils literal"><span class="pre">--no-sourcecode</span></tt>.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">module-tree.html</span></tt></dt>
+<dd>The documented module hierarchy.</dd>
+<dt><tt class="docutils literal"><span class="pre">class-tree.html</span></tt></dt>
+<dd>The documented classes hierarchy.</dd>
+<dt><tt class="docutils literal"><span class="pre">identifier-index.html</span></tt></dt>
+<dd>The index of all the identifiers found in the documented items.</dd>
+<dt><tt class="docutils literal"><span class="pre">term-index.html</span></tt></dt>
+<dd>The index of all the term definition found in the docstrings. Term
+definitions are created using the <a class="reference" href="manual-epytext.html#indexed-terms">Indexed Terms</a> markup.</dd>
+<dt><tt class="docutils literal"><span class="pre">bug-index.html</span></tt></dt>
+<dd>The index of all the known bug in the documented sources. Bugs are marked
+using the <tt class="docutils literal"><span class="pre">&#64;bug</span></tt> tag.</dd>
+<dt><tt class="docutils literal"><span class="pre">todo-index.html</span></tt></dt>
+<dd>The index of all the to-do items in the documented sources. They are
+marked using the <tt class="docutils literal"><span class="pre">&#64;todo</span></tt> tag.</dd>
+<dt><tt class="docutils literal"><span class="pre">help.html</span></tt></dt>
+<dd>The help page for the project. This page explains how to use and navigate
+the webpage produced by epydoc.</dd>
+<dt><tt class="docutils literal"><span class="pre">epydoc-log.html</span></tt></dt>
+<dd>A page with the log of the epydoc execution. It is available clicking on
+the timestamp below each page, if the documentation was created using the
+<tt class="docutils literal"><span class="pre">--include-log</span></tt> option. The page also contains the list of the options
+enabled when the documentation was created.</dd>
+<dt><tt class="docutils literal"><span class="pre">api-objects.txt</span></tt></dt>
+<dd>A text file containing each available item and the URL where it is
+documented. Each item takes a file line and it is separated by the URL by
+a <tt class="docutils literal"><span class="pre">tab</span></tt> charecter. Such file can be used to create <a class="reference" href="manual-othermarkup.html#external-api-links">external API links</a>.</dd>
+<dt><tt class="docutils literal"><span class="pre">redirect.html</span></tt></dt>
+<dd>A page containing Javascript code that redirect the browser to the
+documentation page indicated by the accessed fragment. For example
+opening the page <tt class="docutils literal"><span class="pre">redirect.html#epydoc.apidoc.DottedName</span></tt> the browser
+will be redirected to the page <tt class="docutils literal"><span class="pre">epydoc.apidoc.DottedName-class.html</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">frames.html</span></tt></dt>
+<dd>The main frames file. Two frames on the left side of the window contain a
+table of contents, and the main frame on the right side of the window
+contains API documentation pages.</dd>
+<dt><tt class="docutils literal"><span class="pre">toc.html</span></tt></dt>
+<dd>The top-level table of contents page. This page is displayed in the
+upper-left frame of frames.html, and provides links to the
+<tt class="docutils literal"><span class="pre">toc-everything.html</span></tt> and <tt class="docutils literal"><span class="pre">toc-module-module.html</span></tt> pages.</dd>
+<dt><tt class="docutils literal"><span class="pre">toc-everything.html</span></tt></dt>
+<dd>The table of contents for the entire project. This page is displayed in
+the lower-left frame of frames.html, and provides links to every class,
+type, exception, function, and variable defined by the project.</dd>
+<dt><tt class="docutils literal"><span class="pre">toc-</span></tt><em>module</em><tt class="docutils literal"><span class="pre">-module.html</span></tt></dt>
+<dd>The table of contents for a module. This page is displayed in the
+lower-left frame of frames.html, and provides links to every class, type,
+exception, function, and variable defined by the module. module is the
+complete dotted name of the module, such as <tt class="docutils literal"><span class="pre">sys</span></tt> or <tt class="docutils literal"><span class="pre">epydoc.epytext</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">epydoc.css</span></tt></dt>
+<dd>The CSS stylesheet used to display all HTML pages.</dd>
+</dl>
+</div>
+<div class="section" id="css-stylesheets">
+<h1>CSS Stylesheets</h1>
+<p>Epydoc creates a CSS stylesheet (<tt class="docutils literal"><span class="pre">epydoc.css</span></tt>) when it builds the API
+documentation for a project. You can specify which stylesheet should be used
+using the <tt class="docutils literal"><span class="pre">--css</span></tt> command-line option. If you do not specify a stylesheet,
+and one is already present, epydoc will use that stylesheet; otherwise, it will
+use the default stylesheet.</p>
+</div>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="index.html">
+    Home</a></td></a>
+  <a class="nav" href="installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

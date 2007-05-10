@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>Alternate Markup Languages</title>
+<link rel="stylesheet" href="custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="alternate-markup-languages">
+<h1 class="title">Alternate Markup Languages</h1>
+
+<!-- $Id: manual-othermarkup.txt 1551 2007-02-25 16:13:17Z dvarrazzo $ -->
+<p>Epydoc's default markup language is <a class="reference" href="manual-epytext.html#the-epytext-markup-language">epytext</a>, a lightweight markup language
+that's easy to write and to understand. But if epytext is not powerful enough
+for you, or doesn't suit your needs, epydoc also supports three alternate
+markup languages:</p>
+<dl class="docutils">
+<dt><a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a></dt>
+<dd><p class="first last">is an &quot;easy-to-read, what-you-see-is-what-you-get plaintext markup syntax&quot;.
+It is more powerful than epytext (e.g., it includes markup for tables and
+footnotes); but it is also more complex, and sometimes harder to read.</p>
+</dd>
+<dt><a class="reference" href="http://java.sun.com/j2se/javadoc/">Javadoc</a></dt>
+<dd><p class="first last">is a documentation markup language that was developed for Java. It consists
+of HTML, augmented by a set of special tagged fields.</p>
+</dd>
+<dt>Plaintext docstrings</dt>
+<dd>are rendered verbatim (preserving whitespace).</dd>
+</dl>
+<p>To specify the markup language for a module, you should define a module-level
+string variable <tt class="docutils literal"><span class="pre">__docformat__</span></tt>, containing the name of the module's markup
+language. The name of the markup language may optionally be followed by a
+language code (such as <tt class="docutils literal"><span class="pre">en</span></tt> for English). Conventionally, the definition of
+the <tt class="docutils literal"><span class="pre">__docformat__</span></tt> variable immediately follows the module's docstring:</p>
+<pre class="py-doctest">
+<span class="py-comment"># widget.py</span>
+<span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">Graphical support for `gizmos` and `widgets`.</span>
+<span class="py-string">&quot;&quot;&quot;</span>
+__docformat__ = <span class="py-string">&quot;restructuredtext en&quot;</span>
+<span class="py-comment">#[...]</span></pre>
+<p>To change the default markup language from the command line, use the
+<tt class="docutils literal"><span class="pre">--docformat</span></tt> option. For example, the following command generates API
+documentation for the existing regular expression package <tt class="docutils literal"><span class="pre">re</span></tt>, which uses
+plaintext markup:</p>
+<pre class="literal-block">
+[epydoc]$ epydoc --docformat plaintext re
+</pre>
+<div class="section" id="restructuredtext">
+<h1>reStructuredText</h1>
+<p>reStructuredText is a markup language that was developed in conjunction with
+<a class="reference" href="http://docutils.sourceforge.net/">Docutils</a>. In order to parse reStructuredText docstrings, Docutils 0.3 or
+higher must be installed. If Docutils is not installed, then reStructuredText
+docstrings will be rendered as plaintext. Docutils can be downloaded from the
+<a class="reference" href="http://sourceforge.net/project/showfiles.php?group_id=38414">Docutils SourceForge page</a>.</p>
+<div class="section" id="default-role">
+<h2>Default role</h2>
+<p>Epydoc replaces the Docutils' default <a class="reference" href="http://docutils.sourceforge.net/docs/ref/rst/roles.html">interpreted text role</a> with
+the creation of  <a class="reference" href="manual-epytext.html#documentation-crossreference-links">documentation crossreference links</a>. If you want to create
+a crossreference link to the <tt class="docutils literal"><span class="pre">somemod.Example</span></tt> class, you can put backquotes
+around your test, typing:</p>
+<pre class="literal-block">
+`somemod.Example`
+</pre>
+</div>
+<div class="section" id="consolidated-fields">
+<h2>Consolidated Fields</h2>
+<p>In addition to the <a class="reference" href="manual-fields.html#epydoc-fields">standard set of fields</a>, the reStructruedText parser also
+supports <em>consolidated fields</em>, which combine the documentation for several
+objects into a single field. For example, a single <tt class="docutils literal"><span class="pre">:Parameters:</span></tt> field is
+often used to describe all of the parameters for a function or method:</p>
+<pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">fox_speed</span>(size, weight, age):
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    Return the maximum speed for a fox.</span>
+
+<span class="py-string">    :Parameters:</span>
+<span class="py-string">    - `size`: The size of the fox (in meters)</span>
+<span class="py-string">    - `weight`: The weight of the fox (in stones)</span>
+<span class="py-string">    - `age`: The age of the fox (in years)</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+<p>Epydoc will automatically extract information about each parameter from this
+list. These <em>consolidated fields</em> may be written using either a <a class="reference" href="http://docutils.sourceforge.net/docs/user/rst/quickref.html#bullet-lists">bulleted
+list</a> or a <a class="reference" href="http://docutils.sourceforge.net/docs/user/rst/quickref.html#definition-lists">definition list</a>.</p>
+<ul class="simple">
+<li>If a consolidated field is written as a <em>bulleted list</em>, then each list item
+must begin with the field's argument, marked as <a class="reference" href="http://docutils.sourceforge.net/docs/user/rst/quickref.html#inline-markup">interpreted text</a>, and
+followed by a colon or dash.</li>
+<li>If a consolidated field is written as a <em>definition list</em>, then each
+definition item's term should contain the field's argument, (it is not
+mandatory for it being marked as interpreted text).</li>
+</ul>
+<p>The term classifier, if present, is used to specify the associated type. The
+following example shows the use of a definition list to define a consolidated
+field (note that docutils requires a space before and after the '<tt class="docutils literal"><span class="pre">:</span></tt>' used
+to mark classifiers).</p>
+<pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">fox_speed</span>(size, weight, age):
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    Return the maximum speed for a fox.</span>
+
+<span class="py-string">    :Parameters:</span>
+<span class="py-string">      size</span>
+<span class="py-string">        The size of the fox (in meters)</span>
+<span class="py-string">      weight : float</span>
+<span class="py-string">        The weight of the fox (in stones)</span>
+<span class="py-string">      age : int</span>
+<span class="py-string">        The age of the fox (in years)</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+<p>The following consolidated fields are currently supported by epydoc:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Consolidated Field Tag</th>
+<th class="head">Corresponding Base Field Tag</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal"><span class="pre">:Parameters:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:param:</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">:Exception:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:except:</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">:Groups:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:group:</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">:Keywords:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:keyword:</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">:Variables:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:var:</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">:IVariables:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:ivar:</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">:CVariables:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:cvar:</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">:Types:</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">:type:</span></tt></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="graph-directives">
+<h2>Graph directives</h2>
+<p>The epydoc reStructuredText reader defines several custom <cite>directives</cite>, which
+can be used to automatically generate a variety of graphs. The following custom
+directives are currently defined:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="30%" />
+<col width="70%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Directive</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="first last literal-block">
+.. classtree:: [<em>classes...</em>]
+    :dir: <em>up|down|left|right</em>
+</pre>
+</td>
+<td>Display a class hierarchy for the given class or classes (including all
+superclasses &amp; subclasses). If no class is specified, and the directive
+is used in a class's docstring, then that class's class hierarchy will
+be displayed. The <tt class="docutils literal"><span class="pre">dir</span></tt> option specifies the orientation for the graph
+(default=<tt class="docutils literal"><span class="pre">down</span></tt>).</td>
+</tr>
+<tr><td><pre class="first last literal-block">
+.. packagetree:: [<em>modules...</em>]
+    :dir: <em>up|down|left|right</em>
+    :style: <em>uml|tree</em>
+</pre>
+</td>
+<td>Display a package hierarchy for the given module or modules (including
+all subpackages and submodules). If no module is specified, and the
+directive is used in a module's docstring, then that module's package
+hierarchy will be displayed. The <tt class="docutils literal"><span class="pre">dir</span></tt> option specifies the
+orientation for the graph (default=<tt class="docutils literal"><span class="pre">down</span></tt>). The <tt class="docutils literal"><span class="pre">style</span></tt> option
+specifies whether packages should be displayed in a tree, or using
+nested UML symbols.</td>
+</tr>
+<tr><td><pre class="first last literal-block">
+.. importgraph:: [<em>modules...</em>]
+    :dir: <em>up|down|left|right</em>
+</pre>
+</td>
+<td>Display an import graph for the given module or modules. If no module
+is specified, and the directive is used in a module's docstring, then
+that module's import graph will be displayed. The <tt class="docutils literal"><span class="pre">dir</span></tt> option
+specifies the orientation for the graph (default=<tt class="docutils literal"><span class="pre">left</span></tt>).</td>
+</tr>
+<tr><td><pre class="first last literal-block">
+.. callgraph:: [<em>functions...</em>]
+    :dir: <em>up|down|left|right</em>
+</pre>
+</td>
+<td>Display a call graph for the given function or functions. If no
+function is specified, and the directive is used in a function's
+docstring, then that function's call graph will be displayed. The
+<tt class="docutils literal"><span class="pre">dir</span></tt> option specifies the orientation for the graph (default=<tt class="docutils literal"><span class="pre">right</span></tt>).</td>
+</tr>
+<tr><td><pre class="first last literal-block">
+.. dotgraph:: [<em>title...</em>]
+    :caption: <em>text...</em>
+    <em>graph...</em>
+</pre>
+</td>
+<td>Display a custom Graphviz dot graph. The body of the directive
+(<tt class="docutils literal"><span class="pre">graph...</span></tt>) should contain the body of a dot graph. The optional
+<tt class="docutils literal"><span class="pre">title</span></tt> argument, if specified, is used as the title of the graph.
+The optional <tt class="docutils literal"><span class="pre">caption</span></tt> option can be used to provide a caption for
+the graph.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="colorized-snippets-directive">
+<h2>Colorized snippets directive</h2>
+<p>Using reStructuredText markup it is possible to specify Python snippets in a
+<a class="reference" href="http://docutils.sourceforge.net/docs/user/rst/quickref.html#bullet-lists">doctest block</a>. SUch block will be colorized as in epytext <a class="reference" href="manual-epytext.html#doctest-blocks">Doctest Blocks</a>.</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">def</span> <span class="py-defname">double</span>(x):
+<span class="py-more">... </span>    return x * 2
+<span class="py-more">...</span>
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">print</span> double(8)
+<span class="py-output">16</span></pre>
+<p>Doctest block are mostly useful to be run as a part of automatized test suite
+using the <a class="reference" href="http://docs.python.org/lib/module-doctest.html">doctest</a> module. If the Python prompt gets in your way when you try
+to copy and paste and you are not interested in self-testing docstrings, the
+<tt class="docutils literal"><span class="pre">python</span></tt> directive will let you obtain a simple block of colorized text:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="first last literal-block">
+.. python::
+
+    def fib(n):
+        &quot;&quot;&quot;Print a Fibonacci series.&quot;&quot;&quot;
+        a, b = 0, 1
+        while b &lt; n:
+            print b,
+            a, b = b, a+b
+</pre>
+</td>
+<td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">fib</span>(n):
+    <span class="py-string">&quot;&quot;&quot;Print a Fibonacci series.&quot;&quot;&quot;</span>
+    a, b = 0, 1
+    while b &lt; n:
+        <span class="py-keyword">print</span> b,
+        a, b = b, a+b</pre>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="external-api-links">
+<h2>External API links</h2>
+<p>Epydoc can be used to create hyperlinks from your package documentation towards
+objects defined in the API of other packages. Such links are similar to
+ordinary <a class="reference" href="manual-epytext.html#documentation-crossreference-links">documentation crossreference links</a>, but it is required to configure
+Epydoc setting up a new <a class="reference" href="http://docutils.sourceforge.net/docs/ref/rst/roles.html">interpreted text role</a>, binding it to an external API.</p>
+<p>To create a new role, the command line option <tt class="docutils literal"><span class="pre">--external-api=</span></tt><em>NAME</em> must
+be used. This option introduces a new interpreted text role called <tt class="docutils literal"><span class="pre">NAME</span></tt>,
+which can be used to refer to objects defined in an external API.</p>
+<p>You can alternatively use a configuration file for this and all the other
+options: see the <a class="reference" href="manual-reference.html#sample-configuration-file">sample configuration file</a> for a comprehensive example.</p>
+<p>For example, if your program needs to programmatically use the Epydoc package
+itself, your docstrings may refer to functions described by Epydoc API:</p>
+<pre class="literal-block">
+If you want to print a value, you can use
+the :epydoc:`apidoc.pp_apidoc()` function.
+</pre>
+<p>When you will generate the API documentation for such program, you will
+need the option <tt class="docutils literal"><span class="pre">--external-api=epydoc</span></tt> or you will get parsing errors due
+to the unknown role.</p>
+<p>Of course this doesn't help to really create cross references: the
+<tt class="docutils literal"><span class="pre">--external-api</span></tt> option suffices to stop Epydoc complaining about unknown
+roles, but the text is simply rendered in a monotype font and no link is
+created.</p>
+<p>What Epydoc requires to create external API links is a mapping from the names
+of the objects exposed by the API and the URL where such objects are actually
+described. Such mapping must be provided as a text file, with an object name
+and its URL on each line, separated by a <tt class="docutils literal"><span class="pre">tab</span></tt> character. For example the
+Epydoc API documentation may be represented by a file names <tt class="docutils literal"><span class="pre">api-objects.txt</span></tt>
+containing:</p>
+<pre class="literal-block">
+epydoc                          -&gt;  epydoc-module.html
+epydoc.apidoc                   -&gt;  epydoc.apidoc-module.html
+epydoc.apidoc.UNKNOWN           -&gt;  epydoc.apidoc-module.html#UNKNOWN
+epydoc.apidoc._pp_val           -&gt;  epydoc.apidoc-module.html#_pp_val
+epydoc.apidoc.py_src_filename   -&gt;  epydoc.util-module.html#py_src_filename
+epydoc.apidoc.pp_apidoc         -&gt;  epydoc.apidoc-module.html#pp_apidoc
+epydoc.apidoc._pp_list          -&gt;  epydoc.apidoc-module.html#_pp_list
+...                                 ...
+...                                 ...
+</pre>
+<p>Epydoc's HTML writer indeed includes such file in its output: see <a class="reference" href="manual-usage.html#html-files">HTML
+Files</a> for details.</p>
+<p>You can bind the definition file to the interpreted text role name using
+the command line option <tt class="docutils literal"><span class="pre">--external-api-file=</span></tt><em>NAME:FILENAME</em>.In the
+previous example you can use:</p>
+<pre class="literal-block">
+--external-api-file=epydoc:api-objects.txt
+</pre>
+<p>This helps Epydoc to create relative urls: in the previous example the
+<tt class="docutils literal"><span class="pre">apidoc.pp_apidoc()</span></tt> label will be linked with the
+<tt class="docutils literal"><span class="pre">epydoc.apidoc-module.html#_pp_val</span></tt> URL.</p>
+<p>You can specify a new root for the generated links using the last command line
+option: <tt class="docutils literal"><span class="pre">--external-api-root=</span></tt><em>NAME:STRING</em>. <em>STRING</em> will be attached
+in front of any URL returned by the <em>NAME</em> text role. For example, to let your
+program refer to Epydoc API whose documentation is published at
+<a class="reference" href="http://epydoc.sourceforge.net/api/">http://epydoc.sourceforge.net/api/</a> you can use the options:</p>
+<pre class="literal-block">
+--external-api-root=epydoc:http://epydoc.sourceforge.net/api/
+</pre>
+<p>this will let your reference <a class="reference" href="http://epydoc.sourceforge.net/api/epydoc.apidoc-module.html#pp_apidoc"><tt class="docutils literal"><span class="pre">apidoc.pp_apidoc()</span></tt></a> point at the
+right documentation.</p>
+<p>The three options can be used any number of time, effectively allowing to link
+towards all the required external packages.</p>
+<div class="section" id="names-resolution">
+<h3>Names resolution</h3>
+<p>When an external API link is to be created, the required name is split along
+any separator ('<tt class="docutils literal"><span class="pre">.</span></tt>', '<tt class="docutils literal"><span class="pre">::</span></tt>', '<tt class="docutils literal"><span class="pre">-&gt;</span></tt>'). Everything after the first noise
+character (for example after an '<tt class="docutils literal"><span class="pre">(</span></tt>') is discarded.</p>
+<p>The name fragment is looked for in the names defined in the description file:
+first an exact match is attempted; if no name exactly matches the required
+name, a partial match is attempted: the required name is compared with the
+<em>trailing parts</em> of the names in the file.</p>
+<p>If a single name is found in this lookup, then its URL is returned. If the
+name is not found, or if it matches with the trailing part of many defined
+names, a warning is raised and the name is rendered as literal text.</p>
+</div>
+<div class="section" id="linking-from-standalone-documents">
+<h3>Linking from standalone documents</h3>
+<p>Epydoc provides the script <tt class="docutils literal"><span class="pre">apirst2html.py</span></tt> which allows to use the
+previously described interpreted text roles from any reST document. The script
+exposes the same interface of the standard Docutils script <tt class="docutils literal"><span class="pre">rst2html.py</span></tt> but
+provides the extra command line options described in <a class="reference" href="manual-othermarkup.html#external-api-links">External API links</a>.</p>
+<p>With such tool you will be able to create hypertextual documentation of your
+package with direct links to its API.</p>
+</div>
+</div>
+<div class="section" id="indexed-terms-in-restructuredtext">
+<h2>Indexed Terms in reStructuredText</h2>
+<p>Epydoc uses <a class="reference" href="manual-epytext.html#indexed-terms">indexed terms</a> to create a table of terms definitions. Indexed
+terms are created using the epytext markup <tt class="docutils literal"><span class="pre">X{...}</span></tt>.</p>
+<p>If you want to create indexed terms in reStructuredText modules,
+you can use the <tt class="docutils literal"><span class="pre">term</span></tt> <a class="reference" href="http://docutils.sourceforge.net/docs/ref/rst/roles.html">interpreted text role</a>. For example:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Docstring Input</th>
+<th class="head">Rendered Output</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><pre class="py-doctest">
+<span class="py-keyword">def</span> <span class="py-defname">example</span>():
+    <span class="py-string">&quot;&quot;&quot;</span>
+<span class="py-string">    An :term:`index term` is a term that</span>
+<span class="py-string">    should be included in the index.</span>
+<span class="py-string">    &quot;&quot;&quot;</span>
+    <span class="py-comment">#[...]</span></pre>
+</td>
+<td><p class="first">An <em>index term</em> is a term that should be included in the index.</p>
+<blockquote class="last">
+<table border="1" class="docutils">
+<colgroup>
+<col width="46%" />
+<col width="54%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head" colspan="2">Index</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>index term</td>
+<td><em>example</em></td>
+</tr>
+<tr><td>x intercept</td>
+<td><em>x_intercept</em></td>
+</tr>
+<tr><td>y intercept</td>
+<td><em>x_intercept</em></td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="javadoc">
+<h1>Javadoc</h1>
+<p><a class="reference" href="manual-othermarkup.html#javadoc">Javadoc</a> is a markup language developed by Sun Microsystems for documenting
+Java APIs. The epydoc implementation of Javadoc is based on the <a class="reference" href="http://java.sun.com/j2se/1.4.2/docs/tooldocs/solaris/javadoc.html">Javadoc 1.4.2
+reference documentation</a>. However, there are likely to be some minor incompatibilities between Sun's implementation and epydoc's. Known incompatibilities include:</p>
+<ul class="simple">
+<li>Epydoc does not support the Javadoc block tag <tt class="docutils literal"><span class="pre">&#64;serial</span></tt>.</li>
+<li>Epydoc does not support the following Javadoc inline tags: <tt class="docutils literal"><span class="pre">{&#64;docroot}</span></tt>,
+<tt class="docutils literal"><span class="pre">{&#64;inheritdoc}</span></tt>, <tt class="docutils literal"><span class="pre">{&#64;value}</span></tt>.</li>
+<li>Epydoc adds many field tags that Sun does not include, such as <tt class="docutils literal"><span class="pre">&#64;var</span></tt>,
+<tt class="docutils literal"><span class="pre">&#64;type</span></tt>, and <tt class="docutils literal"><span class="pre">&#64;group</span></tt>.</li>
+</ul>
+<div class="section" id="javadoc-fields">
+<h2>Javadoc Fields</h2>
+<p>For compatibility with Javadoc, every <tt class="docutils literal"><span class="pre">&#64;see</span></tt> field is assumed to contain a
+single crossreference link, unless its body is quoted, or it starts with an
+HTML tag. See the <a class="reference" href="http://java.sun.com/j2se/1.4.2/docs/tooldocs/solaris/javadoc.html#&#64;see">Javadoc reference manual</a> for more information about how the
+<tt class="docutils literal"><span class="pre">&#64;see</span></tt> field is encoded in Javadoc.</p>
+<p>Because Javadoc does not mark end of the optional argument, field arguments
+must contain exactly one word. Thus, multi-word arguments are not available
+in Javadoc. In particular, all group names must be single words.</p>
+</div>
+</div>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="index.html">
+    Home</a></td></a>
+  <a class="nav" href="installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,704 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.ParsedDocstring</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        Class&nbsp;ParsedDocstring
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.ParsedDocstring-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class ParsedDocstring</h1><span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_m_3" name="uml_class_diagram_for_epydoc_m_3">
+<area shape="rect" href="epydoc.markup.pyval_repr.ColorizedPyvalRepr&#45;class.html" title="epydoc.markup.pyval_repr.ColorizedPyvalRepr" alt="" coords="823,267,1042,304" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html" title="An encoded version of a ReStructuredText docstring." alt="" coords="6,211,256,248" />
+<area shape="rect" href="epydoc.markup.javadoc.ParsedJavadocDocstring&#45;class.html" title="An encoded version of a Javadoc docstring." alt="" coords="286,211,520,248" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#split_fields" title="Split this docstring into its body and its fields." alt="" coords="403,36,670,55" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#concatenate" title="Returns:  A new parsed docstring containing the concatination of this docstring and  other." alt="" coords="403,55,670,73" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#to_html" title="Translate this docstring to HTML." alt="" coords="403,73,670,92" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#to_plaintext" title="Translate this docstring to plaintext." alt="" coords="403,92,670,111" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#index_terms" title="Returns:  The list of index terms that are defined in this docstring." alt="" coords="403,111,670,129" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#to_latex" title="Translate this docstring to LaTeX." alt="" coords="403,129,670,148" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#summary" title="Returns:  A pair consisting of a short summary of this docstring and a boolean value  indicating whether there is further documentation in addition to the  summary." alt="" coords="403,148,670,167" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#__add__" title="epydoc.markup.ParsedDocstring.__add__" alt="" coords="403,167,670,185" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html" title="A standard intermediate representation for parsed docstrings that can be used to generate output." alt="" coords="391,5,682,192" />
+<area shape="rect" href="epydoc.markup.plaintext.ParsedPlaintextDocstring&#45;class.html" title="epydoc.markup.plaintext.ParsedPlaintextDocstring" alt="" coords="550,211,790,248" />
+<area shape="rect" href="epydoc.markup.epytext.ParsedEpytextDocstring&#45;class.html" title="epydoc.markup.epytext.ParsedEpytextDocstring" alt="" coords="819,211,1046,248" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_m_3.gif" alt='' usemap="#uml_class_diagram_for_epydoc_m_3" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+A standard intermediate representation for parsed docstrings that can 
+  be used to generate output.  Parsed docstrings are produced by markup 
+  parsers (such as <a href="epydoc.markup.epytext-module.html#parse" 
+  class="link">epytext.parse</a> or <a 
+  href="epydoc.markup-module.html#parse" class="link">javadoc.parse</a>). 
+  <code>ParsedDocstring</code>s support several kinds of operation:
+  <ul>
+    <li>
+      output generation (<a 
+      href="epydoc.markup.ParsedDocstring-class.html#to_plaintext" 
+      class="link">to_plaintext()</a>, <a 
+      href="epydoc.markup.ParsedDocstring-class.html#to_html" 
+      class="link">to_html()</a>, and <a 
+      href="epydoc.markup.ParsedDocstring-class.html#to_latex" 
+      class="link">to_latex()</a>).
+    </li>
+    <li>
+      Summarization (<a 
+      href="epydoc.markup.ParsedDocstring-class.html#summary" 
+      class="link">summary()</a>).
+    </li>
+    <li>
+      Field extraction (<a 
+      href="epydoc.markup.ParsedDocstring-class.html#split_fields" 
+      class="link">split_fields()</a>).
+    </li>
+    <li>
+      Index term extraction (<a 
+      href="epydoc.markup.ParsedDocstring-class.html#index_terms" 
+      class="link">index_terms()</a>.
+    </li>
+  </ul>
+  The output generation methods (<code>to_<i 
+  class="math">format</i>()</code>) use a <a 
+  href="epydoc.markup.DocstringLinker-class.html" 
+  class="link">DocstringLinker</a> to link the docstring output with the 
+  rest of the documentation that epydoc generates.
+  <h1 class="heading">Subclassing</h1>
+    The only method that a subclass is <i>required</i> to implement is 
+    <a href="epydoc.markup.ParsedDocstring-class.html#to_plaintext" 
+    class="link">to_plaintext()</a>; but it is often useful to override the
+    other methods.  The default behavior of each method is described 
+    below:
+    <ul>
+      <li>
+        <code>to_<i>format</i></code>: Calls <code>to_plaintext</code>, 
+        and uses the string it returns to generate verbatim output.
+      </li>
+      <li>
+        <code>summary</code>: Returns <code>self</code> (i.e., the 
+        entire docstring).
+      </li>
+      <li>
+        <code>split_fields</code>: Returns <code>(self, [])</code> 
+        (i.e., extracts no fields).
+      </li>
+      <li>
+        <code>index_terms</code>: Returns <code>[]</code> (i.e., 
+        extracts no index terms).
+      </li>
+    </ul>
+    If and when epydoc adds more output formats, new 
+    <code>to_<i>format</i></code> methods will be added to this base class;
+    but they will always be given a default implementation.<br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>(<a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a>, list of <a 
+      href="epydoc.markup.Field-class.html" 
+      class="link">Field</a>)</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.ParsedDocstring-class.html#split_fields" class="summary-sig-name">split_fields</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">errors</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Split this docstring into its body and its fields.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring.split_fields">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_split_fields_2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_split_fields_2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_split_fields_2" name="call_graph_for_split_fields_2">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="docstringparser.parse_docstring()" alt="" coords="5,6,277,38" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#split_fields" title="split_fields()" alt="" coords="325,6,443,38" />
+</map>
+  <img src="call_graph_for_split_fields_2.gif" alt='' usemap="#call_graph_for_split_fields_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">(<a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a>, <code>bool</code>)</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.ParsedDocstring-class.html#summary" class="summary-sig-name">summary</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Returns:
+      A pair consisting of a short summary of this docstring and a 
+      boolean value indicating whether there is further documentation in 
+      addition to the summary.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring.summary">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.ParsedDocstring-class.html#concatenate" class="summary-sig-name">concatenate</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">other</span>)</span><br />
+      Returns:
+      A new parsed docstring containing the concatination of this 
+      docstring and <code>other</code>.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring.concatenate">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_concatenate-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_concatenate-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_concatenate" name="call_graph_for_concatenate">
+<area shape="rect" href="epydoc.markup.ConcatenatedDocstring&#45;class.html#__init__" title="ConcatenatedDocstring.__init__()" alt="" coords="327,6,601,38" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#__add__" title="__add__()" alt="" coords="7,6,105,38" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#concatenate" title="concatenate()" alt="" coords="155,6,277,38" />
+</map>
+  <img src="call_graph_for_concatenate.gif" alt='' usemap="#call_graph_for_concatenate" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="__add__"></a><span class="summary-sig-name">__add__</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">other</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring.__add__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___add___2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___add___2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___add___2" name="call_graph_for___add___2">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="docstringparser.parse_docstring()" alt="" coords="6,6,278,38" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#__add__" title="__add__()" alt="" coords="327,6,426,38" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#concatenate" title="concatenate()" alt="" coords="475,6,598,38" />
+</map>
+  <img src="call_graph_for___add___2.gif" alt='' usemap="#call_graph_for___add___2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.ParsedDocstring-class.html#to_html" class="summary-sig-name">to_html</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">docstring_linker</span>,
+        <span class="summary-sig-arg">**options</span>)</span><br />
+      Translate this docstring to HTML.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring.to_html">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_to_html_3-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_to_html_3-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_to_html_3" name="call_graph_for_to_html_3">
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#to_html" title="to_html()" alt="" coords="411,34,504,66" />
+<area shape="rect" href="epydoc.markup.plaintext.ParsedPlaintextDocstring&#45;class.html#to_plaintext" title="plaintext.ParsedPlaintextDocstring.to_plaintext()" alt="" coords="554,6,940,38" />
+<area shape="rect" href="epydoc.util&#45;module.html#plaintext_to_html" title="util.plaintext_to_html()" alt="" coords="648,62,846,94" />
+<area shape="rect" href="epydoc.markup.plaintext.ParsedPlaintextDocstring&#45;class.html#to_html" title="plaintext.ParsedPlaintextDocstring.to_html()" alt="" coords="7,34,362,66" />
+</map>
+  <img src="call_graph_for_to_html_3.gif" alt='' usemap="#call_graph_for_to_html_3" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.ParsedDocstring-class.html#to_latex" class="summary-sig-name">to_latex</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">docstring_linker</span>,
+        <span class="summary-sig-arg">**options</span>)</span><br />
+      Translate this docstring to LaTeX.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring.to_latex">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>string</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.ParsedDocstring-class.html#to_plaintext" class="summary-sig-name">to_plaintext</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">docstring_linker</span>,
+        <span class="summary-sig-arg">**options</span>)</span><br />
+      Translate this docstring to plaintext.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring.to_plaintext">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type"><code>list</code> of <code>ParsedDocstring</code></span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.ParsedDocstring-class.html#index_terms" class="summary-sig-name">index_terms</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Returns:
+      The list of index terms that are defined in this docstring.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring.index_terms">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_index_terms_2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_index_terms_2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_index_terms_2" name="call_graph_for_index_terms_2">
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_terms_from_docstring" title="docwriter.html.HTMLWriter._terms_from_docstring()" alt="" coords="5,6,435,38" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#index_terms" title="index_terms()" alt="" coords="483,6,611,38" />
+</map>
+  <img src="call_graph_for_index_terms_2.gif" alt='' usemap="#call_graph_for_index_terms_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="split_fields"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">split_fields</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">errors</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring.split_fields">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_split_fields_2-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_split_fields_2-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_split_fields_2" name="call_graph_for_split_fields_2">
+<area shape="rect" href="epydoc.docstringparser&#45;module.html#parse_docstring" title="docstringparser.parse_docstring()" alt="" coords="5,6,277,38" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#split_fields" title="split_fields()" alt="" coords="325,6,443,38" />
+</map>
+  <img src="call_graph_for_split_fields_2.gif" alt='' usemap="#call_graph_for_split_fields_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Split this docstring into its body and its fields.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>errors</code></strong> (<code>list</code> of <a 
+          href="epydoc.markup.ParseError-class.html" 
+          class="link">ParseError</a>) - A list where any errors generated during splitting will be 
+          stored.  If no list is specified, then errors will be 
+          ignored.</li>
+    </ul></dd>
+    <dt>Returns: <code>(<a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a>, list of <a 
+      href="epydoc.markup.Field-class.html" 
+      class="link">Field</a>)</code></dt>
+        <dd>A tuple <code>(<i class="math">body</i>, <i 
+          class="math">fields</i>)</code>, where <code><i 
+          class="math">body</i></code> is the main body of this docstring, 
+          and <code><i class="math">fields</i></code> is a list of its 
+          fields.  If the resulting body is empty, return <code>None</code>
+          for the body.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="summary"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">summary</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring.summary">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  
+  <dl class="fields">
+    <dt>Returns: (<a href="epydoc.markup.ParsedDocstring-class.html" 
+      class="link">ParsedDocstring</a>, <code>bool</code>)</dt>
+        <dd>A pair consisting of a short summary of this docstring and a 
+          boolean value indicating whether there is further documentation 
+          in addition to the summary. Typically, the summary consists of 
+          the first sentence of the docstring.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="concatenate"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">concatenate</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">other</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring.concatenate">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_concatenate-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_concatenate-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_concatenate" name="call_graph_for_concatenate">
+<area shape="rect" href="epydoc.markup.ConcatenatedDocstring&#45;class.html#__init__" title="ConcatenatedDocstring.__init__()" alt="" coords="327,6,601,38" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#__add__" title="__add__()" alt="" coords="7,6,105,38" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#concatenate" title="concatenate()" alt="" coords="155,6,277,38" />
+</map>
+  <img src="call_graph_for_concatenate.gif" alt='' usemap="#call_graph_for_concatenate" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+    <dt>Returns:</dt>
+        <dd>A new parsed docstring containing the concatination of this 
+          docstring and <code>other</code>.</dd>
+    <dt>Raises:</dt>
+    <dd><ul class="nomargin-top">
+        <li><code><strong class='fraise'>ValueError</strong></code> - If the two parsed docstrings are incompatible.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="to_html"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">to_html</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">docstring_linker</span>,
+        <span class="sig-arg">**options</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring.to_html">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_to_html_3-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_to_html_3-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_to_html_3" name="call_graph_for_to_html_3">
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#to_html" title="to_html()" alt="" coords="411,34,504,66" />
+<area shape="rect" href="epydoc.markup.plaintext.ParsedPlaintextDocstring&#45;class.html#to_plaintext" title="plaintext.ParsedPlaintextDocstring.to_plaintext()" alt="" coords="554,6,940,38" />
+<area shape="rect" href="epydoc.util&#45;module.html#plaintext_to_html" title="util.plaintext_to_html()" alt="" coords="648,62,846,94" />
+<area shape="rect" href="epydoc.markup.plaintext.ParsedPlaintextDocstring&#45;class.html#to_html" title="plaintext.ParsedPlaintextDocstring.to_html()" alt="" coords="7,34,362,66" />
+</map>
+  <img src="call_graph_for_to_html_3.gif" alt='' usemap="#call_graph_for_to_html_3" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Translate this docstring to HTML.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>docstring_linker</code></strong> (<a href="epydoc.markup.DocstringLinker-class.html" 
+          class="link">DocstringLinker</a>) - An HTML translator for crossreference links into and out of 
+          the docstring.</li>
+        <li><strong class="pname"><code>options</code></strong> - Any extra options for the output.  Unknown options are 
+          ignored.</li>
+    </ul></dd>
+    <dt>Returns: <code>string</code></dt>
+        <dd>An HTML fragment that encodes this docstring.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="to_latex"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">to_latex</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">docstring_linker</span>,
+        <span class="sig-arg">**options</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring.to_latex">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Translate this docstring to LaTeX.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>docstring_linker</code></strong> (<a href="epydoc.markup.DocstringLinker-class.html" 
+          class="link">DocstringLinker</a>) - A LaTeX translator for crossreference links into and out of 
+          the docstring.</li>
+        <li><strong class="pname"><code>options</code></strong> - Any extra options for the output.  Unknown options are 
+          ignored.</li>
+    </ul></dd>
+    <dt>Returns: <code>string</code></dt>
+        <dd>A LaTeX fragment that encodes this docstring.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="to_plaintext"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">to_plaintext</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">docstring_linker</span>,
+        <span class="sig-arg">**options</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring.to_plaintext">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </table>
+  
+  Translate this docstring to plaintext.
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>docstring_linker</code></strong> (<a href="epydoc.markup.DocstringLinker-class.html" 
+          class="link">DocstringLinker</a>) - A plaintext translator for crossreference links into and out 
+          of the docstring.</li>
+        <li><strong class="pname"><code>options</code></strong> - Any extra options for the output.  Unknown options are 
+          ignored.</li>
+    </ul></dd>
+    <dt>Returns: <code>string</code></dt>
+        <dd>A plaintext fragment that encodes this docstring.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="index_terms"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">index_terms</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup-pysrc.html#ParsedDocstring.index_terms">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_index_terms_2-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_index_terms_2-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_index_terms_2" name="call_graph_for_index_terms_2">
+<area shape="rect" href="epydoc.docwriter.html.HTMLWriter&#45;class.html#_terms_from_docstring" title="docwriter.html.HTMLWriter._terms_from_docstring()" alt="" coords="5,6,435,38" />
+<area shape="rect" href="epydoc.markup.ParsedDocstring&#45;class.html#index_terms" title="index_terms()" alt="" coords="483,6,611,38" />
+</map>
+  <img src="call_graph_for_index_terms_2.gif" alt='' usemap="#call_graph_for_index_terms_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+    <dt>Returns: <code>list</code> of <code>ParsedDocstring</code></dt>
+        <dd>The list of index terms that are defined in this docstring.  
+          Each of these items will be added to the index page of the 
+          documentation.</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:04:52 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

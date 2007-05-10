@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.restructuredtext._SummaryExtractor</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        <a href="epydoc.markup.restructuredtext-module.html">Module&nbsp;restructuredtext</a> ::
+        Class&nbsp;_SummaryExtractor
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.restructuredtext._SummaryExtractor-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class _SummaryExtractor</h1><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SummaryExtractor">source&nbsp;code</a></span><br /><br />
+<center>
+<center>  <map id="uml_class_diagram_for_epydoc_m_24" name="uml_class_diagram_for_epydoc_m_24">
+<area shape="rect" href="javascript: void(0);" title="Tuple containing node class names (as strings)." alt="" coords="18,28,210,47" />
+<area shape="rect" href="javascript: void(0);" title="Call self.&quot;visit_ + node class name&quot; with node as parameter." alt="" coords="18,50,210,68" />
+<area shape="rect" href="javascript: void(0);" title="Called before exiting unknown Node types." alt="" coords="18,68,210,87" />
+<area shape="rect" href="javascript: void(0);" title="Call self.&quot;depart_ + node class name&quot; with node as parameter." alt="" coords="18,87,210,106" />
+<area shape="rect" href="javascript: void(0);" title="&quot;Visitor&quot; pattern GoF95 abstract superclass implementation for document tree traversals." alt="" coords="6,6,222,112" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SummaryExtractor&#45;class.html#visit_document" title="epydoc.markup.restructuredtext._SummaryExtractor.visit_document" alt="" coords="31,162,196,180" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SummaryExtractor&#45;class.html#visit_field" title="epydoc.markup.restructuredtext._SummaryExtractor.visit_field" alt="" coords="31,180,196,199" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SummaryExtractor&#45;class.html#visit_paragraph" title="epydoc.markup.restructuredtext._SummaryExtractor.visit_paragraph" alt="" coords="31,199,196,218" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SummaryExtractor&#45;class.html#unknown_visit" title="Ignore all unknown nodes" alt="" coords="31,218,196,236" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SummaryExtractor&#45;class.html#__init__" title="epydoc.markup.restructuredtext._SummaryExtractor.__init__" alt="" coords="31,236,196,255" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SummaryExtractor&#45;class.html" title="A docutils node visitor that extracts the first sentence from the first paragraph in a document." alt="" coords="19,131,208,262" />
+</map>
+  <img src="uml_class_diagram_for_epydoc_m_24.gif" alt='' usemap="#uml_class_diagram_for_epydoc_m_24" ismap="ismap" class="graph-without-title" />
+</center></center>
+<hr />
+A docutils node visitor that extracts the first sentence from the 
+  first paragraph in a document.<br /><br />
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._SummaryExtractor-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">document</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SummaryExtractor.__init__">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___48-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for___init___48-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___48" name="call_graph_for___init___48">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.__init__()" alt="" coords="457,6,761,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#summary" title="ParsedRstDocstring.summary()" alt="" coords="5,6,261,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SummaryExtractor&#45;class.html#__init__" title="__init__()" alt="" coords="311,6,407,38" />
+</map>
+  <img src="call_graph_for___init___48.gif" alt='' usemap="#call_graph_for___init___48" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="visit_document"></a><span class="summary-sig-name">visit_document</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SummaryExtractor.visit_document">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_visit_document_4-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_visit_document_4-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_visit_document_4" name="call_graph_for_visit_document_4">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="6,6,352,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SummaryExtractor&#45;class.html#visit_document" title="visit_document()" alt="" coords="400,6,550,38" />
+</map>
+  <img src="call_graph_for_visit_document_4.gif" alt='' usemap="#call_graph_for_visit_document_4" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="visit_paragraph"></a><span class="summary-sig-name">visit_paragraph</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SummaryExtractor.visit_paragraph">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_visit_paragraph-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_visit_paragraph-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_visit_paragraph" name="call_graph_for_visit_paragraph">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__getitem__()" alt="" coords="597,6,904,38" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.__setitem__()" alt="" coords="599,62,903,94" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.Element.copy()" alt="" coords="627,118,875,150" />
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="5,90,352,122" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SummaryExtractor&#45;class.html#visit_paragraph" title="visit_paragraph()" alt="" coords="400,90,549,122" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#__init__" title="ParsedRstDocstring.__init__()" alt="" coords="627,174,875,206" />
+</map>
+  <img src="call_graph_for_visit_paragraph.gif" alt='' usemap="#call_graph_for_visit_paragraph" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="visit_field"></a><span class="summary-sig-name">visit_field</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SummaryExtractor.visit_field">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="epydoc.markup.restructuredtext._SummaryExtractor-class.html#unknown_visit" class="summary-sig-name">unknown_visit</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">node</span>)</span><br />
+      Ignore all unknown nodes</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SummaryExtractor.unknown_visit">source&nbsp;code</a></span>
+            <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_unknown_visit_2-summary-div');return false;">call&nbsp;graph</a></span>&nbsp;
+          </td>
+        </tr>
+      </table>
+      <div style="display:none" id="call_graph_for_unknown_visit_2-summary-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_unknown_visit_2" name="call_graph_for_unknown_visit_2">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="5,6,352,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SummaryExtractor&#45;class.html#unknown_visit" title="unknown_visit()" alt="" coords="400,6,547,38" />
+</map>
+  <img src="call_graph_for_unknown_visit_2.gif" alt='' usemap="#call_graph_for_unknown_visit_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.nodes.NodeVisitor</code></b>:
+      <code>dispatch_departure</code>,
+      <code>dispatch_visit</code>,
+      <code>unknown_departure</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>docutils.nodes.NodeVisitor</code></b>:
+      <code>optional</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">document</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SummaryExtractor.__init__">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for___init___48-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for___init___48-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for___init___48" name="call_graph_for___init___48">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.__init__()" alt="" coords="457,6,761,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext.ParsedRstDocstring&#45;class.html#summary" title="ParsedRstDocstring.summary()" alt="" coords="5,6,261,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SummaryExtractor&#45;class.html#__init__" title="__init__()" alt="" coords="311,6,407,38" />
+</map>
+  <img src="call_graph_for___init___48.gif" alt='' usemap="#call_graph_for___init___48" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.nodes.NodeVisitor.__init__
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="unknown_visit"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">unknown_visit</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">node</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="epydoc.markup.restructuredtext-pysrc.html#_SummaryExtractor.unknown_visit">source&nbsp;code</a></span>&nbsp;
+    <br /><span class="codelink"><a href="javascript:void(0);" onclick="toggleCallGraph('call_graph_for_unknown_visit_2-div');return false;">call&nbsp;graph</a></span>&nbsp;</td>
+  </table>
+  <div style="display:none" id="call_graph_for_unknown_visit_2-div"><center>
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr><td><center>  <map id="call_graph_for_unknown_visit_2" name="call_graph_for_unknown_visit_2">
+<area shape="rect" href="javascript: void(0);" title="docutils.nodes.NodeVisitor.dispatch_visit()" alt="" coords="5,6,352,38" />
+<area shape="rect" href="epydoc.markup.restructuredtext._SummaryExtractor&#45;class.html#unknown_visit" title="unknown_visit()" alt="" coords="400,6,547,38" />
+</map>
+  <img src="call_graph_for_unknown_visit_2.gif" alt='' usemap="#call_graph_for_unknown_visit_2" ismap="ismap" class="graph-without-title" />
+</center></td></tr>
+  <tr><th>Call Graph</th></tr>
+</table><br />
+</center></div>
+
+  Ignore all unknown nodes
+  <dl class="fields">
+    <dt>Overrides:
+      docutils.nodes.NodeVisitor.unknown_visit
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:05:26 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>

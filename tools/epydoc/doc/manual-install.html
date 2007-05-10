@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>Installing Epydoc</title>
+<link rel="stylesheet" href="custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="installing-epydoc">
+<h1 class="title">Installing Epydoc</h1>
+
+<!-- $Id: manual-install.txt 1541 2007-02-20 09:49:56Z dvarrazzo $ -->
+<div class="section" id="downloading-epydoc">
+<h1>Downloading Epydoc</h1>
+<p>Epydoc can be downloaded from the <a class="reference" href="http://sourceforge.net/project/showfiles.php?group_id=32455">SourceForge download page</a>. Epydoc is
+available in five formats:</p>
+<ul class="simple">
+<li>RPM (<tt class="docutils literal"><span class="pre">.noarch.rpm</span></tt>)</li>
+<li>Windows installer (<tt class="docutils literal"><span class="pre">.win32.exe</span></tt>)</li>
+<li>Source install (<tt class="docutils literal"><span class="pre">.tar.gz</span></tt>)</li>
+<li>Source install (<tt class="docutils literal"><span class="pre">.zip</span></tt>)</li>
+<li>Source RPM (<tt class="docutils literal"><span class="pre">.src.rpm</span></tt>)</li>
+</ul>
+<p>If you are installing on RedHat, I recommend that you use the RPM file. If you
+are installing on Windows, I recommended that you use the windows installer.
+Otherwise, you should use one of the source install files.</p>
+</div>
+<div class="section" id="getting-epydoc-from-subversion">
+<h1>Getting Epydoc from Subversion</h1>
+<p>If you wish to keep up on the latest developments, you can get the latest
+version of epydoc from the <a class="reference" href="http://sourceforge.net/svn/?group_id=32455">subversion repository</a>:</p>
+<pre class="literal-block">
+[/home/edloper]$ svn co https://svn.sourceforge.net/svnroot/epydoc/trunk/epydoc epydoc
+[/home/edloper]$ ls epydoc
+Makefile  doc  man  sandbox  src
+</pre>
+<p>This will create a directory named <tt class="docutils literal"><span class="pre">epydoc</span></tt> containing the latest version of
+epydoc. The <tt class="docutils literal"><span class="pre">epydoc</span></tt> package itself is in <tt class="docutils literal"><span class="pre">epydoc/src/epydoc</span></tt> (so adding
+<tt class="docutils literal"><span class="pre">epydoc/src</span></tt> to your <tt class="docutils literal"><span class="pre">PYTHONPATH</span></tt> will let you use it). You should
+periodically update your copy of the subversion repository, to make sure you
+have all the latest changes:</p>
+<pre class="literal-block">
+[/home/edloper/epydoc]$ svn up
+</pre>
+<p>You can browse the subversion repository <a class="reference" href="http://svn.sourceforge.net/viewcvs.cgi/epydoc/trunk/epydoc/">here</a>.</p>
+</div>
+<div class="section" id="installing-from-the-rpm-file">
+<h1>Installing from the RPM File</h1>
+<ol class="arabic">
+<li><p class="first">Download the RPM file to a directory of your choice.</p>
+</li>
+<li><p class="first">Use rpm to install the new package.</p>
+<pre class="literal-block">
+[/tmp]$ su
+Password:
+[/tmp]# rpm -i epydoc-3.0beta1.noarch.rpm
+</pre>
+</li>
+<li><p class="first">Once epydoc is installed, you can delete the RPM file.</p>
+<pre class="literal-block">
+[/tmp]# rm epydoc-3.0beta1.rpm
+</pre>
+</li>
+</ol>
+</div>
+<div class="section" id="installing-from-the-windows-installer">
+<h1>Installing from the Windows Installer</h1>
+<ol class="arabic simple">
+<li>Download and run <tt class="docutils literal"><span class="pre">epydoc-3.0beta1.win32.exe</span></tt>.</li>
+<li>Follow the on-screen instructions. Epydoc will be installed in the epydoc
+subdirectory of your Python installation directory (typically
+<tt class="docutils literal"><span class="pre">C:\Python24\</span></tt>).</li>
+<li>The Windows installer creates two scripts in the <tt class="docutils literal"><span class="pre">Scripts</span></tt> subdirectory of
+your Python installation directory: <tt class="docutils literal"><span class="pre">epydoc.pyw</span></tt> opens the graphical user
+interface, and <tt class="docutils literal"><span class="pre">epydoc.py</span></tt> calls the command line interface. If you'd
+like, you can create shortcuts from these scripts to more convenient
+locations (such as your desktop or start menu).</li>
+<li>Once epydoc is installed, you can delete <tt class="docutils literal"><span class="pre">epydoc-3.0beta1.win32.exe</span></tt>.</li>
+</ol>
+</div>
+<div class="section" id="installing-from-the-source-distribution-using-make">
+<h1>Installing from the Source Distribution (using make)</h1>
+<ol class="arabic">
+<li><p class="first">Download an epydoc source distribution to a directory of your choice, and
+uncompress it.</p>
+<pre class="literal-block">
+[/tmp]$ wget -q http://prdownloads.sourceforge.net/epydoc/epydoc-3.0beta1.tar.gz
+[/tmp]$ gunzip epydoc-3.0beta1.tar.gz
+[/tmp]$ tar -xvf epydoc-3.0beta1.tar
+</pre>
+</li>
+<li><p class="first">Use <tt class="docutils literal"><span class="pre">make</span> <span class="pre">install</span></tt> in the <tt class="docutils literal"><span class="pre">eydoc-3.0beta1/</span></tt> directory to install
+epydoc.</p>
+<pre class="literal-block">
+[/tmp]$ cd epydoc-3.0beta1/
+[/tmp/epydoc-3.0beta1]$ su
+Password:
+[/tmp/epydoc-3.0beta1]# make install
+running install
+running build
+[...]
+copying build/scripts/epydoc -&gt; /usr/bin
+changing mode of /usr/bin/epydoc to 100775
+</pre>
+</li>
+<li><p class="first">If you'd like to keep a local copy of the documentation, then use <tt class="docutils literal"><span class="pre">make</span>
+<span class="pre">installdocs</span></tt>. By default, this will install the documentation to
+<tt class="docutils literal"><span class="pre">/usr/share/doc/</span></tt> and the man pages to <tt class="docutils literal"><span class="pre">/usr/share/man/</span></tt>. If you would
+prefer to install documentation to different directories (such as
+<tt class="docutils literal"><span class="pre">/usr/lib/doc</span></tt>), then edit the <tt class="docutils literal"><span class="pre">MAN</span></tt> and <tt class="docutils literal"><span class="pre">DOC</span></tt> variables at the top of
+<tt class="docutils literal"><span class="pre">Makefile</span></tt> before running <tt class="docutils literal"><span class="pre">make</span> <span class="pre">installdocs</span></tt>.</p>
+<pre class="literal-block">
+[/tmp/epydoc-3.0beta1]# make installdocs
+</pre>
+</li>
+<li><p class="first">Once epydoc is installed, you can delete the installation directory and the
+source distribution file.</p>
+<pre class="literal-block">
+[/tmp/epydoc-3.0beta1]# cd ..
+[/tmp]# rm -r epydoc-3.0beta1
+[/tmp]# rm epydoc-3.0beta1.tar
+</pre>
+</li>
+</ol>
+</div>
+<div class="section" id="installing-from-the-source-distribution-without-make">
+<h1>Installing from the Source Distribution (without make)</h1>
+<ol class="arabic">
+<li><p class="first">Download an epydoc source distribution to a directory of your choice, and
+uncompress it.</p>
+<pre class="literal-block">
+[/tmp]$ wget -q http://prdownloads.sourceforge.net/epydoc/epydoc-3.0beta1.tar.gz
+[/tmp]$ gunzip epydoc-3.0beta1.tar.gz
+[/tmp]$ tar -xvf epydoc-3.0beta1.tar
+</pre>
+</li>
+<li><p class="first">Use the <tt class="docutils literal"><span class="pre">setup.py</span></tt> script in the <tt class="docutils literal"><span class="pre">eydoc-3.0beta1/</span></tt> directory to install
+epydoc.</p>
+<pre class="literal-block">
+[/tmp]$ cd epydoc-3.0beta1/
+[/tmp/epydoc-3.0beta1]$ su
+Password:
+[/tmp/epydoc-3.0beta1]# python setup.py install
+running install
+running build
+[...]
+copying build/scripts/epydoc -&gt; /usr/bin
+changing mode of /usr/bin/epydoc to 100775
+[/tmp/epydoc-3.0beta1]# cd ..
+[/tmp]#
+</pre>
+</li>
+<li><p class="first">If you'd like to keep a local copy of the documentation, then copy it to a
+permanant location, such as <tt class="docutils literal"><span class="pre">/usr/share/doc/</span></tt>. You may also want to copy
+the man pages to a permanant location, such as <tt class="docutils literal"><span class="pre">/usr/share/man/</span></tt>.</p>
+<pre class="literal-block">
+[/tmp]# cp -r epydoc-3.0beta1/doc/ /usr/share/doc/epydoc/
+[/tmp]# cp epydoc-3.0beta1/man/* /usr/share/man/
+</pre>
+</li>
+<li><p class="first">Once epydoc is installed, you can delete the installation directory and the
+source distribution file.</p>
+<pre class="literal-block">
+[/tmp]# rm -r epydoc-3.0beta1
+[/tmp]# rm epydoc-3.0beta1.tar
+</pre>
+</li>
+</ol>
+</div>
+<div class="section" id="installing-on-debian">
+<h1>Installing on Debian</h1>
+<p>Epydoc 2.1 is available as a testing debian package (<tt class="docutils literal"><span class="pre">python-epydoc</span></tt>). The
+epydoc documentation is also available as a package (<tt class="docutils literal"><span class="pre">epydoc-doc</span></tt>).</p>
+</div>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="index.html">
+    Home</a></td></a>
+  <a class="nav" href="installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

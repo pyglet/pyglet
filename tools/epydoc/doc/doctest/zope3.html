@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="ascii" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ascii" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>Regression Testing for Zope 3 support</title>
+<link rel="stylesheet" href="../custom.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="regression-testing-for-zope-3-support">
+<h1 class="title">Regression Testing for Zope 3 support</h1>
+<table class="docinfo" frame="void" rules="none">
+<col class="docinfo-name" />
+<col class="docinfo-content" />
+<tbody valign="top">
+<tr class="field"><th class="docinfo-name">RequireModule:</th><td class="field-body"><p class="first">zope.interface</p>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span><span class="py-keyword">from</span> epydoc.test.util <span class="py-keyword">import</span> runintrospecter</pre>
+</td>
+</tr>
+</tbody>
+</table>
+<p>We treat zope interface objects as if they were classes:</p>
+<blockquote>
+<pre class="py-doctest">
+<span class="py-prompt">&gt;&gt;&gt; </span>runintrospecter(s=<span class="py-string">'''</span>
+<span class="py-more">... </span><span class="py-string">    from zope.interface import Interface, Attribute</span>
+<span class="py-more">... </span><span class="py-string">    class IExample(Interface):</span>
+<span class="py-more">... </span><span class="py-string">        &quot;&quot;&quot;This interface represents a generic example.&quot;&quot;&quot;</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        text = Attribute(&quot;The text of the example&quot;)</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        def setText(text):</span>
+<span class="py-more">... </span><span class="py-string">            &quot;This method writes the passed text to the text attribute.&quot;</span>
+<span class="py-more">...</span>
+<span class="py-more">... </span><span class="py-string">        def getText():</span>
+<span class="py-more">... </span><span class="py-string">            &quot;This method returns the value of the text attribute.&quot;</span>
+<span class="py-more">... </span><span class="py-string">    '''</span>, attribs=<span class="py-string">'pyval canonical_name'</span>, introspect=<span class="py-string">'IExample'</span>)
+<span class="py-output">ClassDoc for epydoc_test.IExample [0]</span>
+<span class="py-output"> +- canonical_name = DottedName('epydoc_test', 'IExample')</span>
+<span class="py-output"> +- pyval = &lt;InterfaceClass epydoc_test.IExample&gt;</span></pre>
+</blockquote>
+<p>(If we didn't add special support, <tt class="docutils literal"><span class="pre">IExample</span></tt> would be a
+<cite>GenericValueDoc</cite>.)</p>
+</div>
+<table width="100%" class="navbox" cellpadding="1" cellspacing="0">
+  <tr>
+  <a class="nav" href="../index.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../index.html">
+    Home</a></td></a>
+  <a class="nav" href="../installing.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../installing.html">
+    Installing Epydoc</a></td></a>
+  <a class="nav" href="../using.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../using.html">
+    Using Epydoc</a></td></a>
+  <a class="nav" href="../epytext.html">
+    <td align="center" width="20%" class="nav">
+    <a class="nav" href="../epytext.html">
+    Epytext</a></td></a>
+  <td align="center" width="20%" class="nav">
+    
+    <A href="http://sourceforge.net/projects/epydoc"> 
+    <IMG src="../sflogo.png" 
+    width="88" height="26" border="0" alt="SourceForge"
+    align="top"/></A></td>
+    </tr>
+</table>
+</body>
+</html>

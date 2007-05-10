@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>epydoc.markup.javadoc</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="epydoc-module.html">Package&nbsp;epydoc</a> ::
+        <a href="epydoc.markup-module.html">Package&nbsp;markup</a> ::
+        Module&nbsp;javadoc
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="epydoc.markup.javadoc-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="epydoc.markup.javadoc-module.html">Module epydoc.markup.javadoc</a></h1>
+<pre class="py-src">
+<a name="L1"></a><tt class="py-lineno">  1</tt>  <tt class="py-line"><tt class="py-comment">#</tt> </tt>
+<a name="L2"></a><tt class="py-lineno">  2</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># javadoc.py: javadoc docstring parsing</tt> </tt>
+<a name="L3"></a><tt class="py-lineno">  3</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Edward Loper</tt> </tt>
+<a name="L4"></a><tt class="py-lineno">  4</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L5"></a><tt class="py-lineno">  5</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Created [07/03/03 12:37 PM]</tt> </tt>
+<a name="L6"></a><tt class="py-lineno">  6</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># $Id: javadoc.py 1444 2007-02-10 19:26:54Z dvarrazzo $</tt> </tt>
+<a name="L7"></a><tt class="py-lineno">  7</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L8"></a><tt class="py-lineno">  8</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L9"></a><tt class="py-lineno">  9</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L10"></a><tt class="py-lineno"> 10</tt>  <tt class="py-line"><tt class="py-docstring">Epydoc parser for U{Javadoc&lt;http://java.sun.com/j2se/javadoc/&gt;}</tt> </tt>
+<a name="L11"></a><tt class="py-lineno"> 11</tt>  <tt class="py-line"><tt class="py-docstring">docstrings.  Javadoc is an HTML-based markup language that was</tt> </tt>
+<a name="L12"></a><tt class="py-lineno"> 12</tt>  <tt class="py-line"><tt class="py-docstring">developed for documenting Java APIs with inline comments.  It consists</tt> </tt>
+<a name="L13"></a><tt class="py-lineno"> 13</tt>  <tt class="py-line"><tt class="py-docstring">of raw HTML, augmented by Javadoc tags.  There are two types of</tt> </tt>
+<a name="L14"></a><tt class="py-lineno"> 14</tt>  <tt class="py-line"><tt class="py-docstring">Javadoc tag:</tt> </tt>
+<a name="L15"></a><tt class="py-lineno"> 15</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L16"></a><tt class="py-lineno"> 16</tt>  <tt class="py-line"><tt class="py-docstring">  - X{Javadoc block tags} correspond to Epydoc fields.  They are</tt> </tt>
+<a name="L17"></a><tt class="py-lineno"> 17</tt>  <tt class="py-line"><tt class="py-docstring">    marked by starting a line with a string of the form \"C{@M{tag}</tt> </tt>
+<a name="L18"></a><tt class="py-lineno"> 18</tt>  <tt class="py-line"><tt class="py-docstring">    [M{arg}]}\", where C{M{tag}} indicates the type of block, and</tt> </tt>
+<a name="L19"></a><tt class="py-lineno"> 19</tt>  <tt class="py-line"><tt class="py-docstring">    C{M{arg}} is an optional argument.  (For fields that take</tt> </tt>
+<a name="L20"></a><tt class="py-lineno"> 20</tt>  <tt class="py-line"><tt class="py-docstring">    arguments, Javadoc assumes that the single word immediately</tt> </tt>
+<a name="L21"></a><tt class="py-lineno"> 21</tt>  <tt class="py-line"><tt class="py-docstring">    following the tag is an argument; multi-word arguments cannot be</tt> </tt>
+<a name="L22"></a><tt class="py-lineno"> 22</tt>  <tt class="py-line"><tt class="py-docstring">    used with javadoc.)  </tt> </tt>
+<a name="L23"></a><tt class="py-lineno"> 23</tt>  <tt class="py-line"><tt class="py-docstring">  </tt> </tt>
+<a name="L24"></a><tt class="py-lineno"> 24</tt>  <tt class="py-line"><tt class="py-docstring">  - X{inline Javadoc tags} are used for inline markup.  In particular,</tt> </tt>
+<a name="L25"></a><tt class="py-lineno"> 25</tt>  <tt class="py-line"><tt class="py-docstring">    epydoc uses them for crossreference links between documentation.</tt> </tt>
+<a name="L26"></a><tt class="py-lineno"> 26</tt>  <tt class="py-line"><tt class="py-docstring">    Inline tags may appear anywhere in the text, and have the form</tt> </tt>
+<a name="L27"></a><tt class="py-lineno"> 27</tt>  <tt class="py-line"><tt class="py-docstring">    \"C{{@M{tag} M{[args...]}}}\", where C{M{tag}} indicates the</tt> </tt>
+<a name="L28"></a><tt class="py-lineno"> 28</tt>  <tt class="py-line"><tt class="py-docstring">    type of inline markup, and C{M{args}} are optional arguments.</tt> </tt>
+<a name="L29"></a><tt class="py-lineno"> 29</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L30"></a><tt class="py-lineno"> 30</tt>  <tt class="py-line"><tt class="py-docstring">Epydoc supports all Javadoc tags, I{except}:</tt> </tt>
+<a name="L31"></a><tt class="py-lineno"> 31</tt>  <tt class="py-line"><tt class="py-docstring">  - C{{@docRoot}}, which gives the (relative) URL of the generated</tt> </tt>
+<a name="L32"></a><tt class="py-lineno"> 32</tt>  <tt class="py-line"><tt class="py-docstring">    documentation's root.</tt> </tt>
+<a name="L33"></a><tt class="py-lineno"> 33</tt>  <tt class="py-line"><tt class="py-docstring">  - C{{@inheritDoc}}, which copies the documentation of the nearest</tt> </tt>
+<a name="L34"></a><tt class="py-lineno"> 34</tt>  <tt class="py-line"><tt class="py-docstring">    overridden object.  This can be used to combine the documentation</tt> </tt>
+<a name="L35"></a><tt class="py-lineno"> 35</tt>  <tt class="py-line"><tt class="py-docstring">    of the overridden object with the documentation of the</tt> </tt>
+<a name="L36"></a><tt class="py-lineno"> 36</tt>  <tt class="py-line"><tt class="py-docstring">    overridding object.</tt> </tt>
+<a name="L37"></a><tt class="py-lineno"> 37</tt>  <tt class="py-line"><tt class="py-docstring">  - C{@serial}, C{@serialField}, and C{@serialData} which describe the</tt> </tt>
+<a name="L38"></a><tt class="py-lineno"> 38</tt>  <tt class="py-line"><tt class="py-docstring">    serialization (pickling) of an object.</tt> </tt>
+<a name="L39"></a><tt class="py-lineno"> 39</tt>  <tt class="py-line"><tt class="py-docstring">  - C{{@value}}, which copies the value of a constant.</tt> </tt>
+<a name="L40"></a><tt class="py-lineno"> 40</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L41"></a><tt class="py-lineno"> 41</tt>  <tt class="py-line"><tt class="py-docstring">@warning: Epydoc only supports HTML output for Javadoc docstrings.</tt> </tt>
+<a name="L42"></a><tt class="py-lineno"> 42</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L43"></a><tt class="py-lineno"> 43</tt>  <tt class="py-line"><tt class="py-name">__docformat__</tt> <tt class="py-op">=</tt> <tt class="py-string">'epytext en'</tt> </tt>
+<a name="L44"></a><tt class="py-lineno"> 44</tt>  <tt class="py-line"> </tt>
+<a name="L45"></a><tt class="py-lineno"> 45</tt>  <tt class="py-line"><tt class="py-comment"># Imports</tt> </tt>
+<a name="L46"></a><tt class="py-lineno"> 46</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-keyword">import</tt> <tt class="py-name">re</tt> </tt>
+<a name="L47"></a><tt class="py-lineno"> 47</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt class="py-name">xml</tt><tt class="py-op">.</tt><tt class="py-name">dom</tt><tt class="py-op">.</tt><tt class="py-name">minidom</tt> <tt class="py-keyword">import</tt> <tt class="py-op">*</tt> </tt>
+<a name="L48"></a><tt class="py-lineno"> 48</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-0" class="py-name" targets="Package epydoc=epydoc-module.html"><a title="epydoc" class="py-name" href="#" onclick="return doclink('link-0', 'epydoc', 'link-0');">epydoc</a></tt><tt class="py-op">.</tt><tt id="link-1" class="py-name" targets="Package epydoc.markup=epydoc.markup-module.html,Method epydoc.markup.doctest.DoctestColorizer.markup()=epydoc.markup.doctest.DoctestColorizer-class.html#markup,Method epydoc.markup.doctest.HTMLDoctestColorizer.markup()=epydoc.markup.doctest.HTMLDoctestColorizer-class.html#markup,Method epydoc.markup.doctest.LaTeXDoctestColorizer.markup()=epydoc.markup.doctest.LaTeXDoctestColorizer-class.html#markup,Method epydoc.markup.doctest.XMLDoctestColorizer.markup()=epydoc.markup.doctest.XMLDoctestColorizer-class.html#markup"><a title="epydoc.markup
+epydoc.markup.doctest.DoctestColorizer.markup
+epydoc.markup.doctest.HTMLDoctestColorizer.markup
+epydoc.markup.doctest.LaTeXDoctestColorizer.markup
+epydoc.markup.doctest.XMLDoctestColorizer.markup" class="py-name" href="#" onclick="return doclink('link-1', 'markup', 'link-1');">markup</a></tt> <tt class="py-keyword">import</tt> <tt class="py-op">*</tt> </tt>
+<a name="L49"></a><tt class="py-lineno"> 49</tt>  <tt class="py-line"> </tt>
+<a name="parse_docstring"></a><div id="parse_docstring-def"><a name="L50"></a><tt class="py-lineno"> 50</tt> <a class="py-toggle" href="#" id="parse_docstring-toggle" onclick="return toggle('parse_docstring');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.javadoc-module.html#parse_docstring">parse_docstring</a><tt class="py-op">(</tt><tt class="py-param">docstring</tt><tt class="py-op">,</tt> <tt class="py-param">errors</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-param">options</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="parse_docstring-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="parse_docstring-expanded"><a name="L51"></a><tt class="py-lineno"> 51</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L52"></a><tt class="py-lineno"> 52</tt>  <tt class="py-line"><tt class="py-docstring">    Parse the given docstring, which is formatted using Javadoc; and</tt> </tt>
+<a name="L53"></a><tt class="py-lineno"> 53</tt>  <tt class="py-line"><tt class="py-docstring">    return a C{ParsedDocstring} representation of its contents.</tt> </tt>
+<a name="L54"></a><tt class="py-lineno"> 54</tt>  <tt class="py-line"><tt class="py-docstring">    @param docstring: The docstring to parse</tt> </tt>
+<a name="L55"></a><tt class="py-lineno"> 55</tt>  <tt class="py-line"><tt class="py-docstring">    @type docstring: C{string}</tt> </tt>
+<a name="L56"></a><tt class="py-lineno"> 56</tt>  <tt class="py-line"><tt class="py-docstring">    @param errors: A list where any errors generated during parsing</tt> </tt>
+<a name="L57"></a><tt class="py-lineno"> 57</tt>  <tt class="py-line"><tt class="py-docstring">        will be stored.</tt> </tt>
+<a name="L58"></a><tt class="py-lineno"> 58</tt>  <tt class="py-line"><tt class="py-docstring">    @type errors: C{list} of L{ParseError}</tt> </tt>
+<a name="L59"></a><tt class="py-lineno"> 59</tt>  <tt class="py-line"><tt class="py-docstring">    @param options: Extra options.  Unknown options are ignored.</tt> </tt>
+<a name="L60"></a><tt class="py-lineno"> 60</tt>  <tt class="py-line"><tt class="py-docstring">        Currently, no extra options are defined.</tt> </tt>
+<a name="L61"></a><tt class="py-lineno"> 61</tt>  <tt class="py-line"><tt class="py-docstring">    @rtype: L{ParsedDocstring}</tt> </tt>
+<a name="L62"></a><tt class="py-lineno"> 62</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L63"></a><tt class="py-lineno"> 63</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt id="link-2" class="py-name" targets="Class epydoc.markup.javadoc.ParsedJavadocDocstring=epydoc.markup.javadoc.ParsedJavadocDocstring-class.html"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring" class="py-name" href="#" onclick="return doclink('link-2', 'ParsedJavadocDocstring', 'link-2');">ParsedJavadocDocstring</a></tt><tt class="py-op">(</tt><tt id="link-3" class="py-name" targets="Variable epydoc.apidoc.APIDoc.docstring=epydoc.apidoc.APIDoc-class.html#docstring"><a title="epydoc.apidoc.APIDoc.docstring" class="py-name" href="#" onclick="return doclink('link-3', 'docstring', 'link-3');">docstring</a></tt><tt class="py-op">,</tt> <tt class="py-name">errors</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L64"></a><tt class="py-lineno"> 64</tt>  <tt class="py-line"> </tt>
+<a name="ParsedJavadocDocstring"></a><div id="ParsedJavadocDocstring-def"><a name="L65"></a><tt class="py-lineno"> 65</tt> <a class="py-toggle" href="#" id="ParsedJavadocDocstring-toggle" onclick="return toggle('ParsedJavadocDocstring');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html">ParsedJavadocDocstring</a><tt class="py-op">(</tt><tt class="py-base-class">ParsedDocstring</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParsedJavadocDocstring-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="ParsedJavadocDocstring-expanded"><a name="L66"></a><tt class="py-lineno"> 66</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L67"></a><tt class="py-lineno"> 67</tt>  <tt class="py-line"><tt class="py-docstring">    An encoded version of a Javadoc docstring.  Since Javadoc is a</tt> </tt>
+<a name="L68"></a><tt class="py-lineno"> 68</tt>  <tt class="py-line"><tt class="py-docstring">    fairly simple markup language, we don't do any processing in</tt> </tt>
+<a name="L69"></a><tt class="py-lineno"> 69</tt>  <tt class="py-line"><tt class="py-docstring">    advance; instead, we wait to split fields or resolve</tt> </tt>
+<a name="L70"></a><tt class="py-lineno"> 70</tt>  <tt class="py-line"><tt class="py-docstring">    crossreference links until we need to.</tt> </tt>
+<a name="L71"></a><tt class="py-lineno"> 71</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L72"></a><tt class="py-lineno"> 72</tt>  <tt class="py-line"><tt class="py-docstring">    @group Field Splitting: split_fields, _ARG_FIELDS, _FIELD_RE</tt> </tt>
+<a name="L73"></a><tt class="py-lineno"> 73</tt>  <tt class="py-line"><tt class="py-docstring">    @cvar _ARG_FIELDS: A list of the fields that take arguments.</tt> </tt>
+<a name="L74"></a><tt class="py-lineno"> 74</tt>  <tt class="py-line"><tt class="py-docstring">        Since Javadoc doesn't mark arguments in any special way, we</tt> </tt>
+<a name="L75"></a><tt class="py-lineno"> 75</tt>  <tt class="py-line"><tt class="py-docstring">        must consult this list to decide whether the first word of a</tt> </tt>
+<a name="L76"></a><tt class="py-lineno"> 76</tt>  <tt class="py-line"><tt class="py-docstring">        field is an argument or not.</tt> </tt>
+<a name="L77"></a><tt class="py-lineno"> 77</tt>  <tt class="py-line"><tt class="py-docstring">    @cvar _FIELD_RE: A regular expression used to search for Javadoc</tt> </tt>
+<a name="L78"></a><tt class="py-lineno"> 78</tt>  <tt class="py-line"><tt class="py-docstring">        block tags.</tt> </tt>
+<a name="L79"></a><tt class="py-lineno"> 79</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L80"></a><tt class="py-lineno"> 80</tt>  <tt class="py-line"><tt class="py-docstring">    @group HTML Output: to_html, _LINK_SPLIT_RE, _LINK_RE</tt> </tt>
+<a name="L81"></a><tt class="py-lineno"> 81</tt>  <tt class="py-line"><tt class="py-docstring">    @cvar _LINK_SPLIT_RE: A regular expression used to search for</tt> </tt>
+<a name="L82"></a><tt class="py-lineno"> 82</tt>  <tt class="py-line"><tt class="py-docstring">        Javadoc inline tags.</tt> </tt>
+<a name="L83"></a><tt class="py-lineno"> 83</tt>  <tt class="py-line"><tt class="py-docstring">    @cvar _LINK_RE: A regular expression used to process Javadoc</tt> </tt>
+<a name="L84"></a><tt class="py-lineno"> 84</tt>  <tt class="py-line"><tt class="py-docstring">        inline tags.</tt> </tt>
+<a name="L85"></a><tt class="py-lineno"> 85</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="ParsedJavadocDocstring.__init__"></a><div id="ParsedJavadocDocstring.__init__-def"><a name="L86"></a><tt class="py-lineno"> 86</tt> <a class="py-toggle" href="#" id="ParsedJavadocDocstring.__init__-toggle" onclick="return toggle('ParsedJavadocDocstring.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">docstring</tt><tt class="py-op">,</tt> <tt class="py-param">errors</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParsedJavadocDocstring.__init__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParsedJavadocDocstring.__init__-expanded"><a name="L87"></a><tt class="py-lineno"> 87</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L88"></a><tt class="py-lineno"> 88</tt>  <tt class="py-line"><tt class="py-docstring">        Create a new C{ParsedJavadocDocstring}.</tt> </tt>
+<a name="L89"></a><tt class="py-lineno"> 89</tt>  <tt class="py-line"><tt class="py-docstring">        </tt> </tt>
+<a name="L90"></a><tt class="py-lineno"> 90</tt>  <tt class="py-line"><tt class="py-docstring">        @param docstring: The docstring that should be used to</tt> </tt>
+<a name="L91"></a><tt class="py-lineno"> 91</tt>  <tt class="py-line"><tt class="py-docstring">            construct this C{ParsedJavadocDocstring}.</tt> </tt>
+<a name="L92"></a><tt class="py-lineno"> 92</tt>  <tt class="py-line"><tt class="py-docstring">        @type docstring: C{string}</tt> </tt>
+<a name="L93"></a><tt class="py-lineno"> 93</tt>  <tt class="py-line"><tt class="py-docstring">        @param errors: A list where any errors generated during</tt> </tt>
+<a name="L94"></a><tt class="py-lineno"> 94</tt>  <tt class="py-line"><tt class="py-docstring">            parsing will be stored.  If no list is given, then</tt> </tt>
+<a name="L95"></a><tt class="py-lineno"> 95</tt>  <tt class="py-line"><tt class="py-docstring">            all errors are ignored.</tt> </tt>
+<a name="L96"></a><tt class="py-lineno"> 96</tt>  <tt class="py-line"><tt class="py-docstring">        @type errors: C{list} of L{ParseError}</tt> </tt>
+<a name="L97"></a><tt class="py-lineno"> 97</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L98"></a><tt class="py-lineno"> 98</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_docstring</tt> <tt class="py-op">=</tt> <tt id="link-4" class="py-name"><a title="epydoc.apidoc.APIDoc.docstring" class="py-name" href="#" onclick="return doclink('link-4', 'docstring', 'link-3');">docstring</a></tt> </tt>
+<a name="L99"></a><tt class="py-lineno"> 99</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">errors</tt> <tt class="py-keyword">is</tt> <tt class="py-name">None</tt><tt class="py-op">:</tt> <tt class="py-name">errors</tt> <tt class="py-op">=</tt> <tt class="py-op">[</tt><tt class="py-op">]</tt> </tt>
+<a name="L100"></a><tt class="py-lineno">100</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-5" class="py-name" targets="Method epydoc.markup.javadoc.ParsedJavadocDocstring._check_links()=epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#_check_links"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring._check_links" class="py-name" href="#" onclick="return doclink('link-5', '_check_links', 'link-5');">_check_links</a></tt><tt class="py-op">(</tt><tt class="py-name">errors</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L101"></a><tt class="py-lineno">101</tt>  <tt class="py-line"> </tt>
+<a name="L102"></a><tt class="py-lineno">102</tt>  <tt class="py-line">    <tt class="py-comment">#////////////////////////////////////////////////////////////</tt> </tt>
+<a name="L103"></a><tt class="py-lineno">103</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-comment"># Field Splitting</tt> </tt>
+<a name="L104"></a><tt class="py-lineno">104</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-comment">#////////////////////////////////////////////////////////////</tt> </tt>
+<a name="L105"></a><tt class="py-lineno">105</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L106"></a><tt class="py-lineno">106</tt>  <tt class="py-line">    <tt id="link-6" class="py-name" targets="Variable epydoc.markup.javadoc.ParsedJavadocDocstring._ARG_FIELDS=epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#_ARG_FIELDS"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring._ARG_FIELDS" class="py-name" href="#" onclick="return doclink('link-6', '_ARG_FIELDS', 'link-6');">_ARG_FIELDS</a></tt> <tt class="py-op">=</tt> <tt class="py-op">(</tt><tt class="py-string">'group variable var type cvariable cvar ivariable '</tt><tt class="py-op">+</tt> </tt>
+<a name="L107"></a><tt class="py-lineno">107</tt>  <tt class="py-line">                   <tt class="py-string">'ivar param '</tt><tt class="py-op">+</tt> </tt>
+<a name="L108"></a><tt class="py-lineno">108</tt>  <tt class="py-line">                   <tt class="py-string">'parameter arg argument raise raises exception '</tt><tt class="py-op">+</tt> </tt>
+<a name="L109"></a><tt class="py-lineno">109</tt>  <tt class="py-line">                   <tt class="py-string">'except deffield newfield keyword kwarg kwparam'</tt><tt class="py-op">)</tt><tt class="py-op">.</tt><tt class="py-name">split</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L110"></a><tt class="py-lineno">110</tt>  <tt class="py-line">    <tt id="link-7" class="py-name" targets="Variable epydoc.markup.javadoc.ParsedJavadocDocstring._FIELD_RE=epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#_FIELD_RE"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring._FIELD_RE" class="py-name" href="#" onclick="return doclink('link-7', '_FIELD_RE', 'link-7');">_FIELD_RE</a></tt> <tt class="py-op">=</tt> <tt class="py-name">re</tt><tt class="py-op">.</tt><tt class="py-name">compile</tt><tt class="py-op">(</tt><tt class="py-string">r'(^\s*\@\w+[\s$])'</tt><tt class="py-op">,</tt> <tt class="py-name">re</tt><tt class="py-op">.</tt><tt class="py-name">MULTILINE</tt><tt class="py-op">)</tt> </tt>
+<a name="L111"></a><tt class="py-lineno">111</tt>  <tt class="py-line">     </tt>
+<a name="L112"></a><tt class="py-lineno">112</tt>  <tt class="py-line">    <tt class="py-comment"># Inherit docs from ParsedDocstring.</tt> </tt>
+<a name="ParsedJavadocDocstring.split_fields"></a><div id="ParsedJavadocDocstring.split_fields-def"><a name="L113"></a><tt class="py-lineno">113</tt> <a class="py-toggle" href="#" id="ParsedJavadocDocstring.split_fields-toggle" onclick="return toggle('ParsedJavadocDocstring.split_fields');">-</a><tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#split_fields">split_fields</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">errors</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParsedJavadocDocstring.split_fields-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParsedJavadocDocstring.split_fields-expanded"><a name="L114"></a><tt class="py-lineno">114</tt>  <tt class="py-line"> </tt>
+<a name="L115"></a><tt class="py-lineno">115</tt>  <tt class="py-line">        <tt class="py-comment"># Split the docstring into an alternating list of field tags</tt> </tt>
+<a name="L116"></a><tt class="py-lineno">116</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-comment"># and text (odd pieces are field tags).</tt> </tt>
+<a name="L117"></a><tt class="py-lineno">117</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-name">pieces</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-8" class="py-name"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring._FIELD_RE" class="py-name" href="#" onclick="return doclink('link-8', '_FIELD_RE', 'link-7');">_FIELD_RE</a></tt><tt class="py-op">.</tt><tt class="py-name">split</tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_docstring</tt><tt class="py-op">)</tt> </tt>
+<a name="L118"></a><tt class="py-lineno">118</tt>  <tt class="py-line"> </tt>
+<a name="L119"></a><tt class="py-lineno">119</tt>  <tt class="py-line">        <tt class="py-comment"># The first piece is the description.</tt> </tt>
+<a name="L120"></a><tt class="py-lineno">120</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt id="link-9" class="py-name" targets="Variable epydoc.apidoc.APIDoc.descr=epydoc.apidoc.APIDoc-class.html#descr,Variable epydoc.cli.descr=epydoc.cli-module.html#descr,Method epydoc.docwriter.html.HTMLWriter.descr()=epydoc.docwriter.html.HTMLWriter-class.html#descr,Method epydoc.markup.ParseError.descr()=epydoc.markup.ParseError-class.html#descr,Method epydoc.markup.epytext.ColorizingError.descr()=epydoc.markup.epytext.ColorizingError-class.html#descr"><a title="epydoc.apidoc.APIDoc.descr
+epydoc.cli.descr
+epydoc.docwriter.html.HTMLWriter.descr
+epydoc.markup.ParseError.descr
+epydoc.markup.epytext.ColorizingError.descr" class="py-name" href="#" onclick="return doclink('link-9', 'descr', 'link-9');">descr</a></tt> <tt class="py-op">=</tt> <tt id="link-10" class="py-name"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring" class="py-name" href="#" onclick="return doclink('link-10', 'ParsedJavadocDocstring', 'link-2');">ParsedJavadocDocstring</a></tt><tt class="py-op">(</tt><tt class="py-name">pieces</tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L121"></a><tt class="py-lineno">121</tt>  <tt class="py-line"> </tt>
+<a name="L122"></a><tt class="py-lineno">122</tt>  <tt class="py-line">        <tt class="py-comment"># The remaining pieces are the block fields (alternating tags</tt> </tt>
+<a name="L123"></a><tt class="py-lineno">123</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-comment"># and bodies; odd pieces are tags).</tt> </tt>
+<a name="L124"></a><tt class="py-lineno">124</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-name">fields</tt> <tt class="py-op">=</tt> <tt class="py-op">[</tt><tt class="py-op">]</tt> </tt>
+<a name="L125"></a><tt class="py-lineno">125</tt>  <tt class="py-line">        <tt class="py-keyword">for</tt> <tt class="py-name">i</tt> <tt class="py-keyword">in</tt> <tt class="py-name">range</tt><tt class="py-op">(</tt><tt class="py-number">1</tt><tt class="py-op">,</tt> <tt class="py-name">len</tt><tt class="py-op">(</tt><tt class="py-name">pieces</tt><tt class="py-op">)</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L126"></a><tt class="py-lineno">126</tt>  <tt class="py-line">            <tt class="py-keyword">if</tt> <tt class="py-name">i</tt><tt class="py-op">%</tt><tt class="py-number">2</tt> <tt class="py-op">==</tt> <tt class="py-number">1</tt><tt class="py-op">:</tt> </tt>
+<a name="L127"></a><tt class="py-lineno">127</tt>  <tt class="py-line">                <tt class="py-comment"># Get the field tag.</tt> </tt>
+<a name="L128"></a><tt class="py-lineno">128</tt>  <tt class="py-line"><tt class="py-comment"></tt>                <tt id="link-11" class="py-name" targets="Method epydoc.markup.Field.tag()=epydoc.markup.Field-class.html#tag"><a title="epydoc.markup.Field.tag" class="py-name" href="#" onclick="return doclink('link-11', 'tag', 'link-11');">tag</a></tt> <tt class="py-op">=</tt> <tt class="py-name">pieces</tt><tt class="py-op">[</tt><tt class="py-name">i</tt><tt class="py-op">]</tt><tt class="py-op">.</tt><tt class="py-name">strip</tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">[</tt><tt class="py-number">1</tt><tt class="py-op">:</tt><tt class="py-op">]</tt> </tt>
+<a name="L129"></a><tt class="py-lineno">129</tt>  <tt class="py-line">            <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L130"></a><tt class="py-lineno">130</tt>  <tt class="py-line">                <tt class="py-comment"># Get the field argument (if appropriate).</tt> </tt>
+<a name="L131"></a><tt class="py-lineno">131</tt>  <tt class="py-line"><tt class="py-comment"></tt>                <tt class="py-keyword">if</tt> <tt id="link-12" class="py-name"><a title="epydoc.markup.Field.tag" class="py-name" href="#" onclick="return doclink('link-12', 'tag', 'link-11');">tag</a></tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-13" class="py-name"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring._ARG_FIELDS" class="py-name" href="#" onclick="return doclink('link-13', '_ARG_FIELDS', 'link-6');">_ARG_FIELDS</a></tt><tt class="py-op">:</tt> </tt>
+<a name="L132"></a><tt class="py-lineno">132</tt>  <tt class="py-line">                    <tt class="py-name">subpieces</tt> <tt class="py-op">=</tt> <tt class="py-name">pieces</tt><tt class="py-op">[</tt><tt class="py-name">i</tt><tt class="py-op">]</tt><tt class="py-op">.</tt><tt class="py-name">strip</tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">.</tt><tt class="py-name">split</tt><tt class="py-op">(</tt><tt class="py-name">None</tt><tt class="py-op">,</tt> <tt class="py-number">1</tt><tt class="py-op">)</tt><tt class="py-op">+</tt><tt class="py-op">[</tt><tt class="py-string">''</tt><tt class="py-op">,</tt><tt class="py-string">''</tt><tt class="py-op">]</tt> </tt>
+<a name="L133"></a><tt class="py-lineno">133</tt>  <tt class="py-line">                    <tt class="py-op">(</tt><tt id="link-14" class="py-name" targets="Method epydoc.markup.Field.arg()=epydoc.markup.Field-class.html#arg"><a title="epydoc.markup.Field.arg" class="py-name" href="#" onclick="return doclink('link-14', 'arg', 'link-14');">arg</a></tt><tt class="py-op">,</tt> <tt id="link-15" class="py-name" targets="Method epydoc.markup.Field.body()=epydoc.markup.Field-class.html#body"><a title="epydoc.markup.Field.body" class="py-name" href="#" onclick="return doclink('link-15', 'body', 'link-15');">body</a></tt><tt class="py-op">)</tt> <tt class="py-op">=</tt> <tt class="py-name">subpieces</tt><tt class="py-op">[</tt><tt class="py-op">:</tt><tt class="py-number">2</tt><tt class="py-op">]</tt> </tt>
+<a name="L134"></a><tt class="py-lineno">134</tt>  <tt class="py-line">                <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L135"></a><tt class="py-lineno">135</tt>  <tt class="py-line">                    <tt class="py-op">(</tt><tt id="link-16" class="py-name"><a title="epydoc.markup.Field.arg" class="py-name" href="#" onclick="return doclink('link-16', 'arg', 'link-14');">arg</a></tt><tt class="py-op">,</tt> <tt id="link-17" class="py-name"><a title="epydoc.markup.Field.body" class="py-name" href="#" onclick="return doclink('link-17', 'body', 'link-15');">body</a></tt><tt class="py-op">)</tt> <tt class="py-op">=</tt> <tt class="py-op">(</tt><tt class="py-name">None</tt><tt class="py-op">,</tt> <tt class="py-name">pieces</tt><tt class="py-op">[</tt><tt class="py-name">i</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L136"></a><tt class="py-lineno">136</tt>  <tt class="py-line"> </tt>
+<a name="L137"></a><tt class="py-lineno">137</tt>  <tt class="py-line">                <tt class="py-comment"># Special processing for @see fields, since Epydoc</tt> </tt>
+<a name="L138"></a><tt class="py-lineno">138</tt>  <tt class="py-line"><tt class="py-comment"></tt>                <tt class="py-comment"># allows unrestricted text in them, but Javadoc just</tt> </tt>
+<a name="L139"></a><tt class="py-lineno">139</tt>  <tt class="py-line"><tt class="py-comment"></tt>                <tt class="py-comment"># uses them for xref links:</tt> </tt>
+<a name="L140"></a><tt class="py-lineno">140</tt>  <tt class="py-line"><tt class="py-comment"></tt>                <tt class="py-keyword">if</tt> <tt id="link-18" class="py-name"><a title="epydoc.markup.Field.tag" class="py-name" href="#" onclick="return doclink('link-18', 'tag', 'link-11');">tag</a></tt> <tt class="py-op">==</tt> <tt class="py-string">'see'</tt> <tt class="py-keyword">and</tt> <tt id="link-19" class="py-name"><a title="epydoc.markup.Field.body" class="py-name" href="#" onclick="return doclink('link-19', 'body', 'link-15');">body</a></tt><tt class="py-op">:</tt> </tt>
+<a name="L141"></a><tt class="py-lineno">141</tt>  <tt class="py-line">                    <tt class="py-keyword">if</tt> <tt id="link-20" class="py-name"><a title="epydoc.markup.Field.body" class="py-name" href="#" onclick="return doclink('link-20', 'body', 'link-15');">body</a></tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt> <tt class="py-keyword">in</tt> <tt class="py-string">'"\''</tt><tt class="py-op">:</tt> </tt>
+<a name="L142"></a><tt class="py-lineno">142</tt>  <tt class="py-line">                        <tt class="py-keyword">if</tt> <tt id="link-21" class="py-name"><a title="epydoc.markup.Field.body" class="py-name" href="#" onclick="return doclink('link-21', 'body', 'link-15');">body</a></tt><tt class="py-op">[</tt><tt class="py-op">-</tt><tt class="py-number">1</tt><tt class="py-op">]</tt> <tt class="py-op">==</tt> <tt id="link-22" class="py-name"><a title="epydoc.markup.Field.body" class="py-name" href="#" onclick="return doclink('link-22', 'body', 'link-15');">body</a></tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt><tt class="py-op">:</tt> <tt id="link-23" class="py-name"><a title="epydoc.markup.Field.body" class="py-name" href="#" onclick="return doclink('link-23', 'body', 'link-15');">body</a></tt> <tt class="py-op">=</tt> <tt id="link-24" class="py-name"><a title="epydoc.markup.Field.body" class="py-name" href="#" onclick="return doclink('link-24', 'body', 'link-15');">body</a></tt><tt class="py-op">[</tt><tt class="py-number">1</tt><tt class="py-op">:</tt><tt class="py-op">-</tt><tt class="py-number">1</tt><tt class="py-op">]</tt> </tt>
+<a name="L143"></a><tt class="py-lineno">143</tt>  <tt class="py-line">                    <tt class="py-keyword">elif</tt> <tt id="link-25" class="py-name"><a title="epydoc.markup.Field.body" class="py-name" href="#" onclick="return doclink('link-25', 'body', 'link-15');">body</a></tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt> <tt class="py-op">==</tt> <tt class="py-string">'&lt;'</tt><tt class="py-op">:</tt> <tt class="py-keyword">pass</tt> </tt>
+<a name="L144"></a><tt class="py-lineno">144</tt>  <tt class="py-line">                    <tt class="py-keyword">else</tt><tt class="py-op">:</tt> <tt id="link-26" class="py-name"><a title="epydoc.markup.Field.body" class="py-name" href="#" onclick="return doclink('link-26', 'body', 'link-15');">body</a></tt> <tt class="py-op">=</tt> <tt class="py-string">'{@link %s}'</tt> <tt class="py-op">%</tt> <tt id="link-27" class="py-name"><a title="epydoc.markup.Field.body" class="py-name" href="#" onclick="return doclink('link-27', 'body', 'link-15');">body</a></tt> </tt>
+<a name="L145"></a><tt class="py-lineno">145</tt>  <tt class="py-line"> </tt>
+<a name="L146"></a><tt class="py-lineno">146</tt>  <tt class="py-line">                <tt class="py-comment"># Construct the field.</tt> </tt>
+<a name="L147"></a><tt class="py-lineno">147</tt>  <tt class="py-line"><tt class="py-comment"></tt>                <tt class="py-name">parsed_body</tt> <tt class="py-op">=</tt> <tt id="link-28" class="py-name"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring" class="py-name" href="#" onclick="return doclink('link-28', 'ParsedJavadocDocstring', 'link-2');">ParsedJavadocDocstring</a></tt><tt class="py-op">(</tt><tt id="link-29" class="py-name"><a title="epydoc.markup.Field.body" class="py-name" href="#" onclick="return doclink('link-29', 'body', 'link-15');">body</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L148"></a><tt class="py-lineno">148</tt>  <tt class="py-line">                <tt class="py-name">fields</tt><tt class="py-op">.</tt><tt class="py-name">append</tt><tt class="py-op">(</tt><tt id="link-30" class="py-name" targets="Class epydoc.markup.Field=epydoc.markup.Field-class.html"><a title="epydoc.markup.Field" class="py-name" href="#" onclick="return doclink('link-30', 'Field', 'link-30');">Field</a></tt><tt class="py-op">(</tt><tt id="link-31" class="py-name"><a title="epydoc.markup.Field.tag" class="py-name" href="#" onclick="return doclink('link-31', 'tag', 'link-11');">tag</a></tt><tt class="py-op">,</tt> <tt id="link-32" class="py-name"><a title="epydoc.markup.Field.arg" class="py-name" href="#" onclick="return doclink('link-32', 'arg', 'link-14');">arg</a></tt><tt class="py-op">,</tt> <tt class="py-name">parsed_body</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L149"></a><tt class="py-lineno">149</tt>  <tt class="py-line"> </tt>
+<a name="L150"></a><tt class="py-lineno">150</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">pieces</tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt><tt class="py-op">.</tt><tt class="py-name">strip</tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L151"></a><tt class="py-lineno">151</tt>  <tt class="py-line">            <tt class="py-keyword">return</tt> <tt class="py-op">(</tt><tt id="link-33" class="py-name"><a title="epydoc.apidoc.APIDoc.descr
+epydoc.cli.descr
+epydoc.docwriter.html.HTMLWriter.descr
+epydoc.markup.ParseError.descr
+epydoc.markup.epytext.ColorizingError.descr" class="py-name" href="#" onclick="return doclink('link-33', 'descr', 'link-9');">descr</a></tt><tt class="py-op">,</tt> <tt class="py-name">fields</tt><tt class="py-op">)</tt> </tt>
+<a name="L152"></a><tt class="py-lineno">152</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L153"></a><tt class="py-lineno">153</tt>  <tt class="py-line">            <tt class="py-keyword">return</tt> <tt class="py-op">(</tt><tt class="py-name">None</tt><tt class="py-op">,</tt> <tt class="py-name">fields</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L154"></a><tt class="py-lineno">154</tt>  <tt class="py-line"> </tt>
+<a name="L155"></a><tt class="py-lineno">155</tt>  <tt class="py-line">    <tt class="py-comment">#////////////////////////////////////////////////////////////</tt> </tt>
+<a name="L156"></a><tt class="py-lineno">156</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-comment"># HTML Output.</tt> </tt>
+<a name="L157"></a><tt class="py-lineno">157</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-comment">#////////////////////////////////////////////////////////////</tt> </tt>
+<a name="L158"></a><tt class="py-lineno">158</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L159"></a><tt class="py-lineno">159</tt>  <tt class="py-line">    <tt id="link-34" class="py-name" targets="Variable epydoc.markup.javadoc.ParsedJavadocDocstring._LINK_SPLIT_RE=epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#_LINK_SPLIT_RE"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring._LINK_SPLIT_RE" class="py-name" href="#" onclick="return doclink('link-34', '_LINK_SPLIT_RE', 'link-34');">_LINK_SPLIT_RE</a></tt> <tt class="py-op">=</tt> <tt class="py-name">re</tt><tt class="py-op">.</tt><tt class="py-name">compile</tt><tt class="py-op">(</tt><tt class="py-string">r'({@link(?:plain)?\s[^}]+})'</tt><tt class="py-op">)</tt> </tt>
+<a name="L160"></a><tt class="py-lineno">160</tt>  <tt class="py-line">    <tt id="link-35" class="py-name" targets="Variable epydoc.markup.javadoc.ParsedJavadocDocstring._LINK_RE=epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#_LINK_RE"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring._LINK_RE" class="py-name" href="#" onclick="return doclink('link-35', '_LINK_RE', 'link-35');">_LINK_RE</a></tt> <tt class="py-op">=</tt> <tt class="py-name">re</tt><tt class="py-op">.</tt><tt class="py-name">compile</tt><tt class="py-op">(</tt><tt class="py-string">r'{@link(?:plain)?\s+'</tt> <tt class="py-op">+</tt> <tt class="py-string">r'([\w#.]+)'</tt> <tt class="py-op">+</tt> </tt>
+<a name="L161"></a><tt class="py-lineno">161</tt>  <tt class="py-line">                          <tt class="py-string">r'(?:\([^\)]*\))?'</tt> <tt class="py-op">+</tt> <tt class="py-string">r'(\s+.*)?'</tt> <tt class="py-op">+</tt> <tt class="py-string">r'}'</tt><tt class="py-op">)</tt> </tt>
+<a name="L162"></a><tt class="py-lineno">162</tt>  <tt class="py-line"> </tt>
+<a name="L163"></a><tt class="py-lineno">163</tt>  <tt class="py-line">    <tt class="py-comment"># Inherit docs from ParsedDocstring.</tt> </tt>
+<a name="ParsedJavadocDocstring.to_html"></a><div id="ParsedJavadocDocstring.to_html-def"><a name="L164"></a><tt class="py-lineno">164</tt> <a class="py-toggle" href="#" id="ParsedJavadocDocstring.to_html-toggle" onclick="return toggle('ParsedJavadocDocstring.to_html');">-</a><tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#to_html">to_html</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">docstring_linker</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-param">options</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParsedJavadocDocstring.to_html-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParsedJavadocDocstring.to_html-expanded"><a name="L165"></a><tt class="py-lineno">165</tt>  <tt class="py-line">        <tt class="py-comment"># Split the docstring into an alternating list of HTML and</tt> </tt>
+<a name="L166"></a><tt class="py-lineno">166</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-comment"># links (odd pieces are links).</tt> </tt>
+<a name="L167"></a><tt class="py-lineno">167</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-name">pieces</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-36" class="py-name"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring._LINK_SPLIT_RE" class="py-name" href="#" onclick="return doclink('link-36', '_LINK_SPLIT_RE', 'link-34');">_LINK_SPLIT_RE</a></tt><tt class="py-op">.</tt><tt class="py-name">split</tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_docstring</tt><tt class="py-op">)</tt> </tt>
+<a name="L168"></a><tt class="py-lineno">168</tt>  <tt class="py-line"> </tt>
+<a name="L169"></a><tt class="py-lineno">169</tt>  <tt class="py-line">        <tt class="py-comment"># This function is used to translate {@link ...}s to HTML.</tt> </tt>
+<a name="L170"></a><tt class="py-lineno">170</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-name">translate_xref</tt> <tt class="py-op">=</tt> <tt class="py-name">docstring_linker</tt><tt class="py-op">.</tt><tt id="link-37" class="py-name" targets="Method epydoc.docwriter.html._HTMLDocstringLinker.translate_identifier_xref()=epydoc.docwriter.html._HTMLDocstringLinker-class.html#translate_identifier_xref,Method epydoc.docwriter.latex.LatexWriter._LatexDocstringLinker.translate_identifier_xref()=epydoc.docwriter.latex.LatexWriter._LatexDocstringLinker-class.html#translate_identifier_xref,Method epydoc.markup.DocstringLinker.translate_identifier_xref()=epydoc.markup.DocstringLinker-class.html#translate_identifier_xref"><a title="epydoc.docwriter.html._HTMLDocstringLinker.translate_identifier_xref
+epydoc.docwriter.latex.LatexWriter._LatexDocstringLinker.translate_identifier_xref
+epydoc.markup.DocstringLinker.translate_identifier_xref" class="py-name" href="#" onclick="return doclink('link-37', 'translate_identifier_xref', 'link-37');">translate_identifier_xref</a></tt> </tt>
+<a name="L171"></a><tt class="py-lineno">171</tt>  <tt class="py-line">         </tt>
+<a name="L172"></a><tt class="py-lineno">172</tt>  <tt class="py-line">        <tt class="py-comment"># Build up the HTML string from the pieces.  For HTML pieces</tt> </tt>
+<a name="L173"></a><tt class="py-lineno">173</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-comment"># (even), just add it to html.  For link pieces (odd), use</tt> </tt>
+<a name="L174"></a><tt class="py-lineno">174</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-comment"># docstring_linker to translate the crossreference link to</tt> </tt>
+<a name="L175"></a><tt class="py-lineno">175</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-comment"># HTML for us.</tt> </tt>
+<a name="L176"></a><tt class="py-lineno">176</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt id="link-38" class="py-name" targets="Module epydoc.docwriter.html=epydoc.docwriter.html-module.html"><a title="epydoc.docwriter.html" class="py-name" href="#" onclick="return doclink('link-38', 'html', 'link-38');">html</a></tt> <tt class="py-op">=</tt> <tt class="py-string">''</tt> </tt>
+<a name="L177"></a><tt class="py-lineno">177</tt>  <tt class="py-line">        <tt class="py-keyword">for</tt> <tt class="py-name">i</tt> <tt class="py-keyword">in</tt> <tt class="py-name">range</tt><tt class="py-op">(</tt><tt class="py-name">len</tt><tt class="py-op">(</tt><tt class="py-name">pieces</tt><tt class="py-op">)</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L178"></a><tt class="py-lineno">178</tt>  <tt class="py-line">            <tt class="py-keyword">if</tt> <tt class="py-name">i</tt><tt class="py-op">%</tt><tt class="py-number">2</tt> <tt class="py-op">==</tt> <tt class="py-number">0</tt><tt class="py-op">:</tt> </tt>
+<a name="L179"></a><tt class="py-lineno">179</tt>  <tt class="py-line">                <tt id="link-39" class="py-name"><a title="epydoc.docwriter.html" class="py-name" href="#" onclick="return doclink('link-39', 'html', 'link-38');">html</a></tt> <tt class="py-op">+=</tt> <tt class="py-name">pieces</tt><tt class="py-op">[</tt><tt class="py-name">i</tt><tt class="py-op">]</tt> </tt>
+<a name="L180"></a><tt class="py-lineno">180</tt>  <tt class="py-line">            <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L181"></a><tt class="py-lineno">181</tt>  <tt class="py-line">                <tt class="py-comment"># Decompose the link into pieces.</tt> </tt>
+<a name="L182"></a><tt class="py-lineno">182</tt>  <tt class="py-line"><tt class="py-comment"></tt>                <tt class="py-name">m</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-40" class="py-name"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring._LINK_RE" class="py-name" href="#" onclick="return doclink('link-40', '_LINK_RE', 'link-35');">_LINK_RE</a></tt><tt class="py-op">.</tt><tt class="py-name">match</tt><tt class="py-op">(</tt><tt class="py-name">pieces</tt><tt class="py-op">[</tt><tt class="py-name">i</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L183"></a><tt class="py-lineno">183</tt>  <tt class="py-line">                <tt class="py-keyword">if</tt> <tt class="py-name">m</tt> <tt class="py-keyword">is</tt> <tt class="py-name">None</tt><tt class="py-op">:</tt> <tt class="py-keyword">continue</tt> <tt class="py-comment"># Error flagged by _check_links</tt> </tt>
+<a name="L184"></a><tt class="py-lineno">184</tt>  <tt class="py-line">                <tt class="py-op">(</tt><tt class="py-name">target</tt><tt class="py-op">,</tt> <tt id="link-41" class="py-name" targets="Variable epydoc.apidoc.VariableDoc.name=epydoc.apidoc.VariableDoc-class.html#name"><a title="epydoc.apidoc.VariableDoc.name" class="py-name" href="#" onclick="return doclink('link-41', 'name', 'link-41');">name</a></tt><tt class="py-op">)</tt> <tt class="py-op">=</tt> <tt class="py-name">m</tt><tt class="py-op">.</tt><tt class="py-name">groups</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L185"></a><tt class="py-lineno">185</tt>  <tt class="py-line"> </tt>
+<a name="L186"></a><tt class="py-lineno">186</tt>  <tt class="py-line">                <tt class="py-comment"># Normalize the target name.</tt> </tt>
+<a name="L187"></a><tt class="py-lineno">187</tt>  <tt class="py-line"><tt class="py-comment"></tt>                <tt class="py-keyword">if</tt> <tt class="py-name">target</tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt> <tt class="py-op">==</tt> <tt class="py-string">'#'</tt><tt class="py-op">:</tt> <tt class="py-name">target</tt> <tt class="py-op">=</tt> <tt class="py-name">target</tt><tt class="py-op">[</tt><tt class="py-number">1</tt><tt class="py-op">:</tt><tt class="py-op">]</tt> </tt>
+<a name="L188"></a><tt class="py-lineno">188</tt>  <tt class="py-line">                <tt class="py-name">target</tt> <tt class="py-op">=</tt> <tt class="py-name">target</tt><tt class="py-op">.</tt><tt class="py-name">replace</tt><tt class="py-op">(</tt><tt class="py-string">'#'</tt><tt class="py-op">,</tt> <tt class="py-string">'.'</tt><tt class="py-op">)</tt> </tt>
+<a name="L189"></a><tt class="py-lineno">189</tt>  <tt class="py-line">                <tt class="py-name">target</tt> <tt class="py-op">=</tt> <tt class="py-name">re</tt><tt class="py-op">.</tt><tt class="py-name">sub</tt><tt class="py-op">(</tt><tt class="py-string">r'\(.*\)'</tt><tt class="py-op">,</tt> <tt class="py-string">''</tt><tt class="py-op">,</tt> <tt class="py-name">target</tt><tt class="py-op">)</tt> </tt>
+<a name="L190"></a><tt class="py-lineno">190</tt>  <tt class="py-line"> </tt>
+<a name="L191"></a><tt class="py-lineno">191</tt>  <tt class="py-line">                <tt class="py-comment"># Provide a name, if it wasn't specified.</tt> </tt>
+<a name="L192"></a><tt class="py-lineno">192</tt>  <tt class="py-line"><tt class="py-comment"></tt>                <tt class="py-keyword">if</tt> <tt id="link-42" class="py-name"><a title="epydoc.apidoc.VariableDoc.name" class="py-name" href="#" onclick="return doclink('link-42', 'name', 'link-41');">name</a></tt> <tt class="py-keyword">is</tt> <tt class="py-name">None</tt><tt class="py-op">:</tt> <tt id="link-43" class="py-name"><a title="epydoc.apidoc.VariableDoc.name" class="py-name" href="#" onclick="return doclink('link-43', 'name', 'link-41');">name</a></tt> <tt class="py-op">=</tt> <tt class="py-name">target</tt> </tt>
+<a name="L193"></a><tt class="py-lineno">193</tt>  <tt class="py-line">                <tt class="py-keyword">else</tt><tt class="py-op">:</tt> <tt id="link-44" class="py-name"><a title="epydoc.apidoc.VariableDoc.name" class="py-name" href="#" onclick="return doclink('link-44', 'name', 'link-41');">name</a></tt> <tt class="py-op">=</tt> <tt id="link-45" class="py-name"><a title="epydoc.apidoc.VariableDoc.name" class="py-name" href="#" onclick="return doclink('link-45', 'name', 'link-41');">name</a></tt><tt class="py-op">.</tt><tt class="py-name">strip</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L194"></a><tt class="py-lineno">194</tt>  <tt class="py-line"> </tt>
+<a name="L195"></a><tt class="py-lineno">195</tt>  <tt class="py-line">                <tt class="py-comment"># Use docstring_linker to convert the name to html.</tt> </tt>
+<a name="L196"></a><tt class="py-lineno">196</tt>  <tt class="py-line"><tt class="py-comment"></tt>                <tt id="link-46" class="py-name"><a title="epydoc.docwriter.html" class="py-name" href="#" onclick="return doclink('link-46', 'html', 'link-38');">html</a></tt> <tt class="py-op">+=</tt> <tt class="py-name">translate_xref</tt><tt class="py-op">(</tt><tt class="py-name">target</tt><tt class="py-op">,</tt> <tt id="link-47" class="py-name"><a title="epydoc.apidoc.VariableDoc.name" class="py-name" href="#" onclick="return doclink('link-47', 'name', 'link-41');">name</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L197"></a><tt class="py-lineno">197</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt id="link-48" class="py-name"><a title="epydoc.docwriter.html" class="py-name" href="#" onclick="return doclink('link-48', 'html', 'link-38');">html</a></tt> </tt>
+</div><a name="L198"></a><tt class="py-lineno">198</tt>  <tt class="py-line"> </tt>
+<a name="ParsedJavadocDocstring._check_links"></a><div id="ParsedJavadocDocstring._check_links-def"><a name="L199"></a><tt class="py-lineno">199</tt> <a class="py-toggle" href="#" id="ParsedJavadocDocstring._check_links-toggle" onclick="return toggle('ParsedJavadocDocstring._check_links');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#_check_links">_check_links</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">errors</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParsedJavadocDocstring._check_links-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParsedJavadocDocstring._check_links-expanded"><a name="L200"></a><tt class="py-lineno">200</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L201"></a><tt class="py-lineno">201</tt>  <tt class="py-line"><tt class="py-docstring">        Make sure that all @{link}s are valid.  We need a separate</tt> </tt>
+<a name="L202"></a><tt class="py-lineno">202</tt>  <tt class="py-line"><tt class="py-docstring">        method for ths because we want to do this at parse time, not</tt> </tt>
+<a name="L203"></a><tt class="py-lineno">203</tt>  <tt class="py-line"><tt class="py-docstring">        html output time.  Any errors found are appended to C{errors}.</tt> </tt>
+<a name="L204"></a><tt class="py-lineno">204</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L205"></a><tt class="py-lineno">205</tt>  <tt class="py-line">        <tt class="py-name">pieces</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-49" class="py-name"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring._LINK_SPLIT_RE" class="py-name" href="#" onclick="return doclink('link-49', '_LINK_SPLIT_RE', 'link-34');">_LINK_SPLIT_RE</a></tt><tt class="py-op">.</tt><tt class="py-name">split</tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_docstring</tt><tt class="py-op">)</tt> </tt>
+<a name="L206"></a><tt class="py-lineno">206</tt>  <tt class="py-line">        <tt id="link-50" class="py-name" targets="Method epydoc.markup.ParseError.linenum()=epydoc.markup.ParseError-class.html#linenum"><a title="epydoc.markup.ParseError.linenum" class="py-name" href="#" onclick="return doclink('link-50', 'linenum', 'link-50');">linenum</a></tt> <tt class="py-op">=</tt> <tt class="py-number">0</tt> </tt>
+<a name="L207"></a><tt class="py-lineno">207</tt>  <tt class="py-line">        <tt class="py-keyword">for</tt> <tt class="py-name">i</tt> <tt class="py-keyword">in</tt> <tt class="py-name">range</tt><tt class="py-op">(</tt><tt class="py-name">len</tt><tt class="py-op">(</tt><tt class="py-name">pieces</tt><tt class="py-op">)</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L208"></a><tt class="py-lineno">208</tt>  <tt class="py-line">            <tt class="py-keyword">if</tt> <tt class="py-name">i</tt><tt class="py-op">%</tt><tt class="py-number">2</tt> <tt class="py-op">==</tt> <tt class="py-number">1</tt> <tt class="py-keyword">and</tt> <tt class="py-keyword">not</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-51" class="py-name"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring._LINK_RE" class="py-name" href="#" onclick="return doclink('link-51', '_LINK_RE', 'link-35');">_LINK_RE</a></tt><tt class="py-op">.</tt><tt class="py-name">match</tt><tt class="py-op">(</tt><tt class="py-name">pieces</tt><tt class="py-op">[</tt><tt class="py-name">i</tt><tt class="py-op">]</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L209"></a><tt class="py-lineno">209</tt>  <tt class="py-line">                <tt class="py-name">estr</tt> <tt class="py-op">=</tt> <tt class="py-string">'Bad link %r'</tt> <tt class="py-op">%</tt> <tt class="py-name">pieces</tt><tt class="py-op">[</tt><tt class="py-name">i</tt><tt class="py-op">]</tt> </tt>
+<a name="L210"></a><tt class="py-lineno">210</tt>  <tt class="py-line">                <tt class="py-name">errors</tt><tt class="py-op">.</tt><tt class="py-name">append</tt><tt class="py-op">(</tt><tt id="link-52" class="py-name" targets="Class epydoc.docparser.ParseError=epydoc.docparser.ParseError-class.html,Class epydoc.markup.ParseError=epydoc.markup.ParseError-class.html"><a title="epydoc.docparser.ParseError
+epydoc.markup.ParseError" class="py-name" href="#" onclick="return doclink('link-52', 'ParseError', 'link-52');">ParseError</a></tt><tt class="py-op">(</tt><tt class="py-name">estr</tt><tt class="py-op">,</tt> <tt id="link-53" class="py-name"><a title="epydoc.markup.ParseError.linenum" class="py-name" href="#" onclick="return doclink('link-53', 'linenum', 'link-50');">linenum</a></tt><tt class="py-op">,</tt> <tt id="link-54" class="py-name" targets="Method epydoc.markup.ParseError.is_fatal()=epydoc.markup.ParseError-class.html#is_fatal"><a title="epydoc.markup.ParseError.is_fatal" class="py-name" href="#" onclick="return doclink('link-54', 'is_fatal', 'link-54');">is_fatal</a></tt><tt class="py-op">=</tt><tt class="py-number">0</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L211"></a><tt class="py-lineno">211</tt>  <tt class="py-line">            <tt id="link-55" class="py-name"><a title="epydoc.markup.ParseError.linenum" class="py-name" href="#" onclick="return doclink('link-55', 'linenum', 'link-50');">linenum</a></tt> <tt class="py-op">+=</tt> <tt class="py-name">pieces</tt><tt class="py-op">[</tt><tt class="py-name">i</tt><tt class="py-op">]</tt><tt class="py-op">.</tt><tt class="py-name">count</tt><tt class="py-op">(</tt><tt class="py-string">'\n'</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L212"></a><tt class="py-lineno">212</tt>  <tt class="py-line"> </tt>
+<a name="L213"></a><tt class="py-lineno">213</tt>  <tt class="py-line">    <tt class="py-comment">#////////////////////////////////////////////////////////////</tt> </tt>
+<a name="L214"></a><tt class="py-lineno">214</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-comment"># Plaintext Output.</tt> </tt>
+<a name="L215"></a><tt class="py-lineno">215</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-comment">#////////////////////////////////////////////////////////////</tt> </tt>
+<a name="L216"></a><tt class="py-lineno">216</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L217"></a><tt class="py-lineno">217</tt>  <tt class="py-line">    <tt class="py-comment"># Inherit docs from ParsedDocstring.  Since we don't define</tt> </tt>
+<a name="L218"></a><tt class="py-lineno">218</tt>  <tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-comment"># to_latex, this is used when generating latex output.</tt> </tt>
+<a name="ParsedJavadocDocstring.to_plaintext"></a><div id="ParsedJavadocDocstring.to_plaintext-def"><a name="L219"></a><tt class="py-lineno">219</tt> <a class="py-toggle" href="#" id="ParsedJavadocDocstring.to_plaintext-toggle" onclick="return toggle('ParsedJavadocDocstring.to_plaintext');">-</a><tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#to_plaintext">to_plaintext</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">docstring_linker</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-param">options</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParsedJavadocDocstring.to_plaintext-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParsedJavadocDocstring.to_plaintext-expanded"><a name="L220"></a><tt class="py-lineno">220</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_docstring</tt> </tt>
+</div><a name="L221"></a><tt class="py-lineno">221</tt>  <tt class="py-line"> </tt>
+<a name="L222"></a><tt class="py-lineno">222</tt>  <tt class="py-line">    <tt class="py-comment"># Jeff's hack to get summary working</tt> </tt>
+<a name="ParsedJavadocDocstring.summary"></a><div id="ParsedJavadocDocstring.summary-def"><a name="L223"></a><tt class="py-lineno">223</tt> <a class="py-toggle" href="#" id="ParsedJavadocDocstring.summary-toggle" onclick="return toggle('ParsedJavadocDocstring.summary');">-</a><tt class="py-line"><tt class="py-comment"></tt>    <tt class="py-keyword">def</tt> <a class="py-def-name" href="epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#summary">summary</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ParsedJavadocDocstring.summary-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ParsedJavadocDocstring.summary-expanded"><a name="L224"></a><tt class="py-lineno">224</tt>  <tt class="py-line">        <tt class="py-comment"># Drop tags</tt> </tt>
+<a name="L225"></a><tt class="py-lineno">225</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-name">doc</tt> <tt class="py-op">=</tt> <tt class="py-string">"\n"</tt><tt class="py-op">.</tt><tt class="py-name">join</tt><tt class="py-op">(</tt><tt class="py-op">[</tt> <tt class="py-name">row</tt> <tt class="py-keyword">for</tt> <tt class="py-name">row</tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_docstring</tt><tt class="py-op">.</tt><tt class="py-name">split</tt><tt class="py-op">(</tt><tt class="py-string">'\n'</tt><tt class="py-op">)</tt> </tt>
+<a name="L226"></a><tt class="py-lineno">226</tt>  <tt class="py-line">                          <tt class="py-keyword">if</tt> <tt class="py-keyword">not</tt> <tt class="py-name">row</tt><tt class="py-op">.</tt><tt class="py-name">lstrip</tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">.</tt><tt class="py-name">startswith</tt><tt class="py-op">(</tt><tt class="py-string">'@'</tt><tt class="py-op">)</tt> <tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L227"></a><tt class="py-lineno">227</tt>  <tt class="py-line"> </tt>
+<a name="L228"></a><tt class="py-lineno">228</tt>  <tt class="py-line">        <tt class="py-name">m</tt> <tt class="py-op">=</tt> <tt class="py-name">re</tt><tt class="py-op">.</tt><tt class="py-name">match</tt><tt class="py-op">(</tt><tt class="py-string">r'(\s*[\w\W]*?\.)(\s|$)'</tt><tt class="py-op">,</tt> <tt class="py-name">doc</tt><tt class="py-op">)</tt> </tt>
+<a name="L229"></a><tt class="py-lineno">229</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">m</tt><tt class="py-op">:</tt> </tt>
+<a name="L230"></a><tt class="py-lineno">230</tt>  <tt class="py-line">            <tt class="py-name">other</tt> <tt class="py-op">=</tt> <tt class="py-name">doc</tt><tt class="py-op">[</tt><tt class="py-name">m</tt><tt class="py-op">.</tt><tt class="py-name">end</tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">:</tt><tt class="py-op">]</tt> </tt>
+<a name="L231"></a><tt class="py-lineno">231</tt>  <tt class="py-line">            <tt class="py-keyword">return</tt> <tt class="py-op">(</tt><tt id="link-56" class="py-name"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring" class="py-name" href="#" onclick="return doclink('link-56', 'ParsedJavadocDocstring', 'link-2');">ParsedJavadocDocstring</a></tt><tt class="py-op">(</tt><tt class="py-name">m</tt><tt class="py-op">.</tt><tt class="py-name">group</tt><tt class="py-op">(</tt><tt class="py-number">1</tt><tt class="py-op">)</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> </tt>
+<a name="L232"></a><tt class="py-lineno">232</tt>  <tt class="py-line">                    <tt class="py-name">other</tt> <tt class="py-op">!=</tt> <tt class="py-string">''</tt> <tt class="py-keyword">and</tt> <tt class="py-keyword">not</tt> <tt class="py-name">other</tt><tt class="py-op">.</tt><tt class="py-name">isspace</tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L233"></a><tt class="py-lineno">233</tt>  <tt class="py-line">             </tt>
+<a name="L234"></a><tt class="py-lineno">234</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L235"></a><tt class="py-lineno">235</tt>  <tt class="py-line">            <tt class="py-name">parts</tt> <tt class="py-op">=</tt> <tt class="py-name">doc</tt><tt class="py-op">.</tt><tt class="py-name">strip</tt><tt class="py-op">(</tt><tt class="py-string">'\n'</tt><tt class="py-op">)</tt><tt class="py-op">.</tt><tt class="py-name">split</tt><tt class="py-op">(</tt><tt class="py-string">'\n'</tt><tt class="py-op">,</tt> <tt class="py-number">1</tt><tt class="py-op">)</tt> </tt>
+<a name="L236"></a><tt class="py-lineno">236</tt>  <tt class="py-line">            <tt class="py-keyword">if</tt> <tt class="py-name">len</tt><tt class="py-op">(</tt><tt class="py-name">parts</tt><tt class="py-op">)</tt> <tt class="py-op">==</tt> <tt class="py-number">1</tt><tt class="py-op">:</tt> </tt>
+<a name="L237"></a><tt class="py-lineno">237</tt>  <tt class="py-line">                <tt id="link-57" class="py-name" targets="Variable epydoc.apidoc.APIDoc.summary=epydoc.apidoc.APIDoc-class.html#summary,Method epydoc.docwriter.html.HTMLWriter.summary()=epydoc.docwriter.html.HTMLWriter-class.html#summary,Method epydoc.markup.ConcatenatedDocstring.summary()=epydoc.markup.ConcatenatedDocstring-class.html#summary,Method epydoc.markup.ParsedDocstring.summary()=epydoc.markup.ParsedDocstring-class.html#summary,Method epydoc.markup.epytext.ParsedEpytextDocstring.summary()=epydoc.markup.epytext.ParsedEpytextDocstring-class.html#summary,Method epydoc.markup.javadoc.ParsedJavadocDocstring.summary()=epydoc.markup.javadoc.ParsedJavadocDocstring-class.html#summary,Method epydoc.markup.plaintext.ParsedPlaintextDocstring.summary()=epydoc.markup.plaintext.ParsedPlaintextDocstring-class.html#summary,Method epydoc.markup.restructuredtext.ParsedRstDocstring.summary()=epydoc.markup.restructuredtext.ParsedRstDocstring-class.html#summary"><a title="epydoc.apidoc.APIDoc.summary
+epydoc.docwriter.html.HTMLWriter.summary
+epydoc.markup.ConcatenatedDocstring.summary
+epydoc.markup.ParsedDocstring.summary
+epydoc.markup.epytext.ParsedEpytextDocstring.summary
+epydoc.markup.javadoc.ParsedJavadocDocstring.summary
+epydoc.markup.plaintext.ParsedPlaintextDocstring.summary
+epydoc.markup.restructuredtext.ParsedRstDocstring.summary" class="py-name" href="#" onclick="return doclink('link-57', 'summary', 'link-57');">summary</a></tt> <tt class="py-op">=</tt> <tt class="py-name">parts</tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt> </tt>
+<a name="L238"></a><tt class="py-lineno">238</tt>  <tt class="py-line">                <tt class="py-name">other</tt> <tt class="py-op">=</tt> <tt class="py-name">False</tt> </tt>
+<a name="L239"></a><tt class="py-lineno">239</tt>  <tt class="py-line">            <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L240"></a><tt class="py-lineno">240</tt>  <tt class="py-line">                <tt id="link-58" class="py-name"><a title="epydoc.apidoc.APIDoc.summary
+epydoc.docwriter.html.HTMLWriter.summary
+epydoc.markup.ConcatenatedDocstring.summary
+epydoc.markup.ParsedDocstring.summary
+epydoc.markup.epytext.ParsedEpytextDocstring.summary
+epydoc.markup.javadoc.ParsedJavadocDocstring.summary
+epydoc.markup.plaintext.ParsedPlaintextDocstring.summary
+epydoc.markup.restructuredtext.ParsedRstDocstring.summary" class="py-name" href="#" onclick="return doclink('link-58', 'summary', 'link-57');">summary</a></tt> <tt class="py-op">=</tt> <tt class="py-name">parts</tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt> <tt class="py-op">+</tt> <tt class="py-string">'...'</tt> </tt>
+<a name="L241"></a><tt class="py-lineno">241</tt>  <tt class="py-line">                <tt class="py-name">other</tt> <tt class="py-op">=</tt> <tt class="py-name">True</tt> </tt>
+<a name="L242"></a><tt class="py-lineno">242</tt>  <tt class="py-line">             </tt>
+<a name="L243"></a><tt class="py-lineno">243</tt>  <tt class="py-line">            <tt class="py-keyword">return</tt> <tt id="link-59" class="py-name"><a title="epydoc.markup.javadoc.ParsedJavadocDocstring" class="py-name" href="#" onclick="return doclink('link-59', 'ParsedJavadocDocstring', 'link-2');">ParsedJavadocDocstring</a></tt><tt class="py-op">(</tt><tt id="link-60" class="py-name"><a title="epydoc.apidoc.APIDoc.summary
+epydoc.docwriter.html.HTMLWriter.summary
+epydoc.markup.ConcatenatedDocstring.summary
+epydoc.markup.ParsedDocstring.summary
+epydoc.markup.epytext.ParsedEpytextDocstring.summary
+epydoc.markup.javadoc.ParsedJavadocDocstring.summary
+epydoc.markup.plaintext.ParsedPlaintextDocstring.summary
+epydoc.markup.restructuredtext.ParsedRstDocstring.summary" class="py-name" href="#" onclick="return doclink('link-60', 'summary', 'link-57');">summary</a></tt><tt class="py-op">)</tt><tt class="py-op">,</tt> <tt class="py-name">other</tt> </tt>
+</div></div><a name="L244"></a><tt class="py-lineno">244</tt>  <tt class="py-line">         </tt>
+<a name="L245"></a><tt class="py-lineno">245</tt>  <tt class="py-line"><tt class="py-comment">#     def concatenate(self, other):</tt> </tt>
+<a name="L246"></a><tt class="py-lineno">246</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#         if not isinstance(other, ParsedJavadocDocstring):</tt> </tt>
+<a name="L247"></a><tt class="py-lineno">247</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#             raise ValueError, 'Could not concatenate docstrings'</tt> </tt>
+<a name="L248"></a><tt class="py-lineno">248</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#         return ParsedJavadocDocstring(self._docstring+other._docstring)</tt> </tt>
+<a name="L249"></a><tt class="py-lineno">249</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="epydoc-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://epydoc.sourceforge.net">epydoc 3.0beta1</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    <a href="epydoc-log.html">Generated by Epydoc
+    3.0beta1 on Tue Feb 27 06:06:16 2007</a>
+    </td>
+    <td align="right" class="footer">
+      <a href="http://epydoc.sourceforge.net">http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie()
+  // -->
+</script>
+  
+</body>
+</html>
