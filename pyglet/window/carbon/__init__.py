@@ -907,8 +907,29 @@ class CarbonWindow(BaseWindow):
         return noErr
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseMoved)
-    @CarbonEventHandler(kEventClassMouse, kEventMouseDragged)
     def _on_mouse_moved(self, next_handler, ev, data):
+        x, y = self._get_mouse_position(ev)
+        y = self.height - y
+        if x < 0 or y < 0:
+            return noErr
+
+        self._mouse_x = x
+        self._mouse_y = y
+
+        delta = HIPoint()
+        carbon.GetEventParameter(ev, kEventParamMouseDelta,
+            typeHIPoint, c_void_p(), sizeof(delta), c_void_p(),
+            byref(delta))
+
+        # Motion event
+        self.dispatch_event(event.EVENT_MOUSE_MOTION, 
+            x, y, delta.x, -delta.y)
+
+        carbon.CallNextEventHandler(next_handler, ev)
+        return noErr
+
+    @CarbonEventHandler(kEventClassMouse, kEventMouseDragged)
+    def _on_mouse_dragged(self, next_handler, ev, data):
         button, modifiers = self._get_mouse_button_and_modifiers(ev)
         x, y = self._get_mouse_position(ev)
         y = self.height - y
@@ -923,14 +944,9 @@ class CarbonWindow(BaseWindow):
             typeHIPoint, c_void_p(), sizeof(delta), c_void_p(),
             byref(delta))
 
-        if button:
-            # Drag event
-            self.dispatch_event(event.EVENT_MOUSE_DRAG,
-                x, y, delta.x, -delta.y, button, modifiers)
-        else:
-            # Motion event
-            self.dispatch_event(event.EVENT_MOUSE_MOTION, 
-                x, y, delta.x, -delta.y)
+        # Drag event
+        self.dispatch_event(event.EVENT_MOUSE_DRAG,
+            x, y, delta.x, -delta.y, button, modifiers)
 
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
@@ -965,7 +981,7 @@ class CarbonWindow(BaseWindow):
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseWheelMoved)
     def _on_mouse_wheel_moved(self, next_handler, ev, data):
-        x, y = self._get_mouse_position(event)
+        x, y = self._get_mouse_position(ev)
         y = self.height - y
 
         axis = EventMouseWheelAxis()

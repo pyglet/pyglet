@@ -451,15 +451,13 @@ class WindowEventLogger(object):
 
     def on_mouse_press(self, x, y, button, modifiers):
         print >> self.file, 'on_mouse_press(x=%d, y=%d, button=%r, '\
-                            'modifiers=%s)' % (
-            mouse.buttons_string(button), x, y, 
-            key.modifiers_string(modifiers))
+                            'modifiers=%s)' % (x, y,
+            mouse.buttons_string(button), key.modifiers_string(modifiers))
 
     def on_mouse_release(self, x, y, button, modifiers):
         print >> self.file, 'on_mouse_release(x=%d, y=%d, button=%r, '\
-                            'modifiers=%s)' % (
-            mouse.buttons_string(button), x, y, 
-            key.modifiers_string(modifiers))
+                            'modifiers=%s)' % (x, y, 
+            mouse.buttons_string(button), key.modifiers_string(modifiers))
 
     def on_mouse_scroll(self, x, y, dx, dy):
         print >> self.file, 'on_mouse_scroll(x=%f, y=%f, dx=%f, dy=%f)' % (
