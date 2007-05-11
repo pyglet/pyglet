@@ -5,7 +5,7 @@ import ctypes
 import comtypes
 from comtypes import client, GUID
 
-from pyglet.media import Sound, Medium
+from pyglet.media import Sound, Medium, Listener, MediaException
 
 _qedit = client.GetModule('qedit.dll')
 _quartz = client.GetModule('quartz.dll')
@@ -18,8 +18,9 @@ CLSID_FilterGraph =   '{e436ebb3-524f-11ce-9f53-0020af0ba770}'
 CLSID_SampleGrabber = '{c1f400a0-3f08-11d3-9f0b-006008039e37}'
 CLSID_NullRenderer =  '{c1f400a4-3f08-11d3-9f0b-006008039e37}'
 
-MEDIATYPE_Audio =  '{73647561-0000-0010-8000-00AA00389B71}'
-MEDIASUBTYPE_PCM = '{00000001-0000-0010-8000-00AA00389B71}'
+MEDIATYPE_Audio =  GUID('{73647561-0000-0010-8000-00AA00389B71}')
+MEDIATYPE_Video =  GUID('{73646976-0000-0010-8000-00AA00389B71}')
+MEDIASUBTYPE_PCM = GUID('{00000001-0000-0010-8000-00AA00389B71}')
 
 INFINITE = 0xFFFFFFFF
 
@@ -34,12 +35,15 @@ class DirectShowStreamingSound(Sound):
             CLSID_FilterGraph, interface=_qedit.IFilterGraph)
         
         filter_builder = filter_graph.QueryInterface(_qedit.IGraphBuilder)
-        filter_builder.RenderFile(filename, None)
-        del filter_builder
-
-        self._position = filter_graph.QueryInterface(_quartz.IMediaPosition)
-        self._control = filter_graph.QueryInterface(_quartz.IMediaControl)
-        del filter_graph
+        try:
+            filter_builder.RenderFile(filename, None)
+            self._position = filter_graph.QueryInterface(_quartz.IMediaPosition)
+            self._control = filter_graph.QueryInterface(_quartz.IMediaControl)
+        except comtypes.COMError:
+            raise MediaException('Cannot load "%s"' % filename)
+        finally:
+            del filter_builder
+            del filter_graph
 
         self._control.Pause()
 
@@ -54,6 +58,9 @@ class DirectShowStreamingSound(Sound):
         if position >= self._stop_time:
             self.finished = True
 
+    def _get_time(self):
+        return self._position.CurrentPosition
+
 
 class DirectShowStreamingMedium(Medium):
     def __init__(self, filename, file=None):
@@ -61,6 +68,39 @@ class DirectShowStreamingMedium(Medium):
             raise NotImplementedError('TODO file objects')
 
         self.filename = filename
+
+        self._check_file()
+
+    def _check_file(self):
+        # Open and render a filtergraph for the file to find out if it has
+        # audio and/or video, and set self.has_(audio|video).
+        
+        filter_graph = client.CreateObject(CLSID_FilterGraph, 
+                                           interface=_qedit.IFilterGraph)
+        
+        filter_builder = filter_graph.QueryInterface(_qedit.IGraphBuilder)
+        try:
+            filter_builder.RenderFile(self.filename, None)
+
+            # Enumerate filters in the graph, see if pins have audio or video
+            # on them.
+            enum_filters = filter_graph.EnumFilters()
+            filter, _ = enum_filters.Next(1)
+            while filter:
+                enum_pins = filter.EnumPins()
+                pin, _ = enum_pins.Next(1)
+                while pin:
+                    media_type = pin.ConnectionMediaType()
+                    self.has_audio |= media_type.majortype == MEDIATYPE_Audio
+                    self.has_video |= media_type.majortype == MEDIATYPE_Video
+                    pin, _ = enum_pins.Next(1)
+                filter, _ = enum_filters.Next(1)
+        except comtypes.COMError:
+            raise
+        finally:
+            del filter_builder
+            del filter_graph
+        print self.has_audio, self.has_video
 
     def get_sound(self):
         sound = DirectShowStreamingSound(self.filename)
@@ -75,6 +115,7 @@ class DirectShow_BufferGrabber(comtypes.COMObject):
 
     def ISampleGrabberCB_BufferCB(self, this, sample_time, buffer, len):
         dest = (ctypes.c_byte * len)()
+        print sample_time
         ctypes.memmove(dest, buffer, len)
         self.buffers.append(dest)
         return 0
@@ -96,8 +137,8 @@ class DirectShowStaticMedium(Medium):
         filter_graph.AddFilter(sample_grabber, None)
 
         media_type = AM_MEDIA_TYPE()
-        media_type.majortype = GUID(MEDIATYPE_Audio)
-        media_type.subtype = GUID(MEDIASUBTYPE_PCM)
+        media_type.majortype = MEDIATYPE_Audio
+        media_type.subtype = MEDIASUBTYPE_PCM
         sample_grabber.SetMediaType(media_type)
         sample_grabber.SetBufferSamples(True)
 
@@ -105,7 +146,17 @@ class DirectShowStaticMedium(Medium):
         buffer_grabber = DirectShow_BufferGrabber(self.buffers)
         sample_grabber.SetCallback(buffer_grabber, 1)
 
-        self._connect_filters(filter_graph, source_filter, sample_grabber)
+        try:
+            self._connect_filters(filter_graph, source_filter, sample_grabber)
+        except comtypes.COMError:
+            # Couldn't connect sample grabber... means nothing could provide
+            # an audio pin.  Give up now, leave has_audio = False.
+            del graph_builder
+            del source_filter
+            del sample_grabber
+            del filter_graph
+            del buffer_grabber
+            return
 
         null_renderer = client.CreateObject(
             CLSID_NullRenderer, interface=_qedit.IBaseFilter)
@@ -128,12 +179,12 @@ class DirectShowStaticMedium(Medium):
         self.sample_rate = self.format.lSamplesPerSec
         self.channels = self.format.nChannels
 
-        print 'done'
-
         self.buffer = []
         for buffer in self.buffers:
             self.buffer += buffer[:]
         self.buffer = (ctypes.c_byte * len(self.buffer))(*self.buffer)
+
+        self.has_audio = True
 
     def get_sound(self):
         return DirectShowStaticSound(self.format, self.buffer)
@@ -169,6 +220,9 @@ class DirectShowStaticSound(Sound):
 
     def play(self):
         self.sound_buffer.Play(_dsound.DSBPLAY_DEFAULT)
+
+    def stop(self):
+        self.sound_buffer.Stop()
 
 # Device interface
 # -----------------------------------------------------------------------------
@@ -207,7 +261,9 @@ def init():
 
 def cleanup():
     while sounds:
-        sounds.pop()
+        sound = sounds.pop()
+        sound.stop()
+        del sound
     
     global directx
     global directsound
@@ -215,7 +271,7 @@ def cleanup():
     del directx
 
 # XXX temporary
-listener = media.Listener()
+listener = Listener()
 
 sounds = []
 

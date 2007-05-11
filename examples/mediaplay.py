@@ -142,7 +142,8 @@ class MediaPlayWindow(window.Window):
 if __name__ == '__main__':
     filename = sys.argv[1]
 
-    win = MediaPlayWindow(filename, width=400, height=150, resizable=True)
-    win.run()
-
-    media.cleanup()
+    try:
+        win = MediaPlayWindow(filename, width=400, height=150, resizable=True)
+        win.run()
+    finally:
+        media.cleanup()
