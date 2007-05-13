@@ -39,6 +39,9 @@ AM_MEDIA_TYPE = _qedit._AMMediaType
 PINDIR_INPUT = 0
 PINDIR_OUTPUT = 1
 
+DBSVOLUME_MIN = -10000
+DBSVOLUME_MAX = 0
+
 class VIDEOINFOHEADER(ctypes.Structure):
     _fields_ = [
         ('rcSource', wintypes.RECT),
@@ -83,7 +86,32 @@ class DirectShow_BufferGrabber(comtypes.COMObject):
         raise NotImplementedError('Use BufferCB instead')
         return 0
 
-class DirectShowStreamingSound(Sound):
+class DirectSound3DBuffer(Sound):
+    '''Volume and positioning methods for any sound buffer.'''
+
+    def _set_filter_graph(self, filter_graph):
+        '''Locate and set the sound buffer from the filter graph.'''
+        enum_filters = filter_graph.EnumFilters()
+        filter, _ = enum_filters.Next(1)
+        while filter:
+            name = filter.QueryFilterInfo().achName
+            name = u''.join([unichr(c) for c in name]).strip(u'\0')
+            if name == 'Default DirectSound Device':
+                self._set_buffer(filter)
+                break
+            filter, _ = enum_filters.Next(1)            
+
+    def _set_buffer(self, buffer):
+        self._basic_audio = buffer.QueryInterface(_quartz.IBasicAudio)
+    
+    def _set_volume(self, volume):
+        self._volume = volume
+        # Scale volume to log between -10000 and 0
+        volume = int(-10 ** (2 * (1. - volume))  * 100 + 1)
+        volume = min(max(-10000, volume), 0)
+        self._basic_audio.Volume = volume
+
+class DirectShowStreamingSound(DirectSound3DBuffer):
     def __init__(self, filename):
         filter_graph = client.CreateObject(
             CLSID_FilterGraph, interface=_qedit.IFilterGraph)
@@ -96,6 +124,8 @@ class DirectShowStreamingSound(Sound):
         self._control.Pause()
 
         self._stop_time = self._position.StopTime
+
+        self._set_filter_graph(filter_graph)
 
     def play(self):
         self._control.Run()
@@ -186,6 +216,10 @@ class DirectShowStreamingVideo(Video):
             audio_renderer_pin = _get_filter_pin(audio_renderer, PINDIR_INPUT)
             graph_builder.Connect(audio_source_pin, audio_renderer_pin)
 
+            # Create public sound interface 
+            self.sound = DirectSound3DBuffer()
+            self.sound._set_buffer(audio_renderer)
+
         # Cue for playing, this should fill up buffers enough to determine
         # format.
         self._control.Pause()
@@ -218,6 +252,7 @@ class DirectShowStreamingVideo(Video):
         self._control.GetState(INFINITE)
         
         # Clean up in this order to prevent a crash
+        del self.sound._basic_audio # yuk, but necessarily like this
         del self._control
         del self._position
         del self._sample_grabber
