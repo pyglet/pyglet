@@ -99,12 +99,22 @@ class DirectShowStreamingSound(Sound):
 
     def play(self):
         self._control.Run()
+        self.playing = True
+
+    def pause(self):
+        self._control.Pause()
+        self.playing = False
+
+    def stop(self):
+        self._control.Stop()
+        self.playing = False
 
     def dispatch_events(self):
         position = self._position.CurrentPosition
           
         if position >= self._stop_time:
             self.finished = True
+            self.playing = False
 
     def _get_time(self):
         return self._position.CurrentPosition
@@ -148,6 +158,7 @@ class DirectShowStreamingVideo(Video):
         
         self._control = filter_graph.QueryInterface(_quartz.IMediaControl)
         self._position = filter_graph.QueryInterface(_quartz.IMediaPosition)
+        self._stop_time = self._position.StopTime
 
         # Enumerate the graph and look for an unconnected output pin.
         # Hopefully this will be the audio stream.
@@ -163,7 +174,6 @@ class DirectShowStreamingVideo(Video):
                         pin.ConnectedTo()
                     except comtypes.COMError:
                         audio_source_pin = pin
-                        print audio_source_pin
                 pin, _ = enum_pins.Next(1)
             filter, _ = enum_filters.Next(1)
 
@@ -193,9 +203,25 @@ class DirectShowStreamingVideo(Video):
             
     def play(self):
         self._control.Run()
+        self.playing = True
+
+    def pause(self):
+        self._control.Pause()
+        self.playing = False
 
     def stop(self):
         self._control.Stop()
+        self.playing = False
+
+        # Wait until it transitions (otherwise we may GC the sample grabber
+        # while it's still in use).
+        self._control.GetState(INFINITE)
+        
+        # Clean up in this order to prevent a crash
+        del self._control
+        del self._position
+        del self._sample_grabber
+        del self._buffer_grabber
 
     def _get_time(self):
         return self._position.CurrentPosition
@@ -214,6 +240,12 @@ class DirectShowStreamingVideo(Video):
     texture = property(_get_texture) 
 
     def dispatch_events(self):
+        position = self._position.CurrentPosition
+          
+        if position >= self._stop_time:
+            self.finished = True
+            self.playing = False
+        
         # TODO look at timestamps
         buffer = None
         while self._buffers:
@@ -352,15 +384,38 @@ class DirectShowStaticSound(Sound):
         desc.fxFormat = format
         desc.guid3DAlgorithm = _dsound.GUID_DS3DALG_NO_VIRTUALIZATION
         
-        self.sound_buffer = directsound.CreateSoundBuffer(desc)
-        self.sound_buffer.WriteBuffer(0, 0, buffer,
-                                      _dsound.DSBLOCK_ENTIREBUFFER)
+        try:
+            self.sound_buffer = directsound.CreateSoundBuffer(desc)
+            self.sound_buffer.WriteBuffer(0, 0, buffer,
+                                          _dsound.DSBLOCK_ENTIREBUFFER)
+        except comtypes.COMError:
+            raise MediaException('Sound is too long for static buffer')
+
+        self._bytes_per_second = float(format.lAvgBytesPerSec)
+        self._last_time = 0
 
     def play(self):
         self.sound_buffer.Play(_dsound.DSBPLAY_DEFAULT)
+        self.playing = True
+
+    def pause(self):
+        self.sound_buffer.Stop()
+        self.playing = False
 
     def stop(self):
         self.sound_buffer.Stop()
+        self.playing = False
+
+    def _get_time(self):
+        position = self.sound_buffer.GetCurrentPosition()
+        return position.lPlay / self._bytes_per_second
+
+    def dispatch_events(self):
+        time = self.time
+        if time < self._last_time:
+            self.finished = True
+            self.playing = False
+        self._last_time = time
 
 # Device interface
 # -----------------------------------------------------------------------------
