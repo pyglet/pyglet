@@ -21,6 +21,7 @@ _dsound_c = ctypes.windll.LoadLibrary('dsound.dll')
 CLSID_FilterGraph =   '{e436ebb3-524f-11ce-9f53-0020af0ba770}'
 CLSID_SampleGrabber = '{c1f400a0-3f08-11d3-9f0b-006008039e37}'
 CLSID_NullRenderer =  '{c1f400a4-3f08-11d3-9f0b-006008039e37}'
+CLSID_DSoundAudioRenderer = '{79376820-07D0-11CF-A24D-0020AFD79767}'
 
 MEDIATYPE_Audio =  GUID('{73647561-0000-0010-8000-00AA00389B71}')
 MEDIATYPE_Video =  GUID('{73646976-0000-0010-8000-00AA00389B71}')
@@ -87,6 +88,7 @@ class DirectShowStreamingSound(Sound):
         filter_graph = client.CreateObject(
             CLSID_FilterGraph, interface=_qedit.IFilterGraph)
         
+        filter_builder = filter_graph.QueryInterface(_qedit.IGraphBuilder)
         filter_builder.RenderFile(filename, None)
         self._position = filter_graph.QueryInterface(_quartz.IMediaPosition)
         self._control = filter_graph.QueryInterface(_quartz.IMediaControl)
@@ -147,7 +149,32 @@ class DirectShowStreamingVideo(Video):
         self._control = filter_graph.QueryInterface(_quartz.IMediaControl)
         self._position = filter_graph.QueryInterface(_quartz.IMediaPosition)
 
-        # TODO self.sound
+        # Enumerate the graph and look for an unconnected output pin.
+        # Hopefully this will be the audio stream.
+        enum_filters = filter_graph.EnumFilters()
+        filter, _ = enum_filters.Next(1)
+        audio_source_pin = None
+        while filter:
+            enum_pins = filter.EnumPins()
+            pin, _ = enum_pins.Next(1)
+            while pin:
+                if pin.QueryDirection() == PINDIR_OUTPUT:
+                    try:
+                        pin.ConnectedTo()
+                    except comtypes.COMError:
+                        audio_source_pin = pin
+                        print audio_source_pin
+                pin, _ = enum_pins.Next(1)
+            filter, _ = enum_filters.Next(1)
+
+        # Create a DirectSound Audio Renderer and connect it to what we think
+        # is the audio source
+        if audio_source_pin:
+            audio_renderer = client.CreateObject(
+                CLSID_DSoundAudioRenderer, interface=_qedit.IBaseFilter)
+            filter_graph.AddFilter(audio_renderer, None)
+            audio_renderer_pin = _get_filter_pin(audio_renderer, PINDIR_INPUT)
+            graph_builder.Connect(audio_source_pin, audio_renderer_pin)
 
         # Cue for playing, this should fill up buffers enough to determine
         # format.
@@ -160,6 +187,7 @@ class DirectShowStreamingVideo(Video):
                                  ctypes.POINTER(VIDEOINFOHEADER)).contents
             self.width = format.bmiHeader.biWidth
             self.height = format.bmiHeader.biHeight
+            self._pitch = (self.width * 3 + 3) & ~0x3 # align to 4 bytes
         else:
             raise MediaException('Unsupported video format type')
             
@@ -182,10 +210,6 @@ class DirectShowStreamingVideo(Video):
                     0, 0, self.width, self.height)
             else:
                 self._texture = texture
-
-            # Flip texture coords (good enough for simple apps).
-            bl, br, tr, tl = self._texture.tex_coords
-            self._texture.tex_coords = tl, tr, br, bl
         return self._texture
     texture = property(_get_texture) 
 
@@ -198,16 +222,14 @@ class DirectShowStreamingVideo(Video):
         if buffer:
             texture = self.texture
             glBindTexture(texture.target, texture.id)
-            glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 4)
-            glTexSubImage2D(texture.target,
-                            texture.level,
-                            0, 0,
-                            self.width, self.height,
-                            GL_RGB,
-                            GL_UNSIGNED_BYTE,
-                            buffer)
-            glPopClientAttrib()
+
+            # Create an intermediate ImageData and use it to update the
+            # texture, as it does a good job of swapping BGR to RGB in the
+            # most efficient way.
+            imagedata = image.ImageData(
+                self.width, self.height, 'BGR', buffer, pitch=self._pitch)
+            imagedata.blit_to_texture(texture.target, 0, 0, 0, 0)
+            
 
 class DirectShowStreamingMedium(Medium):
     def __init__(self, filename, file=None):
