@@ -260,6 +260,7 @@ class EventDispatcher(object):
                 return func
             return decorator
         elif inspect.isroutine(args[0]):        # @window.event
+            func = args[0]
             name = func.__name__
             setattr(self, name, func)
             return args[0]
