@@ -973,23 +973,24 @@ class Window(_window_base):
         self.set_caption(sys.argv[0])
 
         self.switch_to()
-        self.set_viewport()
-        self.set_projection()
+        self.on_resize(self.width, self.height)
 
         if visible:
             self.set_visible(True)
             self.activate()
 
-    def set_viewport(self):
-        self.viewport = projection.WindowViewport(self)
-
-    def set_projection(self):
-        self.projection = projection.OrthographicProjection(self.viewport)
-        self.projection.apply()
-
     def on_resize(self, width, height):
-        # TODO rearrange this so switch_to not magically called from
-        # event handler; wait until user switches, then apply.
+        '''The default implementation sets the viewport to cover the entire
+        window, and sets up an orthagonal projection.  
+        
+        Override this method or provide another event handler for a perspective
+        projection.
+        '''
         self.switch_to()
-        self.projection.apply()
+        glViewport(0, 0, width, height)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(0, width, 0, height, -1, 1)
+        glMatrixMode(GL_MODELVIEW)
+        
 

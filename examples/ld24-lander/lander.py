@@ -140,7 +140,7 @@ def play(level):
     text += '  (press [escape] to continue)'
     sprite = TextSprite(font, text, color=(1., 1., 1., 1.))
     sprite.x, sprite.y = w.width/2 - sprite.width/2, w.height/2 - sprite.height/2
-    w.exit_handler.has_exit = False
+    w.has_exit = False
     while not w.has_exit:
         dt = clock.tick()
         w.dispatch_events()
@@ -172,7 +172,7 @@ layout.set_xhtml(data)
 layout.on_resize(w.width, w.height)
 
 def menu():
-    w.exit_handler.has_exit = False
+    w.has_exit = False
     glClearColor(0, 0, 0, 0)
     while not w.has_exit:
         dt = clock.tick()
