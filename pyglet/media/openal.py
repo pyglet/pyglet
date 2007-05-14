@@ -5,7 +5,7 @@ import ctypes
 import sys
 import time
 
-from pyglet.media import Sound, Listener
+from pyglet.media import Sound, Listener, EVENT_FINISHED
 from pyglet.media import lib_openal as al
 from pyglet.media import lib_alc as alc
 
@@ -246,6 +246,7 @@ class OpenALSound(Sound):
         if processed.value == queued.value:
             self.finished = True
             self.playing = False
+            self.dispatch_event(EVENT_FINISHED)
         self._processed_buffers = processed.value
         self._queued_buffers = queued.value
 

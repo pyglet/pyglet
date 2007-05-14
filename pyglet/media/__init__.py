@@ -7,6 +7,8 @@
 
 import sys
 
+from pyglet import event
+
 class MediaException(Exception):
     pass
 
@@ -86,7 +88,7 @@ class Medium(object):
         sound.play()
         return sound
 
-class MediumInstance(object):
+class MediumInstance(event.EventDispatcher):
     '''An instance of a sound or video.
 
     :Ivariables:
@@ -145,6 +147,8 @@ class MediumInstance(object):
         there is no need to call this from an application.
         '''
         pass
+
+EVENT_FINISHED = MediumInstance.register_event_type('on_finished')
 
 class Sound(MediumInstance):
     '''An instance of a sound, either currently playing or ready to be played.
