@@ -147,3 +147,7 @@ font
     font-metrics
         font.KERNING
         font.ITALIC_CORRECTION
+
+projection
+    projection.VIEWPORT_ORTHO                   DEVELOPER
+    projection.VIEWPORT_CLIP                    DEVELOPER

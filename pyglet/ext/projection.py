@@ -21,28 +21,28 @@ space as the viewport it belongs to.  PerspectiveProjection uses an arbitrary
 unit and a specified field-of-view, and is used to map 3D objects into the
 2D viewport.
 
-By default, `pyglet.window.Window` is created with a WindowViewport and
-OrthographicProjection.  This allows you to begin drawing into the window
-using window-space coordinates (albeit with Y-up orientation) without any
-further setup.
+To use the projection module to render in 2D in a window:
 
-You should replace the window's projection with a PerspectiveProjection
-if you want to render in 3D::
-
-    from pyglet import projection
-    from pyglet import window
+    from pyglet.ext import projection
 
     w = window.Window()
-    w.projection = projection.PerspectiveProjection(fov=75)
+    viewport = projection.WindowViewport(w)
+    projection = projection.OrthographicProjection(viewport)
+
+    @w.event
+    def on_resize(width, height):
+        projection.apply()
 
 You can also embed additional viewports within a projection.  For example,
 a 3D scene can be created within a 2D user interface::
 
-    w = window.Window()
-
     # x, y, width, height give dimensions of inner viewport within window
-    inner_viewport = OrthographicViewport(w.projection, x, y, width, height)
+    inner_viewport = OrthographicViewport(projection, x, y, width, height)
     inner_projection = PerspectiveProjection(inner_viewport, fov=75)
+
+    @w.event
+    def on_resize(width, height):
+        inner_projection.apply()
 
     while not w.has_exit:
         w.dispatch_events()
@@ -54,8 +54,6 @@ a 3D scene can be created within a 2D user interface::
         # Draw 3D scene...
 
         w.flip()
-
-:note: No clipping is performed on viewports yet.
 
 '''
 
