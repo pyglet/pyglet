@@ -107,6 +107,8 @@ class OpenALSound(Sound):
     _queued_buffers = 0
 
     def __init__(self):
+        super(OpenALSound, self).__init__()
+
         self.source = al.ALuint()
         al.alGenSources(1, self.source)
         self.play_when_buffered = False
