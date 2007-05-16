@@ -39,6 +39,7 @@ import os
 
 from pyglet.gl import *
 from pyglet import window
+from pyglet import image
 
 class GlyphString(object):
     '''An immutable string of glyphs that can be rendered quickly.
@@ -327,7 +328,61 @@ class Label(object):
 
     text = property(lambda self: self._text, set_text)
 
+    def get_subwidth(self, from_index, to_index):
+        '''Return the width of a slice of this string.
 
+        Parameters as per GlyphString.get_subwidth(from_index, to_index)
+        '''
+        return self._glyph_string.get_subwidth(from_index, to_index)
+
+
+    def get_texture(self):
+        '''Return a Texture object containing this label.
+        '''
+        if not gl_info.have_extension('GL_EXT_framebuffer_object'):
+            raise RuntimeError('GL_EXT_framebuffer_object requried')
+
+        # create our frame buffer
+        fbo = GLuint()
+        glGenFramebuffersEXT(1, byref(fbo))
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo)
+
+        # allocate a texture and add to the frame buffer
+        w, h = self.width, self.height
+        texture = image.Texture.create_for_size(GL_TEXTURE_2D, w, h, GL_RGBA)
+        glBindTexture(GL_TEXTURE_2D, texture.id)
+        glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,
+            GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, texture.id, 0)
+
+        if __debug__:
+            # make sure all's well
+            status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT)
+            assert status == GL_FRAMEBUFFER_COMPLETE_EXT
+
+        # select our FBO
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo)
+
+        # clear
+        glPushAttrib(GL_COLOR_BUFFER_BIT)
+        glClearColor(0, 0, 0, 0)
+        glClear(GL_COLOR_BUFFER_BIT)
+        glPopAttrib()
+
+        # render
+        glPushMatrix()
+        glLoadIdentity()
+        glTranslatef(0, -self.font.descent, 0)
+        self.draw()
+        glPopMatrix()
+
+        # revert to rendering to color buffer
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0)
+
+        # clean up
+        glDeleteFramebuffersEXT(1, byref(fbo))
+
+        # return the region matching the rendered text
+        return texture.get_region(0, 0, w, h)
 
 
 # Load platform dependent module
