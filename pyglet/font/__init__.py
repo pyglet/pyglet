@@ -36,6 +36,7 @@ __version__ = '$Id$'
 
 import sys
 import os
+import math
 
 from pyglet.gl import *
 from pyglet import window
@@ -335,7 +336,6 @@ class Label(object):
         '''
         return self._glyph_string.get_subwidth(from_index, to_index)
 
-
     def get_texture(self):
         '''Return a Texture object containing this label.
         '''
@@ -348,7 +348,8 @@ class Label(object):
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo)
 
         # allocate a texture and add to the frame buffer
-        w, h = self.width, self.height
+        w = int(math.ceil(self.width))
+        h = int(math.ceil(self.height))
         texture = image.Texture.create_for_size(GL_TEXTURE_2D, w, h, GL_RGBA)
         glBindTexture(GL_TEXTURE_2D, texture.id)
         glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,
@@ -363,10 +364,10 @@ class Label(object):
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo)
 
         # clear
-        glPushAttrib(GL_COLOR_BUFFER_BIT)
+        glPushAttrib(GL_COLOR_BUFFER_BIT|GL_ENABLE_BIT)
         glClearColor(0, 0, 0, 0)
         glClear(GL_COLOR_BUFFER_BIT)
-        glPopAttrib()
+        glEnable(GL_BLEND)
 
         # render
         glPushMatrix()
@@ -374,6 +375,8 @@ class Label(object):
         glTranslatef(0, -self.font.descent, 0)
         self.draw()
         glPopMatrix()
+
+        glPopAttrib()
 
         # revert to rendering to color buffer
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0)
