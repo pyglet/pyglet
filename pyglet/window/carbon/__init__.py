@@ -152,7 +152,7 @@ class CarbonPlatform(BasePlatform):
         else:
             context = aglCreateContext(config._pformat, None)
         _aglcheck()
-        return CarbonGLContext(context, context_share)
+        return CarbonGLContext(context, context_share, config._pformat)
 
     def get_window_class(self):
         return CarbonWindow
@@ -249,9 +249,10 @@ class CarbonGLConfig(BaseGLConfig):
          AGL_SAMPLE_ALPHA)
 
 class CarbonGLContext(BaseGLContext):
-    def __init__(self, context, share):
+    def __init__(self, context, share, pixelformat):
         super(CarbonGLContext, self).__init__(share)
         self._context = context
+        self._pixelformat = pixelformat
 
     def destroy(self):
         super(CarbonGLContext, self).destroy()
@@ -261,7 +262,8 @@ _carbon_event_handler_names = []
 
 def CarbonEventHandler(event_class, event_kind):
     def handler_wrapper(f):
-        _carbon_event_handler_names.append(f.__name__)
+        if f.__name__ not in _carbon_event_handler_names:
+            _carbon_event_handler_names.append(f.__name__)
         if not hasattr(f, '_carbon_handler'):
             f._carbon_handler = []
         f._carbon_handler.append((event_class, event_kind))
@@ -981,6 +983,7 @@ class CarbonWindow(BaseWindow):
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseWheelMoved)
     def _on_mouse_wheel_moved(self, next_handler, ev, data):
+
         x, y = self._get_mouse_position(ev)
         y = self.height - y
 
@@ -999,7 +1002,9 @@ class CarbonWindow(BaseWindow):
             self.dispatch_event(event.EVENT_MOUSE_SCROLL, 
                 x, y, 0., float(delta.value))
                 
-        carbon.CallNextEventHandler(next_handler, ev)
+        # _Don't_ call the next handler, which is application, as this then
+        # calls our window handler again.
+        #carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassWindow, kEventWindowClose)
