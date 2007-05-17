@@ -218,7 +218,8 @@ class TestCase(object):
             return
 
         module_interactive = options.interactive
-        if hasattr(module, '__noninteractive') and module.__noninteractive:
+        if hasattr(module, '__noninteractive') and \
+           getattr(module, '__noninteractive'):
             module_interactive = False
 
         if options.regression_check and \
