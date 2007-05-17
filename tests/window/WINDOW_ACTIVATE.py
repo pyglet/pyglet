@@ -7,6 +7,10 @@ Expected behaviour:
     it should be come to the front and accept keyboard input (this will
     be shown on the terminal).
 
+    On Windows XP, the taskbar icon may flash (indicating the application
+    requires attention) rather than moving the window to the foreground.  This
+    is the correct behaviour.
+
     Press escape or close the window to finished the test.
 '''
 
