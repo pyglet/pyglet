@@ -216,9 +216,12 @@ class Win32Window(BaseWindow):
     _wgl_context = None
     _tracking = False
     _hidden = False
+    _has_focus = False
 
     _exclusive_keyboard = False
+    _exclusive_keyboard_focus = True
     _exclusive_mouse = False
+    _exclusive_mouse_focus = True
     _exclusive_mouse_screen = None
     _exclusive_mouse_client = None
     _mouse_platform_visible = True
@@ -451,7 +454,8 @@ class Win32Window(BaseWindow):
             platform_visible = (self._mouse_visible and
                                 not self._exclusive_mouse and
                                 not self._mouse_cursor.drawable) or \
-                               not self._mouse_in_window
+                               (not self._mouse_in_window or 
+                                not self._has_focus)
 
         if platform_visible and not self._mouse_cursor.drawable:
             if isinstance(self._mouse_cursor, Win32MouseCursor):
@@ -474,10 +478,11 @@ class Win32Window(BaseWindow):
         self._mouse_platform_visible = platform_visible
 
     def set_exclusive_mouse(self, exclusive=True):
-        if self._exclusive_mouse == exclusive:
+        if self._exclusive_mouse == exclusive and \
+           self._exclusive_mouse_focus == self._has_focus:
             return
     
-        if exclusive:
+        if exclusive and self._has_focus:
             # Move mouse to the center of the window.
             p = POINT()
             rect = RECT()
@@ -500,19 +505,21 @@ class Win32Window(BaseWindow):
             _user32.ClipCursor(c_void_p())
 
         self._exclusive_mouse = exclusive
+        self._exclusive_mouse_focus = self._has_focus
         self.set_mouse_platform_visible()
 
     def set_exclusive_keyboard(self, exclusive=True):
-        if self._exclusive_keyboard == exclusive:
+        if self._exclusive_keyboard == exclusive and \
+           self._exclusive_keyboard_focus == self._has_focus:
             return
 
-        if exclusive:
+        if exclusive and self._has_focus:
             _user32.RegisterHotKey(self._hwnd, 0, WIN32_MOD_ALT, VK_TAB)
         else:
-            for i in range(3):
-                _user32.UnregisterHotKey(self._hwnd, i)
+            _user32.UnregisterHotKey(self._hwnd, 0)
 
         self._exclusive_keyboard = exclusive
+        self._exclusive_keyboard_focus = self._has_focus
 
     def get_system_mouse_cursor(self, name):
         if name == CURSOR_DEFAULT:
@@ -737,7 +744,7 @@ class Win32Window(BaseWindow):
 
         y = self.height - y
 
-        if self._exclusive_mouse:
+        if self._exclusive_mouse and self._has_focus:
             # Reset mouse position (so we don't hit the edge of the screen).
             _user32.SetCursorPos(*self._exclusive_mouse_screen)
             
@@ -896,11 +903,17 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_SETFOCUS)
     def _event_setfocus(self, msg, wParam, lParam):
         self.dispatch_event(event.EVENT_ACTIVATE)
+        self._has_focus = True
+        self.set_exclusive_keyboard(self._exclusive_keyboard)
+        self.set_exclusive_mouse(self._exclusive_mouse)
         return 0
 
     @Win32EventHandler(WM_KILLFOCUS)
     def _event_killfocus(self, msg, wParam, lParam):
         self.dispatch_event(event.EVENT_DEACTIVATE)
+        self._has_focus = False
+        self.set_exclusive_keyboard(self._exclusive_keyboard)
+        self.set_exclusive_mouse(self._exclusive_mouse)
         return 0
 
     @Win32EventHandler(WM_GETMINMAXINFO)
