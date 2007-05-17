@@ -561,32 +561,41 @@ class Win32Window(BaseWindow):
             return image
 
         def get_icon(image):
+            # Alpha-blended icon: see http://support.microsoft.com/kb/318876
             image.format = 'BGRA'
             image.pitch = len(image.format) * image.width
 
-            info = BITMAPINFO()
-            info.bmiHeader.biSize = sizeof(info.bmiHeader)
-            info.bmiHeader.biWidth = image.width
-            info.bmiHeader.biHeight = image.height
-            info.bmiHeader.biPlanes = 1
-            info.bmiHeader.biBitCount = 32
-            info.bmiHeader.biCompression = BI_RGB
+            header = BITMAPV5HEADER()
+            header.bV5Size = sizeof(header)
+            header.bV5Width = image.width
+            header.bV5Height = image.height
+            header.bV5Planes = 1
+            header.bV5BitCount = 32
+            header.bV5Compression = BI_BITFIELDS
+            header.bV5RedMask = 0x00ff0000
+            header.bV5GreenMask = 0x0000ff00
+            header.bV5BlueMask = 0x000000ff
+            header.bV5AlphaMask = 0xff000000
 
-            dc = _gdi32.CreateDCA('DISPLAY', None, None, None)
-            bitmap = _gdi32.CreateDIBitmap(
-                dc, info.bmiHeader, CBM_INIT, image.data, info, DIB_RGB_COLORS)
+            hdc = _user32.GetDC(None)
+            dataptr = c_void_p()
+            bitmap = _gdi32.CreateDIBSection(hdc, byref(header), DIB_RGB_COLORS,
+                byref(dataptr), None, 0)
+            _user32.ReleaseDC(None, hdc)
 
-            # XXX Undocumented AFAICT, XP seems happy to use an 8-bit alpha
-            # as mask instead of a bitmask.
-            image.format = 'AAAA'
-            bitmap_mask = _gdi32.CreateDIBitmap(
-                dc, info.bmiHeader, CBM_INIT, image.data, info, DIB_RGB_COLORS)
+            memmove(dataptr, image.data, len(image.data))
+
+            mask = _gdi32.CreateBitmap(image.width, image.height, 1, 1, None)
 
             iconinfo = ICONINFO()
             iconinfo.fIcon = True
-            iconinfo.hbmMask = bitmap_mask
+            iconinfo.hbmMask = mask
             iconinfo.hbmColor = bitmap
             icon = _user32.CreateIconIndirect(byref(iconinfo))
+
+            _gdi32.DeleteObject(mask)
+            _gdi32.DeleteObject(bitmap)
+            
             return icon
 
         # Set large icon
