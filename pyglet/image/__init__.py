@@ -466,6 +466,18 @@ class ImageData(AbstractImage):
         self._current_pitch = self.pitch = pitch
         self.mipmap_images = []
 
+    def __getstate__(self):
+        return {
+            'width': self.width, 
+            'height': self.height, 
+            '_current_data': self.data, 
+            '_current_format': self.format,
+            '_desired_format': self.format,
+            '_current_pitch': self.pitch,
+            'pitch': self.pitch,
+            'mipmap_images': self.mipmap_images
+        }
+
     image_data = property(lambda self: self)
 
     def _set_format(self, format):
@@ -838,6 +850,20 @@ class ImageDataRegion(ImageData):
             image_data._current_pitch)
         self.x = x
         self.y = y
+
+    def __getstate__(self):
+        return {
+            'width': self.width, 
+            'height': self.height, 
+            '_current_data': self.data, 
+            '_current_format': self.format,
+            '_desired_format': self.format,
+            '_current_pitch': self.pitch,
+            'pitch': self.pitch,
+            'mipmap_images': self.mipmap_images,
+            'x': self.x,
+            'y': self.y
+        }
 
     def _get_data(self):
         # Crop the data first
