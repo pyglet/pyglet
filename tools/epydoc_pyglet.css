@@ -92,7 +92,7 @@ td.summary                  { border: 1px solid #608090; }
 code.summary-type           { font-size: 85%; }
 table.summary a:link        { color: #0000ff; }
 table.summary a:visited     { color: #204080; }
-
+span.inherited-from         { font-size: 85%; }
 
 /* Details Tables (functions, variables, etc)
  *   - Each object is described in its own div.
