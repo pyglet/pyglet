@@ -127,6 +127,8 @@ class ExtractionSession(object):
 
         self.channels = asbd.mChannelsPerFrame
         self.sample_rate = asbd.mSampleRate
+        if not self.channels or not self.sample_rate:
+            raise MediaException('No audio in media file')
         
         # Always signed 16-bit interleaved
         asbd.mFormatFlags = kAudioFormatFlagIsSignedInteger | \
@@ -290,7 +292,7 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         )
 
     def _get_time(self):
-        return quicktime.GetMovieTime(self._movie, None) 
+        return quicktime.GetMovieTime(self._movie, None)
 
 
 class QuickTimeGWorldStreamingVideo(Video):
@@ -459,7 +461,7 @@ class QuickTimeMedium(Medium):
             self.movie = None
             return
 
-        self.has_sound = quicktime.GetMovieIndTrackType(movie, 1, 
+        self.has_audio = quicktime.GetMovieIndTrackType(movie, 1, 
             AudioMediaCharacteristic, movieTrackCharacteristic) != 0
         self.has_video = quicktime.GetMovieIndTrackType(movie, 1, 
             VisualMediaCharacteristic, movieTrackCharacteristic) != 0
@@ -467,8 +469,17 @@ class QuickTimeMedium(Medium):
 
         if self.streaming:
             self.movie = movie
-            self.extraction_session = ExtractionSession(self.movie)
+            if self.has_audio: 
+                # TODO why set this up here??
+                try:
+                    self.extraction_session = ExtractionSession(self.movie)
+                except MediaException:
+                    # TODO this pattern for all extraction sessions, above
+                    # has_audio check is not accurate
+                    self.has_audio = False
         else:
+            if not self.has_audio:
+                raise MediaException('No audio in media file')
             extraction_session = ExtractionSession(movie)
             buffers = [b for b in extraction_session.get_buffers(BUFFER_SIZE)]
             self.static_buffers = (al.ALuint * len(buffers))(*buffers)
