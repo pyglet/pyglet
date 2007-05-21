@@ -316,8 +316,8 @@ class QuickTimeGWorldStreamingVideo(Video):
             return
         
         # now handle the video
-        quicktime.OffsetRect(ctypes.byref(r), -r.left, -r.top)
-        quicktime.SetMovieBox(movie, ctypes.byref(r))
+        #quicktime.OffsetRect(ctypes.byref(r), -r.left, -r.top)
+        #quicktime.SetMovieBox(movie, ctypes.byref(r))
 
         # save off current GWorld
         origDevice = ctypes.c_void_p()
@@ -326,13 +326,19 @@ class QuickTimeGWorldStreamingVideo(Video):
 
         self.width = r.right - r.left
         self.height = r.bottom - r.top
-        self.rect = Rect(0, 0, self.width, self.height)
+        self.rect = Rect(0, 0, self.height, self.width)
 
         # TODO sanity check size? QT can scale for us
         self.texture = image.Texture.create_for_size(image.GL_TEXTURE_2D,
             self.width, self.height, image.GL_RGB)
-        tw = self.texture.width
-        th = self.texture.height
+        if (self.texture.width != self.width or
+            self.texture.height != self.height):
+            self.texture = self.texture.get_region(
+                0, 0, self.width, self.height)
+        # Flip texture coords as a cheap way of flipping image.  gst_openal
+        # does the same, so if you fix this, fix Windows too.
+        bl, br, tr, tl = self.texture.tex_coords
+        self.texture.tex_coords = tl, tr, br, bl
 
         # create "graphics world" for QT to render to
         buf = quicktime.NewPtrClear(4 * self.width * self.height)
