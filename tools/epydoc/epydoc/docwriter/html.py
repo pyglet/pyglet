@@ -738,12 +738,13 @@ class HTMLWriter:
             typ = 'Script'
         out('<!-- ==================== %s ' % typ.upper() +
             'DESCRIPTION ==================== -->\n')
-        out('<h1 class="epydoc">%s %s</h1>' % (typ, shortname))
-        out(self.pysrc_link(doc) + '<br /><br />\n')
+        # <pyglet> Show fully-qualified name in heading
+        out('<h1 class="epydoc">%s %s</h1>' % (typ, longname))
+        out(self.pysrc_link(doc) + '\n')
         
         # If the module has a description, then list it.
         if doc.descr not in (None, UNKNOWN):
-            out(self.descr(doc, 2)+'<br /><br />\n\n')
+            out(self.descr(doc, 2)+'\n\n')
 
         # Write any standarad metadata (todo, author, etc.)
         if doc.metadata is not UNKNOWN and doc.metadata:
@@ -758,6 +759,7 @@ class HTMLWriter:
         # module defines.
         self.write_summary_table(out, "Classes", doc, "class")
         self.write_summary_table(out, "Functions", doc, "function")
+        self.write_summary_table(out, "Constants", doc, "constant")
         self.write_summary_table(out, "Variables", doc, "other")
 
         # Write a list of all imported objects.
@@ -767,6 +769,7 @@ class HTMLWriter:
         # Write detailed descriptions of functions & variables defined
         # in this module.
         self.write_details_list(out, "Function Details", doc, "function")
+        self.write_details_list(out, "Constants Details", doc, "constant")
         self.write_details_list(out, "Variables Details", doc, "other")
 
         # Write the page footer (including navigation bar)
@@ -829,7 +832,8 @@ class HTMLWriter:
         else: typ = 'Class'
         out('<!-- ==================== %s ' % typ.upper() +
             'DESCRIPTION ==================== -->\n')
-        out('<h1 class="epydoc">%s %s</h1>' % (typ, shortname))
+        # <pyglet> Show fully-qualified name in heading
+        out('<h1 class="epydoc">%s %s</h1>' % (typ, longname))
         out(self.pysrc_link(doc) + '<br /><br />\n')
 
         # <pyglet> Hide private known subclasses
@@ -881,6 +885,7 @@ class HTMLWriter:
         self.write_summary_table(out, "Nested Classes", doc, "class")
         self.write_summary_table(out, "Instance Methods", doc,
                                  "instancemethod")
+        self.write_summary_table(out, "Events", doc, "event")
         self.write_summary_table(out, "Class Methods", doc, "classmethod")
         self.write_summary_table(out, "Static Methods", doc, "staticmethod")
         self.write_summary_table(out, "Class Variables", doc,
@@ -899,6 +904,7 @@ class HTMLWriter:
         # seems like we should either group in both cases or split in both
         # cases.
         self.write_details_list(out, "Method Details", doc, "method")
+        self.write_details_list(out, "Event Details", doc, "event")
         self.write_details_list(out, "Class Variable Details", doc,
                                 "classvariable")
         self.write_details_list(out, "Instance Variable Details", doc,
@@ -1262,6 +1268,14 @@ class HTMLWriter:
                                    (ClassDoc, types.NoneType))]
         self.write_toc_section(out, "All Functions", funcs)
 
+        # List the constants.
+        vars = []
+        for doc in self.module_list:
+            vars += doc.select_variables(value_type='constant',
+                                         imported=False,
+                                         public=self._public_filter)
+        self.write_toc_section(out, "All Constants", vars)
+
         # List the variables.
         vars = []
         for doc in self.module_list:
@@ -1298,6 +1312,11 @@ class HTMLWriter:
         funcs = doc.select_variables(value_type='function', imported=False,
                                      public=self._public_filter)
         self.write_toc_section(out, "Functions", funcs, fullname=False)
+
+        # List the constants.
+        constants = doc.select_variables(value_type='constant', imported=False,
+                                         public=self._public_filter)
+        self.write_toc_section(out, "Constants", constants, fullname=False)
 
         # List the variables.
         variables = doc.select_variables(value_type='other', imported=False,
@@ -1847,6 +1866,8 @@ class HTMLWriter:
         breadcrumbs we should generate.
         @type context: L{ValueDoc}
         """,
+        # <pyglet> Changed the breadcrumb style to look more pythony and less
+        # C++y.
         # /------------------------- Template -------------------------\
         '''
         <table width="100%" cellpadding="0" cellspacing="0">
@@ -1854,11 +1875,8 @@ class HTMLWriter:
         >>> if isinstance(context, APIDoc):
             <td width="100%">
               <span class="breadcrumbs">
-        >>>   crumbs = self.breadcrumbs(context)
-        >>>   for crumb in crumbs[:-1]:
-                $crumb$ ::
-        >>>   #endfor
-                $crumbs[-1]$
+        >>>   crumbs = '&nbsp;.&nbsp;'.join(self.breadcrumbs(context))
+              $crumbs$
               </span>
             </td>
         >>> else:
@@ -1894,7 +1912,7 @@ class HTMLWriter:
                 if doc.canonical_name is UNKNOWN:
                     return ['??']+crumbs
                 elif isinstance(doc, ModuleDoc):
-                    return ['Package&nbsp;%s' % ident
+                    return ['%s' % ident
                             for ident in doc.canonical_name[:-1]]+crumbs
                 else:
                     return list(doc.canonical_name)+crumbs
@@ -1907,8 +1925,8 @@ class HTMLWriter:
     def _crumb(self, doc):
         if (len(doc.canonical_name)==1 and
             doc.canonical_name[0].startswith('script-')):
-            return 'Script&nbsp;%s' % doc.canonical_name[0][7:]
-        return '%s&nbsp;%s' % (self.doc_kind(doc), doc.canonical_name[-1])
+            return 'S%s' % doc.canonical_name[0][7:]
+        return '%s' % doc.canonical_name[-1]
 
     #////////////////////////////////////////////////////////////
     #{ 3.5. Summary Tables
@@ -1943,9 +1961,10 @@ class HTMLWriter:
                                         value_type=value_type,
                                         public=self._public_filter))
                   for group_name in doc.group_names()]
-                
+
         # Discard any empty groups; and return if they're all empty.
         groups = [(g,vars) for (g,vars) in groups if vars]
+
         if not groups: return
 
         # Write a header
@@ -2094,9 +2113,10 @@ class HTMLWriter:
         if summary: description += '<br />\n      %s' % summary
         
         # If it's inherited, then add a note to the description.
+        # <pyglet> Allow this text to be styled separately.
         if var_doc.container != container and self._inheritance=="included":
-            description += ("\n      <em>(Inherited from " +
-                        self.href(var_doc.container) + ")</em>")
+            description += ("\n      <span class='inherited-from'>" + 
+               "(Inherited from " + self.href(var_doc.container) + ")</span>")
 
         # Write the summary line.
         self._write_summary_line(out, typ, description, tr_class, pysrc_link,
@@ -2714,7 +2734,7 @@ class HTMLWriter:
         >>> # endif
         >>> if doc.subclasses:
             <ul>
-        >>>   for subclass in set(doc.subclasses):
+        >>>   for subclass in sorted(set(doc.subclasses)):
         >>>     if subclass in class_set:
         >>>       self.write_class_tree_item(out, subclass, class_set)
         >>>     #endif
@@ -2743,6 +2763,9 @@ class HTMLWriter:
         field_values = {}
         
         for (field, arg, descr) in doc.metadata:
+            # <pyglet> Don't print version strings
+            if field.singular.lower() == 'version':
+                continue
             if field not in field_values:
                 fields.append(field)
             if field.takes_arg:

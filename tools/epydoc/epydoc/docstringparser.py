@@ -783,6 +783,11 @@ def process_kwarg_field(api_doc, docindex, tag, arg, descr):
     idents = re.split('[:;, ] *', arg)
     api_doc.arg_descrs.append( (idents, descr) )
 
+def process_event_field(api_doc, docindex, tag, arg, descr):
+    # <pyglet> A :event: field indicates this method is an event.
+    _check(api_doc, tag, arg, context=RoutineDoc, expect_arg=False)
+    api_doc.is_event = True
+
 register_field_handler(process_group_field, 'group')
 register_field_handler(process_deffield_field, 'deffield', 'newfield')
 register_field_handler(process_sort_field, 'sort')
@@ -800,6 +805,7 @@ register_field_handler(process_arg_field, 'arg', 'argument',
 register_field_handler(process_kwarg_field, 'kwarg', 'keyword', 'kwparam')
 register_field_handler(process_raise_field, 'raise', 'raises',
                                             'except', 'exception')
+register_field_handler(process_event_field, 'event')
 
 # Tags related to function parameters
 PARAMETER_TAGS = ('arg', 'argument', 'parameter', 'param',

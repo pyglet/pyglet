@@ -1206,10 +1206,18 @@ class ModuleDoc(NamespaceDoc):
         elif value_type == 'function':
             return [var_doc for var_doc in var_list
                     if isinstance(var_doc.value, RoutineDoc)]
+        elif value_type == 'constant':
+            # <pyglet> Show constants (upper-case variables) in a separate
+            # section
+            return [var_doc for var_doc in var_list
+                    if not isinstance(var_doc.value, 
+                                      (ClassDoc, RoutineDoc, ModuleDoc))
+                    and var_doc.name.upper() == var_doc.name]
         elif value_type == 'other':
             return [var_doc for var_doc in var_list
                     if not isinstance(var_doc.value,
-                                      (ClassDoc, RoutineDoc, ModuleDoc))]
+                                      (ClassDoc, RoutineDoc, ModuleDoc))
+                    and var_doc.name.upper() != var_doc.name]
         else:
             raise ValueError('Bad value type %r' % value_type)
 
@@ -1339,6 +1347,7 @@ class ClassDoc(NamespaceDoc):
             which variables should be returned.  Valid values are:
               - 'instancemethod' - variables whose values are
                 instance methods.
+              - 'event' - instance methods which are marked 'is_event'
               - 'classmethod' - variables whose values are class
                 methods.
               - 'staticmethod' - variables whose values are static
@@ -1410,13 +1419,20 @@ class ClassDoc(NamespaceDoc):
         elif value_type == 'method':
             return [var_doc for var_doc in var_list
                     if (isinstance(var_doc.value, RoutineDoc) and
+                        var_doc.value.is_event == False and
                         var_doc.is_instvar in (False, UNKNOWN))]
         elif value_type == 'instancemethod':
             return [var_doc for var_doc in var_list
                     if (isinstance(var_doc.value, RoutineDoc) and
                         not isinstance(var_doc.value, ClassMethodDoc) and
                         not isinstance(var_doc.value, StaticMethodDoc) and
+                        var_doc.value.is_event == False and
                         var_doc.is_instvar in (False, UNKNOWN))]
+        elif value_type == 'event':
+            # <pyglet> Show events in their own section
+            return [var_doc for var_doc in var_list
+                    if (isinstance(var_doc.value, RoutineDoc) and
+                        var_doc.value.is_event == True)]
         elif value_type == 'classmethod':
             return [var_doc for var_doc in var_list
                     if (isinstance(var_doc.value, ClassMethodDoc) and
@@ -1521,6 +1537,8 @@ class RoutineDoc(ValueDoc):
     callgraph_uid = None
     """@ivar: L{DotGraph}.uid of the call graph for the function.
        @type: C{str}"""
+
+    is_event = False
 
     def is_detailed(self):
         if super(RoutineDoc, self).is_detailed():

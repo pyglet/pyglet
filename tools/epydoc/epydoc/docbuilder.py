@@ -96,12 +96,26 @@ class BuildOptions:
         # Test for pattern syntax and compile them into pattern objects.
         try:
             self._introspect_regexp = (exclude_introspect
-                and re.compile(exclude_introspect) or None)
+                and self.compile_re(exclude_introspect) or None)
             self._parse_regexp = (exclude_parse
-                and re.compile(exclude_parse) or None)
+                and self.compile_re(exclude_parse) or None)
         except Exception, exc:
             log.error('Error in regular expression pattern: %s' % exc)
             raise
+
+    def compile_re(self, modules):
+        """
+        Return a compiled re object that matches any of the given modules.
+
+        @param modules: The list of module names to match
+        @type modules: '|' separated string of modules
+        """
+        # <pyglet> This fixes bug where pyglet.gl.gl was excluding
+        # pyglet.gl.gl_info.
+        modules = modules.split('|')
+        modules = ['%s\\.|%s$' % (m, m) for m in modules]
+        expr = '|'.join(modules)
+        return re.compile(expr)
 
     def must_introspect(self, name):
         """

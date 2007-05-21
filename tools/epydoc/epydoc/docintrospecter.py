@@ -368,6 +368,9 @@ def introspect_class(cls, class_doc, module_name=None):
         if bases is not None:
             class_doc.bases = []
             for base in bases:
+                # <pyglet> Don't show methods inherited from object
+                if base is object:
+                    continue
                 basedoc = introspect_docs(base)
                 class_doc.bases.append(basedoc)
                 basedoc.subclasses.append(class_doc)
