@@ -11,14 +11,21 @@ import math
 import sys
 import re
 
-from pyglet.gl import *
 from pyglet import image
-from pyglet.media import Sound, Medium, Video
+from pyglet.media import Sound, Video, Medium, MediaException
 from pyglet.media import lib_openal as al
 from pyglet.media import openal
+from pyglet import window
 from pyglet.window.carbon import _create_cfstring, _oscheck
-from pyglet.window.carbon import carbon, quicktime
+from pyglet.window.carbon import carbon, quicktime, _get_framework
 from pyglet.window.carbon.constants import _name, noErr
+from pyglet.window.carbon.types import Rect
+
+from pyglet.gl import *
+from pyglet import gl
+from pyglet.gl import agl
+
+corevideo = _get_framework('CoreVideo')
 
 BUFFER_SIZE = 8192
 
@@ -30,6 +37,12 @@ quicktime.NewMovieFromDataRef.argtypes = (
     ctypes.c_ulong)
     
 newMovieActive = 1
+
+movieTrackMediaType = 1 << 0
+movieTrackCharacteristic = 1 << 1
+movieTrackEnabledOnly = 1 << 2
+VisualMediaCharacteristic = _name('eyes')
+AudioMediaCharacteristic = _name('ears')
 
 kQTPropertyClass_MovieAudioExtraction_Movie = _name('xmov')
 kQTPropertyClass_MovieAudioExtraction_Audio = _name('xaud')
@@ -219,7 +232,71 @@ class QuickTimeStreamingSound(openal.OpenALStreamingSound):
         buffers = (al.ALuint * len(buffers))(*buffers)
         al.alSourceQueueBuffers(self.source, len(buffers), buffers)
 
-class QuickTimeStreamingVideo(Video):
+class QuickTimeCoreVideoStreamingVideo(Video):
+    '''A streaming video implementation using Core Video to draw
+    directly into an OpenGL texture.
+    '''
+    def __init__(self, sound, movie):
+        self._movie = movie
+        self.sound = sound
+
+        # Get CGL context and pixel format (the long, convoluted way) 
+        agl_context = window.get_current_context()._context
+        agl_pixelformat = window.get_current_context()._pixelformat
+        cgl_context = ctypes.c_void_p()
+        agl.aglGetCGLContext(agl_context, ctypes.byref(cgl_context))
+        cgl_pixelformat = ctypes.c_void_p()
+        agl.aglGetCGLPixelFormat(
+            agl_pixelformat, ctypes.byref(cgl_pixelformat))
+
+        # Create texture context for QuickTime to render into.
+        texture_context = ctypes.c_void_p()
+        r = quicktime.QTOpenGLTextureContextCreate(
+            carbon.CFAllocatorGetDefault(),
+            cgl_context,
+            cgl_pixelformat, 
+            None,
+            ctypes.byref(texture_context))
+        _oscheck(r)
+
+        # Get dimensions of video
+        rect = Rect()
+        quicktime.GetMovieBox(movie, ctypes.byref(rect))
+        width = rect.right - rect.left
+        height = rect.bottom - rect.top
+
+        # Get texture coordinates
+        bl = (gl.GLfloat * 2)()
+        br = (gl.GLfloat * 2)()
+        tl = (gl.GLfloat * 2)()
+        tr = (gl.GLfloat * 2)()
+        corevideo.CVOpenGLTextureGetCleanTexCoords(texture_context, 
+            ctypes.byref(bl), 
+            ctypes.byref(br), 
+            ctypes.byref(tr), 
+            ctypes.byref(tl))
+
+        # TODO match colorspace
+        quicktime.SetMovieVisualContext(movie, texture_context)
+
+        # TODO should we be using a TextureRegion if overriding tex_coords?
+        self.texture = image.Texture(width, height, gl.GL_TEXTURE_2D, 
+            corevideo.CVOpenGLTextureGetName(texture_context))
+        self.texture.tex_coords = (
+            (bl[0], bl[1], 0),
+            (br[0], br[1], 0),
+            (tl[0], tl[1], 0),
+            (tr[0], tr[1], 0),
+        )
+
+    def _get_time(self):
+        return quicktime.GetMovieTime(self._movie, None) 
+
+
+class QuickTimeGWorldStreamingVideo(Video):
+    '''Streaming video implementation using QuickTime and copying
+    from a GWorld buffer each frame.
+    '''
     sound = None
     finished = False
 
@@ -277,6 +354,8 @@ class QuickTimeStreamingVideo(Video):
             raise ValueError, 'Could not lock PixMap'
         self.gp_buffer = quicktime.GetPixBaseAddr(pixmap)
         self.gp_row_stride = quicktime.GetPixRowBytes(pixmap)
+        self.gp_buffer = cast(self.gp_buffer, 
+            POINTER(c_char * (self.gp_row_stride * self.height))).contents
         print self.gp_buffer
 
         # restore old GWorld
@@ -349,7 +428,7 @@ class QuickTimeStreamingVideo(Video):
 
         if self.finished:
             # examples nudge one last time to make sure last frame is drawn
-            self._playMovie(self.movie, quicktime.GetMovieTime(self.movie, 0))
+            self._playMovie(quicktime.GetMovieTime(self.movie, 0))
 
     def __del__(self):
         try:
@@ -357,43 +436,43 @@ class QuickTimeStreamingVideo(Video):
         except NameError, name:
             pass
 
-
 class QuickTimeMedium(Medium):
     def __init__(self, filename, file=None, streaming=None):
         if streaming is None:
-            streaming = False # TODO
+            streaming = False # TODO check duration?
 
         self.filename = filename
         self.file = file
         self.streaming = streaming
 
+        # TODO recreate movie for each instance so they can be seeked
+        # independently.
+        movie = self._create_movie()
+        if not movie:
+            self.streaming = True
+            self.movie = None
+            return
+
+        self.has_sound = quicktime.GetMovieIndTrackType(movie, 1, 
+            AudioMediaCharacteristic, movieTrackCharacteristic) != 0
+        self.has_video = quicktime.GetMovieIndTrackType(movie, 1, 
+            VisualMediaCharacteristic, movieTrackCharacteristic) != 0
+        self._duration = quicktime.GetMovieDuration(movie)
+
         if self.streaming:
-            self.movie = self._create_movie()
+            self.movie = movie
             self.extraction_session = ExtractionSession(self.movie)
-            self.channels = self.extraction_session.channels
-            self.sample_rate = self.extraction_session.sample_rate
         else:
-            self.movie = self._create_movie()
-            extraction_session = ExtractionSession(self.movie)
-            self.channels = extraction_session.channels
-            self.sample_rate = extraction_session.sample_rate
+            extraction_session = ExtractionSession(movie)
             buffers = [b for b in extraction_session.get_buffers(BUFFER_SIZE)]
             self.static_buffers = (al.ALuint * len(buffers))(*buffers)
 
-        self._duration = quicktime.GetMovieDuration(self.movie)
-
-        # copy flags
-        self.has_audio = True       # XXX can't figure how to detect this
-
-        # XXX this is the only way I can think to detect absence of video
-        r = Rect()
-        quicktime.GetMovieBox(self.movie, ctypes.byref(r))
-        self.has_video = not (r.top == r.left == r.bottom == r.right == 0)
 
     def __del__(self):
         if self.streaming:
             pass
             # XXX this disposes the movie from underneath the video playing
+            # TODO then Instance should reference Medium.
             #try:
             #    quicktime.DisposeMovie(self.movie)
             #except NameError:
@@ -405,6 +484,9 @@ class QuickTimeMedium(Medium):
                 pass
             
     def get_sound(self):
+        if not self.has_audio:
+            raise MediaException('No audio in media file')
+
         if self.streaming:
             extraction_session = self.extraction_session
             if not extraction_session:
@@ -412,18 +494,33 @@ class QuickTimeMedium(Medium):
             self.extraction_session = None
 
             sound = QuickTimeStreamingSound(extraction_session)
-            sounds.append(sound)
+            instances.append(sound)
             return sound
         else:
             sound = openal.OpenALStaticSound(self)
-            sounds.append(sound)
+            instances.append(sound)
             al.alSourceQueueBuffers(
                 sound.source, len(self.static_buffers), self.static_buffers)
             return sound
 
     def get_video(self):
-        video = QuickTimeStreamingVideo(self.movie)
-        videos.append(video)
+        if not self.has_video:
+            raise MediaException('No video in media file')
+
+        if not self.streaming:
+            raise MediaException('Cannot play back video from static media')
+
+        sound = None
+        if self.has_audio:
+            sound = self.get_sound()
+
+        # TODO need to re-open movie for playback video more than once?
+        # TODO check OS version for preferred technique
+        if True:
+            video = QuickTimeGWorldStreamingVideo(self.movie)
+        else:
+            video = QuickTimeCoreVideoStreamingVideo(sound, self.movie)
+        instances.append(video)
         return video
 
     def _create_movie(self):
@@ -445,6 +542,8 @@ class QuickTimeMedium(Medium):
             newMovieActive,
             ctypes.byref(fileid),
             data_ref, data_ref_type)
+        if result == -2048:
+            return None
         _oscheck(result)
 
         carbon.CFRelease(filename)
@@ -458,14 +557,10 @@ def load(filename, file=None, streaming=None):
     return QuickTimeMedium(filename, file, streaming)
 
 def dispatch_events():
-    global sounds
-    global videos
-    for sound in sounds:
-        sound.dispatch_events()
-    sounds = [sound for sound in sounds if not sound.finished]
-    for video in videos:
-        video.dispatch_events()
-    videos = [video for video in videos if not video.finished]
+    global instances
+    for instance in instances:
+        instance.dispatch_events()
+    instances = [instance for instance in instances if not instance.finished]
 
 def init():
     openal.init()
@@ -475,5 +570,4 @@ def cleanup():
 
 listener = openal.OpenALListener()
 
-sounds = []
-videos = []
+instances = []
