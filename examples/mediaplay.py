@@ -101,7 +101,7 @@ class MediaPlayWindow(window.Window):
             else:
                 self.instance.play()
                 self.playing_label.text = 'Playing; press space to pause'
-        if symbol in (key.EQUAL, key.NUM_ADD):
+        elif symbol in (key.EQUAL, key.NUM_ADD):
             self.add_volume(.1)
         elif symbol in (key.MINUS, key.NUM_SUBTRACT):
             self.add_volume(-.1)
@@ -125,6 +125,9 @@ class MediaPlayWindow(window.Window):
             self.add_pitch(-0.1)
         elif symbol == key.BRACKETRIGHT:
             self.add_pitch(0.1)
+        else:
+            return super(MediaPlayWindow, self).on_key_press(symbol, modifiers)
+        return event.EVENT_HANDLED
 
     def run(self):
         clock.set_fps_limit(30)
