@@ -815,9 +815,8 @@ class ImageData(AbstractImage):
         elif format == 'RGBA':
             return GL_RGBA, GL_UNSIGNED_BYTE
         elif format == 'ARGB':
-            if (GL_UNSIGNED_BYTE == GL_UNSIGNED_BYTE and
-                gl_info.have_extension('GL_EXT_bgra') and
-                gl_info.have_extension('GL_APPLE_packed_pixel')):
+            if (gl_info.have_extension('GL_EXT_bgra') and
+                gl_info.have_extension('GL_APPLE_packed_pixels')):
                 return GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV
         elif format == 'ABGR':
             if gl_info.have_extension('GL_EXT_abgr'):
