@@ -341,9 +341,8 @@ class QuickTimeStreamingVideo(Video):
         # most efficient way.
         texture = self.texture
         glBindTexture(texture.target, texture.id)
-        buf = string_at(self.gp_buffer, 4*self.width*self.height)
         imagedata = image.ImageData(self.width, self.height, 'ARGB',
-            buf, pitch=self.gp_row_stride)
+            self.gp_buffer)
         imagedata.blit_to_texture(texture.target, 0, 0, 0, 0)
 
         self.finished = quicktime.IsMovieDone(self.movie)
