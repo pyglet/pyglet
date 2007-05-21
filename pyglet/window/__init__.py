@@ -185,7 +185,6 @@ import sys
 
 from pyglet.gl import *
 from pyglet.window.event import WindowEventDispatcher, WindowExitHandler
-from pyglet import projection
 import pyglet.window.key
 
 # List of contexts currently in use, so we can create new contexts that

@@ -32,6 +32,15 @@ import warnings
 from pyglet.gl.gl import *
 
 class GLInfo(object):
+    '''Information interface for a single GL context.
+
+    A default instance is created automatically when the first OpenGL context
+    is created.  You can use the module functions as a convenience for 
+    this default instance's methods.
+
+    If you are using more than one context, you must call `set_active_context`
+    when the context is active for this `GLInfo` instance.
+    '''
     have_context = False
     version = '0.0.0'
     vendor = ''
@@ -39,6 +48,10 @@ class GLInfo(object):
     extensions = set()
 
     def set_active_context(self):
+        '''Store information for the currently active context.
+
+        This method is called automatically for the default context.
+        '''
         self.have_context = True
         self.vendor = cast(glGetString(GL_VENDOR), c_char_p).value
         self.renderer = cast(glGetString(GL_RENDERER), c_char_p).value
@@ -48,21 +61,55 @@ class GLInfo(object):
         self.version = cast(glGetString(GL_VERSION), c_char_p).value
 
     def have_extension(self, extension):
+        '''Determine if an OpenGL extension is available.
+
+        :Parameters:
+            `extension` : str
+                The name of the extension to test for, including its
+                ``GL_`` prefix.
+
+        :return: True if the extension is provided by the driver.
+        :rtype: bool
+        '''
         if not self.have_context:
             warnings.warn('No GL context created yet.')
         return extension in self.extensions
 
     def get_extensions(self):
+        '''Get a list of available OpenGL extensions.
+
+        :return: a list of the available extensions.
+        :rtype: list of str
+        '''
         if not self.have_context:
             warnings.warn('No GL context created yet.')
         return self.extensions
 
     def get_version(self):
+        '''Get the current OpenGL version.
+
+        :return: the OpenGL version
+        :rtype: str
+        '''
         if not self.have_context:
             warnings.warn('No GL context created yet.')
         return self.version
 
     def have_version(self, major, minor=0, release=0):
+        '''Determine if a version of OpenGL is supported.
+
+        :Parameters:
+            `major` : int
+                The major revision number (typically 1 or 2).
+            `minor` : int
+                The minor revision number.
+            `release` : int
+                The release number.  
+
+        :rtype: bool
+        :return: True if the requested or a later version is supported.
+        '''
+
         if not self.have_context:
             warnings.warn('No GL context created yet.')
         ver = '%s.0.0' % self.version.split(' ', 1)[0]
@@ -72,11 +119,19 @@ class GLInfo(object):
            (imajor == major and iminor == minor and irelease >= release)
 
     def get_renderer(self):
+        '''Determine the renderer string of the OpenGL context.
+
+        :rtype: str
+        '''
         if not self.have_context:
             warnings.warn('No GL context created yet.')
         return self.renderer
 
     def get_vendor(self):
+        '''Determine the vendor string of the OpenGL context.
+
+        :rtype: str
+        '''
         if not self.have_context:
             warnings.warn('No GL context created yet.')
         return self.vendor
@@ -94,4 +149,8 @@ get_renderer = _gl_info.get_renderer
 get_vendor = _gl_info.get_vendor
 
 def have_context():
+    '''Determine if a default OpenGL context has been set yet.
+
+    :rtype: bool
+    '''
     return _gl_info.have_context
