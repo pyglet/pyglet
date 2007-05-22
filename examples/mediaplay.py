@@ -53,6 +53,7 @@ class MediaPlayWindow(window.Window):
 
         add_label(filename)
         self.time_label = add_label('')
+        self.fps_label = add_label('')
         add_label('')
         self.playing_label = add_label('Playing; press space to pause')
         self.volume_label = add_label('Volume 1.0; adjust with +,-')
@@ -139,6 +140,7 @@ class MediaPlayWindow(window.Window):
             t = self.instance.time
             self.time_label.text = '%d:%05.2f' % \
                 (int(t / 60), t - 60 * int(t / 60))
+            self.fps_label.text = 'FPS: %.2f'%clock.get_fps()
 
             self.draw()
 
