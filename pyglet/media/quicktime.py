@@ -236,6 +236,9 @@ class QuickTimeStreamingSound(openal.OpenALStreamingSound):
         buffers = (al.ALuint * len(buffers))(*buffers)
         al.alSourceQueueBuffers(self.source, len(buffers), buffers)
 
+    def unschedule(self):
+        instances.remove(self)
+
 class QuickTimeCoreVideoStreamingVideo(Video):
     '''A streaming video implementation using Core Video to draw
     directly into an OpenGL texture.
@@ -298,6 +301,8 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         t = quicktime.GetMovieTime(self._movie, None)
         return t / self._medium._time_scale
 
+    def unschedule(self):
+        instances.remove(self)
 
 class QuickTimeGWorldStreamingVideo(Video):
     '''Streaming video implementation using QuickTime and copying
@@ -309,15 +314,15 @@ class QuickTimeGWorldStreamingVideo(Video):
     sound = None
     finished = False
 
-    __has_bgra = None
+    _has_bgra = None
     def __init__(self, medium):
-        if self.__has_bgra is None:
-            QuickTimeGWorldStreamingVideo.__has_bgra = (
+        if self._has_bgra is None:
+            QuickTimeGWorldStreamingVideo._has_bgra = (
                 gl_info.have_extension('GL_EXT_bgra') and
                 gl_info.have_extension('GL_APPLE_packed_pixels'))
 
         self.medium = medium
-        self._dura_tion = quicktime.GetMovieDuration(medium.movie)
+        self._duration = quicktime.GetMovieDuration(medium.movie)
 
         quicktime.EnterMovies()
 
@@ -371,7 +376,7 @@ class QuickTimeGWorldStreamingVideo(Video):
         self.gp_buffer = cast(self.gp_buffer, 
             POINTER(c_char * (self.gp_row_stride * self.height))).contents
 
-        if not self.__has_bgra:
+        if not self._has_bgra:
             # use ImageData to swizzle the ARGB data
             self.__image = image.ImageData(self.width, self.height, 'ARGB',
                 self.gp_buffer)
@@ -432,24 +437,26 @@ class QuickTimeGWorldStreamingVideo(Video):
             self._playMovie(quicktime.GetMovieTime(self.medium.movie, 0))
 
         # copy to the texture
-        if self.__has_bgra:
+        if self._has_bgra:
             texture = self.texture
             glBindTexture(texture.target, texture.id)
             glTexSubImage2D(texture.target, 0, 0, 0, self.width, self.height,
                 GL_BGRA_EXT, GL_UNSIGNED_INT_8_8_8_8_REV, self.gp_buffer)
         else:
-            # TODO: the following is *incredibly* slow, but on the other hand
             # I'm not aware of any Mac that doesn't have the BGRA extensions
-            self.__image.texture.delete()
             self.__image.data = self.gp_buffer
             texture = self.texture
             glBindTexture(texture.target, texture.id)
             self.__image.blit_to_texture(texture.target, 0, 0, 0, 0)
 
+    def unschedule(self):
+        instances.remove(self)
+
     def __del__(self):
         try:
-            if quicktime.DisposeGWorld is not None:
+            if quicktime.DisposeGWorld is not None and self.gworld is not None:
                 quicktime.DisposeGWorld(self.gworld)
+                self.gworld = None
         except NameError, name:
             pass
 
@@ -500,8 +507,10 @@ class QuickTimeMedium(Medium):
     def __del__(self):
         if self.streaming:
             try:
-                if quicktime.DisposeGWorld is not None:
+                if (quicktime.DisposeMovie is not None
+                        and self.movie is not None):
                     quicktime.DisposeMovie(self.movie)
+                    self.movie = None
             except NameError:
                 pass
         else:

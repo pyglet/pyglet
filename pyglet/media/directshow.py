@@ -146,6 +146,9 @@ class DirectShowStreamingSound(DirectSound3DBuffer):
             self.finished = True
             self.playing = False
 
+    def unschedule(self):
+        instances.remove(self)
+
     def _get_time(self):
         return self._position.CurrentPosition
 
@@ -296,6 +299,9 @@ class DirectShowStreamingVideo(Video):
             imagedata = image.ImageData(
                 self.width, self.height, 'BGR', buffer, pitch=self._pitch)
             imagedata.blit_to_texture(texture.target, 0, 0, 0, 0)
+
+    def unschedule(self):
+        instances.remove(self)
             
 
 class DirectShowStreamingMedium(Medium):
@@ -451,6 +457,9 @@ class DirectShowStaticSound(Sound):
             self.finished = True
             self.playing = False
         self._last_time = time
+
+    def unschedule(self):
+        instances.remove(self)
 
 # Device interface
 # -----------------------------------------------------------------------------

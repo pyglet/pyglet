@@ -148,6 +148,14 @@ class MediumInstance(event.EventDispatcher):
         '''
         pass
 
+    def unschedule(self):
+        '''Stop event processing for this instance.
+        
+        This will prevent any further calls to `dispatch_events`.
+        '''
+        pass
+
+
 EVENT_FINISHED = MediumInstance.register_event_type('on_finished')
 
 class Sound(MediumInstance):
