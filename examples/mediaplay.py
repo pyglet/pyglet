@@ -14,6 +14,7 @@ from pyglet import clock
 from pyglet import font
 from pyglet import media
 from pyglet import window
+from pyglet import event
 from pyglet.window import key
 
 class MediaPlayWindow(window.Window):

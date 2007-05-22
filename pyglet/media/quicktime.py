@@ -379,6 +379,9 @@ class QuickTimeGWorldStreamingVideo(Video):
         # restore old GWorld
         quicktime.SetGWorld(origPort, origDevice)
 
+        # make sure we're at the start
+        quicktime.GoToBeginningOfMovie(self.medium.movie)
+
     def _playMovie(self, timestamp):
         if not timestamp:
             quicktime.GoToBeginningOfMovie(self.medium.movie)
@@ -398,21 +401,19 @@ class QuickTimeGWorldStreamingVideo(Video):
             result = quicktime.GetMoviesError()
         _oscheck(result) 
 
-    __paused = False
     def play(self):
-        if not self.__paused:
-            quicktime.GoToBeginningOfMovie(self.medium.movie)
+        self.playing = True
         quicktime.StartMovie(self.medium.movie)
 
     def pause(self):
-        if self.__paused:
-            quicktime.StartMovie(self.medium.movie)
-        else:
+        if self.playing:
             quicktime.StopMovie(self.medium.movie)
-        self.__paused = not self.__paused
+        else:
+            quicktime.StartMovie(self.medium.movie)
+        self.playing = not self.playing
 
     def stop(self):
-        self.__paused = False
+        self.playing = False
         quicktime.GoToBeginningOfMovie(self.medium.movie)
         quicktime.StopMovie(self.medium.movie)
 
