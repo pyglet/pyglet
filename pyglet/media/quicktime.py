@@ -24,6 +24,7 @@ from pyglet.window.carbon.types import Rect
 from pyglet.gl import *
 from pyglet import gl
 from pyglet.gl import agl
+from pyglet.gl import gl_info
 
 corevideo = _get_framework('CoreVideo')
 
@@ -317,26 +318,24 @@ class QuickTimeGWorldStreamingVideo(Video):
             self.has_video = False
             return
         
-        # now handle the video
-        #quicktime.OffsetRect(ctypes.byref(r), -r.left, -r.top)
-        #quicktime.SetMovieBox(movie, ctypes.byref(r))
-
         # save off current GWorld
         origDevice = ctypes.c_void_p()
         origPort = ctypes.c_void_p()
         quicktime.GetGWorld(ctypes.byref(origPort), ctypes.byref(origDevice))
 
+        # fix the rect if necessary
         self.width = r.right - r.left
         self.height = r.bottom - r.top
         self.rect = Rect(0, 0, self.height, self.width)
 
         # TODO sanity check size? QT can scale for us
         self.texture = image.Texture.create_for_size(image.GL_TEXTURE_2D,
-            self.width, self.height, image.GL_RGB)
+            self.width, self.height, GL_RGB)
         if (self.texture.width != self.width or
             self.texture.height != self.height):
             self.texture = self.texture.get_region(
                 0, 0, self.width, self.height)
+
         # Flip texture coords as a cheap way of flipping image.  gst_openal
         # does the same, so if you fix this, fix Windows too.
         bl, br, tr, tl = self.texture.tex_coords
@@ -346,10 +345,10 @@ class QuickTimeGWorldStreamingVideo(Video):
         buf = quicktime.NewPtrClear(4 * self.width * self.height)
         self.buffer_type = c_char * (4 * self.width * self.height)
         self.gworld = ctypes.c_void_p() #GWorldPtr()
-        err = quicktime.QTNewGWorldFromPtr(ctypes.byref(self.gworld),
+        result = quicktime.QTNewGWorldFromPtr(ctypes.byref(self.gworld),
             k32ARGBPixelFormat, ctypes.byref(self.rect), 0, 0, 0, buf,
             4*self.width)
-        assert err == noErr, 'An error was raised!'
+        _oscheck(result) 
         assert self.gworld != 0, 'Could not allocate GWorld'
         quicktime.SetGWorld(self.gworld, 0)
         quicktime.SetMovieGWorld(movie, self.gworld, 0)
@@ -364,37 +363,36 @@ class QuickTimeGWorldStreamingVideo(Video):
         self.gp_row_stride = quicktime.GetPixRowBytes(pixmap)
         self.gp_buffer = cast(self.gp_buffer, 
             POINTER(c_char * (self.gp_row_stride * self.height))).contents
-        print self.gp_buffer
+
+        # Create an intermediate ImageData and use it to update the
+        # texture, as it does a good job of swizzling ARGB to RGB in the
+        # most efficient way.
+        self._image = image.ImageData(self.width, self.height, 'ARGB',
+            self.gp_buffer)
 
         # restore old GWorld
         quicktime.SetGWorld(origPort, origDevice)
 
         # right, now start playing at start of movie
-        self._playMovie(0)
+        # unnecessary because we always start with a call to .play()
+        #self._playMovie(0)
 
     def _playMovie(self, timestamp):
-        print '_playMovie', timestamp
         if not timestamp:
             quicktime.GoToBeginningOfMovie(self.movie)
-            print '> to beginning'
         elif timestamp > self._duration:
             quicktime.SetMovieTimeValue(self.movie, self._duration)
-            print '> set to end'
         else:
             quicktime.SetMovieTimeValue(self.movie, timestamp)
-            print '> set to timestamp'
 
         # now force redraw and processing of first frame
-        err = quicktime.GetMoviesError()
-        if err == noErr:
-            err = quicktime.UpdateMovie(self.movie)         # force redraw
-            print '> update movie'
-        if err == noErr:
+        result = quicktime.GetMoviesError()
+        if result == noErr:
+            result = quicktime.UpdateMovie(self.movie)         # force redraw
+        if result == noErr:
             quicktime.MoviesTask(self.movie, 0)             # process movie
-            print '> movies task'
-            err = quicktime.GetMoviesError()
-        assert err == noErr, 'An error was raised!'
-        print 'done'
+            result = quicktime.GetMoviesError()
+        _oscheck(result) 
 
     __paused = False
     def play(self):
@@ -420,17 +418,18 @@ class QuickTimeGWorldStreamingVideo(Video):
     def dispatch_events(self):
         ''' draw to the texture '''
         quicktime.MoviesTask(self.movie, 0)
-        err = quicktime.GetMoviesError()
-        assert err == noErr, 'An error was raised!'
+        _oscheck(quicktime.GetMoviesError())
 
-        # Create an intermediate ImageData and use it to update the
-        # texture, as it does a good job of swizzling ARGB to RGB in the
-        # most efficient way.
+        # XXX deleting the old texture introduces a significant performance hit
+        #self._image.texture.delete()
+
+        # update the ImageData instance
+        self._image.data = self.gp_buffer
+
+        # copy to the texture
         texture = self.texture
         glBindTexture(texture.target, texture.id)
-        imagedata = image.ImageData(self.width, self.height, 'ARGB',
-            self.gp_buffer)
-        imagedata.blit_to_texture(texture.target, 0, 0, 0, 0)
+        self._image.blit_to_texture(texture.target, 0, 0, 0, 0)
 
         self.finished = quicktime.IsMovieDone(self.movie)
 
