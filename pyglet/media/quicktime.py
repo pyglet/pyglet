@@ -160,7 +160,8 @@ class ExtractionSession(object):
 
     def __del__(self):
         try:
-            quicktime.MovieAudioExtractionEnd(self.extraction_session_ref)
+            if quicktime.MovieAudioExtractionEnd is not None:
+                quicktime.MovieAudioExtractionEnd(self.extraction_session_ref)
         except NameError:
             pass
 
@@ -239,8 +240,9 @@ class QuickTimeCoreVideoStreamingVideo(Video):
     '''A streaming video implementation using Core Video to draw
     directly into an OpenGL texture.
     '''
-    def __init__(self, sound, movie):
-        self._movie = movie
+    def __init__(self, sound, medium):
+        self._medium = medium
+        self._movie = medium.movie
         self.sound = sound
 
         # Get CGL context and pixel format (the long, convoluted way) 
@@ -299,25 +301,29 @@ class QuickTimeCoreVideoStreamingVideo(Video):
 class QuickTimeGWorldStreamingVideo(Video):
     '''Streaming video implementation using QuickTime and copying
     from a GWorld buffer each frame.
+
+
+    TODO? this instance has no .sound attribute - should it?
     '''
     sound = None
     finished = False
 
-    def __init__(self, movie):    # XXX sound?
-        self.movie = movie
-        self._duration = quicktime.GetMovieDuration(self.movie)
+    __has_bgra = None
+    def __init__(self, medium):
+        if self.__has_bgra is None:
+            QuickTimeGWorldStreamingVideo.__has_bgra = (
+                gl_info.have_extension('GL_EXT_bgra') and
+                gl_info.have_extension('GL_APPLE_packed_pixels'))
+
+        self.medium = medium
+        self._duration = quicktime.GetMovieDuration(medium.movie)
 
         quicktime.EnterMovies()
 
         # determine dimensions of video
         r = Rect()
-        quicktime.GetMovieBox(movie, ctypes.byref(r))
+        quicktime.GetMovieBox(medium.movie, ctypes.byref(r))
 
-        # XXX this is the only way I can think to detect absence of video
-        if r.top == r.left == r.bottom == r.right == 0:
-            self.has_video = False
-            return
-        
         # save off current GWorld
         origDevice = ctypes.c_void_p()
         origPort = ctypes.c_void_p()
@@ -351,7 +357,7 @@ class QuickTimeGWorldStreamingVideo(Video):
         _oscheck(result) 
         assert self.gworld != 0, 'Could not allocate GWorld'
         quicktime.SetGWorld(self.gworld, 0)
-        quicktime.SetMovieGWorld(movie, self.gworld, 0)
+        quicktime.SetMovieGWorld(medium.movie, self.gworld, 0)
 
         # pull out the buffer address and row stride from the pixmap
         # (just in case...)
@@ -364,82 +370,83 @@ class QuickTimeGWorldStreamingVideo(Video):
         self.gp_buffer = cast(self.gp_buffer, 
             POINTER(c_char * (self.gp_row_stride * self.height))).contents
 
-        # Create an intermediate ImageData and use it to update the
-        # texture, as it does a good job of swizzling ARGB to RGB in the
-        # most efficient way.
-        self._image = image.ImageData(self.width, self.height, 'ARGB',
-            self.gp_buffer)
+        if not self.__has_bgra:
+            # use ImageData to swizzle the ARGB data
+            self.__image = image.ImageData(self.width, self.height, 'ARGB',
+                self.gp_buffer)
 
         # restore old GWorld
         quicktime.SetGWorld(origPort, origDevice)
 
-        # right, now start playing at start of movie
-        # unnecessary because we always start with a call to .play()
-        #self._playMovie(0)
-
     def _playMovie(self, timestamp):
         if not timestamp:
-            quicktime.GoToBeginningOfMovie(self.movie)
+            quicktime.GoToBeginningOfMovie(self.medium.movie)
         elif timestamp > self._duration:
-            quicktime.SetMovieTimeValue(self.movie, self._duration)
+            quicktime.SetMovieTimeValue(self.medium.movie, self._duration)
         else:
-            quicktime.SetMovieTimeValue(self.movie, timestamp)
+            quicktime.SetMovieTimeValue(self.medium.movie, timestamp)
 
         # now force redraw and processing of first frame
         result = quicktime.GetMoviesError()
         if result == noErr:
-            result = quicktime.UpdateMovie(self.movie)         # force redraw
+            # force redraw
+            result = quicktime.UpdateMovie(self.medium.movie)
         if result == noErr:
-            quicktime.MoviesTask(self.movie, 0)             # process movie
+            # process movie
+            quicktime.MoviesTask(self.medium.movie, 0)
             result = quicktime.GetMoviesError()
         _oscheck(result) 
 
     __paused = False
     def play(self):
         if not self.__paused:
-            quicktime.GoToBeginningOfMovie(self.movie)
-        quicktime.StartMovie(self.movie)
+            quicktime.GoToBeginningOfMovie(self.medium.movie)
+        quicktime.StartMovie(self.medium.movie)
 
     def pause(self):
         if self.__paused:
-            quicktime.StartMovie(self.movie)
+            quicktime.StartMovie(self.medium.movie)
         else:
-            quicktime.StopMovie(self.movie)
+            quicktime.StopMovie(self.medium.movie)
         self.__paused = not self.__paused
 
     def stop(self):
         self.__paused = False
-        quicktime.GoToBeginningOfMovie(self.movie)
-        quicktime.StopMovie(self.movie)
+        quicktime.GoToBeginningOfMovie(self.medium.movie)
+        quicktime.StopMovie(self.medium.movie)
 
     def _get_time(self):
-        return quicktime.GetMovieTime(self.movie, 0)
+        return quicktime.GetMovieTime(self.medium.movie, 0)
 
     def dispatch_events(self):
         ''' draw to the texture '''
-        quicktime.MoviesTask(self.movie, 0)
+        # play the movie
+        quicktime.MoviesTask(self.medium.movie, 0)
         _oscheck(quicktime.GetMoviesError())
-
-        # XXX deleting the old texture introduces a significant performance hit
-        #self._image.texture.delete()
-
-        # update the ImageData instance
-        self._image.data = self.gp_buffer
-
-        # copy to the texture
-        texture = self.texture
-        glBindTexture(texture.target, texture.id)
-        self._image.blit_to_texture(texture.target, 0, 0, 0, 0)
-
-        self.finished = quicktime.IsMovieDone(self.movie)
-
+        self.finished = quicktime.IsMovieDone(self.medium.movie)
         if self.finished:
             # examples nudge one last time to make sure last frame is drawn
-            self._playMovie(quicktime.GetMovieTime(self.movie, 0))
+            self._playMovie(quicktime.GetMovieTime(self.medium.movie, 0))
+
+        # copy to the texture
+        if self.__has_bgra:
+            texture = self.texture
+            glBindTexture(texture.target, texture.id)
+            glTexSubImage2D(texture.target, 0, 0, 0, self.width, self.height,
+                GL_BGRA_EXT, GL_UNSIGNED_INT_8_8_8_8_REV, self.gp_buffer)
+        else:
+            # TODO: the following is *incredibly* slow, but on the other hand
+            # I'm not aware of any Mac that doesn't have the BGRA extensions
+            self.__image.texture.delete()
+            self.__image.data = self.gp_buffer
+            texture = self.texture
+            glBindTexture(texture.target, texture.id)
+            self.__image.blit_to_texture(texture.target, 0, 0, 0, 0)
 
     def __del__(self):
         try:
-            quicktime.DisposeGWorld(self.gworld)
+            if quicktime.DisposeGWorld is not None:
+                quicktime.DisposeGWorld(self.gworld)
         except NameError, name:
             pass
 
@@ -486,13 +493,11 @@ class QuickTimeMedium(Medium):
 
     def __del__(self):
         if self.streaming:
-            pass
-            # XXX this disposes the movie from underneath the video playing
-            # TODO then Instance should reference Medium.
-            #try:
-            #    quicktime.DisposeMovie(self.movie)
-            #except NameError:
-            #    pass
+            try:
+                if quicktime.DisposeGWorld is not None:
+                    quicktime.DisposeMovie(self.movie)
+            except NameError:
+                pass
         else:
             try:
                 openal.buffer_pool.replace(self.static_buffers)
@@ -533,9 +538,9 @@ class QuickTimeMedium(Medium):
         # TODO need to re-open movie for playback video more than once?
         # TODO check OS version for preferred technique
         if True:
-            video = QuickTimeGWorldStreamingVideo(self.movie)
+            video = QuickTimeGWorldStreamingVideo(self)
         else:
-            video = QuickTimeCoreVideoStreamingVideo(sound, self.movie)
+            video = QuickTimeCoreVideoStreamingVideo(sound, self)
         instances.append(video)
         return video
 
