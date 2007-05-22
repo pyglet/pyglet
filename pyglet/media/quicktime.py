@@ -295,7 +295,8 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         )
 
     def _get_time(self):
-        return quicktime.GetMovieTime(self._movie, None)
+        t = quicktime.GetMovieTime(self._movie, None)
+        return t / self._medium._time_scale
 
 
 class QuickTimeGWorldStreamingVideo(Video):
@@ -316,7 +317,7 @@ class QuickTimeGWorldStreamingVideo(Video):
                 gl_info.have_extension('GL_APPLE_packed_pixels'))
 
         self.medium = medium
-        self._duration = quicktime.GetMovieDuration(medium.movie)
+        self._dura_tion = quicktime.GetMovieDuration(medium.movie)
 
         quicktime.EnterMovies()
 
@@ -416,7 +417,8 @@ class QuickTimeGWorldStreamingVideo(Video):
         quicktime.StopMovie(self.medium.movie)
 
     def _get_time(self):
-        return quicktime.GetMovieTime(self.medium.movie, 0)
+        t = quicktime.GetMovieTime(self.medium.movie, None)
+        return t / self.medium._time_scale
 
     def dispatch_events(self):
         ''' draw to the texture '''
@@ -471,7 +473,10 @@ class QuickTimeMedium(Medium):
             AudioMediaCharacteristic, movieTrackCharacteristic) != 0
         self.has_video = quicktime.GetMovieIndTrackType(movie, 1, 
             VisualMediaCharacteristic, movieTrackCharacteristic) != 0
-        self._duration = quicktime.GetMovieDuration(movie)
+
+        # TimeScale is the number of units of time that pass each second
+        ts = self._time_scale = float(quicktime.GetMovieTimeScale(movie))
+        self._duration = quicktime.GetMovieDuration(movie) / ts
 
         if self.streaming:
             self.movie = movie

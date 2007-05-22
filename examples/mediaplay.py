@@ -131,7 +131,7 @@ class MediaPlayWindow(window.Window):
         return event.EVENT_HANDLED
 
     def run(self):
-        #clock.set_fps_limit(30)
+        clock.set_fps_limit(30)
         while not self.instance.finished and not self.has_exit:
             clock.tick()
             self.dispatch_events()
