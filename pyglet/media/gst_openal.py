@@ -364,6 +364,7 @@ class GstreamerOpenALStreamingSound(openal.OpenALStreamingSound,
         gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PAUSED)
 
     def play(self):
+        instances.append(self)
         super(GstreamerOpenALStreamingSound, self).play()
         gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PLAYING)
 
@@ -372,6 +373,7 @@ class GstreamerOpenALStreamingSound(openal.OpenALStreamingSound,
         gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PAUSED)
 
     def stop(self):
+        instances.remove(self)
         super(GstreamerOpenALStreamingSound, self).stop()
         self._destroy_pipeline(self._pipeline)
         self._pipeline = None
@@ -466,6 +468,7 @@ class GstreamerOpenALStreamingVideo(Video,
     texture = property(_get_texture)
 
     def play(self):
+        instances.append(self)
         self._wait_no_more_pads()
         gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PLAYING)
         if self.sound:
@@ -484,6 +487,7 @@ class GstreamerOpenALStreamingVideo(Video,
         self.playing = False
 
     def stop(self):
+        instances.remove(self)
         if self.sound:
             self.sound.stop()
         self._destroy_pipeline(self._pipeline)
@@ -591,16 +595,12 @@ class GstreamerOpenALStreamingMedium(GstreamerMedium):
     def get_sound(self):
         if not self.has_audio:
             raise InvalidMediumException('No audio in medium')
-        sound = GstreamerOpenALStreamingSound(self.filename, self.file)
-        instances.append(sound)
-        return sound
+        return GstreamerOpenALStreamingSound(self.filename, self.file)
 
     def get_video(self):
         if not self.has_video:
             raise InvalidMediumException('No video in medium')
-        video = GstreamerOpenALStreamingVideo(self.filename, self.file)
-        instances.append(video)
-        return video
+        return GstreamerOpenALStreamingVideo(self.filename, self.file)
 
 # OpenAL static
 # -----------------------------------------------------------------------------
@@ -628,6 +628,17 @@ class OpenALStaticSinkElement(gstreamer.Element):
         # Convert list of buffers to an array of buffers for fast queueing
         self.buffers = (al.ALuint * len(self.buffers))(*self.buffers)
         self.buffers_semaphore.release()
+
+class GstreamerOpenALSound(openal.OpenALSound):
+    '''Subclass to allow scheduling and unscheduling of event dispatch.
+    '''
+    def play(self):
+        instances.append(self)
+        super(GstreamerOpenALSound, self).play()
+
+    def stop(self):
+        instances.remove(self)
+        super(GstreamerOpenALSound, self).stop()
        
 class GstreamerOpenALStaticMedium(GstreamerMedium):
     '''A Medium which decodes all data into a list of OpenAL buffers which
@@ -692,10 +703,8 @@ class GstreamerOpenALStaticMedium(GstreamerMedium):
             self._destroy_pipeline(self._pipeline)
             self._pipeline = None
 
-        sound = openal.OpenALSound()
+        sound = GstreamerOpenALSound()
         al.alSourceQueueBuffers(sound.source, len(self._buffers), self._buffers)
-        instances.append(sound)
-
         return sound
 
  

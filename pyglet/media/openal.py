@@ -259,7 +259,12 @@ class OpenALStreamingSound(OpenALSound):
     def __del__(self):
         try:
             self.stop()
-        except NameError:
+        except (ValueError, TypeError, NameError):
+            # we're being __del__'ed during interpreter exit
+            # (ValueError would come from trying to unschedule us from the
+            # event instances list, NameError from trying to use already-
+            # collected modules and TypeError from trying to invoke methods
+            # on collected objects)
             pass
 
     def stop(self):

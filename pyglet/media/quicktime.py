@@ -222,6 +222,14 @@ class QuickTimeStreamingSound(openal.OpenALStreamingSound):
         # Queue up first buffers
         self.dispatch_events()
 
+    def play(self):
+        instances.append(self)
+        super(QuickTimeStreamingSound, self).play()
+
+    def stop(self):
+        instances.remove(self)
+        super(QuickTimeStreamingSound, self).stop()
+
     def dispatch_events(self):
         super(QuickTimeStreamingSound, self).dispatch_events()
 
@@ -235,9 +243,6 @@ class QuickTimeStreamingSound(openal.OpenALStreamingSound):
             buffers.append(buffer)
         buffers = (al.ALuint * len(buffers))(*buffers)
         al.alSourceQueueBuffers(self.source, len(buffers), buffers)
-
-    def unschedule(self):
-        instances.remove(self)
 
 class QuickTimeCoreVideoStreamingVideo(Video):
     '''A streaming video implementation using Core Video to draw
@@ -301,9 +306,6 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         t = quicktime.GetMovieTime(self._movie, None)
         return t / self._medium._time_scale
 
-    def unschedule(self):
-        instances.remove(self)
-
 class QuickTimeGWorldStreamingVideo(Video):
     '''Streaming video implementation using QuickTime and copying
     from a GWorld buffer each frame.
@@ -314,13 +316,7 @@ class QuickTimeGWorldStreamingVideo(Video):
     sound = None
     finished = False
 
-    _has_bgra = None
     def __init__(self, medium):
-        if self._has_bgra is None:
-            QuickTimeGWorldStreamingVideo._has_bgra = (
-                gl_info.have_extension('GL_EXT_bgra') and
-                gl_info.have_extension('GL_APPLE_packed_pixels'))
-
         self.medium = medium
         self._duration = quicktime.GetMovieDuration(medium.movie)
 
@@ -376,10 +372,9 @@ class QuickTimeGWorldStreamingVideo(Video):
         self.gp_buffer = cast(self.gp_buffer, 
             POINTER(c_char * (self.gp_row_stride * self.height))).contents
 
-        if not self._has_bgra:
-            # use ImageData to swizzle the ARGB data
-            self.__image = image.ImageData(self.width, self.height, 'ARGB',
-                self.gp_buffer)
+        # use ImageData to swizzle the ARGB data
+        self._image = image.ImageData(self.width, self.height, 'ARGB',
+            self.gp_buffer)
 
         # restore old GWorld
         quicktime.SetGWorld(origPort, origDevice)
@@ -407,6 +402,7 @@ class QuickTimeGWorldStreamingVideo(Video):
         _oscheck(result) 
 
     def play(self):
+        instances.append(self)
         self.playing = True
         quicktime.StartMovie(self.medium.movie)
 
@@ -418,6 +414,7 @@ class QuickTimeGWorldStreamingVideo(Video):
         self.playing = not self.playing
 
     def stop(self):
+        instances.remove(self)
         self.playing = False
         quicktime.GoToBeginningOfMovie(self.medium.movie)
         quicktime.StopMovie(self.medium.movie)
@@ -437,20 +434,9 @@ class QuickTimeGWorldStreamingVideo(Video):
             self._playMovie(quicktime.GetMovieTime(self.medium.movie, 0))
 
         # copy to the texture
-        if self._has_bgra:
-            texture = self.texture
-            glBindTexture(texture.target, texture.id)
-            glTexSubImage2D(texture.target, 0, 0, 0, self.width, self.height,
-                GL_BGRA_EXT, GL_UNSIGNED_INT_8_8_8_8_REV, self.gp_buffer)
-        else:
-            # I'm not aware of any Mac that doesn't have the BGRA extensions
-            self.__image.data = self.gp_buffer
-            texture = self.texture
-            glBindTexture(texture.target, texture.id)
-            self.__image.blit_to_texture(texture.target, 0, 0, 0, 0)
-
-    def unschedule(self):
-        instances.remove(self)
+        texture = self.texture
+        glBindTexture(texture.target, texture.id)
+        self._image.blit_to_texture(texture.target, 0, 0, 0, 0)
 
     def __del__(self):
         try:
@@ -530,11 +516,9 @@ class QuickTimeMedium(Medium):
             self.extraction_session = None
 
             sound = QuickTimeStreamingSound(extraction_session)
-            instances.append(sound)
             return sound
         else:
             sound = openal.OpenALStaticSound(self)
-            instances.append(sound)
             al.alSourceQueueBuffers(
                 sound.source, len(self.static_buffers), self.static_buffers)
             return sound
@@ -556,7 +540,6 @@ class QuickTimeMedium(Medium):
             video = QuickTimeGWorldStreamingVideo(self)
         else:
             video = QuickTimeCoreVideoStreamingVideo(sound, self)
-        instances.append(video)
         return video
 
     def _create_movie(self):

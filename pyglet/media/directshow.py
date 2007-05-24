@@ -128,6 +128,7 @@ class DirectShowStreamingSound(DirectSound3DBuffer):
         self._set_filter_graph(filter_graph)
 
     def play(self):
+        instances.append(self)
         self._control.Run()
         self.playing = True
 
@@ -136,6 +137,7 @@ class DirectShowStreamingSound(DirectSound3DBuffer):
         self.playing = False
 
     def stop(self):
+        instances.remove(self)
         self._control.Stop()
         self.playing = False
 
@@ -145,9 +147,6 @@ class DirectShowStreamingSound(DirectSound3DBuffer):
         if position >= self._stop_time:
             self.finished = True
             self.playing = False
-
-    def unschedule(self):
-        instances.remove(self)
 
     def _get_time(self):
         return self._position.CurrentPosition
@@ -239,6 +238,7 @@ class DirectShowStreamingVideo(Video):
             raise MediaException('Unsupported video format type')
             
     def play(self):
+        instances.append(self)
         self._control.Run()
         self.playing = True
 
@@ -247,6 +247,7 @@ class DirectShowStreamingVideo(Video):
         self.playing = False
 
     def stop(self):
+        instances.remove(self)
         self._control.Stop()
         self.playing = False
 
@@ -344,14 +345,10 @@ class DirectShowStreamingMedium(Medium):
     def get_sound(self):
         # TODO if has_video, sink it to null so it doesn't pop up in it's own
         # window.
-        sound = DirectShowStreamingSound(self.filename)
-        instances.append(sound)
-        return sound
+        return DirectShowStreamingSound(self.filename)
 
     def get_video(self):
-        video = DirectShowStreamingVideo(self.filename)
-        instances.append(video)
-        return video
+        return DirectShowStreamingVideo(self.filename)
 
 class DirectShowStaticMedium(Medium):
     def __init__(self, filename, file=None):
@@ -436,6 +433,7 @@ class DirectShowStaticSound(Sound):
         self._last_time = 0
 
     def play(self):
+        instances.append(self)
         self.sound_buffer.Play(_dsound.DSBPLAY_DEFAULT)
         self.playing = True
 
@@ -444,6 +442,7 @@ class DirectShowStaticSound(Sound):
         self.playing = False
 
     def stop(self):
+        instances.remove(self)
         self.sound_buffer.Stop()
         self.playing = False
 
