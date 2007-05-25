@@ -11,6 +11,8 @@ from ctypes import *
 import pyglet.gl.agl
 agl = pyglet.gl.agl
 
+Boolean = c_ubyte           # actually an unsigned char
+
 GDHandle = agl.GDHandle
 
 class Rect(Structure):
@@ -78,6 +80,8 @@ EventMouseButton = c_uint16
 EventMouseWheelAxis = c_uint16
 
 OSType = c_uint32
+OSStatus = c_int32
+
 
 class MouseTrackingRegionID(Structure):
     _fields_ = [('signature', OSType),
@@ -90,3 +94,5 @@ RgnHandle = c_void_p
 class ProcessSerialNumber(Structure):
     _fields_ = [('highLongOfPSN', c_uint32),
                 ('lowLongOfPSN', c_uint32)]
+
+

@@ -19,24 +19,71 @@ from pyglet import window
 from pyglet.window.carbon import _create_cfstring, _oscheck
 from pyglet.window.carbon import carbon, quicktime, _get_framework
 from pyglet.window.carbon.constants import _name, noErr
-from pyglet.window.carbon.types import Rect
+from pyglet.window.carbon.types import Rect, Boolean
 
 from pyglet.gl import *
 from pyglet import gl
 from pyglet.gl import agl
 from pyglet.gl import gl_info
 
-corevideo = _get_framework('CoreVideo')
+try:
+    corevideo = _get_framework('CoreVideo')
+except ImportError:
+    corevideo = None
 
 BUFFER_SIZE = 8192
 
+Movie = ctypes.c_void_p
+
 quicktime.NewMovieFromDataRef.argtypes = (
-    ctypes.POINTER(ctypes.c_void_p),
+    ctypes.POINTER(Movie),
     ctypes.c_short,
     ctypes.POINTER(ctypes.c_short),
     ctypes.c_void_p,
     ctypes.c_ulong)
-    
+
+CVDisplayLinkOutputCallback = CFUNCTYPE(c_int, c_void_p, c_void_p, c_void_p,
+    c_uint64, c_void_p, c_void_p)
+
+ItemCount = ctypes.c_uint32
+OSStatus = ctypes.c_int32
+FourCharCode = ctypes.c_uint32
+OSType = FourCharCode
+QTPropertyClass = OSType
+QTPropertyID = OSType
+ByteCount = ctypes.c_uint32
+QTPropertyValuePtr = ctypes.c_void_p
+QTVisualContextRef = ctypes.c_void_p
+CFStringRef = ctypes.c_void_p
+
+class QTNewMoviePropertyElement(ctypes.Structure):
+     _fields_ = [('propClass', QTPropertyClass),
+                 ('propID', QTPropertyID),
+                 ('propValueSize', ByteCount),
+                 ('propValueAddress', QTPropertyValuePtr),
+                 ('propStatus',OSStatus)]
+
+kQTPropertyClass_DataLocation = _name('dloc')
+kQTDataLocationPropertyID_CFStringPosixPath = _name('cfpp')
+
+kQTPropertyClass_Context = _name('ctxt')
+kQTContextPropertyID_VisualContext = _name('visu')
+
+kQTPropertyClass_MovieInstantiation = _name('mins')
+kQTMovieInstantiationPropertyID_DontAskUnresolvedDataRefs = _name('aurn')
+
+kQTPropertyClass_NewMovieProperty = _name('mprp')
+kQTNewMoviePropertyID_Active = _name('actv')
+kQTNewMoviePropertyID_DontInteractWithUser = _name('intn')
+
+quicktime.NewMovieFromProperties.restype = _oscheck
+quicktime.NewMovieFromProperties.argtypes = (
+    ItemCount,
+    ctypes.POINTER(QTNewMoviePropertyElement),
+    ItemCount,
+    ctypes.POINTER(QTNewMoviePropertyElement),
+    ctypes.POINTER(Movie))
+
 newMovieActive = 1
 
 movieTrackMediaType = 1 << 0
@@ -247,7 +294,10 @@ class QuickTimeStreamingSound(openal.OpenALStreamingSound):
 class QuickTimeCoreVideoStreamingVideo(Video):
     '''A streaming video implementation using Core Video to draw
     directly into an OpenGL texture.
+
+    http://developer.apple.com/documentation/QuickTime/Conceptual/QT7UpdateGuide/Chapter02/chapter_2_section_7.html#//apple_ref/doc/uid/TP40001163-CH313-BBCFCEII
     '''
+    context = None
     def __init__(self, sound, medium):
         self._medium = medium
         self._movie = medium.movie
@@ -262,39 +312,69 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         agl.aglGetCGLPixelFormat(
             agl_pixelformat, ctypes.byref(cgl_pixelformat))
 
+        # XXX 10 points for the person who can find what the attributes are
+        # that we are allowed / able to pass here
+        textureContextAttributes = None
+
+        '''
+        # TODO match colorspace
+
+        ... Other keys? Except these are "CV" not "QT" keys....
+        kCVImageBufferDisplayWidthKey?
+        kCVImageBufferDisplayHeightKey?
+
+        keys = (CFTypeRef*1)(kQTVisualContextWorkingColorSpaceKey)
+        colorSpace = quicktime.CGColorSpaceCreateDeviceRGB()
+        textureContextAttributes = CFDictionaryCreate(
+           carbon.CFAllocatorGetDefault(),
+           keys, ctypes.byref(colorSpace), len(keys),
+           ctypes.byref(quicktime.kCFTypeDictionaryKeyCallBacks),
+           ctypes.byref(quicktime.kCFTypeDictionaryValueCallBacks)
+        )
+        '''
+
         # Create texture context for QuickTime to render into.
-        texture_context = ctypes.c_void_p()
+        self.context = ctypes.c_void_p()
         r = quicktime.QTOpenGLTextureContextCreate(
             carbon.CFAllocatorGetDefault(),
             cgl_context,
             cgl_pixelformat, 
-            None,
-            ctypes.byref(texture_context))
+            textureContextAttributes,
+            ctypes.byref(self.context))
         _oscheck(r)
+
+        if textureContextAttributes:
+            quicktime.CFRelease(textureContextAttributes)
 
         # Get dimensions of video
         rect = Rect()
-        quicktime.GetMovieBox(movie, ctypes.byref(rect))
-        width = rect.right - rect.left
-        height = rect.bottom - rect.top
+        quicktime.GetMovieBox(self._movie, ctypes.byref(rect))
+        self.width = rect.right - rect.left
+        self.height = rect.bottom - rect.top
+
+        quicktime.SetMovieVisualContext(self._movie, self.context)
+
+        # XXX I don't believe there's any point to the following texture
+        # code ... the texture referenced by CVOpenGLTextureGetName(context)
+        # doesn't actually appear to ever have any data in it, and the
+        # coordinates are all screwey anyway.
 
         # Get texture coordinates
-        bl = (gl.GLfloat * 2)()
-        br = (gl.GLfloat * 2)()
-        tl = (gl.GLfloat * 2)()
-        tr = (gl.GLfloat * 2)()
-        corevideo.CVOpenGLTextureGetCleanTexCoords(texture_context, 
-            ctypes.byref(bl), 
-            ctypes.byref(br), 
-            ctypes.byref(tr), 
-            ctypes.byref(tl))
-
-        # TODO match colorspace
-        quicktime.SetMovieVisualContext(movie, texture_context)
+        # XXX hard-code to full size since the function invoked below returns
+        # all 0s
+        bl = (gl.GLfloat * 2)(0,0)
+        br = (gl.GLfloat * 2)(1,0)
+        tl = (gl.GLfloat * 2)(1,0)
+        tr = (gl.GLfloat * 2)(1,1)
+        #corevideo.CVOpenGLTextureGetCleanTexCoords(self.context, 
+        #    ctypes.byref(bl), 
+        #    ctypes.byref(br), 
+        #    ctypes.byref(tr), 
+        #    ctypes.byref(tl))
 
         # TODO should we be using a TextureRegion if overriding tex_coords?
-        self.texture = image.Texture(width, height, gl.GL_TEXTURE_2D, 
-            corevideo.CVOpenGLTextureGetName(texture_context))
+        self.texture = image.Texture(self.width, self.height,
+            gl.GL_TEXTURE_2D, corevideo.CVOpenGLTextureGetName(self.context))
         self.texture.tex_coords = (
             (bl[0], bl[1], 0),
             (br[0], br[1], 0),
@@ -302,16 +382,98 @@ class QuickTimeCoreVideoStreamingVideo(Video):
             (tr[0], tr[1], 0),
         )
 
+        # create display link
+        self.display_link = ctypes.c_void_p()
+        main_display = quicktime.CGMainDisplayID()
+        result = corevideo.CVDisplayLinkCreateWithCGDisplay(main_display,
+            ctypes.byref(self.display_link))
+        _oscheck(result)
+
+        # now, er call another function with the same two arguments, reversed!
+        result = corevideo.CVDisplayLinkSetCurrentCGDisplay(self.display_link,
+            main_display)
+        _oscheck(result)
+
+        # set the output callback
+        result = corevideo.CVDisplayLinkSetOutputCallback(self.display_link,
+            CVDisplayLinkOutputCallback(self.output_callback), None)
+        _oscheck(result)
+
+        # create our drawing mutext
+        self.draw_lock = quicktime.QTMLCreateMutex()
+
+        self.latest_texture = None
+
     def _get_time(self):
         t = quicktime.GetMovieTime(self._movie, None)
         return t / self._medium._time_scale
 
+    def play(self):
+        # start the display link
+        result = corevideo.CVDisplayLinkStart(self.display_link)
+        _oscheck(result)
+
+        self.playing = True
+        # XXX I believe this is still required to kick off audio...
+        quicktime.StartMovie(self._movie)
+
+    def pause(self):
+        if self.playing:
+            quicktime.StopMovie(self._movie)
+        else:
+            quicktime.StartMovie(self._movie)
+        self.playing = not self.playing
+
+    def stop(self):
+        quicktime.StopMovie(self._movie)
+        result = corevideo.CVDisplayLinkStop(self.display_link)
+        _oscheck(result)
+
+        self.playing = False
+        quicktime.GoToBeginningOfMovie(self._movie)
+
+    def output_callback(self, display_link, now, ts, flags, flags_out, ctx):
+        print 'callback ... called',
+
+        quicktime.QTMLGrabMutex(self.draw_lock)
+
+        if quicktime.QTVisualContextIsNewImageAvailable(self.context, ts):
+            print 'frame'
+            # free up the previous texture
+            if self.latest_texture is not None:
+                corevideo.CVOpenGLTextureRelease(self.latest_texture)
+            self.latest_texture = c_void_p()
+
+            # grab new image to new texture
+            quicktime.QTVisualContextCopyImageForTime(self.context, None, 
+                 ts, ctypes.byref(self.latest_texture))
+
+            # copy the texture "name" to our rendering texture
+            name = corevideo.CVOpenGLTextureGetName(self.latest_texture)
+            print name
+            self.texture.id = name
+        else:
+            print 'no frame'
+
+        quicktime.QTMLReturnMutex(self.draw_lock)
+
+        quicktime.QTVisualContextTask(self.context)
+
+        return 0
+
+    def __del__(self):
+        try:
+            if (quicktime.QTVisualContextRelease is not None 
+                    and self.context is not None):
+                quicktime.QTVisualContextRelease(self.context)
+                self.context = None
+        except NameError, name:
+            pass
+
+
 class QuickTimeGWorldStreamingVideo(Video):
     '''Streaming video implementation using QuickTime and copying
     from a GWorld buffer each frame.
-
-
-    TODO? this instance has no .sound attribute - should it?
     '''
     sound = None
     finished = False
@@ -320,7 +482,8 @@ class QuickTimeGWorldStreamingVideo(Video):
         self.medium = medium
         self._duration = quicktime.GetMovieDuration(medium.movie)
 
-        quicktime.EnterMovies()
+        _oscheck(quicktime.InitializeQTML(0))
+        _oscheck(quicktime.EnterMovies())
 
         # determine dimensions of video
         r = Rect()
@@ -447,6 +610,9 @@ class QuickTimeGWorldStreamingVideo(Video):
             pass
 
 class QuickTimeMedium(Medium):
+    # prevent __del__ generating spurious error messages
+    movie = None
+
     def __init__(self, filename, file=None, streaming=None):
         if streaming is None:
             streaming = False # TODO check duration?
@@ -535,11 +701,10 @@ class QuickTimeMedium(Medium):
             sound = self.get_sound()
 
         # TODO need to re-open movie for playback video more than once?
-        # TODO check OS version for preferred technique
-        if True:
-            video = QuickTimeGWorldStreamingVideo(self)
-        else:
+        if corevideo is not None:
             video = QuickTimeCoreVideoStreamingVideo(sound, self)
+        else:
+            video = QuickTimeGWorldStreamingVideo(self)
         return video
 
     def _create_movie(self):
@@ -548,22 +713,59 @@ class QuickTimeMedium(Medium):
 
         filename = _create_cfstring(self.filename)
 
-        data_ref = ctypes.c_void_p()
-        data_ref_type = ctypes.c_ulong()
-        result = quicktime.QTNewDataReferenceFromFullPathCFString(filename,
-            -1, 0, ctypes.byref(data_ref), ctypes.byref(data_ref_type))
-        _oscheck(result) 
+        movie = Movie()
 
-        movie = ctypes.c_void_p()
-        fileid = ctypes.c_short(0)
-        result = quicktime.NewMovieFromDataRef(
-            ctypes.byref(movie),
-            newMovieActive,
-            ctypes.byref(fileid),
-            data_ref, data_ref_type)
-        if result == -2048:
-            return None
-        _oscheck(result)
+        if corevideo is None:
+            fileid = ctypes.c_short(0)
+            data_ref = ctypes.c_void_p()
+            data_ref_type = ctypes.c_ulong()
+            result = quicktime.QTNewDataReferenceFromFullPathCFString(filename,
+                -1, 0, ctypes.byref(data_ref), ctypes.byref(data_ref_type))
+            _oscheck(result) 
+            result = quicktime.NewMovieFromDataRef(
+                ctypes.byref(movie),
+                newMovieActive,
+                ctypes.byref(fileid),
+                data_ref, data_ref_type)
+            if result == -2048:
+                return None
+            _oscheck(result)
+        else:
+            # use newer QT7 API
+            true = Boolean(1)
+
+            filePathRef = CFStringRef()
+            filePathRef.value = filename
+
+            # XXX this really wants the context passed to it - and there's
+            # really not reason not to AFAICT. We pass a NULL context so that
+            # it's not set up using the default GWorld.
+            no_context = c_void_p(0)
+
+            properties = (QTNewMoviePropertyElement * 5)(
+                (kQTPropertyClass_DataLocation,
+                kQTDataLocationPropertyID_CFStringPosixPath,
+                ctypes.sizeof(filePathRef), 
+                ctypes.cast(ctypes.pointer(filePathRef), ctypes.c_void_p), 0),
+                (kQTPropertyClass_Context,
+                kQTContextPropertyID_VisualContext,
+                ctypes.sizeof(c_void_p), 
+                ctypes.cast(ctypes.pointer(no_context), ctypes.c_void_p), 0),
+                (kQTPropertyClass_NewMovieProperty,
+                kQTNewMoviePropertyID_Active,
+                ctypes.sizeof(Boolean),
+                ctypes.cast(ctypes.pointer(true), ctypes.c_void_p), 0),
+                (kQTPropertyClass_NewMovieProperty,
+                kQTNewMoviePropertyID_DontInteractWithUser,
+                ctypes.sizeof(Boolean),
+                ctypes.cast(ctypes.pointer(true), ctypes.c_void_p), 0),
+                (kQTPropertyClass_MovieInstantiation,
+                kQTMovieInstantiationPropertyID_DontAskUnresolvedDataRefs,
+                ctypes.sizeof(Boolean),
+                ctypes.cast(ctypes.pointer(true), ctypes.c_void_p), 0),
+            )
+            quicktime.NewMovieFromProperties(len(properties), properties,
+                0, None, ctypes.byref(movie))
 
         carbon.CFRelease(filename)
 

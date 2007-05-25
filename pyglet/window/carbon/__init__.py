@@ -1108,6 +1108,7 @@ def _create_cfstring(text):
 def _oscheck(result):
     if result != noErr:
         raise 'Carbon error %d' % result
+    return result
 
 def _aglcheck():
     err = aglGetError()
