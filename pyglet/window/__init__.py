@@ -906,13 +906,11 @@ def get_factory():
 
 if hasattr(sys, 'is_epydoc') and sys.is_epydoc:
     # We are building documentation: fake the base platform class.
-    print >> open('tmp', 'a'), 'documenting'
     class _DocumentedPlatform(BasePlatform):
         def get_window_class(self):
             return BaseWindow
     _platform = _DocumentedPlatform()
 else:
-    print >> open('tmp', 'a'), 'not documenting', sys.argv[0]
     # Try to determine which platform to use.
     if sys.platform == 'darwin':
         from pyglet.window.carbon import CarbonPlatform
