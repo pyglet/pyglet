@@ -63,6 +63,32 @@ class QTNewMoviePropertyElement(ctypes.Structure):
                  ('propValueAddress', QTPropertyValuePtr),
                  ('propStatus',OSStatus)]
 
+class CVSMPTETime(ctypes.Structure):
+    _fields_ = [
+        ('subframes', ctypes.c_int16),
+        ('subframeDivisor', ctypes.c_int16),
+        ('counter', ctypes.c_uint32),
+        ('type', ctypes.c_uint32),
+        ('flags', ctypes.c_uint32),
+        ('hours', ctypes.c_int16),
+        ('minutes', ctypes.c_int16),
+        ('seconds', ctypes.c_int16),
+        ('frames', ctypes.c_int16),
+    ]
+
+class CVTimeStamp(ctypes.Structure):
+    _fields_ = [
+        ('version', ctypes.c_uint32),
+        ('videoTimeScale', ctypes.c_int32),
+        ('videoTime', ctypes.c_int64),
+        ('hostTime', ctypes.c_uint64),
+        ('rateScalar', ctypes.c_double),
+        ('videoRefreshPeriod', ctypes.c_int64),
+        ('smpteTime', CVSMPTETime),
+        ('flags', ctypes.c_uint64),
+        ('reserved', ctypes.c_uint64),
+    ]
+
 kQTPropertyClass_DataLocation = _name('dloc')
 kQTDataLocationPropertyID_CFStringPosixPath = _name('cfpp')
 
@@ -354,33 +380,9 @@ class QuickTimeCoreVideoStreamingVideo(Video):
 
         quicktime.SetMovieVisualContext(self._movie, self.context)
 
-        # XXX I don't believe there's any point to the following texture
-        # code ... the texture referenced by CVOpenGLTextureGetName(context)
-        # doesn't actually appear to ever have any data in it, and the
-        # coordinates are all screwey anyway.
-
-        # Get texture coordinates
-        # XXX hard-code to full size since the function invoked below returns
-        # all 0s
-        bl = (gl.GLfloat * 2)(0,0)
-        br = (gl.GLfloat * 2)(1,0)
-        tl = (gl.GLfloat * 2)(1,0)
-        tr = (gl.GLfloat * 2)(1,1)
-        #corevideo.CVOpenGLTextureGetCleanTexCoords(self.context, 
-        #    ctypes.byref(bl), 
-        #    ctypes.byref(br), 
-        #    ctypes.byref(tr), 
-        #    ctypes.byref(tl))
-
-        # TODO should we be using a TextureRegion if overriding tex_coords?
-        self.texture = image.Texture(self.width, self.height,
-            gl.GL_TEXTURE_2D, corevideo.CVOpenGLTextureGetName(self.context))
-        self.texture.tex_coords = (
-            (bl[0], bl[1], 0),
-            (br[0], br[1], 0),
-            (tl[0], tl[1], 0),
-            (tr[0], tr[1], 0),
-        )
+        # create a Texture that we can use for rendering
+        self._texture = image.Texture.create_for_size(GL_TEXTURE_2D,
+            self.width, self.height).get_region(0, 0, self.width, self.height)
 
         # create display link
         self.display_link = ctypes.c_void_p()
@@ -395,14 +397,30 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         _oscheck(result)
 
         # set the output callback
+        self._callback = CVDisplayLinkOutputCallback(self.output_callback)
         result = corevideo.CVDisplayLinkSetOutputCallback(self.display_link,
-            CVDisplayLinkOutputCallback(self.output_callback), None)
+            self._callback, None)
         _oscheck(result)
 
         # create our drawing mutext
         self.draw_lock = quicktime.QTMLCreateMutex()
+        self._ts = 0
 
-        self.latest_texture = None
+        self.latest_texture = c_void_p(0)
+
+    # XXX need a better way to do this
+    def get_texture(self):
+        '''Wrap the texture so calls to blit() will lock the draw mutex.
+        '''
+        class TextureProxy(object):
+            def __init__(self, obj):
+                self.obj = obj
+            def blit(self, *args, **kw):
+                quicktime.QTMLGrabMutex(self.obj.draw_lock)
+                self.obj._texture.blit(*args, **kw)
+                quicktime.QTMLReturnMutex(self.obj.draw_lock)
+        return TextureProxy(self)
+    texture = property(get_texture)
 
     def _get_time(self):
         t = quicktime.GetMovieTime(self._movie, None)
@@ -410,11 +428,10 @@ class QuickTimeCoreVideoStreamingVideo(Video):
 
     def play(self):
         # start the display link
-        result = corevideo.CVDisplayLinkStart(self.display_link)
-        _oscheck(result)
+        _oscheck(corevideo.CVDisplayLinkStart(self.display_link))
 
+        # right, now kick off the movie
         self.playing = True
-        # XXX I believe this is still required to kick off audio...
         quicktime.StartMovie(self._movie)
 
     def pause(self):
@@ -425,48 +442,53 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         self.playing = not self.playing
 
     def stop(self):
-        quicktime.StopMovie(self._movie)
-        result = corevideo.CVDisplayLinkStop(self.display_link)
-        _oscheck(result)
-
+        # stop the movie playing
         self.playing = False
+        quicktime.StopMovie(self._movie)
+
+        # stop the display link so we don't get unnecessary updates
+        _oscheck(corevideo.CVDisplayLinkStop(self.display_link))
+
+        # restart the movie
         quicktime.GoToBeginningOfMovie(self._movie)
 
     def output_callback(self, display_link, now, ts, flags, flags_out, ctx):
-        print 'callback ... called',
-
-        quicktime.QTMLGrabMutex(self.draw_lock)
-
+        _oscheck(quicktime.QTMLGrabMutex(self.draw_lock))
         if quicktime.QTVisualContextIsNewImageAvailable(self.context, ts):
-            print 'frame'
             # free up the previous texture
-            if self.latest_texture is not None:
+            if self.latest_texture:
                 corevideo.CVOpenGLTextureRelease(self.latest_texture)
-            self.latest_texture = c_void_p()
 
             # grab new image to new texture
-            quicktime.QTVisualContextCopyImageForTime(self.context, None, 
-                 ts, ctypes.byref(self.latest_texture))
+            _oscheck(quicktime.QTVisualContextCopyImageForTime(self.context,
+                None, ts, ctypes.byref(self.latest_texture)))
+            corevideo.CVOpenGLTextureRetain(self.latest_texture)
 
             # copy the texture "name" to our rendering texture
-            name = corevideo.CVOpenGLTextureGetName(self.latest_texture)
-            print name
-            self.texture.id = name
-        else:
-            print 'no frame'
+            t = self._texture
+            t.target = corevideo.CVOpenGLTextureGetTarget(self.latest_texture)
+            t.id = corevideo.CVOpenGLTextureGetName(self.latest_texture)
 
-        quicktime.QTMLReturnMutex(self.draw_lock)
-
-        quicktime.QTVisualContextTask(self.context)
-
+        _oscheck(quicktime.QTVisualContextTask(self.context))
+        _oscheck(quicktime.QTMLReturnMutex(self.draw_lock))
         return 0
+
+    def delete(self):
+        # XXX needed to remove circular refs?
+        pass
 
     def __del__(self):
         try:
+            if (self.latest_texture is not None
+                    and corevideo.CVOpenGLTextureRelease is not None):
+                corevideo.CVOpenGLTextureRelease(self.latest_texture)
+
             if (quicktime.QTVisualContextRelease is not None 
                     and self.context is not None):
                 quicktime.QTVisualContextRelease(self.context)
                 self.context = None
+
+            self._callback = None
         except NameError, name:
             pass
 
@@ -482,7 +504,8 @@ class QuickTimeGWorldStreamingVideo(Video):
         self.medium = medium
         self._duration = quicktime.GetMovieDuration(medium.movie)
 
-        _oscheck(quicktime.InitializeQTML(0))
+        if corevideo is not None:
+            _oscheck(quicktime.InitializeQTML(0))
         _oscheck(quicktime.EnterMovies())
 
         # determine dimensions of video
