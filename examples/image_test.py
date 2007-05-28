@@ -1,46 +1,30 @@
 import sys
 import os
+import ctypes
 
 import pyglet.window
 from pyglet.gl import *
 from pyglet import clock
-from pyglet.ext.scene2d import Image2d
-
-from ctypes import *
+from pyglet import image
 
 if len(sys.argv) != 2:
     print 'Usage: %s <PNG/JPEG filename>'%sys.argv[0]
     sys.exit()
 
 window = pyglet.window.Window(width=400, height=400)
+image = image.load(sys.argv[1])
+imx = imy = 0
+@window.event
+def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
+    global imx, imy
+    imx += dx
+    imy += dy
 
-image = Image2d.load(sys.argv[1])
-s = max(image.width, image.height)
-
-c = clock.Clock(60)
-
-glMatrixMode(GL_PROJECTION)
-glLoadIdentity()
-gluPerspective(60., 1., 1., 100.)
-glEnable(GL_COLOR_MATERIAL)
-
-glMatrixMode(GL_MODELVIEW)
-glClearColor(0, 0, 0, 0)
-glColor4f(1, 1, 1, 1)
-
-glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-glEnable(GL_BLEND)
-
+clock.set_fps_limit(30)
 while not window.has_exit:
-    c.tick()
+    clock.tick()
     window.dispatch_events()
-
     glClear(GL_COLOR_BUFFER_BIT)
-    glLoadIdentity()
-
-    glScalef(1./s, 1./s, 1.)
-    glTranslatef(-image.width/2, -image.height/2, -1.)
-    image.draw()
-
+    image.blit(imx, imy, 0)
     window.flip()
 
