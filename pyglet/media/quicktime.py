@@ -436,6 +436,8 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         return t / self._medium._time_scale
 
     def play(self):
+        instances.append(self)
+
         # start the display link
         _oscheck(corevideo.CVDisplayLinkStart(self.display_link))
 
@@ -451,6 +453,8 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         self.playing = not self.playing
 
     def stop(self):
+        instances.remove(self)
+
         # stop the movie playing
         self.playing = False
         quicktime.StopMovie(self._movie)
@@ -465,6 +469,16 @@ class QuickTimeCoreVideoStreamingVideo(Video):
             corevideo.CVOpenGLTextureRelease(self.latest_texture)
             self.latest_texture = None
 
+    def dispatch_events(self):
+        ''' draw to the texture '''
+        quicktime.MoviesTask(self._movie, 0)
+        _oscheck(quicktime.GetMoviesError())
+        self.finished = quicktime.IsMovieDone(self._movie)
+        if self.finished:
+            # examples nudge one last time to make sure last frame is drawn
+            ts = quicktime.GetMovieTime(self.medium.movie, 0)
+            quicktime.SetMovieTimeValue(self.medium.movie, ts)
+
     def output_callback(self, display_link, now, ts, flags, flags_out, ctx):
         _oscheck(quicktime.QTMLGrabMutex(self.draw_lock))
         if quicktime.QTVisualContextIsNewImageAvailable(self.context, ts):
@@ -474,7 +488,8 @@ class QuickTimeCoreVideoStreamingVideo(Video):
 
             # grab new image to new texture
             _oscheck(quicktime.QTVisualContextCopyImageForTime(self.context,
-                None, ts, ctypes.byref(self.latest_texture)))
+                carbon.CFAllocatorGetDefault(),
+                ts, ctypes.byref(self.latest_texture)))
             corevideo.CVOpenGLTextureRetain(self.latest_texture)
 
             # copy the texture "name" to our rendering texture
@@ -491,7 +506,13 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         pass
 
     def __del__(self):
+        '''Ensure background processing has stopped.'''
         try:
+            if self._movie is not None:
+                if quicktime.StopMovie is not None:
+                    quicktime.StopMovie(self._movie)
+                if quicktime.SetMovieVisualContext is not None:
+                    quicktime.SetMovieVisualContext(self._movie, None)
             if corevideo.CVDisplayLinkStop is not None:
                 corevideo.CVDisplayLinkStop(self.display_link)
             if (quicktime.QTVisualContextRelease is not None 
