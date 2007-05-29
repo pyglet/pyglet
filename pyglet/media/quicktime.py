@@ -10,6 +10,7 @@ import ctypes
 import math
 import sys
 import re
+import atexit
 
 from pyglet import image
 from pyglet.media import Sound, Video, Medium, MediaException
@@ -402,11 +403,19 @@ class QuickTimeCoreVideoStreamingVideo(Video):
             self._callback, None)
         _oscheck(result)
 
+        # ensure the display link is closed down nicely on program exit
+        atexit.register(self.cleanup)
+
         # create our drawing mutext
         self.draw_lock = quicktime.QTMLCreateMutex()
         self._ts = 0
 
         self.latest_texture = c_void_p(0)
+
+    def cleanup(self):
+        '''On interpreter exit stop the display link thread.'''
+        if corevideo.CVDisplayLinkIsRunning(self.display_link):
+            corevideo.CVDisplayLinkStop(self.display_link)
 
     # XXX need a better way to do this
     def get_texture(self):
@@ -452,6 +461,10 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         # restart the movie
         quicktime.GoToBeginningOfMovie(self._movie)
 
+        if self.latest_texture is not None:
+            corevideo.CVOpenGLTextureRelease(self.latest_texture)
+            self.latest_texture = None
+
     def output_callback(self, display_link, now, ts, flags, flags_out, ctx):
         _oscheck(quicktime.QTMLGrabMutex(self.draw_lock))
         if quicktime.QTVisualContextIsNewImageAvailable(self.context, ts):
@@ -479,16 +492,12 @@ class QuickTimeCoreVideoStreamingVideo(Video):
 
     def __del__(self):
         try:
-            if (self.latest_texture is not None
-                    and corevideo.CVOpenGLTextureRelease is not None):
-                corevideo.CVOpenGLTextureRelease(self.latest_texture)
-
+            if corevideo.CVDisplayLinkStop is not None:
+                corevideo.CVDisplayLinkStop(self.display_link)
             if (quicktime.QTVisualContextRelease is not None 
                     and self.context is not None):
                 quicktime.QTVisualContextRelease(self.context)
                 self.context = None
-
-            self._callback = None
         except NameError, name:
             pass
 
