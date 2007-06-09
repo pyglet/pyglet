@@ -52,7 +52,7 @@ def get_library(name):
 glib = get_library('glib-2.0')
 gobject = get_library('gobject-2.0')
 gst = get_library('gstreamer-0.10')
-gstbase = get_library('gstbase.0.10')
+gstbase = get_library('gstbase-0.10')
 
 GST_VERSION_MAJOR = 0
 GST_VERSION_MINOR = 10

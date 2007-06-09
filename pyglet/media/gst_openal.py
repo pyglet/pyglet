@@ -406,7 +406,8 @@ class GstreamerOpenALStreamingSound(openal.OpenALStreamingSound,
         gst.gst_element_set_state(self._pipeline, gstreamer.GST_STATE_PAUSED)
 
     def stop(self):
-        instances.remove(self)
+        if self in instances:
+            instances.remove(self)
         super(GstreamerOpenALStreamingSound, self).stop()
         self._destroy_pipeline(self._pipeline)
         self._pipeline = None
