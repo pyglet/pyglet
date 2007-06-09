@@ -668,15 +668,40 @@ class ImageData(AbstractImage):
         data_pitch = abs(self._current_pitch)
 
         # Determine pixel format from format string
+        matrix = None
         format, type = self._get_gl_format_and_type(data_format)
         if format is None:
-            # Need to convert data to a standard form
-            data_format = {
-                1: 'L',
-                2: 'LA',
-                3: 'RGB',
-                4: 'RGBA'}.get(len(data_format))
-            format, type = self._get_gl_format_and_type(data_format)
+            if (len(data_format) in (3, 4) and 
+                gl_info.have_extension('GL_ARB_imaging')):
+                # Construct a color matrix to convert to GL_RGBA
+                def component_column(component):
+                    try:
+                        pos = 'RGBA'.index(component)
+                        return [0] * pos + [1] + [0] * (3 - pos)
+                    except ValueError:
+                        return [0, 0, 0, 0]
+                # pad to avoid index exceptions
+                lookup_format = data_format + 'XXX'
+                matrix = (component_column(lookup_format[0]) +
+                          component_column(lookup_format[1]) +
+                          component_column(lookup_format[2]) + 
+                          component_column(lookup_format[3]))
+                format = {
+                    3: GL_RGB,
+                    4: GL_RGBA}.get(len(data_format))
+                type = GL_UNSIGNED_BYTE
+
+                glMatrixMode(GL_COLOR)
+                glPushMatrix()
+                glLoadMatrixf((GLfloat * 16)(*matrix))
+            else:
+                # Need to convert data to a standard form
+                data_format = {
+                    1: 'L',
+                    2: 'LA',
+                    3: 'RGB',
+                    4: 'RGBA'}.get(len(data_format))
+                format, type = self._get_gl_format_and_type(data_format)
 
         # Get data in required format (hopefully will be the same format it's
         # already in, unless that's an obscure format, upside-down or the
@@ -716,6 +741,10 @@ class ImageData(AbstractImage):
                             format, type,
                             data)
         glPopClientAttrib()
+
+        if matrix:
+            glPopMatrix()
+            glMatrixMode(GL_MODELVIEW)
 
     def _apply_region_unpack(self):
         pass
@@ -765,7 +794,6 @@ class ImageData(AbstractImage):
             else:
                 # Rows are tightly packed, apply regex over whole image.
                 data = swap_pattern.sub(repl, data)
-            current_pitch = sign_pitch * self.width * len(format)
 
         if pitch != current_pitch:
             diff = abs(current_pitch) - abs(pitch)
@@ -814,16 +842,16 @@ class ImageData(AbstractImage):
             return GL_RGB, GL_UNSIGNED_BYTE
         elif format == 'RGBA':
             return GL_RGBA, GL_UNSIGNED_BYTE
-        elif format == 'ARGB':
-            if (gl_info.have_extension('GL_EXT_bgra') and
-                gl_info.have_extension('GL_APPLE_packed_pixels')):
-                return GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV
-        elif format == 'ABGR':
-            if gl_info.have_extension('GL_EXT_abgr'):
-                return GL_ABGR_EXT, GL_UNSIGNED_BYTE
-        elif format == 'BGR':
-            if gl_info.have_extension('GL_EXT_bgra'):
-                return GL_BGR, GL_UNSIGNED_BYTE
+        elif (format == 'ARGB' and
+              gl_info.have_extension('GL_EXT_bgra') and
+              gl_info.have_extension('GL_APPLE_packed_pixels')):
+            return GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV
+        elif (format == 'ABGR' and
+              gl_info.have_extension('GL_EXT_abgr')):
+            return GL_ABGR_EXT, GL_UNSIGNED_BYTE
+        elif (format == 'BGR' and
+              gl_info.have_extension('GL_EXT_bgra')):
+            return GL_BGR, GL_UNSIGNED_BYTE
 
         return None, None
 

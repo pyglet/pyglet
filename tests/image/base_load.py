@@ -58,6 +58,11 @@ class TestLoad(ImageRegressionTestCase):
         if self.capture_regression_image():
             self.has_exit = True
 
+    def load_image(self):
+        if self.texture_file:
+            self.texture_file = join(dirname(__file__), self.texture_file)
+            self.image = image.load(self.texture_file, decoder=self.decoder)
+
     def test_load(self):
         width, height = 800, 600
         self.window = w = Window(width, height, visible=False)
@@ -66,11 +71,9 @@ class TestLoad(ImageRegressionTestCase):
         self.screen = image.get_buffer_manager().get_color_buffer()
         self.checkerboard = image.create(32, 32, image.CheckerImagePattern())
 
-        if self.texture_file:
-            self.texture_file = join(dirname(__file__), self.texture_file)
-            self.texture = image.load(self.texture_file, 
-                                      decoder=self.decoder).texture 
-
+        self.load_image()
+        self.texture = self.image.texture
+    
         if self.alpha:
             glEnable(GL_BLEND)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)

@@ -120,6 +120,10 @@ image
         image.PLATFORM_LA_LOAD                  X11 WIN OSX
         image.PLATFORM_L_LOAD                   X11 WIN OSX
 
+    image-matrix
+        image.MATRIX_RGB                        GENERIC
+        image.MATRIX_RGBA                       GENERIC
+
     image-dds
         image.DDS_RGB_DXT1_LOAD                 GENERIC
         image.DDS_RGBA_DXT1_LOAD                GENERIC
