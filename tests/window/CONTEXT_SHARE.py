@@ -17,6 +17,12 @@ from pyglet.gl import *
 __noninteractive = True
 
 class CONTEXT_SHARE(unittest.TestCase):
+    def create_context(self, share):
+        display = window.get_platform().get_default_display()
+        screen = display.get_default_screen()
+        config = screen.get_best_config()
+        return config.create_context(share)
+
     def test_context_share_list(self):
         w1 = window.Window(200, 200)
         w1.switch_to()
@@ -42,10 +48,7 @@ class CONTEXT_SHARE(unittest.TestCase):
         glEndList()
         self.assertTrue(glIsList(list))
 
-        factory = window.get_factory()
-        factory.set_context_share(window.CONTEXT_SHARE_NONE)
-        factory.set_size(200, 200)
-        w2 = factory.create_window()
+        w2 = window.Window(200, 200, context=self.create_context(None))
         w2.set_visible(True)
         w2.switch_to()
         self.assertTrue(not glIsList(list))

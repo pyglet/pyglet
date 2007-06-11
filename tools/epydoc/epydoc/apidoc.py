@@ -1452,11 +1452,20 @@ class ClassDoc(NamespaceDoc):
         elif value_type == 'instancevariable':
             return [var_doc for var_doc in var_list
                     if var_doc.is_instvar is True]
+        elif value_type == 'constant':
+            # <pyglet> Show constants (upper-case variables) in a separate
+            # section
+            return [var_doc for var_doc in var_list
+                    if (var_doc.is_instvar in (False, UNKNOWN) and
+                        not isinstance(var_doc.value,
+                                       (RoutineDoc, ClassDoc, PropertyDoc)) and
+                        var_doc.name.upper() == var_doc.name)]
         elif value_type == 'classvariable':
             return [var_doc for var_doc in var_list
                     if (var_doc.is_instvar in (False, UNKNOWN) and
                         not isinstance(var_doc.value,
-                                       (RoutineDoc, ClassDoc, PropertyDoc)))]
+                                       (RoutineDoc, ClassDoc, PropertyDoc))
+                        and not var_doc.name.upper() == var_doc.name)]
         else:
             raise ValueError('Bad value type %r' % value_type)
 

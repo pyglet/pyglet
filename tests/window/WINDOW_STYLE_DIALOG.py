@@ -21,7 +21,7 @@ class TEST_WINDOW_STYLE_DIALOG(unittest.TestCase):
     def test_style_dialog(self):
         self.width, self.height = 200, 200
         self.w = w = window.Window(self.width, self.height, 
-                                   style=window.WINDOW_STYLE_DIALOG)
+                                   style=window.Window.WINDOW_STYLE_DIALOG)
         glClearColor(1, 1, 1, 1)
         while not w.has_exit:
             glClear(GL_COLOR_BUFFER_BIT)

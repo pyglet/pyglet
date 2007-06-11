@@ -21,7 +21,7 @@ class WINDOW_TEST_STYLE_BORDERLESS(unittest.TestCase):
     def test_style_borderless(self):
         self.width, self.height = 200, 200
         self.w = w = window.Window(self.width, self.height, 
-                                   style=window.WINDOW_STYLE_BORDERLESS)
+                                   style=window.Window.WINDOW_STYLE_BORDERLESS)
         glClearColor(1, 1, 1, 1)
         while not w.has_exit:
             glClear(GL_COLOR_BUFFER_BIT)

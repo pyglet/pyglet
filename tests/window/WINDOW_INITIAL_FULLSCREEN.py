@@ -38,8 +38,7 @@ class WINDOW_INITIAL_FULLSCREEN(unittest.TestCase):
         self.w.flip()
 
     def test_initial_fullscreen(self):
-        screen = pyglet.window.get_factory().get_screens()[0]
-        self.w = window.Window(screen.width, screen.height, True)
+        self.w = window.Window(fullscreen=True)
         self.w.push_handlers(self)
         self.w.push_handlers(WindowEventLogger())
         self.on_expose()

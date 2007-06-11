@@ -30,7 +30,7 @@ class WINDOW_MINIMIZE_MAXIMIZE(unittest.TestCase):
 
     def test_minimize_maximize(self):
         self.width, self.height = 200, 200
-        self.w = w = window.Window(self.width, self.height)
+        self.w = w = window.Window(self.width, self.height, resizable=True)
         w.push_handlers(self)
         while not w.has_exit:
             w.dispatch_events()

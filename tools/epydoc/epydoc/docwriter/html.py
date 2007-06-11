@@ -883,16 +883,14 @@ class HTMLWriter:
         # Write summary tables describing the variables that the
         # class defines.
         self.write_summary_table(out, "Nested Classes", doc, "class")
-        self.write_summary_table(out, "Instance Methods", doc,
-                                 "instancemethod")
         self.write_summary_table(out, "Events", doc, "event")
-        self.write_summary_table(out, "Class Methods", doc, "classmethod")
-        self.write_summary_table(out, "Static Methods", doc, "staticmethod")
-        self.write_summary_table(out, "Class Variables", doc,
-                                 "classvariable")
+        self.write_summary_table(out, "Methods", doc, "method")
+        self.write_summary_table(out, "Properties", doc, "property")
         self.write_summary_table(out, "Instance Variables", doc,
                                  "instancevariable")
-        self.write_summary_table(out, "Properties", doc, "property")
+        self.write_summary_table(out, "Class Variables", doc,
+                                 "classvariable")
+        self.write_summary_table(out, "Constants", doc, "constant")
 
         # Write a list of all imported objects.
         if self._show_imports:
@@ -900,16 +898,13 @@ class HTMLWriter:
 
         # Write detailed descriptions of functions & variables defined
         # in this class.
-        # [xx] why group methods into one section but split vars into two?
-        # seems like we should either group in both cases or split in both
-        # cases.
-        self.write_details_list(out, "Method Details", doc, "method")
         self.write_details_list(out, "Event Details", doc, "event")
-        self.write_details_list(out, "Class Variable Details", doc,
-                                "classvariable")
+        self.write_details_list(out, "Method Details", doc, "method")
+        self.write_details_list(out, "Property Details", doc, "property")
         self.write_details_list(out, "Instance Variable Details", doc,
                                 "instancevariable")
-        self.write_details_list(out, "Property Details", doc, "property")
+        self.write_details_list(out, "Class Variable Details", doc,
+                                "classvariable")
 
         # Write the page footer (including navigation bar)
         self.write_navbar(out, doc)
@@ -2210,6 +2205,7 @@ class HTMLWriter:
                           ('Delete', prop_doc.fdel)]
                             if val_doc not in (None, UNKNOWN)
                             and val_doc.pyval is not None ]
+            accessors = []
 
             self.write_property_details_entry(out, var_doc, descr,
                                               accessors, div_class)

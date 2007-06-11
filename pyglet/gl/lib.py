@@ -78,11 +78,11 @@ class GLException(Exception):
     pass
 
 def errcheck(result, func, arguments):
-    from pyglet.window import get_current_context
+    from pyglet.gl import get_current_context
     context = get_current_context()
     if not context:
         raise GLException('No GL context; create a Window first')
-    if not context.gl_begin:
+    if not context._gl_begin:
         from pyglet.gl import glGetError, gluErrorString
         error = glGetError()
         if error:
@@ -91,19 +91,19 @@ def errcheck(result, func, arguments):
         return result
 
 def errcheck_glbegin(result, func, arguments):
-    from pyglet.window import get_current_context
+    from pyglet.gl import get_current_context
     context = get_current_context()
     if not context:
         raise GLException('No GL context; create a Window first')
-    context.gl_begin = True
+    context._gl_begin = True
     return result
 
 def errcheck_glend(result, func, arguments):
-    from pyglet.window import get_current_context
+    from pyglet.gl import get_current_context
     context = get_current_context()
     if not context:
         raise GLException('No GL context; create a Window first')
-    context.gl_begin = False
+    context._gl_begin = False
     return errcheck(result, func, arguments)
 
 def decorate_function(func, name):

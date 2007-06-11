@@ -102,3 +102,198 @@ from pyglet.gl.gl import *
 from pyglet.gl.glu import *
 from pyglet.gl.glext_abi import *
 from pyglet.gl.glext_missing import *
+
+# List of contexts currently in use, so we can create new contexts that
+# share objects with.  Remember to remove from this list when context is
+# destroyed.
+_contexts = []
+_current_context = None
+
+def get_current_context():
+    '''Return the active OpenGL context.
+
+    You can change the current context by calling `Context.switch_to`.
+
+    :rtype: `Context`
+    :return: the context to which OpenGL commands are directed, or None
+        if there is no selected context.
+    '''
+    return _current_context
+
+class Config(object):
+    '''Graphics configuration.
+
+    A GLConfig stores the preferences for OpenGL attributes such as the
+    number of auxilliary buffers, size of the colour and depth buffers,
+    double buffering, stencilling, multi- and super-sampling, and so on.
+
+    Different platforms support a different set of attributes, so these
+    are set with a string key and a value which is integer or boolean.
+
+    Use `WindowFactory.get_matching_configs` or `BasePlatform.create_configs`
+    to obtain an instance of this class.
+
+    :Ivariables:
+        `double_buffer` : bool
+            Specify the presence of a back-buffer for every color buffer.
+        `stereo` : bool
+            Specify the presence of separate left and right buffer sets.
+        `buffer_size` : int
+            Total bits per sample per color buffer.
+        `aux_buffers` : int
+            The number of auxilliary color buffers.
+        `sample_buffers` : int
+            The number of multisample buffers.
+        `samples` : int
+            The number of samples per pixel, or 0 if there are no multisample
+            buffers.
+        `red_size` : int
+            Bits per sample per buffer devoted to the red component.
+        `green_size` : int
+            Bits per sample per buffer devoted to the green component.
+        `blue_size` : int
+            Bits per sample per buffer devoted to the blue component.
+        `alpha_size` : int
+            Bits per sample per buffer devoted to the alpha component.
+        `depth_size` : int
+            Bits per sample in the depth buffer.
+        `stencil_size` : int
+            Bits per sample in the stencil buffer.
+        `accum_red_size` : int
+            Bits per pixel devoted to the red component in the accumulation
+            buffer.
+        `accum_green_size` : int
+            Bits per pixel devoted to the green component in the accumulation
+            buffer.
+        `accum_blue_size` : int
+            Bits per pixel devoted to the blue component in the accumulation
+            buffer.
+        `accum_alpha_size` : int
+            Bits per pixel devoted to the alpha component in the accumulation
+            buffer.
+    '''
+
+    _attribute_names = [
+        'double_buffer',
+        'stereo',
+        'buffer_size',
+        'aux_buffers',
+        'sample_buffers',
+        'samples',
+        'red_size',
+        'green_size',
+        'blue_size',
+        'alpha_size',
+        'depth_size',
+        'stencil_size',
+        'accum_red_size',
+        'accum_green_size',
+        'accum_blue_size',
+        'accum_alpha_size',
+    ]
+
+    def __init__(self, **kwargs):
+        for name in self._attribute_names:
+            if name in kwargs:
+                setattr(self, name, kwargs[name])
+            else:
+                setattr(self, name, None)
+
+    def get_gl_attributes(self):
+        return [(name, getattr(self, name)) for name in self._attribute_names]
+
+    def create_context(self, share):
+        '''Create a GL context that satisifies this configuration.
+
+        :Parameters:
+            `share` : `Context`
+                If not None, a context with which to share objects with.
+
+        :rtype: `Context`
+        :return: The new context.
+        '''
+        return ConfigException(
+            'This config is not complete.  Use Screen.get_matching_configs')
+
+    def is_complete(self):
+        '''Determine if this config is complete and able to create a context.
+
+        Configs created directly are not complete, they can only serve
+        as templates for retrieving a supported config from the system.
+        For example, `pyglet.window.Screen.get_matching_configs` returns
+        complete configs.
+
+        :rtype: bool
+        :return: True if the config is complete and can create a context.
+        '''
+        return False
+
+    def __repr__(self):
+        return '%s(%s)' % (self.__class__.__name__, 
+                           pprint.pformat(self.get_gl_attributes(),
+                                          indent=len(prefix)))
+
+class ObjectSpace(object):
+    pass
+
+class Context(object):
+    '''OpenGL context for drawing.
+
+    Windows in pyglet each have their own GL context.  This class boxes
+    the context in a platform-independent manner.  Applications will have
+    no need to deal with contexts directly.
+
+    :Ivariables:
+        `object_space` : `ObjectSpace`
+            An object which is shared between all contexts that share
+            GL objects.
+        `window`: `pyglet.window.Window`
+            The window this context is used by.
+
+    '''
+
+    #: Context share behaviour indicating that objects should not be
+    #: shared with existing contexts.
+    CONTEXT_SHARE_NONE = None
+
+    #: Context share behaviour indicating that objects are shared with
+    #: the most recently created context (the default).
+    CONTEXT_SHARE_EXISTING = 1
+    
+    # Used for error checking, True if currently within a glBegin/End block.
+    # Ignored if error checking is disabled.
+    _gl_begin = False
+
+    def __init__(self, context_share=None):
+        self.window = None
+        _contexts.append(self)
+        if context_share:
+            assert context_share in _contexts
+            self.object_space = context_share.object_space
+        else:
+            self.object_space = ObjectSpace()
+    
+    def __repr__(self):
+        return '%s()' % self.__class__.__name__
+
+    def set_current(self):
+        global _current_context
+        assert self in _contexts
+        _current_context = self
+
+    def destroy(self):
+        '''Release the context.
+
+        The context will not be useable after being destroyed.  Each platform
+        has its own convention for releasing the context and the buffer(s)
+        that depend on it in the correct order; this should never be called
+        by an application.
+        '''
+        global _current_context
+        if _current_context is self:
+            _current_context = None
+            gl_info.remove_active_context()
+        _contexts.remove(self)
+
+class ContextException(Exception):
+    pass

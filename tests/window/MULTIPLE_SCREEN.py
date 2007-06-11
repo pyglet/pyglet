@@ -20,7 +20,7 @@ __version__ = '$Id: $'
 
 import unittest
 
-import pyglet.window
+from pyglet import window
 from pyglet.gl import *
 
 colours = [
@@ -32,7 +32,7 @@ colours = [
 class MULTIPLE_SCREEN(unittest.TestCase):
     def open_next_window(self):
         screen = self.screens[self.index]
-        self.w = pyglet.window.Window(screen=screen, fullscreen=True)
+        self.w = window.Window(screen=screen, fullscreen=True)
 
     def on_expose(self):
         self.w.switch_to()
@@ -41,7 +41,8 @@ class MULTIPLE_SCREEN(unittest.TestCase):
         self.w.flip()
 
     def test_multiple_screen(self):
-        self.screens = pyglet.window.get_factory().get_screens()
+        display = window.get_platform().get_default_display()
+        self.screens = display.get_screens()
         for i in range(len(self.screens)):
             self.index = i
             self.open_next_window()

@@ -33,180 +33,114 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''
-Platform-independent windows and events.
-===========================================================================
+'''Windowing and user-interface events.
 
 This module allows applications to create and display windows with an
-OpenGL context on Windows, OS X and Linux.  Windows can be created with
-a variety of border styles or set fullscreen, and these properties can
-be changed while the window is visible.
+OpenGL context.  Windows can be created with a variety of border styles 
+or set fullscreen.
 
 You can register event handlers for keyboard, mouse and window events.
 For games and kiosks you can also restrict the input to your windows,
 for example disabling users from switching away from the application
 with certain key combinations or capturing and hiding the mouse.
 
-This module depends on `pyglet.gl`, `pyglet.event` and `pyglet.image`.
-
----------------
-Getting Started
+Getting started
 ---------------
 
-Call the Window constructor to create a new window:
+Call the Window constructor to create a new window::
 
-    >>> from pyglet.window import Window
-    >>> win = Window(width=640, height=480, fullscreen=False)
-    >>> 
+    from pyglet.window import Window
+    win = Window(width=640, height=480)
 
-Windows are subclasses of EventDispatcher, so you can push event handlers
-onto them::
+Attach your own event handlers::
 
-    >>> class MyEvents:
-    ...     def on_key_press(self, symbol, modifiers):
-    ...         print 'Pressed key %d' % symbol
-    ...
-    >>> win.push_handlers(MyEvents())
-    >>>
+    @win.event
+    def on_key_press(symbol, modifiers):
+        # ... handle this event ...
 
-Windows automatically set an instance of WindowExitHandler, which sets a flag
-has_exit if the window is closed or the ESC key is pressed.
+Within your main run loop, you must call `Window.dispatch_events` regularly.
+Windows are double-buffered by default, so you must call `Window.flip` to
+update the display::
 
-The easiest way to find out the events that are available and their
-parameters, use the WindowEventLogger, which will print out all events
-received by the window to the terminal::
+    while not win.has_exit:
+        win.dispatch_events()
+        # ... drawing commands ...
+        win.flip()
 
-    >>> win.push_handler(pyglet.window.event.WindowEventLogger())
-    >>>
+Creating a game window
+----------------------
 
-For a complete list of events, see the `pyglet.window.event` documentation.
+Use `Window.set_mouse_exclusive` to hide the mouse cursor and receive relative
+mouse movement events.  Specify ``fullscreen=True`` as a keyword argument to
+the `Window` constructor to render to the entire screen rather than opening a
+window::
 
-Each window has its own OpenGL buffer and context.  When you create a
-window it will be set as the current context automatically, so you can start
-using OpenGL functions straight away.  Use the window's `flip` method to
-make the back-buffer visible::
+    win = Window(fullscreen=True)
+    win.set_mouse_exclusive()
 
-    >>> from pyglet.gl import *
-    >>> glClear(GL_COLOR_BUFFER_BIT)
-    >>> win.flip()
-    >>>
+Working with multiple windows
+-----------------------------
 
-If you are using more than one window, you will need to explicitly select
-which context to send OpenGL commands to using the `switch_to` method::
+You can open any number of windows and render to them individually.  Each
+window must have the event handlers set on it that you are interested in
+(i.e., each window will have its own mouse event handler).  
 
-    >>> window1.switch_to()
-    >>> gl... # Commands for window1
-    >>> window1.flip()
-    >>> window2.switch_to()
-    >>> gl... # Commands for window2
-    >>> window2.flip()
-    >>>
+You must call `Window.dispatch_events` for each window.  Before rendering
+to a window, you must call `Window.switch_to` to set the active GL context.
+Here is an example run loop for a list of windows::
 
-----------------
-Creating Windows
-----------------
+    windows = # list of Window instances
+    while windows:
+        for win in windows:
+            win.dispatch_events()
+            if win.has_exit:
+                win.close()
+        windows = [w for w in windows if not w.has_exit]
+   
+        for win in windows:
+            win.switch_to()
+            # ... drawing commands for this window ...
+            win.flip()
 
-The Window constructor simplifies the multi-step process involved in
-creating a window.  It accepts the following optional keyword arguments:
+Working with multiple screens
+-----------------------------
 
-width, height
-    The size of the window to create.  These are ignored if the window is
-    fullscreen.
-fullscreen
-    `True` to create a fullscreen window on the default screen.  Defaults
-    to False.
-visible
-    By default, windows are shown as soon as they are created.  To register
-    events and set properties of the window first, set this to `False`.
-    You can then manually show the window using the `set_visible` method.
-doublebuffer
-    Use double-buffering to eliminate flicker and tearing.  Enabled by
-    default.
-vsync
-    Enables syncing double-buffered display swaps to the monitor's
-    video frame.
+By default, fullscreen windows are opened on the primary display (typically
+set by the user in their operating system settings).  You can retrieve a list
+of attached screens and select one manually if you prefer.  This is useful for
+opening a fullscreen window on each screen::
 
-You can also specify any other OpenGL attributes supported by the platform;
-these are listed elsewhere.  (TODO: where?)
+    display = window.get_platform().get_default_display()
+    screens = display.get_screens()
+    windows = []
+    for screen in screens:
+        windows.append(window.Window(fullscreen=True, screen=screen))
 
--------------------
-Using WindowFactory
--------------------
+Specifying a screen has no effect if the window is not fullscreen.
 
-For complete flexibility in creating windows, use the WindowFactory to
-set up your window step by step.  Obtain a WindowFactory using the
-`get_factory` function::
+Specifying the OpenGL context properties
+----------------------------------------
 
-    >>> factory = pyglet.window.get_factory()
-    >>>
+Each window has its own context which is created when the window is created.
+You can specify the properties of the context before it is created
+by creating a "template" configuration::
 
-Call methods on the factory to set up the initial attributes of the window.
-For example::
+    from pyglet import gl
+    # Create template config
+    config = gl.Config()
+    config.stencil_size = 8
+    config.aux_buffers = 4
+    # Create a window using this config
+    win = window.Window(config=config)
 
-    >>> factory.set_fullscreen(False)
-    >>> factory.set_size(640, 480)
-    >>>
+To determine if a given configuration is supported, query the screen (see
+above, "Working with multiple screens")::
 
-You can get a list of the available screens (for example, on a multi-monitor
-system), and then select one to use::
-
-    >>> screens = factory.get_screens()
-    >>> factory.set_screen(screens[0])      # Use the default screen
-    >>>
-
-When you have set the screen (or want to use the default screen) and GL
-attributes, you can get a list of available GL configurations that
-support the attributes you specified::
-
-    >>> configs = factory.get_matching_configs()
-    >>> factory.set_config(configs[0])      # Set the first matching config
-
-If the requested attributes cannot be satisfied by the device (for example,
-requesting a buffer size that's too large), no matching configs will be
-returned, and you should revise the attributes and try again.  Some platforms
-will return multiple matching configurations from which you can pick and
-choose from (by default, the first matching config is used).
-
-Once a config has been set, or you will use the default, you can create
-a GL context::
-
-    >>> context = factory.get_context()
-    >>>
-
-Contexts can optionally share display lists, shaders and textures with another
-context.  By default the WindowFactory will try to share the context with the
-most recently created context, if any.  You can override this explicitly
-before calling `get_context`::
-
-    >>> factory.set_context_share(my_context)
-    >>> context = factory.get_context()
-    >>>
-
-Finally, create the window with the attributes, config and context you have
-set::
-
-    >>> window = factory.create_window()
-    >>>
-
-The `create_window` method can optionally take the base class for the window,
-which defaults to `get_platform().get_window_class()`.
-
-You can create multiple windows with the same configuration but different
-contexts by repeatedly calling `create_window`.
-
------------------
-Modifying Windows
------------------
-
-You can modify an existing window (for example, to make it fullscreen or
-windowed, or to change a GL attribute) by calling the `create` method
-with a properly configured factory::
-
-    >>> window.create(factory)
-    >>>
-
-Note that in some cases the context may need to be recreated, and state
-and/or objects may be lost.
+    configs = screen.get_matching_configs(config)
+    if not configs:
+        # ... config is not supported
+    else:
+        win = window.Window(config=configs[0])
 
 '''
 
@@ -216,75 +150,120 @@ __version__ = '$Id$'
 import pprint
 import sys
 
-from pyglet.gl import *
+from pyglet import gl
 from pyglet.window.event import WindowEventDispatcher, WindowExitHandler
 import pyglet.window.key
 
-# List of contexts currently in use, so we can create new contexts that
-# share objects with.  Remember to remove from this list when context is
-# destroyed.
-_active_contexts = []
-_current_context = None
-
-# Constants for WindowFactory.set_context_share
-CONTEXT_SHARE_NONE = None           # Do not share the created context.
-CONTEXT_SHARE_EXISTING = 1          # Share the context with any other 
-                                    # arbitrary compatible context.
-
-# Constants for WindowFactory.set_location
-LOCATION_DEFAULT = None             # No preference for window location.
-
-# Constants for Window.get_system_mouse_cursor
-CURSOR_DEFAULT = None
-CURSOR_CROSSHAIR = 'crosshair'
-CURSOR_HAND = 'hand'
-CURSOR_HELP = 'help'
-CURSOR_NO = 'no'
-CURSOR_SIZE = 'size'
-CURSOR_SIZE_UP = 'size_up'
-CURSOR_SIZE_UP_RIGHT = 'size_up_right'
-CURSOR_SIZE_RIGHT = 'size_right'
-CURSOR_SIZE_DOWN_RIGHT = 'size_down_right'
-CURSOR_SIZE_DOWN = 'size_down'
-CURSOR_SIZE_DOWN_LEFT = 'size_down_left'
-CURSOR_SIZE_LEFT = 'size_left'
-CURSOR_SIZE_UP_LEFT = 'size_up_left'
-CURSOR_SIZE_UP_DOWN = 'size_up_down'
-CURSOR_SIZE_LEFT_RIGHT = 'size_left_right'
-CURSOR_TEXT = 'text'
-CURSOR_WAIT = 'wait'
-CURSOR_WAIT_ARROW = 'wait_arrow'
-
-WINDOW_STYLE_DEFAULT = None
-WINDOW_STYLE_DIALOG = 'dialog'
-WINDOW_STYLE_TOOL = 'tool'
-WINDOW_STYLE_BORDERLESS = 'borderless'
-
-def get_current_context():
-    return _current_context
-
 class WindowException(Exception):
+    '''The root exception for all window-related errors.'''
     pass
 
-class BaseScreen(object):
-    '''Virtual screen that supports windows and/or fullscreen.
+class NoSuchDisplayException(WindowException):
+    '''An exception indicating the requested display is not available.'''
+    pass
 
-    Virtual screens typically map onto a physical display such as a
-    from pyglet.gl import *
+class NoSuchConfigException(WindowException):
+    '''An exception indicating the requested configuration is not
+    available.'''
+    pass
+
+class MouseCursorException(WindowException):
+    '''The root exception for all mouse cursor-related errors.'''
+    pass
+
+class Platform(object):
+    '''Operating-system-level functionality.
+
+    The platform instance can only be obtained with `get_platform`.  Use
+    the platform to obtain a `Display` instance.
+    '''
+    def get_display(self, name):
+        '''Get a display device by name.
+
+        This is meaningful only under X11, where the `name` is a
+        string including the host name and display number; for example
+        ``"localhost:1"``.
+
+        On platforms other than X11, `name` is ignored and the default
+        display is returned.  pyglet does not support multiple multiple
+        video devices on Windows or OS X.  If more than one device is
+        attached, they will appear as a single virtual device comprising
+        all the attached screens.
+
+        :Parameters:
+            `name` : str
+                The name of the display to connect to.
+
+        :rtype: `Display`
+        '''
+        return get_default_display()
+
+    def get_default_display(self):
+        '''Get the default display device.
+
+        :rtype: `Display`
+        '''
+        raise NotImplementedError('abstract')
+
+class Display(object):
+    '''A display device supporting one or more screens.
+
+    Use `Platform.get_display` or `Platform.get_default_display` to obtain
+    an instance of this class.  Use a display to obtain `Screen` instances.
+    '''
+    def get_screens(self):
+        '''Get the available screens.
+
+        A typical multi-monitor workstation comprises one `Display` with
+        multiple `Screen` s.  This method returns a list of screens which
+        can be enumerated to select one for full-screen display.
+
+        For the purposes of creating an OpenGL config, the default screen
+        will suffice.
+
+        :rtype: list of `Screen`
+        '''
+        raise NotImplementedError('abstract')    
+
+    def get_default_screen(self):
+        '''Get the default screen as specified by the user's operating system
+        preferences.
+
+        :rtype: `Screen`
+        '''
+        return self.get_screens()[0]
+
+class Screen(object):
+    '''A virtual monitor that supports fullscreen windows.
+
+    Screens typically map onto a physical display such as a
     monitor, television or projector.  Selecting a screen for a window
     has no effect unless the window is made fullscreen, in which case
     the window will fill only that particular virtual screen.
 
     The `width` and `height` attributes of a screen give the current
-    resolution of the display (which can possibly be changed).  The
-    `x` and `y` attributes give the global location of the top-left
-    corner of the screen.  This is useful for determining if screens
-    arranged above or next to one another.  
+    resolution of the screen.  The `x` and `y` attributes give the global
+    location of the top-left corner of the screen.  This is useful for
+    determining if screens arranged above or next to one another.  
     
-    You should not rely on the origin to give the placement of moniters. 
+    You cannot always rely on the origin to give the placement of monitors.
     For example, an X server with two displays without Xinerama enabled
     will present two logically separate screens with no relation to each
     other.
+
+    Use `Display.get_screens` or `Display.get_default_screen` to obtain an
+    instance of this class.
+
+    :Ivariables:
+        `x` : int
+            Left edge of the screen on the virtual desktop.
+        `y` : int
+            Top edge of the screen on the virtual desktop.
+        `width` : int
+            Width of the screen, in pixels.
+        `height` : int
+            Height of the screen, in pixels.
+
     '''
 
     def __init__(self, x, y, width, height):
@@ -297,110 +276,103 @@ class BaseScreen(object):
         return '%s(x=%d, y=%d, width=%d, height=%d)' % \
             (self.__class__.__name__, self.x, self.y, self.width, self.height)
 
-    '''
-    Proposed interface for switching resolution:
+    def get_best_config(self, template=None):
+        '''Get the best available GL config.
 
-    def get_modes(self):
-        raise NotImplementedError()
+        Any required attributes can be specified in `template`.  If
+        no configuration matches the template, `NoSuchConfigException` will
+        be raised.
 
-    def set_mode(self, mode):
-        raise NotImplementedError()
-    '''
+        :Parameters:
+            `template` : `pyglet.gl.Config`
+                A configuration with desired attributes filled in.
 
-class BaseGLConfig(object):
-    '''Graphics configuration.
-
-    A GLConfig stores the preferences for OpenGL attributes such as the
-    number of auxilliary buffers, size of the colour and depth buffers,
-    double buffering, stencilling, multi- and super-sampling, and so on.
-
-    Different platforms support a different set of attributes, so these
-    are set with a string key and a value which is integer or boolean.
-    '''
-
-    def get_gl_attribute(self, name):
-        '''Get the value of a GL attribute.
-
-        If the attribute has not been specified, None will be returned,
-        otherwise the result will be an integer.
+        :rtype: `pyglet.gl.Config`
+        :return: A configuration supported by the platform that best
+            fulfils the needs described by the template.
         '''
-        return self.get_gl_attributes().get(name, None)
+        if template is None:
+            template = gl.Config()
+        configs = self.get_matching_configs(template)
+        if not configs:
+            raise NoSuchConfigException()
+        return configs[0]
 
-    def get_gl_attributes():
-        '''Get a dict of all GL attributes set.'''
-        raise NotImplementedError()
+    def get_matching_configs(self, template):
+        '''Get a list of configs that match a specification.
 
-    def __repr__(self):
-        prefix = '%s(' % self.__class__.__name__
-        return '%s%s)' % (prefix, 
-                          pprint.pformat(self.get_gl_attributes(),
-                                         indent=len(prefix)))
+        Any attributes specified in `template` will have values equal
+        to or greater in each returned config.  If no configs satisfy
+        the template, an empty list is returned.
 
-class GLSharedObjectSpace(object):
-    pass
+        :Parameters:
+            `template` : `pyglet.gl.Config`
+                A configuration with desired attributes filled in.
 
-class BaseGLContext(object):
-    '''OpenGL context for drawing.
-
-    Windows in pyglet each have their own GL context.  This class boxes
-    the context in a platform-independent manner.  Applications will have
-    no need to deal with contexts directly.
-    '''
-
-    # Used for error checking, True if currently within a glBegin/End block.
-    # Ignored if error checking is disabled.
-    gl_begin = False
-
-    def __init__(self, context_share=None):
-        if context_share:
-            self._shared_object_space = context_share.get_shared_object_space()
-        else:
-            self._shared_object_space = GLSharedObjectSpace()
-
-    
-    def __repr__(self):
-        return '%s()' % self.__class__.__name__
-
-    def set_current(self):
-        global _current_context
-        _current_context = self
-
-    def destroy(self):
-        '''Release the context.
-
-        The context will not be useable after being destroyed.  Each platform
-        has its own convention for releasing the context and the buffer(s)
-        that depend on it in the correct order; this should never be called
-        by an application.
+        :rtype: list of `pyglet.gl.Config`
+        :return: A list of matching configs.
         '''
-        global _current_context
-        _active_contexts.remove(self)
-        _current_context = None
-
-    def get_shared_object_space(self):
-        return self._shared_object_space
+        raise NotImplementedError('abstract')
 
 class MouseCursor(object):
-    drawable = True     # if True, draw method is called each frame
+    '''An abstract mouse cursor.'''
+
+    #: Indicates if the cursor is drawn using OpenGL.  This is True
+    #: for all mouse cursors except system cursors.
+    drawable = True
+
     def draw(self, x, y):
+        '''Abstract render method.
+
+        The cursor should be drawn with the "hot" spot at the given
+        coordinates.  The projection is set to the pyglet default (i.e., 
+        orthographic in window-space), however no other aspects of the 
+        state can be assumed.
+
+        :Parameters:
+            `x` : int
+                X coordinate of the mouse pointer's hot spot.
+            `y` : int
+                Y coordinate of the mouse pointer's hot spot.
+
+        '''
         raise NotImplementedError('abstract')
 
 class DefaultMouseCursor(MouseCursor):
+    '''The default mouse cursor used by the operating system.'''
     drawable = False
 
 class ImageMouseCursor(MouseCursor):
+    '''A user-defined mouse cursor created from an image.
+
+    Use this class to create your own mouse cursors and assign them
+    to windows.  There are no constraints on the image size or format.
+    '''
     drawable = True
+
     def __init__(self, image, hot_x, hot_y):
+        '''Create a mouse cursor from an image.
+
+        :Parameters:
+            `image` : `pyglet.image.AbstractImage`
+                Image to use for the mouse cursor.  It must have a
+                valid `texture` attribute.
+            `hot_x` : int
+                X coordinate of the "hot" spot in the image.
+            `hot_y` : int
+                Y coordinate of the "hot" spot in the image, measured
+                from the bottom.
+        '''
         self.texture = image.texture
         self.hot_x = hot_x
         self.hot_y = hot_y
 
     def draw(self, x, y):
-        glPushAttrib(GL_ENABLE_BIT)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        gl.glPushAttrib(gl.GL_ENABLE_BIT)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
-        glPopAttrib()
+        gl.glPopAttrib()
 
 class BaseWindow(WindowEventDispatcher, WindowExitHandler):
     '''Platform-independent application window.
@@ -424,16 +396,79 @@ class BaseWindow(WindowEventDispatcher, WindowExitHandler):
     it the current OpenGL context.  If you use only one window in the
     application, there is no need to do this.
     '''
+    #: The default window style.
+    WINDOW_STYLE_DEFAULT = None
+    #: The window style for pop-up dialogs.
+    WINDOW_STYLE_DIALOG = 'dialog'
+    #: The window style for tool windows.
+    WINDOW_STYLE_TOOL = 'tool'
+    #: A window style without any decoration.
+    WINDOW_STYLE_BORDERLESS = 'borderless' 
 
-    _context = None
+    #: The default mouse cursor.
+    CURSOR_DEFAULT = None
+    #: A crosshair mouse cursor.
+    CURSOR_CROSSHAIR = 'crosshair'
+    #: A pointing hand mouse cursor.
+    CURSOR_HAND = 'hand'
+    #: A "help" mouse cursor; typically a question mark and an arrow.
+    CURSOR_HELP = 'help'
+    #: A mouse cursor indicating that the selected operation is not permitted.
+    CURSOR_NO = 'no'
+    #: A mouse cursor indicating the element can be resized.
+    CURSOR_SIZE = 'size'
+    #: A mouse cursor indicating the element can be resized from the top
+    #: border.
+    CURSOR_SIZE_UP = 'size_up'
+    #: A mouse cursor indicating the element can be resized from the
+    #: upper-right corner.
+    CURSOR_SIZE_UP_RIGHT = 'size_up_right'
+    #: A mouse cursor indicating the element can be resized from the right 
+    #: border.
+    CURSOR_SIZE_RIGHT = 'size_right'
+    #: A mouse cursor indicating the element can be resized from the lower-right
+    #: corner.
+    CURSOR_SIZE_DOWN_RIGHT = 'size_down_right'
+    #: A mouse cursor indicating the element can be resized from the bottom 
+    #: border.
+    CURSOR_SIZE_DOWN = 'size_down'
+    #: A mouse cursor indicating the element can be resized from the lower-left
+    #: corner.
+    CURSOR_SIZE_DOWN_LEFT = 'size_down_left'
+    #: A mouse cursor indicating the element can be resized from the left 
+    #: border.
+    CURSOR_SIZE_LEFT = 'size_left'
+    #: A mouse cursor indicating the element can be resized from the upper-left
+    #: corner.
+    CURSOR_SIZE_UP_LEFT = 'size_up_left'
+    #: A mouse cursor indicating the element can be resized vertically.
+    CURSOR_SIZE_UP_DOWN = 'size_up_down'
+    #: A mouse cursor indicating the element can be resized horizontally.
+    CURSOR_SIZE_LEFT_RIGHT = 'size_left_right'
+    #: A text input mouse cursor (I-beam).
+    CURSOR_TEXT = 'text'
+    #: A "wait" mouse cursor; typically an hourglass or watch.
+    CURSOR_WAIT = 'wait'
+    #: The "wait" mouse cursor combined with an arrow.
+    CURSOR_WAIT_ARROW = 'wait_arrow'
+
+    # Instance variables accessible only via properties
+
+    _width = None
+    _height = None
+    _caption = None
+    _resizable = False
+    _style = WINDOW_STYLE_DEFAULT
+    _fullscreen = False
+    _visible = False
+    _vsync = False
+    _screen = None
     _config = None
+    _context = None
 
     # Used to restore window size and position after fullscreen
     _windowed_size = None
     _windowed_location = None
-
-    _resizable = False
-    _style = WINDOW_STYLE_DEFAULT
 
     # Subclasses should update these after relevant events
     _mouse_cursor = DefaultMouseCursor()
@@ -442,128 +477,488 @@ class BaseWindow(WindowEventDispatcher, WindowExitHandler):
     _mouse_visible = True
     _mouse_exclusive = False
     _mouse_in_window = True
- 
-    def __init__(self):
+
+    def __init__(self, 
+                 width=640,
+                 height=480,
+                 caption=None,
+                 resizable=False,
+                 style=WINDOW_STYLE_DEFAULT,
+                 fullscreen=False,
+                 visible=True,
+                 vsync=True,
+                 display=None,
+                 screen=None,
+                 config=None,
+                 context=None):
+        '''Create a window.
+
+        All parameters are optional, and reasonable defaults are assumed
+        where they are not specified.
+
+        The `display`, `screen`, `config` and `context` parameters form
+        a hierarchy of control: there is no need to specify more than 
+        one of these.  For example, if you specify `screen` the `display`
+        will be inferred, and a default `config` and `context` will be
+        created.
+
+        `config` is a special case; it can be a template created by the
+        user specifying the attributes desired, or it can be a complete
+        `config` as returned from `Screen.get_matching_configs` or similar.
+
+        :Parameters:
+            `width` : int
+                Width of the window, in pixels.  Ignored if `fullscreen`
+                is True.  Defaults to 640.
+            `height` : int
+                Height of the window, in pixels.  Ignored if `fullscreen`
+                is True.  Defaults to 480.
+            `caption` : str or unicode
+                Initial caption (title) of the window.  Defaults to
+                ``sys.argv[0]``.
+            `resizable` : bool
+                If True, the window will be resizable.  Defaults to False.
+            `style` : int
+                One of the ``WINDOW_STYLE_*`` constants specifying the
+                border style of the window.
+            `fullscreen` : bool
+                If True, the window will cover the entire screen rather
+                than floating.  Defaults to False.
+            `visible` : bool
+                Determines if the window is visible immediately after
+                creation.  Defaults to True.  Set this to False if you
+                would like to change attributes of the window before
+                having it appear to the user.
+            `vsync` : bool
+                If True, buffer flips are synchronised to the primary screen's
+                vertical retrace, eliminating flicker.
+            `display` : `Display`
+                The display device to use.  Useful only under X11.
+            `screen` : `Screen`
+                The screen to use, if in fullscreen.
+            `config` : `pyglet.gl.Config`
+                Either a template from which to create a complete config,
+                or a complete config.
+            `context` : `pyglet.gl.Context`
+                The context to attach to this window.  The context must
+                not already be attached to another window.
+
+        '''
         WindowEventDispatcher.__init__(self)
 
-    def create(self, factory):
-        self._config = factory.get_config()
-        self._context = factory.get_context()
-        self._fullscreen = factory.get_fullscreen()
+        if not display:
+            display = get_platform().get_default_display()
+
+        if not screen:
+            screen = display.get_default_screen()
+
+        if not config:
+            config = gl.Config(double_buffer=True,
+                               depth_size=24)
+
+        if not config.is_complete():
+            config = screen.get_best_config(config)
+
+        if not context:
+            context = config.create_context(gl.get_current_context())
+
+        if fullscreen:
+            self._windowed_size = width, height
+            width = screen.width
+            height = screen.height
+
+        self._width = width
+        self._height = height
+        self._resizable = resizable
+        self._fullscreen = fullscreen
+        self._style = style
+        self._vsync = vsync
+
+        # Set these in reverse order to above, to ensure we get user
+        # preference
+        self._context = context
+        self._config = self._context.config
+        self._screen = self._config.screen
+        self._display = self._screen.display
+
+        if caption is None:
+            caption = sys.argv[0]
+        self._caption = caption
+
+        self._create()
+
+        if visible:
+            self.set_visible(True)
+            self.switch_to()
+            self.activate()
+
+    def _create(self):
+        raise NotImplementedError('abstract')
+
+    def _recreate(self, changes):
+        '''Recreate the window with current attributes.
+
+        :Parameters:
+            `changes` : list of str
+                List of attribute names that were changed since the last
+                `_create` or `_recreate`.  For example, ``['fullscreen']``
+                is given if the window is to be toggled to or from fullscreen. 
+        '''
+        raise NotImplementedError('abstract')
+
+    def set_fullscreen(self, fullscreen=True):
+        '''Toggle to or from fullscreen.
+
+        After toggling fullscreen, the GL context should have retained its
+        state and objects, however the buffers will need to be cleared and
+        redrawn.
+
+        :Parameters:
+            `fullscreen` : bool
+                True if the window should be made fullscreen, False if it
+                should be windowed.
+
+        '''
+        if fullscreen == self._fullscreen:
+            return
+
+        if not self._fullscreen:
+            # Save windowed size
+            self._windowed_size = self.get_size()
+            self._windowed_location = self.get_location()
+
+        self._fullscreen = fullscreen
+        if self._fullscreen:
+            self._width = self.screen.width
+            self._height = self.screen.height
+        else:
+            self._width, self._height = self._windowed_size
+
+        self._recreate(['fullscreen'])
+
+        self.set_visible(True)
+        self.switch_to()
+
+        if not self._fullscreen and self._windowed_location:
+            # Restore windowed location
+            self.set_location(*self._windowed_location)
+
+    def on_resize(self, width, height):
+        '''A default resize event handler.
+
+        This default handler updates the GL viewport to cover the entire
+        window and sets the ``GL_PROJECTION`` matrix to be orthagonal in
+        window space.  The bottom-left corner is (0, 0) and the top-right
+        corner is the width and height of the window in pixels.
+
+        Override this event handler with your own to create another
+        projection, for example in perspective.
+        '''
+        self.switch_to()
+        gl.glViewport(0, 0, width, height)
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
+        gl.glOrtho(0, width, 0, height, -1, 1)
+        gl.glMatrixMode(gl.GL_MODELVIEW)
 
     def close(self):
+        '''Close the window.
+
+        Windows are closed automatically when the process exits, so this
+        method need only be called when multiple windows or console input
+        are being used.
+
+        After closing the window, the GL context will be invalid.  The
+        window instance cannot be reused once closed (see also `set_visible`).
+        '''
         self._context.destroy()
         self._config = None
         self._context = None
 
-    def switch_to(self):
-        raise NotImplementedError()
-
     def draw_mouse_cursor(self):
+        '''Draw the custom mouse cursor.
+
+        If the current mouse cursor has ``drawable`` set, this method
+        is called before the buffers are flipped to render it.  
+        
+        This method always leaves the ``GL_MODELVIEW`` matrix as current,
+        regardless of what it was set to previously.  No other GL state
+        is affected.
+
+        There is little need to override this method; instead, subclass
+        ``MouseCursor`` and provide your own ``draw`` method.
+        '''
         # Draw mouse cursor if set and visible.
         # XXX leaves state in modelview regardless of starting state
         if (self._mouse_cursor.drawable and 
             self._mouse_visible and 
             self._mouse_in_window):
-            glMatrixMode(GL_PROJECTION)
-            glPushMatrix()
-            glLoadIdentity()
-            glOrtho(0, self.width, 0, self.height, -1, 1)
+            gl.glMatrixMode(gl.GL_PROJECTION)
+            gl.glPushMatrix()
+            gl.glLoadIdentity()
+            gl.glOrtho(0, self.width, 0, self.height, -1, 1)
 
-            glMatrixMode(GL_MODELVIEW)
-            glPushMatrix()
-            glLoadIdentity()
+            gl.glMatrixMode(gl.GL_MODELVIEW)
+            gl.glPushMatrix()
+            gl.glLoadIdentity()
 
             self._mouse_cursor.draw(self._mouse_x, self._mouse_y)
 
-            glMatrixMode(GL_PROJECTION)
-            glPopMatrix()
+            gl.glMatrixMode(gl.GL_PROJECTION)
+            gl.glPopMatrix()
 
-            glMatrixMode(GL_MODELVIEW)
-            glPopMatrix()
+            gl.glMatrixMode(gl.GL_MODELVIEW)
+            gl.glPopMatrix()
 
-    def get_context(self):
-        return self._context
+    # Properties provide read-only access to instance variables.  Use
+    # set_* methods to change them if applicable.
 
-    def get_config(self):
-        return self._config
+    caption = property(lambda self: self._caption,
+        doc='''The window caption (title).  Read-only.
+
+        :type: str
+        ''')
+    resizable = property(lambda self: self._resizable,
+        doc='''True if the window is resizeable.  Read-only.
+
+        :type: bool
+        ''')
+    style = property(lambda self: self._style,
+        doc='''The window style; one of the ``WINDOW_STYLE_*`` constants.
+        Read-only.
+        
+        :type: int
+        ''')
+    fullscreen = property(lambda self: self._fullscreen,
+        doc='''True if the window is currently fullscreen.  Read-only.
+        
+        :type: bool
+        ''')
+    visible = property(lambda self: self._visible,
+        doc='''True if the window is currently visible.  Read-only.
+        
+        :type: bool
+        ''')
+    vsync = property(lambda self: self._vsync,
+        doc='''True if buffer flips are synchronised to the screen's vertical
+        retrace.  Read-only.
+        
+        :type: bool
+        ''')
+    display = property(lambda self: self._display,
+        doc='''The display this window belongs to.  Read-only.
+
+        :type: `Display`
+        ''')
+    screen = property(lambda self: self._screen,
+        doc='''The screen this window is fullscreen in.  Read-only.
+        
+        :type: `Screen`
+        ''')
+    config = property(lambda self: self._config,
+        doc='''A GL config describing the context of this window.  Read-only.
+        
+        :type: `pyglet.gl.Config`
+        ''')
+    context = property(lambda self: self._context,
+        doc='''The OpenGL context attached to this window.  Read-only.
+        
+        :type: `pyglet.gl.Context`
+        ''')
+
+    # These are the only properties that can be set
+    width = property(lambda self: self.get_size()[0],
+                     lambda self, width: self.set_size(width, self.height),
+         doc='''The width of the window, in pixels.  Read-write.
+         
+         :type: int
+         ''')
+
+    height = property(lambda self: self.get_size()[1],
+                      lambda self, height: self.set_size(self.width, height),
+         doc='''The height of the window, in pixels.  Read-write.
+         
+         :type: int
+         ''')
 
     def set_caption(self, caption):
-        self.caption = caption
+        '''Set the window's caption.
 
-    def get_caption(self):
-        return self.caption
+        The caption appears in the titlebar of the window, if it has one,
+        and in the taskbar on Windows and many X11 window managers.
+
+        :Parameters:
+            `caption` : str or unicode
+                The caption to set.
+
+        '''
+        raise NotImplementedError('abstract')
 
     def set_minimum_size(self, width, height):
-        raise NotImplementedError()
+        '''Set the minimum size of the window.
+
+        Once set, the user will not be able to resize the window smaller
+        than the given dimensions.  There is no way to remove the
+        minimum size constraint on a window (but you could set it to 0,0).
+
+        The behaviour is undefined if the minimum size is set larger than
+        the current size of the window.
+
+        The window size does not include the border or title bar.
+
+        :Parameters:
+            `width` : int
+                Minimum width of the window, in pixels.
+            `height` : int
+                Minimum height of the window, in pixels.
+
+        '''
+        raise NotImplementedError('abstract')
 
     def set_maximum_size(self, width, height):
-        raise NotImplementedError()
+        '''Set the maximum size of the window.
+
+        Once set, the user will not be able to resize the window larger
+        than the given dimensions.  There is no way to remove the
+        maximum size constraint on a window (but you could set it to a large
+        value).
+
+        The behaviour is undefined if the maximum size is set smaller than
+        the current size of the window.
+
+        The window size does not include the border or title bar.
+
+        :Parameters:
+            `width` : int
+                Maximum width of the window, in pixels.
+            `height` : int
+                Maximum height of the window, in pixels.
+
+        '''
+        raise NotImplementedError('abstract')
 
     def set_size(self, width, height):
-        raise NotImplementedError()
+        '''Resize the window.
+        
+        The behaviour is undefined if the window is not resizable, or if
+        it is currently fullscreen.
+
+        The window size does not include the border or title bar.
+
+        :Parameters:
+            `width` : int
+                New width of the window, in pixels.
+            `height` : int
+                New height of the window, in pixels.
+
+        '''
+        raise NotImplementedError('abstract')
 
     def get_size(self):
-        raise NotImplementedError()
+        '''Return the current size of the window.
+
+        The window size does not include the border or title bar.
+
+        :rtype: (int, int)
+        :return: The width and height of the window, in pixels.
+        '''
+        raise NotImplementedError('abstract')
 
     def set_location(self, x, y):
-        raise NotImplementedError()
+        '''Set the position of the window.
+
+        :Parameters:
+            `x` : int
+                Distance of the left edge of the window from the left edge
+                of the virtual desktop, in pixels.
+            `y` : int
+                Distance of the top edge of the window from the top edge of
+                the virtual desktop, in pixels.
+
+        '''
+        raise NotImplementedError('abstract')
 
     def get_location(self):
-        raise NotImplementedError()
+        '''Return the current position of the window.
+
+        :rtype: (int, int)
+        :return: The distances of the left and top edges from their respective
+            edges on the virtual desktop, in pixels.
+        '''
+        raise NotImplementedError('abstract')
 
     def activate(self):
-        raise NotImplementedError()
+        '''Attempt to restore keyboard focus to the window.
+
+        Depending on the window manager or operating system, this may not
+        be successful.  For example, on Windows XP an application is not
+        allowed to "steal" focus from another application.  Instead, the
+        window's taskbar icon will flash, indicating it requires attention.
+        '''
+        raise NotImplementedError('abstract')
 
     def set_visible(self, visible=True):    
-        raise NotImplementedError()
+        '''Show or hide the window.
+
+        :Parameters:
+            `visible` : bool
+                If True, the window will be shown; otherwise it will be
+                hidden.
+
+        '''
+        raise NotImplementedError('abstract')
 
     def minimize(self):
-        raise NotImplementedError()
+        '''Minimize the window.
+        '''
+        raise NotImplementedError('abstract')
 
     def maximize(self):
-        raise NotImplementedError()
-        
-    def set_fullscreen(self, fullscreen=True, width=None, height=None):
-        if fullscreen == self._fullscreen:
-            return
+        '''Maximize the window.
 
-        factory = get_factory()
-        factory.set_gl_attributes(self.get_config().get_gl_attributes())
-        if width and height:
-            factory.set_size(width, height)
-        elif fullscreen:
-            self._windowed_size = self.get_size()
-            self._windowed_location = self.get_location()
-            screen = factory.get_screen()
-            factory.set_size(screen.width, screen.height)
-            factory.set_location(screen.x, screen.y)
-        elif self._windowed_size:
-            factory.set_size(*self._windowed_size)
-            factory.set_location(*self._windowed_location)
-        factory.set_fullscreen(fullscreen)
-        factory.set_context_share(self.get_context())
-        self.create(factory)
-        self.switch_to()
-        self.set_visible(True)
-
-    def get_resizable(self):
-        return self._resizable
-
-    resizable = property(get_resizable)
-
-    def get_style(self):
-        return self._style
-    
-    style = property(get_style)
-
-    def get_vsync(self):
-        return None
+        The behaviour of this method is somewhat dependent on the user's
+        display setup.  On a multi-monitor system, the window may maximize
+        to either a single screen or the entire virtual desktop.
+        '''
+        raise NotImplementedError('abstract')
 
     def set_vsync(self, vsync):
-        pass
+        '''Enable or disable vertical sync control.
+
+        When enabled, this option ensures flips from the back to the front
+        buffer are performed only during the vertical retrace period of the
+        primary display.  This can prevent "tearing" or flickering when
+        the buffer is updated in the middle of a video scan.
+
+        Note that LCD monitors have an analagous time in which they are not
+        reading from the video buffer; while it does not correspond to
+        a vertical retrace it has the same effect.
+
+        With multi-monitor systems the secondary monitor cannot be
+        synchronised to, so tearing and flicker cannot be avoided when the
+        window is positioned outside of the primary display.  In this case
+        it may be advisable to forcibly reduce the framerate (for example,
+        using `pyglet.clock.set_fps_limit`).
+
+        :Parameters:
+            `vsync` : bool
+                If True, vsync is enabled, otherwise it is disabled.
+
+        '''
+        raise NotImplementedError('abstract')
 
     def set_mouse_visible(self, visible=True):
+        '''Show or hide the mouse cursor.
+
+        The mouse cursor will only be hidden while it is positioned within
+        this window.  Mouse events will still be processed as usual.
+
+        :Parameters:
+            `visible` : bool
+                If True, the mouse cursor will be visible, otherwise it
+                will be hidden.
+
+        '''
         self._mouse_visible = visible
         self.set_mouse_platform_visible()
 
@@ -584,42 +979,69 @@ class BaseWindow(WindowEventDispatcher, WindowExitHandler):
         raise NotImplementedError()
 
     def set_mouse_cursor(self, cursor=None):
+        '''Change the appearance of the mouse cursor.
+
+        The appearance of the mouse cursor is only changed while it is
+        within this window.
+
+        :Parameters:
+            `cursor` : `MouseCursor`
+                The cursor to set, or None to restore the default cursor.
+
+        '''
         if cursor is None:
             cursor = DefaultMouseCursor()
         self._mouse_cursor = cursor
         self.set_mouse_platform_visible()
 
-    def get_mouse_cursor(self):
-        return self._mouse_cursor
-
     def set_exclusive_mouse(self, exclusive=True):
-        raise NotImplementedError()
+        '''Hide the mouse cursor and direct all mouse events to this
+        window.
+
+        When enabled, this feature prevents the mouse leaving the window.  It
+        is useful for certain styles of games that require complete control of
+        the mouse.  The position of the mouse as reported in subsequent events
+        is meaningless when exclusive mouse is enabled; you should only use
+        the relative motion parameters ``dx`` and ``dy``.
+
+        :Parameters:
+            `exclusive` : bool
+                If True, exclusive mouse is enabled, otherwise it is disabled.
+
+        '''
+        raise NotImplementedError('abstract')
 
     def set_exclusive_keyboard(self, exclusive=True):
-        raise NotImplementedError()
+        '''Prevent the user from switching away from this window using
+        keyboard accelerators.
 
-    width = property(lambda self: self.get_size()[0],
-                     lambda self, width: self.set_size(width, self.height))
+        When enabled, this feature disables certain operating-system specific
+        key combinations such as Alt+Tab (Command+Tab on OS X).  This can be
+        useful in certain kiosk applications, it should be avoided in general
+        applications or games.
 
-    height = property(lambda self: self.get_size()[1],
-                      lambda self, height: self.set_size(self.width, height))
+        :Parameters:
+            `exclusive` : bool
+                If True, exclusive keyboard is enabled, otherwise it is
+                disabled.
+
+        '''
+        raise NotImplementedError('abstract')
 
     def get_system_mouse_cursor(self, name):
-        '''Subclasses must override to return a mouse cursor for the
-        given name.
+        '''Obtain a system mouse cursor.
 
-        Valid names are
-        * pyglet.window.CURSOR_DEFAULT
-        * pyglet.window.CURSOR_WAIT 
-        * pyglet.window.CURSOR_TEXT 
-        * pyglet.window.CURSOR_CROSS
+        Use `set_mouse_cursor` to make the cursor returned by this method
+        active.  The names accepted by this method are the ``CURSOR_*``
+        constants defined on this class.
 
         :Parameters:
             `name` : str
-                Name describing the mouse cursor to return.
+                Name describing the mouse cursor to return.  For example,
+                ``CURSOR_WAIT``, ``CURSOR_HELP``, etc.
 
-
-        :rtype: MouseCursor
+        :rtype: `MouseCursor`
+        :return: A mouse cursor which can be used with `set_mouse_cursor`.
         '''
         raise NotImplementedError()
 
@@ -640,387 +1062,32 @@ class BaseWindow(WindowEventDispatcher, WindowExitHandler):
         '''
         pass
 
-class BasePlatform(object):
-    '''Abstraction of platform-specific methods.
-
-    The BasePlatform class is subclassed by each platform to provide
-    methods for creating instances of BaseScreen, BaseGLConfig, BaseGLContext
-    and BaseWindow.  In each case the constructed object will reflect
-    the properties set by the user on a WindowFactory object.
-    '''
-
-    # Platform specific abstract methods.
-    def get_screens(self, factory):
-        '''Subclasses must override to return a list of BaseScreen.
-
-        If multimonitor support is not implemented, return [BaseScreen()]
-        (one instance).
-        '''
-        raise NotImplementedError()
-
-    def create_configs(self, factory):
-        '''Subclasses must override to create and return a list of BaseGLConfig.
-        '''
-        raise NotImplementedError()
-
-    def create_context(self, factory):
-        '''Subclasses must override to create and return a BaseGLContext.
-
-        The created context must share with factory.get_context_share() if not
-        None.  
-        '''
-        raise NotImplementedError()
-
-    def get_window_class(self):
-        '''Subclasses must override to create and return a subclass of 
-        BaseWindow.
-        '''
-        raise NotImplementedError()
-
-class WindowFactory(object):
-    '''Configuration and build pattern for BaseWindow instances.
-
-    This class fulfils two roles: firstly, applications set the desired
-    configuration on this factory for later interpretation by the 
-    specific Platform.  Secondly, it provides the algorithms necessary
-    for constructing windows in stages.
-
-    This is the class that applications work directly with to create
-    windows by following these steps:
-    
-    1. Use pyglet.window.get_factory() to create a new factory
-       using the appropriate BasePlatform.  
-    2. Set attributes on the factory and (optionally) examine the intermediate
-       Screen, GLConfig and GLContext settings.
-    3. When ready, pass the factory to a BaseWindow's `create` method
-       to apply the factory's settings to the new or existing window.
-
-    '''
-
-    _config = None
-    _config_attributes = {}
-    _context = None
-    _context_share = CONTEXT_SHARE_EXISTING
-
-    _screen = None
-    _resizable = False
-    _style = WINDOW_STYLE_DEFAULT
-    _fullscreen = False
-    _vsync = None
-    _width = 640
-    _height = 480 # Reasonable default size.
-    _location = LOCATION_DEFAULT
-    _x_display = None
-    
-    def __init__(self, platform):
-        self._platform = platform
-
-    # Window and context attributes, to be set before selecting a config.
-    def set_size(self, width, height):
-        self._width = width
-        self._height = height
-
-    def get_size(self):
-        return self._width, self._height
-
-    def set_location(self, x, y):
-        self._location = x, y
-
-    def get_location(self):
-        return self._location
-
-    def set_fullscreen(self, fullscreen):
-        self._fullscreen = fullscreen
-
-    def get_fullscreen(self):
-        return self._fullscreen
-
-    def set_resizable(self, resizable):
-        self._resizable = resizable
-
-    def get_resizable(self):
-        return self._resizable
-
-    def set_style(self, style):
-        self._style = style
-
-    def get_style(self):
-        return self._style
-
-    def set_vsync(self, vsync):
-        self._vsync = vsync
-
-    def get_vsync(self):
-        return self._vsync
-
-    def set_gl_attribute(self, name, value):
-        '''Set the minimum value of a GL attribute for creating a context.
-
-        Allowable `name`s depend on the platform.  The common ones supported
-        on all platforms are:
-        
-        buffer_size
-            Bits per sample, as int (typically 32).
-        doublebuffer
-            True to create two colour buffers and enable flip() (typically
-            True).
-        stereo
-            True to create left and right colour buffers (typically False).
-        red_size, green_size, blue_size, alpha_size
-            Size of component per sample, in bits (typically 8).
-        depth_size
-            Size of depth sample, in bits (typically 24).
-        stencil_size
-            Size of stencil buffer sample, in bits (typically 8).
-        accum_red_size, accum_blue_size, accum_green_size, accum_alpha_size
-            Size of accumulation buffer component sizes, in bits (typically
-            16).
-        multisample, supersample, sample_alpha, sample_buffers, samples
-            TODO
-        color_float
-            TODO
-
-        Unsupported attributes are ignored (see platform-specific
-        documentation for more attribute names).
-        '''
-        self._config_attributes[name] = value
-
-    def set_gl_attributes(self, attributes):
-        '''Identical to set_gl_attribute, but set a whole dictionary of
-        attributes.
-        '''
-        for name, value in attributes.items():
-            self._config_attributes[name] = value
-
-    def get_gl_attributes(self):
-        return self._config_attributes
-
-    def set_context_share(self, context):
-        '''Set a context to share display lists and objects with.
-
-        By default the most recently created context will be used as
-        the share.  Pass None to this function to share with no 
-        existing context.
-        '''
-        self._context_share = context
-
-    def get_context_share(self):
-        # If sharing context objects (the default), find a context to share
-        # with.
-        if self._context_share is CONTEXT_SHARE_EXISTING:
-            self._context_share = self.get_existing_context()
-
-        return self._context_share
-
-    def set_x_display(self, display):
-        '''For X11, set the display.  
-        
-        Normally read from an environment variable or command line.  For
-        example::
-
-            set_x_display(':1.0')   # Select second X server.
-
-        On other platforms, has no effect.
-        '''
-        self._x_display = display
-
-    def get_x_display(self):
-        return self._x_display
-
-    def set_arguments(self, args):
-        '''Convenience function to set common window attributes from
-        the command line.
-
-        Any unrecognized options or arguments are returned as a list.  The
-        recognized options are:
-
-         * --width=
-         * --height=
-         * --fullscreen
-         * --no-fullscreen
-         * --display=
-
-        '''
-        remaining_args = []
-        for arg in args:
-            if '=' in arg:
-                key, value = arg.split('=', 1)
-            else:
-                key = arg
-            if key == '--width':
-                self._width = int(value)
-            elif key == '--height':
-                self._height = int(value)
-            elif key == '--fullscreen':
-                self._fullscreen = True
-            elif key == '--no-fullscreen':
-                self._fullscreen = False
-            elif key == '--display':
-                self.set_x_display(value)
-            else:
-                remaining_args.append(arg)
-
-        return args
-    
-    # Multimonitor selection
-    def get_screens(self):
-        return self._platform.get_screens(self)
-
-    def set_screen(self, screen):
-        self._screen = screen
-
-    def get_screen(self):
-        # Choose primary screen by default
-        if not self._screen:
-            screen = self.get_screens()[0]
-            self.set_screen(screen)
-        return self._screen
-
-    # Creation process.
-    def get_matching_configs(self):
-        return self._platform.create_configs(self)
-
-    def set_config(self, config):
-        self._config = config
-
-    def get_config(self):
-        # If no configuration has been decided yet, choose the first
-        # compatible one.
-        if not self._config:
-            configs = self.get_matching_configs()
-            if not configs:
-                raise WindowException('No matching GL configuration available.')
-            self.set_config(configs[0])
-
-        return self._config
-
-    def create_context(self):
-        self._context = self._platform.create_context(self)
-        _active_contexts.append(self._context)
-
-    def get_existing_context(self):
-        if _active_contexts:
-            return _active_contexts[-1]
-        return None
-
-    def set_context(self, context):
-        self._context = context
-
-    def get_context(self):
-        if not self._context:
-            self.create_context()
-        return self._context
-
-    def create_window(self, window_class=None):
-        # Create a window based on factory attributes.
-        if not window_class:
-            window_class = self._platform.get_window_class()
-        window = window_class()
-        window.create(self)
-        window.switch_to()
-
-        # We should reset now in case someone tries to use the
-        # same factory to create more than one window.
-        self._context = None
-
-        return window
-
 def get_platform():
-    '''Get an instance of the BasePlatform most appropriate for this
+    '''Get an instance of the Platform most appropriate for this
     system.
+
+    :rtype: `Platform`
+    :return: The platform instance.
     '''
     return _platform
 
-def get_factory():
-    '''Create a new WindowFactory which can be used to construct or
-    alter windows.
-    '''
-    return WindowFactory(_platform)
-
 if hasattr(sys, 'is_epydoc') and sys.is_epydoc:
-    # We are building documentation: fake the base platform class.
-    class _DocumentedPlatform(BasePlatform):
-        def get_window_class(self):
-            return BaseWindow
-    _platform = _DocumentedPlatform()
+    # We are building documentation
+    Window = BaseWindow
+    Window.__name__ = 'Window'
+    del BaseWindow
 else:
     # Try to determine which platform to use.
     if sys.platform == 'darwin':
-        from pyglet.window.carbon import CarbonPlatform
+        from pyglet.window.carbon import CarbonPlatform, CarbonWindow
         _platform = CarbonPlatform()
+        Window = CarbonWindow
     elif sys.platform in ('win32', 'cygwin'):
-        from pyglet.window.win32 import Win32Platform
+        from pyglet.window.win32 import Win32Platform, Win32Window
         _platform = Win32Platform()
+        Window = Win32Window
     else:
-        from pyglet.window.xlib import XlibPlatform
+        from pyglet.window.xlib import XlibPlatform, XlibWindow
         _platform = XlibPlatform()
-_window_base = _platform.get_window_class()
-
-
-class Window(_window_base):
-    def __init__(self, 
-                 width=None,
-                 height=None,
-                 resizable=False,
-                 style=WINDOW_STYLE_DEFAULT,
-                 fullscreen=False,
-                 visible=True,
-                 doublebuffer=True,
-                 vsync=True,
-                 depth_size=24,
-                 factory=None,
-                 screen=None,
-                 **kwargs):
-
-        super(Window, self).__init__()
-
-        if factory is None:
-            factory = get_factory()
-        if screen is not None:
-            factory.set_screen(screen)
-        if width or height:
-            _width, _height = factory.get_size()
-            if not width:
-                width = _width
-            if not height:
-                height = _height
-            factory.set_size(width, height)
-        factory.set_resizable(resizable)
-        factory.set_style(style)
-        factory.set_fullscreen(fullscreen)
-        factory.set_gl_attribute('doublebuffer', doublebuffer)
-        factory.set_gl_attribute('depth_size', depth_size)
-        factory.set_vsync(vsync)
-        for key, value in kwargs.items():
-            factory.set_gl_attribute(key, value)
-        sys.argv = factory.set_arguments(sys.argv)
-
-        if fullscreen:
-            screen = factory.get_screen()
-            factory.set_size(screen.width, screen.height)
-
-        self.create(factory)
-        self.set_caption(sys.argv[0])
-
-        self.switch_to()
-        self.on_resize(self.width, self.height)
-
-        if visible:
-            self.set_visible(True)
-            self.activate()
-
-    def on_resize(self, width, height):
-        '''The default implementation sets the viewport to cover the entire
-        window, and sets up an orthagonal projection.  
-        
-        Override this method or provide another event handler for a perspective
-        projection.
-        '''
-        self.switch_to()
-        glViewport(0, 0, width, height)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(0, width, 0, height, -1, 1)
-        glMatrixMode(GL_MODELVIEW)
-        
+        Window = XlibWindow
 

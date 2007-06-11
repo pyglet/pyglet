@@ -20,7 +20,7 @@ class TEST_WINDOW_STYLE_TOOL(unittest.TestCase):
     def test_style_tool(self):
         self.width, self.height = 200, 200
         self.w = w = window.Window(self.width, self.height, 
-                                   style=window.WINDOW_STYLE_TOOL)
+                                   style=window.Window.WINDOW_STYLE_TOOL)
         glClearColor(1, 1, 1, 1)
         while not w.has_exit:
             glClear(GL_COLOR_BUFFER_BIT)

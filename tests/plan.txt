@@ -16,6 +16,7 @@ window
         window.MULTIPLE_WINDOW_OPEN             X11 WIN OSX
         window.CONTEXT_SHARE                    X11 WIN OSX
         window.WINDOW_SET_VSYNC                 X11 WIN OSX
+        window.WINDOW_MULTISAMPLE               X11 WIN OSX
 
     window-styles
         window.WINDOW_STYLE_DIALOG              X11 WIN OSX
@@ -152,6 +153,3 @@ font
         font.KERNING
         font.ITALIC_CORRECTION
 
-projection
-    projection.VIEWPORT_ORTHO                   DEVELOPER
-    projection.VIEWPORT_CLIP                    DEVELOPER

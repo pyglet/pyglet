@@ -93,6 +93,9 @@ class GLInfo(object):
             self.extensions = set(self.extensions.split())
         self.version = cast(glGetString(GL_VERSION), c_char_p).value
 
+    def remove_active_context(self):
+        self.have_context = False
+
     def have_extension(self, extension):
         '''Determine if an OpenGL extension is available.
 
@@ -174,6 +177,7 @@ class GLInfo(object):
 _gl_info = GLInfo()
 
 set_active_context = _gl_info.set_active_context
+remove_active_context = _gl_info.remove_active_context
 have_extension = _gl_info.have_extension
 get_extensions = _gl_info.get_extensions
 get_version = _gl_info.get_version
