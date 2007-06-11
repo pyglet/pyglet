@@ -62,6 +62,18 @@ class Glyph(image.TextureRegion):
     vertices = (0, 0, 0, 0)
 
     def set_bearings(self, baseline, left_side_bearing, advance):
+        '''Set metrics for this glyph.
+
+        :Parameters:
+            `baseline` : int
+                Distance from the bottom of the glyph to its baseline;
+                typically negative.
+            `left_side_bearing` : int
+                Distance to add to the left edge of the glyph.
+            `advance` : int
+                Distance to move the horizontal advance to the next glyph.
+
+        '''
         self.advance = advance
         self.vertices = (
             left_side_bearing,
@@ -70,16 +82,20 @@ class Glyph(image.TextureRegion):
             -baseline + self.height)
 
     def draw(self):
-        '''Debug method: use the higher level APIs for performance and
-        kerning.'''
+        '''Debug method.
+        
+        Use the higher level APIs for performance and kerning.
+        '''
         glBindTexture(GL_TEXTURE_2D, self.owner.id)
         glBegin(GL_QUADS)
         self.draw_quad_vertices()
         glEnd()
 
     def draw_quad_vertices(self):
-        '''Debug method: use the higher level APIs for performance and
-        kerning.'''
+        '''Debug method. 
+
+        Use the higher level APIs for performance and kerning.
+        '''
         glTexCoord2f(self.tex_coords[0][0], self.tex_coords[0][1])
         glVertex2f(self.vertices[0], self.vertices[1])
         glTexCoord2f(self.tex_coords[1][0], self.tex_coords[1][1])
@@ -90,15 +106,21 @@ class Glyph(image.TextureRegion):
         glVertex2f(self.vertices[0], self.vertices[3])
 
     def get_kerning_pair(self, right_glyph):
+        '''Not implemented.
+        '''
         return 0
 
 class GlyphTextureAtlas(image.Texture):
+    '''A texture within which glyphs can be drawn.
+    '''
     region_class = Glyph
     x = 0
     y = 0
     line_height = 0
 
     def apply_blend_state(self):
+        '''Set the OpenGL blend state for the glyphs in this texture.
+        '''
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_BLEND)
 
@@ -137,6 +159,8 @@ class GlyphRenderer(object):
         raise NotImplementedError('Subclass must override')
 
 class FontException(Exception):
+    '''Generic exception related to errors from the font module.  Typically
+    these relate to invalid font data.'''
     pass
 
 class Font(object):

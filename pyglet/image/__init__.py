@@ -279,17 +279,6 @@ class AbstractImage(object):
             Width of image
         `height` : int
             Height of image
-        `image_data` : ImageData
-            An ImageData view of this image.  Changes to the returned instance
-            may or may not be reflected in this image.  Read-only.
-        `texture` : Texture
-            A Texture view of this image.  Changes to the returned instance
-            may or may not be reflected in this image.  Read-only.
-        `mipmapped_texture` : Texture
-            A Texture view of this image.  The returned Texture will have 
-            mipmaps filled in for all levels.  Requires that image dimensions
-            be powers of 2.  Read-only.
-
     '''
 
     def __init__(self, width, height):
@@ -303,19 +292,40 @@ class AbstractImage(object):
         '''Retrieve an ImageData instance for this image.'''
         raise ImageException('Cannot retrieve image data for %r' % self)
 
-    image_data = property(_get_image_data)
+    image_data = property(_get_image_data,
+        doc='''An ImageData view of this image.  
+        
+        Changes to the returned instance may or may not be reflected in this
+        image.  Read-only.
+        
+        :type: `ImageData`
+        ''')
 
     def _get_texture(self):
         '''Retrieve a Texture instance for this image.'''
         raise ImageException('Cannot retrieve texture for %r' % self)
 
-    texture = property(_get_texture)
+    texture = property(_get_texture,
+        doc=''' A Texture view of this image.  
+        
+        Changes to the returned instance may or may not be reflected in this
+        image.  Read-only.
+
+        :type: `Texture`
+        ''')
 
     def _get_mipmapped_texture(self):
         '''Retrieve a Texture instance with all mipmap levels filled in.'''
         raise ImageException('Cannot retrieve mipmapped texture for %r' % self)
 
-    mipmapped_texture = property(_get_mipmapped_texture)
+    mipmapped_texture = property(_get_mipmapped_texture,
+        doc='''A Texture view of this image.  
+        
+        The returned Texture will have mipmaps filled in for all levels.
+        Requires that image dimensions be powers of 2.  Read-only.
+
+        :type: `Texture`
+        ''')
 
     def get_region(self, x, y, width, height):
         '''Retrieve a rectangular region of this image.
@@ -427,7 +437,7 @@ class AbstractImageSequence(object):
 class TextureSequence(AbstractImageSequence):
     '''Interface for a sequence of textures.
 
-    Typical implementations store multiple `TextureRegion`s within one
+    Typical implementations store multiple `TextureRegion` s within one
     `Texture` so as to minimise state changes.
     '''
     texture_sequence = property(lambda self: self)
@@ -517,7 +527,11 @@ class ImageData(AbstractImage):
         self._desired_format = format.upper()
         self._current_texture = None
 
-    format = property(lambda self: self._desired_format, _set_format)
+    format = property(lambda self: self._desired_format, _set_format,
+        doc='''Format string of the data.  Read-write.
+        
+        :type: str
+        ''')
 
     def _get_data(self):
         if self._current_pitch != self.pitch or \
@@ -536,13 +550,17 @@ class ImageData(AbstractImage):
         self._current_texture = None
         self._current_mipmapped_texture = None
 
-    data = property(_get_data, _set_data)
+    data = property(_get_data, _set_data, 
+        doc='''The byte data of the image.  Read-write.
+        
+        :type: sequence of bytes, or str
+        ''')
 
     def set_mipmap_image(self, level, image):
         '''Set a mipmap image for a particular level.
 
         The mipmap image will be applied to textures obtained via the
-        `mipmapped_image` attribute. 
+        `mipmapped_texture` property
 
         :Parameters:
             `level` : int
@@ -1454,8 +1472,9 @@ class DepthTexture(Texture):
         source.blit_to_texture(self.level, x, y, z)
 
 class BufferManager(object):
-    '''Manages the set of framebuffers for a context.  This class must
-    be singleton per context.
+    '''Manages the set of framebuffers for a context.
+
+    Use `get_buffer_manager` to obtain the singleton instance of this class.
     '''
     def __init__(self):
         self.color_buffer = None
@@ -1475,17 +1494,33 @@ class BufferManager(object):
         self.refs = []
 
     def get_viewport(self):
+        '''Get the current OpenGL viewport dimensions.
+
+        :rtype: 4-tuple of float.
+        :return: Left, top, right and bottom dimensions.
+        '''
         viewport = (GLint * 4)()
         glGetIntegerv(GL_VIEWPORT, viewport)
         return viewport
     
     def get_color_buffer(self):
+        '''Get the color buffer.
+
+        :rtype: `ColorBufferImage`
+        '''
         if not self.color_buffer:
             viewport = self.get_viewport()
             self.color_buffer = ColorBufferImage(*viewport)
         return self.color_buffer
 
     def get_aux_buffer(self):
+        '''Get a free auxilliary buffer.
+
+        If not aux buffers are available, `ImageException` is raised.  Buffers
+        are released when they are garbage collected.
+        
+        :rtype: `ColorBufferImage`
+        '''
         if not self.free_aux_buffers:
             raise ImageException('No free aux buffer is available.')
 
@@ -1501,12 +1536,24 @@ class BufferManager(object):
         return buffer
 
     def get_depth_buffer(self):
+        '''Get the depth buffer.
+
+        :rtype: `DepthBufferImage`
+        '''
         if not self.depth_buffer:
             viewport = self.get_viewport()
             self.depth_buffer = DepthBufferImage(*viewport)
         return self.depth_buffer
 
     def get_buffer_mask(self):
+        '''Get a free bitmask buffer.
+
+        A bitmask buffer is a buffer referencing a single bit in the stencil
+        buffer.  If no bits are free, `ImageException` is raised.  Bits are
+        released when the bitmask buffer is garbage collected.
+
+        :rtype: `BufferImageMask`
+        '''
         if not self.free_stencil_bits:
             raise ImageException('No free stencil bits are available.')
 
@@ -1522,6 +1569,10 @@ class BufferManager(object):
         return buffer
 
 def get_buffer_manager():
+    '''Get the singleton buffer manager.
+    
+    :rtype: `BufferManager`
+    '''
     context = get_current_context()
     if not hasattr(context, 'image_buffer_manager'):
         context.image_buffer_manager = BufferManager()
@@ -1530,9 +1581,17 @@ def get_buffer_manager():
 # XXX BufferImage could be generalised to support EXT_framebuffer_object's
 # renderbuffer.
 class BufferImage(AbstractImage):
+    '''An abstract framebuffer.
+    '''
+    #: The OpenGL read and write target for this buffer.
     gl_buffer = GL_BACK
+
+    #: The OpenGL format constant for image data.
     gl_format = 0
+
+    #: The format string used for image data.
     format = ''
+
     owner = None
 
     # TODO: enable methods
@@ -1572,6 +1631,11 @@ class BufferImage(AbstractImage):
         return region
 
 class ColorBufferImage(BufferImage):
+    '''A color framebuffer.
+
+    This class is used to wrap both the primary color buffer (i.e., the back
+    buffer) or any one of the auxilliary buffers.
+    '''
     gl_format = GL_RGBA
     format = 'RGBA'
 
@@ -1608,6 +1672,8 @@ class ColorBufferImage(BufferImage):
                             self.x, self.y, self.width, self.height) 
 
 class DepthBufferImage(BufferImage):
+    '''The depth buffer.
+    '''
     gl_format = GL_DEPTH_COMPONENT
     format = 'L'
 
@@ -1636,6 +1702,8 @@ class DepthBufferImage(BufferImage):
 
 
 class BufferImageMask(BufferImage):
+    '''A single bit of the stencil buffer.
+    '''
     gl_format = GL_STENCIL_INDEX
     format = 'L'
 
@@ -1867,5 +1935,5 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
         return len(self.items)
 
 # Initialise default codecs
-from pyglet.image import codecs
-codecs.add_default_image_codecs()
+from pyglet.image import codecs as _codecs
+_codecs.add_default_image_codecs()

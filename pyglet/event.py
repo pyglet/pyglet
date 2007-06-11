@@ -108,7 +108,7 @@ To remove all handlers on the top stack level, use
 Note that any handlers pushed onto the stack have precedence over the
 handlers set directly on the instance (for example, using the methods
 described in the previous section), regardless of when they were set.
-For example, handler `foo` is called before handler `bar` in the following
+For example, handler ``foo`` is called before handler ``bar`` in the following
 example::
 
     dispatcher.push_handlers(on_resize=foo)
@@ -130,7 +130,7 @@ updates the application state and checks for new events::
         dispatcher.dispatch_events()
         # ... additional per-frame processing
 
-Not all event dispatchers require the call to `dispatch_events`; check with
+Not all event dispatchers require the call to ``dispatch_events``; check with
 the particular class's documentation.
 
 '''
@@ -144,6 +144,8 @@ EVENT_HANDLED = True
 EVENT_UNHANDLED = None
 
 class EventException(Exception):
+    '''An exception raised when an event handler could not be attached.
+    '''
     pass
 
 class EventDispatcher(object):
@@ -161,6 +163,11 @@ class EventDispatcher(object):
         Registering event types allows the dispatcher to validate event
         handler names as they are attached, and to search attached objects for
         suitable handlers.
+
+        :Parameters:
+            `name` : str
+                Name of the event to register.
+
         '''
         if not hasattr(cls, 'event_types'):
             cls.event_types = []
@@ -236,10 +243,12 @@ class EventDispatcher(object):
         del self._event_stack[0]
 
     def dispatch_event(self, event_type, *args):
-        '''Dispatch a single event to the attached handlers, propogating
-        from the top of the stack until one returns `EVENT_UNHANDLED`.
-        This method should be used only by `EventDispatcher` implementors;
-        applications should call `dispatch_events`.
+        '''Dispatch a single event to the attached handlers.
+        
+        The event is propogated to all handlers from from the top of the stack
+        until one returns `EVENT_HANDLED`.  This method should be used only by
+        `EventDispatcher` implementors; applications should call
+        `dispatch_events`.
 
         :Parameters:
             `event_type` : str
@@ -277,7 +286,6 @@ class EventDispatcher(object):
             @win.event
             def on_resize(self, width, height):
                 # ...
-
 
         or::
 

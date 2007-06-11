@@ -1264,6 +1264,7 @@ class HTMLWriter:
                                    (ClassDoc, types.NoneType))]
         self.write_toc_section(out, "All Functions", funcs)
 
+        '''
         # List the constants.
         vars = []
         for doc in self.module_list:
@@ -1279,6 +1280,7 @@ class HTMLWriter:
                                          imported=False,
                                          public=self._public_filter)
         self.write_toc_section(out, "All Variables", vars)
+        '''
 
         # Footer material.
         out('<hr />\n')

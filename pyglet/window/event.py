@@ -172,7 +172,7 @@ if hasattr(sys, 'is_epydoc') and sys.is_epydoc:
             :Parameters:
                 `x` : float
                     Distance in pixels from the left edge of the window.
-                `y`: float
+                `y` : float
                     Distance in pixels from the bottom edge of the window.
                 `dx` : float
                     Relative X position from the previous mouse position.
@@ -191,7 +191,7 @@ if hasattr(sys, 'is_epydoc') and sys.is_epydoc:
             :Parameters:
                 `x` : float
                     Distance in pixels from the left edge of the window.
-                `y`: float
+                `y` : float
                     Distance in pixels from the bottom edge of the window.
                 `dx` : float
                     Relative X position from the previous mouse position.
@@ -212,7 +212,7 @@ if hasattr(sys, 'is_epydoc') and sys.is_epydoc:
             :Parameters:
                 `x` : float
                     Distance in pixels from the left edge of the window.
-                `y`: float
+                `y` : float
                     Distance in pixels from the bottom edge of the window.
                 `button` : int
                     The mouse button that was pressed.
@@ -229,7 +229,7 @@ if hasattr(sys, 'is_epydoc') and sys.is_epydoc:
             :Parameters:
                 `x` : float
                     Distance in pixels from the left edge of the window.
-                `y`: float
+                `y` : float
                     Distance in pixels from the bottom edge of the window.
                 `button` : int
                     The mouse button that was released.
@@ -279,7 +279,7 @@ if hasattr(sys, 'is_epydoc') and sys.is_epydoc:
             :Parameters:
                 `x` : float
                     Distance in pixels from the left edge of the window.
-                `y`: float
+                `y` : float
                     Distance in pixels from the bottom edge of the window.
 
             :event:
@@ -295,7 +295,7 @@ if hasattr(sys, 'is_epydoc') and sys.is_epydoc:
             :Parameters:
                 `x` : float
                     Distance in pixels from the left edge of the window.
-                `y`: float
+                `y` : float
                     Distance in pixels from the bottom edge of the window.
 
             :event:

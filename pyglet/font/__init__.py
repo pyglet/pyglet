@@ -56,12 +56,11 @@ The most efficient way to render these glyphs is with a `GlyphString`::
     glyph_string = GlyphString(text, glyphs)
     glyph_string.draw()
 
-There are also a variety of methods in both `Font` and `GlyphString` to
-facilitate word-wrapping.
+There are also a variety of methods in both `Font` and
+`GlyphString` to facilitate word-wrapping.
 
-For complex multi-font rendering and layout, consider the `pyglet.ext.layout`
-package.
-
+See the `pyglet.font.base` module for documentation on the base classes used
+by this package.
 '''
 
 __docformat__ = 'restructuredtext'
@@ -88,7 +87,8 @@ class GlyphString(object):
         '''Create a glyph string.
         
         The `text` string is used to determine valid breakpoints; all glyphs
-        must have already been determined using `Font.get_glyphs`.  The string
+        must have already been determined using
+        `pyglet.font.base.Font.get_glyphs`.  The string
         will be positioned with the baseline of the left-most glyph at the
         given coordinates.
         
@@ -237,6 +237,13 @@ class GlyphString(object):
 
 class Label(object):
     '''Simple displayable text.
+
+    This is a convenience class for rendering strings of text.  It takes
+    care of caching the vertices so the text can be rendered every frame with
+    little performance penalty.
+
+    Labels can be word-wrapped by specifying a `width` to wrap into.  If the
+    width is not specified, it gives the width of the text as laid out.
     '''
 
     _layout_width = None  # Width to layout text to
@@ -254,10 +261,29 @@ class Label(object):
     BASELINE = 'baseline'
     TOP = 'top'
 
-    halign = LEFT
-    valign = BASELINE
+    _halign = LEFT
+    _valign = BASELINE
 
     def __init__(self, font, text='', x=0, y=0, z=0, color=(1,1,1,1)):
+        '''Create a label.
+
+        :Parameters:
+            `font` : `Font`
+                Font to render the text in.
+            `text` : str
+                Initial string to render.
+            `x` : float
+                X coordinate of the left edge of the text.
+            `y` : float
+                Y coordinate of the baseline of the text.  If the text is
+                word-wrapped, this refers to the first line of text.
+            `z` : float
+                Z coordinate of the text plane.
+            `color` : 4-tuple of float
+                Color to render the text in.  Alpha values can be specified
+                in the fourth component.
+
+        '''
         self._dirty = True
         self.font = font
         self._text = text
@@ -306,23 +332,32 @@ class Label(object):
         self._dirty = False
         
     def draw(self):
+        '''Render the text.
+
+        This method makes no assumptions about the projection.  Using the
+        default projection set up by pyglet, coordinates refer to window-space
+        and the text will be aligned to the window.  Other projections can
+        be used to render text into 3D space.
+
+        The OpenGL state is not modified by this method.
+        '''
         if self._dirty:
             self._clean()
 
         x = self.x
-        if self.halign == self.RIGHT:
+        if self._halign == self.RIGHT:
             raise NotImplementedError('no align yet')
             x += self._layout_width - self.width
-        elif self.halign == self.CENTER:
+        elif self._halign == self.CENTER:
             raise NotImplementedError('no align yet')
             x += -self._layout_width / 2 + self._text_width / 2
 
         y = self.y
-        if self.valign == self.BOTTOM:
+        if self._valign == self.BOTTOM:
             y += self.height
-        elif self.valign == self.CENTER:
+        elif self._valign == self.CENTER:
             y += self.height / 2
-        elif self.valign == self.TOP:
+        elif self._valign == self.TOP:
             y -= self.font.ascent
 
         glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT)
@@ -336,34 +371,55 @@ class Label(object):
         glPopMatrix()
         glPopAttrib()
 
-    def get_width(self):
+    def _get_width(self):
         if self._dirty:
             self._clean()
         if self._layout_width:
             return self._layout_width
         return self._text_width
 
-    def set_width(self, width):
+    def _set_width(self, width):
         self._layout_width = width
         self._dirty = True
 
-    width = property(get_width, set_width)
+    width = property(_get_width, _set_width, 
+        doc='''Width of the text.
 
-    def get_height(self):
+        When set, this enables word-wrapping to the specified width.
+        Otherwise, the width of the text as it will be rendered can be
+        determined.
+        
+        :type: float
+        ''')
+
+    def _get_height(self):
         if self._dirty:
             self._clean()
         return self._text_height
 
-    height = property(get_height)
+    height = property(_get_height,
+        doc='''Height of the text.
+        
+        This property is the ascent minus the descent of the font, unless
+        there is more than one line of word-wrapped text, in which case
+        the height takes into account the line leading.  Read-only.
 
-    def set_text(self, text):
+        :type: float
+        ''')
+
+    def _set_text(self, text):
         self._text = text
         self._dirty = True
 
-    text = property(lambda self: self._text, set_text)
+    text = property(lambda self: self._text, _set_text,
+        doc='''Text to render.
 
+        The glyph vertices are only recalculated as needed, so multiple
+        changes to the text can be performed with no performance penalty.
+        
+        :type: str
+        ''')
 
-# Load platform dependent module
 if sys.platform == 'darwin':
     from pyglet.font.carbon import CarbonFont
     _font_class = CarbonFont
@@ -392,7 +448,7 @@ def load(name, size, bold=False, italic=False):
             If True, an italic variant is returned, if one exists for the given
             family and size.
 
-    :rtype: `pyglet.font.base.Font`
+    :rtype: `Font`
     '''
     # Find first matching name
     if type(name) in (tuple, list):
@@ -420,6 +476,21 @@ def load(name, size, bold=False, italic=False):
     return font
 
 def add_file(font):
+    '''Add a font to pyglet's search path.
+
+    In order to load a font that is not installed on the system, you must
+    call this method to tell pyglet that it exists.  You can supply
+    either a filename or any file-like object.
+
+    The font format is platform-dependent, but is typically a TrueType font
+    file containing a single font face.  Note that to load this file after
+    adding it you must specify the face name to `load`, not the filename.
+
+    :Parameters:
+        `font` : str or file
+            Filename or file-like object to load fonts from.
+
+    '''
     if type(font) in (str, unicode):
         font = open(font, 'rb')
     if hasattr(font, 'read'):
@@ -428,6 +499,16 @@ def add_file(font):
 
 
 def add_directory(dir):
+    '''Add a directory of fonts to pyglet's search path.
+
+    This function simply calls `add_file` for each file with a ``.ttf``
+    extension in the given directory.  Subdirectories are not searched.
+
+    :Parameters:
+        `dir` : str
+            Directory that contains font files.
+
+    '''
     import os
     for file in os.listdir(dir):
         if file[:-4].lower() == '.ttf':

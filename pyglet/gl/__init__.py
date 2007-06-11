@@ -247,7 +247,7 @@ class Context(object):
         `object_space` : `ObjectSpace`
             An object which is shared between all contexts that share
             GL objects.
-        `window`: `pyglet.window.Window`
+        `window` : `pyglet.window.Window`
             The window this context is used by.
 
     '''
