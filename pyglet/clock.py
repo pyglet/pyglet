@@ -38,19 +38,21 @@
 Measuring time
 ==============
 
-    >>> from pylet import clock
-    >>> while True:
-    ...     dt = clock.tick()
-    ...     # (update, render)
-    ...     print 'FPS is %f' % clock.get_fps()
-    >>>
+The `tick` and `get_fps` functions can be used in conjunction to fulfil most
+games' basic requirements::
 
-The `dt` value returned gives the number of seconds (as a float) since the
+    from pylet import clock
+    while True:
+        dt = clock.tick()
+        # ... update and render ...
+        print 'FPS is %f' % clock.get_fps()
+
+The ``dt`` value returned gives the number of seconds (as a float) since the
 last "tick".
 
 The `get_fps` function averages the framerate over a sliding window of
 approximately 1 second.  (You can calculate the instantaneous framerate by
-taking the reciprocal of `dt`).
+taking the reciprocal of ``dt``).
 
 Always remember to `tick` the clock!
 
@@ -59,8 +61,7 @@ Limiting frame-rate
 
 The framerate can be limited::
 
-    >>> clock.set_fps_limit(60)
-    >>>
+    clock.set_fps_limit(60)
 
 This causes `clock` to sleep during each `tick` in an attempt to keep the
 number of ticks (frames) per second below 60.
@@ -74,51 +75,44 @@ Scheduling
 
 You can schedule a function to be called every time the clock is ticked::
 
-    >>> def callback(dt):
-    ...     print '%f seconds since last callback' % dt
-    ...
-    >>> clock.schedule(callback)
-    >>>
-
-The `schedule_interval` method causes a function to be called every `n`
+    def callback(dt):
+        print '%f seconds since last callback' % dt
+   
+    clock.schedule(callback)
+   
+The `schedule_interval` method causes a function to be called every "n"
 seconds::
 
-    >>> clock.schedule_interval(callback, .5)   # called twice a second
-    >>>
+    clock.schedule_interval(callback, .5)   # called twice a second
 
-The `schedule_once` method causes a function to be called once `n` seconds
+The `schedule_once` method causes a function to be called once "n" seconds
 in the future::
 
-    >>> clock.schedule_once(callback, 5)        # called in 5 seconds
-    >>>
+    clock.schedule_once(callback, 5)        # called in 5 seconds
 
 All of the `schedule` methods will pass on any additional args or keyword args
 you specify ot the callback function::
 
-    >>> def animate(dt, velocity, sprite):
-    ...    sprite.position += dt * velocity
-    ...
-    >>> clock.schedule(animate, velocity=5.0, sprite=alien)
-    >>>
-
+    def animate(dt, velocity, sprite):
+       sprite.position += dt * velocity
+   
+    clock.schedule(animate, velocity=5.0, sprite=alien)
+   
 You can cancel a function scheduled with any of these methods using
 `unschedule`::
 
-    >>> clock.unschedule(animate)
-    >>>
+    clock.unschedule(animate)
 
 Displaying FPS
 ==============
 
 The ClockDisplay class provides a simple FPS counter::
 
-    >>> fps_display = clock.ClockDisplay()
-    >>> fps_display.draw()
-    >>>
-
+    fps_display = clock.ClockDisplay()
+    fps_display.draw()
+   
 There are several options to change the font, color and text displayed
-within the __init__ method.  The display will be bottom-right aligned
-to the window by default (XXX temporary).
+within the __init__ method.
 
 Using multiple clocks
 =====================
@@ -126,21 +120,19 @@ Using multiple clocks
 The clock functions are all relayed to an instance of `Clock` which is
 initalised with the module.  You can get this instance to use directly::
 
-    >>> clk = clock.get_default()
-    >>>
+    clk = clock.get_default()
 
 You can also replace the default clock with your own:
 
-    >>> myclk = clock.Clock()
-    >>> clock.set_default(myclk)
+    myclk = clock.Clock()
+    clock.set_default(myclk)
 
 Each clock maintains its own set of scheduled functions and FPS
-limiting/measurement.  Each clock must be `tick`d separately.
+limiting/measurement.  Each clock must be "ticked" separately.
 
 Multiple and derived clocks potentially allow you to separate "game-time" and
 "wall-time", or to synchronise your clock to an audio or video stream instead
 of the system clock.
-
 '''
 
 __docformat__ = 'restructuredtext'
@@ -169,17 +161,17 @@ if sys.platform in ('win32', 'cygwin'):
             _kernel32.WaitForSingleObject(self._timer, 0xffffffff)
 
 else:
-    path = ctypes.util.find_library('c')
-    if not path:
+    _path = ctypes.util.find_library('c')
+    if not _path:
         raise ImportError('libc not found')
-    _c = ctypes.cdll.LoadLibrary(path)
+    _c = ctypes.cdll.LoadLibrary(_path)
     _c.usleep.argtypes = [ctypes.c_ulong]
 
     class _ClockBase(object):
         def sleep(self, microseconds):
             _c.usleep(int(microseconds))
 
-class ScheduledIntervalItem(object):
+class _ScheduledIntervalItem(object):
     __slots__ = ['func', 'interval', 'last_ts', 'next_ts', 
                  'args', 'kwargs']
     def __init__(self, func, interval, last_ts, next_ts, args, kwargs):
@@ -195,23 +187,26 @@ class Clock(_ClockBase):
     functions.
     '''
 
-    # No attempt to sleep will be made for less than this time.  Setting
-    # high will increase accuracy and CPU burn.  Setting low reduces accuracy
-    # but ensures more sleeping takes place rather than busy-loop.
+    #: The minimum amount of time in seconds this clock will attempt to sleep 
+    #: for when framerate limiting.  Higher values will increase the
+    #: accuracy of the limiting but also increase CPU usage while
+    #: busy-waiting.  Lower values mean the process sleeps more often, but is
+    #: prone to over-sleep and run at a potentially lower or uneven framerate
+    #: than desired.
     MIN_SLEEP = 0.005
 
-    # Sleep by the desired amount minus this bit.  This is to compensate
-    # for operating systems being a bit lazy in returning control.
+    #: The amount of time in seconds this clock subtracts from sleep values
+    #: to compensate for lazy operating systems.
     SLEEP_UNDERSHOOT = MIN_SLEEP - 0.001
 
     # List of functions to call every tick.
-    schedule_items = None
+    _schedule_items = None
 
     # List of schedule interval items kept in sort order.
-    schedule_interval_items = None
+    _schedule_interval_items = None
 
     # Dict mapping function to schedule item for fast removal 
-    schedule_functions = None
+    _schedule_functions = None
 
     def __init__(self, fps_limit=None, time_function=time.time):
         '''Initialise a Clock, with optional framerate limit and custom
@@ -237,21 +232,21 @@ class Clock(_ClockBase):
         self.set_fps_limit(fps_limit)
         self.cumulative_time = 0
 
-        self.schedule_items = []
-        self.schedule_interval_items = []
-        self.schedule_functions = {}
+        self._schedule_items = []
+        self._schedule_interval_items = []
+        self._schedule_functions = {}
 
     def tick(self):
         '''Signify that one frame has passed.
 
         This will call any scheduled functions that have elapsed.
 
-        :return: The number of seconds (as a float) since the last `tick`,
-            or 0 if this was the first frame.
-
+        :rtype: float
+        :return: The number of seconds since the last "tick", or 0 if this was
+            the first frame.
         '''
         if self.period_limit:
-            self.limit()
+            self._limit()
 
         ts = self.time()
         if self.last_ts is None: 
@@ -265,12 +260,12 @@ class Clock(_ClockBase):
         self.last_ts = ts
 
         # Call functions scheduled for every frame  
-        for func, args, kwargs in self.schedule_items:
+        for func, args, kwargs in self._schedule_items:
             func(delta_t, *args, **kwargs)
 
         # Call all scheduled interval functions and reschedule for future.
         need_resort = False
-        for item in self.schedule_interval_items:
+        for item in self._schedule_interval_items:
             if item.next_ts > ts:
                 break
             item.func(ts - item.last_ts, *item.args, **item.kwargs)
@@ -283,17 +278,17 @@ class Clock(_ClockBase):
                 need_resort = True
 
         # Remove finished one-shots.
-        self.schedule_interval_items = \
-            [item for item in self.schedule_interval_items \
+        self._schedule_interval_items = \
+            [item for item in self._schedule_interval_items \
              if item.next_ts > ts]
 
         if need_resort:
             # TODO bubble up changed items might be faster
-            self.schedule_interval_items.sort(key=lambda a: a.next_ts)
+            self._schedule_interval_items.sort(key=lambda a: a.next_ts)
 
         return delta_t
 
-    def limit(self):
+    def _limit(self):
         '''Sleep until the next frame is due.  Called automatically by
         `tick` if a framerate limit has been set.
 
@@ -338,9 +333,9 @@ class Clock(_ClockBase):
     def get_fps_limit(self):
         '''Get the framerate limit.
 
+        :rtype: float
         :return: The framerate limit previously set in the constructor or
             `set_fps_limit`, or None if no limit was set.
-
         '''
         if self.period_limit:
             return 1. / self.period_limit
@@ -348,10 +343,12 @@ class Clock(_ClockBase):
             return 0
 
     def get_fps(self):
-        '''Get the average FPS of recent history, as a float.  The result
-        is the average of a sliding window of the last `n` frames, where
-        `n` is some number designed to cover approximately 1 second.
+        '''Get the average FPS of recent history.  
+        
+        The result is the average of a sliding window of the last "n" frames,
+        where "n" is some number designed to cover approximately 1 second.
 
+        :rtype: float
         :return: The measured frames per second.
         '''
         if not self.cumulative_time: 
@@ -361,7 +358,7 @@ class Clock(_ClockBase):
     def schedule(self, func, *args, **kwargs):
         '''Schedule a function to be called every frame.
 
-        The function should have a prototype that includes `dt` as the
+        The function should have a prototype that includes ``dt`` as the
         first argument, which gives the elapsed time, in seconds, since the
         last clock tick.  Any additional arguments given to this function
         are passed on to the callback::
@@ -369,48 +366,49 @@ class Clock(_ClockBase):
             def callback(dt, *args, **kwargs):
                 pass
 
-        Note that this method is also implemented on Clock, which schedules
-        the function on the default clock.
+        :Parameters:
+            `func` : function
+                The function to call each frame.
         '''
         item = (func, args, kwargs)
-        self.schedule_items.append(item)
+        self._schedule_items.append(item)
 
-        # schedule_functions gives mapping of func to item.  if func
+        # _schedule_functions gives mapping of func to item.  if func
         # is already scheduled, the mapping becomes a list of items.
-        if func in self.schedule_functions:
-            entry = self.schedule_functions[func]
+        if func in self._schedule_functions:
+            entry = self._schedule_functions[func]
             if type(entry) == list:
-                self.schedule_functions[func].append(item)
+                self._schedule_functions[func].append(item)
             else:
-                self.schedule_functions[func] = [entry, item]
+                self._schedule_functions[func] = [entry, item]
         else:
-            self.schedule_functions[func] = item
+            self._schedule_functions[func] = item
 
-    def schedule_item(self, func, interval, repeat, *args, **kwargs):
+    def _schedule_item(self, func, interval, repeat, *args, **kwargs):
         last_ts = self.last_ts or self.next_ts
         next_ts = last_ts + interval
         if not repeat:
             interval = 0
 
-        item = ScheduledIntervalItem(
+        item = _ScheduledIntervalItem(
             func, interval, last_ts, next_ts, args, kwargs)
 
         # Insert in sort order
-        for i, other in enumerate(self.schedule_interval_items):
+        for i, other in enumerate(self._schedule_interval_items):
             if other.next_ts > next_ts:
-                self.schedule_interval_items.insert(i, item)
+                self._schedule_interval_items.insert(i, item)
                 return
-        self.schedule_interval_items.append(item)
+        self._schedule_interval_items.append(item)
 
         # add item to func mapping
-        if func in self.schedule_functions:
-            entry = self.schedule_functions[func]
+        if func in self._schedule_functions:
+            entry = self._schedule_functions[func]
             if type(entry) == list:
-                self.schedule_functions[func].append(item)
+                self._schedule_functions[func].append(item)
             else:
-                self.schedule_functions[func] = [entry, item]
+                self._schedule_functions[func] = [entry, item]
         else:
-            self.schedule_functions[func] = item
+            self._schedule_functions[func] = item
 
     def schedule_interval(self, func, interval, *args, **kwargs):
         '''Schedule a function to be called every `interval` seconds.
@@ -420,42 +418,55 @@ class Clock(_ClockBase):
 
         The callback function prototype is the same as for `schedule`.
 
-        Note that this method is also implemented on Clock, which schedules
-        the function on the default clock.
+        :Parameters:
+            `func` : function
+                The function to call when the timer lapses.
+            `interval` : float
+                The number of seconds to wait between each call.
+
         '''
-        self.schedule_item(func, interval, True, *args, **kwargs)
+        self._schedule_item(func, interval, True, *args, **kwargs)
 
     def schedule_once(self, func, delay, *args, **kwargs):
         '''Schedule a function to be called once after `delay` seconds.
 
         The callback function prototype is the same as for `schedule`.
 
-        Note that this method is also implemented on Clock, which schedules
-        the function on the default clock.
+        :Parameters:
+            `func` : function
+                The function to call when the timer lapses.
+            `delay` : float
+                The number of seconds to wait before the timer lapses.
         '''
-        self.schedule_item(func, delay, False, *args, **kwargs)
+        self._schedule_item(func, delay, False, *args, **kwargs)
 
     def unschedule(self, func):
-        '''Remove a function from the schedule.  If it appears in the
-        schedule more than once, all occurances are removed.  If the
-        function was not scheduled, no error is raised.
+        '''Remove a function from the schedule.  
+        
+        If the function appears in the schedule more than once, all occurances
+        are removed.  If the function was not scheduled, no error is raised.
+
+        :Parameters:
+            `func` : function
+                The function to remove from the schedule.
+
         '''
-        if func not in self.schedule_functions:
+        if func not in self._schedule_functions:
             return
 
-        items = self.schedule_functions[func]
+        items = self._schedule_functions[func]
         if type(items) == list:
             for item in items:
-                if item in self.schedule_items:
-                    self.schedule_items.remove(item)
-                elif item in self.schedule_interval_items:
-                    self.schedule_interval_items.remove(item)
+                if item in self._schedule_items:
+                    self._schedule_items.remove(item)
+                elif item in self._schedule_interval_items:
+                    self._schedule_interval_items.remove(item)
         else:
-            if items in self.schedule_items:
-                self.schedule_items.remove(items)
-            elif item in self.schedule_interval_items:
-                self.schedule_interval_items.remove(item)
-        del self.schedule_functions[func]
+            if items in self._schedule_items:
+                self._schedule_items.remove(items)
+            elif item in self._schedule_interval_items:
+                self._schedule_interval_items.remove(item)
+        del self._schedule_functions[func]
 
 
 # Default clock.
@@ -465,6 +476,10 @@ def set_default(default):
     '''Set the default clock to use for all module-level functions.
 
     By default an instance of `Clock` is used.
+
+    :Parameters:
+        `default` : `Clock`
+            The default clock to use.
     '''
     global _default
     _default = default
@@ -472,6 +487,9 @@ def set_default(default):
 def get_default():
     '''Return the `Clock` instance that is used by all module-level
     clock functions.
+
+    :rtype: `Clock`
+    :return: The default clock.
     '''
     return _default
 
@@ -480,14 +498,17 @@ def tick():
 
     This will call any scheduled functions that have elapsed.
 
-    :return: The number of seconds (as a float) since the last `tick`,
-        or 0 if this was the first frame.
+    :rtype: float
+    :return: The number of seconds since the last "tick", or 0 if this was the
+        first frame.
     '''
 
     return _default.tick()
 
 def get_fps():
     '''Return the current measured FPS of the default clock.
+
+    :rtype: float
     '''
     return _default.get_fps()
 
@@ -512,56 +533,100 @@ def get_fps_limit():
     return _default.get_fps_limit()
 
 def schedule(func, *args, **kwargs):
-    '''Schedule 'func' to be called every frame on the default clock.  The
-    arguments passed to func are 'dt', followed by any *args and **kwargs
-    given here.
+    '''Schedule 'func' to be called every frame on the default clock.  
+    
+    The arguments passed to func are ``dt``, followed by any ``*args`` and 
+    ``**kwargs`` given here.
 
-    If no default clock is set, the func is queued and will be scheduled
-    on the default clock as soon as it is created.
+    :Parameters:
+        `func` : function
+            The function to call each frame.
     '''
     _default.schedule(func, *args, **kwargs)
 
 def schedule_interval(func, interval, *args, **kwargs):
-    '''Schedule 'func' to be called every 'interval' seconds (can be
-    a float) on the default clock.  The arguments passed to 'func' are
-    'dt' (time since last function call), followed by any *args and
-    **kwargs given here.
+    '''Schedule 'func' to be called every 'interval' seconds on the default
+    clock.  
     
-    If no default clock is set, the func is queued and will be scheduled
-    on the default clock as soon as it is created.
+    The arguments passed to 'func' are 'dt' (time since last function call),
+    followed by any ``*args`` and ``**kwargs`` given here.
+    
+    :Parameters:
+        `func` : function
+            The function to call when the timer lapses.
+        `interval` : float
+            The number of seconds to wait between each call.
+
     '''
     _default.schedule_interval(func, interval, *args, **kwargs)
 
 def schedule_once(func, delay, *args, **kwargs):
     '''Schedule 'func' to be called once after 'delay' seconds (can be
     a float) on the default clock.  The arguments passed to 'func' are
-    'dt' (time since last function call), followed by any *args and
-    **kwargs given here.
+    'dt' (time since last function call), followed by any ``*args`` and
+    ``**kwargs`` given here.
     
     If no default clock is set, the func is queued and will be scheduled
     on the default clock as soon as it is created.
+
+    :Parameters:
+        `func` : function
+            The function to call when the timer lapses.
+        `delay` : float
+            The number of seconds to wait before the timer lapses.
+ 
     ''' 
     _default.schedule_once(func, delay, *args, **kwargs)
 
 def unschedule(func):
     '''Remove 'func' from the default clock's schedule.  No error
     is raised if the func was never scheduled.
+
+    :Parameters:
+        `func` : function
+            The function to remove from the schedule.
+
     '''
     _default.unschedule(func)
 
 class ClockDisplay(object):
     '''Display current clock values, such as FPS.
 
-    Assumes an orthogonal window projection.
+    This is a convenience class for displaying diagnostics such as the
+    framerate.  See the module documentation for example usage.
+
+    :Ivariables:
+        `label` : `pyglet.font.Label`
+            The label which is displayed.
+
     '''
     
-    window_width = 0 #XXX temp
     def __init__(self, 
                  font=None,
                  interval=0.25,
                  format='%(fps).2f',
                  color=(.5, .5, .5, .5),
                  clock=None):
+        '''Create a ClockDisplay.
+
+        All parameters are optional.  By default, a large translucent
+        font will be used to display the FPS to two decimal places.
+
+        :Parameters:
+            `font` : `pyglet.font.Font`
+                The font to format text in.
+            `interval` : float
+                The number of seconds between updating the display.
+            `format` : str
+                A format string describing the format of the text.  This
+                string is modulated with the dict ``{'fps' : fps}``.
+            `color` : 4-tuple of float
+                The color, including alpha, passed to ``glColor4f``.
+            `clock` : `Clock`
+                The clock which determines the time.  If None, the default
+                clock is used.
+
+        '''
 
         if clock is None:
             self.clock = _default
@@ -577,18 +642,15 @@ class ClockDisplay(object):
         self.format = format
 
     def update_text(self, dt=0):
+        '''Scheduled method to update the label text.''' 
         fps = self.clock.get_fps()
         self.label.text = self.format % {'fps': fps}
 
     def draw(self):
+        '''Method called each frame to render the label.'''
         self.label.draw()
 
-    def on_resize(self, width, height):
-        # TODO when TextSprite implements Sprite.
-        #self.sprite.right = width
-        self.window_width = width
-
-if __name__ == '__main__':
+def test_clock():
     import sys
     import getopt
     test_seconds = 1 
@@ -635,3 +697,5 @@ if __name__ == '__main__':
     # in the startup situation.
     print 'Average FPS: %f' % ((n_frames - 1) / total_time)
 
+if __name__ == '__main__':
+    test_clock()

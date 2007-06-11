@@ -905,6 +905,7 @@ class HTMLWriter:
                                 "instancevariable")
         self.write_details_list(out, "Class Variable Details", doc,
                                 "classvariable")
+        self.write_details_list(out, "Constant Details", doc, "constant")
 
         # Write the page footer (including navigation bar)
         self.write_navbar(out, doc)
