@@ -57,7 +57,7 @@ Usage::
         elif symbol == key.NUM_1:
 
         # Modifiers:
-        if modifiers & key.key.MOD_CTRL:
+        if modifiers & key.MOD_CTRL:
 
 '''
 
