@@ -15,21 +15,18 @@ from pyglet.gl import glu_info
 
 platform = pyglet.window.get_platform()
 print 'Platform instance is %r' % platform
-factory = pyglet.window.get_factory()
+display = platform.get_default_display()
+print 'Display instance is %r' % display
 print 'Screens:'
-for screen in factory.get_screens():
+for screen in display.get_screens():
     print '  %r' % screen
 
 print 'Creating default context...'
-w = pyglet.window.Window(1, 1, visible=False)
+w = pyglet.window.Window(1, 1, visible=True)
 
 print 'GL attributes:'
-order = ['buffer_size', 'doublebuffer', 'stereo', 'red_size', 'green_size',
-    'blue_size', 'alpha_size', 'aux_buffers', 'depth_size', 'stencil_size',
-    'accum_red_size', 'accum_green_size', 'accum_blue_size',
-    'accum_alpha_size']
-attrs = w.get_config().get_gl_attributes()
-attrs = ' '.join(['%s=%s'%(i, attrs[i]) for i in order])
+attrs = w.config.get_gl_attributes()
+attrs = ' '.join(['%s=%s'%(name, value) for name, value in attrs])
 print '\n'.join(textwrap.wrap(attrs))
 
 print 'GL version:', gl_info.get_version()
@@ -46,7 +43,7 @@ print ' ', '\n  '.join(textwrap.wrap(exts))
 
 print
 
-context = w.get_context()
+context = w.context
 print 'Context is', context
 
 if context.__class__.__name__ == 'XlibGLContext':
@@ -77,3 +74,4 @@ elif context.__class__.__name__ == 'Win32Context':
     else:
         print 'WGL_EXT_extensions_string extension not available.'
 
+w.close()
