@@ -460,7 +460,7 @@ def load(name, size, bold=False, italic=False):
             name = None
 
     # Locate or create font cache   
-    shared_object_space = get_current_context().get_shared_object_space()
+    shared_object_space = get_current_context().object_space
     if not hasattr(shared_object_space, 'pyglet_font_font_cache'):
         shared_object_space.pyglet_font_font_cache = {}
     font_cache = shared_object_space.pyglet_font_font_cache
