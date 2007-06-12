@@ -903,7 +903,7 @@ class ImageData(AbstractImage):
         elif (format == 'BGR' and
               gl_info.have_extension('GL_EXT_bgra')):
             return GL_BGR, GL_UNSIGNED_BYTE
-        elif format == 'BGRA':
+        elif (format == 'BGRA' and
               gl_info.have_extension('GL_EXT_bgra')):
             return GL_BGRA, GL_UNSIGNED_BYTE
 
