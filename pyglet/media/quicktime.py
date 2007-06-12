@@ -65,6 +65,11 @@ try:
 except ImportError:
     corevideo = None
 
+# <rj> permanently disable CoreVideo until it can be made to work (and work
+# faster than GWorld, 'cos otherwise there's simply no point to having it
+# as it's more complex than GWorld)
+corevideo = None
+
 BUFFER_SIZE = 8192
 
 Movie = ctypes.c_void_p
@@ -364,8 +369,8 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         self.sound = sound
 
         # Get CGL context and pixel format (the long, convoluted way) 
-        agl_context = window.get_current_context()._context
-        agl_pixelformat = window.get_current_context()._pixelformat
+        agl_context = gl.get_current_context()._context
+        agl_pixelformat = gl.get_current_context()._pixelformat
         cgl_context = ctypes.c_void_p()
         agl.aglGetCGLContext(agl_context, ctypes.byref(cgl_context))
         cgl_pixelformat = ctypes.c_void_p()
@@ -394,6 +399,20 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         '''
 
         # Create texture context for QuickTime to render into.
+        # XXX <rj> can find no information on what a QTOpenGLTextureContextRef
+        # might point to. Searching through the headers I notice that the
+        # C declaration actually has the argument as a QTVisualContextRef
+        # which is a pointer to an OpaqueQTVisualContext ... which I can't
+        # find any declaration for on my system (though obviously there
+        # must be one) ... but from the name I assume it's a void*.
+        # ... so if there's an actual OpenGL texture in there that we could
+        # use (as opposed to performing the copy we do in the thread callback)
+        # then I'm stuffed if I know how to get it...
+
+        # 
+        # it may be that this is barking up the wrong tree. It may be that
+        # we should be using QTPixelBufferContextCreate instead:
+        # http://developer.apple.com/qa/qa2005/qa1443.html
         self.context = ctypes.c_void_p()
         r = quicktime.QTOpenGLTextureContextCreate(
             carbon.CFAllocatorGetDefault(),
@@ -509,8 +528,8 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         self.finished = quicktime.IsMovieDone(self._movie)
         if self.finished:
             # examples nudge one last time to make sure last frame is drawn
-            ts = quicktime.GetMovieTime(self.medium.movie, 0)
-            quicktime.SetMovieTimeValue(self.medium.movie, ts)
+            ts = quicktime.GetMovieTime(self._movie, 0)
+            quicktime.SetMovieTimeValue(self._movie, ts)
 
     def output_callback(self, display_link, now, ts, flags, flags_out, ctx):
         _oscheck(quicktime.QTMLGrabMutex(self.draw_lock))
