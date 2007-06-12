@@ -151,6 +151,7 @@ import pprint
 import sys
 
 from pyglet import gl
+from pyglet.gl import gl_info
 from pyglet.window.event import WindowEventDispatcher, WindowExitHandler
 import pyglet.window.key
 
@@ -506,6 +507,9 @@ class BaseWindow(WindowEventDispatcher, WindowExitHandler):
         user specifying the attributes desired, or it can be a complete
         `config` as returned from `Screen.get_matching_configs` or similar.
 
+        The context will be active as soon as the window is created, as if
+        `switch_to` was just called.
+
         :Parameters:
             `width` : int
                 Width of the window, in pixels.  Ignored if `fullscreen`
@@ -587,9 +591,9 @@ class BaseWindow(WindowEventDispatcher, WindowExitHandler):
 
         self._create()
 
+        self.switch_to()
         if visible:
             self.set_visible(True)
-            self.switch_to()
             self.activate()
 
     def _create(self):
