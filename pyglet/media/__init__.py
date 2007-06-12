@@ -530,7 +530,7 @@ class Listener(object):
         :type: float
         ''')
 
-if getattr(sys, 'is_epydoc') and sys.is_epydoc:
+if getattr(sys, 'is_epydoc', False):
     #: The singleton listener.
     #:
     #: :type: `Listener`
