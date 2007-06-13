@@ -488,6 +488,8 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         return t / self._medium._time_scale
 
     def play(self):
+        if self.playing: return
+
         instances.append(self)
 
         # start the display link
@@ -498,11 +500,9 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         quicktime.StartMovie(self._movie)
 
     def pause(self):
-        if self.playing:
-            quicktime.StopMovie(self._movie)
-        else:
-            quicktime.StartMovie(self._movie)
-        self.playing = not self.playing
+        if not self.playing: return
+        quicktime.StopMovie(self._movie)
+        self.playing = False
 
     def stop(self):
         instances.remove(self)
@@ -687,12 +687,22 @@ class QuickTimeGWorldStreamingVideo(Video):
         quicktime.GoToBeginningOfMovie(self.medium.movie)
         quicktime.StopMovie(self.medium.movie)
 
+    _seek_to = None
+    def seek(self, ts):
+        assert 0 <= ts < self._medium.duration
+        self._seek_to = ts
+
     def _get_time(self):
         t = quicktime.GetMovieTime(self.medium.movie, None)
         return t / self.medium._time_scale
 
     def dispatch_events(self):
         ''' draw to the texture '''
+        if self._seek_to is not None:
+            ts = int(self._seek_to * self.medium._time_scale)
+            self._seek_to = None
+            quicktime.SetMovieTimeValue(self.medium.movie, ts)
+
         # play the movie
         quicktime.MoviesTask(self.medium.movie, 0)
         _oscheck(quicktime.GetMoviesError())

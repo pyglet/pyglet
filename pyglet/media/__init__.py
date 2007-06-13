@@ -167,6 +167,11 @@ class MediumInstance(event.EventDispatcher):
         '''
         raise NotImplementedError('abstract')
 
+    def seek(self, timestamp):
+        '''Seek for playback to the indicated timestamp in seconds.
+        '''
+        raise NotImplementedError('abstract')
+
     def _get_time(self):
         raise NotImplementedError('abstract')
 
