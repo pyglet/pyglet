@@ -236,6 +236,8 @@ class Win32Config(gl.Config):
             self._pf, sizeof(PIXELFORMATDESCRIPTOR), byref(self._pfd))
 
         self.double_buffer = bool(self._pfd.dwFlags & PFD_DOUBLEBUFFER)
+        self.sample_buffers = 0
+        self.samples = 0
         self.stereo = bool(self._pfd.dwFlags & PFD_STEREO)
         self.buffer_size = self._pfd.cColorBits
         self.red_size = self._pfd.cRedBits
