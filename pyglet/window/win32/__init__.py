@@ -601,6 +601,21 @@ class Win32Window(BaseWindow):
 
         self._mouse_platform_visible = platform_visible
 
+    def _reset_exclusive_mouse_screen(self):
+        '''Recalculate screen coords of mouse warp point for exclusive
+        mouse.'''
+        p = POINT()
+        rect = RECT()
+        _user32.GetClientRect(self._hwnd, byref(rect))
+        _user32.MapWindowPoints(self._hwnd, HWND_DESKTOP, byref(rect), 2)
+        p.x = (rect.left + rect.right) / 2
+        p.y = (rect.top + rect.bottom) / 2
+
+        # This is the point the mouse will be kept at while in exclusive
+        # mode.
+        self._exclusive_mouse_screen = p.x, p.y
+        self._exclusive_mouse_client = p.x - rect.left, p.y - rect.top
+
     def set_exclusive_mouse(self, exclusive=True):
         if self._exclusive_mouse == exclusive and \
            self._exclusive_mouse_focus == self._has_focus:
@@ -608,21 +623,14 @@ class Win32Window(BaseWindow):
     
         if exclusive and self._has_focus:
             # Move mouse to the center of the window.
-            p = POINT()
-            rect = RECT()
-            _user32.GetClientRect(self._hwnd, byref(rect))
-            _user32.MapWindowPoints(self._hwnd, HWND_DESKTOP, byref(rect), 2)
-            p.x = (rect.left + rect.right) / 2
-            p.y = (rect.top + rect.bottom) / 2
-
-            # This is the point the mouse will be kept at while in exclusive
-            # mode.
-            self._exclusive_mouse_screen = p.x, p.y
-            self._exclusive_mouse_client = p.x - rect.left, p.y - rect.top
-            _user32.SetCursorPos(p.x, p.y)
+            self._reset_exclusive_mouse_screen()
+            _user32.SetCursorPos(*self._exclusive_mouse_screen)
 
             # Clip to client area, to prevent large mouse movements taking
             # it outside the client area.
+            rect = RECT()
+            _user32.GetClientRect(self._hwnd, byref(rect))
+            _user32.MapWindowPoints(self._hwnd, HWND_DESKTOP, byref(rect), 2)
             _user32.ClipCursor(byref(rect))
         else:
             # Release clip
@@ -1001,12 +1009,14 @@ class Win32Window(BaseWindow):
             self._hidden = False
             self.dispatch_event(event.EVENT_SHOW)
         w, h = self._get_location(lParam)
+        self._reset_exclusive_mouse_screen()
         self.dispatch_event(event.EVENT_RESIZE, w, h)
         return 0
 
     @Win32EventHandler(WM_MOVE)
     def _event_move(self, msg, wParam, lParam):
         x, y = self._get_location(lParam)
+        self._reset_exclusive_mouse_screen()
         self.dispatch_event(event.EVENT_MOVE, x, y)
         return 0
 
