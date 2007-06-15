@@ -260,12 +260,14 @@ class Clock(_ClockBase):
         self.last_ts = ts
 
         # Call functions scheduled for every frame  
-        for func, args, kwargs in self._schedule_items:
+        # Dupe list just in case one of the items unchedules itself
+        for func, args, kwargs in list(self._schedule_items):
             func(delta_t, *args, **kwargs)
 
         # Call all scheduled interval functions and reschedule for future.
         need_resort = False
-        for item in self._schedule_interval_items:
+        # Dupe list just in case one of the items unchedules itself
+        for item in list(self._schedule_interval_items):
             if item.next_ts > ts:
                 break
             item.func(ts - item.last_ts, *item.args, **item.kwargs)
