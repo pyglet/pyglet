@@ -98,7 +98,7 @@ Module details
 As mentioned above, images all implement the `AbstractImage` class.  The
 class hierarchy of this interface is shown below.
 
-.. image: image-class.svg
+.. image:: image_classes.svg
 
 For the simple uses described in the previous section, it is enough to use
 only the `AbstractImage` interface; for example, for loading, saving and
@@ -113,7 +113,7 @@ are also stored in the class.
 
 Most image decoders return an instance of `ImageData` when an image is loaded.
 You can also create an `ImageData` instance for any type of `AbstractImage` by
-accessing the `image_data` property.  For example::
+accessing the `AbstractImage.image_data` property.  For example::
 
     kitten = image.load('kitten.jpg')
     # image is probably an `ImageData`, but there is no guarantee

@@ -1,0 +1,14 @@
+pyglet Documentation Index
+--------------------------
+
+pyglet Programming Guide
+========================
+
+  * `The OpenGL Interface`
+  * `Images`
+
+pyglet API Reference
+====================
+
+  * `API Reference <api/index.html>`_
+

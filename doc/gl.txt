@@ -1,5 +1,5 @@
-OpenGL Interface
-================
+The OpenGL Interface
+====================
 
 pyglet provides an interface to OpenGL and GLU.  The interface is used by all
 of pyglet's higher-level API's, so that all rendering is done efficiently by

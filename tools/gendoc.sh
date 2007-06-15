@@ -6,11 +6,27 @@ BASE=$TOOLS/..
 EPYDOC=$TOOLS/epydoc
 PYTHONPATH=$EPYDOC:$BASE:$PYTHONPATH
 
-MODULES_EXCLUDE='pyglet.window.xlib|pyglet.window.carbon|pyglet.window.win32'
+DOC=$BASE/doc
+DOC_HTML=$DOC/html
+DOC_HTML_API=$DOC_HTML/api
 
+# Clean old docs and create dir structure
+rm -rf $DOC_HTML
+mkdir -p $DOC_HTML
+
+# Generate API (html) docs
 export PYTHONPATH
-export MODULES_EXCLUDE
 $EPYDOC/scripts/epydoc \
     --config=$TOOLS/epydoc.config \
     --css=$TOOLS/epydoc_pyglet.css \
     $*
+
+# Generate html docs
+$TOOLS/gendoc_html.py \
+    --apidoc-dir=$DOC_HTML_API \
+    --input-dir=$DOC \
+    --html-dir=$DOC_HTML
+
+# Copy stylesheet
+cp $DOC/doc.css $DOC_HTML/doc.css
+

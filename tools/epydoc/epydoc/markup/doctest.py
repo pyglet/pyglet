@@ -88,11 +88,11 @@ class DoctestColorizer:
 
     #: A list of the names of all Python keywords.  ('as' is included
     #: even though it is technically not a keyword.)
-    _KEYWORDS = ("and       del       for       is        raise"
-                 "assert    elif      from      lambda    return"
-                 "break     else      global    not       try"
-                 "class     except    if        or        while"
-                 "continue  exec      import    pass      yield"
+    _KEYWORDS = ("and       del       for       is        raise "
+                 "assert    elif      from      lambda    return "
+                 "break     else      global    not       try "
+                 "class     except    if        or        while "
+                 "continue  exec      import    pass      yield "
                  "def       finally   in        print     as").split()
 
     #: A list of all Python builtins.
