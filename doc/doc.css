@@ -302,3 +302,30 @@ div.py-highlight            { border-bottom: 2px solid #000000;
 .py-param                   { color: #000060; }
 .py-docstring               { color: #006030; }
 .py-decorator               { color: #804020; }
+
+/*---------------------------------------------------------------------
+  Page navigation
+  ---------------------------------------------------------------------*/
+.navigation {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    background: #e8f0f8;
+    border-bottom: 1px solid #708890;
+    padding: 2px;
+    font-family: sans-serif;
+    font-size: 80%;
+    text-align: center;
+}
+
+.navigation > .previous {
+    float: left;
+}
+
+.navigation > .next {
+    float: right;
+}
+
+.navigation > .breadcrumbs {
+}

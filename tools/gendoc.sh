@@ -24,8 +24,14 @@ $EPYDOC/scripts/epydoc \
 # Generate html docs
 $TOOLS/gendoc_html.py \
     --apidoc-dir=$DOC_HTML_API \
-    --input-dir=$DOC \
-    --html-dir=$DOC_HTML
+    --html-dir=$DOC_HTML \
+    --depth=2 \
+    --add-navigation \
+    $DOC/programming_guide.txt
+
+$TOOLS/gendoc_html.py \
+    --html-dir=$DOC_HTML \
+    $DOC/index.txt
 
 # Copy stylesheet
 cp $DOC/doc.css $DOC_HTML/doc.css

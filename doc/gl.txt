@@ -17,6 +17,9 @@ without using ctypes, in which case you should investigate `PyOpenGL`_.
 `PyOpenGL`_ provides similar functionality with a more "Pythonic" interface,
 and will work with pyglet without any modification.
 
+.. contents::
+    :local:
+
 .. _PyOpenGL: http://pyopengl.sourceforge.net/
 
 Using OpenGL

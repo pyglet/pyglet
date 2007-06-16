@@ -16,6 +16,9 @@ Other pyglet packages rely on images; for example, `pyglet.ext.scene2d` and
 but does not cover any specific functionality provided by modules outside of
 `pyglet.image`.
 
+.. contents::
+    :local:
+
 Loading an image
 ----------------
 
