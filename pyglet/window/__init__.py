@@ -1066,6 +1066,14 @@ class BaseWindow(WindowEventDispatcher, WindowExitHandler):
         '''
         pass
 
+    def clear(self):
+        '''Clear the window.
+
+        This is a convenience method for clearing the color and depth
+        buffer.  The window must be the active context (see `switch_to`).
+        '''
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+
 def get_platform():
     '''Get an instance of the Platform most appropriate for this
     system.

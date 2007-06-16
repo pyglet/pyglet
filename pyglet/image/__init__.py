@@ -379,7 +379,7 @@ class AbstractImage(object):
                         'No image encoders are available')
             raise first_exception
 
-    def blit(self, x, y, z):
+    def blit(self, x, y, z=0):
         '''Draw this image to the active framebuffers.'''
         raise ImageException('Cannot blit %r.' % self)
 
@@ -705,7 +705,7 @@ class ImageData(AbstractImage):
         '''
         return ImageDataRegion(x, y, width, height, self)
 
-    def blit(self, x, y, z):
+    def blit(self, x, y, z=0):
         self.texture.blit(x, y, z)
 
     def blit_to_texture(self, target, level, x, y, z, internalformat=None):
@@ -1276,7 +1276,7 @@ class Texture(AbstractImage):
 
     # no implementation of blit_to_texture yet (could use aux buffer)
 
-    def blit(self, x, y, z):
+    def blit(self, x, y, z=0):
         # Create interleaved array in T4F_V4F format
         t = self.tex_coords
         w, h = self.width, self.height
