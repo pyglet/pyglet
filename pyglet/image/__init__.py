@@ -846,6 +846,9 @@ class ImageData(AbstractImage):
                 # Rows are tightly packed, apply regex over whole image.
                 data = swap_pattern.sub(repl, data)
 
+            # After conversion, rows will always be tightly packed
+            current_pitch = len(format) * self.width
+
         if pitch != current_pitch:
             diff = abs(current_pitch) - abs(pitch)
             if diff > 0:
