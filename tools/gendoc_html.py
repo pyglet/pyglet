@@ -8,9 +8,36 @@ import subprocess
 
 from docutils.core import publish_doctree, publish_from_doctree
 from docutils.utils import new_document
+from docutils.writers import html4css1
 from docutils import nodes
 
 from epydoc.markup.doctest import HTMLDoctestColorizer
+
+class HTMLWriter(html4css1.Writer):
+    def __init__(self):
+        html4css1.Writer.__init__(self)
+        self.translator_class = HTMLTranslator
+
+class HTMLTranslator(html4css1.HTMLTranslator):
+    def visit_reference(self, node):
+        # Copied from html4css1.Writer but extended to add "title" attribute.
+        if node.has_key('refuri'):
+            href = node['refuri']
+            if ( self.settings.cloak_email_addresses
+                 and href.startswith('mailto:')):
+                href = self.cloak_mailto(href)
+                self.in_mailto = 1
+        else:
+            assert node.has_key('refid'), \
+                   'References must have "refuri" or "refid" attribute.'
+            href = '#' + node['refid']
+        atts = {'href': href, 'class': 'reference'}
+        if not isinstance(node.parent, nodes.TextElement):
+            assert len(node) == 1 and isinstance(node[0], nodes.image)
+            atts['class'] += ' image-reference'
+        if node.has_key('title'):
+            atts['title'] = node['title']
+        self.body.append(self.starttag(node, 'a', '', **atts))
 
 def convert_image(uri, input_dir, html_dir):
     '''Convert image found at uri in input_dir to something useable and place
@@ -25,9 +52,19 @@ def convert_image(uri, input_dir, html_dir):
         newuri = '%s.png' % os.path.splitext(os.path.basename(uri))[0]
         input_file = os.path.join(input_dir, uri)
         output_file = os.path.join(html_dir, newuri)
-        subprocess.call('convert %s %s' % (input_file, output_file),
+        #subprocess.call('convert %s %s' % (input_file, output_file),
+        #                shell=True)
+        subprocess.call('inkscape --export-png=%s %s' % \
+                            (output_file, input_file),
                         shell=True)
         return newuri
+
+def shorten(title):
+    words = title.split()
+    if len(words) <= 3:
+        return ' '.join(words)
+    else:
+        return ' '.join(words[:2]) + ' ...'
 
 class Page(object):
     def __init__(self, document, filename, parent, ids):
@@ -94,24 +131,24 @@ class Page(object):
             inline = nodes.inline()
             inline['classes'] += ['previous']
             inline += nodes.Text('Previous: ')
-            inline += previous.create_reference()
+            inline += previous.create_short_reference()
             paragraph += inline
 
         if next:
             inline = nodes.inline()
             inline['classes'] += ['next']
             inline += nodes.Text('Next: ')
-            inline += next.create_reference()
+            inline += next.create_short_reference()
             paragraph += inline
         
-        breadcrumbs = self.create_breadcrumbs()
+        breadcrumbs = self.create_short_breadcrumbs()
         if breadcrumbs:
             inline = nodes.inline()
             inline['classes'] += ['breadcrumbs']
             for breadcrumb in breadcrumbs:
                 inline += breadcrumb
                 inline += nodes.Text(u' \u00bb ')
-            inline += nodes.Text(self.title)
+            inline += nodes.Text(shorten(self.title))
             paragraph += inline
 
         # Header
@@ -127,11 +164,26 @@ class Page(object):
         else:
             return []
 
+    def create_short_breadcrumbs(self):
+        if self.parent:
+            return (self.parent.create_short_breadcrumbs() +
+                    [self.parent.create_short_reference()])
+        else:
+            return []
+
     def create_reference(self):
         ref = nodes.reference()
         ref['refuri'] = self.filename
         ref['name'] = self.title
         ref += nodes.Text(self.title)
+        return ref
+
+    def create_short_reference(self):
+        ref = nodes.reference()
+        ref['refuri'] = self.filename
+        ref['name'] = self.title
+        ref['title'] = self.title
+        ref += nodes.Text(shorten(self.title))
         return ref
 
     def preorder(self):
@@ -200,18 +252,20 @@ def gendoc_html(input_file, html_dir, api_objects, options):
                     if isinstance(n, nodes.title_reference)]:
             title = ref.astext()
             url = None
-            if title in api_objects and api_objects[title]:
-                url = os.path.join(apidoc_dir_rel, api_objects[title])
+            if title in api_objects and api_objects[title][0]:
+                canonical, uri = api_objects[title]
+                url = os.path.join(apidoc_dir_rel, uri)
                 # Only link once per page, to avoid littering the text
                 # with too many links
-                if url in linked_objects:
-                    url = None
-                linked_objects.add(url)
-            if url:
-                newref = nodes.reference()
-                newref.children = [c.deepcopy() for c in ref.children]
-                newref.attributes['refuri'] = url
-                ref.replace_self(newref)
+                if url not in linked_objects:
+                    linked_objects.add(url)
+
+                    newref = nodes.reference()
+                    newref.children = [c.deepcopy() for c in ref.children]
+                    newref['refuri'] = url
+                    if canonical != title:
+                        newref['title'] = canonical # tooltip is canonical name
+                    ref.replace_self(newref)
 
         # Write page
         settings = {
@@ -219,13 +273,16 @@ def gendoc_html(input_file, html_dir, api_objects, options):
             'stylesheet': 'doc.css',
             'stylesheet_path': None,
         }
+        writer = HTMLWriter()
         html = publish_from_doctree(page.document, 
-                                    writer_name='html',
+                                    writer=writer,
                                     settings_overrides=settings)
         output_file = open(os.path.join(html_dir, page.filename), 'w')
         output_file.write(html)
 
 def get_api_objects(apidoc_dir):
+    '''Return a dict of name -> (canonical, uri) of api_objects exported from
+    epydoc.'''
     objects = {}
 
     # Read API doc objects
@@ -233,17 +290,19 @@ def get_api_objects(apidoc_dir):
     for line in apidoc_file:
         name, url = line.split('\t')
         # Canonical name always matches
-        objects[name] = url
+        objects[name] = (name, url)
+        canonical = name
         # Also strip off leading components one at a time and add if not
         # ambiguous
         while '.' in name:
             name = name.split('.', 1)[1]
             if name in objects and url != objects[name]:
-                objects[name] = None # Ambiguous: don't match
+                objects[name] = (None, None) # Ambiguous: don't match
             else:
-                objects[name] = url
+                objects[name] = (canonical, url)
 
     return objects
+
 
 if __name__ == '__main__':
     op = optparse.OptionParser()

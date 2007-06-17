@@ -193,6 +193,13 @@ class Config(object):
     ]
 
     def __init__(self, **kwargs):
+        '''Create a template config with the given attributes.
+
+        Specify attributes as keyword arguments, for example::
+
+            template = Config(double_buffer=True)
+
+        '''
         for name in self._attribute_names:
             if name in kwargs:
                 setattr(self, name, kwargs[name])
@@ -200,6 +207,12 @@ class Config(object):
                 setattr(self, name, None)
 
     def get_gl_attributes(self):
+        '''Return a list of attributes set on this config.
+
+        :rtype: list of tuple (name, value)
+        :return: All attributes, with unset attributes having a value of
+            ``None``.
+        '''
         return [(name, getattr(self, name)) for name in self._attribute_names]
 
     def create_context(self, share):
@@ -229,9 +242,10 @@ class Config(object):
         return False
 
     def __repr__(self):
+        import pprint
         return '%s(%s)' % (self.__class__.__name__, 
-                           pprint.pformat(self.get_gl_attributes(),
-                                          indent=len(prefix)))
+                           pprint.pformat(self.get_gl_attributes()))
+                                          
 
 class ObjectSpace(object):
     pass

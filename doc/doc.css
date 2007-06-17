@@ -81,6 +81,7 @@ div.dedication p.topic-title {
   font-style: normal }
 
 div.figure {
+  text-align: center;
   margin-left: 2em ;
   margin-right: 2em }
 
@@ -133,7 +134,8 @@ h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
   margin-top: 0.4em }
 
 h1.title {
-  text-align: center }
+  text-align: center;
+  margin-top: 1em;}
 
 h2.subtitle {
   text-align: center }
@@ -238,13 +240,16 @@ table.citation {
 table.docinfo {
   margin: 2em 4em }
 
-table.docutils {
-  margin-top: 0.5em ;
-  margin-bottom: 0.5em }
-
 table.footnote {
   border-left: solid 1px black;
   margin-left: 1px }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em;
+  border: 1px solid #708890;
+  border-collapse: collapse;
+}
 
 table.docutils td, table.docutils th,
 table.docinfo td, table.docinfo th {
@@ -257,6 +262,10 @@ table.docutils th.field-name, table.docinfo th.docinfo-name {
   text-align: left ;
   white-space: nowrap ;
   padding-left: 0 }
+
+table.docutils th {
+  background: #e8f0f8;
+}
 
 h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
 h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
@@ -308,6 +317,7 @@ div.py-highlight            { border-bottom: 2px solid #000000;
   ---------------------------------------------------------------------*/
 .navigation {
     position: fixed;
+    overflow: clip;
     top: 0px;
     left: 0px;
     right: 0px;
@@ -321,10 +331,12 @@ div.py-highlight            { border-bottom: 2px solid #000000;
 
 .navigation > .previous {
     float: left;
+    margin-right: 1em;
 }
 
 .navigation > .next {
     float: right;
+    margin-left: 1em;
 }
 
 .navigation > .breadcrumbs {
