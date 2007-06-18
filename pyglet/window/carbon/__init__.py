@@ -391,6 +391,8 @@ class CarbonWindow(BaseWindow):
 
         _aglcheck()
 
+        self.set_caption(self._caption)
+
         # Get initial state
         self._event_dispatcher = carbon.GetEventDispatcherTarget()
         self._current_modifiers = carbon.GetCurrentKeyModifiers().value
