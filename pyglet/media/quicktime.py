@@ -689,7 +689,7 @@ class QuickTimeGWorldStreamingVideo(Video):
 
     _seek_to = None
     def seek(self, ts):
-        assert 0 <= ts < self._medium.duration
+        assert 0 <= ts < self.medium.duration
         self._seek_to = ts
 
     def _get_time(self):
