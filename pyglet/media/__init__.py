@@ -36,6 +36,26 @@
 
 '''Media playback interface.
 
+Only basic functionality is described here; for full reference see the
+accompanying documentation.
+
+To load some media::
+
+    from pyglet import media
+    sound = media.load('sound.mp3')
+    audio = medium.get_audio()
+
+    movie = media.load('movie.mp4')
+    video = medium.get_video()
+
+The supported media file types include WAV, MP3, and many more,
+depending on the operating system.
+
+Both audio and video support the same API implemeted in `MediumInstance`.
+
+To have media actually play, you will need to invoke
+``media.dispatch_events()`` in your application's event loop.
+
 '''
 
 __docformat__ = 'restructuredtext'

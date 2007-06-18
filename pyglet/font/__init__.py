@@ -51,7 +51,7 @@ object::
     text = 'Hello, world!'
     glyphs = arial.get_glyphs(text)
 
-A convenient way to render these glyphs is with a `GlyphString`::
+The most efficient way to render these glyphs is with a `GlyphString`::
 
     glyph_string = GlyphString(text, glyphs)
     glyph_string.draw()
@@ -59,7 +59,7 @@ A convenient way to render these glyphs is with a `GlyphString`::
 There are also a variety of methods in both `Font` and
 `GlyphString` to facilitate word-wrapping.
 
-The most efficient way to render a string of text is with a `Label`::
+A convenient way to render a string of text is with a `Label`::
 
     label = Label(font, text)
     label.draw()
