@@ -51,13 +51,18 @@ object::
     text = 'Hello, world!'
     glyphs = arial.get_glyphs(text)
 
-The most efficient way to render these glyphs is with a `GlyphString`::
+A convenient way to render these glyphs is with a `GlyphString`::
 
     glyph_string = GlyphString(text, glyphs)
     glyph_string.draw()
 
 There are also a variety of methods in both `Font` and
 `GlyphString` to facilitate word-wrapping.
+
+The most efficient way to render a string of text is with a `Label`::
+
+    label = Label(font, text)
+    label.draw()
 
 See the `pyglet.font.base` module for documentation on the base classes used
 by this package.
