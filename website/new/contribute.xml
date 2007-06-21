@@ -1,0 +1,61 @@
+<div>
+  <p>
+    pyglet is currently in alpha release, and many features are not yet fully
+    documented.  If you're using pyglet today, sign up to the mailing list
+    for developer support.  Let us know when you find bugs, or if you have
+    a feature request.
+  </p>
+
+  <h2>mailing lists</h2>
+  <p>
+    The main forum for pyglet discussion is the <a
+    href="http://groups.google.com/group/pyglet-users">pyglet-users</a>
+    mailing list.  You can browse the mailing list online or provide your
+    email address for immediate or digest updates.
+  </p>
+
+  <p>
+    There are two more mailing lists if you're interested in following the
+    progress of pyglet development:
+  </p>
+
+  <ul>
+    <li><a
+    href="http://groups.google.com/group/pyglet-issues">pyglet-issues</a> is
+    an announcement list which broadcasts emails from the issue tracker.</li>
+
+    <li><a
+    href="http://groups.google.com/group/pyglet-commits">pyglet-commits</a> is
+    an announcement list which broadcasts SVN commits.</li>
+  </ul>
+
+  <h2>issue tracker</h2>
+
+  <p>The <a href="http://code.google.com/p/pyglet/issues/list">issue tracker</a>
+  should be used to report any bugs or compatibility issues.</p>
+
+  <h2>wiki</h2>
+
+  <p>We have a <a href="wiki">wiki</a> which is primarily used for
+  discussing future design aspects of pyglet.  If you'd like to contribute
+  a tutorial or FAQ question though, please feel free!  Registration is
+  open but requires an email address.</p>
+
+  <h2>subversion repository</h2>
+
+  <p>The subversion repository houses the source trunk, documentation,
+  examples and development tools.  You can <a
+  href="http://pyglet.googlecode.com/svn/">browse the repository</a> or check
+  out a working copy using an SVN client:</p>
+
+  <p class="console">svn checkout http://pyglet.googlecode.com/svn/trunk/
+  pyglet</p>
+
+  <h2>contact</h2>
+
+  <p>pyglet is primarily developed by Alex Holkner.  You can reach him via
+  email at <a href="Alex.Holkner@gmail.com">Alex.Holkner@gmail.com</a>.  Other
+  contributors are noted in the NOTICE file of the source trunk or any source
+  distribution.</p>
+
+</div>

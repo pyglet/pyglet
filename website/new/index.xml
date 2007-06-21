@@ -1,0 +1,46 @@
+<div>
+  <p>
+    <strong>pyglet</strong>: a cross-platform windowing and multimedia
+    library for Python.
+  </p>
+
+  <h2>news</h2>
+  <news items="1" />
+
+  <p>
+    <a href="news.html">Older news...</a>
+  </p>
+
+  <h2>about pyglet</h2>
+  <p>
+    pyglet provides an object-oriented programming interface for developing
+    games and other visually-rich applications for Windows, Mac OS X and
+    Linux.  Some of the features of pyglet are:
+
+    <ul>
+      <li><strong>No external dependencies or installation
+      requirements.</strong>  Users of
+      your application need only install Python to experience a first-class
+      application featuring 3D graphics, sound and video.  pyglet is written
+      in pure Python, so no dangerous binaries are required.</li>
+
+      <li><strong>Take advantage of multiple windows and multi-monitor
+      desktops.</strong>  pyglet allows you to use as many windows as you
+      need, and is fully aware of multi-monitor setups for use with
+      fullscreen games.</li>
+
+      <li><strong>Load images, sound, music and video in almost any
+      format.</strong> pyglet can use any installed codecs to read media
+      files.  On Windows, Linux and Mac OS X this means you get access to
+      PNG, JPEG, MP3, MPEG-1 and many other file types even with a clean
+      operating system install.</li>
+    </ul>
+  </p>
+
+  <p>pyglet is provided under the BSD open-source license, allowing you to
+  use it for both commerical and other open-source projects with very
+  little restriction.</p>
+
+  <p>Please join us on the <a href="#">mailing list</a>, or download the
+  SDK today!</p>
+</div>

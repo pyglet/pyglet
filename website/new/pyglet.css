@@ -1,0 +1,123 @@
+#banner {
+  font-family: Arial, sans-serif;
+  margin-bottom: 3em;
+}
+
+#banner-title {
+  font-size: 64pt;
+}
+
+#banner-rule {
+  border-top: 5px solid black;
+  position: absolute;
+  left: 0px;
+  width: 100%;
+  
+}
+
+#banner-logo {
+  position: absolute;
+  left: 50px;
+  /*top: -100px;*/
+}
+
+#banner-tabs {
+  display: block;
+  font-size: 16pt;
+  margin-top: 5px;
+  padding: 0px;
+}
+
+#banner-tabs > li {
+  display: inline;
+  margin-left: 0px;
+  margin-right: 20px;
+}
+
+#banner-tabs > li > a:hover {
+  border-bottom: 5px solid #ff6161;
+}
+
+#banner-tabs > li.selected {
+  color: #ff6161;
+}
+
+#banner-tabs > li > a {
+  color: inherit;
+  text-decoration: none;
+}
+
+#navigation {
+  position: absolute;
+  margin-top: 2em;
+  left: 20px;
+  width: 140px;
+}
+
+#navigation > h1 {
+  font-size: 16pt;
+  font-weight: normal;
+  border-bottom: 5px solid #ff6161;
+}
+
+#navigation > ul {
+  display: block;
+  padding: 0px;
+}
+
+#navigation > ul > li {
+  display: block;
+}
+
+#navigation a {
+  color: black;
+  text-decoration: none;
+}
+
+#navigation a:hover {
+  color: #ff6161; 
+}
+
+
+body {
+  margin-left: 180px;
+  margin-right: 60px;
+  font-family: Verdana;
+  font-size: 11pt;
+}
+
+#content p {
+  margin-bottom: 1.5em;
+}
+
+#content li {
+  margin-bottom: 1.5em;
+}
+
+#content h2 {
+  font-size: 18pt;
+  font-weight: normal;
+  color: #ff6161;
+}
+
+#content .console {
+  font-family: monospace;
+  font-size: 10pt;
+  /*background-color: #ff9191;*/
+  border: 1px solid #ff6161;
+  padding: 5px;
+}
+
+.news-item {
+  clear: right;
+}
+
+.news-title {
+  font-weight: bold;
+}
+
+.news-attribution {
+  font-size: 10pt;
+  float: right;
+  margin-bottom: 1em;
+}

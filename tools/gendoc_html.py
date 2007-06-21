@@ -4,6 +4,7 @@
 import optparse
 import os
 import os.path
+import shutil
 import subprocess
 
 from docutils.core import publish_doctree, publish_from_doctree
@@ -47,8 +48,8 @@ def convert_image(uri, input_dir, html_dir):
     if uri.startswith('http:'):
         return uri
 
-    # Simple image conversion using ImageMagick (must be in path)
     if uri.endswith('.svg'):
+        # Convert SVG to PNG using Inkscape
         newuri = '%s.png' % os.path.splitext(os.path.basename(uri))[0]
         input_file = os.path.join(input_dir, uri)
         output_file = os.path.join(html_dir, newuri)
@@ -58,6 +59,13 @@ def convert_image(uri, input_dir, html_dir):
                             (output_file, input_file),
                         shell=True)
         return newuri
+    elif uri.endswith('.png') or uri.endswith('.jpg'):
+        # Copy image to output dir
+        input_file = os.path.join(input_dir, uri)
+        output_file = os.path.join(html_dir, uri)
+        shutil.copy(input_file, output_file)
+        return uri
+        
 
 def shorten(title):
     words = title.split()

@@ -1,0 +1,54 @@
+<div>
+  <p>
+    The current version of pyglet is <strong>1.0 Alpha 1</strong>.
+  </p>
+
+  <h2>runtime eggs</h2>
+  <p>
+    The runtime eggs can be used with any setuptools-enabled application.
+  </p>
+  <ul>
+    <li><a
+    href="pyglet-1.0-alpha1-python2.4.egg">pyglet-1.0-alpha1-python2.4.egg</a>:
+    Runtime for Python 2.4</li>
+    <li><a
+    href="pyglet-1.0-alpha1-python2.5.egg">pyglet-1.0-alpha1-python2.5.egg</a>:
+    Runtmie for Python 2.5</li>
+  </ul>
+
+  <h2>platform distributions</h2>
+  <p>
+    Choose the pyglet distribution corresponding to your platform, or select
+    one of the source distributions below.  Double-click on the downloaded
+    file to install pyglet.
+  </p>
+  <ul>
+    <li><a href="pyglet-1.0-alpha1.msi">pyglet-1.0-alpha1.msi</a>: Windows
+    installer</li>
+    <li><a href="pyglet-1.0-alpha1.dmg">pyglet-1.0-alpha1.dmg</a>: Mac OS X
+    disk image</li>
+  </ul>
+
+  <h2>documentation</h2>
+  <p>
+    Download the complete documentation and application examples to go with
+    the above platform distributions.
+  </p>
+  <ul>
+    <li><a href="pyglet-1.0-alpha1-docs.zip">pyglet-1.0-alpha1-docs.zip</a></li>
+  </ul>
+
+  <h2>source distributions</h2>
+  <p>
+    The source distribution includes pyglet, documentation and examples.  To
+    install, run:
+  </p>
+  <p class="console">
+    python setup.py install
+  </p>
+  <ul>
+    <li><a href="pyglet-1.0-alpha1.tar.gz">pyglet-1.0-alpha1.tar.gz</a></li>
+    <li><a href="pyglet-1.0-alpha1.zip">pyglet-1.0-alpha1.zip</a></li>
+  </ul>
+
+</div>
