@@ -1,0 +1,7 @@
+include LICENSE
+include NOTICE
+include README
+#recursive-include doc/html *
+recursive-include doc/html/api *
+#recursive-include examples *
+
