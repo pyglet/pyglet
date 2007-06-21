@@ -625,6 +625,9 @@ class XlibWindow(BaseWindow):
     def set_size(self, width, height):
         self._width = width
         self._height = height
+        if not self._resizable:
+            self.set_minimum_size(width, height)
+            self.set_maximum_size(width, height)
         xlib.XResizeWindow(self._x_display, self._window, width, height)
         self.dispatch_event(event.EVENT_RESIZE, width, height)
 

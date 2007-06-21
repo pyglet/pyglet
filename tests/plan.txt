@@ -30,6 +30,7 @@ window
     window-resize
         window.WINDOW_RESIZABLE                 X11 WIN OSX
         window.WINDOW_SET_SIZE                  X11 WIN OSX
+        window.WINDOW_FIXED_SET_SIZE            X11 WIN OSX
         window.WINDOW_SET_MIN_MAX_SIZE          X11 WIN OSX
 
     window-actions
