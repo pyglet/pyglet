@@ -269,7 +269,8 @@ class Label(object):
     _halign = LEFT
     _valign = BASELINE
 
-    def __init__(self, font, text='', x=0, y=0, z=0, color=(1,1,1,1)):
+    def __init__(self, font, text='', x=0, y=0, z=0, color=(1,1,1,1),
+            width=None, halign=LEFT, valign=BASELINE):
         '''Create a label.
 
         :Parameters:
@@ -287,7 +288,15 @@ class Label(object):
             `color` : 4-tuple of float
                 Color to render the text in.  Alpha values can be specified
                 in the fourth component.
-
+            `width` : float
+                Width to limit the rendering to. Text will be word-wrapped
+                if necessary.
+            `halign` : str
+                Alignment of the text if it is not as wide as the width
+                specified, one of LEFT, CENTER or RIGHT. Defaults to LEFT.
+            `valign` : str
+                Controls positioning of the text based off the y coordinate.
+                One of BASELINE, BOTTOM, CENTER or TOP. Defaults to BASELINE.
         '''
         self._dirty = True
         self.font = font
@@ -296,6 +305,9 @@ class Label(object):
         self.x = x
         self.y = y
         self.leading = 0
+        self._layout_width = width
+        self._halign = halign
+        self._valign = valign
 
     def _clean(self):
         '''Resolve changed layout'''
