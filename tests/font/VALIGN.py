@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-'''Test that font.Label horizontal alignment works.
+'''Test that font.Label vertical alignment works.
 
-Three labels will be rendered aligned left, center and right.
+Four labels will be aligned top, center, baseline and bottom.
 '''
 
 __docformat__ = 'restructuredtext'

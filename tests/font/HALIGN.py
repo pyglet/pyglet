@@ -29,6 +29,10 @@ class TEST_HALIGN(base_text.TextTestBase):
             font.Label(fnt, 'RIGHT', 0, 10 + h, width=w, halign='right'),
         ]
 
+    def on_resize(self, width, height):
+        for label in self.labels:
+            label.width = width
+
     def draw(self):
         for label in self.labels:
             label.draw()

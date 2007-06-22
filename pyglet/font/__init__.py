@@ -363,9 +363,9 @@ class Label(object):
 
         y = self.y
         if self._valign == self.BOTTOM:
-            y -= self.font.descent
+            y += self.height - self.font.ascent
         elif self._valign == self.CENTER:
-            y -= self.height // 2 + self.font.descent
+            y += self.height // 2 - self.font.ascent
         elif self._valign == self.TOP:
             y -= self.font.ascent
 
