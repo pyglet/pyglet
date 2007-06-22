@@ -12,7 +12,10 @@ import sys
 import time
 from xml.dom.minidom import parse
 
-from elementtree import ElementTree
+try:
+    from xml.etree import ElementTree
+except ImportError:
+    from elementtree import ElementTree
 
 def get_elem_by_id(doc, name, id):
     for element in doc.getElementsByTagName(name):

@@ -361,14 +361,6 @@ class Label(object):
         if self._dirty:
             self._clean()
 
-        x = self.x
-        if self._halign == self.RIGHT:
-            raise NotImplementedError('no align yet')
-            x += self._layout_width - self.width
-        elif self._halign == self.CENTER:
-            raise NotImplementedError('no align yet')
-            x += -self._layout_width / 2 + self._text_width / 2
-
         y = self.y
         if self._valign == self.BOTTOM:
             y += self.height
@@ -381,10 +373,19 @@ class Label(object):
         glEnable(GL_TEXTURE_2D)
         glColor4f(*self.color)
         glPushMatrix()
-        glTranslatef(x, y, 0)
+        glTranslatef(0, y, 0)
         for start, end in self.lines:
+            width = self._glyph_string.get_subwidth(start, end)
+
+            x = self.x
+            if self._halign == self.RIGHT:
+                x += self._layout_width - width
+            elif self._halign == self.CENTER:
+                x += self._layout_width / 2 - width / 2
+
+            glTranslatef(x, 0, 0)
             self._glyph_string.draw(start, end)
-            glTranslatef(0, -self.line_height, 0)
+            glTranslatef(-x, -self.line_height, 0)
         glPopMatrix()
         glPopAttrib()
 
