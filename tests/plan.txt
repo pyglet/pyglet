@@ -147,6 +147,7 @@ font
         font.COLOR                              X11 WIN OSX
         font.COLOR_BLEND                        X11 WIN OSX
         font.HALIGN                             X11 WIN OSX
+        font.VALIGN                             X11 WIN OSX
 
     font-load
         font.ADD_FONT                           X11 WIN OSX

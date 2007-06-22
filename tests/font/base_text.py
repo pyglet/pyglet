@@ -20,6 +20,7 @@ class TextTestBase(ImageRegressionTestCase):
     font_name = ''
     font_size = 24
     text = 'Quickly brown fox'
+    window_size = 200, 200
 
     def on_expose(self):
         glClearColor(0.5, 0, 0, 1)
@@ -39,7 +40,7 @@ class TextTestBase(ImageRegressionTestCase):
         self.label.draw()
 
     def test_main(self):
-        width, height = 200, 200
+        width, height = self.window_size
         self.window = w = Window(width, height, visible=False, resizable=True)
         w.push_handlers(self)
 
