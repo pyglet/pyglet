@@ -19,6 +19,7 @@ from tests.regression import ImageRegressionTestCase
 
 class TestLoad(ImageRegressionTestCase):
     texture_file = None
+    image = None
     texture = None
     show_checkerboard = True
     alpha = True
@@ -72,7 +73,8 @@ class TestLoad(ImageRegressionTestCase):
         self.checkerboard = image.create(32, 32, image.CheckerImagePattern())
 
         self.load_image()
-        self.texture = self.image.texture
+        if self.image:
+            self.texture = self.image.texture
     
         if self.alpha:
             glEnable(GL_BLEND)

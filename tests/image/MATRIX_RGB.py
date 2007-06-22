@@ -16,15 +16,16 @@ import sys
 
 from pyglet.gl import gl_info
 
-class TEST_PLATFORM_RGBA_LOAD(base_load.TestLoad):
+class TEST_MATRIX_RGB(base_load.TestLoad):
     texture_file = 'rgb.png'
     
     def load_image(self):
         if not gl_info.have_extension('GL_ARB_imaging'):
+            print 'GL_ARB_imaging is not present, skipping test.'
             self.has_exit = True
         else:
             # Load image as usual then rearrange components
-            super(TEST_PLATFORM_RGBA_LOAD, self).load_image()
+            super(TEST_MATRIX_RGB, self).load_image()
             self.image.format = 'GRB'
             pixels = self.image.data # forces conversion
 
