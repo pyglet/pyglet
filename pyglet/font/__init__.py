@@ -381,7 +381,7 @@ class Label(object):
             if self._halign == self.RIGHT:
                 x += self._layout_width - width
             elif self._halign == self.CENTER:
-                x += self._layout_width / 2 - width / 2
+                x += self._layout_width // 2 - width // 2
 
             glTranslatef(x, 0, 0)
             self._glyph_string.draw(start, end)
