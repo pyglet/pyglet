@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Generic event dispatcher framework.
+'''Event dispatch framework.
 
 All objects that produce events in pyglet implement `EventDispatcher`,
 providing a consistent interface for registering and manipulating event

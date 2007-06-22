@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Image loading and high-level texture functions.
+'''Image load, capture and high-level texture functions.
 
 Only basic functionality is described here; for full reference see the
 accompanying documentation.
