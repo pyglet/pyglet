@@ -1,31 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
   <head>
     <title>pyglet</title>
     <link rel="stylesheet" href="pyglet.css" type="text/css" />
+    <!--[if lte IE 6]>
+      <link rel="stylesheet" href="pyglet-ie6.css" type="text/css" />
+    <![endif]-->
     <link rel="alternate" href="news.xml" type="application/atom+xml" />
   </head>
 
   <body>
     <div id="banner">
-      <span id="banner-title">pyglet</span>
+      <div>
+        <span id="banner-title">pyglet</span>
+      </div>
       <div id="banner-rule"><!-- Don't collapse this to empty element --></div>
-      <img src="logo_large.png" id="banner-logo" />
-      <ul id="banner-tabs">
-        <li select="index.xml">
+      <div id="banner-logo-container">
+        <img src="logo_large.png" id="banner-logo" />
+      </div>
+      <div id="banner-tabs">
+        <span select="index.xml">
           <a href="index.html">home</a>
-        </li>
-        <!--<li select="gallery.xml"><a href="#">gallery</a></li>-->
-        <li select="download.xml">
+        </span>
+        <span select="download.xml">
           <a href="download.html">download</a>
-        </li>
-        <li select="documentation.xml">
+        </span>
+        <span select="documentation.xml">
           <a href="documentation.html">documentation</a>
-        </li>
-        <li select="contribute.xml">
+        </span>
+        <span select="contribute.xml">
           <a href="contribute.html">contribute</a>
-        </li>
-      </ul>
+        </span>
+      </div>
     </div>
 
     <div id="navigation">

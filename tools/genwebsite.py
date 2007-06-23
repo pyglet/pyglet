@@ -124,8 +124,8 @@ if __name__ == '__main__':
             output_content.appendChild(child.cloneNode(True))
 
         # Set class on active tab
-        banner_tabs = get_elem_by_id(output_doc, 'ul', 'banner-tabs')
-        for child in element_children(banner_tabs, 'li'):
+        banner_tabs = get_elem_by_id(output_doc, 'div', 'banner-tabs')
+        for child in element_children(banner_tabs, 'span'):
             if child.hasAttribute('select'):
                 if child.getAttribute('select') == file:
                     child.setAttribute('class', 'selected')
