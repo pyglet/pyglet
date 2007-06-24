@@ -68,7 +68,7 @@ except ImportError:
 # <rj> permanently disable CoreVideo until it can be made to work (and work
 # faster than GWorld, 'cos otherwise there's simply no point to having it
 # as it's more complex than GWorld)
-corevideo = None
+#corevideo = None
 
 BUFFER_SIZE = 8192
 
@@ -368,7 +368,7 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         self._movie = medium.movie
         self.sound = sound
 
-        # Get CGL context and pixel format (the long, convoluted way) 
+        # Get CGL context and pixel format (10.4 only)
         agl_context = gl.get_current_context()._context
         agl_pixelformat = gl.get_current_context()._pixelformat
         cgl_context = ctypes.c_void_p()
@@ -377,9 +377,6 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         agl.aglGetCGLPixelFormat(
             agl_pixelformat, ctypes.byref(cgl_pixelformat))
 
-        # XXX 10 points for the person who can find what the attributes are
-        # that we are allowed / able to pass here
-        textureContextAttributes = None
 
         '''
         # TODO match colorspace
@@ -398,24 +395,13 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         )
         '''
 
-        # Create texture context for QuickTime to render into.
-        # XXX <rj> can find no information on what a QTOpenGLTextureContextRef
-        # might point to. Searching through the headers I notice that the
-        # C declaration actually has the argument as a QTVisualContextRef
-        # which is a pointer to an OpaqueQTVisualContext ... which I can't
-        # find any declaration for on my system (though obviously there
-        # must be one) ... but from the name I assume it's a void*.
-        # ... so if there's an actual OpenGL texture in there that we could
-        # use (as opposed to performing the copy we do in the thread callback)
-        # then I'm stuffed if I know how to get it...
+        # no attributes on texture contexts, only pixel buffer, according to
+        # apple docs ref'd in class docstring.  do i get 10 points?
+        textureContextAttributes = None
 
-        # 
-        # it may be that this is barking up the wrong tree. It may be that
-        # we should be using QTPixelBufferContextCreate instead:
-        # http://developer.apple.com/qa/qa2005/qa1443.html
         self.context = ctypes.c_void_p()
         r = quicktime.QTOpenGLTextureContextCreate(
-            carbon.CFAllocatorGetDefault(),
+            None,
             cgl_context,
             cgl_pixelformat, 
             textureContextAttributes,
@@ -431,12 +417,23 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         self.width = rect.right - rect.left
         self.height = rect.bottom - rect.top
 
+        # Set to null before setting real context to disassocate from
+        # automatically created gworld.
+        quicktime.SetMovieVisualContext(self._movie, None)
+
         quicktime.SetMovieVisualContext(self._movie, self.context)
 
-        # create a Texture that we can use for rendering
+        # Dummy texture object to hold id and target of textures returned by
+        # corevideo.  XXX need to cleanup texture data after first frame
+        # retrieved.
         self._texture = image.Texture.create_for_size(GL_TEXTURE_2D,
-            self.width, self.height).get_region(0, 0, self.width, self.height)
+            self.width, self.height)
 
+        self._last_cv_image = None
+
+        # Display link is not needed, we sync frames ourselves with vsync.
+        # Mutexes not needed, pyglet is completely thread oblivious :-)
+        '''
         # create display link
         self.display_link = ctypes.c_void_p()
         main_display = quicktime.CGMainDisplayID()
@@ -463,24 +460,18 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         self._ts = 0
 
         self.latest_texture = c_void_p(0)
+        '''
 
     def cleanup(self):
         '''On interpreter exit stop the display link thread.'''
+        '''
         if corevideo.CVDisplayLinkIsRunning(self.display_link):
             corevideo.CVDisplayLinkStop(self.display_link)
-
-    # XXX need a better way to do this
-    def get_texture(self):
-        '''Wrap the texture so calls to blit() will lock the draw mutex.
         '''
-        class TextureProxy(object):
-            def __init__(self, obj):
-                self.obj = obj
-            def blit(self, *args, **kw):
-                quicktime.QTMLGrabMutex(self.obj.draw_lock)
-                self.obj._texture.blit(*args, **kw)
-                quicktime.QTMLReturnMutex(self.obj.draw_lock)
-        return TextureProxy(self)
+
+    def get_texture(self):
+        return self._texture
+
     texture = property(get_texture)
 
     def _get_time(self):
@@ -488,19 +479,21 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         return t / self._medium._time_scale
 
     def play(self):
-        if self.playing: return
+        if self.playing: 
+            return
 
         instances.append(self)
 
         # start the display link
-        _oscheck(corevideo.CVDisplayLinkStart(self.display_link))
+        #_oscheck(corevideo.CVDisplayLinkStart(self.display_link))
 
         # right, now kick off the movie
         self.playing = True
         quicktime.StartMovie(self._movie)
 
     def pause(self):
-        if not self.playing: return
+        if not self.playing: 
+            return
         quicktime.StopMovie(self._movie)
         self.playing = False
 
@@ -512,25 +505,73 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         quicktime.StopMovie(self._movie)
 
         # stop the display link so we don't get unnecessary updates
-        _oscheck(corevideo.CVDisplayLinkStop(self.display_link))
+        #_oscheck(corevideo.CVDisplayLinkStop(self.display_link))
 
         # restart the movie
-        quicktime.GoToBeginningOfMovie(self._movie)
+        #quicktime.GoToBeginningOfMovie(self._movie)
 
-        if self.latest_texture is not None:
-            corevideo.CVOpenGLTextureRelease(self.latest_texture)
-            self.latest_texture = None
+        #if self.latest_texture is not None:
+        #    corevideo.CVOpenGLTextureRelease(self.latest_texture)
+        #    self.latest_texture = None
 
     def dispatch_events(self):
         ''' draw to the texture '''
         quicktime.MoviesTask(self._movie, 0)
         _oscheck(quicktime.GetMoviesError())
         self.finished = quicktime.IsMovieDone(self._movie)
+        ts = quicktime.GetMovieTime(self._movie, 0)
         if self.finished:
             # examples nudge one last time to make sure last frame is drawn
-            ts = quicktime.GetMovieTime(self._movie, 0)
+            #ts = quicktime.GetMovieTime(self._movie, 0)
             quicktime.SetMovieTimeValue(self._movie, ts)
 
+        quicktime.QTVisualContextTask(self.context)
+
+        # TODO get corevideo timestamp from qt timestamp.  "None" means "right
+        # now", so potential problems with audio sync (though maybe not)
+        cvts = None
+        if quicktime.QTVisualContextIsNewImageAvailable(self.context, cvts):
+            cv_image = ctypes.c_void_p()
+            r = quicktime.QTVisualContextCopyImageForTime(self.context,
+                None, cvts, ctypes.byref(cv_image))
+            _oscheck(r)
+
+            corevideo.CVOpenGLTextureRelease(self._last_cv_image)
+            self._last_cv_image = cv_image
+            self._texture.target = corevideo.CVOpenGLTextureGetTarget(cv_image)
+            self._texture.id = corevideo.CVOpenGLTextureGetName(cv_image)
+
+            # Probably optimisable into a single array with some trickery.
+            bottom_left = (GLfloat * 2)()
+            bottom_right = (GLfloat * 2)()
+            top_right = (GLfloat * 2)()
+            top_left = (GLfloat * 2)()
+            corevideo.CVOpenGLTextureGetCleanTexCoords(cv_image, 
+                ctypes.byref(bottom_left), 
+                ctypes.byref(bottom_right), 
+                ctypes.byref(top_right), 
+                ctypes.byref(top_left))
+            self._texture.tex_coords = (
+                (bottom_left[0], bottom_left[1], 0),
+                (bottom_right[0], bottom_right[1], 0),
+                (top_right[0], top_right[1], 0),
+                (top_left[0], top_left[1], 0))
+            
+            # If we want the texture width and height to be correct...  pyglet
+            # media API doesn't specify
+            glBindTexture(self._texture.target, self._texture.id)
+            width = GLint()
+            glGetTexLevelParameteriv(self._texture.target, 0,
+                GL_TEXTURE_WIDTH, ctypes.byref(width))
+            height = GLint()
+            glGetTexLevelParameteriv(self._texture.target, 0,
+                GL_TEXTURE_HEIGHT, ctypes.byref(height))
+            self._texture.width = width.value
+            self._texture.height = height.value
+
+
+
+    '''
     def output_callback(self, display_link, now, ts, flags, flags_out, ctx):
         _oscheck(quicktime.QTMLGrabMutex(self.draw_lock))
         if quicktime.QTVisualContextIsNewImageAvailable(self.context, ts):
@@ -552,6 +593,7 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         _oscheck(quicktime.QTVisualContextTask(self.context))
         _oscheck(quicktime.QTMLReturnMutex(self.draw_lock))
         return 0
+    '''
 
     def delete(self):
         # XXX needed to remove circular refs?
@@ -565,8 +607,8 @@ class QuickTimeCoreVideoStreamingVideo(Video):
                     quicktime.StopMovie(self._movie)
                 if quicktime.SetMovieVisualContext is not None:
                     quicktime.SetMovieVisualContext(self._movie, None)
-            if corevideo.CVDisplayLinkStop is not None:
-                corevideo.CVDisplayLinkStop(self.display_link)
+            #if corevideo.CVDisplayLinkStop is not None:
+            #    corevideo.CVDisplayLinkStop(self.display_link)
             if (quicktime.QTVisualContextRelease is not None 
                     and self.context is not None):
                 quicktime.QTVisualContextRelease(self.context)
@@ -830,7 +872,9 @@ class QuickTimeMedium(Medium):
 
         movie = Movie()
 
-        if corevideo is None:
+        if corevideo is None or True: 
+            # corevideo: set visualcontext to nil, then to the texture
+            # context -- avoids having to use FromProperties.
             fileid = ctypes.c_short(0)
             data_ref = ctypes.c_void_p()
             data_ref_type = ctypes.c_ulong()
