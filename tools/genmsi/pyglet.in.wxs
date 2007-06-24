@@ -1,92 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2003/01/wi">
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <!-- Version string must not have any letters, so use:
-       alpha = x.x.x.1.x
-       beta = x.x.x.2.x
-       rc = x.x.x.3.x
-       release = x.x.x.4.x -->
-  <Product Id="AEEC09B3-FC40-4841-9805-32ABC272945C" UpgradeCode="F2EAE19E-05FB-4AB1-B412-B0E45F3A41C7" Name="pyglet" Language="1033" Version="1.0.0.1.1" Manufacturer="pyglet">
-    <Package Id="????????-????-????-????-????????????" Description="Windowing and multimedia library for Python" Comments="This will appear in the file summary stream." InstallerVersion="200" Compressed="yes" />
-	
-	  <!-- Require Windows XP -->
-	  <Condition Message="pyglet requires Windows XP or later.  The installation will be aborted.">VersionNT &gt;= 501</Condition>
+       alpha = x.x.x.(0 + alpha num)
+       beta = x.x.x.(16 + beta num)
+       rc = x.x.x.(32 + rc num)
+       release = x.x.x.128 -->
+  <Product Id="AEEC09B3-FC40-4841-9805-32ABC272945C"
+      UpgradeCode="F2EAE19E-05FB-4AB1-B412-B0E45F3A41C7" Name="pyglet"
+      Language="1033" Version="1.0.0.0" Manufacturer="pyglet">
+    <Package Description="Windowing and multimedia library for Python" Comments="This will appear in the file summary stream." InstallerVersion="200" Compressed="yes" />
+  
+    <!-- Require Windows XP -->
+    <Condition Message="pyglet requires Windows XP or later.  The installation will be aborted.">VersionNT &gt;= 501</Condition>
     
     <Media Id="1" Cabinet="Product.cab" EmbedCab="yes" />
 
-    <!-- Locate Python installation -->
-	  <Property Id="PYTHON25HOME">
-		  <RegistrySearch Id="Python25InstallDir" Root="HKLM" Key="SOFTWARE\Python\PythonCore\2.5\InstallPath" Type="directory"/>
-  	</Property>
-  	<Property Id="PYTHON24HOME">
-		  <RegistrySearch Id="Python24InstallDir" Root="HKLM" Key="SOFTWARE\Python\PythonCore\2.4\InstallPath" Type="directory"/>
-  	</Property>
-  	<Property Id="CHOOSEPYTHONHOME">[PYTHON24HOME]</Property><!-- ignored; supresses ICE error -->
-  	
-  	<Condition Message="pyglet requires Python 2.4 or later.  The installation will be aborted.">
-  	  PYTHON24HOME or PYTHON25HOME
-  	</Condition>
-  	
-  	
-  	<!-- Byte compilation -->
-  	<CustomAction Id="SetPythonExe" Property="PYTHONEXE" Value="[PYTHONHOME]\pythonw.exe" />
-  	<CustomAction Id="ByteCompile" Property="PYTHONEXE" ExeCommand='-c "import compileall; compileall.compile_dir(\"[PYTHONHOME]\Lib\site-packages\pyglet\", force=1)"' Return="ignore" />
-  	<CustomAction Id="ByteOptimize" Property="PYTHONEXE" ExeCommand='-OO -c "import compileall; compileall.compile_dir(\"[PYTHONHOME]\Lib\site-packages\pyglet\", force=1)"' Return="ignore" />
-  	
-  	<CustomAction Id="SetPythonHome" Property="PYTHONHOME" Value="[PYTHON24HOME][PYTHON25HOME]" />
-  	
-  	<InstallExecuteSequence>
-  	  <LaunchConditions After="AppSearch" />
-  	  <Custom Action="SetPythonExe" After="InstallFinalize" />
-  	  <Custom Action="ByteCompile" After="SetPythonExe" />
-  	  <Custom Action="ByteOptimize" After="ByteCompile" />
-  	</InstallExecuteSequence>
-  	
-  	<UI Id="SetupUI"> 
-  	  <Property Id="DefaultUIFont">DlgFont8</Property>
-  	  <Property Id="DlgTitleFont">{&amp;DlgFontBold8}</Property>
-  	  
-  	  <Dialog Id="ChoosePythonDlg" Width="370" Height="270" Title="pyglet Setup" NoMinimize="yes">
-  	    <!-- Banner -->
-  	    <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="BannerBitmap" />
+    
+    
+    <!-- Byte compilation -->
+<!--
+    <CustomAction Id="ByteCompile" Property="PYTHONEXE" ExeCommand='-c "import compileall; compileall.compile_dir(\"[PYTHONHOME]\Lib\site-packages\pyglet\", force=1)"' Return="ignore" />
+    <CustomAction Id="ByteOptimize" Property="PYTHONEXE" ExeCommand='-OO -c "import compileall; compileall.compile_dir(\"[PYTHONHOME]\Lib\site-packages\pyglet\", force=1)"' Return="ignore" />
+-->    
+    
+    <InstallExecuteSequence>
+      <LaunchConditions After="AppSearch" />
+      <!--
+      <Custom Action="SetPythonExe" After="InstallFinalize" />
+      <Custom Action="ByteCompile" After="SetPythonExe" />
+      <Custom Action="ByteOptimize" After="ByteCompile" />
+      -->
+    </InstallExecuteSequence>
+    
+    <UI Id="SetupUI"> 
+      <Property Id="DefaultUIFont">DlgFont8</Property>
+      <Property Id="DlgTitleFont">{&amp;DlgFontBold8}</Property>
+      
+      <Dialog Id="ChoosePythonDlg" Width="370" Height="270" Title="pyglet Setup" NoMinimize="yes">
+        <!-- Banner -->
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="BannerBitmap" />
         <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
         <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
         <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
-          <Text>[DlgTitleFont]Select Python installation</Text>
+          <Text>[DlgTitleFont]Choose Python</Text>
         </Control>
         <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes">
-          <Text>More than one version of Python is installed on this computer.</Text>
+          <Text>Select which instances of Python pyglet should be installed into.</Text>
         </Control>
 
         <!-- Content -->        
         <Control Id="Text" Type="Text" X="25" Y="70" Width="320" Height="20">
-          <Text>Select which Python to install pyglet into:</Text>
+          <Text>Click on the icons in the list below to choose how pyglet will be installed.</Text>
         </Control>
-        <Control Id="ChoosePython" Type="RadioButtonGroup" X="40" Y="90" Width="330" Height="40" Property="CHOOSEPYTHONHOME">
-          <Publish Property="ChosePython" Value="1" />
-        </Control>
+        <Control Id="Tree" Type="SelectionTree" X="25" Y="95"
+          Width="320" Height="95" Property="_BrowseProperty" Sunken="yes"
+          TabSkip="no" Text="Tree of selections" />
         
-   	    <!-- Buttons -->
-        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Disabled="yes" Text="Back" />
-        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Disabled="yes" Text="Next">
-          <Publish Property="PYTHONHOME" Value="[CHOOSEPYTHONHOME]">1</Publish>
-          <Publish Event="NewDialog" Value="InstallDlg">1</Publish>
-          <Condition Action="enable">
-            CHOOSEPYTHONHOME
-          </Condition>
-  	    </Control>
-  	    <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
+        <!-- Buttons -->
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56"
+            Height="17" Text="Back" Disabled="yes" />
+        <Control Id="Install" Type="PushButton" X="236" Y="243" Width="56"
+            Height="17" Default="yes" Text="Install">
+          <Publish Event="NewDialog" Value="InstallDlg" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56"
+            Height="17" Cancel="yes" Text="Cancel">
           <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
         </Control>
-  	  </Dialog>
-  	  
-  	  <RadioButtonGroup Property="CHOOSEPYTHONHOME">
-  	    <RadioButton Text="Python 2.4, installed in [PYTHON24HOME]" Value="[PYTHON24HOME]" X="5" Y="0" Width="250" Height="15" />
-  	    <RadioButton Text="Python 2.5, installed in [PYTHON25HOME]" Value="[PYTHON25HOME]" X="5" Y="15" Width="250" Height="15" />
-  	  </RadioButtonGroup>
-  	  
-  	  <Dialog Id="InstallDlg" Width="370" Height="270" Title="pyglet Setup" NoMinimize="yes">
-  	    <!-- Banner -->
-  	    <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="BannerBitmap" />
+      </Dialog>
+       
+      <Dialog Id="InstallDlg" Width="370" Height="270" Title="pyglet Setup" NoMinimize="yes">
+        <!-- Banner -->
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="BannerBitmap" />
         <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
         <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
         <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
@@ -101,24 +86,21 @@
           <Text>Click Install to install pyglet into [PYTHONHOME].</Text>
         </Control>
         
-   	    <!-- Buttons -->
-        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back" Disabled="yes">
+        <!-- Buttons -->
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back">
           <Publish Event="NewDialog" Value="ChoosePythonDlg" />
-          <Condition Action="enable">
-            CHOOSEPYTHONHOME
-          </Condition>
         </Control>
-   	    <Control Id="Install" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Install">
-  	      <Publish Event="NewDialog" Value="ProgressDlg" />
-  	    </Control>
-  	    <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
+        <Control Id="Install" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Install">
+          <Publish Event="NewDialog" Value="ProgressDlg" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
           <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
         </Control>
-  	  </Dialog>
-  	  
-  	  <Dialog Id="ProgressDlg" Width="370" Height="270" Title="pyglet Setup" Modeless="yes">
-  	    <!-- Banner -->
-  	    <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="BannerBitmap" />
+      </Dialog>
+      
+      <Dialog Id="ProgressDlg" Width="370" Height="270" Title="pyglet Setup" Modeless="yes">
+        <!-- Banner -->
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="BannerBitmap" />
         <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
         <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
         <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
@@ -140,14 +122,14 @@
         <!-- Buttons -->
         <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Disabled="yes" Text="Back" />
         <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Disabled="yes" Text="Next" />
-  	    <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
           <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
         </Control>
       </Dialog>
       
       <Dialog Id="FinishDlg" Width="370" Height="270" Title="pyglet Setup" NoMinimize="yes">
-  	    <!-- Banner -->
-  	    <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="BannerBitmap" />
+        <!-- Banner -->
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="BannerBitmap" />
         <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
         <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
         <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
@@ -159,13 +141,13 @@
           <Text>pyglet has been installed successfully.</Text>
         </Control>
         
-   	    <!-- Buttons -->
-   	    <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Disabled="yes" Text="Back" />
+        <!-- Buttons -->
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Disabled="yes" Text="Back" />
         <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Cancel="yes" Text="Finish">
           <Publish Event="EndDialog" Value="Return">1</Publish>
         </Control>
-  	    <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Disabled="yes" Text="Cancel" />
-  	  </Dialog>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Disabled="yes" Text="Cancel" />
+      </Dialog>
       
       <Dialog Id="CancelDlg" Width="260" Height="85" Title="pyglet Setup" NoMinimize="yes">
         <Control Id="No" Type="PushButton" X="132" Y="57" Width="56" Height="17" Default="yes" Cancel="yes" Text="No">
@@ -179,13 +161,13 @@
         </Control>
         <Control Id="Icon" Type="Icon" X="15" Y="15" Width="24" Height="24" ToolTip="Information icon" FixedSize="yes" IconSize="32" Text="InfoIcon" />
       </Dialog>
-  	  
+      
       <TextStyle Id="DlgFont8" FaceName="Tahoma" Size="8" />
       <TextStyle Id="DlgFontBold8" FaceName="Tahoma" Size="8" Bold="yes" />
       
-   	  <ProgressText Action="ByteCompile">Byte-compiling modules</ProgressText>
-  	  <ProgressText Action="ByteOptimize">Byte-compiling modules with optimization</ProgressText>
-  	  
+      <ProgressText Action="ByteCompile">Byte-compiling modules</ProgressText>
+      <ProgressText Action="ByteOptimize">Byte-compiling modules with optimization</ProgressText>
+      
       <ProgressText Action="CostFinalize">Computing space requirements</ProgressText>
       <ProgressText Action="CostInitialize">Computing space requirements</ProgressText>
       <ProgressText Action="FileCost">Computing space requirements</ProgressText>
@@ -257,31 +239,25 @@
       <ProgressText Action="UnmoveFiles" Template="File: [1], Directory: [9]">Removing moved files</ProgressText>
       <ProgressText Action="UnpublishProduct">Unpublishing product information</ProgressText>
       
-  	  <AdminUISequence />
-  	  <InstallUISequence>
-  	    <!-- ChoosePythonDlg is only shown if both 2.4 and 2.5 were found, otherwise PYTHONHOME is set immediately. -->
-  	    <Custom Action="SetPythonHome" After="LaunchConditions">not (PYTHON24HOME and PYTHON25HOME)</Custom>
-  	    <Show Dialog="ChoosePythonDlg" After="CostFinalize">PYTHON24HOME and PYTHON25HOME</Show>
-  	    <Show Dialog="InstallDlg" After="ChoosePythonDlg">not (PYTHON24HOME and PYTHON25HOME)</Show>
-  	    <Show Dialog="FinishDlg" OnExit="success" />
-  	  </InstallUISequence>
-  	</UI>
-  	
-  	<Binary Id="BannerBitmap" SourceFile="res\banner.bmp" />
-  	<Binary Id="InfoIcon" SourceFile="res\info.ico" />
-  	
+      <AdminUISequence />
+      <InstallUISequence>
+        <Show Dialog="ChoosePythonDlg" After="MigrateFeatureStates" />
+        <!--<Show Dialog="InstallDlg" After="ChoosePythonDlg">not
+        (PYTHON24HOME and PYTHON25HOME)</Show>-->
+        <Show Dialog="FinishDlg" OnExit="success" />
+      </InstallUISequence>
+    </UI>
+    
+    <Binary Id="BannerBitmap" SourceFile="res\banner.bmp" />
+    <Binary Id="InfoIcon" SourceFile="res\info.ico" />
+    
     <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="PYTHONHOME">
-		    <Directory Id="LibDir" Name="Lib">
-		      <Directory Id="SitePackagesDir" Name="sitepack" LongName="site-packages">
-		        <!-- pyglet modules are inserted here -->
-			    </Directory>
-        </Directory>
-      </Directory>
+    <!-- pyglet modules are inserted here -->
     </Directory>
 
-    <Feature Id="ProductFeature" Title="Feature Title" Level="1">
-      <!-- pyglet component refs are inserted here -->
+    <Feature Id="RuntimeFeature" Title="pyglet runtime" 
+      Display="expand" Level="1">
+      <!-- Python version features are inserted here -->
     </Feature>
   </Product> 
 </Wix>
