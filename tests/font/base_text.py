@@ -34,7 +34,7 @@ class TextTestBase(ImageRegressionTestCase):
 
     def render(self):
         fnt = font.load(self.font_name, self.font_size) 
-        self.label = font.Label(fnt, self.text, 10, 10)
+        self.label = font.Text(fnt, self.text, 10, 10)
 
     def draw(self):
         self.label.draw()

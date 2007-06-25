@@ -15,7 +15,7 @@ from pyglet import font
 class TEST_COLOR_BLEND(base_text.TextTestBase):
     def render(self):
         fnt = font.load(self.font_name, self.font_size)
-        self.label = font.Label(fnt, self.text, 10, 10, color=(1, 1, 1, 0.1))
+        self.label = font.Text(fnt, self.text, 10, 10, color=(1, 1, 1, 0.1))
 
 if __name__ == '__main__':
     unittest.main()

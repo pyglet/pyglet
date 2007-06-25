@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''Test that font.Label alignment works with multiple lines.
+'''Test that font.Text alignment works with multiple lines.
 
 Three labels will be rendered at the top-left, center and bottom-right of the
 window.  Resize the window to ensure the alignment is as specified.
@@ -26,15 +26,15 @@ class TEST_ALIGN_MULTILINE(base_text.TextTestBase):
         h = self.window.height
 
         self.labels = [
-            font.Label(fnt, 
+            font.Text(fnt, 
                 'This text is top-left aligned  with several  lines.', 
                 0, h, width=w, 
                 halign='left', valign='top'),
-            font.Label(fnt, 
+            font.Text(fnt, 
                 'This text is centered in the middle.',
                 0, h//2, width=w, 
                 halign='center', valign='center'),
-            font.Label(fnt, 
+            font.Text(fnt, 
                 'This text is aligned to the bottom-right of the window.',
                 0, 0, width=w, 
                 halign='right', valign='bottom'),

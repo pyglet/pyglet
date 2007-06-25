@@ -38,10 +38,10 @@ class TEST_ADD_FONT(base_text.TextTestBase):
         h = fnt.ascent - fnt.descent
 
         self.labels = [
-            font.Label(fnt, 'Action Man', 10, 10 + 3 * h),
-            font.Label(fnt_i, 'Action Man Italic', 10, 10 + 2 * h),
-            font.Label(fnt_b, 'Action Man Bold', 10, 10 + h),
-            font.Label(fnt_bi, 'Action Man Bold Italic', 10, 10)
+            font.Text(fnt, 'Action Man', 10, 10 + 3 * h),
+            font.Text(fnt_i, 'Action Man Italic', 10, 10 + 2 * h),
+            font.Text(fnt_b, 'Action Man Bold', 10, 10 + h),
+            font.Text(fnt_bi, 'Action Man Bold Italic', 10, 10)
         ]
 
     def draw(self):

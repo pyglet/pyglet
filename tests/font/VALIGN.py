@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''Test that font.Label vertical alignment works.
+'''Test that font.Text vertical alignment works.
 
 Four labels will be aligned top, center, baseline and bottom.
 '''
@@ -29,7 +29,7 @@ class TEST_VALIGN(base_text.TextTestBase):
         x = 0
         for align in 'top center baseline bottom'.split():
             label = align.upper() + 'y'
-            self.labels.append(font.Label(fnt, label, x, 50, valign=align))
+            self.labels.append(font.Text(fnt, label, x, 50, valign=align))
             x += self.labels[-1].width
 
     def draw(self):

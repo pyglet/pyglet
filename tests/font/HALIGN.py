@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''Test that font.Label horizontal alignment works.
+'''Test that font.Text horizontal alignment works.
 
 Three labels will be rendered aligned left, center and right.
 '''
@@ -24,9 +24,9 @@ class TEST_HALIGN(base_text.TextTestBase):
         w = self.window.width
 
         self.labels = [
-            font.Label(fnt, 'LEFT', 0, 10 + 3 * h, width=w, halign='left'),
-            font.Label(fnt, 'CENTER', 0, 10 + 2 * h, width=w, halign='center'),
-            font.Label(fnt, 'RIGHT', 0, 10 + h, width=w, halign='right'),
+            font.Text(fnt, 'LEFT', 0, 10 + 3 * h, width=w, halign='left'),
+            font.Text(fnt, 'CENTER', 0, 10 + 2 * h, width=w, halign='center'),
+            font.Text(fnt, 'RIGHT', 0, 10 + h, width=w, halign='right'),
         ]
 
     def on_resize(self, width, height):

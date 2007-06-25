@@ -45,7 +45,7 @@ class MediaPlayWindow(window.Window):
         self.y = self.height
         self.labels = []
         def add_label(text):
-            l = font.Label(font.load('Arial', 12), text, color=(1, 1, 1, 1))
+            l = font.Text(font.load('Arial', 12), text, color=(1, 1, 1, 1))
             l.x = 10
             l.y = self.y - l.height
             self.y -= l.height

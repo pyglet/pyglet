@@ -59,7 +59,7 @@ if __name__ == '__main__':
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-    label = font.Label(font.load('Arial', 14), 
+    label = font.Text(font.load('Arial', 14), 
         'Press space to add a ball, backspace to remove.', 
         window.width / 2, 10)
     #label.halign = label.CENTER

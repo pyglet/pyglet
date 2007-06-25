@@ -59,10 +59,10 @@ The most efficient way to render these glyphs is with a `GlyphString`::
 There are also a variety of methods in both `Font` and
 `GlyphString` to facilitate word-wrapping.
 
-A convenient way to render a string of text is with a `Label`::
+A convenient way to render a string of text is with a `Text`::
 
-    label = Label(font, text)
-    label.draw()
+    text = Text(font, text)
+    text.draw()
 
 See the `pyglet.font.base` module for documentation on the base classes used
 by this package.
@@ -240,14 +240,14 @@ class GlyphString(object):
         if from_index:
             glPopMatrix()
 
-class Label(object):
+class Text(object):
     '''Simple displayable text.
 
     This is a convenience class for rendering strings of text.  It takes
     care of caching the vertices so the text can be rendered every frame with
     little performance penalty.
 
-    Labels can be word-wrapped by specifying a `width` to wrap into.  If the
+    Text can be word-wrapped by specifying a `width` to wrap into.  If the
     width is not specified, it gives the width of the text as laid out.
     '''
 
@@ -259,11 +259,21 @@ class Label(object):
     _dirty = False        # Flag if require layout
 
     # Alignment constants
+
+    #: Align the left edge of the text to the given X coordinate.
     LEFT = 'left'
+    #: Align the horizontal center of the text to the given X coordinate.
     CENTER = 'center'
+    #: Align the right edge of the text to the given X coordinate.
     RIGHT = 'right'
+    #: Align the bottom of the descender of the final line of text with the
+    #: given Y coordinate.
     BOTTOM = 'bottom'
+    #: Align the baseline of the first line of text with the given Y
+    #: coordinate.
     BASELINE = 'baseline'
+    #: Align the top of the ascender of the first line of text with the given
+    #: Y coordinate.
     TOP = 'top'
 
     _halign = LEFT
@@ -271,7 +281,7 @@ class Label(object):
 
     def __init__(self, font, text='', x=0, y=0, z=0, color=(1,1,1,1),
             width=None, halign=LEFT, valign=BASELINE):
-        '''Create a label.
+        '''Create displayable text.
 
         :Parameters:
             `font` : `Font`
@@ -438,15 +448,44 @@ class Label(object):
         :type: str
         ''')
 
-if sys.platform == 'darwin':
-    from pyglet.font.carbon import CarbonFont
-    _font_class = CarbonFont
-elif sys.platform == 'win32':
-    from pyglet.font.win32 import Win32Font
-    _font_class = Win32Font
-else:
-    from pyglet.font.freetype import FreeTypeFont
-    _font_class = FreeTypeFont
+    def _set_halign(self, halign):
+        self._halign = halign
+        self._dirty = True
+
+    halign = property(lambda self: self._halign, _set_halign,
+        doc='''Horizontal alignment of the text.
+
+        The text is positioned relative to `x` according to this property,
+        which must be one of the alignment constants `LEFT`, `CENTER` or
+        `RIGHT`.
+
+        :type: str
+        ''')
+
+    def _set_valign(self, valign):
+        self._valign = valign
+        self._dirty = True
+
+    valign = property(lambda self: self._valign, _set_valign,
+        doc='''Vertical alignment of the text.
+
+        The text is positioned relative to `y` according to this property,
+        which must be one of the alignment constants `BOTTOM`, `BASELINE` or
+        `TOP`.
+
+        :type: str
+        ''')
+
+if not getattr(sys, 'is_epydoc', False):
+    if sys.platform == 'darwin':
+        from pyglet.font.carbon import CarbonFont
+        _font_class = CarbonFont
+    elif sys.platform == 'win32':
+        from pyglet.font.win32 import Win32Font
+        _font_class = Win32Font
+    else:
+        from pyglet.font.freetype import FreeTypeFont
+        _font_class = FreeTypeFont
 
 def load(name, size, bold=False, italic=False):
     '''Load a font for rendering.
