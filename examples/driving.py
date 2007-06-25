@@ -31,7 +31,7 @@ m = RectMap.load_xml(os.path.join(dirname, 'road-map.xml'), 'map0')
 car = CarSprite.from_image(0, 0, Image2d.load(os.path.join(dirname, 'car.png')))
 view = FlatView.from_window(w, layers=[m], sprites=[car])
 
-keyboard = key.KeyboardStateHandler()
+keyboard = key.KeyStateHandler()
 w.push_handlers(keyboard)
 
 clock.set_fps_limit(30)

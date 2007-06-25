@@ -69,7 +69,7 @@ w = pyglet.window.Window(width=1280, height=1024, fullscreen=True)
 #w = pyglet.window.Window(width=800, height=600)
 w.set_exclusive_mouse()
 clock.set_fps_limit(60)
-keyboard = key.KeyboardStateHandler()
+keyboard = key.KeyStateHandler()
 w.push_handlers(keyboard)
 
 class SaveHandler:

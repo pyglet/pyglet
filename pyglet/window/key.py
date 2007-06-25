@@ -64,14 +64,14 @@ Usage::
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-class KeyboardStateHandler(dict):
+class KeyStateHandler(dict):
     '''Simple handler that tracks the state of keys on the keyboard. If a
     key is pressed then this handler holds a True value for it.
 
     For example::
 
         >>> win = window.Window
-        >>> keyboard = key.KeyboardStateHandler()
+        >>> keyboard = key.KeyStateHandler()
         >>> win.push_handlers(keyboard)
 
         # Hold down the "up" arrow...

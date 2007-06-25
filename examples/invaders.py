@@ -63,7 +63,7 @@ for enemy in enemies:
     view.sprites.append(enemy)
     clock.schedule(enemy.update)
 
-keyboard = key.KeyboardStateHandler()
+keyboard = key.KeyStateHandler()
 w.push_handlers(keyboard)
 
 while not (w.has_exit or dead):
