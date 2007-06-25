@@ -238,7 +238,6 @@ class CarbonGlyphRenderer(base.GlyphRenderer):
             0,
             kATSUToTextEnd,
             fixed(-lsb + 1), fixed(baseline)) 
-
         
         # A negative pitch is required, but it is much faster to load the
         # glyph upside-down and flip the tex_coords.  Note region used
@@ -249,7 +248,7 @@ class CarbonGlyphRenderer(base.GlyphRenderer):
         skip_rows = int(self._bitmap_rect.size.height - image_height)
         image = image.get_region(0, skip_rows, image.width, image_height)
         glyph = self.font.create_glyph(image)
-        glyph.set_bearings(baseline, lsb, advance)
+        glyph.set_bearings(baseline, lsb - 1, advance)
         glyph.tex_coords = (glyph.tex_coords[3], 
                             glyph.tex_coords[2],
                             glyph.tex_coords[1],

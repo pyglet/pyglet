@@ -20,14 +20,14 @@ class TEST_ALIGN_MULTILINE(base_text.TextTestBase):
     window_size = 400, 500
 
     def render(self):
-        fnt = font.load('', self.font_size)
+        fnt = font.load(self.font_name, self.font_size)
 
         w = self.window.width
         h = self.window.height
 
         self.labels = [
             font.Text(fnt, 
-                'This text is top-left aligned  with several  lines.', 
+                'This text is top-left aligned  with several lines.', 
                 0, h, width=w, 
                 halign='left', valign='top'),
             font.Text(fnt, 
