@@ -43,7 +43,6 @@ import ctypes
 import math
 import sys
 import re
-import atexit
 
 from pyglet import image
 from pyglet.media import Sound, Video, Medium, MediaException
@@ -378,25 +377,8 @@ class QuickTimeCoreVideoStreamingVideo(Video):
             agl_pixelformat, ctypes.byref(cgl_pixelformat))
 
 
-        '''
-        # TODO match colorspace
-
-        ... Other keys? Except these are "CV" not "QT" keys....
-        kCVImageBufferDisplayWidthKey?
-        kCVImageBufferDisplayHeightKey?
-
-        keys = (CFTypeRef*1)(kQTVisualContextWorkingColorSpaceKey)
-        colorSpace = quicktime.CGColorSpaceCreateDeviceRGB()
-        textureContextAttributes = CFDictionaryCreate(
-           carbon.CFAllocatorGetDefault(),
-           keys, ctypes.byref(colorSpace), len(keys),
-           ctypes.byref(quicktime.kCFTypeDictionaryKeyCallBacks),
-           ctypes.byref(quicktime.kCFTypeDictionaryValueCallBacks)
-        )
-        '''
-
-        # no attributes on texture contexts, only pixel buffer, according to
-        # apple docs ref'd in class docstring.  do i get 10 points?
+        # No attributes on texture contexts, only pixel buffer, according to
+        # apple docs ref'd in class docstring.
         textureContextAttributes = None
 
         self.context = ctypes.c_void_p()
@@ -420,7 +402,6 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         # Set to null before setting real context to disassocate from
         # automatically created gworld.
         quicktime.SetMovieVisualContext(self._movie, None)
-
         quicktime.SetMovieVisualContext(self._movie, self.context)
 
         # Dummy texture object to hold id and target of textures returned by
@@ -432,42 +413,6 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         self._last_cv_image = None
 
         # Display link is not needed, we sync frames ourselves with vsync.
-        # Mutexes not needed, pyglet is completely thread oblivious :-)
-        '''
-        # create display link
-        self.display_link = ctypes.c_void_p()
-        main_display = quicktime.CGMainDisplayID()
-        result = corevideo.CVDisplayLinkCreateWithCGDisplay(main_display,
-            ctypes.byref(self.display_link))
-        _oscheck(result)
-
-        # now, er call another function with the same two arguments, reversed!
-        result = corevideo.CVDisplayLinkSetCurrentCGDisplay(self.display_link,
-            main_display)
-        _oscheck(result)
-
-        # set the output callback
-        self._callback = CVDisplayLinkOutputCallback(self.output_callback)
-        result = corevideo.CVDisplayLinkSetOutputCallback(self.display_link,
-            self._callback, None)
-        _oscheck(result)
-
-        # ensure the display link is closed down nicely on program exit
-        atexit.register(self.cleanup)
-
-        # create our drawing mutext
-        self.draw_lock = quicktime.QTMLCreateMutex()
-        self._ts = 0
-
-        self.latest_texture = c_void_p(0)
-        '''
-
-    def cleanup(self):
-        '''On interpreter exit stop the display link thread.'''
-        '''
-        if corevideo.CVDisplayLinkIsRunning(self.display_link):
-            corevideo.CVDisplayLinkStop(self.display_link)
-        '''
 
     def get_texture(self):
         return self._texture
@@ -484,10 +429,7 @@ class QuickTimeCoreVideoStreamingVideo(Video):
 
         instances.append(self)
 
-        # start the display link
-        #_oscheck(corevideo.CVDisplayLinkStart(self.display_link))
-
-        # right, now kick off the movie
+        # kick off the movie
         self.playing = True
         quicktime.StartMovie(self._movie)
 
@@ -504,25 +446,27 @@ class QuickTimeCoreVideoStreamingVideo(Video):
         self.playing = False
         quicktime.StopMovie(self._movie)
 
-        # stop the display link so we don't get unnecessary updates
-        #_oscheck(corevideo.CVDisplayLinkStop(self.display_link))
-
         # restart the movie
         #quicktime.GoToBeginningOfMovie(self._movie)
 
-        #if self.latest_texture is not None:
-        #    corevideo.CVOpenGLTextureRelease(self.latest_texture)
-        #    self.latest_texture = None
+    _seek_to = None
+    def seek(self, ts):
+        assert 0 <= ts < self._medium.duration
+        self._seek_to = ts
 
     def dispatch_events(self):
         ''' draw to the texture '''
+        if self._seek_to is not None:
+            ts = int(self._seek_to * self._medium._time_scale)
+            self._seek_to = None
+            quicktime.SetMovieTimeValue(self._movie, ts)
+
         quicktime.MoviesTask(self._movie, 0)
         _oscheck(quicktime.GetMoviesError())
         self.finished = quicktime.IsMovieDone(self._movie)
         ts = quicktime.GetMovieTime(self._movie, 0)
         if self.finished:
             # examples nudge one last time to make sure last frame is drawn
-            #ts = quicktime.GetMovieTime(self._movie, 0)
             quicktime.SetMovieTimeValue(self._movie, ts)
 
         quicktime.QTVisualContextTask(self.context)
@@ -536,19 +480,23 @@ class QuickTimeCoreVideoStreamingVideo(Video):
                 None, cvts, ctypes.byref(cv_image))
             _oscheck(r)
 
-            corevideo.CVOpenGLTextureRelease(self._last_cv_image)
+            # free up the last frame
+            if self._last_cv_image is not None:
+                corevideo.CVOpenGLTextureRelease(self._last_cv_image)
+
+            # grab the new frame
             self._last_cv_image = cv_image
             self._texture.target = corevideo.CVOpenGLTextureGetTarget(cv_image)
             self._texture.id = corevideo.CVOpenGLTextureGetName(cv_image)
 
-            # Probably optimisable into a single array with some trickery.
+            # XXX probably optimisable into a single array with some trickery
             bottom_left = (GLfloat * 2)()
             bottom_right = (GLfloat * 2)()
             top_right = (GLfloat * 2)()
             top_left = (GLfloat * 2)()
             corevideo.CVOpenGLTextureGetCleanTexCoords(cv_image, 
-                ctypes.byref(bottom_left), 
-                ctypes.byref(bottom_right), 
+                ctypes.byref(bottom_left),
+                ctypes.byref(bottom_right),
                 ctypes.byref(top_right), 
                 ctypes.byref(top_left))
             self._texture.tex_coords = (
@@ -570,31 +518,6 @@ class QuickTimeCoreVideoStreamingVideo(Video):
             self._texture.height = height.value
 
 
-
-    '''
-    def output_callback(self, display_link, now, ts, flags, flags_out, ctx):
-        _oscheck(quicktime.QTMLGrabMutex(self.draw_lock))
-        if quicktime.QTVisualContextIsNewImageAvailable(self.context, ts):
-            # free up the previous texture
-            if self.latest_texture:
-                corevideo.CVOpenGLTextureRelease(self.latest_texture)
-
-            # grab new image to new texture
-            _oscheck(quicktime.QTVisualContextCopyImageForTime(self.context,
-                carbon.CFAllocatorGetDefault(),
-                ts, ctypes.byref(self.latest_texture)))
-            corevideo.CVOpenGLTextureRetain(self.latest_texture)
-
-            # copy the texture "name" to our rendering texture
-            t = self._texture
-            t.target = corevideo.CVOpenGLTextureGetTarget(self.latest_texture)
-            t.id = corevideo.CVOpenGLTextureGetName(self.latest_texture)
-
-        _oscheck(quicktime.QTVisualContextTask(self.context))
-        _oscheck(quicktime.QTMLReturnMutex(self.draw_lock))
-        return 0
-    '''
-
     def delete(self):
         # XXX needed to remove circular refs?
         pass
@@ -607,8 +530,6 @@ class QuickTimeCoreVideoStreamingVideo(Video):
                     quicktime.StopMovie(self._movie)
                 if quicktime.SetMovieVisualContext is not None:
                     quicktime.SetMovieVisualContext(self._movie, None)
-            #if corevideo.CVDisplayLinkStop is not None:
-            #    corevideo.CVDisplayLinkStop(self.display_link)
             if (quicktime.QTVisualContextRelease is not None 
                     and self.context is not None):
                 quicktime.QTVisualContextRelease(self.context)
