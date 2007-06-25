@@ -598,7 +598,7 @@ class ClockDisplay(object):
     framerate.  See the module documentation for example usage.
 
     :Ivariables:
-        `label` : `pyglet.font.Label`
+        `label` : `pyglet.font.Text`
             The label which is displayed.
 
     '''
@@ -639,7 +639,7 @@ class ClockDisplay(object):
             font = load_font('', 36, bold=True)
 
         import pyglet.font
-        self.label = pyglet.font.Label(font, '', color=color, x=10, y=10)
+        self.label = pyglet.font.Text(font, '', color=color, x=10, y=10)
 
         self.format = format
 
