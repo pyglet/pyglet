@@ -60,7 +60,7 @@ from pyglet import gl
 from pyglet.gl import gl_info
 from pyglet.gl import glu_info
 from pyglet.gl import wgl
-from pyglet.gl import wglext_abi
+from pyglet.gl import wglext_arb
 from pyglet.gl import wgl_info
 
 _gdi32 = windll.gdi32
@@ -219,7 +219,7 @@ class Win32Screen(Screen):
         
         pformats = (c_int * 16)()
         nformats = c_uint(16)
-        wglext_abi.wglChoosePixelFormatARB(hdc, attrs, None, 
+        wglext_arb.wglChoosePixelFormatARB(hdc, attrs, None, 
                                            nformats, pformats, nformats)
 
         formats = [Win32ConfigARB(self, hdc, pf) \
@@ -265,22 +265,22 @@ class Win32Config(gl.Config):
 
 class Win32ConfigARB(Win32Config):    
     attribute_ids = {
-        'double_buffer': wglext_abi.WGL_DOUBLE_BUFFER_ARB,
-        'stereo': wglext_abi.WGL_STEREO_ARB,
-        'buffer_size': wglext_abi.WGL_COLOR_BITS_ARB,
-        'aux_buffers': wglext_abi.WGL_AUX_BUFFERS_ARB,
-        'sample_buffers': wglext_abi.WGL_SAMPLE_BUFFERS_ARB,
-        'samples': wglext_abi.WGL_SAMPLES_ARB,
-        'red_size': wglext_abi.WGL_RED_BITS_ARB,
-        'green_size': wglext_abi.WGL_GREEN_BITS_ARB,
-        'blue_size': wglext_abi.WGL_BLUE_BITS_ARB,
-        'alpha_size': wglext_abi.WGL_ALPHA_BITS_ARB,
-        'depth_size': wglext_abi.WGL_DEPTH_BITS_ARB,
-        'stencil_size': wglext_abi.WGL_STENCIL_BITS_ARB,
-        'accum_red_size': wglext_abi.WGL_ACCUM_RED_BITS_ARB,
-        'accum_green_size': wglext_abi.WGL_ACCUM_GREEN_BITS_ARB,
-        'accum_blue_size': wglext_abi.WGL_ACCUM_BLUE_BITS_ARB,
-        'accum_alpha_size': wglext_abi.WGL_ACCUM_ALPHA_BITS_ARB,
+        'double_buffer': wglext_arb.WGL_DOUBLE_BUFFER_ARB,
+        'stereo': wglext_arb.WGL_STEREO_ARB,
+        'buffer_size': wglext_arb.WGL_COLOR_BITS_ARB,
+        'aux_buffers': wglext_arb.WGL_AUX_BUFFERS_ARB,
+        'sample_buffers': wglext_arb.WGL_SAMPLE_BUFFERS_ARB,
+        'samples': wglext_arb.WGL_SAMPLES_ARB,
+        'red_size': wglext_arb.WGL_RED_BITS_ARB,
+        'green_size': wglext_arb.WGL_GREEN_BITS_ARB,
+        'blue_size': wglext_arb.WGL_BLUE_BITS_ARB,
+        'alpha_size': wglext_arb.WGL_ALPHA_BITS_ARB,
+        'depth_size': wglext_arb.WGL_DEPTH_BITS_ARB,
+        'stencil_size': wglext_arb.WGL_STENCIL_BITS_ARB,
+        'accum_red_size': wglext_arb.WGL_ACCUM_RED_BITS_ARB,
+        'accum_green_size': wglext_arb.WGL_ACCUM_GREEN_BITS_ARB,
+        'accum_blue_size': wglext_arb.WGL_ACCUM_BLUE_BITS_ARB,
+        'accum_alpha_size': wglext_arb.WGL_ACCUM_ALPHA_BITS_ARB,
     }
     def __init__(self, screen, hdc, pf):
         self.screen = screen
@@ -291,7 +291,7 @@ class Win32ConfigARB(Win32Config):
         attrs = (c_int * len(attrs))(*attrs)
         values = (c_int * len(attrs))()
         
-        result = wglext_abi.wglGetPixelFormatAttribivARB(hdc,
+        result = wglext_arb.wglGetPixelFormatAttribivARB(hdc,
             pf, 0, len(attrs), attrs, values)
 
         for name, value in zip(names, values):
@@ -496,12 +496,12 @@ class Win32Window(BaseWindow):
 
     def _get_vsync(self):
         if wgl_info.have_extension('WGL_EXT_swap_control'):
-            return bool(wglext_abi.wglGetSwapIntervalEXT())
+            return bool(wglext_arb.wglGetSwapIntervalEXT())
     vsync = property(_get_vsync) # overrides BaseWindow property
 
     def set_vsync(self, vsync):
         if wgl_info.have_extension('WGL_EXT_swap_control'):
-            wglext_abi.wglSwapIntervalEXT(int(vsync))
+            wglext_arb.wglSwapIntervalEXT(int(vsync))
         else:
             warnings.warn('Could not set vsync; unsupported extension.')
 

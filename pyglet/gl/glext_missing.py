@@ -38,7 +38,7 @@
 These are hand-wrapped extension tokens and functions that are in
 the OpenGL Extension Registry but have not yet been added to either 
 the registry's glext.h or nVidia's glext.h.  Remove wraps from here
-when the headers are updated (and glext_abi.py or glext_nv.py are
+when the headers are updated (and glext_arb.py or glext_nv.py are
 regenerated).
 
 When adding an extension here, include the name and URL, and any tokens and

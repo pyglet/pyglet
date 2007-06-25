@@ -51,7 +51,7 @@ from pyglet import gl
 from pyglet.gl import gl_info
 from pyglet.gl import glu_info
 from pyglet.gl import glx
-from pyglet.gl import glxext_abi
+from pyglet.gl import glxext_arb
 from pyglet.gl import glx_info
 
 import pyglet.window.xlib.xlib
@@ -597,8 +597,8 @@ class XlibWindow(BaseWindow):
 
         if self._vsync and self._have_SGI_video_sync:
             count = c_uint()
-            glxext_abi.glXGetVideoSyncSGI(byref(count))
-            glxext_abi.glXWaitVideoSyncSGI(
+            glxext_arb.glXGetVideoSyncSGI(byref(count))
+            glxext_arb.glXWaitVideoSyncSGI(
                 2, (count.value + 1) % 2, byref(count))
 
         if self._glx_1_3:

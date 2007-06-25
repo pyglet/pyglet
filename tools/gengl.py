@@ -162,8 +162,8 @@ modules = {
         ModuleWrapper(GL_H, 'gl.py'),
     'glu': 
         ModuleWrapper(GLU_H, 'glu.py'),
-    'glext_abi': 
-        ModuleWrapper(GLEXT_ABI_H, 'glext_abi.py', 
+    'glext_arb': 
+        ModuleWrapper(GLEXT_ABI_H, 'glext_arb.py', 
             requires_prefix='GL_', system_header='GL/glext.h',
             prologue='#define GL_GLEXT_PROTOTYPES\n#include <GL/gl.h>\n'),
     'glext_nv': 
@@ -173,8 +173,8 @@ modules = {
     'glx': 
         ModuleWrapper(GLX_H, 'glx.py', 
             requires_prefix='GLX_'),
-    'glxext_abi': 
-        ModuleWrapper(GLXEXT_ABI_H, 'glxext_abi.py', requires_prefix='GLX_',
+    'glxext_arb': 
+        ModuleWrapper(GLXEXT_ABI_H, 'glxext_arb.py', requires_prefix='GLX_',
             system_header='GL/glxext.h',
             prologue='#define GLX_GLXEXT_PROTOTYPES\n#include <GL/glx.h>\n'),
     'glxext_nv': 
@@ -185,8 +185,8 @@ modules = {
         ModuleWrapper(AGL_H, 'agl.py'),
     'wgl':
         ModuleWrapper(WGL_H, 'wgl.py'),
-    'wglext_abi':
-        ModuleWrapper(WGLEXT_ABI_H, 'wglext_abi.py', requires_prefix='WGL_',
+    'wglext_arb':
+        ModuleWrapper(WGLEXT_ABI_H, 'wglext_arb.py', requires_prefix='WGL_',
             prologue='#define WGL_WGLEXT_PROTOTYPES\n'\
                      '#include "%s"\n' % WGL_H.encode('string_escape')),
     'wglext_nv':

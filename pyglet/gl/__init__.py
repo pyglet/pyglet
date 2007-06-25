@@ -65,7 +65,7 @@ so are available by importing ``pyglet.gl``):
     OpenGL
 ``pyglet.gl.glu``
     GLU
-``pyglet.gl.gl.glext_abi``
+``pyglet.gl.gl.glext_arb``
     ARB registered OpenGL extension functions
 ``pyglet.gl.gl.glext_missing``
     ARB registered OpenGL extension functions not included in the ARB C header
@@ -79,13 +79,13 @@ by default:
     AGL (Mac OS X OpenGL context functions)
 ``pyglet.gl.glx``
     GLX (Linux OpenGL context functions)
-``pyglet.gl.glxext_abi``
+``pyglet.gl.glxext_arb``
     ARB registered GLX extension functions
 ``pyglet.gl.glxext_nv``
     nvidia GLX extension functions
 ``pyglet.gl.wgl``
     WGL (Windows OpenGL context functions)
-``pyglet.gl.wglext_abi``
+``pyglet.gl.wglext_arb``
     ARB registered WGL extension functions
 ``pyglet.gl.wglext_nv``
     nvidia WGL extension functions
@@ -100,7 +100,7 @@ __version__ = '$Id$'
 from pyglet.gl.lib import GLException
 from pyglet.gl.gl import *
 from pyglet.gl.glu import *
-from pyglet.gl.glext_abi import *
+from pyglet.gl.glext_arb import *
 from pyglet.gl.glext_missing import *
 
 # List of contexts currently in use, so we can create new contexts that
