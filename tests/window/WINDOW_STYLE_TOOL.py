@@ -5,7 +5,7 @@
 Expected behaviour:
     One tool-styled window will be opened.
 
-    Close the window or press ESC to end the test.
+    Close the window to end the test.
 '''
 
 __docformat__ = 'restructuredtext'
