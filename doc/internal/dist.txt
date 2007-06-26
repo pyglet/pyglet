@@ -5,7 +5,7 @@ Making a pyglet release
 
 0. svn up && tools/gendoc.sh
 0.5 rm -rf dist/*
-1. Update version string in setup.py.  # TODO what about __version__ strings?
+1. Update version string in setup.py and pyglet/__init__.py
 2. Source, egg and doc releases:
 
         tools/gendist.sh
@@ -19,11 +19,8 @@ Making a pyglet release
    Creates .dmg in dist/
 
 4. Windows release (requires WIX 3.0 UNSTABLE -- currently at 3.0.3022.0.  WIX
-   bin/ must be in PATH)
+   bin/ must be in PATH)::
 
-   * Update version string in tools/pyglet.in.wxs  # TODO automate this
-   * Exec::  
-  
         python tools/genmsi/genmsi.py
   
    Creates .msi in dist/
@@ -33,16 +30,13 @@ Still untested, must be done before alpha:
   * Source distros on any platform
   * Eggs on any platform: both to be installed and without installation
     ('require')
-  * Upgrade of Windows install (after changing version string to beta, etc)
   * Windows Vista
   * Upgrade of Mac OS X install (after changing version string to beta, etc)
   * Mac OS X with Python 2.4 + ctypes (ctypes didn't compile on my mac).
   * Mac OS X 10.3
 
 Still to be decided:
-  * __version__ string should be transmogrified into a tag name.. if so, how?
-  * .. and on all files, or just pyglet/__init__.py?
-  * .. note that not all files currently have $Id: $ filled in.. presumably a
+  * Note that not all files currently have $Id: $ filled in.. presumably a
     their SVN keyword bits are not set properly (i hate that crap, why can't
     it just do it on all text files?).
   * Should tests/ be added into the distros?  We want alpha testers to both
