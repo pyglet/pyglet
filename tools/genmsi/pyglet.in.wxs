@@ -7,7 +7,7 @@
        release = x.x.x.128 -->
   <Product Id="AEEC09B3-FC40-4841-9805-32ABC272945C"
       UpgradeCode="F2EAE19E-05FB-4AB1-B412-B0E45F3A41C7" Name="pyglet"
-      Language="1033" Version="1.0.0.0" Manufacturer="pyglet">
+      Language="1033" Version="REPLACED" Manufacturer="pyglet">
     <Package Description="Windowing and multimedia library for Python" Comments="This will appear in the file summary stream." InstallerVersion="200" Compressed="yes" />
   
     <!-- Require Windows XP -->
@@ -35,7 +35,37 @@
     <UI Id="SetupUI"> 
       <Property Id="DefaultUIFont">DlgFont8</Property>
       <Property Id="DlgTitleFont">{&amp;DlgFontBold8}</Property>
-      
+
+      <Dialog Id="WelcomeDlg" Width="370" Height="270" Title="pyglet Setup" NoMinimize="yes">
+        <!-- Banner -->
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="BannerBitmap" />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
+          <Text>[DlgTitleFont]Install pyglet</Text>
+        </Control>
+        <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes">
+          <Text>Please read the following before continuing the installation.</Text>
+        </Control>
+        
+        <!-- Content -->        
+        <Control Id="ReadmeText" Type="ScrollableText" X="5" Y="50"
+        Width="360" Height="180" Sunken="yes" TabSkip="no">
+          <Text SourceFile="res\readme.rtf" />
+        </Control>
+        
+        <!-- Buttons -->
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56"
+            Height="17" Default="yes" Text="Next">
+          <Publish Event="NewDialog" Value="ChoosePythonDlg" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56"
+        Height="17" Text="Cancel" Cancel="yes">
+          <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
+        </Control>
+      </Dialog> 
+
+
       <Dialog Id="ChoosePythonDlg" Width="370" Height="270" Title="pyglet Setup" NoMinimize="yes">
         <!-- Banner -->
         <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="BannerBitmap" />
@@ -58,46 +88,19 @@
         
         <!-- Buttons -->
         <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56"
-            Height="17" Text="Back" Disabled="yes" />
+            Height="17" Text="Back">
+          <Publish Event="NewDialog" Value="WelcomeDlg" />
+        </Control>
         <Control Id="Install" Type="PushButton" X="236" Y="243" Width="56"
             Height="17" Default="yes" Text="Install">
-          <Publish Event="NewDialog" Value="InstallDlg" />
+          <Publish Event="NewDialog" Value="ProgressDlg" />
         </Control>
         <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56"
             Height="17" Cancel="yes" Text="Cancel">
           <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
         </Control>
       </Dialog>
-       
-      <Dialog Id="InstallDlg" Width="370" Height="270" Title="pyglet Setup" NoMinimize="yes">
-        <!-- Banner -->
-        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="BannerBitmap" />
-        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
-        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
-        <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
-          <Text>[DlgTitleFont]Ready to Install</Text>
-        </Control>
-        <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes">
-          <Text>pyglet is ready to be installed</Text>
-        </Control>
-
-        <!-- Content -->        
-        <Control Id="Text" Type="Text" X="25" Y="70" Width="320" Height="20">
-          <Text>Click Install to install pyglet into [PYTHONHOME].</Text>
-        </Control>
-        
-        <!-- Buttons -->
-        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back">
-          <Publish Event="NewDialog" Value="ChoosePythonDlg" />
-        </Control>
-        <Control Id="Install" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Install">
-          <Publish Event="NewDialog" Value="ProgressDlg" />
-        </Control>
-        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
-          <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
-        </Control>
-      </Dialog>
-      
+            
       <Dialog Id="ProgressDlg" Width="370" Height="270" Title="pyglet Setup" Modeless="yes">
         <!-- Banner -->
         <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="BannerBitmap" />
@@ -161,9 +164,22 @@
         </Control>
         <Control Id="Icon" Type="Icon" X="15" Y="15" Width="24" Height="24" ToolTip="Information icon" FixedSize="yes" IconSize="32" Text="InfoIcon" />
       </Dialog>
+
+
+
       
       <TextStyle Id="DlgFont8" FaceName="Tahoma" Size="8" />
       <TextStyle Id="DlgFontBold8" FaceName="Tahoma" Size="8" Bold="yes" />
+
+      <UIText Id="MenuAbsent">Entire feature will be unavailable</UIText>
+      <UIText Id="MenuAdvertise">Feature will be installed when required</UIText>
+      <UIText Id="MenuAllCD">Entire feature will be installed to run from CD</UIText>
+      <UIText Id="MenuAllLocal">Entire feature will be installed on local hard drive</UIText>
+      <UIText Id="MenuAllNetwork">Entire feature will be installed to run from network</UIText>
+      <UIText Id="MenuCD">Will be installed to run from CD</UIText>
+      <UIText Id="MenuLocal">Will be installed on local hard drive</UIText>
+      <UIText Id="MenuNetwork">Will be installed to run from network</UIText>
+
       
       <ProgressText Action="ByteCompile">Byte-compiling modules</ProgressText>
       <ProgressText Action="ByteOptimize">Byte-compiling modules with optimization</ProgressText>
@@ -241,7 +257,7 @@
       
       <AdminUISequence />
       <InstallUISequence>
-        <Show Dialog="ChoosePythonDlg" After="MigrateFeatureStates" />
+        <Show Dialog="WelcomeDlg" After="MigrateFeatureStates" />
         <!--<Show Dialog="InstallDlg" After="ChoosePythonDlg">not
         (PYTHON24HOME and PYTHON25HOME)</Show>-->
         <Show Dialog="FinishDlg" OnExit="success" />
@@ -256,7 +272,7 @@
     </Directory>
 
     <Feature Id="RuntimeFeature" Title="pyglet runtime" 
-      Display="expand" Level="1">
+      Display="expand" Level="1" AllowAdvertise="no">
       <!-- Python version features are inserted here -->
     </Feature>
   </Product> 

@@ -9,12 +9,15 @@ import subprocess
 from uuid import uuid1
 from xml.dom.minidom import parse
 
+import pkg_resources
+
 class PythonVersion(object):
     def __init__(self, version):
         self.version = version
         self.id = 'PY' + version.replace('.', '')
         self.key = r'SOFTWARE\Python\PythonCore\%s\InstallPath' % version
         self.dir_prop = 'PYTHONHOME%s' % self.id
+        self.exe_prop = 'PYTHONEXE%s' % self.id
         self.components = []
 PYTHON_VERSIONS = (
     PythonVersion('2.4'),
@@ -132,11 +135,44 @@ if __name__ == '__main__':
         match = version_re.match(line)
         if match:
             version = match.groups()[0]
+
+    # Create a Windows-friendly dotted number for the version
+    # Version string must not have any letters, so use:
+    #   alpha = x.x.x.(0 + alpha num)
+    #   beta = x.x.x.(16 + beta num)
+    #   rc = x.x.x.(32 + rc num)
+    #   release = x.x.x.128 -->
+    parts = list(pkg_resources.parse_version(version))
+    major = int(parts.pop(0))
+    minor = patch = tagnum = 0
+    if parts[0][0] != '*':
+        minor = int(parts.pop(0))
+    if parts[0][0] != '*':
+        patch = int(parts.pop(0))
+    tag = parts.pop(0)
+    if tag == '*alpha':
+        base = 0
+    elif tag == '*beta':
+        base = 16
+    elif tag == '*rc':
+        base = 32
+    elif tag == '*final':
+        base = 128
+    else:
+        assert False, 'Unrecognised version tag "%s"' % tag
+    if parts and parts[0][0] != '*':
+        tagnum = int(parts.pop(0))
+    assert not parts or parts[0] == '*final'
+
+    version_windows = '%d.%d.%d.%d' % (major, minor, patch, base + tagnum)
+    print 'Version %s is Windows version %s' % (version, version_windows)
+    
     print 'Writing pyglet.wxs'
 
     # Open template wxs and find Product element
     wxs = parse(os.path.join(script_dir, 'pyglet.in.wxs'))
     Product = wxs.getElementsByTagName('Product')[0]
+    Product.setAttribute('Version', version_windows)
 
     # Add Python discovery
     for pyver in PYTHON_VERSIONS:
@@ -189,7 +225,8 @@ if __name__ == '__main__':
         feature = node(wxs, 'Feature',
                        Id='RuntimeFeature%s' % pyver.id,
                        Title='pyglet runtime for Python %s' % pyver.version,
-                       Level='1')
+                       Level='1',
+                       AllowAdvertise='no')
         condition = node(wxs, 'Condition',
                          Level='0')
         condition.appendChild(wxs.createTextNode('NOT ' + pyver.dir_prop))
@@ -199,6 +236,62 @@ if __name__ == '__main__':
                                      Id=component))
             feature.appendChild(wxs.createTextNode('\n'))
         RuntimeFeature.appendChild(feature)
+
+    # Add byte compilation custom actions
+    last_action = 'InstallFinalize'
+    InstallExecuteSequence = \
+        wxs.getElementsByTagName('InstallExecuteSequence')[0]
+    UI = wxs.getElementsByTagName('UI')[0]
+    for pyver in PYTHON_VERSIONS:
+        # Actions are conditional on the feature being installed
+        def cond(node):
+            node.appendChild(wxs.createTextNode(
+                '(&RuntimeFeature%s=3) AND NOT(!RuntimeFeature%s=3)' % (
+                    pyver.id, pyver.id)))
+            return node
+        
+        # Define the actions
+        Product.appendChild(node(wxs, 'CustomAction',
+          Id='SetPythonExe%s' % pyver.id,
+          Property=pyver.exe_prop,
+          Value=r'[%s]\pythonw.exe' % pyver.dir_prop))
+        Product.appendChild(node(wxs, 'CustomAction',
+          Id='ByteCompile%s' % pyver.id,
+          Property=pyver.exe_prop,
+          ExeCommand=r'-c "import compileall; compileall.compile_dir(\"[%s]\Lib\site-packages\pyglet\", force=1)"' % pyver.dir_prop,
+          Return='ignore'))
+        Product.appendChild(node(wxs, 'CustomAction',
+          Id='ByteOptimize%s' % pyver.id,
+          Property=pyver.exe_prop,
+          ExeCommand=r'-OO -c "import compileall; compileall.compile_dir(\"[%s]\Lib\site-packages\pyglet\", force=1)"' % pyver.dir_prop,
+          Return='ignore'))
+
+        # Schedule execution of these actions
+        InstallExecuteSequence.appendChild(cond(
+            node(wxs, 'Custom',
+                 Action='SetPythonExe%s' % pyver.id,
+                 After=last_action)))
+        InstallExecuteSequence.appendChild(cond(
+            node(wxs, 'Custom',
+                 Action='ByteCompile%s' % pyver.id,
+                 After='SetPythonExe%s' % pyver.id)))
+        InstallExecuteSequence.appendChild(cond(
+            node(wxs, 'Custom',
+                 Action='ByteOptimize%s' % pyver.id,
+                 After='ByteCompile%s' % pyver.id)))
+        last_action = 'ByteOptimize%s' % pyver.id
+        
+        # Set progress text for the actions
+        progress = node(wxs, 'ProgressText',
+                        Action='ByteCompile%s' % pyver.id)
+        progress.appendChild(wxs.createTextNode(
+            'Byte-compiling modules for Python %s' % pyver.version))
+        UI.appendChild(progress)
+        progress = node(wxs, 'ProgressText',
+                        Action='ByteOptimize%s' % pyver.id)
+        progress.appendChild(wxs.createTextNode(
+            'Byte-optimizing modules for Python %s' % pyver.version))
+        UI.appendChild(progress)
     
     # Write wxs file
     wxs.writexml(open(os.path.join(script_dir, 'pyglet.wxs'), 'w'))
