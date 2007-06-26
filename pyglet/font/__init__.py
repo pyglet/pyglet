@@ -302,8 +302,7 @@ class Text(object):
                 Width to limit the rendering to. Text will be word-wrapped
                 if necessary.
             `halign` : str
-                Alignment of the text if it is not as wide as the width
-                specified, one of LEFT, CENTER or RIGHT. Defaults to LEFT.
+                Alignment of the text.  See `Text.halign` for details.
             `valign` : str
                 Controls positioning of the text based off the y coordinate.
                 One of BASELINE, BOTTOM, CENTER or TOP. Defaults to BASELINE.
@@ -388,10 +387,11 @@ class Text(object):
             width = self._glyph_string.get_subwidth(start, end)
 
             x = self.x
+            align_width = self._layout_width or 0
             if self._halign == self.RIGHT:
-                x += self._layout_width - width
+                x += align_width - width
             elif self._halign == self.CENTER:
-                x += self._layout_width // 2 - width // 2
+                x += align_width // 2 - width // 2
 
             glTranslatef(x, 0, 0)
             self._glyph_string.draw(start, end)
@@ -455,9 +455,9 @@ class Text(object):
     halign = property(lambda self: self._halign, _set_halign,
         doc='''Horizontal alignment of the text.
 
-        The text is positioned relative to `x` according to this property,
-        which must be one of the alignment constants `LEFT`, `CENTER` or
-        `RIGHT`.
+        The text is positioned relative to `x` and `width` according to this
+        property, which must be one of the alignment constants `LEFT`,
+        `CENTER` or `RIGHT`.
 
         :type: str
         ''')
@@ -470,8 +470,8 @@ class Text(object):
         doc='''Vertical alignment of the text.
 
         The text is positioned relative to `y` according to this property,
-        which must be one of the alignment constants `BOTTOM`, `BASELINE` or
-        `TOP`.
+        which must be one of the alignment constants `BOTTOM`, `BASELINE`,
+        `CENTER` or `TOP`.
 
         :type: str
         ''')
