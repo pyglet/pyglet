@@ -41,6 +41,20 @@ Detailed documentation is available at http://www.pyglet.org
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+#: The release version of this pyglet installation.  
+#:
+#: Valid only if pyglet was installed from a source or binary distribution
+#: (i.e. not in a checked-out copy from SVN).
+#: 
+#: Use setuptools if you need to check for a specific release version, e.g.::
+#:
+#:    >>> import pyglet
+#:    >>> from pkg_resources import parse_version
+#:    >>> parse_version(pyglet.version) >= parse_version('1.0')
+#:    False
+#:
+version = '1.0alpha1'
+
 def _require_ctypes_version(version):
     # Check ctypes version
     import ctypes

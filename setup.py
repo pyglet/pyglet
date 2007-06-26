@@ -10,6 +10,7 @@ import os
 import shutil
 import sys
 
+# Bump pyglet/__init__.py version as well.
 VERSION = '1.0alpha1'
 
 long_description = '''pyglet provides an object-oriented programming
