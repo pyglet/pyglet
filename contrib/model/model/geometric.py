@@ -2,7 +2,7 @@ import math
 import random
 
 from pyglet.gl import *
-from pyglet.ext import euclid
+import euclid
 
 M_2PI = math.pi * 2.0
 
