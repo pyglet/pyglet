@@ -1,32 +1,39 @@
 Making a pyglet release
 -----------------------
 
-**Not complete**
-
-0. svn up && tools/gendoc.sh
-0.5 rm -rf dist/*
-1. Update version string in setup.py and pyglet/__init__.py
-2. Source, egg and doc releases:
-
-        tools/gendist.sh
-
-   Creates .eggs, .tar.gzs and .zips in dist/
-
-3. Mac OS X release (requires OS X 10.4 and developer tools installed)::
+1. svn up
+2. tools/gendoc.sh
+3. Update version string in setup.py and pyglet/__init__.py
+4. svn copy https://pyglet.googlecode.com/svn/trunk \
+            https://pyglet.googlecode.com/svn/tags/pyglet-**VERSION**
+5. Mac OS X release (requires OS X 10.4 and developer tools installed)::
 
         tools/genmpkg/genmpkg.sh
 
    Creates .dmg in dist/
 
-4. Windows release (requires WIX 3.0 UNSTABLE -- currently at 3.0.3022.0.  WIX
+6. Windows release (requires WIX 3.0 UNSTABLE -- currently at 3.0.3022.0.  WIX
    bin/ must be in PATH)::
 
         python tools/genmsi/genmsi.py
   
    Creates .msi in dist/
 
+7. Source, egg and doc releases:
 
-Still untested, must be done before alpha:
+        tools/gendist.sh
+
+   Creates .eggs, .tar.gzs and .zips in dist/
+
+8. Upload files to googlecode::
+
+        python tools/upload/upload.sh
+
+9. Copy URLs reported from upload into website/download.xml
+10. Sync website with pyglet.org.
+11. Tell people!
+
+Untested AFAIK:
   * Source distros on any platform
   * Eggs on any platform: both to be installed and without installation
     ('require')
@@ -35,18 +42,3 @@ Still untested, must be done before alpha:
   * Mac OS X with Python 2.4 + ctypes (ctypes didn't compile on my mac).
   * Mac OS X 10.3
 
-Still to be decided:
-  * Note that not all files currently have $Id: $ filled in.. presumably a
-    their SVN keyword bits are not set properly (i hate that crap, why can't
-    it just do it on all text files?).
-  * Should tests/ be added into the distros?  We want alpha testers to both
-    run the tests and use the distros (rather than svn), so this seems like a
-    good idea.  tests/ should definitely be left out of the final release
-    though.
-  * Should examples/ and doc/ be added to the Windows and OS X installers?  I
-    have not done so at the moment because I consider these to be "end-user"
-    runtime installs.. people who don't really know what python is but have
-    been told to install things.  The examples/ and doc/ are in a separate zip
-    download, which obviously doesn't need an installer.  I'm pretty happy
-    with this setup, but maybe people like all-in-ones, or maybe they want
-    documentation linked from the start menu, or something..?
