@@ -466,8 +466,8 @@ class Clock(_ClockBase):
         else:
             if items in self._schedule_items:
                 self._schedule_items.remove(items)
-            elif item in self._schedule_interval_items:
-                self._schedule_interval_items.remove(item)
+            elif items in self._schedule_interval_items:
+                self._schedule_interval_items.remove(items)
         del self._schedule_functions[func]
 
 
