@@ -1,10 +1,9 @@
 <news>
-  <item date="20-June-2007" author="Alex" 
+  <item date="27-June-2007" author="Alex" 
         title="pyglet 1.0 alpha released">
-    This alpha release is
-    feature complete on Linux, with only some video issues remaining on
-    Windows and Mac OS X.  You can start developing pyglet applications
-    by downloading the SDK.
+    This alpha release is feature complete on Linux, with only some audio and
+    video issues remaining on Windows and Mac OS X.  You can start developing
+    pyglet applications by downloading the SDK.
   </item>
   <item date="29-March-2007" author="Alex"
         title="Approaching Beta">

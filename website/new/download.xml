@@ -9,10 +9,10 @@
   </p>
   <ul>
     <li><a
-    href="pyglet-1.0alpha1-py2.4.egg">pyglet-1.0alpha1-python2.4.egg</a>:
+    href="http://pyglet.googlecode.com/files/pyglet-1.0alpha1-py2.4.egg">pyglet-1.0alpha1-py2.4.egg</a>:
     Runtime for Python 2.4</li>
     <li><a
-    href="pyglet-1.0alpha1-py2.5.egg">pyglet-1.0alpha1-python2.5.egg</a>:
+    href="http://pyglet.googlecode.com/files/pyglet-1.0alpha1-py2.5.egg">pyglet-1.0alpha1-py2.5.egg</a>:
     Runtmie for Python 2.5</li>
   </ul>
 
@@ -23,9 +23,9 @@
     file to install pyglet.
   </p>
   <ul>
-    <li><a href="pyglet-1.0alpha1.msi">pyglet-1.0alpha1.msi</a>: Windows
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0alpha1.msi">pyglet-1.0alpha1.msi</a>: Windows
     installer</li>
-    <li><a href="pyglet-1.0alpha1.dmg">pyglet-1.0alpha1.dmg</a>: Mac OS X
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0alpha1.dmg">pyglet-1.0alpha1.dmg</a>: Mac OS X
     disk image</li>
   </ul>
 
@@ -35,7 +35,7 @@
     the above platform distributions.
   </p>
   <ul>
-    <li><a href="pyglet-1.0alpha1-docs.zip">pyglet-1.0alpha1-docs.zip</a></li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0alpha1-docs.zip">pyglet-1.0alpha1-docs.zip</a></li>
   </ul>
 
   <h2>source distributions</h2>
@@ -47,8 +47,8 @@
     python setup.py install
   </p>
   <ul>
-    <li><a href="pyglet-1.0alpha1.tar.gz">pyglet-1.0alpha1.tar.gz</a></li>
-    <li><a href="pyglet-1.0alpha1.zip">pyglet-1.0alpha1.zip</a></li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0alpha1.tar.gz">pyglet-1.0alpha1.tar.gz</a></li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0alpha1.zip">pyglet-1.0alpha1.zip</a></li>
   </ul>
 
 </div>
