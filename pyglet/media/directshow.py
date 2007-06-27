@@ -34,6 +34,7 @@
 # ----------------------------------------------------------------------------
 # $Id:$
 
+import atexit
 import ctypes
 import comtypes
 from comtypes import client, GUID
@@ -529,15 +530,18 @@ def init():
     directsound.SetCooperativeLevel(w._hwnd, _dsound.DSSCL_PRIORITY)
 
 def cleanup():
-    while instances:
-        instance = instances.pop()
+    for instance in instances[:]:
         instance.stop()
-        del instance
     
     global directx
     global directsound
     del directsound
     del directx
+
+# XXX temporary, this is critical on Windows to avoid a crash on exit.
+# should probably do same/similar on other platforms and remove public
+# cleanup() call.
+atexit.register(cleanup)
 
 # XXX temporary
 listener = Listener()
