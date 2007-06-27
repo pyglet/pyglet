@@ -1,21 +1,16 @@
 #!/usr/bin/env python
 
-'''
+'''Prints all window events to stdout.
 '''
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: window_test.py 26 2006-09-17 04:06:25Z Alex.Holkner $'
-
-import pyglet.window
+from pyglet import window
 from pyglet.window.event import WindowEventLogger
-from pyglet.gl import *
 
-w1 = pyglet.window.create(width=120, height=120)
-glClearColor(1, 0, 1, 1)
-glClear(GL_COLOR_BUFFER_BIT)
-w1.flip()
+win = window.Window()
 
-w1.push_handlers(WindowEventLogger())
+win.push_handlers(WindowEventLogger())
 
-while True:
-    w1.dispatch_events()
+while not win.has_exit:
+    win.dispatch_events()
+    win.clear()
+    win.flip()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''Demonstrates how to handle a platform-specific event not defined in
-pyglet by subclassing Window.  
+pyglet by subclassing Window.  This is not for the faint-hearted!
 
 A message will be printed to stdout when the following events are caught:
 
@@ -10,9 +10,6 @@ A message will be printed to stdout when the following events are caught:
  - On Linux, the window properties are changed.
 
 '''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
 
 from pyglet.window import Window
 

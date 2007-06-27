@@ -1,5 +1,10 @@
-#!/usr/bin/python
-# $Id:$
+#!/usr/bin/env python
+
+'''Bounces balls around a window and plays noises.
+
+This is a simple demonstration of how pyglet efficiently manages many sound
+channels without intervention.
+'''
 
 import os
 import random
@@ -34,14 +39,17 @@ class Ball(object):
         self.dy = (random.random() - 0.5) * 1000
 
     def update(self, dt):
-        if self.x < 0 or self.x + self.width > window.width:
+        if self.x <= 0 or self.x + self.width >= window.width:
             self.dx *= -1
             sound.play()
-        if self.y < 0 or self.y + self.height > window.height:
+        if self.y <= 0 or self.y + self.height >= window.height:
             self.dy *= -1
             sound.play()
         self.x += self.dx * dt
         self.y += self.dy * dt
+
+        self.x = min(max(self.x, 0), window.width - self.width)
+        self.y = min(max(self.y, 0), window.height - self.height)
 
     def draw(self):
         self.ball_image.blit(self.x, self.y, 0)
@@ -53,7 +61,10 @@ def on_key_press(symbol, modifiers):
     if symbol == key.SPACE:
         balls.append(Ball())
     elif symbol == key.BACKSPACE:
-        del balls[-1]
+        if balls:
+            del balls[-1]
+    elif symbol == key.ESCAPE:
+        window.has_exit = True
 
 if __name__ == '__main__':
     glEnable(GL_BLEND)
@@ -61,9 +72,8 @@ if __name__ == '__main__':
 
     label = font.Text(font.load('Arial', 14), 
         'Press space to add a ball, backspace to remove.', 
-        window.width / 2, 10)
-    #label.halign = label.CENTER
-    #label.valign = label.BASELINE
+        window.width / 2, 10, 
+        halign=font.Text.CENTER)
 
     while not window.has_exit:
         window.dispatch_events()

@@ -7,9 +7,6 @@ Usage::
 
 '''
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import sys
 
 from pyglet.window import Window

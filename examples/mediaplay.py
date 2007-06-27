@@ -1,10 +1,19 @@
 #!/usr/bin/env python
 
-'''
-'''
+'''A very minimalist sound and video player.  We are using this for testing
+pyglet.media for now.  You can use it to test if a particular file format is
+supported on your system::
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
+    mediaplay.py <media-file>
+
+pyglet uses the installed codecs on your operating system (gstreamer on Linux)
+to play media; so for example you will need to download and install the OGG
+codec to play OGG files.
+
+There are some keyboard commands to alter playback at runtime which are
+documented within the window (unless the video you're playing is mostly white,
+in which case they won't be readable).
+'''
 
 import sys
 import time

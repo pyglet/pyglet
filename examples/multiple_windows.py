@@ -1,18 +1,11 @@
 #!/usr/bin/env python
 
+'''Demonstrates how to manage OpenGL calls between two independent windows.
 '''
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: gl_test_2.py 111 2006-10-20 06:39:12Z r1chardj0n3s $'
-
-import pyglet.window
-from pyglet.window.event import *
-import time
 
 from pyglet.gl import *
+from pyglet import window
 from pyglet import clock
-
 
 def setup():
     glMatrixMode(GL_PROJECTION)
@@ -24,12 +17,9 @@ def setup():
     glColor4f(.5, .5, .5, .5)
 
 def draw():
-    global r
     glClear(GL_COLOR_BUFFER_BIT)
     glLoadIdentity()
 
-    r += 1
-    if r > 360: r = 0
     glRotatef(r, 0, 0, 1)
     glBegin(GL_QUADS)
     glVertex3f(-1., -1., -5.)
@@ -38,19 +28,20 @@ def draw():
     glVertex3f(1., -1., -5.)
     glEnd()
 
-w1 = pyglet.window.Window(200, 200)
+w1 = window.Window(200, 200, caption='First window')
 w1.switch_to()
 setup()
 
-c = clock.Clock(60)
-w2 = pyglet.window.Window(400, 400)
+w2 = window.Window(300, 300, caption='Second window')
 w2.switch_to()
 setup()
 
-
 r = 0
+clock.set_fps_limit(30)
 while not (w1.has_exit or w2.has_exit):
-    c.tick()
+    dt = clock.tick()
+    r += 1
+    if r > 360: r = 0
 
     w1.switch_to()
     w1.dispatch_events()

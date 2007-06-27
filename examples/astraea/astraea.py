@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 
 # Copyright (c) 2006-2007 Alex Holkner
 # All rights reserved.
