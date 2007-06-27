@@ -33,6 +33,11 @@
 
 '''A sprite-based game loosely based on the classic "Asteroids".
 
+Shoot the asteroids, get high score.
+
+Left/right: Turn ship
+Up: Thrusters
+Ctrl: Shoot
 '''
 
 import math
