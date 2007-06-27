@@ -15,21 +15,7 @@ VERSION = '1.0alpha1'
 
 long_description = '''pyglet provides an object-oriented programming
 interface for developing games and other visually-rich applications
-for Windows, Mac OS X and Linux.  Some of the features of pyglet are:
-
-* No external dependencies or installation requirements. Users of your
-  application need only install Python to experience a first-class
-  application featuring 3D graphics, sound and video. pyglet is written
-  in pure Python, so no dangerous binaries are required.
-* Take advantage of multiple windows and multi-monitor desktops. pyglet
-  allows you to use as many windows as you need, and is fully aware of
-  multi-monitor setups for use with fullscreen games.
-* Load images, sound, music and video in almost any format. pyglet can
-  use any installed codecs to read media files. On Windows, Linux and
-  Mac OS X this means you get access to PNG, JPEG, MP3, MPEG-1 and many
-  other file types even with a clean operating system install.
-
-'''
+for Windows, Mac OS X and Linux.'''
 
 setup_info = dict(
     # Metadata

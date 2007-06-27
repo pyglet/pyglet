@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id:$
+# $Id$
 
 base=`dirname $0`/..
 cd $base
@@ -15,4 +15,5 @@ python2.5 setup.py bdist_egg --exclude-source-files
 
 # Build docs archive
 python setup.py sdist --manifest-only
+rm dist/pyglet-$VERSION-docs.zip
 grep -v ^pyglet MANIFEST | zip dist/pyglet-$VERSION-docs.zip -@

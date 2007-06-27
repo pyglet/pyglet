@@ -43,8 +43,7 @@ This is an alpha release, meaning it is feature-complete but not yet ready for
 production use.  This alpha release:
 
 * Lacks documentation
-* Has incomplete video support on Mac OS X, and incomplete audio support on
-  Windows XP
+* Has incomplete audio support on Windows XP
 * Has other known issues that will be fixed before Beta, please see the issue
   tracker at http://code.google.com/p/pyglet/issues/list for details.
 
