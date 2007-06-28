@@ -154,6 +154,7 @@ font
 
     font-load
         font.ADD_FONT                           X11 WIN OSX
+        font.SET_DPI                            X11 WIN OSX
 
     font-metrics
         font.KERNING

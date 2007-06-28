@@ -39,6 +39,9 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
+# TODO Tiger and later: need to set kWindowApplicationScaledAttribute for DPI
+# independence?
+
 from ctypes import *
 from sys import byteorder
 
@@ -290,6 +293,12 @@ class CarbonFont(base.Font):
 
         if not name:
             name = 'Helvetica'
+
+        if dpi is not None:
+            # If application is not DPI-aware, DPI is fixed at 72.  Scale
+            # font size to emulate other DPI if necessary.  This will need
+            # to be fixed if issue #87 is implemented.
+            size = size * dpi / 72
 
         font_id = ATSUFontID()
         carbon.ATSUFindFontFromName(
