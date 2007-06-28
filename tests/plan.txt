@@ -147,16 +147,17 @@ font
         font.COLOR                              X11 WIN OSX
         font.COLOR_BLEND                        X11 WIN OSX
 
+    font-load
+        font.ADD_FONT                           X11 WIN OSX
+        font.SET_DPI                            X11 WIN OSX
+
     font-align
         font.HALIGN                             GENERIC
         font.VALIGN                             GENERIC
         font.ALIGN_MULTILINE                    GENERIC
 
-    font-load
-        font.ADD_FONT                           X11 WIN OSX
-        font.SET_DPI                            X11 WIN OSX
-
     font-metrics
+        font.HORIZONTAL_METRICS                 GENERIC
         font.KERNING
         font.ITALIC_CORRECTION
 
