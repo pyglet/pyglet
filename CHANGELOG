@@ -2,6 +2,7 @@ Current
 
     * Added DPI parameter to font.load()
     * Fixed the calculated width of font.Text instances.
+    * Renamed examples/event_test.py to examples/events.py
 
 1.0alpha1
 
