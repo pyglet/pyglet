@@ -128,7 +128,8 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
 
     def render(self, text):
         face = self.font.face
-        FT_Set_Char_Size(face, 0, self.font._face_size, 0, 0)
+        FT_Set_Char_Size(face, 0, self.font._face_size, 
+                         self.font._dpi, self.font._dpi)
         glyph_index = fontconfig.FcFreeTypeCharIndex(byref(face), ord(text[0]))
         error = FT_Load_Glyph(face, glyph_index, FT_LOAD_RENDER)
         if error != 0:
@@ -185,11 +186,14 @@ class FreeTypeFont(base.Font):
     def __init__(self, name, size, bold=False, italic=False, dpi=None):
         super(FreeTypeFont, self).__init__()
 
+        if dpi is None:
+            dpi = 0  # Select default DPI of 72 by specifying 0.
+
         # Check if font name/style matches a font loaded into memory by user
         lname = name.lower()
         if (lname, bold, italic) in self._memory_fonts:
             font = self._memory_fonts[lname, bold, italic]
-            self._set_face(font.face, size)
+            self._set_face(font.face, size, dpi)
             return
 
         # Use fontconfig to match the font (or substitute a default).
@@ -213,13 +217,14 @@ class FreeTypeFont(base.Font):
 
         fontconfig.FcPatternDestroy(match)
 
-        self._set_face(f, size)
+        self._set_face(f, size, dpi)
 
-    def _set_face(self, face, size):
+    def _set_face(self, face, size, dpi):
         self.face = face.contents
         self._face_size = frac(size)
+        self._dpi = dpi
 
-        FT_Set_Char_Size(self.face, 0, frac(size), 0, 0)
+        FT_Set_Char_Size(self.face, 0, frac(size), dpi, dpi)
         self.ascent = self.face.ascender * size / self.face.units_per_EM
         self.descent = self.face.descender * size / self.face.units_per_EM
 
