@@ -251,7 +251,7 @@ class Win32GlyphRenderer(base.GlyphRenderer):
 class Win32Font(base.Font):
     glyph_renderer_class = Win32GlyphRenderer
 
-    def __init__(self, name, size, bold=False, italic=False):
+    def __init__(self, name, size, bold=False, italic=False, dpi=None):
         super(Win32Font, self).__init__()
 
         self.hfont = self.get_hfont(name, size, bold, italic)

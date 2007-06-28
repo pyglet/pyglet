@@ -182,7 +182,7 @@ class FreeTypeFont(base.Font):
     # Map font (name, bold, italic) to FreeTypeMemoryFont
     _memory_fonts = {}
 
-    def __init__(self, name, size, bold=False, italic=False):
+    def __init__(self, name, size, bold=False, italic=False, dpi=None):
         super(FreeTypeFont, self).__init__()
 
         # Check if font name/style matches a font loaded into memory by user

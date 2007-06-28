@@ -285,7 +285,7 @@ class CarbonGlyphRenderer(base.GlyphRenderer):
 class CarbonFont(base.Font):
     glyph_renderer_class = CarbonGlyphRenderer
 
-    def __init__(self, name, size, bold=False, italic=False):
+    def __init__(self, name, size, bold=False, italic=False, dpi=None):
         super(CarbonFont, self).__init__()
 
         if not name:
