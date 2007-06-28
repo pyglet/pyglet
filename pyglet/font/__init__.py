@@ -334,8 +334,8 @@ class Text(object):
                 self._text_width = max(self._text_width, 
                                        self._glyph_string.get_subwidth(i, end))
                 i = end + 1
-            end = len(text)
-            if end != i:
+            end = len(text) - 1
+            if i < end:
                 self.lines.append((i, end))
                 self._text_width = max(self._text_width,
                                        self._glyph_string.get_subwidth(i, end))

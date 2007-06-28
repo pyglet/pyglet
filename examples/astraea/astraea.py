@@ -428,7 +428,7 @@ class MenuItem(object):
 
         if selected:
             self.draw_pointer(
-                self.text.x - self.text.width / 2 - pointer_image.width - 8,
+                self.text.x - self.text.width / 2 - pointer_image.width,
                 self.y - pointer_image.height / 2, 
                 self.pointer_color,
                 self.inverted_pointers)
