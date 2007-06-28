@@ -1074,6 +1074,12 @@ class BaseWindow(WindowEventDispatcher, WindowExitHandler):
         '''
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
+    def dispatch_events(self):
+        '''Process the operating system event queue and call attached
+        event handlers.
+        '''
+        raise NotImplementedError('abstract')
+
 def get_platform():
     '''Get an instance of the Platform most appropriate for this
     system.

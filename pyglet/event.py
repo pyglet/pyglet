@@ -269,11 +269,6 @@ class EventDispatcher(object):
         if hasattr(self, event_type):
             getattr(self, event_type)(*args)
 
-    def dispatch_events(self):
-        '''Call attached event handlers for all queued events.
-        '''
-        raise NotImplementedError(
-            'This class does not implement dispatch_events')
 
 
     def event(self, *args):

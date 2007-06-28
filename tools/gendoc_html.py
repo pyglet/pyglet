@@ -297,6 +297,7 @@ def get_api_objects(apidoc_dir):
     apidoc_file = open(os.path.join(apidoc_dir, 'api-objects.txt'))
     for line in apidoc_file:
         name, url = line.split('\t')
+
         # Canonical name always matches
         objects[name] = (name, url)
         canonical = name
@@ -304,7 +305,7 @@ def get_api_objects(apidoc_dir):
         # ambiguous
         while '.' in name:
             name = name.split('.', 1)[1]
-            if name in objects and url != objects[name]:
+            if name in objects and (canonical, url) != objects[name]:
                 objects[name] = (None, None) # Ambiguous: don't match
             else:
                 objects[name] = (canonical, url)
