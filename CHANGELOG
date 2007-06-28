@@ -1,0 +1,7 @@
+Current
+
+    * Added DPI parameter to font.load()
+
+1.0alpha1
+
+    * Initial release.
