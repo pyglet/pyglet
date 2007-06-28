@@ -343,7 +343,7 @@ class Overlay(object):
 
 class Banner(Overlay):
     def __init__(self, label, dismiss_func=None, timeout=None):
-        self.text = font.Text(font.load('Saved By Zero', 48),
+        self.text = font.Text(create_font(48),
                               label,
                               x = ARENA_WIDTH / 2, y = ARENA_HEIGHT / 2,
                               halign=font.Text.CENTER,
@@ -365,7 +365,7 @@ class Banner(Overlay):
 class Menu(Overlay):
     def __init__(self, title):
         self.items = []
-        self.title_text = font.Text(font.load('Saved By Zero', 48),
+        self.title_text = font.Text(create_font(48),
                                     title, 
                                     x=ARENA_WIDTH / 2, y=350,
                                     halign=font.Text.CENTER,
@@ -399,7 +399,7 @@ class MenuItem(object):
 
     def __init__(self, label, y, activate_func):
         self.y = y
-        self.text = font.Text(font.load('Saved By Zero', 18),
+        self.text = font.Text(create_font(18),
                               label,
                               x=ARENA_WIDTH / 2, y=y,
                               halign=font.Text.CENTER,
@@ -535,7 +535,7 @@ class InstructionsMenu(Menu):
         self.items.append(MenuItem('Ok', 50, begin_main_menu))
         self.reset()
 
-        self.instruction_text = font.Text(font.load('Saved By Zero', 18),
+        self.instruction_text = font.Text(create_font(18),
                                           INSTRUCTIONS,
                                           x=20, y=300,
                                           width=ARENA_WIDTH - 40,
@@ -723,6 +723,9 @@ def res(filename):
     res_dir = os.path.join(os.path.dirname(__file__), 'res')
     return os.path.join(res_dir, filename)
 
+def create_font(size):
+    return font.load('Saved By Zero', size, dpi=72)
+
 asteroid_sizes = [AsteroidSize('asteroid1.png', 100),
                   AsteroidSize('asteroid2.png', 50),
                   AsteroidSize('asteroid3.png', 10)]
@@ -781,7 +784,7 @@ if __name__ == '__main__':
 
     font.add_file(res('saved_by_zero.ttf'))
 
-    score_text = font.Text(font.load('Saved By Zero', 24), 
+    score_text = font.Text(create_font(24),
                            '',
                            x = ARENA_WIDTH - 10, y = ARENA_HEIGHT - 10,
                            halign=font.Text.RIGHT, valign=font.Text.TOP)
@@ -792,7 +795,7 @@ if __name__ == '__main__':
     begin_menu_background()
     begin_main_menu()
 
-    fps_display = clock.ClockDisplay(font=font.load('Saved By Zero', 36))
+    fps_display = clock.ClockDisplay(font=create_font(36))
 
     while not win.has_exit:
         win.dispatch_events()

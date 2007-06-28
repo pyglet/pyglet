@@ -36,6 +36,9 @@
 '''
 '''
 
+# TODO Windows Vista: need to call SetProcessDPIAware?  May affect GDI+ calls
+# as well as font.
+
 from ctypes import *
 
 from pyglet.font import base
@@ -254,12 +257,10 @@ class Win32Font(base.Font):
     def __init__(self, name, size, bold=False, italic=False, dpi=None):
         super(Win32Font, self).__init__()
 
-        self.hfont = self.get_hfont(name, size, bold, italic)
+        self.hfont = self.get_hfont(name, size, bold, italic, dpi)
 
         # Create a dummy DC for coordinate mapping
         dc = user32.GetDC(0)
-        logpixelsy = gdi32.GetDeviceCaps(dc, LOGPIXELSY)
-
         metrics = TEXTMETRIC()
         gdi32.SelectObject(dc, self.hfont)
         gdi32.GetTextMetricsA(dc, byref(metrics))
@@ -268,10 +269,13 @@ class Win32Font(base.Font):
         self.max_glyph_width = metrics.tmMaxCharWidth
 
     @staticmethod
-    def get_hfont(name, size, bold, italic):
+    def get_hfont(name, size, bold, italic, dpi):
         # Create a dummy DC for coordinate mapping
         dc = user32.GetDC(0)
-        logpixelsy = gdi32.GetDeviceCaps(dc, LOGPIXELSY)
+        if dpi is None:
+            logpixelsy = gdi32.GetDeviceCaps(dc, LOGPIXELSY)
+        else:
+            logpixelsy = dpi
 
         logfont = LOGFONT()
         # Conversion of point size to device pixels
