@@ -1077,11 +1077,11 @@ class XlibWindow(BaseWindow):
 
         buttons = 0
         if ev.xmotion.state & xlib.Button1MotionMask:
-            buttons |= mouse.MOUSE_LEFT_BUTTON
+            buttons |= mouse.LEFT
         if ev.xmotion.state & xlib.Button2MotionMask:
-            buttons |= mouse.MOUSE_MIDDLE_BUTTON
+            buttons |= mouse.MIDDLE
         if ev.xmotion.state & xlib.Button3MotionMask:
-            buttons |= mouse.MOUSE_RIGHT_BUTTON
+            buttons |= mouse.RIGHT
 
         if buttons:
             # Drag event

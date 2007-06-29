@@ -44,8 +44,8 @@ def buttons_string(buttons):
 
     Example::
 
-        >>> buttons_string(MOUSE_LEFT_BUTTON | MOUSE_RIGHT_BUTTON)
-        'MOUSE_LEFT_BUTTON|MOUSE_RIGHT_BUTTON'
+        >>> buttons_string(LEFT | RIGHT)
+        'LEFT|RIGHT'
 
     :Parameters:
         `buttons` : int
@@ -54,15 +54,15 @@ def buttons_string(buttons):
     :rtype: str
     '''
     button_names = []
-    if buttons & MOUSE_LEFT_BUTTON:
-        button_names.append('MOUSE_LEFT_BUTTON')
-    if buttons & MOUSE_MIDDLE_BUTTON:
-        button_names.append('MOUSE_MIDDLE_BUTTON')
-    if buttons & MOUSE_RIGHT_BUTTON:
-        button_names.append('MOUSE_RIGHT_BUTTON')
+    if buttons & LEFT:
+        button_names.append('LEFT')
+    if buttons & MIDDLE:
+        button_names.append('MIDDLE')
+    if buttons & RIGHT:
+        button_names.append('RIGHT')
     return '|'.join(button_names)
 
 # Symbolic names for the mouse buttons
-MOUSE_LEFT_BUTTON =   1 << 0
-MOUSE_MIDDLE_BUTTON = 1 << 1
-MOUSE_RIGHT_BUTTON =  1 << 2
+LEFT =   1 << 0
+MIDDLE = 1 << 1
+RIGHT =  1 << 2

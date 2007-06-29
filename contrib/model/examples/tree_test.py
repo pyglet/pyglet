@@ -37,10 +37,10 @@ class Tree(object):
         self.rmb = False
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        if buttons & mouse.MOUSE_LEFT_BUTTON:
+        if buttons & mouse.LEFT:
             self.rx += dx
             self.ry += dy
-        if buttons & mouse.MOUSE_RIGHT_BUTTON:
+        if buttons & mouse.RIGHT:
             self.x += dx
             self.y += dy
 

@@ -903,11 +903,11 @@ class Win32Window(BaseWindow):
         
         buttons = 0
         if wParam & MK_LBUTTON:
-            buttons |= mouse.MOUSE_LEFT_BUTTON
+            buttons |= mouse.LEFT
         if wParam & MK_MBUTTON:
-            buttons |= mouse.MOUSE_MIDDLE_BUTTON
+            buttons |= mouse.MIDDLE
         if wParam & MK_RBUTTON:
-            buttons |= mouse.MOUSE_RIGHT_BUTTON
+            buttons |= mouse.RIGHT
 
         if buttons:
             # Drag event
@@ -945,32 +945,32 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_LBUTTONDOWN)
     def _event_lbuttondown(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            event.EVENT_MOUSE_PRESS, mouse.MOUSE_LEFT_BUTTON, lParam)
+            event.EVENT_MOUSE_PRESS, mouse.LEFT, lParam)
 
     @Win32EventHandler(WM_LBUTTONUP)
     def _event_lbuttonup(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            event.EVENT_MOUSE_RELEASE, mouse.MOUSE_LEFT_BUTTON, lParam)
+            event.EVENT_MOUSE_RELEASE, mouse.LEFT, lParam)
 
     @Win32EventHandler(WM_MBUTTONDOWN)
     def _event_mbuttondown(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            event.EVENT_MOUSE_PRESS, mouse.MOUSE_MIDDLE_BUTTON, lParam)
+            event.EVENT_MOUSE_PRESS, mouse.MIDDLE, lParam)
 
     @Win32EventHandler(WM_MBUTTONUP)
     def _event_mbuttonup(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            event.EVENT_MOUSE_RELEASE, mouse.MOUSE_MIDDLE_BUTTON, lParam)
+            event.EVENT_MOUSE_RELEASE, mouse.MIDDLE, lParam)
 
     @Win32EventHandler(WM_RBUTTONDOWN)
     def _event_rbuttondown(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            event.EVENT_MOUSE_PRESS, mouse.MOUSE_RIGHT_BUTTON, lParam)
+            event.EVENT_MOUSE_PRESS, mouse.RIGHT, lParam)
 
     @Win32EventHandler(WM_RBUTTONUP)
     def _event_rbuttonup(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            event.EVENT_MOUSE_RELEASE, mouse.MOUSE_RIGHT_BUTTON, lParam)
+            event.EVENT_MOUSE_RELEASE, mouse.RIGHT, lParam)
 
     @Win32EventHandler(WM_MOUSEWHEEL)
     def _event_mousewheel(self, msg, wParam, lParam):

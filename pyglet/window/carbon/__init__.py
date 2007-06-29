@@ -865,11 +865,11 @@ class CarbonWindow(BaseWindow):
             byref(button))
         
         if button.value == 1: 
-            button = mouse.MOUSE_LEFT_BUTTON
+            button = mouse.LEFT
         elif button.value == 2: 
-            button = mouse.MOUSE_RIGHT_BUTTON
+            button = mouse.RIGHT
         elif button.value == 3: 
-            button = mouse.MOUSE_MIDDLE_BUTTON
+            button = mouse.MIDDLE
 
         modifiers = c_uint32()
         carbon.GetEventParameter(ev, kEventParamKeyModifiers,
