@@ -240,22 +240,22 @@ if hasattr(sys, 'is_epydoc') and sys.is_epydoc:
             :event:
             '''
                 
-        def on_mouse_scroll(x, y, dx, dy):
+        def on_mouse_scroll(x, y, scroll_x, scroll_y):
             '''The mouse wheel was scrolled.
 
-            Note that most mice have only a vertical scroll wheel, so `dx` is
-            usually 0.  An exception to this is the Apple Mighty Mouse, which
-            has a mouse ball in place of the wheel which allows both `dx` and `dy`
-            movement.
+            Note that most mice have only a vertical scroll wheel, so
+            `scroll_x` is usually 0.  An exception to this is the Apple Mighty
+            Mouse, which has a mouse ball in place of the wheel which allows
+            both `scroll_x` and `scroll_y` movement.
 
             :Parameters:
                 `x` : float
                     Distance in pixels from the left edge of the window.
                 `y` : float
                     Distance in pixels from the bottom edge of the window.
-                `dx` : int
+                `scroll_x` : int
                     Number of "clicks" towards the right (left if negative).
-                `dy` : int
+                `scroll_y` : int
                     Number of "clicks" upwards (downards if negative).
 
             :event:
