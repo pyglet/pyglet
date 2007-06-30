@@ -59,10 +59,10 @@ else:
     glu_lib = cdll.LoadLibrary(glu_path)
 
 # Look for glXGetProcAddressARB extension, use it as fallback (for
-# ATI fglrx driver).
+# ATI fglrx and DRI drivers).
 try:
     glXGetProcAddressARB = getattr(gl_lib, 'glXGetProcAddressARB')
-    glXGetProcAddressARB.restype = c_void_p
+    glXGetProcAddressARB.restype = POINTER(CFUNCTYPE(None))
     glXGetProcAddressARB.argtypes = [POINTER(c_ubyte)]
     _have_getprocaddress = True
 except AttributeError:
@@ -82,7 +82,7 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
             addr = glXGetProcAddressARB(bname)
             if addr:
                 ftype = CFUNCTYPE(*((restype,) + tuple(argtypes)))
-                func = ftype(addr)
+                func = cast(addr, ftype)
                 decorate_function(func, name)
                 return func
 
