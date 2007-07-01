@@ -150,7 +150,7 @@ class GlyphTextureAtlas(image.Texture):
         region = self.get_region(
             self.x, self.y, image.width, image.height)
         region.blit_into(image, 0, 0, 0)
-        self.x += image.width
+        self.x += image.width + 1
         return region
 
 class GlyphRenderer(object):
