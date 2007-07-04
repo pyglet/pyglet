@@ -83,7 +83,7 @@ if getattr(sys, 'frozen', None):
 #:     errors using ``glGetError``.  This will severely impact performance,
 #:     but provides useful exceptions at the point of failure.  By default,
 #:     this option is enabled if ``__debug__`` is (i.e., if Python was not run
-#:     with the -O option).  It is disabled by defualt when pyglet is "frozen"
+#:     with the -O option).  It is disabled by default when pyglet is "frozen"
 #:     within a py2exe or py2app library archive.
 #:
 options = {
