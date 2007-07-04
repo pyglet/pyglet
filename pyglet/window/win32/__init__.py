@@ -413,13 +413,15 @@ class Win32Window(BaseWindow):
         width, height = self._client_to_window_size(self._width, self._height)
 
         if not self._window_class:
+            module = _kernel32.GetModuleHandleA(None)
             white = _gdi32.GetStockObject(WHITE_BRUSH)
             self._window_class = WNDCLASS()
             self._window_class.lpszClassName = 'GenericAppClass%d' % id(self)
             self._window_class.lpfnWndProc = WNDPROC(self._wnd_proc)
             self._window_class.style = CS_VREDRAW | CS_HREDRAW
             self._window_class.hInstance = 0
-            self._window_class.hIcon = _user32.LoadIconA(0, IDI_APPLICATION)
+            #self._window_class.hIcon = _user32.LoadIconA(0, IDI_APPLICATION)
+            self._window_class.hIcon = _user32.LoadIconA(module, 1)
             self._window_class.hCursor = _user32.LoadCursorA(0, IDC_ARROW)
             self._window_class.hbrBackground = white
             self._window_class.lpszMenuName = None
