@@ -39,6 +39,8 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: pil.py 163 2006-11-13 04:15:46Z Alex.Holkner $'
 
+import sys
+
 from ctypes import *
 
 from pyglet.gl import *
@@ -62,6 +64,7 @@ k8IndexedPixelFormat          = 0x00000008
 k16BE555PixelFormat           = 0x00000010
 k24RGBPixelFormat             = 0x00000018
 k32ARGBPixelFormat            = 0x00000020
+k32BGRAPixelFormat            = _name('BGRA')
 k1IndexedGrayPixelFormat      = 0x00000021
 k2IndexedGrayPixelFormat      = 0x00000022
 k4IndexedGrayPixelFormat      = 0x00000024
@@ -90,13 +93,17 @@ class QuickTimeImageDecoder(ImageDecoder):
         height = rect.bottom
 
         # TODO choose 24 bit where appropriate.
-        format = 'ARGB'
-        qtformat = k32ARGBPixelFormat
+        if sys.byteorder == 'big':
+            format = 'ARGB'
+            qtformat = k32ARGBPixelFormat
+        else:
+            format = 'BGRA'
+            qtformat = k32BGRAPixelFormat
 
         buffer = (c_byte * (width * height * len(format)))()
         world = GWorldPtr()
         quicktime.QTNewGWorldFromPtr(byref(world), qtformat,
-            byref(rect), c_void_p(), c_void_p(), kNativeEndianPixMap, buffer,
+            byref(rect), c_void_p(), c_void_p(), 0, buffer,
             len(format) * width)
 
         quicktime.GraphicsImportSetGWorld(importer, world, c_void_p())
