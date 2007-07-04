@@ -730,8 +730,11 @@ def begin_clear_background():
 # --------------------------------------------------------------------------
 
 def res(filename):
-    if _in_py2exe:
+    frozen = getattr(sys, 'frozen', None)
+    if frozen in ('windows_exe', 'console_exe'):
         res_dir = os.path.join(os.path.dirname(sys.executable), 'res')
+    elif frozen == 'macosx_app':
+        res_dir = os.path.join(os.environ['RESOURCEPATH'], 'res')
     else:
         res_dir = os.path.join(os.path.dirname(__file__), 'res')
     return os.path.join(res_dir, filename)
