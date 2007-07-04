@@ -7,7 +7,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 from pyglet.event import EventDispatcher, EVENT_UNHANDLED
-from pyglet.ext.layout.css import RuleSet, Selector, SimpleSelector
+from layout.css import RuleSet, Selector, SimpleSelector
 
 
 # Instead of each stack layer being a dictionary mapping event-name to

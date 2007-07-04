@@ -14,8 +14,8 @@ __version__ = '$Id: $'
 
 from warnings import *
 
-from pyglet.ext.layout.base import *
-from pyglet.ext.layout.css import *
+from layout.base import *
+from layout.css import *
 
 class StyleTree(object):
     def __init__(self, render_device):
@@ -779,7 +779,7 @@ _initial_values = {
     'list-style-position': Ident('outside'),
 
     # 13 Paged media
-    # Page break properties are ignored by pyglet.ext.layout.
+    # Page break properties are ignored by layout.
 
     # 14 Colors and Backgrounds
     # 14.1 Foreground color

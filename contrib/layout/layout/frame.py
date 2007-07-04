@@ -8,8 +8,8 @@ __version__ = '$Id$'
 
 import warnings
 
-from pyglet.ext.layout.content import *
-from pyglet.ext.layout.properties import *
+from layout.content import *
+from layout.properties import *
 
 import re
 

@@ -10,7 +10,7 @@ import warnings
 
 from pyglet.gl import *
 from pyglet import image
-from pyglet.ext.layout.frame import *
+from layout.frame import *
 
 class ImageReplacedElementFactory(ReplacedElementFactory):
     accept_names = ['img']

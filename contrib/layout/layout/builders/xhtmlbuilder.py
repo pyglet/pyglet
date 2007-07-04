@@ -6,11 +6,11 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.ext.layout.content import *
-from pyglet.ext.layout.css import *
-from pyglet.ext.layout.builders import *
-from pyglet.ext.layout.builders.xmlbuilder import *
-from pyglet.ext.layout.builders.htmlstylesheet import *
+from layout.content import *
+from layout.css import *
+from layout.builders import *
+from layout.builders.xmlbuilder import *
+from layout.builders.htmlstylesheet import *
 
 __all__ = ['XHTMLElement', 'XHTMLBuilder']
 

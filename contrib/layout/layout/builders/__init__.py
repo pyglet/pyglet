@@ -6,7 +6,7 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.ext.layout.content import *
+from layout.content import *
 
 class ContentBuilder(object):
     element_class = ContentElement

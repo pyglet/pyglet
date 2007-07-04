@@ -12,7 +12,7 @@ from pyglet.gl import *
 from pyglet.window import Window
 from pyglet import clock
 
-from pyglet.ext.layout import *
+from layout import *
 
 window = Window(visible=False, vsync=False, resizable=True)
 

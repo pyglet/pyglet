@@ -28,7 +28,7 @@ import warnings
 from Plex import *
 from Plex.Traditional import re
 
-from pyglet.ext.layout.base import *
+from layout.base import *
 
 # Interfaces
 # ---------------------------------------------------------------------------

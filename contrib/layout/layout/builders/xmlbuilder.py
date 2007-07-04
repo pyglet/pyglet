@@ -8,9 +8,9 @@ __version__ = '$Id$'
 
 import xml.sax
 
-from pyglet.ext.layout.content import *
-from pyglet.ext.layout.css import *
-from pyglet.ext.layout.builders import *
+from layout.content import *
+from layout.css import *
+from layout.builders import *
 
 __all__ = ['XMLElement', 'XMLBuilder']
 
