@@ -45,6 +45,16 @@ import os
 import random
 import sys
 
+# Determine if we are inside a py2exe
+if hasattr(sys, 'frozen'):
+    _in_py2exe = True
+    
+    # Disable GL debugging; this will give a large speedup on slow computers
+    import pyglet
+    pyglet.options['gl_error_check'] = False
+else:
+    _in_py2exe = False
+
 from pyglet.gl import *
 from pyglet import clock
 from pyglet import font
@@ -720,7 +730,10 @@ def begin_clear_background():
 # --------------------------------------------------------------------------
 
 def res(filename):
-    res_dir = os.path.join(os.path.dirname(__file__), 'res')
+    if _in_py2exe:
+        res_dir = os.path.join(os.path.dirname(sys.executable), 'res')
+    else:
+        res_dir = os.path.join(os.path.dirname(__file__), 'res')
     return os.path.join(res_dir, filename)
 
 def create_font(size):
