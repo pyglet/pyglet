@@ -45,16 +45,6 @@ import os
 import random
 import sys
 
-# Determine if we are inside a py2exe
-if hasattr(sys, 'frozen'):
-    _in_py2exe = True
-    
-    # Disable GL debugging; this will give a large speedup on slow computers
-    import pyglet
-    pyglet.options['gl_error_check'] = False
-else:
-    _in_py2exe = False
-
 from pyglet.gl import *
 from pyglet import clock
 from pyglet import font

@@ -41,6 +41,8 @@ Detailed documentation is available at http://www.pyglet.org
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import sys
+
 #: The release version of this pyglet installation.  
 #:
 #: Valid only if pyglet was installed from a source or binary distribution
@@ -64,6 +66,10 @@ def _require_ctypes_version(version):
         raise ImportError('pyglet requires ctypes %s or later.' % version)
 _require_ctypes_version('1.0.0')
 
+_enable_optimisations = not __debug__
+if getattr(sys, 'frozen', None):
+    _enable_optimisations = True
+
 #: Global dict of pyglet options.  To change an option from its default, you
 #: must import `pyglet` before any sub-packages.  For example::
 #:
@@ -77,8 +83,9 @@ _require_ctypes_version('1.0.0')
 #:     errors using ``glGetError``.  This will severely impact performance,
 #:     but provides useful exceptions at the point of failure.  By default,
 #:     this option is enabled if ``__debug__`` is (i.e., if Python was not run
-#:     with the -O option.
+#:     with the -O option).  It is disabled by defualt when pyglet is "frozen"
+#:     within a py2exe or py2app library archive.
 #:
 options = {
-    'gl_error_check': __debug__,
+    'gl_error_check': not _enable_optimisations,
 }
