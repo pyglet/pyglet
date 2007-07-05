@@ -101,6 +101,10 @@ kATSOptionFlagsProcessSubdirectories = 0x00000001 << 6
 kATSUFromTextBeginning = c_ulong(0xFFFFFFFF)
 kATSUToTextEnd = c_ulong(0xFFFFFFFF)
 
+kATSULineAscentTag = 8
+kATSULineDescentTag = 9
+ATSUTextMeasurement = Fixed
+
 kATSUQDBoldfaceTag            = 256
 kATSUQDItalicTag              = 257
 kATSUFontTag                  = 261
@@ -197,7 +201,10 @@ class CarbonGlyphRenderer(base.GlyphRenderer):
             text_len)
         carbon.ATSUSetRunStyle(layout, self.font.atsu_style, 
             kATSUFromTextBeginning, kATSUToTextEnd)
-        carbon.ATSUSetTransientFontMatching(layout, True)
+
+        # Turning on transient font matching screws up font layout
+        # predictability when strange fonts are installed
+        carbon.ATSUSetTransientFontMatching(layout, False)
 
         # Get bitmap dimensions required
         rect = Rect()
@@ -298,7 +305,7 @@ class CarbonFont(base.Font):
             # If application is not DPI-aware, DPI is fixed at 72.  Scale
             # font size to emulate other DPI if necessary.  This will need
             # to be fixed if issue #87 is implemented.
-            size = size * dpi / 72
+            size = size * dpi / 72.
 
         font_id = ATSUFontID()
         carbon.ATSUFindFontFromName(
@@ -350,22 +357,18 @@ class CarbonFont(base.Font):
             1)
         carbon.ATSUSetRunStyle(layout, self.atsu_style, 
             kATSUFromTextBeginning, kATSUToTextEnd)
-        carbon.ATSUSetTransientFontMatching(layout, True)
 
-        bounds_actual = c_uint32()
-        bounds = ATSTrapezoid()
-        carbon.ATSUGetGlyphBounds(
-            layout,
-            0, 0,
-            kATSUFromTextBeginning,
-            kATSUToTextEnd,
-            kATSUseDeviceOrigins,
-            1,
-            byref(bounds),
-            byref(bounds_actual))
-        self.ascent = -fix2float(bounds.upperLeft.y)
-        self.descent = -fix2float(bounds.lowerLeft.y)
+        # determine the metrics for this font only
+        carbon.ATSUSetTransientFontMatching(layout, False)
 
+        # determine the ascent / descent
+        value = ATSUTextMeasurement()
+        carbon.ATSUGetLineControl(layout, 0, kATSULineAscentTag, 
+            sizeof(value), byref(value), None)
+        self.ascent = fix2float(value)
+        carbon.ATSUGetLineControl(layout, 0, kATSULineDescentTag,
+            sizeof(value), byref(value), None)
+        self.descent = -fix2float(value)
 
     @classmethod
     def add_font_data(cls, data):
