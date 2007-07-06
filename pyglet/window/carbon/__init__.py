@@ -326,6 +326,11 @@ class CarbonWindow(BaseWindow):
             carbon.DisposeWindow(self._window)
             self._window = None
 
+        # create a new context for the new window
+        old_context = self.context
+        self._context = self._config.create_context(old_context)
+        old_context.destroy()
+
         self._create()
 
     def _create(self):
@@ -344,6 +349,9 @@ class CarbonWindow(BaseWindow):
                                       byref(self._window),
                                       None,
                                       0)
+            # the following may be used for debugging if you have a second
+            # monitor - only the main monitor will go fullscreen
+            #agl.aglEnable(self._agl_context, agl.AGL_FS_CAPTURE_SINGLE)
             agl.aglSetFullScreen(self._agl_context, 
                                  self._width, self._height, 0, 0)
         else:
@@ -550,7 +558,7 @@ class CarbonWindow(BaseWindow):
         if visible:
             width, height = self.get_size()
             self.dispatch_event(event.EVENT_RESIZE, width, height)
-
+            self.dispatch_event(event.EVENT_EXPOSE)
             carbon.ShowWindow(self._window)
         else:
             carbon.HideWindow(self._window)

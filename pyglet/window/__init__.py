@@ -640,8 +640,8 @@ class BaseWindow(WindowEventDispatcher, WindowExitHandler):
 
         self._recreate(['fullscreen'])
 
-        self.set_visible(True)
         self.switch_to()
+        self.set_visible(True)
 
         if not self._fullscreen and self._windowed_location:
             # Restore windowed location
