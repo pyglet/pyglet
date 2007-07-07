@@ -640,11 +640,9 @@ class BaseWindow(WindowEventDispatcher, WindowExitHandler):
 
         self._recreate(['fullscreen'])
 
-        self.switch_to()
-        self.set_visible(True)
-
         if not self._fullscreen and self._windowed_location:
-            # Restore windowed location
+            # Restore windowed location -- no effect on OS X because of
+            # deferred recreate.  Move into platform _create? XXX
             self.set_location(*self._windowed_location)
 
     def on_resize(self, width, height):
