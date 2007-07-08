@@ -1,4 +1,16 @@
 <news>
+  <item date="9-July-2007" author="Alex"
+        title="FAQ, user pages and developer wiki ready">
+    The <a href="http://groups.google.com/group/pyglet-users/web/faq">FAQ</a>
+    has been moved to a more permanent home where all pyglet-users members can
+    contribute.  The <a
+    href="http://code.google.com/p/pyglet/w/list">development wiki</a> has
+    been moved to Google to make room for some forthcoming documentation.
+    <p>We'd also like to point you in the direction of the <a
+    href="http://groups.google.com/group/pyglet-users/web">user web
+    pages</a> that can be created within the pyglet-users group.  Screenshots
+    from these pages will soon be appearing on pyglet.org.</p>
+  </item>
   <item date="27-June-2007" author="Alex" 
         title="pyglet 1.0 alpha released">
     This alpha release is feature complete on Linux, with only some audio and

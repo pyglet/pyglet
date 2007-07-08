@@ -29,17 +29,31 @@
     an announcement list which broadcasts SVN commits.</li>
   </ul>
 
+  <h2>user pages</h2>
+
+  <p>Members of the pyglet-users mailing list can collaborate to <a
+  href="http://groups.google.com/group/pyglet-users/files">upload files</a>
+  and <a href="http://groups.google.com/group/pyglet-users/web">create web
+  pages</a>.  Screenshots from these pages will soon appear on pyglet.org to
+  promote your projects as well as pyglet.</p>
+
+  <p>Members can also contribute to the <a
+  href="http://groups.google.com/group/pyglet-users/web/faq">FAQ</a>, or write
+  new tutorials and "howto"s.</p>
+
   <h2>issue tracker</h2>
 
   <p>The <a href="http://code.google.com/p/pyglet/issues/list">issue tracker</a>
-  should be used to report any bugs or compatibility issues.</p>
+  should be used to report any bugs or compatibility issues.  You will need
+  a <a href="http://mail.google.com/mail/signup">Google account</a> to submit
+  issues.</p>
 
   <h2>wiki</h2>
 
-  <p>We have a <a href="wiki">wiki</a> which is primarily used for
-  discussing future design aspects of pyglet.  If you'd like to contribute
-  a tutorial or FAQ question though, please feel free!  Registration is
-  open but requires an email address.</p>
+  <p>We have a <a href="http://code.google.com/p/pyglet/w/list">wiki</a> which
+  is primarily used for discussing future design aspects of pyglet.  Anyone
+  can read this wiki, however you must be a pyglet developer (have SVN commit
+  access) to write to it.</p>
 
   <h2>subversion repository</h2>
 

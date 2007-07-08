@@ -28,6 +28,15 @@ def element_children(parent, name):
             child.nodeName == name):
             yield child
 
+def element_text(elem):
+    if elem.nodeType == elem.TEXT_NODE:
+        return elem.nodeValue
+    else:
+        s = ''
+        for child in elem.childNodes:
+            s += element_text(child)
+        return s
+
 if __name__ == '__main__':
     root = os.path.join(os.path.dirname(__file__), '..')
     input_dir = os.path.join(root, 'website/new')
@@ -60,7 +69,7 @@ if __name__ == '__main__':
     date = time.strftime('%Y-%m-%d', date)
     SE(root, 'updated').text = "%sT00:00:00Z" % date
     for item in news_items[:10]:
-        content = item.childNodes[0].data 
+        content = element_text(item)
         date = time.strptime(item.getAttribute('date'), '%d-%B-%Y')
         date = time.strftime('%Y-%m-%d', date)
 

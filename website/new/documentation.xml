@@ -2,9 +2,13 @@
   <p>The pyglet programming guide is currently under development, and will
   be available when Beta 1 is released.</p>
 
-  <p>The API reference is included in the source download, but not yet
-  available for viewing online.</p>
+  <p>The API reference is included in the source and documentation
+  distributions, but not yet available for viewing online.</p>
 
   <p>There are several documented example applications located in the
-  <tt>examples</tt> directory of the source download.</p>
+  <tt>examples</tt> directory of the source and documentation distributions.</p>
+
+  <p>A short, but hopefully growing, <a
+  href="http://groups.google.com/group/pyglet-users/web/faq">FAQ</a> is online
+  and awaiting your contributions.</p>
 </div>

@@ -50,37 +50,17 @@
   border-bottom: 5px solid #ff6161;
 }
 
-#navigation {
+#sidebar {
   position: absolute;
-  margin-top: 2em;
-  left: 20px;
-  width: 140px;
+  left: 10px;
+  width: 160px;
+  font-size: 9pt;
 }
 
-#navigation > h1 {
-  font-size: 16pt;
-  font-weight: normal;
-  border-bottom: 5px solid #ff6161;
+#sidebar > * {
+  position: relative;
+  top: 4em;
 }
-
-#navigation > ul {
-  display: block;
-  padding: 0px;
-}
-
-#navigation > ul > li {
-  display: block;
-}
-
-#navigation a {
-  color: black;
-  text-decoration: none;
-}
-
-#navigation a:hover {
-  color: #ff6161; 
-}
-
 
 body {
   margin-left: 180px;
@@ -120,6 +100,30 @@ body {
 }
 
 .news-attribution {
+  font-size: 10pt;
+  float: right;
+  margin-bottom: 1em;
+}
+
+.gallery td {
+  padding-bottom: 0.5em;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.gallery img {
+  border: 0px;
+}
+
+.discussion-entry {
+  clear: right;
+}
+
+.discussion-title {
+  font-weight: bold;
+}
+
+.discussion-attribution {
   font-size: 10pt;
   float: right;
   margin-bottom: 1em;
