@@ -1,0 +1,40 @@
+====== Known good configurations ======
+
+A collection of system configurations that have passed the test suite.  Add your system to this list (**even if some tests failed**... but please submit an issue on the tracker for each fail).  This helps us keep track of what configurations pyglet is not getting regular coverage on.
+
+**CPU**
+  * 32-bit or 64-bit?  Intel-based or PowerPC?  New or old?  Laptop or desktop?
+**Video**
+  * ATI, nVidia, Intel, ...?  Family/model?
+**Operating System**
+  * Include version (distro if Linux).  Specify if 64-bit, otherwise assumed to be 32-bit.
+**Window manager**
+  * Linux: Gnome, KDE, XFCE, Fluxbox, ...?  Specify version.
+  * Windows Vista: Aero or non-composited?
+  * Otherwise N/A.
+**Python version**
+  * 2.4 or 2.5 (or both, if tested under both).
+**pyglet release**
+  * If a release, specify downloaded file (e.g. "pyglet-1.0-alpha1.msi" for Windows installer, "pyglet-1.0-alpha1.tar.gz" for source download).
+  * If a checkout, specify revision number (e.g. "r936").
+**Who are you?**
+  * We're not going to steal your stuff.   This is just so that if you want to go back and update your row with a later pyglet release you can find your entry :-)
+
+\\
+\\
+
+^ CPU ^ Video ^ Operating System ^ Window Manager ^ Python ^ pyglet release ^ Who are you? (optional) ^
+| G3 | ATI Radeon 9600 | Mac OS X 10.4.9 | N/A | 2.5 | r936 | Alex |
+| AMD64 | nVidia 6600 | Gentoo AMD64 | XFCE 4.2 | 2.4/5 | r936 | Alex |
+| AMD64 | nVidia 6600 | Windows XP SP 2 | N/A | 2.4/5 | r936 | Alex |
+| Celeron | ATI RAGE ?? | Windows XP SP 2 | N/A | 2.5 | r900 | Alex |
+| Intel Core Duo | Intel GMA 950 | Mac OS X 10.4.10 | N/A | 1.5 | pyglet-1.0alpha1.dmg | Dethe |
+
+\\
+\\
+
+Dethe -- cool, that's the first Intel Mac tested AFAIK :-)  I presume that's supposed to read Python 2.5, not 1.5, though?  --- //[[alex@partiallydisassembled.net|Alex]] 2007/06/28 20:00//
+
+Sorry to burst your bubble, but I was developing pyglet on an Intel Mac a few months ago :)  --- //[[richardjones@optushome.com.au|Richard Jones]] 2007/06/29 07:51//
+
+**Please preview before saving to check that you haven't messed up the table formatting.**  Thanks for your feedback!

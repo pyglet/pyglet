@@ -1,0 +1,181 @@
+====== Upcoming refactor (RFC) ======
+
+Class hierarchy should be (updated for texture sequences):
+
+<code>
+  AbstractImage                     (replaces Image)
+    ImageData                       (replaces RawImage)
+    CompressedImageData             (replaces DDSCompressedImage)
+    Texture
+      TextureRegion                 (replaces SubTexture)
+        TextureGrid                 (implements UniformTextureSequence)
+      Texture3D                     (implements UniformTextureSequence)
+      TextureCube                   (implements UniformTextureSequence)
+      DepthTexture
+    TileableTexture                 (replaces Texture.stretch)
+    BufferImage
+      ColorBufferImage              (replaces BufferImage)
+      DepthBufferImage
+      BufferImageMask               (replaces/enhances StencilBufferImage)
+  AbstractImageSequence
+    TextureSequence                   # interface only
+      UniformTextureSequence          # interface only
+    ImageGrid
+  BufferManager
+</code>
+
+Creation function returns an instance of ''AbstractImage'' (when loading,
+decoder typically returns ImageData).
+
+  * See [[Package organisation]] discussion.
+  * Creation functions for texture sequence?  (constructors take care of empty sequence -- what about sequence of AbstractImage or decoded GIF/MNG/etc?)
+
+
+Public interfaces are:
+
+<code python>
+  class AbstractImage(object):
+      width  -> int
+      height -> int
+      image_data = property()       -> ImageData
+      texture = property()          -> Texture (or TextureRegion)
+      mipmapped_texture = property()-> Texture
+      depth_texture = property()    -> DepthTexture
+      tileable_texture = property() -> Texture (never TextureRegion)
+      save(self, filename=None, file=None, encoder=None)
+
+      # blit this image to active framebuffer(s)
+      blit(self, x, y, z)
+      
+      # blit source image into this image
+      blit_into(self, source, x, y, z)
+
+      # blit to currently bound texture at `target`
+      blit_to_texture(self, target, level, x, y, z)
+
+  class ImageData(AbstractImage):
+      # Properties are mutable, when changed "fix" the underlying data lazily.
+      format -> str  (e.g., 'RGBA')
+      pitch  -> int  (bytes per row, -ve if rows are top-to-bottom)
+      data   -> str
+      set_mipmap_image(self, level, image)
+  
+  class CompressedImageData(AbstractData):
+      # Read-only (or, modify at own risk) 
+      data -> str
+      gl_format -> int
+      set_mipmap_data(self, level, data)
+
+  class Texture(AbtractImage):
+      id  -> int
+      tex_coords = ((0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0))  # always 3D
+      target -> (GL_TEXTURE_1D or GL_TEXTURE_2D [default] or GL_TEXTURE_3D)
+      level = 0
+      blit(self, srcimage, x, y, z)
+      get_region(self, x, y, width, height)  -> TextureRegion
+      get_level(self, level) -> Texture
+      __del__(self)  # releases texture
+  
+  class TextureRegion(Texture):
+      # width, height, refer to the region
+      # blit does not clip to region (but does translate coordinates)
+      tex_coords -> ((u, v, r), (u, v, r), (u, v, r), (u, v, r))  # always 3D
+      owner -> Texture
+
+  class DepthTexture(Texture):
+
+ 
+  class TileableTexture(Texture):
+      # width, height refer to tile size, not texture size (which cannot be determined)
+      
+      blit_tiled(self, x, y, z, width, height)
+
+  class AbstractImageSequence:
+      texture_sequence -> TextureSequence
+
+  class TextureSequence(AbstractImageSequence):
+      # Interface for accessing predefined regions of a single texture.
+      __getitem__(self, slice) -> TextureRegion
+      __setitem__(self, slice, srcimage)
+      __len__(self)
+
+  class UniformTextureSequence(TextureSequence):
+      # Interface for TextureSequence in which all subtextures have the same dimensions
+      item_width -> int
+      item_height -> int
+
+  class ImageGrid(AbstractImage, AbstractImageSequence):
+      __init__(self, image, rows, columns, item_width=None, item_height=None, rowpadding=0, columnpadding=0)
+
+      texture_sequence -> TextureGrid
+
+  class TextureGrid(TextureRegion, UniformTextureSequence):
+      # Grid layout of images on a single texture.  Without padding can cause filtering errors between adjacent images.
+      get(self, row, col) -> TextureRegion
+      # __getitem__'s slice components can be ints (access as if grid is unwrapped top-to-bottom, left-to-right), or a tuple (row,col).
+      # e.g. atlas[(0,0):(2,2)] returns tuple of images (0,0), (0,1), (1,0), (1,1)
+      __init__(self, grid)
+
+  class Texture3D(Texture, UniformTextureSequence):
+      @classmethod create_for_images(cls, images) -> Texture3D
+      @classmethod create_for_image_grid(cls, grid) -> Texture3D
+
+  class TextureCube(Texture, UniformTextureSequence):
+      @classmethod create_for_images(cls, front, back, top, bottom, left, right) -> TextureCube
+      front -> TextureRegion
+      back -> TextureRegion
+      top -> TextureRegion
+      bottom -> TextureRegion
+      left -> TextureRegion
+      right -> TextureRegion
+
+  class BufferImage(AbstractImage):
+      clear(self)
+      get_region(self, x, y, width, height) -> BufferImage
+      writeable -> bool      # if True, buffer is updated when drawn to
+
+  class ColorBufferImage(BufferImage):
+      clear(self, color=(0, 0, 0, 0))
+
+  class DepthBufferImage(BufferImage):
+
+
+  class BufferImageMask(BufferImage):
+      __init__(self)
+      stencil_bit -> int     # r/o
+      enabled -> bool        # if True, color buffer writes are masked by this mask
+
+  class BufferImageRegion(BufferImage):
+      x, y -> int, int
+      owner -> BufferImage
+      writeable -> property()  # set raises exception, get returns owner.writeable
+
+  class BufferManager:
+      # singleton per context
+      get_color_buffer(self) -> ColorBufferImage
+      get_aux_buffer(self) -> ColorBufferImage
+      get_depth_buffer(self) -> DepthBufferImage
+      get_buffer_mask(self) -> BufferImageMask
+  
+  # top-level convenience funcs get_buffer_manager for you:
+  get_color_buffer()
+  get_aux_buffer()
+  get_depth_buffer()
+  get_buffer_mask()
+
+</code>
+
+
+
+
+
+
+====== 3D textures ======
+
+Are required for animated particles in a particle engine, and also have benefits for animated sprites (no texture change required).  Avoids bilinear filtering bleed that TextureAtlas gives.  Ideally should be the default texture type for animation (any drawbacks?).
+
+**<rj>**: Loading GIF animations brings kudos. MNG isn't very popular. I'm not aware of any other standard for lossless image animation.
+
+**<ah>**: GIF is pretty useless IMO because of its crap-arse enforced palette and lack of alpha channel.  I didn't see any support in the OS's for loading them either (PIL might).  We could be a bit screwed here trying to find a format that already does what we want and a loader that exists on all platforms.  One of the MNG options looks like just a pasted-together list of PNG images, which we could parse and hand-off to the decoder.  The other MNG option uses deltas between images, though, so we'd only get partial support.  What do we think about creating a custom file format for animations/3d-textures and some handy tools for creating them from separate images or image strips?
+
+**<ah>**: Forgot DDS, which I'm 90% certain has 3D texture support, and possibly supports uncompressed textures in addition to DXT5 (which we already load if hardware supports it).

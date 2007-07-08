@@ -1,0 +1,57 @@
+====== Release schedule ======
+
+1.0 Alpha:
+  * Feature complete (see feature list below... nearly there!)
+  * Documentation and bug fixes only.
+  * No more API changes unless //really// needed.
+  * Announce on pyglet-users and pyglet.org only.
+
+1.0 Beta:
+  * Documentation complete.
+  * Bug fixing, additional tutorials and examples only.
+  * Announce to general Python mailing lists etc. 
+
+Remaining features for 1.0:
+
+  * <del>Cursor motion events (Linux, Mac, Win)</del>
+  * Load media from file objects (<del>Linux</del>, Mac, Win)
+  * <del>Video playback (Linux, Mac, Win)</del>
+  * DirectSound 3D positioning (Win)
+  * on_finished media event (Win, <del>Mac</del>, <del>Linux</del>)
+  * <del>Font insertion (Linux, Mac, Win)</del>
+  * <del>S3TC decoder (DXT1, DXT3, DXT5; non-packed RGB for GL < 1.2)</del>
+  * <del>Finish pyglet.projection</del>... moved to pyglet.ext, is too extravagant now.
+
+Features in core postponed until 1.1 or later:
+
+  * pyglet.font:
+      * Enumerate installed fonts
+      * Select a default font by style (serif, sans-serif, monospace)
+      * Font kerning, vertical fonts, BIDI
+      * Use VBO in glyph string if available
+      * Extended glyph string for runs of font/color.
+      * Text motion/select support in glyph string.
+      * Get the OS to draw entire line of text at a time (optionally).  On Mac this would give access to advanced type features (e.g. Zapfino).  On Mac and Windows we would get subpixel antialiasing (RGB decimated).  Use some sort of texture paging mechanism to update and reuse textures as needed.  Keep track of glyph positions within the rendering for text motion/select support (see above).  (What about style runs?).
+  * //pyglet.platform//
+      * Determine registered file types/handlers/icons
+      * Activate screensaver, turn off / reboot computer [general platform-dependent stuff]
+      * Clipboard, drag/drop, file accept
+  * //pyglet.input//
+      * Joystick, wheel, wii, tablet input
+  * pyglet.media
+      * Audio capture
+      * Video capture
+      * Media seeking
+      * Audio surround files
+      * Optional ALSA backend for Linux in place of OpenAL (for media apps, not games)
+  * pyglet.window
+      * Window modality
+      * Screen resolution/mode switch
+      * Platform-provided message box (non-OpenGL.. good for errors, especially at startup)
+      * An alternative to OpenGL contexts: perhaps a simple drawing and blitting interface for simple/low-end applications.
+      * Platform-drawn menubar (especially Mac) and pop-up menus.
+  * pyglet.image
+      * HDR textures (.tif, .hdr)
+      * Cubemaps, volume, depth textures in DDS
+      * Better support for texture_rectangle_ARB (currently possible by specifying internalformat, but this untested, and ideally it would be a nicer interface with fallback where not available).
+  * ... more ideas?

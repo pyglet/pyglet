@@ -1,0 +1,50 @@
+====== FAQ ======
+
+===== Why doesn't it work? =====
+
+==== Windows and Graphics ====
+
+=== Nothing is displayed ===
+
+  * You have forgotten to call ''flip()'' on your window.  The standard run loop is:
+
+    w = Window()
+    while not w.has_exit:
+         w.dispatch_events()
+         # ... draw stuff
+         w.flip()
+
+=== Program doesn't respond to mouse or keyboard ===
+
+  * You have forgotten to call ''dispatch_events()'' on your window.  See the sample run loop, above.
+
+
+==== Sound and video ====
+
+=== Python crashes after using media on Windows ===
+
+  * You must call ''pyglet.media.cleanup()'' before exiting your program.  This is also a good thing to do on other platforms.  You should probably wrap your program in a ''try/finally'' block to guarantee it is called (and not use sys.exit).
+
+=== Sound is distorted when many samples are playing at once ===
+
+  * The audio hardware has limited resolution: when samples are played together their amplitudes are added together, and when the amplitude exceeds the maximum amplitude of the audio buffer, the sound is "clipped".  This will sound like intermittent distortion.  The solution is to lower the volume of any sounds you expect to be played  more than once at a time.
+
+==== Performance ====
+
+=== Program uses 100% CPU ===
+
+  * Use ''pyglet.clock'' to limit the framerate if your program doesn't need very small time updates.  30 frames per second will give very responsive performance but lets the CPU idle (or switch to other processes) in between updates.  For example:
+
+    from pyglet import clock
+    clock.set_fps_limit(30)
+    while not w.has_exit:
+        clock.tick()
+        w.dispatch_events()
+        # ... draw stuff
+        w.flip()
+    
+
+
+
+
+

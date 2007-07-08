@@ -1,0 +1,417 @@
+====== Sprites and Tiles ======
+
+**Implementation has begun.**
+
+<code>
+View
+  contains Camera, Maps, SpriteLayers and Sprites
+  FlatView
+
+ViewScrollHandler
+
+Camera
+  FlatCamera
+
+Layer
+  SpriteLayer
+    contains Sprites
+
+  Map
+    RegularTesselationMap
+      RectMap
+        contains Sprites with RectGeometry
+      HexMap
+        contains Sprites with HexGeometry
+
+TileSet
+  contains Tiles
+
+Tile
+  contains Image2d
+</code>
+
+
+
+
+====== Sprites ======
+
+Implemented in pyglet.scene2d.sprite
+
+Features:
+
+  * separate collision/drawing geometry (might be image, or bounding box, or sphere, etc)
+  * each image/frame has an anchor, which may be outside image bounds (makes walk cycle easier)
+  * attach path animation / ai.
+  * can be used as particles (abstract away the rendering so it can be batched)
+  * make it easy to animate smoothly from one tile (or position) to another
+  * may be included in layers which have depth -- which is used to sort them into the display with maps and other sprite layers
+  * animation queue and optional cycles
+
+All sprites should implement basic movement and rotation. This simplifies implementation code, and game development. What this means in practise:
+
+  * sprites get a movement vector (either euclid module **or** just dx, dy)
+  * to implement movement, sprites could have a standard update_position(dt) method which may be scheduled directly or called by a subclass' update() method
+  * sprites get a rotation around Z
+  * sprites choose a collision model - rect, rotated rect or circle (with pixel-perfect being an option in all cases)
+  * have a scale, base colour and "mesh" attribute
+
+Shader-based blurring is a post-processing step.
+
+All other sprite "effects" can be implemented using additional sprite artwork **or** someone sufficiently knowledgeable in OpenGL to extend the Sprite implementation in a custom manner.
+
+
+
+
+Things that sprite games do a lot:
+
+  * detect collision between sprite and sprite
+  * animate the image attached to a sprite, possibly changing the sprite size
+  * align the sprite to the "world" or other sprites, ie. have the sprite stand on ground, or stop the sprite walking through a wall
+
+====== Maps ======
+
+Implemented in pyglet.scene2d.map
+
+Features:
+
+  * cells are Sprites
+  * collision or not
+  * hexagons (flat-top only), squares
+  * frustum/viewport culling
+  * scrolling (duke nukem) or paged (zelda) or both (captain comic)
+  * play well with pathfinding code
+  * query for tile at given position (transformed by viewport)
+
+Cells will support individual effects similar to Image 2d effects.
+
+
+====== View ======
+
+See pyglet.scene2d.view
+
+Features:
+
+  * top-down ("flat")
+  * axiometric (with supplied scaling for each axis  * eg isometric / dimetric)
+  * persepctive
+  * handles layers of sprites/tiles
+  * allows scrolling or paging of map display
+  * handles mouse input, farming out click/hover/drag events to appropriate tiles/sprites
+
+
+**Premature Optimisation Discussion**
+
+Rendering will compile a display list, or vertex array or perhaps even vertex buffer
+on supported systems.
+
+Animated tiles will have to be invoked separately. This means we'd have to
+check for animations each time we render and possibly recompile the list/array/buffer
+to accommodate a tile that has changed from static to animated or vice versa.
+
+Or perhaps we force the app developer to .update() the renderer if they change
+one of the tiles. That's probably not unreasonable.
+
+====== Event handling ======
+
+Implemented in pyglet.scene2d.event (and pyglet.scene2d.view)
+
+All of these mouse event handlers translate viewport coordinates to map coordinates and generate on_map_mouse_press on the depth-sorted in-bounds sprites and maps with the mouse coordinates translated. If a sprite/map doesn't handle the event we can pass it on to the next sprite/map in depth order.
+
+on_mouse_press, on_mouse_release, on_mouse_drag, on_mouse_scroll are passed through to map/sprite.
+
+on_mouse_motion will be used to generate hover events
+
+
+
+====== Use cases ======
+
+  * side/up scroller shmup (map auto scroll, free movement, parallax)
+  * platformer (map paging, partial scroll, free movement with obstacles)
+  * hexagonal strategy game incl. piece placement on tile borders, stacked units
+  * top-down roguelike (fixed cell movement, squares, special tiles)
+  * top-down RPG (free movement, squares, special tiles)
+  * top-down RTS (free movement, hexagonal, regions)
+  * walls/platforms for isometric (that exploding game by phil)
+  * full heightmap w/ gradients (simcity 2000, though with smooth blending between levels)
+
+
+====== Inner workings and features of other sprite engines ======
+
+[[http://en.wikipedia.org/wiki/Category:3D_Scenegraph_APIs|Wikipedia list of 3D scenegraphs libraries]]
+
+[[http://sgl.sourceforge.net/statelets.html|SGL statelets]]
+  * Every GL attribute (or some combinations, e.g. texture state) has a unique state class (statelet).  Many statelets can be applied to a state, and many States can be applied to a Drawable.  
+  * Sort order defaults to transform only (i.e., regular scene-graph) but can be optimised to any arbitrary sequence of statelets.  
+  * Some examples show that there is no one best sort order -- depends on scene and hardware.
+  * State sorted objects are drawn first, then occlusion-queried objects in front-to-back order, then translucent objects in back-to-front order.
+
+[[http://qgl.googlecode.com/svn/trunk/qgl/render.py|QGL visitor]]
+  * Visitor pattern (single-dispatch) over render tree
+  * Nodes are indescriminately renderable objects or transformations.
+  * Separate "compilation" pass (another visitor) over tree (required, as it sets up values needed for projection)
+      * Nodes marked "static" automatically compiled into DL.
+  * No state or depth sorting
+
+[[http://oss.sgi.com/cgi-bin/cvsweb.cgi/inventor/lib/database/include/Inventor/|Open Inventor paths and actions]]
+  * Undocumented AFAIK, but from headers I gather that:
+  * Path is a scene graph with a root (nodes can appear more than once in the graph, are explicitly ordered)
+  * State is accumulated in a stack while traversing Path for lazy state changing.
+
+[[http://openscenegraph.sourceforge.net/documentation/VRLabLecture/HowToLearnAbout/HowToLearnAboutOpenSceneGraph.html|OpenSceneGraph]]
+  * QGL + lazy state; nothing (documented) not seen elsewhere.
+  * There's some [[http://www.openscenegraph.org/documentation/OpenSceneGraphReferenceDocs/classosg_1_1State.html auto-gen API docs]]
+
+[[http://irrlicht.sourceforge.net/docu/classirr_1_1scene_1_1_i_scene_manager.html|Irrlicht]]
+  * Apparently does some state management, can't see where
+  * Does have an interesting register method for scenegraph nodes to select which pass they are rendered in (onPreRender) and to update absolute matrix / animate (onPostRender).
+
+
+
+
+====== Chat with Toby and Richard ======
+
+**[toby]** to my mind, the important things are really: rendering to fbos, a good fallback system so that you have handle a variety of systems, and multiple render passes. \\
+**[toby]** after those things, you only need some pretty basic sprite and quad drawing (with optional shaders). \\
+**[toby]** all your layer stuff equates well to render passes. \\
+**[toby]** so i don't think you should have two systems for that. \\
+**[richard]** alex's goal was to allow users with no opengl knowledge \\
+**[toby]** absolutely. \\
+**[toby]** but that just means you give them canned effects. \\
+**[toby]** also, I think you should split out any physics concepts like time/velocity/acceleration/mass/force. don't make that part of the sprite specification. \\
+**[richard]** I'm pushing for just velocity. it's so common for games that use sprites.  \\
+**[toby]** i think you should start with a 2d mesh with texcoords and vertex colours. \\
+**[toby]** you need layers. \\
+**[toby]** you need multitexturing. \\
+**[toby]** you need scale and rotation. \\
+**[toby]** but that seems like it. \\
+**[toby]** batching would be useful, and for that i'd have a system of defining immutable parameters (texcoord, maybe) and mutable ones (position, rotation, vertex colour) and means of providing a block of mutable params to a batch renderer with an intent (basically, mirroring the intent that vertex buffers have)\\
+
+====== Chat with Alex and Richard ======
+
+**[xander]** without it, the user has to keep track of sharing representations \\
+**[xander]** that's ok when loading (perhaps), but changing something on the fly will be pita \\
+**[xander]** also some representations assume additional attributes on Sprite.  is ok and fairly pythonic, but grates against my oo sensibilities \\
+**[richard]** but you're only caching ImageSpriteRepresentations, not textures \\
+**[richard]** you may not have noticed I added colour and scale to standard sprite attrs? \\
+**[xander]** no you didn't \\
+**[richard]** under the "Sprite Extensions" heading \\
+**[xander]** ah, well that's before "YASM", so is overridden :) \\
+**[xander]** i disagree anyway.. colour can be intepreted in different ways, and scale can be specified in several ways \\
+**[richard]** we *specify* how they're used \\
+**[richard]** toby's pushing for no physics at all in sprites \\
+**[xander]** well that's good, there isn't any \\
+**[richard]** pull yourself back from that "we do everything" minset again, please :) \\
+**[richard]** we need to implement a useful basic set of functionality. trying to implement everything will get us nowhere and leave us with a sprite engine no-one can understand \\
+**[xander]** with new image api, there is already a way to "draw this image here".. which is all pygame's sprite engine does (minus collision)... i see that as the simple approach, and sprite _should_ be more clever \\
+**[richard]** yes, but should that clever mean "model the known physical universe" or "do lots of sprites fast"? \\
+**[xander]** lots of sprites fast, in an extensible manner \\
+**[richard]** "extensible" meaning someone who knows what they're doing can implement a new *Sprite* class \\
+**[richard]** (overriding the default behaviour we implement) \\
+**[xander]** a new something class, sure.... but that should still fit into the existing optimisation we write \\
+**[richard]** sure, if possible \\
+**[xander]** well, that's the trick.  just providing class Sprite(): def draw(self):  is all easy and stuff, but can't be clever with speed \\
+**[xander]** hence the complexity \\
+**[richard]** sure it can be smart about speed \\
+**[xander]** the fact that doing this well is tricky is precisely _why_ it should be in pyglet \\
+**[richard]** that's easy. introducing the complexities of handling arbitrary effects etc. is what's making it hard \\
+**[xander]** then you lose extensibility \\
+**[richard]** not without some effort, yes \\
+**[richard]** draw() and draw_many() handle that, from where I sit \\
+**[xander]** i think we more or less agree on the solution, just that you're saying it's a simplification, and i'm saying it's a complexification \\
+**[richard]** added some thoughts to the wiki \\
+**[xander]**  why the need for a name? \\
+**[richard]** convenience for referring to it later on \\
+**[richard]** also we can hash names for lookup \\
+**[xander]**  doesn't sound convenient.. what's difference to using sprite object? \\
+**[richard]** easier to do that caching thing \\
+**[xander]**  doesn't affect caching \\
+**[richard]** maybe \\
+**[xander]**  (which is not really caching) \\
+**[xander]**  how? \\
+**[richard]** just trying to think of an alternative API. the current proposal seems a little yucky ;) \\
+**[richard]** I'm not convinced that caching is really needed since you can still just ultimately group on texture id for the most common case \\
+**[xander]**  but then you can't draw_many \\
+**[richard]** & other cases should be similarly simple \\
+**[richard]** why not? \\
+**[xander]**  what do you draw_many of? \\
+**[richard]** actually, now that you say that I don't see how your proposed draw_many works at all :) \\
+**[xander]**  ah good \\
+**[richard]** you keep a reference to all the various SpriteRepresentations? and then for each one call draw_many() with a list of the sprites that use that? \\
+**[xander]**  yes \\
+**[xander]**  the "cache-that-wasn't" is just a way to make sure representations are shared when possible.  another approach could be "make this sprite look like that sprite" \\
+**[richard]** you're grouping on id(sprite.representation) whereas I'm saying you can just have the representations know how to sort themselves \\
+**[xander]**  same diff.  yours is more efficient if you can prevent more state changes, but that would mean encoding the current gl state \\
+**[richard]** my approach has no yucky invoking some method on the View to attach an image to a Sprite :) \\
+**[richard]** but it has more instances of SpriteRepresentation \\
+**[xander]**  sure, it's the approach of all scenegraphs \\
+**[xander]**  but you need to encode all of gl \\
+**[xander]**  kinda heavy \\
+**[richard]** "all" is a bit over the top \\
+**[richard]** "a useful subset" is where I'd have stopped \\
+**[richard]** which at the moment is actually very little \\
+**[richard]** ... as long as we make it extensible, which is easy 'cos people can plug in their own SpriteRepresentations later on... \\
+**[xander]**  yep, though own sprite representations won't be sorted correctly (no visual error, but performance penalty) \\
+**[xander]**  (if they use another "uncommon" gl state) \\
+**[richard]** no, I think we can still sort them reasonably \\
+**[xander]**  only if we encode the states that happen to get used \\
+**[xander]**  and if we're going down this track, there's no need for spriterepresentation, just subclass sprite \\
+**[richard]** or we just make custom SpriteRepresentations setup/teardown the state completely before/after draw_many \\
+**[xander]**  defeats purpose of your approach \\
+**[richard]** it does?  \\
+**[richard]** my approach is internally inconsistent .. woot :) \\
+**[xander]**  draw_many isn't very useful with yours, because there is one rep per sprite \\
+**[xander]**  could be more \\
+**[xander]**  but need my icky not-a-cache then :) \\
+**[richard]** no, we can still share state for all the instances of a particular SpriteRepresentation class \\
+**[xander]**  no no \\
+**[xander]**  no \\
+**[richard]** and that's a huge win for the most common case where everyone just uses the basic class \\
+**[richard]** why? \\
+**[xander]**  representation encodes the needed state (say, texture id) \\
+**[xander]**  not a separate subclass per texture ;) \\
+**[richard]** wasn't saying that \\
+**[richard]** you're also sorting on texture id \\
+**[xander]**  then you can't share state for instances of a class \\
+**[richard]** so you can change that state as you go \\
+**[richard]** you do share other state as necessary \\
+**[richard]** like texture env \\
+**[xander]**  ok, so now we've got a hybrid state-sorting/draw-many approach \\
+**[richard]** er, I think so :) \\
+**[xander]**  state sort on current_bit and texture_id, draw_many on everything else \\
+**[xander]**  sounds complicated \\
+**[xander]**  brb \\
+**[richard]** sorry to say this, but I'm strongly leaning back towards the approach under "SpriteRepresentation" \\
+**[richard]** whoops \\
+**[richard]** "Sprite Extensions" \\
+**[richard]** That is, the default Sprite implementation handles basic stuff like tinting and transformation of the image, sprite motion and collision model as you outlined. \\
+**[richard]** Then people who know what they're doing (ie. can program OpenGL) can write subclasses which do funkier things.  \\
+**[richard]** draw_many is on the Sprite and looks very much like the one we have at the moment on Drawable \\
+**[xander]**  draw_many takes a list of other sprites to draw, in addition to this one? \\
+**[richard]** yeah, not sure where that list comes from yet :) \\
+**[richard]** could be as simple as sorting on class \\
+**[xander]**  sort sprites on class, then by their own cmp method \\
+**[richard]** hah \\
+**[xander]**  though now any subclass of sprite loses perf.  say i want to subclass for BossSprite, PlayerSprite, ElfSprite... \\
+**[richard]** hmm \\
+**[richard]** could sort on draw_many  \\
+**[xander]**  dear god \\
+**[richard]** why not? that's exactly what we want to do... \\
+**[xander]**  it's exactly what a spriterepresentation is! \\
+**[richard]** well except that you're jumping through hoops to make spriterepresentations singletons \\
+**[richard]** kinda singletons \\
+**[xander]**  ikwym \\
+**[richard]** draw_many will be unique to the appropriate instances \\
+**[richard]** it'll Just Work ... or possible it might just work... \\
+**[xander]**  it's just not kosher \\
+**[richard]** did I break your OO world view again? \\
+**[xander]**  _my_ world view is just fine, thankyou \\
+**[richard]** hehe \\
+**[xander]**  also makes it tricky to change a sprite's appearance \\
+**[xander]**  ok in ruby.. can override a method at instance level :) \\
+**[richard]** you can do that in Python too \\
+**[richard]** and if you do, then you get what you asked for \\
+**[xander]**  not near me you wouldn't \\
+**[richard]** I've been known to do it in the past :) \\
+**[richard]** haven't made a habit of it though \\
+**[xander]**  it's going to be very tempting to just keep bolting things straight into Sprite, since subclassing and changing draw_many means rewriting the whole damn thing, including state sorting \\
+**[richard]** bolting things on wouldn't work for the image stuff (I can't think of an example that would work) ...  \\
+**[xander]**  i mean, just adding more and more attributes/effects straight into Sprite \\
+**[xander]**  rather than specialising \\
+**[richard]** effects? \\
+**[xander]**  translucency, scale, ... \\
+**[xander]**  states with more expensive names :) \\
+**[richard]** both of those effects are in the default set \\
+**[xander]**  see? \\
+**[richard]** haha \\
+**[richard]** "reasonable subset" \\
+**[xander]**  "richard's reasonable subset" \\
+**[richard]** not just mine \\
+**[xander]**  perfect for writing games by richard \\
+**[xander]**  ah.. that's how subclassing works \\
+**[xander]**  AlexsSprite(Sprite) \\
+**[xander]**  RichardsSprite(Sprite) \\
+**[xander]**  everybody's happy :) \\
+**[richard]** indeed ;) \\
+**[xander]**  what do you think about spriterepresentation without the singleton-avoiding nonsense?  leave it up to user to share reps if they want to.. is pretty easy during load time \\
+**[richard]** what does it buy us? \\
+**[xander]**  is not tied to any set of default state, performs well when most sprites share rep, is easy to define new effects/reps and still get perf. \\
+**[richard]** so in order to have a sprite they can colour and scale the poor game programmer has to Sprite.set_image(ScaledTintedSpriteRepresentation(image), ... other args) \\
+**[richard]** ignore other args \\
+**[xander]**  actually sprite.representation = ScaledTintedSpriteRepresentation(image) \\
+**[richard]** yes, and we'd rename TransformedScaledTintedSpriteRepresentation to OneWithTheLot to save everyone typing cos that's the only one anyone would ever use :) \\
+**[xander]**  yeah, that's wack \\
+**[xander]**  let's just go with full state sorting \\
+**[xander]**  can have some "easy" attrs on sprite  like .color that add the state easily \\
+**[richard]** sorry, missed the significance of that \\
+**[xander]**  avoid sprite.add_state(GLColorState(1, 0, 0, 0))  or whatever \\
+**[richard]** sprite.color = (1, 0, 0, 0) \\
+**[xander]**  yes.. would be a property \\
+**[richard]** why does it need to be a property? \\
+**[xander]**  to add the state \\
+**[richard]** why do we need to have a state - why can't __cmp__/draw/draw_many just understand what the color attr means? \\
+**[xander]**  too difficult to extend \\
+**[richard]** so there'd be some list on the class of the state attrs which is used for sorting and ordering state changes? \\
+**[xander]**  yep \\
+**[xander]**  then some omnipotent being (SpriteView) sorts and draws all sprites in one hit \\
+**[richard]** Sprite base class could have a draw_all which knows how to do that \\
+**[xander]**  draw_all what? \\
+**[richard]** sprites \\
+**[xander]**  how does sprite base class know who all the sprites are?? \\
+**[richard]** the same way your omnipotent being (SpriteView) knows... \\
+**[xander]**  i assumed the view actually has a reference to all the sprites in the view \\
+**[richard]** yes \\
+**[xander]**  why would the class? \\
+**[richard]** this is a very minor point. it's just about who knows how to draw sprites. I figure the Sprite class should know, but if you want the View to know, thats OK too I guess :) \\
+**[xander]**  oh crap \\
+**[richard]** indeed? \\
+**[xander]**  forgot about draw method \\
+**[richard]** what about it? \\
+**[xander]**  (thought sorting states should just do the trick :) ) \\
+**[xander]**  well it's still being called on each sprite \\
+**[richard]** er, why? \\
+**[xander]**  yeah ok, now i see \\
+**[xander]**  so draw_many draws the quads for each sprite, and view sets up the order and calls accordingly \\
+**[richard]** yes \\
+**[xander]**  cool.. draw_many can be overridden to draw funky things, but still get state sorting benefit \\
+**[xander]**  pull state sorting out of SpriteView, it can be used on 3d as well \\
+**[xander]**  sort order is pass, z-order (optionally depending on pass), state, class. \\
+**[richard]** pass? \\
+**[richard]** oh, pass \\
+**[xander]**  thinking future 3d.. shadow pass, etc \\
+**[richard]** yeah \\
+**[xander]**  State has methods \\
+**[richard]** yes \\
+**[xander]**  apply(state instance) \\
+**[richard]** before and after, I presumt \\
+**[xander]**  revert() \\
+**[xander]**  apply_default() \\
+**[xander]**  no \\
+**[xander]**  push(), pop(), set(state) \\
+**[richard]** yeah \\
+**[xander]**  push() needn't use the gl stack \\
+**[richard]** indeed \\
+**[xander]**  scale doesn't really work in this scheem \\
+**[richard]** why not? it's very likely only going to be active for single sprites, but so? \\
+**[xander]**  it affects translation \\
+**[xander]**  which is either a separate state, or not a state \\
+**[richard]** that's why you scale after translation \\
+**[xander]**  can't do that if state sorting before drawing :) \\
+**[richard]** ah yes, that's right you've got states and drawing split \\
+**[richard]** I just caught up with that. I was still in Drawable Do Everything land \\
+**[richard]** which is clearly not right :) \\
+**[xander]**  can have ModelviewMatrixState \\
+**[xander]**  fun fun \\
+**[xander]**  nah that sucks too \\
+**[xander]**  prob have to make scale and rot "special" attrs that are exempt from state system \\
+**[richard]** or just have draw_many do all the hard work and not have these state things \\
+**[xander]**  you keep saying that, but i keep shooting it down :) \\
+**[richard]** no, you keep complicating it :) \\
+**[xander]**  when draw_many is doing all the hard work, it's too hard to extend drawing \\
+**[richard]** *unless* you just force the person doing the extending to know what they're doing. and that's really not *that* much to ask \\
+**[xander]**  not just know what they're doing, also reimplement everything you've implemented \\
+**[richard]** that's why God invented copy&paste \\
+**[xander]**  ah, now i see \\
+**[xander]**  ye have lost your way \\
+**[richard]** :) \\
+**[richard]** just as soon as you solve the state sorting problem, you let me know :) \\
+**[xander]**  i solved it already \\

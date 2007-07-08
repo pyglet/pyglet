@@ -1,0 +1,12 @@
+**Pixel offset**
+
+
+Text glyphs are rendered as textured quads.  When positioned at a sub-pixel, the text is fuzzy as the texture is sampled off of the texels.  Sub-pixel coordinates in layout are actually quite common (any conversion to metric or font units will do it).  Currently layout tries to compensate and move the baseline of each line box onto an aligned pixel, but this will only work if the layout itself is pixel-aligned (depends on modelview and projection matrix), and if the baseline offset is also integral (this is less of a problem, only affecting super/subscripts).  
+
+Other possibilities:
+  * I haven't seen a GL state to "round coordinates to nearest raster pixel", but that doesn't mean there isn't one.
+  * Same effect could be achieved in the vertex shader by checking and rounding down the transformed vertex.
+
+**Windows/ATI rendering**
+
+Glyph textures have GL_ALPHA internalformat.  I believe this is what's causing my Windows/ATI laptop to not render blended or colored text (black text works but without antialiasing).  Fallback to GL_LUMINANCE_ALPHA could resolve this.

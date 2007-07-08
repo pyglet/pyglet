@@ -1,0 +1,41 @@
+====== GL.info ======
+
+
+As well as current, should provide a mechanism for reserving and releasing auxilliary buffers and stencil buffer bits (anything else?).
+
+<richard> Does that really belong in a module called "info"? I see that as a purely information-providing module...
+
+<ah> If planned image refactor goes ahead, all of this can be handled by BufferImage classes (with actual data stored on / associated with the current context).
+
+====== New GL API (nearly ready) ======
+
+Usage:
+<code python>
+from pyglet.gl import *            # Imports all of GL, GLU and latest ABI-listed GL extensions
+from pyglet.gl.glext_nv import *   # Imports latest nvidia-listed GL extensions
+</code>
+
+Functions not exported by the driver are replaced by a function that raises MissingFunctionException().  Message in exception gives detail of which extension or GL version was needed for the function.  Best practice is to check extension/version availability from pyglet.gl.info first.
+
+All modules (internal use only):
+<code python>
+pyglet.gl             # package.  __init__ imports * from gl, glu, glext_abi.
+pyglet.gl.agl         # agl.h
+pyglet.gl.gl          # gl.h
+pyglet.gl.glu         # glu.h
+pyglet.gl.glext_abi   # glext.h from opengl.org
+pyglet.gl.glext_nv    # glext.h from nvidia.com
+pyglet.gl.glx         # glx.h
+pyglet.gl.glxext_abi  # glxext.h from opengl.org
+pyglet.gl.glxext_nv   # glxext.h from nvidia.com
+pyglet.gl.wgl         # (relevant sections from Windows.h)
+pyglet.gl.wglext_abi  # wglext.h from opengl.org
+pyglet.gl.wglext_nv   # wglext.h from nvidia.com
+pyglet.gl.gl_info     # have_context(), have_extension(), etc.
+pyglet.gl.glu_info    # have_context(), have_extension(), etc.
+pyglet.gl.glx_info    # have_extension(), etc.
+pyglet.gl.wgl_info    # have_extension(), etc.
+</code>
+
+  * case change is ok?
+

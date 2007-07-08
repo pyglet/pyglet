@@ -1,0 +1,38 @@
+====== Exit Handler integration ======
+
+And this is the implementation:
+
+<code python>
+class Window:
+  def __init__(..):
+    self.exit_handler = ExitHandler()
+    self.set_handlers(self.exit_handler)
+  
+  has_exit = property(lambda self: self.exit_handler.has_exit)
+</code>
+
+====== Threaded/synchronised window ======
+
+Why it's needed: interpreter.py example can't open a window on carbon (blocks app, no more events processed).
+
+How it'd work (suggestion):
+
+<code python>
+  w = SynchronisedWindow()
+</code>
+
+After creating the window in the usual way, starts a thread with:
+
+<code python>
+  while not self.has_exit:
+      w.dispatch_events()  # SYNCHRONISED
+      sleep(0.05)
+</code>
+
+All properties and methods on the window also have synchronised access.  This should be easy enough with some sort of proxy.
+
+The user can now issue drawing commands, add event handlers, flip the buffer, etc.  Two options for event handlers:
+
+  * Events are dispatched directly from the window's thread.  This is easiest, but could be surprising / interesting.
+  * Alternatively, events are signalled as "processed" (or whatever) to the OS immediately, and queued for dispatch until the used manually calls ''dispatch_events'', at which point the queued events are dispatched (within the application/main thread).  Downside (besides complexity) is events can no longer suppress default OS behaviour.  OTTOMH there is no use-case for this yet, so not a problem.
+

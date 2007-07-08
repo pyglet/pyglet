@@ -1,0 +1,27 @@
+====== pyglet ======
+
+This wiki is a general discussion place for developers and users of [[http://www.pyglet.org/|pyglet]].
+
+[[http://pyglet.org/wiki/doku.php?id=start&do=register|Register]] an account to edit pages.
+
+====== Preliminary docs ======
+
+  * [[Package dependencies]] (public only)
+  * [[FAQ]] -- Why doesn't XYZ work?  How do I XYZ?  What does XYZ do?
+  * [[Known good configurations]]
+
+====== Future design discussion ======
+
+[[Release schedule]]
+
+  * On [[GL]]
+  * On [[windowing]]
+  * On [[images]]
+  * On [[text and layout]]
+  * On [[sprites and tiles]]
+  * On the [[test harness]]
+  * On [[XML resources]]
+  * On [[GUI]]
+  * On [[package organisation]]
+  * [[projection]]
+  * [[audio]]

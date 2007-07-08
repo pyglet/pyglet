@@ -1,0 +1,187 @@
+
+**This page is out of date**
+
+Implemented in pyglet.resource (and other files)
+
+----
+
+
+
+(12:13:04) Alex: here's the thinking:  all xml files used by pyglet define one or more objects, such as imageatlas, tileset, map, etc.  you can optionally give these objects ids.  in the preamble of any xml file, you can say <require file="thing.xml" />, which means that this xml file can now reference id's from the xml file that was 'required'.  now it's up to the user how to split resources among files.  they can put everything in one big file, or have every object in a separate file, or some hybrid.
+
+(12:13:41) Alex: allows us to have a generalised loader as well... just needs a mapping of element-name to object factory.
+
+(12:14:18) Alex: and makes easy for users to write their own objects and have them loaded in same system
+
+
+
+
+
+===== Examples =====
+
+In a single file:
+
+<code xml>
+<?xml version="1.0"?>
+<!-- gamedata.xml -->
+<resource>
+  <imageatlas file="img1.png">
+    <image offset="50,50" id="horseimage" />
+    <image offset="100,50", id="cowimage" />
+  </imageatlas>
+  
+  <!-- Images don't need to be in atlases -->
+  <image file="player.png" id="playerimage" />
+
+  <tileset id="animaltiles" />
+    <property type="bool" name="isanimal" value="True" />
+  
+    <tile id="horsetile">
+      <image ref="horseimage" />
+      <property type="bool" name="friendly" value="True" />
+    </tile>
+    <tile id="cowtile">
+      <image ref="cowimage" />
+      <property type="bool" name="friendly" value="False" />
+    </tile>
+  </tileset>
+
+  <map id="level1" size="10x10">
+    <cell location="1,5">
+      <!-- Loader intercepts the "ref" attr and looks up id instead of
+      invoking factory -->
+      <tile ref="horsetile" />
+    </cell>
+    <cell location="7,9">
+      <tile ref="horsetile" />
+      <property type="bool" name="secretobjective" value="True" />
+    </cell>
+  </map>
+</resource>
+</code>
+
+----
+
+In several files (looks the same when loaded):
+
+<code xml>
+<?xml version="1.0"?>
+<!-- animalatlas.xml -->
+<resource>
+  <imageatlas id="animalimages" file="img1.png">
+    <image offset="50,50" id="horseimage" />
+    <image offset="100,50", id="cowimage" />
+  </imageatlas>
+</resource>
+</code>
+
+<code xml>
+<?xml version="1.0"?>
+<!-- animaltiles.xml -->
+<resource>
+  <require file="animalatlas.xml" namespace="animalatlas" />
+
+  <tileset id="animaltiles" />
+    <property type="bool" name="isanimal" value="True" />
+  
+    <tile id="horsetile">
+      <image ref="animalatlas:horseimage" />
+      <property type="bool" name="friendly" value="True" />
+    </tile>
+    <tile id="cowtile">
+      <image ref="animalatlas:cowimage" />
+      <property type="bool" name="friendly" value="False" />
+    </tile>
+  </tileset>
+</resource>
+</code>
+
+<code xml>
+<?xml version="1.0"?>
+<!-- level1.xml -->
+<resource>
+  <require file="animaltiles.xml" namespace="animals" />
+
+  <map id="level1" size="10x10">
+    <cell location="1,5">
+      <tile ref="animals:horsetile" />
+    </cell>
+    <cell location="7,9">
+      <tile ref="animals:horsetile" />
+      <property type="bool" name="secretobjective" value="True" />
+    </cell>
+  </map>
+</resource>
+</code>
+
+<code xml>
+<?xml version="1.0"?>
+<!-- player.xml -->
+<resource>
+  <image file="player.png" id="playerimage" />
+</resource>
+</code>
+
+<code xml>
+<?xml version="1.0"?>
+<!-- gamedata.xml -->
+<resource>
+  <require file="level1.xml" />
+  <require file="player.xml" />
+</resource>
+</code>
+
+
+
+
+===== API =====
+
+<code python>
+class Resource:
+    id = None
+    properties = {}
+    file = ''           # file that it came from, for saving data back
+
+class Image2D(Resource)
+
+class Tileset(Resource)
+
+class Image2DAtlas(Resource)
+
+class BitmapFont(Resource)
+
+class ResourceLoader:
+    # in future, can also load from zip files or some binary format
+    def add_path(path):     # like a class path
+    def add_file(file, namespace=None):     # adds ids in file to hash
+    def get_resource(id, file=None):        # file is the file that referenced
+        #    the id; None for the app, to get explicitly added files only.
+
+    # pluggable objects
+    def add_resource_factory(name, factory):
+
+class ResourceFactory:
+    def create(element):    # element is DOM element interface
+
+class Image2DResourceFactory(ResourceFactory):
+
+# very similar, but create different classes
+class ImageAtlasResourceFactory(ResourceFactory):
+class Image2DAtlasResourceFactory(ImageAtlasResourceFactory):
+class BitmapFontResourceFactory(ImageAtlasResourceFactory):
+
+class TileSetResourceFactory(ResourceFactory):
+</code>
+
+====== More ideas ======
+
+resource.py is currently very good for loading objects that have factory classes from xml descriptions.  More things it should do:
+
+  * Load ordinary binary data (perhaps via indirection from an xml description); e.g. images, fonts, sounds...
+      * So when tile references an image filename, resource figures out where that file (e.g. relative to XML file) is and loads the data from it.
+  * Allow XML files and binary files to be packaged into a single zip or etc.
+  * Extract resources from the egg that the app is distributed in (integrate with setuptools)
+  * Extract resources from the exe the app is compiled into (long way off, look at py2exe etc).
+  * Load etc from URL
+  * Move pyglet.layout.locator into resource; generic way to determine and figure out relative paths and resource sources.
+  * Way later: people will want signing/encryption.

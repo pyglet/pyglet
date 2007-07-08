@@ -1,0 +1,63 @@
+====== Import pattern ======
+
+Currently:
+
+<code python>
+from pyglet.gl import *
+from pyglet.gl.gl_info import *
+from pyglet.window import *
+from pyglet.image import *
+from pyglet.text import *
+from pyglet.layout import *
+from pyglet.clock import *
+
+glVertex3f(..)
+gl_info.have_extension(..) # horrible and confusing, yes
+
+load_font(..)
+load_image(..)
+Window(..)
+Layout()
+Clock()
+</code>
+
+Proposed:
+
+<code python>
+from pyglet.gl import *
+from pyglet.gl import gl_info
+from pyglet import window
+from pyglet import image
+from pyglet import font
+from pyglet import clock
+from pyglet.ext import layout
+
+glVertex3f(..)
+gl_info.have_extension(..)
+
+font.load(..)
+image.load(...)
+window.Window(...)
+layout.Layout()
+clock.Clock()
+</code>
+
+Things that need to happen first:
+
+  * <del>Rename pyglet.text to pyglet.font</del> Done.
+
+Things that need to happen pretty much atomically (possibly in a branch):
+
+  * <del>Fix gl_info and friends to use module functions and remove gl_info object within that file</del> Done.
+  * <del>Change public functions e.g. load_image to load</del> Done.
+  * <del>Change key constants.  Suggest K_1 becomes key._1 (yeck, other possibilities are key.N1, key.ONE, key.K1, key.K_1)</del> Done.
+  * <del>Update examples, test cases and docs.</del> Done.
+
+Less important, can be done incrementally on trunk:
+
+  * Incrementally replace internal imports.  This pretty much means going through line-by-line.  
+
+Things that stay the same, using import *:
+
+  * Unless you object with violence, I won't change import * of constants.py or types.py modules in window/*/ (it is clear where the names are defined, they need to be in a separate module (generated), and there's no risk of collision because they have prefixes).
+  * pyglet.gl... needs magic in __init__.py to grab from multiple generated files, and we both think that GL_BEGIN is better than gl.BEGIN.

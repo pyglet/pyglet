@@ -1,0 +1,8 @@
+Public package dependencies.
+
+{{public_packages.png|}}
+
+Notes:
+
+  * pyglet.gui is hypothetical
+  * pyglet.text will depend on pyglet.resource when bitmap fonts are added

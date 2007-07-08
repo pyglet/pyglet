@@ -1,0 +1,4 @@
+====== pyglet.projection ======
+
+
+** Implemented, see module docstring (no clipping yet -- maybe Toby or someone else clever wants to figure this bit out?). **

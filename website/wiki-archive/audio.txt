@@ -1,0 +1,141 @@
+====== Example usage: ======
+
+
+<code python>
+from pyglet import audio
+
+# audio devices are initialised automatically when required.
+
+laser = audio.load('laser.wav')
+laser.duration      # -> seconds (float)
+laser.channels      # -> int
+laser.sample_rate   # -> int (Hz)
+
+laser.play()
+laser.play(volume=0.8,balance=-0.5)
+
+# For more control:
+
+laser = audio.load('laser.wav', streaming=False)   # by default streaming=True if duration > 5.0
+
+buffer = laser.get_buffer()   # Each 'get_buffer' returns a new buffer, 
+                              # so can be playing more than once
+buffer.pause()
+buffer.play()
+buffer.stop()        # can't be restarted after stop, use pause instead unless really done.
+buffer.volume        # 0 <= volume <= 1
+buffer.balance       # -1 <= balance <= 1  
+                     # or "pan"?  really depends on mono/stereo; resets 3D position
+buffer.position      # -> seconds (float)  # or "time"?
+buffer.on_complete = # an event handler
+buffer.pitch = ...   # scale pitch: 1 = current, 0.5 = one octave lower, 2 = one octave higher, etc
+
+# 3D positioning available on all mono buffers (no effect for multi-channel)
+buffer.x/y/z = ...
+buffer.dx/dy/xz = ...
+buffer.orientation = ...
+buffer.penumbra = ...
+#etc
+
+
+# Module level stuff
+
+audio.get_clock()   # Clock instance synchronised to current audio device instead of sys clock
+
+# call this in runloop to pump audio buffers; (or could thread, eek)
+audio.dispatch_events()
+
+# remove unused devices and channels... unlikely to be needed
+audio.cleanup()
+
+# convenience module-level
+audio.mute()
+audio.set_volume(0.5) # master volume
+audio.stop()          # panic button
+
+# positional constants
+audio.listener.speed_of_sound = ...
+audio.listener.doppler_effect = ..
+audio.listener.x/y/z
+audio.listener.dx/dy/dz
+audio.listener.orientation
+</code>
+
+====== Design ======
+
+<code python>
+
+class AudioDevice:
+  load(..) -> AudioSound  
+
+class AudioSound:
+  get_buffer() -> AudioBuffer
+  channels -> int
+  sample_rate -> int
+  duration -> float
+
+class AudioBuffer:
+  volume -> float
+  balance -> float
+  position -> float  
+
+  pause()
+  play()
+  stop()
+  
+  on_complete -> event target
+
+  x,y,z -> float,float,float
+  dx,dy,dz -> float, float, float
+  orientation -> float  # um, dimensions missing here
+
+  pitch -> float
+
+class AudioListener:
+  x,y,z -> float,float,float
+  dx,dy,dz -> float,float,float
+  orientation -> float
+  
+  doppler_effect -> float
+  speed_of_sound -> float
+
+# These module-level names are resolved to the appropriate platform modules on init
+
+device -> AudioDevice
+listener = device.listener
+load = device.load
+stop = device.stop
+set_volume = device.set_volume
+
+
+</code>
+
+====== Impl notes ======
+
+
+===== Linux: =====
+
+  * All sounds decoded via gstreamer.
+  * OpenAL uses mono sources only on Linux, so stereo samples use the ALSA sink instead.
+  * Currently implemented:
+      * static, mono: openalstaticsink: element for sinking audio into AL buffers in one go.
+      * streaming, stereo: uses alsasink
+  * TODO
+      * streaming, mono: needs an element that subclasses GstAudioSinkElement (partially implemented)
+      * static, stereo: needs an element that can buffer entire stream and source many times (there is a bad-plugin that apparently does this).
+
+===== Mac: =====
+
+  * <del>CoreAudio for decoding and mixing.  [[http://developer.apple.com/reference/MusicAudio/idxCoreAudio-date.html|doc starting point]]</del>  CoreAudio is unusable.
+  * QuickTime for stereo any-format playback.
+  * OpenAL for positional sounds (probably no different from linux impl) -- or, if can hook onto QuickTime, use for all output.
+  * [[http://developer.apple.com/samplecode/OpenGL_Movie/index.html|Render QuickTime to OpenGL texture]]
+  * Use [[http://developer.apple.com/documentation/QuickTime/REF/QT41_HTML/QT41WhatsNew-89.html|Sound Converter]] to fill OpenAL buffers (what about video then?)
+  * Use [[http://developer.apple.com/quicktime/audioextraction.html|Audio Extraction API]] to fill OpenAL buffers.
+
+===== Win: =====
+
+  * See ''experimental/directshow.py''
+  * DirectShow does everything great, except read from a stream (provided filters only want a filename).  Example code in VC samples show how to create a custom filter to read from a memory buffer.  Heavily reliant on subclassing a C++ class though.
+  * Vista [[http://www.openal.org/openal_vista.html|does not support hardware audio buffers]] for DirectAudio (but XP does).  On Vista, OpenAL is the preferred API (amazing!), but it's not included in the 8GB OS installation, there's a separate runtime download from creative.com.  This should be an option for pyglet.audio on windows when we start supporting vista... (can reuse openal classes from linux/osx).
+  * Incidentally, here's some example code for [[http://svn.berlios.de/wsvn/utgs/trunk/Useless/Movie/DShow/CSurfaceRender.h?op=file&rev=0&sc=0|rendering DirectShow video to an OpenGL texture]].  (Also requires subclassing, gah).

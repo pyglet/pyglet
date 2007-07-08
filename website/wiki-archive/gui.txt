@@ -1,0 +1,157 @@
+====== How it will work ======
+
+A "widget" is no different from any other element.  Easiest example is a button:
+
+<code xml>
+  <button>Click me</button>
+</code>
+
+With appropriate styling (border, padding, background, including :hover and :active) it should look and feel just like the real thing.  Some widgets are actually composite:
+
+<code xml>
+  <scrollbar>
+    <button class="button1">
+    <slider>
+      <groove />
+      <thumb />
+    </slider>
+    <button class="button2">
+  </scrollbar>
+</code>
+
+A method can construct the above element hierarchy:
+
+<code python>
+  def create_scrollbar(name, attributes):
+      return ContentElement(name='scrollbar', children=[
+                ContentElement(name='button', classes=('button1')),
+                ContentElement(name='slider', children=[
+                  ContentElement(name='groove'),
+                  ContentElement(name='thumb'),
+                ]),
+                ContentElement(name='button', classes=('button2')),
+              ])
+</code>
+
+Register this method with the GUI/Layout/ContentBuilder, so that when
+an element in the source with name='scrollbar' is created, it delegates
+to the create_scrollbar method.  Application source now just needs:
+
+<code xml>
+  <scrollbar/>
+</code>
+
+and the complete hierarchy is created automatically.  
+
+ContentElement instances can be modified ad-hoc, so the create_scrollbar
+method would actually set up some pointers so the thumb knows what slider
+it belongs to (or it could be inferred from parent), and attributes like
+min_value and max_value on the element could be assigned:
+
+<code python>
+  def create_scrollbar(name, attributes):
+      elem = ContentElement(name='scrollbar', children=[
+                ContentElement(name='button', classes=('button1')),
+                ContentElement(name='slider', children=[
+                  ContentElement(name='groove'),
+                  ContentElement(name='thumb'),
+                ]),
+                ContentElement(name='button', classes=('button2')),
+              ])
+      elem.min_value = attributes.get('min', 0)
+      elem.max_value = attributes.get('max', 100)
+      return elem
+</code>
+
+<code xml>
+  <scrollbar min="10" max="40" />
+</code>
+
+The GUI/Layout has handlers with select methods like:
+
+<code python>
+  @select('scrollbar > button')
+  def on_mouse_press(element, button, x, y, handlers):
+      scrollbar = element.parent
+      # etc..
+</code>
+
+Additional events can be generated from the lower-level handlers:
+
+<code python>
+  @select('button')
+  def on_mouse_release(element, button, x, y, handlers):
+      if 'active' in element.pseudo_classes:
+          layout.dispatch_element_event(element, 'on_command', 
+              element.attributes.get('command', element.id))
+</code>
+
+So you can trap events from buttons with:
+
+<code xml>
+  <button command="save">Save changes</button>
+</code>
+
+<code python>
+  def on_command(element, command):
+      if command == 'save':
+          # ...
+</code>
+
+When each widget element is created (e.g. by create_scrollbar) if it is focusable it is added to the layout's focus list, which is then traversed during appropriate mouse/key events.
+
+The GUI comes with a default stylesheet which can obviously be overridden,
+as can each of the event handlers.
+
+====== Problems ======
+
+Where does the ContentBuilder put child elements of composite widgets?  e.g.:
+
+<code xml>
+  <dropdown>
+    <display>
+      <item class="selected"></item>
+      <button />
+    </display>
+    <list>
+    </list>
+  </dropdown>
+</code>
+
+When used in an application:
+
+<code xml>
+  <dropdown selected="Red">
+    <item>Red</item>
+    <item>Green</item>
+    <item>Blue</item>
+  </dropdown>
+</code>
+
+Or, perhaps
+
+<code xml>
+  <dropdown>
+    <item>Red</item>
+    <list>
+      <item>Red</item>
+      <item>Green</item>
+      <item>Blue</item>
+    </list>
+  </dropdown>
+</code>
+
+In any case, the content builder needs to insert child elements at specific places within the generated element.  Some possible options:
+
+  - Element returned from generator is a subclass, say DropdownContentElement, which can then override add_child (but, chlid added will also have been passed through a generator, say, for <list>, so this gets tricky)
+  - ContentBuilder assembles entire element **first**, then passes the element to the hook (create_dropdown), which examines, modifies, and/or replaces the element before it is added to the content tree.  The returned element may still need to override add_child, to handle runtime changes to the widget (possibly providing additional API too, like select_item, get_selected, ...).
+
+----
+Vague thought from Richard:
+
+Input focus could be handled by an event handler/dispatcher that listens for mouse clicks and tab-key events. On getting them it examines its list of widgets and focuses generates on_focus / on_focus_lost events for appropriate widget(s).
+
+----
+Unrelated comment from Alex (but this page seemed as good as any):
+
+Awesome thoughts from [[http://www.mechanicalcat.net/richard/log/Python/Some_updates|anon on Richard's blog]]: game GUIs (i.e., all custom graphics) should be authored in Gimp, with special names given to layers.  pyglet should read gimp and/or photoshop files directly.  Something similar and more flexible could be done with SVG.  What about animation?
