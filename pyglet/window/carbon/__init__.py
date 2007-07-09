@@ -739,10 +739,10 @@ class CarbonWindow(BaseWindow):
     def _install_event_handlers(self):
         self._remove_event_handlers()
 
-        #if self._fullscreen:
-        #    target = carbon.GetApplicationEventTarget()
-        #else:
-        target = carbon.GetWindowEventTarget(self._window)
+        if self._fullscreen:
+            target = carbon.GetApplicationEventTarget()
+        else:
+            target = carbon.GetWindowEventTarget(self._window)
         carbon.InstallStandardEventHandler(target)
 
         self._carbon_event_handlers = []
