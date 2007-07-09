@@ -534,6 +534,8 @@ class CarbonWindow(BaseWindow):
         return rect.left, rect.top
 
     def set_size(self, width, height):
+        if self._fullscreen:
+            raise WindowException('Cannot set size of fullscreen window.')
         rect = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
         rect.right = rect.left + width

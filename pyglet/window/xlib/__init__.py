@@ -623,6 +623,8 @@ class XlibWindow(BaseWindow):
         return self._caption
 
     def set_size(self, width, height):
+        if self._fullscreen:
+            raise WindowException('Cannot set size of fullscreen window.')
         self._width = width
         self._height = height
         if not self._resizable:
