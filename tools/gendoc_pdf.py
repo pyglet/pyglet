@@ -12,6 +12,7 @@ __version__ = '$Id$'
 import os
 import shutil
 import subprocess
+from xml.dom.minidom import parse
 
 from docutils.core import publish_doctree, publish_from_doctree
 from docutils.writers import docbook
@@ -36,6 +37,15 @@ def get_docbook_path():
                 return path.strip()
 
     raise "Docbook stylesheets not found...  hack me with a path."
+
+def elements(node, name):
+    '''Return all descendent element nodes of 'node' with given name'''
+    matches = []
+    if node.nodeType == node.ELEMENT_NODE and node.nodeName == name:
+        matches = [node]
+    for child in node.childNodes:
+        matches += elements(child, name)
+    return matches
 
 def rest2docbook(rest_filename, docbook_filename):
     print 'Reading %s' % rest_filename
@@ -63,12 +73,58 @@ def rest2docbook(rest_filename, docbook_filename):
     # Write docbook xml
     writer = docbook.Writer()
     settings = {
-        'doctype': 'article',
+        'doctype': 'book',
     }
     docbook_xml = publish_from_doctree(doctree,     
                                    writer=writer,
                                    settings_overrides=settings)
     open(docbook_filename, 'w').write(docbook_xml)
+
+    # Open docbook xml and fix it
+    print 'Reading %s' % docbook_filename
+    doc = parse(docbook_filename)
+
+    # Strip leading newline from programlisting
+    for elem in elements(doc, 'programlisting'):
+        if elem.childNodes and elem.childNodes[0].nodeType == elem.TEXT_NODE:
+            elem.childNodes[0].nodeValue = elem.childNodes[0].nodeValue.strip()
+
+    # Dodgy hack to compensate for FOP's lack of table layout.
+    # Programming guide tables need more room in the first (header) column than
+    # right-hand columns.
+    for elem in elements(doc, 'colspec'):
+        if elem.getAttribute('colname') == 'col_1':
+            elem.attributes['colwidth'] = '2*'
+        else:
+            elem.attributes['colwidth'] = '1*'
+
+    # Strip table of contents (docbook creates its own)
+    for title in elements(doc, 'title'):
+        if title.childNodes[0].nodeType == title.TEXT_NODE and \
+           title.childNodes[0].nodeValue == 'Contents':
+            section = title.parentNode
+            if section.nodeType == section.ELEMENT_NODE and \
+               section.nodeName == 'section':
+                section.parentNode.removeChild(section)
+
+    # Strip local contents
+    for section in elements(doc, 'section'):
+        for child in section.childNodes:
+            if child.nodeType == child.ELEMENT_NODE:
+                break
+        if child.nodeName == 'itemizedlist':
+            section.parentNode.removeChild(section)
+
+    # Scale screenshots of windows down (programming guide hack to fit in
+    # table)
+    for imagedata in elements(doc, 'imagedata'):
+        fileref = imagedata.getAttribute('fileref')
+        if fileref.startswith('window_xp_') or fileref.startswith('window_osx'):
+            imagedata.attributes['scale'] = '25'
+
+    # Write fixed docbook
+    print 'Writing %s' % docbook_filename
+    open(docbook_filename, 'w').write(doc.toxml())
 
 def docbook2pdf(docbook_filename, pdf_filename):
     # Run docbook FO stylesheet to produce XSL:FO document
@@ -77,8 +133,15 @@ def docbook2pdf(docbook_filename, pdf_filename):
 
     print 'Using %s' % stylesheet
     print 'Writing %s' % fo_filename
-    result = subprocess.call('xsltproc -o %s %s %s ' % (
-        fo_filename, stylesheet, docbook_filename),
+    parameters = [
+        #'--stringparam paper.type A4',
+        #'--param double.sided 1',
+        #'--stringparam alignment left',
+        #'--param shade.verbatim 1',
+        '--param chapter.autolabel 0',
+    ]
+    result = subprocess.call('xsltproc %s -o %s %s %s ' % (
+        ' '.join(parameters), fo_filename, stylesheet, docbook_filename),
         shell=True)
 
     if result != 0:
