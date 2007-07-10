@@ -3,31 +3,43 @@ KNOWN BUGS
 
 - NO DOCUMENTATION
 - VERY LITTLE CODE DOCUMENTATION
-- slider sizing isn't correct
-- slider movement isn't correct when clicking beside the bar
-- table columns don't truncate
-- also, tables are stupidly slow
 - assets are poorly-located for packaging
-- dragged elements should be rendered on top of everything else 
-- XHTML labels will just be truncated when they don't fit a texture
-- oh yeah, selection lists are slow too
 - border model should be fixed so border doesn't automagic padding
-- text weights for button-on-image are clearly different to -on-rect()
-- file dialog doesn't understand ~
-- file dialog needs to understand dir "foo" == "foo/"
-- <ah> right-hand border of text in test_button not rendered
 - top-left pixel of any border not rendered
-- buttons in test_drawer have an extra line of white to the right of the
-  border
-- <ah> overdraw inconsistency between drawers and their buttons
-- <ah> can see individual elements of drawer move during animation (probably
-  subpixel positioned)
-- text in test_menu is blurry
-- <ah> test_movie crashes when movie finishes
-- <ah> cannot open another movie once first movie has started
-- text input scrolling always wants to be as left as possible, rather than
-  keeping the current viewport
-- text input cursor is lost at far right 
+- Sliders:
+  . slider sizing isn't correct
+  . slider movement isn't correct when clicking beside the bar
+- Tables:
+  . table columns don't truncate
+  . also, tables are stupidly slow
+- Dragging:
+  . dragged elements should be rendered on top of everything else 
+- Labels:
+  . XHTML labels will just be truncated when they don't fit a texture
+- Selection Lists:
+  . oh yeah, selection lists are slow too
+- Buttons:
+  . text weights for button-on-image are clearly different to -on-rect()
+  . <ah> right-hand border of text in test_button not rendered
+- File Dialog:
+  . file dialog doesn't understand ~
+  . file dialog needs to understand dir "foo" == "foo/"
+- Menus:
+  . text in test_menu is blurry
+- Movies:
+  . <ah> test_movie crashes when movie finishes
+  . <ah> cannot open another movie once first movie has started
+    (rj can't reproduce this)
+- Drawer:
+  . buttons in test_drawer have an extra line of white to the right of the
+    border
+  . <ah> overdraw inconsistency between drawers and their buttons
+  . <ah> can see individual elements of drawer move during animation (probably
+    subpixel positioned)
+- Text Input:
+  . text input scrolling always wants to be as left as possible, rather than
+    keeping the current viewport
+  . text input cursor is lost at far right 
 
 
 KNOWN AREAS OF REWRITING
