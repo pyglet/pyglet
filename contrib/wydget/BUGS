@@ -13,7 +13,18 @@ KNOWN BUGS
 - oh yeah, selection lists are slow too
 - border model should be fixed so border doesn't automagic padding
 - text weights for button-on-image are clearly different to -on-rect()
-
+- <ah> right-hand border of text in test_button not rendered
+- top-left pixel of any border not rendered
+- buttons in test_drawer have an extra line of white to the right of the
+  border
+- <ah> overdraw inconsistency between drawers and their buttons
+- <ah> can see individual elements of drawer move during animation (probably
+  subpixel positioned)
+- text in test_menu is blurry
+- <ah> test_movie crashes when movie finishes
+- <ah> cannot open another movie once first movie has started
+- text box scrolling always wants to be as left as possible, rather than
+  keeping the current viewport
 
 KNOWN AREAS OF REWRITING
 ------------------------
