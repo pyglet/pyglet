@@ -127,8 +127,6 @@ class HorizontalSlider(SliderCommon):
         super(HorizontalSlider, self).__init__(parent, x, y, z, width, height,
             **kw)
 
-        print 'post init', height, self
-
         self.button_size = bs = self.height
 
         # do this after the call to super to allow it to set the parent etc.
