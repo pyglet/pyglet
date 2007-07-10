@@ -1,0 +1,34 @@
+===============
+XML file format
+===============
+
+The XML format requires that the top-level element be a ``<frame>``.
+
+To load XML files, you may either::
+
+    import wydget
+    gui = wydget.GUI.fromXML(file)
+
+or, with an existing gui or gui element as a parent::
+
+    from wydget.loadxml import load_xml
+    load_xml(parent, file)
+
+In both cases ``file`` may be a filename or file object.
+
+
+Elements allowed
+----------------
+
+Each widget will have a corresponding XML element. The widget's ``name``
+attribute determines the element name. See the widget API docs for
+details.
+
+
+Layout
+------
+
+Frames may be laid out using `wydget.layouts`. Again the layout element names
+are derived from the layout class ``name`` attributes. See the widget API
+docs for details.
+
