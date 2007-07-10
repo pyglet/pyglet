@@ -1,0 +1,14 @@
+<frame is_transparent="true" height="100%" width="100%">
+ <vertical halign="center" padding="1">
+
+ <label>defaults</label>
+ <label padding="10">padding="10"</label>
+ <label bgcolor="white">bgcolor="white"</label>
+ <label bgcolor="white" padding="-2">bgcolor="white" padding="-2"</label>
+
+ <label border="white">border="white"</label>
+ <label border="white" padding="0">border="white" padding="0"</label>
+ <label border="white" padding="10">border="white" padding="10"</label>
+
+ </vertical>
+</frame>

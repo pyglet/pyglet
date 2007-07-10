@@ -1,0 +1,24 @@
+KNOWN BUGS
+----------
+
+- NO DOCUMENTATION
+- VERY LITTLE CODE DOCUMENTATION
+- slider sizing isn't correct
+- slider movement isn't correct when clicking beside the bar
+- table columns don't truncate
+- also, tables are stupidly slow
+- assets are poorly-located for packaging
+- dragged elements should be rendered on top of everything else 
+
+
+KNOWN AREAS OF REWRITING
+------------------------
+
+The style module and the way XML files are styled will be overhauled at
+some point. The current styling of elements is unlikely to change
+significantly though. Never say never, of course.
+
+The table implementation is terrible.
+
+Z positioning is largely ignored or otherwise abused.
+

@@ -1,0 +1,66 @@
+<frame width="100%" height="100%" is_transparent="true">
+
+ <vertical padding="10" halign="center">
+
+  <selection width="25%" is_vertical="false">
+   <option>One</option>
+   <option>Two</option>
+   <option>Three</option>
+   <option>Four</option>
+   <option>Five</option>
+   <option>Six</option>
+   <option>Seven</option>
+   <option>Eight</option>
+   <option>Nine</option>
+  </selection>
+
+  <selection size="3">
+   <option>Option One</option>
+   <option>Option Two</option>
+   <option>Option Three</option>
+   <option>Option Four</option>
+   <option>Option Five</option>
+   <option>Option Six</option>
+   <option>Option Seven</option>
+   <option>Option Eight</option>
+   <option>Option Nine</option>
+  </selection>
+
+  <selection size="3" font_size="20"
+        bgcolor="7f7" alt_bgcolor="77f" active_bgcolor="f77">
+   <option>Option One font_size="20"</option>
+   <option>Option Two font_size="20"</option>
+   <option>Option Three font_size="20"</option>
+   <option>Option Four font_size="20"</option>
+   <option>Option Five font_size="20"</option>
+   <option>Option Six font_size="20"</option>
+   <option>Option Seven font_size="20"</option>
+   <option>Option Eight font_size="20"</option>
+   <option>Option Nine font_size="20"</option>
+  </selection>
+
+  <selection size="3" font_size="20">
+   <option is_active="true" font_size="10">is_active="true" font_size="10"</option>
+   <option is_active="false" font_size="10">is_active="false" font_size="10"</option>
+   <option font_size="30">font_size="30"</option>
+   <option bgcolor="7f7" font_size="10">bgcolor="7f7" font_size="10"</option>
+   <option bgcolor="77f" font_size="20" >bgcolor="77f" font_size="20"</option>
+   <option bgcolor="77f">bgcolor="77f" default font_size="20"</option>
+   <option color="5f5" font_size="10">color="5f5" font_size="10"</option>
+   <option font_size="40">font_size="40"</option>
+   <option font_size="10">font_size="10"</option>
+  </selection>
+
+  <selection is_exclusive="true" size="3">
+   <option>Exclusive Option One</option>
+   <option>Exclusive Option Two</option>
+   <option>Exclusive Option Three</option>
+   <option>Exclusive Option Four</option>
+   <option>Exclusive Option Five</option>
+   <option>Exclusive Option Six</option>
+   <option>Exclusive Option Seven</option>
+   <option>Exclusive Option Eight</option>
+   <option>Exclusive Option Nine</option>
+  </selection>
+ </vertical>
+</frame>

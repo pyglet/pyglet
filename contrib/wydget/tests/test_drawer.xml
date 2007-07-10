@@ -1,0 +1,78 @@
+<frame width="100%" height="100%">
+ <horizontal>
+  <frame width="33%" height="100%">
+
+   <vertical padding="10">
+    <frame width="100%" is_transparent="true">
+     <horizontal>
+      <drawer width="50%" state="exposed" side="right" id="test-drawer-1">
+        <vertical>
+         <label width="100%" valign="center" halign="left"
+                bgcolor="white">I'm a drawer!</label>
+         <label width="100%" valign="center"
+                halign="center" bgcolor="white">I'm a drawer!</label>
+         <label width="100%" valign="center"
+                halign="right" bgcolor="white">I'm a drawer!</label>
+        </vertical>
+      </drawer>
+      <label width="50%" height="100" id="drawer-control-1" valign="center"
+             class="drawer-control" halign="center" border="black"
+             bgcolor="white">Click me!</label>
+     </horizontal>
+    </frame>
+
+    <frame width="100%" is_transparent="true">
+     <horizontal>
+      <label width="50%" height="100" id="drawer-control-2" valign="center"
+             class="drawer-control" halign="center" border="black"
+             bgcolor="white">Click me!</label>
+      <drawer width="50%" state="exposed" side="left" id="test-drawer-2">
+        <vertical>
+         <label width="100%" valign="center" halign="left"
+                bgcolor="white">I'm a drawer!</label>
+         <label width="100%" valign="center"
+                halign="center" bgcolor="white">I'm a drawer!</label>
+         <label width="100%" valign="center"
+                halign="right" bgcolor="white">I'm a drawer!</label>
+        </vertical>
+      </drawer>
+     </horizontal>
+    </frame>
+   </vertical>
+  </frame>
+
+  <frame width="33%" height="100%">
+   <vertical>
+    <label width="100%" id="drawer-control-3" class="drawer-control"
+           bgcolor="white" halign="center" border="black">Click me!</label>
+    <drawer width="100%" state="exposed" side="bottom" id="test-drawer-3">
+     <vertical>
+      <label width="100%" valign="center" halign="left"
+             bgcolor="white">I'm a drawer!</label>
+      <label width="100%" valign="center"
+             halign="center" bgcolor="white">I'm a drawer!</label>
+      <label width="100%" valign="center"
+             halign="right" bgcolor="white">I'm a drawer!</label>
+     </vertical>
+    </drawer>
+   </vertical>
+  </frame>
+
+  <frame width="33%" height="100%">
+   <vertical>
+    <drawer width="100%" state="exposed" side="top" id="test-drawer-4">
+     <vertical>
+      <label width="100%" valign="center" halign="left"
+             bgcolor="white">I'm a drawer!</label>
+      <label width="100%" valign="center"
+             halign="center" bgcolor="white">I'm a drawer!</label>
+      <label width="100%" valign="center"
+             halign="right" bgcolor="white">I'm a drawer!</label>
+     </vertical>
+    </drawer>
+    <label width="100%" id="drawer-control-4" class="drawer-control"
+           bgcolor="white" halign="center" border="black">Click me!</label>
+   </vertical>
+  </frame>
+ </horizontal>
+</frame>

@@ -1,0 +1,5 @@
+<frame id="movie-test" width="100%" height="100%" is_transparent="true">
+ <vertical halign="center">
+  <label padding="20" bgcolor="white">Press RMB to open a movie file</label>
+ </vertical>
+</frame>

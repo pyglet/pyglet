@@ -1,0 +1,44 @@
+<frame is_transparent="true" height="100%" width="100%">
+ <vertical halign="center" padding="1">
+
+  <frame border="green">
+   <label bgcolor="white">default (absolute) layout</label>
+   <label y="50" bgcolor="white">y="50"</label>
+   <label x="200" bgcolor="white">x="200"</label>
+  </frame>
+
+  <frame border="green" padding="10">
+   <vertical valign="top" halign="left">
+    <label bgcolor="white">valign="top" halign="left" frame.padding="10"</label>
+   </vertical>
+  </frame>
+
+  <frame border="green" padding="10" height="60">
+   <vertical valign="top" halign="left">
+    <label bgcolor="white">valign="top" halign="left" frame.height="60" frame.padding="10"</label>
+    <label bgcolor="white">valign="top" halign="left" frame.height="60" frame.padding="10"</label>
+   </vertical>
+  </frame>
+
+  <frame border="green" padding="10" height="60">
+   <vertical valign="center" halign="left">
+    <label bgcolor="white">valign="center" halign="left" frame.height="60" frame.padding="10"</label>
+    <label bgcolor="white">valign="center" halign="left" frame.height="60" frame.padding="10"</label>
+   </vertical>
+  </frame>
+
+  <frame border="green" padding="10" height="60">
+   <vertical valign="bottom" halign="left">
+    <label bgcolor="white">valign="bottom" halign="left" frame.height="60" frame.padding="10"</label>
+    <label bgcolor="white">valign="bottom" halign="left" frame.height="60" frame.padding="10"</label>
+   </vertical>
+  </frame>
+
+  <frame border="green" padding="10" width="75%">
+   <vertical valign="top" halign="right">
+    <label bgcolor="white">valign="top" halign="right" frame.width="75%" frame.padding="10"</label>
+   </vertical>
+  </frame>
+
+ </vertical>
+</frame>

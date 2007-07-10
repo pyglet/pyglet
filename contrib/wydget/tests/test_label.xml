@@ -1,0 +1,51 @@
+<frame bgcolor="666" height="100%" width="100%">
+ <vertical halign="center" padding="1">
+
+  <image image="tests/data/ball-small.png" />
+
+  <frame is_transparent="true"><horizontal padding="10">
+   <image border="black" image="tests/data/ball-small.png" />
+   <label>(border="black")</label>
+  </horizontal></frame>
+
+  <frame is_transparent="true"><horizontal padding="10">
+   <image bgcolor="red" image="tests/data/ball-small.png" />
+   <label>(bgcolor="red")</label>
+  </horizontal></frame>
+
+  <frame is_transparent="true"><horizontal padding="10">
+   <image border="black" bgcolor="red" image="tests/data/ball-small.png" />
+   <label>(border="black" bgcolor="red")</label>
+  </horizontal></frame>
+
+  <image border="black" padding="10" image="tests/data/ball-small.png" />
+
+  <label halign="left" bgcolor="white" width="50%">halign left</label>
+  <label halign="center" bgcolor="white" width="50%">halign center</label>
+  <label halign="right" bgcolor="white" width="50%">halign right</label>
+
+  <label color="white">color="white"</label>
+
+  <label font_size="10">font_size="10"</label>
+  <label font_size="20">font_size="20"</label>
+  <label font_size="40">font_size="40"</label>
+
+  <xhtml width="50%">
+&lt;h1&gt;Synopsis&lt;/h1&gt;
+&lt;p style="font-size:12px"&gt;Lorem ipsum dolor sit amet consectetuer
+adipiscing elit. Suspendisse vel tellus. Nam sem massa, accumsan id,
+sollicitudin at, feugiat non, felis. Etiam nunc. Nam augue mauris,
+semper in, hendrerit vitae, congue viverra, massa. Suspendisse at lacus.
+Proin mollis dui ut sem. Donec auctor, pede nec hendrerit tincidunt,
+lacus diam laoreet diam, ut varius odio felis eget enim. Curabitur dui
+sem, rutrum sed, mattis eu, rhoncus ultrices, erat. Maecenas eu tellus.
+Vivamus bibendum facilisis orci. Aliquam risus. Aliquam erat. Aenean
+dignissim fringilla diam. Quisque dapibus, nulla non consectetuer iaculis,
+velit urna ornare orci, quis sodales neque sapien id turpis. Etiam urna
+lacus, vulputate congue, vulputate in, aliquet vitae, tellus. Maecenas
+sem. Ut sed massa. Etiam non ipsum eget nibh cursus placerat.
+Vivamus at mauris.
+&lt;/p&gt;
+  </xhtml>
+ </vertical>
+</frame>

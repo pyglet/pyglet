@@ -1,0 +1,12 @@
+<frame is_transparent="true">
+ <frame is_transparent="true" width="50%" height="100%">
+  <vertical valign="center" halign="center" padding="20">
+   <label class="draggable">Drag me!"</label>
+   <text-button class="draggable" text="Drag me, press me!" id="press-me" />
+  </vertical>
+ </frame>
+ <frame class="droppable" bgcolor="white" width="50%" height="100%" x="512">
+  <label valign="center" halign="center" width="100%" height="100%">Drop here!</label>
+ </frame>
+</frame>
+

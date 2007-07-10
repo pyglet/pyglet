@@ -1,0 +1,34 @@
+wydget
+======
+
+wydget is a GUI library for pyglet
+
+http://www.pyglet.org/
+
+
+Disclaimer
+----------
+
+THIS SOFTWARE IS IN HEAVY DEVELOPMENT AND THE API WILL CHANGE!
+
+See BUGS for more information.
+
+
+Requirements
+------------
+
+wydget requires pyglet and the "layout" contributed package in the pyglet repository
+
+To run wydget's tests, try::
+
+  PYTHONPATH=../../:../layout run_tests.py [tests/ xml file]
+
+By default it will run all xml files in the tests directory.
+
+
+Installation
+------------
+
+Not yet. See above disclaimer.
+
+
