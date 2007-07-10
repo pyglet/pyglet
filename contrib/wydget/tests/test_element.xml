@@ -1,4 +1,4 @@
-<frame is_transparent="true" height="100%" width="100%">
+<frame bgcolor="777" height="100%" width="100%">
  <vertical halign="center" padding="1">
 
  <label>defaults</label>
