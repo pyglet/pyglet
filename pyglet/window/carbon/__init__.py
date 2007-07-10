@@ -594,6 +594,9 @@ class CarbonWindow(BaseWindow):
         self._visible = visible
         if visible:
             carbon.ShowWindow(self._window)
+            self._queued_events.append((event.EVENT_RESIZE, 
+                                       self._width, self._height))
+            self._queued_events.append((event.EVENT_EXPOSE,))
         else:
             carbon.HideWindow(self._window)
 
