@@ -73,20 +73,6 @@ class TextInputLine(Label):
 
         self.cursor_x = text_width
 
-    def render(self, rect):
-        '''Render the cursor too
-        '''
-        super(TextInputLine, self).render(rect)
-
-        # render the cursor if we have focus
-        if self.parent.hasFocus():
-            glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT)
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-            glEnable(GL_BLEND)
-            glColor4f(*self.cursor_color)
-            glRectf(self.cursor_x, 1, self.cursor_x+1, self.height-1)
-            glPopAttrib()
-
 class TextInput(Frame):
     '''Cursor position indicates which indexed element the cursor is to the
     left of.
@@ -146,6 +132,19 @@ class TextInput(Frame):
         ir = self.inner_rect
         self.setViewClip((0, 0, ir.width, ir.height))
     height = property(get_height, set_height)
+
+    def render(self, rect):
+        '''Render the cursor too
+        '''
+        super(TextInput, self).render(rect)
+        # render the cursor if we have focus
+        if self.hasFocus():
+            glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glEnable(GL_BLEND)
+            glColor4f(*self.ti.cursor_color)
+            glRectf(self.ti.cursor_x, 1, self.ti.cursor_x+1, self.ti.height-1)
+            glPopAttrib()
     
 class PasswordInput(TextInput):
     name='password'
