@@ -9,10 +9,16 @@ KNOWN BUGS
 - also, tables are stupidly slow
 - assets are poorly-located for packaging
 - dragged elements should be rendered on top of everything else 
+- XHTML labels will just be truncated when they don't fit a texture
+- oh yeah, selection lists are slow too
+- border model should be fixed so border doesn't automagic padding
+- text weights for button-on-image are clearly different to -on-rect()
 
 
 KNOWN AREAS OF REWRITING
 ------------------------
+
+Nothing's resizeable, and it all needs to be.
 
 The style module and the way XML files are styled will be overhauled at
 some point. The current styling of elements is unlikely to change
