@@ -1,7 +1,7 @@
 from pyglet.gl import *
 from pyglet.window import key
 
-from wydget import event, anim, util
+from wydget import event, anim, util, element
 from wydget.widgets.frame import Frame
 from wydget.widgets.label import Label
 
@@ -13,13 +13,12 @@ class CursorAnimation(anim.Animation):
     def animate(self, dt):
         self.anim_time += dt
         if self.anim_time % 1 < .5:
-            self.element.cursor_color = (1, 1, 1, 1)
+            self.element.color = (1, 1, 1, 1)
         else:
-            self.element.cursor_color = (0, 0, 0, 1)
+            self.element.color = (0, 0, 0, 1)
 
 class TextInputLine(Label):
     def __init__(self, parent, text, *args, **kw):
-        self.cursor_x = 0
         self.cursor_index = len(text)
         if 'is_password' in kw:
             self.is_password = kw.pop('is_password')
@@ -27,8 +26,6 @@ class TextInputLine(Label):
             self.is_password = False
         kw['border'] = None
         super(TextInputLine, self).__init__(parent, text, *args, **kw)
-        self.cursor_color = (0, 0, 0, 1)
-        self.cursor_animation = None
 
     def setText(self, text):
         self.text = text
@@ -64,14 +61,29 @@ class TextInputLine(Label):
         parent_width = self.parent.inner_rect.width
 
         # offset for current self.image offset
-        if text_width >= parent_width:
-            self.x = 1 - (text_width - parent_width + 2)
+        if text_width > parent_width:
+            self.x = - (text_width - parent_width + 2)
         elif text_width < self.x:
-            self.x = 1 - (text_width)
+            self.x = - (text_width)
         else:
-            self.x = 1
+            self.x = 0
 
-        self.cursor_x = text_width
+        if hasattr(self.parent, 'cursor'):
+            # XXX hax - this is done before the cursor is created because
+            # the cursor is created after the textinputline so it's
+            # rendered on top. urk. z indexes, you say...
+            self.parent.cursor.x = text_width - 2
+
+class Cursor(element.Element):
+    name = '-text-cursor'
+    color = (0, 0, 0, 1)
+    def render(self, rect):
+        glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_BLEND)
+        glColor4f(*self.color)
+        glRectf(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height)
+        glPopAttrib()
 
 class TextInput(Frame):
     '''Cursor position indicates which indexed element the cursor is to the
@@ -99,6 +111,7 @@ class TextInput(Frame):
 
         self.ti = TextInputLine(self, text, font_size=font_size,
             bgcolor=bgcolor, classes=('-text-input-line',))
+        self.cursor = Cursor(self, 1, 0, 0, 1, font_size, is_visible=False)
 
         if width is None:
             self.width = self.ti.width + self.padding * 2
@@ -132,20 +145,7 @@ class TextInput(Frame):
         ir = self.inner_rect
         self.setViewClip((0, 0, ir.width, ir.height))
     height = property(get_height, set_height)
-
-    def render(self, rect):
-        '''Render the cursor too
-        '''
-        super(TextInput, self).render(rect)
-        # render the cursor if we have focus
-        if self.hasFocus():
-            glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT)
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-            glEnable(GL_BLEND)
-            glColor4f(*self.ti.cursor_color)
-            glRectf(self.ti.cursor_x, 1, self.ti.cursor_x+1, self.ti.height-1)
-            glPopAttrib()
-    
+ 
 class PasswordInput(TextInput):
     name='password'
     def __init__(self, *args, **kw):
@@ -156,7 +156,6 @@ class PasswordInput(TextInput):
 def on_mouse_press(widget, x, y, button, modifiers):
     widget = widget.ti
     x, y = widget.calculateRelativeCoords(x, y)
-    x += widget.x
     diff = abs(x)
     index = 0
     if widget.glyphs is not None:
@@ -172,13 +171,15 @@ def on_mouse_press(widget, x, y, button, modifiers):
 
 @event.default('.-text-input')
 def on_gain_focus(widget):
-    widget.ti.cursor_animation = CursorAnimation(widget.ti)
+    widget.cursor.animation = CursorAnimation(widget.cursor)
+    widget.cursor.is_visible = True
     return event.EVENT_HANDLED
 
 @event.default('.-text-input')
 def on_lose_focus(widget):
-    widget.ti.cursor_animation.cancel()
-    widget.ti.cursor_animation = None
+    widget.cursor.animation.cancel()
+    widget.cursor.animation = None
+    widget.cursor.is_visible = False
     return event.EVENT_HANDLED
 
 @event.default('.-text-input')

@@ -23,10 +23,14 @@ if len(sys.argv) > 1:
         print ' --dump         -- text dump of constructed GUI objects'
         print ' --once         -- render the GUI exactly once and exit'
         sys.exit(0)
+    print '-'*75
     print 'To exit the test, hit <escape> or close the window'
+    print '-'*75
 else:
+    print '-'*75
     print 'To move on to the next test, hit <escape>.'
     print 'Close the window to exit the tests.'
+    print '-'*75
 
 window = Window(width=800, height=600, vsync=False)
 
