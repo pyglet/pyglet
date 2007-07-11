@@ -107,7 +107,7 @@ class FT_Bitmap(Structure):
         # declaring buffer as c_char_p confuses ctypes, poor dear
         ('buffer', POINTER(c_ubyte)),
         ('num_grays', c_short),
-        ('pixel_mode', c_char),
+        ('pixel_mode', c_ubyte),
         ('palette_mode', c_char),
         ('palette', c_void_p),
     ]
@@ -172,11 +172,20 @@ class FT_Size_Metrics(Structure):
 class FT_SizeRec(Structure):
     _fields_ = [
         ('face', c_void_p),
-        ('generic', c_void_p),
+        ('generic', FT_Generic),
         ('metrics', FT_Size_Metrics),
         ('internal', c_void_p),
     ]
 FT_Size = POINTER(FT_SizeRec)
+
+class FT_Bitmap_Size(Structure):
+    _fields_ = [
+        ('height', c_ushort),
+        ('width', c_ushort),
+        ('size', c_long),
+        ('x_ppem', c_long),
+        ('y_ppem', c_long),
+    ]
 
 # face_flags values
 FT_FACE_FLAG_SCALABLE          = 1 <<  0
@@ -205,7 +214,7 @@ class FT_FaceRec(Structure):
           ('style_name', c_char_p),
 
           ('num_fixed_sizes', c_int),
-          ('available_sizes', c_void_p),
+          ('available_sizes', POINTER(FT_Bitmap_Size)),
 
           ('num_charmaps', c_int),
           ('charmaps', c_void_p),

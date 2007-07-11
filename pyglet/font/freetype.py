@@ -77,6 +77,29 @@ FC_SLANT_ITALIC = 100
 FT_STYLE_FLAG_ITALIC = 1
 FT_STYLE_FLAG_BOLD = 2
 
+(FT_RENDER_MODE_NORMAL,
+ FT_RENDER_MODE_LIGHT,
+ FT_RENDER_MODE_MONO,
+ FT_RENDER_MODE_LCD,
+ FT_RENDER_MODE_LCD_V) = range(5)
+
+def FT_LOAD_TARGET_(x):
+    return (x & 15) << 16
+
+FT_LOAD_TARGET_NORMAL = FT_LOAD_TARGET_(FT_RENDER_MODE_NORMAL)
+FT_LOAD_TARGET_LIGHT = FT_LOAD_TARGET_(FT_RENDER_MODE_LIGHT)
+FT_LOAD_TARGET_MONO = FT_LOAD_TARGET_(FT_RENDER_MODE_MONO)
+FT_LOAD_TARGET_LCD = FT_LOAD_TARGET_(FT_RENDER_MODE_LCD)
+FT_LOAD_TARGET_LCD_V = FT_LOAD_TARGET_(FT_RENDER_MODE_LCD_V)
+
+(FT_PIXEL_MODE_NONE,
+ FT_PIXEL_MODE_MONO,
+ FT_PIXEL_MODE_GRAY,
+ FT_PIXEL_MODE_GRAY2,
+ FT_PIXEL_MODE_GRAY4,
+ FT_PIXEL_MODE_LCD,
+ FT_PIXEL_MODE_LCD_V) = range(7)
+
 (FcTypeVoid,
  FcTypeInteger,
  FcTypeDouble, 
@@ -113,13 +136,17 @@ class FcValue(Structure):
 
 # End of library definitions
 
+def f16p16_to_float(value):
+    return float(value) / (1 << 16)
 
-# Hehe, battlestar galactica... (sorry.  was meant to be short for "fraction")
-def frac(value):
-    return int(value * 64)
+def float_to_f16p16(value):
+    return int(value * (1 << 16))
 
-def unfrac(value):
-    return value >> 6
+def f26p6_to_float(value):
+    return float(value) / (1 << 6)
+
+def float_to_f26p6(value):
+    return int(value * (1 << 6))
 
 class FreeTypeGlyphRenderer(base.GlyphRenderer):
     def __init__(self, font):
@@ -134,18 +161,43 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         error = FT_Load_Glyph(face, glyph_index, FT_LOAD_RENDER)
         if error != 0:
             raise base.FontException(
-                'Could not load glyph for "c"' % text[0], error) 
+                'Could not load glyph for "%c"' % text[0], error) 
         glyph_slot = face.glyph.contents
         width = glyph_slot.bitmap.width
         height = glyph_slot.bitmap.rows
         baseline = height - glyph_slot.bitmap_top
         lsb = glyph_slot.bitmap_left
-        advance = unfrac(glyph_slot.advance.x)
-        pitch = glyph_slot.bitmap.pitch  # 1 component, so no alignment prob.
+        advance = f26p6_to_float(glyph_slot.advance.x)
+        mode = glyph_slot.bitmap.pixel_mode
+        pitch = glyph_slot.bitmap.pitch
+        
+        if mode == FT_PIXEL_MODE_MONO:
+            # BCF fonts always render to 1 bit mono, regardless of render
+            # flags. (freetype 2.3.5)
+            bitmap_data = cast(glyph_slot.bitmap.buffer, 
+                               POINTER(c_ubyte * (pitch * height))).contents
+            data = (c_ubyte * (pitch * 8 * height))()
+            data_i = 0
+            for byte in bitmap_data:
+                # Data is MSB; left-most pixel in a byte has value 128.
+                data[data_i + 0] = (byte & 0x80) and 255 or 0
+                data[data_i + 1] = (byte & 0x40) and 255 or 0
+                data[data_i + 2] = (byte & 0x20) and 255 or 0
+                data[data_i + 3] = (byte & 0x10) and 255 or 0
+                data[data_i + 4] = (byte & 0x08) and 255 or 0
+                data[data_i + 5] = (byte & 0x04) and 255 or 0
+                data[data_i + 6] = (byte & 0x02) and 255 or 0
+                data[data_i + 7] = (byte & 0x01) and 255 or 0
+                data_i += 8
+            pitch <<= 3
+        elif mode == FT_PIXEL_MODE_GRAY:
+            # Usual case
+            data = glyph_slot.bitmap.buffer
+        else:
+            raise base.FontException('Unsupported render mode for this glyph')
 
         # pitch should be negative, but much faster to just swap tex_coords
-        img = image.ImageData(width, height, 
-                              'A', glyph_slot.bitmap.buffer, pitch)
+        img = image.ImageData(width, height, 'A', data, pitch)
         glyph = self.font.create_glyph(img) 
         glyph.set_bearings(baseline, lsb, advance)
         glyph.tex_coords = (glyph.tex_coords[3],
@@ -221,12 +273,13 @@ class FreeTypeFont(base.Font):
 
     def _set_face(self, face, size, dpi):
         self.face = face.contents
-        self._face_size = frac(size)
+        self._face_size = float_to_f26p6(size)
         self._dpi = dpi
 
-        FT_Set_Char_Size(self.face, 0, frac(size), dpi, dpi)
-        self.ascent = self.face.ascender * size / self.face.units_per_EM
-        self.descent = self.face.descender * size / self.face.units_per_EM
+        FT_Set_Char_Size(self.face, 0, float_to_f26p6(size), dpi, dpi)
+        metrics = self.face.size.contents.metrics
+        self.ascent = f26p6_to_float(metrics.ascender)
+        self.descent = f26p6_to_float(metrics.descender)
 
     @staticmethod
     def get_fontconfig_match(name, size, bold, italic):
