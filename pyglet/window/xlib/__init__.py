@@ -376,7 +376,10 @@ class XlibWindow(BaseWindow):
     _height = 0             # Last known window size
     _mouse_exclusive_client = None  # x,y of "real" mouse during exclusive
     _mouse_buttons = [False] * 6 # State of each xlib button
-    _exclusive_keyboard = False
+    _keyboard_exclusive = False
+    _active = True
+    _applied_mouse_exclusive = False
+    _applied_keyboard_exclusive = False
     _mapped = False
     _lost_context = False
     _lost_context_state = False
@@ -715,54 +718,66 @@ class XlibWindow(BaseWindow):
             else:
                 xlib.XUndefineCursor(self._x_display, self._window)
 
+    def _update_exclusivity(self):
+        mouse_exclusive = self._active and self._mouse_exclusive
+        keyboard_exclusive = self._active and self._keyboard_exclusive
+
+        if mouse_exclusive != self._applied_mouse_exclusive:
+            if mouse_exclusive:
+                self.set_mouse_platform_visible(False)
+
+                # Restrict to client area
+                xlib.XGrabPointer(self._x_display, self._window,
+                    True,
+                    0,
+                    xlib.GrabModeAsync,
+                    xlib.GrabModeAsync,
+                    self._window,
+                    0,
+                    xlib.CurrentTime)
+
+                # Move pointer to center of window
+                x = self._width / 2
+                y = self._height / 2
+                self._mouse_exclusive_client = x, y
+                xlib.XWarpPointer(self._x_display,
+                    0,              # src window
+                    self._window,   # dst window
+                    0, 0,           # src x, y
+                    0, 0,           # src w, h
+                    x, y)
+            else:
+                # Unclip
+                xlib.XUngrabPointer(self._x_display, xlib.CurrentTime)
+                self.set_mouse_platform_visible()
+
+            self._applied_mouse_exclusive = mouse_exclusive
+
+        if keyboard_exclusive != self._applied_keyboard_exclusive:
+            if exclusive:
+                xlib.XGrabKeyboard(self._x_display,
+                    self._window,
+                    False,
+                    xlib.GrabModeAsync,
+                    xlib.GrabModeAsync,
+                    xlib.CurrentTime)
+            else:
+                 xlib.XUngrabKeyboard(self._x_display, xlib.CurrentTime)
+            self._applied_keyboard_exclusive = keyboard_exclusive
+
     def set_exclusive_mouse(self, exclusive=True):
         if exclusive == self._mouse_exclusive:
             return
 
-        if exclusive:
-            self.set_mouse_platform_visible(False)
-
-            # Restrict to client area
-            xlib.XGrabPointer(self._x_display, self._window,
-                True,
-                0,
-                xlib.GrabModeAsync,
-                xlib.GrabModeAsync,
-                self._window,
-                0,
-                xlib.CurrentTime)
-
-            # Move pointer to center of window
-            x = self._width / 2
-            y = self._height / 2
-            self._mouse_exclusive_client = x, y
-            xlib.XWarpPointer(self._x_display,
-                0,              # src window
-                self._window,   # dst window
-                0, 0,           # src x, y
-                0, 0,           # src w, h
-                x, y)
-        else:
-            # Unclip
-            xlib.XUngrabPointer(self._x_display, xlib.CurrentTime)
-            self.set_mouse_platform_visible()
-
         self._mouse_exclusive = exclusive
+        self._update_exclusivity()
 
     def set_exclusive_keyboard(self, exclusive=True):
-        if exclusive == self._exclusive_keyboard:
+        if exclusive == self._keyboard_exclusive:
             return
         
-        self._exclusive_keyboard = exclusive
-        if exclusive:
-            xlib.XGrabKeyboard(self._x_display,
-                self._window,
-                False,
-                xlib.GrabModeAsync,
-                xlib.GrabModeAsync,
-                xlib.CurrentTime)
-        else:
-             xlib.XUngrabKeyboard(self._x_display, xlib.CurrentTime)
+        self._keyboard_exclusive = exclusive
+        self._update_exclusivity()
 
     def get_system_mouse_cursor(self, name):
         if name == self.CURSOR_DEFAULT:
@@ -1056,14 +1071,14 @@ class XlibWindow(BaseWindow):
         dx = x - self._mouse_x
         dy = y - self._mouse_y
 
-        if self._mouse_exclusive and \
+        if self._applied_mouse_exclusive and \
            (ev.xmotion.x, ev.xmotion.y) == self._mouse_exclusive_client:
             # Ignore events caused by XWarpPointer
             self._mouse_x = x
             self._mouse_y = y
             return
 
-        if self._mouse_exclusive:
+        if self._applied_mouse_exclusive:
             # Reset pointer position
             ex, ey = self._mouse_exclusive_client
             xlib.XWarpPointer(self._x_display,
@@ -1173,10 +1188,14 @@ class XlibWindow(BaseWindow):
 
     @XlibEventHandler(xlib.FocusIn)
     def _event_focusin(self, ev):
+        self._active = True
+        self._update_exclusivity()
         self.dispatch_event(event.EVENT_ACTIVATE)
 
     @XlibEventHandler(xlib.FocusOut)
     def _event_focusout(self, ev):
+        self._active = False
+        self._update_exclusivity()
         self.dispatch_event(event.EVENT_DEACTIVATE)
 
     @XlibEventHandler(xlib.MapNotify)
