@@ -144,6 +144,8 @@ import operator
 import ctypes
 import ctypes.util
 
+import pyglet.lib
+
 if sys.platform in ('win32', 'cygwin'):
     # Win32 Sleep function is only 10-millisecond resolution, so instead
     # use a waitable timer object, which has up to 100-nanosecond resolution
@@ -161,10 +163,7 @@ if sys.platform in ('win32', 'cygwin'):
             _kernel32.WaitForSingleObject(self._timer, 0xffffffff)
 
 else:
-    _path = ctypes.util.find_library('c')
-    if not _path:
-        raise ImportError('libc not found')
-    _c = ctypes.cdll.LoadLibrary(_path)
+    _c = pyglet.lib.load_library('c', darwin='/usr/lib/libc.dylib')
     _c.usleep.argtypes = [ctypes.c_ulong]
 
     class _ClockBase(object):
