@@ -6,11 +6,17 @@
     <hslider minimum="0" maximum="10" current="0" />
     <hslider minimum="0" maximum="3" current="0" />
     <hslider minimum="0" maximum="1" current="0" />
+    <hslider minimum="0" maximum="100" current="0" width="64" />
    </vertical>
   </frame>
-  <vslider minimum="0" maximum="100" current="0" height="400" />
-  <vslider minimum="0" maximum="10" current="0" height="400" />
-  <vslider minimum="0" maximum="3" current="0" height="400" />
-  <vslider minimum="0" maximum="1" current="0" height="400" />
+  <frame is_transparent="true" height="400">
+   <horizontal padding="10">
+    <vslider minimum="0" maximum="100" current="0" />
+    <vslider minimum="0" maximum="10" current="0" />
+    <vslider minimum="0" maximum="3" current="0" />
+    <vslider minimum="0" maximum="1" current="0" />
+    <vslider minimum="0" maximum="100" current="0" height="64" />
+   </horizontal>
+  </frame>
  </horizontal>
 </frame>
