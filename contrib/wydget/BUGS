@@ -7,8 +7,7 @@ KNOWN BUGS
 - border model should be fixed so border doesn't automagic padding
 - top-left pixel of any border not rendered
 - Sliders:
-  . slider sizing isn't correct
-  . slider movement isn't correct when clicking beside the bar
+  . slider clicks in bar result in rounding error during move
 - Tables:
   . table columns don't truncate
   . also, tables are stupidly slow

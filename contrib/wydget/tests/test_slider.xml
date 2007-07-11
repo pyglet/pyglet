@@ -1,6 +1,6 @@
 <frame width="100%" height="100%" is_transparent="true">
  <horizontal halign="center" valign="center" padding="10">
-  <frame is_transparent="true" width="100">
+  <frame is_transparent="true" width="400">
    <vertical padding="10" halign="center">
     <hslider minimum="0" maximum="100" current="0" />
     <hslider minimum="0" maximum="10" current="0" />
@@ -8,9 +8,9 @@
     <hslider minimum="0" maximum="1" current="0" />
    </vertical>
   </frame>
-  <vslider minimum="0" maximum="100" current="0" height="100" />
-  <vslider minimum="0" maximum="10" current="0" height="100" />
-  <vslider minimum="0" maximum="3" current="0" height="100" />
-  <vslider minimum="0" maximum="1" current="0" height="100" />
+  <vslider minimum="0" maximum="100" current="0" height="400" />
+  <vslider minimum="0" maximum="10" current="0" height="400" />
+  <vslider minimum="0" maximum="3" current="0" height="400" />
+  <vslider minimum="0" maximum="1" current="0" height="400" />
  </horizontal>
 </frame>

@@ -6,11 +6,6 @@ from wydget.widgets.button import Button, RepeaterButton
 class SliderCommon(element.Element):
     slider_size = 16
 
-    def _commonInit(self, pixel_size):
-        self.range = self.maximum - self.minimum
-        self.scroll_pixel_range = pixel_size - (self.button_size * 2)
-        self.bar_pixels = int(max(2, self.scroll_pixel_range / (self.range+1)))
-        self.bar_pixel_range = self.scroll_pixel_range - self.bar_pixels
 
     def _barPosition(self):
         pos = (self.current / float(self.range)) * self.bar_pixel_range
@@ -19,25 +14,22 @@ class SliderCommon(element.Element):
     def setValue(self, value):
         self.current = max(self.minimum, min(self.maximum, value))
 
-    def setCurrent(self, new):
+    def changeCurrent(self, new):
         self.current = max(self.minimum, min(self.maximum, new))
+        self.positionBar()
         self.getGUI().dispatch_event(self, 'on_change', self.current)
 
-    def moveToMaximum(self):
-        self.setCurrent(self.current + self.step)
+    def stepToMaximum(self):
+        self.changeCurrent(self.current + self.step)
 
-    def moveToMinimum(self):
-        self.setCurrent(self.current - self.step)
-
-    def moveBar(self, move):
-        px = self._barPosition() + move
-        self.setCurrent(px * float(self.range) / self.bar_pixel_range)
+    def stepToMinimum(self):
+        self.changeCurrent(self.current - self.step)
 
 class VerticalSlider(SliderCommon):
     name='vslider'
     def __init__(self, parent, minimum, maximum, current, step=1,
-            x=0, y=0, z=0, width=SliderCommon.slider_size,
-            height=None, **kw):
+            x=0, y=0, z=0, width=SliderCommon.slider_size, arrows=True,
+            height=None, bgcolor=(.7, .7, .7, 1), **kw):
 
         self.minimum = util.parse_value(minimum, 0)
         self.maximum = util.parse_value(maximum, 0)
@@ -47,75 +39,72 @@ class VerticalSlider(SliderCommon):
         if height is None: height = parent.height
 
         super(VerticalSlider, self).__init__(parent, x, y, z, width, height,
-            **kw)
+            bgcolor=bgcolor, **kw)
 
-        self.button_size = bs = self.width
+        assert self.height > 32, 'Slider is too small to be useful'
 
-        # do this after the call to super to allow it to set the parent etc.
-        self.children = [
+        # assume buttons are same height
+        bh = ArrowButtonUp.get_arrow().height
+
+        # only have buttons if there's enough room (two buttons plus
+        # scrolling room)
+        self.have_buttons = self.height > (bh * 2 + 32)
+        if self.have_buttons:
+            # do this after the call to super to allow it to set the parent etc.
             ArrowButtonDown(self, classes=('-repeater-button-min',)),
-            ArrowButtonUp(self, y=self.height-bs,
-                classes=('-repeater-button-max',)),
-        ]
+            ArrowButtonUp(self, y=self.height-bh,
+                    classes=('-repeater-button-max',)),
 
-        self._commonInit(self.height)
+        # add slider bar
+        range = self.maximum - self.minimum
+        height = int(max(self.slider_size, self.inner_rect.height / (range+1)))
+        width = self.slider_size
+        self.bar = SliderBar(self, 'y', 0, 0, width, height)
+        self.positionBar()
 
-    def render(self, rect):
-        # XXX use view clip
-        glPushAttrib(GL_CURRENT_BIT)
+    def get_inner_rect(self):
+        if self.have_buttons:
+            bh = ArrowButtonLeft.get_arrow().height
+            return util.Rect(0, bh, self.width, self.height - bh*2)
+        else:
+            return util.Rect(0, 0, self.width, self.height)
+    inner_rect = property(get_inner_rect)
 
-        r = util.Rect(0, 0, self.width, self.height).intersect(rect)
-        if r:
-            glColor4f(.7, .7, .7, 1)
-            glRectf(r.x, r.y, r.x+r.width, r.y+r.height)
-
-        bottom = self._barPosition()
-        bh = self.button_size
-        r = util.Rect(0, bottom+bh, self.width, self.bar_pixels)
-        r = r.intersect(rect)
-        if r:
-            glColor4f(.3, .3, .3, 1)
-            glRectf(r.x, r.y, r.x+r.width, r.y+r.height)
-        glPopAttrib()
+    def positionBar(self):
+        ir = self.inner_rect
+        h = ir.height - self.bar.height
+        range = self.maximum - self.minimum
+        self.bar.y = ir.y + int(self.current / float(range) * h)
 
 @event.default('vslider')
 def on_mouse_press(self, x, y, buttons, modifiers):
     x, y = self.calculateRelativeCoords(x, y)
-    bottom = self._barPosition()
-    y -= self.button_size   # XXX actually, arrow height
-    m = self.bar_pixels / float(self.scroll_pixel_range)
-    m *= (self.maximum - self.minimum)
-    if y > int(bottom + self.bar_pixels):
-        self.moveBar(self.current + self.bar_pixels)
-    elif y < int(bottom):
-        self.moveBar(self.current - self.bar_pixels)
-    return event.EVENT_HANDLED
-
-@event.default('vslider')
-def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-    self.moveBar(dy)
+    r = self.bar.rect
+    if y < r.y: self.bar.moveY(-r.height)
+    elif y > r.top: self.bar.moveY(r.height)
     return event.EVENT_HANDLED
 
 @event.default('vslider')
 def on_mouse_scroll(self, x, y, dx, dy):
-    if dy: self.moveBar(dy)
-    elif dx: self.moveBar(dx)
+    self.moveY(dy)
     return event.EVENT_HANDLED
+
 
 @event.default('.-repeater-button-max')
 def on_click(widget, *args):
-    widget.parent.moveToMaximum()
+    widget.parent.stepToMaximum()
     return event.EVENT_HANDLED
 
 @event.default('.-repeater-button-min')
 def on_click(widget, *args):
-    widget.parent.moveToMinimum()
+    widget.parent.stepToMinimum()
     return event.EVENT_HANDLED
 
 class HorizontalSlider(SliderCommon):
     name='hslider'
     def __init__(self, parent, minimum, maximum, current, step=1,
-            x=0, y=0, z=0, width=None, height=SliderCommon.slider_size, **kw):
+            x=0, y=0, z=0, width=None, height=SliderCommon.slider_size,
+            bgcolor=(.7, .7, .7, 1), **kw):
 
         self.minimum = util.parse_value(minimum, 0)
         self.maximum = util.parse_value(maximum, 0)
@@ -125,66 +114,102 @@ class HorizontalSlider(SliderCommon):
         if width is None: width = parent.width
 
         super(HorizontalSlider, self).__init__(parent, x, y, z, width, height,
-            **kw)
+            bgcolor=bgcolor, **kw)
 
-        self.button_size = bs = self.height
+        # assume buttons are same width
+        bw = ArrowButtonLeft.get_arrow().width
 
-        # do this after the call to super to allow it to set the parent etc.
-        self.children = [
+        # only have buttons if there's enough room (two buttons plus
+        # scrolling room)
+        self.have_buttons = self.width > (bw * 2 + 32)
+        if self.have_buttons:
+            # do this after the call to super to allow it to set the parent etc.
             ArrowButtonLeft(self, classes=('-repeater-button-min',)),
-            ArrowButtonRight(self, x=self.width-bs, 
+            ArrowButtonRight(self, x=self.width-bw,
                 classes=('-repeater-button-max',)),
-        ]
 
-        self._commonInit(self.width)
+        range = self.maximum - self.minimum
+        width = int(max(self.slider_size, self.inner_rect.width / (range+1)))
+        height = self.slider_size
+        self.bar = SliderBar(self, 'x', 0, 0, width, height)
+        self.positionBar()
 
-    def render(self, rect):
-        glPushAttrib(GL_CURRENT_BIT)
-        r = util.Rect(0, 0, self.width, self.height).intersect(rect)
-        if r:
-            glColor4f(.7, .7, .7, 1)
-            glRectf(r.x, r.y, r.x+r.width, r.y+r.height)
-        bottom = self._barPosition()
-        bw = self.button_size
-        r = util.Rect(bw + bottom, 0, self.bar_pixels, self.height)
-        r = r.intersect(rect)
-        if r:
-            glColor4f(.3, .3, .3, 1)
-            glRectf(r.x, r.y, r.x+r.width, r.y+r.height)
-        glPopAttrib()
+    def get_inner_rect(self):
+        if self.have_buttons:
+            bw = ArrowButtonLeft.get_arrow().width
+            return util.Rect(bw, 0, self.width - bw*2, self.height)
+        else:
+            return util.Rect(0, 0, self.width, self.height)
+    inner_rect = property(get_inner_rect)
+
+    def positionBar(self):
+        ir = self.inner_rect
+        w = ir.width - self.bar.width
+        range = self.maximum - self.minimum
+        self.bar.x = ir.x + int(self.current / float(range) * w)
+
 
 @event.default('hslider')
 def on_mouse_press(self, x, y, buttons, modifiers):
     x, y = self.calculateRelativeCoords(x, y)
-    bottom = self._barPosition()
-    x -= self.button_size       # XXX actually, arrow width
-    if x > int(bottom + self.bar_pixels):
-        self.moveBar(self.current + self.bar_pixels)
-    if x < int(bottom):
-        self.moveBar(self.current - self.bar_pixels)
-    return event.EVENT_HANDLED
-
-@event.default('hslider')
-def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-    self.moveBar(dx)
+    r = self.bar.rect
+    if x < r.x: self.bar.moveX(-r.width)
+    elif x > r.right: self.bar.moveX(r.width)
     return event.EVENT_HANDLED
 
 @event.default('hslider')
 def on_mouse_scroll(self, x, y, dx, dy):
-    if dy: self.moveBar(dy)
-    elif dx: self.moveBar(dx)
+    if dx: self.moveX(dx)
+    else: self.moveX(dy)
     return event.EVENT_HANDLED
+
+
+class SliderBar(element.Element):
+    name = 'slider-bar'
+    def __init__(self, parent, axis, x, y, width, height,
+            bgcolor=(.3, .3, .3, 1), **kw):
+        self.axis = axis
+        super(SliderBar, self).__init__(parent, x, y, 0, width, height,
+            bgcolor=bgcolor, **kw)
+
+    def moveY(self, move):
+        self.y += move
+        p = self.parent
+        ir = p.inner_rect
+        r = self.rect
+        if r.y < ir.y: r.y = p.y
+        elif r.top > ir.top: r.top = ir.top
+        range = p.maximum - p.minimum
+        p.changeCurrent((self.y - ir.y) * float(range) / (ir.height - self.height))
+
+    def moveX(self, move):
+        self.x += move
+        p = self.parent
+        ir = p.inner_rect
+        r = self.rect
+        if r.x < ir.x: r.x = p.x
+        elif r.right > ir.right: r.right = ir.right
+        range = p.maximum - p.minimum
+        p.changeCurrent((self.x - ir.x) * float(range) / (ir.width - self.width))
+
+@event.default('slider-bar')
+def on_mouse_drag(widget, x, y, dx, dy, buttons, modifiers):
+    if widget.axis == 'x': widget.moveX(dx)
+    else: widget.moveY(dy)
+    return event.EVENT_HANDLED
+
 
 class ArrowButton(RepeaterButton):
     def __init__(self, parent, **kw):
         super(ArrowButton, self).__init__(parent, image=self.arrow, **kw)
 
-    def get_arrow(self):
-        if self.image_file not in self.__dict__:
-            im = data.load_gui_image(self.image_file)
-            self.__dict__[self.image_file] = im
-        return self.__dict__[self.image_file]
-    arrow = property(get_arrow)
+    @classmethod
+    def get_arrow(cls):
+        if not hasattr(cls, 'image_object'):
+            cls.image_object = data.load_gui_image(cls.image_file)
+        return cls.image_object
+    def _get_arrow(self): return self.get_arrow()
+    arrow = property(_get_arrow)
 
 class ArrowButtonUp(ArrowButton):
     image_file = 'slider-arrow-up.png'
