@@ -27,14 +27,14 @@ class LibraryLoader(object):
         if type(platform_names) in (str, unicode):
             platform_names = (platform_names,)
         elif type(platform_names) == list:
-            platform_names = tuple(list)
+            platform_names = tuple(platform_names)
         for name in platform_names + names:
             path = self.find_library(name)
             if path:
                 return ctypes.cdll.LoadLibrary(path)
         raise ImportError('Library "%s" not found.' % names[0])
 
-    find_library = ctypes.util.find_library
+    find_library = lambda self, name: ctypes.util.find_library(name)
 
     platform = sys.platform
     if platform == 'cygwin':
