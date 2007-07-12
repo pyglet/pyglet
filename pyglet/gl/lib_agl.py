@@ -40,23 +40,16 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 from ctypes import *
-from ctypes.util import find_library
 
+import pyglet.lib
 from pyglet.gl.lib import missing_function, decorate_function
 
 __all__ = ['link_GL', 'link_GLU', 'link_AGL']
 
-gl_path = find_library('OpenGL')
-if not gl_path:
-    raise ImportError('OpenGL framework not found.')
-gl_lib = cdll.LoadLibrary(gl_path)
-
-agl_path = find_library('AGL')
-if not agl_path:
-    # hacky, will never happen
-    agl_lib = gl_lib
-else:
-    agl_lib = cdll.LoadLibrary(agl_path)
+gl_lib = pyglet.lib.load_library(
+    framework='/System/Library/Frameworks/OpenGL.framework')
+agl_lib = pyglet.lib.load_library(
+    framework='/System/Library/Frameworks/AGL.framework')
 
 def link_GL(name, restype, argtypes, requires=None, suggestions=None):
     try:

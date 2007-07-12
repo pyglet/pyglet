@@ -40,7 +40,6 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 from ctypes import *
-import ctypes.util
 import os.path
 import unicodedata
 import warnings
@@ -54,6 +53,7 @@ from pyglet.window.carbon.constants import *
 from pyglet.window.carbon.types import *
 from pyglet.window.carbon.quartzkey import keymap
 
+import pyglet.lib
 from pyglet import gl
 from pyglet.gl import agl
 from pyglet.gl import gl_info
@@ -62,27 +62,10 @@ from pyglet.gl import glu_info
 class CarbonException(WindowException):
     pass
 
-def _get_framework(*names):
-    '''Load a cdll for a framework name.  Optionally can take a list
-    of names, giving the path to a subframework.  For example::
-
-        _get_framework('ApplicationServices', 'CoreGraphics')
-
-    '''
-    path = ctypes.util.find_library(names[0])
-    if not path:
-        raise ImportError('%s framework not found' % names[0])
-    for sub_framework in names[1:]:
-        path = os.path.dirname(path)
-        path = os.path.join(path,
-                            'Versions/Current/Frameworks/%s.framework/%s' % \
-                                (sub_framework, sub_framework))
-        if not os.path.exists(path):
-            raise ImportError('%s framework not found' % sub_framework)
-    return cdll.LoadLibrary(path)
-
-carbon = _get_framework('Carbon')
-quicktime = _get_framework('Quicktime')
+carbon = pyglet.lib.load_library(
+    framework='/System/Library/Frameworks/Carbon.framework')
+quicktime = pyglet.lib.load_library(
+    framework='/System/Library/Frameworks/Quicktime.framework')
 
 import MacOS
 if not MacOS.WMAvailable():

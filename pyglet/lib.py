@@ -23,6 +23,9 @@ class LibraryLoader(object):
 
         Raises ImportError if library is not found.
         '''
+        if 'framework' in kwargs and self.platform == 'darwin':
+            return self.load_framework(kwargs['framework'])
+
         platform_names = kwargs.get(self.platform, [])
         if type(platform_names) in (str, unicode):
             platform_names = (platform_names,)
@@ -39,6 +42,9 @@ class LibraryLoader(object):
     platform = sys.platform
     if platform == 'cygwin':
         platform = 'win32'
+
+    def load_framework(self, path):
+        raise RuntimeError("Can't load framework on this platform.")
 
 class MachOLibraryLoader(LibraryLoader):
     def __init__(self):
@@ -91,6 +97,35 @@ class MachOLibraryLoader(LibraryLoader):
 
         return None
 
+    def find_framework(self, path):
+        '''Implement runtime framework search as described by:
+
+        http://developer.apple.com/documentation/MacOSX/Conceptual/BPFrameworks/Concepts/FrameworkBinding.html
+        '''
+
+        # e.g. path == '/System/Library/Frameworks/OpenGL.framework'
+        #      name == 'OpenGL'
+        # return '/System/Library/Frameworks/OpenGL.framework/OpenGL'
+        name = os.path.splitext(os.path.split(path)[1])[0]
+
+        realpath = os.path.join(path, name)
+        if os.path.exists(realpath):
+            return realpath
+
+        for dir in ('/Library/Frameworks',
+                    '/System/Library/Frameworks'):
+            realpath = os.path.join(dir, '%s.framework' % name, name)
+            if os.path.exists(realpath):
+                return realpath
+
+        return None
+
+    def load_framework(self, path):
+        realpath = self.find_framework(path)
+        if realpath:
+            return ctypes.cdll.LoadLibrary(realpath)
+
+        raise ImportError("Can't find framework %s." % path)
 
 if sys.platform == 'darwin':
     loader = MachOLibraryLoader()

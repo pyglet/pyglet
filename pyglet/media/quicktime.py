@@ -44,13 +44,14 @@ import math
 import sys
 import re
 
+import pyglet.lib
 from pyglet import image
 from pyglet.media import Sound, Video, Medium, MediaException
 from pyglet.media import lib_openal as al
 from pyglet.media import openal
 from pyglet import window
 from pyglet.window.carbon import _create_cfstring, _oscheck
-from pyglet.window.carbon import carbon, quicktime, _get_framework
+from pyglet.window.carbon import carbon, quicktime
 from pyglet.window.carbon.constants import _name, noErr
 from pyglet.window.carbon.types import Rect, Boolean
 
@@ -60,7 +61,8 @@ from pyglet.gl import agl
 from pyglet.gl import gl_info
 
 try:
-    corevideo = _get_framework('CoreVideo')
+    corevideo = pyglet.lib.load_library(
+        framework='/System/Library/Frameworks/CoreVideo.framework')
 except ImportError:
     corevideo = None
 
