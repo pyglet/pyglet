@@ -177,6 +177,10 @@ class GUI(event.GUIEventDispatcher):
     def isEnabled(self): return True
     def isVisible(self): return True
 
+    def getParent(self, selector):
+        if selector == self.name: return self
+        return None
+
     def calculateAbsoluteCoords(self, x, y):
         return (x + self.x, y + self.y)
 

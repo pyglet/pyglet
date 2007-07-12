@@ -151,6 +151,7 @@ class PasswordInput(TextInput):
     def __init__(self, *args, **kw):
         super(PasswordInput, self).__init__(*args, **kw)
         self.ti.is_password = True
+        self.ti.setText(self.ti.text)
 
 @event.default('.-text-input')
 def on_mouse_press(widget, x, y, button, modifiers):

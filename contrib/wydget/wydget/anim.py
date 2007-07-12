@@ -38,8 +38,9 @@ class Animation(object):
         clock.schedule(self.animate)
 
     def cancel(self):
-        self.is_running = False
-        clock.unschedule(self.animate)
+        if self.is_running:
+            self.is_running = False
+            clock.unschedule(self.animate)
 
 
 class Delayed(Animation):

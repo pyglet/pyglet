@@ -16,6 +16,7 @@ KNOWN BUGS
   . dragged elements should be rendered on top of everything else 
 - Labels:
   . XHTML labels will just be truncated when they don't fit a texture
+  . XHTML rendered to texture sometimes has white border at bottom
 - Selection Lists:
   . oh yeah, selection lists are slow too
 - Buttons:

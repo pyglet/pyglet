@@ -237,6 +237,14 @@ class Element(object):
         child.parent = self
         self.getGUI().registerID(child)
 
+    def getParent(self, selector):
+        '''Get the first parent selected by the selector.
+
+        XXX at the moment, just does name
+        '''
+        if self.name == selector: return self
+        return self.parent.getParent(selector)
+
     def holds(self, element):
         '''Return True if the element is a child of this element or its
         children.
@@ -457,6 +465,12 @@ class Element(object):
         '''Indicate to the child that the parent rect has changed and it
         may have the opportunity to resize.'''
         pass
+
+    def setModal(self, element=None):
+        '''Have this element capture all user input.
+        '''
+        if element is None: element = self
+        self.parent.setModal(element)
 
     def gainFocus(self):
         self.getGUI().setFocus(self)

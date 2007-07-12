@@ -51,9 +51,11 @@ p {font-size: %(font_size)spx; color: #444; margin: 2px;}
 .button {font-size: %(font_size)spx; border: 1px solid black; padding: 2px; margin: 0px;}
 '''%locals()
 
-    def renderXHTML(self, text, width=None, height=None):
+    def renderXHTML(self, text, width=None, height=None, style=None):
         label = Layout()
-        label.set_xhtml('''<?xml version="1.0"?><html><head><style>%s</style></head><body>%s</body></html>'''%(self.stylesheet, text))
+        if style is None:
+            style = self.stylesheet
+        label.set_xhtml('''<?xml version="1.0"?><html><head><style>%s</style></head><body>%s</body></html>'''%(style, text))
 
         label.viewport_x = 0
         label.viewport_y = 0

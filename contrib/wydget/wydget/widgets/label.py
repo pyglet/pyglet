@@ -157,8 +157,9 @@ class XHTML(LabelCommon):
     name='xhtml'
     need_background = True
 
-    def __init__(self, parent, text, **kw):
+    def __init__(self, parent, text, style=None, **kw):
         self.parent = parent
+        self.style = style
         super(XHTML, self).__init__(parent, **kw)
         assert self.width_spec, 'XHTML requires a width specification'
         self.setText(text)
@@ -184,5 +185,5 @@ class XHTML(LabelCommon):
             self.image.delete()
 
         self.setImage(self.getStyle().renderXHTML('<p>%s</p>'%text,
-            width=w))
+            width=w, style=self.style))
 

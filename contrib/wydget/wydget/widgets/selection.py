@@ -28,7 +28,7 @@ class Selection(Frame):
             # XXX size really doesn't make sense...
             if size is not None:
                 kw['width'] = size * font_size
-            kw['height'] = font_size + 16   # XXX slider size
+            #kw['height'] = font_size + 16   # XXX slider size
 
         kw['scrollable'] = True
         kw['is_transparent'] = True
