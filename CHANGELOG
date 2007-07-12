@@ -4,7 +4,12 @@ Current
     * Fixed the calculated width of font.Text instances.
     * Renamed examples/event_test.py to examples/events.py
     * Renamed mouse.MOUSE_*_BUTTON to mouse.LEFT, mouse.MIDDLE and mouse.RIGHT
-    * GLX with ATI drivers fixed.
+    * Linux: GLX with ATI drivers fixed.
+    * Window.set_size() now raises an exception if the window is fullscreen
+    * OS X: Fixed fullscreen windowing
+    * OS X: Fixed dylib loading when DYLD_FALLBACK_LIBRARY_PATH is defined
+    * Linux: Fixed exclusive mode problems when keyboard focus is lost
+    * Linux: Support for bitmap fonts.
 
 1.0alpha1
 
