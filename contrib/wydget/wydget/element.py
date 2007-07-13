@@ -207,8 +207,8 @@ class Element(object):
     def get_center(self):
         return (self._x + self.width/2, self._y + self.height/2)
     def set_center(self, (x, y)):
-        self._x = x - self.width/2
-        self._y = y - self.height/2
+        self._x = x - self.width // 2
+        self._y = y - self.height // 2
         # XXX just update my rect
         self.getGUI().setDirty()
     center = property(get_center, set_center)

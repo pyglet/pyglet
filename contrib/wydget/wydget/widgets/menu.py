@@ -46,7 +46,7 @@ class PopupMenu(Frame):
     def expose(self, mouse):
         w = self.getGUI().window
         w, h = w.width, w.height
-        self.center = mouse
+        self.center = map(int, mouse)
         if self.x < 0: self.x = 0
         if self.y < 0: self.y = 0
         if self.x + self.width > w: self.x = w - self.width
