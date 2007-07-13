@@ -41,7 +41,6 @@ __version__ = '$Id: lib_glx.py 597 2007-02-03 16:13:07Z Alex.Holkner $'
 
 import ctypes
 from ctypes import *
-from ctypes.util import find_library
 
 from pyglet.gl.lib import missing_function, decorate_function
 

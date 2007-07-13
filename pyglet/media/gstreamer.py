@@ -43,16 +43,12 @@ from ctypes import util
 import time
 import sys
 
-def get_library(name):
-    path = util.find_library(name)
-    if not path:
-        raise ImportError('Could not find library "%s"' % name)
-    return ctypes.cdll.LoadLibrary(path)
+import pyglet.lib
 
-glib = get_library('glib-2.0')
-gobject = get_library('gobject-2.0')
-gst = get_library('gstreamer-0.10')
-gstbase = get_library('gstbase-0.10')
+glib = pyglet.lib.load_library('glib-2.0')
+gobject = pyglet.lib.load_library('gobject-2.0')
+gst = pyglet.lib.load_library('gstreamer-0.10')
+gstbase = pyglet.lib.load_library('gstbase-0.10')
 
 GST_VERSION_MAJOR = 0
 GST_VERSION_MINOR = 10

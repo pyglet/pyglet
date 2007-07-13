@@ -52,6 +52,7 @@ import ctypes
 import time
 import threading
 
+import pyglet.lib
 from pyglet.gl import *
 from pyglet import image
 from pyglet.media import Medium, MediaException, InvalidMediumException, Video
@@ -785,7 +786,7 @@ def dispatch_events():
     instances = [instance for instance in instances if not instance.finished]
 
 def init():
-    gthread = gstreamer.get_library('gthread-2.0')
+    gthread = pyglet.lib.load_library('gthread-2.0')
     thread_supported = ctypes.cast(gthread.g_threads_got_initialized,
                                    ctypes.POINTER(ctypes.c_int)).contents.value
     if not thread_supported:

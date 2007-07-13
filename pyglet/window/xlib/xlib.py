@@ -44,12 +44,10 @@ __version__ = '$Id$'
 
 import ctypes
 from ctypes import *
-from ctypes.util import find_library as _find_library
 
-_libpath = _find_library('X11')
-if not _libpath:
-    raise ImportError('Could not locate X11 library')
-_lib = cdll.LoadLibrary(_libpath)
+import pyglet.lib
+
+_lib = pyglet.lib.load_library('X11')
 
 _int_types = (c_int16, c_int32)
 if hasattr(ctypes, 'c_int64'):

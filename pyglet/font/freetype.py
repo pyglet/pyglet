@@ -41,19 +41,15 @@ __version__ = '$Id$'
 
 import ctypes
 from ctypes import *
-from ctypes import util
 from warnings import warn
 
+import pyglet.lib
 from pyglet.font import base
 from pyglet import image
 from pyglet.font.freetype_lib import *
 
 # fontconfig library definitions
-
-path = util.find_library('fontconfig')
-if not path:
-    raise ImportError('Cannot locate fontconfig library')
-fontconfig = cdll.LoadLibrary(path)
+fontconfig = pyglet.lib.load_library('fontconfig')
 
 FcResult = c_int
 

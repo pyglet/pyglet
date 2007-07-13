@@ -40,14 +40,12 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from ctypes import *
-from ctypes import util
+
+import pyglet.lib
+
+_libfreetype = pyglet.lib.load_library('freetype')
 
 _font_data = {}
-
-path = util.find_library('freetype')
-if not path:
-    raise ImportError('Cannot locate freetype library')
-_libfreetype = cdll.LoadLibrary(path)
 
 def _get_function(name, argtypes, rtype):
     try:

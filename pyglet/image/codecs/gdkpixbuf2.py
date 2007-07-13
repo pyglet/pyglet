@@ -40,7 +40,6 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from ctypes import *
-from ctypes import util
 
 from pyglet.gl import *
 from pyglet.image import *
@@ -48,15 +47,8 @@ from pyglet.image.codecs import *
 
 import pyglet.window
 
-_path = util.find_library('gdk-x11-2.0')
-if not _path:
-    raise ImportError('Cannot locate libgdk-x11-2.0.so')
-gdk = cdll.LoadLibrary(_path)
-
-_path = util.find_library('gdk_pixbuf-2.0')
-if not _path:
-    raise ImportError('Cannot locate libgdk_pixbuf-2.0.so')
-gdkpixbuf = cdll.LoadLibrary(_path)
+gdk = pyglet.lib.load_library('gdk-x11-2.0')
+gdkpixbuf = pyglet.lib.load_library('gdk_pixbuf-2.0')
 
 GdkPixbufLoader = c_void_p
 GdkPixbuf = c_void_p

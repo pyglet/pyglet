@@ -40,23 +40,14 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from ctypes import *
-from ctypes.util import find_library
 
+import pyglet.lib
 from pyglet.gl.lib import missing_function, decorate_function
 
 __all__ = ['link_GL', 'link_GLU', 'link_GLX']
 
-gl_path = find_library('GL')
-if not gl_path:
-    raise ImportError('GL shared library not found.')
-gl_lib = cdll.LoadLibrary(gl_path)
-
-glu_path = find_library('GLU')
-if not glu_path:
-    # Hacky hack, unlikely to happen.
-    glu_lib = gl_lib
-else:
-    glu_lib = cdll.LoadLibrary(glu_path)
+gl_lib = pyglet.lib.load_library('GL')
+glu_lib = pyglet.lib.load_library('GLU')
 
 # Look for glXGetProcAddressARB extension, use it as fallback (for
 # ATI fglrx and DRI drivers).
