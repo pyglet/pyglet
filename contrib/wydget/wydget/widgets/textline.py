@@ -13,9 +13,9 @@ class CursorAnimation(anim.Animation):
     def animate(self, dt):
         self.anim_time += dt
         if self.anim_time % 1 < .5:
-            self.element.color = (1, 1, 1, 1)
+            self.element.alpha = 1
         else:
-            self.element.color = (0, 0, 0, 1)
+            self.element.alpha = 0.2
 
 class TextInputLine(Label):
     def __init__(self, parent, text, *args, **kw):
@@ -37,7 +37,9 @@ class TextInputLine(Label):
 
         if text:
             self.glyphs = style.getGlyphString(text, size=self.font_size)
-            self.image = style.textAsTexture(text, font_size=self.font_size)
+            self.image = style.textAsTexture(text,
+                font_size=self.font_size, color=self.color,
+                bgcolor=self.bgcolor)
             self.width = self.image.width
             self.height = self.image.height
         else:
@@ -72,16 +74,21 @@ class TextInputLine(Label):
             # XXX hax - this is done before the cursor is created because
             # the cursor is created after the textinputline so it's
             # rendered on top. urk. z indexes, you say...
-            self.parent.cursor.x = text_width - 2
+            self.parent.cursor.x = min(parent_width-2, max(0, text_width))
+            print self.parent.cursor.x
 
 class Cursor(element.Element):
     name = '-text-cursor'
-    color = (0, 0, 0, 1)
+    def __init__(self, color, *args, **kw):
+        self.color = color
+        self.alpha = 1
+        super(Cursor, self).__init__(*args, **kw)
     def render(self, rect):
         glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_BLEND)
-        glColor4f(*self.color)
+        color = self.color[:3] + (self.alpha,)
+        glColor4f(*color)
         glRectf(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height)
         glPopAttrib()
 
@@ -96,7 +103,7 @@ class TextInput(Frame):
     is_focusable = True
     def __init__(self, parent, text='', font_size=None, size=None,
             x=0, y=0, z=0, width=None, height=None, border='black',
-            padding=2, bgcolor=(1, 1, 1, 1), classes=(), **kw):
+            padding=2, bgcolor='white', color='black', classes=(), **kw):
         classes += ('-text-input',)
         if font_size is None:
             font_size = parent.getStyle().font_size
@@ -110,8 +117,9 @@ class TextInput(Frame):
             **kw)
 
         self.ti = TextInputLine(self, text, font_size=font_size,
-            bgcolor=bgcolor, classes=('-text-input-line',))
-        self.cursor = Cursor(self, 1, 0, 0, 1, font_size, is_visible=False)
+            bgcolor=bgcolor, color=color, classes=('-text-input-line',))
+        self.cursor = Cursor(self.ti.color, self, 1, 0, 0, 1, font_size,
+            is_visible=False)
 
         if width is None:
             self.width = self.ti.width + self.padding * 2

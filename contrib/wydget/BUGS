@@ -38,7 +38,6 @@ KNOWN BUGS
 - Text Input:
   . text input scrolling always wants to be as left as possible, rather than
     keeping the current viewport
-  . text input cursor is lost at far right 
 
 
 KNOWN AREAS OF REWRITING
