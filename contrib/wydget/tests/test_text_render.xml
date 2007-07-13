@@ -1,0 +1,15 @@
+<frame width="100%" height="100%" bgcolor="white">
+<vertical valign="center" halign="center" padding="10">
+<button text="image button" image="tests/data/bg-100x19.png" />
+
+<text-button text="button" />
+
+<text-button text="label" />
+
+<text-button text="label on white" bgcolor="white" />
+
+<frame bgcolor="black">
+<button text="image button" image="tests/data/bg-100x19.png" />
+</frame>
+</vertical>
+</frame>

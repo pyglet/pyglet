@@ -98,13 +98,6 @@ class Button(ImageCommon):
                 glPopAttrib()
             return _inner
 
-        #glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT|GL_COLOR_BUFFER_BIT)
-        #glClearColor(1, 1, 1, 0)
-        #glEnable(GL_TEXTURE_2D)
-        #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        #glEnable(GL_BLEND)
-        #glDisable(GL_DEPTH_TEST)
-
         self.setImage(util.renderToTexture(self.width, self.height,
             f(self.bg)))
 
@@ -156,8 +149,9 @@ class TextButton(Button):
     over_image = None
     pressed_image = None
 
+    _default = []
     def __init__(self, parent, text, bgcolor=(1, 1, 1, 1),
-            pressed_bgcolor=(1, .9, .9, 1), is_blended=True,
+            pressed_bgcolor=(1, .9, .9, 1), is_blended=False,
             over_bgcolor=(.9, .9, 1, 1), font_size=None, color=(0, 0, 0, 1),
             x=0, y=0, z=0, width=None, height=None, **kw):
         kw['classes'] = kw.get('classes', ()) + ('button',)
@@ -209,13 +203,6 @@ class TextButton(Button):
                 super(TextButton, self).renderBackground(ir, ir)
             label.draw()
             glPopAttrib()
-
-        # render the images
-        #glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT|GL_COLOR_BUFFER_BIT)
-        #glEnable(GL_TEXTURE_2D)
-        #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        #glEnable(GL_BLEND)
-        #glDisable(GL_DEPTH_TEST)
 
         self.setImage(util.renderToTexture(w, h, f))
         for name in additional:
