@@ -10,6 +10,8 @@ KNOWN BUGS
   . text is currently rendered GL_MODULATE which means alpha isn't 1
     when we've pre-rendered onto a background. Subsequent rendering of
     the element results in blending with background colour.
+    Solution: use GL_DECAL when pre-rendering onto a background. Not
+    easy in current pyglet.font.Text/GlyphString implementation
 - Sliders:
   . slider clicks in bar result in rounding error during move
   . sliders in inner frame in test_frame.xml are misbehaving
