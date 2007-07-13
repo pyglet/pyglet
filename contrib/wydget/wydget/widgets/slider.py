@@ -41,7 +41,7 @@ class VerticalSlider(SliderCommon):
         super(VerticalSlider, self).__init__(parent, x, y, z, width, height,
             bgcolor=bgcolor, **kw)
 
-        assert self.height > 32, 'Slider is too small to be useful'
+        assert self.height > 32, 'Slider is too small (%s) to be useful'%self.height
 
         # assume buttons are same height
         bh = ArrowButtonUp.get_arrow().height

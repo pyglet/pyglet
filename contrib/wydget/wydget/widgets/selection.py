@@ -10,8 +10,8 @@ class Selection(Frame):
     name = 'selection'
 
     def __init__(self, parent, size=None, is_exclusive=False,
-            color=(0, 0, 0, 1), bgcolor=(1, 1, 1, 1), is_vertical=True,
-            alt_bgcolor=(.9, .9, .9, 1), active_bgcolor=(1, .8, .8, 1),
+            color='black', bgcolor='white', is_vertical=True,
+            alt_bgcolor='silver', active_bgcolor='aqua',
             font_size=None, **kw):
         self.is_vertical = is_vertical
         self.is_exclusive = is_exclusive
@@ -96,7 +96,7 @@ class Option(TextButton):
 
         kw['height'] = font_size
         super(Option, self).__init__(parent, border=border, bgcolor=bgcolor,
-            font_size=font_size, id=id, **kw)
+            font_size=font_size, color=color, id=id, **kw)
 
         # fix up widths
         if select.is_vertical:

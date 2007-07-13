@@ -14,7 +14,7 @@
    <option>Nine</option>
   </selection>
 
-  <selection size="3">
+  <selection size="5">
    <option>Option One</option>
    <option>Option Two</option>
    <option>Option Three</option>
@@ -26,20 +26,20 @@
    <option>Option Nine</option>
   </selection>
 
-  <selection size="3" font_size="20"
-        bgcolor="7f7" alt_bgcolor="77f" active_bgcolor="f77">
-   <option>Option One font_size="20"</option>
-   <option>Option Two font_size="20"</option>
-   <option>Option Three font_size="20"</option>
-   <option>Option Four font_size="20"</option>
-   <option>Option Five font_size="20"</option>
+  <selection size="5" font_size="20" color="red"
+        bgcolor="blue" alt_bgcolor="green" active_bgcolor="white">
+   <option>red on blue</option>
+   <option>red on green</option>
+   <option>selected is red on white</option>
+   <option is_active="true">is selected</option>
+   <option>and font_size="20"</option>
    <option>Option Six font_size="20"</option>
    <option>Option Seven font_size="20"</option>
    <option>Option Eight font_size="20"</option>
    <option>Option Nine font_size="20"</option>
   </selection>
 
-  <selection size="3" font_size="20">
+  <selection size="5" font_size="20">
    <option is_active="true" font_size="10">is_active="true" font_size="10"</option>
    <option is_active="false" font_size="10">is_active="false" font_size="10"</option>
    <option font_size="30">font_size="30"</option>
@@ -51,7 +51,7 @@
    <option font_size="10">font_size="10"</option>
   </selection>
 
-  <selection is_exclusive="true" size="3">
+  <selection is_exclusive="true" size="5">
    <option>Exclusive Option One</option>
    <option>Exclusive Option Two</option>
    <option>Exclusive Option Three</option>
