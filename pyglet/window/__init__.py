@@ -70,7 +70,7 @@ update the display::
 Creating a game window
 ----------------------
 
-Use `Window.set_mouse_exclusive` to hide the mouse cursor and receive relative
+Use `Window.set_exclusive_mouse` to hide the mouse cursor and receive relative
 mouse movement events.  Specify ``fullscreen=True`` as a keyword argument to
 the `Window` constructor to render to the entire screen rather than opening a
 window::
