@@ -276,6 +276,8 @@ class XlibGLConfig10(XlibGLConfig):
                 self._visual_info, attr, byref(value))
             if result >= 0:
                 setattr(self, name, value.value)
+        self.sample_buffers = 0
+        self.samples = 0
 
     def get_visual_info(self):
         return self._visual_info.contents
