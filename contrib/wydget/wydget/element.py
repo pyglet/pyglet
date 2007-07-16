@@ -218,8 +218,9 @@ class Element(object):
     rect = property(get_rect)
 
     def get_inner_rect(self):
-        p = self.padding
-        return util.Rect(p, p, self.width - p*2, self.height - p*2)
+        px = self.padding * self.sx
+        py = self.padding * self.sy
+        return util.Rect(px, py, self.width - px*2, self.height - py*2)
     inner_rect = property(get_inner_rect)
 
     @classmethod

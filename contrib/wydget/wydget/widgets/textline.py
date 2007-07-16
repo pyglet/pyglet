@@ -75,7 +75,6 @@ class TextInputLine(Label):
             # the cursor is created after the textinputline so it's
             # rendered on top. urk. z indexes, you say...
             self.parent.cursor.x = min(parent_width-2, max(0, text_width))
-            print self.parent.cursor.x
 
 class Cursor(element.Element):
     name = '-text-cursor'

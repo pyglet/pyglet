@@ -266,7 +266,7 @@ class TabbedFrame(Frame):
 
     default = []
     def newTab(self, text=None, image=None, border=default,
-            bgcolor=default, **kw):
+            bgcolor=default, scrollable=False, **kw):
         if border is self.default: border = self.border
         if bgcolor is self.default: bgcolor = self.bgcolor
         b = self.button_class(self.top, text=text, image=image,
@@ -280,8 +280,12 @@ class TabbedFrame(Frame):
         self.bottom.height = self.bottom.height_spec = self.top.y = self.height-self.top.height
 
         vis = not self.bottom.children
-        f = self.frame_class(self.bottom, width="100%", height="100%",
-            is_visible=vis, border=border, bgcolor=bgcolor, padding=2)
+        if scrollable:
+            f = self.frame_class(self.bottom, scrollable=True,
+                is_visible=vis, border=border, bgcolor=bgcolor, padding=2)
+        else:
+            f = self.frame_class(self.bottom, width="100%", height="100%",
+                is_visible=vis, border=border, bgcolor=bgcolor, padding=2)
         b._frame = f
         f._button = b
         if vis: self._active_frame = f
