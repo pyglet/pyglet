@@ -93,6 +93,9 @@ class Button(ImageCommon):
                 glLoadIdentity()
                 bg.blit(bx, by, 0)
                 glTranslatef(tx, ty, 0)
+                # prevent the text's alpha channel being written into the new
+                # texture
+                glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
                 label.draw()
                 glPopMatrix()
                 glPopAttrib()
@@ -201,6 +204,9 @@ class TextButton(Button):
             glClear(GL_COLOR_BUFFER_BIT)
             if self.bgcolor is not None:
                 super(TextButton, self).renderBackground(ir, ir)
+            # prevent the text's alpha channel being written into the new
+            # texture
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
             label.draw()
             glPopAttrib()
 

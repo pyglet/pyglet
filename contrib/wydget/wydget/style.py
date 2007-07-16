@@ -39,6 +39,9 @@ class Style(object):
             glDisable(GL_DEPTH_TEST)
             glClearColor(*bgcolor)
             glClear(GL_COLOR_BUFFER_BIT)
+            # prevent the text's alpha channel being written into the new
+            # texture
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
             label.draw()
             glPopAttrib()
         return util.renderToTexture(w, h, _f)
@@ -74,6 +77,9 @@ p {font-size: %(font_size)spx; color: #444; margin: 2px;}
             glPushMatrix()
             glLoadIdentity()
             glTranslatef(0, h, 0)
+            # prevent the text's alpha channel being written into the new
+            # texture
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
             label.view.draw()
             glPopMatrix()
             glPopAttrib()

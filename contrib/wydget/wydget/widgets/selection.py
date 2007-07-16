@@ -12,7 +12,7 @@ class Selection(Frame):
     def __init__(self, parent, size=None, is_exclusive=False,
             color='black', bgcolor='white', is_vertical=True,
             alt_bgcolor='silver', active_bgcolor='aqua',
-            font_size=None, **kw):
+            is_transparent=True, scrollable=True, font_size=None, **kw):
         self.is_vertical = is_vertical
         self.is_exclusive = is_exclusive
 
@@ -30,15 +30,14 @@ class Selection(Frame):
                 kw['width'] = size * font_size
             #kw['height'] = font_size + 16   # XXX slider size
 
-        kw['scrollable'] = True
-        kw['is_transparent'] = True
-
-        super(Selection, self).__init__(parent, bgcolor=bgcolor, **kw)
+        super(Selection, self).__init__(parent, bgcolor=bgcolor,
+            scrollable=scrollable, is_transparent=is_transparent, **kw)
+        if scrollable: f = self.contents
+        else: f = self
         if is_vertical:
-            self.contents.layout = layouts.Vertical(self.contents, valign='top')
+            f.layout = layouts.Vertical(f, valign='top')
         else:
-            self.contents.layout = layouts.Horizontal(self.contents,
-                valign='top', halign='left')
+            f.layout = layouts.Horizontal(f, valign='top', halign='left')
 
         # specific attributes for Options
         self.color = util.parse_color(color)
@@ -48,14 +47,19 @@ class Selection(Frame):
         self.font_size = font_size
 
     def clearOptions(self):
-        self.contents.clear()
+        if self.scrollable: self.contents.clear()
+        else: self.clear()
 
     def addOption(self, label, id=None):
-        o = Option(self.contents, text=label, id=id or label)
-        self.contents.layout.layout()
+        if self.scrollable: f = self.contents
+        else: f = self
+        o = Option(f, text=label, id=id or label)
+        f.layout.layout()
 
     def get_value(self):
-        return [c.id for c in self.contents.children if c.is_active]
+        if self.scrollable: f = self.contents
+        else: f = self
+        return [c.id for c in f.children if c.is_active]
     value = property(get_value)
 
     @event.default('selection')
@@ -79,7 +83,7 @@ class Option(TextButton):
         assert 'text' in kw, 'text required for Option'
 
         # default styling and width to parent settings
-        select = parent.parent
+        select = parent.getParent('selection')
         if color is None:
             color = select.color
         if bgcolor is None:
@@ -132,9 +136,11 @@ class Option(TextButton):
 def on_click(widget, *args):
     # XXX exclusive mode
     widget.is_active = not widget.is_active
-    select = widget.parent.parent
+    select = widget.getParent('selection')
+    if select.scrollable: f = select.contents
+    else: f = select
     if widget.is_active and select.is_exclusive:
-        for child in select.contents.children:
+        for child in f.children:
             if child is not widget:
                 child.is_active = None
     widget.getGUI().dispatch_event(select, 'on_change', select.value)
