@@ -2,10 +2,10 @@
 
  <vertical padding="10" halign="center">
 
-  <selection width="25%" is_vertical="false">
-   <option>One</option>
-   <option>Two</option>
-   <option>Three</option>
+  <selection width="25%" padding="4" is_vertical="false">
+   <option padding="4">padding=4</option>
+   <option padding="2">padding=2</option>
+   <option padding="8" >padding=8</option>
    <option>Four</option>
    <option>Five</option>
    <option>Six</option>

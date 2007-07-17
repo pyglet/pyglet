@@ -264,6 +264,10 @@ class TabbedFrame(Frame):
         self.top = Frame(self, width="100%", is_transparent=True)
         self.bottom = Frame(self, width="100%", is_transparent=True)
 
+    def get_active(self):
+        return self._active_frame._button
+    active = property(get_active)
+
     default = []
     def newTab(self, text=None, image=None, border=default,
             bgcolor=default, scrollable=False, **kw):

@@ -86,7 +86,7 @@ def on_mouse_press(self, x, y, buttons, modifiers):
 
 @event.default('vslider')
 def on_mouse_scroll(self, x, y, dx, dy):
-    self.moveY(dy)
+    self.bar.moveY(dy)
     return event.EVENT_HANDLED
 
 
@@ -159,8 +159,8 @@ def on_mouse_press(self, x, y, buttons, modifiers):
 
 @event.default('hslider')
 def on_mouse_scroll(self, x, y, dx, dy):
-    if dx: self.moveX(dx)
-    else: self.moveX(dy)
+    if dx: self.bar.moveX(dx)
+    else: self.bar.moveX(dy)
     return event.EVENT_HANDLED
 
 

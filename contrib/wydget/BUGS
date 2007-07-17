@@ -4,7 +4,8 @@ KNOWN BUGS
 - NO DOCUMENTATION
 - VERY LITTLE CODE DOCUMENTATION
 - assets are poorly-located for packaging
-- border model should be fixed so border doesn't automagic padding
+- border model should be fixed so border doesn't have automagic padding
+- view clipping problem: see test_selection first test
 - top-left pixel of any border not rendered
 - Sliders:
   . slider clicks in bar result in rounding error during move

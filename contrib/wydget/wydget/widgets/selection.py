@@ -25,17 +25,15 @@ class Selection(Frame):
             if size is not None:
                 kw['height'] = size * font_size
         else:
-            # XXX size really doesn't make sense...
             if size is not None:
                 kw['width'] = size * font_size
-            #kw['height'] = font_size + 16   # XXX slider size
 
         super(Selection, self).__init__(parent, bgcolor=bgcolor,
             scrollable=scrollable, is_transparent=is_transparent, **kw)
         if scrollable: f = self.contents
         else: f = self
         if is_vertical:
-            f.layout = layouts.Vertical(f, valign='top')
+            f.layout = layouts.Vertical(f, valign='top', halign='center')
         else:
             f.layout = layouts.Horizontal(f, valign='top', halign='left')
 
@@ -50,11 +48,13 @@ class Selection(Frame):
         if self.scrollable: self.contents.clear()
         else: self.clear()
 
-    def addOption(self, label, id=None):
+    def addOption(self, label, id=None, **kw):
         if self.scrollable: f = self.contents
         else: f = self
-        o = Option(f, text=label, id=id or label)
+        o = Option(f, text=label, id=id or label, **kw)
         f.layout.layout()
+        print self, (label, f.layout.width, f.layout.height)
+        print '..', o
 
     def get_value(self):
         if self.scrollable: f = self.contents
@@ -64,14 +64,15 @@ class Selection(Frame):
 
     @event.default('selection')
     def on_mouse_scroll(widget, x, y, dx, dy):
-        if widget.scrollable:
-            if widget.v_slider is not None:
-                # XXX is this really setting the correct value?!?
-                widget.v_slider.setCurrent(widget.v_slider.current + dy)
-            if widget.h_slider is not None:
-                widget.h_slider.setCurrent(widget.h_slider.current + dx)
-            return event.EVENT_HANDLED
-        return event.EVENT_UNHANDLED
+        if not widget.scrollable:
+            return event.EVENT_UNHANDLED
+        # XXX this needs revisiting
+        if widget.v_slider is not None:
+            widget.v_slider.bar.moveY(dy)
+        if widget.h_slider is not None:
+            widget.h_slider.bar.moveX(dx)
+        return event.EVENT_HANDLED
+
 
 class Option(TextButton):
     name = 'option'
@@ -98,7 +99,7 @@ class Option(TextButton):
         if font_size is None: font_size = select.font_size
         if id is None: id = kw['text']
 
-        kw['height'] = font_size
+        #kw['height'] = font_size
         super(Option, self).__init__(parent, border=border, bgcolor=bgcolor,
             font_size=font_size, color=color, id=id, **kw)
 
