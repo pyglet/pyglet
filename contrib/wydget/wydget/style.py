@@ -20,16 +20,17 @@ class Style(object):
         return font.GlyphString(text, glyphs)
 
     def text(self, text, color=(0, 0, 0, 1), font_size=None,
-            halign='left', width=None):
+            font_name=None, halign='left', width=None):
         if font_size is None: font_size = self.font_size
-        f = self.getFont(size=font_size)
+        if font_name is None: font_name = self.font_name
+        f = self.getFont(name=font_name, size=font_size)
         return font.Text(f, text, color=color, halign=halign, width=width,
             valign=font.Text.BOTTOM)
 
     def textAsTexture(self, text, color=(0, 0, 0, 1), bgcolor=(1, 1, 1, 0),
-            font_size=None, halign='left', width=None):
+            font_size=None, font_name=None, halign='left', width=None):
         label = self.text(text, color=color, font_size=font_size,
-            halign=halign, width=width)
+            font_name=font_name, halign=halign, width=width)
         w = int(label.width)
         h = int(label.height)
         x = c_int()

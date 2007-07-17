@@ -9,22 +9,27 @@ from wydget.widgets.button import Button
 
 class Movie(element.Element):
     name='movie'
-    def __init__(self, parent, file=None, playing=False,
-            x=0, y=0, z=0, width=None, height=None, **kw):
+    def __init__(self, parent, file=None, medium=None, playing=False,
+            x=0, y=0, z=0, width=None, height=None, scale=True, **kw):
         self.parent = parent
+        self.scale = scale
 
-        # sanity checks
-        assert file is not None
-        assert width is None and height is None
+        if file is not None:
+            medium = self.medium = media.load(file, streaming=True)
+        else:
+            assert medium is not None, 'one of file or medium is required'
+            self.medium = medium
 
         # Load the medium, determine if it's video and/or audio
-        medium = self.medium = media.load(file, streaming=True)
         if not medium.has_video:
             raise ValueError("Movie file doesn't contain video")
         self.video = medium.get_video()
+        if width is None:
+            width = self.video.width
+        if height is None:
+            height = self.video.height
 
-        super(Movie, self).__init__(parent, x, y, z, self.video.width,
-            self.video.height, **kw)
+        super(Movie, self).__init__(parent, x, y, z, width, height, **kw)
 
         # basic frame
         c = self.control = Frame(self, bgcolor=(1, 1, 1, .5),
@@ -56,7 +61,19 @@ class Movie(element.Element):
 
     def render(self, rect):
         image = self.video.texture
+        if self.scale:
+            glPushMatrix()
+            x = float(self.width) / image.width
+            y = float(self.height) / image.height
+            s = min(x, y)
+            w = int(image.width * s)
+            h = int(image.height * s)
+            glTranslatef(self.width//2 - w//2, self.height//2 - h//2, 0)
+            glScalef(s, s, 1)
         image.blit(0, 0, 0)
+        if self.scale:
+            glPopMatrix()
+
         '''
         XXX get_region currently does the WRONG THING re: tex coords
         r = self.rect

@@ -12,19 +12,26 @@ from wydget.widgets.button import Button
 class Music(Frame):
     name='music'
 
-    def __init__(self, parent, file, title=None, playing=False,
-            bgcolor=(1, 1, 1, 1), color=(0, 0, 0, 1), font_size=20,
-            **kw):
+    def __init__(self, parent, file=None, medium=None, title=None,
+            playing=False, bgcolor=(1, 1, 1, 1), color=(0, 0, 0, 1),
+            font_size=20, **kw):
+        '''Pass in a filename as "file" or a pyglet Medium as "medium".
+        '''
         self.parent = parent
 
-        if title is None:
-            # XXX use an id3 lib or similar?
+        if file is not None:
+            medium = self.medium = media.load(file, streaming=True)
+            if title is None:
+                # XXX use an id3 lib or similar?
+                title = '[title unknown]'
+        else:
+            assert medium is not None, 'one of file or medium is required'
+            self.medium = medium
             title = '[title unknown]'
 
         # Load the medium, determine if it's audio
-        medium = self.medium = media.load(file, streaming=True)
         if not medium.has_audio:
-            raise ValueError("File doesn't contain audio")
+            raise ValueError("Medium doesn't contain audio")
         self.audio = medium.get_sound()
 
         super(Music, self).__init__(parent, bgcolor=bgcolor, **kw)

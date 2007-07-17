@@ -215,7 +215,8 @@ class TabButton(Frame):
     is_focusable = False
 
     def __init__(self, parent, text=None, image=None, border="black",
-            padding=1, halign="left", valign="bottom", **kw):
+            padding=1, halign="left", valign="bottom", font_size=None,
+            **kw):
         super(TabButton, self).__init__(parent, border=border,
             padding=padding, **kw)
 
@@ -223,7 +224,7 @@ class TabButton(Frame):
             raise ValueError, 'text or image required'
 
         if image is not None: Image(self, image)
-        if text is not None: Label(self, text)
+        if text is not None: Label(self, text, font_size=font_size)
         layouts.Horizontal(self, padding=2, halign=halign,
             valign=valign).layout()
 
@@ -270,18 +271,19 @@ class TabbedFrame(Frame):
 
     default = []
     def newTab(self, text=None, image=None, border=default,
-            bgcolor=default, scrollable=False, **kw):
+            bgcolor=default, scrollable=False, font_size=None, **kw):
         if border is self.default: border = self.border
         if bgcolor is self.default: bgcolor = self.bgcolor
         b = self.button_class(self.top, text=text, image=image,
-            border=border, bgcolor=bgcolor, **kw)
+            border=border, bgcolor=bgcolor, font_size=font_size, **kw)
 
         # this will resize the height of the top frame if necessary
         b._top = self
         layouts.Horizontal(self.top, halign=self.halign, padding=2).layout()
 
         # XXX need a signal or something?
-        self.bottom.height = self.bottom.height_spec = self.top.y = self.height-self.top.height
+        h = self.height-self.top.height
+        self.bottom.height = self.bottom.height_spec = self.top.y = h
 
         vis = not self.bottom.children
         if scrollable:
