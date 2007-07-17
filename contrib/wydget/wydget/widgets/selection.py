@@ -53,8 +53,6 @@ class Selection(Frame):
         else: f = self
         o = Option(f, text=label, id=id or label, **kw)
         f.layout.layout()
-        print self, (label, f.layout.width, f.layout.height)
-        print '..', o
 
     def get_value(self):
         if self.scrollable: f = self.contents

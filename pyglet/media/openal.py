@@ -186,6 +186,7 @@ class OpenALSound(Sound):
 
         if _have_1_1:
             # Add buffer timestamp to sample offset
+            # XXX this occasionally goes backwards
             buffer_samples = al.ALint()
             al.alGetSourcei(self.source, al.AL_SAMPLE_OFFSET, buffer_samples)
             sample_rate = al.ALint()

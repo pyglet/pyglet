@@ -90,6 +90,20 @@ def run(xml_file):
         gui.getByID(id).toggle_state()
         return event.EVENT_HANDLED
 
+    @gui.select('#music-test')
+    def on_click(widget, x, y, button, modifiers, click_count):
+        if not button & mouse.RIGHT:
+            return event.EVENT_UNHANDLED
+
+        def load_music(file=None):
+            if not file: return
+            gui.getByID('music-test').delete()
+            m = widgets.Music(gui, file, id='music-test', playing=True)
+            m.gainFocus()
+
+        dialogs.FileOpenDialog(gui, callback=load_music)
+        return event.EVENT_HANDLED
+
     @gui.select('#movie-test')
     def on_click(widget, x, y, button, modifiers, click_count):
         if not button & mouse.RIGHT:

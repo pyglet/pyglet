@@ -4,6 +4,7 @@ from wydget.widgets.drawer import Drawer
 from wydget.widgets.label import Image, Label, XHTML
 from wydget.widgets.menu import MenuItem, PopupMenu, DropDownMenu, DropDownItem
 from wydget.widgets.movie import Movie
+from wydget.widgets.music import Music
 from wydget.widgets.selection import Selection, Option
 from wydget.widgets.slider import VerticalSlider, HorizontalSlider
 from wydget.widgets.slider import ArrowButtonUp, ArrowButtonDown
@@ -23,7 +24,7 @@ for klass in [Frame, TabbedFrame,
         ArrowButtonUp, ArrowButtonDown,
         ArrowButtonLeft, ArrowButtonRight,
         Checkbox,
-        Movie,
+        Movie, Music,
         PopupMenu, MenuItem,
         DropDownMenu, DropDownItem,
         Selection, Option,
