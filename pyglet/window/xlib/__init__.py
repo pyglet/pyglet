@@ -446,10 +446,14 @@ class XlibWindow(BaseWindow):
         self._have_MESA_swap_control = \
             self.display.info.have_extension('GLX_MESA_swap_control')
 
-        # Prefer video_sync over swap_control, as it can be disabled.  If
-        # _use_video_sync evaluates False one of the swap_control extensions
-        # will be used (prefer MESA to SGI, as it can be disabled).
-        self._use_video_sync = self._have_SGI_video_sync
+        # In order of preference:
+        # 1. GLX_MESA_swap_control (more likely to work where video_sync will
+        #    not)
+        # 2. GLX_SGI_video_sync (does not work on Intel 945GM, but that has
+        #    MESA)
+        # 3. GLX_SGI_swap_control (cannot be disabled once enabled).
+        self._use_video_sync = (self._have_SGI_video_sync and 
+                                not self._have_MESA_swap_control)
 
         # Create X window if not already existing.
         if not self._window:
