@@ -45,6 +45,7 @@ from pyglet.gl import *
 from pyglet.image import *
 from pyglet.image.codecs import *
 
+import pyglet.lib
 import pyglet.window
 
 gdk = pyglet.lib.load_library('gdk-x11-2.0')
