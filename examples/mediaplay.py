@@ -62,8 +62,8 @@ class MediaPlayWindow(window.Window):
             return l
 
         add_label(filename)
-        self.time_label = add_label('')
-        self.fps_label = add_label('')
+        self.time_label = add_label(' ')
+        self.fps_label = add_label(' ')
         add_label('')
         self.playing_label = add_label('Playing; press space to pause')
         self.volume_label = add_label('Volume 1.0; adjust with +,-')
@@ -142,12 +142,17 @@ class MediaPlayWindow(window.Window):
 
     def run(self):
         #clock.set_fps_limit(30)
+        last_time = None
         while not self.instance.finished and not self.has_exit:
             clock.tick()
             self.dispatch_events()
             media.dispatch_events()
 
             t = self.instance.time
+            if last_time is not None and t < last_time:
+                print 'time goes backwards', t-last_time
+            last_time = t
+
             self.time_label.text = '%d:%05.2f' % \
                 (int(t / 60), t - 60 * int(t / 60))
             self.fps_label.text = 'FPS: %.2f'%clock.get_fps()
