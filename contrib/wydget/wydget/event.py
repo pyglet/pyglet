@@ -162,8 +162,8 @@ class GUIEventDispatcher(EventDispatcher):
                         try:
                             ret = handler(element, *args)
                         except TypeError, message:
-                            print 'ERROR CALLING  %r(%r, *%r)]'%(message,
-                                handler, element, args)
+                            print 'ERROR CALLING  %r (%r, *%r)]'%(handler,
+                                element, args)
                             raise
                         if ret != EVENT_UNHANDLED:
                             # update the currently-active element

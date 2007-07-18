@@ -2,7 +2,7 @@ from pyglet.gl import *
 from pyglet.window import mouse
 from pyglet import media, clock
 
-from wydget import element, event, util, data, layouts
+from wydget import element, event, util, data, layouts, anim
 from wydget.widgets.frame import Frame
 from wydget.widgets.label import Image, Label
 from wydget.widgets.button import Button
@@ -36,6 +36,7 @@ class Movie(element.Element):
             is_visible=False, width='100%', height=64)
         c.play = Image(c, data.load_gui_image('media-play.png'),
             classes=('-play-button',), is_visible=not playing)
+        c.anim = None
 
         c.range = Image(c, data.load_gui_image('media-range.png'))
 
@@ -108,18 +109,25 @@ class Movie(element.Element):
 
 
 @event.default('movie')
-def on_element_enter(widget, x, y):
+def on_element_enter(widget, *args):
     widget.control.setVisible(True)
+    widget.control.anim = anim.Delayed(widget.control.setVisible, False,
+        delay=5)
     return event.EVENT_HANDLED
 
-#@event.default('movie')
-#def on_mouse_move(widget, x, y):
-#    widget.control.setVisible(True)
-#    return event.EVENT_HANDLED
+@event.default('movie')
+def on_mouse_motion(widget, *args):
+    if widget.control.anim is not None:
+        widget.control.anim.cancel()
+    widget.control.anim = anim.Delayed(widget.control.setVisible, False,
+        delay=5)
+    return event.EVENT_HANDLED
 
 @event.default('movie')
-def on_element_leave(widget, x, y):
+def on_element_leave(widget, *args):
     widget.control.setVisible(False)
+    if widget.control.anim is not None:
+        widget.control.anim.cancel()
     return event.EVENT_HANDLED
 
 @event.default('movie .-play-button', 'on_click')
