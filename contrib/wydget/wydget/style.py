@@ -55,12 +55,13 @@ p {font-size: %(font_size)spx; color: #444; margin: 2px;}
 .button {font-size: %(font_size)spx; border: 1px solid black; padding: 2px; margin: 0px;}
 '''%locals()
 
-    def renderXHTML(self, text, width=None, height=None, style=None):
+    def xhtml(self, text, width=None, height=None, style=None):
         label = Layout()
         if style is None:
             style = self.stylesheet
-        label.set_xhtml('''<?xml version="1.0"?><html><head><style>%s</style></head><body>%s</body></html>'''%(style, text))
-
+        label.set_xhtml('''<?xml version="1.0"?>
+            <html><head><style>%s</style></head>
+            <body>%s</body></html>'''%(style, text))
         label.viewport_x = 0
         label.viewport_y = 0
         label.viewport_width = width or 256
@@ -69,6 +70,12 @@ p {font-size: %(font_size)spx; color: #444; margin: 2px;}
         w = int(label.view.canvas_width)
         label.viewport_width = w
         label.viewport_height = h
+        return label
+
+    def xhtmlAsTexture(self, text, width=None, height=None, style=None):
+        label = self.xhtml(text, width, height, style)
+        h = int(label.view.canvas_height)
+        w = int(label.view.canvas_width)
         def _f():
             glPushAttrib(GL_CURRENT_BIT|GL_COLOR_BUFFER_BIT|GL_ENABLE_BIT)
             glEnable(GL_TEXTURE_2D)

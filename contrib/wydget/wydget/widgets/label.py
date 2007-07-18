@@ -184,6 +184,27 @@ class XHTML(LabelCommon):
         if self.image is not None:
             self.image.delete()
 
-        self.setImage(self.getStyle().renderXHTML('<p>%s</p>'%text,
-            width=w, style=self.style))
+        self.setImage(self.getStyle().xhtmlAsTexture('<p>%s</p>'%text, width=w,
+            style=self.style))
 
+    '''
+    The following is using the layout rendering directly, but it's ver'
+    slow.
+
+        self.label = self.getStyle().xhtml('<p>%s</p>'%text, width=w,
+            style=self.style)
+        if self.width_spec is None:
+            self.width = self.label.viewport_width
+        if self.height_spec is None:
+            self.height = self.label.viewport_height
+
+    def render(self, rect):
+        self.label.viewport_x = rect.x
+        self.label.viewport_y = rect.y
+        self.label.viewport_width = rect.width
+        self.label.viewport_height = rect.height
+        glPushMatrix()
+        glTranslatef(0, self.label.viewport_height, 0)
+        self.label.view.draw()
+        glPopMatrix()
+    '''

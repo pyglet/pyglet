@@ -47,6 +47,7 @@ sem. Ut sed massa. Etiam non ipsum eget nibh cursus placerat.
 Vivamus at mauris.
 &lt;/p&gt;
   </xhtml>
+
   <xhtml width="50%" style="p {margin: 0px;}
     body {margin: 0px; background-color: black; color: white; font-size: 20px; padding: 4px;}">
     Different style XHTML (body {margin: 0px; background-color: black; color: white;
