@@ -7,6 +7,17 @@ Expected behaviour:
       - Press "v" to toggle vsync on/off.  "Tearing" should only be visible
         when vsync is off (as indicated at the terminal).
 
+    Not all video drivers support vsync.  On Linux, check the output of
+    `tools/info.py`:
+
+      - If GLX_SGI_video_sync extension is present, should work as expected.
+      - If GLX_MESA_swap_control extension is present, should work as expected.
+      - If GLX_SGI_swap_control extension is present, vsync can be enabled,
+        but once enabled, it cannot be switched off (there will be no error
+        message).
+      - If none of these extensions are present, vsync is not supported by
+        your driver, but no error message or warning will be printed.
+
     Close the window or press ESC to end the test.
 '''
 
@@ -24,7 +35,7 @@ class WINDOW_SET_VSYNC(unittest.TestCase):
     color_index = 0
 
     def open_window(self):
-        return window.Window(200, 200)
+        return window.Window(200, 200, vsync=False)
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.V:
