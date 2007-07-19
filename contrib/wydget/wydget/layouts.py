@@ -31,11 +31,13 @@ class Layout(object):
         pass
 
     def get_height(self):
-        return max(c.y + c.height for c in self.parent.children)
+        return max(c.y + c.height for c in self.parent.children
+            if c.isVisible())
     height = property(get_height)
 
     def get_width(self):
-        return max(c.x + c.width for c in self.parent.children)
+        return max(c.x + c.width for c in self.parent.children
+            if c.isVisible())
     width = property(get_width)
 
     @classmethod
@@ -143,12 +145,13 @@ class Vertical(Layout):
 
     # XXX make these two properties static
     def get_height(self):
-        h = reduce(operator.add, [c.height for c in self.parent.children])
-        return h + self.padding * (len(self.parent.children)-1)
+        l = [c.height for c in self.parent.children if c.isVisible()]
+        if not l: return 0
+        return sum(l) + self.padding * (len(l)-1)
     height = property(get_height)
 
     def get_width(self):
-        return max([c.width for c in self.parent.children])
+        return max(c.width for c in self.parent.children if c.isVisible())
     width = property(get_width)
 
     def layout(self):
@@ -160,6 +163,8 @@ class Vertical(Layout):
 
         h = self.height
 
+        vis = [c for c in self.parent.children if c.isVisible()]
+
         if self.valign == TOP:
             y = rect.height
         elif self.valign == CENTER:
@@ -167,7 +172,7 @@ class Vertical(Layout):
         elif self.valign == BOTTOM:
             y = h
 
-        for c in self.parent.children:
+        for c in vis:
             if self.halign == LEFT:
                 c.x = 0
             elif self.halign == CENTER:
@@ -191,16 +196,16 @@ class Horizontal(Layout):
 
     # XXX make these two properties static
     def get_width(self):
+        l = [c.width for c in self.parent.children if c.isVisible()]
         if self.halign == FILL:
-            c = self.parent.children[-1]
+            c = l[-1]
             return c.x + c.width
         else:
-            w = reduce(operator.add, [c.width for c in self.parent.children])
-            return w + self.padding * (len(self.parent.children)-1)
+            return sum(l) + self.padding * (len(l)-1)
     width = property(get_width)
 
     def get_height(self):
-        return max([c.height for c in self.parent.children])
+        return max(c.height for c in self.parent.children if c.isVisible())
     height = property(get_height)
 
     def layout(self):
@@ -212,6 +217,8 @@ class Horizontal(Layout):
 
         w = self.width
 
+        vis = [c for c in self.parent.children if c.isVisible()]
+
         if self.halign == RIGHT:
             x = rect.width - w
         elif self.halign == CENTER:
@@ -221,12 +228,11 @@ class Horizontal(Layout):
         elif self.halign == FILL:
             x = 0
             sizes = {}
-            w = reduce(operator.add, [c.width for c in self.parent.children])
-            w += self.padding * (len(self.parent.children)-1)
-            for child in self.parent.children:
+            w = sum(vis) + self.padding * (len(vis)-1)
+            for child in vis:
                 sizes[child.id] = float(child.width) / w
 
-        for child in self.parent.children:
+        for child in vis:
             if self.valign == BOTTOM:
                 child.y = 0
             elif self.valign == CENTER:
@@ -263,8 +269,8 @@ class Form(Layout):
     width = property(get_width)
 
     def get_height(self):
-        h = reduce(operator.add, [c.height for c in self.elements])
-        return h + self.padding * (len(self.elements)-1)
+        l = [c.height for c in self.elements if c.isVisible()]
+        return sum(l) + self.padding * (len(l)-1)
     height = property(get_height)
 
     def addElement(self, label, element, expand_element=True):
@@ -287,6 +293,8 @@ class Form(Layout):
 
         h = self.height
 
+        vis = [c for c in self.elements if c.isVisible()]
+
         if self.valign == TOP:
             y = rect.height
         elif self.valign == CENTER:
@@ -294,7 +302,7 @@ class Form(Layout):
         elif self.valign == BOTTOM:
             y = h
 
-        for element in self.elements:
+        for element in vis:
             element.x = self.label_width + self.padding
             y -= element.height
             element.y = y

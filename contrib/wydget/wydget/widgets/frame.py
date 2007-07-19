@@ -285,25 +285,30 @@ class TabbedFrame(Frame):
         h = self.height-self.top.height
         self.bottom.height = self.bottom.height_spec = self.top.y = h
 
-        vis = not self.bottom.children
+        if self.bottom.children:
+            self.bottom.children[-1].setVisible(False)
         if scrollable:
             f = self.frame_class(self.bottom, scrollable=True,
-                is_visible=vis, border=border, bgcolor=bgcolor, padding=2)
+                border=border, bgcolor=bgcolor, padding=2)
         else:
             f = self.frame_class(self.bottom, width="100%", height="100%",
-                is_visible=vis, border=border, bgcolor=bgcolor, padding=2)
+                border=border, bgcolor=bgcolor, padding=2)
         b._frame = f
         f._button = b
-        if vis: self._active_frame = f
+        self._active_frame = f
         return f
+
+    def activate(self, tab):
+        self._active_frame.setVisible(False)
+        self._active_frame.setEnabled(False)
+        self._active_frame = tab
+        tab.setVisible(True)
+        tab.setEnabled(True)
+
 
 @event.default('tab-button', 'on_click')
 def on_tab_click(widget, *args):
-    widget._top._active_frame.setVisible(False)
-    widget._top._active_frame.setEnabled(False)
-    widget._top._active_frame = widget._frame
-    widget._frame.setVisible(True)
-    widget._frame.setEnabled(True)
+    widget.getParent('tabbed-frame').activate(widget._frame)
     return event.EVENT_HANDLED
 
 

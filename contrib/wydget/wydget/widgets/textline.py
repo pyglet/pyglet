@@ -30,12 +30,11 @@ class TextInputLine(Label):
     def setText(self, text):
         self.text = text
 
-        # re-render
-        style = self.getStyle()
         if self.is_password:
             text = u'\u2022' * len(text)
 
         if text:
+            style = self.getStyle()
             self.glyphs = style.getGlyphString(text, size=self.font_size)
             self.image = style.textAsTexture(text,
                 font_size=self.font_size, color=self.color,
