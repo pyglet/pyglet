@@ -1210,7 +1210,7 @@ class Texture(AbstractImage):
                 GL constant giving texture target to use, typically
                 ``GL_TEXTURE_2D``.
             `min_width` : int
-                Minimum width of texture (may be increased to createa  power
+                Minimum width of texture (may be increased to create a power
                 of 2).
             `min_height` : int
                 Minimum height of texture (may be increased to create a power

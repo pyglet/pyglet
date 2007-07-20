@@ -40,5 +40,22 @@
    </vertical>
   </frame>
 
+  <frame border="green" width="502">
+   <horizontal halign="fill">
+    <label border="black" bgcolor="white">short</label>
+    <label border="black" bgcolor="white">quite long, really</label>
+    <label border="black" bgcolor="white">X</label>
+    <label border="black" bgcolor="white">another long'un</label>
+   </horizontal>
+  </frame>
+
+  <frame border="green" height="102">
+   <vertical valign="fill">
+    <label bgcolor="white" border="black" height="20">fill height="20"</label>
+    <label bgcolor="white" border="black" height="20">fill height="20"</label>
+    <label bgcolor="white" border="black" height="40">fill height="40"</label>
+   </vertical>
+  </frame>
+
  </vertical>
 </frame>

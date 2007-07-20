@@ -348,15 +348,17 @@ class GUIEventDispatcher(EventDispatcher):
             if element is not None and element.is_enabled:
                 ok = self.dispatch_event(element, 'on_drop', x, y, button,
                     modifiers, active) == EVENT_HANDLED
+                new_active_element = element
             else:
                 ok = False
+                new_active_element = None
 
             # now tell the active element what's going on
             handled = self.dispatch_event(active,
                 'on_drag_complete', x, y, button, modifiers, ok)
 
             # clear state - we're done
-            self.active_element = None
+            self.active_element = new_active_element
             self.is_dragging_element = False
             return handled
 

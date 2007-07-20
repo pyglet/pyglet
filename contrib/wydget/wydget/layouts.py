@@ -145,9 +145,11 @@ class Vertical(Layout):
 
     # XXX make these two properties static
     def get_height(self):
-        l = [c.height for c in self.parent.children if c.isVisible()]
-        if not l: return 0
-        return sum(l) + self.padding * (len(l)-1)
+        if self.valign == FILL:
+            # fill means using the available height
+            return self.parent.inner_rect.height
+        vis = [c for c in self.parent.children if c.isVisible()]
+        return sum(c.height for c in vis) + self.padding * (len(vis)-1)
     height = property(get_height)
 
     def get_width(self):
@@ -171,6 +173,12 @@ class Vertical(Layout):
             y = rect.height//2 + h//2
         elif self.valign == BOTTOM:
             y = h
+        elif self.valign == FILL:
+            sizes = {}
+            h = sum(c.height for c in vis) + self.padding * (len(vis)-1)
+            y = rect.height
+            for child in vis:
+                sizes[child.id] = float(child.height) / h
 
         for c in vis:
             if self.halign == LEFT:
@@ -179,9 +187,16 @@ class Vertical(Layout):
                 c.x = rect.width//2 - c.width//2
             elif self.halign == RIGHT:
                 c.x = rect.width - c.width
-            y -= c.height
-            c.y = y
-            y -= self.padding
+
+            if self.valign == FILL:
+                # XXX aligned bottom inside sub-region
+                h = int(sizes[c.id] * rect.height)
+                y -= h
+                c.y = y
+            else:
+                y -= c.height
+                c.y = y
+                y -= self.padding
 
         super(Vertical, self).layout()
 
@@ -196,12 +211,11 @@ class Horizontal(Layout):
 
     # XXX make these two properties static
     def get_width(self):
-        l = [c.width for c in self.parent.children if c.isVisible()]
         if self.halign == FILL:
-            c = l[-1]
-            return c.x + c.width
-        else:
-            return sum(l) + self.padding * (len(l)-1)
+            # fill means using the available width
+            return self.parent.inner_rect.width
+        vis = [c for c in self.parent.children if c.isVisible()]
+        return sum(c.width for c in vis) + self.padding * (len(vis)-1)
     width = property(get_width)
 
     def get_height(self):
@@ -228,7 +242,7 @@ class Horizontal(Layout):
         elif self.halign == FILL:
             x = 0
             sizes = {}
-            w = sum(vis) + self.padding * (len(vis)-1)
+            w = sum(c.width for c in vis) + self.padding * (len(vis)-1)
             for child in vis:
                 sizes[child.id] = float(child.width) / w
 
@@ -239,8 +253,10 @@ class Horizontal(Layout):
                 child.y = rect.height//2 - child.height//2
             elif self.valign == TOP:
                 child.y = rect.height - child.height
+
             if self.halign == FILL:
-                w = int(sizes[child.id] * self.parent.width)
+                # XXX aligned left inside sub-region
+                w = int(sizes[child.id] * rect.width)
                 child.x = x
                 x += w
             else:
