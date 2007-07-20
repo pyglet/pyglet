@@ -13,6 +13,8 @@ from pyglet import clock
 from pyglet.gl import *
 from pyglet import media
 
+import layout
+
 from wydget import GUI
 from wydget import event, dialogs, dragndrop, anim, layouts, widgets
 
@@ -142,6 +144,14 @@ def run(xml_file):
     def on_drag_leave(widget, x, y, element):
         widget.bgcolor = (1, 1, 1, 1)
         return event.EVENT_HANDLED
+
+    sample = gui.getByID('xhtml-sample')
+    if sample:
+        @layout.select('#click-me')
+        def on_mouse_press(element, x, y, button, modifiers):
+            print 'CLICK ON', element
+            return event.EVENT_HANDLED
+        sample.layout.push_handlers(on_mouse_press)
 
     my_escape.has_exit = False
     while not (window.has_exit or my_escape.has_exit):

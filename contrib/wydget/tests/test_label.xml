@@ -30,10 +30,13 @@
   <label font_size="20">font_size="20"</label>
   <label font_size="40">font_size="40"</label>
 
-  <xhtml width="50%">
+  <xhtml width="50%" id="xhtml-sample">
 &lt;h1&gt;Synopsis&lt;/h1&gt;
 &lt;p style="font-size:12px"&gt;Lorem ipsum dolor sit amet consectetuer
-adipiscing elit. Suspendisse vel tellus. Nam sem massa, accumsan id,
+adipiscing elit. 
+&lt;span id="click-me" style="background-color: black; color: white"&gt;CLICK
+ME.&lt;/span&gt;
+Suspendisse vel tellus. Nam sem massa, accumsan id,
 sollicitudin at, feugiat non, felis. Etiam nunc. Nam augue mauris,
 semper in, hendrerit vitae, congue viverra, massa. Suspendisse at lacus.
 Proin mollis dui ut sem. Donec auctor, pede nec hendrerit tincidunt,

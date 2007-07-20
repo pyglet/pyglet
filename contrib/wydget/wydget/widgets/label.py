@@ -4,7 +4,7 @@ import xml.sax.saxutils
 from pyglet.gl import *
 import pyglet.image
 
-from wydget import element, event, loadxml, util, data
+from wydget import element, event, loadxml, util, data, style
 
 TOP = 'top'
 BOTTOM = 'bottom'
@@ -184,8 +184,17 @@ class XHTML(LabelCommon):
         if self.image is not None:
             self.image.delete()
 
-        self.setImage(self.getStyle().xhtmlAsTexture('<p>%s</p>'%text, width=w,
-            style=self.style))
+        self.layout = self.getStyle().xhtml('<p>%s</p>'%text, width=w,
+            style=self.style)
+
+        self.setImage(style.xhtmlAsTexture(self.layout))
+
+@event.default('xhtml')
+def on_mouse_press(widget, x, y, button, modifiers):
+    x, y = widget.calculateRelativeCoords(x, y)
+    # layouts start at y=0 and go negative
+    y -= widget.height
+    return widget.layout.on_mouse_press(x, y, button, modifiers)
 
     '''
     The following is using the layout rendering directly, but it's ver'

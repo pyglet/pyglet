@@ -56,43 +56,42 @@ p {font-size: %(font_size)spx; color: #444; margin: 2px;}
 '''%locals()
 
     def xhtml(self, text, width=None, height=None, style=None):
-        label = Layout()
+        layout = Layout()
         if style is None:
             style = self.stylesheet
-        label.set_xhtml('''<?xml version="1.0"?>
+        layout.set_xhtml('''<?xml version="1.0"?>
             <html><head><style>%s</style></head>
             <body>%s</body></html>'''%(style, text))
-        label.viewport_x = 0
-        label.viewport_y = 0
-        label.viewport_width = width or 256
-        label.viewport_height = height or 200
-        h = int(label.view.canvas_height)
-        w = int(label.view.canvas_width)
-        label.viewport_width = w
-        label.viewport_height = h
-        return label
+        layout.viewport_x = 0
+        layout.viewport_y = 0
+        layout.viewport_width = width or 256
+        layout.viewport_height = height or 200
+        h = int(layout.view.canvas_height)
+        w = int(layout.view.canvas_width)
+        layout.viewport_width = w
+        layout.viewport_height = h
+        return layout
 
     def xhtmlAsTexture(self, text, width=None, height=None, style=None):
-        label = self.xhtml(text, width, height, style)
-        h = int(label.view.canvas_height)
-        w = int(label.view.canvas_width)
-        def _f():
-            glPushAttrib(GL_CURRENT_BIT|GL_COLOR_BUFFER_BIT|GL_ENABLE_BIT)
-            glEnable(GL_TEXTURE_2D)
-            glDisable(GL_DEPTH_TEST)
-            glClearColor(1, 1, 1, 0)
-            glClear(GL_COLOR_BUFFER_BIT)
-            glPushMatrix()
-            glLoadIdentity()
-            glTranslatef(0, h, 0)
-            # prevent the text's alpha channel being written into the new
-            # texture
-            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
-            label.view.draw()
-            glPopMatrix()
-            glPopAttrib()
-        return util.renderToTexture(w, h, _f)
+        return xhtmlAsTexture(self.xhtml(text, width, height, style))
 
+def xhtmlAsTexture(layout):
+    h = int(layout.view.canvas_height)
+    w = int(layout.view.canvas_width)
+    def _f():
+        glPushAttrib(GL_CURRENT_BIT|GL_COLOR_BUFFER_BIT|GL_ENABLE_BIT)
+        #glEnable(GL_TEXTURE_2D)
+        #glDisable(GL_DEPTH_TEST)
+        glClearColor(1, 1, 1, 1)
+        glClear(GL_COLOR_BUFFER_BIT)
+        glPushMatrix()
+        glLoadIdentity()
+        glTranslatef(0, h, 0)
+        glColor4f(1, 1, 1, 1)
+        layout.view.draw()
+        glPopMatrix()
+        glPopAttrib()
+    return util.renderToTexture(w, h, _f)
 
 class Gradient(object):
     def __init__(self, *corners):
