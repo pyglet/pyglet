@@ -11,7 +11,8 @@ CENTER = 'center'
 FILL = 'fill'
 
 class Layout(object):
-    def __init__(self, parent):
+    def __init__(self, parent, ignore_visibility=False):
+        self.ignore_visibility = ignore_visibility
         self.parent = parent
 
     def __repr__(self):
@@ -32,13 +33,17 @@ class Layout(object):
 
     def get_height(self):
         return max(c.y + c.height for c in self.parent.children
-            if c.isVisible())
+            if self.ignore_visibility or c.isVisible())
     height = property(get_height)
 
     def get_width(self):
         return max(c.x + c.width for c in self.parent.children
-            if c.isVisible())
+            if self.ignore_visibility or c.isVisible())
     width = property(get_width)
+
+    def getChildren(self):
+        return [c for c in self.parent.children
+            if self.ignore_visibility or c.isVisible()]
 
     @classmethod
     def fromXML(cls, element, parent):
@@ -137,23 +142,24 @@ class Cell(object):
 class Vertical(Layout):
     name = 'vertical'
 
-    def __init__(self, parent, valign=CENTER, halign=None, padding=0):
+    def __init__(self, parent, valign=CENTER, halign=None, padding=0, **kw):
         self.valign = valign
         self.halign = halign
         self.padding = util.parse_value(padding, parent.inner_rect.height)
-        super(Vertical, self).__init__(parent)
+        super(Vertical, self).__init__(parent, *kw)
 
     # XXX make these two properties static
     def get_height(self):
         if self.valign == FILL:
             # fill means using the available height
             return self.parent.inner_rect.height
-        vis = [c for c in self.parent.children if c.isVisible()]
+        vis = self.getChildren()
         return sum(c.height for c in vis) + self.padding * (len(vis)-1)
     height = property(get_height)
 
     def get_width(self):
-        return max(c.width for c in self.parent.children if c.isVisible())
+        return max(c.width for c in self.parent.children
+            if self.ignore_visibility or c.isVisible())
     width = property(get_width)
 
     def layout(self):
@@ -165,7 +171,7 @@ class Vertical(Layout):
 
         h = self.height
 
-        vis = [c for c in self.parent.children if c.isVisible()]
+        vis = self.getChildren()
 
         if self.valign == TOP:
             y = rect.height
@@ -203,23 +209,24 @@ class Vertical(Layout):
 class Horizontal(Layout):
     name = 'horizontal'
 
-    def __init__(self, parent, halign=CENTER, valign=None, padding=0):
+    def __init__(self, parent, halign=CENTER, valign=None, padding=0, **kw):
         self.halign = halign
         self.valign = valign
         self.padding = util.parse_value(padding, parent.inner_rect.width)
-        super(Horizontal, self).__init__(parent)
+        super(Horizontal, self).__init__(parent, **kw)
 
     # XXX make these two properties static
     def get_width(self):
         if self.halign == FILL:
             # fill means using the available width
             return self.parent.inner_rect.width
-        vis = [c for c in self.parent.children if c.isVisible()]
+        vis = self.getChildren()
         return sum(c.width for c in vis) + self.padding * (len(vis)-1)
     width = property(get_width)
 
     def get_height(self):
-        return max(c.height for c in self.parent.children if c.isVisible())
+        return max(c.height for c in self.parent.children
+            if self.ignore_visibility or c.isVisible())
     height = property(get_height)
 
     def layout(self):
@@ -231,7 +238,7 @@ class Horizontal(Layout):
 
         w = self.width
 
-        vis = [c for c in self.parent.children if c.isVisible()]
+        vis = self.getChildren()
 
         if self.halign == RIGHT:
             x = rect.width - w
@@ -269,7 +276,8 @@ class Horizontal(Layout):
 class Form(Layout):
     name = 'form'
 
-    def __init__(self, parent, valign=TOP, label_width=None, padding=4):
+    def __init__(self, parent, valign=TOP, label_width=None, padding=4,
+            **kw):
         self.valign = valign
         if label_width is None:
             label_width = parent.width * .25
@@ -278,14 +286,15 @@ class Form(Layout):
         pw = parent.inner_rect.width
         self.element_width = pw - (self.label_width + self.padding)
         self.elements = []
-        super(Form, self).__init__(parent)
+        super(Form, self).__init__(parent, **kw)
 
     def get_width(self):
         return self.parent.width
     width = property(get_width)
 
     def get_height(self):
-        l = [c.height for c in self.elements if c.isVisible()]
+        l = [c.height for c in self.elements
+            if self.ignore_visibility or c.isVisible()]
         return sum(l) + self.padding * (len(l)-1)
     height = property(get_height)
 
@@ -309,7 +318,7 @@ class Form(Layout):
 
         h = self.height
 
-        vis = [c for c in self.elements if c.isVisible()]
+        vis = self.getChildren()
 
         if self.valign == TOP:
             y = rect.height
