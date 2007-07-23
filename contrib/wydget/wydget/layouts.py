@@ -11,8 +11,16 @@ CENTER = 'center'
 FILL = 'fill'
 
 class Layout(object):
-    def __init__(self, parent, ignore_visibility=False):
-        self.ignore_visibility = ignore_visibility
+    '''Absolute positioning layout -- also base class for other layouts.
+
+    Elements in the parent are positioined using absolute coordinates in
+    the parent's coordinate space.
+
+    "only_visible" -- limits the layout to only those elements which are
+                      isVisible()
+    '''
+    def __init__(self, parent, only_visible=False):
+        self.only_visible = only_visible
         self.parent = parent
 
     def __repr__(self):
@@ -33,17 +41,17 @@ class Layout(object):
 
     def get_height(self):
         return max(c.y + c.height for c in self.parent.children
-            if self.ignore_visibility or c.isVisible())
+            if not self.only_visible or c.isVisible())
     height = property(get_height)
 
     def get_width(self):
         return max(c.x + c.width for c in self.parent.children
-            if self.ignore_visibility or c.isVisible())
+            if not self.only_visible or c.isVisible())
     width = property(get_width)
 
     def getChildren(self):
         return [c for c in self.parent.children
-            if self.ignore_visibility or c.isVisible()]
+            if not self.only_visible or c.isVisible()]
 
     @classmethod
     def fromXML(cls, element, parent):
@@ -159,7 +167,7 @@ class Vertical(Layout):
 
     def get_width(self):
         return max(c.width for c in self.parent.children
-            if self.ignore_visibility or c.isVisible())
+            if not self.only_visible or c.isVisible())
     width = property(get_width)
 
     def layout(self):
@@ -226,7 +234,7 @@ class Horizontal(Layout):
 
     def get_height(self):
         return max(c.height for c in self.parent.children
-            if self.ignore_visibility or c.isVisible())
+            if not self.only_visible or c.isVisible())
     height = property(get_height)
 
     def layout(self):
@@ -294,7 +302,7 @@ class Form(Layout):
 
     def get_height(self):
         l = [c.height for c in self.elements
-            if self.ignore_visibility or c.isVisible()]
+            if not self.only_visible or c.isVisible()]
         return sum(l) + self.padding * (len(l)-1)
     height = property(get_height)
 
