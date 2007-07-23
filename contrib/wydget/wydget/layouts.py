@@ -318,7 +318,7 @@ class Form(Layout):
 
         h = self.height
 
-        vis = self.getChildren()
+        vis = [c for c in self.elements if c.isVisible()]
 
         if self.valign == TOP:
             y = rect.height

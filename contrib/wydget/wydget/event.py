@@ -251,6 +251,8 @@ class GUIEventDispatcher(EventDispatcher):
             #    element.on_element_hover(x, y)
 
         self.over_element = element
+        if element is not None:
+            self.dispatch_event(element, 'on_mouse_motion', x, y, dx, dy)
         return EVENT_HANDLED
 
     def on_mouse_enter(self, x, y):

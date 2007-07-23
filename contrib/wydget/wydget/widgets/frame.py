@@ -57,11 +57,12 @@ class Frame(element.Element):
 @event.default('frame')
 def on_mouse_scroll(widget, x, y, dx, dy):
     if widget.scrollable:
-        if widget.v_slider is not None:
-            # XXX is this really setting the correct value?!?
-            widget.v_slider.setCurrent(widget.v_slider.current + dy)
-        if widget.h_slider is not None:
-            widget.h_slider.setCurrent(widget.h_slider.current + dx)
+        if dy and widget.v_slider is not None:
+            widget.v_slider.bar.moveY(dy)
+        if dx and widget.h_slider is not None:
+            widget.h_slider.bar.moveX(dx)
+        elif dy and widget.v_slider is None and widget.h_slider is not None:
+            widget.h_slider.bar.moveX(dy)
         return event.EVENT_HANDLED
     return event.EVENT_UNHANDLED
 
@@ -200,6 +201,10 @@ class TabFrame(Frame):
         glVertex2f(x2, rect.y)
         glVertex2f(x2, y2)
         if butx2 != x2: glVertex2f(butx2, y2)
+        if self.bgcolor is not None:
+            glColor4f(*self.bgcolor)
+            glVertex2f(butx2-1, y2)
+            glVertex2f(butx1+1, y2)
         glEnd()
 
     def delete(self):

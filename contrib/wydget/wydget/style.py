@@ -80,13 +80,13 @@ def xhtmlAsTexture(layout):
     w = int(layout.view.canvas_width)
     def _f():
         glPushAttrib(GL_CURRENT_BIT|GL_COLOR_BUFFER_BIT|GL_ENABLE_BIT)
-        #glEnable(GL_TEXTURE_2D)
-        #glDisable(GL_DEPTH_TEST)
+        # always draw onto solid white
         glClearColor(1, 1, 1, 1)
         glClear(GL_COLOR_BUFFER_BIT)
         glPushMatrix()
         glLoadIdentity()
         glTranslatef(0, h, 0)
+        # ... and blend with solid white
         glColor4f(1, 1, 1, 1)
         layout.view.draw()
         glPopMatrix()

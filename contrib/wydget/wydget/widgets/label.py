@@ -54,19 +54,17 @@ class ImageCommon(element.Element):
             image = image.get_region(rect.x, rect.y, rect.width/self._sx,
                 rect.height/self._sy)
 
-        glPushAttrib(GL_ENABLE_BIT)
-        glEnable(GL_TEXTURE_2D)
-        glDisable(GL_DEPTH_TEST)
         if self.is_blended:
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glPushAttrib(GL_ENABLE_BIT)
             glEnable(GL_BLEND)
 
         # XXX alignment
-        # figure the image rect to render
 
+        # blit() handles enabling GL_TEXTURE_2D and binding
         image.blit(rect.x, rect.y, 0)
 
-        glPopAttrib()
+        if self.is_blended:
+            glPopAttrib()
 
 
 class Image(ImageCommon):
@@ -187,33 +185,47 @@ class XHTML(LabelCommon):
         self.layout = self.getStyle().xhtml('<p>%s</p>'%text, width=w,
             style=self.style)
 
+        # pre-render
         self.setImage(style.xhtmlAsTexture(self.layout))
+
+'''
+        # don't pre-render
+        if self.width_spec is None:
+            self.width = self.layout.viewport_width
+        if self.height_spec is None:
+            self.height = self.layout.viewport_height
+
+    def render(self, rect):
+        self.layout.viewport_x = rect.x
+        self.layout.viewport_y = rect.y
+        self.layout.viewport_width = rect.width
+        self.layout.viewport_height = rect.height
+        glPushAttrib(GL_CURRENT_BIT)
+        glPushMatrix()
+        glTranslatef(0, self.layout.viewport_height, 0)
+        self.layout.view.draw()
+        glPopMatrix()
+        glPopAttrib()
+'''
+
+# Note with the following that layouts start at y=0 and go negative
 
 @event.default('xhtml')
 def on_mouse_press(widget, x, y, button, modifiers):
     x, y = widget.calculateRelativeCoords(x, y)
-    # layouts start at y=0 and go negative
     y -= widget.height
     return widget.layout.on_mouse_press(x, y, button, modifiers)
 
-    '''
-    The following is using the layout rendering directly, but it's ver'
-    slow.
+'''
+@event.default('xhtml')
+def on_element_leave(widget, x, y):
+    x, y = widget.calculateRelativeCoords(x, y)
+    y -= widget.height
+    return widget.layout.on_mouse_leave(x, y)
 
-        self.label = self.getStyle().xhtml('<p>%s</p>'%text, width=w,
-            style=self.style)
-        if self.width_spec is None:
-            self.width = self.label.viewport_width
-        if self.height_spec is None:
-            self.height = self.label.viewport_height
-
-    def render(self, rect):
-        self.label.viewport_x = rect.x
-        self.label.viewport_y = rect.y
-        self.label.viewport_width = rect.width
-        self.label.viewport_height = rect.height
-        glPushMatrix()
-        glTranslatef(0, self.label.viewport_height, 0)
-        self.label.view.draw()
-        glPopMatrix()
-    '''
+@event.default('xhtml')
+def on_mouse_motion(widget, x, y, button, modifiers):
+    x, y = widget.calculateRelativeCoords(x, y)
+    y -= widget.height
+    return widget.layout.on_mouse_motion(x, y, button, modifiers)
+'''
