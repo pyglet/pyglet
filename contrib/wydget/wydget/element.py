@@ -500,7 +500,7 @@ class Element(object):
         return self.parent.calculateAbsoluteCoords(x, y)
 
     def calculateRelativeCoords(self, x, y):
-        x -= self._x; y -= self._y
+        x -= self._x + self.padding; y -= self._y + self.padding
         return self.parent.calculateRelativeCoords(x, y)
 
     def reparent(self, new_parent):
