@@ -20,19 +20,20 @@ class Style(object):
         return font.GlyphString(text, glyphs)
 
     def text(self, text, color=(0, 0, 0, 1), font_size=None,
-            font_name=None, halign='left', width=None):
+            font_name=None, halign='left', width=None,
+            valign=font.Text.BOTTOM):
         if font_size is None: font_size = self.font_size
         if font_name is None: font_name = self.font_name
         f = self.getFont(name=font_name, size=font_size)
         return font.Text(f, text, color=color, halign=halign, width=width,
-            valign=font.Text.BOTTOM)
+            valign=valign)
 
     def textAsTexture(self, text, color=(0, 0, 0, 1), bgcolor=(1, 1, 1, 0),
             font_size=None, font_name=None, halign='left', width=None):
         label = self.text(text, color=color, font_size=font_size,
-            font_name=font_name, halign=halign, width=width)
+            font_name=font_name, halign=halign, width=width, valign='top')
         w = int(label.width)
-        h = int(label.height)
+        h = font_size #int(label.height)
         x = c_int()
         def _f():
             glPushAttrib(GL_COLOR_BUFFER_BIT|GL_ENABLE_BIT|GL_CURRENT_BIT)
@@ -42,8 +43,11 @@ class Style(object):
             glClear(GL_COLOR_BUFFER_BIT)
             # prevent the text's alpha channel being written into the new
             # texture
+            glPushMatrix()
+            glTranslatef(0, h, 0)
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
             label.draw()
+            glPopMatrix()
             glPopAttrib()
         return util.renderToTexture(w, h, _f)
 

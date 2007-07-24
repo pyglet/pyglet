@@ -306,14 +306,15 @@ class Form(Layout):
         return sum(l) + self.padding * (len(l)-1)
     height = property(get_height)
 
-    def addElement(self, label, element, expand_element=True):
+    def addElement(self, label, element, expand_element=True,
+            halign='right', **kw):
         self.elements.append(element)
         if expand_element:
             element.width = self.element_width
         # XXX alignment
         if label:
             element._label = Label(self.parent, label, width=self.label_width,
-                halign='right')
+                halign=halign, **kw)
         else:
             element._label = None
 

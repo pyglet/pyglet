@@ -76,13 +76,13 @@ class Button(ImageCommon):
 
         # XXX restrict text width?
         label = self.getStyle().text(text, font_size=self.font_size,
-            color=self.color)
+            color=self.color, valign='top')
 
         # center
         bx = self.width // 2 - self.bg.width // 2
         by = self.height // 2 - self.bg.height // 2
         tx = self.width // 2 - label.width // 2
-        ty = self.height // 2 - label.height // 2
+        ty = self.height // 2 - font_size // 2
 
         def f(bg):
             def _inner():
@@ -92,7 +92,7 @@ class Button(ImageCommon):
                 glPushMatrix()
                 glLoadIdentity()
                 bg.blit(bx, by, 0)
-                glTranslatef(tx, ty, 0)
+                glTranslatef(tx, ty + font_size, 0)
                 # prevent the text's alpha channel being written into the new
                 # texture
                 glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
@@ -185,7 +185,7 @@ class TextButton(Button):
 
         # XXX restrict text width?
         label = self.getStyle().text(text, font_size=self.font_size,
-            color=self.color)
+            color=self.color, valign='top')
 
         # recalc size
         if self.width_spec is None:
@@ -195,7 +195,7 @@ class TextButton(Button):
 
         # text offset
         w = label.width
-        h = label.height
+        h = self.font_size #label.height
         ir = util.Rect(0, 0, w, h)
 
         def f():
@@ -207,7 +207,10 @@ class TextButton(Button):
             # prevent the text's alpha channel being written into the new
             # texture
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
+            glPushMatrix()
+            glTranslatef(0, h, 0)
             label.draw()
+            glPopMatrix()
             glPopAttrib()
 
         self.setImage(util.renderToTexture(w, h, f))

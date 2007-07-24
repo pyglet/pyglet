@@ -132,7 +132,8 @@ class Label(LabelCommon):
 
         if self.is_blended:
             label = self.getStyle().text(text, color=self.color,
-                font_size=self.font_size, width=w, halign=self.halign)
+                font_size=self.font_size, width=w, halign=self.halign,
+                valign='top')
         else:
             label = self.getStyle().textAsTexture(text, color=self.color,
                 bgcolor=self.bgcolor, font_size=self.font_size,
@@ -148,7 +149,10 @@ class Label(LabelCommon):
             return super(Label, self).render(rect)
 
         # XXX clip with glScissor
+        glPushMatrix()
+        glTranslatef(0, self.font_size, 0)
         self.image.draw()
+        glPopMatrix()
 
 
 class XHTML(LabelCommon):
