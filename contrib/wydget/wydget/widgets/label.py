@@ -109,7 +109,7 @@ class Label(LabelCommon):
             color = util.parse_color(color)
         self.color = color
 
-        self.font_size = font_size
+        self.font_size = int(font_size or self.getStyle().font_size)
 
         super(Label, self).__init__(parent, **kw)
 

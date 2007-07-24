@@ -145,7 +145,10 @@ def run(xml_file):
         widget.bgcolor = (1, 1, 1, 1)
         return event.EVENT_HANDLED
 
-    sample = gui.getByID('xhtml-sample')
+    try:
+        sample = gui.getByID('xhtml-sample')
+    except KeyError:
+        sample = None
     if sample:
         @layout.select('#click-me')
         def on_mouse_press(element, x, y, button, modifiers):

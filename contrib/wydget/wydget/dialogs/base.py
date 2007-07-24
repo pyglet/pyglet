@@ -3,7 +3,7 @@ from wydget import widgets, event
 
 class Dialog(widgets.Frame):
     def __init__(self, parent, x=0, y=0, z=0, width=None, height=None,
-            classes=(), border='black', bgcolor='white', **kw):
+            classes=(), border='black', bgcolor='white', padding=2, **kw):
         if 'dialog' not in classes:
             classes = ('dialog', ) + classes
         super(Dialog, self).__init__(parent, x, y, z, width, height,

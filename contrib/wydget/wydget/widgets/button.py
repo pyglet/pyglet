@@ -35,7 +35,7 @@ class Button(ImageCommon):
         self.setOverImage(over_image)
 
         if text:
-            self.font_size = None
+            self.font_size = int(font_size or self.getStyle().font_size)
             self.color = util.parse_color(color)
             self.bg = self.base_image
             self.over_bg = self.over_image
@@ -82,7 +82,7 @@ class Button(ImageCommon):
         bx = self.width // 2 - self.bg.width // 2
         by = self.height // 2 - self.bg.height // 2
         tx = self.width // 2 - label.width // 2
-        ty = self.height // 2 - font_size // 2
+        ty = self.height // 2 - self.font_size // 2
 
         def f(bg):
             def _inner():
@@ -92,7 +92,7 @@ class Button(ImageCommon):
                 glPushMatrix()
                 glLoadIdentity()
                 bg.blit(bx, by, 0)
-                glTranslatef(tx, ty + font_size, 0)
+                glTranslatef(tx, ty + self.font_size, 0)
                 # prevent the text's alpha channel being written into the new
                 # texture
                 glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
@@ -170,7 +170,7 @@ class TextButton(Button):
         self.base_bgcolor = self.bgcolor
         self.pressed_bgcolor = util.parse_color(pressed_bgcolor)
         self.over_bgcolor = util.parse_color(over_bgcolor)
-        self.font_size = font_size
+        self.font_size = int(font_size or self.getStyle().font_size)
 
         # generate images
         self.setText(text)
