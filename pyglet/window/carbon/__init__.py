@@ -487,13 +487,14 @@ class CarbonWindow(BaseWindow):
 
         e = EventRef()
         result = carbon.ReceiveNextEvent(0, c_void_p(), 0, True, byref(e))
-        if result == noErr:
+        while result == noErr:
             carbon.SendEventToEventTarget(e, self._event_dispatcher)
             carbon.ReleaseEvent(e)
 
             if self._recreate_deferred:
                 self._recreate_immediate()
-        elif result != eventLoopTimedOutErr:
+            result = carbon.ReceiveNextEvent(0, c_void_p(), 0, True, byref(e))
+        if result != eventLoopTimedOutErr:
             raise 'Error %d' % result
 
     def set_caption(self, caption):
