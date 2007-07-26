@@ -26,6 +26,9 @@
 
   <label color="white">color="white"</label>
 
+  <label border="red" color="white" width="50">testing wrapping</label>
+  <label border="red" color="white" bgcolor="blue" width="50">...with background</label>
+
   <label font_size="10">font_size="10"</label>
   <label font_size="20">font_size="20"</label>
   <label font_size="40">font_size="40"</label>

@@ -32,8 +32,9 @@ class Style(object):
             font_size=None, font_name=None, halign='left', width=None):
         label = self.text(text, color=color, font_size=font_size,
             font_name=font_name, halign=halign, width=width, valign='top')
+        label._clean()
         w = int(label.width)
-        h = font_size #int(label.height)
+        h = font_size * len(label.lines) #int(label.height)
         x = c_int()
         def _f():
             glPushAttrib(GL_COLOR_BUFFER_BIT|GL_ENABLE_BIT|GL_CURRENT_BIT)

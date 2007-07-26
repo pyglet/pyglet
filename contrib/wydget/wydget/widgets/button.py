@@ -77,12 +77,13 @@ class Button(ImageCommon):
         # XXX restrict text width?
         label = self.getStyle().text(text, font_size=self.font_size,
             color=self.color, valign='top')
+        num_lines = len(label.lines)
 
         # center
         bx = self.width // 2 - self.bg.width // 2
         by = self.height // 2 - self.bg.height // 2
         tx = self.width // 2 - label.width // 2
-        ty = self.height // 2 - self.font_size // 2
+        ty = self.height // 2 - (self.font_size * num_lines) // 2
 
         def f(bg):
             def _inner():
@@ -92,7 +93,7 @@ class Button(ImageCommon):
                 glPushMatrix()
                 glLoadIdentity()
                 bg.blit(bx, by, 0)
-                glTranslatef(tx, ty + self.font_size, 0)
+                glTranslatef(tx, ty + (self.font_size * num_lines), 0)
                 # prevent the text's alpha channel being written into the new
                 # texture
                 glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
@@ -186,6 +187,7 @@ class TextButton(Button):
         # XXX restrict text width?
         label = self.getStyle().text(text, font_size=self.font_size,
             color=self.color, valign='top')
+        num_lines = len(label.lines)
 
         # recalc size
         if self.width_spec is None:
@@ -195,7 +197,7 @@ class TextButton(Button):
 
         # text offset
         w = label.width
-        h = self.font_size #label.height
+        h = self.font_size * num_lines #label.height
         ir = util.Rect(0, 0, w, h)
 
         def f():

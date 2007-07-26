@@ -150,7 +150,7 @@ class Label(LabelCommon):
 
         # XXX clip with glScissor
         glPushMatrix()
-        glTranslatef(0, self.font_size, 0)
+        glTranslatef(0, self.font_size * len(self.image.lines), 0)
         self.image.draw()
         glPopMatrix()
 
