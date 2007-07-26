@@ -511,6 +511,18 @@ class Element(object):
         self.parent = new_parent
         self.getGUI().setDirty()
 
+    def replace(self, old, new):
+        '''Replace the "old" widget with the "new" one.
+
+        It is assumed that "new" is already a child of this element.
+        '''
+        self.children.remove(new)
+        old_index = self.children.index(old)
+        old.delete()
+        self.children.insert(old_index, new)
+        if hasattr(self, 'layout'):
+            self.layout.layout()
+
     def clear(self):
         for child in list(self.children): child.delete()
         self.children = []

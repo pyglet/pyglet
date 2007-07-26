@@ -17,7 +17,8 @@ class Layout(object):
     the parent's coordinate space.
 
     "only_visible" -- limits the layout to only those elements which are
-                      isVisible()
+                      is_visible (note NOT isVisible - parent visibility
+                      obviously makes no sense in this context)
     '''
     def __init__(self, parent, only_visible=False):
         self.only_visible = only_visible
@@ -41,17 +42,17 @@ class Layout(object):
 
     def get_height(self):
         return max(c.y + c.height for c in self.parent.children
-            if not self.only_visible or c.isVisible())
+            if not self.only_visible or c.is_visible)
     height = property(get_height)
 
     def get_width(self):
         return max(c.x + c.width for c in self.parent.children
-            if not self.only_visible or c.isVisible())
+            if not self.only_visible or c.is_visible)
     width = property(get_width)
 
     def getChildren(self):
         return [c for c in self.parent.children
-            if not self.only_visible or c.isVisible()]
+            if not self.only_visible or c.is_visible]
 
     @classmethod
     def fromXML(cls, element, parent):
@@ -167,7 +168,7 @@ class Vertical(Layout):
 
     def get_width(self):
         return max(c.width for c in self.parent.children
-            if not self.only_visible or c.isVisible())
+            if not self.only_visible or c.is_visible)
     width = property(get_width)
 
     def layout(self):
@@ -208,7 +209,7 @@ class Vertical(Layout):
                 y -= h
                 c.y = y
             else:
-                y -= c.height
+                y -= int(c.height)
                 c.y = y
                 y -= self.padding
 
@@ -234,7 +235,7 @@ class Horizontal(Layout):
 
     def get_height(self):
         return max(c.height for c in self.parent.children
-            if not self.only_visible or c.isVisible())
+            if not self.only_visible or c.is_visible)
     height = property(get_height)
 
     def layout(self):
@@ -276,7 +277,7 @@ class Horizontal(Layout):
                 x += w
             else:
                 child.x = x
-                x += child.width + self.padding
+                x += int(child.width + self.padding)
 
         super(Horizontal, self).layout()
 
@@ -302,7 +303,7 @@ class Form(Layout):
 
     def get_height(self):
         l = [c.height for c in self.elements
-            if not self.only_visible or c.isVisible()]
+            if not self.only_visible or c.is_visible]
         return sum(l) + self.padding * (len(l)-1)
     height = property(get_height)
 
@@ -327,7 +328,7 @@ class Form(Layout):
 
         h = self.height
 
-        vis = [c for c in self.elements if c.isVisible()]
+        vis = [c for c in self.elements if c.is_visible]
 
         if self.valign == TOP:
             y = rect.height

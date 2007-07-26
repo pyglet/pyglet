@@ -97,9 +97,7 @@ def on_element_leave(item, x, y):
 
 @event.default('drop-item')
 def on_click(item, *args):
-    menu = item.parent.parent
-    menu.label.setText(item.text)
-    menu.label.width = menu.inner_rect.width
+    menu = item.getParent('drop-menu')
     menu.value = item.id
     item.parent.setVisible(False)
     menu.label.setVisible(True)
@@ -115,8 +113,8 @@ class DropDownMenu(Frame):
             bgcolor=bgcolor, padding=2, **kw)
 
         self.font_size = font_size
-        self.label, self.value = items[0]
-        self.label = Label(self, self.label, classes=('-drop-down-button',),
+        label, value = items[0]
+        self.label = Label(self, label, classes=('-drop-down-button',),
             font_size=font_size)
 
         # set up the popup item
@@ -133,6 +131,8 @@ class DropDownMenu(Frame):
                 width = max(width, i.width)
             if self.height_spec is None:
                 height = max(height, i.height)
+
+        self.value = value
 
         # fix up contents size
         for i in self.contents.children:
@@ -155,6 +155,18 @@ class DropDownMenu(Frame):
         if x > gx: c.x = gx - c.width
         if y > gy: c.y = gy - c.height
 
+    def get_value(self):
+        return self._value
+
+    def set_value(self, value):
+        for item in self.contents.children:
+            if item.id == value: break
+        else:
+            raise ValueError, '%r not a valid child item id'%(value,)
+        self.label.setText(item.text)
+        self.label.width = self.inner_rect.width
+        self._value = value
+    value = property(get_value, set_value)
 
     @classmethod
     def fromXML(cls, element, parent):
