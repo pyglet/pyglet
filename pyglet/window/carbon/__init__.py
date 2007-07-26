@@ -67,11 +67,6 @@ carbon = pyglet.lib.load_library(
 quicktime = pyglet.lib.load_library(
     framework='/System/Library/Frameworks/Quicktime.framework')
 
-import MacOS
-if not MacOS.WMAvailable():
-    raise CarbonException('Window manager is not available.  ' \
-                          'Ensure you run "pythonw", not "python"')
-
 carbon.GetEventDispatcherTarget.restype = EventTargetRef
 carbon.ReceiveNextEvent.argtypes = \
     [c_uint32, c_void_p, c_double, c_ubyte, POINTER(EventRef)]
@@ -112,6 +107,12 @@ class CarbonDisplay(Display):
     # TODO: CarbonDisplay could be per display device, which would make
     # reporting of screens and available configs more accurate.  The number of
     # Macs with more than one video card is probably small, though.
+    def __init__(self):
+        import MacOS
+        if not MacOS.WMAvailable():
+            raise CarbonException('Window manager is not available.  ' \
+                                  'Ensure you run "pythonw", not "python"')
+
     def get_screens(self):
         count = CGDisplayCount()
         carbon.CGGetActiveDisplayList(0, None, byref(count))
