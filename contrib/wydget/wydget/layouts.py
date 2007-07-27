@@ -189,11 +189,9 @@ class Vertical(Layout):
         elif self.valign == BOTTOM:
             y = h
         elif self.valign == FILL:
-            sizes = {}
-            h = sum(c.height for c in vis) + self.padding * (len(vis)-1)
-            y = rect.height
-            for child in vis:
-                sizes[child.id] = float(child.height) / h
+            h = sum(c.height for c in vis)
+            fill_padding = (rect.height - h)/float(len(vis)-1)
+            y = float(rect.height)
 
         for c in vis:
             if self.halign == LEFT:
@@ -203,14 +201,11 @@ class Vertical(Layout):
             elif self.halign == RIGHT:
                 c.x = rect.width - c.width
 
+            y -= c.height
+            c.y = int(y)
             if self.valign == FILL:
-                # XXX aligned bottom inside sub-region
-                h = int(sizes[c.id] * rect.height)
-                y -= h
-                c.y = y
+                y -= fill_padding
             else:
-                y -= int(c.height)
-                c.y = y
                 y -= self.padding
 
         super(Vertical, self).layout()
@@ -256,11 +251,9 @@ class Horizontal(Layout):
         elif self.halign == LEFT:
             x = 0
         elif self.halign == FILL:
+            w = sum(c.width for c in vis)
+            fill_padding = (rect.width - w)/float(len(vis)-1)
             x = 0
-            sizes = {}
-            w = sum(c.width for c in vis) + self.padding * (len(vis)-1)
-            for child in vis:
-                sizes[child.id] = float(child.width) / w
 
         for child in vis:
             if self.valign == BOTTOM:
@@ -271,10 +264,8 @@ class Horizontal(Layout):
                 child.y = rect.height - child.height
 
             if self.halign == FILL:
-                # XXX aligned left inside sub-region
-                w = int(sizes[child.id] * rect.width)
-                child.x = x
-                x += w
+                child.x = int(x)
+                x += int(child.width + fill_padding)
             else:
                 child.x = x
                 x += int(child.width + self.padding)
