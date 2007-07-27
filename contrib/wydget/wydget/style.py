@@ -32,7 +32,6 @@ class Style(object):
             font_size=None, font_name=None, halign='left', width=None):
         label = self.text(text, color=color, font_size=font_size,
             font_name=font_name, halign=halign, width=width, valign='top')
-        label._clean()
         w = int(label.width)
         h = font_size * len(label.lines) #int(label.height)
         x = c_int()

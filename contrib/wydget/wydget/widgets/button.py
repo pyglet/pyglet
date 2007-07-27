@@ -77,6 +77,7 @@ class Button(ImageCommon):
         # XXX restrict text width?
         label = self.getStyle().text(text, font_size=self.font_size,
             color=self.color, valign='top')
+        label.width        # force clean
         num_lines = len(label.lines)
 
         # center
@@ -187,6 +188,7 @@ class TextButton(Button):
         # XXX restrict text width?
         label = self.getStyle().text(text, font_size=self.font_size,
             color=self.color, valign='top')
+        label.width        # force clean
         num_lines = len(label.lines)
 
         # recalc size
