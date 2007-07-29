@@ -79,8 +79,11 @@ class GLXInfo(object):
         if not glXQueryExtension(self.display, None, None):
             raise GLXInfoException('pyglet requires an X server with GLX')
 
-        server = [int(i) for i in self.get_server_version().split('.')]
-        client = [int(i) for i in self.get_client_version().split('.')]
+        server_version = self.get_server_version().split()[0]
+        client_version = self.get_client_version().split()[0]
+
+        server = [int(i) for i in server_version.split('.')]
+        client = [int(i) for i in client_version.split('.')]
         return (tuple(server) >= (major, minor) and 
                 tuple(client) >= (major, minor))
 
