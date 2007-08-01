@@ -20,11 +20,11 @@ __version__ = '$Id$'
 
 import unittest
 from render_base import RenderBase
-from pyglet.ext.scene2d import Tile, Sprite
+from scene2d import Tile, Sprite
 from pyglet.event import event
-from pyglet.ext.scene2d.event import for_cells, for_sprites
-from pyglet.ext.scene2d.drawable import TintEffect
-from pyglet.ext.scene2d.debug import gen_rect_map
+from scene2d.event import for_cells, for_sprites
+from scene2d.drawable import TintEffect
+from scene2d.debug import gen_rect_map
 
 class RectFlatMouseTest(RenderBase):
     def test_main(self):

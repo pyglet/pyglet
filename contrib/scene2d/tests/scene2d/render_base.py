@@ -14,8 +14,8 @@ import pyglet.window
 from pyglet.window.event import *
 from pyglet.window import key
 from pyglet import clock
-from pyglet.ext.scene2d import *
-from pyglet.ext.scene2d.drawable import ScaleEffect
+from scene2d import *
+from scene2d.drawable import ScaleEffect
 
 ball_png = os.path.join(os.path.dirname(__file__), 'ball.png')
 
@@ -32,7 +32,7 @@ class RenderBase(unittest.TestCase):
             vx = self.w.width
             vy = self.w.height
 
-        self.view = pyglet.ext.scene2d.FlatView(0, 0, vx, vy, layers=[m])
+        self.view = scene2d.FlatView(0, 0, vx, vy, layers=[m])
 
         self.w.push_handlers(self.view.camera)
 

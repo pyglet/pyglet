@@ -24,8 +24,8 @@ import math
 import xml.dom
 import xml.dom.minidom
 
-from pyglet.ext.resource import Resource, register_factory
-from pyglet.ext.scene2d.drawable import *
+from resource import Resource, register_factory
+from scene2d.drawable import *
 
 @register_factory('rectmap')
 def rectmap_factory(resource, tag):

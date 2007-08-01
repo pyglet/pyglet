@@ -5,8 +5,8 @@ import pyglet.window
 from pyglet.window.event import *
 from pyglet.window import key
 from pyglet import clock
-from pyglet.ext.euclid import Vector2, Matrix3
-from pyglet.ext.scene2d import *
+from euclid import Vector2, Matrix3
+from scene2d import *
 
 class CarSprite(RotatableSprite):
     def update(self, dt):

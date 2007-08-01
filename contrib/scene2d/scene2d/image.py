@@ -10,7 +10,7 @@ Getting Started
 
 You may create a drawable image with:
 
-    >>> from pyglet.ext.scene2d import *
+    >>> from scene2d import *
     >>> i = Image2d.load('kitten.jpg')
     >>> i.draw()
 
@@ -22,8 +22,8 @@ __version__ = '$Id$'
 from pyglet.gl import *
 
 from pyglet import image
-from pyglet.ext.scene2d.drawable import *
-from pyglet.ext.resource import register_factory, ResourceError
+from scene2d.drawable import *
+from resource import register_factory, ResourceError
 
 
 @register_factory('imageatlas')

@@ -6,13 +6,13 @@ import os
 import math
 
 import pyglet.window
-from pyglet.ext.resource import *
+from resource import *
 from pyglet.window import key
 from pyglet import clock
-from pyglet.ext.scene2d import *
-from pyglet.ext.scene2d.textsprite import *
+from scene2d import *
+from scene2d.textsprite import *
 from pyglet import font
-from pyglet.ext.layout import *
+from layout import *
 
 class RocketSprite(Sprite):
     def update(self, dt):

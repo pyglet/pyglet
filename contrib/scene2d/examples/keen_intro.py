@@ -8,7 +8,7 @@ __version__ = '$Id$'
 
 from pyglet.window import Window
 from pyglet import clock
-from pyglet.ext.scene2d.textsprite import *
+from scene2d.textsprite import *
 from pyglet import font
 
 width, height = 640, 480

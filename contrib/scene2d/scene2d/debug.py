@@ -11,9 +11,9 @@ __version__ = '$Id$'
 
 import math
 
-from pyglet.ext.scene2d import *
+from scene2d import *
 from pyglet import image
-from pyglet.ext.scene2d.drawable import *
+from scene2d.drawable import *
 from pyglet.gl import *
 
 def brensenham_line(x, y, x2, y2):

@@ -12,7 +12,7 @@ import unittest
 
 from pyglet.window import Window
 from pyglet.image import SolidColorImagePattern
-from pyglet.ext.scene2d import Sprite, Image2d
+from scene2d import Sprite, Image2d
 
 class SpriteModelTest(unittest.TestCase):
 

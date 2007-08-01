@@ -62,7 +62,7 @@ Other tags within <resource> are handled by factories. Standard factories
 exist for:
 
 <image file="" id="">
-    Loads the file into a pyglet.ext.scene2d.Image2d object.
+    Loads the file into a scene2d.Image2d object.
 
 <imageatlas file="" [id="" size="x,y"]>
     Sets up an image atlas for child <image> tags to use. Child tags are of
@@ -74,7 +74,7 @@ exist for:
     child <image> tags must provide one.
 
 <tileset id="">
-    Sets up a pyglet.ext.scene2d.TileSet object. Child tags are of the form:
+    Sets up a scene2d.TileSet object. Child tags are of the form:
 
        <tile id="">
          [<image ...>]
@@ -84,7 +84,7 @@ exist for:
     completely empty).
 
 <rectmap id="" tile_size="" [origin=""]>
-    Sets up a pyglet.ext.scene2d.RectMap object. Child tags are of the form:
+    Sets up a scene2d.RectMap object. Child tags are of the form:
 
        <column>
         <cell tile="" />

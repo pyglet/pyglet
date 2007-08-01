@@ -12,8 +12,8 @@ __version__ = '$Id$'
 
 import unittest
 from render_base import RenderBase
-import pyglet.ext.scene2d
-from pyglet.ext.scene2d.debug import gen_rect_map
+import scene2d
+from scene2d.debug import gen_rect_map
 
 class RectFlatDebugTest(RenderBase):
     def test_main(self):

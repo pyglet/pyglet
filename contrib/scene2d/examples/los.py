@@ -19,7 +19,7 @@ options['gl_error_check'] = False
 
 from pyglet.window import Window
 from pyglet import clock
-from pyglet.ext.scene2d import *
+from scene2d import *
 from pyglet.gl import *
 
 w = Window(600, 600, vsync=False)

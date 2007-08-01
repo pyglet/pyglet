@@ -11,7 +11,7 @@ from pyglet.window import Window
 from pyglet.window import key
 from pyglet import clock
 from pyglet import font
-from pyglet.ext.scene2d.textsprite import *
+from scene2d.textsprite import *
 
 window = Window(visible=False, resizable=True)
 arial = font.load('Arial', 24)

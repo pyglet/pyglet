@@ -11,8 +11,8 @@ __version__ = '$Id$'
 import unittest
 
 from pyglet.window import Window
-from pyglet.ext.scene2d import RectMap, HexMap, RectCell, HexCell
-from pyglet.ext.scene2d.debug import gen_hex_map, gen_rect_map
+from scene2d import RectMap, HexMap, RectCell, HexCell
+from scene2d.debug import gen_hex_map, gen_rect_map
 
 rmd = [
    [ {'meta': x} for x in m ] for m in ['ad', 'be', 'cf']
