@@ -7,6 +7,8 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: //depot/task/DEV-99/client/tests.py#13 $'
 
 import sys
+sys.path.append('../../')
+sys.path.append('../layout/')
 
 from pyglet.window import *
 from pyglet import clock
@@ -84,6 +86,15 @@ def run(xml_file):
         if not button & mouse.RIGHT:
             return event.EVENT_UNHANDLED
         gui.getByID('test-menu').expose((x, y))
+        return event.EVENT_HANDLED
+
+    @gui.select('.hover')
+    def on_element_enter(widget, *args):
+        print 'ENTER ELEMENT', widget.id
+        return event.EVENT_HANDLED
+    @gui.select('.hover')
+    def on_element_leave(widget, *args):
+        print 'LEAVE ELEMENT', widget.id
         return event.EVENT_HANDLED
 
     @gui.select('.drawer-control')

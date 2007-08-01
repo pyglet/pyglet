@@ -21,7 +21,7 @@ wydget requires pyglet and the "layout" contributed package in the pyglet reposi
 
 To run wydget's tests, try::
 
-  PYTHONPATH=../../:../layout run_tests.py [tests/ xml file]
+  python run_tests.py [tests/ xml file]
 
 By default it will run all xml files in the tests directory.
 

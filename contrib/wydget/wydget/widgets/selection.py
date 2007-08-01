@@ -133,7 +133,6 @@ class Option(TextButton):
 
 @event.default('option')
 def on_click(widget, *args):
-    # XXX exclusive mode
     widget.is_active = not widget.is_active
     select = widget.getParent('selection')
     if select.scrollable: f = select.contents
@@ -143,7 +142,7 @@ def on_click(widget, *args):
             if child is not widget:
                 child.is_active = None
     widget.getGUI().dispatch_event(select, 'on_change', select.value)
-    return event.EVENT_UNHANDLED
+    return event.EVENT_HANDLED
 
 '''
 XXX focus and keyboard interaction

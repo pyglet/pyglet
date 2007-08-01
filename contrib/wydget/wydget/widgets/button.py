@@ -301,12 +301,12 @@ def on_lose_focus(self):
 @event.default('button, text-button, repeater-button')
 def on_element_enter(self, x, y):
     self.is_over = True
-    return event.EVENT_UNHANDLED
+    return event.EVENT_HANDLED
 
 @event.default('button, text-button')
 def on_element_leave(self, x, y):
     self.is_over = False
-    return event.EVENT_UNHANDLED
+    return event.EVENT_HANDLED
 
 @event.default('repeater-button')
 def on_element_leave(self, x, y):

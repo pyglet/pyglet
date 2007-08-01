@@ -189,8 +189,11 @@ class Vertical(Layout):
         elif self.valign == BOTTOM:
             y = h
         elif self.valign == FILL:
-            h = sum(c.height for c in vis)
-            fill_padding = (rect.height - h)/float(len(vis)-1)
+            if len(vis) == 1:
+                fill_padding = 0
+            else:
+                h = sum(c.height for c in vis)
+                fill_padding = (rect.height - h)/float(len(vis)-1)
             y = float(rect.height)
 
         for c in vis:
@@ -251,8 +254,11 @@ class Horizontal(Layout):
         elif self.halign == LEFT:
             x = 0
         elif self.halign == FILL:
-            w = sum(c.width for c in vis)
-            fill_padding = (rect.width - w)/float(len(vis)-1)
+            if len(vis) == 1:
+                fill_padding = 0
+            else:
+                w = sum(c.width for c in vis)
+                fill_padding = (rect.width - w)/float(len(vis)-1)
             x = 0
 
         for child in vis:

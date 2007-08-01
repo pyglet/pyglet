@@ -13,12 +13,12 @@ class MenuItem(Label):
 def on_element_enter(item, x, y):
     item._save_bgcolor = item.bgcolor
     item.bgcolor = (.9, .9, 1, 1)
-    return event.EVENT_UNHANDLED
+    return event.EVENT_HANDLED
 
 @event.default('menu-item')
 def on_element_leave(item, x, y):
     item.bgcolor = item._save_bgcolor
-    return event.EVENT_UNHANDLED
+    return event.EVENT_HANDLED
 
 @event.default('menu-item')
 def on_click(widget, *args):
@@ -88,12 +88,12 @@ class DropDownItem(Label):
 def on_element_enter(item, x, y):
     item._save_bgcolor = item.bgcolor
     item.bgcolor = (.9, .9, 1, 1)
-    return event.EVENT_UNHANDLED
+    return event.EVENT_HANDLED
 
 @event.default('drop-item')
 def on_element_leave(item, x, y):
     item.bgcolor = item._save_bgcolor
-    return event.EVENT_UNHANDLED
+    return event.EVENT_HANDLED
 
 @event.default('drop-item')
 def on_click(item, *args):

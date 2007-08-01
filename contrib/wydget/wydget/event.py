@@ -83,6 +83,9 @@ class GUIEventDispatcher(EventDispatcher):
         assert isinstance(self._event_stack, tuple)
         self._event_stack = [self.default_event_handlers]
 
+        # list of elements that have responded to an on_element_enter event
+        self.entered_elements = []
+
     @classmethod
     def set_default_handler(cls, name, selector, handler):
         '''Inspect handler for a selector and apply to the primary-set.
@@ -152,6 +155,7 @@ class GUIEventDispatcher(EventDispatcher):
 
     def dispatch_event(self, element, event_type, *args, **kw):
         update_active=kw.get('update_active', True)
+        propogate=kw.get('propogate', True)
         if element.isEnabled():
             for frame in self._event_stack:
                 ruleset = frame.get(event_type, None)
@@ -172,7 +176,7 @@ class GUIEventDispatcher(EventDispatcher):
                             return True
 
         # not handled, so pass the event up to parent element
-        if element.parent is not None:
+        if propogate and element.parent is not None:
             return self.dispatch_event(element.parent, event_type, *args, **kw)
 
     # NOW THE EVENT HANDLERS
@@ -180,10 +184,7 @@ class GUIEventDispatcher(EventDispatcher):
     is_dragging_element = False
     mouse_press_element = None
     drag_over_element = None
-    over_element = None
     focused_element = None
-    # XXX record the element and timestamp for generating EVENT_MOUSE_HOVER
-    hover_element = None
 
     _rects = None
     def setDirty(self):
@@ -235,22 +236,42 @@ class GUIEventDispatcher(EventDispatcher):
             return o
         return None
 
+    # XXX need list of entered elements which 
+
     def on_mouse_motion(self, x, y, dx, dy):
         element = self.determineHit(x, y)
-        if element is not self.over_element:
-            if self.over_element is not None and self.over_element.is_enabled:
-                self.dispatch_event(self.over_element, 'on_element_leave', x, y)
 
-            if element is not None and element.is_enabled:
-                self.dispatch_event(element, 'on_element_enter', x, y)
+        if self.debug_display is not None:
+            self.debug_display.setText(repr(element))
 
-            if self.debug_display is not None:
-                self.debug_display.setText(repr(element))
+        # see which elements (starting with the one under the mouse and
+        # moving up the parentage) care about an on_element_enter event
+        over = []
+        e = element
+        while e:
+            if not e.isEnabled():
+                e = e.parent
+                continue
+            if e in self.entered_elements:
+                over.append(e)
+                e = e.parent
+                continue
+            if self.dispatch_event(e, 'on_element_enter', x, y,
+                    propogate=False):
+                over.append(e)
+            e = e.parent
 
-            #if mouse stable (not moving)? and 1 second has passed
-            #    element.on_element_hover(x, y)
+        # right, now "leave" any elements that aren't in "over" any
+        # more
+        for e in self.entered_elements:
+            if e not in over:
+                self.dispatch_event(e, 'on_element_leave', x, y)
 
-        self.over_element = element
+        #if mouse stable (not moving)? and 1 second has passed
+        #    element.on_element_hover(x, y)
+
+        self.entered_elements = over
+
         if element is not None:
             self.dispatch_event(element, 'on_mouse_motion', x, y, dx, dy)
         return EVENT_HANDLED
@@ -259,9 +280,9 @@ class GUIEventDispatcher(EventDispatcher):
         return self.on_mouse_motion(x, y, 0, 0)
 
     def on_mouse_leave(self, x, y):
-        if self.over_element is not None and self.over_element.is_enabled:
-            self.dispatch_event(self.over_element, 'on_element_leave', x, y)
-        self.over_element = None
+        for e in self.entered_elements:
+            self.dispatch_event(e, 'on_element_leave', x, y)
+        self.entered_elements = []
         return EVENT_HANDLED
 
     def on_mouse_press(self, x, y, button, modifiers):

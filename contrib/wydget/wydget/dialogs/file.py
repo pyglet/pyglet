@@ -51,18 +51,23 @@ class FileOpenDialog(base.Dialog):
         self.selected_file = None
         self.selected_widget = None
 
+    def addOption(self, label):
+        f = self.listing.contents
+        FileOption(f, text=label)
+        f.layout.layout()
+
     def openPath(self, path):
         self.listing.clearOptions()
         self.path.text = path
         self.path.cursor_position = -1
         if path != '/':
-            self.listing.addOption('..')
+            self.addOption('..')
         for entry in os.listdir(path):
             # XXX real filtering please
             if entry.startswith('.'): continue
             if os.path.isdir(os.path.join(path, entry)):
                 entry += '/'
-            self.listing.addOption(entry)
+            self.addOption(entry)
 
     def on_ok(self):
         if self.callback is not None:
@@ -72,28 +77,43 @@ class FileOpenDialog(base.Dialog):
         if self.callback is not None:
             self.callback()
 
+class FileOption(widgets.Option):
+    name = 'file-option'
 
-@event.default('.-file-open-dialog option')
+@event.default('file-option')
 def on_click(widget, x, y, buttons, modifiers, click_count):
-    # XXX ugh
-    sel = widget.parent.parent.parent
+    # copy from regular Option on_click
+    widget.is_active = not widget.is_active
+    select = widget.getParent('selection')
+    if select.scrollable: f = select.contents
+    else: f = select
+    if widget.is_active and select.is_exclusive:
+        for child in f.children:
+            if child is not widget:
+                child.is_active = None
+    widget.getGUI().dispatch_event(select, 'on_change', select.value)
+
+    # now the custom file dialog behaviour
+    dialog = widget.getParent('file-dialog')
     if widget.text == '..':
-        sel.selected_widget = None
-        sel.openPath(os.path.split(sel.path.text)[0])
+        dialog.selected_widget = None
+        path = dialog.path.text
+        if path[-1] == '/': path = path[:-1]
+        dialog.openPath(os.path.split(path)[0])
     elif widget.text[-1] == '/':
-        sel.selected_widget = None
-        sel.openPath(os.path.join(sel.path.text, widget.text))
+        dialog.selected_widget = None
+        dialog.openPath(os.path.join(dialog.path.text, widget.text))
     else:
-        file = os.path.join(sel.path.text, widget.text)
+        file = os.path.join(dialog.path.text, widget.text)
         if click_count > 1:
-            sel.selected_file = file
-            sel.on_ok()
-            sel.close()
-        elif sel.selected_file == file:
-            sel.selected_widget = None
+            dialog.selected_file = file
+            dialog.on_ok()
+            dialog.close()
+        elif dialog.selected_file == file:
+            dialog.selected_widget = None
         else:
-            sel.selected_file = file
-            sel.selected_widget = widget
+            dialog.selected_file = file
+            dialog.selected_widget = widget
     return event.EVENT_HANDLED
 
 @event.default('.-file-open-dialog-ok')
