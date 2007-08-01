@@ -77,7 +77,7 @@ class Option(TextButton):
 
     def __init__(self, parent, border=None, color=None, bgcolor=None,
             active_bgcolor=None, font_size=None, is_active=False,
-            id=None, **kw):
+            alt_bgcolor=None, id=None, **kw):
         self.is_active = is_active
         assert 'text' in kw, 'text required for Option'
 
@@ -85,13 +85,24 @@ class Option(TextButton):
         select = parent.getParent('selection')
         if color is None:
             color = select.color
+
         if bgcolor is None:
-            n = len(parent.children)
-            bgcolor = (select.bgcolor, select.alt_bgcolor)[n%2]
+            self.bgcolor = select.bgcolor
+        else:
+            self.bgcolor = util.parse_color(bgcolor)
+        if alt_bgcolor is None:
+            self.alt_bgcolor = select.alt_bgcolor
+        else:
+            self.alt_bgcolor = util.parse_color(alt_bgcolor)
         if active_bgcolor is None:
             self.active_bgcolor = select.active_bgcolor
         else:
             self.active_bgcolor = util.parse_color(active_bgcolor)
+
+        if self.alt_bgcolor:
+            n = len(parent.children)
+            bgcolor = (self.bgcolor, self.alt_bgcolor)[n%2]
+
         if select.is_vertical and select.width_spec is not None:
             kw['width'] = select.inner_rect.width
         if font_size is None: font_size = select.font_size
