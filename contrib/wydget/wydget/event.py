@@ -344,9 +344,15 @@ class GUIEventDispatcher(EventDispatcher):
         '''Translate this into an on_element_leave for all
         on_element_enter'ed elements.
         '''
+        # leave all entered elements
         for e in self.entered_elements:
             self.dispatch_event(e, 'on_element_leave', x, y)
         self.entered_elements = []
+
+        # cancel current drag
+        if self.is_dragging_element:
+            self.dispatch_event(self.active_element,
+                'on_drag_complete', x, y, button, modifiers, False)
         return EVENT_HANDLED
 
     def on_mouse_press(self, x, y, button, modifiers):

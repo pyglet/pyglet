@@ -291,17 +291,33 @@ class Columns(Layout):
     name = 'columns'
 
     # XXX column alignments
+    def __init__(self, parent, colpad=0, rowpad=0, **kw):
+        self.colpad = colpad
+        self.rowpad = rowpad
+        super(Columns, self).__init__(parent, **kw)
+
+    def columnWidths(self):
+        columns = []
+        children = self.getChildren()
+        N = len(children[0].children)
+        for i in range(N):
+            w = []
+            for row in children:
+                pad = i < N-1 and self.colpad or 0
+                col = row.children[i]
+                w.append(col.width + col.padding * 2 + pad)
+            columns.append(max(w))
+        return columns
 
     def get_width(self):
-        '''Will only be correct after a layout run.
-        '''
-        return max(c.children[-1].x + c.children[-1].width + c.padding * 2
-            for c in self.getChildren())
+        return sum(self.columnWidths())
     width = property(get_width)
 
     def get_height(self):
-        return sum(max(e.height for e in c.children) + c.padding * 2
-            for c in self.getChildren())
+        children = self.getChildren()
+        h = sum(max(e.height for e in c.children) + c.padding * 2
+            for c in children)
+        return h + (len(children)-1) * self.rowpad
     height = property(get_height)
 
     def layout(self):
@@ -311,22 +327,21 @@ class Columns(Layout):
         children = self.getChildren()
 
         # determine column widths
-        columns = []
-        for i in range(len(children[0].children)):
-            columns.append(max(c.children[i].width + c.padding * 2
-                for c in children))
+        columns = self.columnWidths()
 
         # right, now position everything
         y = self.height
-        for c in children:
-            y -= c.height
-            c.y = y
+        for row in children:
+            y -= row.height
+            row.y = y
             x = 0
-            for i, e in enumerate(c.children):
-                e.x = x
+            for i, col in enumerate(row.children):
+                col.x = x
                 x += columns[i]
-            c.layout()
+            row.layout()
+            y -= self.rowpad
 
+        super(Columns, self).layout()
 
 class Form(Layout):
     name = 'form'

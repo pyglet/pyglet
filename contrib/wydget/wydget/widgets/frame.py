@@ -48,9 +48,9 @@ class Frame(element.Element):
             else:
                 loadxml.getConstructor(child.tag)(child, obj)
         if obj.scrollable:
-            obj.contents.layout.layout()
+            obj.contents.layout()
         else:
-            obj.layout.layout()
+            obj.layout()
         return obj
 
 
