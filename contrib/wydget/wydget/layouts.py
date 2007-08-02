@@ -31,6 +31,9 @@ class Layout(object):
         # XXX use signal?
         self.parent.layoutDimensionsChanged(self)
 
+    def __call__(self):
+        self.layout()
+
     def add(self, child):
         '''Generally this is a NOOP for simple layouts.
 
@@ -57,7 +60,6 @@ class Layout(object):
     @classmethod
     def fromXML(cls, element, parent):
         '''Create the a layout from the XML element and handle children.
-        Don't add the layout to the parent element.
         '''
         kw = loadxml.parseAttributes(parent, element)
         parent.layout = layout = cls(parent, **kw)
@@ -279,6 +281,53 @@ class Horizontal(Layout):
         super(Horizontal, self).layout()
 
 
+class Columns(Layout):
+    '''A simple table layout that sets column widths in child rows to fit
+    all child data.
+
+    Note that this layout ignores *cell* visibility but honors *row*
+    visibility for layout purposes.
+    '''
+    name = 'columns'
+
+    # XXX column alignments
+
+    def get_width(self):
+        '''Will only be correct after a layout run.
+        '''
+        return max(c.children[-1].x + c.children[-1].width + c.padding * 2
+            for c in self.getChildren())
+    width = property(get_width)
+
+    def get_height(self):
+        return sum(max(e.height for e in c.children) + c.padding * 2
+            for c in self.getChildren())
+    height = property(get_height)
+
+    def layout(self):
+        # give the parent a chance to resize before we layout
+        self.parent.layoutDimensionsChanged(self)
+
+        children = self.getChildren()
+
+        # determine column widths
+        columns = []
+        for i in range(len(children[0].children)):
+            columns.append(max(c.children[i].width + c.padding * 2
+                for c in children))
+
+        # right, now position everything
+        y = self.height
+        for c in children:
+            y -= c.height
+            c.y = y
+            x = 0
+            for i, e in enumerate(c.children):
+                e.x = x
+                x += columns[i]
+            c.layout()
+
+
 class Form(Layout):
     name = 'form'
 
@@ -345,6 +394,6 @@ class Form(Layout):
 
 
 import loadxml
-for klass in [Grid, Row, Cell, Vertical, Horizontal]:
+for klass in [Grid, Row, Cell, Vertical, Horizontal, Columns]:
     loadxml.xml_registry[klass.name] = klass
 
