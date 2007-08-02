@@ -32,9 +32,6 @@ KNOWN BUGS
   . <ah> overdraw inconsistency between drawers and their buttons
   . <ah> can see individual elements of drawer move during animation (probably
     subpixel positioned)
-- Text Input:
-  . text input scrolling always wants to be as left as possible, rather than
-    keeping the current viewport
 
 
 KNOWN AREAS OF REWRITING
