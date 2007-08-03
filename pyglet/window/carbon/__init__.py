@@ -959,8 +959,6 @@ class CarbonWindow(BaseWindow):
         button, modifiers = self._get_mouse_button_and_modifiers(ev)
         x, y = self._get_mouse_position(ev)
         y = self.height - y
-        if x < 0 or y < 0:
-            return noErr
 
         self._mouse_x = x
         self._mouse_y = y
