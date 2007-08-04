@@ -93,8 +93,12 @@ class Win32Exception(WindowException):
     pass
 
 class Win32Platform(Platform):
+    _display = None
+
     def get_default_display(self):
-        return Win32Display()
+        if not self._display:
+            self._display = Win32Display()
+        return self._display
     
 class Win32Display(Display):
     def get_screens(self):

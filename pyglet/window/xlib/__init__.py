@@ -105,16 +105,23 @@ class XlibMouseCursor(MouseCursor):
         self.cursor = cursor
 
 class XlibPlatform(Platform):
+    def __init__(self):
+        self._displays = {}
+
     def get_display(self, name):
-        return XlibDisplayDevice(name)
+        if name not in self._displays:
+            self._displays[name] = XlibDisplayDevice(name)
+        return self._displays[name]
 
     def get_default_display(self):
-        return XlibDisplayDevice('')
+        return self.get_display('')
 
 class XlibDisplayDevice(Display):
     _display = None     # POINTER(xlib.Display)
 
     def __init__(self, name):
+        super(XlibDisplayDevice, self).__init__()
+
         self._display = xlib.XOpenDisplay(name)
         if not self._display:
             raise NoSuchDisplayException('Cannot connect to "%s"' % name)

@@ -212,6 +212,9 @@ class Display(object):
     Use `Platform.get_display` or `Platform.get_default_display` to obtain
     an instance of this class.  Use a display to obtain `Screen` instances.
     '''
+    def __init__(self):
+        self._windows = []
+
     def get_screens(self):
         '''Get the available screens.
 
@@ -233,6 +236,13 @@ class Display(object):
         :rtype: `Screen`
         '''
         return self.get_screens()[0]
+
+    def get_windows(self):
+        '''Get the windows currently attached to this display.
+
+        :rtype: sequence of `Window`
+        '''
+        return self._windows
 
 class Screen(object):
     '''A virtual monitor that supports fullscreen windows.
@@ -589,6 +599,7 @@ class BaseWindow(WindowEventDispatcher, WindowExitHandler):
             caption = sys.argv[0]
         self._caption = caption
 
+        display._windows.append(self)
         self._create()
 
         self.switch_to()
@@ -673,6 +684,7 @@ class BaseWindow(WindowEventDispatcher, WindowExitHandler):
         After closing the window, the GL context will be invalid.  The
         window instance cannot be reused once closed (see also `set_visible`).
         '''
+        self._display._windows.remove(self)
         self._context.destroy()
         self._config = None
         self._context = None
