@@ -455,6 +455,7 @@ class CarbonWindow(BaseWindow):
 
         # Restore cursor visibility
         self.set_mouse_platform_visible(True)
+        self.set_exclusive_mouse(False)
 
         if self._fullscreen:
             quicktime.EndFullScreen(self._fullscreen_restore, 0)
