@@ -539,6 +539,10 @@ class XlibWindow(BaseWindow):
         # Set caption
         self.set_caption(self._caption)
 
+        self.switch_to()
+        if self._visible:
+            self.set_visible(True)
+
     def _map(self):
         if self._mapped:
             return
@@ -599,7 +603,6 @@ class XlibWindow(BaseWindow):
             glx.glXDestroyWindow(self._x_display, self._glx_window)
         if self._window:
             xlib.XDestroyWindow(self._x_display, self._window)
-        super(XlibWindow, self).close()
 
         self._window = None
         self._glx_window = None
@@ -710,6 +713,7 @@ class XlibWindow(BaseWindow):
             self._map()
         else:
             self._unmap()
+        self._visible = visible
 
     def set_minimum_size(self, width, height):
         self._minimum_size = width, height
