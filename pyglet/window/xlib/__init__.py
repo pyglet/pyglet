@@ -563,8 +563,9 @@ class XlibWindow(BaseWindow):
         if self._fullscreen:
             self.activate()
 
-        self.dispatch_event(event.EVENT_RESIZE, self._width, self._height)
-        self.dispatch_event(event.EVENT_EXPOSE)
+        self._event_queue.append((event.EVENT_RESIZE, 
+                                  self._width, self._height))
+        self._event_queue.append((event.EVENT_EXPOSE,))
 
     def _unmap(self):
         if not self._mapped:
@@ -669,7 +670,7 @@ class XlibWindow(BaseWindow):
             self.set_minimum_size(width, height)
             self.set_maximum_size(width, height)
         xlib.XResizeWindow(self._x_display, self._window, width, height)
-        self.dispatch_event(event.EVENT_RESIZE, width, height)
+        self._event_queue.append((event.EVENT_RESIZE, width, height))
 
     def get_size(self):
         # XGetGeometry and XWindowAttributes seem to always return the
