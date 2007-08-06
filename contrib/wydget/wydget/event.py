@@ -404,9 +404,8 @@ class GUIEventDispatcher(EventDispatcher):
         if self.active_element is not None:
 
             # check drag threshold
-            print self.cumulative_drag
             cdx, cdy = self.cumulative_drag
-            cdx += dx; cdy += dy
+            cdx += abs(dx); cdy += abs(dy)
             self.cumulative_drag = (cdx, cdy)
             if cdx + cdy < 4:
                 # less than 4 pixels, don't drag just yet
