@@ -32,9 +32,12 @@ class LibraryLoader(object):
         elif type(platform_names) == list:
             platform_names = tuple(platform_names)
         for name in platform_names + names:
-            path = self.find_library(name)
-            if path:
-                return ctypes.cdll.LoadLibrary(path)
+            try:
+                return ctypes.cdll.LoadLibrary(name)
+            except OSError:
+                path = self.find_library(name)
+                if path:
+                    return ctypes.cdll.LoadLibrary(path)
         raise ImportError('Library "%s" not found.' % names[0])
 
     find_library = lambda self, name: ctypes.util.find_library(name)
