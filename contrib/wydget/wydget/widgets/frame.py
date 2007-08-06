@@ -57,13 +57,13 @@ def on_mouse_scroll(widget, x, y, dx, dy):
     if widget.scrollable:
         if dy and widget.v_slider is not None:
             slider = widget.v_slider
-            slider.changeCurrent(slider.current + dy * slider.step)
+            slider.value = slider.value + dy * slider.step
         if dx and widget.h_slider is not None:
             slider = widget.h_slider
-            slider.changeCurrent(slider.current + dx * slider.step)
+            slider.value = slider.value + dx * slider.step
         elif dy and widget.v_slider is None and widget.h_slider is not None:
             slider = widget.h_slider
-            slider.changeCurrent(slider.current + dy * slider.step)
+            slider.value = slider.value + dy * slider.step
         return event.EVENT_HANDLED
     return event.EVENT_UNHANDLED
 

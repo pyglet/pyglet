@@ -1,4 +1,5 @@
 from pyglet.gl import *
+from pyglet.window import mouse
 
 from wydget import element, event, data, util
 from wydget.widgets.button import Button, RepeaterButton
@@ -6,32 +7,31 @@ from wydget.widgets.label import Label
 
 class SliderCommon(element.Element):
     slider_size = 16
-    def _barPosition(self):
-        pos = (self.current / float(self.range)) * self.bar_pixel_range
-        return  pos
 
-    def setValue(self, value):
-        self.current = self.type(max(self.minimum, min(self.maximum, value)))
-
-    def changeCurrent(self, new):
-        self.setValue(new)
-        self.positionBar()
-        self.getGUI().dispatch_event(self, 'on_change', self.current)
+    def get_value(self):
+        return self._value
+    def set_value(self, value, generate_event=False, position_bar=True):
+        self._value = self.type(max(self.minimum, min(self.maximum, value)))
+        if position_bar:
+            self.positionBar()
         if self.show_value:
-            self.bar.setText(str(self.current))
+            self.bar.setText(str(self._value))
+        if generate_event:
+            self.getGUI().dispatch_event(self, 'on_change', self._value)
+    value = property(get_value, set_value)
 
     def stepToMaximum(self):
-        self.changeCurrent(self.current + self.step)
+        self.value = self._value + self.step
 
     def stepToMinimum(self):
-        self.changeCurrent(self.current - self.step)
+        self.value = self._value - self.step
 
 class VerticalSlider(SliderCommon):
     '''
-    The current value will be of the same type as the minimum value.
+    The value will be of the same type as the minimum value.
     '''
     name='vslider'
-    def __init__(self, parent, minimum, maximum, current, step=1,
+    def __init__(self, parent, minimum, maximum, value, step=1,
             bar_size=None, show_value=False, bar_text_color='white',
             bar_color=(.3, .3, .3, 1), x=0, y=0, z=0,
             width=SliderCommon.slider_size, height='100%',
@@ -41,7 +41,7 @@ class VerticalSlider(SliderCommon):
         self.type = type(self.minimum)
         self.maximum = util.parse_value(maximum, 0)
         self.range = self.maximum - self.minimum
-        self.current = util.parse_value(current, 0)
+        self._value = util.parse_value(value, 0)
         self.step = util.parse_value(step, 0)
         self.show_value = show_value
 
@@ -69,7 +69,7 @@ class VerticalSlider(SliderCommon):
             self.bar_size = int(max(self.slider_size, i_height /
                 (self.range+1)))
 
-        s = show_value and str(self.current) or ' '
+        s = show_value and str(self._value) or ' '
         # note: dimensions are funny because the bar is rotated 90 degrees
         self.bar = SliderBar(self, 'y', s, self.width, self.bar_size,
             bgcolor=bar_color, color=bar_text_color)
@@ -86,7 +86,7 @@ class VerticalSlider(SliderCommon):
     def positionBar(self):
         ir = self.inner_rect
         h = ir.height - self.bar.height
-        self.bar.y = ir.y + int(self.current / float(self.range) * h)
+        self.bar.y = ir.y + int(self._value / float(self.range) * h)
 
 @event.default('vslider')
 def on_mouse_press(self, x, y, buttons, modifiers):
@@ -98,7 +98,7 @@ def on_mouse_press(self, x, y, buttons, modifiers):
 
 @event.default('vslider')
 def on_mouse_scroll(self, x, y, dx, dy):
-    if dy: self.changeCurrent(self.current + dy * self.step)
+    if dy: self.changeCurrent(self._value + dy * self.step)
     return event.EVENT_HANDLED
 
 @event.default('.-repeater-button-max')
@@ -113,10 +113,10 @@ def on_click(widget, *args):
 
 class HorizontalSlider(SliderCommon):
     '''
-    The current value will be of the same type as the minimum value.
+    The value will be of the same type as the minimum value.
     '''
     name='hslider'
-    def __init__(self, parent, minimum, maximum, current, step=1,
+    def __init__(self, parent, minimum, maximum, value, step=1,
             bar_size=None, show_value=False, bar_text_color='white',
             bar_color=(.3, .3, .3, 1), x=0, y=0, z=0, width='100%',
             height=SliderCommon.slider_size, bgcolor='gray', **kw):
@@ -125,7 +125,7 @@ class HorizontalSlider(SliderCommon):
         self.type = type(self.minimum)
         self.maximum = util.parse_value(maximum, 0)
         self.range = self.maximum - self.minimum
-        self.current = util.parse_value(current, 0)
+        self._value = util.parse_value(value, 0)
         self.step = util.parse_value(step, 0)
         self.show_value = show_value
 
@@ -151,7 +151,7 @@ class HorizontalSlider(SliderCommon):
         if self.bar_size is None:
             self.bar_size = int(max(self.slider_size, i_width / (self.range+1)))
 
-        s = show_value and str(self.current) or ' '
+        s = show_value and str(self._value) or ' '
         self.bar = SliderBar(self, 'x', s, self.bar_size,
             self.height, bgcolor=bar_color, color=bar_text_color)
 
@@ -169,7 +169,7 @@ class HorizontalSlider(SliderCommon):
         ir = self.inner_rect
         w = ir.width - self.bar.width
         range = self.maximum - self.minimum
-        self.bar.x = ir.x + int(self.current / float(range) * w)
+        self.bar.x = ir.x + int(self._value / float(range) * w)
 
 
 @event.default('hslider')
@@ -182,8 +182,8 @@ def on_mouse_press(self, x, y, buttons, modifiers):
 
 @event.default('hslider')
 def on_mouse_scroll(self, x, y, dx, dy):
-    if dx: self.changeCurrent(self.current + dx * self.step)
-    else: self.changeCurrent(self.current + dy * self.step)
+    if dx: self.changeCurrent(self._value + dx * self.step)
+    else: self.changeCurrent(self._value + dy * self.step)
     return event.EVENT_HANDLED
 
 
@@ -224,16 +224,21 @@ class SliderBar(Label):
 
 @event.default('slider-bar')
 def on_mouse_drag(widget, x, y, dx, dy, buttons, modifiers):
-    # XXX enforce buttons
+    if not buttons & mouse.LEFT:
+        return event.EVENT_UNHANDLED
     if widget.axis == 'x':
         s = widget.getParent('hslider')
-        x, y = s.calculateRelativeCoords(x, y)
-        value = x / s.inner_rect.width
+        w = s.inner_rect.width - widget.width
+        xoff = s.inner_rect.x
+        widget.x = max(xoff, min(w + xoff, widget.x + dx))
+        value = (widget.x - xoff) / float(w)
     else:
         s = widget.getParent('vslider')
-        x, y = s.calculateRelativeCoords(x, y)
-        value = y / s.inner_rect.height
-    s.changeCurrent(value * s.range + s.minimum)
+        h = s.inner_rect.height - widget.height
+        yoff = s.inner_rect.y
+        widget.y = max(yoff, min(h + yoff, widget.y + dy))
+        value = (widget.y - yoff) / float(h)
+    s.set_value(value * s.range + s.minimum, position_bar=False)
     return event.EVENT_HANDLED
 
 
