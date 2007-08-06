@@ -43,7 +43,7 @@ class Drawer(Frame):
         self.state = self.HIDDEN
 
 class HideAnimation(anim.Animation):
-    def __init__(self, drawer, duration=1., function=anim.cosine90):
+    def __init__(self, drawer, duration=.25, function=anim.cosine90):
         self.drawer = drawer
         self.duration = duration
         self.function = function
@@ -107,30 +107,30 @@ class HideAnimation(anim.Animation):
                 self.drawer.y = y
 
 class ExposeAnimation(anim.Animation):
-    def __init__(self, drawer, duration=1., function=anim.cosine90):
+    def __init__(self, drawer, duration=.25, function=anim.cosine90):
         self.drawer = drawer
         self.duration = duration
         self.function = function
         if drawer.side == Drawer.LEFT:
-            self.sx = drawer.x
-            self.ex = drawer.x + drawer.width
+            self.sx = int(drawer.x)
+            self.ex = int(drawer.x + drawer.width)
             self.sw = 0
-            self.ew = drawer.width
+            self.ew = int(drawer.width)
         elif drawer.side == Drawer.RIGHT:
-            self.sx = drawer.x
-            self.ex = drawer.x - drawer.width
+            self.sx = int(drawer.x)
+            self.ex = int(drawer.x - drawer.width)
             self.sw = 0
-            self.ew = drawer.width
+            self.ew = int(drawer.width)
         elif drawer.side == Drawer.TOP:
-            self.sy = drawer.y
-            self.ey = drawer.y + drawer.height
+            self.sy = int(drawer.y)
+            self.ey = int(drawer.y + drawer.height)
             self.sh = 0
-            self.eh = drawer.height
+            self.eh = int(drawer.height)
         elif drawer.side == Drawer.BOTTOM:
-            self.sy = drawer.y
-            self.ey = drawer.y - drawer.height
+            self.sy = int(drawer.y)
+            self.ey = int(drawer.y - drawer.height)
             self.sh = 0
-            self.eh = drawer.height
+            self.eh = int(drawer.height)
         super(ExposeAnimation, self).__init__()
 
     def cancel(self):
