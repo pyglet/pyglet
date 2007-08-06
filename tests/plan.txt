@@ -75,11 +75,11 @@ window
             window.EVENT_SHOW_HIDE              X11 WIN OSX
 
         window-event-sequence
-            window.EVENT_SEQUENCE_CREATE            DEVELOPER
-            window.EVENT_SEQUENCE_SHOW              DEVELOPER
-            window.EVENT_SEQUENCE_CREATE_FULLSCREEN DEVELOPER
-            window.EVENT_SEQUENCE_SET_FULLSCREEN    DEVELOPER
-            window.EVENT_SEQUENCE_UNSET_FULLSCREEN  DEVELOPER
+            window.EVENT_SEQUENCE_CREATE            X11 DEVELOPER
+            window.EVENT_SEQUENCE_SHOW              X11 DEVELOPER
+            window.EVENT_SEQUENCE_CREATE_FULLSCREEN X11 DEVELOPER
+            window.EVENT_SEQUENCE_SET_FULLSCREEN    X11 DEVELOPER
+            window.EVENT_SEQUENCE_UNSET_FULLSCREEN  X11 DEVELOPER
 
 
 clock

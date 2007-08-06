@@ -565,6 +565,7 @@ class XlibWindow(BaseWindow):
 
         self._event_queue.append((event.EVENT_RESIZE, 
                                   self._width, self._height))
+        self._event_queue.append((event.EVENT_SHOW,))
         self._event_queue.append((event.EVENT_EXPOSE,))
 
     def _unmap(self):
