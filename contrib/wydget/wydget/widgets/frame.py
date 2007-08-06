@@ -58,11 +58,14 @@ class Frame(element.Element):
 def on_mouse_scroll(widget, x, y, dx, dy):
     if widget.scrollable:
         if dy and widget.v_slider is not None:
-            widget.v_slider.bar.moveY(dy)
+            slider = widget.v_slider
+            slider.changeCurrent(slider.current + dy * slider.step)
         if dx and widget.h_slider is not None:
-            widget.h_slider.bar.moveX(dx)
+            slider = widget.h_slider
+            slider.changeCurrent(slider.current + dx * slider.step)
         elif dy and widget.v_slider is None and widget.h_slider is not None:
-            widget.h_slider.bar.moveX(dy)
+            slider = widget.h_slider
+            slider.changeCurrent(slider.current + dy * slider.step)
         return event.EVENT_HANDLED
     return event.EVENT_UNHANDLED
 
@@ -120,7 +123,7 @@ class ContainerFrame(element.Element):
                 h = vc_height
             self.y = -r
             p.v_slider = VerticalSlider(p, 0, r, r, x=vc_width, y=yoffset,
-                height=h, classes=('-frame-vertical-slider',))
+                height=h, step=16, classes=('-frame-vertical-slider',))
         elif p.v_slider is not None:
             p.v_slider.delete()
             p.v_slider = None
@@ -133,7 +136,7 @@ class ContainerFrame(element.Element):
             self.y += yoffset
             vc_height -= yoffset
             p.h_slider = HorizontalSlider(p, 0, r, 0, width=vc_width,
-                classes=('-frame-horizontal-slider',))
+                step=16, classes=('-frame-horizontal-slider',))
         elif p.h_slider is not None:
             p.h_slider.delete()
             p.h_slider = None

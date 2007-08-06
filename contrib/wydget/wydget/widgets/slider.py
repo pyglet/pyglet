@@ -5,6 +5,7 @@ from wydget.widgets.button import Button, RepeaterButton
 from wydget.widgets.label import Label
 
 class SliderCommon(element.Element):
+    slider_size = 16
     def _barPosition(self):
         pos = (self.current / float(self.range)) * self.bar_pixel_range
         return  pos
@@ -32,8 +33,9 @@ class VerticalSlider(SliderCommon):
     name='vslider'
     def __init__(self, parent, minimum, maximum, current, step=1,
             bar_size=None, show_value=False, bar_text_color='white',
-            bar_color=(.3, .3, .3, 1),
-            x=0, y=0, z=0, width=16, height='100%', bgcolor='gray', **kw):
+            bar_color=(.3, .3, .3, 1), x=0, y=0, z=0,
+            width=SliderCommon.slider_size, height='100%',
+            bgcolor='gray', **kw):
 
         self.minimum = util.parse_value(minimum, 0)
         self.type = type(self.minimum)
@@ -64,7 +66,8 @@ class VerticalSlider(SliderCommon):
         i_height = self.inner_rect.height
         self.bar_size = util.parse_value(bar_size, i_height)
         if self.bar_size is None:
-            self.bar_size = int(max(16, i_height / (self.range+1)))
+            self.bar_size = int(max(self.slider_size, i_height /
+                (self.range+1)))
 
         s = show_value and str(self.current) or ' '
         # note: dimensions are funny because the bar is rotated 90 degrees
@@ -115,8 +118,8 @@ class HorizontalSlider(SliderCommon):
     name='hslider'
     def __init__(self, parent, minimum, maximum, current, step=1,
             bar_size=None, show_value=False, bar_text_color='white',
-            bar_color=(.3, .3, .3, 1),
-            x=0, y=0, z=0, width='100%', height=16, bgcolor='gray', **kw):
+            bar_color=(.3, .3, .3, 1), x=0, y=0, z=0, width='100%',
+            height=SliderCommon.slider_size, bgcolor='gray', **kw):
 
         self.minimum = util.parse_value(minimum, 0)
         self.type = type(self.minimum)
@@ -146,7 +149,7 @@ class HorizontalSlider(SliderCommon):
         i_width = self.inner_rect.width
         self.bar_size = util.parse_value(bar_size, i_width)
         if self.bar_size is None:
-            self.bar_size = int(max(16, i_width / (self.range+1)))
+            self.bar_size = int(max(self.slider_size, i_width / (self.range+1)))
 
         s = show_value and str(self.current) or ' '
         self.bar = SliderBar(self, 'x', s, self.bar_size,
