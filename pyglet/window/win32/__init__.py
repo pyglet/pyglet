@@ -780,6 +780,9 @@ class Win32Window(BaseWindow):
     # Event dispatching
 
     def dispatch_events(self):
+        while self._event_queue:
+            self.dispatch_event(*self._event_queue.pop(0))
+
         msg = MSG()
         while _user32.PeekMessageA(byref(msg), self._hwnd, 0, 0, PM_REMOVE):
             _user32.TranslateMessage(byref(msg))

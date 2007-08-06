@@ -489,6 +489,8 @@ class BaseWindow(WindowEventDispatcher, WindowExitHandler):
     _mouse_exclusive = False
     _mouse_in_window = True
 
+    _event_queue = None
+
     def __init__(self, 
                  width=640,
                  height=480,
@@ -559,6 +561,7 @@ class BaseWindow(WindowEventDispatcher, WindowExitHandler):
 
         '''
         WindowEventDispatcher.__init__(self)
+        self._event_queue = []
 
         if not display:
             display = get_platform().get_default_display()

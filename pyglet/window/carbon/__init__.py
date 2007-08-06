@@ -444,9 +444,6 @@ class CarbonWindow(BaseWindow):
         self._create()
 
     def _create(self):
-        # TODO make this standard on all platforms?
-        self._queued_events = []
-
         self._agl_context = self.context._context
 
         if self._window:
@@ -480,9 +477,9 @@ class CarbonWindow(BaseWindow):
             agl.aglSetFullScreen(self._agl_context, 
                                  self._width, self._height, 0, 0)
 
-            self._queued_events.append((event.EVENT_RESIZE, 
+            self._event_queue.append((event.EVENT_RESIZE, 
                                        self._width, self._height))
-            self._queued_events.append((event.EVENT_EXPOSE,))
+            self._event_queue.append((event.EVENT_EXPOSE,))
         else:
             # Create floating window
             rect = Rect()
@@ -608,8 +605,8 @@ class CarbonWindow(BaseWindow):
         agl.aglSetInteger(self._agl_context, agl.AGL_SWAP_INTERVAL, byref(swap))
 
     def dispatch_events(self):
-        while self._queued_events:
-            self.dispatch_event(*self._queued_events.pop(0))
+        while self._event_queue:
+            self.dispatch_event(*self._event_queue.pop(0))
 
         e = EventRef()
         result = carbon.ReceiveNextEvent(0, c_void_p(), 0, True, byref(e))
@@ -704,9 +701,9 @@ class CarbonWindow(BaseWindow):
         self._visible = visible
         if visible:
             carbon.ShowWindow(self._window)
-            self._queued_events.append((event.EVENT_RESIZE, 
+            self._event_queue.append((event.EVENT_RESIZE, 
                                        self._width, self._height))
-            self._queued_events.append((event.EVENT_EXPOSE,))
+            self._event_queue.append((event.EVENT_EXPOSE,))
         else:
             carbon.HideWindow(self._window)
 
