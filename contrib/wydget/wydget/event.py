@@ -443,15 +443,8 @@ class GUIEventDispatcher(EventDispatcher):
         if element is None: return EVENT_UNHANDLED
         if not element.is_enabled:
             self.active_element = None
-            # XXX mouse_leave??
             return EVENT_UNHANDLED
-
-        if self.active_element is not element:
-            # XXX mouse_over??
-            self.active_element = element
-
         self.is_dragging_element = False
-
         return self.dispatch_event(element, 'on_mouse_drag', x, y, dx, dy,
             buttons, modifiers)
 
@@ -503,8 +496,10 @@ class GUIEventDispatcher(EventDispatcher):
             self._click_count = 1
         self._last_click = now
 
-        return self.dispatch_event(element, 'on_click', x, y, button,
-            modifiers, self._click_count)
+        if element is self.mouse_press_element:
+            return self.dispatch_event(element, 'on_click', x, y, button,
+                modifiers, self._click_count)
+        return EVENT_UNHANDLED
 
     def on_mouse_scroll(self, x, y, dx, dy):
         element = self.determineHit(x, y)

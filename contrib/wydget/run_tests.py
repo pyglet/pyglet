@@ -60,16 +60,10 @@ def run(xml_file):
 
     gui.push_handlers(dragndrop.DragHandler('.draggable'))
 
-    @gui.select('button#press-me', 'on_click')
-    def on_click_woohoo(widget, *args):
-        fr = widget.getGUI().getByID('left-frame')
-        if fr.sx == 1.:
-            anim.TranslateProperty(fr, 'sx', .5, .5)
-            anim.TranslateProperty(fr, 'sy', .5, .5)
-        else:
-            anim.TranslateProperty(fr, 'sx', 1., .5)
-            anim.TranslateProperty(fr, 'sy', 1., .5)
-        return event.EVENT_UNHANDLED
+    @gui.select('#press-me')
+    def on_click(widget, *args):
+        print 'on_click', widget
+        return event.EVENT_HANDLED
 
     if 0:
         @gui.select('button,text-button')
