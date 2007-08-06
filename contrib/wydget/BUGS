@@ -17,9 +17,6 @@ KNOWN BUGS
   . oh yeah, selection lists are slow too
 - Buttons:
   . <ah> right-hand border of text in test_button not rendered
-- File Dialog:
-  . file dialog doesn't understand ~
-  . file dialog needs to understand dir "foo" == "foo/"
 - Movies:
   . <ah> test_movie crashes when movie finishes
   . <ah> cannot open another movie once first movie has started

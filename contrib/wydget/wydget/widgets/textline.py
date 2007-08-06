@@ -76,6 +76,8 @@ class TextInputLine(Label):
             self.cursor._render(self.cursor.rect)
 
     def setCursorPosition(self, index):
+        if index >= len(self.text):
+            index = len(self.text)
         direction = index - self.cursor_index
 
         self.cursor_index = index

@@ -124,9 +124,11 @@ class ContainerFrame(element.Element):
             self.y = -r
             p.v_slider = VerticalSlider(p, 0, r, r, x=vc_width, y=yoffset,
                 height=h, step=16, classes=('-frame-vertical-slider',))
-        elif p.v_slider is not None:
-            p.v_slider.delete()
-            p.v_slider = None
+        else:
+            if p.v_slider is not None:
+                p.v_slider.delete()
+                p.v_slider = None
+            self.y = vc_height - self.height
 
         if w > vc_width:
             if p.h_slider is not None:

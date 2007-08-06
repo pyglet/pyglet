@@ -11,7 +11,7 @@ class Selection(Frame):
 
     def __init__(self, parent, size=None, is_exclusive=False,
             color='black', bgcolor='white', is_vertical=True,
-            alt_bgcolor='silver', active_bgcolor='aqua',
+            alt_bgcolor='ccc', active_bgcolor='ffc',
             is_transparent=True, scrollable=True, font_size=None, **kw):
         self.is_vertical = is_vertical
         self.is_exclusive = is_exclusive

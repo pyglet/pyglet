@@ -130,6 +130,7 @@ def on_click(widget, *args):
 
 @event.default('.-file-open-path')
 def on_change(widget, value):
+    value = os.path.expanduser(os.path.expandvars(value))
     if os.path.isdir(value):
         widget.parent.openPath(value)
     return event.EVENT_HANDLED
