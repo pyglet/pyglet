@@ -6,6 +6,7 @@ KNOWN BUGS
 - assets are poorly-located for packaging
 - border model should be fixed so border doesn't have automagic padding
 - view clipping problem: see test_selection first test
+- borders aren't clipped to view properly (all four sides are still drawn)
 - top-left pixel of any border not rendered
 - Sliders:
   . sliders in inner frame in test_frame.xml are misbehaving
@@ -25,12 +26,6 @@ KNOWN BUGS
   . <ah> test_movie crashes when movie finishes
   . <ah> cannot open another movie once first movie has started
     (rj can't reproduce this)
-- Drawer:
-  . buttons in test_drawer have an extra line of white to the right of the
-    border
-  . <ah> overdraw inconsistency between drawers and their buttons
-  . <ah> can see individual elements of drawer move during animation (probably
-    subpixel positioned)
 
 
 KNOWN AREAS OF REWRITING

@@ -48,24 +48,24 @@ class HideAnimation(anim.Animation):
         self.duration = duration
         self.function = function
         if drawer.side == Drawer.LEFT:
-            self.sx = drawer.x
-            self.ex = drawer.x - drawer.width
-            self.sw = drawer.width
+            self.sx = int(drawer.x)
+            self.ex = int(drawer.x - drawer.width)
+            self.sw = int(drawer.width)
             self.ew = 0
         elif drawer.side == Drawer.RIGHT:
-            self.sx = drawer.x
-            self.ex = drawer.x + drawer.width
-            self.sw = drawer.width
+            self.sx = int(drawer.x)
+            self.ex = int(drawer.x + drawer.width)
+            self.sw = int(drawer.width)
             self.ew = 0
         elif drawer.side == Drawer.TOP:
-            self.sy = drawer.y
-            self.ey = drawer.y - drawer.height
-            self.sh = drawer.height
+            self.sy = int(drawer.y)
+            self.ey = int(drawer.y - drawer.height)
+            self.sh = int(drawer.height)
             self.eh = 0
         elif drawer.side == Drawer.BOTTOM:
-            self.sy = drawer.y
-            self.ey = drawer.y + drawer.height
-            self.sh = drawer.height
+            self.sy = int(drawer.y)
+            self.ey = int(drawer.y + drawer.height)
+            self.sh = int(drawer.height)
             self.eh = 0
         super(HideAnimation, self).__init__()
 
