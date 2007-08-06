@@ -479,6 +479,7 @@ class CarbonWindow(BaseWindow):
 
             self._event_queue.append((event.EVENT_RESIZE, 
                                        self._width, self._height))
+            self._event_queue.append((event.EVENT_SHOW,))
             self._event_queue.append((event.EVENT_EXPOSE,))
         else:
             # Create floating window
@@ -605,6 +606,9 @@ class CarbonWindow(BaseWindow):
         agl.aglSetInteger(self._agl_context, agl.AGL_SWAP_INTERVAL, byref(swap))
 
     def dispatch_events(self):
+        if self._recreate_deferred:
+            self._recreate_immediate()
+
         while self._event_queue:
             self.dispatch_event(*self._event_queue.pop(0))
 
@@ -703,6 +707,7 @@ class CarbonWindow(BaseWindow):
             carbon.ShowWindow(self._window)
             self._event_queue.append((event.EVENT_RESIZE, 
                                        self._width, self._height))
+            self._event_queue.append((event.EVENT_SHOW,))
             self._event_queue.append((event.EVENT_EXPOSE,))
         else:
             carbon.HideWindow(self._window)

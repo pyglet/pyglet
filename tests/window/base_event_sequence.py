@@ -11,6 +11,8 @@ class BaseEventSequence(unittest.TestCase):
     start_time = time.time()
 
     def check_sequence(self, sequence, name):
+        if sequence == 0:
+            self.start_time = time.time()
         if not self.finished:
             self.assertTrue(self.next_sequence == sequence,
                             '%s out of order' % name)
