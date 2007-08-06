@@ -1,5 +1,5 @@
 from pyglet.gl import *
-from pyglet.window import key
+from pyglet.window import key, mouse
 
 from wydget import event, anim, util, element
 from wydget.widgets.frame import Frame
@@ -35,6 +35,7 @@ class CursorAnimation(anim.Animation):
             self.element.alpha = 0.2
 
 class TextInputLine(Label):
+    name = '-text-input-line'
     def __init__(self, parent, text, *args, **kw):
         self.cursor_index = len(text)
         if 'is_password' in kw:
@@ -46,6 +47,13 @@ class TextInputLine(Label):
 
         self.cursor = Cursor(self.color, self, 1, 0, 0, 1, self.font_size,
             is_visible=False)
+        self.highlight = None
+
+    def selectAll(self):
+        self.highlight = (0, len(self.text))
+
+    def clearSelection(self):
+        self.highlight = None
 
     def setText(self, text):
         self.text = text
@@ -74,6 +82,31 @@ class TextInputLine(Label):
         super(TextInputLine, self).render(rect)
         if self.cursor.is_visible:
             self.cursor._render(self.cursor.rect)
+
+        if self.highlight is not None:
+            start, end = self.highlight
+            if start:
+                start = self.glyphs.get_subwidth(0, start)
+            end = self.glyphs.get_subwidth(0, end)
+
+            glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glEnable(GL_BLEND)
+            glColor4f(.8, .8, 1, .5)
+            glRectf(start, 0, end, rect.height)
+            glPopAttrib()
+               
+    def determineIndex(self, x):
+        diff = abs(x)
+        if self.glyphs is None:
+            return 0
+        index = 0
+        for advance in self.glyphs.cumulative_advance:
+            new_diff = abs(x - advance)
+            if new_diff > diff: break
+            index += 1
+            diff = new_diff
+        return min(len(self.text), index)
 
     def setCursorPosition(self, index):
         if index >= len(self.text):
@@ -114,20 +147,20 @@ class TextInput(Frame):
     def __init__(self, parent, text='', font_size=None, size=None,
             x=0, y=0, z=0, width=None, height=None, border='black',
             padding=2, bgcolor='white', color='black', classes=(), **kw):
-        classes += ('-text-input',)
         if font_size is None:
             font_size = parent.getStyle().font_size
         else:
             font_size = util.parse_value(font_size, None)
         self.font_size = font_size
         if size is not None:
+            size = util.parse_value(size, None)
             width = size * self.font_size
         super(TextInput, self).__init__(parent, x, y, z, width, height,
             padding=padding, border=border, classes=classes, bgcolor=bgcolor,
             **kw)
 
         self.ti = TextInputLine(self, text, font_size=font_size,
-            bgcolor=bgcolor, color=color, classes=('-text-input-line',))
+            bgcolor=bgcolor, color=color)
 
         if width is None:
             self.width = self.ti.width + self.padding * 2
@@ -169,51 +202,78 @@ class PasswordInput(TextInput):
         self.ti.is_password = True
         self.ti.setText(self.ti.text)
 
-@event.default('.-text-input')
-def on_mouse_press(widget, x, y, button, modifiers):
-    widget = widget.ti
-    x, y = widget.calculateRelativeCoords(x, y)
-    diff = abs(x)
-    index = 0
-    if widget.glyphs is not None:
-        for advance in widget.glyphs.cumulative_advance:
-            new_diff = abs(x - advance)
-            if new_diff > diff: break
-            index += 1
-            diff = new_diff
-        if index >= len(widget.text):
-            index = len(widget.text)
-    widget.setCursorPosition(index)
+@event.default('textinput')
+def on_mouse_press(widget, x, y, buttons, modifiers):
+    ti = widget.ti
+    x, y = ti.calculateRelativeCoords(x, y)
+    new = ti.determineIndex(x)
+
+    if buttons & mouse.LEFT and modifiers & key.MOD_SHIFT:
+        old = ti.cursor_index
+        if old < new: ti.highlight = (old, new)
+        else: ti.highlight = (new, old)
+        widget.getGUI().setSelection(ti)
+    else:
+        widget.ti.clearSelection()
+
+    ti.setCursorPosition(new)
     return event.EVENT_HANDLED
 
-@event.default('.-text-input')
+@event.default('textinput')
+def on_click(widget, x, y, buttons, modifiers, click_count):
+    ti = widget.ti
+    if click_count == 2 and buttons & mouse.LEFT:
+        ti.selectAll()
+        widget.getGUI().setSelection(ti)
+        return event.EVENT_HANDLED
+    return event.EVENT_HANDLED
+
+@event.default('textinput')
+def on_mouse_drag(widget, x, y, dx, dy, buttons, modifiers):
+    if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
+    ti = widget.ti
+    x, y = ti.calculateRelativeCoords(x, y)
+    if ti.highlight is None:
+        start = ti.determineIndex(x)
+        ti.highlight = (start, start)
+        widget.getGUI().setSelection(ti)
+    else:
+        start, end = ti.highlight
+        now = ti.determineIndex(x)
+        if now <= start:
+            ti.highlight = (now, end)
+        else:
+            ti.highlight = (start, now)
+    return event.EVENT_HANDLED
+
+@event.default('textinput')
 def on_gain_focus(widget):
     widget.ti.cursor.animation = CursorAnimation(widget.ti.cursor)
     widget.ti.cursor.is_visible = True
     return event.EVENT_HANDLED
 
-@event.default('.-text-input')
+@event.default('textinput')
 def on_lose_focus(widget):
     widget.ti.cursor.animation.cancel()
     widget.ti.cursor.animation = None
     widget.ti.cursor.is_visible = False
     return event.EVENT_HANDLED
 
-@event.default('.-text-input')
+@event.default('textinput')
 def on_element_enter(widget, x, y):
     w = widget.getGUI().window
     cursor = w.get_system_mouse_cursor(w.CURSOR_TEXT)
     w.set_mouse_cursor(cursor)
     return event.EVENT_HANDLED
 
-@event.default('.-text-input')
+@event.default('textinput')
 def on_element_leave(widget, x, y):
     w = widget.getGUI().window
     cursor = w.get_system_mouse_cursor(w.CURSOR_DEFAULT)
     w.set_mouse_cursor(cursor)
     return event.EVENT_HANDLED
 
-@event.default('.-text-input')
+@event.default('textinput')
 def on_text(widget, text):
     # special-case newlines - we don't want them
     if text == '\r': return event.EVENT_UNHANDLED
@@ -225,16 +285,14 @@ def on_text(widget, text):
     ti.getGUI().dispatch_event(widget, 'on_change', text)
     return event.EVENT_HANDLED
 
-@event.default('.-text-input')
+@event.default('textinput')
 def on_text_motion(widget, motion):
     ti = widget.ti
     pos = ti.cursor_index
     if motion == key.MOTION_LEFT:
-        if pos != 0:
-            ti.setCursorPosition(pos-1)
+        if pos != 0: ti.setCursorPosition(pos-1)
     elif motion == key.MOTION_RIGHT:
-        if pos != len(ti.text):
-            ti.setCursorPosition(pos+1)
+        if pos != len(ti.text): ti.setCursorPosition(pos+1)
     elif motion in (key.MOTION_UP, key.MOTION_BEGINNING_OF_LINE,
             key.MOTION_BEGINNING_OF_FILE):
         ti.setCursorPosition(0)
@@ -242,20 +300,67 @@ def on_text_motion(widget, motion):
             key.MOTION_END_OF_FILE):
         ti.setCursorPosition(len(ti.text))
     elif motion == key.MOTION_BACKSPACE:
+        text = ti.text
+        if ti.highlight is not None:
+            start, end = ti.highlight
+            text = text[:start] + text[end:]
+            ti.highlight = None
+            ti.cursor_index = start
         if pos != 0:
             n = pos
             ti.cursor_index -= 1
-            text = ti.text[0:n-1] + ti.text[n:]
+            text = text[0:n-1] + text[n:]
+        if text != ti.text:
             ti.setText(text)
             widget.getGUI().dispatch_event(widget, 'on_change', text)
     elif motion == key.MOTION_DELETE:
-        if pos != len(ti.text):
+        text = ti.text
+        if ti.highlight is not None:
+            start, end = ti.highlight
+            text = text[:start] + text[end:]
+            ti.highlight = None
+            ti.cursor_index = start
+        elif pos != len(text):
             n = pos
-            text = ti.text[0:n] + ti.text[n+1:]
+            text = text[0:n] + text[n+1:]
+        if text != ti.text:
             ti.setText(text)
             widget.getGUI().dispatch_event(widget, 'on_change', text)
     else:
         print 'Unhandled MOTION', key.motion_string(motion)
+
+    return event.EVENT_HANDLED
+
+@event.default('textinput')
+def on_text_motion_select(widget, motion):
+    ti = widget.ti
+    pos = ti.cursor_index
+    if ti.highlight is None:
+        start = end = pos
+        widget.getGUI().setSelection(ti)
+    else:
+        start, end = ti.highlight
+
+    # regular motion
+    if motion == key.MOTION_LEFT:
+        if pos != 0: ti.setCursorPosition(pos-1)
+    elif motion == key.MOTION_RIGHT:
+        if pos != len(ti.text): ti.setCursorPosition(pos+1)
+    elif motion in (key.MOTION_UP, key.MOTION_BEGINNING_OF_LINE,
+            key.MOTION_BEGINNING_OF_FILE):
+        ti.setCursorPosition(0)
+    elif motion in (key.MOTION_DOWN, key.MOTION_END_OF_LINE,
+            key.MOTION_END_OF_FILE):
+        ti.setCursorPosition(len(ti.text))
+    else:
+        print 'Unhandled MOTION SELECT', key.motion_string(motion)
+
+    if ti.cursor_index < start:
+        start = ti.cursor_index
+    elif ti.cursor_index > end:
+        end = ti.cursor_index
+    if start < end: ti.highlight = (start, end)
+    else: ti.highlight = (end, start)
 
     return event.EVENT_HANDLED
 

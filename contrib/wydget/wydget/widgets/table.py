@@ -18,6 +18,7 @@ class Table(element.Element):
             alt_bgcolor=(.9, .9, .9, 1), active_bgcolor=(1, .8, .8, 1),
             x=0, y=0, z=0, width='100%', height=None, **kw):
         font_size = parent.getStyle().font_size
+        size = util.parse_value(size, None)
         if size is not None:
             height = (size + 1) * font_size
 

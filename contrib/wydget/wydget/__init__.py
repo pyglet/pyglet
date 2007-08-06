@@ -107,6 +107,23 @@ class GUI(event.GUIEventDispatcher):
                     found = True
             assert found, '%r not found in gui children'%(element,)
 
+    clipboard_element = None
+    def setSelection(self, element):
+        '''The element has some data that may interact with the clipboard.
+        '''
+        if self.clipboard_element not in (element, None):
+            self.clipboard_element.clearSelection()
+        self.clipboard_element = element
+
+    def clearSelection(self, element):
+        '''The element doesn't want to interact with the clipboard any
+        longer.
+        '''
+        # XXX assert self.clipboard_element is element? 
+        # might already have been bumped for another
+        if self.clipboard_element is element:
+            self.clipoard_element = None
+
     def dump(self, s=''):
         print s + str(self)
         for child in self.children: child.dump(s+' ')

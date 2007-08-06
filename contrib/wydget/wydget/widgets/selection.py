@@ -21,6 +21,8 @@ class Selection(Frame):
         else:
             font_size = util.parse_value(font_size, None)
 
+        size = util.parse_value(size, None)
+
         if is_vertical:
             if size is not None:
                 kw['height'] = size * font_size

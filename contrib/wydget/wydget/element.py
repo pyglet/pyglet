@@ -482,6 +482,12 @@ class Element(object):
     def loseFocus(self):
         self.getGUI().setFocus(None)
 
+    def clearSelection(self):
+        '''The element has previously indicated that it has data for the
+        clipboard, but it has now been superceded by another element.
+        '''
+        pass
+
     def getStyle(self):
         return self.parent.getStyle()
 

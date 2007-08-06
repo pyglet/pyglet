@@ -352,8 +352,9 @@ class GUIEventDispatcher(EventDispatcher):
 
         # cancel current drag
         if self.is_dragging_element:
+            # XXX button and modifiers...
             self.dispatch_event(self.active_element,
-                'on_drag_complete', x, y, button, modifiers, False)
+                'on_drag_complete', x, y, 0, 0, False)
         return EVENT_HANDLED
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -543,8 +544,8 @@ class GUIEventDispatcher(EventDispatcher):
 
     def on_text_motion_select(self, motion):
         if self.focused_element is None: return
-        return self.dispatch_event(self.focused_element, 'on_text_select',
-            motion)
+        return self.dispatch_event(self.focused_element,
+            'on_text_motion_select', motion)
 
 
 # EVENTS IN and OUT
