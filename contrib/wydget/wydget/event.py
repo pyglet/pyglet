@@ -220,6 +220,7 @@ class GUIEventDispatcher(EventDispatcher):
     is_dragging_element = False
     mouse_press_element = None
     drag_over_element = None
+    cumulative_drag = (0, 0)
     focused_element = None
 
     _rects = None
@@ -373,6 +374,7 @@ class GUIEventDispatcher(EventDispatcher):
         self.active_element = element
         self.mouse_press_element = element
         self.is_dragging_element = False
+        self.cumulative_drag = (0, 0)
 
         # switch focus
         self.setFocus(element)
@@ -400,6 +402,16 @@ class GUIEventDispatcher(EventDispatcher):
         `on_mouse_drag` event for the element underneath the mouse pointer.
         '''
         if self.active_element is not None:
+
+            # check drag threshold
+            print self.cumulative_drag
+            cdx, cdy = self.cumulative_drag
+            cdx += dx; cdy += dy
+            self.cumulative_drag = (cdx, cdy)
+            if cdx + cdy < 4:
+                # less than 4 pixels, don't drag just yet
+                return EVENT_UNHANDLED
+
             # see if the previously-pressed element wants...
 
             # an on_mouse_drag event
@@ -450,6 +462,7 @@ class GUIEventDispatcher(EventDispatcher):
 
     _last_click = 0
     def on_mouse_release(self, x, y, button, modifiers):
+        self.cumulative_drag = (0, 0)
         if self.is_dragging_element:
             # the on_drop check will most likely alter the active element
             active = self.active_element
