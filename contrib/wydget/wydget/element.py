@@ -369,6 +369,10 @@ class Element(object):
             #print 'NEW CLIP'
             if view_clip is not None:
                 view_clip = view_clip.intersect(self.view_clip)
+                if view_clip is None:
+                    if push:
+                        glPopMatrix()
+                    return
             else:
                 view_clip = self.view_clip
 

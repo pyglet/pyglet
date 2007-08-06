@@ -29,10 +29,8 @@ class Frame(element.Element):
         # contents.
         if self.width_spec is None:
             self.width = layout.width + self.padding*2
-            if self.v_slider: self.width += self.v_slider.width
         if self.height_spec is None:
             self.height = layout.height + self.padding*2
-            if self.h_slider: self.height += self.h_slider.height
 
     @classmethod
     def fromXML(cls, element, parent):
@@ -96,7 +94,6 @@ class ContainerFrame(element.Element):
         self.parent.layoutDimensionsChanged(self)
         self.checkForScrollbars()
 
-
     def checkForScrollbars(self):
         # XXX perhaps this should be on the parent
         h = self.height
@@ -108,8 +105,9 @@ class ContainerFrame(element.Element):
 
         vc_width, vc_height = pr.width, pr.height
 
+        self.y = vc_height - self.height
+
         yoffset = 0
-        self.y = 0
         if h > vc_height:
             if p.v_slider is not None:
                 p.v_slider.delete()
@@ -121,21 +119,18 @@ class ContainerFrame(element.Element):
                 r += yoffset
             else:
                 h = vc_height
-            self.y = -r
             p.v_slider = VerticalSlider(p, 0, r, r, x=vc_width, y=yoffset,
                 height=h, step=16, classes=('-frame-vertical-slider',))
         else:
             if p.v_slider is not None:
                 p.v_slider.delete()
                 p.v_slider = None
-            self.y = vc_height - self.height
 
         if w > vc_width:
             if p.h_slider is not None:
                 p.h_slider.delete()
             r = w - vc_width
             yoffset = HorizontalSlider.slider_size
-            self.y += yoffset
             vc_height -= yoffset
             p.h_slider = HorizontalSlider(p, 0, r, 0, width=vc_width,
                 step=16, classes=('-frame-horizontal-slider',))
