@@ -25,13 +25,18 @@ class LibraryLoader(object):
         '''
         if 'framework' in kwargs and self.platform == 'darwin':
             return self.load_framework(kwargs['framework'])
-
+        
         platform_names = kwargs.get(self.platform, [])
         if type(platform_names) in (str, unicode):
-            platform_names = (platform_names,)
-        elif type(platform_names) == list:
-            platform_names = tuple(platform_names)
-        for name in platform_names + names:
+            platform_names = [platform_names]
+        elif type(platform_names) is tuple:
+            platform_names = list(platform_names)
+
+        if self.platform == 'linux2':
+            platform_names.extend(['lib%s.so' % n for n in names])
+
+        platform_names.extend(names)
+        for name in platform_names:
             try:
                 return ctypes.cdll.LoadLibrary(name)
             except OSError:
