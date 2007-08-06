@@ -29,10 +29,12 @@ class Style(object):
             valign=valign)
 
     def textAsTexture(self, text, color=(0, 0, 0, 1), bgcolor=(1, 1, 1, 0),
-            font_size=None, font_name=None, halign='left', width=None):
+            font_size=None, font_name=None, halign='left', width=None,
+            rotate=0):
         label = self.text(text, color=color, font_size=font_size,
             font_name=font_name, halign=halign, width=width, valign='top')
-        w = int(label.width)
+        label.width
+        w = int(width or label.width)
         h = font_size * len(label.lines) #int(label.height)
         x = c_int()
         def _f():
@@ -41,15 +43,25 @@ class Style(object):
             glDisable(GL_DEPTH_TEST)
             glClearColor(*bgcolor)
             glClear(GL_COLOR_BUFFER_BIT)
+            glPushMatrix()
+            if rotate == 0:
+                glTranslatef(0, h, 0)
+            if rotate:
+                glRotatef(rotate, 0, 0, 1)
+            if rotate == 270:
+                glTranslatef(-w, h, 0)
+            if rotate == 180:
+                glTranslatef(-w, 0, 0)
             # prevent the text's alpha channel being written into the new
             # texture
-            glPushMatrix()
-            glTranslatef(0, h, 0)
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
             label.draw()
             glPopMatrix()
             glPopAttrib()
-        return util.renderToTexture(w, h, _f)
+        if rotate in (0, 180):
+            return util.renderToTexture(w, h, _f)
+        else:
+            return util.renderToTexture(h, w, _f)
 
     stylesheet = '''
 body {margin: 0px; background-color: white; font-family: sans-serif;}

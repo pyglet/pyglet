@@ -35,10 +35,8 @@ def parseAttributes(parent, element):
             value = tuple(value.split(' '))
             key = 'classes'
         elif key in ('is_exclusive', 'scrollable', 'is_visible', 'is_blended',
-                'is_active', 'is_vertical'):
+                'is_active', 'is_vertical', 'show_value'):
             value = { 'true': True, 'false': False, }[value.lower()]
-        elif key in ('size', ):
-            value = int(value)
         kw[key] = value
     return kw
 

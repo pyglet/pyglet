@@ -27,11 +27,6 @@ class ImageCommon(element.Element):
         if hasattr(image, 'texture'):
             image = image.texture
         self.image = image
-        if self.width_spec is None:
-            self.width = self.image.width + self.padding*2
-        if self.height_spec is None:
-            self.height = self.image.height + self.padding*2
-
         self.updateSize()
 
     def updateSize(self):
@@ -101,8 +96,10 @@ class Label(LabelCommon):
     name='label'
     need_background = True
 
-    def __init__(self, parent, text, color=(0, 0, 0, 1), font_size=None, **kw):
+    def __init__(self, parent, text, color=(0, 0, 0, 1), font_size=None,
+            rotate=0, width=None, height=None, **kw):
         self.parent = parent
+        self.rotate = util.parse_value(rotate, 0)
 
         # colors
         if isinstance(color, str):
@@ -111,7 +108,17 @@ class Label(LabelCommon):
 
         self.font_size = int(font_size or self.getStyle().font_size)
 
-        super(Label, self).__init__(parent, **kw)
+        super(Label, self).__init__(parent, width=width, height=height, **kw)
+
+        # recalculate the width and height based on rotation
+        #ir = parent.inner_rect
+        #if self.rotate in (90, 270):
+            #self._width = util.parse_value(width, ir.height)
+            #self._height = util.parse_value(height, ir.width)
+            #print 'ROTATE'
+        if self.rotate not in (0, 90, 180, 270):
+            raise ValueError, 'rotate must be one of 0, 90, 180, 270, '\
+                'not %r'%(self.rotate)
 
         # sanity check
         if not self.bgcolor:
@@ -121,9 +128,16 @@ class Label(LabelCommon):
 
     def setText(self, text):
         self.text = text
-        pw = self.parent.inner_rect.width
-        w = util.parse_value(self.width_spec, pw)
-        if w is not None: w -= self.padding * 2
+        if self.rotate in (0, 180):
+            pw = self.parent.inner_rect.width
+            w = util.parse_value(self.width_spec, pw)
+            if w is not None:
+                w -= self.padding * 2
+        else:
+            ph = self.parent.inner_rect.height
+            w = util.parse_value(self.height_spec, ph)
+            if w is not None:
+                w -= self.padding * 2
 
         # free up old image
         if self.image is not None and isinstance(self.image,
@@ -134,15 +148,26 @@ class Label(LabelCommon):
             label = self.getStyle().text(text, color=self.color,
                 font_size=self.font_size, width=w, halign=self.halign,
                 valign='top')
+            image = label
         else:
             label = self.getStyle().textAsTexture(text, color=self.color,
                 bgcolor=self.bgcolor, font_size=self.font_size,
-                width=w, halign=self.halign)
-        self.setImage(label)
-        if self.width_spec is None:
-            self.width = label.width + self.padding * 2
-        if self.height_spec is None:
-            self.height = label.height + self.padding * 2
+                width=w, halign=self.halign, rotate=self.rotate)
+            image = label.texture
+
+        if self.is_blended and self.rotate in (90, 270):
+            if self.width_spec is None:
+                self.width = label.height + self.padding * 2
+            if self.height_spec is None:
+                self.height = label.width + self.padding * 2
+        else:
+            if self.width_spec is None:
+                self.width = label.width + self.padding * 2
+            if self.height_spec is None:
+                self.height = label.height + self.padding * 2
+
+        # don't invoke setImage as it doesn't understand rotate
+        self.image = image
 
     def render(self, rect):
         if not self.is_blended:
@@ -150,9 +175,20 @@ class Label(LabelCommon):
 
         # XXX clip with glScissor
         glPushMatrix()
-        self.image.width        # force clean
-        glTranslatef(0, self.font_size * len(self.image.lines), 0)
+        w = self.image.width        # (keep to force _clean() )
+        h = self.font_size * len(self.image.lines)
+
+        if self.rotate == 0:
+            glTranslatef(0, h, 0)
+        if self.rotate:
+            glRotatef(self.rotate, 0, 0, 1)
+        if self.rotate == 270:
+            glTranslatef(-w, h, 0)
+        if self.rotate == 180:
+            glTranslatef(-w, 0, 0)
+
         self.image.draw()
+
         glPopMatrix()
 
 

@@ -20,19 +20,50 @@
 
   <image border="black" padding="10" image="tests/data/ball-small.png" />
 
-  <label halign="left" bgcolor="white" width="50%">halign left</label>
-  <label halign="center" bgcolor="white" width="50%">halign center</label>
-  <label halign="right" bgcolor="white" width="50%">halign right</label>
+  <frame width="100%">
+   <horizontal>
+    <frame width="50%">
+     <vertical>
+      <label halign="left" bgcolor="white" width="50%">halign left</label>
+      <label halign="center" bgcolor="white" width="50%">halign center</label>
+      <label halign="right" bgcolor="white" width="50%">halign right</label>
 
-  <label color="white">color="white"</label>
+      <label color="white">color="white"</label>
 
-  <label border="red" color="white" width="50">testing wrapping</label>
-  <label border="red" color="white" bgcolor="blue" width="50">...with background</label>
+      <label border="red" color="white" width="50">testing wrapping</label>
+      <label border="red" color="white" bgcolor="blue" width="50">...with background</label>
 
-  <label font_size="10">font_size="10"</label>
-  <label font_size="20">font_size="20"</label>
-  <label font_size="40">font_size="40"</label>
+      <label rotate="180" halign="left" bgcolor="white" width="100%">halign left rotate 180</label>
+      <label rotate="180" halign="center" bgcolor="white" width="100%">halign center rotate 180</label>
+      <label rotate="180" halign="right" bgcolor="white" width="100%">halign right rotate 180</label>
+      <label rotate="180" halign="left" width="100%">halign left rotate 180</label>
+      <label rotate="180" halign="center" width="100%">halign center rotate 180</label>
+      <label rotate="180" halign="right" width="100%">halign right rotate 180</label>
 
+      <label font_size="10">font_size="10"</label>
+      <label font_size="20">font_size="20"</label>
+      <label font_size="40">font_size="40"</label>
+     </vertical>
+    </frame>
+
+    <frame width="25%">
+     <horizontal valign='center'>
+      <label rotate="90" halign="left" bgcolor="white" height="50%">halign left rotate 90</label>
+      <label rotate="90" halign="center" bgcolor="white" height="50%">halign center rotate 90</label>
+      <label rotate="90" halign="right" bgcolor="white" height="50%">halign right rotate 90</label>
+      <label rotate="270" halign="left" bgcolor="white" height="50%">halign left rotate 270</label>
+      <label rotate="270" halign="center" bgcolor="white" height="50%">halign center rotate 270</label>
+      <label rotate="270" halign="right" bgcolor="white" height="50%">halign right rotate 270</label>
+      <label rotate="90" halign="left" height="50%">halign left rotate 90</label>
+      <label rotate="90" halign="center" height="50%">halign center rotate 90</label>
+      <label rotate="90" halign="right" height="50%">halign right rotate 90</label>
+      <label rotate="270" halign="left" height="50%">halign left rotate 270</label>
+      <label rotate="270" halign="center" height="50%">halign center rotate 270</label>
+      <label rotate="270" halign="right" height="50%">halign right rotate 270</label>
+     </horizontal>
+    </frame>
+   </horizontal>
+  </frame>
   <xhtml width="50%" id="xhtml-sample">
 &lt;h1&gt;Synopsis&lt;/h1&gt;
 &lt;p style="font-size:12px"&gt;Lorem ipsum dolor sit amet consectetuer

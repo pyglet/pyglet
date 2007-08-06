@@ -2,21 +2,29 @@
  <horizontal halign="center" valign="center" padding="10">
   <frame is_transparent="true" width="400">
    <vertical padding="10" halign="center">
-    <hslider minimum="0" maximum="100" current="0" />
-    <hslider minimum="0" maximum="10" current="0" />
-    <hslider minimum="0" maximum="3" current="0" />
-    <hslider minimum="0" maximum="1" current="0" />
-    <hslider minimum="0" maximum="100" current="0" width="64" />
+    <hslider minimum="0" maximum="100" current="0"
+        bar_size="64" step="5" show_value="true" />
+    <hslider minimum="0" maximum="10" current="0"
+        bar_size="50%" show_value="true" />
+    <hslider minimum="0" maximum="3" current="0" show_value="true" />
+    <hslider minimum="0" maximum="1" current="0" show_value="true" />
+    <hslider minimum="0.0" maximum="1.0" current="0.5" step=".1" show_value="true" />
+    <hslider minimum="0" maximum="100" current="0" width="64" height="64" />
    </vertical>
   </frame>
+
   <frame is_transparent="true" height="400">
    <horizontal padding="10">
-    <vslider minimum="0" maximum="100" current="0" />
-    <vslider minimum="0" maximum="10" current="0" />
-    <vslider minimum="0" maximum="3" current="0" />
-    <vslider minimum="0" maximum="1" current="0" />
-    <vslider minimum="0" maximum="100" current="0" height="64" />
+    <vslider minimum="0" maximum="100" current="0"
+        bar_size="64" step="5" show_value="true" />
+    <vslider minimum="0" maximum="10" current="0"
+        bar_size="50%" show_value="true" />
+    <vslider minimum="0" maximum="3" current="0" show_value="true" />
+    <vslider minimum="0" maximum="1" current="0" show_value="true" />
+    <vslider minimum="0.0" maximum="1.0" current="0.5" step=".1" show_value="true" />
+    <vslider minimum="0" maximum="100" current="0" height="64" width="64" />
    </horizontal>
   </frame>
+
  </horizontal>
 </frame>

@@ -8,7 +8,6 @@ KNOWN BUGS
 - view clipping problem: see test_selection first test
 - top-left pixel of any border not rendered
 - Sliders:
-  . slider clicks in bar result in rounding error during move
   . sliders in inner frame in test_frame.xml are misbehaving
 - Tables:
   . table columns don't truncate
