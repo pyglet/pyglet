@@ -8,8 +8,6 @@ KNOWN BUGS
 - view clipping problem: see test_selection first test
 - borders aren't clipped to view properly (all four sides are still drawn)
 - top-left pixel of any border not rendered
-- Sliders:
-  . sliders in inner frame in test_frame.xml are misbehaving
 - Tables:
   . table columns don't truncate
   . also, tables are stupidly slow
@@ -28,8 +26,10 @@ KNOWN BUGS
     (rj can't reproduce this)
 
 
-KNOWN AREAS OF REWRITING
-------------------------
+KNOWN AREAS OF (POSSIBLE) REWRITING
+-----------------------------------
+
+Use layout's element model at the core.
 
 Nothing's resizeable, and it all needs to be.
 
