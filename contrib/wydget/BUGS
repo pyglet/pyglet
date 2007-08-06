@@ -4,7 +4,6 @@ KNOWN BUGS
 - NO DOCUMENTATION
 - VERY LITTLE CODE DOCUMENTATION
 - assets are poorly-located for packaging
-- border model should be fixed so border doesn't have automagic padding
 - view clipping problem: see test_selection first test
 - borders aren't clipped to view properly (all four sides are still drawn)
 - top-left pixel of any border not rendered
@@ -15,16 +14,12 @@ KNOWN BUGS
   . dragged elements should be rendered on top of everything else 
 - Selection Lists:
   . oh yeah, selection lists are slow too
-- Buttons:
-  . <ah> right-hand border of text in test_button not rendered
-- Movies:
-  . <ah> test_movie crashes when movie finishes
-  . <ah> cannot open another movie once first movie has started
-    (rj can't reproduce this)
 
 
 KNOWN AREAS OF (POSSIBLE) REWRITING
 -----------------------------------
+
+Border model should be fixed so border doesn't have automagic padding
 
 Use layout's element model at the core.
 
