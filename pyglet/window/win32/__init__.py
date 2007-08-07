@@ -495,8 +495,8 @@ class Win32Window(BaseWindow):
         self.set_vsync(self._vsync)
 
         if self._visible:
-            self._event_queue.append((event.EVENT_SHOW,))
-            self._event_queue.append((event.EVENT_EXPOSE,))
+            self._event_queue.append(('on_show',))
+            self._event_queue.append(('on_expose',))
 
     def close(self):
         super(Win32Window, self).close()
@@ -571,11 +571,11 @@ class Win32Window(BaseWindow):
                     SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
             else:
                 _user32.ShowWindow(self._hwnd, SW_SHOW)
-            self._event_queue.append((event.EVENT_SHOW,))
+            self._event_queue.append(('on_show',))
             self.activate()
         else:
             _user32.ShowWindow(self._hwnd, SW_HIDE)
-            self._event_queue.append((event.EVENT_HIDE,))
+            self._event_queue.append(('on_hide',))
         self._visible = visible
         self.set_mouse_platform_visible()
 
@@ -854,9 +854,9 @@ class Win32Window(BaseWindow):
         if lParam & (1 << 30):
             if msg not in (WM_KEYUP, WM_SYSKEYUP):
                 repeat = True
-            ev = event.EVENT_KEY_RELEASE
+            ev = 'on_key_release'
         else:
-            ev = event.EVENT_KEY_PRESS
+            ev = 'on_key_press'
 
         symbol = keymap.get(wParam, None)
         if symbol is None:
@@ -878,9 +878,9 @@ class Win32Window(BaseWindow):
         if (symbol, ctrl) in _motion_map:
             motion = _motion_map[symbol, ctrl]
             if modifiers & key.MOD_SHIFT:
-                self.dispatch_event(event.EVENT_TEXT_MOTION_SELECT, motion)
+                self.dispatch_event('on_text_motion_select', motion)
             else:
-                self.dispatch_event(event.EVENT_TEXT_MOTION, motion)
+                self.dispatch_event('on_text_motion', motion)
 
         # Send on to DefWindowProc if not exclusive.
         if self._exclusive_keyboard:
@@ -892,7 +892,7 @@ class Win32Window(BaseWindow):
     def _event_char(self, msg, wParam, lParam):
         text = unichr(wParam)
         if unicodedata.category(text) != 'Cc' or text == '\r':
-            self.dispatch_event(event.EVENT_TEXT, text)
+            self.dispatch_event('on_text', text)
         return 0
 
     @Win32EventHandler(WM_MOUSEMOVE)
@@ -921,7 +921,7 @@ class Win32Window(BaseWindow):
             # re-entering (to track the next WM_MOUSELEAVE).
             self._mouse_in_window = True
             self.set_mouse_platform_visible()
-            self.dispatch_event(event.EVENT_MOUSE_ENTER, x, y)
+            self.dispatch_event('on_mouse_enter', x, y)
             self._tracking = True
             track = TRACKMOUSEEVENT()
             track.cbSize = sizeof(track)
@@ -943,11 +943,11 @@ class Win32Window(BaseWindow):
         if buttons:
             # Drag event
             modifiers = self._get_modifiers()
-            self.dispatch_event(event.EVENT_MOUSE_DRAG, 
+            self.dispatch_event('on_mouse_drag', 
                 x, y, dx, dy, buttons, modifiers)
         else:
             # Motion event
-            self.dispatch_event(event.EVENT_MOUSE_MOTION, x, y, dx, dy)
+            self.dispatch_event('on_mouse_motion', x, y, dx, dy)
         return 0
 
     @Win32EventHandler(WM_MOUSELEAVE)
@@ -960,11 +960,11 @@ class Win32Window(BaseWindow):
         self._tracking = False
         self._mouse_in_window = False
         self.set_mouse_platform_visible()
-        self.dispatch_event(event.EVENT_MOUSE_LEAVE, x, y)
+        self.dispatch_event('on_mouse_leave', x, y)
         return 0
 
     def _event_mousebutton(self, ev, button, lParam):
-        if ev == event.EVENT_MOUSE_PRESS:
+        if ev == 'on_mouse_press':
             _user32.SetCapture(self._hwnd)
         else:
             _user32.ReleaseCapture()
@@ -976,48 +976,48 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_LBUTTONDOWN)
     def _event_lbuttondown(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            event.EVENT_MOUSE_PRESS, mouse.LEFT, lParam)
+            'on_mouse_press', mouse.LEFT, lParam)
 
     @Win32EventHandler(WM_LBUTTONUP)
     def _event_lbuttonup(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            event.EVENT_MOUSE_RELEASE, mouse.LEFT, lParam)
+            'on_mouse_release', mouse.LEFT, lParam)
 
     @Win32EventHandler(WM_MBUTTONDOWN)
     def _event_mbuttondown(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            event.EVENT_MOUSE_PRESS, mouse.MIDDLE, lParam)
+            'on_mouse_press', mouse.MIDDLE, lParam)
 
     @Win32EventHandler(WM_MBUTTONUP)
     def _event_mbuttonup(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            event.EVENT_MOUSE_RELEASE, mouse.MIDDLE, lParam)
+            'on_mouse_release', mouse.MIDDLE, lParam)
 
     @Win32EventHandler(WM_RBUTTONDOWN)
     def _event_rbuttondown(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            event.EVENT_MOUSE_PRESS, mouse.RIGHT, lParam)
+            'on_mouse_press', mouse.RIGHT, lParam)
 
     @Win32EventHandler(WM_RBUTTONUP)
     def _event_rbuttonup(self, msg, wParam, lParam):
         return self._event_mousebutton(
-            event.EVENT_MOUSE_RELEASE, mouse.RIGHT, lParam)
+            'on_mouse_release', mouse.RIGHT, lParam)
 
     @Win32EventHandler(WM_MOUSEWHEEL)
     def _event_mousewheel(self, msg, wParam, lParam):
         delta = c_short(wParam >> 16).value
-        self.dispatch_event(event.EVENT_MOUSE_SCROLL, 
+        self.dispatch_event('on_mouse_scroll', 
             self._mouse_x, self._mouse_y, 0, float(delta) / WHEEL_DELTA)
         return 0
 
     @Win32EventHandler(WM_CLOSE)
     def _event_close(self, msg, wParam, lParam):
-        self.dispatch_event(event.EVENT_CLOSE)
+        self.dispatch_event('on_close')
         return 0
 
     @Win32EventHandler(WM_PAINT)
     def _event_paint(self, msg, wParam, lParam):
-        self.dispatch_event(event.EVENT_EXPOSE)
+        self.dispatch_event('on_expose')
         # Validating the window using ValidateRect or ValidateRgn
         # doesn't clear the paint message when more than one window
         # is open [why?]; defer to DefWindowProc instead.
@@ -1033,22 +1033,22 @@ class Win32Window(BaseWindow):
         if wParam == SIZE_MINIMIZED:
             # Minimized, not resized.
             self._hidden = True
-            self.dispatch_event(event.EVENT_HIDE)
+            self.dispatch_event('on_hide')
             return 0
         if self._hidden:
             # Restored
             self._hidden = False
-            self.dispatch_event(event.EVENT_SHOW)
+            self.dispatch_event('on_show')
         w, h = self._get_location(lParam)
         self._reset_exclusive_mouse_screen()
-        self.dispatch_event(event.EVENT_RESIZE, w, h)
+        self.dispatch_event('on_resize', w, h)
         return 0
 
     @Win32EventHandler(WM_MOVE)
     def _event_move(self, msg, wParam, lParam):
         x, y = self._get_location(lParam)
         self._reset_exclusive_mouse_screen()
-        self.dispatch_event(event.EVENT_MOVE, x, y)
+        self.dispatch_event('on_move', x, y)
         return 0
 
     '''
@@ -1058,16 +1058,16 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_ACTIVATE)
     def _event_activate(self, msg, wParam, lParam):
         if wParam & 0xffff == WA_INACTIVE:
-            self.dispatch_event(event.EVENT_DEACTIVATE)
+            self.dispatch_event('on_deactivate')
         else:
-            self.dispatch_event(event.EVENT_ACTIVATE)
+            self.dispatch_event('on_activate')
             _user32.SetFocus(self._hwnd)
         return 0
     '''
 
     @Win32EventHandler(WM_SETFOCUS)
     def _event_setfocus(self, msg, wParam, lParam):
-        self.dispatch_event(event.EVENT_ACTIVATE)
+        self.dispatch_event('on_activate')
         self._has_focus = True
         self.set_exclusive_keyboard(self._exclusive_keyboard)
         self.set_exclusive_mouse(self._exclusive_mouse)
@@ -1075,7 +1075,7 @@ class Win32Window(BaseWindow):
 
     @Win32EventHandler(WM_KILLFOCUS)
     def _event_killfocus(self, msg, wParam, lParam):
-        self.dispatch_event(event.EVENT_DEACTIVATE)
+        self.dispatch_event('on_deactivate')
         self._has_focus = False
         self.set_exclusive_keyboard(self._exclusive_keyboard)
         self.set_exclusive_mouse(self._exclusive_mouse)
