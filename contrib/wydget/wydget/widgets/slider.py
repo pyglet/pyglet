@@ -21,10 +21,10 @@ class SliderCommon(element.Element):
     value = property(get_value, set_value)
 
     def stepToMaximum(self):
-        self.value = self._value + self.step
+        self.set_value(self._value + self.step, event=True)
 
     def stepToMinimum(self):
-        self.value = self._value - self.step
+        self.set_value(self._value - self.step, event=True)
 
 class VerticalSlider(SliderCommon):
     '''
@@ -92,8 +92,8 @@ class VerticalSlider(SliderCommon):
 def on_mouse_press(self, x, y, buttons, modifiers):
     x, y = self.calculateRelativeCoords(x, y)
     r = self.bar.rect
-    if y < r.y: self.bar.moveY(-r.height)
-    elif y > r.top: self.bar.moveY(r.height)
+    if y < r.y: self.stepToMinimum()
+    elif y > r.top: self.stepToMaximum()
     return event.EVENT_HANDLED
 
 @event.default('vslider')
@@ -176,8 +176,8 @@ class HorizontalSlider(SliderCommon):
 def on_mouse_press(self, x, y, buttons, modifiers):
     x, y = self.calculateRelativeCoords(x, y)
     r = self.bar.rect
-    if x < r.x: self.bar.moveX(-r.width)
-    elif x > r.right: self.bar.moveX(r.width)
+    if x < r.x: self.stepToMinimum()
+    elif x > r.right: self.stepToMaximum()
     return event.EVENT_HANDLED
 
 @event.default('hslider')
@@ -194,31 +194,6 @@ class SliderBar(Label):
         rotate = 90 if axis == 'y' else 0
         super(SliderBar, self).__init__(parent, str(initial), width=width,
             height=height, halign='center', rotate=rotate, **kw)
-
-    def moveY(self, move):
-        self.setY(self.y + move)
-
-    def setY(self, y):
-        self.y = y
-        ir = self.parent.inner_rect
-        r = self.rect
-        if r.y < ir.y:
-            self.set_value(self._value - self.step, event=True)
-        elif r.top > ir.top:
-            self.set_value(self._value + self.step, event=True)
-
-    def moveX(self, move):
-        self.setX(self.x + move)
-
-    def setX(self, x):
-        self.x = x
-        ir = self.parent.inner_rect
-        r = self.rect
-        if r.x < ir.x:
-            self.set_value(self._value - self.step, event=True)
-        elif r.right > ir.right:
-            self.set_value(self._value + self.step, event=True)
-
 
 @event.default('slider-bar')
 def on_mouse_drag(widget, x, y, dx, dy, buttons, modifiers):

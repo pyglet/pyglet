@@ -10,6 +10,7 @@ KNOWN BUGS
   . also, tables are stupidly slow
 - Dragging:
   . dragged elements should be rendered on top of everything else 
+  . sometimes slider bar drags don't register
 - Selection Lists:
   . oh yeah, selection lists are slow too
 
