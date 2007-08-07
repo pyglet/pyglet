@@ -409,13 +409,30 @@ class Element(object):
 
     def renderBorder(self, rect, clipped):
         if self.border is None: return
-        x2, y2 = clipped.topright
+        ox, oy = rect.bottomleft
+        ox2, oy2 = rect.topright
+        cx, cy = clipped.bottomleft
+        cx2, cy2 = clipped.topright
+
         glColor4f(*self.border)
-        glBegin(GL_LINE_LOOP)
-        glVertex2f(clipped.x, clipped.y)
-        glVertex2f(clipped.x, y2-1)
-        glVertex2f(x2-1, y2-1)
-        glVertex2f(x2-1, clipped.y)
+        glBegin(GL_LINES)
+        # left
+        if ox == cx:
+            glVertex2f(ox, cy)
+            glVertex2f(ox, cy2)
+        # right
+        if ox2 == cx2:
+            glVertex2f(ox2-1, cy)
+            glVertex2f(ox2-1, cy2)
+        # bottom
+        if oy == cy:
+            glVertex2f(cx, oy)
+            glVertex2f(cx2, oy)
+        # top
+        if oy2 == cy2:
+            glVertex2f(cx, oy2-1)
+            glVertex2f(cx2, oy2-1)
+
         glEnd()
         
     def getRects(self, view_clip=None, exclude=None):

@@ -5,8 +5,6 @@ KNOWN BUGS
 - VERY LITTLE CODE DOCUMENTATION
 - assets are poorly-located for packaging
 - view clipping problem: see test_selection first test
-- borders aren't clipped to view properly (all four sides are still drawn)
-- top-left pixel of any border not rendered
 - Tables:
   . table columns don't truncate
   . also, tables are stupidly slow

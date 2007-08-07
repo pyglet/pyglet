@@ -1,6 +1,9 @@
-<frame border="black" bgcolor="white">
+<frame border="black" bgcolor="white" padding="100">
 
- <frame id="outer" scrollable="true" x="300" y="100" width="200" height="200">
+ <columns rowpad="10" colpad="10">
+  <frame>
+
+ <frame id="outer" scrollable="true" width="200" height="200">
   <frame bgcolor="afa" padding="20" border="5f5">
    <image x="20" y="20" image="tests/data/kitten.jpg" />
    <frame id="inner" scrollable="true" x="50" y="450" width="80" height="80">
@@ -11,7 +14,7 @@
   </frame>
  </frame>
 
- <frame scrollable="true" x="100" y="100" width="100" height="100">
+ <frame scrollable="true" width="100" height="100">
   <frame bgcolor="afa" padding="20" border="5f5">
    <image image="tests/data/ball-small.png" />
    <image is_blended="true" x="20" y="40" image="tests/data/ball-small.png" />
@@ -19,7 +22,11 @@
   </frame>
  </frame>
 
- <frame scrollable="true" x="100" y="300" height="32" width="100">
+ </frame>
+
+ <frame>
+
+ <frame scrollable="true" height="32" width="100">
   <frame bgcolor="afa">
    <horizontal>
     <image image="tests/data/ball-small.png" />
@@ -35,5 +42,12 @@
    </horizontal>
   </frame>
  </frame>
+ <frame scrollable="true" width="100" height="100" bgcolor="gray"
+        border="red">
+  <xhtml width="98">Some text, should appear in top-right 
+  of red frame.</xhtml>
+ </frame>
+ </frame>
 
+ </columns>
 </frame>

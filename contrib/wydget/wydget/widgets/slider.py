@@ -10,13 +10,13 @@ class SliderCommon(element.Element):
 
     def get_value(self):
         return self._value
-    def set_value(self, value, generate_event=False, position_bar=True):
+    def set_value(self, value, event=False, position_bar=True):
         self._value = self.type(max(self.minimum, min(self.maximum, value)))
         if position_bar:
             self.positionBar()
         if self.show_value:
             self.bar.setText(str(self._value))
-        if generate_event:
+        if event:
             self.getGUI().dispatch_event(self, 'on_change', self._value)
     value = property(get_value, set_value)
 
@@ -98,7 +98,7 @@ def on_mouse_press(self, x, y, buttons, modifiers):
 
 @event.default('vslider')
 def on_mouse_scroll(self, x, y, dx, dy):
-    if dy: self.changeCurrent(self._value + dy * self.step)
+    if dy: self.set_value(self._value + dy * self.step, event=True)
     return event.EVENT_HANDLED
 
 @event.default('.-repeater-button-max')
@@ -182,8 +182,8 @@ def on_mouse_press(self, x, y, buttons, modifiers):
 
 @event.default('hslider')
 def on_mouse_scroll(self, x, y, dx, dy):
-    if dx: self.changeCurrent(self._value + dx * self.step)
-    else: self.changeCurrent(self._value + dy * self.step)
+    if dx: self.set_value(self._value + dx * self.step, event=True)
+    else: self.set_value(self._value + dy * self.step, event=True)
     return event.EVENT_HANDLED
 
 
@@ -200,26 +200,24 @@ class SliderBar(Label):
 
     def setY(self, y):
         self.y = y
-        p = self.parent
-        ir = p.inner_rect
+        ir = self.parent.inner_rect
         r = self.rect
-        if r.y < ir.y: r.y = p.y
-        elif r.top > ir.top: r.top = ir.top
-        range = p.maximum - p.minimum
-        p.changeCurrent((self.y - ir.y) * float(range) / (ir.height - self.height))
+        if r.y < ir.y:
+            self.set_value(self._value - self.step, event=True)
+        elif r.top > ir.top:
+            self.set_value(self._value + self.step, event=True)
 
     def moveX(self, move):
         self.setX(self.x + move)
 
     def setX(self, x):
         self.x = x
-        p = self.parent
-        ir = p.inner_rect
+        ir = self.parent.inner_rect
         r = self.rect
-        if r.x < ir.x: r.x = p.x
-        elif r.right > ir.right: r.right = ir.right
-        range = p.maximum - p.minimum
-        p.changeCurrent((self.x - ir.x) * float(range) / (ir.width - self.width))
+        if r.x < ir.x:
+            self.set_value(self._value - self.step, event=True)
+        elif r.right > ir.right:
+            self.set_value(self._value + self.step, event=True)
 
 
 @event.default('slider-bar')
@@ -238,7 +236,7 @@ def on_mouse_drag(widget, x, y, dx, dy, buttons, modifiers):
         yoff = s.inner_rect.y
         widget.y = max(yoff, min(h + yoff, widget.y + dy))
         value = (widget.y - yoff) / float(h)
-    s.set_value(value * s.range + s.minimum, position_bar=False)
+    s.set_value(value * s.range + s.minimum, position_bar=False, event=True)
     return event.EVENT_HANDLED
 
 

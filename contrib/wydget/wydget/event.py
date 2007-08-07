@@ -108,8 +108,6 @@ from layout.css import Rule, RuleSet, Selector, SimpleSelector
 # event-function, each layer is a dictionary mapping event-name to 
 # RuleSet
 
-POSITIONAL_EVENTS = set('on_mouse_motion on_mouse_press on_mouse_release on_mouse_drag on_mouse_scroll on_drag on_element_enter on_element_leave on_drag_enter on_drag_leave on_drag_complete on_drop on_enter on_leave'.split())
-
 class GUIEventDispatcher(EventDispatcher):
 
     default_event_handlers = {}

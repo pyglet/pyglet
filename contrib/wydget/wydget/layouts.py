@@ -292,8 +292,8 @@ class Columns(Layout):
 
     # XXX column alignments
     def __init__(self, parent, colpad=0, rowpad=0, **kw):
-        self.colpad = colpad
-        self.rowpad = rowpad
+        self.colpad = util.parse_value(colpad, 0)
+        self.rowpad = util.parse_value(rowpad, 0)
         super(Columns, self).__init__(parent, **kw)
 
     def columnWidths(self):
