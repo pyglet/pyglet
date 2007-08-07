@@ -1,3 +1,5 @@
+import sys
+
 from pyglet.gl import *
 from pyglet.window import key, mouse
 
@@ -274,12 +276,35 @@ def on_element_leave(widget, x, y):
     return event.EVENT_HANDLED
 
 @event.default('textinput')
+def on_key_press(widget, symbol, modifiers):
+    if sys.platform == 'darwin':
+        active_mod = key.MOD_COMMAND
+    else:
+        active_mod = key.MOD_CTRL
+    if modifiers & active_mod:
+        if symbol == key.A:
+            widget.ti.selectAll()
+            return event.EVENT_HANDLED
+        elif symbol == key.X:
+            raise NotImplementedError('Cut to clipboard not implemented')
+        elif symbol == key.C:
+            raise NotImplementedError('Copy to clipboard not implemented')
+        elif symbol == key.V:
+            raise NotImplementedError('Copy from clipboard not implemented')
+    return event.EVENT_UNHANDLED
+
+@event.default('textinput')
 def on_text(widget, text):
     # special-case newlines - we don't want them
     if text == '\r': return event.EVENT_UNHANDLED
     ti = widget.ti
     i = ti.cursor_index
-    text = ti.text[0:i] + text + ti.text[i:]
+    if ti.highlight:
+        s, e = ti.highlight
+        text = ti.text[0:s] + text + ti.text[e:]
+        ti.highlight = None
+    else:
+        text = ti.text[0:i] + text + ti.text[i:]
     ti.setText(text)
     ti.setCursorPosition(i+1)
     ti.getGUI().dispatch_event(widget, 'on_change', text)
