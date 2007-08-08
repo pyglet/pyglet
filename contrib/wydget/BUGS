@@ -13,7 +13,10 @@ KNOWN BUGS
   . sometimes slider bar drags don't register
 - Selection Lists:
   . oh yeah, selection lists are slow too
-
+- Text Line:
+  . selection out of the text line's bounds doesn't scroll the text
+  . cursor movement during selection doesn't create new selection if
+    cursor is out of old selection
 
 KNOWN AREAS OF (POSSIBLE) REWRITING
 -----------------------------------

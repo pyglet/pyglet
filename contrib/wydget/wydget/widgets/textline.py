@@ -6,6 +6,7 @@ from pyglet.window import key, mouse
 from wydget import event, anim, util, element
 from wydget.widgets.frame import Frame
 from wydget.widgets.label import Label
+from wydget import clipboard
 
 class Cursor(element.Element):
     name = '-text-cursor'
@@ -79,6 +80,21 @@ class TextInputLine(Label):
 
         # move cursor
         self.setCursorPosition(self.cursor_index)
+
+    def editText(self, text, move=0):
+        '''Either insert at the current cursor position or replace the
+        current highlight.
+        '''
+        i = self.cursor_index
+        if self.highlight:
+            s, e = self.highlight
+            text = self.text[0:s] + text + self.text[e:]
+            self.highlight = None
+        else:
+            text = self.text[0:i] + text + self.text[i:]
+        self.setText(text)
+        self.setCursorPosition(i+move)
+        self.getGUI().dispatch_event(self, 'on_change', text)
 
     def render(self, rect):
         super(TextInputLine, self).render(rect)
@@ -286,28 +302,28 @@ def on_key_press(widget, symbol, modifiers):
             widget.ti.selectAll()
             return event.EVENT_HANDLED
         elif symbol == key.X:
-            raise NotImplementedError('Cut to clipboard not implemented')
+            # cut highlighted section
+            ti = widget.ti
+            if ti.highlight is None:
+                return event.EVENT_HANDLED
+            start, end = ti.highlight
+            clipboard.put_text(ti.text[start:end])
+            ti.editText('')
         elif symbol == key.C:
-            raise NotImplementedError('Copy to clipboard not implemented')
+            # copy highlighted section
+            if widget.ti.highlight is None:
+                return event.EVENT_HANDLED
+            start, end = widget.ti.highlight
+            clipboard.put_text(widget.ti.text[start:end])
         elif symbol == key.V:
-            raise NotImplementedError('Copy from clipboard not implemented')
+            widget.ti.editText(clipboard.get_text())
     return event.EVENT_UNHANDLED
 
 @event.default('textinput')
 def on_text(widget, text):
     # special-case newlines - we don't want them
     if text == '\r': return event.EVENT_UNHANDLED
-    ti = widget.ti
-    i = ti.cursor_index
-    if ti.highlight:
-        s, e = ti.highlight
-        text = ti.text[0:s] + text + ti.text[e:]
-        ti.highlight = None
-    else:
-        text = ti.text[0:i] + text + ti.text[i:]
-    ti.setText(text)
-    ti.setCursorPosition(i+1)
-    ti.getGUI().dispatch_event(widget, 'on_change', text)
+    widget.ti.editText(text, move=1)
     return event.EVENT_HANDLED
 
 @event.default('textinput')
