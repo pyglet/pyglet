@@ -305,18 +305,21 @@ def on_key_press(widget, symbol, modifiers):
             # cut highlighted section
             ti = widget.ti
             if ti.highlight is None:
-                return event.EVENT_HANDLED
+                return event.EVENT_UNHANDLED
             start, end = ti.highlight
             clipboard.put_text(ti.text[start:end])
             ti.editText('')
+            return event.EVENT_HANDLED
         elif symbol == key.C:
             # copy highlighted section
             if widget.ti.highlight is None:
-                return event.EVENT_HANDLED
+                return event.EVENT_UNHANDLED
             start, end = widget.ti.highlight
             clipboard.put_text(widget.ti.text[start:end])
+            return event.EVENT_HANDLED
         elif symbol == key.V:
             widget.ti.editText(clipboard.get_text())
+            return event.EVENT_HANDLED
     return event.EVENT_UNHANDLED
 
 @event.default('textinput')

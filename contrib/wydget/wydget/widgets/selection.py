@@ -11,7 +11,7 @@ class Selection(Frame):
 
     def __init__(self, parent, size=None, is_exclusive=False,
             color='black', bgcolor='white', is_vertical=True,
-            alt_bgcolor='ccc', active_bgcolor='ffc',
+            alt_bgcolor='ccc', active_bgcolor='ffc', item_pad=0,
             is_transparent=True, scrollable=True, font_size=None, **kw):
         self.is_vertical = is_vertical
         self.is_exclusive = is_exclusive
@@ -35,9 +35,11 @@ class Selection(Frame):
         if scrollable: f = self.contents
         else: f = self
         if is_vertical:
-            f.layout = layouts.Vertical(f, valign='top', halign='center')
+            f.layout = layouts.Vertical(f, valign='top', padding=item_pad,
+                halign='center')
         else:
-            f.layout = layouts.Horizontal(f, valign='top', halign='left')
+            f.layout = layouts.Horizontal(f, valign='top',
+                padding=item_pad, halign='left')
 
         # specific attributes for Options
         self.color = util.parse_color(color)
@@ -54,7 +56,7 @@ class Selection(Frame):
         if self.scrollable: f = self.contents
         else: f = self
         o = Option(f, text=label, id=id or label, **kw)
-        f.layout.layout()
+        f.layout()
 
     def get_value(self):
         if self.scrollable: f = self.contents

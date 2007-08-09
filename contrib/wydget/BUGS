@@ -18,6 +18,7 @@ KNOWN BUGS
   . cursor movement during selection doesn't create new selection if
     cursor is out of old selection
 
+
 KNOWN AREAS OF (POSSIBLE) REWRITING
 -----------------------------------
 

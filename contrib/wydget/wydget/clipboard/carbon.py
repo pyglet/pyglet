@@ -4,6 +4,7 @@ Based on information from:
   http://developer.apple.com/carbon/pasteboards.html
 '''
 
+import sys
 from ctypes import *
 
 import pyglet.lib
@@ -26,6 +27,7 @@ utf16_plain_text = _create_cfstring("public.utf16-plain-text")
 traditional_mac_plain_text = _create_cfstring("com.apple.traditional-mac-plain-text")
 
 carbon.CFDataGetBytePtr.restype = POINTER(c_char)
+
 
 class CarbonPasteboard(object):
     def __init__(self):
@@ -64,8 +66,11 @@ class CarbonPasteboard(object):
                         try:
                             data = carbon.CFDataGetBytePtr(flavor_data)
                             length = carbon.CFDataGetLength(flavor_data)
-                            return str(data[:length]).decode('utf16')
-              
+                            s = str(data[:length])
+                            if sys.byteorder == 'big':
+                                return s.decode('utf_16_be')
+                            else:
+                                return s.decode('utf_16_le')   # explicit endian avoids BOM
                         finally:
                             carbon.CFRelease (flavor_data)
 
@@ -103,8 +108,11 @@ class CarbonPasteboard(object):
   
         if not sync_flags & kPasteboardClientIsOwner:
             raise ValueError, "Pasteboard not owned after clear"
-  
-        utf16_data = text.encode('utf16')
+
+        if sys.byteorder == 'big':
+            utf16_data = text.encode('utf_16_be')
+        else:
+            utf16_data = text.encode('utf_16_le')   # explicit endian avoids BOM
         data_ref = carbon.CFDataCreate(None, utf16_data, len(utf16_data))
         if not data_ref:
             raise ValueError, "Can't create unicode data for pasteboard"
@@ -129,7 +137,6 @@ class CarbonPasteboard(object):
             carbon.CFRelease(data_ref)
 
 if __name__ == '__main__':
-    import sys
     clipboard = CarbonPasteboard()
     print `clipboard.get_text()`
 

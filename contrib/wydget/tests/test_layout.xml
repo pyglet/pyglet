@@ -1,6 +1,5 @@
 <frame is_transparent="true" height="100%" width="100%">
- <vertical halign="center" padding="1">
-
+ <vertical halign="center" valing="center" padding="1">
   <frame border="green">
    <label bgcolor="white">default (absolute) layout</label>
    <label y="50" bgcolor="white">y="50"</label>
@@ -49,12 +48,48 @@
    </horizontal>
   </frame>
 
-  <frame border="green" height="102">
-   <vertical valign="fill">
-    <label border="white" height="20">fill height="20"</label>
-    <label border="white" height="20">fill height="20"</label>
-    <label border="white" height="40">fill height="40"</label>
-   </vertical>
+  <frame is_transparent="true">
+   <horizontal padding="10">
+    <frame border="green" height="102">
+     <vertical valign="fill">
+      <label border="white" height="20">fill height="20"</label>
+      <label border="white" height="20">fill height="20"</label>
+      <label border="white" height="40">fill height="40"</label>
+     </vertical>
+    </frame>
+    <frame border="green" width="150" height="100">
+     <horizontal padding="4" wrap="true" halign="left" valign="top">
+      <label bgcolor="aqua" color="black">REALLY</label>
+      <label bgcolor="aqua" color="black">EXPENSIVE</label>
+      <label bgcolor="aqua" color="black">TEXT align=topleft</label>
+      <label bgcolor="aqua" color="black">WRAPPING</label>
+     </horizontal>
+    </frame>
+    <frame border="green" width="150" height="100">
+     <horizontal padding="4" wrap="true" halign="center" valign="center">
+      <label bgcolor="aqua" color="black">REALLY</label>
+      <label bgcolor="aqua" color="black">EXPENSIVE</label>
+      <label bgcolor="aqua" color="black">TEXT align=center</label>
+      <label bgcolor="aqua" color="black">WRAPPING</label>
+     </horizontal>
+    </frame>
+    <frame border="green" width="150" height="100">
+     <horizontal padding="4" wrap="true" halign="fill" valign="center">
+      <label bgcolor="aqua" color="black">REALLY</label>
+      <label bgcolor="aqua" color="black">EXPENSIVE</label>
+      <label bgcolor="aqua" color="black">TEXT align=fillcenter</label>
+      <label bgcolor="aqua" color="black">WRAPPING</label>
+     </horizontal>
+    </frame>
+    <frame border="green" width="150" height="100">
+     <horizontal padding="4" wrap="true" halign="right" valign="bottom">
+      <label bgcolor="aqua" color="black">REALLY</label>
+      <label bgcolor="aqua" color="black">EXPENSIVE</label>
+      <label bgcolor="aqua" color="black">TEXT align=bottomright</label>
+      <label bgcolor="aqua" color="black">WRAPPING</label>
+     </horizontal>
+    </frame>
+   </horizontal>
   </frame>
 
   <frame bgcolor="white" border="green">
@@ -64,6 +99,5 @@
     <frame><label border="black">Third row, first column rocks!</label><label border="black">2nd col</label><label border="black">3rd col</label></frame>
    </columns>
   </frame>
-
  </vertical>
 </frame>
