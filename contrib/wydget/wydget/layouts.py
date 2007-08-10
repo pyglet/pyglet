@@ -248,9 +248,9 @@ class Vertical(Layout):
 
             # now layout the columns
             for child in col:
-                y -= int(child.height)
-                child.y = y
-                y -= int(fill_padding)
+                y -= child.height
+                child.y = int(y)
+                y -= fill_padding
                 if self.halign == LEFT:
                     child.x = int(x)
                 elif self.halign == CENTER:
@@ -361,7 +361,7 @@ class Horizontal(Layout):
                     fill_padding = (rect.width - w)/float(len(row)-1)
 
             for child in row:
-                child.x = x
+                child.x = int(x)
                 x += int(child.width + fill_padding)
                 if self.valign == BOTTOM:
                     child.y = int(y)
