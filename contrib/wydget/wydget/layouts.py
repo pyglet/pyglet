@@ -164,12 +164,14 @@ class Vertical(Layout):
             # fill means using the available height
             return self.parent.inner_rect.height
         vis = self.getChildren()
+        if not vis: return 0
         return sum(c.height for c in vis) + self.padding * (len(vis)-1)
     height = property(get_height)
 
     def get_width(self):
-        return max(c.width for c in self.parent.children
-            if not self.only_visible or c.is_visible)
+        vis = self.getChildren()
+        if not vis: return 0
+        return max(c.width for c in vis)
     width = property(get_width)
 
     def layout(self):
@@ -218,11 +220,10 @@ class Horizontal(Layout):
     name = 'horizontal'
 
     def __init__(self, parent, halign=CENTER, valign=None, padding=0,
-            wrap=False, **kw):
+            wrap=None, **kw):
         self.halign = halign
         self.valign = valign
-        # XXX enforce parent.width_spec?
-        self.wrap = wrap
+        self.wrap = util.parse_value(wrap, parent.inner_rect.width)
         if wrap and valign is None:
             # we need to align somewhere to wrap
             self.valign = self.BOTTOM
@@ -235,28 +236,34 @@ class Horizontal(Layout):
             # fill means using the available width
             return pw
         vis = self.getChildren()
+        if not vis: return 0
         if self.wrap:
-            # parent width or widest child if wider than parent
-            return max(pw, max(c.width for c in vis))
-        else:
-            return sum(c.width for c in vis) + self.padding * (len(vis)-1)
+            if self.parent.width_spec:
+                # parent width or widest child if wider than parent
+                return max(self.wrap, max(c.width for c in vis))
+            else:
+                # width of widest row
+                return max(sum(c.width for c in row) +
+                    self.padding * (len(row)-1)
+                        for row in self.determineRows())
+        return sum(c.width for c in vis) + self.padding * (len(vis)-1)
     width = property(get_width)
 
     def get_height(self):
+        vis = self.getChildren()
+        if not vis: return 0
         if self.wrap:
             rows = self.determineRows()
             return sum(max(c.height for c in row) for row in rows) + \
                 self.padding * (len(rows)-1)
-        return max(c.height for c in self.parent.children
-            if not self.only_visible or c.is_visible)
+        return max(c.height for c in vis)
     height = property(get_height)
 
     def determineRows(self):
         rows = [[]]
         rw = 0
-        pw = self.parent.inner_rect.width
         for c in self.getChildren():
-            if self.wrap and rw and rw + c.width > pw:
+            if self.wrap and rw and rw + c.width > self.wrap:
                 rw = 0
                 rows.append([])
             row = rows[-1]
