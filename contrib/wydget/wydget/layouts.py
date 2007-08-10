@@ -153,26 +153,58 @@ class Cell(object):
 class Vertical(Layout):
     name = 'vertical'
 
-    def __init__(self, parent, valign=CENTER, halign=None, padding=0, **kw):
+    def __init__(self, parent, valign=CENTER, halign=None, padding=0,
+            wrap=None, **kw):
         self.valign = valign
         self.halign = halign
         self.padding = util.parse_value(padding, parent.inner_rect.height)
+        self.wrap = util.parse_value(wrap, parent.inner_rect.height)
+        if wrap and halign is None:
+            # we need to align somewhere to wrap
+            self.halign = self.LEFT
         super(Vertical, self).__init__(parent, *kw)
 
     def get_height(self):
+        ph = self.parent.inner_rect.height
         if self.valign == FILL:
             # fill means using the available height
-            return self.parent.inner_rect.height
+            return ph
         vis = self.getChildren()
         if not vis: return 0
+        if self.wrap:
+            if self.parent.height_spec:
+                # parent height or widest child if higher than parent
+                return max(self.wrap, max(c.height for c in vis))
+            else:
+                # height of highest row
+                return max(sum(c.height for c in column) +
+                    self.padding * (len(column)-1)
+                        for column in self.determineColumns())
         return sum(c.height for c in vis) + self.padding * (len(vis)-1)
     height = property(get_height)
 
     def get_width(self):
         vis = self.getChildren()
         if not vis: return 0
+        if self.wrap:
+            cols = self.determineColumns()
+            return sum(max(c.width for c in col) for col in cols) + \
+                self.padding * (len(cols)-1)
         return max(c.width for c in vis)
     width = property(get_width)
+
+    def determineColumns(self):
+        cols = [[]]
+        ch = 0
+        for c in self.getChildren():
+            if self.wrap and ch and ch + c.height > self.wrap:
+                ch = 0
+                cols.append([])
+            col = cols[-1]
+            col.append(c)
+            ch += c.height + self.padding
+        if not cols[-1]: cols.pop()
+        return cols
 
     def layout(self):
         # give the parent a chance to resize before we layout
@@ -181,40 +213,56 @@ class Vertical(Layout):
         # now get the area available for our layout
         rect = self.parent.inner_rect
 
-        h = self.height
+        # Determine starting X coord
+        x = 0
+        if self.halign == CENTER:
+            x = rect.width//2 - self.width//2
+        elif self.halign == RIGHT:
+            x = rect.width - self.width
 
-        vis = self.getChildren()
+        fill_padding = self.padding
+        for col in self.determineColumns():
+            # column width is width of widest child
+            cw = max(child.width for child in col)
 
-        if self.valign == TOP:
-            y = rect.height
-        elif self.valign == CENTER:
-            y = rect.height//2 + h//2
-        elif self.valign == BOTTOM:
-            y = h
-        elif self.valign == FILL:
-            if len(vis) == 1:
-                fill_padding = 0
-            else:
-                h = sum(c.height for c in vis)
-                fill_padding = (rect.height - h)/float(len(vis)-1)
-            y = float(rect.height)
-
-        for c in vis:
-            if self.halign == LEFT:
-                c.x = 0
-            elif self.halign == CENTER:
-                c.x = rect.width//2 - c.width//2
-            elif self.halign == RIGHT:
-                c.x = rect.width - c.width
-
-            y -= c.height
-            c.y = int(y)
+            # height of this column
             if self.valign == FILL:
-                y -= fill_padding
+                h = rect.height
             else:
-                y -= self.padding
+                h = sum(c.height for c in col) + self.padding * (len(col)-1)
+
+            # vertical align for this column
+            if self.valign == BOTTOM:
+                y = h
+            elif self.valign == TOP:
+                y = rect.height
+            elif self.valign == CENTER:
+                y = rect.height//2 - h//2 + h
+            elif self.valign == FILL:
+                y = rect.height
+                if len(col) == 1:
+                    fill_padding = 0
+                else:
+                    h = sum(c.height for c in col)
+                    fill_padding = (rect.height - h)/float(len(col)-1)
+
+            # now layout the columns
+            for child in col:
+                y -= int(child.height)
+                child.y = y
+                y -= int(fill_padding)
+                if self.halign == LEFT:
+                    child.x = int(x)
+                elif self.halign == CENTER:
+                    child.x = int(x + (cw//2 - child.width//2))
+                elif self.halign == RIGHT:
+                    child.x = int(x + (cw - child.width))
+
+            if self.wrap:
+                x += self.padding + cw
 
         super(Vertical, self).layout()
+
 
 class Horizontal(Layout):
     name = 'horizontal'
@@ -268,7 +316,7 @@ class Horizontal(Layout):
                 rows.append([])
             row = rows[-1]
             row.append(c)
-            rw += c.width
+            rw += c.width + self.padding
         if not rows[-1]: rows.pop()
         return rows
 
@@ -279,8 +327,7 @@ class Horizontal(Layout):
         # now get the area available for our layout
         rect = self.parent.inner_rect
 
-        # All very simplistic, assumes all children in a row are the same
-        # height. Start y coords out at top of parent.
+        # Determine starting y coordinate at top of parent.
         if self.valign == BOTTOM:
             y = self.height
         elif self.valign == CENTER:
@@ -290,8 +337,9 @@ class Horizontal(Layout):
 
         fill_padding = self.padding
         for row in self.determineRows():
+            rh = max(child.height for child in row)
             if self.valign is not None:
-                y -= max(child.height for child in row)
+                y -= rh
 
             # width of this row
             if self.halign == FILL:
@@ -315,8 +363,12 @@ class Horizontal(Layout):
             for child in row:
                 child.x = x
                 x += int(child.width + fill_padding)
-                if self.valign is not None:
-                    child.y = y
+                if self.valign == BOTTOM:
+                    child.y = int(y)
+                elif self.valign == CENTER:
+                    child.y = int(y + (rh//2 - child.height//2))
+                elif self.valign == TOP:
+                    child.y = int(y + (rh - child.height))
 
             if self.wrap:
                 y -= self.padding

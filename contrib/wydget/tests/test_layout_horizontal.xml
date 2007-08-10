@@ -1,0 +1,110 @@
+<frame is_transparent="true" height="100%" width="100%">
+ <vertical halign="center" valing="center" padding="1">
+
+  <frame border="green">
+   <horizontal>
+    <label bgcolor="white" font_size="20">defaults</label>
+    <label bgcolor="gray">defaults</label>
+   </horizontal>
+  </frame>
+
+  <frame border="green" height="30" width="50%">
+   <horizontal>
+    <label bgcolor="white" font_size="20">defaults h=30 w=50%</label>
+    <label bgcolor="gray">defaults h=30 w=50%</label>
+   </horizontal>
+  </frame>
+
+  <frame border="green" height="30">
+   <horizontal valign="top" halign="left">
+    <label bgcolor="white" font_size="20">v=top h=left h=30</label>
+    <label bgcolor="gray">v=top h=left h=30</label>
+   </horizontal>
+  </frame>
+
+  <frame border="green" height="30">
+   <horizontal valign="center" halign="left">
+    <label bgcolor="white" font_size="20">v=center h=left h=30</label>
+    <label bgcolor="gray">v=center h=left h=30</label>
+   </horizontal>
+  </frame>
+
+  <frame border="green" height="30">
+   <horizontal valign="bottom" halign="left">
+    <label bgcolor="white" font_size="20">v=bottom h=left h=30</label>
+    <label bgcolor="gray">v=bottom h=left h=30</label>
+   </horizontal>
+  </frame>
+
+  <frame border="green" height="30" width="75%">
+   <horizontal valign="top" halign="right">
+    <label bgcolor="white" font_size="20">v=top h=right h=30 w=75%</label>
+    <label bgcolor="gray">v=top h=right h=30 w=75%</label>
+   </horizontal>
+  </frame>
+
+  <frame border="green" height="30" width="75%">
+   <horizontal valign="center" halign="center">
+    <label bgcolor="white" font_size="20">v=center h=center h=30 w=75%</label>
+    <label bgcolor="gray">v=center h=center h=30 w=75%</label>
+   </horizontal>
+  </frame>
+
+  <frame border="green" height="30" width="75%">
+   <horizontal valign="bottom" halign="left">
+    <label bgcolor="white" font_size="20">v=bottom h=left h=30 w=75%</label>
+    <label bgcolor="gray">v=bottom h=left h=30 w=75%</label>
+   </horizontal>
+  </frame>
+
+  <frame border="green" width="502">
+   <horizontal halign="fill">
+    <label bgcolor="white">short</label>
+    <label bgcolor="white">quite long, really</label>
+    <label bgcolor="white">X</label>
+    <label bgcolor="white">another long'un</label>
+   </horizontal>
+  </frame>
+
+  <frame is_transparent="true">
+   <horizontal padding="2">
+    <frame border="green" width="150" height="100">
+     <horizontal padding="2" wrap="100%" halign="left" valign="top">
+      <label bgcolor="aqua" color="black">SOME</label>
+      <label bgcolor="aqua" color="black">TEXT align=topleft</label>
+      <label bgcolor="aqua" color="black">WRAPPING</label>
+     </horizontal>
+    </frame>
+    <frame border="green" width="150" height="100">
+     <horizontal padding="2" wrap="100%" halign="center" valign="center">
+      <label bgcolor="aqua" color="black">SOME</label>
+      <label bgcolor="aqua" color="black">TEXT align=center</label>
+      <label bgcolor="aqua" color="black">WRAPPING</label>
+     </horizontal>
+    </frame>
+    <frame border="green" height="100">
+     <horizontal padding="2" wrap="150" halign="center" valign="center">
+      <label bgcolor="aqua" color="black">SOME snug</label>
+      <label bgcolor="aqua" color="black">TEXT align=center</label>
+      <label bgcolor="aqua" color="black">WRAPPING</label>
+     </horizontal>
+    </frame>
+    <frame border="green" width="150" height="100">
+     <horizontal padding="2" wrap="100%" halign="fill" valign="center">
+      <label bgcolor="aqua" color="black">SOME</label>
+      <label bgcolor="aqua" color="black">align=fillcenter</label>
+      <label bgcolor="aqua" color="black">WRAPPING</label>
+     </horizontal>
+    </frame>
+    <frame border="green" width="150" height="100">
+     <horizontal padding="2" wrap="100%" halign="right" valign="bottom">
+      <label bgcolor="aqua" color="black">SOME</label>
+      <label bgcolor="aqua" color="black">TEXT align=botright</label>
+      <label bgcolor="aqua" color="black">WRAPPING</label>
+     </horizontal>
+    </frame>
+   </horizontal>
+  </frame>
+
+ </vertical>
+</frame>

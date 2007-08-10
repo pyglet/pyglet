@@ -1,0 +1,115 @@
+<frame is_transparent="true" height="100%" width="100%">
+ <horizontal halign="fill" padding="10" valign="center">
+  <frame is_transparent="true" padding="10">
+ <vertical halign="center" valing="center" padding="1">
+  <frame border="green">
+   <vertical>
+    <label bgcolor="white">defaults</label>
+    <label bgcolor="white">defaults</label>
+   </vertical>
+  </frame>
+
+  <frame border="green" height="40" width="50%">
+   <vertical>
+    <label bgcolor="white">1 defaults h=40 w=50%</label>
+    <label bgcolor="white">2 defaults h=40 w=50%</label>
+   </vertical>
+  </frame>
+
+  <frame border="green" height="40">
+   <vertical valign="top" halign="left">
+    <label bgcolor="white">v=top h=left h=40</label>
+    <label bgcolor="white">v=top h=left h=40</label>
+   </vertical>
+  </frame>
+
+  <frame border="green" height="40">
+   <vertical valign="center" halign="left">
+    <label bgcolor="white">v=center h=left h=40</label>
+    <label bgcolor="white">v=center h=left h=40</label>
+   </vertical>
+  </frame>
+
+  <frame border="green" height="40">
+   <vertical valign="bottom" halign="left">
+    <label bgcolor="white">v=bottom h=left h=40</label>
+    <label bgcolor="white">v=bottom h=left h=40</label>
+   </vertical>
+  </frame>
+
+  <frame border="green" height="40" width="50%">
+   <vertical valign="top" halign="right">
+    <label bgcolor="white">v=top h=right h=40 w=50%</label>
+    <label bgcolor="white">v=top h=right h=40 w=50%</label>
+   </vertical>
+  </frame>
+
+  <frame border="green" height="40" width="50%">
+   <vertical valign="center" halign="center">
+    <label bgcolor="white">v=center h=center h=40 w=50%</label>
+    <label bgcolor="white">v=center h=center h=40 w=50%</label>
+   </vertical>
+  </frame>
+
+  <frame border="green" height="40" width="50%">
+   <vertical valign="bottom" halign="left">
+    <label bgcolor="white">v=bottom h=left h=40 w=50%</label>
+    <label bgcolor="white">v=bottom h=left h=40 w=50%</label>
+   </vertical>
+  </frame>
+  </vertical>
+ </frame>
+
+ <frame is_transparent="true" padding="10">
+ <vertical halign="center" valing="center" padding="1">
+  <frame border="green" height="100">
+   <vertical valign="fill">
+    <label border="white" height="20">fill height="20"</label>
+    <label border="white" height="20">fill height="20"</label>
+    <label border="white" height="40">fill height="40"</label>
+   </vertical>
+  </frame>
+
+  <frame is_transparent="true">
+   <vertical padding="2">
+    <frame border="green" width="300" height="40">
+     <vertical padding="2" wrap="100%" halign="left" valign="top">
+      <label bgcolor="aqua" color="black">SOME</label>
+      <label bgcolor="aqua" color="black">TEXT align=topleft</label>
+      <label bgcolor="aqua" color="black">WRAPPING</label>
+     </vertical>
+    </frame>
+    <frame border="green" width="300" height="40">
+     <vertical padding="2" wrap="100%" halign="center" valign="center">
+      <label bgcolor="aqua" color="black">SOME</label>
+      <label bgcolor="aqua" color="black">TEXT align=center</label>
+      <label bgcolor="aqua" color="black">WRAPPING</label>
+     </vertical>
+    </frame>
+    <frame border="green">
+     <vertical padding="2" wrap="40" halign="center" valign="center">
+      <label bgcolor="aqua" color="black">SOME snug</label>
+      <label bgcolor="aqua" color="black">TEXT align=center</label>
+      <label bgcolor="aqua" color="black">WRAPPING</label>
+     </vertical>
+    </frame>
+    <frame border="green" width="300" height="40">
+     <vertical padding="2" wrap="100%" valign="fill" halign="center">
+      <label bgcolor="aqua" color="black">SOME</label>
+      <label bgcolor="aqua" color="black">TEXT align=fillcenter</label>
+      <label bgcolor="aqua" color="black">WRAPPING</label>
+     </vertical>
+    </frame>
+    <frame border="green" width="300" height="40">
+     <vertical padding="2" wrap="100%" halign="right" valign="bottom">
+      <label bgcolor="aqua" color="black">SOME</label>
+      <label bgcolor="aqua" color="black">TEXT align=botright</label>
+      <label bgcolor="aqua" color="black">WRAPPING</label>
+     </vertical>
+    </frame>
+   </vertical>
+  </frame>
+ </vertical>
+ </frame>
+ </horizontal>
+</frame>
