@@ -38,6 +38,7 @@ else:
 
 window = Window(width=800, height=600, vsync=False)
 
+#clock.set_fps_limit(10)
 fps = clock.ClockDisplay(color=(1, .5, .5, 1))
 window.push_handlers(fps)
 
@@ -168,7 +169,7 @@ def run(xml_file):
         media.dispatch_events()
 
         glClearColor(.2, .2, .2, 1)
-        glClear(GL_COLOR_BUFFER_BIT)
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         gui.draw()
         fps.draw()
         window.flip()

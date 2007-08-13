@@ -13,7 +13,8 @@ def DragHandler(rule, buttons=mouse.LEFT):
             if not buttons & self.mouse_buttons:
                 return event.EVENT_UNHANDLED
             if self.original_position is None:
-                self.original_position = (widget.x, widget.y)
+                self.original_position = (widget.x, widget.y, widget.z)
+                widget.z = 1
             widget.x += dx; widget.y += dy
             return event.EVENT_HANDLED
 
@@ -23,7 +24,7 @@ def DragHandler(rule, buttons=mouse.LEFT):
                 self.original_position = None
             else:
                 if self.original_position is None: return
-                widget.x, widget.y = self.original_position
+                widget.x, widget.y, widget.z = self.original_position
                 self.original_position = None
             return event.EVENT_HANDLED
     return _DragHandler()

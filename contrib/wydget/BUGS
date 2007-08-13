@@ -4,13 +4,19 @@ KNOWN BUGS
 - NO DOCUMENTATION
 - VERY LITTLE CODE DOCUMENTATION
 - assets are poorly-located for packaging
-- view clipping problem: see test_selection first test
+- elements with negative padding are not rendered "correctly"
+- Scrollable Frames:
+  . horizontal scrollbars when we shouldn't have them :(
+  . (see test_selection)
+  . (see also "Nothing's resizeable, and it all needs to be")
+- Layouts:
+  . columns & horizontal fill layouts have bogus RHS padding
 - Tables:
   . table columns don't truncate
   . also, tables are stupidly slow
-- Dragging:
-  . dragged elements should be rendered on top of everything else 
-  . sometimes slider bar drags don't register
+- Dropdown / Popup Menus:
+  . popup offset by a couple of pixels
+  . inner padding not rendered (between border and content)
 - Selection Lists:
   . oh yeah, selection lists are slow too
 - Text Line:
@@ -33,6 +39,4 @@ some point. The current styling of elements is unlikely to change
 significantly though. Never say never, of course.
 
 The table implementation is terrible.
-
-Z positioning is largely ignored or otherwise abused.
 

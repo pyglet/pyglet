@@ -207,7 +207,7 @@ class TextButton(Button):
             glClearColor(1, 1, 1, 0)
             glClear(GL_COLOR_BUFFER_BIT)
             if self.bgcolor is not None:
-                super(TextButton, self).renderBackground(ir, ir)
+                super(TextButton, self).renderBackground(ir)
             # prevent the text's alpha channel being written into the new
             # texture
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)

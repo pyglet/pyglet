@@ -1,5 +1,5 @@
-<frame bgcolor="777" height="100%" width="100%">
- <vertical halign="center" padding="1">
+<frame bgcolor="gray" height="100%" width="100%">
+ <vertical halign="center" padding="10">
 
  <label>defaults</label>
  <label padding="10">padding="10"</label>

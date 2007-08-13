@@ -279,138 +279,140 @@ class Element(object):
     def setEnabled(self, is_enabled):
         self.is_enabled = is_enabled
 
-    def setViewClip(self, rect):
-        self.view_clip = util.Rect(*rect)
+    def getRects(self, view_clip=None, exclude=None):
+        '''Determine the drawing parameters for this element and its
+        children.
 
-    def draw(self, view_clip=None):
-        '''Draw me and my children.
+        Returns a list of (element, (x, y, z, sx, sy, clipped)) where:
 
-        Optionally restrict rendering to the view rect.
+           (x, y, z) is the screen location to render at
+           (sx, sy)  is the scale to render at
+           clipped   is the relative rectangle to render
         '''
-        if not self.is_visible: return
+        if not self.is_visible: return []
+
+        # figure my rect
+        r = util.Rect(self._x, self._y, self._width * self._sx,
+            self._height * self._sy)
+        if view_clip is not None:
+            r = r.intersect(view_clip)
+        if r is None: return []
 
         x, y, z, sx, sy = self._x, self._y, self._z, self._sx, self._sy
 
+        # translate the view clip into this element's coordinate space
+        clipped = self.rect
+        clipped.x -= x
+        clipped.y -= y
+        if view_clip:
+            view_clip = view_clip.copy()
+            view_clip.x -= x
+            view_clip.y -= y
+            clipped = clipped.intersect(view_clip)
+            if not clipped:
+                return []
+
+        rects = []
+        if not self.is_transparent:
+            rects.append((self, (x, y, z, sx, sy, clipped)))
+
+        # shift child elements and view clip for left & bottom padding 
+        pad = self._padding
+        x += pad
+        y += pad
         if view_clip is not None:
             view_clip = view_clip.copy()
-            clipped = view_clip.intersect(self.rect)
-            if clipped is None:
-                # absolutely nothing to display
-                return
-        else:
-            clipped = self.rect
+            view_clip.x -= pad
+            view_clip.y -= pad
 
-        # compensate for gl translate
-        clipped.x -= self.x
-        clipped.y -= self.y
-
-        # translate
-        push = x or y or z or sx != 1 or sy != 1 or self._padding
-        if push:
-            glPushMatrix()
-
-        if x or y or z:
-            glTranslatef(x, y, z)
-
-        if not self.is_transparent:
-            # render the common Element stuff - border and background
-            attrib = GL_CURRENT_BIT
-            if ((self.bgcolor and self.bgcolor[-1] != 1) or
-                    (self.border and self.border[-1] != 1)):
-                attrib |= GL_ENABLE_BIT
-            glPushAttrib(attrib)
-            if attrib & GL_ENABLE_BIT:
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-                glEnable(GL_BLEND)
-            r = self.rect.copy()
-            r.x -= self.x; r.y -= self.y
-            self.renderBackground(r, clipped)
-            self.renderBorder(r, clipped)
-            glPopAttrib()
-
-        # add padding
-        if self._padding:
-            glTranslatef(self._padding, self._padding, 0)
-
-            if view_clip is not None:
-                # translate the view clip to compensate for the gl translate
-                view_clip.x -= self._padding
-                view_clip.y -= self._padding
-
-        # now render the element
-        if not self.is_transparent:
-            if sx != 1 or sy != 1:
-                glScalef(sx, sy, 1)
-            r = self.inner_rect
-            r.x += self._x
-            r.y += self._y
-            if view_clip is not None:
-                view_clip = view_clip.copy()
-                r = view_clip.intersect(r)
-
-            if r is not None:
-                # shift the rect so render() is at (0,0)
-                r.x -= (self._x + self.padding)
-                r.y -= (self._y + self.padding)
-                self.render(r)
-                
-        if view_clip:
-            # shift the view clip to this element's coordinate space
-            view_clip = view_clip.intersect(self.rect)
-            if view_clip is None:
-                if push:
-                    glPopMatrix()
-                return
-            view_clip.x -= self.x
-            view_clip.y -= self.y
-
+        # clip by this element's view clip
         if self.view_clip is not None:
-            # clip by this element's view_clip
-            #print 'NEW CLIP'
             if view_clip is not None:
                 view_clip = view_clip.intersect(self.view_clip)
-                if view_clip is None:
-                    if push:
-                        glPopMatrix()
-                    return
             else:
                 view_clip = self.view_clip
 
-        #print self, view_clip
+        if not view_clip: return rects
+
         for child in self.children:
-            if view_clip is None:
-                child.draw()
-            else:
-                # restrict by view clip
-                #print '..', child, child.rect
-                if child.y > view_clip.top: continue
-                if child.y + child.height < view_clip.y: continue
-                if child.x > view_clip.right: continue
-                if child.x + child.width < view_clip.x: continue
-                child.draw(view_clip)
+            if exclude is child: continue
+            for obj, (ox, oy, oz, osx, osy, c) in child.getRects(view_clip,
+                    exclude):
+                rects.append((obj, (ox*sx+x, oy*sy+y, oz+z, osx, osy, c)))
+        return rects
 
-        #if self.view_clip is not None:
-        #    glPopAttrib()
+    def setViewClip(self, rect):
+        self.view_clip = util.Rect(*rect)
 
-        if push:
-            glPopMatrix()
+    def draw(self, x, y, z, sx, sy, clipped):
+        '''Draw me given the parameters:
 
-    def render(self, rect):
-        '''Render this element inside the indicated rect.
+        `rect`      -- absolute coordinates of the element on screen
+                       taking into account all translation and scaling
+        `sx`, `sy`  -- scaling factors
+        `z`         -- z position
+        `clipped`   -- recangle to draw in *relative* coordinates
+                       to pass to render()
+
+        This method is not invoked if self.is_transparent or
+        not self.is_visible.
+        '''
+        # translate
+        glPushMatrix()
+        glTranslatef(x, y, z)
+
+       # print '**', self
+       # print (x, y, z)
+       # print clipped
+
+        # render the common Element stuff - border and background
+        attrib = GL_CURRENT_BIT
+        bg, border = self.bgcolor, self.border
+        if (bg and bg[-1] != 1) or (border and border[-1] != 1):
+            attrib |= GL_ENABLE_BIT
+        glPushAttrib(attrib)
+        if attrib & GL_ENABLE_BIT:
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glEnable(GL_BLEND)
+        self.renderBackground(clipped)
+        self.renderBorder(clipped)
+        glPopAttrib()
+
+        # translate padding
+        if self._padding:
+            glTranslatef(self._padding, self._padding, 0)
+
+        # scale if necessary
+        if sx != 1 or sy != 1:
+            glScalef(sx, sy, 1)
+
+        # now render the element
+        self.render(clipped)
+
+        glPopMatrix()
+
+    def render(self, clipped):
+        '''Render the element in relative coordinates clipped to the
+        indicated view.
         '''
         pass
 
-    def renderBackground(self, rect, clipped):
+    def renderBackground(self, clipped):
+        '''Render the background in relative coordinates clipped to the
+        indicated view.
+        '''
         if self.bgcolor is None: return
-        # XXX *cough* don't just draw the clipped rect, clip the lines!
         glColor4f(*self.bgcolor)
         x2, y2 = clipped.topright
         glRectf(clipped.x, clipped.y, x2, y2)
 
-    def renderBorder(self, rect, clipped):
+    def renderBorder(self, clipped):
+        '''Render the border in relative coordinates clipped to the
+        indicated view.
+        '''
         if self.border is None: return
-        ox, oy = rect.bottomleft
-        ox2, oy2 = rect.topright
+        ox, oy = 0, 0
+        ox2, oy2 = self.width, self.height
         cx, cy = clipped.bottomleft
         cx2, cy2 = clipped.topright
 
@@ -434,54 +436,6 @@ class Element(object):
             glVertex2f(cx2, oy2-1)
 
         glEnd()
-        
-    def getRects(self, view_clip=None, exclude=None):
-        '''Return my rect and all my children.'''
-        if not self.is_visible: return []
-
-        r = self.getRect(view_clip)
-        if r is None: return []
-
-        if self.is_transparent: l = []
-        else: l = [(self, r)]
-
-        # translate then scale, so don't scale this element's translation
-        bx, by, bz, sx, sy = self._x, self._y, self._z, self._sx, self._sy
-
-        if view_clip:
-            view_clip = view_clip.copy()
-            view_clip.x -= bx
-            view_clip.y -= by
-
-        # XXX have separated padding?
-        bx += self._padding
-        by += self._padding
-
-        if view_clip is not None:
-            view_clip.x -= self._padding
-            view_clip.y -= self._padding
-
-        if self.view_clip is not None:
-            if view_clip is not None:
-                view_clip = view_clip.intersect(self.view_clip)
-            else:
-                view_clip = self.view_clip
-
-        for child in self.children:
-            if exclude is child: continue
-            for obj, (x, y, z, w, h) in child.getRects(view_clip, exclude):
-                if not w or not h: continue
-                l.append((obj, (x*sx+bx, y*sy+by, z+bz, w*sx, h*sy)))
-        return l
-
-    def getRect(self, view_clip=None):
-        '''Return my rect for hit testing.'''
-        r = util.Rect(self._x, self._y, self._width * self._sx,
-            self._height * self._sy)
-        if view_clip is not None:
-            r = r.intersect(view_clip)
-        if r is None: return r
-        return (r.x, r.y, self._z, r.width, r.height)
 
     def parentDimensionsChanged(self):
         '''Indicate to the child that the parent rect has changed and it

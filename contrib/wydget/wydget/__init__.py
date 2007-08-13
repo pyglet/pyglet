@@ -212,24 +212,52 @@ class GUI(event.GUIEventDispatcher):
     rect = property(get_rect)
     inner_rect = property(get_rect)
 
+    def getRects(self, exclude=None):
+        '''Get the rects for all the children to draw & interact with.
+
+        Prune the tree at "exclude" if provided.
+        '''
+        if self._rects is not None and exclude is not None:
+            return self._rects
+
+        rects = []
+        clip = self.rect
+        for element in self.children:
+            if element is exclude: continue
+            rects.extend(element.getRects(clip, exclude))
+        rects.reverse()
+        if exclude is not None:
+            self._rects = rects
+        return rects
+
     def draw(self):
         '''Render all the elements on display.'''
-        glPushAttrib(GL_ENABLE_BIT)
-        glDisable(GL_DEPTH_TEST)
+        glPushAttrib(GL_ENABLE_BIT|GL_DEPTH_BUFFER_BIT)
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LEQUAL)
 
-        view_clip = None #self.rect
-        for element in self.children:
-            if element is self.debug_display: continue
-            element.draw(view_clip)
+        # get the rects and sort by Z (yay for stable sort!)
+        view_clip = None
+        rects = self.getRects(view_clip)
+        rects.sort(lambda a,b: -cmp(a[1][2], b[1][2]))
+        rects.reverse()
+
+        # draw
+        oz = 0
+        for element, (x, y, z, sx, sy, c) in rects:
+            if element is self.debug_display:
+                continue
+            element.draw(x, y, z, sx, sy, c)
 
         if self.debug:
-
             # render the debugging displays
-            self.debug_display.draw()
 
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             glEnable(GL_BLEND)
-            for o, (x, y, z, w, h) in self.getRects(view_clip):
+            for o, (x, y, z, sx, sy, c) in rects:
+                w, h = c.width, c.height
+                x += c.x
+                y += c.y
                 glColor4f(1, 0, 0, .1)
                 glRectf(x, y, x+w, y+h)
                 glColor4f(1, 1, 1, .1)
@@ -244,6 +272,11 @@ class GUI(event.GUIEventDispatcher):
                     v = o.view_clip
                     glColor4f(0, 0, 1, .1)
                     glRectf(x+v.x, y+v.y, x+v.x+v.width, y+v.y+v.height)
+
+            glDisable(GL_BLEND)
+            glDepthFunc(GL_ALWAYS)
+            self.debug_display.draw(0, 0, 0, 1, 1, util.Rect(0, 0,
+                self.width, self.debug_display.height))
 
         glPopAttrib()
 
