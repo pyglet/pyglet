@@ -232,9 +232,8 @@ class GUI(event.GUIEventDispatcher):
 
     def draw(self):
         '''Render all the elements on display.'''
-        glPushAttrib(GL_ENABLE_BIT|GL_DEPTH_BUFFER_BIT)
-        glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LEQUAL)
+        glPushAttrib(GL_ENABLE_BIT)
+        glDisable(GL_DEPTH_TEST)
 
         # get the rects and sort by Z (yay for stable sort!)
         view_clip = None

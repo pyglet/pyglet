@@ -169,7 +169,7 @@ def run(xml_file):
         media.dispatch_events()
 
         glClearColor(.2, .2, .2, 1)
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+        glClear(GL_COLOR_BUFFER_BIT)
         gui.draw()
         fps.draw()
         window.flip()
