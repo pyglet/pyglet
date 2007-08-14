@@ -421,27 +421,27 @@ class Win32Window(BaseWindow):
         width, height = self._client_to_window_size(self._width, self._height)
 
         if not self._window_class:
-            module = _kernel32.GetModuleHandleA(None)
+            module = _kernel32.GetModuleHandleW(None)
             white = _gdi32.GetStockObject(WHITE_BRUSH)
             self._window_class = WNDCLASS()
-            self._window_class.lpszClassName = 'GenericAppClass%d' % id(self)
+            self._window_class.lpszClassName = u'GenericAppClass%d' % id(self)
             self._window_class.lpfnWndProc = WNDPROC(self._wnd_proc)
             self._window_class.style = CS_VREDRAW | CS_HREDRAW
             self._window_class.hInstance = 0
-            self._window_class.hIcon = _user32.LoadIconA(module, 1)
-            self._window_class.hCursor = _user32.LoadCursorA(0, IDC_ARROW)
+            self._window_class.hIcon = _user32.LoadIconW(module, 1)
+            self._window_class.hCursor = _user32.LoadCursorW(0, IDC_ARROW)
             self._window_class.hbrBackground = white
             self._window_class.lpszMenuName = None
             self._window_class.cbClsExtra = 0
             self._window_class.cbWndExtra = 0
-            if not _user32.RegisterClassA(byref(self._window_class)):
+            if not _user32.RegisterClassW(byref(self._window_class)):
                 _check()
         
         if not self._hwnd:
-            self._hwnd = _user32.CreateWindowExA(
+            self._hwnd = _user32.CreateWindowExW(
                 self._ex_ws_style,
                 self._window_class.lpszClassName,
-                '',
+                u'',
                 self._ws_style,
                 CW_USEDEFAULT,
                 CW_USEDEFAULT,
@@ -451,6 +451,7 @@ class Win32Window(BaseWindow):
                 0,
                 self._window_class.hInstance,
                 0)
+            _check()
 
             self._dc = _user32.GetDC(self._hwnd)
         else:
@@ -460,10 +461,10 @@ class Win32Window(BaseWindow):
             # to redraw the whole screen after leaving fullscreen.
             _user32.ShowWindow(self._hwnd, SW_HIDE)
 
-            _user32.SetWindowLongA(self._hwnd,
+            _user32.SetWindowLongW(self._hwnd,
                 GWL_STYLE,
                 self._ws_style)
-            _user32.SetWindowLongA(self._hwnd,
+            _user32.SetWindowLongW(self._hwnd,
                 GWL_EXSTYLE,
                 self._ex_ws_style)
 
@@ -501,7 +502,7 @@ class Win32Window(BaseWindow):
     def close(self):
         super(Win32Window, self).close()
         _user32.DestroyWindow(self._hwnd)
-        _user32.UnregisterClassA(self._window_class.lpszClassName, 0)
+        _user32.UnregisterClassW(self._window_class.lpszClassName, 0)
         self.set_mouse_platform_visible(True)
         self._hwnd = None
         self._dc = None
@@ -601,8 +602,8 @@ class Win32Window(BaseWindow):
             if isinstance(self._mouse_cursor, Win32MouseCursor):
                 cursor = self._mouse_cursor.cursor
             else:
-                cursor = _user32.LoadCursorA(None, IDC_ARROW)
-            _user32.SetClassLongA(self._hwnd, GCL_HCURSOR, cursor)
+                cursor = _user32.LoadCursorW(None, IDC_ARROW)
+            _user32.SetClassLongW(self._hwnd, GCL_HCURSOR, cursor)
             _user32.SetCursor(cursor)
 
         if platform_visible == self._mouse_platform_visible:
@@ -695,7 +696,7 @@ class Win32Window(BaseWindow):
         }
         if name not in names:
             raise Win32Exception('Unknown cursor name "%s"' % name)
-        cursor = _user32.LoadCursorA(None, names[name])
+        cursor = _user32.LoadCursorW(None, names[name])
         return Win32MouseCursor(cursor)
 
     def set_icon(self, *images):
@@ -757,13 +758,13 @@ class Win32Window(BaseWindow):
         image = best_image(_user32.GetSystemMetrics(SM_CXICON),
                            _user32.GetSystemMetrics(SM_CYICON))
         icon = get_icon(image)
-        _user32.SetClassLongA(self._hwnd, GCL_HICON, icon)
+        _user32.SetClassLongW(self._hwnd, GCL_HICON, icon)
 
         # Set small icon
         image = best_image(_user32.GetSystemMetrics(SM_CXSMICON),
                            _user32.GetSystemMetrics(SM_CYSMICON))
         icon = get_icon(image)
-        _user32.SetClassLongA(self._hwnd, GCL_HICONSM, icon)
+        _user32.SetClassLongW(self._hwnd, GCL_HICONSM, icon)
 
     # Private util
 
@@ -799,22 +800,22 @@ class Win32Window(BaseWindow):
                 event[0](*event[1:])
 
         msg = MSG()
-        while _user32.PeekMessageA(byref(msg), self._hwnd, 0, 0, PM_REMOVE):
+        while _user32.PeekMessageW(byref(msg), self._hwnd, 0, 0, PM_REMOVE):
             _user32.TranslateMessage(byref(msg))
-            _user32.DispatchMessageA(byref(msg))
+            _user32.DispatchMessageW(byref(msg))
         self._defer_event_dispatch = True
 
     def _wnd_proc(self, hwnd, msg, wParam, lParam):
         event_handler = self._event_handlers.get(msg, None)
-        result = None
+        result = 0
         if event_handler:
             if self._defer_event_dispatch:
                 self._event_queue.append((event_handler, msg, wParam, lParam))
                 result = 0
             else:
                 result = event_handler(msg, wParam, lParam)
-        if result is None:
-            result = _user32.DefWindowProcA(c_int(hwnd), c_int(msg),
+        if not result:
+            result = _user32.DefWindowProcW(c_int(hwnd), c_int(msg),
                 c_int(wParam), c_int(lParam)) 
         return result
 

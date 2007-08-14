@@ -36,6 +36,13 @@ There are no compilation steps during the installation; if you prefer, you can
 simply add this directory to your PYTHONPATH and use pyglet without
 installing it.
 
+Known issues on Windows
+-----------------------
+
+* The language bar (used to select another keyboard layout or input language)
+  hangs while a pyglet application has focus.  No solution to this has been
+  found yet.
+
 Alpha release known issues
 --------------------------
 
