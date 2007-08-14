@@ -389,18 +389,17 @@ class OpenALPlayer(BasePlayer):
 
             if _have_1_1:
                 # Add buffer timestamp to sample offset
+                # XXX This is wrong, should consider offset into all buffers
                 buffer_samples = al.ALint()
                 al.alGetSourcei(self._al_source, 
                                 al.AL_SAMPLE_OFFSET, buffer_samples)
                 sample_rate = al.ALint()
                 al.alGetBufferi(buffer.value, al.AL_FREQUENCY, sample_rate)
                 buffer_time = buffer_samples.value / float(sample_rate.value)
+                self._last_known_timestamp = buffer_timestamp + buffer_time
                 return buffer_timestamp + buffer_time
             else:
-                if not self._playing:
-                    # Paused.
-                    return self._last_known_timestamp
-                elif buffer.value == self._last_buffer:
+                if buffer.value == self._last_buffer:
                     # Interpolate system time past buffer timestamp
                     return (time.time() - self._last_known_system_time + 
                             self._last_known_timestamp)

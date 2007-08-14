@@ -49,8 +49,8 @@ import pyglet.lib
 
 import ctypes
 
-av = pyglet.lib.load_library('avbin')
-
+av = pyglet.lib.load_library('avbin', 
+                             darwin='/usr/lib/libavbin.dylib')
 
 AVBIN_RESULT_ERROR = -1
 AVBIN_RESULT_OK = 0

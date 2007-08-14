@@ -289,6 +289,8 @@ class BasePlayer(event.EventDispatcher):
     #: end of the current source.  If there is no source queued, the player
     #: will pause.
     EOS_NEXT = 'next'
+    #: The player will stop entirely; valid only for ManagedPlayer.
+    EOS_STOP = 'stop'
 
     # Source and queuing attributes
     _source = None
