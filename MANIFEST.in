@@ -1,10 +1,13 @@
 include LICENSE
 include NOTICE
 include README
+include CHANGELOG
 #recursive-include doc/html *
 recursive-include doc/html/api *
 recursive-include examples *
 recursive-include tests *
+include tools/gl_info.py
+include tools/al_info.py
 recursive-exclude * *.pyc 
 recursive-exclude * *.pyo
 prune tests/regression
