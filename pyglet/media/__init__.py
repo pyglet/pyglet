@@ -779,15 +779,15 @@ else:
     listener = openal.listener
     dispatch_events = openal.dispatch_events
 
-# TODO: port platform media readers to the new design.  In the meantime,
-# use Python WAVE loader only.
-def load(filename, file=None, streaming=True):
+try:
     from pyglet.media import avbin
-    source = avbin.AVbinSource(filename, file)
-    '''
+    _source_class = avbin.AVbinSource
+except ImportError:
     from pyglet.media import riff
-    source = riff.WaveSource(filename, file)
-    '''
+    _source_class = riff.WaveSource
+
+def load(filename, file=None, streaming=True):
+    source = _source_class(filename, file)
     if not streaming:
         source = StaticSource(source)
     return source
