@@ -12,21 +12,25 @@ from xml.dom.minidom import parse
 import pkg_resources
 
 class PythonVersion(object):
-    def __init__(self, version):
+    def __init__(self, version, key_root, display_version):
         self.version = version
-        self.id = 'PY' + version.replace('.', '')
+        self.display_version = display_version
+        self.id = 'PY' + version.replace('.', '') + key_root
+        self.key_root = key_root
         self.key = r'SOFTWARE\Python\PythonCore\%s\InstallPath' % version
         self.dir_prop = 'PYTHONHOME%s' % self.id
         self.exe_prop = 'PYTHONEXE%s' % self.id
         self.components = []
 PYTHON_VERSIONS = (
-    PythonVersion('2.4'),
-    PythonVersion('2.5'),
+    PythonVersion('2.4', 'HKLM', 'Python 2.4'),
+    PythonVersion('2.5', 'HKLM', 'Python 2.5'),
+    PythonVersion('2.4', 'HKCU', 'Python 2.4 (current user only)'),
+    PythonVersion('2.5', 'HKCU', 'Python 2.4 (current user only)'),
 )
 MISSING_PYTHON_MESSAGE = 'pyglet requires Python 2.4 or later.  The ' \
                          'installation will be aborted.'
 
-exclude_packages = ['ext']
+exclude_packages = []
 
 ids = set()
 def id(name):
@@ -181,7 +185,7 @@ if __name__ == '__main__':
         Property.appendChild(
             node(wxs, 'RegistrySearch',
                  Id='%sRegSearch' % pyver.dir_prop,
-                 Root='HKLM',
+                 Root=pyver.key_root,
                  Key=pyver.key,
                  Type='directory'))
         Product.appendChild(Property) 
@@ -224,7 +228,7 @@ if __name__ == '__main__':
     for pyver in PYTHON_VERSIONS:
         feature = node(wxs, 'Feature',
                        Id='RuntimeFeature%s' % pyver.id,
-                       Title='pyglet runtime for Python %s' % pyver.version,
+                       Title='pyglet runtime for %s' % pyver.display_version,
                        Level='1',
                        AllowAdvertise='no')
         condition = node(wxs, 'Condition',
