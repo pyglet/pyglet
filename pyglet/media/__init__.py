@@ -34,77 +34,74 @@
 # ----------------------------------------------------------------------------
 # $Id$
 
-'''Media playback interface.
-
-Only basic functionality is described here; for full reference see the
-accompanying documentation.
-
-To load some media::
-
-    from pyglet import media
-    sound = media.load('sound.mp3')
-    audio = medium.get_audio()
-
-    movie = media.load('movie.mp4')
-    video = medium.get_video()
-
-The supported media file types include WAV, MP3, and many more,
-depending on the operating system.
-
-Both audio and video support the same API implemeted in `MediumInstance`.
-
-To have media actually play, you will need to invoke
-``media.dispatch_events()`` in your application's event loop.
-
+'''Audio and video playback.
 '''
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import sys
+import StringIO
 
 from pyglet import event
 
 class MediaException(Exception):
     pass
 
-class InvalidMediumException(MediaException):
+class MediaFormatException(Exception):
     pass
 
-class Medium(object):
-    '''An audio and/or video medium that can be played.
+class CannotSeekException(MediaException):
+    pass
 
-    A medium cannot itself be played, but it can provide a sound instance
-    which represents an instance of a playing sample.  You can retrieve
-    an instance of the sound, which will be queued up as soon as possible,
-    with `get_sound`.  
-    
-    For convenience, the `play` method will return a sound and begin playing
-    it as soon as possible (for a static Medium, this will be almost
-    immediately).
+class AudioFormat(object):
+    def __init__(self, channels, sample_size, sample_rate):
+        self.channels = channels
+        self.sample_size = sample_size
+        self.sample_rate = sample_rate
+        
+        # Convenience
+        self.bytes_per_sample = (sample_size >> 3) * channels
+        self.bytes_per_second = self.bytes_per_sample * sample_rate
+
+class AudioData(object):
+    def __init__(self, data, length, timestamp, duration, is_eos=False):
+        self.data = data
+        self.length = length
+        self.timestamp = timestamp
+        self.duration = duration
+        self.is_eos = is_eos
+
+class VideoFormat(object):
+    def __init__(self, width, height, sample_aspect=1.0):
+        self.width = width
+        self.height = height
+        self.sample_aspect = sample_aspect
+
+class Source(object):
+    '''An audio and/or video source.
 
     :Ivariables:
-        `has_audio` : bool
-            If True, there is an audio track in the medium, and `get_sound`
-            can be called to use it.
-        `has_video` : bool
-            If True, there is a video track in the medium, and `get_video`
-            can be called to use it.
-
+        `audio_format` : `AudioFormat`
+            Format of the audio in this source, or None if the source is
+            silent.
+        `video_format` : `VideoFormat`
+            Format of the video in this source, or None if there is no
+            video.
     '''
 
     _duration = None
     
-    has_audio = False
-    has_video = False
+    audio_format = None
+    video_format = None
 
     def _get_duration(self):
         return self._duration
 
     duration = property(lambda self: self._get_duration(),
-                        doc='''The length of the medium, in seconds.
+                        doc='''The length of the source, in seconds.
 
-        Not all media can determine their duration; in this case the value
+        Not all source durations can be determined; in this case the value
         is None.
 
         Read-only.
@@ -112,149 +109,193 @@ class Medium(object):
         :type: float
         ''')
 
-    def get_sound(self):
-        '''Create and return a new sound that can be played.
-
-        Each call to this method creates a new sound instance; the multiple
-        sounds can be played, paused, and otherwise manipulated independently
-        and simultaneously.
-
-        :rtype: `Sound`
-        '''
-        raise NotImplementedError('abstract')
-
-    def get_video(self):
-        '''Create and return a new video that can be played.
-
-        Each call to this method creates a new video instance, which can be
-        played and paused independently of any other videos.
-
-        This call can fail if the medium has no video data (i.e., it is a
-        sound file), or if the medium was loaded statically instead of
-        streaming.
-
-        :rtype: `Video`
-        '''
-
     def play(self):
-        '''Play the sound.
+        '''Play the source.
 
-        This is a convenience method which creates a sound and plays it
-        immediately.
+        This is a convenience method which creates a ManagedSoundPlayer for
+        this source and plays it immediately.
 
-        :rtype: `Sound`
+        :rtype: `ManagedSoundPlayer`
         '''
-        sound = self.get_sound()
-        sound.play()
-        return sound
+        player = ManagedSoundPlayer()
+        player.queue(self)
+        player.play()
+        return player
 
-class MediumInstance(event.EventDispatcher):
-    '''An instance of a sound or video.
+    # Internal methods that Players call on the source:
 
-    :Ivariables:
-        `playing` : bool
-            If True, the sound is currently playing.  Even after calling
-            `play`, the sound may not begin playing until enough audio has
-            been buffered.  If False, the sound is either buffering and
-            about to play, is explicitly paused, or has finished.
-            This variable is read-only.
-        `finished` : bool
-            If True, the sound has finished playing.  This variable is
-            read-only.
-    '''
-
-    playing = False
-    finished = False
-
-    def play(self):
-        '''Begin playing the instance.
-
-        This has no effect if the instance is already playing.
-        '''
-        raise NotImplementedError('abstract')
-
-    def pause(self):
-        '''Pause playback of the instance.
-
-        This has no effect if the instance is already paused.
-        '''
-        raise NotImplementedError('abstract')
-
-    def stop(self):
-        '''Stop playback of the instance and release all resources.
-
-        Once an instance has been stopped, it cannot be started again.
-        '''
-        raise NotImplementedError('abstract')
-
-    def seek(self, timestamp):
-        '''Seek for playback to the indicated timestamp in seconds.
-        '''
-        raise NotImplementedError('abstract')
-
-    def _get_time(self):
-        raise NotImplementedError('abstract')
-
-    time = property(lambda self: self._get_time(),
-                    doc='''Retrieve the current playback time of the instance.
-                    
-         The playback time is a float expressed in seconds, with 0.0 being
-         the beginning of the sound.  The playback time returned represents
-         the time encoded in the media, and may not reflect actual time
-         passed due to pitch shifting or pausing.
-
-         Read-only.
-
-         :type: float
-         ''')
- 
-    def dispatch_events(self):
-        '''Dispatch any pending events and perform regular heartbeat functions
-        to maintain playback.
-
-        This method is called automatically by `pyglet.media.dispatch_events`,
-        there is no need to call this from an application.
-        '''
+    def _play(self):
+        '''Begin decoding in real-time.'''
         pass
 
-    def unschedule(self):
-        '''Stop event processing for this instance.
-        
-        This will prevent any further calls to `dispatch_events`.
-        '''
+    def _pause(self):
+        '''Pause decoding, but remain prerolled.'''
         pass
 
+    def _stop(self):
+        '''Stop forever and clean up.'''
+        pass
 
-EVENT_FINISHED = MediumInstance.register_event_type('on_finished')
+    def _seek(self, timestamp):
+        '''Seek to given timestamp.'''
+        raise CannotSeekException()
 
-class Sound(MediumInstance):
-    '''An instance of a sound, either currently playing or ready to be played.
+    def _get_queue_source(self):
+        '''Return the `Source` to be used as the queue source for a player.
 
-    By default, monaural sounds are played at nominal volume equally among
-    all speakers, however they may also be positioned in 3D space.  Stereo
-    sounds are not positionable.
+        Default implementation returns self.'''
+        return self
 
-    :Ivariables:
-        `depth` : int
-            The number of bits per sample per channel (usually 8 or 16).
-            The value is None if the audio properties have not yet been
-            determined.
-        `channels` : int
-            The number of audio channels provided: 1 for monoaural sound, 2
-            for stereo, or more for multi-channel sound. The value is None if
-            the audio properties have not yet been determined.
-        `sample_rate` : float
-            The audio sample rate, in Hz.  The sound may be resampled
-            to match the audio device's sample rate; this value gives
-            the original sample rate.  The value is None if the audio
-            properties have not yet been determined.
+    def _get_audio_data(self, bytes):
+        '''Get next packet of audio data.
 
+        :Parameters:
+            `bytes` : int
+                Maximum number of bytes of data to return.
+
+        :rtype: `AudioData`
+        :return: Next packet of audio data, or None if there is no (more)
+            data.
+        '''
+        return None
+
+    def _init_texture(self, player):
+        '''Create the player's texture.'''
+        pass
+
+    def _update_texture(self, player, timestamp):
+        '''Update the texture on player.'''
+        pass
+
+    def _release_texture(self, player):
+        '''Release the player's texture.'''
+        pass
+
+class StreamingSource(Source):
+    '''A source that is decoded as it is being played, and can only be
+    queued once.
     '''
-        
-    depth = None
-    sample_rate = None
-    channels = None
+    
+    _is_queued = False
 
+    is_queued = property(lambda self: self._is_queued,
+                         doc='''Determine if this source has been queued
+        on a `Player` yet.
+
+        Read-only.
+
+        :type: bool
+        ''')
+
+    def _get_queue_source(self):
+        '''Return the `Source` to be used as the queue source for a player.
+
+        Default implementation returns self.'''
+        if self._is_queued:
+            raise MediaException('This source is already queued on a player.')
+        self._is_queued = True
+        return self
+
+class StaticSource(Source):
+    '''A source that has been completely decoded in memory.  This source can
+    be queued onto multiple players any number of times.
+    '''
+    
+    def __init__(self, source):
+        '''Construct a `StaticSource` for the data in `source`.
+
+        :Parameters:
+            `source` : `Source`
+                The source to read and decode audio and video data from.
+
+        '''
+        if source.video_format:
+            raise NotImplementedException(
+                'Static sources not supported for video yet.')
+
+        self.audio_format = source.audio_format
+        if not self.audio_format:
+            return
+
+        # TODO enable time-insensitive playback 
+        source.play()
+
+        # Arbitrary: number of bytes to request at a time.
+        buffer_size = 1 << 20 # 1 MB
+
+        # Naive implementation.  Driver-specific implementations may override
+        # to load static audio data into device (or at least driver) memory. 
+        data = StringIO.StringIO()
+        while True:
+            audio_data = source._get_audio_data(buffer_size)
+            if not audio_data:
+                break
+            data.write(audio_data.data)
+        self._data = data.getvalue()
+
+    def _get_queue_source(self):
+        return StaticMemorySource(self._data, self.audio_format)
+
+    def _get_audio_data(self, bytes):
+        raise RuntimeError('StaticSource cannot be queued.')
+
+class StaticMemorySource(StaticSource):
+    '''Helper class for default implementation of `StaticSource`.  Do not use
+    directly.'''
+
+    def __init__(self, data, audio_format):
+        self._file = StringIO.StringIO(data)
+        self._max_offset = len(data)
+        self.audio_format = audio_format
+
+    def _seek(self, timestamp):
+        offset = int(timestamp * self.audio_format.bytes_per_second)
+
+        # Align to sample
+        if self.audio_format.bytes_per_sample == 2:
+            offset &= 0xfffffffe
+        elif self.audio_foramt.bytes_per_sample == 4:
+            offset &= 0xfffffffc
+
+        self._file.seek(offset)
+
+    def _get_audio_data(self, bytes):
+        offset = self._file.tell()
+        timestamp = float(offset) / self.audio_format.bytes_per_second
+
+        data = self._file.read(bytes)
+        if not data:
+            return None
+
+        duration = float(len(data)) / self.audio_format.bytes_per_second
+        is_eos = self._file.tell() == self._max_offset
+        return AudioData(data,
+                         len(data),
+                         timestamp,
+                         duration,
+                         is_eos)
+
+class BasePlayer(event.EventDispatcher):
+    '''A sound and/or video player.
+
+    Queue sources on this player to play them.
+    '''
+
+    #: The player will pause when it reaches the end of the stream.
+    EOS_PAUSE = 'pause'
+    #: The player will loop the current stream continuosly.
+    EOS_LOOP = 'loop'
+    #: The player will move on to the next queued stream when it reaches the
+    #: end of the current source.  If there is no source queued, the player
+    #: will pause.
+    EOS_NEXT = 'next'
+
+    # Source and queuing attributes
+    _source = None
+    _eos_action = EOS_NEXT
+    _playing = False
+
+    # Sound and spacialisation attributes
     _volume = 1.0
     _max_gain = 1.0
     _min_gain = 0.0
@@ -268,6 +309,117 @@ class Sound(MediumInstance):
     _cone_outer_angle = 360.
     _cone_outer_gain = 1.
 
+    # Video attributes
+    _texture = None
+
+    def queue(self, source):
+        '''Queue the source on this player.
+
+        If the player has no source, the player will be paused immediately
+        on this source.
+
+        :Parameters:
+            `source` : Source
+                The source to queue.
+
+        '''
+
+    def play(self):
+        '''Begin playing the current source.
+
+        This has no effect if the player is already playing.
+        '''
+        raise NotImplementedError('abstract')
+
+    def pause(self):
+        '''Pause playback of the current source.
+
+        This has no effect if the player is already paused.
+        '''
+        raise NotImplementedError('abstract')
+
+    def seek(self, timestamp):
+        '''Seek for playback to the indicated timestamp in seconds on the
+        current source.  If the timestamp is outside the duration of the
+        source, it will be clamped to the end.
+
+        :Parameters:
+            `timestamp` : float
+                Timestamp to seek to.
+        '''
+        raise NotImplementedError('abstract')
+
+    def next(self):
+        '''Move immediately to the next queued source.
+
+        If the `eos_action` of this player is `EOS_NEXT`, and the source has
+        been queued for long enough, there will be no gap in the audio or
+        video playback.  Otherwise, there may be some delay as the next source
+        is prerolled and the first frames decoded and buffered.
+        '''
+        raise NotImplementedError('abstract')
+
+    def dispatch_events(self):
+        '''Dispatch any pending events and perform regular heartbeat functions
+        to maintain playback.
+        '''
+        pass
+
+    def _get_time(self):
+        raise NotImplementedError('abstract')
+
+    time = property(lambda self: self._get_time(),
+                    doc='''Retrieve the current playback time of the current
+         source.
+                    
+         The playback time is a float expressed in seconds, with 0.0 being
+         the beginning of the sound.  The playback time returned represents
+         the time encoded in the source, and may not reflect actual time
+         passed due to pitch shifting or pausing.
+
+         Read-only.
+
+         :type: float
+         ''')
+
+    def _get_source(self):
+        return self._source
+
+    source = property(lambda self: self._get_source(),
+                      doc='''Return the current source.
+
+         Read-only.
+
+         :type: Source
+         ''')
+
+    def _set_eos_action(self, action):
+        self._eos_action = action
+
+    eos_action = property(lambda self: self._eos_action,
+                          _set_eos_action,
+                          doc='''Set the behaviour of the player when it
+        reaches the end of the current source.
+
+        This must be one of the constants `EOS_NEXT`, `EOS_PAUSE` or
+        `EOS_LOOP`.
+
+        :type: str
+        ''')
+
+    playing = property(lambda self: self._playing,
+                       doc='''Determine if the player state is playing.
+
+        The `playing` property is irrespective of whether or not there is
+        actually a source to play.  If `playing` is True and a source is
+        queued, it will begin playing immediately.  If `playing` is False, 
+        it is implied that the player is paused.  There is no other possible
+        state.
+
+        Read-only.
+
+        :type: bool
+        ''')
 
     def _set_volume(self, volume):
         raise NotImplementedError('abstract')
@@ -412,27 +564,28 @@ class Sound(MediumInstance):
         :type: float
         ''')
 
+    texture = property(lambda self: self._texture,
+                       doc='''The video texture.
 
-class Video(MediumInstance):
-    '''A video that can be played.
+        You should rerequest this property every time you display a frame
+        of video, as multiple textures might be used.  This property will
+        be `None` if there is no video in the current source.
 
-    :Ivariables:
-        `sound` : `Sound`
-            Reference to the sound instance that accompanies this video.
-        `texture` : `pyglet.image.Texture`
-            Reference to the texture object that holds the current frame of
-            video.
-        `width` : int
-            Width of the video, in pixels.  None if unknown.
-        `height` : int
-            Height of the video, in pixels.  None if unknown.
+        :type: `pyglet.image.Texture`
+        ''')
 
-    '''
-    sound = None
-    texture = None
+    if getattr(sys, 'is_epydoc', False):
+        def on_eos():
+            '''The player has reached the end of the current source.
 
-    width = None
-    height = None
+            This event is dispatched regardless of the EOS action.  You
+            can alter the EOS action in this event handler, however playback
+            may stutter as the media device will not have enough time to
+            decode and buffer the new data in advance.
+
+            :event:
+            '''
+BasePlayer.register_event_type('on_eos')
 
 class Listener(object):
     '''The listener properties for positional audio.
@@ -561,8 +714,38 @@ if getattr(sys, 'is_epydoc', False):
     #: :type: `Listener`
     listener = Listener()
 
-    def load(filename, file=None, streaming=None):
-        '''Load a medium.
+    # Document imaginary Player class
+    Player = BasePlayer
+    Player.__name__ = 'Player'
+    del BasePlayer
+
+    # Document imaginary ManagedSoundPlayer class.  There is no point making
+    # a BaseManagedSoundPlayer class; it won't fit into the devices' class
+    # hierarchies.
+    class ManagedSoundPlayer(Player):
+        '''A player which takes care of updating its own audio buffers.
+
+        This player will continue playing the sound until the sound is
+        finished, even if the application discards the player early.
+        There is no need to call `Player.dispatch_events` on this player,
+        though you must call `pyglet.media.dispatch_events`.
+        '''
+
+        #: The only possible end of stream action for a managed player.
+        EOS_STOP = 'stop'
+
+        eos_action = property(lambda self: EOS_STOP,
+                              doc='''The fixed eos_action is `EOS_STOP`,
+            in which the player is discarded as soon as the source has
+            finished.
+
+            Read-only.
+            
+            :type: str
+            ''')
+                              
+    def load(filename, file=None, streaming=True):
+        '''Load a source.
 
         :Parameters:
             `filename` : str
@@ -571,41 +754,41 @@ if getattr(sys, 'is_epydoc', False):
                 File to load data from.  If unspecified, the filename will be
                 opened.
             `streaming` : bool
-                If True, the medium will be decoded as it is played; otherwise
-                it will be decoded immediately and stored in memory.
+                If unspecified, the source returned will be streaming, and can
+                only be used once.  Specify `False` here to return a
+                fully decoded `StaticSource`.
 
-        :rtype: `Medium`
+        :rtype: `Source`
         '''
 
     def dispatch_events():
-        '''Process audio events.
+        '''Process managed audio events.
 
         You must call this function regularly (typically once per run loop
-        iteration) in order to keep audio buffers full and video textures
-        up-to-date.
+        iteration) in order to keep audio buffers of managed players full.
         '''
 
-    def cleanup():
-        '''Release all media resources.
-
-        You should call this function before your application exits, if it has
-        imported this module.
-        '''
 else:
-    if sys.platform == 'linux2':
-        from pyglet.media import gst_openal
-        _device = gst_openal
-    elif sys.platform == 'darwin':
-        from pyglet.media import quicktime
-        _device = quicktime
-    elif sys.platform in ('win32', 'cygwin'):
-        from pyglet.media import directshow
-        _device = directshow
-    else:
-        raise ImportError('pyglet.media not yet supported on %s' % sys.platform)
+    # Currently audio playback is through OpenAL on all platforms; in 
+    # the future alternative drivers using ALSA or DirectSound may be
+    # implemented.
+    from pyglet.media import openal
+    openal.init()
+    Player = openal.OpenALPlayer
+    ManagedSoundPlayer = openal.OpenALManagedPlayer
+    listener = openal.listener
+    dispatch_events = openal.dispatch_events
 
-    load = _device.load
-    dispatch_events = _device.dispatch_events
-    cleanup = _device.cleanup
-    listener = _device.listener
-    _device.init()
+# TODO: port platform media readers to the new design.  In the meantime,
+# use Python WAVE loader only.
+def load(filename, file=None, streaming=True):
+    from pyglet.media import avbin
+    source = avbin.AVbinSource(filename, file)
+    '''
+    from pyglet.media import riff
+    source = riff.WaveSource(filename, file)
+    '''
+    if not streaming:
+        source = StaticSource(source)
+    return source
+

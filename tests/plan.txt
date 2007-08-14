@@ -169,3 +169,10 @@ font
         font.KERNING
         font.ITALIC_CORRECTION
 
+media
+    media-player
+        media.PLAYER_QUEUE_PLAY                 DEVELOPER
+        media.PLAYER_PLAY_QUEUE                 DEVELOPER
+        media.PLAYER_PAUSE                      DEVELOPER
+        media.PLAYER_PAUSE_QUEUE                DEVELOPER
+        media.PLAYER_EOS_NEXT                   DEVELOPER

@@ -1225,6 +1225,14 @@ class Texture(AbstractImage):
         if target not in (GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_RECTANGLE_ARB):
             width = _nearest_pow2(min_width)
             height = _nearest_pow2(min_height)
+            tex_coords = cls.tex_coords
+        else:
+            width = min_width
+            height = min_height
+            tex_coords = ((0, 0, 0), 
+                          (width, 0, 0), 
+                          (width, height, 0), 
+                          (0, height, 0))
         id = GLuint()
         glGenTextures(1, byref(id))
 
@@ -1239,7 +1247,9 @@ class Texture(AbstractImage):
                          GL_RGBA, GL_UNSIGNED_BYTE,
                          blank)
                          
-        return cls(width, height, target, id.value)
+        texture = cls(width, height, target, id.value)
+        texture.tex_coords = tex_coords
+        return texture
 
     def get_image_data(self, z=0):
         '''Get the image data of this texture.

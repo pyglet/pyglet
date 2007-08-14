@@ -805,6 +805,7 @@ if __name__ == '__main__':
 
     while not win.has_exit:
         win.dispatch_events()
+        media.dispatch_events()
 
         # Update
         dt = clock.tick()

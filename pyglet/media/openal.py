@@ -4,11 +4,11 @@
 # Copyright (c) 2006-2007 Alex Holkner
 # All rights reserved.
 # 
-# Redistribution and use in source and binary forms, with or without
+# Redistribution and use in _al_source and binary forms, with or without
 # modification, are permitted provided that the following conditions 
 # are met:
 #
-#  * Redistributions of source code must retain the above copyright
+#  * Redistributions of _al_source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
 #  * Redistributions in binary form must reproduce the above copyright 
 #    notice, this list of conditions and the following disclaimer in
@@ -38,7 +38,7 @@ import ctypes
 import sys
 import time
 
-from pyglet.media import Sound, Listener, EVENT_FINISHED
+from pyglet.media import BasePlayer, Listener, MediaException
 from pyglet.media import lib_openal as al
 from pyglet.media import lib_alc as alc
 
@@ -49,6 +49,9 @@ def init(device_name = None):
     global _device
     global _is_init
     global _have_1_1
+
+    # TODO devices must be enumerated on Windows, otherwise 1.0 context is
+    # returned.
 
     _device = alc.alcOpenDevice(device_name)
     if not _device:
@@ -100,24 +103,41 @@ def get_extensions():
 def have_extension(extension):
     return extension in get_extensions()
 
+class BufferInformation(object):
+    __slots__ = ['timestamp', 'length', 'owner', 'is_eos']
+
 class BufferPool(list):
     def __init__(self):
-        self.timestamps = {}
+        self.info = {}
 
-    def get(self, timestamp):
+    def get(self, timestamp, length, owner, is_eos=False):
         if not self:
             buffer = al.ALuint()
             al.alGenBuffers(1, buffer)
+            info = BufferInformation()
+            self.info[buffer.value] = info
         else:
             buffer = al.ALuint(self.pop(0))
-        self.timestamps[buffer.value] = timestamp
+            info = self.info[buffer.value]
+        info.timestamp = timestamp  # for video sync
+        info.length = length        # in seconds
+        info.owner = owner          # Source that owns it, or buffer_pool
+        info.is_eos = is_eos        # True if last buffer for this source
         return buffer
 
-    def timestamp(self, buffer):
-        return self.timestamps[buffer]
+    def info(self, buffer):
+        return self.info[buffer]
 
-    def replace(self, buffers):
-        self.extend(buffers)
+    def release(self, buffer):
+        '''Players should call this method when a buffer is finished
+        playing.'''
+        self.info[buffer].owner._openal_release_buffer(buffer)
+
+    def _openal_release_buffer(self, buffer):
+        '''Release a buffer.  Sources can set the buffer owner to be the
+        buffer pool if the buffer can be released as soon it is played.
+        '''
+        self.append(buffer)
 
     def __del__(self, al=al):
         if al and al.ALuint and al.alDeleteBuffers:
@@ -135,17 +155,23 @@ _format_map = {
 def get_format(channels, depth):
     return _format_map[channels, depth]
 
-class OpenALSound(Sound):
-    _processed_buffers = 0
-    _queued_buffers = 0
+class SourceInfo(object):
+    def __init__(self, source):
+        self.source = source
+
+class OpenALPlayer(BasePlayer):
+    #: Seconds ahead to buffer audio.  Keep small for low latency, but large
+    #: enough to avoid underruns. (0.05 is the minimum for my 2.2 GHz Linux)
+    _min_buffer_time = 0.3
+
+    #: Maximum size of an OpenAL buffer, in bytes.  TODO: use OpenAL maximum
+    _max_buffer_size = 65536
 
     def __init__(self):
-        super(OpenALSound, self).__init__()
+        super(OpenALPlayer, self).__init__()
 
-        self.source = al.ALuint()
-        al.alGenSources(1, self.source)
-        self.play_when_buffered = False
-
+        self._al_source = al.ALuint()
+        al.alGenSources(1, self._al_source)
         # OpenAL on Linux lacks the time functions, so this is a stab at
         # interpolating time between the known buffer timestamps.  When a
         # timestamp is read from the active buffer, the current system time is
@@ -166,175 +192,322 @@ class OpenALSound(Sound):
         #
         # When OpenAL 1.1 is present (i.e., on OS X), we add the buffer's
         # timestamp to the retrieved sample offset within the current buffer.
-        #
-        # XXX Need special consideration when pausing (Linux only).
-        self._last_buffer = 0
-        self._last_buffer_time = 0
+        self._last_buffer = -1
+        self._last_known_timestamp = 0
+        self._last_known_system_time = 0
+
+        self._sources = []
+
+        # Index into self._sources that is currently the source of new audio
+        # buffers
+        self._source_read_index = 0
+
+        # List of BufferInformation
+        self._queued_buffers = []
+
+        # If not playing, must be paused (irrespective of whether or not
+        # sources are queued).
+        self._playing = False
+
+        # self._al_playing = (_al_source.state == AL_PLAYING)
+        self._al_playing = False
 
     def __del__(self, al=al):
         if al and al.alDeleteSources:
-            al.alDeleteSources(1, self.source)
+            al.alDeleteSources(1, self._al_source)
 
-    def _get_time(self):
-        buffer = al.ALint()
-        al.alGetSourcei(self.source, al.AL_BUFFER, buffer)
-        if not buffer:
-            return 0.
+    def queue(self, source):
+        source = source._get_queue_source()
 
-        # The playback position at the start of the current buffer
-        buffer_timestamp = buffer_pool.timestamp(buffer.value)
+        if not self._sources:
+            self._source_read_index = 0
+            source._init_texture(self)
+        self._sources.append(source)
 
-        if _have_1_1:
-            # Add buffer timestamp to sample offset
-            # XXX this occasionally goes backwards
-            buffer_samples = al.ALint()
-            al.alGetSourcei(self.source, al.AL_SAMPLE_OFFSET, buffer_samples)
-            sample_rate = al.ALint()
-            al.alGetBufferi(buffer.value, al.AL_FREQUENCY, sample_rate)
-            buffer_time = buffer_samples.value / float(sample_rate.value)
-            return buffer_timestamp + buffer_time
+        # Determine OpenAL format of source audio data.
+        if source.audio_format:
+            source.al_format = {
+                (8, 1): al.AL_FORMAT_MONO8,
+                (16, 1): al.AL_FORMAT_MONO16,
+                (8, 2): al.AL_FORMAT_STEREO8,
+                (16, 2): al.AL_FORMAT_STEREO16
+            }.get((source.audio_format.sample_size, 
+                   source.audio_format.channels), None)
         else:
-            # Interpolate system time past buffer timestamp
-            if not self.playing:
-                return self._last_buffer_time + buffer_timestamp
-            elif buffer.value == self._last_buffer:
-                return time.time() - self._last_buffer_time + buffer_timestamp
-            else:
-                self._last_buffer = buffer.value
-                self._last_buffer_time = time.time()
-                return buffer_timestamp
+            source.al_format = None
 
-    def play(self):
-        self._openal_play()
+    def next(self):
+        if self._sources:
+            old_source = self._sources.pop(0)
+            old_source._release_texture(self)
+            old_source._stop()
+            self._source_read_index -= 1
 
-    def _openal_play(self):
-        if self.playing:
+        if self._sources:
+            self._sources[0]._init_texture(self)
+            
+    def dispatch_events(self):
+        if not self._sources:
+            return
+            
+        if not self._playing:
+            # If paused, just update the video texture.
+            if self._texture:
+                self._sources[0]._update_texture(self, self.time)
             return
 
-        buffers = al.ALint()
-        al.alGetSourcei(self.source, al.AL_BUFFERS_QUEUED, buffers)
-        if buffers.value == 0:
-            self.play_when_buffered = True
+        # Calculate once only for this method.
+        self_time = self.time
+        
+        # Update state of AL source
+        state = al.ALint()
+        al.alGetSourcei(self._al_source, al.AL_SOURCE_STATE, state)
+        self._al_playing = state.value == al.AL_PLAYING
+
+        if self._sources[0].al_format:
+            # Find out how many buffers are done
+            processed = al.ALint()
+            al.alGetSourcei(self._al_source, 
+                            al.AL_BUFFERS_PROCESSED, processed)
+            processed = processed.value
+            queued = al.ALint()
+            al.alGetSourcei(self._al_source, al.AL_BUFFERS_QUEUED, queued)
+
+            # Release spent buffers
+            if processed:
+                buffers = (al.ALuint * processed)()
+                al.alSourceUnqueueBuffers(self._al_source, 
+                                          len(buffers), buffers)
+
+                # If any buffers were EOS buffers, dispatch appropriate
+                # event.
+                for buffer in buffers:
+                    info = self._queued_buffers.pop(0)
+                    assert info is buffer_pool.info[buffer]
+                    if info.is_eos:
+                        if self._eos_action == self.EOS_NEXT:
+                            self.next()
+                        elif self._eos_action == self.EOS_STOP:
+                            # For ManagedPlayer only.
+                            self._stop()
+                        self.dispatch_event('on_eos')
+                    buffer_pool.release(buffer)
+
         else:
-            al.alSourcePlay(self.source)
-            self.play_when_buffered = False
-            self.playing = True
-            self._last_buffer_time = time.time() - self._last_buffer_time
+            # Check for EOS on silent source
+            if self_time > self._sources[0].duration:
+                if self._eos_action == self.EOS_NEXT:
+                    self.next()
+                self.dispatch_event('on_eos')
+
+        # Determine minimum duration of audio already buffered (current buffer
+        # is ignored, as this could be just about to be dequeued).
+        buffer_time = sum([b.length for b in self._queued_buffers[1:]])
+
+        # Ensure audio buffers are full
+        try:
+            source = self._sources[self._source_read_index]
+        except IndexError:
+            source = None
+        while source and buffer_time < self._min_buffer_time:
+            # Read next packet of audio data
+            if source.al_format:
+                max_bytes = int(
+                  self._min_buffer_time * source.audio_format.bytes_per_second)
+                max_bytes = min(max_bytes, self._max_buffer_size)
+                audio_data = source._get_audio_data(max_bytes)
+
+            # If there is audio data, create and queue a buffer
+            if source.al_format and audio_data:
+                buffer = buffer_pool.get(audio_data.timestamp,
+                                         audio_data.duration,
+                                         buffer_pool,
+                                         audio_data.is_eos)
+                al.alBufferData(buffer, 
+                                source.al_format,
+                                audio_data.data,
+                                audio_data.length,
+                                source.audio_format.sample_rate)
+                # TODO consolidate info and audio_data
+                info = buffer_pool.info[buffer.value]
+                self._queued_buffers.append(info)
+                buffer_time += info.length
+
+                # Queue this buffer onto the AL source.
+                al.alSourceQueueBuffers(self._al_source, 1, 
+                                        ctypes.byref(buffer))
+                
+            else:
+                # No more data from source, check eos behaviour
+                if self._eos_action == self.EOS_NEXT:
+                    self._source_read_index += 1
+                    try:
+                        source = self._sources[self._source_read_index]
+                        source._play() # Preroll source ahead of buffering
+                    except IndexError:
+                        source = None
+                elif self._eos_action == self.EOS_LOOP:
+                    source._seek(0)
+                elif self._eos_action == self.EOS_PAUSE:
+                    source = None
+                else:
+                    assert False, 'Invalid eos_action'
+                    source = None
+
+        # Update video texture
+        if self._texture:
+            self._sources[0]._update_texture(self, self_time)
+
+
+        # Ensure the AL source is playing (if there is a buffer underrun
+        # this restarts the AL source).  This needs to be at the end of the
+        # function to ensure it catches newly queued sources without needing
+        # a second iteration of dispatch_events.
+        if (self._sources and self._sources[0].al_format and
+            self._queued_buffers and
+            self._playing and not self._al_playing):
+            al.alSourcePlay(self._al_source)
+            self._al_playing = True
+
+    def _get_time(self):
+        if not self._sources:
+            return 0.0
+
+        if not self._playing:
+            return self._last_known_timestamp
+        
+        if self._sources[0].audio_format:
+            # Add current buffer timestamp to sample offset within that
+            # buffer.
+            buffer = al.ALint()
+            al.alGetSourcei(self._al_source, al.AL_BUFFER, buffer)
+            if not buffer or not al.alIsBuffer(buffer.value):
+                return 0.0
+
+            # The playback position at the start of the current buffer
+            buffer_timestamp = buffer_pool.info[buffer.value].timestamp
+
+            if _have_1_1:
+                # Add buffer timestamp to sample offset
+                buffer_samples = al.ALint()
+                al.alGetSourcei(self._al_source, 
+                                al.AL_SAMPLE_OFFSET, buffer_samples)
+                sample_rate = al.ALint()
+                al.alGetBufferi(buffer.value, al.AL_FREQUENCY, sample_rate)
+                buffer_time = buffer_samples.value / float(sample_rate.value)
+                return buffer_timestamp + buffer_time
+            else:
+                if not self._playing:
+                    # Paused.
+                    return self._last_known_timestamp
+                elif buffer.value == self._last_buffer:
+                    # Interpolate system time past buffer timestamp
+                    return (time.time() - self._last_known_system_time + 
+                            self._last_known_timestamp)
+                else:
+                    # Buffer has changed, assume we are at the start of it.
+                    self._last_known_system_time = time.time()
+                    self._last_known_timestamp = buffer_timestamp
+                    self._last_buffer = buffer.value
+                    return buffer_timestamp
+        else:
+            # There is no audio data, so we use system time to track the 
+            # timestamp.
+            return (time.time() - self._last_known_system_time +
+                    self._last_known_timestamp)
+
+
+    def play(self):
+        if self._playing:
+            return
+
+        self._playing = True
+
+        if not self._sources:
+            return
+
+        if self._sources[0].al_format:
+            buffers = al.ALint()
+            al.alGetSourcei(self._al_source, al.AL_BUFFERS_QUEUED, buffers)
+            if buffers.value:
+                al.alSourcePlay(self._al_source)
+                self._al_playing = True
+        self._last_known_system_time = time.time()
 
     def pause(self):
-        self.playing = False
-        self._last_buffer_time = time.time() - self._last_buffer_time
-        al.alSourcePause(self.source)
+        self._playing = False
 
-    def stop(self):
-        self.playing = False
-        self.finished = True
-        al.alSourceStop(self.source)
+        if not self._sources:
+            return
+
+        if self._al_playing:
+            al.alSourcePause(self._al_source)
+            self._al_playing = False
+
+    def seek(self, timestamp):
+        if self._sources:
+            self._sources[0]._seek(timestamp)
+            self._last_known_system_time = time.time()
+            self._last_known_timestamp = timestamp
+
+    def _stop(self):
+        raise RuntimeError('Invalid eos_action for this player.') 
+
+    def _get_source(self):
+        if self._sources:
+            return self._sources[0]
+        return None
 
     def _set_volume(self, volume):
-        al.alSourcef(self.source, al.AL_GAIN, max(0, volume))
+        al.alSourcef(self._al_source, al.AL_GAIN, max(0, volume))
         self._volume = volume
 
     def _set_min_gain(self, min_gain):
-        al.alSourcef(self.source, al.AL_MIN_GAIN, max(0, min_gain))
+        al.alSourcef(self._al_source, al.AL_MIN_GAIN, max(0, min_gain))
         self._min_gain = min_gain
 
     def _set_max_gain(self, max_gain):
-        al.alSourcef(self.source, al.AL_MAX_GAIN, max(0, max_gain))
+        al.alSourcef(self._al_source, al.AL_MAX_GAIN, max(0, max_gain))
         self._max_gain = max_gain
 
     def _set_position(self, position):
         x, y, z = position
-        al.alSource3f(self.source, al.AL_POSITION, x, y, z)
+        al.alSource3f(self._al_source, al.AL_POSITION, x, y, z)
         self._position = position
 
     def _set_velocity(self, velocity):
         x, y, z = velocity
-        al.alSource3f(self.source, al.AL_VELOCITY, x, y, z)
+        al.alSource3f(self._al_source, al.AL_VELOCITY, x, y, z)
         self._velocity = velocity
 
     def _set_pitch(self, pitch):
-        al.alSourcef(self.source, al.AL_PITCH, max(0, pitch))
+        al.alSourcef(self._al_source, al.AL_PITCH, max(0, pitch))
         self._pitch = pitch
 
     def _set_cone_orientation(self, cone_orientation):
         x, y, z = cone_orientation
-        al.alSource3f(self.source, al.AL_DIRECTION, x, y, z)
+        al.alSource3f(self._al_source, al.AL_DIRECTION, x, y, z)
         self._cone_orientation = cone_orientation
 
     def _set_cone_inner_angle(self, cone_inner_angle):
-        al.alSourcef(self.source, al.AL_CONE_INNER_ANGLE, cone_inner_angle)
+        al.alSourcef(self._al_source, al.AL_CONE_INNER_ANGLE, cone_inner_angle)
         self._cone_inner_angle = cone_inner_angle
 
     def _set_cone_outer_angle(self, cone_outer_angle):
-        al.alSourcef(self.source, al.AL_CONE_OUTER_ANGLE, cone_outer_angle)
+        al.alSourcef(self._al_source, al.AL_CONE_OUTER_ANGLE, cone_outer_angle)
         self._cone_outer_angle = cone_outer_angle
 
     def _set_cone_outer_gain(self, cone_outer_gain):
-        al.alSourcef(self.source, al.AL_CONE_OUTER_GAIN, cone_outer_gain)
+        al.alSourcef(self._al_source, al.AL_CONE_OUTER_GAIN, cone_outer_gain)
         self._cone_outer_gain = cone_outer_gain
 
-    def dispatch_events(self):
-        queued = al.ALint()
-        processed = al.ALint()
-        al.alGetSourcei(self.source, al.AL_BUFFERS_QUEUED, queued)
-        al.alGetSourcei(self.source, al.AL_BUFFERS_PROCESSED, processed)
-        if processed.value == queued.value:
-            self.finished = True
-            self.playing = False
-            self.dispatch_event(EVENT_FINISHED)
-        self._processed_buffers = processed.value
-        self._queued_buffers = queued.value
-
-        if self.play_when_buffered and queued.value:
-            self._openal_play()
-
-class OpenALStreamingSound(OpenALSound):
-    def __del__(self):
-        try:
-            self.stop()
-        except (ValueError, TypeError, NameError):
-            # we're being __del__'ed during interpreter exit
-            # (ValueError would come from trying to unschedule us from the
-            # event instances list, NameError from trying to use already-
-            # collected modules and TypeError from trying to invoke methods
-            # on collected objects)
-            pass
+class OpenALManagedPlayer(OpenALPlayer):
+    def __init__(self):
+        super(OpenALManagedPlayer, self).__init__()
+        managed_players.append(self)
 
     def stop(self):
-        super(OpenALStreamingSound, self).stop()
-
-        # Release all buffers
-        queued = al.ALint()
-        al.alGetSourcei(self.source, al.AL_BUFFERS_QUEUED, queued)
-        self._release_buffers(queued.value)
-
-    def dispatch_events(self):
-        super(OpenALStreamingSound, self).dispatch_events()
-
-        # Release spent buffers
-        if self._processed_buffers:
-            self._release_buffers(self._processed_buffers)
-
-    def _release_buffers(self, num_buffers):
-        discard_buffers = (al.ALuint * num_buffers)()
-        al.alSourceUnqueueBuffers(
-            self.source, len(discard_buffers), discard_buffers)
-        buffer_pool.replace(discard_buffers)
-
-
-class OpenALStaticSound(OpenALSound):
-    def __init__(self, medium):
-        super(OpenALStaticSound, self).__init__()
-
-        # Keep a reference to the medium to avoid premature release of
-        # buffers.
-        self.medium = medium
-
-    def stop(self):
-        super(OpenALSound, self).stop()
-
-        self.medium = None
+        managed_players.remove(self)
 
 class OpenALListener(Listener):
     def _set_position(self, position):
@@ -364,3 +537,11 @@ class OpenALListener(Listener):
     def _set_speed_of_sound(self, speed_of_sound):
         al.alSpeedOfSound(speed_of_sound)
         self._speed_of_sound = speed_of_sound
+
+listener = OpenALListener()
+
+managed_players = []
+
+def dispatch_events():
+    for player in managed_players:
+        player.dispatch_events()

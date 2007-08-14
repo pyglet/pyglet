@@ -44,6 +44,7 @@ __version__ = '$Id$'
 
 import ctypes
 from ctypes import *
+import sys
 
 import pyglet.lib
 
