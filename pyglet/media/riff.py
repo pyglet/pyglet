@@ -192,10 +192,12 @@ class WaveSource(StreamingSource):
 
         # Read RIFF format, get format and data chunks
         riff = RIFFFile(file)
-        format = riff.get_wave_form().get_format_chunk()
-        data_chunk = riff.get_wave_form().get_data_chunk()
+        wave_form = riff.get_wave_form()
+        if wave_form:
+            format = wave_form.get_format_chunk()
+            data_chunk = wave_form.get_data_chunk()
 
-        if not format or not data_chunk:
+        if not wave_form or not format or not data_chunk:
             raise WAVEFormatException('Not a WAVE file')
 
         if format.wFormatTag != WAVE_FORMAT_PCM:
