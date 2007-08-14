@@ -1,10 +1,17 @@
 Current
 
+    * Complete change in interface and implementation of pyglet.media
+    * Window events are now only dispatched from the dispatch_events()
+      function, and in a consistent order across platforms.
+    * Abstract class WindowEventDispatcher removed, its functionality is
+      now in BaseWindow.
     * Added DPI parameter to font.load()
-    * Fixed the calculated width of font.Text instances.
-    * Renamed examples/event_test.py to examples/events.py
     * Renamed mouse.MOUSE_*_BUTTON to mouse.LEFT, mouse.MIDDLE and mouse.RIGHT
     * Window.set_size() now raises an exception if the window is fullscreen
+    * Fixed the calculated width of font.Text instances.
+    * Renamed examples/event_test.py to examples/events.py
+    * Added tools/gl_info.py and tools/al_info.py into the source dists.
+    * Added tests/regression/__init__.py into the source dists
     * OS X: Fixed fullscreen windowing
     * OS X: Fixed dylib loading when DYLD_FALLBACK_LIBRARY_PATH is defined
     * OS X: Fixed various mouse-visibility and exclusivity problems
@@ -13,6 +20,8 @@ Current
     * Linux: Support for bitmap fonts.
     * Linux: Fixed GLX 1.0, ATI and MESA implementations
     * Linux: Improved vsync support across video drivers
+    * Linux: Fixed library loading to observe LD_LIBRARY_PATH
+    * Win32: Window is now "Unicode-aware"
 
 1.0alpha1
 
