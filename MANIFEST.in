@@ -2,12 +2,23 @@ include LICENSE
 include NOTICE
 include README
 include CHANGELOG
-#recursive-include doc/html *
-recursive-include doc/html/api *
-recursive-include examples *
-recursive-include tests *
+
+# Public tools
 include tools/gl_info.py
 include tools/al_info.py
+
+# Examples
+recursive-include examples *
+prune examples/**/dist
+
+# Tests
+recursive-include tests *
+prune tests/regression/images/*
+
+# Docs
+#recursive-include doc/html *
+recursive-include doc/html/api *
+
+prune **/.svn
 recursive-exclude * *.pyc 
 recursive-exclude * *.pyo
-prune tests/regression
