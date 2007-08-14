@@ -705,8 +705,8 @@ class ImageData(AbstractImage):
         '''
         return ImageDataRegion(x, y, width, height, self)
 
-    def blit(self, x, y, z=0):
-        self.texture.blit(x, y, z)
+    def blit(self, x, y, z=0, width=None, height=None):
+        self.texture.blit(x, y, z, width, height)
 
     def blit_to_texture(self, target, level, x, y, z, internalformat=None):
         '''Draw this image to to the currently bound texture at `target`.
@@ -1286,10 +1286,11 @@ class Texture(AbstractImage):
 
     # no implementation of blit_to_texture yet (could use aux buffer)
 
-    def blit(self, x, y, z=0):
+    def blit(self, x, y, z=0, width=None, height=None):
         # Create interleaved array in T4F_V4F format
         t = self.tex_coords
-        w, h = self.width, self.height
+        w = width is None and self.width or width
+        h = height is None and self.height or height
         array = (GLfloat * 32)(
              t[0][0], t[0][1], t[0][2], 1.,
              x,       y,       z,       1.,
