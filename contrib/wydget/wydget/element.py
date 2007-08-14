@@ -46,6 +46,7 @@ class Element(object):
     is_transparent  -- is this element displayed*?
     is_visible      -- is this element *and its children* displayed*?
     is_enabled      -- is this element *and its children* enabled?
+    is_modal        -- is this element capturing all user input?
     children        -- Elements I hold
     parent          -- container I belong to
     id              -- my id (auto-allocated if none given)
@@ -125,6 +126,7 @@ class Element(object):
 
         self.is_visible = is_visible
         self.is_enabled = is_enabled
+        self.is_modal = False
         self.is_transparent = is_transparent
         self.id = id or self.allocateID()
         self.classes = classes
@@ -509,7 +511,11 @@ class Element(object):
         self.children = []
 
     def delete(self):
+        gui = self.getGUI()
+        # clear modality?
+        if self.is_modal: gui.setModal(None)
+        gui.dispatch_event(self, 'on_delete')
         self.parent.children.remove(self)
-        self.getGUI().unregisterID(self)
+        gui.unregisterID(self)
         self.clear()
 

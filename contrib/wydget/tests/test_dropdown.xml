@@ -3,7 +3,7 @@
   <drop-menu font_size="40">
    <drop-item id="item-1">Item One</drop-item>
    <drop-item id="item-2">Item Two</drop-item>
-   <drop-item id="item-3">Item Three</drop-item>
+   <drop-item id="item-3">Item Three Is Longer!</drop-item>
    <drop-item id="item-4">Item Four</drop-item>
   </drop-menu>
  </horizontal>

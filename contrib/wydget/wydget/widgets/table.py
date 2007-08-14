@@ -122,9 +122,6 @@ class Cell(TextButton):
             text = str(value)
         super(Cell, self).__init__(parent, text, **kw)
 
-    def __cmp__(self, other):
-        return cmp(self.value, other.value)
-
     @classmethod
     def fromXML(cls, element, parent):
         '''Create the object from the XML element and attach it to the parent.

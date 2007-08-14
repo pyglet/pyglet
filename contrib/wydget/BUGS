@@ -14,9 +14,6 @@ KNOWN BUGS
 - Tables:
   . table columns don't truncate
   . also, tables are stupidly slow
-- Dropdown / Popup Menus:
-  . popup offset by a couple of pixels
-  . inner padding not rendered (between border and content)
 - Selection Lists:
   . oh yeah, selection lists are slow too
 - Text Line:

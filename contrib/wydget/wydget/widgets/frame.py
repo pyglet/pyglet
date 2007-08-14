@@ -184,21 +184,21 @@ class TabFrame(Frame):
     it appears merged with the button. Also performs more cleanup on delete().
     '''
     name = 'tab-frame'
-    def renderBorder(self, rect, clipped):
+    def renderBorder(self, clipped):
         if self.border is None: return
 
         glColor4f(*self.border)
 
-        # XXX handle clippped
-        x2, y2 = rect.topright
+        # XXX handle clippped better
+        x2, y2 = clipped.topright
         butx1 = self._button.x
         butx2 = self._button.x + self._button.width
 
         glBegin(GL_LINE_STRIP)
         glVertex2f(butx1, y2)
-        if butx1 != rect.x: glVertex2f(rect.x, y2)
-        glVertex2f(rect.x, rect.y)
-        glVertex2f(x2, rect.y)
+        if butx1 != clipped.x: glVertex2f(clipped.x, y2)
+        glVertex2f(clipped.x, clipped.y)
+        glVertex2f(x2, clipped.y)
         glVertex2f(x2, y2)
         if butx2 != x2: glVertex2f(butx2, y2)
         if self.bgcolor is not None:
@@ -233,16 +233,31 @@ class TabButton(Frame):
         layouts.Horizontal(self, padding=2, halign=halign,
             valign=valign).layout()
 
-    def renderBorder(self, rect, clipped):
+    def renderBorder(self, clipped):
+        '''Render the border in relative coordinates clipped to the
+        indicated view.
+        '''
         if self.border is None: return
-        # XXX handle clippped
+        ox, oy = 0, 0
+        ox2, oy2 = self.width, self.height
+        cx, cy = clipped.bottomleft
+        cx2, cy2 = clipped.topright
+
         glColor4f(*self.border)
-        x2, y2 = rect.topright
-        glBegin(GL_LINE_STRIP)
-        glVertex2f(rect.x, rect.y)
-        glVertex2f(rect.x, y2-1)
-        glVertex2f(x2-1, y2-1)
-        glVertex2f(x2-1, rect.y)
+        glBegin(GL_LINES)
+        # left
+        if ox == cx:
+            glVertex2f(ox, cy)
+            glVertex2f(ox, cy2)
+        # right
+        if ox2 == cx2:
+            glVertex2f(ox2-1, cy)
+            glVertex2f(ox2-1, cy2)
+        # top
+        if oy2 == cy2:
+            glVertex2f(cx, oy2-1)
+            glVertex2f(cx2, oy2-1)
+
         glEnd()
 
     def delete(self):

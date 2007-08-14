@@ -1,6 +1,7 @@
 import xml.sax.saxutils
 
 from pyglet.gl import *
+from pyglet.window import mouse
 
 from wydget import event, layouts, loadxml
 from wydget.widgets.frame import Frame
@@ -31,7 +32,7 @@ class PopupMenu(Frame):
     name = 'popup-menu'
     is_focusable = True
     def __init__(self, parent, items, **kw):
-        super(PopupMenu, self).__init__(parent, border="black", padding=2,
+        super(PopupMenu, self).__init__(parent, border="black",
             is_visible=False, **kw)
 
         for n, (label, id) in enumerate(items):
@@ -110,7 +111,7 @@ class DropDownMenu(Frame):
     def __init__(self, parent, items, font_size=None, border="black",
             bgcolor="white", **kw):
         super(DropDownMenu, self).__init__(parent, border=border,
-            bgcolor=bgcolor, padding=2, **kw)
+            bgcolor=bgcolor, **kw)
 
         self.font_size = font_size
         label, value = items[0]
@@ -119,7 +120,7 @@ class DropDownMenu(Frame):
 
         # set up the popup item
         self.contents = Frame(self, is_visible=False, border="black",
-            padding=2, classes=('-drop-down-menu',))
+            classes=('-drop-down-menu',))
 
         # add the menu items and resize the main box if necessary
         width = height = 0
@@ -144,16 +145,11 @@ class DropDownMenu(Frame):
             self.height = height + self.padding*2
         self.label.width = self.inner_rect.width
 
-        # now position the contents, aiming for centered over the label
-        self.contents.y = self.y - self.contents.height//2
-        g = self.getGUI()
-        c = self.contents
-        if c.x < g.x: c.x = g.x
-        if c.y < g.y: c.y = g.y
-        x, y = c.rect.topright
-        gx, gy = g.rect.topright
-        if x > gx: c.x = gx - c.width
-        if y > gy: c.y = gy - c.height
+        # now position the contents
+        self.contents.y = self.y - self.contents.height//2 - 1
+        self.contents.x = self.width//2 - self.contents.width//2 - 1
+
+        self.dump()
 
     def get_value(self):
         return self._value
@@ -181,20 +177,23 @@ class DropDownMenu(Frame):
             items.append((text, child.attrib['id']))
         return cls(parent, items, **kw)
 
-@event.default('.-drop-down-button', 'on_click')
-def on_drop_down_click(button, *args):
-    button.parent.contents.setVisible(True)
-    button.setVisible(False)
-    button.parent.contents.gainFocus()
+@event.default('.-drop-down-button')
+def on_click(widget, x, y, button, modifiers, click_count):
+    if not button & mouse.LEFT:
+        return event.EVENT_UNHANDLED
+    # XXX position contents so the active item is over the label
+    widget.parent.contents.setVisible(True)
+    widget.setVisible(False)
+    widget.parent.contents.gainFocus()
     return event.EVENT_HANDLED
 
-@event.default('.-drop-down-menu', 'on_gain_focus')
-def on_drop_down_gain_focus(frame):
+@event.default('.-drop-down-menu')
+def on_gain_focus(frame):
     # catch focus
     return event.EVENT_HANDLED
 
-@event.default('.-drop-down-menu', 'on_lose_focus')
-def on_drop_down_lose_focus(frame):
+@event.default('.-drop-down-menu')
+def on_lose_focus(frame):
     frame.setVisible(False)
     frame.parent.label.setVisible(True)
     return event.EVENT_HANDLED

@@ -98,6 +98,7 @@ class GUI(event.GUIEventDispatcher):
         if element is None:
             for child in self.children:
                 child.is_enabled = True
+                child.is_modal = False
         else:
             found = False
             for child in self.children:
@@ -105,6 +106,7 @@ class GUI(event.GUIEventDispatcher):
                     child.is_enabled = False
                 else:
                     found = True
+                    child.is_modal = True
             assert found, '%r not found in gui children'%(element,)
 
     clipboard_element = None
@@ -148,11 +150,10 @@ class GUI(event.GUIEventDispatcher):
         if element.is_focusable:
             self._focus_order.remove(element.id)
         self.setDirty()
+    def hasID(self, id):
+        return id in self._by_id
     def getByID(self, id):
-        for child in self.children:
-            match = child.getByID(id)
-            if match is not None: return match
-        raise KeyError, id
+        return self._by_id[id]
 
     def addChild(self, child):
         self.children.append(child)
@@ -225,7 +226,7 @@ class GUI(event.GUIEventDispatcher):
         for element in self.children:
             if element is exclude: continue
             rects.extend(element.getRects(clip, exclude))
-        rects.reverse()
+        rects.sort(lambda a,b: cmp(a[1][2], b[1][2]))
         if exclude is not None:
             self._rects = rects
         return rects
@@ -238,8 +239,6 @@ class GUI(event.GUIEventDispatcher):
         # get the rects and sort by Z (yay for stable sort!)
         view_clip = None
         rects = self.getRects(view_clip)
-        rects.sort(lambda a,b: -cmp(a[1][2], b[1][2]))
-        rects.reverse()
 
         # draw
         oz = 0
@@ -273,7 +272,6 @@ class GUI(event.GUIEventDispatcher):
                     glRectf(x+v.x, y+v.y, x+v.x+v.width, y+v.y+v.height)
 
             glDisable(GL_BLEND)
-            glDepthFunc(GL_ALWAYS)
             self.debug_display.draw(0, 0, 0, 1, 1, util.Rect(0, 0,
                 self.width, self.debug_display.height))
 
