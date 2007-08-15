@@ -248,7 +248,10 @@ class Config(object):
                                           
 
 class ObjectSpace(object):
-    pass
+    def __init__(self):
+        # Textures scheduled for deletion the next time this object space is
+        # active.
+        self._doomed_textures = []
 
 class Context(object):
     '''OpenGL context for drawing.
@@ -295,6 +298,13 @@ class Context(object):
         assert self in _contexts
         _current_context = self
 
+        # Release textures on this context scheduled for deletion
+        if self.object_space._doomed_textures:
+            textures = self.object_space._doomed_textures
+            textures = (GLuint * len(textures))(*textures)
+            glDeleteTextures(len(textures), textures)
+            self.object_space._doomed_textures = []
+
     def destroy(self):
         '''Release the context.
 
@@ -308,6 +318,25 @@ class Context(object):
             _current_context = None
             gl_info.remove_active_context()
         _contexts.remove(self)
+
+    def delete_texture(self, texture_id):
+        '''Safely delete a texture belonging to this context.
+
+        Usually, the texture is released immediately using
+        ``glDeleteTextures``, however if another context that does not share
+        this context's object space is current active, the deletion will
+        be deferred until an appropriate context is activated.
+
+        :Parameters:
+            `texture_id` : int
+                The OpenGL name of the texture to delete.
+
+        '''
+        if self.object_space is _current_context.object_space:
+            id = GLuint(texture_id)
+            glDeleteTextures(1, id)
+        else:
+            self.object_space._doomed_textures.append(texture_id)
 
 class ContextException(Exception):
     pass

@@ -1190,15 +1190,20 @@ class Texture(AbstractImage):
         super(Texture, self).__init__(width, height)
         self.target = target
         self.id = id
+        self._context = get_current_context()
 
     def delete(self):
-        id = GLuint(self.id)
-        glDeleteTextures(1, byref(id))
+        warnings.warn(
+            'Texture.delete() is deprecated; textures are '
+            'released through GC now')
+        self._context.delete_texture(self.id)
+        self.id = 0
 
     def __del__(self):
-        # TODO
-        # self.delete()
-        pass
+        try:
+            self._context.delete_texture(self.id)
+        except NameError:
+            pass
 
     @classmethod
     def create_for_size(cls, target, min_width, min_height,
