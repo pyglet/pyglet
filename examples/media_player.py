@@ -188,6 +188,9 @@ class PlayerWindow(window.Window):
     def on_resize(self, width, height):
         '''Position and size video image.'''
         super(PlayerWindow, self).on_resize(width, height)
+
+        self.slider.width = width - self.GUI_PADDING * 2
+
         height -= self.GUI_HEIGHT
         if height <= 0:
             return
@@ -206,8 +209,6 @@ class PlayerWindow(window.Window):
             self.video_width = height * video_aspect
         self.video_x = (width - self.video_width) / 2
         self.video_y = (height - self.video_height) / 2 + self.GUI_HEIGHT
-
-        self.slider.width = width - self.GUI_PADDING * 2
 
     def on_mouse_press(self, x, y, button, modifiers):
         for control in self.controls:
