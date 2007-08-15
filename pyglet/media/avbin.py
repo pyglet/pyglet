@@ -418,6 +418,7 @@ class AVbinSource(StreamingSource):
             return
 
         img = None
+        i = 0
         while (not img or 
                 (img.timestamp < timestamp and 
                  not self._force_next_video_image) ):
@@ -429,9 +430,15 @@ class AVbinSource(StreamingSource):
                     return
                 img = self._decode_video_packet(packet)
 
-        player._texture.blit_into(img.image, 0, 0, 0)
-        self._last_video_timestamp = img.timestamp
-        self._force_next_video_image = False
+            # Emergency loop exit when timestamps are bad
+            i += 1
+            if i > 60:
+                break
+
+        if img:
+            player._texture.blit_into(img.image, 0, 0, 0)
+            self._last_video_timestamp = img.timestamp
+            self._force_next_video_image = False
 
     def _release_texture(self, player):
         if player._texture:
