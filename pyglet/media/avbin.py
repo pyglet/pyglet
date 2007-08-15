@@ -274,6 +274,7 @@ class AVbinSource(StreamingSource):
             self._buffer_streams.append(self._video_stream_index)
             self._buffered_images = []
             self._force_next_video_image = True
+            self._last_video_timestamp = None
 
     def __del__(self):
         try:
@@ -290,6 +291,7 @@ class AVbinSource(StreamingSource):
         self._buffered_packets = []
         self._buffered_images = []
         self._force_next_video_image = True
+        self._last_video_timestamp = None
 
     def _get_packet_for_stream(self, stream_index):
         # See if a packet has already been buffered
@@ -412,27 +414,23 @@ class AVbinSource(StreamingSource):
         if not self.video_format:
             return
 
-        img = next_img = None
-        if self._buffered_images:
-            next_img = self._buffered_images.pop(0)
+        if self._last_video_timestamp > timestamp:
+            return
+
+        img = None
         while (not img or 
-                ( (not next_img or next_img.timestamp < timestamp) and
-                   not self._force_next_video_image)):
-            img = next_img
+                (img.timestamp < timestamp and 
+                 not self._force_next_video_image) ):
             if self._buffered_images:
-                next_img = self._buffered_images.pop(0)
+                img = self._buffered_images.pop(0)
             else:
                 packet = self._get_packet_for_stream(self._video_stream_index)
                 if not packet:
-                    break
-                next_img = self._decode_video_packet(packet)
-                if self._force_next_video_image:
-                    img = next_img
-
-        if next_img:
-            self._buffered_images.insert(0, next_img)
+                    return
+                img = self._decode_video_packet(packet)
 
         player._texture.blit_into(img.image, 0, 0, 0)
+        self._last_video_timestamp = img.timestamp
         self._force_next_video_image = False
 
     def _release_texture(self, player):
