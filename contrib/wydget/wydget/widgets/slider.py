@@ -201,16 +201,23 @@ def on_mouse_drag(widget, x, y, dx, dy, buttons, modifiers):
         return event.EVENT_UNHANDLED
     if widget.axis == 'x':
         s = widget.getParent('hslider')
+        x = s.calculateRelativeCoords(x, y)[0]
         w = s.inner_rect.width - widget.width
         xoff = s.inner_rect.x
+        if x < xoff or x > (xoff + s.inner_rect.width):
+            return event.EVENT_HANDLED
         widget.x = max(xoff, min(w + xoff, widget.x + dx))
         value = (widget.x - xoff) / float(w)
     else:
         s = widget.getParent('vslider')
+        y = s.calculateRelativeCoords(x, y)[1]
         h = s.inner_rect.height - widget.height
         yoff = s.inner_rect.y
+        if y < yoff or y > (yoff + s.inner_rect.height):
+            return event.EVENT_HANDLED
         widget.y = max(yoff, min(h + yoff, widget.y + dy))
         value = (widget.y - yoff) / float(h)
+
     s.set_value(value * s.range + s.minimum, position_bar=False, event=True)
     return event.EVENT_HANDLED
 

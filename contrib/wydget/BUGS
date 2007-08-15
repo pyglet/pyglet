@@ -22,6 +22,21 @@ KNOWN BUGS
     cursor is out of old selection
 
 
+DEFINITE AREAS OF IMPROVEMENT
+-----------------------------
+
+Text size handling is currently a hack because many fonts have ridiculous
+descender values. We're also forcing pyglet to not use glyph substitution
+because that results in a huge descender *regardless* of the font
+specified.
+
+To get around this, I am going to look into changing how text positioning
+and sizing is specified in wydget:
+
+1. all text will be positioned by baseline offset from bottom of element
+2. size of resultant rendered text will be overridable
+
+
 KNOWN AREAS OF (POSSIBLE) REWRITING
 -----------------------------------
 
