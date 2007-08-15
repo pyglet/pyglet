@@ -97,7 +97,7 @@ class Slider(Control):
                   self.THUMB_WIDTH, self.THUMB_HEIGHT)
 
     def coordinate_to_value(self, x):
-        return (x - self.x) / self.width * (self.max - self.min) + self.min
+        return float(x - self.x) / self.width * (self.max - self.min) + self.min
 
     def on_mouse_press(self, x, y, button, modifiers):
         value = self.coordinate_to_value(x)
