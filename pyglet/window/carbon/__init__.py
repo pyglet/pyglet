@@ -1035,49 +1035,54 @@ class CarbonWindow(BaseWindow):
 
         return button, CarbonWindow._map_modifiers(modifiers.value)
 
+    @staticmethod
+    def _get_mouse_in_content(ev):
+       position = Point()
+       carbon.GetEventParameter(ev, kEventParamMouseLocation,
+            typeQDPoint, c_void_p(), sizeof(position), c_void_p(),
+            byref(position)) 
+       return carbon.FindWindow(position, None) == inContent 
+
     @CarbonEventHandler(kEventClassMouse, kEventMouseDown)
     def _on_mouse_down(self, next_handler, ev, data):
-
-        button, modifiers = self._get_mouse_button_and_modifiers(ev)
-        x, y = self._get_mouse_position(ev)
-        y = self.height - y
-        if x >= 0 and y >= 0:
-            self.dispatch_event('on_mouse_press', 
-                x, y, button, modifiers)
+        if self._get_mouse_in_content(ev):
+            button, modifiers = self._get_mouse_button_and_modifiers(ev)
+            x, y = self._get_mouse_position(ev)
+            y = self.height - y
+            self.dispatch_event('on_mouse_press', x, y, button, modifiers)
 
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseUp)
     def _on_mouse_up(self, next_handler, ev, data):
+        # Always report mouse up, even out of content area, because it's
+        # probably after a drag gesture.
         button, modifiers = self._get_mouse_button_and_modifiers(ev)
         x, y = self._get_mouse_position(ev)
         y = self.height - y
-        if x >= 0 and y >= 0:
-            self.dispatch_event('on_mouse_release', 
-                x, y, button, modifiers)
+        self.dispatch_event('on_mouse_release', x, y, button, modifiers)
 
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseMoved)
     def _on_mouse_moved(self, next_handler, ev, data):
-        x, y = self._get_mouse_position(ev)
-        y = self.height - y
-        if x < 0 or y < 0:
-            return noErr
+        if self._get_mouse_in_content(ev):
+            x, y = self._get_mouse_position(ev)
+            y = self.height - y
 
-        self._mouse_x = x
-        self._mouse_y = y
+            self._mouse_x = x
+            self._mouse_y = y
 
-        delta = HIPoint()
-        carbon.GetEventParameter(ev, kEventParamMouseDelta,
-            typeHIPoint, c_void_p(), sizeof(delta), c_void_p(),
-            byref(delta))
+            delta = HIPoint()
+            carbon.GetEventParameter(ev, kEventParamMouseDelta,
+                typeHIPoint, c_void_p(), sizeof(delta), c_void_p(),
+                byref(delta))
 
-        # Motion event
-        self.dispatch_event('on_mouse_motion', 
-            x, y, delta.x, -delta.y)
+            # Motion event
+            self.dispatch_event('on_mouse_motion', 
+                x, y, delta.x, -delta.y)
 
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
