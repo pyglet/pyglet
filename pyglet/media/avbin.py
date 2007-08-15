@@ -194,6 +194,11 @@ class BufferedPacket(object):
         self.size = packet.size
         ctypes.memmove(self.data, packet.data, self.size)
 
+class BufferedImage(object):
+    def __init__(self, image, timestamp):
+        self.image = image
+        self.timestamp = timestamp
+
 class AVbinSource(StreamingSource):
     def __init__(self, filename, file=None):
         if file is not None:
@@ -267,8 +272,7 @@ class AVbinSource(StreamingSource):
             
         if self.video_format:
             self._buffer_streams.append(self._video_stream_index)
-            self._next_video_image = None
-            self._next_video_timestamp = -1
+            self._buffered_images = []
             self._force_next_video_image = True
 
     def __del__(self):
@@ -284,7 +288,7 @@ class AVbinSource(StreamingSource):
     def _seek(self, timestamp):
         av.avbin_seek_file(self._file, timestamp_to_avbin(timestamp))
         self._buffered_packets = []
-        self._next_video_image = None
+        self._buffered_images = []
         self._force_next_video_image = True
 
     def _get_packet_for_stream(self, stream_index):
@@ -301,6 +305,10 @@ class AVbinSource(StreamingSource):
                 return None
             elif self._packet.stream_index == stream_index:
                 return self._packet
+            elif self._packet.stream_index == self._video_stream_index:
+                buffered_image = self._decode_video_packet(self._packet)
+                if buffered_image:
+                    self._buffered_images.append(buffered_image)
             elif self._packet.stream_index in self._buffer_streams:
                 self._buffered_packets.append(BufferedPacket(self._packet))
 
@@ -383,23 +391,8 @@ class AVbinSource(StreamingSource):
             player._texture.height /= self.video_format.sample_aspect
         print player._texture.width, player._texture.height
 
-    def _update_texture(self, player, timestamp):
-        if not self.video_format:
-            return
-
-        if self._next_video_image:
-            # A frame is ready, is it time to show?
-            if timestamp >= self._next_video_timestamp:
-                player._texture.blit_into(self._next_video_image, 0, 0, 0)
-                self._next_video_image = None
-            else:
-                return
-
-        packet = self._get_packet_for_stream(self._video_stream_index)
-        if not packet:
-            return
-        # TODO what if no timestamp?
-        self._next_video_timestamp = timestamp_from_avbin(packet.timestamp)
+    def _decode_video_packet(self, packet):
+        timestamp = timestamp_from_avbin(packet.timestamp)
 
         width = self.video_format.width
         height = self.video_format.height
@@ -409,15 +402,38 @@ class AVbinSource(StreamingSource):
                                        packet.data, packet.size, 
                                        buffer)
         if result < 0:
+            return None
+
+        return BufferedImage(
+            image.ImageData(width, height, 'RGB', buffer, pitch),
+            timestamp)
+
+    def _update_texture(self, player, timestamp):
+        if not self.video_format:
             return
 
-        self._next_video_image = \
-            image.ImageData(width, height, 'RGB', buffer, pitch)
-        if (timestamp >= self._next_video_timestamp or
-            self._force_next_video_image):
-            player._texture.blit_into(self._next_video_image, 0, 0, 0)
-            self._next_video_image = None
-            self._force_next_video_image = False
+        img = next_img = None
+        if self._buffered_images:
+            next_img = self._buffered_images.pop(0)
+        while (not img or 
+                ( (not next_img or next_img.timestamp < timestamp) and
+                   not self._force_next_video_image)):
+            img = next_img
+            if self._buffered_images:
+                next_img = self._buffered_images.pop(0)
+            else:
+                packet = self._get_packet_for_stream(self._video_stream_index)
+                if not packet:
+                    break
+                next_img = self._decode_video_packet(packet)
+                if self._force_next_video_image:
+                    img = next_img
+
+        if next_img:
+            self._buffered_images.insert(0, next_img)
+
+        player._texture.blit_into(img.image, 0, 0, 0)
+        self._force_next_video_image = False
 
     def _release_texture(self, player):
         if player._texture:
