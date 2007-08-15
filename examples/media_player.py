@@ -145,7 +145,42 @@ class PlayerWindow(window.Window):
         self.play_pause_button.width = 45
         self.play_pause_button.on_press = self.on_play_pause
 
-        self.controls = [self.slider, self.play_pause_button]
+        win = self
+        self.window_button = TextButton(self)
+        self.window_button.x = self.play_pause_button.x + \
+                               self.play_pause_button.width + self.GUI_PADDING
+        self.window_button.y = self.GUI_PADDING
+        self.window_button.height = self.GUI_BUTTON_HEIGHT
+        self.window_button.width = 90
+        self.window_button.text = 'Windowed'
+        self.window_button.on_press = lambda: win.set_fullscreen(False)
+
+        self.controls = [
+            self.slider, 
+            self.play_pause_button,
+            self.window_button,
+        ]
+
+        x = self.window_button.x + self.window_button.width + self.GUI_PADDING
+        def create_screen_button(screen, i):
+            screen_button = TextButton(self)
+            screen_button.x = x
+            screen_button.y = self.GUI_PADDING
+            screen_button.height = self.GUI_BUTTON_HEIGHT
+            screen_button.width = 80
+            screen_button.text = 'Screen %d' % (i + 1)
+            screen_button.on_press = \
+                lambda: win.set_fullscreen(True,
+                                           screen=screen)
+            return screen_button
+
+        i = 0
+        for screen in self.display.get_screens():
+            screen_button = create_screen_button(screen, i)
+            self.controls.append(screen_button)
+            i += 1
+            x += screen_button.width + self.GUI_PADDING
+
 
     def on_eos(self):
         self.gui_update_state()
@@ -257,6 +292,7 @@ if __name__ == '__main__':
     win.set_visible(True)
 
     player.play()
+    win.gui_update_state()
     while not win.has_exit:
         win.dispatch_events()
         player.dispatch_events()

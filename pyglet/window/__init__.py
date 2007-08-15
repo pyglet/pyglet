@@ -625,7 +625,7 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
         '''
         raise NotImplementedError('abstract')
 
-    def set_fullscreen(self, fullscreen=True):
+    def set_fullscreen(self, fullscreen=True, screen=None):
         '''Toggle to or from fullscreen.
 
         After toggling fullscreen, the GL context should have retained its
@@ -636,15 +636,23 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
             `fullscreen` : bool
                 True if the window should be made fullscreen, False if it
                 should be windowed.
+            `screen` : Screen
+                If not None and fullscreen is True, the window is moved to the
+                given screen.  The screen must belong to the same display as
+                the window.
 
         '''
-        if fullscreen == self._fullscreen:
+        if fullscreen == self._fullscreen and screen is None:
             return
 
         if not self._fullscreen:
             # Save windowed size
             self._windowed_size = self.get_size()
             self._windowed_location = self.get_location()
+
+        if fullscreen and screen is not None:
+            assert screen.display is self.display
+            self._screen = screen
 
         self._fullscreen = fullscreen
         if self._fullscreen:
