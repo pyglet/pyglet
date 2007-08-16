@@ -133,6 +133,10 @@ if __name__ == '__main__':
     except OSError:
         pass
 
+    # Copy current avbin into res
+    shutil.copyfile('c:/windows/system32/avbin.dll', 
+                    os.path.join(script_dir, 'res', 'avbin.dll'))
+
     # Determine release version from setup.py
     version_re = re.compile("VERSION = '([^']*)'")
     for line in open(os.path.join(root_dir, 'setup.py')):
