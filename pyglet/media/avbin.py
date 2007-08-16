@@ -358,7 +358,6 @@ class AVbinSource(StreamingSource):
         # XXX bytes currently ignored
 
         if self._force_next_audio:
-            print self._buffered_packets
             self._next_audio_data = self._get_next_audio_data()
             self._force_next_audio = False
 
