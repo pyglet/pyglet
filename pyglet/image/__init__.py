@@ -1358,6 +1358,10 @@ class TextureRegion(Texture):
     def blit_into(self, source, x, y, z):
         self.owner.blit_into(source, x + self.x, y + self.y, z + self.z)
 
+    def __del__(self):
+        # only the owner Texture should handle deletion
+        pass
+
 Texture.region_class = TextureRegion
 
 class Texture3D(Texture, UniformTextureSequence):
