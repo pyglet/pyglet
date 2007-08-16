@@ -162,7 +162,8 @@ class PlayerWindow(window.Window):
         ]
 
         x = self.window_button.x + self.window_button.width + self.GUI_PADDING
-        def create_screen_button(screen, i):
+        i = 0
+        for screen in self.display.get_screens():
             screen_button = TextButton(self)
             screen_button.x = x
             screen_button.y = self.GUI_PADDING
@@ -170,13 +171,7 @@ class PlayerWindow(window.Window):
             screen_button.width = 80
             screen_button.text = 'Screen %d' % (i + 1)
             screen_button.on_press = \
-                lambda: win.set_fullscreen(True,
-                                           screen=screen)
-            return screen_button
-
-        i = 0
-        for screen in self.display.get_screens():
-            screen_button = create_screen_button(screen, i)
+                (lambda s: lambda: win.set_fullscreen(True, screen=s))(screen)
             self.controls.append(screen_button)
             i += 1
             x += screen_button.width + self.GUI_PADDING
