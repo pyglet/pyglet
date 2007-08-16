@@ -48,7 +48,7 @@ import sys
 
 import pyglet.lib
 
-_lib = pyglet.lib.load_library('openal',
+_lib = pyglet.lib.load_library('openal', 'openal32',
     framework='/System/Library/Frameworks/OpenAL.framework')
 
 _int_types = (c_int16, c_int32)
