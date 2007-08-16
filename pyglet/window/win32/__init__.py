@@ -493,7 +493,7 @@ class Win32Window(BaseWindow):
         self.set_vsync(self._vsync)
 
         if self._visible:
-            self.dispatch_event('on_show')
+            self.set_visible()
             self.dispatch_event('on_expose')
 
     def close(self):
