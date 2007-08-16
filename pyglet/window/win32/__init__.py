@@ -50,6 +50,7 @@ if sys.platform not in ('cygwin', 'win32'):
 from pyglet.window import Platform, Display, Screen, BaseWindow, \
     WindowException, MouseCursor, DefaultMouseCursor
 from pyglet.window import event
+from pyglet.event import EventDispatcher
 from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.window.win32.constants import *
@@ -375,10 +376,6 @@ class Win32Window(BaseWindow):
     _minimum_size = None
     _maximum_size = None
 
-    # Events are posted to the _event_queue as long as dispatch_events is not
-    # on the frame stack.
-    _defer_event_dispatch = True
-
     def __init__(self, *args, **kwargs):
         # Bind event handlers
         self._event_handlers = {}
@@ -496,8 +493,8 @@ class Win32Window(BaseWindow):
         self.set_vsync(self._vsync)
 
         if self._visible:
-            self._event_queue.append(('on_show',))
-            self._event_queue.append(('on_expose',))
+            self.dispatch_event('on_show')
+            self.dispatch_event('on_expose')
 
     def close(self):
         super(Win32Window, self).close()
@@ -572,11 +569,11 @@ class Win32Window(BaseWindow):
                     SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
             else:
                 _user32.ShowWindow(self._hwnd, SW_SHOW)
-            self._event_queue.append(('on_show',))
+            self.dispatch_event('on_show')
             self.activate()
         else:
             _user32.ShowWindow(self._hwnd, SW_HIDE)
-            self._event_queue.append(('on_hide',))
+            self.dispatch_event('on_hide')
         self._visible = visible
         self.set_mouse_platform_visible()
 
@@ -789,12 +786,12 @@ class Win32Window(BaseWindow):
     # Event dispatching
 
     def dispatch_events(self):
-        self._defer_event_dispatch = False
+        self._allow_dispatch_event = True
         while self._event_queue:
             event = self._event_queue.pop(0)
             if type(event[0]) is str:
                 # pyglet event
-                self.dispatch_event(*event)
+                EventDispatcher.dispatch_event(self, *event)
             else:
                 # win32 event
                 event[0](*event[1:])
@@ -803,17 +800,17 @@ class Win32Window(BaseWindow):
         while _user32.PeekMessageW(byref(msg), self._hwnd, 0, 0, PM_REMOVE):
             _user32.TranslateMessage(byref(msg))
             _user32.DispatchMessageW(byref(msg))
-        self._defer_event_dispatch = True
+        self._allow_dispatch_event = False
 
     def _wnd_proc(self, hwnd, msg, wParam, lParam):
         event_handler = self._event_handlers.get(msg, None)
         result = 0
         if event_handler:
-            if self._defer_event_dispatch:
+            if self._allow_dispatch_event:
+                result = event_handler(msg, wParam, lParam)
+            else:
                 self._event_queue.append((event_handler, msg, wParam, lParam))
                 result = 0
-            else:
-                result = event_handler(msg, wParam, lParam)
         if not result:
             result = _user32.DefWindowProcW(c_int(hwnd), c_int(msg),
                 c_int(wParam), c_int(lParam)) 
