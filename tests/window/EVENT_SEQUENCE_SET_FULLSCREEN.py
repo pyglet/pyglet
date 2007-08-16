@@ -10,12 +10,13 @@ import base_event_sequence
 __noninteractive = True
 
 class TEST_CLASS(base_event_sequence.BaseEventSequence):
+    last_sequence = 2
+
     def on_resize(self, width, height):
         self.check_sequence(1, 'on_resize')
 
     def on_expose(self):
         self.check_sequence(2, 'on_expose')
-        self.finished = True
 
     def test_method(self):
         win = window.Window()

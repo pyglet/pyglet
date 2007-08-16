@@ -491,6 +491,7 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
     _mouse_in_window = True
 
     _event_queue = None
+    _allow_dispatch_event = False # controlled by dispatch_events stack frame
 
     def __init__(self, 
                  width=640,
@@ -1095,6 +1096,12 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
         buffer.  The window must be the active context (see `switch_to`).
         '''
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+    
+    def dispatch_event(self, *args):
+        if self._allow_dispatch_event:
+            EventDispatcher.dispatch_event(self, *args)
+        else:
+            self._event_queue.append(args)
 
     def dispatch_events(self):
         '''Process the operating system event queue and call attached

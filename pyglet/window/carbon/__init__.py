@@ -58,6 +58,7 @@ from pyglet import gl
 from pyglet.gl import agl
 from pyglet.gl import gl_info
 from pyglet.gl import glu_info
+from pyglet.event import EventDispatcher
 
 class CarbonException(WindowException):
     pass
@@ -477,10 +478,9 @@ class CarbonWindow(BaseWindow):
             agl.aglSetFullScreen(self._agl_context, 
                                  self._width, self._height, 0, 0)
 
-            self._event_queue.append(('on_resize', 
-                                       self._width, self._height))
-            self._event_queue.append(('on_show',))
-            self._event_queue.append(('on_expose',))
+            self.dispatch_event('on_resize', self._width, self._height)
+            self.dispatch_event('on_show')
+            self.dispatch_event('on_expose')
         else:
             # Create floating window
             rect = Rect()
@@ -609,8 +609,9 @@ class CarbonWindow(BaseWindow):
         if self._recreate_deferred:
             self._recreate_immediate()
 
+        self._allow_dispatch_event = True
         while self._event_queue:
-            self.dispatch_event(*self._event_queue.pop(0))
+            EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
 
         e = EventRef()
         result = carbon.ReceiveNextEvent(0, c_void_p(), 0, True, byref(e))
@@ -621,6 +622,8 @@ class CarbonWindow(BaseWindow):
             if self._recreate_deferred:
                 self._recreate_immediate()
             result = carbon.ReceiveNextEvent(0, c_void_p(), 0, True, byref(e))
+
+        self._allow_dispatch_event = False
         if result != eventLoopTimedOutErr:
             raise 'Error %d' % result
 
@@ -704,11 +707,9 @@ class CarbonWindow(BaseWindow):
     def set_visible(self, visible=True):
         self._visible = visible
         if visible:
+            self.dispatch_event('on_resize', self._width, self._height)
+            self.dispatch_event('on_show')
             carbon.ShowWindow(self._window)
-            self._event_queue.append(('on_resize', 
-                                       self._width, self._height))
-            self._event_queue.append(('on_show',))
-            self._event_queue.append(('on_expose',))
         else:
             carbon.HideWindow(self._window)
 
