@@ -386,13 +386,6 @@ class AVbinSource(StreamingSource):
         bl, br, tr, tl = player._texture.tex_coords
         player._texture.tex_coords = tl, tr, br, bl
 
-        # XXX HACK Change texture size to account for sample aspect
-        if self.video_format.sample_aspect > 1.0:
-            player._texture.width *= self.video_format.sample_aspect
-        elif self.video_format.sample_aspect < 1.0:
-            player._texture.height /= self.video_format.sample_aspect
-        print player._texture.width, player._texture.height
-
     def _decode_video_packet(self, packet):
         timestamp = timestamp_from_avbin(packet.timestamp)
 
