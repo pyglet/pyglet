@@ -269,6 +269,7 @@ class AVbinSource(StreamingSource):
             self._audio_buffer = \
                 (ctypes.c_uint8 * av.avbin_get_audio_buffer_size())()
             self._buffer_streams.append(self._audio_stream_index)
+            self._force_next_audio = False
             self._next_audio_data = self._get_next_audio_data()
             
         if self.video_format:
@@ -290,6 +291,8 @@ class AVbinSource(StreamingSource):
         av.avbin_seek_file(self._file, timestamp_to_avbin(timestamp))
         self._buffered_packets = []
         self._buffered_images = []
+        self._audio_packet_size = 0
+        self._force_next_audio = True
         self._force_next_video_image = True
         self._last_video_timestamp = None
 
@@ -353,6 +356,11 @@ class AVbinSource(StreamingSource):
 
     def _get_audio_data(self, bytes):
         # XXX bytes currently ignored
+
+        if self._force_next_audio:
+            print self._buffered_packets
+            self._next_audio_data = self._get_next_audio_data()
+            self._force_next_audio = False
 
         if not self._next_audio_data:
             return None

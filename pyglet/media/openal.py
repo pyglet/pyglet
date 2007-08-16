@@ -377,6 +377,9 @@ class OpenALPlayer(BasePlayer):
             return self._last_known_timestamp
         
         if self._sources[0].audio_format:
+            if not self._al_playing:
+                return self._last_known_timestamp
+
             # Add current buffer timestamp to sample offset within that
             # buffer.
             buffer = al.ALint()
@@ -444,10 +447,31 @@ class OpenALPlayer(BasePlayer):
             self._al_playing = False
 
     def seek(self, timestamp):
+        self._clear_buffers()
         if self._sources:
             self._sources[0]._seek(timestamp)
             self._last_known_system_time = time.time()
             self._last_known_timestamp = timestamp
+
+    def _clear_buffers(self):
+        '''Stop source and remove all queued buffers.'''
+        al.alSourceStop(self._al_source)
+        self._al_playing = False
+
+        processed = al.ALint()
+        al.alGetSourcei(self._al_source, 
+                        al.AL_BUFFERS_PROCESSED, processed)
+        processed = processed.value
+
+        if processed:
+            buffers = (al.ALuint * processed)()
+            al.alSourceUnqueueBuffers(self._al_source, 
+                                      len(buffers), buffers)
+            for buffer in buffers:
+                self._queued_buffers.pop(0)
+                assert info is buffer_pool.info[buffer]
+                buffer_pool.release(buffer)
+        assert not self._queued_buffers
 
     def _stop(self):
         raise RuntimeError('Invalid eos_action for this player.') 
