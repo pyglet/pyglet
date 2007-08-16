@@ -46,6 +46,7 @@ from pyglet.window import WindowException, NoSuchDisplayException, \
 from pyglet.window import event
 from pyglet.window import key
 from pyglet.window import mouse
+from pyglet.event import EventDispatcher
 
 from pyglet import gl
 from pyglet.gl import gl_info
@@ -563,10 +564,9 @@ class XlibWindow(BaseWindow):
         if self._fullscreen:
             self.activate()
 
-        self._event_queue.append(('on_resize', 
-                                  self._width, self._height))
-        self._event_queue.append(('on_show',))
-        self._event_queue.append(('on_expose',))
+        self.dispatch_event('on_resize', self._width, self._height)
+        self.dispatch_event('on_show')
+        self.dispatch_event('on_expose')
 
     def _unmap(self):
         if not self._mapped:
@@ -671,7 +671,7 @@ class XlibWindow(BaseWindow):
             self.set_minimum_size(width, height)
             self.set_maximum_size(width, height)
         xlib.XResizeWindow(self._x_display, self._window, width, height)
-        self._event_queue.append(('on_resize', width, height))
+        self.dispatch_event('on_resize', width, height)
 
     def get_size(self):
         # XGetGeometry and XWindowAttributes seem to always return the
@@ -959,15 +959,17 @@ class XlibWindow(BaseWindow):
 
     def dispatch_events(self):
         while self._event_queue:
-            self.dispatch_event(*self._event_queue.pop(0))
+            EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
 
         # Dispatch any context-related events
         if self._lost_context:
             self._lost_context = False
-            self.dispatch_event('on_context_lost')
+            EventDispatcher.dispatch_event(self, 'on_context_lost')
         if self._lost_context_state:
             self._lost_context_state = False
-            self.dispatch_event('on_context_state_lost')
+            EventDispatcher.dispatch_event(self, 'on_context_state_lost')
+
+        self._allow_dispatch_event = True
 
         e = xlib.XEvent()
 
@@ -998,6 +1000,8 @@ class XlibWindow(BaseWindow):
                     event_handler(e)
         for e in push_back:
             xlib.XPutBackEvent(_x_display, byref(e))
+
+        self._allow_dispatch_event = False
 
     @staticmethod
     def _translate_modifiers(state):
