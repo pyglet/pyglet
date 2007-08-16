@@ -261,6 +261,7 @@ class AVbinSource(StreamingSource):
         self._buffered_packets = []
 
         self._buffer_streams = []
+        self._buffered_images = []
         if self.audio_format:
             self._audio_packet_ptr = 0
             self._audio_packet_size = 0
@@ -272,7 +273,6 @@ class AVbinSource(StreamingSource):
             
         if self.video_format:
             self._buffer_streams.append(self._video_stream_index)
-            self._buffered_images = []
             self._force_next_video_image = True
             self._last_video_timestamp = None
 
