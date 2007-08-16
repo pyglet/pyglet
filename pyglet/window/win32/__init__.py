@@ -410,7 +410,7 @@ class Win32Window(BaseWindow):
             }
             self._ws_style, self._ex_ws_style = styles[self._style]
 
-        if self._resizable:
+        if self._resizable and not self._fullscreen:
             self._ws_style |= WS_THICKFRAME
         else:
             self._ws_style &= ~(WS_THICKFRAME|WS_MAXIMIZEBOX)
