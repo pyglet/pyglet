@@ -11,7 +11,8 @@ Requirements
 
 pyglet requires one of the following operating systems:
 
-* Windows XP or Vista
+* Windows XP or Vista with the following library:
+   * OpenAL <http://openal.org/> (you will need to reboot after installation)
 * Mac OS X 10.3 or later
 * Linux, with the following libraries (most recent distributions will have
   these in a default installation):
