@@ -178,7 +178,6 @@ def run(xml_file):
             sys.exit()
 
     window.pop_handlers()
-    media.cleanup()
     gui.delete()
 
     return window.has_exit

@@ -63,8 +63,6 @@ class Button(ImageCommon):
     def setText(self, text, width=None, height=None):
         self.text = text
 
-        self.delete_images()
-
         self.over_image = None
         self.pressed_image = None
 
@@ -125,21 +123,6 @@ class Button(ImageCommon):
             self.image = self.base_image
         super(Button, self).render(rect)
 
-    def delete_images(self):
-        if self.base_image is not None:
-            self.base_image.delete()
-            self.base_image = None
-        if self.over_image is not None:
-            self.over_image.delete()
-            self.over_image = None
-        if self.pressed_image is not None:
-            self.pressed_image.delete()
-            self.pressed_image = None
-
-    def delete(self):
-        if self.text is not None:
-            self.delete_images()
-        super(Button, self).delete()
 
 class TextButton(Button):
     '''A button with text on it.
@@ -179,8 +162,6 @@ class TextButton(Button):
 
     def setText(self, text, additional=('pressed', 'over')):
         self.text = text
-
-        self.delete_images()
 
         self.over_image = None
         self.pressed_image = None
@@ -238,9 +219,6 @@ class TextButton(Button):
             self.bgcolor = self.base_bgcolor
         super(TextButton, self).render(rect)
 
-    def delete(self):
-        self.delete_images()
-        super(Button, self).delete()
 
 class RepeaterButton(Button):
     '''Generates on_click events periodically if the mouse button is held

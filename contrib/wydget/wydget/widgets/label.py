@@ -139,11 +139,6 @@ class Label(LabelCommon):
             if w is not None:
                 w -= self.padding * 2
 
-        # free up old image
-        if self.image is not None and isinstance(self.image,
-                pyglet.image.Texture):
-            self.image.delete()
-
         if self.is_blended:
             label = self.getStyle().text(text, color=self.color,
                 font_size=self.font_size, width=w, halign=self.halign,
@@ -218,10 +213,6 @@ class XHTML(LabelCommon):
         pw = self.parent.inner_rect.width
         w = util.parse_value(self.width_spec, pw)
         if w is not None: w -= self.padding * 2
-
-        # free up old image
-        if self.image is not None:
-            self.image.delete()
 
         self.layout = self.getStyle().xhtml('<p>%s</p>'%text, width=w,
             style=self.style)

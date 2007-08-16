@@ -223,7 +223,8 @@ class GUIEventDispatcher(EventDispatcher):
         if propogate and element.parent is not None:
             return self.dispatch_event(element.parent, event_type, *args, **kw)
 
-    # NOW THE EVENT HANDLERS
+
+    # EVENT HANDLER BEHAVIOR
     active_element = None
     is_dragging_element = False
     mouse_press_element = None
@@ -231,12 +232,24 @@ class GUIEventDispatcher(EventDispatcher):
     cumulative_drag = (0, 0)
     focused_element = None
 
-    _rects = None
-    def setDirty(self):
-        '''Indicate that one or more of the gui's children have changed
-        size and a new set of collision rects is needed.
+    def setModal(self, element):
+        '''The element will capture all input.
+
+        setModal(None) to clear.
         '''
-        self._rects = None
+        if element is None:
+            for child in self.children:
+                child.is_enabled = True
+                child.is_modal = False
+        else:
+            found = False
+            for child in self.children:
+                if child is not element:
+                    child.is_enabled = False
+                else:
+                    found = True
+                    child.is_modal = True
+            assert found, '%r not found in gui children'%(element,)
 
     def setFocus(self, element):
         '''Set the indicated element to be the focus of keyboard input.
@@ -263,24 +276,35 @@ class GUIEventDispatcher(EventDispatcher):
 
         self.focused_element = element
 
-    def determineHit(self, x, y, exclude=None):
-        '''Determine which element is at the absolute (x, y) position.
-
-        "exclude" allows us to ignore a single element (eg. an element
-        under the cursor being dragged - we wish to know which element is
-        under *that)
+    def focusNextElement(self, direction=1):
+        '''Move the focus on to the next element.
         '''
-        for o, (ox, oy, oz, sx, sy, clip) in reversed(self.getRects(exclude)):
-            ox += clip.x
-            oy += clip.y
-            if x < ox: continue
-            if y < oy: continue
-            if x > ox + clip.width: continue
-            if y > oy + clip.height: continue
-            return o
-        return None
+        if not self._focus_order: return
+        N = len(self._focus_order)
+        if self.focused_element is None:
+            if direction == 1: i = 0
+            else: i = N-1
+        else:
+            try:
+                i = self._focus_order.index(self.focused_element.id) + direction
+            except ValueError:
+                # element not in the focus order list
+                i = 0
+            if i < 0: i = N-1
+            if i >= N: i = 0
+        j = i
+        while 1:
+            element = self._by_id[self._focus_order[i]]
+            if element.isEnabled() and self.isVisible():
+                self.setFocus(element)
+                return
+            i += direction
+            if i < 0: i = N-1
+            if i >= N: i = 0
+            if i == j: return       # no focusable element found
 
 
+    # NOW THE EVENT HANDLERS
     def on_mouse_motion(self, x, y, dx, dy):
         '''Determine what element(s) the mouse is positioned over and
         generate on_element_enter and on_element_leave events. Additionally

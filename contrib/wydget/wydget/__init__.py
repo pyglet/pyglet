@@ -90,25 +90,12 @@ class GUI(event.GUIEventDispatcher):
         loadxml.load_xml(gui, file)
         return gui
 
-    def setModal(self, element):
-        '''The element will capture all input.
+    def dump(self, s=''):
+        print s + str(self)
+        for child in self.children: child.dump(s+' ')
 
-        setModal(None) to clear.
-        '''
-        if element is None:
-            for child in self.children:
-                child.is_enabled = True
-                child.is_modal = False
-        else:
-            found = False
-            for child in self.children:
-                if child is not element:
-                    child.is_enabled = False
-                else:
-                    found = True
-                    child.is_modal = True
-            assert found, '%r not found in gui children'%(element,)
 
+    # clipboard support
     clipboard_element = None
     def setSelection(self, element):
         '''The element has some data that may interact with the clipboard.
@@ -121,20 +108,13 @@ class GUI(event.GUIEventDispatcher):
         '''The element doesn't want to interact with the clipboard any
         longer.
         '''
-        # XXX assert self.clipboard_element is element? 
         # might already have been bumped for another
         if self.clipboard_element is element:
             self.clipoard_element = None
 
-    def dump(self, s=''):
-        print s + str(self)
-        for child in self.children: child.dump(s+' ')
 
-    def delete(self):
-        for child in self.children: child.delete()
-        self.children = []
-
-    # XXX alter to be registerElement
+    # Management by Element ID
+    # XXX remove "ID" from API?
     def registerID(self, element):
         if element.id in self._by_id:
             raise KeyError, 'ID %r already exists as %r (trying to add %r)'%(
@@ -155,63 +135,14 @@ class GUI(event.GUIEventDispatcher):
     def getByID(self, id):
         return self._by_id[id]
 
-    def addChild(self, child):
-        self.children.append(child)
-        self.registerID(child)
-    def deleteChild(self, child):
-        child.delete()
-        self.children.remove(child)
 
-    def focusNextElement(self, direction=1):
-        '''Move the focus on to the next element.
+    # rendering / hit detection
+    _rects = None
+    def setDirty(self):
+        '''Indicate that one or more of the gui's children have changed
+        geometry and a new set of child rects is needed.
         '''
-        if not self._focus_order: return
-        N = len(self._focus_order)
-        if self.focused_element is None:
-            if direction == 1: i = 0
-            else: i = N-1
-        else:
-            try:
-                i = self._focus_order.index(self.focused_element.id) + direction
-            except ValueError:
-                # element not in the focus order list
-                i = 0
-            if i < 0: i = N-1
-            if i >= N: i = 0
-        j = i
-        while 1:
-            element = self._by_id[self._focus_order[i]]
-            if element.isEnabled() and self.isVisible():
-                self.setFocus(element)
-                return
-            i += direction
-            if i < 0: i = N-1
-            if i >= N: i = 0
-            if i == j: return       # no focusable element found
-
-    # Element API terminators
-    def getStyle(self): return self.style
-    def getGUI(self): return self
-    def isEnabled(self): return True
-    def isVisible(self): return True
-
-    def getParent(self, selector):
-        if selector == self.name: return self
-        return None
-
-    def calculateAbsoluteCoords(self, x, y):
-        return (x + self.x, y + self.y)
-
-    def calculateRelativeCoords(self, x, y):
-        return (x - self.x, y - self.y)
-    
-    def layoutDimensionsChanged(self, layout):
-        pass
-
-    def get_rect(self):
-        return util.Rect(0, 0, self.width, self.height)
-    rect = property(get_rect)
-    inner_rect = property(get_rect)
+        self._rects = None
 
     def getRects(self, exclude=None):
         '''Get the rects for all the children to draw & interact with.
@@ -231,14 +162,29 @@ class GUI(event.GUIEventDispatcher):
             self._rects = rects
         return rects
 
+    def determineHit(self, x, y, exclude=None):
+        '''Determine which element is at the absolute (x, y) position.
+
+        "exclude" allows us to ignore a single element (eg. an element
+        under the cursor being dragged - we wish to know which element is
+        under *that)
+        '''
+        for o, (ox, oy, oz, sx, sy, clip) in reversed(self.getRects(exclude)):
+            ox += clip.x
+            oy += clip.y
+            if x < ox or y < oy: continue
+            if x > ox + clip.width: continue
+            if y > oy + clip.height: continue
+            return o
+        return None
+
     def draw(self):
         '''Render all the elements on display.'''
         glPushAttrib(GL_ENABLE_BIT)
         glDisable(GL_DEPTH_TEST)
 
         # get the rects and sort by Z (yay for stable sort!)
-        view_clip = None
-        rects = self.getRects(view_clip)
+        rects = self.getRects()
 
         # draw
         oz = 0
@@ -276,4 +222,37 @@ class GUI(event.GUIEventDispatcher):
                 self.width, self.debug_display.height))
 
         glPopAttrib()
+
+
+    # Element API (mostly terminators)
+    def getStyle(self): return self.style
+    def getGUI(self): return self
+    def isEnabled(self): return True
+    def isVisible(self): return True
+
+    def getParent(self, selector):
+        if selector == self.name: return self
+        return None
+
+    def calculateAbsoluteCoords(self, x, y):
+        return (x + self.x, y + self.y)
+
+    def calculateRelativeCoords(self, x, y):
+        return (x - self.x, y - self.y)
+    
+    def layoutDimensionsChanged(self, layout):
+        pass
+
+    def get_rect(self):
+        return util.Rect(0, 0, self.width, self.height)
+    rect = property(get_rect)
+    inner_rect = property(get_rect)
+
+    def addChild(self, child):
+        self.children.append(child)
+        self.registerID(child)
+
+    def delete(self):
+        for child in self.children: child.delete()
+        self.children = []
 
