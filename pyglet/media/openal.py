@@ -468,7 +468,7 @@ class OpenALPlayer(BasePlayer):
             al.alSourceUnqueueBuffers(self._al_source, 
                                       len(buffers), buffers)
             for buffer in buffers:
-                self._queued_buffers.pop(0)
+                info = self._queued_buffers.pop(0)
                 assert info is buffer_pool.info[buffer]
                 buffer_pool.release(buffer)
         assert not self._queued_buffers
