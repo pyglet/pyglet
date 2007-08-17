@@ -5,6 +5,12 @@ ROOT=`dirname $0`/../..
 RES=`dirname $0`/res
 VERSION=`grep 'VERSION =' $ROOT/setup.py | cut -d "'" -f2`
 
+# Create AVbin files
+mkdir -p $ROOT/build/avbin
+rsync -a /usr/lib/libavbin.dylib $ROOT/build/avbin/
+cp /usr/lib/`ls -l /usr/lib/libavbin.dylib | sed 's/.* -> \(.*\)$/\1/'` \
+    $ROOT/build/avbin/
+
 python $ROOT/setup.py bdist_mpkg \
     --background=$RES/background.pdf \
     --readme=$RES/readme.rtf 

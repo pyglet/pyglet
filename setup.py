@@ -114,7 +114,7 @@ elif 'bdist_mpkg' in sys.argv:
         return plists.path_requirement(prefix, **kw)
 
     # Subclass bdist_mpkg
-    from bdist_mpkg import cmd_bdist_mpkg
+    from bdist_mpkg import cmd_bdist_mpkg, tools
     class pyglet_bdist_mpkg(cmd_bdist_mpkg.bdist_mpkg):
         # Don't include platform or python version in mpkg name (aesthetics)
         def finalize_package_data(self):
@@ -144,6 +144,26 @@ elif 'bdist_mpkg' in sys.argv:
         # the same Archive.bom.
         def make_scheme_package(self, scheme):
             assert scheme == 'purelib'
+
+            # Make AVbin package
+            pkgname = 'AVbin'
+            pkgfile = pkgname + '.pkg'
+            self.packages.append((pkgfile, self.get_scheme_status(scheme)))
+            pkgdir = os.path.join(self.packagesdir, pkgfile)
+            self.mkpath(pkgdir)
+            version = self.get_scheme_version(scheme)
+            info = dict(self.get_scheme_info(scheme))
+            description = 'AVbin audio and video support (recommended)'
+            files = list(tools.walk_files('build/avbin'))
+            common = 'build/avbin'
+            prefix = '/usr/lib'
+            pkg.make_package(self,
+                pkgname, version,
+                files, common, prefix,
+                pkgdir,
+                info, description)
+
+            # pyglet packages
             files, common, prefix = self.get_scheme_root(scheme)
 
             # Hardcoded per-version prefix
