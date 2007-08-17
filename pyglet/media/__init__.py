@@ -35,6 +35,44 @@
 # $Id$
 
 '''Audio and video playback.
+
+pyglet can play WAV files, and if AVbin is installed, many other audio and
+video formats.
+
+Playback is handled by the `Player` class, which reads raw data from `Source`
+objects and provides methods for pausing, seeking, adjusting the volume, and
+so on.  The `Player` class implements a the best available audio device
+(currently, only OpenAL is supported)::
+
+    player = Player()
+
+A `Source` is used to decode arbitrary audio and video files.  It is
+associated with a single player by "queuing" it::
+
+    source = load('background_music.mp3')
+    player.queue(source)
+
+Use the `Player` to control playback.  Within your main run loop, you must
+periodically call `dispatch_events` to ensure the audio buffers are refilled::
+
+    player.play()
+    while player.source:    # While the source hasn't finished
+        player.dispatch_events()
+
+If the source contains video, its `video_format` attribute will be non-None,
+and the player's `texture` attribute will contain the current video image
+synchronised to the audio.
+
+Decoding sounds can be processor-intensive and may introduce latency,
+particularly for short sounds that must be played quickly, such as bullets or
+explosions.  You can force such sounds to be decoded and retained in memory
+rather than streamed from disk by wrapping the source in a `StaticSource`::
+
+    bullet_sound = StaticSource(load('bullet.wav'))
+
+The other advantage of a `StaticSound` is that it can be queued on any number
+of players, and so played many times simultaneously.
+
 '''
 
 __docformat__ = 'restructuredtext'
@@ -55,6 +93,23 @@ class CannotSeekException(MediaException):
     pass
 
 class AudioFormat(object):
+    '''Audio details.
+
+    An instance of this class is provided by sources with audio tracks.  You
+    should not modify the fields, as they are used internally to describe the
+    format of data provided by the source.
+
+    :Ivariables:
+        `channels` : int
+            The number of channels: 1 for mono or 2 for stereo (pyglet does
+            not yet support surround-sound sources).
+        `sample_size` : int
+            Bits per sample; typically 8 or 16.
+        `sample_rate` : int
+            Samples per second (in Herz).
+
+    '''
+
     def __init__(self, channels, sample_size, sample_rate):
         self.channels = channels
         self.sample_size = sample_size
@@ -64,19 +119,57 @@ class AudioFormat(object):
         self.bytes_per_sample = (sample_size >> 3) * channels
         self.bytes_per_second = self.bytes_per_sample * sample_rate
 
+class VideoFormat(object):
+    '''Video details.
+
+    An instance of this class is provided by sources with a video track.  You
+    should not modify the fields.
+
+    Note that the sample aspect has no relation to the aspect ratio of the
+    video image.  For example, a video image of 640x480 with sample aspect 2.0
+    should be displayed at 1280x480.  It is the responsibility of the
+    application to perform this scaling.
+
+    :Ivariables:
+        `width` : int
+            Width of video image, in pixels.
+        `height` : int
+            Height of video image, in pixels.
+        `sample_aspect` : float
+            Aspect ratio (width over height) of a single video pixel.
+
+    '''
+    
+    def __init__(self, width, height, sample_aspect=1.0):
+        self.width = width
+        self.height = height
+        self.sample_aspect = sample_aspect
+
+
 class AudioData(object):
+    '''A single packet of audio data.
+
+    This class is used internally by pyglet.
+
+    :Ivariables:
+        `data` : str or ctypes array or pointer
+            Sample data.
+        `length` : int
+            Size of sample data, in bytes.
+        `timestamp` : float
+            Time of the first sample, in seconds.
+        `duration` : float
+            Total data duration, in seconds.
+        `is_eos` : bool
+            If True, this is the last audio packet in the source.
+
+    '''
     def __init__(self, data, length, timestamp, duration, is_eos=False):
         self.data = data
         self.length = length
         self.timestamp = timestamp
         self.duration = duration
         self.is_eos = is_eos
-
-class VideoFormat(object):
-    def __init__(self, width, height, sample_aspect=1.0):
-        self.width = width
-        self.height = height
-        self.sample_aspect = sample_aspect
 
 class Source(object):
     '''An audio and/or video source.
@@ -789,6 +882,22 @@ except ImportError:
     _source_class = riff.WaveSource
 
 def load(filename, file=None, streaming=True):
+    '''Load a source from a file.
+
+    Currently the `file` argument is not supported; media files must exist
+    as real paths.
+
+    :Parameters:
+        `filename` : str
+            Filename of the media file to load.
+        `file` : file-like object
+            Not yet supported.
+        `streaming` : bool
+            If False, a `StaticSource` will be returned; otherwise (default) a
+            `StreamingSource` is created.
+
+    :rtype: `Source`
+    '''
     source = _source_class(filename, file)
     if not streaming:
         source = StaticSource(source)
