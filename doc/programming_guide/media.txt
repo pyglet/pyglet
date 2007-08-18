@@ -1,0 +1,332 @@
+Sound and Video
+===============
+
+pyglet can play many audio and video formats.  Audio is played back with
+OpenAL -- the standard hardware-accelerated API for stereo and surround-sound
+audio.  Video is played into OpenGL textures, and so can be easily be
+manipulated in real-time by applications and incorporated into 3D
+environments.
+
+Decoding of compressed audio and video is provided by `AVbin`_, an optional
+component available for Linux, Windows and Mac OS X.  AVbin is installed
+alongside pyglet by default if the Windows or Mac OS X installation is used.
+If pyglet was installed from source, AVbin can be installed separately.
+
+If AVbin is not present, pyglet will fall back to reading uncompressed WAV
+files only.  This may be sufficient for many applications that require only a
+small number of short sounds, in which case those applications need not
+distribute AVbin.
+
+OpenAL is included with Mac OS X.  Windows users can download a generic driver
+from `openal.org`_, or from their sound device's manufacturer.  Linux users can
+use the reference implementation also provided by Creative.  For example,
+Ubuntu users can ``apt-get openal``.  ALUT is not required.
+
+If OpenAL is not installed, no audio or video files (even silent ones) can be
+played.
+
+Please note that due to a long-standing bug in the reference implementation of
+OpenAL, stereo audio is downmixed to mono on Linux.  This does not affect
+Windows or Mac OS X users.  Future versions of pyglet may provide an
+alternative audio driver to address this problem.
+
+.. _AVbin: http://code.google.com/p/avbin
+
+.. _openal.org: http://www.openal.org/downloads.html
+
+Supported media types
+---------------------
+
+If AVbin is not installed, only uncompressed RIFF/WAV files encoded with
+linear PCM can be read.
+
+With AVbin, many common and less-common formats are supported.  Due to the
+large number of combinations of audio and video codecs, options, and container
+formats, it is difficult to provide a complete yet useful list.  Some of the
+supported audio formats are:
+
+* AU
+* MP2
+* MP3
+* OGG/Vorbis
+* WAV
+* WMA
+
+Some of the supported video formats are:
+
+* AVI
+* DivX
+* H.263
+* H.264
+* MPEG
+* MPEG-2
+* OGG/Theora
+* Xvid
+* WMV
+
+For a complete list, see the AVbin sources.  Otherwise, it is probably simpler
+to simply try playing back your target file with the ``media_player.py``
+example.
+
+New versions of AVbin as they are released may support additional formats, or
+fix errors in the current implementation.  AVbin is completely future- and
+backward-compatible, so no change to pyglet is needed to use a newer version
+of AVbin -- just install it in place of the old version.
+
+Loading media
+-------------
+
+Audio and video files are loaded in the same way, using the
+`pyglet.media.load` function, providing a filename::
+
+    from pyglet import media
+    source = media.load('explosion.wav')
+
+The result of loading a media file is a `Source` object.  This object provides
+useful information about the type of media encoded in the file, and serves as
+an opaque object used for playing back the file (described in the next
+section).
+
+The `load` function will raise a `MediaException` if the format is unknown.
+`IOError` may also be raised if the file could not be read from disk.  Future
+versions of pyglet will also support reading from arbitrary file-like objects,
+however a valid filename must currently be given.
+
+The length of the media file is given by the `duration` property, which
+returns the media's length in seconds.
+
+Audio metadata is provided in the source's `audio_format` attribute, which is
+`None` for silent videos.  This metadata is not generally useful to
+applications.  See the `AudioFormat` class documentation for details.  
+
+Video metadata is provided in the source's `video_format` attribute, which is
+`None` for audio files.  It is recommended that this attribute is checked
+before attempting play back a video file -- if a movie file has a readable
+audio track but unknown video format it will appear as an audio file.
+
+You can use the video metadata, described in a `VideoFormat` object, to set up
+display of the video before beginning playback.  The attributes are as
+follows:
+
+    .. list-table::
+        :header-rows: 1
+
+        * - Attribute
+          - Description
+        * - ``width``, ``height``
+          - Width and height of the video image, in pixels.
+        * - ``sample_aspect``
+          - The aspect ratio of each video pixel.
+
+You must take care to apply the sample aspect ratio to the video image size
+for display purposes.  The following code determines the display size for a
+given video format::
+
+    def get_video_size(width, height, sample_aspect):
+        if sample_aspect > 1.:
+            return width * sample_aspect, height
+        elif sample_aspect < 1.:
+            return width, height / sample_aspect
+        else:
+            return width, height
+
+Media files are not normally read entirely from disk; instead, they are
+streamed into the decoder, and then into the audio buffers and video memory
+only when needed.  This reduces the startup time of loading a file and reduces
+the memory requirements of the application.
+
+However, there are times when it is desirable to completely decode an audio
+file in memory first.  For example, a sound that will be played many times
+(such as a bullet or explosion) should only be decoded once.  You can instruct
+pyglet to completely decode an audio file into memory at load time::
+
+    explosion = media.load('explosion.wav', streaming=False)
+
+The resulting source is an instance of `StaticSource`, which provides the same
+interface as a streaming source.  You can also construct a `StaticSource`
+directly from an already-loaded `Source`::
+
+    explosion = media.StaticSource(media.load('explosion.wav'))
+
+Simple audio playback
+---------------------
+
+Many applications, especially games, need to play sounds in their entirety
+without needing to keep track of them.  For example, a sound needs to be
+played when the player's space ship explodes, but this sound never needs to
+have its volume adjusted, or be rewound, or interrupted.
+
+pyglet provides a simple interface for this kind of use-case.  Call the `play`
+method of any `Source` to play it immediately and completely::
+
+    from pyglet import media
+    explosion = media.load('explosion.wav', streaming=False)
+    explosion.play()
+
+You can call `play` on any `Source`, not just `StaticSource`.
+
+pyglet is not multi-threaded.  In order to ensure the audio buffers remain
+full, you must call `media.dispatch_events` periodically.  For example, it is
+common to do this in your main run loop::
+
+    while True:
+        media.dispatch_events()
+
+The return value of `Source.play` is a `ManagedPlayer`, which can either be
+discarded, or retained to maintain control over the sound's playback.
+
+Controlling playback
+--------------------
+
+You can implement many functions common to a media player using the `Player`
+class.  Use of this class is also necessary for video playback.  There are no
+parameters to its construction::
+
+    from pyglet import media
+    player = media.Player()
+
+A player will play any source that is "queued" on it.  Any number of sources
+can be queued on a single player, but once queued, a source can never be
+dequeued (until it is removed automatically once complete).  The main use of
+this queuing mechanism is to facilitate "gapless" transitions between playback
+of media files.
+
+A `StreamingSource` can only ever be queued on one player, and only once on
+that player.  `StaticSource` objects can be queued any number of times on any
+number of players.  Recall that a `StaticSource` can be created by passing
+``streaming=False`` to the `load` method.
+
+In the following example, two sounds are queued onto a player::
+
+    player.queue(source1)
+    player.queue(source2)
+
+Playback begins with the player's `play` method is called::
+
+    player.play()
+
+Standard controls for controlling playback are provided by these methods:
+
+    .. list-table::
+        :header-rows: 1
+
+        * - Method
+          - Description
+        * - `play`
+          - Begin or resume playback of the current source.
+        * - `pause`
+          - Pause playback of the current source.
+        * - `next`
+          - Dequeue the current source and move to the next one immediately.
+        * - `seek`
+          - Seek to a specific time within the current source.
+
+Note that there is no `stop` method.  If you do not need to resume playback,
+simply pause playback and discard the player and source objects.  Using the
+`next` method does not guarantee gapless playback.
+
+There are several properties that describe the player's current state:
+
+    .. list-table::
+        :header-rows: 1
+        
+        * - Property
+          - Description
+        * - `time`
+          - The current playback position within the current source, in
+            seconds.  This is read-only (but see the `seek` method).
+        * - `playing`
+          - True if the player is currently playing, False if there are no
+            sources queued or the player is paused.  This is read-only (but
+            see the `pause` and `play` methods).
+        * - `source`
+          - A reference to the current source being played.  This is
+            read-only (but see the `queue` method).
+        * - `volume`
+          - The audio level, expressed as a float from 0 (mute) to 1 (normal
+            volume).  This can be set at any time.
+
+While a player is playing, it is important that your application periodically
+calls its `dispatch_events` method.  This is used to update the video texture
+and to ensure the audio buffers remain full.  Typically this call is done in
+every iteration of your main loop::
+
+    while True::
+        player.dispatch_events()
+
+Note that this `dispatch_events` method is unrelated to the
+`media.dispatch_events` function, which provides the same functionality for
+`ManagedPlayer` instances.
+
+When a player reaches the end of the current source, by default it will move
+immediately to the next queued source.  If there are no more sources, playback
+stops until another is queued.  There are several other possible behaviours,
+specified by setting the `eos_action` attribute on the player:
+
+    .. list-table::
+        :header-rows: 1
+
+        * - ``eos_action``
+          - Description
+        * - `EOS_NEXT`
+          - The default action: playback continues at the next source.
+        * - `EOS_PAUSE`
+          - Playback pauses at the end of the source, which remains the
+            current source for this player.
+        * - `EOS_LOOP`
+          - Playback continues immediately at the beginning of the current
+            source.
+        * - `EOS_STOP`
+          - Valid only for `ManagedPlayer`, for which it is default: the
+            player is discarded when the current source finishes.
+
+You can change a player's `eos_action` at any time, but be aware that unless
+sufficient time is given for the future data to be decoded and buffered there
+may be a stutter or gap in playback.  If `eos_action` is set well in advance
+of the end of the source (say, several seconds), there will be no disruption.
+
+Incorporating video
+-------------------
+
+When a `Player` is playing back a source with video, its `texture` property
+gives the current video image.  This can be used to display the current video
+image syncronised with the audio track, for example::
+
+    while True:
+        # Fill audio buffers and update the video texture
+        player.dispatch_events()
+
+        # Draw the video image to the current window.
+        player.texture.blit(0, 0)
+
+Because `Player` uses OpenGL to create video textures, you must ensure an
+OpenGL context is created before queueing a video source onto a player.  You
+normally do this by creating a `Window`.
+
+The texture is an instance of `pyglet.image.Texture`, with an internal format
+of either ``GL_TEXTURE_2D`` or ``GL_TEXTURE_RECTANGLE_ARB``.  While the
+texture will typically be created only once and subsequentally updated each
+frame, you should make no such assumption in your application -- future
+versions of pyglet may use multiple texture objects.
+
+Positional audio
+----------------
+
+pyglet uses OpenAL for audio playback, which includes many features for
+positioning sound within a 3D space.  This is particularly effective with a
+surround-sound setup, but is also applicable to stereo systems.
+
+A `Player` in pyglet has an associated position and velocity in 3D space --
+that is, it is equivalent to an OpenAL "source".  The properties for setting
+these parameters are described in more detail in the API documentation; see
+for example `Player.position`, `Player.velocity` and `Player.pitch`.
+
+The OpenAL "listener" object is provided by the `pyglet.media.listener`
+singleton, an instance of `Listener`.  This provides similar properties such
+as `Listener.position`, `Listener.velocity`, `Listener.forward_orientation`
+and `Listener.up_orientation` that describe the position of the user in 3D
+space.  Global constants such as `doppler_factor` and `speed_of_sound` are
+also defined on this object.
+
+Note that only mono sounds can be positioned.  Stereo sounds will play back as
+normal, and only their volume and pitch properties will affect the sound.

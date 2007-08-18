@@ -1,0 +1,387 @@
+Displaying text
+===============
+
+pyglet provides the `font` module for rendering high-quality antialiased
+Unicode text efficiently.  Any installed font on the operating system can be
+used, or you can supply your own font with your application.  
+
+Some basic functionality is provided for rendering text in a single font, and
+additional complex rendering can be achieved by layering more sophisticated
+behaviour above the pyglet base classes.
+
+Before you can load any fonts you must have an active OpenGL context.  That
+is, you should create a window before loading fonts.  If you need to load the
+font before you can determine the size of the window, set the visibility of
+the window to False initially::
+
+    from pyglet import font
+    from pyglet import window
+
+    win = win.Window(visible=False)
+
+    # ... load fonts and calculate window layout
+
+    win.set_size(width, height)
+    win.set_visible(True)
+
+.. contents::
+    :local:
+
+Loading system fonts
+--------------------
+
+To load a font you must know its family name.  This is the name displayed in
+the font dialog of any application.  For example, all operating systems
+include the *Times New Roman* font.  You must also specify the font size to
+load, in points::
+
+    from pyglet import font
+
+    # Load "Times New Roman" at 16pt
+    times = font.load('Times New Roman', 16)
+
+Bold and italic variants of the font can specified with keyword parameters::
+
+    times_bold = font.load('Times New Roman', 16, bold=True)
+    times_italic = font.load('Times New Roman', 16, italic=True)
+    times_bold_italic = font.load('Times New Roman', 16, bold=True, italic=True)
+
+For maximum compatibility on all platforms, you can specify a list of font
+names to load, in order of preference.  For example, many users will have
+installed the Microsoft Web Fonts pack, which includes `Verdana`, but this
+cannot be guaranteed, so you might specify `Arial` or `Helvetica` as
+suitable alternatives::
+
+    sans_serif = font.load(('Verdana', 'Helvetica', 'Arial'), 16)
+
+If you do not particularly care which font is used, and just need to display
+some readable text, you can specify `None` as the family name, which will load
+a default sans-serif font (Helvetica on Mac OS X, Arial on Windows XP)::
+
+    sans_serif = font.load(None, 16)
+
+Font sizes
+----------
+
+When loading a font you must specify the font size it is to be rendered at, in
+points.  Points are a somewhat historical but conventional unit used in both
+display and print media.  There are various conflicting definitions for the
+actual length of a point, but pyglet uses the PostScript definition: 1 point =
+1/72 inches.
+
+Font resolution
+^^^^^^^^^^^^^^^
+
+The actual rendered size of the font on screen depends on the display
+resolution.  Each operating system defines its own assumed font resolution,
+given in dots (pixels) per inch (DPI):
+
+    .. list-table::
+        :header-rows: 1
+
+        * - Operating system
+          - Default DPI
+        * - Windows XP
+          - 96, or 120 with "Large Fonts" enabled
+        * - Mac OS X
+          - 72
+        * - Linux
+          - Depends on X11 configuration, but typically 96.
+
+You should keep in mind when writing your application that fonts are displayed
+at different pixel sizes on different operating systems.  For a typical
+application, this means you should not assume anything about the size of a
+font, except by using the font metrics functions desribed later.
+
+This can be quite inconvenient when writing a graphics-intensive application
+such as a game, for example.  If you need to mix text and graphics which
+cannot be easily resized, you can force pyglet to use a different font
+resolution.  This is given as the `dpi` parameter in the `font.load` method
+and can be set differently for each font loaded::
+
+    from pyglet import font
+
+    times = font.load('Times New Roman', 12, dpi=96)
+
+So, if you are primarily developing your application on Windows but wanted to
+ensure the fonts are displayed as similarly as possible on Mac OS X, you would
+specify a DPI of 96 when loading the font.  Conversely, if you primarily
+develop on Mac OS X you would specify a DPI of 72.
+
+By specifying a DPI you are overriding both the operating system defaults and
+potentially any user-defined settings.  This is not recommended for
+general-purpose applications, which should remain accessible to all users by
+not specifying a font resolution.
+
+Determining font size
+^^^^^^^^^^^^^^^^^^^^^
+
+Once a font is loaded at a particular size, you can query its pixel size with
+the attributes::
+
+    Font.ascent
+    Font.descent
+
+These measurements are shown in the diagram below.
+
+.. figure:: font_metrics.svg
+    
+    Font metrics.  Note that the descent is usually negative as it descends
+    below the baseline.
+
+You can calculate the distance between successive lines of text as::
+
+    ascent - descent + leading
+
+where `leading` is the number of pixels to insert between each line of text.
+
+Loading custom fonts
+--------------------
+
+You can supply a font with your application if it's not commonly installed on
+the target platform.  You should ensure you have a license to distribute the
+font -- the terms are often specified within the font file itself, and can be
+viewed with your operating system's font viewer.
+
+Loading a custom font must be performed in two steps:
+
+1. Let pyglet know about the additional font or font files.
+2. Load the font by its family name.
+
+For example, let's say you have the *Action Man* font in a file called
+``action_man.ttf``.  The following code will load an instance of that font::
+
+    from pyglet import font
+
+    font.add_file('action_man.ttf')
+    action_man = font.load('Action Man')
+
+Fonts are often distributed in separate files for each variant.  *Action Man
+Bold* would probably be distributed as a separate file called
+``action_man_bold.ttf``; you need to let pyglet know about this as well::
+
+    font.add_file('action_man_bold.ttf')
+    action_man_bold = font.load('Action Man', bold=True)
+
+Note that even when you know the filename of the font you want to load, you
+must specify the font's family name to `font.load`.
+
+You need not have the file on disk to add it to pyglet; you can specify any
+file-like object supporting the `read` method.  This can be useful for
+extracting fonts from a resource archive or over a network.
+
+Supported font formats
+^^^^^^^^^^^^^^^^^^^^^^
+
+pyglet can load any font file that the operating system natively supports.
+The list of supported formats is shown in the table below.
+
+    .. list-table::
+        :header-rows: 1
+
+        * - Font Format
+          - Windows XP
+          - Mac OS X
+          - Linux (FreeType)
+        * - TrueType (.ttf)
+          - X
+          - X
+          - X
+        * - PostScript Type 1 (.pfm, .pfb)
+          - X
+          - X
+          - X
+        * - Windows Bitmap (.fnt)
+          - X
+          - 
+          - X
+        * - Mac OS X Data Fork Font (.dfont)
+          - 
+          - X 
+          - 
+        * - OpenType (.ttf) [#opentype]_
+          -
+          - X
+          -
+        * - X11 font formats PCF, BDF, SFONT
+          -
+          - 
+          - X
+        * - Bitstream PFR (.pfr)
+          -
+          -
+          - X
+
+.. [#opentype] All OpenType fonts are backward compatible with TrueType, so
+               while the advanced OpenType features can only be rendered with
+               Mac OS X, the files can be used on any platform.  pyglet
+               does not currently make use of the additional kerning and
+               ligature information within OpenType fonts.
+
+Basic text rendering
+--------------------
+
+Most of the text requirements of applications written with pyglet can be taken
+care of with the `Text` class.  This permits simple but efficient rendering of
+one or more lines of text in a single font.
+
+Drawing text is a two step process:
+
+1. Create a `Text` instance, specifying the text to display and the font to
+   use; and optionally the position, color and alignment of the text.
+2. Each frame, call `Text.draw` to draw the text to the window.
+
+The following is a reprint of the "Hello, World" example from the first
+chapter::
+
+    from pyglet import window
+    from pyglet import font
+
+    win = window.Window()
+
+    ft = font.load('Arial', 36)
+    text = font.Text(ft, 'Hello, World!')
+
+    while not win.has_exit:
+        win.dispatch_events()
+
+        win.clear()
+        text.draw()
+        win.flip()
+
+Position and alignment
+^^^^^^^^^^^^^^^^^^^^^^
+
+You can specify the location in the window of the text during construction::
+
+    text = font.Text(ft, 'Hello, World!', x=25, y=80)
+
+or change this at any time (for example, to animate some text moving across
+the screen)::
+
+    text.x += 10
+    text.y += 1
+
+By default the position you give determines the left edge of the text, and the
+baseline of the first line of text.  The `halign` and `valign` properties
+allow you to center or right-align text, and position relative to the top,
+center or bottom of the text.  For example, in the following example the text
+is centered within the window::
+
+    text = font.Text(ft, 'Hello, World!', 
+                     x=win.width / 2, 
+                     y=win.height / 2,
+                     halign=font.Text.CENTER,
+                     valign=font.Text.CENTER)
+
+You may find it useful to be able to align various assets around the text.  To
+do this, you need to know how much space it is taking.  The `width` and
+`height` attributes can be queried; these give the total dimensions of the
+text when it is laid out.
+
+Text color
+^^^^^^^^^^
+
+The color of the text is white by default, but can be changed with the `color`
+property::
+
+    text.color = (1, 0, 0) # Red
+
+Colors are specified as if passed to `glColor3f` or `glColor4f`.  They are a
+tuple of the red, green, blue and alpha color components, in that order.  The
+range of each component is a float between 0 and 1.  If alpha is not
+specified, it is assumed to be 1.
+
+For example, to draw semi-translucent dark blue text::
+
+    text.color = (0, 0.5, 0, 0.5)
+
+Word wrapping
+^^^^^^^^^^^^^
+
+Text can be made to fit within a specified width.  When the `width` property
+is not ``None``, text will be split into separate lines along word boundaries
+so that the width of the text does not exceed the limit.  For example, to
+word-wrap a large paragraph into the whole window::
+
+    text = font.Text(ft, long_text,
+                     x=0,
+                     y=win.height,
+                     valign=font.Text.TOP)
+    text.width = win.width
+
+If you add the ``text.width = win.width`` line to an `on_resize` event handler
+for the window, you can ensure the text reflows as the window is resized.
+
+Limitations
+^^^^^^^^^^^
+
+The `Text` class is suitable only for text that can be displayed with a single
+font, size and color.  It does not support any markup, nor does it handle
+bidirectional text.  
+
+For more sophisticated text rendering, you may want to consider the ``layout``
+module located in the ``contrib`` directory of the SVN source tree.  The
+``layout`` module allows text to be marked-up with XML or HTML, and then
+styled with CSS.  This module is currently in development and is not yet
+supported.
+
+The `GlyphString` class gives lower-level access to some of the features
+provided by `Text`, which could be useful in implementing your own layout
+engine.
+
+OpenGL font considerations
+--------------------------
+
+Text in pyglet is drawn using textured quads.  Each font maintains a set of
+one or more textures, into which glyphs are uploaded as they are needed.  For
+most applications this detail is transparent and unimportant, however some of
+the details of these glyph textures are described below for advanced users.
+
+Context affinity
+^^^^^^^^^^^^^^^^
+
+When a font is loaded, it immediately creates a texture in the current
+context's object space.  Subsequent textures may need to be created if there
+is not enough room on the first texture for all the glyphs.  This is done when
+the glyph is first requested; for example, when drawing or measuring a `Text`.  
+
+pyglet always assumes that the object space that was active when the font was
+loaded is the active one when any texture operations are performed.  Normally
+this assumption is valid, as pyglet shares object spaces between all contexts
+by default.  There are a few situations in which this will not be the case,
+though:
+
+* When closing the only window, then creating a new one and reusing the same
+  font.  In this case, the original object space was destroyed with the first
+  window's context, so could not be shared with the second window's context.
+* When explicitly setting the context share during context creation.
+* When multiple display devices are being used which cannot support a shared
+  context object space.
+
+In any of these cases, you will need to reload the font for each object space
+that it's needed in.  pyglet keeps a cache of fonts, but does so
+per-object-space, so it knows when it can reuse an existing font instance or
+if it needs to load it and create new textures.  You will also need to ensure
+that an appropriate context is active when any glyphs may need to be added
+(for example, when reading the `width` or `height` properties of `Text`).
+
+Blend state
+^^^^^^^^^^^
+
+The glyph textures have an internal format of ``GL_ALPHA``, which provides
+a simple way to recolour and blend antialiased text simply by changing the
+vertex colors.  pyglet makes very few assumptions about the OpenGL state, and
+will not alter it besides changing the currently bound texture.
+
+The following blend state is used for drawing font glyphs::
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glEnable(GL_BLEND)
+
+All glyph textures use the ``GL_TEXTURE_2D`` target, so you should ensure that
+a higher priority target such as ``GL_TEXTURE_3D`` is not enabled before
+trying to render text.
+
+For complete control over how text is rendered, use the `Glyph` objects
+returned from `Font.get_glyphs` to construct your own vertex arrays.

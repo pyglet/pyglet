@@ -38,35 +38,27 @@ All function names and constants are identical to the C counterparts.  For
 example, the following program draws a triangle on the screen::
 
     from pyglet.gl import *
-    from pyglet.window import *
+    from pyglet import window
 
     # The OpenGL context is created only when you create a window.  Any calls
     # to OpenGL before a window is created will fail.
-    window = Window(visible=False)
+    win = win.Window(visible=False)
 
-    window.set_visible()
+    # ... perform any OpenGL state initialisation here.
+
+    win.set_visible()
     while not window.has_exit:
-        window.dispatch_events()
+        win.dispatch_events()
 
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
         glBegin(GL_TRIANGLES)
         glVertex2f(0, 0)
-        glVertex2f(window.width, 0)
-        glVertex2f(window.width, window.height)
+        glVertex2f(win.width, 0)
+        glVertex2f(win.width, win.height)
         glEnd()
 
-        window.flip()
-
-You can set the attributes of the OpenGL context when you create the window.
-For example, to ensure there is a stencil buffer::
-
-    window = Window(stencil_size=8)
-
-By default, windows are created with a depth buffer and two colour buffers
-(double-buffered).  See the `pyglet.window` documentation for complete
-reference.  If you are using a double-buffer, remember to call
-``window.flip()`` to swap the buffers after every frame.
+        win.flip()
 
 .. _OpenGL Website: http://www.opengl.org
 .. _OpenGL Programming Guide: http://opengl.org/documentation/red_book/
@@ -85,7 +77,7 @@ the resize event to update this matrix::
         gluPerspective(65, width / float(height), .1, 1000)
         glMatrixMode(GL_MODELVIEW)
 
-    window.push_handlers(on_resize)
+    win.on_resize = on_resize
 
 Error checking
 --------------
@@ -147,13 +139,8 @@ Using multiple windows
 
 pyglet allows you to create and display any number of windows simultaneously.
 Each will be created with its own OpenGL context, however all contexts will
-share the same texture objects, display lists, shader programs, and so on [#]_.
-Each context has its own state and framebuffers.
-
-.. [#] Sometimes objects and lists cannot be shared between contexts; for
-       example, when the contexts are provided by different video devices.
-       This will usually only occur if you explicitly select different screens
-       driven by different devices.
+share the same texture objects, display lists, shader programs, and so on 
+[#objects]_.  Each context has its own state and framebuffers.
 
 There is always an active context (unless there are no windows).  By default,
 the active context belongs to whichever window was displayed last.  This works
@@ -161,8 +148,8 @@ well if there is only ever one window visible at a time.  If there are more,
 you need to explicitly set the active context when you start drawing.  You can
 do this by calling the window's ``switch_to`` method::
 
-    window_1 = Window()
-    window_2 = Window()
+    window_1 = window.Window()
+    window_2 = window.Window()
 
     while running:
         window_1.dispatch_events()
@@ -178,6 +165,11 @@ do this by calling the window's ``switch_to`` method::
         glClear(GL_COLOR_BUFFER_BIT)
         # ...
         window_2.flip()
+
+.. [#objects] Sometimes objects and lists cannot be shared between contexts; for
+              example, when the contexts are provided by different video
+              devices.  This will usually only occur if you explicitly select
+              different screens driven by different devices.
 
 AGL, GLX and WGL
 ----------------
@@ -202,10 +194,10 @@ There are convenience modules for querying the version and extensions of WGL
 and GLX named ``pyglet.gl.wgl_info`` and ``pyglet.gl.glx_info``, respectively.
 AGL does not have such a module, just query the version of OS X instead.
 
-If using GLX extensions, you can import ``pyglet.gl.glxext_abi`` for the
+If using GLX extensions, you can import ``pyglet.gl.glxext_arb`` for the
 registered extensions or ``pyglet.gl.glxext_nv`` for the latest nVidia
 extensions.
 
-Similarly, if using WGL extensions, import ``pyglet.gl.wglext_abi`` or
+Similarly, if using WGL extensions, import ``pyglet.gl.wglext_arb`` or
 ``pyglet.gl.wglext_nv``.
 

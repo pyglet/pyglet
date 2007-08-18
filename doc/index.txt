@@ -1,6 +1,6 @@
 pyglet Documentation Index
 --------------------------
 
-  * `pyglet Programming Guide <programming_guide.html>`_
+  * `pyglet Programming Guide <programming_guide/index.html>`_
   * `API Reference <api/index.html>`_
 

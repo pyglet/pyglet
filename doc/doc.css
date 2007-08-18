@@ -2,6 +2,11 @@
   Start with original docutils stylesheet
   ---------------------------------------------------------------------*/
 
+div.document {
+    margin-left: 60px;
+    margin-right: 60px;
+}
+
 /* used to remove borders from tables and images */
 .borderless, table.borderless td, table.borderless th {
   border: 0 }
@@ -23,7 +28,8 @@ table.borderless td, table.borderless th {
 
 a.toc-backref {
   text-decoration: none ;
-  color: black }
+  color: inherit;
+}
 
 blockquote.epigraph {
   margin: 2em 5em ; }
@@ -129,16 +135,26 @@ div.system-message p.system-message-title {
 div.topic {
   margin: 2em }
 
-h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
-h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
-  margin-top: 0.4em }
+h1, h2, h3, h4, h5, h6 {
+  font-family: Arial, sans-serif;
+  margin-top: 1em;
+}
+
+h1 {
+    font-size: 16pt;
+    color: #ff6161;
+    font-weight: normal;
+}
 
 h1.title {
-  text-align: center;
-  margin-top: 1em;}
-
-h2.subtitle {
-  text-align: center }
+    color: black;
+    font-family: Arial, sans-serif;
+    font-size: 24pt;
+    margin-top: 96px;
+    margin-bottom: 72px;
+    text-align: right;
+    border-bottom: 1px solid black;
+}
 
 hr.docutils {
   width: 75% }
@@ -274,13 +290,29 @@ h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
 ul.auto-toc {
   list-style-type: none }
 
+table.images td {
+    vertical-align: middle;
+    text-align: center;
+    padding: 4px;
+}
+
+table.images th.stub {
+    vertical-align: top;
+    text-align: left;
+    font-weight: normal;
+}
+
+table.images th.head {
+    font-weight: bold;
+}
+
 /*---------------------------------------------------------------------
   Add epydoc's source coloring
   ---------------------------------------------------------------------*/
 pre.py-doctest 
                             { padding: .5em; margin: 1em;
-                              background: #e8f0f8; color: #000000;
-                              border: 1px solid #708890; }
+                              color: #000000;
+                              border-left: 2px solid silver; }
 table pre.py-doctest        { background: #dce4ec;
                               color: #000000; }
 pre.py-src                  { border: 2px solid #000000; 
@@ -316,17 +348,26 @@ div.py-highlight            { border-bottom: 2px solid #000000;
   Page navigation
   ---------------------------------------------------------------------*/
 .navigation {
-    position: fixed;
     overflow: clip;
-    top: 0px;
+    position: absolute;
     left: 0px;
     right: 0px;
-    background: #e8f0f8;
-    border-bottom: 1px solid #708890;
     padding: 2px;
     font-family: sans-serif;
     font-size: 80%;
     text-align: center;
+    border-top: 1px solid silver;
+    border-bottom: 1px solid silver;
+}
+
+.navigation-header {
+    top: 5px;
+    border-bottom: 2px solid silver;
+}
+
+.navigation-footer {
+    margin-top: 72px;
+    border-top: 2px solid silver;
 }
 
 .navigation > .previous {

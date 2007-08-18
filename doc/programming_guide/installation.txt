@@ -1,0 +1,64 @@
+Installation
+============
+
+pyglet does not need to be installed.  Because it uses no external libraries
+or compiled binaries, you can run it in-place.  You can distribute the pyglet
+source code or runtime eggs alongside your application code (see
+`Distribution`).
+
+You might want to experiment with pyglet and run the example programs before
+you install it on your development machine.  To do this, add either the
+extracted pyglet source archive directory or the compressed runtime egg to
+your ``PYTHONPATH``.
+
+On Windows you can specify this from a command line::
+
+    set PYTHONPATH c:\path\to\pyglet-1.0alpha1\;%PYTHONPATH%
+
+On Mac OS X, Linux or on Windows under cygwin using bash::
+
+    set PYTHONPATH /path/to/pyglet-1.0alpha1/:$PYTHONPATH
+    export PYTHONPATH
+
+or, using tcsh or a variant::
+
+    setenv PYTHONPATH /path/to/pyglet-1.0alpha1/:$PYTHONPATH
+
+If you have downloaded a runtime egg instead of the source archive, you would
+specify the filename of the egg in place of ``pyglet-1.0alpha1/``.
+
+.. contents::
+    :local:
+
+Installing using setup.py
+-------------------------
+
+To make pyglet available to all users, or to avoid having to set the
+``PYTHONPATH`` for each session, you can install it into your Python's
+``site-packages`` directory.
+
+From a command prompt on Windows, change into the extracted
+pyglet source archive directory and type::
+
+    python setup.py install
+
+On Mac OS X and Linux you will need to do the above as a priveleged user; for
+example using ``sudo``::
+
+    sudo python setup.py install
+
+Once installed you should be able to ``import pyglet`` from any terminal
+without setting the ``PYTHONPATH``.
+
+Installation from the runtime eggs
+----------------------------------
+
+If you have *setuptools* installed, you can install or upgrade to the latest
+version of pyglet using ``easy_install``::
+
+    easy_install -U pyglet
+
+On Mac OS X and Linux you may need to run the above as a priveleged user; for
+example::
+
+    sudo easy_install -U pyglet

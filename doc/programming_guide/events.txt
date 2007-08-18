@@ -1,0 +1,317 @@
+The pyglet event framework
+==========================
+
+Both the `pyglet.window` and `pyglet.media` modules make use of a consistent
+event pattern, which provides several ways to attach event handlers to
+objects.  You can also reuse this pattern in your own classes easily.
+
+Throughout this documentation, an "event dispatcher" is an object that has
+events it needs to notify other objects about, and an "event handler" is some
+code that can be attached to a dispatcher.
+
+.. contents::
+    :local:
+
+Setting event handlers
+----------------------
+
+An event handler is simply a function with a formal parameter list
+corresponding to the event type.  For example, the `Window.on_resize` event
+has the parameters ``(width, height)``, so an event handler for this event
+could be::
+
+    def on_resize(width, height):
+        pass
+
+The `Window` class subclasses `EventDispatcher`, which enables it to have
+event handlers attached to it.  The simplest way to attach an event handler is
+to set the corresponding attribute on the object::
+
+    from pyglet import window
+
+    win = window.Window()
+
+    def on_resize(width, height):
+        pass
+    win.on_resize = on_resize
+
+Note that you need not even name your function the same as the event.  
+
+While this technique is straight-forward, it requires you to write the name of
+the event three times for the one function, which can get tiresome.  pyglet
+provides a shortcut using the `event` decorator::
+
+    win = window.Window()
+
+    @win.event
+    def on_resize(width, height):
+        pass
+
+You can even give the event handler another name if necessary::
+
+    @win.event('on_resize')
+    def handle_resize_event(width, height):
+        pass
+
+As shown in `Subclassing Window`, you can also attach event handlers by
+subclassing the event dispatcher and adding the event handler as a method::
+
+    class MyWindow(window.Window):
+        def on_resize(self, width, height):
+            pass
+
+In this case you must use the name of the event handler as the method name.
+
+Dispatching events
+------------------
+
+When do event handlers get called?  pyglet is single-threaded, and will only
+call event handlers at predictable points in your code.  Events will queue up
+until a `dispatch_events` function or method is called, at which point the
+appropriate event handlers are called, in the order that the events arrived
+in.
+
+`Window.dispatch_events` is the method which performs this task for a single
+window.  Though the user may resize a window at any time, the `on_resize`
+handler shown above is only notified when you call `dispatch_events`.  This
+leads inevitably to requiring some sort of main event or "run" loop::
+
+    while not win.has_exit:
+        win.dispatch_events()
+
+Note that unlike in other window frameworks, pyglet does not block on
+`dispatch_events` -- if there are no events pending, control is returned to
+your program immediately.
+
+For `pyglet.media`, the single `media.dispatch_events` function handles the
+dispatch of events for all media instances.  An application with two windows
+and any number of sounds and videos would have a run loop similar to::
+    
+    from pyglet import media
+
+    while not (win1.has_exit or win2.has_exit):
+        win1.dispatch_events()
+        win2.dispatch_events()
+        media.dispatch_events()
+
+It is necessary to call `dispatch_events` for every window that you create,
+and for `pyglet.media` if you have any sounds or videos playing, even if you
+have no event handlers.  This is so that behind-the-scenes operating system
+events can be processed (remember, pyglet is single-threaded).
+
+Stacking event handlers
+-----------------------
+
+It is often convenient to attach more than one event handler for an event.
+`EventDispatcher` allows you to stack event handlers upon one another, rather
+than replacing them outright.  The event will propogate from the top of the
+stack to the bottom, but can be stopped by any handler along the way.
+
+To push an event handler onto the stack, use the `push_handlers` method::
+
+    def on_key_press(symbol, modifiers):
+        if symbol == key.SPACE
+            fire_laser()
+
+    win.push_handlers(on_key_press)
+
+One use for pushing handlers instead of setting them is to handle different
+parameterisations of events in different functions.  In the above example, if
+the spacebar is pressed, the laser will be fired.  After the event handler
+returns control is passed to the next handler on the stack, which on a
+`Window` is a function that checks for the ESC key and sets the ``has_exit``
+attribute if it is pressed.  By pushing the event handler instead of setting
+it, the application keeps the default behaviour while adding additional
+functionality.
+
+You can prevent the remaining event handlers in the stack from receiving the
+event by returning ``True``.  The following event handler, when pushed onto
+the window, will prevent the escape key from exiting the program::
+
+    def on_key_press(symbol, modifiers):
+        if symbol == key.ESCAPE:
+            return True
+
+    win.push_handlers(on_key_press)
+
+You can push more than one event handler at a time, which is especially useful
+when coupled with the ``pop_handlers`` function.  In the following example,
+when the game starts some additional event handlers are pushed onto the stack.
+When the game ends (perhaps returning to some menu screen) the handlers are
+popped off in one go::
+
+    def start_game():
+        def on_key_press(symbol, modifiers):
+            print 'Key pressed in game'
+            return True
+
+        def on_mouse_press(x, y, button, modifiers):
+            print 'Mouse button pressed in game'
+            return True
+
+        win.push_handlers(on_key_press, on_mouse_press)
+
+    def end_game():
+        win.pop_handlers()
+
+Note that you do not specify which handlers to pop off the stack -- the entire
+top "level" (consisting of all handlers specified in a single call to
+`push_handlers`) is popped.
+
+You can apply the same pattern in an object-oriented fashion by grouping
+related event handlers in a single class.  In the following example, a
+``GameEventHandler`` class is defined.  An instance of that class can be
+pushed on and popped off of a window::
+
+    class GameEventHandler(object):
+        def on_key_press(self, symbol, modifiers):
+            print 'Key pressed in game'
+            return True
+
+        def on_mouse_press(self, x, y, button, modifiers):
+            print 'Mouse button pressed in game'
+            return True
+
+    game_handlers = GameEventHandler()
+
+    def start_game()
+        win.push_handlers(game_handlers)
+    
+    def stop_game()
+        win.pop_handlers()
+
+Creating your own event dispatcher
+----------------------------------
+
+pyglet provides only the `Window` and `MediaInstance` event dispatchers, but
+exposes a public interface for creating and dispatching your own events.
+
+The steps for creating an event dispatcher are:
+
+1. Subclass `EventDispatcher`
+2. Call the `register_event_type` class method on your subclass for each
+   event your subclass will recognise.
+3. Call `dispatch_event` to create and dispatch an event as needed.
+
+It is not necessary to create a `dispatch_events` method; you may choose to
+dispatch events as soon as they are generated, or dispatch them from a
+separate thread.  If you were to follow the pyglet model you would queue
+events until a `dispatch_events` method is called.
+
+In the following example, a hypothetical GUI widget provides several events::
+
+    from pyglet import event
+
+    class ClankingWidget(event.EventDispatcher):
+        def clank(self):
+            self.dispatch_event('on_clank')
+
+        def click(self, clicks):
+            self.dispatch_event('on_clicked', clicks)
+
+        def on_clank(self):
+            print 'Default clank handler.'
+
+    register_event_type(ClankingWidget, 'on_clank')
+    register_event_type(ClankingWidget, 'on_clicked')
+    
+Event handlers can then be attached as described in the preceding sections::
+
+    widget = ClankingWidget()
+    
+    @widget.event
+    def on_clank():
+        pass
+
+    @widget.event
+    def on_clicked(clicks):
+        pass
+
+    def override_on_clicked(clicks):
+        pass
+    
+    widget.push_handlers(on_clicked=override_on_clicked)
+
+The `EventDispatcher` takes care of propogating the event to all attached
+handlers or ignoring it if there are no handlers for that event.
+
+There is zero instance overhead on objects that have no event handlers
+attached, and only an additional attribute per event (the event stack is
+created only when required).  This makes `EventDispatcher` suitable for use
+even on light-weight objects that may not always have handlers.  For example,
+`MediaInstance` is an `EventDispatcher` even though potentially hundreds of
+these objects may be created and destroyed each second, and most will not need
+an event handler.
+
+Implementing the Observer pattern
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The [Observer design pattern]_, also known as Publisher/Subscriber, is a
+simple way to decouple software components.  It is used extensively in many
+large software projects; for example, Java's AWT and Swing GUI toolkits and the
+Python ``logging`` module; and is fundamental to any Model-View-Controller
+architecture.
+
+`EventDispatcher` can be used to easily add observerable components to your
+application.  The following example recreates the `ClockTimer` example from
+`Design Patterns` (pages 300-301), though without needing the bulky
+``Attach``, ``Detach`` and ``Notify`` methods::
+
+    # The subject
+    class ClockTimer(event.EventDispatcher):
+        def tick(self):
+            self.dispatch_events('on_update')
+    ClockTimer.register_event('on_update')
+
+    # Abstract observer class
+    class Observer(object):
+        def __init__(self, subject):
+            subject.push_handlers(self)
+
+    # Concrete observer
+    class DigitalClock(Observer):
+        def on_update(self):
+            pass
+
+    # Concrete observer
+    class AnalogClock(Observer):
+        def on_update(self):
+            pass
+
+    timer = ClockTimer()
+    digital_clock = DigitalClock(timer)
+    analog_clock = AnalogClock(timer)
+
+The two clock objects will be notified whenever the timer is "ticked", though
+neither the timer nor the clocks needed prior knowledge of the other.  During
+object construction any relationships between subjects and observers can be
+created.
+
+.. [Observer design pattern] Gamma, et al., `Design Patterns`
+                             Addison-Wesley 1994
+
+Documenting events
+^^^^^^^^^^^^^^^^^^
+
+pyglet uses a modified version of `Epydoc`_ to construct its API
+documentation.  One of these modifications is the inclusion of an "Events"
+summary for event dispatchers.  If you plan on releasing your code as a
+library for others to use, you may want to consider using the same tool to
+document code.
+
+The patched version of Epydoc is included in the pyglet repository under
+``trunk/tools/epydoc`` (it is not included in distributions).  To document an
+event, create a method with the event's signature and add a blank ``event``
+field to the docstring::
+
+    class MyDispatcher(object):
+        def on_update():
+            '''The object was updated.
+
+            :event:
+            '''
+
+Note that the event parameters should not include ``self``.  The function will
+appear in the "Events" table and not as a method.
+
+.. _Epydoc: http://epydoc.sourceforge.net/

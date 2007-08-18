@@ -1,0 +1,12 @@
+Distribution
+============
+
+Self-contained executables
+--------------------------
+
+Creating icons
+^^^^^^^^^^^^^^
+
+Mac OS X requires several different icon images combined into a single
+``.icns`` file.  Use *Icon Composer* to create this file (this is installed in
+``/Developer/Applications/Utilities`` with the Developer Tools.
