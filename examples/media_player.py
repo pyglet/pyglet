@@ -213,7 +213,7 @@ class PlayerWindow(window.Window):
         video_width, video_height = self.get_video_size()
         width = max(width, video_width)
         height += video_height
-        self.set_size(width, height)
+        self.set_size(int(width), int(height))
 
     def on_resize(self, width, height):
         '''Position and size video image.'''
