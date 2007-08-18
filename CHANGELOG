@@ -8,13 +8,15 @@ Current
     * Added DPI parameter to font.load()
     * Renamed mouse.MOUSE_*_BUTTON to mouse.LEFT, mouse.MIDDLE and mouse.RIGHT
     * Window.set_size() now raises an exception if the window is fullscreen
+    * Textures are now deleted when discarded, rather than requiring delete()
     * Fixed the calculated width of font.Text instances.
     * Renamed examples/event_test.py to examples/events.py
+    * Added media_player.py and Programming Guide examples.
     * Added tools/gl_info.py and tools/al_info.py into the source dists.
     * Added tests/regression/__init__.py into the source dists
     * OS X: Fixed fullscreen windowing
     * OS X: Fixed dylib loading when DYLD_FALLBACK_LIBRARY_PATH is defined
-    * OS X: Fixed various mouse-visibility and exclusivity problems
+    * OS X: Fixed various mouse-visibility, exclusivity and position problems
     * OS X: Support the menu bar and application quit events
     * Linux: Fixed exclusive mode problems when keyboard focus is lost
     * Linux: Support for bitmap fonts.
