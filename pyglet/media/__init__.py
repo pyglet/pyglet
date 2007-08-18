@@ -867,7 +867,11 @@ else:
     # Currently audio playback is through OpenAL on all platforms; in 
     # the future alternative drivers using ALSA or DirectSound may be
     # implemented.
-    from pyglet.media import openal
+    try:
+        from pyglet.media import openal
+    except ImportError:
+        raise ImportError(
+            'pyglet.media requires OpenAL, see http://www.openal.org/')
     openal.init()
     Player = openal.OpenALPlayer
     ManagedSoundPlayer = openal.OpenALManagedPlayer
