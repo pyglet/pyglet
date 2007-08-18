@@ -48,10 +48,14 @@ def convert_image(uri, input_dir, html_dir):
     if uri.startswith('http:'):
         return uri
 
+    input_file = os.path.join(input_dir, uri)
+    if not os.path.exists(input_file):
+        print 'Not found: %s' % uri
+        return uri
+
     if uri.endswith('.svg'):
         # Convert SVG to PNG using Inkscape
         newuri = '%s.png' % os.path.splitext(os.path.basename(uri))[0]
-        input_file = os.path.join(input_dir, uri)
         output_file = os.path.join(html_dir, newuri)
         #subprocess.call('convert %s %s' % (input_file, output_file),
         #                shell=True)
@@ -61,7 +65,6 @@ def convert_image(uri, input_dir, html_dir):
         return newuri
     elif uri.endswith('.png') or uri.endswith('.jpg'):
         # Copy image to output dir
-        input_file = os.path.join(input_dir, uri)
         output_file = os.path.join(html_dir, uri)
         shutil.copy(input_file, output_file)
         return uri
@@ -82,12 +85,24 @@ class Page(object):
         self.ids = ids
         self.children = []
 
-        # Look for title
-        title_i = document.first_child_matching_class(nodes.Titular)
-        if title_i is not None:
-            self.title = self.document[title_i].astext()
-        else:
-            self.title = self.filename
+        # Look for breadcrumb name (title)
+        self.title = None
+        for field in [n for n in document.traverse() \
+                        if isinstance(n, nodes.field)]:
+            i = field.first_child_matching_class(nodes.field_name)
+            if field[i].astext() == 'breadcrumb':
+                j = field.first_child_matching_class(nodes.field_body)
+                self.title = field[j].astext()
+                field.parent.remove(field)
+
+        # No breadcrumb field, use title
+        if self.title is None:
+            title_i = document.first_child_matching_class(nodes.Titular)
+            if title_i is not None:
+                self.title = self.document[title_i].astext()
+            else:
+                self.title = self.filename
+        document['title'] = self.title
  
     def split(self, depth):
         # Remove sections that are children of document and create
@@ -159,11 +174,13 @@ class Page(object):
             inline += nodes.Text(shorten(self.title))
             paragraph += inline
 
-        # Header
-        self.document.insert(0, navigation)
+        header = navigation.deepcopy()
+        header['classes'] += ['navigation-header']
+        self.document.insert(0, header)
 
-        # Footer
-        #self.document += navigation.deepcopy()
+        footer = navigation.deepcopy()
+        footer['classes'] += ['navigation-footer']
+        self.document += footer
 
     def create_breadcrumbs(self):
         if self.parent:
@@ -206,7 +223,7 @@ def gendoc_html(input_file, html_dir, api_objects, options):
     titles = {}
 
     # XXX Should calculate how apidoc_dir is relative to html_dir...
-    apidoc_dir_rel = 'api' 
+    apidoc_dir_rel = '../api' 
 
     # Read root doctree
     doctree = publish_doctree(open(input_file).read(), source_path=input_file)

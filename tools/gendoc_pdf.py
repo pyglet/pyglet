@@ -115,6 +115,24 @@ def rest2docbook(rest_filename, docbook_filename):
         if child.nodeName == 'itemizedlist':
             section.parentNode.removeChild(section)
 
+    # Pull everything before first chapter into a preface
+    preface_nodes = []
+    preface = doc.createElement('preface')
+    preface_title = doc.createElement('title')
+    preface_title.appendChild(doc.createTextNode('Welcome'))
+    preface.appendChild(preface_title)
+    for child in doc.documentElement.childNodes:
+        if child.nodeType == child.ELEMENT_NODE:
+            if child.nodeName == 'chapter':
+                for node in preface_nodes:
+                    doc.documentElement.removeChild(node)
+                for node in preface_nodes:
+                    preface.appendChild(node)
+                doc.documentElement.insertBefore(preface, child)
+                break
+            elif child.nodeName != 'bookinfo':
+                preface_nodes.append(child)
+
     # Scale screenshots of windows down (programming guide hack to fit in
     # table)
     for imagedata in elements(doc, 'imagedata'):
