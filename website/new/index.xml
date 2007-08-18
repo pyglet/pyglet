@@ -19,10 +19,9 @@
 
     <ul>
       <li><strong>No external dependencies or installation
-      requirements.</strong>  Users of
-      your application need only install Python to experience a first-class
-      application featuring 3D graphics, sound and video.  pyglet is written
-      in pure Python, so no dangerous binaries are required.</li>
+      requirements.</strong>  For most application and game requirements,
+      pyglet needs nothing else besides Python, simplifying distribution
+      and installation.</li>
 
       <li><strong>Take advantage of multiple windows and multi-monitor
       desktops.</strong>  pyglet allows you to use as many windows as you
@@ -30,10 +29,9 @@
       fullscreen games.</li>
 
       <li><strong>Load images, sound, music and video in almost any
-      format.</strong> pyglet can use any installed codecs to read media
-      files.  On Windows, Linux and Mac OS X this means you get access to
-      PNG, JPEG, MP3, MPEG-1 and many other file types even with a clean
-      operating system install.</li>
+      format.</strong>  pyglet can optionally use AVbin to play back audio
+      formats such as MP3, OGG/Vorbis and WMA, and video formats such as DivX,
+      MPEG-2, H.264, WMV and Xvid.</li>
     </ul>
   </p>
 

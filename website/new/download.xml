@@ -1,21 +1,22 @@
 <div>
   <p>
-    The current version of pyglet is <strong>1.0 alpha 1</strong>.
+    The current version of pyglet is <strong>1.0 alpha 2</strong>.
   </p>
 
+<!--
   <h2>runtime eggs</h2>
   <p>
     The runtime eggs can be used with any setuptools-enabled application.
   </p>
   <ul>
     <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.0alpha1-py2.4.egg">pyglet-1.0alpha1-py2.4.egg</a>:
+    href="http://pyglet.googlecode.com/files/pyglet-1.0alpha2-py2.4.egg">pyglet-1.0alpha2-py2.4.egg</a>:
     Runtime for Python 2.4</li>
     <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.0alpha1-py2.5.egg">pyglet-1.0alpha1-py2.5.egg</a>:
+    href="http://pyglet.googlecode.com/files/pyglet-1.0alpha2-py2.5.egg">pyglet-1.0alpha2-py2.5.egg</a>:
     Runtime for Python 2.5</li>
   </ul>
-
+-->
   <h2>platform distributions</h2>
   <p>
     Choose the pyglet distribution corresponding to your platform, or select
@@ -23,10 +24,10 @@
     file to install pyglet.
   </p>
   <ul>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0alpha1.msi">pyglet-1.0alpha1.msi</a>: Windows
-    installer</li>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0alpha1.dmg">pyglet-1.0alpha1.dmg</a>: Mac OS X
-    disk image</li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0alpha2.msi">pyglet-1.0alpha2.msi</a>: Windows
+    installer, includes AVbin-2</li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0alpha2.dmg">pyglet-1.0alpha2.dmg</a>: Mac OS X
+    disk image, includes AVbin-2</li>
   </ul>
 
   <h2>documentation</h2>
@@ -35,7 +36,7 @@
     the above platform distributions.
   </p>
   <ul>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0alpha1-docs.zip">pyglet-1.0alpha1-docs.zip</a></li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0alpha2-docs.zip">pyglet-1.0alpha2-docs.zip</a></li>
   </ul>
 
   <h2>source distributions</h2>
@@ -46,9 +47,13 @@
   <p class="console">
     python setup.py install
   </p>
+  <p>
+    To play compressed audio and video files, you will also need <a
+    href="http://code.google.com/p/avbin">AVbin</a>.
+  </p>
   <ul>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0alpha1.tar.gz">pyglet-1.0alpha1.tar.gz</a></li>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0alpha1.zip">pyglet-1.0alpha1.zip</a></li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0alpha2.tar.gz">pyglet-1.0alpha2.tar.gz</a></li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0alpha2.zip">pyglet-1.0alpha2.zip</a></li>
   </ul>
 
 </div>
