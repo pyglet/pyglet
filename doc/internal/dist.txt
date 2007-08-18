@@ -2,36 +2,37 @@ Making a pyglet release
 -----------------------
 
 1. svn up
-2. tools/gendoc.sh
-3. Update version string in setup.py and pyglet/__init__.py
+2. Update version string in setup.py, pyglet/__init__.py and CHANGELOG
+3. svn ci
 4. svn copy https://pyglet.googlecode.com/svn/trunk \
             https://pyglet.googlecode.com/svn/tags/pyglet-**VERSION**
-5. Mac OS X release (requires OS X 10.4 and developer tools installed)::
+5. tools/gendoc.sh
+6. Mac OS X release (requires OS X 10.4 and developer tools installed)::
 
         tools/genmpkg/genmpkg.sh
 
    Creates .dmg in dist/
 
-6. Windows release (requires WIX 3.0 UNSTABLE -- currently at 3.0.3022.0.  WIX
+7. Windows release (requires WIX 3.0 UNSTABLE -- currently at 3.0.3022.0.  WIX
    bin/ must be in PATH)::
 
         python tools/genmsi/genmsi.py
   
    Creates .msi in dist/
 
-7. Source, egg and doc releases:
+8. Source, egg and doc releases:
 
         tools/gendist.sh
 
    Creates .eggs, .tar.gzs and .zips in dist/
 
-8. Upload files to googlecode::
+9. Upload files to googlecode::
 
         python tools/upload/upload.sh
 
-9. Copy URLs reported from upload into website/download.xml
-10. Sync website with pyglet.org.
-11. Tell people!
+10. Copy URLs reported from upload into website/download.xml
+11. Sync website with pyglet.org.
+12. Tell people!
 
 Untested AFAIK:
   * Source distros on any platform

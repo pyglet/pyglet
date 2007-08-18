@@ -16,8 +16,8 @@ recursive-include tests *
 prune tests/regression/images/*
 
 # Docs
-#recursive-include doc/html *
-recursive-include doc/html/api *
+recursive-include doc/html *
+recursive-include doc/pdf *
 
 prune **/.svn
 recursive-exclude * *.pyc 

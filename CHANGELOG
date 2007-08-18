@@ -1,4 +1,4 @@
-Current
+1.0alpha2
 
     * Complete change in interface and implementation of pyglet.media
     * Window events are now only dispatched from the dispatch_events()

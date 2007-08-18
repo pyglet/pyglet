@@ -55,7 +55,7 @@ import sys
 #:    >>> parse_version(pyglet.version) >= parse_version('1.0')
 #:    False
 #:
-version = '1.0alpha1'
+version = '1.0alpha2'
 
 def _require_ctypes_version(version):
     # Check ctypes version
