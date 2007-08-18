@@ -1,8 +1,8 @@
 <news>
   <item date="18-August-2007" author="Alex"
         title="pyglet 1.0 alpha 2 released">
-    This alpha release fixes many bugs, a new audio and video implementation,
-    and the introduction of the pyglet Programming Guide.  See the <a
+    This alpha release fixes many bugs, includes a new audio and video
+    implementation, and introduces the pyglet Programming Guide.  See the <a
     href="download.html">downloads</a> page to grab your copy.
   </item>
   <item date="9-July-2007" author="Alex"
