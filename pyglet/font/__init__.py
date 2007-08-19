@@ -574,6 +574,6 @@ def add_directory(dir):
     '''
     import os
     for file in os.listdir(dir):
-        if file[:-4].lower() == '.ttf':
-            add_file(file)
+        if file[-4:].lower() == '.ttf':
+            add_file(os.path.join(dir, file))
 

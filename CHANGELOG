@@ -1,3 +1,6 @@
+Current
+    * Fix font.add_directory()
+
 1.0alpha2
 
     * Complete change in interface and implementation of pyglet.media
