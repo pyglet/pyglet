@@ -7,7 +7,7 @@ from pyglet.gl import *
 from pyglet import window
 from pyglet import clock
 
-def setup():
+def setup(w, h):
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     gluPerspective(60., 1., 1., 100.)
@@ -29,12 +29,12 @@ def draw():
     glEnd()
 
 w1 = window.Window(200, 200, caption='First window')
+w1.on_resize = setup
 w1.switch_to()
-setup()
 
 w2 = window.Window(300, 300, caption='Second window')
+w2.on_resize = setup
 w2.switch_to()
-setup()
 
 r = 0
 clock.set_fps_limit(30)
