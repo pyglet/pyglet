@@ -203,7 +203,7 @@ image::
     image_part = kitten.get_region(x=10, y=10, width=100, height=100)
 
 This returns an image with dimensions 100x100.  The region extracted from
-`image` is aligned such that the bottom-left corner of the rectangle is 10
+`kitten` is aligned such that the bottom-left corner of the rectangle is 10
 pixels from the left and 10 pixels from the bottom of the image.
 
 Image regions can be used as if they were complete images.  Note that changes
@@ -270,7 +270,7 @@ There is no penalty for accessing one of these properties if object is already
 of the requested class.  The following table shows how concrete classes are
 converted into other classes via property access.
 
-    .. list-table:
+    .. list-table::
         :header-rows: 1
         :stub-columns: 1
 
@@ -392,14 +392,14 @@ examined in order:
 2. Is there an extension present that handles this pixel format?
 3. Can the data be transformed with a single regular expression?
 4. If none of the above are possible, the image will be split into separate
-   lines and a regular expression replacement done on each; then the lines will
-   be joined together again.
+   scanlines and a regular expression replacement done on each; then the lines
+   will be joined together again.
 
 The following table shows which image formats can be used directly with steps
 1 and 2 above, as long as the image rows are tightly packed (that is, the
 pitch is equal to the width times the number of components).
 
-    .. list-table:
+    .. list-table::
         :header-rows: 1
 
         * - Format
@@ -509,7 +509,8 @@ region::
 The `Texture.blit` method does this.
 
 Use the ``Texture.create_for_size`` method to create a texture with
-non-power-2 dimensions using the ``GL_texture_rectangle_ARB`` extension.
+non-power-2 dimensions using the ``GL_texture_rectangle_ARB`` extension (the
+`media` package does this for video textures where possible).
 
 Texture internal format
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -518,7 +519,7 @@ pyglet automatically selects an internal format for the texture based on the
 source image's `format` attribute.  The following table describes how it is
 selected.
 
-    .. list-table:
+    .. list-table::
         :header-rows: 1
         
         * - Format
@@ -662,7 +663,7 @@ You cannot create the buffer images directly; instead you must obtain
 instances via the `BufferManager`.  Use `get_buffer_manager` to
 get this singleton::
 
-    buffers = image.get_buffer_image_manager()
+    buffers = image.get_buffer_manager()
 
 Only the back-left color buffer can be obtained (i.e., the front buffer is
 inaccessible, and stereo contexts are not supported by the buffer manager)::
