@@ -530,7 +530,7 @@ class GUIEventDispatcher(EventDispatcher):
         if not element.is_enabled:
             return EVENT_UNHANDLED
 
-        handled =  self.dispatch_event(element, 'on_mouse_release', x, y,
+        handled = self.dispatch_event(element, 'on_mouse_release', x, y,
             button, modifiers)
         if handled == EVENT_HANDLED:
             return EVENT_HANDLED

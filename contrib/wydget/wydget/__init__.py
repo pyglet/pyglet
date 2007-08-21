@@ -149,7 +149,7 @@ class GUI(event.GUIEventDispatcher):
 
         Prune the tree at "exclude" if provided.
         '''
-        if self._rects is not None and exclude is not None:
+        if self._rects is not None and exclude is None:
             return self._rects
 
         rects = []
@@ -158,7 +158,7 @@ class GUI(event.GUIEventDispatcher):
             if element is exclude: continue
             rects.extend(element.getRects(clip, exclude))
         rects.sort(lambda a,b: cmp(a[1][2], b[1][2]))
-        if exclude is not None:
+        if exclude is None:
             self._rects = rects
         return rects
 
