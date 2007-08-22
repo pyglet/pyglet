@@ -67,7 +67,7 @@ class Layout(object):
         for child in element.getchildren():
             child = loadxml.getConstructor(child.tag)(child, layout.parent)
             layout.add(child)
-        layout.layout()
+        layout()
 
         return layout
 

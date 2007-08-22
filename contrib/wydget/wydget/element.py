@@ -96,8 +96,11 @@ class Element(object):
 
         ir = parent.inner_rect
         self._x = util.parse_value(x, ir.width)
+        self.x_spec = x
         self._y = util.parse_value(y, ir.height)
+        self.y_spec = y
         self._z = util.parse_value(z)
+        self.z_spec = z
 
         # save off the width / height specs for later recalculation
         self._width = util.parse_value(width, ir.width)
@@ -442,7 +445,38 @@ class Element(object):
     def parentDimensionsChanged(self):
         '''Indicate to the child that the parent rect has changed and it
         may have the opportunity to resize.'''
-        pass
+        ir = self.parent.inner_rect
+
+        # recalulate position
+        new_x = util.parse_value(self.x_spec, ir.width)
+        if new_x != self._x: self.x = new_x
+        new_y = util.parse_value(self.y_spec, ir.height)
+        if new_y != self._y: self.y = new_y
+        new_z = util.parse_value(self.z_spec)
+        if new_z != self._z: self.z = new_z
+
+        # recalulate width / height
+        change = False
+        if self.width_spec is not None:
+            new_width = util.parse_value(self.width_spec, ir.width)
+        else:
+            new_width = ir.width
+        if new_width != self._width:
+            self.width = new_width
+            change = True
+        if self.height_spec is not None:
+            new_height = util.parse_value(self.height_spec, ir.height)
+        else:
+            new_height = ir.height
+        if new_height != self._height:
+            self.height = new_height
+            change = True
+
+        if change:
+            for child in self.children:
+                child.parentDimensionsChanged()
+
+        return change
 
     def setModal(self, element=None):
         '''Have this element capture all user input.

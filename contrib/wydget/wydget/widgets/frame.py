@@ -24,13 +24,24 @@ class Frame(element.Element):
         else:
             self.layout = layouts.Layout(self)
 
+    def parentDimensionsChanged(self):
+        super(Frame, self).parentDimensionsChanged()
+        if self.scrollable:
+            self.contents.layout()
+        else:
+            self.layout()
+
     def layoutDimensionsChanged(self, layout):
         # If our width / height weren't specified then adjust size to fit
         # contents.
         if self.width_spec is None:
             self.width = layout.width + self.padding*2
+            if self.v_slider:
+                self.width += self.v_slider.width
         if self.height_spec is None:
             self.height = layout.height + self.padding*2
+            if self.h_slider:
+                self.height += self.h_slider.height
 
     @classmethod
     def fromXML(cls, element, parent):
@@ -94,6 +105,27 @@ class ContainerFrame(element.Element):
         self.parent.layoutDimensionsChanged(self)
         self.checkForScrollbars()
 
+    def parentDimensionsChanged(self):
+        '''We're a scrolled frame - don't change position.
+        '''
+        ir = self.parent.inner_rect
+        # recalulate width / height
+        change = False
+        if self.width_spec is not None:
+            new_width = util.parse_value(self.width_spec, ir.width)
+            if new_width != self._width:
+                self.width = new_width
+                change = True
+        if self.height_spec is not None:
+            new_height = util.parse_value(self.height_spec, ir.height)
+            if new_height != self._height:
+                self.height = new_height
+                change = True
+
+        if change:
+            for child in self.children:
+                child.parentDimensionsChanged()
+
     def checkForScrollbars(self):
         # XXX perhaps this should be on the parent
         h = self.height
@@ -107,65 +139,69 @@ class ContainerFrame(element.Element):
 
         self.y = vc_height - self.height
 
-        yoffset = 0
+        change = False          # slider added or removed
+
+        # add a vertical slider?
         if h > vc_height:
             if p.v_slider is not None:
                 p.v_slider.delete()
             r = h - vc_height
             vc_width -= VerticalSlider.slider_size
             if w > vc_width:
-                yoffset = HorizontalSlider.slider_size
-                h = vc_height - yoffset
-                r += yoffset
+                y = HorizontalSlider.slider_size
+                h = vc_height - y
+                r += y
             else:
+                y = 0
                 h = vc_height
-            p.v_slider = VerticalSlider(p, 0, r, r, x=vc_width, y=yoffset,
+            p.v_slider = VerticalSlider(p, 0, r, r, x=vc_width, y=y,
                 height=h, step=16, classes=('-frame-vertical-slider',))
-        else:
-            if p.v_slider is not None:
-                p.v_slider.delete()
-                p.v_slider = None
+            change = True
+        elif p.v_slider is not None:
+            p.v_slider.delete()
+            p.v_slider = None
+            change = True
 
+        # add a horizontal slider?
         if w > vc_width:
             if p.h_slider is not None:
                 p.h_slider.delete()
             r = w - vc_width
-            yoffset = HorizontalSlider.slider_size
-            vc_height -= yoffset
             p.h_slider = HorizontalSlider(p, 0, r, 0, width=vc_width,
                 step=16, classes=('-frame-horizontal-slider',))
+            change = True
         elif p.h_slider is not None:
             p.h_slider.delete()
             p.h_slider = None
+            change = True
 
-        self.setViewClip((0, -self.y + yoffset, vc_width, vc_height))
+        self.updateViewClip()
+
+        if change:
+            self.parentDimensionsChanged()
+
+    def updateViewClip(self):
+        p = self.parent
+        pr = p.inner_rect
+        vc_width, vc_height = pr.width, pr.height
+        h_height = 0
+        if p.v_slider:
+            vc_width -= p.v_slider.width
+        if p.h_slider:
+            h_height = p.h_slider.height
+            vc_height -= h_height
+        self.setViewClip((-self.x, -self.y + h_height, vc_width, vc_height))
 
     def setY(self, value):
         self.y = -value
         p = self.parent
-        pr = p.inner_rect
-        vc_width, vc_height = pr.width, pr.height
-        h_height = 0
-        if p.v_slider:
-            vc_width -= p.v_slider.width
         if p.h_slider:
-            h_height = p.h_slider.height
-            vc_height -= h_height
-            self.y += h_height
-        self.setViewClip((-self.x, -self.y + h_height, vc_width, vc_height))
+            self.y += p.h_slider.height
+        self.updateViewClip()
 
     def setX(self, value):
         self.x = -value
-        p = self.parent
-        pr = p.inner_rect
-        vc_width, vc_height = pr.width, pr.height
-        h_height = 0
-        if p.v_slider:
-            vc_width -= p.v_slider.width
-        if p.h_slider:
-            h_height = p.h_slider.height
-            vc_height -= h_height
-        self.setViewClip((-self.x, -self.y + h_height, vc_width, vc_height))
+        self.updateViewClip()
 
 
 @event.default('.-frame-vertical-slider')

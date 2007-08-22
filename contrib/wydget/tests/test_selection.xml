@@ -1,7 +1,6 @@
 <frame width="100%" height="100%" is_transparent="true">
 
  <vertical padding="10" halign="center">
-
   <selection width="25%" padding="4" is_vertical="false">
    <option padding="4">padding=4</option>
    <option padding="2">padding=2</option>

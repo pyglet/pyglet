@@ -8,6 +8,13 @@ from wydget.widgets.label import Label
 class SliderCommon(element.Element):
     slider_size = 16
 
+    def parentDimensionsChanged(self):
+        # re-size the slider bar and its bits
+        change = super(SliderCommon, self).parentDimensionsChanged()
+        if change:
+            self.handleSizing()
+        return change
+
     def get_value(self):
         return self._value
     def set_value(self, value, event=False, position_bar=True):
@@ -44,18 +51,32 @@ class VerticalSlider(SliderCommon):
         self._value = util.parse_value(value, 0)
         self.step = util.parse_value(step, 0)
         self.show_value = show_value
+        self.bar_spec = bar_size
+        self.bar_color = util.parse_color(bar_color)
+        self.bar_text_color = util.parse_color(bar_text_color)
 
         super(VerticalSlider, self).__init__(parent, x, y, z, width, height,
             bgcolor=bgcolor, **kw)
 
-        assert self.height > 32, 'Slider too small (%spx)'%self.height
+        self.handleSizing()
+
+    def handleSizing(self):
+        try:
+            # if the bar size spec is a straight integer, use it
+            min_size = int(self.bar_spec) + self.slider_size
+        except:
+            min_size = self.slider_size * 2
+        if self.height < min_size:
+            self.height = min_size
+
+        self.clear()
 
         # assume buttons are same height
         bh = ArrowButtonUp.get_arrow().height
 
         # only have buttons if there's enough room (two buttons plus
         # scrolling room)
-        self.have_buttons = self.height > (bh * 2 + 32)
+        self.have_buttons = self.height > (bh * 2 + min_size)
         if self.have_buttons:
             # do this after the call to super to allow it to set the parent etc.
             ArrowButtonDown(self, classes=('-repeater-button-min',))
@@ -64,15 +85,15 @@ class VerticalSlider(SliderCommon):
 
         # add slider bar
         i_height = self.inner_rect.height
-        self.bar_size = util.parse_value(bar_size, i_height)
+        self.bar_size = util.parse_value(self.bar_spec, i_height)
         if self.bar_size is None:
             self.bar_size = int(max(self.slider_size, i_height /
                 (self.range+1)))
 
-        s = show_value and str(self._value) or ' '
+        s = self.show_value and str(self._value) or ' '
         # note: dimensions are funny because the bar is rotated 90 degrees
         self.bar = SliderBar(self, 'y', s, self.width, self.bar_size,
-            bgcolor=bar_color, color=bar_text_color)
+            bgcolor=self.bar_color, color=self.bar_text_color)
         self.positionBar()
 
     def get_inner_rect(self):
@@ -128,18 +149,32 @@ class HorizontalSlider(SliderCommon):
         self._value = util.parse_value(value, 0)
         self.step = util.parse_value(step, 0)
         self.show_value = show_value
+        self.bar_spec = bar_size
+        self.bar_color = util.parse_color(bar_color)
+        self.bar_text_color = util.parse_color(bar_text_color)
 
         super(HorizontalSlider, self).__init__(parent, x, y, z, width, height,
             bgcolor=bgcolor, **kw)
 
-        assert self.width > 32, 'Slider too small (%spx)'%self.width
+        self.handleSizing()
+
+    def handleSizing(self):
+        try:
+            # if the bar size spec is a straight integer, use it
+            min_size = int(self.bar_spec) + self.slider_size
+        except:
+            min_size = self.slider_size * 2
+        if self.width < min_size:
+            self.width = min_size
+
+        self.clear()
 
         # assume buttons are same width
         bw = ArrowButtonLeft.get_arrow().width
 
         # only have buttons if there's enough room (two buttons plus
         # scrolling room)
-        self.have_buttons = self.width > (bw * 2 + 32)
+        self.have_buttons = self.width > (bw * 2 + min_size)
         if self.have_buttons:
             ArrowButtonLeft(self, classes=('-repeater-button-min',)),
             ArrowButtonRight(self, x=self.width-bw,
@@ -147,13 +182,13 @@ class HorizontalSlider(SliderCommon):
 
         # slider bar size
         i_width = self.inner_rect.width
-        self.bar_size = util.parse_value(bar_size, i_width)
+        self.bar_size = util.parse_value(self.bar_spec, i_width)
         if self.bar_size is None:
             self.bar_size = int(max(self.slider_size, i_width / (self.range+1)))
 
-        s = show_value and str(self._value) or ' '
+        s = self.show_value and str(self._value) or ' '
         self.bar = SliderBar(self, 'x', s, self.bar_size,
-            self.height, bgcolor=bar_color, color=bar_text_color)
+            self.height, bgcolor=self.bar_color, color=self.bar_text_color)
 
         self.positionBar()
 
@@ -204,18 +239,24 @@ def on_mouse_drag(widget, x, y, dx, dy, buttons, modifiers):
         x = s.calculateRelativeCoords(x, y)[0]
         w = s.inner_rect.width - widget.width
         xoff = s.inner_rect.x
-        if x < xoff or x > (xoff + s.inner_rect.width):
-            return event.EVENT_HANDLED
-        widget.x = max(xoff, min(w + xoff, widget.x + dx))
+        if x < xoff:
+            widget.x = xoff
+        elif x > (xoff + s.inner_rect.width):
+            widget.x = w + xoff
+        else:
+            widget.x = max(xoff, min(w + xoff, widget.x + dx))
         value = (widget.x - xoff) / float(w)
     else:
         s = widget.getParent('vslider')
         y = s.calculateRelativeCoords(x, y)[1]
         h = s.inner_rect.height - widget.height
         yoff = s.inner_rect.y
-        if y < yoff or y > (yoff + s.inner_rect.height):
-            return event.EVENT_HANDLED
-        widget.y = max(yoff, min(h + yoff, widget.y + dy))
+        if y < yoff:
+            widget.y = yoff
+        elif y > (yoff + s.inner_rect.height):
+            widget.y = h + yoff
+        else:
+            widget.y = max(yoff, min(h + yoff, widget.y + dy))
         value = (widget.y - yoff) / float(h)
 
     s.set_value(value * s.range + s.minimum, position_bar=False, event=True)

@@ -1,6 +1,6 @@
 <frame width="100%" height="100%" is_transparent="true">
  <horizontal halign="center" valign="center" padding="10">
-  <frame is_transparent="true" width="400">
+  <frame is_transparent="true" width="50%">
    <vertical padding="10" halign="center">
     <hslider minimum="0" maximum="100" value="0"
         bar_size="64" step="5" show_value="true" />
@@ -13,7 +13,7 @@
    </vertical>
   </frame>
 
-  <frame is_transparent="true" height="400">
+  <frame is_transparent="true" height="50%">
    <horizontal padding="10">
     <vslider minimum="0" maximum="100" value="0"
         bar_size="64" step="5" show_value="true" />

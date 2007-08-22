@@ -7,8 +7,8 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: //depot/task/DEV-99/client/tests.py#13 $'
 
 import sys
-sys.path.append('../../')
-sys.path.append('../layout/')
+sys.path.insert(0, '../../')
+sys.path.insert(0, '../layout/')
 
 from pyglet.window import *
 from pyglet import clock
@@ -36,7 +36,7 @@ else:
     print 'Close the window to exit the tests.'
     print '-'*75
 
-window = Window(width=800, height=600, vsync=False)
+window = Window(width=800, height=600, vsync=False, resizable=True)
 
 #clock.set_fps_limit(10)
 fps = clock.ClockDisplay(color=(1, .5, .5, 1))
@@ -177,8 +177,16 @@ def run(xml_file):
             window.close()
             sys.exit()
 
+    if '--dump' in sys.argv:
+        print '-'*75
+        gui.dump()
+        print '-'*75
+
+
+    # reset everything
     window.pop_handlers()
     gui.delete()
+    window.set_size(800, 600)
 
     return window.has_exit
 
@@ -187,6 +195,7 @@ if len(sys.argv) > 1:
 else:
     import os
     for file in os.listdir('tests'):
+        if not file.endswith('.xml'): continue
         if not os.path.isfile(os.path.join('tests', file)): continue
         print 'Running', file
         if run(os.path.join('tests', file)): break

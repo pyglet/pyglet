@@ -80,6 +80,16 @@ class Image(ImageCommon):
 
         self.setImage(image)
 
+    def parentDimensionsChanged(self):
+        '''Re-layout text if my dimensions changed.
+        '''
+        change = super(Image, self).parentDimensionsChanged()
+        if change:
+            # override default behaviour and reset width/height if changed
+            # and there was no spec
+            self.updateSize()
+        return change
+
 class LabelCommon(ImageCommon):
     @classmethod
     def fromXML(cls, element, parent):
@@ -111,11 +121,6 @@ class Label(LabelCommon):
         super(Label, self).__init__(parent, width=width, height=height, **kw)
 
         # recalculate the width and height based on rotation
-        #ir = parent.inner_rect
-        #if self.rotate in (90, 270):
-            #self._width = util.parse_value(width, ir.height)
-            #self._height = util.parse_value(height, ir.width)
-            #print 'ROTATE'
         if self.rotate not in (0, 90, 180, 270):
             raise ValueError, 'rotate must be one of 0, 90, 180, 270, '\
                 'not %r'%(self.rotate)
@@ -125,6 +130,14 @@ class Label(LabelCommon):
             self.is_blended = True
 
         self.setText(text)
+
+    def parentDimensionsChanged(self):
+        '''Re-layout text if my dimensions changed.
+        '''
+        change = super(Label, self).parentDimensionsChanged()
+        if change:
+            self.setText(self.text)
+        return change
 
     def setText(self, text):
         self.text = text
@@ -202,28 +215,26 @@ class XHTML(LabelCommon):
         '''Indicate to the child that the parent rect has changed and it
         may have the opportunity to resize.'''
         pw = self.parent.inner_rect.width
-        new_width = util.parse_value(self.width_spec, pw)
-        if self.width != new_width:
-            self.width = new_width
-            self.setText(self.text)
+        w = util.parse_value(self.width_spec, pw)
+        w -= self.padding * 2
+        if w != self.width:
+            # re-layout the XHTML and re-gen the texture
+            self.layout.viewport_width = self.width = w
+            self.layout.constrain_viewport()
+        return w != self.width
 
     _default = []
     def setText(self, text):
         self.text = text
         pw = self.parent.inner_rect.width
         w = util.parse_value(self.width_spec, pw)
-        if w is not None: w -= self.padding * 2
+        w -= self.padding * 2
 
         self.layout = self.getStyle().xhtml('<p>%s</p>'%text, width=w,
             style=self.style)
 
-        # pre-render
-        self.setImage(style.xhtmlAsTexture(self.layout))
-
-'''
-        # don't pre-render
-        if self.width_spec is None:
-            self.width = self.layout.viewport_width
+        # update my dimensions
+        self.width = self.layout.viewport_width
         if self.height_spec is None:
             self.height = self.layout.viewport_height
 
@@ -238,17 +249,15 @@ class XHTML(LabelCommon):
         self.layout.view.draw()
         glPopMatrix()
         glPopAttrib()
-'''
+
 
 # Note with the following that layouts start at y=0 and go negative
-
 @event.default('xhtml')
 def on_mouse_press(widget, x, y, button, modifiers):
     x, y = widget.calculateRelativeCoords(x, y)
     y -= widget.height
     return widget.layout.on_mouse_press(x, y, button, modifiers)
 
-'''
 @event.default('xhtml')
 def on_element_leave(widget, x, y):
     x, y = widget.calculateRelativeCoords(x, y)
@@ -260,4 +269,4 @@ def on_mouse_motion(widget, x, y, button, modifiers):
     x, y = widget.calculateRelativeCoords(x, y)
     y -= widget.height
     return widget.layout.on_mouse_motion(x, y, button, modifiers)
-'''
+

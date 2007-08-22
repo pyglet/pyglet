@@ -1,6 +1,5 @@
 <frame bgcolor="666" height="100%" width="100%">
  <vertical halign="center" padding="1">
-
   <image image="tests/data/ball-small.png" />
 
   <frame is_transparent="true"><horizontal padding="10">

@@ -121,6 +121,7 @@ class DropDownMenu(Frame):
         # set up the popup item
         self.contents = Frame(self, is_visible=False, border="black",
             classes=('-drop-down-menu',))
+        self.contents.layout = layouts.Vertical(self.contents)
 
         # add the menu items and resize the main box if necessary
         width = height = 0
@@ -138,7 +139,7 @@ class DropDownMenu(Frame):
         # fix up contents size
         for i in self.contents.children:
             i.width = width
-        layouts.Vertical(self.contents).layout()
+        self.contents.layout()
         if self.width_spec is None:
             self.width = width + self.padding*2
         if self.height_spec is None:

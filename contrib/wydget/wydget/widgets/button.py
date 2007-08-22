@@ -46,6 +46,14 @@ class Button(ImageCommon):
         else:
             self.text = text
 
+    def parentDimensionsChanged(self):
+        change = super(Button, self).parentDimensionsChanged()
+        if change:
+            # override default behaviour and reset width/height if changed
+            # and there was no spec
+            self.updateSize()
+        return change
+
     def setImage(self, image, attribute='base_image'):
         if isinstance(image, str):
             image = data.load_image(image).texture
@@ -160,15 +168,31 @@ class TextButton(Button):
         # generate images
         self.setText(text)
 
+    def parentDimensionsChanged(self):
+        '''Re-layout text if my dimensions changed.
+        '''
+        # NOTE avoidance of the Button override of this method
+        change = super(Button, self).parentDimensionsChanged()
+        if change:
+            self.setText(self.text)
+        return change
+
     def setText(self, text, additional=('pressed', 'over')):
         self.text = text
 
         self.over_image = None
         self.pressed_image = None
 
-        # XXX restrict text width?
+        # restrict text width?
+        restrict_width = None
+        inner_width = self.inner_rect.width
+        text_width = self.getStyle().getGlyphString(text,
+            size=self.font_size).width
+        if text_width > inner_width:
+            restrict_width = inner_width
+
         label = self.getStyle().text(text, font_size=self.font_size,
-            color=self.color, valign='top')
+            color=self.color, width=restrict_width, valign='top')
         label.width        # force clean
         num_lines = len(label.lines)
 

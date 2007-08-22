@@ -61,7 +61,9 @@ class GUI(event.GUIEventDispatcher):
         # element.Element stuff
         self.x, self.y, self.z = x, y, z
         self.width = width or window.width
+        self.width_spec = width
         self.height = height or window.height
+        self.height_spec = height
         self.children = []
 
         # map Element.id to Element

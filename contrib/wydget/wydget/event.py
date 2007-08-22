@@ -305,6 +305,17 @@ class GUIEventDispatcher(EventDispatcher):
 
 
     # NOW THE EVENT HANDLERS
+    def on_resize(self, w, h):
+        if self.width_spec is None:
+            self.width = w
+        if self.height_spec is None:
+            self.height = h
+        if self.width_spec is None or self.height_spec is None:
+            for child in self.children:
+                child.parentDimensionsChanged()
+        # let the window do its resize handling too
+        return EVENT_UNHANDLED
+
     def on_mouse_motion(self, x, y, dx, dy):
         '''Determine what element(s) the mouse is positioned over and
         generate on_element_enter and on_element_leave events. Additionally
@@ -375,7 +386,8 @@ class GUIEventDispatcher(EventDispatcher):
         '''
         # leave all entered elements
         for e in self.entered_elements:
-            self.dispatch_event(e, 'on_element_leave', x, y)
+            self.dispatch_event(e, 'on_element_leave', x, y,
+                propogate=False)
         self.entered_elements = []
 
         # cancel current drag
