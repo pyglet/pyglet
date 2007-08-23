@@ -1,0 +1,10 @@
+<frame width="100%" height="100%">
+<vertical valign="center" halign="center">
+
+<progress width="100" class="progress-me" />
+
+<progress height="50" width="100%" bgcolor="white" bar_color="black"
+    color="red" class="progress-me" />
+
+</vertical>
+</frame>

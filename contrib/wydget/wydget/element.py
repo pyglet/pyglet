@@ -33,9 +33,9 @@ import inspect
 
 from pyglet.gl import *
 
-import loadxml
-import event
-import util 
+from wydget import loadxml
+from wydget import event
+from wydget import util 
 
 class Element(object):
     '''A GUI element.
@@ -241,7 +241,7 @@ class Element(object):
     def addChild(self, child):
         self.children.append(child)
         child.parent = self
-        self.getGUI().registerID(child)
+        self.getGUI().register(child)
 
     def getParent(self, selector):
         '''Get the first parent selected by the selector.
@@ -505,12 +505,8 @@ class Element(object):
     def getGUI(self):
         return self.parent.getGUI()
 
-    def getByID(self, id):
-        if id == self.id: return self
-        for child in self.children:
-            match = child.getByID(id)
-            if match is not None: return match
-        return None
+    def get(self, spec):
+        return self.getGUI().get(spec)
 
     def calculateAbsoluteCoords(self, x, y):
         x += self._x; y += self._y
@@ -550,6 +546,6 @@ class Element(object):
         if self.is_modal: gui.setModal(None)
         gui.dispatch_event(self, 'on_delete')
         self.parent.children.remove(self)
-        gui.unregisterID(self)
+        gui.unregister(self)
         self.clear()
 

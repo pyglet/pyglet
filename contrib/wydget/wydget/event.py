@@ -352,7 +352,7 @@ class GUIEventDispatcher(EventDispatcher):
         # (only if they still exist)
         all = enter + over
         for e in self.entered_elements:
-            if e not in all and self.hasID(e.id):
+            if e not in all and self.has('#'+e.id):
                 self.dispatch_event(e, 'on_element_leave', x, y,
                     propogate=False)
 

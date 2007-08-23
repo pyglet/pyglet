@@ -80,7 +80,7 @@ def run(xml_file):
     def on_menu(w, x, y, button, modifiers, click_count):
         if not button & mouse.RIGHT:
             return event.EVENT_UNHANDLED
-        gui.getByID('test-menu').expose((x, y))
+        gui.get('#test-menu').expose((x, y))
         return event.EVENT_HANDLED
 
     @gui.select('.hover')
@@ -95,7 +95,7 @@ def run(xml_file):
     @gui.select('.drawer-control')
     def on_click(widget, *args):
         id = widget.id.replace('drawer-control', 'test-drawer')
-        gui.getByID(id).toggle_state()
+        gui.get('#'+id).toggle_state()
         return event.EVENT_HANDLED
 
     @gui.select('#music-test')
@@ -105,7 +105,7 @@ def run(xml_file):
 
         def load_music(file=None):
             if not file: return
-            gui.getByID('music-test').delete()
+            gui.get('#music-test').delete()
             m = widgets.Music(gui, file, id='music-test', playing=True)
             m.gainFocus()
 
@@ -119,7 +119,7 @@ def run(xml_file):
 
         def load_movie(file=None):
             if not file: return
-            gui.getByID('movie-test').delete()
+            gui.get('#movie-test').delete()
             m = widgets.Movie(gui, file, id='movie-test', playing=True)
             # XXX handle scaling!
             m.gainFocus()
@@ -130,8 +130,8 @@ def run(xml_file):
     @gui.select('#movie-test')
     def on_text(widget, text):
         if text == 'f':
-            gui.getByID('movie-test').video.pause()
-            anim.Delayed(gui.getByID('movie-test').video.play, duration=10)
+            gui.get('#movie-test').video.pause()
+            anim.Delayed(gui.get('#movie-test').video.play, duration=10)
             window.set_fullscreen()
         return event.EVENT_HANDLED
 
@@ -152,7 +152,7 @@ def run(xml_file):
         return event.EVENT_HANDLED
 
     try:
-        sample = gui.getByID('xhtml-sample')
+        sample = gui.get('#xhtml-sample')
     except KeyError:
         sample = None
     if sample:
@@ -161,6 +161,23 @@ def run(xml_file):
             print 'CLICK ON', element
             return event.EVENT_HANDLED
         sample.layout.push_handlers(on_mouse_press)
+
+    if gui.has('.progress-me'):
+        class Progress:
+            progress = 0
+            direction = 1
+            def animate(self, dt):
+                self.progress += dt * self.direction
+                if self.progress > 5:
+                    self.progress = 5
+                    self.direction = -1
+                elif self.progress < 0:
+                    self.progress = 0
+                    self.direction = 1
+                for e in gui.get('.progress-me'):
+                    e.value = self.progress / 5.
+        animate_progress = Progress().animate
+        clock.schedule(animate_progress)
 
     my_escape.has_exit = False
     while not (window.has_exit or my_escape.has_exit):
@@ -182,6 +199,8 @@ def run(xml_file):
         gui.dump()
         print '-'*75
 
+    if gui.has('.progress-me'):
+        clock.unschedule(animate_progress)
 
     # reset everything
     window.pop_handlers()

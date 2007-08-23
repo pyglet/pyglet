@@ -35,6 +35,7 @@ dimensions of the window and at z = 0::
 '''
 
 import sys
+import collections
 from xml.etree import ElementTree
 
 from pyglet.gl import *
@@ -66,8 +67,10 @@ class GUI(event.GUIEventDispatcher):
         self.height_spec = height
         self.children = []
 
-        # map Element.id to Element
+        # map Element id, class and name to Element
         self._by_id = {}
+        self._by_class = collections.defaultdict(set)
+        self._by_name = collections.defaultdict(set)
 
         # list Element.ids in the order they're registered for tabbing
         self._focus_order = []
@@ -115,27 +118,49 @@ class GUI(event.GUIEventDispatcher):
             self.clipoard_element = None
 
 
-    # Management by Element ID
-    # XXX remove "ID" from API?
-    def registerID(self, element):
+    # Registration of elements
+    # XXX I suspect that this is duplicating functionality in layout
+    def register(self, element):
+        '''Register the element with the gui.
+
+        IDs must be unique.
+        '''
         if element.id in self._by_id:
             raise KeyError, 'ID %r already exists as %r (trying to add %r)'%(
                 element.id, self._by_id[element.id], element)
         self._by_id[element.id] = element
+        self._by_name[element.name].add(element.id)
+        for klass in element.classes:
+            self._by_class[klass].add(element.id)
         if element.is_focusable:
             self._focus_order.append(element.id)
         self.setDirty()
-    def unregisterID(self, element):
+
+    def unregister(self, element):
         del self._by_id[element.id]
+        self._by_name[element.name].remove(element.id)
+        for klass in element.classes:
+            self._by_class[klass].remove(element.id)
         if self.focused_element is element:
             self.focused_element = None
         if element.is_focusable:
             self._focus_order.remove(element.id)
         self.setDirty()
-    def hasID(self, id):
-        return id in self._by_id
-    def getByID(self, id):
-        return self._by_id[id]
+
+    def has(self, spec):
+        if spec[0] == '#':
+            return spec[1:] in self._by_id
+        elif spec[0] == '.':
+            return spec[1:] in self._by_class
+        else:
+            return spec in self._by_name
+    def get(self, spec):
+        if spec[0] == '#':
+            return self._by_id[spec[1:]]
+        elif spec[0] == '.':
+            return (self._by_id[id] for id in self._by_class[spec[1:]])
+        else:
+            return (self._by_id[id] for id in self._by_name[spec])
 
 
     # rendering / hit detection
@@ -252,7 +277,7 @@ class GUI(event.GUIEventDispatcher):
 
     def addChild(self, child):
         self.children.append(child)
-        self.registerID(child)
+        self.register(child)
 
     def delete(self):
         for child in self.children: child.delete()
