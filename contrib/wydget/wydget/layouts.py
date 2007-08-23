@@ -44,11 +44,13 @@ class Layout(object):
         pass
 
     def get_height(self):
+        if not self.parent.children: return 0
         return max(c.y + c.height for c in self.parent.children
             if not self.only_visible or c.is_visible)
     height = property(get_height)
 
     def get_width(self):
+        if not self.parent.children: return 0
         return max(c.x + c.width for c in self.parent.children
             if not self.only_visible or c.is_visible)
     width = property(get_width)
@@ -441,20 +443,19 @@ class Columns(Layout):
 class Form(Layout):
     name = 'form'
 
-    def __init__(self, parent, valign=TOP, label_width=None, padding=4,
+    def __init__(self, parent, valign=TOP, label_width='25%', padding=4,
             **kw):
         self.valign = valign
-        if label_width is None:
-            label_width = parent.width * .25
-        self.label_width = label_width
+        self.label_width = util.parse_value(label_width,
+            parent.inner_rect.width)
         self.padding = padding
-        pw = parent.inner_rect.width
-        self.element_width = pw - (self.label_width + self.padding)
         self.elements = []
         super(Form, self).__init__(parent, **kw)
 
     def get_width(self):
-        return self.parent.width
+        l = [c.width + c._label.width for c in self.elements
+            if not self.only_visible or c.is_visible]
+        return max(l) + self.padding
     width = property(get_width)
 
     def get_height(self):
@@ -463,11 +464,12 @@ class Form(Layout):
         return sum(l) + self.padding * (len(l)-1)
     height = property(get_height)
 
-    def addElement(self, label, element, expand_element=True,
+    def addElement(self, label, element, expand_element=False,
             halign='right', **kw):
         self.elements.append(element)
         if expand_element:
-            element.width = self.element_width
+            pw = parent.inner_rect.width
+            element.width = pw - (self.label_width + self.padding)
         # XXX alignment
         if label:
             element._label = Label(self.parent, label, width=self.label_width,

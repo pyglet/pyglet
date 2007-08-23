@@ -3,6 +3,7 @@ KNOWN BUGS
 
 - NO DOCUMENTATION
 - VERY LITTLE CODE DOCUMENTATION
+- no dialog tests
 - assets are poorly-located for packaging
 - elements with negative padding are not rendered "correctly"
   . reject negative padding?
@@ -37,6 +38,12 @@ and sizing is specified in wydget:
 
 KNOWN AREAS OF (POSSIBLE) REWRITING
 -----------------------------------
+
+Frames could be the only things that have children:
+
+- move all child handling stuff from Element to Frame
+- get rid of Frame.is_transparent
+- lots of other cleanups as a result
 
 Border model should be fixed so border doesn't have automagic padding?
 

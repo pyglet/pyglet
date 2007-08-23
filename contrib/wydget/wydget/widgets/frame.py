@@ -25,7 +25,35 @@ class Frame(element.Element):
             self.layout = layouts.Layout(self)
 
     def parentDimensionsChanged(self):
-        super(Frame, self).parentDimensionsChanged()
+        ir = self.parent.inner_rect
+
+        # recalulate position
+        new_x = util.parse_value(self.x_spec, ir.width)
+        if new_x != self._x: self.x = new_x
+        new_y = util.parse_value(self.y_spec, ir.height)
+        if new_y != self._y: self.y = new_y
+        new_z = util.parse_value(self.z_spec)
+        if new_z != self._z: self.z = new_z
+
+        # recalulate width / height
+        # BUT unlike basic elements, do NOT default to filling parent
+        # dimensions
+        change = False
+        if self.width_spec is not None:
+            new_width = util.parse_value(self.width_spec, ir.width)
+            if new_width != self._width:
+                self.width = new_width
+                change = True
+        if self.height_spec is not None:
+            new_height = util.parse_value(self.height_spec, ir.height)
+            if new_height != self._height:
+                self.height = new_height
+                change = True
+
+        if change:
+            for child in self.children:
+                child.parentDimensionsChanged()
+
         if self.scrollable:
             self.contents.layout()
         else:
@@ -247,6 +275,11 @@ class TabFrame(Frame):
         self._button = None
         super(Frame, self).delete()
 
+    def layoutDimensionsChanged(self, layout):
+        '''Let the tabs container know that this frame has changed size.
+        '''
+        super(TabFrame, self).layoutDimensionsChanged(layout)
+        self.parent.layout()
 
 class TabButton(Frame):
     '''Special button for inside a TabbedFrame that renders its border so
@@ -301,6 +334,17 @@ class TabButton(Frame):
         self._top = None
         super(Frame, self).delete()
 
+class TabsLayout(layouts.Layout):
+    '''A special layout that overlaps TabFrames.
+    '''
+    name = 'tabs-layout'
+
+    def layout(self):
+        for child in self.parent.children:
+            child.width = self.width
+            child.height = self.height
+        self.parent.layoutDimensionsChanged(self)
+        self.parent.parent.layout()
 
 class TabbedFrame(Frame):
     '''A collection of frames, one active at a time.
@@ -318,8 +362,13 @@ class TabbedFrame(Frame):
 
         self.halign = halign
 
-        self.top = Frame(self, width="100%", is_transparent=True)
-        self.bottom = Frame(self, width="100%", is_transparent=True)
+        self.top = Frame(self, is_transparent=True)
+        self.top.layout = layouts.Horizontal(self.top, halign=self.halign,
+            padding=2)
+        self.bottom = Frame(self, is_transparent=True)
+        self.bottom.layout = TabsLayout(self.bottom)
+        self.layout = layouts.Vertical(self)
+        self._active_frame = None
 
     def get_active(self):
         return self._active_frame._button
@@ -330,28 +379,25 @@ class TabbedFrame(Frame):
             bgcolor=default, scrollable=False, font_size=None, **kw):
         if border is self.default: border = self.border
         if bgcolor is self.default: bgcolor = self.bgcolor
-        b = self.button_class(self.top, text=text, image=image,
-            border=border, bgcolor=bgcolor, font_size=font_size, **kw)
 
         # this will resize the height of the top frame if necessary
+        b = self.button_class(self.top, text=text, image=image,
+            border=border, bgcolor=bgcolor, font_size=font_size, **kw)
+        self.top.layout()
         b._top = self
-        layouts.Horizontal(self.top, halign=self.halign, padding=2).layout()
 
-        # XXX need a signal or something?
-        h = self.height-self.top.height
-        self.bottom.height = self.bottom.height_spec = self.top.y = h
-
-        if self.bottom.children:
-            self.bottom.children[-1].setVisible(False)
         if scrollable:
             f = self.frame_class(self.bottom, scrollable=True,
                 border=border, bgcolor=bgcolor, padding=2)
         else:
-            f = self.frame_class(self.bottom, width="100%", height="100%",
-                border=border, bgcolor=bgcolor, padding=2)
+            f = self.frame_class(self.bottom, border=border,
+                bgcolor=bgcolor, padding=2)
         b._frame = f
         f._button = b
-        self._active_frame = f
+        if self._active_frame is None:
+            self._active_frame = f
+        else:
+            f.setVisible(False)
         return f
 
     def activate(self, tab):
@@ -361,10 +407,28 @@ class TabbedFrame(Frame):
         tab.setVisible(True)
         tab.setEnabled(True)
 
+    @classmethod
+    def fromXML(cls, element, parent):
+        '''Create the object from the XML element and attach it to the parent.
+
+        Create tabs for <tab> child tags.
+        '''
+        kw = loadxml.parseAttributes(parent, element)
+        obj = cls(parent, **kw)
+        for child in element.getchildren():
+            assert child.tag == 'tab'
+            kw = loadxml.parseAttributes(obj, child)
+            label = kw.pop('label')
+            tab = obj.newTab(label, **kw)
+            for content in child.getchildren():
+                loadxml.getConstructor(content.tag)(content, tab)
+            tab.layout()
+        obj.layout()
+        return obj
+
 
 @event.default('tab-button', 'on_click')
 def on_tab_click(widget, *args):
     widget.getParent('tabbed-frame').activate(widget._frame)
     return event.EVENT_HANDLED
-
 

@@ -1,0 +1,20 @@
+<frame width="100%" height="100%">
+<vertical valign="center" halign="center">
+
+<tabbed-frame border="black" bgcolor="white">
+ <tab label="Tab 1">
+  <vertical valign="center" halign="center">
+   <label>Label in tab 1</label>
+   <label>Label in tab 1 which is really quite long</label>
+   <label>Label in tab 1</label>
+  </vertical>
+ </tab>
+ <tab label="Tab 2">
+  <vertical valign="center" halign="center">
+   <label>Label in tab 2 should be centered</label>
+  </vertical>
+ </tab>
+</tabbed-frame>
+
+</vertical>
+</frame>
