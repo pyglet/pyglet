@@ -9,9 +9,22 @@ class Dialog(widgets.Frame):
         super(Dialog, self).__init__(parent, x, y, z, width, height,
             border=border, classes=classes, bgcolor=bgcolor, **kw)
 
+    def position(self):
+        # position dialog to center of parent
+        new_x = self.parent.width//2 - self.width//2
+        if new_x != self._x: self.x = new_x
+        new_y = self.parent.height//2 - self.height//2
+        if new_y != self._y: self.y = new_y
+
+    def parentDimensionsChanged(self):
+        change = super(Dialog, self).parentDimensionsChanged()
+        self.position()
+        return change
+
     def run(self):
         '''Invoke to make this dialog become modal.
         '''
+        self.position()
         self.getGUI().setModal(self)
 
     def close(self):
