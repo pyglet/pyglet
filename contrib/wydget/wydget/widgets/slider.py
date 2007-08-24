@@ -27,11 +27,11 @@ class SliderCommon(element.Element):
             self.getGUI().dispatch_event(self, 'on_change', self._value)
     value = property(get_value, set_value)
 
-    def stepToMaximum(self):
-        self.set_value(self._value + self.step, event=True)
+    def stepToMaximum(self, multiplier=1):
+        self.set_value(self._value + multiplier * self.step, event=True)
 
-    def stepToMinimum(self):
-        self.set_value(self._value - self.step, event=True)
+    def stepToMinimum(self, multiplier=1):
+        self.set_value(self._value - multiplier * self.step, event=True)
 
 class VerticalSlider(SliderCommon):
     '''
@@ -119,7 +119,7 @@ def on_mouse_press(self, x, y, buttons, modifiers):
 
 @event.default('vslider')
 def on_mouse_scroll(self, x, y, dx, dy):
-    if dy: self.set_value(self._value + dy * self.step, event=True)
+    if dy: self.stepToMaximum(dy)
     return event.EVENT_HANDLED
 
 @event.default('.-repeater-button-max')
@@ -217,8 +217,8 @@ def on_mouse_press(self, x, y, buttons, modifiers):
 
 @event.default('hslider')
 def on_mouse_scroll(self, x, y, dx, dy):
-    if dx: self.set_value(self._value + dx * self.step, event=True)
-    else: self.set_value(self._value + dy * self.step, event=True)
+    if dx: self.stepToMaximum(dx)
+    else: self.stepToMaximum(dy)
     return event.EVENT_HANDLED
 
 

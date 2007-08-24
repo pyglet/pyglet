@@ -190,6 +190,7 @@ class TextInput(Frame):
     def set_text(self, text):
         self.ti.setText(text)
     text = property(get_text, set_text)
+    value = property(get_text, set_text)
 
     def get_cursor_postion(self):
         return self.ti.cursor_index

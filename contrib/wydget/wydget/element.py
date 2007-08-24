@@ -364,11 +364,7 @@ class Element(object):
         '''
         # translate
         glPushMatrix()
-        glTranslatef(x, y, z)
-
-       # print '**', self
-       # print (x, y, z)
-       # print clipped
+        glTranslatef(int(x), int(y), z)
 
         # render the common Element stuff - border and background
         attrib = GL_CURRENT_BIT
@@ -509,7 +505,7 @@ class Element(object):
         return self.getGUI().get(spec)
 
     def calculateAbsoluteCoords(self, x, y):
-        x += self._x; y += self._y
+        x += self._x + self.parent.padding; y += self._y + self.parent.padding
         return self.parent.calculateAbsoluteCoords(x, y)
 
     def calculateRelativeCoords(self, x, y):

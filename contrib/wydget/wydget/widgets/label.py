@@ -49,16 +49,29 @@ class ImageCommon(element.Element):
             image = image.get_region(rect.x, rect.y, rect.width/self._sx,
                 rect.height/self._sy)
 
+        attrib = 0
+        if not self.isEnabled():
+            attrib = GL_CURRENT_BIT
         if self.is_blended:
-            glPushAttrib(GL_ENABLE_BIT)
+            attrib |= GL_ENABLE_BIT
+
+        if attrib:
+            glPushAttrib(attrib)
+
+        if attrib & GL_ENABLE_BIT:
+            # blend with background
             glEnable(GL_BLEND)
+
+        if attrib & GL_CURRENT_BIT:
+            # blend with gray colour to wash out
+            glColor4f(.7, .7, .7, 1.)
 
         # XXX alignment
 
         # blit() handles enabling GL_TEXTURE_2D and binding
         image.blit(rect.x, rect.y, 0)
 
-        if self.is_blended:
+        if attrib:
             glPopAttrib()
 
 
@@ -163,19 +176,22 @@ class Label(LabelCommon):
                 width=w, halign=self.halign, rotate=self.rotate)
             image = label.texture
 
-        if self.is_blended and self.rotate in (90, 270):
-            if self.width_spec is None:
-                self.width = label.height + self.padding * 2
-            if self.height_spec is None:
-                self.height = label.width + self.padding * 2
-        else:
-            if self.width_spec is None:
-                self.width = label.width + self.padding * 2
-            if self.height_spec is None:
-                self.height = label.height + self.padding * 2
-
         # don't invoke setImage as it doesn't understand rotate
         self.image = image
+
+        self.updateSize()
+
+    def updateSize(self):
+        if self.is_blended and self.rotate in (90, 270):
+            if self.width_spec is None:
+                self.width = self.image.height + self.padding * 2
+            if self.height_spec is None:
+                self.height = self.image.width + self.padding * 2
+        else:
+            if self.width_spec is None:
+                self.width = self.image.width + self.padding * 2
+            if self.height_spec is None:
+                self.height = self.image.height + self.padding * 2
 
     def render(self, rect):
         if not self.is_blended:
@@ -201,6 +217,19 @@ class Label(LabelCommon):
 
 
 class XHTML(LabelCommon):
+    '''Render an XHTML layout.
+
+    Note that layouts use a different coordinate system:
+
+    Canvas dimensions
+        layout.canvas_width and layout.canvas_height
+    Viewport
+        layout.viewport_x, layout.viewport_y, layout.viewport_width
+        and layout.viewport_height
+
+    The y coordinates start 0 at the *top* of the canvas and increase
+    *down* the canvas.
+    '''
     name='xhtml'
     need_background = True
 
@@ -219,8 +248,11 @@ class XHTML(LabelCommon):
         w -= self.padding * 2
         if w != self.width:
             # re-layout the XHTML and re-gen the texture
-            self.layout.viewport_width = self.width = w
+            self.layout.viewport_width = w
             self.layout.constrain_viewport()
+            self.width = self.layout.canvas_width
+            if self.height_spec is None:
+                self.height = self.layout.canvas_height
         return w != self.width
 
     _default = []
@@ -234,20 +266,43 @@ class XHTML(LabelCommon):
             style=self.style)
 
         # update my dimensions
-        self.width = self.layout.viewport_width
+        self.width = self.layout.canvas_width
         if self.height_spec is None:
-            self.height = self.layout.viewport_height
+            self.height = self.layout.canvas_height
 
     def render(self, rect):
-        self.layout.viewport_x = rect.x
-        self.layout.viewport_y = rect.y
-        self.layout.viewport_width = rect.width
-        self.layout.viewport_height = rect.height
-        glPushAttrib(GL_CURRENT_BIT)
+        '''To render we need to:
+
+        1. Translate the y position from our OpenGL-based y-increases-up
+           value to the layout y-increases-down value.
+        2. Set up a scissor to limit display to the pixel rect we specify.
+        '''
+        layout = self.layout
+
+        # reposition the viewport based on visible rect
+        layout.viewport_x = rect.x
+        scrollable_height = layout.canvas_height - rect.height
+        layout.viewport_y = int(scrollable_height - rect.y)
+        layout.viewport_width = rect.width
+        layout.viewport_height = rect.height
+        layout.constrain_viewport()
+
+        scissor = not (rect.x == rect.y == 0 and rect.width == self.width and
+            rect.height == self.height)
+
+        if scissor:
+            glPushAttrib(GL_CURRENT_BIT|GL_SCISSOR_BIT)
+            glEnable(GL_SCISSOR_TEST)
+            x, y = self.calculateAbsoluteCoords(rect.x, rect.y)
+            glScissor(int(x), int(y), int(rect.width), int(rect.height))
+        else:
+            glPushAttrib(GL_CURRENT_BIT)
+
         glPushMatrix()
-        glTranslatef(0, self.layout.viewport_height, 0)
-        self.layout.view.draw()
+        glTranslatef(0, int(layout.canvas_height - layout.viewport_y), 0)
+        layout.view.draw()
         glPopMatrix()
+
         glPopAttrib()
 
 

@@ -69,6 +69,7 @@ div.frame {border: 1px solid #555; background-color: white;}
 h1 {font-size: %(font_size)spx; color: black; margin: 2px;}
 p {font-size: %(font_size)spx; color: #444; margin: 2px;}
 .button {font-size: %(font_size)spx; border: 1px solid black; padding: 2px; margin: 0px;}
+a {color: blue;}
 '''%locals()
 
     def xhtml(self, text, width=None, height=None, style=None):

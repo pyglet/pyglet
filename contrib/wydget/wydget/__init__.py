@@ -270,6 +270,7 @@ class GUI(event.GUIEventDispatcher):
     def layoutDimensionsChanged(self, layout):
         pass
 
+    padding = 0
     def get_rect(self):
         return util.Rect(0, 0, self.width, self.height)
     rect = property(get_rect)

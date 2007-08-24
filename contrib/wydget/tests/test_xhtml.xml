@@ -1,0 +1,36 @@
+<frame bgcolor="gray" height="100%" width="100%">
+ <vertical halign="center" padding="1">
+
+  <xhtml width="50%" id="xhtml-sample">
+&lt;h1&gt;Synopsis&lt;/h1&gt;
+&lt;p style="font-size:12px"&gt;Lorem ipsum dolor sit amet consectetuer
+adipiscing elit. 
+&lt;span id="click-me" style="background-color: black; color: white"&gt;CLICK
+ME.&lt;/span&gt;
+Suspendisse vel tellus. Nam sem massa, accumsan id,
+sollicitudin at, feugiat non, felis. Etiam nunc. Nam augue mauris,
+semper in, hendrerit vitae, congue viverra, massa. Suspendisse at lacus.
+Proin mollis dui ut sem. Donec auctor, pede nec hendrerit tincidunt,
+lacus diam laoreet diam, ut varius odio felis eget enim. Curabitur dui
+sem, rutrum sed, mattis eu, rhoncus ultrices, erat. Maecenas eu tellus.
+Vivamus bibendum facilisis orci. Aliquam risus. Aliquam erat. Aenean
+dignissim fringilla diam. Quisque dapibus, nulla non consectetuer iaculis,
+velit urna ornare orci, quis sodales neque sapien id turpis. Etiam urna
+lacus, vulputate congue, vulputate in, aliquet vitae, tellus. Maecenas
+sem. Ut sed massa. Etiam non ipsum eget nibh cursus placerat.
+Vivamus at mauris.
+&lt;/p&gt;
+  </xhtml>
+
+  <xhtml width="25%">
+   By the way, these XHTML areas should resize with the window.
+  </xhtml>
+
+  <xhtml width="50%" style="p {margin: 0px;}
+    body {margin: 0px; background-color: black; color: white; font-size: 20px; padding: 4px;}">
+    Different style XHTML (body {margin: 0px; background-color: black; color: white;
+                      font-size: 20; padding: 4px;})
+  </xhtml>
+
+ </vertical>
+</frame>

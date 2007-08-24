@@ -68,11 +68,10 @@ class Selection(Frame):
     def on_mouse_scroll(widget, x, y, dx, dy):
         if not widget.scrollable:
             return event.EVENT_UNHANDLED
-        # XXX this needs revisiting
         if widget.v_slider is not None:
-            widget.v_slider.bar.moveY(dy)
+            widget.v_slider.stepToMaximum(dy)
         if widget.h_slider is not None:
-            widget.h_slider.bar.moveX(dx)
+            widget.h_slider.stepToMaximum(dx)
         return event.EVENT_HANDLED
 
 

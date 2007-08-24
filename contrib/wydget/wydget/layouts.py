@@ -459,7 +459,7 @@ class Form(Layout):
     width = property(get_width)
 
     def get_height(self):
-        l = [c.height for c in self.elements
+        l = [max(c.height, c._label.height) for c in self.elements
             if not self.only_visible or c.is_visible]
         return sum(l) + self.padding * (len(l)-1)
     height = property(get_height)
@@ -497,7 +497,7 @@ class Form(Layout):
 
         for element in vis:
             element.x = self.label_width + self.padding
-            y -= element.height
+            y -= max(element.height, element._label.height)
             element.y = y
             if element._label: element._label.y = y
             y -= self.padding

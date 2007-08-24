@@ -16,6 +16,10 @@ class Dialog(widgets.Frame):
         new_y = self.parent.height//2 - self.height//2
         if new_y != self._y: self.y = new_y
 
+    def layoutDimensionsChanged(self, layout):
+        super(Dialog, self).layoutDimensionsChanged(layout)
+        self.position()
+
     def parentDimensionsChanged(self):
         change = super(Dialog, self).parentDimensionsChanged()
         self.position()

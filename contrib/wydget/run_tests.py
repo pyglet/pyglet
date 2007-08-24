@@ -53,17 +53,24 @@ window.push_handlers(my_escape)
 
 def run(xml_file):
     gui = GUI.fromXML(window, xml_file)
-    window.push_handlers(gui)
     if '--dump' in sys.argv:
         print '-'*75
         gui.dump()
         print '-'*75
+
+    window.push_handlers(gui)
 
     gui.push_handlers(dragndrop.DragHandler('.draggable'))
 
     @gui.select('#press-me')
     def on_click(widget, *args):
         print 'on_click', widget
+        return event.EVENT_HANDLED
+
+    @gui.select('#enable-other')
+    def on_click(widget, *args):
+        w = gui.get('#press-me')
+        w.setEnabled(not w.isEnabled())
         return event.EVENT_HANDLED
 
     if 0:

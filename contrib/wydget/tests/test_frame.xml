@@ -50,6 +50,25 @@
  </frame>
  </frame>
 
+ <frame>
+
+  <frame scrollable="true" height="100" width="100" border="red">
+   <xhtml width="82">
+   Some XHTML text, should end up being scrolled.
+   Some XHTML text, should end up being scrolled.
+   Some XHTML text, should end up being scrolled.
+   Some XHTML text, should end up being scrolled.
+   Some XHTML text, should end up being scrolled.
+   Some XHTML text, should end up being scrolled.
+   </xhtml>
+  </frame>
+
+  <frame>
+  </frame>
+
+ </frame>
+
  </columns>
 
+-->
 </frame>
