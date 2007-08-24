@@ -572,8 +572,16 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
             screen = display.get_default_screen()
 
         if not config:
-            config = gl.Config(double_buffer=True,
-                               depth_size=24)
+            for template_config in [
+                gl.Config(double_buffer=True, depth_size=24),
+                gl.Config(double_buffer=True, depth_size=16)]:
+                try:
+                    config = screen.get_best_config(template_config)
+                    break
+                except NoSuchConfigException:
+                    pass
+            if not config:
+                raise NoSuchConfigException('No standard config is available.')
 
         if not config.is_complete():
             config = screen.get_best_config(config)
