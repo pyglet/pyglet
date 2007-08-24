@@ -221,7 +221,7 @@ class PasswordInput(TextInput):
         self.ti.is_password = True
         self.ti.setText(self.ti.text)
 
-@event.default('textinput')
+@event.default('textinput, password')
 def on_mouse_press(widget, x, y, buttons, modifiers):
     ti = widget.ti
     x, y = ti.calculateRelativeCoords(x, y)
@@ -238,7 +238,7 @@ def on_mouse_press(widget, x, y, buttons, modifiers):
     ti.setCursorPosition(new)
     return event.EVENT_HANDLED
 
-@event.default('textinput')
+@event.default('textinput, password')
 def on_click(widget, x, y, buttons, modifiers, click_count):
     ti = widget.ti
     if click_count == 2 and buttons & mouse.LEFT:
@@ -247,7 +247,7 @@ def on_click(widget, x, y, buttons, modifiers, click_count):
         return event.EVENT_HANDLED
     return event.EVENT_HANDLED
 
-@event.default('textinput')
+@event.default('textinput, password')
 def on_mouse_drag(widget, x, y, dx, dy, buttons, modifiers):
     if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
     ti = widget.ti
@@ -265,34 +265,34 @@ def on_mouse_drag(widget, x, y, dx, dy, buttons, modifiers):
             ti.highlight = (start, now)
     return event.EVENT_HANDLED
 
-@event.default('textinput')
+@event.default('textinput, password')
 def on_gain_focus(widget):
     widget.ti.cursor.animation = CursorAnimation(widget.ti.cursor)
     widget.ti.cursor.is_visible = True
     return event.EVENT_HANDLED
 
-@event.default('textinput')
+@event.default('textinput, password')
 def on_lose_focus(widget):
     widget.ti.cursor.animation.cancel()
     widget.ti.cursor.animation = None
     widget.ti.cursor.is_visible = False
     return event.EVENT_HANDLED
 
-@event.default('textinput')
+@event.default('textinput, password')
 def on_element_enter(widget, x, y):
     w = widget.getGUI().window
     cursor = w.get_system_mouse_cursor(w.CURSOR_TEXT)
     w.set_mouse_cursor(cursor)
     return event.EVENT_HANDLED
 
-@event.default('textinput')
+@event.default('textinput, password')
 def on_element_leave(widget, x, y):
     w = widget.getGUI().window
     cursor = w.get_system_mouse_cursor(w.CURSOR_DEFAULT)
     w.set_mouse_cursor(cursor)
     return event.EVENT_HANDLED
 
-@event.default('textinput')
+@event.default('textinput, password')
 def on_key_press(widget, symbol, modifiers):
     if sys.platform == 'darwin':
         active_mod = key.MOD_COMMAND
@@ -323,14 +323,14 @@ def on_key_press(widget, symbol, modifiers):
             return event.EVENT_HANDLED
     return event.EVENT_UNHANDLED
 
-@event.default('textinput')
+@event.default('textinput, password')
 def on_text(widget, text):
     # special-case newlines - we don't want them
     if text == '\r': return event.EVENT_UNHANDLED
     widget.ti.editText(text, move=1)
     return event.EVENT_HANDLED
 
-@event.default('textinput')
+@event.default('textinput, password')
 def on_text_motion(widget, motion):
     ti = widget.ti
     pos = ti.cursor_index
@@ -376,7 +376,7 @@ def on_text_motion(widget, motion):
 
     return event.EVENT_HANDLED
 
-@event.default('textinput')
+@event.default('textinput, password')
 def on_text_motion_select(widget, motion):
     ti = widget.ti
     pos = ti.cursor_index

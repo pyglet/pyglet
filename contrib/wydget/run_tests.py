@@ -78,10 +78,10 @@ def run(xml_file):
         def on_click(widget, *args):
             print 'DEBUG', widget, 'PRESSED'
             return event.EVENT_HANDLED
-        @gui.select('*')
-        def on_change(widget, text):
-            print 'DEBUG', widget, 'VALUE CHANGED', `text`
-            return event.EVENT_HANDLED
+    @gui.select('.show-value')
+    def on_change(widget, value):
+        print 'DEBUG', widget, 'VALUE CHANGED', `value`
+        return event.EVENT_HANDLED
 
     @gui.select('frame#menu-test', 'on_click')
     def on_menu(w, x, y, button, modifiers, click_count):

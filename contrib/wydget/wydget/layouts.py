@@ -453,13 +453,13 @@ class Form(Layout):
         super(Form, self).__init__(parent, **kw)
 
     def get_width(self):
-        l = [c.width + c._label.width for c in self.elements
+        l = [c.width + c._label_dim[0] for c in self.elements
             if not self.only_visible or c.is_visible]
         return max(l) + self.padding
     width = property(get_width)
 
     def get_height(self):
-        l = [max(c.height, c._label.height) for c in self.elements
+        l = [max(c.height, c._label_dim[1]) for c in self.elements
             if not self.only_visible or c.is_visible]
         return sum(l) + self.padding * (len(l)-1)
     height = property(get_height)
@@ -472,10 +472,12 @@ class Form(Layout):
             element.width = pw - (self.label_width + self.padding)
         # XXX alignment
         if label:
-            element._label = Label(self.parent, label, width=self.label_width,
-                halign=halign, **kw)
+            l = element._label = Label(self.parent, label,
+                width=self.label_width, halign=halign, **kw)
+            element._label_dim = (l.width, l.height)
         else:
             element._label = None
+            element._label_dim = (self.label_width, 0)
 
     def layout(self):
         # give the parent a chance to resize before we layout
@@ -497,7 +499,7 @@ class Form(Layout):
 
         for element in vis:
             element.x = self.label_width + self.padding
-            y -= max(element.height, element._label.height)
+            y -= max(element.height, element._label_dim[1])
             element.y = y
             if element._label: element._label.y = y
             y -= self.padding

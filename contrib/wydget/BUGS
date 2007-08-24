@@ -20,9 +20,10 @@ KNOWN BUGS
   . are really single-element selections
   . are poorly-structured and don't cope with resizing
 
-
 DEFINITE AREAS OF IMPROVEMENT
 -----------------------------
+
+Allow style as an argument to Element construction.
 
 Text size handling is currently a hack because many fonts have ridiculous
 descender values. We're also forcing pyglet to not use glyph substitution
