@@ -302,6 +302,7 @@ class XlibGLConfig10(XlibGLConfig):
 class XlibGLConfig10ATI(XlibGLConfig10):
     attribute_ids = XlibGLConfig.attribute_ids.copy()
     del attribute_ids['stereo']
+    stereo = False
 
 class XlibGLConfig13(XlibGLConfig):
     attribute_ids = XlibGLConfig.attribute_ids.copy()
