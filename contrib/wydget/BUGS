@@ -19,6 +19,51 @@ KNOWN BUGS
 - Drop-down menus:
   . are really single-element selections
   . are poorly-structured and don't cope with resizing
+- Button:
+  . <ah> buttons remain charged when mouse leaves the button with mouse down.
+- TextButton:
+  . <ah> with over and press colour, appears to flicker to the default
+    colour for one frame when mouse is pressed or released (e.g. last 
+    button in test_button)
+- DropDownMenu
+  . <ah> Doesn't open menu on mouse press.
+- Element
+  . <ah> Right border is inset by one pixel (evident in test_element,
+    test_drawer and test_dropdown)
+  . <ah> Negative padding obscures text at top (test_element, 4th element),
+    missing top-left and bottom-right corners.
+- test_element_over
+  . <ah> Move mouse from outside window into inner generates ENTER inner,
+    ENTER outer (bad nesting when mouse then leaves ENTER inner).
+- Scroll bar
+  . <ah> No repeat behaviour when clicking in bar
+- RepeatButton
+  . <ah> Continues repeating while mouse has left the button (evident in
+    test_frame)
+- test_menu
+  . <ah> No Ctrl-click on Mac?
+- test_movie
+  . <ah> Not yet changed to pyglet-1.0alpha2
+  . <ah> File dialog: type "/Volumes/someth" (contents of /Volumes is still
+    shown), then click on an item; incorrectly appends to "someth" instead
+    of replacing it.
+- test_table
+  . <ah> Width of horizontal scrollbar thumb is incorrect.
+- TextInput
+  . <ah> Caret continues flashing while typing or moving.
+  . <ah> Caret not visible at right edge of entry (probably just element border
+    problem).
+  . <ah> Selecting text with mouse moves the caret to the wrong place.
+  . <ah> Moving caret should deselect any selected text.
+  . <ah> Double-clicking selects entire field, not single word.
+  . <ah> Word motion events not yet implemented.
+  . <ah> Caret motion past edge of field should scroll enough to get caret
+    into the center of the field (or to limit).
+  . <ah> Clicking on non-focusable background should not remove focus from
+    text field.
+- PasswordInput
+  . <ah> Dot glyphs are clipped by 3 or 4 pixels on right edge.
+
 
 DEFINITE AREAS OF IMPROVEMENT
 -----------------------------
