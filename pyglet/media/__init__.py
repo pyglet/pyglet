@@ -857,8 +857,7 @@ else:
             __import__(driver_name)
             driver = sys.modules[driver_name]
             break
-        except ImportError, e:
-            print e
+        except ImportError:
             pass
 
     if not driver:

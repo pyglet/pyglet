@@ -13,9 +13,9 @@ import ctypes
 import optparse
 import sys
 
-from pyglet.media import openal
-from pyglet.media import lib_openal as al
-from pyglet.media import lib_alc as alc
+from pyglet.media.drivers import openal
+from pyglet.media.drivers.openal import lib_openal as al
+from pyglet.media.drivers.openal import lib_alc as alc
 
 def split_nul_strings(s):
     # NUL-separated list of strings, double-NUL-terminated.
@@ -64,10 +64,10 @@ if __name__ == '__main__':
 
     if options.device:
         print 'Using device "%s"...' % options.device
-        openal.init(options.device)
+        openal.driver_init(options.device)
     else:
         print 'Using default device...'
-        openal.init()
+        openal.driver_init()
 
     print 'OpenAL version %d.%d' % openal.get_version()
     print 'Extensions:              %s' % ', '.join(openal.get_extensions())

@@ -40,8 +40,8 @@ import time
 
 from pyglet.media import BasePlayer, ManagedSoundPlayerMixIn, Listener
 from pyglet.media import MediaException
-from pyglet.media.drivers import lib_openal as al
-from pyglet.media.drivers import lib_alc as alc
+from pyglet.media.drivers.openal import lib_openal as al
+from pyglet.media.drivers.openal import lib_alc as alc
 
 _device = None
 _is_init = False
