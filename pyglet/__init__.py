@@ -85,7 +85,7 @@ if getattr(sys, 'frozen', None):
 #:     this option is enabled if ``__debug__`` is (i.e., if Python was not run
 #:     with the -O option).  It is disabled by default when pyglet is "frozen"
 #:     within a py2exe or py2app library archive.
-#: audio_drivers
+#: audio_driver
 #:     A sequence of the names of audio drivers to attempt to load, in
 #:     order of preference.  The default is to prefer OpenAL, then any
 #:     platform-specific drivers such as ALSA, and finally falling back
