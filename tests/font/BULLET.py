@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-'''Test that font.Text horizontal alignment works.
+'''Test that rendering of bullet glyphs works.
 
-Three labels will be rendered aligned left, center and right.
+You should see 5 bullet glyphs rendered in the bottom-left of the window.
 '''
 
 __docformat__ = 'restructuredtext'
