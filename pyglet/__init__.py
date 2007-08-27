@@ -97,6 +97,6 @@ if getattr(sys, 'frozen', None):
 #:
 options = {
     'gl_error_check': not _enable_optimisations,
-    'audio_driver': ('openal', 'alsa', 'silent'),
+    'audio_driver': ('openal', 'silent'),
 }
 
