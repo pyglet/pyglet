@@ -303,6 +303,11 @@ class AVbinSource(StreamingSource):
                 self._buffered_packets.remove(packet)
                 return packet
 
+        # Make sure we're not buffering packets that are being ignored
+        for buffer in self._buffered_packets, self._buffered_images:
+            if len(buffer) > 20:
+                buffer.pop(0)
+
         # Read more packets, buffering each interesting one until we get to 
         # the one we want or reach end of file.
         while True: 

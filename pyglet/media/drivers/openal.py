@@ -38,14 +38,15 @@ import ctypes
 import sys
 import time
 
-from pyglet.media import BasePlayer, Listener, MediaException
-from pyglet.media import lib_openal as al
-from pyglet.media import lib_alc as alc
+from pyglet.media import BasePlayer, ManagedSoundPlayerMixIn, Listener
+from pyglet.media import MediaException
+from pyglet.media.drivers import lib_openal as al
+from pyglet.media.drivers import lib_alc as alc
 
 _device = None
 _is_init = False
 _have_1_1 = False
-def init(device_name = None):
+def driver_init(device_name = None):
     global _device
     global _is_init
     global _have_1_1
@@ -288,7 +289,7 @@ class OpenALPlayer(BasePlayer):
                         if self._eos_action == self.EOS_NEXT:
                             self.next()
                         elif self._eos_action == self.EOS_STOP:
-                            # For ManagedPlayer only.
+                            # For ManagedSoundPlayer only.
                             self._stop()
                         self.dispatch_event('on_eos')
                     buffer_pool.release(buffer)
@@ -524,13 +525,8 @@ class OpenALPlayer(BasePlayer):
         al.alSourcef(self._al_source, al.AL_CONE_OUTER_GAIN, cone_outer_gain)
         self._cone_outer_gain = cone_outer_gain
 
-class OpenALManagedPlayer(OpenALPlayer):
-    def __init__(self):
-        super(OpenALManagedPlayer, self).__init__()
-        managed_players.append(self)
-
-    def stop(self):
-        managed_players.remove(self)
+class OpenALManagedSoundPlayer(OpenALPlayer, ManagedSoundPlayerMixIn):
+    pass
 
 class OpenALListener(Listener):
     def _set_position(self, position):
@@ -561,10 +557,6 @@ class OpenALListener(Listener):
         al.alSpeedOfSound(speed_of_sound)
         self._speed_of_sound = speed_of_sound
 
-listener = OpenALListener()
-
-managed_players = []
-
-def dispatch_events():
-    for player in managed_players:
-        player.dispatch_events()
+driver_listener = OpenALListener()
+DriverPlayer = OpenALPlayer
+DriverManagedSoundPlayer = OpenALManagedSoundPlayer

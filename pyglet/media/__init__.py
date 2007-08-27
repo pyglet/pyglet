@@ -382,7 +382,7 @@ class BasePlayer(event.EventDispatcher):
     #: end of the current source.  If there is no source queued, the player
     #: will pause.
     EOS_NEXT = 'next'
-    #: The player will stop entirely; valid only for ManagedPlayer.
+    #: The player will stop entirely; valid only for ManagedSoundPlayer.
     EOS_STOP = 'stop'
 
     # Source and queuing attributes
@@ -682,6 +682,14 @@ class BasePlayer(event.EventDispatcher):
             '''
 BasePlayer.register_event_type('on_eos')
 
+class ManagedSoundPlayerMixIn(object):
+    def __init__(self):
+        super(ManagedSoundPlayerMixIn, self).__init__()
+        managed_players.append(self)
+
+    def stop(self):
+        managed_players.remove(self)
+
 class Listener(object):
     '''The listener properties for positional audio.
 
@@ -814,9 +822,8 @@ if getattr(sys, 'is_epydoc', False):
     Player.__name__ = 'Player'
     del BasePlayer
 
-    # Document imaginary ManagedSoundPlayer class.  There is no point making
-    # a BaseManagedSoundPlayer class; it won't fit into the devices' class
-    # hierarchies.
+    # Document imaginary ManagedSoundPlayer class.  (Actually implemented
+    # by ManagedSoundPlayerMixIn).
     class ManagedSoundPlayer(Player):
         '''A player which takes care of updating its own audio buffers.
 
@@ -838,52 +845,37 @@ if getattr(sys, 'is_epydoc', False):
             
             :type: str
             ''')
-                              
-    def load(filename, file=None, streaming=True):
-        '''Load a source.
-
-        :Parameters:
-            `filename` : str
-                Filename to load.
-            `file` : file-like object
-                File to load data from.  If unspecified, the filename will be
-                opened.
-            `streaming` : bool
-                If unspecified, the source returned will be streaming, and can
-                only be used once.  Specify `False` here to return a
-                fully decoded `StaticSource`.
-
-        :rtype: `Source`
-        '''
-
-    def dispatch_events():
-        '''Process managed audio events.
-
-        You must call this function regularly (typically once per run loop
-        iteration) in order to keep audio buffers of managed players full.
-        '''
 
 else:
-    # Currently audio playback is through OpenAL on all platforms; in 
-    # the future alternative drivers using ALSA or DirectSound may be
-    # implemented.
-    try:
-        from pyglet.media import openal
-    except ImportError:
-        raise ImportError(
-            'pyglet.media requires OpenAL, see http://www.openal.org/')
-    openal.init()
-    Player = openal.OpenALPlayer
-    ManagedSoundPlayer = openal.OpenALManagedPlayer
-    listener = openal.listener
-    dispatch_events = openal.dispatch_events
+    # Find best available sound driver according to user preference
+    import pyglet
+    driver = None
+    for driver_name in pyglet.options['audio_driver']:
+        try:
+            driver_name = 'pyglet.media.drivers.' + driver_name
+            print driver_name
+            __import__(driver_name)
+            driver = sys.modules[driver_name]
+            break
+        except ImportError, e:
+            print e
+            pass
 
-try:
-    from pyglet.media import avbin
-    _source_class = avbin.AVbinSource
-except ImportError:
-    from pyglet.media import riff
-    _source_class = riff.WaveSource
+    if not driver:
+        raise ImportError('No suitable audio driver could be loaded.')
+
+    driver.driver_init()
+    Player = driver.DriverPlayer
+    ManagedSoundPlayer = driver.DriverManagedSoundPlayer
+    listener = driver.driver_listener
+
+    # Find best available source loader
+    try:
+        from pyglet.media import avbin
+        _source_class = avbin.AVbinSource
+    except ImportError:
+        from pyglet.media import riff
+        _source_class = riff.WaveSource
 
 def load(filename, file=None, streaming=True):
     '''Load a source from a file.
@@ -907,3 +899,12 @@ def load(filename, file=None, streaming=True):
         source = StaticSource(source)
     return source
 
+managed_players = []
+def dispatch_events():
+    '''Process managed audio events.
+
+    You must call this function regularly (typically once per run loop
+    iteration) in order to keep audio buffers of managed players full.
+    '''
+    for player in managed_players:
+        player.dispatch_events()
