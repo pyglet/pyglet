@@ -106,7 +106,7 @@ class Slider(Control):
         self.dispatch_event('on_change', value)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        value = self.coordinate_to_value(x)
+        value = min(max(self.coordinate_to_value(x), self.min), self.max)
         self.dispatch_event('on_change', value)
     
     def on_mouse_release(self, x, y, button, modifiers):
