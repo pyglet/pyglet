@@ -7,7 +7,8 @@ class Dialog(widgets.Frame):
         if 'dialog' not in classes:
             classes = ('dialog', ) + classes
         super(Dialog, self).__init__(parent, x, y, z, width, height,
-            border=border, classes=classes, bgcolor=bgcolor, **kw)
+            padding=padding, border=border, classes=classes,
+            bgcolor=bgcolor, **kw)
 
     def position(self):
         # position dialog to center of parent

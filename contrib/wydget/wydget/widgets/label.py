@@ -149,11 +149,11 @@ class Label(LabelCommon):
         '''
         change = super(Label, self).parentDimensionsChanged()
         if change:
-            self.setText(self.text)
+            self.setText(self._text)
         return change
 
     def setText(self, text):
-        self.text = text
+        self._text = text
         if self.rotate in (0, 180):
             pw = self.parent.inner_rect.width
             w = util.parse_value(self.width_spec, pw)
@@ -165,7 +165,7 @@ class Label(LabelCommon):
             if w is not None:
                 w -= self.padding * 2
 
-        if self.is_blended:
+        if self.is_blended or not text:
             label = self.getStyle().text(text, color=self.color,
                 font_size=self.font_size, width=w, halign=self.halign,
                 valign='top')
@@ -180,6 +180,8 @@ class Label(LabelCommon):
         self.image = image
 
         self.updateSize()
+
+    text = property(lambda self: self._text, setText)
 
     def updateSize(self):
         if self.is_blended and self.rotate in (90, 270):

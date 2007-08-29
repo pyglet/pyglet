@@ -18,6 +18,7 @@ class Button(ImageCommon):
     is_focusable = True
     is_pressed = False
     is_over = False
+    is_focused = False
 
     def __init__(self, parent, image, text=None, pressed_image=None,
             over_image=None, is_blended=True, font_size=None,
@@ -123,7 +124,7 @@ class Button(ImageCommon):
     def render(self, rect):
         '''Select the correct image to render.
         '''
-        if self.is_pressed and self.pressed_image:
+        if self.is_pressed and self.is_over and self.pressed_image:
             self.image = self.pressed_image
         elif self.is_over and self.over_image:
             self.image = self.over_image
@@ -235,7 +236,7 @@ class TextButton(Button):
     def render(self, rect):
         '''Select the correct image to render.
         '''
-        if self.is_pressed and self.pressed_bgcolor:
+        if self.is_pressed and self.is_over and self.pressed_bgcolor:
             self.bgcolor = self.pressed_bgcolor
         elif self.is_over and self.over_bgcolor:
             self.bgcolor = self.over_bgcolor
@@ -290,17 +291,17 @@ class RepeaterButton(Button):
 
 @event.default('button, text-button, repeater-button')
 def on_gain_focus(self):
-    self.is_over = True
+    self.higlight_focused = True
     # let the event propogate to any parent
     return event.EVENT_UNHANDLED
 
 @event.default('button, text-button, repeater-button')
 def on_lose_focus(self):
-    self.is_over = False
+    self.higlight_focused = False
     # let the event propogate to any parent
     return event.EVENT_UNHANDLED
 
-@event.default('button, text-button, repeater-button')
+@event.default('button, text-button')
 def on_element_enter(self, x, y):
     self.is_over = True
     return event.EVENT_HANDLED
@@ -310,16 +311,16 @@ def on_element_leave(self, x, y):
     self.is_over = False
     return event.EVENT_HANDLED
 
-@event.default('repeater-button')
-def on_element_leave(self, x, y):
-    self.is_over = False
-    self.stopRepeat()
-    return event.EVENT_HANDLED
-
 @event.default('button, text-button')
 def on_mouse_press(self, x, y, button, modifiers):
     self.is_pressed = True
     return event.EVENT_UNHANDLED
+
+@event.default('button, text-button')
+def on_mouse_release(self, x, y, button, modifiers):
+    self.is_pressed = False
+    return event.EVENT_UNHANDLED
+
 
 @event.default('repeater-button')
 def on_mouse_press(self, x, y, buttons, modifiers):
@@ -335,11 +336,6 @@ def on_mouse_press(self, x, y, buttons, modifiers):
     self.is_pressed = True
     return event.EVENT_HANDLED
 
-@event.default('button, text-button')
-def on_mouse_release(self, x, y, button, modifiers):
-    self.is_pressed = False
-    return event.EVENT_UNHANDLED
-
 @event.default('repeater-button')
 def on_mouse_release(self, x, y, buttons, modifiers):
     self.is_pressed = False
@@ -347,11 +343,16 @@ def on_mouse_release(self, x, y, buttons, modifiers):
     return event.EVENT_HANDLED
 
 @event.default('repeater-button')
-def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-    if not self.is_pressed:
-        return event.EVENT_UNHANDLED
-    if self.delay_timer is None and not self.repeating:
+def on_element_enter(self, x, y):
+    if self.is_pressed:
         self.startRepeat()
+    self.is_over = True
+    return event.EVENT_HANDLED
+
+@event.default('repeater-button')
+def on_element_leave(self, x, y):
+    self.is_over = False
+    self.stopRepeat()
     return event.EVENT_HANDLED
 
 @event.default('button, text-button, repeater-button')

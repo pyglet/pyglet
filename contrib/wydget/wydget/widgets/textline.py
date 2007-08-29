@@ -165,14 +165,16 @@ class TextInput(Frame):
     def __init__(self, parent, text='', font_size=None, size=None,
             x=0, y=0, z=0, width=None, height=None, border='black',
             padding=2, bgcolor='white', color='black', classes=(), **kw):
+        style = parent.getStyle()
         if font_size is None:
-            font_size = parent.getStyle().font_size
+            font_size = style.font_size
         else:
             font_size = util.parse_value(font_size, None)
         self.font_size = font_size
         if size is not None:
             size = util.parse_value(size, None)
-            width = size * self.font_size
+            width = size * style.getGlyphString('M', size=font_size).width
+            width += padding*2
         super(TextInput, self).__init__(parent, x, y, z, width, height,
             padding=padding, border=border, classes=classes, bgcolor=bgcolor,
             **kw)

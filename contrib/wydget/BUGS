@@ -1,7 +1,7 @@
 KNOWN BUGS
 ----------
 
-- NO DOCUMENTATION
+
 - VERY LITTLE CODE DOCUMENTATION
 - no dialog tests
 - assets are poorly-located for packaging
@@ -19,12 +19,6 @@ KNOWN BUGS
 - Drop-down menus:
   . are really single-element selections
   . are poorly-structured and don't cope with resizing
-- Button:
-  . <ah> buttons remain charged when mouse leaves the button with mouse down.
-- TextButton:
-  . <ah> with over and press colour, appears to flicker to the default
-    colour for one frame when mouse is pressed or released (e.g. last 
-    button in test_button)
 - DropDownMenu
   . <ah> Doesn't open menu on mouse press.
 - Element
@@ -35,13 +29,13 @@ KNOWN BUGS
 - test_element_over
   . <ah> Move mouse from outside window into inner generates ENTER inner,
     ENTER outer (bad nesting when mouse then leaves ENTER inner).
+    <rj> Don't see a problem here.
 - Scroll bar
   . <ah> No repeat behaviour when clicking in bar
-- RepeatButton
-  . <ah> Continues repeating while mouse has left the button (evident in
-    test_frame)
 - test_menu
   . <ah> No Ctrl-click on Mac?
+    <rj> hrm, this is poorly set up - currently the application must
+         explicitly listen for menu-generating events.
 - test_movie
   . <ah> Not yet changed to pyglet-1.0alpha2
   . <ah> File dialog: type "/Volumes/someth" (contents of /Volumes is still
@@ -61,8 +55,11 @@ KNOWN BUGS
     into the center of the field (or to limit).
   . <ah> Clicking on non-focusable background should not remove focus from
     text field.
+  . <rj> delete doesn't work immediately after tabbing into a textinput
+  . <rj> drag to select doesn't always select correct ranges
 - PasswordInput
   . <ah> Dot glyphs are clipped by 3 or 4 pixels on right edge.
+    <rj> Appears to be a bug in pyglet.font - see pyglet/test/font/BULLET.py
 
 
 DEFINITE AREAS OF IMPROVEMENT

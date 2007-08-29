@@ -118,9 +118,9 @@ class DropDownMenu(Frame):
         self.label = Label(self, label, classes=('-drop-down-button',),
             font_size=font_size)
 
-        # set up the popup item
+        # set up the popup item - try to make it appear in front
         self.contents = Frame(self, is_visible=False, border="black",
-            classes=('-drop-down-menu',))
+            classes=('-drop-down-menu',), z=.5)
         self.contents.layout = layouts.Vertical(self.contents)
 
         # add the menu items and resize the main box if necessary
@@ -149,8 +149,6 @@ class DropDownMenu(Frame):
         # now position the contents
         self.contents.y = self.y - self.contents.height//2 - 1
         self.contents.x = self.width//2 - self.contents.width//2 - 1
-
-        self.dump()
 
     def get_value(self):
         return self._value

@@ -21,9 +21,9 @@ class Checkbox(element.Element):
         ir = parent.inner_rect
         iw, ih = ir.width, ir.height
         width = util.parse_value(width, iw)
-        if width is None: width = 32
+        if width is None: width = 16
         height = util.parse_value(height, ih)
-        if height is None: height = 32
+        if height is None: height = 16
 
         super(Checkbox, self).__init__(parent, x, y, z, width, height, **kw)
 
