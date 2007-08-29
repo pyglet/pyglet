@@ -285,12 +285,11 @@ Text color
 The color of the text is white by default, but can be changed with the `color`
 property::
 
-    text.color = (1, 0, 0) # Red
+    text.color = (1, 0, 0, 1) # Red
 
-Colors are specified as if passed to `glColor3f` or `glColor4f`.  They are a
-tuple of the red, green, blue and alpha color components, in that order.  The
-range of each component is a float between 0 and 1.  If alpha is not
-specified, it is assumed to be 1.
+Colors are specified as if passed to `glColor4f`.  They are a tuple of the
+red, green, blue and alpha color components, in that order.  The range of each
+component is a float between 0 and 1.
 
 For example, to draw semi-translucent dark blue text::
 
