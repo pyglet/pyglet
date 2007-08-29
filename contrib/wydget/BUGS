@@ -19,6 +19,11 @@ KNOWN BUGS
 - Drop-down menus:
   . are really single-element selections
   . are poorly-structured and don't cope with resizing
+- Drag-and-drop:
+  . drags and moves are unbounded (dx/dy continue to be generated when
+    pointer hits the screen boundary, try test_drag and drag up until the
+    pointer hits the top of the screen. drag down and see the element offset
+    from the pointer)
 - DropDownMenu
   . <ah> Doesn't open menu on mouse press.
 - Element

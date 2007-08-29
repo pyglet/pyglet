@@ -88,6 +88,8 @@ situations where this is not the case:
 - if an `on_drag` or `on_mouse_drag` event is handled by the
   `mouse_press_element` (ie. the one identified on an `on_mouse_press` event)
   then it is passed further drag-related events
+- `on_mouse_release` events are always passed to the `mouse_press_element`
+  regardless of where the mouse pointer happens to be
 - `on_click` is only generated for the `mouse_press_element` if the
   `on_mouse_release` event is received over that element
 - `on_element_enter` and `on_element_leave` are generated for all elements up
@@ -395,15 +397,13 @@ class GUIEventDispatcher(EventDispatcher):
         `self.setFocus(element)`
 
         The element will be registered as potentially interesting for
-        generating future `on_click` and `on_drag` events.
+        generating future `on_mouse_release`, `on_click` and `on_drag`
+        events.
         '''
         element = self.determineHit(x, y)
         if element is None: return EVENT_UNHANDLED
         if not element.is_enabled: return EVENT_UNHANDLED
 
-        # remember the pressed element so that we can:
-        # 1. pass it mouse drag events even if the mouse moves off its hit area
-        # 2. TODO pass it a "lost focus" event?
         self.mouse_press_element = element
         self.mouse_drag_element = None
         self.drag_element = None
@@ -417,22 +417,25 @@ class GUIEventDispatcher(EventDispatcher):
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         '''Translate this event into a number of events:
+
+        First up, generate enter/leave events (replicating the behaviour of
+        `on_mouse_move`).
+
+        If already dragging (self.drag_element or self.mouse_drag_element
+        are set) then continue that behaviour.
         
         If the mouse button was pressed while over an element we attempt to
         pass an `on_mouse_drag` event to that element. If that event is
-        handled and the handler returns EVENT_HANDLED then [XXX we additionally
-        generate an `on_mouse_release` event (once per drag) and XXX] this
-        handler returns.
+        handled and the handler returns EVENT_HANDLED then we set
+        self.mouse_drag_element and the handler returns.
         
-        If the mouse button was pressed while over an element we attempt to
-        pass an `on_drag` event to that element. If that event is
-        handled and the handler returns EVENT_HANDLED [XXX then we additionally
-        generate an `on_mouse_release` event (once per drag). XXX] We then
+        We then check a drag threshold to determine whether an on_drag
+        should be generated. If the mouse has moved far enough (currently
+        4 pixels) then we attempt to pass an `on_drag` event to the
+        element under the pointer. If that event is handled and the
+        handler returns EVENT_HANDLED we set self.drag_element and them
         attempt to pass on_drag_enter and on_drag_leave events on the
         element *under* the element being dragged.
-
-        If no event handling was invoked above then we generate an
-        `on_mouse_drag` event for the element underneath the mouse pointer.
         '''
         element = self.determineHit(x, y)
         self.generateEnterLeave(x, y, element)
@@ -461,6 +464,10 @@ class GUIEventDispatcher(EventDispatcher):
             self.mouse_drag_element = element
             return handled
 
+        # we didn't actually click on an element
+        if self.mouse_press_element is None:
+            return EVENT_UNHANDLED
+
         # try an on_mouse_drag event
         element, handled = self.dispatch_event(self.mouse_press_element,
             'on_mouse_drag', x, y, dx, dy, buttons, modifiers)
@@ -479,28 +486,31 @@ class GUIEventDispatcher(EventDispatcher):
         # try an on_drag event
         element, handled = self.dispatch_event(self.mouse_press_element,
             'on_drag', x, y, dx, dy, buttons, modifiers)
-        if handled == EVENT_HANDLED:
-            # the event may have been handled by a parent
-            self.drag_element = element
+        if handled == EVENT_UNHANDLED:
+            return EVENT_UNHANDLED
 
-            # tell the element we've dragged the active element over
-            element = self.determineHit(x, y, exclude=element)
-            if element is not self.drag_over_element:
-                if self.drag_over_element is not None:
-                    self.dispatch_event(self.drag_over_element,
-                        'on_drag_leave', x, y, self.drag_element)
-            if element is not None and element.is_enabled:
-                self.dispatch_event(element, 'on_drag_enter', x, y,
-                    self.drag_element)
-            self.drag_over_element = element
-            return EVENT_HANDLED
+        # the event may have been handled by a parent
+        self.drag_element = element
+
+        # tell the element we've dragged the active element over
+        element = self.determineHit(x, y, exclude=element)
+        if element is not self.drag_over_element:
+            if self.drag_over_element is not None:
+                self.dispatch_event(self.drag_over_element,
+                    'on_drag_leave', x, y, self.drag_element)
+        if element is not None and element.is_enabled:
+            self.dispatch_event(element, 'on_drag_enter', x, y,
+                self.drag_element)
+        self.drag_over_element = element
+        return EVENT_HANDLED
 
 
     _last_click = 0
     def on_mouse_release(self, x, y, button, modifiers):
         # send release to the previously-pressed element
-        self.dispatch_event(self.mouse_press_element, 'on_mouse_release',
-            x, y, button, modifiers)
+        if self.mouse_press_element is not None:
+            self.dispatch_event(self.mouse_press_element, 'on_mouse_release',
+                x, y, button, modifiers)
 
         if self.drag_element is not None:
             # the on_drop check will most likely alter the active element
