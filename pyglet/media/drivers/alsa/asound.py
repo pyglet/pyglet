@@ -3,9 +3,9 @@
 Generated with:
 tools/wraptypes/wrap.py -o asound.py -lasound /usr/include/alsa/alisp.h /usr/include/alsa/asoundef.h /usr/include/alsa/asoundlib.h /usr/include/alsa/conf.h /usr/include/alsa/control.h /usr/include/alsa/control_external.h /usr/include/alsa/conv.h /usr/include/alsa/error.h /usr/include/alsa/global.h /usr/include/alsa/hwdep.h /usr/include/alsa/iatomic.h /usr/include/alsa/input.h /usr/include/alsa/instr.h /usr/include/alsa/mixer.h /usr/include/alsa/mixer_abst.h /usr/include/alsa/pcm.h /usr/include/alsa/pcm_external.h /usr/include/alsa/pcm_extplug.h /usr/include/alsa/pcm_ioplug.h /usr/include/alsa/pcm_old.h /usr/include/alsa/pcm_plugin.h /usr/include/alsa/pcm_rate.h /usr/include/alsa/rawmidi.h /usr/include/alsa/seq.h /usr/include/alsa/seq_event.h /usr/include/alsa/seq_midi_event.h /usr/include/alsa/seqmid.h /usr/include/alsa/timer.h /usr/include/alsa/version.h
 
-Do not modify this file.
-
  -- And then hacked to work with libasound.so, grep for XXX  
+
+Do not regenerate this file.
 '''
 
 __docformat__ =  'restructuredtext'
@@ -838,6 +838,17 @@ struct__snd_output._fields_ = [
 ]
 
 snd_output_t = struct__snd_output 	# /usr/include/alsa/output.h:54
+
+# XXX output.h was not generated because of varargs, but we need this..
+snd_output_stdio_open = _lib.snd_output_stdio_open
+snd_output_stdio_open.restype = c_int
+snd_output_stdio_open.argtypes = [POINTER(POINTER(snd_output_t)), c_char_p, c_char_p]
+
+# XXX no args for varargs function (python can do formatting)
+snd_output_printf = _lib.snd_output_printf
+snd_output_printf.restype = c_int
+snd_output_printf.argtypes = [POINTER(snd_output_t), c_char_p]
+
 # /usr/include/alsa/conf.h:91
 snd_config_save = _lib.snd_config_save
 snd_config_save.restype = c_int

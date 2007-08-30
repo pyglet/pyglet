@@ -290,7 +290,7 @@ class OpenALPlayer(BasePlayer):
                             self.next()
                         elif self._eos_action == self.EOS_STOP:
                             # For ManagedSoundPlayer only.
-                            self._stop()
+                            self.stop()
                         self.dispatch_event('on_eos')
                     buffer_pool.release(buffer)
 
@@ -350,6 +350,8 @@ class OpenALPlayer(BasePlayer):
                 elif self._eos_action == self.EOS_LOOP:
                     source._seek(0)
                 elif self._eos_action == self.EOS_PAUSE:
+                    source = None
+                elif self._eos_action == self.EOS_STOP:
                     source = None
                 else:
                     assert False, 'Invalid eos_action'

@@ -211,6 +211,7 @@ class Source(object):
         :rtype: `ManagedSoundPlayer`
         '''
         player = ManagedSoundPlayer()
+        player.eos_action = player.EOS_STOP
         player.queue(self)
         player.play()
         return player

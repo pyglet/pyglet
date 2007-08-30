@@ -81,9 +81,6 @@ class SilentPlayer(BasePlayer):
             self._timestamp = timestamp
             self._timestamp_time = time.time()
 
-    def _stop(self):
-        raise RuntimeError('Invalid eos_action for this player.')
-
     def _get_source(self):
         if self._sources:
             return self._sources[0]
