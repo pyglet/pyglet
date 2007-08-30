@@ -19,7 +19,7 @@ from wydget import loadxml
 for klass in [Frame, TabbedFrame,
         Drawer,
         Image, Label, XHTML,
-        Button, TextButton, RepeaterButton,
+        Button, RepeaterButton,
         TextInput, PasswordInput,
         VerticalSlider, HorizontalSlider,
         ArrowButtonUp, ArrowButtonDown,
@@ -28,7 +28,7 @@ for klass in [Frame, TabbedFrame,
         Movie, Music,
         PopupMenu, MenuItem,
         DropDownMenu, DropDownItem,
-        SelectionBar, Selection, Option,
+        Selection, Option,
         Table, Heading, Row, Cell,
         Progress]:
     loadxml.xml_registry[klass.name] = klass

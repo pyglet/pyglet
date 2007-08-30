@@ -96,8 +96,7 @@ class VerticalSlider(SliderCommon):
         # also, we force blending here so we don't generate a bazillion
         # textures
         self.bar = SliderBar(self, 'y', s, self.width, self.bar_size,
-            bgcolor=self.bar_color, is_blended=True,
-            color=self.bar_text_color)
+            bgcolor=self.bar_color, color=self.bar_text_color)
         self.positionBar()
 
     def get_inner_rect(self):
@@ -194,8 +193,7 @@ class HorizontalSlider(SliderCommon):
         s = self.show_value and str(self._value) or ' '
         # we force blending here so we don't generate a bazillion textures
         self.bar = SliderBar(self, 'x', s, self.bar_size,
-            self.height, bgcolor=self.bar_color, is_blended=True,
-            color=self.bar_text_color)
+            self.height, bgcolor=self.bar_color, color=self.bar_text_color)
 
         self.positionBar()
 

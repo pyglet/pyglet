@@ -1,15 +1,13 @@
 <frame width="100%" height="100%" bgcolor="white">
 <vertical valign="center" halign="center" padding="10">
-<button text="image button" image="tests/data/bg-100x19.png" />
 
-<text-button text="button" />
+<button>MbuttongM</button>
 
-<text-button text="label" />
+<button bgcolor="white">Mlabel on whitegM</button>
 
-<text-button text="label on white" bgcolor="white" />
-
+<button image="tests/data/bg-100x19.png">Mimage buttgM</button>
 <frame bgcolor="black">
-<button text="image button" image="tests/data/bg-100x19.png" />
+<button image="tests/data/bg-100x19.png">Mimage buttgM</button>
 </frame>
 </vertical>
 </frame>

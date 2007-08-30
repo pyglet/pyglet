@@ -59,7 +59,7 @@ class TextInputLine(Label):
         self.highlight = None
 
     def setText(self, text):
-        self.text = text
+        self._text = text
 
         if self.is_password:
             text = u'\u2022' * len(text)
@@ -67,9 +67,8 @@ class TextInputLine(Label):
         if text:
             style = self.getStyle()
             self.glyphs = style.getGlyphString(text, size=self.font_size)
-            self.image = style.textAsTexture(text,
-                font_size=self.font_size, color=self.color,
-                bgcolor=self.bgcolor)
+            self.image = style.text(text, font_size=self.font_size,
+                color=self.color, valign='top')
             self.width = self.image.width
             self.height = self.image.height
         else:
@@ -80,6 +79,8 @@ class TextInputLine(Label):
 
         # move cursor
         self.setCursorPosition(self.cursor_index)
+
+    text = property(lambda self: self._text, setText)
 
     def editText(self, text, move=0):
         '''Either insert at the current cursor position or replace the

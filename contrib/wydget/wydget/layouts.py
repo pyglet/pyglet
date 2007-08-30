@@ -63,7 +63,7 @@ class Layout(object):
     def fromXML(cls, element, parent):
         '''Create the a layout from the XML element and handle children.
         '''
-        kw = loadxml.parseAttributes(parent, element)
+        kw = loadxml.parseAttributes(element)
         parent.layout = layout = cls(parent, **kw)
 
         for child in element.getchildren():
@@ -139,7 +139,7 @@ class Cell(object):
 
     @classmethod
     def fromXML(cls, element, parent):
-        kw = loadxml.parseAttributes(parent, element)
+        kw = loadxml.parseAttributes(element)
         layout = cls(parent, **kw)
 
         l = element.getchildren()

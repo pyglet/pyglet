@@ -26,7 +26,7 @@ def getConstructor(name):
     except KeyError:
         raise KeyError, 'No constructor for XML element %r'%name
 
-def parseAttributes(parent, element):
+def parseAttributes(element):
     '''Convert various XML element attribute strings into Python values.
     '''
     kw = {}

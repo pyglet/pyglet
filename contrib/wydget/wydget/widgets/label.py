@@ -130,7 +130,7 @@ class LabelCommon(element.Element):
     def fromXML(cls, element, parent):
         '''Create the object from the XML element and attach it to the parent.
         '''
-        kw = loadxml.parseAttributes(parent, element)
+        kw = loadxml.parseAttributes(element)
         text = xml.sax.saxutils.unescape(element.text)
         obj = cls(parent, text, **kw)
         for child in element.getchildren():
@@ -179,22 +179,38 @@ class LabelCommon(element.Element):
             if self.height_spec is None:
                 self.height = self.image.height + self.padding * 2
 
+
     def render(self, rect):
-        # XXX clip with glScissor
         glPushMatrix()
         w = self.image.width
         h = self.font_size * len(self.image.lines)
 
-        if self.rotate == 0:
-            glTranslatef(0, h, 0)
         if self.rotate:
             glRotatef(self.rotate, 0, 0, 1)
+        else:
+            glTranslatef(0, h, 0)
+
         if self.rotate == 270:
             glTranslatef(-w, h, 0)
-        if self.rotate == 180:
+            w, h = h, w
+        elif self.rotate == 90:
+            w, h = h, w
+        elif self.rotate == 180:
             glTranslatef(-w, 0, 0)
 
+        scissor = not (rect.x == rect.y == 0 and rect.width >= w and
+            rect.height >= h)
+
+        if scissor:
+            glPushAttrib(GL_SCISSOR_BIT)
+            glEnable(GL_SCISSOR_TEST)
+            x, y = self.calculateAbsoluteCoords(rect.x, rect.y)
+            glScissor(int(x), int(y), int(rect.width), int(rect.height))
+
         self.image.draw()
+
+        if scissor:
+            glPopAttrib()
 
         glPopMatrix()
 

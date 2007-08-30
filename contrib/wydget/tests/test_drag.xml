@@ -2,7 +2,7 @@
  <frame is_transparent="true" width="50%" height="100%">
   <vertical valign="center" halign="center" padding="20">
    <label class="draggable">Drag me!"</label>
-   <text-button class="draggable" text="Drag me, press me!" id="press-me" />
+   <button class="draggable" id="press-me">Drag me, press me!"</button>
   </vertical>
  </frame>
  <frame class="droppable" bgcolor="white" width="50%" height="100%" x="512">

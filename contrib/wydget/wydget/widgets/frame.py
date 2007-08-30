@@ -77,7 +77,7 @@ class Frame(element.Element):
 
         If scrollable then put all children loaded into a container frame.
         '''
-        kw = loadxml.parseAttributes(parent, element)
+        kw = loadxml.parseAttributes(element)
         obj = cls(parent, **kw)
         for child in element.getchildren():
             if obj.scrollable:
@@ -413,11 +413,11 @@ class TabbedFrame(Frame):
 
         Create tabs for <tab> child tags.
         '''
-        kw = loadxml.parseAttributes(parent, element)
+        kw = loadxml.parseAttributes(element)
         obj = cls(parent, **kw)
         for child in element.getchildren():
             assert child.tag == 'tab'
-            kw = loadxml.parseAttributes(obj, child)
+            kw = loadxml.parseAttributes(child)
             label = kw.pop('label')
             tab = obj.newTab(label, **kw)
             for content in child.getchildren():

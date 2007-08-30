@@ -11,7 +11,6 @@ KNOWN BUGS
   . columns & horizontal fill layouts have bogus RHS padding
 - Tables:
   . table columns don't truncate
-  . also, tables are stupidly slow
 - Text Line:
   . selection out of the text line's bounds doesn't scroll the text
   . cursor movement during selection doesn't create new selection if
@@ -19,18 +18,15 @@ KNOWN BUGS
 - Drop-down menus:
   . aren't really menus
   . are poorly-structured and don't cope with resizing
+  . <ah> Doesn't open menu on mouse press.
 - Drag-and-drop:
   . drags and moves are unbounded (dx/dy continue to be generated when
     pointer hits the screen boundary, try test_drag and drag up until the
     pointer hits the top of the screen. drag down and see the element offset
     from the pointer)
-- DropDownMenu
-  . <ah> Doesn't open menu on mouse press.
 - Element
   . <ah> Right border is inset by one pixel (evident in test_element,
     test_drawer and test_dropdown)
-  . <ah> Negative padding obscures text at top (test_element, 4th element),
-    missing top-left and bottom-right corners.
 - test_element_over
   . <ah> Move mouse from outside window into inner generates ENTER inner,
     ENTER outer (bad nesting when mouse then leaves ENTER inner).
@@ -92,8 +88,6 @@ Frames could be the only things that have children:
 - move all child handling stuff from Element to Frame
 - get rid of Frame.is_transparent
 - lots of other cleanups as a result
-
-Border model should be fixed so border doesn't have automagic padding?
 
 Use layout's element model at the core.
 

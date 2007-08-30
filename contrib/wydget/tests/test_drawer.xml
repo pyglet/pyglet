@@ -15,7 +15,7 @@
                 halign="right" bgcolor="white">I'm a drawer!</label>
         </vertical>
       </drawer>
-      <label width="50%" height="100" id="drawer-control-1" valign="center"
+      <label rotate="90" height="100" id="drawer-control-1" valign="center"
              class="drawer-control" halign="center" border="black"
              bgcolor="white">Click me!</label>
      </horizontal>
@@ -23,7 +23,7 @@
 
     <frame width="100%" is_transparent="true">
      <horizontal>
-      <label width="50%" height="100" id="drawer-control-2" valign="center"
+      <label rotate="270" height="100" id="drawer-control-2" valign="center"
              class="drawer-control" halign="center" border="black"
              bgcolor="white">Click me!</label>
       <drawer width="50%" state="exposed" side="left" id="test-drawer-2">

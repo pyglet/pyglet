@@ -232,7 +232,7 @@ class Element(object):
     def fromXML(cls, element, parent):
         '''Create the object from the XML element and attach it to the parent.
         '''
-        kw = loadxml.parseAttributes(parent, element)
+        kw = loadxml.parseAttributes(element)
         obj = cls(parent, **kw)
         for child in element.getchildren():
             loadxml.getConstructor(child.tag)(child, obj)

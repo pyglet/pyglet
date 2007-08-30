@@ -1,8 +1,10 @@
+import xml.sax.saxutils
+
 from pyglet.gl import *
 from pyglet import clock
 from pyglet.window import key, mouse
 
-from wydget import element, event, util, anim, data
+from wydget import element, event, util, anim, data, loadxml
 from wydget.widgets.label import ImageCommon, LabelCommon
 
 
@@ -49,6 +51,24 @@ class Button(ButtonCommon, ImageCommon):
             self.setText(text)
         else:
             self.text = text
+
+    @classmethod
+    def fromXML(cls, element, parent):
+        '''Create the object from the XML element and attach it to the parent.
+        '''
+        kw = loadxml.parseAttributes(element)
+        if element.text:
+            text = xml.sax.saxutils.unescape(element.text)
+        else:
+            text = None
+        if 'image' in kw:
+            kw['text'] = text
+            obj = Button(parent, **kw)
+        else:
+            obj = TextButton(parent, text, **kw)
+        for child in element.getchildren():
+            loadxml.getConstructor(child.tag)(child, obj)
+        return obj
 
     def parentDimensionsChanged(self):
         change = super(Button, self).parentDimensionsChanged()
@@ -142,7 +162,7 @@ class TextButton(ButtonCommon, LabelCommon):
     Will be rendered over the standard Element rendering.
     '''
 
-    name = 'text-button'
+    name = 'button'
     is_focusable = True
 
     _default = []
@@ -158,16 +178,18 @@ class TextButton(ButtonCommon, LabelCommon):
         self.pressed_bgcolor = util.parse_color(pressed_bgcolor)
         self.over_bgcolor = util.parse_color(over_bgcolor)
 
-    def render(self, rect):
+    def renderBackground(self, clipped):
         '''Select the correct image to render.
         '''
-        if self.is_pressed and self.is_over and self.pressed_bgcolor:
+        if not self.isEnabled():
+            self.bgcolor = (.7, .7, .7, 1)
+        elif self.is_pressed and self.is_over and self.pressed_bgcolor:
             self.bgcolor = self.pressed_bgcolor
         elif self.is_over and self.over_bgcolor:
             self.bgcolor = self.over_bgcolor
         else:
             self.bgcolor = self.base_bgcolor
-        super(TextButton, self).render(rect)
+        super(TextButton, self).renderBackground(clipped)
 
 
 class RepeaterButton(Button):
@@ -214,34 +236,34 @@ class RepeaterButton(Button):
         self.repeating = False
 
 
-@event.default('button, text-button, repeater-button')
+@event.default('button, repeater-button')
 def on_gain_focus(self):
     self.higlight_focused = True
     # let the event propogate to any parent
     return event.EVENT_UNHANDLED
 
-@event.default('button, text-button, repeater-button')
+@event.default('button, repeater-button')
 def on_lose_focus(self):
     self.higlight_focused = False
     # let the event propogate to any parent
     return event.EVENT_UNHANDLED
 
-@event.default('button, text-button')
+@event.default('button')
 def on_element_enter(self, x, y):
     self.is_over = True
     return event.EVENT_HANDLED
 
-@event.default('button, text-button')
+@event.default('button')
 def on_element_leave(self, x, y):
     self.is_over = False
     return event.EVENT_HANDLED
 
-@event.default('button, text-button')
+@event.default('button')
 def on_mouse_press(self, x, y, button, modifiers):
     self.is_pressed = True
     return event.EVENT_UNHANDLED
 
-@event.default('button, text-button')
+@event.default('button')
 def on_mouse_release(self, x, y, button, modifiers):
     self.is_pressed = False
     return event.EVENT_UNHANDLED
@@ -280,7 +302,7 @@ def on_element_leave(self, x, y):
     self.stopRepeat()
     return event.EVENT_HANDLED
 
-@event.default('button, text-button, repeater-button')
+@event.default('button, repeater-button')
 def on_text(self, text):
     if text in ' \r':
         self.getGUI().dispatch_event(self, 'on_click', 0, 0, mouse.LEFT, 0, 1)

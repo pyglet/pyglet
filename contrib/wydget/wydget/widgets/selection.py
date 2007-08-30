@@ -8,6 +8,98 @@ from wydget.widgets.frame import Frame
 from wydget.widgets.button import TextButton, Button
 from wydget.widgets.label import Label, Image
 
+class Selection(Frame):
+    name = 'selection'
+
+    def __init__(self, parent, items=[], size=None, is_exclusive=False,
+            color='black', bgcolor='white', is_vertical=True,
+            alt_bgcolor='ccc', active_bgcolor='ffc', item_pad=0,
+            is_transparent=True, scrollable=True, font_size=None, **kw):
+        self.is_vertical = is_vertical
+        self.is_exclusive = is_exclusive
+
+        if font_size is None:
+            font_size = parent.getStyle().font_size
+        else:
+            font_size = util.parse_value(font_size, None)
+
+        size = util.parse_value(size, None)
+
+        if is_vertical:
+            if size is not None:
+                kw['height'] = size * font_size
+        else:
+            if size is not None:
+                kw['width'] = size * font_size
+
+        super(Selection, self).__init__(parent, bgcolor=bgcolor,
+            scrollable=scrollable, is_transparent=is_transparent, **kw)
+        if scrollable: f = self.contents
+        else: f = self
+        if is_vertical:
+            f.layout = layouts.Vertical(f, valign='top', padding=item_pad,
+                halign='center')
+        else:
+            f.layout = layouts.Horizontal(f, valign='top',
+                padding=item_pad, halign='left')
+
+        # specific attributes for Options
+        self.color = util.parse_color(color)
+        self.base_bgcolor = self.bgcolor
+        self.alt_bgcolor = util.parse_color(alt_bgcolor)
+        self.active_bgcolor = util.parse_color(active_bgcolor)
+        self.font_size = font_size
+
+        for label, id, kw in items:
+            self.addOption(label, id, **kw)
+
+    @classmethod
+    def fromXML(cls, element, parent):
+        '''Create the object from the XML element and attach it to the parent.
+        '''
+        kw = loadxml.parseAttributes(element)
+
+        items = []
+        for child in element.getchildren():
+            assert child.tag == 'option'
+            text = xml.sax.saxutils.unescape(child.text)
+            childkw = loadxml.parseAttributes(child)
+            items.append((text, child.attrib.get('id'), childkw))
+
+        size = int(kw.pop('size', 0))
+        if size == 1:
+            obj = SelectionBar(parent, items, **kw)
+        else:
+            obj = Selection(parent, items, size=size, **kw)
+        return obj
+
+    def clearOptions(self):
+        if self.scrollable: self.contents.clear()
+        else: self.clear()
+
+    def addOption(self, label, id=None, **kw):
+        if self.scrollable: f = self.contents
+        else: f = self
+        o = Option(f, text=label, id=id or label, **kw)
+        f.layout()
+
+    def get_value(self):
+        if self.scrollable: f = self.contents
+        else: f = self
+        return [c.id for c in f.children if c.is_active]
+    value = property(get_value)
+
+    @event.default('selection')
+    def on_mouse_scroll(widget, x, y, dx, dy):
+        if not widget.scrollable:
+            return event.EVENT_UNHANDLED
+        if widget.v_slider is not None:
+            widget.v_slider.stepToMaximum(dy)
+        if widget.h_slider is not None:
+            widget.h_slider.stepToMaximum(dx)
+        return event.EVENT_HANDLED
+
+
 class SelectionBar(Frame):
     name = 'selection-bar'
 
@@ -39,8 +131,8 @@ class SelectionBar(Frame):
 
         # add the menu items and resize the main box if necessary
         width = height = 0
-        for n, (label, id) in enumerate(items):
-            i = Option(self.contents, text=label, id=id)
+        for n, (label, id, kw) in enumerate(items):
+            i = Option(self.contents, text=label, id=id, **kw)
             width = max(width, i.width)
             height = max(height, i.height)
 
@@ -82,110 +174,32 @@ class SelectionBar(Frame):
         self._value = value
     value = property(get_value, set_value)
 
-    @classmethod
-    def fromXML(cls, element, parent):
-        '''Create the object from the XML element and attach it to the parent.
-
-        If scrollable then put all children loaded into a container frame.
-        '''
-        kw = loadxml.parseAttributes(parent, element)
-        items = []
-        for child in element.getchildren():
-            text = xml.sax.saxutils.unescape(child.text)
-            items.append((text, child.attrib.get('id')))
-        return cls(parent, items, **kw)
-
-@event.default('selection-bar')
-def on_click(widget, x, y, button, modifiers, click_count):
-    if not button & mouse.LEFT:
-        return event.EVENT_UNHANDLED
-    # XXX position contents so the active item is over the label
-    contents = widget.contents
-    if contents.is_visible:
-        contents.setVisible(False)
-        contents.loseFocus()
-    else:
-        contents.setVisible(True)
-        contents.gainFocus()
-    return event.EVENT_HANDLED
-
-@event.default('selection-bar', 'on_gain_focus')
-def on_gain_focus(widget):
-    # catch focus
-    return event.EVENT_HANDLED
-
-@event.default('selection-bar', 'on_lose_focus')
-def on_lose_focus(widget):
-    widget.contents.setVisible(False)
-    return event.EVENT_HANDLED
-
-
-class Selection(Frame):
-    name = 'selection'
-
-    def __init__(self, parent, size=None, is_exclusive=False,
-            color='black', bgcolor='white', is_vertical=True,
-            alt_bgcolor='ccc', active_bgcolor='ffc', item_pad=0,
-            is_transparent=True, scrollable=True, font_size=None, **kw):
-        self.is_vertical = is_vertical
-        self.is_exclusive = is_exclusive
-
-        if font_size is None:
-            font_size = parent.getStyle().font_size
-        else:
-            font_size = util.parse_value(font_size, None)
-
-        size = util.parse_value(size, None)
-
-        if is_vertical:
-            if size is not None:
-                kw['height'] = size * font_size
-        else:
-            if size is not None:
-                kw['width'] = size * font_size
-
-        super(Selection, self).__init__(parent, bgcolor=bgcolor,
-            scrollable=scrollable, is_transparent=is_transparent, **kw)
-        if scrollable: f = self.contents
-        else: f = self
-        if is_vertical:
-            f.layout = layouts.Vertical(f, valign='top', padding=item_pad,
-                halign='center')
-        else:
-            f.layout = layouts.Horizontal(f, valign='top',
-                padding=item_pad, halign='left')
-
-        # specific attributes for Options
-        self.color = util.parse_color(color)
-        self.base_bgcolor = self.bgcolor
-        self.alt_bgcolor = util.parse_color(alt_bgcolor)
-        self.active_bgcolor = util.parse_color(active_bgcolor)
-        self.font_size = font_size
-
-    def clearOptions(self):
-        if self.scrollable: self.contents.clear()
-        else: self.clear()
-
     def addOption(self, label, id=None, **kw):
-        if self.scrollable: f = self.contents
-        else: f = self
-        o = Option(f, text=label, id=id or label, **kw)
-        f.layout()
+        Option(self.contents, text=label, id=id or label, **kw)
+        self.contents.layout()
 
-    def get_value(self):
-        if self.scrollable: f = self.contents
-        else: f = self
-        return [c.id for c in f.children if c.is_active]
-    value = property(get_value)
-
-    @event.default('selection')
-    def on_mouse_scroll(widget, x, y, dx, dy):
-        if not widget.scrollable:
+    @event.default('selection-bar')
+    def on_click(widget, x, y, button, modifiers, click_count):
+        if not button & mouse.LEFT:
             return event.EVENT_UNHANDLED
-        if widget.v_slider is not None:
-            widget.v_slider.stepToMaximum(dy)
-        if widget.h_slider is not None:
-            widget.h_slider.stepToMaximum(dx)
+        # XXX position contents so the active item is over the label
+        contents = widget.contents
+        if contents.is_visible:
+            contents.setVisible(False)
+            contents.loseFocus()
+        else:
+            contents.setVisible(True)
+            contents.gainFocus()
+        return event.EVENT_HANDLED
+
+    @event.default('selection-bar', 'on_gain_focus')
+    def on_gain_focus(widget):
+        # catch focus
+        return event.EVENT_HANDLED
+
+    @event.default('selection-bar', 'on_lose_focus')
+    def on_lose_focus(widget):
+        widget.contents.setVisible(False)
         return event.EVENT_HANDLED
 
 
@@ -227,7 +241,6 @@ class Option(TextButton):
         if font_size is None: font_size = select.font_size
         if id is None: id = kw['text']
 
-        #kw['height'] = font_size
         super(Option, self).__init__(parent, border=border, bgcolor=bgcolor,
             font_size=font_size, color=color, id=id, **kw)
 
@@ -243,21 +256,21 @@ class Option(TextButton):
     def fromXML(cls, element, parent):
         '''Create the object from the XML element and attach it to the parent.
         '''
-        kw = loadxml.parseAttributes(parent, element)
+        kw = loadxml.parseAttributes(element)
         kw['text'] = xml.sax.saxutils.unescape(element.text)
         obj = cls(parent, **kw)
         for child in element.getchildren():
             loadxml.getConstructor(element.tag)(child, obj)
         return obj
 
-    def render(self, rect):
+    def renderBackground(self, clipped):
         '''Select the correct image to render.
         '''
         if self.is_active and self.active_bgcolor:
             self.bgcolor = self.active_bgcolor
         else:
             self.bgcolor = self.base_bgcolor
-        super(TextButton, self).render(rect)
+        super(TextButton, self).renderBackground(clipped)
 
 @event.default('selection-bar option')
 def on_click(widget, *args):

@@ -36,7 +36,7 @@ class PopupMenu(Frame):
             is_visible=False, **kw)
 
         for n, (label, id) in enumerate(items):
-            MenuItem(self, text=label, id=id, is_blended=True,
+            MenuItem(self, text=label, id=id,
                 bgcolor=((.95, .95, .95, 1), (1, 1, 1, 1))[n%2])
 
         layouts.Vertical(self).layout()
@@ -64,7 +64,7 @@ class PopupMenu(Frame):
 
         If scrollable then put all children loaded into a container frame.
         '''
-        kw = loadxml.parseAttributes(parent, element)
+        kw = loadxml.parseAttributes(element)
         items = []
         for child in element.getchildren():
             text = xml.sax.saxutils.unescape(child.text)
@@ -126,7 +126,7 @@ class DropDownMenu(Frame):
         # add the menu items and resize the main box if necessary
         width = height = 0
         for n, (label, id) in enumerate(items):
-            i = DropDownItem(self.contents, text=label, id=id, is_blended=True,
+            i = DropDownItem(self.contents, text=label, id=id,
                 bgcolor=((.95, .95, .95, 1), (1, 1, 1, 1))[n%2],
                 font_size=font_size)
             if self.width_spec is None:
@@ -169,7 +169,7 @@ class DropDownMenu(Frame):
 
         If scrollable then put all children loaded into a container frame.
         '''
-        kw = loadxml.parseAttributes(parent, element)
+        kw = loadxml.parseAttributes(element)
         items = []
         for child in element.getchildren():
             text = xml.sax.saxutils.unescape(child.text)

@@ -16,7 +16,7 @@ class Progress(Label):
 
         super(Progress, self).__init__(parent, ' ', width=width,
             height=height, bgcolor=bgcolor, color=color, halign=halign,
-            valign=valign, is_blended=True, **kw)
+            valign=valign, **kw)
 
         if self.show_value:
             self.setText('%d%%'%(value * 100))
@@ -39,7 +39,7 @@ class Progress(Label):
     def fromXML(cls, element, parent):
         '''Create the object from the XML element and attach it to the parent.
         '''
-        kw = loadxml.parseAttributes(parent, element)
+        kw = loadxml.parseAttributes(element)
         obj = cls(parent, **kw)
         for child in element.getchildren():
             loadxml.getConstructor(element.tag)(child, obj)

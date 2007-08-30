@@ -74,7 +74,7 @@ def run(xml_file):
         return event.EVENT_HANDLED
 
     if 0:
-        @gui.select('button,text-button')
+        @gui.select('button')
         def on_click(widget, *args):
             print 'DEBUG', widget, 'PRESSED'
             return event.EVENT_HANDLED

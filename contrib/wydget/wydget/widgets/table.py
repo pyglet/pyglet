@@ -6,7 +6,7 @@ from pyglet.gl import *
 from wydget import element, event, layouts, loadxml, util
 from wydget.widgets.frame import Frame, ContainerFrame
 from wydget.widgets.slider import VerticalSlider, HorizontalSlider
-from wydget.widgets.button import TextButton
+from wydget.widgets.label import Label
 
 class Table(element.Element):
     name = 'table'
@@ -54,7 +54,7 @@ class Table(element.Element):
 
         If scrollable then put all children loaded into a container frame.
         '''
-        kw = loadxml.parseAttributes(parent, element)
+        kw = loadxml.parseAttributes(element)
         obj = cls(parent, **kw)
         for child in element.getchildren():
             if child.tag == 'row':
@@ -101,16 +101,25 @@ class Row(Frame):
         kw['height'] = font_size
         super(Row, self).__init__(parent, border=border, bgcolor=bgcolor,
             width=width, **kw)
+        self.base_bgcolor = bgcolor
+
+    def renderBackground(self, clipped):
+        '''Select the correct background color to render.
+        '''
+        if self.is_active and self.active_bgcolor:
+            self.bgcolor = self.active_bgcolor
+        else:
+            self.bgcolor = self.base_bgcolor
+        super(Row, self).renderBackground(clipped)
 
 
-class Cell(TextButton):
+
+class Cell(Label):
     name = 'cell'
 
     def __init__(self, parent, value, type='string', **kw):
         self.value = value
         self.type = type
-        self.active_bgcolor = parent.active_bgcolor
-        kw['bgcolor'] = parent.bgcolor
         self.column = len(parent.children)
         kw['x'] = parent.parent.parent.heading.children[self.column].x
         if type == 'time':
@@ -126,7 +135,7 @@ class Cell(TextButton):
     def fromXML(cls, element, parent):
         '''Create the object from the XML element and attach it to the parent.
         '''
-        kw = loadxml.parseAttributes(parent, element)
+        kw = loadxml.parseAttributes(element)
         text = xml.sax.saxutils.unescape(element.text)
 
         t = kw.get('type')
@@ -153,18 +162,4 @@ class Cell(TextButton):
         #for child in element.getchildren():
         #    loadxml.getConstructor(element.tag)(child, obj)
         return obj
-
-    def setText(self, text):
-        return super(Cell, self).setText(text, additional=('active', ))
-
-    def render(self, rect):
-        '''Select the correct image to render.
-        '''
-        if self.parent.is_active and self.active_bgcolor:
-            self.bgcolor = self.active_bgcolor
-            self.image = self.active_image
-        else:
-            self.image = self.base_image
-            self.bgcolor = self.base_bgcolor
-        super(Cell, self).render(rect)
 

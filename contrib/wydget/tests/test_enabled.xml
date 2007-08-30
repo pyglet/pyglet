@@ -4,7 +4,7 @@
 <label bgcolor="white" padding="10" id="enable-other">Click me to toggle
 the other button's enabled state</label>
 
-<text-button id="press-me" text="I am the other button" />
+<button id="press-me">I am the other button</button>
 
 </vertical>
 </frame>
