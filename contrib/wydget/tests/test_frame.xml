@@ -1,6 +1,6 @@
 <frame border="black" bgcolor="white" padding="100">
 
- <columns rowpad="10" colpad="10">
+ <grid rowpad="10" colpad="10">
   <frame>
 
  <frame id="outer" scrollable="true" width="200" height="200">
@@ -68,7 +68,7 @@
 
  </frame>
 
- </columns>
+ </grid>
 
 -->
 </frame>

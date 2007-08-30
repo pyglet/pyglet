@@ -1,12 +1,12 @@
 <frame width="100%" height="100%">
 <vertical valign="center" halign="center">
 
-<selection size="1">
+<combo-box>
  <option>First Option</option>
  <option>Second Option</option>
  <option>Third, long Option</option>
  <option>Last Option</option>
-</selection>
+</combo-box>
 
 </vertical>
 </frame>

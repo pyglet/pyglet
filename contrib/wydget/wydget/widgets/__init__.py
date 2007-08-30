@@ -5,7 +5,7 @@ from wydget.widgets.label import Image, Label, XHTML
 from wydget.widgets.menu import MenuItem, PopupMenu, DropDownMenu, DropDownItem
 from wydget.widgets.movie import Movie
 from wydget.widgets.music import Music
-from wydget.widgets.selection import SelectionBar, Selection, Option
+from wydget.widgets.selection import ComboBox, Selection, Option
 from wydget.widgets.slider import VerticalSlider, HorizontalSlider
 from wydget.widgets.slider import ArrowButtonUp, ArrowButtonDown
 from wydget.widgets.slider import ArrowButtonLeft, ArrowButtonRight
@@ -28,7 +28,7 @@ for klass in [Frame, TabbedFrame,
         Movie, Music,
         PopupMenu, MenuItem,
         DropDownMenu, DropDownItem,
-        Selection, Option,
+        ComboBox, Selection, Option,
         Table, Heading, Row, Cell,
         Progress]:
     loadxml.xml_registry[klass.name] = klass

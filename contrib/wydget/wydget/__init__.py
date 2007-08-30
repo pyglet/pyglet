@@ -258,7 +258,9 @@ class GUI(event.GUIEventDispatcher):
     def isVisible(self): return True
 
     def getParent(self, selector):
-        if selector == self.name: return self
+        if isinstance(selector, str):
+            selector = [s.strip() for s in selector.split(',')]
+        if self.name in selector: return self
         return None
 
     def calculateAbsoluteCoords(self, x, y):

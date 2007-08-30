@@ -248,7 +248,9 @@ class Element(object):
 
         XXX at the moment, just does name
         '''
-        if self.name == selector: return self
+        if isinstance(selector, str):
+            selector = [s.strip() for s in selector.split(',')]
+        if self.name in selector: return self
         return self.parent.getParent(selector)
 
     def holds(self, element):

@@ -34,15 +34,6 @@ class Layout(object):
     def __call__(self):
         self.layout()
 
-    def add(self, child):
-        '''Generally this is a NOOP for simple layouts.
-
-        We generally only care about "child" when it's a child layout.
-
-        See Grid for where this is actually used.
-        '''
-        pass
-
     def get_height(self):
         if not self.parent.children: return 0
         return max(c.y + c.height for c in self.parent.children
@@ -67,87 +58,8 @@ class Layout(object):
         parent.layout = layout = cls(parent, **kw)
 
         for child in element.getchildren():
-            child = loadxml.getConstructor(child.tag)(child, layout.parent)
-            layout.add(child)
+            loadxml.getConstructor(child.tag)(child, layout.parent)
         layout()
-
-        return layout
-
-
-class Grid(Layout):
-    name = 'grid'
-
-    def __init__(self, parent):
-        super(Grid, self).__init__(parent)
-        self.rows = []
-
-    def add(self, row):
-        self.rows.append(row)
-    
-    def layout(self):
-        # XXX allow varying heights
-        ys = self.parent.height // len(self.rows)
-
-        for j, row in enumerate(self.rows):
-            # XXX allow varying widths
-            # XXX allow column spanning
-            # XXX allow row spanning
-            xs = self.parent.width // len(row.cells)
-            for i, cell in enumerate(row.cells):
-                if cell.child is None: continue
-
-                x = i * xs
-                if cell.halign == CENTER:
-                    x += xs // 2 - cell.child.width // 2
-                elif cell.halign == RIGHT:
-                    x += xs - cell.child.width
-
-                y = j * ys
-                if cell.valign == CENTER:
-                    y += ys // 2 - cell.child.height // 2
-                elif cell.valign == TOP:
-                    y += ys - cell.child.height
-
-                cell.child.x, cell.child.y, cell.child.z = x, y, 0
-
-        super(Grid, self).layout()
-
-
-class Row(Layout):
-    name = 'row'
-    def __init__(self, parent):
-        super(Row, self).__init__(parent)
-        self.cells = []
-
-    def add(self, cell):
-        self.cells.append(cell)
-
-    def layout(self):
-        pass
-
-class Cell(object):
-    name = 'cell'
-
-    def __init__(self, parent, child=None, valign=CENTER, halign=CENTER):
-        super(Cell, self).__init__(parent)
-        self.child = child
-        self.valign = valign
-        self.halign = halign
-
-    def layout(self):
-        pass
-
-    @classmethod
-    def fromXML(cls, element, parent):
-        kw = loadxml.parseAttributes(element)
-        layout = cls(parent, **kw)
-
-        l = element.getchildren()
-        if not l: return
-
-        assert len(l) == 1, '<cell> may only have one (or no) child'
-
-        layout.child = loadxml.getConstructor(l[0].tag)(l[0], parent)
 
         return layout
 
@@ -378,20 +290,20 @@ class Horizontal(Layout):
         super(Horizontal, self).layout()
 
 
-class Columns(Layout):
+class Grid(Layout):
     '''A simple table layout that sets column widths in child rows to fit
     all child data.
 
     Note that this layout ignores *cell* visibility but honors *row*
     visibility for layout purposes.
     '''
-    name = 'columns'
+    name = 'grid'
 
     # XXX column alignments
     def __init__(self, parent, colpad=0, rowpad=0, **kw):
         self.colpad = util.parse_value(colpad, 0)
         self.rowpad = util.parse_value(rowpad, 0)
-        super(Columns, self).__init__(parent, **kw)
+        super(Grid, self).__init__(parent, **kw)
 
     def columnWidths(self):
         columns = []
@@ -438,7 +350,8 @@ class Columns(Layout):
             row.layout()
             y -= self.rowpad
 
-        super(Columns, self).layout()
+        super(Grid, self).layout()
+
 
 class Form(Layout):
     name = 'form'
@@ -468,7 +381,7 @@ class Form(Layout):
             halign='right', **kw):
         self.elements.append(element)
         if expand_element:
-            pw = parent.inner_rect.width
+            pw = self.parent.inner_rect.width
             element.width = pw - (self.label_width + self.padding)
         # XXX alignment
         if label:
@@ -506,8 +419,27 @@ class Form(Layout):
 
         super(Form, self).layout()
 
+    @classmethod
+    def fromXML(cls, element, parent):
+        '''Create the a layout from the XML element and handle children.
+        '''
+        kw = loadxml.parseAttributes(element)
+        parent.layout = layout = cls(parent, **kw)
+
+        for child in element.getchildren():
+            assert child.tag == 'row', '<form> children must be <row>'
+            ckw = loadxml.parseAttributes(child)
+            l = child.getchildren()
+            if not l: return
+            assert len(l) == 1, '<row> may only have one (or no) child'
+            content = loadxml.getConstructor(l[0].tag)(l[0], parent)
+            layout.addElement(ckw['label'], content, ckw.get('expand'))
+
+        layout()
+        return layout
+
 
 import loadxml
-for klass in [Grid, Row, Cell, Vertical, Horizontal, Columns]:
+for klass in [Vertical, Horizontal, Grid, Form]:
     loadxml.xml_registry[klass.name] = klass
 

@@ -1,0 +1,21 @@
+<frame width="100%" height="100%">
+<vertical halign="center" valign="center">
+
+<frame border="red" bgcolor="white">
+ <form>
+  <row label="First Element"><textinput size="10" text="size=10em" /></row>
+  <row label="Second Element"><checkbox /></row>
+  <row label="Third"><frame><horizontal padding="4">
+    <textinput size="4" text="YYYY" />
+    <textinput size="2" text="MM" />
+    <textinput size="2" text="DD" />
+  </horizontal></frame></row>
+  <!--
+  <row label="Another Element" expand="true"><textinput text="Expand!" /></row>
+  -->
+  <row label="Element"><textinput size="20" text="size=20em" /></row>
+ </form>
+</frame>
+
+</vertical>
+</frame>

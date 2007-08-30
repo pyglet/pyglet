@@ -2,11 +2,11 @@
  <vertical halign="center" valing="center" padding="1">
 
     <frame bgcolor="white" border="green">
-     <columns>
+     <grid>
       <frame padding="4"><label border="black">First row, first column</label><label border="black">2nd col</label><label border="black">3rd col</label></frame>
       <frame bgcolor="gray"><label border="black">Second row, 1st column</label><label padding="10" border="black">2nd col</label><label border="black">3rd column</label></frame>
       <frame><label border="black">Third row, first column rocks!</label><label border="black">2nd col</label><label border="black">3rd col</label></frame>
-     </columns>
+     </grid>
     </frame>
 
  </vertical>

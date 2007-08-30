@@ -8,7 +8,24 @@ from wydget.widgets.frame import Frame
 from wydget.widgets.button import TextButton, Button
 from wydget.widgets.label import Label, Image
 
-class Selection(Frame):
+class SelectionCommon(Frame):
+
+    @classmethod
+    def fromXML(cls, element, parent):
+        '''Create the object from the XML element and attach it to the parent.
+        '''
+        kw = loadxml.parseAttributes(element)
+
+        items = []
+        for child in element.getchildren():
+            assert child.tag == 'option'
+            text = xml.sax.saxutils.unescape(child.text)
+            childkw = loadxml.parseAttributes(child)
+            items.append((text, child.attrib.get('id'), childkw))
+
+        return cls(parent, items, **kw)
+
+class Selection(SelectionCommon):
     name = 'selection'
 
     def __init__(self, parent, items=[], size=None, is_exclusive=False,
@@ -53,26 +70,6 @@ class Selection(Frame):
         for label, id, kw in items:
             self.addOption(label, id, **kw)
 
-    @classmethod
-    def fromXML(cls, element, parent):
-        '''Create the object from the XML element and attach it to the parent.
-        '''
-        kw = loadxml.parseAttributes(element)
-
-        items = []
-        for child in element.getchildren():
-            assert child.tag == 'option'
-            text = xml.sax.saxutils.unescape(child.text)
-            childkw = loadxml.parseAttributes(child)
-            items.append((text, child.attrib.get('id'), childkw))
-
-        size = int(kw.pop('size', 0))
-        if size == 1:
-            obj = SelectionBar(parent, items, **kw)
-        else:
-            obj = Selection(parent, items, size=size, **kw)
-        return obj
-
     def clearOptions(self):
         if self.scrollable: self.contents.clear()
         else: self.clear()
@@ -100,15 +97,15 @@ class Selection(Frame):
         return event.EVENT_HANDLED
 
 
-class SelectionBar(Frame):
-    name = 'selection-bar'
+class ComboBox(SelectionCommon):
+    name = 'combo-box'
 
     is_vertical = True
     def __init__(self, parent, items, font_size=None, border="black",
             color='black', bgcolor='white', 
             alt_bgcolor='ccc', active_bgcolor='ffc', item_pad=0,
             **kw):
-        super(SelectionBar, self).__init__(parent, border=border,
+        super(ComboBox, self).__init__(parent, border=border,
             bgcolor=bgcolor, **kw)
         self.layout = layouts.Horizontal(self, valign='center',
             only_visible=True)
@@ -120,6 +117,7 @@ class SelectionBar(Frame):
         self.active_bgcolor = util.parse_color(active_bgcolor)
         self.font_size = font_size
 
+        # XXX add a an editable flag, and use a TextInput if it's true
         self.label = Label(self, items[0][0], font_size=font_size,
             color=color)
 
@@ -178,7 +176,7 @@ class SelectionBar(Frame):
         Option(self.contents, text=label, id=id or label, **kw)
         self.contents.layout()
 
-    @event.default('selection-bar')
+    @event.default('combo-box')
     def on_click(widget, x, y, button, modifiers, click_count):
         if not button & mouse.LEFT:
             return event.EVENT_UNHANDLED
@@ -192,12 +190,12 @@ class SelectionBar(Frame):
             contents.gainFocus()
         return event.EVENT_HANDLED
 
-    @event.default('selection-bar', 'on_gain_focus')
+    @event.default('combo-box', 'on_gain_focus')
     def on_gain_focus(widget):
         # catch focus
         return event.EVENT_HANDLED
 
-    @event.default('selection-bar', 'on_lose_focus')
+    @event.default('combo-box', 'on_lose_focus')
     def on_lose_focus(widget):
         widget.contents.setVisible(False)
         return event.EVENT_HANDLED
@@ -213,9 +211,7 @@ class Option(TextButton):
         assert 'text' in kw, 'text required for Option'
 
         # default styling and width to parent settings
-        select = parent.getParent('selection')
-        if select is None:
-            select = parent.getParent('selection-bar')
+        select = parent.getParent('selection, combo-box')
         if color is None:
             color = select.color
 
@@ -272,9 +268,9 @@ class Option(TextButton):
             self.bgcolor = self.base_bgcolor
         super(TextButton, self).renderBackground(clipped)
 
-@event.default('selection-bar option')
+@event.default('combo-box option')
 def on_click(widget, *args):
-    select = widget.getParent('selection-bar')
+    select = widget.getParent('combo-box')
     select.value = widget.id
     select.contents.setVisible(False)
     select.contents.loseFocus()
