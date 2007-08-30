@@ -120,7 +120,26 @@ class SilentManagedSoundPlayer(SilentPlayer, ManagedSoundPlayerMixIn):
     pass
 
 class SilentListener(Listener):
-    pass
+    def set_volume(self, volume):
+        self._volume = volume
+
+    def set_position(self, position):
+        self._position = position
+
+    def set_velocity(self, velocity):
+        self._velocity = velocity
+
+    def set_forward_orientation(self, orientation):
+        self._forward_orientation = orientation
+
+    def set_up_orientation(self, orientation):
+        self._up_orientation = orientation
+
+    def set_doppler_factor(self, factor):
+        self._doppler_factor = factor
+
+    def set_speed_of_sound(self, speed_of_sound):
+        self._speed_of_sound = speed_of_sound
 
 def driver_init():
     pass

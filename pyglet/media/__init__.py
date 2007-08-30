@@ -853,7 +853,6 @@ else:
     for driver_name in pyglet.options['audio_driver']:
         try:
             driver_name = 'pyglet.media.drivers.' + driver_name
-            print driver_name
             __import__(driver_name)
             driver = sys.modules[driver_name]
             break
