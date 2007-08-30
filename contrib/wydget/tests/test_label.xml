@@ -17,6 +17,12 @@
    <label>(border="black" bgcolor="red")</label>
   </horizontal></frame>
 
+  <frame is_transparent="true"><horizontal padding="10">
+   <image border="black" bgcolor="red" color="blue"
+          image="tests/data/ball-small.png" />
+   <label>(border="black" bgcolor="red" color="blue")</label>
+  </horizontal></frame>
+
   <image border="black" padding="10" image="tests/data/ball-small.png" />
 
   <label halign="left" bgcolor="white" width="50%">halign left</label>

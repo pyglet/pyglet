@@ -13,22 +13,19 @@
         over_image="tests/data/bg-over-100x19.png"
         pressed_image="tests/data/bg-pressed-100x19.png" />
 
-<text-button text="text" bgcolor="white" />
+<text-button bgcolor="white">text</text-button>
 
-<text-button padding="5" text="padding=5" bgcolor="white" />
+<text-button padding="5" bgcolor="white">padding=5</text-button>
 
-<text-button text="text (over=red)" bgcolor="white"
-             over_bgcolor="red" />
-<text-button text="text (press=green)" bgcolor="white"
-             pressed_bgcolor="green" />
-<text-button text="text (over=red, press=green)" bgcolor="white"
-             over_bgcolor="red" pressed_bgcolor="green" />
-<text-button text="text with border" border="black" bgcolor="white" />
-<text-button text="text with border (over=red)" border="black"
-             bgcolor="white" over_bgcolor="red" />
-<text-button text="text with border (press=green)" border="black"
-             bgcolor="white" pressed_bgcolor="green" />
-<text-button text="text with border (over=red, press=green)" border="black"
-             bgcolor="white" over_bgcolor="red" pressed_bgcolor="green" />
+<text-button bgcolor="white" over_bgcolor="red">text (over=red)</text-button>
+<text-button bgcolor="white" pressed_bgcolor="green">text (press=green)</text-button>
+<text-button bgcolor="white" over_bgcolor="red" pressed_bgcolor="green">text (over=red, press=green)</text-button>
+<text-button border="black" bgcolor="white">text with border</text-button>
+<text-button border="black" bgcolor="white" over_bgcolor="red">text with border (over=red)</text-button>
+<text-button border="black" bgcolor="white" pressed_bgcolor="green">text with border (press=green)</text-button>
+<text-button border="black" bgcolor="white" over_bgcolor="red" pressed_bgcolor="green">text with border (over=red, press=green)</text-button>
+
+<text-button rotate="90">rotated 90 button</text-button>
+
 </vertical>
 </frame>

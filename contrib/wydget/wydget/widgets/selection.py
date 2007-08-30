@@ -1,10 +1,124 @@
 import xml.sax.saxutils
 
+from pyglet.window import mouse
 from pyglet.gl import *
 
-from wydget import element, event, layouts, loadxml, util
+from wydget import element, event, layouts, loadxml, util, data
 from wydget.widgets.frame import Frame
 from wydget.widgets.button import TextButton, Button
+from wydget.widgets.label import Label, Image
+
+class SelectionBar(Frame):
+    name = 'selection-bar'
+
+    is_vertical = True
+    def __init__(self, parent, items, font_size=None, border="black",
+            color='black', bgcolor='white', 
+            alt_bgcolor='ccc', active_bgcolor='ffc', item_pad=0,
+            **kw):
+        super(SelectionBar, self).__init__(parent, border=border,
+            bgcolor=bgcolor, **kw)
+        self.layout = layouts.Horizontal(self, valign='center',
+            only_visible=True)
+
+        # specific attributes for Options
+        self.color = util.parse_color(color)
+        self.base_bgcolor = self.bgcolor
+        self.alt_bgcolor = util.parse_color(alt_bgcolor)
+        self.active_bgcolor = util.parse_color(active_bgcolor)
+        self.font_size = font_size
+
+        self.label = Label(self, items[0][0], font_size=font_size,
+            color=color)
+
+        Image(self, self.arrow, color=(0, 0, 0, 1))
+
+        # set up the popup item - try to make it appear in front
+        self.contents = Frame(self, is_visible=False, border="black", z=.5)
+        self.contents.layout = layouts.Vertical(self.contents)
+
+        # add the menu items and resize the main box if necessary
+        width = height = 0
+        for n, (label, id) in enumerate(items):
+            i = Option(self.contents, text=label, id=id)
+            width = max(width, i.width)
+            height = max(height, i.height)
+
+        self.value = self.contents.children[0].id
+
+        # fix up contents size
+        for i in self.contents.children:
+            i.width = width
+        self.contents.layout()
+
+        # fix label width so it fits largest selection
+        self.label.width = width + self.padding*2
+        self.label.height = height + self.padding*2
+        self.layout()
+
+        # reposition so the selection drops down over first item
+        r = self.contents.rect
+        r.top = self.inner_rect.top
+        self.contents.y = r.y
+
+    @classmethod
+    def get_arrow(cls):
+        if not hasattr(cls, 'image_object'):
+            cls.image_object = data.load_gui_image('slider-arrow-down.png')
+        return cls.image_object
+    def _get_arrow(self): return self.get_arrow()
+    arrow = property(_get_arrow)
+
+    def get_value(self):
+        return self._value
+
+    def set_value(self, value):
+        for item in self.contents.children:
+            if item.id == value: break
+        else:
+            raise ValueError, '%r not a valid child item id'%(value,)
+        self.label.setText(item.text)
+        self.label.width = self.inner_rect.width
+        self._value = value
+    value = property(get_value, set_value)
+
+    @classmethod
+    def fromXML(cls, element, parent):
+        '''Create the object from the XML element and attach it to the parent.
+
+        If scrollable then put all children loaded into a container frame.
+        '''
+        kw = loadxml.parseAttributes(parent, element)
+        items = []
+        for child in element.getchildren():
+            text = xml.sax.saxutils.unescape(child.text)
+            items.append((text, child.attrib.get('id')))
+        return cls(parent, items, **kw)
+
+@event.default('selection-bar')
+def on_click(widget, x, y, button, modifiers, click_count):
+    if not button & mouse.LEFT:
+        return event.EVENT_UNHANDLED
+    # XXX position contents so the active item is over the label
+    contents = widget.contents
+    if contents.is_visible:
+        contents.setVisible(False)
+        contents.loseFocus()
+    else:
+        contents.setVisible(True)
+        contents.gainFocus()
+    return event.EVENT_HANDLED
+
+@event.default('selection-bar', 'on_gain_focus')
+def on_gain_focus(widget):
+    # catch focus
+    return event.EVENT_HANDLED
+
+@event.default('selection-bar', 'on_lose_focus')
+def on_lose_focus(widget):
+    widget.contents.setVisible(False)
+    return event.EVENT_HANDLED
+
 
 class Selection(Frame):
     name = 'selection'
@@ -86,6 +200,8 @@ class Option(TextButton):
 
         # default styling and width to parent settings
         select = parent.getParent('selection')
+        if select is None:
+            select = parent.getParent('selection-bar')
         if color is None:
             color = select.color
 
@@ -139,13 +255,20 @@ class Option(TextButton):
         '''
         if self.is_active and self.active_bgcolor:
             self.bgcolor = self.active_bgcolor
-            self.image = self.active_image
         else:
-            self.image = self.base_image
             self.bgcolor = self.base_bgcolor
-        super(Button, self).render(rect)
+        super(TextButton, self).render(rect)
 
-@event.default('option')
+@event.default('selection-bar option')
+def on_click(widget, *args):
+    select = widget.getParent('selection-bar')
+    select.value = widget.id
+    select.contents.setVisible(False)
+    select.contents.loseFocus()
+    widget.getGUI().dispatch_event(select, 'on_change', select.value)
+    return event.EVENT_HANDLED
+
+@event.default('selection option')
 def on_click(widget, *args):
     widget.is_active = not widget.is_active
     select = widget.getParent('selection')
@@ -172,3 +295,4 @@ def on_lose_focus(widget):
     # let the event propogate to any parent
     return event.EVENT_UNHANDLED
 '''
+

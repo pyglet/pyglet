@@ -79,9 +79,10 @@ class VerticalSlider(SliderCommon):
         self.have_buttons = self.height > (bh * 2 + min_size)
         if self.have_buttons:
             # do this after the call to super to allow it to set the parent etc.
-            ArrowButtonDown(self, classes=('-repeater-button-min',))
-            ArrowButtonUp(self, y=self.height-bh,
-                    classes=('-repeater-button-max',))
+            ArrowButtonDown(self, classes=('-repeater-button-min',),
+                color='black')
+            ArrowButtonUp(self, y=self.height-bh, color='black',
+                classes=('-repeater-button-max',))
 
         # add slider bar
         i_height = self.inner_rect.height
@@ -92,8 +93,11 @@ class VerticalSlider(SliderCommon):
 
         s = self.show_value and str(self._value) or ' '
         # note: dimensions are funny because the bar is rotated 90 degrees
+        # also, we force blending here so we don't generate a bazillion
+        # textures
         self.bar = SliderBar(self, 'y', s, self.width, self.bar_size,
-            bgcolor=self.bar_color, color=self.bar_text_color)
+            bgcolor=self.bar_color, is_blended=True,
+            color=self.bar_text_color)
         self.positionBar()
 
     def get_inner_rect(self):
@@ -176,9 +180,10 @@ class HorizontalSlider(SliderCommon):
         # scrolling room)
         self.have_buttons = self.width > (bw * 2 + min_size)
         if self.have_buttons:
-            ArrowButtonLeft(self, classes=('-repeater-button-min',)),
-            ArrowButtonRight(self, x=self.width-bw,
-                classes=('-repeater-button-max',)),
+            ArrowButtonLeft(self, classes=('-repeater-button-min',),
+                color='black')
+            ArrowButtonRight(self, x=self.width-bw, color='black',
+                classes=('-repeater-button-max',))
 
         # slider bar size
         i_width = self.inner_rect.width
@@ -187,8 +192,10 @@ class HorizontalSlider(SliderCommon):
             self.bar_size = int(max(self.slider_size, i_width / (self.range+1)))
 
         s = self.show_value and str(self._value) or ' '
+        # we force blending here so we don't generate a bazillion textures
         self.bar = SliderBar(self, 'x', s, self.bar_size,
-            self.height, bgcolor=self.bar_color, color=self.bar_text_color)
+            self.height, bgcolor=self.bar_color, is_blended=True,
+            color=self.bar_text_color)
 
         self.positionBar()
 

@@ -13,8 +13,8 @@ RIGHT = 'right'
 CENTER = 'center'
 
 class ImageCommon(element.Element):
-    is_blended = False
     image = None
+    blend_color = False
 
     def __init__(self, parent, x=0, y=0, z=0, width=None, height=None,
             is_blended=False, valign='top', halign='left', **kw):
@@ -52,6 +52,8 @@ class ImageCommon(element.Element):
         attrib = 0
         if not self.isEnabled():
             attrib = GL_CURRENT_BIT
+        elif self.blend_color and self.color is not None:
+            attrib = GL_CURRENT_BIT
         if self.is_blended:
             attrib |= GL_ENABLE_BIT
 
@@ -63,8 +65,11 @@ class ImageCommon(element.Element):
             glEnable(GL_BLEND)
 
         if attrib & GL_CURRENT_BIT:
-            # blend with gray colour to wash out
-            glColor4f(.7, .7, .7, 1.)
+            if not self.isEnabled():
+                # blend with gray colour to wash out
+                glColor4f(.7, .7, .7, 1.)
+            else:
+                glColor4f(*self.color)
 
         # XXX alignment
 
@@ -77,8 +82,9 @@ class ImageCommon(element.Element):
 
 class Image(ImageCommon):
     name='image'
+    blend_color = True
 
-    def __init__(self, parent, image, is_blended=True, **kw):
+    def __init__(self, parent, image, is_blended=True, color=None, **kw):
         if image is None and file is None:
             raise ValueError, 'image or file required'
 
@@ -88,6 +94,8 @@ class Image(ImageCommon):
             image = image.texture
 
         self.parent = parent
+
+        self.color = util.parse_color(color)
 
         super(Image, self).__init__(parent, is_blended=is_blended, **kw)
 
@@ -103,7 +111,21 @@ class Image(ImageCommon):
             self.updateSize()
         return change
 
-class LabelCommon(ImageCommon):
+
+class LabelCommon(element.Element):
+    def __init__(self, parent, text, x=0, y=0, z=0, width=None, height=None,
+            font_size=None, valign='top', halign='left', color='black',
+            rotate=0, **kw):
+        self.valign = valign
+        self.halign = halign
+        self.font_size = int(font_size or parent.getStyle().font_size)
+        self.color = util.parse_color(color)
+        assert rotate in (0, 90, 180, 270), \
+            'rotate must be one of 0, 90, 180, 270, not %r'%(rotate, )
+        self.rotate = util.parse_value(rotate, 0)
+        super(LabelCommon, self).__init__(parent, x, y, z, width, height, **kw)
+        self.text = text
+
     @classmethod
     def fromXML(cls, element, parent):
         '''Create the object from the XML element and attach it to the parent.
@@ -115,39 +137,10 @@ class LabelCommon(ImageCommon):
             loadxml.getConstructor(element.tag)(child, obj)
         return obj
 
-class Label(LabelCommon):
-    name='label'
-    need_background = True
-
-    def __init__(self, parent, text, color=(0, 0, 0, 1), font_size=None,
-            rotate=0, width=None, height=None, **kw):
-        self.parent = parent
-        self.rotate = util.parse_value(rotate, 0)
-
-        # colors
-        if isinstance(color, str):
-            color = util.parse_color(color)
-        self.color = color
-
-        self.font_size = int(font_size or self.getStyle().font_size)
-
-        super(Label, self).__init__(parent, width=width, height=height, **kw)
-
-        # recalculate the width and height based on rotation
-        if self.rotate not in (0, 90, 180, 270):
-            raise ValueError, 'rotate must be one of 0, 90, 180, 270, '\
-                'not %r'%(self.rotate)
-
-        # sanity check
-        if not self.bgcolor:
-            self.is_blended = True
-
-        self.setText(text)
-
     def parentDimensionsChanged(self):
         '''Re-layout text if my dimensions changed.
         '''
-        change = super(Label, self).parentDimensionsChanged()
+        change = super(LabelCommon, self).parentDimensionsChanged()
         if change:
             self.setText(self._text)
         return change
@@ -165,26 +158,17 @@ class Label(LabelCommon):
             if w is not None:
                 w -= self.padding * 2
 
-        if self.is_blended or not text:
-            label = self.getStyle().text(text, color=self.color,
-                font_size=self.font_size, width=w, halign=self.halign,
-                valign='top')
-            image = label
-        else:
-            label = self.getStyle().textAsTexture(text, color=self.color,
-                bgcolor=self.bgcolor, font_size=self.font_size,
-                width=w, halign=self.halign, rotate=self.rotate)
-            image = label.texture
-
-        # don't invoke setImage as it doesn't understand rotate
-        self.image = image
+        # XXX called "image" for hysterical reasons - change it
+        self.image = self.getStyle().text(text, color=self.color,
+            font_size=self.font_size, width=w, halign=self.halign,
+            valign='top')
 
         self.updateSize()
 
     text = property(lambda self: self._text, setText)
 
     def updateSize(self):
-        if self.is_blended and self.rotate in (90, 270):
+        if self.rotate in (90, 270):
             if self.width_spec is None:
                 self.width = self.image.height + self.padding * 2
             if self.height_spec is None:
@@ -196,12 +180,9 @@ class Label(LabelCommon):
                 self.height = self.image.height + self.padding * 2
 
     def render(self, rect):
-        if not self.is_blended:
-            return super(Label, self).render(rect)
-
         # XXX clip with glScissor
         glPushMatrix()
-        w = self.image.width        # (keep to force _clean() )
+        w = self.image.width
         h = self.font_size * len(self.image.lines)
 
         if self.rotate == 0:
@@ -216,6 +197,10 @@ class Label(LabelCommon):
         self.image.draw()
 
         glPopMatrix()
+
+
+class Label(LabelCommon):
+    name='label'
 
 
 class XHTML(LabelCommon):
@@ -233,14 +218,12 @@ class XHTML(LabelCommon):
     *down* the canvas.
     '''
     name='xhtml'
-    need_background = True
 
     def __init__(self, parent, text, style=None, **kw):
+        assert 'width' in kw, 'XHTML requires a width specification'
         self.parent = parent
         self.style = style
-        super(XHTML, self).__init__(parent, **kw)
-        assert self.width_spec, 'XHTML requires a width specification'
-        self.setText(text)
+        super(XHTML, self).__init__(parent, text, **kw)
 
     def parentDimensionsChanged(self):
         '''Indicate to the child that the parent rect has changed and it
@@ -259,7 +242,7 @@ class XHTML(LabelCommon):
 
     _default = []
     def setText(self, text):
-        self.text = text
+        self._text = text
         pw = self.parent.inner_rect.width
         w = util.parse_value(self.width_spec, pw)
         w -= self.padding * 2
@@ -271,6 +254,8 @@ class XHTML(LabelCommon):
         self.width = self.layout.canvas_width
         if self.height_spec is None:
             self.height = self.layout.canvas_height
+    text = property(lambda self: self._text, setText)
+
 
     def render(self, rect):
         '''To render we need to:

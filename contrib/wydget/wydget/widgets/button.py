@@ -3,9 +3,17 @@ from pyglet import clock
 from pyglet.window import key, mouse
 
 from wydget import element, event, util, anim, data
-from wydget.widgets.label import ImageCommon
+from wydget.widgets.label import ImageCommon, LabelCommon
 
-class Button(ImageCommon):
+
+class ButtonCommon(object):
+    is_focusable = True
+    is_pressed = False
+    is_over = False
+    is_focused = False
+
+
+class Button(ButtonCommon, ImageCommon):
     '''A button represented by one to three images.
 
         image         - the normal-state image to be displayed
@@ -15,16 +23,11 @@ class Button(ImageCommon):
     If text is supplied, it is rendered over the image, centered.
     '''
     name='button'
-    is_focusable = True
-    is_pressed = False
-    is_over = False
-    is_focused = False
 
     def __init__(self, parent, image, text=None, pressed_image=None,
             over_image=None, is_blended=True, font_size=None,
             color=(0, 0, 0, 1),
             x=0, y=0, z=0, width=None, height=None, **kw):
-        kw['classes'] = kw.get('classes', ()) + ('button',)
         super(Button, self).__init__(parent, x, y, z, width, height, 
             is_blended=is_blended, **kw)
 
@@ -34,10 +37,10 @@ class Button(ImageCommon):
         self.setImage(image)
         self.setPressedImage(pressed_image)
         self.setOverImage(over_image)
+        self.color = util.parse_color(color)
 
         if text:
             self.font_size = int(font_size or self.getStyle().font_size)
-            self.color = util.parse_color(color)
             self.bg = self.base_image
             self.over_bg = self.over_image
             self.pressed_bg = self.pressed_image
@@ -133,7 +136,7 @@ class Button(ImageCommon):
         super(Button, self).render(rect)
 
 
-class TextButton(Button):
+class TextButton(ButtonCommon, LabelCommon):
     '''A button with text on it.
 
     Will be rendered over the standard Element rendering.
@@ -142,96 +145,18 @@ class TextButton(Button):
     name = 'text-button'
     is_focusable = True
 
-    base_image = None
-    over_image = None
-    pressed_image = None
-
     _default = []
-    def __init__(self, parent, text, bgcolor=(1, 1, 1, 1),
-            pressed_bgcolor=(1, .9, .9, 1), is_blended=False,
-            over_bgcolor=(.9, .9, 1, 1), font_size=None, color=(0, 0, 0, 1),
-            x=0, y=0, z=0, width=None, height=None, **kw):
-        kw['classes'] = kw.get('classes', ()) + ('button',)
+    def __init__(self, parent, text, bgcolor='white', color='black',
+            border='black', pressed_bgcolor=(1, .9, .9, 1),
+            over_bgcolor=(.9, .9, 1, 1), **kw):
 
-        # NOTE we don't invoke Button.__init__!
-        super(Button, self).__init__(parent, x, y, z, width, height,
-            bgcolor=bgcolor, is_blended=is_blended, **kw)
-        if self.bgcolor is None:
-            raise ValueError, 'TextButton must have bgcolor'
+        super(TextButton, self).__init__(parent, text, bgcolor=bgcolor,
+            color=color, border=border, **kw)
 
         # specific attributes
-        self.color = util.parse_color(color)
         self.base_bgcolor = self.bgcolor
         self.pressed_bgcolor = util.parse_color(pressed_bgcolor)
         self.over_bgcolor = util.parse_color(over_bgcolor)
-        self.font_size = int(font_size or self.getStyle().font_size)
-
-        # generate images
-        self.setText(text)
-
-    def parentDimensionsChanged(self):
-        '''Re-layout text if my dimensions changed.
-        '''
-        # NOTE avoidance of the Button override of this method
-        change = super(Button, self).parentDimensionsChanged()
-        if change:
-            self.setText(self.text)
-        return change
-
-    def setText(self, text, additional=('pressed', 'over')):
-        self.text = text
-
-        self.over_image = None
-        self.pressed_image = None
-
-        # restrict text width?
-        restrict_width = None
-        inner_width = self.inner_rect.width
-        text_width = self.getStyle().getGlyphString(text,
-            size=self.font_size).width
-        if text_width > inner_width:
-            restrict_width = inner_width
-
-        label = self.getStyle().text(text, font_size=self.font_size,
-            color=self.color, width=restrict_width, valign='top')
-        label.width        # force clean
-        num_lines = len(label.lines)
-
-        # recalc size
-        if self.width_spec is None:
-            self.width = label.width + self.padding * 2
-        if self.height_spec is None:
-            self.height = label.height + self.padding * 2
-
-        # text offset
-        w = label.width
-        h = self.font_size * num_lines #label.height
-        ir = util.Rect(0, 0, w, h)
-
-        def f():
-            glPushAttrib(GL_CURRENT_BIT|GL_COLOR_BUFFER_BIT)
-            glClearColor(1, 1, 1, 0)
-            glClear(GL_COLOR_BUFFER_BIT)
-            if self.bgcolor is not None:
-                super(TextButton, self).renderBackground(ir)
-            # prevent the text's alpha channel being written into the new
-            # texture
-            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
-            glPushMatrix()
-            glTranslatef(0, h, 0)
-            label.draw()
-            glPopMatrix()
-            glPopAttrib()
-
-        self.setImage(util.renderToTexture(w, h, f))
-        for name in additional:
-            c = getattr(self, name+'_bgcolor')
-            if c is None: continue
-            self.bgcolor = c
-            self.setImage(util.renderToTexture(w, h, f), name+'_image')
-        self.bgcolor = self.base_bgcolor
-
-        self.updateSize()
 
     def render(self, rect):
         '''Select the correct image to render.
