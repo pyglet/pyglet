@@ -21,6 +21,7 @@ class ALSAException(MediaException):
 def check(err):
     if err < 0:
         raise ALSAException(asound.snd_strerror(err))
+    return err
 
 class Device(object):
     def __init__(self, name):
@@ -32,7 +33,7 @@ class Device(object):
         check(asound.snd_pcm_open(ctypes.byref(self.pcm),
                                   name,
                                   asound.SND_PCM_STREAM_PLAYBACK,
-                                  0))
+                                  asound.SND_PCM_NONBLOCK))
         check(asound.snd_pcm_hw_params_malloc(ctypes.byref(self.hwparams)))
         check(asound.snd_pcm_sw_params_malloc(ctypes.byref(self.swparams)))
         check(asound.snd_pcm_hw_params_any(self.pcm, self.hwparams))
@@ -54,13 +55,42 @@ class Device(object):
         except (NameError, AttributeError):
             pass
 
+    def prepare(self, source):
+        # TODO avoid creating in this case.
+        if not source.audio_format:
+            return
+
+        format = {
+            8:  asound.SND_PCM_FORMAT_U8,
+            16: asound.SND_PCM_FORMAT_S16,
+            24: asound.SND_PCM_FORMAT_S24,  # probably won't work
+            32: asound.SND_PCM_FORMAT_S32
+        }.get(source.audio_format.sample_size)
+        if format is None:
+            raise ALSAException('Unsupported audio format.')
+
+        check(asound.snd_pcm_set_params(self.pcm,
+            format, 
+            asound.SND_PCM_ACCESS_RW_INTERLEAVED,
+            source.audio_format.channels,
+            source.audio_format.sample_rate,
+            1,
+            0))
+        
+
 class ALSAPlayer(BasePlayer):
+    _min_buffer_time = 0.3
+    _max_buffer_size = 65536
+
     def __init__(self):
         super(ALSAPlayer, self).__init__()
 
         self._sources = []
         self._playing = False
         self._device = None
+
+        self._buffer_time = 0.
+        self._start_time = None
 
     def queue(self, source):
         source = source._get_queue_source()
@@ -84,17 +114,52 @@ class ALSAPlayer(BasePlayer):
 
         if not self._device:
             self._device = Device('plug:front')
+            self._device.prepare(self._sources[0])
 
         self_time = self.time
 
         if self._texture:
             self._sources[0]._update_texture(self, self_time)
 
-        if self._eos_action == 'stop':
-            self.stop()
+        source = self._sources[0]
+        while source and self._buffer_time - self_time < self._min_buffer_time:
+            max_bytes = int(
+                self._min_buffer_time * source.audio_format.bytes_per_second)
+            max_bytes = min(max_bytes, self._max_buffer_size)
+            audio_data = source._get_audio_data(max_bytes)
+
+            if audio_data:
+                self._buffer_time = audio_data.timestamp + audio_data.duration
+                samples = \
+                    audio_data.length // source.audio_format.bytes_per_sample
+                if self._start_time is None:
+                    self._start_time = self._get_asound_time()
+                samples_out = check(asound.snd_pcm_writei(self._device.pcm, 
+                                                          audio_data.data,
+                                                          samples))
+                if samples_out < samples:
+                    # TODO keep going until it's all written.
+                    pass
+
+                # TODO xrun recovery
+            else:
+                # EOS (in buffer)
+                source = None
 
     def _get_time(self):
-        return 0
+        if self._start_time is None:
+            return 0.
+        return self._get_asound_time() - self._start_time
+
+    def _get_asound_time(self):
+        status = ctypes.POINTER(asound.snd_pcm_status_t)()
+        timestamp = asound.snd_timestamp_t()
+
+        check(asound.snd_pcm_status_malloc(ctypes.byref(status)))
+        check(asound.snd_pcm_status(self._device.pcm, status))
+        asound.snd_pcm_status_get_tstamp(status, ctypes.byref(timestamp))
+        asound.snd_pcm_status_free(status)
+        return timestamp.tv_sec + timestamp.tv_usec * 0.000001
 
     def play(self):
         if self._playing:
@@ -104,7 +169,6 @@ class ALSAPlayer(BasePlayer):
 
         if not self._sources:
             return
-
 
     def pause(self):
         self._playing = False
