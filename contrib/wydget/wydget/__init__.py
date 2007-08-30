@@ -85,16 +85,6 @@ class GUI(event.GUIEventDispatcher):
         return '<%s at (%s, %s, %s) (%sx%s)>'%(self.__class__.__name__,
             self.x, self.y, self.z, self.width, self.height)
 
-    @classmethod
-    def fromXML(cls, window, file, **kw):
-        '''Load a GUI from the file or filename.
-
-        See `doc/xml-format.txt` for more information.
-        '''
-        gui = cls(window, **kw)
-        loadxml.load_xml(gui, file)
-        return gui
-
     def dump(self, s=''):
         print s + str(self)
         for child in self.children: child.dump(s+' ')

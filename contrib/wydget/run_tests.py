@@ -18,7 +18,7 @@ from pyglet import media
 import layout
 
 from wydget import GUI
-from wydget import event, dialogs, dragndrop, anim, layouts, widgets
+from wydget import event, dialogs, dragndrop, anim, layouts, widgets, loadxml
 
 if len(sys.argv) > 1:
     if '--help' in sys.argv:
@@ -52,7 +52,8 @@ my_escape = MyEscape()
 window.push_handlers(my_escape)
 
 def run(xml_file):
-    gui = GUI.fromXML(window, xml_file)
+    gui = GUI(window)
+    loadxml.fromFile(gui, xml_file)
     if '--dump' in sys.argv:
         print '-'*75
         gui.dump()

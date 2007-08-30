@@ -5,7 +5,7 @@ class XMLLoadError(Exception):
 
 xml_registry = {}
 
-def load_xml(parent, file):
+def fromFile(parent, file):
     '''Load a gui frame and any child elements from the XML file.
 
     The elements will be added as children on "parent" which may be any
@@ -16,7 +16,20 @@ def load_xml(parent, file):
     except Exception, error:
         raise XMLLoadError, '%s (%r)'%(error, file)
     assert element.tag == 'frame', 'XML root tag must be <frame>'
-    getConstructor(element.tag)(element, parent)
+    return getConstructor(element.tag)(element, parent)
+
+def fromString(parent, string):
+    '''Load a gui frame and any child elements from the XML string.
+
+    The elements will be added as children on "parent" which may be any
+    other widget or a GUI instance.
+    '''
+    try:
+        element = ElementTree.fromstring(string)
+    except Exception, error:
+        raise XMLLoadError, '%s (%r)'%(error, string)
+    assert element.tag == 'frame', 'XML root tag must be <frame>'
+    return getConstructor(element.tag)(element, parent)
 
 def getConstructor(name):
     '''Wrap the constructor retrieval to present a nicer error message.
