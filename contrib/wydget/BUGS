@@ -24,6 +24,8 @@ KNOWN BUGS
     pointer hits the screen boundary, try test_drag and drag up until the
     pointer hits the top of the screen. drag down and see the element offset
     from the pointer)
+    Poss. Solution: only use the pointer position, not dx/dy - will require
+    remembering the initial offset of pointer -> element being moved.
 - Element
   . <ah> Right border is inset by one pixel (evident in test_element,
     test_drawer and test_dropdown)
@@ -54,13 +56,15 @@ KNOWN BUGS
   . <ah> Word motion events not yet implemented.
   . <ah> Caret motion past edge of field should scroll enough to get caret
     into the center of the field (or to limit).
-  . <ah> Clicking on non-focusable background should not remove focus from
-    text field.
   . <rj> delete doesn't work immediately after tabbing into a textinput
   . <rj> drag to select doesn't always select correct ranges
 - PasswordInput
   . <ah> Dot glyphs are clipped by 3 or 4 pixels on right edge.
     <rj> Appears to be a bug in pyglet.font - see pyglet/test/font/BULLET.py
+- Focusing
+  . <ah> Clicking on non-focusable background should not remove focus from
+    text field.
+  -- <rj> does this apply to *all* focusable elements?
 
 
 DEFINITE AREAS OF IMPROVEMENT
