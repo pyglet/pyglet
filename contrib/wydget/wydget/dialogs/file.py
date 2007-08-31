@@ -57,6 +57,7 @@ class FileOpenDialog(base.Dialog):
         f.layout.layout()
 
     def openPath(self, path):
+        self.current_path = path
         self.listing.clearOptions()
         self.path.text = path
         self.path.cursor_position = -1
@@ -97,14 +98,14 @@ def on_click(widget, x, y, buttons, modifiers, click_count):
     dialog = widget.getParent('file-dialog')
     if widget.text == '..':
         dialog.selected_widget = None
-        path = dialog.path.text
+        path = dialog.current_path
         if path[-1] == '/': path = path[:-1]
         dialog.openPath(os.path.split(path)[0])
     elif widget.text[-1] == '/':
         dialog.selected_widget = None
-        dialog.openPath(os.path.join(dialog.path.text, widget.text))
+        dialog.openPath(os.path.join(dialog.current_path, widget.text))
     else:
-        file = os.path.join(dialog.path.text, widget.text)
+        file = os.path.join(dialog.current_path, widget.text)
         if click_count > 1:
             dialog.selected_file = file
             dialog.on_ok()

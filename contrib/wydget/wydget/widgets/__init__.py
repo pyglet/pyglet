@@ -2,7 +2,7 @@ from wydget.widgets.button import Button, TextButton, RepeaterButton
 from wydget.widgets.frame import Frame, TabbedFrame
 from wydget.widgets.drawer import Drawer
 from wydget.widgets.label import Image, Label, XHTML
-from wydget.widgets.menu import MenuItem, PopupMenu, DropDownMenu, DropDownItem
+from wydget.widgets.menu import MenuItem, PopupMenu
 from wydget.widgets.movie import Movie
 from wydget.widgets.music import Music
 from wydget.widgets.selection import ComboBox, Selection, Option
@@ -27,7 +27,6 @@ for klass in [Frame, TabbedFrame,
         Checkbox,
         Movie, Music,
         PopupMenu, MenuItem,
-        DropDownMenu, DropDownItem,
         ComboBox, Selection, Option,
         Table, Heading, Row, Cell,
         Progress]:

@@ -11,14 +11,6 @@ KNOWN BUGS
   . columns & horizontal fill layouts have bogus RHS padding
 - Tables:
   . table columns don't truncate
-- Text Line:
-  . selection out of the text line's bounds doesn't scroll the text
-  . cursor movement during selection doesn't create new selection if
-    cursor is out of old selection
-- Drop-down menus:
-  . aren't really menus
-  . are poorly-structured and don't cope with resizing
-  . <ah> Doesn't open menu on mouse press.
 - Drag-and-drop:
   . drags and moves are unbounded (dx/dy continue to be generated when
     pointer hits the screen boundary, try test_drag and drag up until the
@@ -29,35 +21,18 @@ KNOWN BUGS
 - Element
   . <ah> Right border is inset by one pixel (evident in test_element,
     test_drawer and test_dropdown)
-- test_element_over
-  . <ah> Move mouse from outside window into inner generates ENTER inner,
-    ENTER outer (bad nesting when mouse then leaves ENTER inner).
-    <rj> Don't see a problem here.
-- Scroll bar
-  . <ah> No repeat behaviour when clicking in bar
-- test_menu
-  . <ah> No Ctrl-click on Mac?
-    <rj> hrm, this is poorly set up - currently the application must
-         explicitly listen for menu-generating events.
-- test_movie
-  . <ah> Not yet changed to pyglet-1.0alpha2
-  . <ah> File dialog: type "/Volumes/someth" (contents of /Volumes is still
-    shown), then click on an item; incorrectly appends to "someth" instead
-    of replacing it.
 - test_table
   . <ah> Width of horizontal scrollbar thumb is incorrect.
 - TextInput
-  . <ah> Caret continues flashing while typing or moving.
-  . <ah> Caret not visible at right edge of entry (probably just element border
-    problem).
-  . <ah> Selecting text with mouse moves the caret to the wrong place.
-  . <ah> Moving caret should deselect any selected text.
-  . <ah> Double-clicking selects entire field, not single word.
   . <ah> Word motion events not yet implemented.
   . <ah> Caret motion past edge of field should scroll enough to get caret
     into the center of the field (or to limit).
-  . <rj> delete doesn't work immediately after tabbing into a textinput
-  . <rj> drag to select doesn't always select correct ranges
+  . selection out of the text line's bounds doesn't scroll the text
+  . cursor movement during selection doesn't create new selection if
+    cursor is out of old selection
+  . selection flickers on clicking -- because the focus is being gained on
+    the mouse_press event (resulting in the field being selected) and then
+    the release generating a click which deselects the field.
 - PasswordInput
   . <ah> Dot glyphs are clipped by 3 or 4 pixels on right edge.
     <rj> Appears to be a bug in pyglet.font - see pyglet/test/font/BULLET.py

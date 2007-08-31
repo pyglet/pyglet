@@ -1,4 +1,5 @@
 import sys
+import string
 
 from pyglet.gl import *
 from pyglet.window import key, mouse
@@ -8,11 +9,15 @@ from wydget.widgets.frame import Frame
 from wydget.widgets.label import Label
 from wydget import clipboard
 
+# for detecting words later
+letters = set(string.letters)
+
 class Cursor(element.Element):
     name = '-text-cursor'
     def __init__(self, color, *args, **kw):
         self.color = color
         self.alpha = 1
+        self.animation = None
         super(Cursor, self).__init__(*args, **kw)
     def draw(self, *args):
         pass
@@ -25,12 +30,32 @@ class Cursor(element.Element):
         glRectf(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height)
         glPopAttrib()
 
+    def enable(self):
+        self.setVisible(True)
+        self.animation = CursorAnimation(self)
+
+    def disable(self):
+        self.setVisible(False)
+        if self.animation is not None:
+            self.animation.cancel()
+            self.animation = None
+
 class CursorAnimation(anim.Animation):
     def __init__(self, element):
         self.element = element
         super(CursorAnimation, self).__init__()
+        self.paused = 0
+
+    def pause(self):
+        self.element.alpha = 1
+        self.paused = .5
 
     def animate(self, dt):
+        if self.paused > 0:
+            self.paused -= dt
+            if self.paused < 0:
+                self.paused = 0
+            return
         self.anim_time += dt
         if self.anim_time % 1 < .5:
             self.element.alpha = 1
@@ -39,6 +64,7 @@ class CursorAnimation(anim.Animation):
 
 class TextInputLine(Label):
     name = '-text-input-line'
+    is_focusable = True
     def __init__(self, parent, text, *args, **kw):
         self.cursor_index = len(text)
         if 'is_password' in kw:
@@ -51,6 +77,39 @@ class TextInputLine(Label):
         self.cursor = Cursor(self.color, self, 1, 0, 0, 1, self.font_size,
             is_visible=False)
         self.highlight = None
+
+    def selectWord(self, pos):
+        if self.is_password:
+            return self.selectAll()
+
+        # clicks outside the bounds should select the last item in the text
+        if pos >= len(self.text):
+            pos = len(self.text) - 1
+
+        # determine whether we should select a word, some whitespace or
+        # just a single char of punctuation
+        current = self.text[pos]
+        if current == ' ':
+            allowed = set(' ')
+        elif current in letters:
+            allowed = letters
+        else:
+            self.highlight = (pos, pos+1)
+            return
+
+        # scan back to the start of the thing
+        for start in range(pos, -1, -1):
+            if self.text[start] not in allowed:
+                start += 1
+                break
+
+        # scan up to the end of the thing
+        for end in range(pos, len(self.text)):
+            if self.text[end] not in allowed:
+                break
+        else:
+            end += 1
+        self.highlight = (start, end)
 
     def selectAll(self):
         self.highlight = (0, len(self.text))
@@ -154,6 +213,190 @@ class TextInputLine(Label):
         if hasattr(self, 'cursor'):
             self.cursor.x = max(0, cursor_text_width)
 
+@event.default('-text-input-line')
+def on_click(widget, x, y, buttons, modifiers, click_count):
+    x, y = widget.calculateRelativeCoords(x, y)
+    if not buttons & mouse.LEFT:
+        return event.EVENT_UNHANDLED
+    if click_count == 1:
+        new = widget.determineIndex(x)
+        if modifiers & key.MOD_SHIFT:
+            old = widget.cursor_index
+            if old < new: widget.highlight = (old, new)
+            else: widget.highlight = (new, old)
+            widget.getGUI().setSelection(widget)
+        else:
+            widget.getGUI().clearSelection(widget)
+            widget.highlight = None
+            widget.cursor.enable()
+            widget.setCursorPosition(new)
+    elif click_count == 2:
+        widget.cursor.disable()
+        pos = widget.determineIndex(x)
+        widget.selectWord(pos)
+        widget.getGUI().setSelection(widget)
+    elif click_count == 3:
+        widget.cursor.disable()
+        widget.selectAll()
+        widget.getGUI().setSelection(widget)
+
+    return event.EVENT_HANDLED
+
+@event.default('-text-input-line')
+def on_mouse_drag(widget, x, y, dx, dy, buttons, modifiers):
+    if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
+    x, y = widget.calculateRelativeCoords(x, y)
+    if widget.highlight is None:
+        start = widget.determineIndex(x)
+        widget.highlight = (start, start)
+        widget.getGUI().setSelection(widget)
+        widget.cursor.disable()
+    else:
+        start, end = widget.highlight
+        now = widget.determineIndex(x)
+        if now <= start:
+            widget.highlight = (now, end)
+        else:
+            widget.highlight = (start, now)
+    return event.EVENT_HANDLED
+
+@event.default('-text-input-line')
+def on_gain_focus(widget):
+    if widget.text:
+        widget.selectAll()
+    else:
+        widget.cursor.enable()
+        widget.setCursorPosition(0)
+    return event.EVENT_HANDLED
+
+@event.default('-text-input-line')
+def on_lose_focus(widget):
+    widget.cursor.disable()
+    widget.highlight = None
+    return event.EVENT_HANDLED
+
+@event.default('-text-input-line')
+def on_key_press(widget, symbol, modifiers):
+    if sys.platform == 'darwin':
+        active_mod = key.MOD_COMMAND
+    else:
+        active_mod = key.MOD_CTRL
+    if modifiers & active_mod:
+        if symbol == key.A:
+            widget.selectAll()
+            return event.EVENT_HANDLED
+        elif symbol == key.X:
+            # cut highlighted section
+            if widget.highlight is None:
+                return event.EVENT_UNHANDLED
+            start, end = widget.highlight
+            clipboard.put_text(widget.text[start:end])
+            widget.editText('')
+            return event.EVENT_HANDLED
+        elif symbol == key.C:
+            # copy highlighted section
+            if widget.highlight is None:
+                return event.EVENT_UNHANDLED
+            start, end = widget.highlight
+            clipboard.put_text(widget.text[start:end])
+            return event.EVENT_HANDLED
+        elif symbol == key.V:
+            widget.editText(clipboard.get_text())
+            return event.EVENT_HANDLED
+    return event.EVENT_UNHANDLED
+
+@event.default('-text-input-line')
+def on_text(widget, text):
+    # special-case newlines - we don't want them
+    if text == '\r': return event.EVENT_UNHANDLED
+    widget.editText(text, move=1)
+    if widget.cursor.animation is not None:
+        widget.cursor.animation.pause()
+    return event.EVENT_HANDLED
+
+@event.default('-text-input-line')
+def on_text_motion(widget, motion):
+    # hide mouse highlight, show caret
+    widget.highlight = None
+    widget.cursor.enable()
+    widget.cursor.animation.pause()
+
+    pos = widget.cursor_index
+    if motion == key.MOTION_LEFT:
+        if pos != 0: widget.setCursorPosition(pos-1)
+    elif motion == key.MOTION_RIGHT:
+        if pos != len(widget.text): widget.setCursorPosition(pos+1)
+    elif motion in (key.MOTION_UP, key.MOTION_BEGINNING_OF_LINE,
+            key.MOTION_BEGINNING_OF_FILE):
+        widget.setCursorPosition(0)
+    elif motion in (key.MOTION_DOWN, key.MOTION_END_OF_LINE,
+            key.MOTION_END_OF_FILE):
+        widget.setCursorPosition(len(widget.text))
+    elif motion == key.MOTION_BACKSPACE:
+        text = widget.text
+        if widget.highlight is not None:
+            start, end = widget.highlight
+            text = text[:start] + text[end:]
+            widget.highlight = None
+            widget.cursor_index = start
+        if pos != 0:
+            n = pos
+            widget.cursor_index -= 1
+            text = text[0:n-1] + text[n:]
+        if text != widget.text:
+            widget.setText(text)
+            widget.getGUI().dispatch_event(widget.parent, 'on_change', text)
+    elif motion == key.MOTION_DELETE:
+        text = widget.text
+        if widget.highlight is not None:
+            start, end = widget.highlight
+            text = text[:start] + text[end:]
+            widget.highlight = None
+            widget.cursor_index = start
+        elif pos != len(text):
+            n = pos
+            text = text[0:n] + text[n+1:]
+        if text != widget.text:
+            widget.setText(text)
+            widget.getGUI().dispatch_event(widget.parent, 'on_change', text)
+    else:
+        print 'Unhandled MOTION', key.motion_string(motion)
+
+    return event.EVENT_HANDLED
+
+@event.default('-text-input-line')
+def on_text_motion_select(widget, motion):
+    pos = widget.cursor_index
+    if widget.highlight is None:
+        start = end = pos
+        widget.getGUI().setSelection(widget)
+    else:
+        start, end = widget.highlight
+
+    # regular motion
+    if motion == key.MOTION_LEFT:
+        if pos != 0: widget.setCursorPosition(pos-1)
+    elif motion == key.MOTION_RIGHT:
+        if pos != len(widget.text): widget.setCursorPosition(pos+1)
+    elif motion in (key.MOTION_UP, key.MOTION_BEGINNING_OF_LINE,
+            key.MOTION_BEGINNING_OF_FILE):
+        widget.setCursorPosition(0)
+    elif motion in (key.MOTION_DOWN, key.MOTION_END_OF_LINE,
+            key.MOTION_END_OF_FILE):
+        widget.setCursorPosition(len(widget.text))
+    else:
+        print 'Unhandled MOTION SELECT', key.motion_string(motion)
+
+    if widget.cursor_index < start:
+        start = widget.cursor_index
+    elif widget.cursor_index > end:
+        end = widget.cursor_index
+    if start < end: widget.highlight = (start, end)
+    else: widget.highlight = (end, start)
+
+    return event.EVENT_HANDLED
+
+
 class TextInput(Frame):
     '''Cursor position indicates which indexed element the cursor is to the
     left of.
@@ -162,7 +405,6 @@ class TextInput(Frame):
     from the border.
     '''
     name='textinput'
-    is_focusable = True
     def __init__(self, parent, text='', font_size=None, size=None,
             x=0, y=0, z=0, width=None, height=None, border='black',
             padding=2, bgcolor='white', color='black', classes=(), **kw):
@@ -225,63 +467,6 @@ class PasswordInput(TextInput):
         self.ti.setText(self.ti.text)
 
 @event.default('textinput, password')
-def on_mouse_press(widget, x, y, buttons, modifiers):
-    ti = widget.ti
-    x, y = ti.calculateRelativeCoords(x, y)
-    new = ti.determineIndex(x)
-
-    if buttons & mouse.LEFT and modifiers & key.MOD_SHIFT:
-        old = ti.cursor_index
-        if old < new: ti.highlight = (old, new)
-        else: ti.highlight = (new, old)
-        widget.getGUI().setSelection(ti)
-    else:
-        widget.ti.clearSelection()
-
-    ti.setCursorPosition(new)
-    return event.EVENT_HANDLED
-
-@event.default('textinput, password')
-def on_click(widget, x, y, buttons, modifiers, click_count):
-    ti = widget.ti
-    if click_count == 2 and buttons & mouse.LEFT:
-        ti.selectAll()
-        widget.getGUI().setSelection(ti)
-        return event.EVENT_HANDLED
-    return event.EVENT_HANDLED
-
-@event.default('textinput, password')
-def on_mouse_drag(widget, x, y, dx, dy, buttons, modifiers):
-    if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
-    ti = widget.ti
-    x, y = ti.calculateRelativeCoords(x, y)
-    if ti.highlight is None:
-        start = ti.determineIndex(x)
-        ti.highlight = (start, start)
-        widget.getGUI().setSelection(ti)
-    else:
-        start, end = ti.highlight
-        now = ti.determineIndex(x)
-        if now <= start:
-            ti.highlight = (now, end)
-        else:
-            ti.highlight = (start, now)
-    return event.EVENT_HANDLED
-
-@event.default('textinput, password')
-def on_gain_focus(widget):
-    widget.ti.cursor.animation = CursorAnimation(widget.ti.cursor)
-    widget.ti.cursor.is_visible = True
-    return event.EVENT_HANDLED
-
-@event.default('textinput, password')
-def on_lose_focus(widget):
-    widget.ti.cursor.animation.cancel()
-    widget.ti.cursor.animation = None
-    widget.ti.cursor.is_visible = False
-    return event.EVENT_HANDLED
-
-@event.default('textinput, password')
 def on_element_enter(widget, x, y):
     w = widget.getGUI().window
     cursor = w.get_system_mouse_cursor(w.CURSOR_TEXT)
@@ -293,122 +478,5 @@ def on_element_leave(widget, x, y):
     w = widget.getGUI().window
     cursor = w.get_system_mouse_cursor(w.CURSOR_DEFAULT)
     w.set_mouse_cursor(cursor)
-    return event.EVENT_HANDLED
-
-@event.default('textinput, password')
-def on_key_press(widget, symbol, modifiers):
-    if sys.platform == 'darwin':
-        active_mod = key.MOD_COMMAND
-    else:
-        active_mod = key.MOD_CTRL
-    if modifiers & active_mod:
-        if symbol == key.A:
-            widget.ti.selectAll()
-            return event.EVENT_HANDLED
-        elif symbol == key.X:
-            # cut highlighted section
-            ti = widget.ti
-            if ti.highlight is None:
-                return event.EVENT_UNHANDLED
-            start, end = ti.highlight
-            clipboard.put_text(ti.text[start:end])
-            ti.editText('')
-            return event.EVENT_HANDLED
-        elif symbol == key.C:
-            # copy highlighted section
-            if widget.ti.highlight is None:
-                return event.EVENT_UNHANDLED
-            start, end = widget.ti.highlight
-            clipboard.put_text(widget.ti.text[start:end])
-            return event.EVENT_HANDLED
-        elif symbol == key.V:
-            widget.ti.editText(clipboard.get_text())
-            return event.EVENT_HANDLED
-    return event.EVENT_UNHANDLED
-
-@event.default('textinput, password')
-def on_text(widget, text):
-    # special-case newlines - we don't want them
-    if text == '\r': return event.EVENT_UNHANDLED
-    widget.ti.editText(text, move=1)
-    return event.EVENT_HANDLED
-
-@event.default('textinput, password')
-def on_text_motion(widget, motion):
-    ti = widget.ti
-    pos = ti.cursor_index
-    if motion == key.MOTION_LEFT:
-        if pos != 0: ti.setCursorPosition(pos-1)
-    elif motion == key.MOTION_RIGHT:
-        if pos != len(ti.text): ti.setCursorPosition(pos+1)
-    elif motion in (key.MOTION_UP, key.MOTION_BEGINNING_OF_LINE,
-            key.MOTION_BEGINNING_OF_FILE):
-        ti.setCursorPosition(0)
-    elif motion in (key.MOTION_DOWN, key.MOTION_END_OF_LINE,
-            key.MOTION_END_OF_FILE):
-        ti.setCursorPosition(len(ti.text))
-    elif motion == key.MOTION_BACKSPACE:
-        text = ti.text
-        if ti.highlight is not None:
-            start, end = ti.highlight
-            text = text[:start] + text[end:]
-            ti.highlight = None
-            ti.cursor_index = start
-        if pos != 0:
-            n = pos
-            ti.cursor_index -= 1
-            text = text[0:n-1] + text[n:]
-        if text != ti.text:
-            ti.setText(text)
-            widget.getGUI().dispatch_event(widget, 'on_change', text)
-    elif motion == key.MOTION_DELETE:
-        text = ti.text
-        if ti.highlight is not None:
-            start, end = ti.highlight
-            text = text[:start] + text[end:]
-            ti.highlight = None
-            ti.cursor_index = start
-        elif pos != len(text):
-            n = pos
-            text = text[0:n] + text[n+1:]
-        if text != ti.text:
-            ti.setText(text)
-            widget.getGUI().dispatch_event(widget, 'on_change', text)
-    else:
-        print 'Unhandled MOTION', key.motion_string(motion)
-
-    return event.EVENT_HANDLED
-
-@event.default('textinput, password')
-def on_text_motion_select(widget, motion):
-    ti = widget.ti
-    pos = ti.cursor_index
-    if ti.highlight is None:
-        start = end = pos
-        widget.getGUI().setSelection(ti)
-    else:
-        start, end = ti.highlight
-
-    # regular motion
-    if motion == key.MOTION_LEFT:
-        if pos != 0: ti.setCursorPosition(pos-1)
-    elif motion == key.MOTION_RIGHT:
-        if pos != len(ti.text): ti.setCursorPosition(pos+1)
-    elif motion in (key.MOTION_UP, key.MOTION_BEGINNING_OF_LINE,
-            key.MOTION_BEGINNING_OF_FILE):
-        ti.setCursorPosition(0)
-    elif motion in (key.MOTION_DOWN, key.MOTION_END_OF_LINE,
-            key.MOTION_END_OF_FILE):
-        ti.setCursorPosition(len(ti.text))
-    else:
-        print 'Unhandled MOTION SELECT', key.motion_string(motion)
-
-    if ti.cursor_index < start:
-        start = ti.cursor_index
-    elif ti.cursor_index > end:
-        end = ti.cursor_index
-    if start < end: ti.highlight = (start, end)
-    else: ti.highlight = (end, start)
-
     return event.EVENT_HANDLED
 

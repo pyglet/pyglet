@@ -9,25 +9,30 @@ from wydget.widgets.button import Button
 
 class Movie(element.Element):
     name='movie'
-    def __init__(self, parent, file=None, medium=None, playing=False,
+    def __init__(self, parent, file=None, source=None, playing=False,
             x=0, y=0, z=0, width=None, height=None, scale=True, **kw):
         self.parent = parent
         self.scale = scale
 
         if file is not None:
-            medium = self.medium = media.load(file, streaming=True)
+            source = media.load(file, streaming=True)
         else:
-            assert medium is not None, 'one of file or medium is required'
-            self.medium = medium
+            assert source is not None, 'one of file or source is required'
 
-        # Load the medium, determine if it's video and/or audio
-        if not medium.has_video:
+        self.player = media.Player()
+
+        # poke at the video format
+        if not source.video_format:
             raise ValueError("Movie file doesn't contain video")
-        self.video = medium.get_video()
+        video_format = source.video_format
         if width is None:
-            width = self.video.width
+            width = video_format.width
+            if video_format.sample_aspect > 1:
+                width *= video_format.sample_aspect
         if height is None:
-            height = self.video.height
+            height = video_format.height
+            if video_format.sample_aspect < 1:
+                height /= video_format.sample_aspect
 
         super(Movie, self).__init__(parent, x, y, z, width, height, **kw)
 
@@ -40,7 +45,7 @@ class Movie(element.Element):
 
         c.range = Image(c, data.load_gui_image('media-range.png'))
 
-        c.time = Label(c, '00:00', font_size=20, is_blended=True)
+        c.time = Label(c, '00:00', font_size=20)
         layouts.Horizontal(c, valign='center', halign='center',
             padding=10).layout()
 
@@ -54,38 +59,59 @@ class Movie(element.Element):
         c.position.y = c.range.y - 2
         c.position.x = c.range.x
 
-        self.video.play()
-        if not playing:
-            self.video.pause()
-        else:
-            clock.schedule(self.time_update)
+        # make sure we get at least one frame to display
+        self.player.queue(source)
+        clock.schedule(self.update)
+        self.playing = playing
+        if playing:
+            self.player.play()
+
+    def update(self, dt):
+        self.player.dispatch_events()
+
+    def pause(self):
+        if not self.playing: return
+        clock.unschedule(self.time_update)
+        self.player.pause()
+        self.control.play.setVisible(True)
+        self.control.pause.setVisible(False)
+        self.playing = False
+
+    def play(self):
+        if self.playing: return
+        clock.schedule(self.time_update)
+        self.player.play()
+        self.control.pause.setVisible(True)
+        self.control.play.setVisible(False)
+        self.playing = True
 
     def render(self, rect):
-        image = self.video.texture
-        if self.scale:
-            glPushMatrix()
-            x = float(self.width) / image.width
-            y = float(self.height) / image.height
-            s = min(x, y)
-            w = int(image.width * s)
-            h = int(image.height * s)
-            glTranslatef(self.width//2 - w//2, self.height//2 - h//2, 0)
-            glScalef(s, s, 1)
-        image.blit(0, 0, 0)
-        if self.scale:
-            glPopMatrix()
+        # XXX handle scaling / clipping properly
+        if self.player.texture:
+            self.player.texture.blit(rect.x, rect.y, width=rect.width,
+                height=rect.height)
 
-        '''
-        XXX get_region currently does the WRONG THING re: tex coords
-        r = self.rect
-        if rect != r:
-            image = image.get_region(rect.x, rect.y, rect.width, rect.height)
-        image.blit(rect.x, rect.y, 0)
-        '''
+       # self.video_x, self.video_y,
+       #     width=self.video_width, height=self.video_height)
+
+        #image = self.video.texture
+        #if self.scale:
+        #    glPushMatrix()
+        #    x = float(self.width) / image.width
+        #    y = float(self.height) / image.height
+        #    s = min(x, y)
+        #    w = int(image.width * s)
+        #    h = int(image.height * s)
+        #    glTranslatef(self.width//2 - w//2, self.height//2 - h//2, 0)
+        #    glScalef(s, s, 1)
+        #image.blit(0, 0, 0)
+        #if self.scale:
+        #    glPopMatrix()
+
 
     def time_update(self, ts):
         if not self.control.isVisible(): return
-        t = self.video.time
+        t = self.player.time
 
         # time display
         s = int(t)
@@ -96,16 +122,16 @@ class Movie(element.Element):
         if h: text = '%d:%02d:%02d'%(h, m, s)
         else: text = '%02d:%02d'%(m, s)
         if text != self.control.time.text:
-            self.control.time.setText(text)
+            self.control.time.text = text
 
         # slider position
-        p = (t/self.medium.duration)
+        p = (t/self.player.source.duration)
         p *= self.control.range.width
         self.control.position.x = self.control.range.x + int(p)
 
     def delete(self):
+        clock.unschedule(self.update)
         super(Movie, self).delete()
-        self.video.stop()
 
 
 @event.default('movie')
@@ -119,6 +145,7 @@ def on_element_enter(widget, *args):
 def on_mouse_motion(widget, *args):
     if widget.control.anim is not None:
         widget.control.anim.cancel()
+    widget.control.setVisible(True)
     widget.control.anim = anim.Delayed(widget.control.setVisible, False,
         delay=5)
     return event.EVENT_HANDLED
@@ -130,36 +157,38 @@ def on_element_leave(widget, *args):
         widget.control.anim.cancel()
     return event.EVENT_HANDLED
 
-@event.default('movie .-play-button', 'on_click')
-def on_click_play(widget, x, y, buttons, modifiers, click_count):
+@event.default('movie .-play-button')
+def on_click(widget, x, y, buttons, modifiers, click_count):
     if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
-    video = widget.parent.parent.video
-    if video.playing: return event.EVENT_HANDLED
-    clock.schedule(widget.parent.parent.time_update)
-    video.play()
-    widget.setVisible(False)
-    widget.parent.pause.setVisible(True)
+    widget.getParent('movie').play()
     return event.EVENT_HANDLED
 
-@event.default('movie .-pause-button', 'on_click')
-def on_click_pause(widget, x, y, buttons, modifiers, click_count):
+@event.default('movie .-pause-button')
+def on_click(widget, x, y, buttons, modifiers, click_count):
     if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
-    video = widget.parent.parent.video
-    if not video.playing: return event.EVENT_HANDLED
-    clock.unschedule(widget.parent.parent.time_update)
-    video.pause()
-    widget.setVisible(False)
-    widget.parent.play.setVisible(True)
+    widget.getParent('movie').pause()
     return event.EVENT_HANDLED
 
-@event.default('movie .-position', 'on_drag')
-def on_drag_position(widget, x, y, dx, dy, buttons, modifiers):
+@event.default('movie .-position')
+def on_mouse_press(widget, x, y, buttons, modifiers):
+    if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
+    widget.getParent('movie').pause()
+    return event.EVENT_HANDLED
+
+@event.default('movie .-position')
+def on_mouse_release(widget, x, y, buttons, modifiers):
+    if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
+    widget.getParent('movie').play()
+    return event.EVENT_HANDLED
+
+@event.default('movie .-position')
+def on_drag(widget, x, y, dx, dy, buttons, modifiers):
     if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
     rx = widget.range.x
     rw = widget.range.width
     widget.x = max(rx, min(rx + rw, widget.x + dx))
-    movie = widget.parent.parent
+    movie = widget.getParent('movie')
     p = float(widget.x - rx) / rw
-    movie.video.seek(p * movie.medium.duration)
+    movie.player.seek(p * movie.player.source.duration)
     return event.EVENT_HANDLED
 

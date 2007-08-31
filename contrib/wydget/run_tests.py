@@ -86,7 +86,7 @@ def run(xml_file):
 
     @gui.select('frame#menu-test', 'on_click')
     def on_menu(w, x, y, button, modifiers, click_count):
-        if not button & mouse.RIGHT:
+        if not widgets.PopupMenu.isActivatingClick(button, modifiers):
             return event.EVENT_UNHANDLED
         gui.get('#test-menu').expose((x, y))
         return event.EVENT_HANDLED

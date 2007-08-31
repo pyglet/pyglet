@@ -6,7 +6,7 @@
   <label color="white">size="10" with 9 M chars</label>
   </horizontal></frame>
   <textinput class="show-value" color="white" bgcolor="black"
-      border="red" size="10" font_size="32" text="Hello World!" />
+      border="red" size="10" font_size="32" text="Hello    World!" />
   <password class="show-value" size="10" font_size="40" text="Hello World!" />
  </vertical>
 </frame>

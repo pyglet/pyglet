@@ -1,5 +1,5 @@
 <frame id="music-test" width="100%" height="100%">
  <vertical halign="center">
-  <label padding="20" bgcolor="white">Press RMB to open a file</label>
+  <label padding="20" bgcolor="white">Press RMB to open a music file</label>
  </vertical>
 </frame>

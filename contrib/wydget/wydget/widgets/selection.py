@@ -1,6 +1,6 @@
 import xml.sax.saxutils
 
-from pyglet.window import mouse
+from pyglet.window import mouse, key
 from pyglet.gl import *
 
 from wydget import element, event, layouts, loadxml, util, data
@@ -99,6 +99,7 @@ class Selection(SelectionCommon):
 
 class ComboBox(SelectionCommon):
     name = 'combo-box'
+    is_focusable = True
 
     is_vertical = True
     def __init__(self, parent, items, font_size=None, border="black",
@@ -198,6 +199,19 @@ class ComboBox(SelectionCommon):
     @event.default('combo-box', 'on_lose_focus')
     def on_lose_focus(widget):
         widget.contents.setVisible(False)
+        return event.EVENT_HANDLED
+
+    @event.default('combo-box')
+    def on_text_motion(widget, motion):
+        options = widget.contents.children
+        for i, option in enumerate(options):
+            if option.id == widget.value:
+                break
+        if motion == key.MOTION_DOWN and i + 1 != len(options):
+            widget.value = options[i+1].id
+        elif motion == key.MOTION_UP and i - 1 != -1:
+            widget.value = options[i-1].id
+            
         return event.EVENT_HANDLED
 
 

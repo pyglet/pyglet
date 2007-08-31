@@ -152,7 +152,6 @@ class GUI(event.GUIEventDispatcher):
         else:
             return (self._by_id[id] for id in self._by_name[spec])
 
-
     # rendering / hit detection
     _rects = None
     def setDirty(self):

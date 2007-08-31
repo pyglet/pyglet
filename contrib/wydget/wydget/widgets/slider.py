@@ -1,7 +1,8 @@
 from pyglet.gl import *
+from pyglet import clock
 from pyglet.window import mouse
 
-from wydget import element, event, data, util
+from wydget import element, event, data, util, anim
 from wydget.widgets.button import Button, RepeaterButton
 from wydget.widgets.label import Label
 
@@ -156,6 +157,9 @@ class HorizontalSlider(SliderCommon):
         self.bar_color = util.parse_color(bar_color)
         self.bar_text_color = util.parse_color(bar_text_color)
 
+        # for step repeat when clicking in the bar
+        self.delay_timer = None
+
         super(HorizontalSlider, self).__init__(parent, x, y, z, width, height,
             bgcolor=bgcolor, **kw)
 
@@ -211,13 +215,45 @@ class HorizontalSlider(SliderCommon):
         range = self.maximum - self.minimum
         self.bar.x = ir.x + int(self._value / float(range) * w)
 
+    repeating = False
+    def startRepeat(self, direction):
+        self.delay_timer = None
+        self.repeat_time = 0
+        self.repeating = True
+        self.repeat_direction = direction
+        clock.schedule(self.repeat)
+
+    def repeat(self, dt):
+        self.repeat_time += dt
+        if self.repeat_time > .1:
+            self.repeat_time -= .1
+            self.repeat_direction()
+
+    def stopRepeat(self):
+        if self.delay_timer is not None:
+            self.delay_timer.cancel()
+            self.delay_timer = None
+        if self.repeating:
+            clock.unschedule(self.repeat)
+        self.repeating = False
 
 @event.default('hslider')
 def on_mouse_press(self, x, y, buttons, modifiers):
     x, y = self.calculateRelativeCoords(x, y)
     r = self.bar.rect
-    if x < r.x: self.stepToMinimum()
-    elif x > r.right: self.stepToMaximum()
+    if x < r.x:
+        self.stepToMinimum()
+        self.delay_timer = anim.Delayed(self.startRepeat,
+            self.stepToMinimum, delay=.5)
+    elif x > r.right:
+        self.stepToMaximum()
+        self.delay_timer = anim.Delayed(self.startRepeat,
+            self.stepToMaximum, delay=.5)
+    return event.EVENT_HANDLED
+
+@event.default('hslider')
+def on_mouse_release(self, x, y, buttons, modifiers):
+    self.stopRepeat()
     return event.EVENT_HANDLED
 
 @event.default('hslider')

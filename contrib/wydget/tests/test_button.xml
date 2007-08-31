@@ -24,8 +24,12 @@
 <button border="black" bgcolor="white" over_bgcolor="red">text with border (over=red)</button>
 <button border="black" bgcolor="white" pressed_bgcolor="green">text with border (press=green)</button>
 <button border="black" bgcolor="white" over_bgcolor="red" pressed_bgcolor="green">text with border (over=red, press=green)</button>
+<button rotate="180">rotated 180 button</button>
 
+<frame><horizontal>
 <button rotate="90">rotated 90 button</button>
+<button rotate="270">rotated 270 button</button>
+</horizontal></frame>
 
 </vertical>
 </frame>

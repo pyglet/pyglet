@@ -17,33 +17,29 @@ from wydget.widgets.button import Button
 class Music(Frame):
     name='music'
 
-    def __init__(self, parent, file=None, medium=None, title=None,
+    def __init__(self, parent, file=None, source=None, title=None,
             playing=False, bgcolor=(1, 1, 1, 1), color=(0, 0, 0, 1),
             font_size=20, **kw):
-        '''Pass in a filename as "file" or a pyglet Medium as "medium".
+        '''Pass in a filename as "file" or a pyglet Source as "source".
         '''
         self.parent = parent
 
         if file is not None:
-            medium = self.medium = media.load(file, streaming=True)
-            if title is None:
-                # XXX use an id3 lib or similar?
-                title = '[title unknown]'
+            source = media.load(file, streaming=True)
         else:
-            assert medium is not None, 'one of file or medium is required'
-            self.medium = medium
-            title = '[title unknown]'
+            assert source is not None, 'one of file or source is required'
 
-        # Load the medium, determine if it's audio
-        if not medium.has_audio:
-            raise ValueError("Medium doesn't contain audio")
-        self.audio = medium.get_sound()
+        self.player = media.Player()
+
+        # poke at the video format
+        if not source.audio_format:
+            raise ValueError("File doesn't contain video")
 
         super(Music, self).__init__(parent, bgcolor=bgcolor, **kw)
 
         # lay it out
-        Label(self, title, color=color, bgcolor=bgcolor, padding=2,
-            font_size=font_size)
+        Label(self, title or 'unknown', color=color, bgcolor=bgcolor,
+            padding=2, font_size=font_size)
 
         # basic frame
         c = self.control = Frame(self, width='100%', height=64,
@@ -53,7 +49,7 @@ class Music(Frame):
 
         c.range = Image(c, data.load_gui_image('media-range.png'))
 
-        c.time = Label(c, '00:00', font_size=20, is_blended=True)
+        c.time = Label(c, '00:00', font_size=20)
         layouts.Horizontal(c, valign='center', halign='center',
             padding=10).layout()
 
@@ -69,15 +65,35 @@ class Music(Frame):
 
         layouts.Vertical(self, halign='center').layout()
 
-        self.audio.play()
-        if not playing:
-            self.audio.pause()
-        else:
-            clock.schedule(self.time_update)
+        # make sure we get at least one frame to display
+        self.player.queue(source)
+        clock.schedule(self.update)
+        self.playing = playing
+        if playing:
+            self.player.play()
+
+    def update(self, dt):
+        self.player.dispatch_events()
+
+    def pause(self):
+        if not self.playing: return
+        clock.unschedule(self.time_update)
+        self.player.pause()
+        self.control.play.setVisible(True)
+        self.control.pause.setVisible(False)
+        self.playing = False
+
+    def play(self):
+        if self.playing: return
+        clock.schedule(self.time_update)
+        self.player.play()
+        self.control.pause.setVisible(True)
+        self.control.play.setVisible(False)
+        self.playing = True
 
     def time_update(self, ts):
         if not self.control.isVisible(): return
-        t = self.audio.time
+        t = self.player.time
 
         # time display
         s = int(t)
@@ -88,50 +104,50 @@ class Music(Frame):
         if h: text = '%d:%02d:%02d'%(h, m, s)
         else: text = '%02d:%02d'%(m, s)
         if text != self.control.time.text:
-            self.control.time.setText(text)
+            self.control.time.text = text
 
         # slider position
-        p = (t/self.medium.duration)
+        p = (t/self.player.source.duration)
         p *= self.control.range.width
         self.control.position.x = self.control.range.x + int(p)
 
     def delete(self):
+        clock.unschedule(self.update)
         super(Music, self).delete()
-        self.audio.stop()
 
 
-@event.default('music .-play-button', 'on_click')
-def on_click_play(widget, x, y, buttons, modifiers, click_count):
+@event.default('music .-play-button')
+def on_click(widget, x, y, buttons, modifiers, click_count):
     if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
-    music = widget.getParent('music')
-    audio = music.audio
-    if audio.playing: return event.EVENT_HANDLED
-    clock.schedule(music.time_update)
-    audio.play()
-    widget.setVisible(False)
-    widget.parent.pause.setVisible(True)
+    widget.getParent('music').play()
     return event.EVENT_HANDLED
 
-@event.default('music .-pause-button', 'on_click')
-def on_click_pause(widget, x, y, buttons, modifiers, click_count):
+@event.default('music .-pause-button')
+def on_click(widget, x, y, buttons, modifiers, click_count):
     if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
-    music = widget.getParent('music')
-    audio = music.audio
-    if not audio.playing: return event.EVENT_HANDLED
-    clock.unschedule(music.time_update)
-    audio.pause()
-    widget.setVisible(False)
-    widget.parent.play.setVisible(True)
+    widget.getParent('music').pause()
     return event.EVENT_HANDLED
 
-@event.default('music .-position', 'on_drag')
-def on_drag_position(widget, x, y, dx, dy, buttons, modifiers):
+@event.default('music .-position')
+def on_mouse_press(widget, x, y, buttons, modifiers):
+    if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
+    widget.getParent('music').pause()
+    return event.EVENT_HANDLED
+
+@event.default('music .-position')
+def on_mouse_release(widget, x, y, buttons, modifiers):
+    if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
+    widget.getParent('music').play()
+    return event.EVENT_HANDLED
+
+@event.default('music .-position')
+def on_drag(widget, x, y, dx, dy, buttons, modifiers):
     if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
     rx = widget.range.x
     rw = widget.range.width
     widget.x = max(rx, min(rx + rw, widget.x + dx))
-    p = float(widget.x - rx) / rw
     music = widget.getParent('music')
-    music.audio.seek(p * music.medium.duration)
+    p = float(widget.x - rx) / rw
+    music.player.seek(p * music.player.source.duration)
     return event.EVENT_HANDLED
 

@@ -120,9 +120,9 @@ class LabelCommon(element.Element):
         self.halign = halign
         self.font_size = int(font_size or parent.getStyle().font_size)
         self.color = util.parse_color(color)
-        assert rotate in (0, 90, 180, 270), \
-            'rotate must be one of 0, 90, 180, 270, not %r'%(rotate, )
         self.rotate = util.parse_value(rotate, 0)
+        assert self.rotate in (0, 90, 180, 270), \
+            'rotate must be one of 0, 90, 180, 270, not %r'%(self.rotate, )
         super(LabelCommon, self).__init__(parent, x, y, z, width, height, **kw)
         self.text = text
 
@@ -142,10 +142,14 @@ class LabelCommon(element.Element):
         '''
         change = super(LabelCommon, self).parentDimensionsChanged()
         if change:
-            self.setText(self._text)
+            # text hasn't changed but layout has
+            self.setText(self._text, force=True)
         return change
 
-    def setText(self, text):
+    _text = None
+    def setText(self, text, force=False):
+        if text == self._text and not force: return
+
         self._text = text
         if self.rotate in (0, 180):
             pw = self.parent.inner_rect.width
