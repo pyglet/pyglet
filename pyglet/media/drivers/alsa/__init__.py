@@ -81,7 +81,7 @@ class Device(object):
         self.can_pause = asound.snd_pcm_hw_params_can_pause(self.hwparams)
 
 class ALSAPlayer(BasePlayer):
-    _min_buffer_time = 0.3
+    _min_buffer_time = 0.1
     _max_buffer_size = 65536
 
     def __init__(self):
@@ -150,14 +150,15 @@ class ALSAPlayer(BasePlayer):
             elif self._eos_action == self.EOS_STOP:
                 self.stop()
                 self._sources = []
+                return
             self.dispatch_event('on_eos')
 
             self_time -= source.duration
-            self._start_time = self._get_asound_time() - self_time
             self._cumulative_buffer_time -= source.duration
-            assert self._cumulative_buffer_time >= 0.
+            assert self._cumulative_buffer_time >= -0.001 # some float err ok
             try:
                 source = self._sources[0]
+                self._set_start_time(self._sources[0], self_time)
             except IndexError:
                 source = None
                 self._start_time = None
@@ -205,14 +206,8 @@ class ALSAPlayer(BasePlayer):
                     
                 if self._start_time is None:
                     # XXX start playback
-                    delay = asound.snd_pcm_sframes_t()
-                    check(asound.snd_pcm_delay(self._device.pcm,
-                                               ctypes.byref(delay)))
-                    delay = delay.value / \
-                        source.audio_format.bytes_per_sample / \
-                        float(source.audio_format.bytes_per_second) 
-                    self._start_time = self._get_asound_time() - \
-                        audio_data.timestamp - delay
+                    self._set_start_time(source, audio_data.timestamp)
+                    
             else:
                 # EOS on read source
                 self._cumulative_buffer_time += source.duration
@@ -263,6 +258,14 @@ class ALSAPlayer(BasePlayer):
         self._queue_audio_data = None
         self._start_time = None
 
+    def _set_start_time(self, source, timestamp):
+        delay = asound.snd_pcm_sframes_t()
+        check(asound.snd_pcm_delay(self._device.pcm, ctypes.byref(delay)))
+        delay = (delay.value / 
+                 source.audio_format.bytes_per_sample /
+                 float(source.audio_format.bytes_per_second))
+        self._start_time = self._get_asound_time() - timestamp - delay
+
     def play(self):
         if self._playing:
             return
@@ -276,7 +279,7 @@ class ALSAPlayer(BasePlayer):
             state = asound.snd_pcm_state(self._device.pcm)
             if self._device.can_pause and state == asound.SND_PCM_STATE_PAUSED:
                 check(asound.snd_pcm_pause(self._device.pcm, 0))
-                self._start_time = self._get_asound_time() - self._timestamp
+                self._set_start_time(self._sources[0], self._timestamp)
 
     def pause(self):
         if not self._playing:
