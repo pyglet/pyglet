@@ -149,6 +149,7 @@ class ALSAPlayer(BasePlayer):
                 self.next()
             elif self._eos_action == self.EOS_STOP:
                 self.stop()
+                self._sources = []
             self.dispatch_event('on_eos')
 
             self_time -= source.duration

@@ -358,6 +358,7 @@ class StaticMemorySource(StaticSource):
         self._file = StringIO.StringIO(data)
         self._max_offset = len(data)
         self.audio_format = audio_format
+        self._duration = len(data) / float(audio_format.bytes_per_second)
 
     def _seek(self, timestamp):
         offset = int(timestamp * self.audio_format.bytes_per_second)
