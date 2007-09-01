@@ -1,0 +1,956 @@
+Notes on Py3k migration
+-----------------------
+Last updated 2007-9-1 (python-3.0a1, 2to3 r57825).
+
+Summary
+=======
+
+Unresolved:
+
+* 2to3 gets infinite recursion exception when run over the generated modules.
+* 2to3 transforms media.Player.next() to __next__()
+
+Fixable now (compat with 2):
+
+* type(..) -> isinstance(..)  [idiom transform in 2to3]
+
+Fixed by 2to3 correctly:
+
+* StringIO.StringIO -> io.StringIO
+* except X, e -> except X as e
+
+Manual rewrites for:
+
+* All the places we use strings for byte arrays (pretty much everywhere).
+
+Haven't actually tested anything under 3.0a1 yet (because the string changes
+will be needed before anything works, most likely).
+
+2to3 Log
+========
+
+Log of ./refactor.py ~/projects/pyglet/pyglet
+[Modified 2to3.py to continue after crashing, and log an error]
+
+RefactoringTool: Files that need to be modified:
+RefactoringTool: /home/alex/projects/pyglet/pyglet/clock.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/event.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/lib.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/font/__init__.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/font/base.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/font/carbon.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/font/freetype_lib.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/font/ttf.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/gl/lib_agl.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/gl/lib_glx.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/gl/lib_wgl.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/image/__init__.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/image/codecs/dds.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/image/codecs/pil.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/image/codecs/png.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/image/codecs/pypng.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/media/__init__.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/media/riff.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/media/drivers/silent.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/media/drivers/alsa/__init__.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/media/drivers/openal/__init__.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/window/event.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/window/key.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/window/carbon/__init__.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/window/win32/__init__.py
+RefactoringTool: /home/alex/projects/pyglet/pyglet/window/xlib/__init__.py
+RefactoringTool: There were 6 errors:
+RefactoringTool: Crashed on /home/alex/projects/pyglet/pyglet/gl/gl.py
+RefactoringTool: Crashed on /home/alex/projects/pyglet/pyglet/gl/glext_arb.py
+RefactoringTool: Crashed on /home/alex/projects/pyglet/pyglet/gl/glext_nv.py
+RefactoringTool: Crashed on /home/alex/projects/pyglet/pyglet/media/drivers/alsa/asound.py
+RefactoringTool: Crashed on /home/alex/projects/pyglet/pyglet/window/win32/constants.py
+RefactoringTool: Crashed on /home/alex/projects/pyglet/pyglet/window/xlib/xlib.py
+
+2to3 patch
+==========
+
+--- /home/alex/projects/pyglet/pyglet/clock.py (original)
++++ /home/alex/projects/pyglet/pyglet/clock.py (refactored)
+@@ -378,7 +378,7 @@
+         # is already scheduled, the mapping becomes a list of items.
+         if func in self._schedule_functions:
+             entry = self._schedule_functions[func]
+-            if type(entry) == list:
++            if isinstance(entry, list):
+                 self._schedule_functions[func].append(item)
+             else:
+                 self._schedule_functions[func] = [entry, item]
+@@ -404,7 +404,7 @@
+         # add item to func mapping
+         if func in self._schedule_functions:
+             entry = self._schedule_functions[func]
+-            if type(entry) == list:
++            if isinstance(entry, list):
+                 self._schedule_functions[func].append(item)
+             else:
+                 self._schedule_functions[func] = [entry, item]
+@@ -456,7 +456,7 @@
+             return
+ 
+         items = self._schedule_functions[func]
+-        if type(items) == list:
++        if isinstance(items, list):
+             for item in items:
+                 if item in self._schedule_items:
+                     self._schedule_items.remove(item)
+@@ -683,20 +683,20 @@
+     # Add one because first frame has no update interval.
+     n_frames = int(test_seconds * test_fps + 1)
+ 
+-    print 'Testing %f FPS for %f seconds...' % (test_fps, test_seconds)
+-    for i in xrange(n_frames):
++    print('Testing %f FPS for %f seconds...' % (test_fps, test_seconds))
++    for i in range(n_frames):
+         tick()
+         if show_fps:
+-            print get_fps()
++            print(get_fps())
+     total_time = time.time() - start
+     total_error = total_time - test_seconds
+-    print 'Total clock error: %f secs' % total_error
+-    print 'Total clock error / secs: %f secs/secs' % \
+-        (total_error / test_seconds)
++    print('Total clock error: %f secs' % total_error)
++    print('Total clock error / secs: %f secs/secs' % \
++        (total_error / test_seconds))
+ 
+     # Not fair to add the extra frame in this calc, since no-one's interested
+     # in the startup situation.
+-    print 'Average FPS: %f' % ((n_frames - 1) / total_time)
++    print('Average FPS: %f' % ((n_frames - 1) / total_time))
+ 
+ if __name__ == '__main__':
+     test_clock()
+--- /home/alex/projects/pyglet/pyglet/event.py (original)
++++ /home/alex/projects/pyglet/pyglet/event.py (refactored)
+@@ -186,7 +186,7 @@
+         callables with event names.
+         '''
+         # Create event stack if necessary
+-        if type(self._event_stack) is tuple:
++        if isinstance(self._event_stack, tuple):
+             self._event_stack = [{}]
+ 
+         # Place dict full of new handlers at beginning of stack
+@@ -200,7 +200,7 @@
+         See `push_handlers` for the accepted argument types.
+         '''
+         # Create event stack if necessary
+-        if type(self._event_stack) is tuple:
++        if isinstance(self._event_stack, tuple):
+             self._event_stack = [{}]
+ 
+         for object in args:
+@@ -215,7 +215,7 @@
+                 for name, handler in inspect.getmembers(object):
+                     if name in self.event_types:
+                         self.set_handler(name, handler)
+-        for name, handler in kwargs.items():
++        for name, handler in list(kwargs.items()):
+             # Function for handling given event (no magic)
+             if name not in self.event_types:
+                 raise EventException('Unknown event "%s"' % name)
+@@ -232,7 +232,7 @@
+ 
+         '''
+         # Create event stack if necessary
+-        if type(self._event_stack) is tuple:
++        if isinstance(self._event_stack, tuple):
+             self._event_stack = [{}]
+ 
+         self._event_stack[0][name] = handler
+@@ -304,7 +304,7 @@
+             name = func.__name__
+             setattr(self, name, func)
+             return args[0]
+-        elif type(args[0]) in (str, unicode):   # @window.event('on_resize')
++        elif type(args[0]) in (str, str):   # @window.event('on_resize')
+             name = args[0]
+             def decorator(func):
+                 setattr(self, name, func)
+--- /home/alex/projects/pyglet/pyglet/lib.py (original)
++++ /home/alex/projects/pyglet/pyglet/lib.py (refactored)
+@@ -27,9 +27,9 @@
+             return self.load_framework(kwargs['framework'])
+         
+         platform_names = kwargs.get(self.platform, [])
+-        if type(platform_names) in (str, unicode):
++        if type(platform_names) in (str, str):
+             platform_names = [platform_names]
+-        elif type(platform_names) is tuple:
++        elif isinstance(platform_names, tuple):
+             platform_names = list(platform_names)
+ 
+         if self.platform == 'linux2':
+--- /home/alex/projects/pyglet/pyglet/font/__init__.py (original)
++++ /home/alex/projects/pyglet/pyglet/font/__init__.py (refactored)
+@@ -174,7 +174,7 @@
+                 return to_index 
+             if c == '\n':
+                 return i + from_index + 1
+-            elif c in u'\u0020\u200b':
++            elif c in '\u0020\u200b':
+                 to_index = i + from_index + 1
+         return to_index
+ 
+@@ -554,7 +554,7 @@
+             Filename or file-like object to load fonts from.
+ 
+     '''
+-    if type(font) in (str, unicode):
++    if type(font) in (str, str):
+         font = open(font, 'rb')
+     if hasattr(font, 'read'):
+         font = font.read()
+--- /home/alex/projects/pyglet/pyglet/font/base.py (original)
++++ /home/alex/projects/pyglet/pyglet/font/base.py (refactored)
+@@ -334,7 +334,7 @@
+                 break
+ 
+             # If a valid breakpoint, commit holding buffer
+-            if c in u'\u0020\u200b':
++            if c in '\u0020\u200b':
+                 glyphs += glyph_buffer
+                 glyph_buffer = []
+ 
+--- /home/alex/projects/pyglet/pyglet/font/carbon.py (original)
++++ /home/alex/projects/pyglet/pyglet/font/carbon.py (refactored)
+@@ -141,7 +141,7 @@
+ 
+ def create_atsu_style(attributes):
+     # attributes is a dict of ATSUAttributeTag => ctypes value
+-    tags, values = zip(*attributes.items())
++    tags, values = zip(*list(attributes.items()))
+     tags = (c_int * len(tags))(*tags)
+     sizes = (c_uint * len(values))(*[sizeof(v) for v in values])
+     values = (c_void_p * len(values))(*[cast(pointer(v), c_void_p) \
+@@ -155,7 +155,7 @@
+ def set_layout_attributes(layout, attributes):
+     if attributes:
+         # attributes is a dict of ATSUAttributeTag => ctypes value
+-        tags, values = zip(*attributes.items())
++        tags, values = zip(*list(attributes.items()))
+         tags = (c_int * len(tags))(*tags)
+         sizes = (c_uint * len(values))(*[sizeof(v) for v in values])
+         values = (c_void_p * len(values))(*[cast(pointer(v), c_void_p) \
+--- /home/alex/projects/pyglet/pyglet/font/freetype_lib.py (original)
++++ /home/alex/projects/pyglet/pyglet/font/freetype_lib.py (refactored)
+@@ -53,7 +53,7 @@
+         func.argtypes = argtypes
+         func.restype = rtype
+         return func
+-    except AttributeError, e:
++    except AttributeError as e:
+             raise ImportError(e)
+ 
+ FT_Done_FreeType = _get_function('FT_Done_FreeType', [c_void_p], None)
+@@ -85,7 +85,7 @@
+ 
+     def dump(self):
+         for (name, type) in self._fields_:
+-            print 'FT_Glyph_Metrics', name, `getattr(self, name)`
++            print('FT_Glyph_Metrics', name, repr(getattr(self, name)))
+ 
+ class FT_Generic(Structure):
+     _fields_ = [('data', c_void_p), ('finalizer', c_void_p)]
+@@ -250,7 +250,7 @@
+ 
+     def dump(self):
+         for (name, type) in self._fields_:
+-            print 'FT_FaceRec', name, `getattr(self, name)`
++            print('FT_FaceRec', name, repr(getattr(self, name)))
+ 
+     def has_kerning(self):
+         return self.face_flags & FT_FACE_FLAG_KERNING
+--- /home/alex/projects/pyglet/pyglet/font/ttf.py (original)
++++ /home/alex/projects/pyglet/pyglet/font/ttf.py (refactored)
+@@ -247,14 +247,14 @@
+         """
+         
+         names = self.get_names()
+-        if type(name) == str:
++        if isinstance(name, str):
+             name = self._name_id_lookup[name]
+         if not platform:
+             for platform in ('microsoft','macintosh'):
+                 value = self.get_name(name, platform, languages)
+                 if value:
+                     return value
+-        if type(platform) == str:
++        if isinstance(platform, str):
+             platform = self._platform_id_lookup[platform]
+         if not (platform, name) in names:
+             return None
+@@ -323,7 +323,7 @@
+             gmap = self.get_glyph_map()
+             kerns = self.get_glyph_kernings()
+             self._character_kernings = {}
+-            for pair, value in kerns.items():
++            for pair, value in list(kerns.items()):
+                 lglyph, rglyph = pair
+                 lchar = lglyph in gmap and gmap[lglyph] or None
+                 rchar = rglyph in gmap and gmap[rglyph] or None
+@@ -377,7 +377,7 @@
+             return self._glyph_map
+         cmap = self.get_character_map()
+         self._glyph_map = {}
+-        for ch, glyph in cmap.items():
++        for ch, glyph in list(cmap.items()):
+             if not glyph in self._glyph_map:
+                 self._glyph_map[glyph] = ch
+         return self._glyph_map
+@@ -433,12 +433,12 @@
+                         id_range_offset_address + 2*i
+                     g = struct.unpack('>H', self._data[addr:addr+2])[0]
+                     if g != 0:
+-                        character_map[unichr(c)] = (g + id_delta[i]) % 65536
++                        character_map[chr(c)] = (g + id_delta[i]) % 65536
+             else:
+                 for c in range(start_count[i], end_count[i] + 1):
+                     g = (c + id_delta[i]) % 65536
+                     if g != 0:
+-                        character_map[unichr(c)] = g
++                        character_map[chr(c)] = g
+         return character_map
+ 
+     def _read_array(self, format, offset):
+--- /home/alex/projects/pyglet/pyglet/gl/lib_agl.py (original)
++++ /home/alex/projects/pyglet/pyglet/gl/lib_agl.py (refactored)
+@@ -58,7 +58,7 @@
+         func.argtypes = argtypes
+         decorate_function(func, name)
+         return func
+-    except AttributeError, e:
++    except AttributeError as e:
+         return missing_function(name, requires, suggestions)
+ 
+ link_GLU = link_GL
+@@ -70,6 +70,6 @@
+         func.argtypes = argtypes
+         decorate_function(func, name)
+         return func
+-    except AttributeError, e:
++    except AttributeError as e:
+         return missing_function(name, requires, suggestions)
+ 
+--- /home/alex/projects/pyglet/pyglet/gl/lib_glx.py (original)
++++ /home/alex/projects/pyglet/pyglet/gl/lib_glx.py (refactored)
+@@ -66,7 +66,7 @@
+         func.argtypes = argtypes
+         decorate_function(func, name)
+         return func
+-    except AttributeError, e:
++    except AttributeError as e:
+         if _have_getprocaddress:
+             # Fallback if implemented but not in ABI
+             bname = cast(pointer(create_string_buffer(name)), POINTER(c_ubyte))
+@@ -88,6 +88,6 @@
+         func.argtypes = argtypes
+         decorate_function(func, name)
+         return func
+-    except AttributeError, e:
++    except AttributeError as e:
+         return missing_function(name, requires, suggestions)
+ 
+--- /home/alex/projects/pyglet/pyglet/gl/lib_wgl.py (original)
++++ /home/alex/projects/pyglet/pyglet/gl/lib_wgl.py (refactored)
+@@ -93,7 +93,7 @@
+         func.argtypes = argtypes
+         decorate_function(func, name)
+         return func
+-    except AttributeError, e:
++    except AttributeError as e:
+         # Not in opengl32.dll. Try and get a pointer from WGL.
+         try:
+             fargs = (restype,) + tuple(argtypes)
+@@ -121,7 +121,7 @@
+         func.argtypes = argtypes
+         decorate_function(func, name)
+         return func
+-    except AttributeError, e:
++    except AttributeError as e:
+         # Not in glu32.dll. Try and get a pointer from WGL.
+         try:
+             fargs = (restype,) + tuple(argtypes)
+--- /home/alex/projects/pyglet/pyglet/image/__init__.py (original)
++++ /home/alex/projects/pyglet/pyglet/image/__init__.py (refactored)
+@@ -136,7 +136,7 @@
+ 
+ from ctypes import *
+ from math import ceil
+-from StringIO import StringIO
++from io import StringIO
+ 
+ from pyglet.gl import *
+ from pyglet.gl import gl_info
+@@ -179,7 +179,7 @@
+             try:
+                 image = decoder.decode(file, filename)
+                 return image
+-            except codecs.ImageDecodeException, e:
++            except codecs.ImageDecodeException as e:
+                 first_exception = first_exception or e
+                 file.seek(0)
+ 
+@@ -370,7 +370,7 @@
+                 try:
+                     encoder.encode(self, file, filename)
+                     return
+-                except codecs.ImageDecodeException, e:
++                except codecs.ImageDecodeException as e:
+                     first_exception = first_exception or e
+                     file.seek(0)
+ 
+@@ -872,7 +872,7 @@
+         return data
+ 
+     def _ensure_string_data(self):
+-        if type(self._current_data) is not str:
++        if not isinstance(self._current_data, str):
+             buf = create_string_buffer(len(self._current_data))
+             memmove(buf, self._current_data, len(self._current_data))
+             self._current_data = buf.raw
+@@ -1419,7 +1419,7 @@
+         return self.items[index]
+ 
+     def __setitem__(self, index, value):
+-        if type(index) is slice:
++        if isinstance(index, slice):
+             for item, image in zip(self[index], value):
+                 image.blit_to_texture(self.target, self.level, 0, 0, item.z)
+         else:
+@@ -1903,26 +1903,26 @@
+         return self[(row, column)]
+ 
+     def __getitem__(self, index):
+-        if type(index) is slice:
+-            if type(index.start) is not tuple and \
+-               type(index.stop) is not tuple:
++        if isinstance(index, slice):
++            if not isinstance(index.start, tuple) and \
++               not isinstance(index.stop, tuple):
+                 return self.items[index]
+             else:
+                 row1 = 0
+                 col1 = 0
+                 row2 = self.rows
+                 col2 = self.columns
+-                if type(index.start) is tuple:
++                if isinstance(index.start, tuple):
+                     row1, col1 = index.start
+-                elif type(index.start) is int:
++                elif isinstance(index.start, int):
+                     row1 = index.start / self.columns
+                     col1 = index.start % self.columns
+                 assert row1 >= 0 and col1 >= 0 and \
+                        row1 < self.rows and col1 < self.columns
+ 
+-                if type(index.stop) is tuple:
++                if isinstance(index.stop, tuple):
+                     row2, col2 = index.stop
+-                elif type(index.stop) is int:
++                elif isinstance(index.stop, int):
+                     row2 = index.stop / self.columns
+                     col2 = index.stop % self.columns
+                 assert row2 >= 0 and col2 >= 0 and \
+@@ -1935,16 +1935,16 @@
+                     i += self.columns
+                 return result
+         else:
+-            if type(index) is tuple:
++            if isinstance(index, tuple):
+                 row, column = index
+                 assert row >= 0 and column >= 0 and \
+                        row < self.rows and column < self.columns
+                 return self.items[row * self.columns + column]
+-            elif type(index) is int:
++            elif isinstance(index, int):
+                 return self.items[index]
+ 
+     def __setitem__(self, index, value):
+-        if type(index) is slice:
++        if isinstance(index, slice):
+             for region, image in zip(self[index], value):
+                 if image.width != self.item_width or \
+                    image.height != self.item_height:
+--- /home/alex/projects/pyglet/pyglet/image/codecs/dds.py (original)
++++ /home/alex/projects/pyglet/pyglet/image/codecs/dds.py (refactored)
+@@ -153,7 +153,7 @@
+ def _check_error():
+     e = glGetError()
+     if e != 0:
+-        print 'GL error %d' % e
++        print('GL error %d' % e)
+ 
+ class DDSImageDecoder(codecs.ImageDecoder):
+     def get_file_extensions(self):
+--- /home/alex/projects/pyglet/pyglet/image/codecs/pil.py (original)
++++ /home/alex/projects/pyglet/pyglet/image/codecs/pil.py (refactored)
+@@ -56,7 +56,7 @@
+     def decode(self, file, filename):
+         try:
+             image = Image.open(file)
+-        except Exception, e:
++        except Exception as e:
+             raise ImageDecodeException(
+                 'PIL cannot read %r: %s' % (filename or file, e))
+ 
+@@ -100,7 +100,7 @@
+ 
+         try:
+             pil_image.save(file, format)
+-        except Exception, e:
++        except Exception as e:
+             raise ImageEncodeException(e)
+ 
+ def get_decoders():
+--- /home/alex/projects/pyglet/pyglet/image/codecs/png.py (original)
++++ /home/alex/projects/pyglet/pyglet/image/codecs/png.py (refactored)
+@@ -55,7 +55,7 @@
+         try:
+             reader = pyglet.image.codecs.pypng.Reader(file=file)
+             width, height, pixels, metadata = reader.read()
+-        except Exception, e:
++        except Exception as e:
+             raise ImageDecodeException(
+                 'PyPNG cannot read %r: %s' % (filename or file, e))
+ 
+--- /home/alex/projects/pyglet/pyglet/image/codecs/pypng.py (original)
++++ /home/alex/projects/pyglet/pyglet/image/codecs/pypng.py (refactored)
+@@ -180,27 +180,27 @@
+ 
+         if transparent is not None:
+             if greyscale:
+-                if type(transparent) is not int:
++                if not isinstance(transparent, int):
+                     raise ValueError(
+                         "transparent color for greyscale must be integer")
+             else:
+                 if not (len(transparent) == 3 and
+-                        type(transparent[0]) is int and
+-                        type(transparent[1]) is int and
+-                        type(transparent[2]) is int):
++                        isinstance(transparent[0], int) and
++                        isinstance(transparent[1], int) and
++                        isinstance(transparent[2], int)):
+                     raise ValueError(
+                         "transparent color must be a triple of integers")
+ 
+         if background is not None:
+             if greyscale:
+-                if type(background) is not int:
++                if not isinstance(background, int):
+                     raise ValueError(
+                         "background color for greyscale must be integer")
+             else:
+                 if not (len(background) == 3 and
+-                        type(background[0]) is int and
+-                        type(background[1]) is int and
+-                        type(background[2]) is int):
++                        isinstance(background[0], int) and
++                        isinstance(background[1], int) and
++                        isinstance(background[2], int)):
+                     raise ValueError(
+                         "background color must be a triple of integers")
+ 
+@@ -726,7 +726,7 @@
+         while True:
+             try:
+                 tag, data = self.read_chunk()
+-            except ValueError, e:
++            except ValueError as e:
+                 raise Error('Chunk error: ' + e.args[0])
+ 
+             # print >> sys.stderr, tag, len(data)
+--- /home/alex/projects/pyglet/pyglet/media/__init__.py (original)
++++ /home/alex/projects/pyglet/pyglet/media/__init__.py (refactored)
+@@ -79,7 +79,7 @@
+ __version__ = '$Id: __init__.py 1217 2007-09-01 01:47:46Z Alex.Holkner $'
+ 
+ import sys
+-import StringIO
++import io
+ 
+ from pyglet import event
+ 
+@@ -173,7 +173,7 @@
+ 
+     def consume(self, bytes, audio_format):
+         '''Remove some data from beginning of packet.'''
+-        if type(self.data) is str:
++        if isinstance(self.data, str):
+             self.data = self.data[bytes:]
+         else:
+             # ctypes array or pointer
+@@ -331,7 +331,7 @@
+ 
+         # Naive implementation.  Driver-specific implementations may override
+         # to load static audio data into device (or at least driver) memory. 
+-        data = StringIO.StringIO()
++        data = io.StringIO()
+         while True:
+             audio_data = source._get_audio_data(buffer_size)
+             if not audio_data:
+@@ -350,7 +350,7 @@
+     directly.'''
+ 
+     def __init__(self, data, audio_format):
+-        self._file = StringIO.StringIO(data)
++        self._file = io.StringIO(data)
+         self._max_offset = len(data)
+         self.audio_format = audio_format
+ 
+@@ -457,7 +457,7 @@
+         '''
+         raise NotImplementedError('abstract')
+ 
+-    def next(self):
++    def __next__(self):
+         '''Move immediately to the next queued source.
+ 
+         If the `eos_action` of this player is `EOS_NEXT`, and the source has
+--- /home/alex/projects/pyglet/pyglet/media/riff.py (original)
++++ /home/alex/projects/pyglet/pyglet/media/riff.py (refactored)
+@@ -54,7 +54,7 @@
+ 
+ import ctypes
+ import struct
+-import StringIO
++import io
+ 
+ WAVE_FORMAT_PCM = 0x0001
+ IBM_FORMAT_MULAW = 0x0101
+@@ -140,7 +140,7 @@
+ 
+     def __init__(self, file):
+         if not hasattr(file, 'seek'):
+-            file = StringIO.StringIO(file.read())
++            file = io.StringIO(file.read())
+ 
+         super(RIFFFile, self).__init__(file, 0)
+ 
+--- /home/alex/projects/pyglet/pyglet/media/drivers/silent.py (original)
++++ /home/alex/projects/pyglet/pyglet/media/drivers/silent.py (refactored)
+@@ -27,7 +27,7 @@
+             source._init_texture(self)
+         self._sources.append(source)
+ 
+-    def next(self):
++    def __next__(self):
+         if self._sources:
+             old_source = self._sources.pop(0)
+             old_source._release_texture(self)
+@@ -49,7 +49,7 @@
+             self._sources[0]._update_texture(self, self._timestamp)
+ 
+         if self._timestamp > self._sources[0].duration:
+-            self.next()
++            next(self)
+             self._timestamp = 0.
+ 
+     def _get_time(self):
+--- /home/alex/projects/pyglet/pyglet/media/drivers/alsa/__init__.py (original)
++++ /home/alex/projects/pyglet/pyglet/media/drivers/alsa/__init__.py (refactored)
+@@ -47,7 +47,7 @@
+     def __del__(self):
+         try:
+             check(asound.snd_pcm_close(self.pcm))
+-            print 'closed'
++            print('closed')
+         except (NameError, AttributeError):
+             pass
+ 
+@@ -102,7 +102,7 @@
+             source._init_texture(self)
+         self._sources.append(source)
+ 
+-    def next(self):
++    def __next__(self):
+         if self._sources:
+             old_source = self._sources.pop(0)
+             old_source._release_texture(self)
+@@ -261,7 +261,7 @@
+ 
+ def driver_init():
+     global debug_output
+-    print asound.snd_asoundlib_version()
++    print(asound.snd_asoundlib_version())
+     debug_output = ctypes.POINTER(asound.snd_output_t)()
+     if alsa_debug:
+         check(asound.snd_output_stdio_open(ctypes.byref(debug_output),
+--- /home/alex/projects/pyglet/pyglet/media/drivers/openal/__init__.py (original)
++++ /home/alex/projects/pyglet/pyglet/media/drivers/openal/__init__.py (refactored)
+@@ -237,7 +237,7 @@
+         else:
+             source.al_format = None
+ 
+-    def next(self):
++    def __next__(self):
+         if self._sources:
+             old_source = self._sources.pop(0)
+             old_source._release_texture(self)
+@@ -287,7 +287,7 @@
+                     assert info is buffer_pool.info[buffer]
+                     if info.is_eos:
+                         if self._eos_action == self.EOS_NEXT:
+-                            self.next()
++                            next(self)
+                         elif self._eos_action == self.EOS_STOP:
+                             # For ManagedSoundPlayer only.
+                             self.stop()
+@@ -298,7 +298,7 @@
+             # Check for EOS on silent source
+             if self_time > self._sources[0].duration:
+                 if self._eos_action == self.EOS_NEXT:
+-                    self.next()
++                    next(self)
+                 self.dispatch_event('on_eos')
+ 
+         # Determine minimum duration of audio already buffered (current buffer
+--- /home/alex/projects/pyglet/pyglet/window/event.py (original)
++++ /home/alex/projects/pyglet/pyglet/window/event.py (refactored)
+@@ -95,81 +95,81 @@
+         self.file = logfile
+ 
+     def on_key_press(self, symbol, modifiers):
+-        print >> self.file, 'on_key_press(symbol=%s, modifiers=%s)' % (
+-            key.symbol_string(symbol), key.modifiers_string(modifiers))
++        print('on_key_press(symbol=%s, modifiers=%s)' % (
++            key.symbol_string(symbol), key.modifiers_string(modifiers)), file=self.file)
+ 
+     def on_key_release(self, symbol, modifiers):
+-        print >> self.file, 'on_key_release(symbol=%s, modifiers=%s)' % (
+-            key.symbol_string(symbol), key.modifiers_string(modifiers))
++        print('on_key_release(symbol=%s, modifiers=%s)' % (
++            key.symbol_string(symbol), key.modifiers_string(modifiers)), file=self.file)
+ 
+     def on_text(self, text):
+-        print >> self.file, 'on_text(text=%r)' % text
++        print('on_text(text=%r)' % text, file=self.file)
+ 
+     def on_text_motion(self, motion):
+-        print >> self.file, 'on_text_motion(motion=%s)' % (
+-            key.motion_string(motion))
++        print('on_text_motion(motion=%s)' % (
++            key.motion_string(motion)), file=self.file)
+ 
+     def on_text_motion_select(self, motion):
+-        print >> self.file, 'on_text_motion_select(motion=%s)' % (
+-            key.motion_string(motion))
++        print('on_text_motion_select(motion=%s)' % (
++            key.motion_string(motion)), file=self.file)
+ 
+     def on_mouse_motion(self, x, y, dx, dy):
+-        print >> self.file, 'on_mouse_motion(x=%d, y=%d, dx=%d, dy=%d)' % (
+-            x, y, dx, dy)
++        print('on_mouse_motion(x=%d, y=%d, dx=%d, dy=%d)' % (
++            x, y, dx, dy), file=self.file)
+ 
+     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+-        print >> self.file, 'on_mouse_drag(x=%d, y=%d, dx=%d, dy=%d, '\
++        print('on_mouse_drag(x=%d, y=%d, dx=%d, dy=%d, '\
+                             'buttons=%s, modifiers=%s)' % (
+               x, y, dx, dy, 
+-              mouse.buttons_string(buttons), key.modifiers_string(modifiers))
++              mouse.buttons_string(buttons), key.modifiers_string(modifiers)), file=self.file)
+ 
+     def on_mouse_press(self, x, y, button, modifiers):
+-        print >> self.file, 'on_mouse_press(x=%d, y=%d, button=%r, '\
++        print('on_mouse_press(x=%d, y=%d, button=%r, '\
+                             'modifiers=%s)' % (x, y,
+-            mouse.buttons_string(button), key.modifiers_string(modifiers))
++            mouse.buttons_string(button), key.modifiers_string(modifiers)), file=self.file)
+ 
+     def on_mouse_release(self, x, y, button, modifiers):
+-        print >> self.file, 'on_mouse_release(x=%d, y=%d, button=%r, '\
++        print('on_mouse_release(x=%d, y=%d, button=%r, '\
+                             'modifiers=%s)' % (x, y, 
+-            mouse.buttons_string(button), key.modifiers_string(modifiers))
++            mouse.buttons_string(button), key.modifiers_string(modifiers)), file=self.file)
+ 
+     def on_mouse_scroll(self, x, y, dx, dy):
+-        print >> self.file, 'on_mouse_scroll(x=%f, y=%f, dx=%f, dy=%f)' % (
+-            x, y, dx, dy)
++        print('on_mouse_scroll(x=%f, y=%f, dx=%f, dy=%f)' % (
++            x, y, dx, dy), file=self.file)
+ 
+     def on_close(self):
+-        print >> self.file, 'on_close()'
++        print('on_close()', file=self.file)
+ 
+     def on_mouse_enter(self, x, y):
+-        print >> self.file, 'on_mouse_enter(x=%d, y=%d)' % (x, y)
++        print('on_mouse_enter(x=%d, y=%d)' % (x, y), file=self.file)
+ 
+     def on_mouse_leave(self, x, y):
+-        print >> self.file, 'on_mouse_leave(x=%d, y=%d)' % (x, y)
++        print('on_mouse_leave(x=%d, y=%d)' % (x, y), file=self.file)
+ 
+     def on_expose(self):
+-        print >> self.file, 'on_expose()'
++        print('on_expose()', file=self.file)
+ 
+     def on_resize(self, width, height):
+-        print >> self.file, 'on_resize(width=%d, height=%d)' % (width, height)
++        print('on_resize(width=%d, height=%d)' % (width, height), file=self.file)
+ 
+     def on_move(self, x, y):
+-        print >> self.file, 'on_move(x=%d, y=%d)' % (x, y)
++        print('on_move(x=%d, y=%d)' % (x, y), file=self.file)
+ 
+     def on_activate(self):
+-        print >> self.file, 'on_activate()'
++        print('on_activate()', file=self.file)
+ 
+     def on_deactivate(self):
+-        print >> self.file, 'on_deactivate()'
++        print('on_deactivate()', file=self.file)
+ 
+     def on_show(self):
+-        print >> self.file, 'on_show()'
++        print('on_show()', file=self.file)
+ 
+     def on_hide(self):
+-        print >> self.file, 'on_hide()'
++        print('on_hide()', file=self.file)
+ 
+     def on_context_lost(self):
+-        print >> self.file, 'on_context_lost()'
++        print('on_context_lost()', file=self.file)
+ 
+     def on_context_state_lost(self):
+-        print >> self.file, 'on_context_state_lost()'
++        print('on_context_state_lost()', file=self.file)
+ 
+--- /home/alex/projects/pyglet/pyglet/window/key.py (original)
++++ /home/alex/projects/pyglet/pyglet/window/key.py (refactored)
+@@ -491,7 +491,7 @@
+ 
+ _key_names = {}
+ _motion_names = {}
+-for _name, _value in locals().items():
++for _name, _value in list(locals().items()):
+     if _name[:2] != '__' and _name.upper() == _name and \
+        not _name.startswith('MOD_'):
+         if _name.startswith('MOTION_'):
+--- /home/alex/projects/pyglet/pyglet/window/carbon/__init__.py (original)
++++ /home/alex/projects/pyglet/pyglet/window/carbon/__init__.py (refactored)
+@@ -353,7 +353,7 @@
+         self._pformat = pformat
+         self._attributes = {}
+ 
+-        for name, attr in self._attribute_ids.items():
++        for name, attr in list(self._attribute_ids.items()):
+             value = c_int()
+             result = agl.aglDescribePixelFormat(pformat, attr, byref(value))
+             if result:
+@@ -921,7 +921,7 @@
+                 self.dispatch_event('on_text_motion_select', motion)
+             else:
+                 self.dispatch_event('on_text_motion', motion)
+-        elif ((unicodedata.category(text[0]) != 'Cc' or text == u'\r') and
++        elif ((unicodedata.category(text[0]) != 'Cc' or text == '\r') and
+             not (modifiers & key.MOD_COMMAND)):
+             self.dispatch_event('on_text', text)
+         return noErr
+--- /home/alex/projects/pyglet/pyglet/window/win32/__init__.py (original)
++++ /home/alex/projects/pyglet/pyglet/window/win32/__init__.py (refactored)
+@@ -292,7 +292,7 @@
+         self._hdc = hdc
+         self._pf = pf
+         
+-        names, attrs = map(None, *self.attribute_ids.items())
++        names, attrs = list(map(None, *list(self.attribute_ids.items())))
+         attrs = (c_int * len(attrs))(*attrs)
+         values = (c_int * len(attrs))()
+         
+@@ -421,7 +421,7 @@
+             module = _kernel32.GetModuleHandleW(None)
+             white = _gdi32.GetStockObject(WHITE_BRUSH)
+             self._window_class = WNDCLASS()
+-            self._window_class.lpszClassName = u'GenericAppClass%d' % id(self)
++            self._window_class.lpszClassName = 'GenericAppClass%d' % id(self)
+             self._window_class.lpfnWndProc = WNDPROC(self._wnd_proc)
+             self._window_class.style = CS_VREDRAW | CS_HREDRAW
+             self._window_class.hInstance = 0
+@@ -438,7 +438,7 @@
+             self._hwnd = _user32.CreateWindowExW(
+                 self._ex_ws_style,
+                 self._window_class.lpszClassName,
+-                u'',
++                '',
+                 self._ws_style,
+                 CW_USEDEFAULT,
+                 CW_USEDEFAULT,
+@@ -789,7 +789,7 @@
+         self._allow_dispatch_event = True
+         while self._event_queue:
+             event = self._event_queue.pop(0)
+-            if type(event[0]) is str:
++            if isinstance(event[0], str):
+                 # pyglet event
+                 EventDispatcher.dispatch_event(self, *event)
+             else:
+@@ -888,7 +888,7 @@
+ 
+     @Win32EventHandler(WM_CHAR)
+     def _event_char(self, msg, wParam, lParam):
+-        text = unichr(wParam)
++        text = chr(wParam)
+         if unicodedata.category(text) != 'Cc' or text == '\r':
+             self.dispatch_event('on_text', text)
+         return 0
+--- /home/alex/projects/pyglet/pyglet/window/xlib/__init__.py (original)
++++ /home/alex/projects/pyglet/pyglet/window/xlib/__init__.py (refactored)
+@@ -279,7 +279,7 @@
+         if not self._visual_info:
+             raise gl.ContextException('No conforming visual exists')
+ 
+-        for name, attr in self.attribute_ids.items():
++        for name, attr in list(self.attribute_ids.items()):
+             value = c_int()
+             result = glx.glXGetConfig(self._display,
+                 self._visual_info, attr, byref(value))
+@@ -328,7 +328,7 @@
+         self.screen = screen
+         self._display = screen.display._display
+         self._fbconfig = fbconfig
+-        for name, attr in self.attribute_ids.items():
++        for name, attr in list(self.attribute_ids.items()):
+             value = c_int()
+             result = glx.glXGetFBConfigAttrib(
+                 self._display, self._fbconfig, attr, byref(value))
+@@ -893,7 +893,7 @@
+         atom = xlib.XInternAtom(self._x_display, name, True)
+         if not atom:
+             raise XlibException('Undefined atom "%s"' % name)
+-        assert type(value) in (str, unicode)
++        assert type(value) in (str, str)
+         property = xlib.XTextProperty()
+         if _have_utf8 and allow_utf8:
+             buf = create_string_buffer(value.encode('utf8'))
+@@ -1025,7 +1025,7 @@
+         # pyglet.self.key keysymbols are identical to X11 keysymbols, no
+         # need to map the keysymbol.
+         symbol = xlib.XKeycodeToKeysym(self._x_display, event.xkey.keycode, 0)
+-        if symbol not in key._key_names.keys():
++        if symbol not in list(key._key_names.keys()):
+             symbol = key.user_key(event.xkey.keycode)
+         return symbol
+ 
+@@ -1039,7 +1039,7 @@
+                                        None,
+                                        None)
+             if count:
+-                text = unicode(buffer.value[:count])
++                text = str(buffer.value[:count])
+                 if unicodedata.category(text) != 'Cc' or text == '\r':
+                     return text
+         return None
+
