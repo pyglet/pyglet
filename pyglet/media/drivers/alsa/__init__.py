@@ -24,6 +24,8 @@ def check(err):
     return err
 
 class Device(object):
+    _ring_buffer_time = 0.3
+    
     def __init__(self, name):
         self.name = name
         self.pcm = ctypes.POINTER(asound.snd_pcm_t)()
@@ -40,13 +42,7 @@ class Device(object):
 
         if alsa_debug:
             asound.snd_output_printf(debug_output, 'New device: %s\n' % name)
-            check(asound.snd_pcm_dump(self.pcm, debug_output))
-            check(asound.snd_pcm_dump_setup(self.pcm, debug_output))
-            asound.snd_output_printf(debug_output, 'hwparams:\n')
-            check(asound.snd_pcm_hw_params_dump(self.hwparams, debug_output))
-            asound.snd_output_printf(debug_output, 'swparams:\n')
-            check(asound.snd_pcm_sw_params_dump(self.swparams, debug_output))
-            asound.snd_output_printf(debug_output, '---------\n')
+
 
     def __del__(self):
         try:
@@ -56,8 +52,8 @@ class Device(object):
             pass
 
     def prepare(self, source):
-        # TODO avoid creating in this case.
         if not source.audio_format:
+            # TODO avoid creating in this case.
             return
 
         format = {
@@ -69,14 +65,19 @@ class Device(object):
         if format is None:
             raise ALSAException('Unsupported audio format.')
 
-        check(asound.snd_pcm_set_params(self.pcm,
-            format, 
-            asound.SND_PCM_ACCESS_RW_INTERLEAVED,
-            source.audio_format.channels,
-            source.audio_format.sample_rate,
-            1,
-            0))
-        
+        check(asound.snd_pcm_hw_params_set_access(self.pcm, self.hwparams,
+            asound.SND_PCM_ACCESS_RW_INTERLEAVED))
+        check(asound.snd_pcm_hw_params_set_format(self.pcm, self.hwparams,
+            format))
+        check(asound.snd_pcm_hw_params_set_channels(self.pcm, self.hwparams,
+            source.audio_format.channels))
+        check(asound.snd_pcm_hw_params_set_rate(self.pcm, self.hwparams,
+            source.audio_format.sample_rate, 0))
+        check(asound.snd_pcm_hw_params_set_buffer_size(self.pcm, self.hwparams,
+            int(self._ring_buffer_time * source.audio_format.sample_rate)))
+        check(asound.snd_pcm_hw_params(self.pcm, self.hwparams))
+        if alsa_debug:
+            check(asound.snd_pcm_dump(self.pcm, debug_output))
 
 class ALSAPlayer(BasePlayer):
     _min_buffer_time = 0.3
@@ -91,6 +92,8 @@ class ALSAPlayer(BasePlayer):
 
         self._buffer_time = 0.
         self._start_time = None
+
+        self._queue_audio_data = None
 
     def queue(self, source):
         source = source._get_queue_source()
@@ -116,30 +119,38 @@ class ALSAPlayer(BasePlayer):
             self._device = Device('plug:front')
             self._device.prepare(self._sources[0])
 
-        self_time = self.time
-
+        self_time = self.time 
         if self._texture:
             self._sources[0]._update_texture(self, self_time)
 
         source = self._sources[0]
         while source and self._buffer_time - self_time < self._min_buffer_time:
-            max_bytes = int(
-                self._min_buffer_time * source.audio_format.bytes_per_second)
-            max_bytes = min(max_bytes, self._max_buffer_size)
-            audio_data = source._get_audio_data(max_bytes)
+            if self._queue_audio_data:
+                audio_data = self._queue_audio_data
+                self._queue_audio_data = None
+            else:
+                max_bytes = int(
+                  self._min_buffer_time * source.audio_format.bytes_per_second)
+                max_bytes = min(max_bytes, self._max_buffer_size)
+                audio_data = source._get_audio_data(max_bytes)
 
-            if audio_data:
-                self._buffer_time = audio_data.timestamp + audio_data.duration
+            if audio_data: 
                 samples = \
                     audio_data.length // source.audio_format.bytes_per_sample
+                samples_out = check(asound.snd_pcm_writei(self._device.pcm, 
+                    audio_data.data, samples))
+                if samples_out < samples:
+                    audio_data.consume(
+                        samples * source.audio_format.bytes_per_sample,
+                        source.audio_format)
+                    self._buffer_time = audio_data.timestamp
+                    self._queue_audio_data = audio_data
+                else:
+                    self._buffer_time = \
+                        audio_data.timestamp + audio_data.duration
+                    
                 if self._start_time is None:
                     self._start_time = self._get_asound_time()
-                samples_out = check(asound.snd_pcm_writei(self._device.pcm, 
-                                                          audio_data.data,
-                                                          samples))
-                if samples_out < samples:
-                    # TODO keep going until it's all written.
-                    pass
 
                 # TODO xrun recovery
             else:

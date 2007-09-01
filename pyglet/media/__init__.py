@@ -171,6 +171,18 @@ class AudioData(object):
         self.duration = duration
         self.is_eos = is_eos
 
+    def consume(self, bytes, audio_format):
+        '''Remove some data from beginning of packet.'''
+        if type(self.data) is str:
+            self.data = self.data[bytes:]
+        else:
+            # ctypes array or pointer
+            self.data = ctypes.cast(self.data, ctypes.c_void_p) + bytes
+        self.length -= bytes
+        self.duration -= bytes / float(audio_format.bytes_per_second)
+        self.timestamp += bytes / float(audio_format.bytes_per_second)
+
+
 class Source(object):
     '''An audio and/or video source.
 
