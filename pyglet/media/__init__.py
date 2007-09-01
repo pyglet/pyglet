@@ -182,7 +182,6 @@ class AudioData(object):
             data = ctypes.create_string_buffer(self.length)
             ctypes.memmove(data, self.data, self.length)
             self.data = data
-        print 'consume', bytes
         self.data = self.data[bytes:]
         self.length -= bytes
         self.duration -= bytes / float(audio_format.bytes_per_second)
