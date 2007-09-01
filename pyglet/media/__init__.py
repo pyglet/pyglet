@@ -78,6 +78,7 @@ of players, and so played many times simultaneously.
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import ctypes
 import sys
 import StringIO
 
@@ -173,11 +174,16 @@ class AudioData(object):
 
     def consume(self, bytes, audio_format):
         '''Remove some data from beginning of packet.'''
-        if type(self.data) is str:
-            self.data = self.data[bytes:]
-        else:
-            # ctypes array or pointer
-            self.data = ctypes.cast(self.data, ctypes.c_void_p) + bytes
+        if not isinstance(self.data, str):
+            # XXX Create a string buffer for the whole packet then
+            #     chop it up.  Could do some pointer arith here and
+            #     save a bit of data pushing, but my guess is this is
+            #     faster than fudging aruond with ctypes (and easier).
+            data = ctypes.create_string_buffer(self.length)
+            ctypes.memmove(data, self.data, self.length)
+            self.data = data
+        print 'consume', bytes
+        self.data = self.data[bytes:]
         self.length -= bytes
         self.duration -= bytes / float(audio_format.bytes_per_second)
         self.timestamp += bytes / float(audio_format.bytes_per_second)

@@ -87,10 +87,17 @@ class ALSAPlayer(BasePlayer):
         super(ALSAPlayer, self).__init__()
 
         self._sources = []
+        self._source_read_index = 0
         self._playing = False
         self._device = None
 
-        self._buffer_time = 0.
+        # timestamp of last packet buffered (must be of _source_read_index)
+        self._current_buffer_time = 0.
+
+        # cumulative duration of all sources completely buffered.
+        self._cumulative_buffer_time = 0.
+
+        # asound time for current source begin time
         self._start_time = None
 
         self._queue_audio_data = None
@@ -99,6 +106,7 @@ class ALSAPlayer(BasePlayer):
         source = source._get_queue_source()
 
         if not self._sources:
+            self._source_read_index = 0
             source._init_texture(self)
         self._sources.append(source)
 
@@ -107,6 +115,7 @@ class ALSAPlayer(BasePlayer):
             old_source = self._sources.pop(0)
             old_source._release_texture(self)
             old_source._stop()
+            self._source_read_index -= 1
 
         if self._sources:
             self._sources[0]._init_texture(self)
@@ -115,16 +124,41 @@ class ALSAPlayer(BasePlayer):
         if not self._sources:
             return
 
+        # Create a device if there isn't one.  TODO only if source and source
+        # has audio
         if not self._device:
             self._device = Device('plug:front')
             self._device.prepare(self._sources[0])
 
         self_time = self.time 
-        if self._texture:
-            self._sources[0]._update_texture(self, self_time)
 
+        # Passed EOS?
         source = self._sources[0]
-        while source and self._buffer_time - self_time < self._min_buffer_time:
+        while source and source.duration < self_time:
+            if self._eos_action == self.EOS_NEXT:
+                self.next()
+            elif self._eos_action == self.EOS_STOP:
+                self.stop()
+            self.dispatch_event('on_eos')
+
+            self_time -= source.duration
+            self._start_time = self._get_asound_time() - self_time
+            self._cumulative_buffer_time -= source.duration
+            assert self._cumulative_buffer_time >= 0.
+            try:
+                source = self._sources[0]
+            except IndexError:
+                source = None
+                self._start_time = None
+
+        # Ensure device buffer is full
+        try:
+            source = self._sources[self._source_read_index]
+        except IndexError:
+            source = None
+        while (source and 
+               self._cumulative_buffer_time + self._current_buffer_time - self_time
+                  < self._min_buffer_time):
             if self._queue_audio_data:
                 audio_data = self._queue_audio_data
                 self._queue_audio_data = None
@@ -137,25 +171,53 @@ class ALSAPlayer(BasePlayer):
             if audio_data: 
                 samples = \
                     audio_data.length // source.audio_format.bytes_per_sample
-                samples_out = check(asound.snd_pcm_writei(self._device.pcm, 
-                    audio_data.data, samples))
-                if samples_out < samples:
+                samples_out = asound.snd_pcm_writei(self._device.pcm, 
+                    audio_data.data, samples)
+                if samples_out < 0:
+                    if samples_out == -11: # EAGAIN
+                        self._queue_audio_data = audio_data
+                    else:
+                        raise ALSAException(asound.snd_strerror(samples_out))
+                elif samples_out < samples:
                     audio_data.consume(
-                        samples * source.audio_format.bytes_per_sample,
+                        samples_out * source.audio_format.bytes_per_sample,
                         source.audio_format)
-                    self._buffer_time = audio_data.timestamp
+                    self._current_buffer_time = audio_data.timestamp
                     self._queue_audio_data = audio_data
                 else:
-                    self._buffer_time = \
+                    self._current_buffer_time = \
                         audio_data.timestamp + audio_data.duration
                     
                 if self._start_time is None:
+                    # XXX start playback
                     self._start_time = self._get_asound_time()
 
                 # TODO xrun recovery
             else:
-                # EOS (in buffer)
-                source = None
+                # EOS on read source
+                self._cumulative_buffer_time += source.duration
+                self._current_buffer_time = 0.
+                if self._eos_action == self.EOS_NEXT:
+                    self._source_read_index += 1
+                    try:
+                        # preroll
+                        source = self._sources[self._source_read_index]
+                        source._play()
+                    except IndexError:
+                        source = None
+                elif self._eos_action == self.EOS_LOOP:
+                    source._seek(0)
+                elif self._eos_action == self.EOS_PAUSE:
+                    source = None
+                elif self._eos_action == self.EOS_STOP:
+                    source = None
+                else:
+                    assert False, 'Invalid eos_action'
+                    source = None
+
+        # Update video texture
+        if self._texture:
+            self._sources[0]._update_texture(self, self_time)
 
     def _get_time(self):
         if self._start_time is None:
