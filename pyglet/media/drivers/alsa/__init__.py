@@ -47,7 +47,6 @@ class Device(object):
     def __del__(self):
         try:
             check(asound.snd_pcm_close(self.pcm))
-            print 'closed'
         except (NameError, AttributeError):
             pass
 
@@ -129,6 +128,12 @@ class ALSAPlayer(BasePlayer):
         if not self._sources:
             return
 
+        if not self._playing:
+            # If paused, just update the video texture.
+            if self._texture:
+                self._sources[0]._update_texture(self, self.time)
+            return
+
         # Create a device if there isn't one.  TODO only if source and source
         # has audio
         if not self._device:
@@ -137,25 +142,24 @@ class ALSAPlayer(BasePlayer):
 
         self_time = self.time 
 
-        if self._playing:
-            # Passed EOS?
-            source = self._sources[0]
-            while source and source.duration < self_time:
-                if self._eos_action == self.EOS_NEXT:
-                    self.next()
-                elif self._eos_action == self.EOS_STOP:
-                    self.stop()
-                self.dispatch_event('on_eos')
+        # Passed EOS?
+        source = self._sources[0]
+        while source and source.duration < self_time:
+            if self._eos_action == self.EOS_NEXT:
+                self.next()
+            elif self._eos_action == self.EOS_STOP:
+                self.stop()
+            self.dispatch_event('on_eos')
 
-                self_time -= source.duration
-                self._start_time = self._get_asound_time() - self_time
-                self._cumulative_buffer_time -= source.duration
-                assert self._cumulative_buffer_time >= 0.
-                try:
-                    source = self._sources[0]
-                except IndexError:
-                    source = None
-                    self._start_time = None
+            self_time -= source.duration
+            self._start_time = self._get_asound_time() - self_time
+            self._cumulative_buffer_time -= source.duration
+            assert self._cumulative_buffer_time >= 0.
+            try:
+                source = self._sources[0]
+            except IndexError:
+                source = None
+                self._start_time = None
 
         # Ensure device buffer is full
         try:
@@ -200,7 +204,14 @@ class ALSAPlayer(BasePlayer):
                     
                 if self._start_time is None:
                     # XXX start playback
-                    self._start_time = self._get_asound_time()
+                    delay = asound.snd_pcm_sframes_t()
+                    check(asound.snd_pcm_delay(self._device.pcm,
+                                               ctypes.byref(delay)))
+                    delay = delay.value / \
+                        source.audio_format.bytes_per_sample / \
+                        float(source.audio_format.bytes_per_second) 
+                    self._start_time = self._get_asound_time() - \
+                        audio_data.timestamp - delay
             else:
                 # EOS on read source
                 self._cumulative_buffer_time += source.duration
@@ -228,10 +239,8 @@ class ALSAPlayer(BasePlayer):
             self._sources[0]._update_texture(self, self_time)
 
     def _get_time(self):
-        if not self._playing:
+        if self._start_time is None or not self._playing:
             return self._timestamp
-        if self._start_time is None:
-            return 0.
         return self._get_asound_time() - self._start_time
 
     def _get_asound_time(self):
@@ -244,6 +253,15 @@ class ALSAPlayer(BasePlayer):
         asound.snd_pcm_status_free(status)
         return timestamp.tv_sec + timestamp.tv_usec * 0.000001
 
+    def _clear_ring_buffer(self):
+        check(asound.snd_pcm_drop(self._device.pcm))
+        check(asound.snd_pcm_prepare(self._device.pcm))
+        self._current_buffer_time = 0.
+        self._cumulative_buffer_time = 0.
+        self._source_read_index = 0
+        self._queue_audio_data = None
+        self._start_time = None
+
     def play(self):
         if self._playing:
             return
@@ -254,12 +272,15 @@ class ALSAPlayer(BasePlayer):
             return
 
         if self._device:
-            self._start_time = self._get_asound_time() - self._timestamp
             state = asound.snd_pcm_state(self._device.pcm)
             if self._device.can_pause and state == asound.SND_PCM_STATE_PAUSED:
                 check(asound.snd_pcm_pause(self._device.pcm, 0))
+                self._start_time = self._get_asound_time() - self._timestamp
 
     def pause(self):
+        if not self._playing:
+            return
+
         self._playing = False
 
         if not self._sources:
@@ -273,24 +294,16 @@ class ALSAPlayer(BasePlayer):
                 # Hardware can't pause, so we'll just drop everything that's
                 # been buffered.  Improvement could be to rebuffer data that
                 # wasn't played.
-                check(asound.snd_pcm_drop(self._device.pcm))
-                check(asound.snd_pcm_prepare(self._device.pcm))
-                self._current_buffer_time = 0.
-                self._cumulative_buffer_time = 0.
-                self._source_read_index = 0
+                self._clear_ring_buffer()
 
     def seek(self, timestamp):
         if self._sources:
             self._sources[0]._seek(timestamp)
             self._timestamp = timestamp
-            self._start_time = self._get_asound_time() - self._timestamp
+            self._start_time = None
             
             if self._device:
-                check(asound.snd_pcm_drop(self._device.pcm))
-                check(asound.snd_pcm_prepare(self._device.pcm))
-                self._current_buffer_time = 0.
-                self._cumulative_buffer_time = 0.
-                self._source_read_index = 0
+                self._clear_ring_buffer()
 
     def _get_source(self):
         if self._sources:
