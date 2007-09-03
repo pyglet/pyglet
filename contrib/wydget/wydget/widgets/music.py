@@ -31,9 +31,9 @@ class Music(Frame):
 
         self.player = media.Player()
 
-        # poke at the video format
+        # poke at the audio format
         if not source.audio_format:
-            raise ValueError("File doesn't contain video")
+            raise ValueError("File doesn't contain audio")
 
         super(Music, self).__init__(parent, bgcolor=bgcolor, **kw)
 

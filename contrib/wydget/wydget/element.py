@@ -30,12 +30,15 @@ Finally each element may define a "view clip" which will restrict the
 rendering of the item and its children to a limited rectangle.
 '''
 import inspect
+import math
 
 from pyglet.gl import *
 
 from wydget import loadxml
 from wydget import event
 from wydget import util 
+
+intceil = lambda i: int(math.ceil(i))
 
 class Element(object):
     '''A GUI element.
@@ -174,14 +177,14 @@ class Element(object):
         self.getGUI().setDirty()
     z = property(get_z, set_z)
 
-    def get_width(self): return self._width * self._sx
+    def get_width(self): return intceil(self._width * self._sx)
     def set_width(self, value):
         self._width = value
         # XXX just update my rect
         self.getGUI().setDirty()
     width = property(get_width, set_width)
 
-    def get_height(self): return self._height * self._sy
+    def get_height(self): return intceil(self._height * self._sy)
     def set_height(self, value):
         self._height = value
         # XXX just update my rect

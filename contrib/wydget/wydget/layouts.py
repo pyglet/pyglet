@@ -1,4 +1,5 @@
 import operator
+import math
 
 from wydget import util
 from wydget.widgets.label import Label
@@ -9,6 +10,8 @@ LEFT = 'left'
 RIGHT = 'right'
 CENTER = 'center'
 FILL = 'fill'
+
+intceil = lambda i: int(math.ceil(i))
 
 class Layout(object):
     '''Absolute positioning layout -- also base class for other layouts.
@@ -36,14 +39,14 @@ class Layout(object):
 
     def get_height(self):
         if not self.parent.children: return 0
-        return max(c.y + c.height for c in self.parent.children
-            if not self.only_visible or c.is_visible)
+        return intceil(max(c.y + c.height for c in self.parent.children
+            if not self.only_visible or c.is_visible))
     height = property(get_height)
 
     def get_width(self):
         if not self.parent.children: return 0
-        return max(c.x + c.width for c in self.parent.children
-            if not self.only_visible or c.is_visible)
+        return intceil(max(c.x + c.width for c in self.parent.children
+            if not self.only_visible or c.is_visible))
     width = property(get_width)
 
     def getChildren(self):
@@ -82,19 +85,20 @@ class Vertical(Layout):
         ph = self.parent.inner_rect.height
         if self.valign == FILL:
             # fill means using the available height
-            return ph
+            return int(ph)
         vis = self.getChildren()
         if not vis: return 0
         if self.wrap:
             if self.parent.height_spec:
                 # parent height or widest child if higher than parent
-                return max(self.wrap, max(c.height for c in vis))
+                return intceil(max(self.wrap, max(c.height for c in vis)))
             else:
                 # height of highest row
-                return max(sum(c.height for c in column) +
+                return intceil(max(sum(c.height for c in column) +
                     self.padding * (len(column)-1)
-                        for column in self.determineColumns())
-        return sum(c.height for c in vis) + self.padding * (len(vis)-1)
+                        for column in self.determineColumns()))
+        return intceil(sum(c.height for c in vis) +
+            self.padding * (len(vis)-1))
     height = property(get_height)
 
     def get_width(self):
@@ -196,19 +200,20 @@ class Horizontal(Layout):
         pw = self.parent.inner_rect.width
         if self.halign == FILL:
             # fill means using the available width
-            return pw
+            return int(pw)
         vis = self.getChildren()
         if not vis: return 0
         if self.wrap:
             if self.parent.width_spec:
                 # parent width or widest child if wider than parent
-                return max(self.wrap, max(c.width for c in vis))
+                return intceil(max(self.wrap, max(c.width for c in vis)))
             else:
                 # width of widest row
                 return max(sum(c.width for c in row) +
                     self.padding * (len(row)-1)
                         for row in self.determineRows())
-        return sum(c.width for c in vis) + self.padding * (len(vis)-1)
+        return intceil(sum(c.width for c in vis) +
+            self.padding * (len(vis)-1))
     width = property(get_width)
 
     def get_height(self):
@@ -216,9 +221,9 @@ class Horizontal(Layout):
         if not vis: return 0
         if self.wrap:
             rows = self.determineRows()
-            return sum(max(c.height for c in row) for row in rows) + \
-                self.padding * (len(rows)-1)
-        return max(c.height for c in vis)
+            return intceil(sum(max(c.height for c in row) for row in rows) +
+                self.padding * (len(rows)-1))
+        return intceil(max(c.height for c in vis))
     height = property(get_height)
 
     def determineRows(self):
@@ -319,14 +324,14 @@ class Grid(Layout):
         return columns
 
     def get_width(self):
-        return sum(self.columnWidths())
+        return intceil(sum(self.columnWidths()))
     width = property(get_width)
 
     def get_height(self):
         children = self.getChildren()
-        h = sum(max(e.height for e in c.children) + c.padding * 2
-            for c in children)
-        return h + (len(children)-1) * self.rowpad
+        h = intceil(sum(max(e.height for e in c.children) + c.padding * 2
+            for c in children))
+        return intceil(h + (len(children)-1) * self.rowpad)
     height = property(get_height)
 
     def layout(self):
@@ -368,13 +373,13 @@ class Form(Layout):
     def get_width(self):
         l = [c.width + c._label_dim[0] for c in self.elements
             if not self.only_visible or c.is_visible]
-        return max(l) + self.padding
+        return intceil(max(l) + self.padding)
     width = property(get_width)
 
     def get_height(self):
         l = [max(c.height, c._label_dim[1]) for c in self.elements
             if not self.only_visible or c.is_visible]
-        return sum(l) + self.padding * (len(l)-1)
+        return intceil(sum(l) + self.padding * (len(l)-1))
     height = property(get_height)
 
     def addElement(self, label, element, expand_element=False,
@@ -411,10 +416,10 @@ class Form(Layout):
             y = h
 
         for element in vis:
-            element.x = self.label_width + self.padding
+            element.x = int(self.label_width + self.padding)
             y -= max(element.height, element._label_dim[1])
-            element.y = y
-            if element._label: element._label.y = y
+            element.y = int(y)
+            if element._label: element._label.y = int(y)
             y -= self.padding
 
         super(Form, self).layout()
