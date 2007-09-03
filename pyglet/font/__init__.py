@@ -322,7 +322,7 @@ class Text(object):
         self._layout_width = width
         self._halign = halign
         self._valign = valign
-        self.pixel_align = valign
+        self.pixel_align = pixel_align
 
     def _clean(self):
         '''Resolve changed layout'''
