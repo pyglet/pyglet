@@ -361,6 +361,17 @@ class CarbonFont(base.Font):
         # determine the metrics for this font only
         carbon.ATSUSetTransientFontMatching(layout, False)
 
+        # XXX this code obtains *point* sizes, not *pixel* sizes
+        # we should be using ATSUGlyphGetScreenMetrics (on some random
+        # string of glyphs with ascenders and descenders - the advice I've
+        # read says "... it may be easiest for you to create a long string
+        # of every character you might want to draw, create an ATSUI
+        # layout, and then use ATSUGetGlyphInfo to obtain glyph IDs
+        # corresponding to of the characters in the particular font you are
+        # interested in. With the glyph IDs in hand, you can call
+        # ATSUGlyphGetIdealMetrics to retrieve the geometric
+        # characteristics of the glyphs")
+
         # determine the ascent / descent
         value = ATSUTextMeasurement()
         carbon.ATSUGetLineControl(layout, 0, kATSULineAscentTag, 
