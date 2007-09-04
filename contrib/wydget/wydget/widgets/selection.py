@@ -192,7 +192,10 @@ class ComboBox(SelectionCommon):
         return event.EVENT_HANDLED
 
     @event.default('combo-box', 'on_gain_focus')
-    def on_gain_focus(widget):
+    def on_gain_focus(widget, source):
+        if source == 'mouse':
+            # don't focus on mouse clicks
+            return event.EVENT_UNHANDLED
         # catch focus
         return event.EVENT_HANDLED
 
@@ -303,19 +306,4 @@ def on_click(widget, *args):
                 child.is_active = None
     widget.getGUI().dispatch_event(select, 'on_change', select.value)
     return event.EVENT_HANDLED
-
-'''
-XXX focus and keyboard interaction
-@event.default('option')
-def on_gain_focus(widget):
-    widget.is_over = True
-    # let the event propogate to any parent
-    return event.EVENT_UNHANDLED
-
-@event.default('option')
-def on_lose_focus(widget):
-    widget.is_over = False
-    # let the event propogate to any parent
-    return event.EVENT_UNHANDLED
-'''
 

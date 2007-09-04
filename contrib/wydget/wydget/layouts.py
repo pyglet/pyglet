@@ -346,7 +346,7 @@ class Grid(Layout):
         # right, now position everything
         y = self.height
         for row in children:
-            y -= row.height
+            y -= max(e.height for e in row.children)
             row.y = y
             x = 0
             for i, col in enumerate(row.children):

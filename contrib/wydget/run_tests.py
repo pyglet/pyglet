@@ -74,11 +74,11 @@ def run(xml_file):
         w.setEnabled(not w.isEnabled())
         return event.EVENT_HANDLED
 
-    if 0:
-        @gui.select('button')
-        def on_click(widget, *args):
-            print 'DEBUG', widget, 'PRESSED'
-            return event.EVENT_HANDLED
+    @gui.select('button, text-button')
+    def on_click(widget, *args):
+        print 'DEBUG', widget, 'PRESSED'
+        return event.EVENT_HANDLED
+
     @gui.select('.show-value')
     def on_change(widget, value):
         print 'DEBUG', widget, 'VALUE CHANGED', `value`

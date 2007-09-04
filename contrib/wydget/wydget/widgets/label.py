@@ -187,7 +187,7 @@ class LabelCommon(element.Element):
     def render(self, rect):
         glPushMatrix()
         w = self.image.width
-        h = self.font_size * len(self.image.lines)
+        h = self.image.height #font_size * len(self.image.lines)
 
         if self.rotate:
             glRotatef(self.rotate, 0, 0, 1)

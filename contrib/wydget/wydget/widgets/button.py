@@ -12,8 +12,6 @@ class ButtonCommon(object):
     is_focusable = True
     is_pressed = False
     is_over = False
-    is_focused = False
-
 
 class Button(ButtonCommon, ImageCommon):
     '''A button represented by one to three images.
@@ -24,7 +22,7 @@ class Button(ButtonCommon, ImageCommon):
 
     If text is supplied, it is rendered over the image, centered.
     '''
-    name='button'
+    name = 'button'
 
     def __init__(self, parent, image, text=None, pressed_image=None,
             over_image=None, is_blended=True, font_size=None,
@@ -153,6 +151,7 @@ class Button(ButtonCommon, ImageCommon):
             self.image = self.over_image
         else:
             self.image = self.base_image
+        # XXX handle isFocused()
         super(Button, self).render(rect)
 
 
@@ -161,22 +160,30 @@ class TextButton(ButtonCommon, LabelCommon):
 
     Will be rendered over the standard Element rendering.
     '''
-
     name = 'button'
-    is_focusable = True
 
     _default = []
     def __init__(self, parent, text, bgcolor='white', color='black',
-            border='black', pressed_bgcolor=(1, .9, .9, 1),
-            over_bgcolor=(.9, .9, 1, 1), **kw):
+            border='black', focus_border=(.7, .3, .3, 1),
+            pressed_bgcolor=(1, .9, .9, 1), over_bgcolor=(.9, .9, 1, 1),
+            **kw):
 
         super(TextButton, self).__init__(parent, text, bgcolor=bgcolor,
             color=color, border=border, **kw)
 
-        # specific attributes
+        # colouring attributes
         self.base_bgcolor = self.bgcolor
         self.pressed_bgcolor = util.parse_color(pressed_bgcolor)
         self.over_bgcolor = util.parse_color(over_bgcolor)
+        self.base_border = self.border
+        self.focus_border = util.parse_color(focus_border)
+
+    def renderBorder(self, clipped):
+        if self.isFocused():
+            self.border = self.focus_border
+        else:
+            self.border = self.base_border
+        super(TextButton, self).renderBorder(clipped)
 
     def renderBackground(self, clipped):
         '''Select the correct image to render.
@@ -207,6 +214,7 @@ class RepeaterButton(Button):
 
     '''
     name = 'repeater-button'
+    is_focusable = False
 
     delay_timer = None
     def __init__(self, parent, delay=.5, **kw):
@@ -236,17 +244,12 @@ class RepeaterButton(Button):
         self.repeating = False
 
 
-@event.default('button, repeater-button')
-def on_gain_focus(self):
-    self.higlight_focused = True
-    # let the event propogate to any parent
-    return event.EVENT_UNHANDLED
-
-@event.default('button, repeater-button')
-def on_lose_focus(self):
-    self.higlight_focused = False
-    # let the event propogate to any parent
-    return event.EVENT_UNHANDLED
+@event.default('button, text-button')
+def on_gain_focus(self, source):
+    if source == 'mouse':
+        # mouse clicks should not focus buttons
+        return event.EVENT_UNHANDLED
+    return event.EVENT_HANDLED
 
 @event.default('button')
 def on_element_enter(self, x, y):

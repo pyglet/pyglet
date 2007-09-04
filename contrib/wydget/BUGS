@@ -1,7 +1,6 @@
 KNOWN BUGS
 ----------
 
-
 - VERY LITTLE CODE DOCUMENTATION
 - no dialog tests
 - assets are poorly-located for packaging
@@ -30,9 +29,6 @@ KNOWN BUGS
   . selection out of the text line's bounds doesn't scroll the text
   . cursor movement during selection doesn't create new selection if
     cursor is out of old selection
-  . selection flickers on clicking -- because the focus is being gained on
-    the mouse_press event (resulting in the field being selected) and then
-    the release generating a click which deselects the field.
 - PasswordInput
   . <ah> Dot glyphs are clipped by 3 or 4 pixels on right edge.
     <rj> Appears to be a bug in pyglet.font - see pyglet/test/font/BULLET.py

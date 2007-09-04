@@ -279,6 +279,9 @@ class Element(object):
     def isEnabled(self):
         return self.is_enabled and self.parent.isEnabled()
 
+    def setEnabled(self, is_enabled):
+        self.is_enabled = is_enabled
+
     def isVisible(self):
         return self.is_visible and self.parent.isVisible()
 
@@ -286,8 +289,8 @@ class Element(object):
         self.is_visible = is_visible
         self.getGUI().setDirty()
 
-    def setEnabled(self, is_enabled):
-        self.is_enabled = is_enabled
+    def isFocused(self):
+        return self is self.getGUI().focused_element
 
     def getRects(self, view_clip=None, exclude=None):
         '''Determine the drawing parameters for this element and its
@@ -486,13 +489,13 @@ class Element(object):
         self.parent.setModal(element)
 
     def gainFocus(self):
-        self.getGUI().setFocus(self)
+        self.getGUI().setFocus(self, source='code')
 
     def hasFocus(self):
         return self.getGUI().focused_element is self
 
     def loseFocus(self):
-        self.getGUI().setFocus(None)
+        self.getGUI().setFocus(None, source='code')
 
     def clearSelection(self):
         '''The element has previously indicated that it has data for the
