@@ -10,7 +10,7 @@ from math import *
 from ctypes import *
 
 from pyglet.gl import *
-from pyglet.ext.euclid import *
+from euclid import *
 
 def FloatArray(*args):
     t = (c_float * len(args))
@@ -69,12 +69,6 @@ class Cube(Polyhedron):
                 5, 7, 3, 1)
 
 if __name__ == '__main__':
-    def on_resize(width, height):
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(65, width/float(height), 1, 100)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
 
     def rand(min, max):
         return (random() * (max - min) + min)
@@ -85,8 +79,13 @@ if __name__ == '__main__':
     from pyglet.window.event import *
 
     w = Window()
-    w.push_handlers(on_resize)
-    on_resize(w.width, w.height)
+    @w.event
+    def on_resize(width, height):
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        gluPerspective(65, width/float(height), 1, 100)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
 
     glEnable(GL_NORMALIZE)
     glEnable(GL_COLOR_MATERIAL)
@@ -140,3 +139,4 @@ if __name__ == '__main__':
             glPopMatrix()
         shapes = [s for s in shapes if s.y < 8]
         w.flip()
+

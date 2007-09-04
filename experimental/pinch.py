@@ -29,23 +29,23 @@ void main() {
 '''
 
 
-blur = shader.ShaderProgram()
-blur.setShader(shader.FragmentShader('pinch_f', pinch_f))
-blur.install()
-blur.uset2F('size', float(kitten.width), float(kitten.height))
+pinch = shader.ShaderProgram()
+pinch.setShader(shader.FragmentShader('pinch_f', pinch_f))
+pinch.install()
+pinch.uset2F('size', float(kitten.width), float(kitten.height))
 
 @w.event
 def on_mouse_motion(x, y, *args):
-    blur.uset2F('mouse', float(x)/kitten.width, float(y)/kitten.height)
+    pinch.uset2F('mouse', float(x)/kitten.width, float(y)/kitten.height)
     return True
 
 strength = 50.
-blur.uset1F('strength', strength)
+pinch.uset1F('strength', strength)
 @w.event
 def on_mouse_scroll(x, y, dx, dy):
     global strength
     strength = max(1, strength + dy)
-    blur.uset1F('strength', float(strength))
+    pinch.uset1F('strength', float(strength))
     return True
 
 while not w.has_exit:

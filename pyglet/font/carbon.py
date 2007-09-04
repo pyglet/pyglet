@@ -43,16 +43,16 @@ __version__ = '$Id: $'
 # independence?
 
 from ctypes import *
+import string
+import math
 from sys import byteorder
 
 from pyglet.font import base
 import pyglet.image
 from pyglet.window.carbon import carbon, _oscheck
 from pyglet.window.carbon import _create_cfstring
-from pyglet.window.carbon.types import Rect, CGRect
+from pyglet.window.carbon.types import *
 
-
-Fixed = c_int32
 
 class FixedPoint(Structure):
     _fields_ = [
@@ -115,7 +115,6 @@ kATSURGBAlphaColorTag         = 288
 
 kATSULineWidthTag             = 1
 
-
 kFontFullName                 = 4
 kFontNoPlatformCode           = c_ulong(-1)
 kFontNoScriptCode             = c_ulong(-1)
@@ -128,6 +127,46 @@ kATSFontContextLocal          = 2
 
 carbon.CGColorSpaceCreateWithName.restype = c_void_p
 carbon.CGBitmapContextCreate.restype = POINTER(c_void_p)
+
+UniCharArrayOffset  = c_uint32
+UniCharCount = c_uint32
+
+GlyphID = ATSGlyphRef = c_uint16
+
+class ATSUGlyphInfo(Structure):
+    _fields_ = [
+        ('glyphID', GlyphID), 
+        ('reserved', c_uint16), 
+        ('layoutFlags', c_uint32),
+        ('charIndex', UniCharArrayOffset), 
+        ('style', c_void_p), 
+        ('deltaY', c_float), 
+        ('idealX', c_float), 
+        ('screenX', c_int16), 
+        ('caretX', c_int16),
+    ]
+
+# XXX I'm guessing here - I can't actually find this in the docs
+class Float32Point(Structure):
+    _fields_ = [
+        ('x', c_float),
+        ('y', c_float),
+    ]
+
+class ATSGlyphScreenMetrics(Structure):
+    _fields_ = [
+        ('deviceAdvance', Float32Point),
+        ('topLeft', Float32Point),
+        ('height', c_uint32),
+        ('width', c_uint32),
+        ('sideBearing', Float32Point),
+        ('otherSideBearing', Float32Point),
+    ]
+
+carbon.ATSUGlyphGetScreenMetrics.argtypes = (c_void_p,
+      ItemCount, c_void_p, ByteOffset, Boolean, Boolean,
+      POINTER(ATSGlyphScreenMetrics))
+carbon.ATSUGlyphGetScreenMetrics.restype = OSStatus
 
 def fixed(value):
     # This is a guess... could easily be wrong
@@ -345,34 +384,57 @@ class CarbonFont(base.Font):
         # It seems the only way to get the font's ascent and descent is to lay
         # out some glyphs and measure them.
 
-        # This is a (pretend) UCS2 string
-        text = '\0a'
+        # use a long string of every character we're likely to draw in
+        # common usage
+        s = 'a' #string.printable
+        text = str_ucs2(s)
+        line_length = len(s)
 
         layout = c_void_p()
         carbon.ATSUCreateTextLayout(byref(layout))
         carbon.ATSUSetTextPointerLocation(layout,
-            text,
-            kATSUFromTextBeginning,
-            kATSUToTextEnd,
-            1)
+            text, kATSUFromTextBeginning, kATSUToTextEnd,
+            line_length)
         carbon.ATSUSetRunStyle(layout, self.atsu_style, 
             kATSUFromTextBeginning, kATSUToTextEnd)
 
         # determine the metrics for this font only
         carbon.ATSUSetTransientFontMatching(layout, False)
 
-        # XXX this code obtains *point* sizes, not *pixel* sizes
-        # we should be using ATSUGlyphGetScreenMetrics (on some random
-        # string of glyphs with ascenders and descenders - the advice I've
-        # read says "... it may be easiest for you to create a long string
-        # of every character you might want to draw, create an ATSUI
-        # layout, and then use ATSUGetGlyphInfo to obtain glyph IDs
-        # corresponding to of the characters in the particular font you are
-        # interested in. With the glyph IDs in hand, you can call
-        # ATSUGlyphGetIdealMetrics to retrieve the geometric
-        # characteristics of the glyphs")
+        """
+        # We define the structure here so that the glyphs array is of the
+        # correct size. If you think this is nasty, you should see a C
+        # version of this :)
+        class ATSUGlyphInfoArray(Structure):
+            _fields_ = [
+                ('layout', c_void_p),
+                ('numGlyphs', ItemCount),
+                ('glyphs', ATSUGlyphInfo * line_length),
+            ]
+        carbon.ATSUGetGlyphInfo.argtypes = (c_void_p, UniCharArrayOffset,
+             UniCharCount, POINTER(ByteCount), POINTER(ATSUGlyphInfoArray))
+        carbon.ATSUGetGlyphInfo.restype = OSStatus
 
-        # determine the ascent / descent
+        # now get the glyphs info
+        array = ATSUGlyphInfoArray()
+        array.layout = layout
+        array.numGlyphs = line_length
+        buffer_size = ByteCount(sizeof(array))
+        # this function is deprecated as of 10.3 but I cannot find another
+        # function that will give ne GlyphIDs
+        r = carbon.ATSUGetGlyphInfo(layout, kATSUFromTextBeginning,
+            kATSUToTextEnd, byref(buffer_size), array)
+        _oscheck(r)
+
+        metrics = ATSGlyphScreenMetrics()
+        r = carbon.ATSUGlyphGetScreenMetrics(self.atsu_style,
+            array.numGlyphs, array.glyphs, sizeof(ATSUGlyphInfo), 
+            False, True, byref(metrics))
+        _oscheck(r)
+
+        # Since the above doesn't tell us the ascent and descent, now
+        # determine the ascent / descent in point sizes
+        """
         value = ATSUTextMeasurement()
         carbon.ATSUGetLineControl(layout, 0, kATSULineAscentTag, 
             sizeof(value), byref(value), None)
@@ -380,6 +442,16 @@ class CarbonFont(base.Font):
         carbon.ATSUGetLineControl(layout, 0, kATSULineDescentTag,
             sizeof(value), byref(value), None)
         self.descent = -fix2float(value)
+
+        """
+        # now figure the ascent and descent using our screen metrics (and
+        # rounding ascent up and descent down)
+        line_height = ascent - descent
+        print (ascent, descent, line_height, metrics.height)
+        self.ascent = math.ceil(self.ascent/line_height * metrics.height)
+        self.descent = math.floor(self.descent/line_height * metrics.height)
+        print '...', self.ascent, self.descent
+        """
 
     @classmethod
     def add_font_data(cls, data):
