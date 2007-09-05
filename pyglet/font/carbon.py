@@ -131,43 +131,6 @@ carbon.CGBitmapContextCreate.restype = POINTER(c_void_p)
 UniCharArrayOffset  = c_uint32
 UniCharCount = c_uint32
 
-GlyphID = ATSGlyphRef = c_uint16
-
-class ATSUGlyphInfo(Structure):
-    _fields_ = [
-        ('glyphID', GlyphID), 
-        ('reserved', c_uint16), 
-        ('layoutFlags', c_uint32),
-        ('charIndex', UniCharArrayOffset), 
-        ('style', c_void_p), 
-        ('deltaY', c_float), 
-        ('idealX', c_float), 
-        ('screenX', c_int16), 
-        ('caretX', c_int16),
-    ]
-
-# XXX I'm guessing here - I can't actually find this in the docs
-class Float32Point(Structure):
-    _fields_ = [
-        ('x', c_float),
-        ('y', c_float),
-    ]
-
-class ATSGlyphScreenMetrics(Structure):
-    _fields_ = [
-        ('deviceAdvance', Float32Point),
-        ('topLeft', Float32Point),
-        ('height', c_uint32),
-        ('width', c_uint32),
-        ('sideBearing', Float32Point),
-        ('otherSideBearing', Float32Point),
-    ]
-
-carbon.ATSUGlyphGetScreenMetrics.argtypes = (c_void_p,
-      ItemCount, c_void_p, ByteOffset, Boolean, Boolean,
-      POINTER(ATSGlyphScreenMetrics))
-carbon.ATSUGlyphGetScreenMetrics.restype = OSStatus
-
 def fixed(value):
     # This is a guess... could easily be wrong
     #return c_int32(int(value) * (1 << 16))
@@ -384,57 +347,19 @@ class CarbonFont(base.Font):
         # It seems the only way to get the font's ascent and descent is to lay
         # out some glyphs and measure them.
 
-        # use a long string of every character we're likely to draw in
-        # common usage
-        s = 'a' #string.printable
-        text = str_ucs2(s)
-        line_length = len(s)
+        # fake ucs2 string
+        text = '\0a'
 
         layout = c_void_p()
         carbon.ATSUCreateTextLayout(byref(layout))
-        carbon.ATSUSetTextPointerLocation(layout,
-            text, kATSUFromTextBeginning, kATSUToTextEnd,
-            line_length)
+        carbon.ATSUSetTextPointerLocation(layout, text,
+            kATSUFromTextBeginning, kATSUToTextEnd, 1)
         carbon.ATSUSetRunStyle(layout, self.atsu_style, 
             kATSUFromTextBeginning, kATSUToTextEnd)
 
         # determine the metrics for this font only
         carbon.ATSUSetTransientFontMatching(layout, False)
 
-        """
-        # We define the structure here so that the glyphs array is of the
-        # correct size. If you think this is nasty, you should see a C
-        # version of this :)
-        class ATSUGlyphInfoArray(Structure):
-            _fields_ = [
-                ('layout', c_void_p),
-                ('numGlyphs', ItemCount),
-                ('glyphs', ATSUGlyphInfo * line_length),
-            ]
-        carbon.ATSUGetGlyphInfo.argtypes = (c_void_p, UniCharArrayOffset,
-             UniCharCount, POINTER(ByteCount), POINTER(ATSUGlyphInfoArray))
-        carbon.ATSUGetGlyphInfo.restype = OSStatus
-
-        # now get the glyphs info
-        array = ATSUGlyphInfoArray()
-        array.layout = layout
-        array.numGlyphs = line_length
-        buffer_size = ByteCount(sizeof(array))
-        # this function is deprecated as of 10.3 but I cannot find another
-        # function that will give ne GlyphIDs
-        r = carbon.ATSUGetGlyphInfo(layout, kATSUFromTextBeginning,
-            kATSUToTextEnd, byref(buffer_size), array)
-        _oscheck(r)
-
-        metrics = ATSGlyphScreenMetrics()
-        r = carbon.ATSUGlyphGetScreenMetrics(self.atsu_style,
-            array.numGlyphs, array.glyphs, sizeof(ATSUGlyphInfo), 
-            False, True, byref(metrics))
-        _oscheck(r)
-
-        # Since the above doesn't tell us the ascent and descent, now
-        # determine the ascent / descent in point sizes
-        """
         value = ATSUTextMeasurement()
         carbon.ATSUGetLineControl(layout, 0, kATSULineAscentTag, 
             sizeof(value), byref(value), None)
@@ -442,16 +367,6 @@ class CarbonFont(base.Font):
         carbon.ATSUGetLineControl(layout, 0, kATSULineDescentTag,
             sizeof(value), byref(value), None)
         self.descent = -fix2float(value)
-
-        """
-        # now figure the ascent and descent using our screen metrics (and
-        # rounding ascent up and descent down)
-        line_height = ascent - descent
-        print (ascent, descent, line_height, metrics.height)
-        self.ascent = math.ceil(self.ascent/line_height * metrics.height)
-        self.descent = math.floor(self.descent/line_height * metrics.height)
-        print '...', self.ascent, self.descent
-        """
 
     @classmethod
     def add_font_data(cls, data):

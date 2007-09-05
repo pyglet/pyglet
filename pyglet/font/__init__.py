@@ -405,7 +405,10 @@ class Text(object):
 
             glTranslatef(x, 0, 0)
             self._glyph_string.draw(start, end)
-            glTranslatef(-x, -self.line_height, 0)
+            if self.pixel_align:
+                glTranslatef(-x, -int(self.line_height), 0)
+            else:
+                glTranslatef(-x, -self.line_height, 0)
         glPopMatrix()
         glPopAttrib()
 
