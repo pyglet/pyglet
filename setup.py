@@ -49,6 +49,7 @@ setup_info = dict(
         'pyglet.image', 
         'pyglet.image.codecs',
         'pyglet.media', 
+        'pyglet.media.drivers', 
         'pyglet.window', 
         'pyglet.window.carbon',
         'pyglet.window.win32', 
