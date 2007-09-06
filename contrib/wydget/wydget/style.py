@@ -26,7 +26,7 @@ class Style(object):
         if font_name is None: font_name = self.font_name
         f = self.getFont(name=font_name, size=font_size)
         return font.Text(f, text, color=color, halign=halign, width=width,
-            valign=valign, pixel_align=True)
+            valign=valign)
 
     def textAsTexture(self, text, color=(0, 0, 0, 1), bgcolor=(1, 1, 1, 0),
             font_size=None, font_name=None, halign='left', width=None,

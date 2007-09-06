@@ -280,7 +280,7 @@ class Text(object):
     _valign = BASELINE
 
     def __init__(self, font, text='', x=0, y=0, z=0, color=(1,1,1,1),
-            width=None, halign=LEFT, valign=BASELINE, pixel_align=False):
+            width=None, halign=LEFT, valign=BASELINE):
         '''Create displayable text.
 
         :Parameters:
@@ -306,11 +306,6 @@ class Text(object):
             `valign` : str
                 Controls positioning of the text based off the y coordinate.
                 One of BASELINE, BOTTOM, CENTER or TOP. Defaults to BASELINE.
-            `pixel_align` : bool
-                Controls whether the text is aligned to pixels on screen.
-                To achieve this, the x and y translation cause by halign or
-                valign are truncated with int(), so this assumes your
-                projection maps opengl coordinates to pixels 1-to-1.
         '''
         self._dirty = True
         self.font = font
@@ -322,7 +317,6 @@ class Text(object):
         self._layout_width = width
         self._halign = halign
         self._valign = valign
-        self.pixel_align = pixel_align
 
     def _clean(self):
         '''Resolve changed layout'''
@@ -380,7 +374,7 @@ class Text(object):
         if self._valign == self.BOTTOM:
             y += self.height - self.font.ascent
         elif self._valign == self.CENTER:
-            y += self.height / 2 - self.font.ascent
+            y += self.height // 2 - self.font.ascent
         elif self._valign == self.TOP:
             y -= self.font.ascent
 
@@ -388,8 +382,6 @@ class Text(object):
         glEnable(GL_TEXTURE_2D)
         glColor4f(*self.color)
         glPushMatrix()
-        if self.pixel_align:
-            y = int(y)
         glTranslatef(0, y, 0)
         for start, end in self.lines:
             width = self._glyph_string.get_subwidth(start, end)
@@ -399,16 +391,11 @@ class Text(object):
             if self._halign == self.RIGHT:
                 x += align_width - width
             elif self._halign == self.CENTER:
-                x += align_width / 2 - width / 2
-            if self.pixel_align:
-                x = int(x)
+                x += align_width // 2 - width // 2
 
             glTranslatef(x, 0, 0)
             self._glyph_string.draw(start, end)
-            if self.pixel_align:
-                glTranslatef(-x, -int(self.line_height), 0)
-            else:
-                glTranslatef(-x, -self.line_height, 0)
+            glTranslatef(-x, -self.line_height, 0)
         glPopMatrix()
         glPopAttrib()
 
