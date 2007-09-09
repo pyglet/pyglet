@@ -630,7 +630,8 @@ class ClockDisplay(object):
         '''
 
         if clock is None:
-            self.clock = _default
+            clock = _default
+        self.clock = clock
         self.clock.schedule_interval(self.update_text, interval)
 
         if not font:
