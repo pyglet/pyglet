@@ -985,23 +985,13 @@ class XlibWindow(BaseWindow):
             if event_handler:
                 event_handler(e)
 
-        # Now check generic events for this display and manually filter
-        # them to see whether they're for this window. sigh.
-        # Store off the events we need to push back so we don't confuse
-        # XCheckTypedEvent
-        push_back = []
-        while xlib.XCheckTypedEvent(_x_display, 
-                                    xlib.ClientMessage, byref(e)):
-            if e.xclient.window != _window:
-                push_back.append(e)
-                e = xlib.XEvent()
-            else:
-                event_handler = self._event_handlers.get(e.type)
-                if event_handler:
-                    event_handler(e)
-        for e in push_back:
-            xlib.XPutBackEvent(_x_display, byref(e))
-
+        # Generic events for this window (the window close event).
+        while xlib.XCheckTypedWindowEvent(_x_display, _window, 
+                xlib.ClientMessage, byref(e)):
+            event_handler = self._event_handlers.get(e.type)
+            if event_handler:
+                event_handler(e)
+        
         self._allow_dispatch_event = False
 
     @staticmethod

@@ -1,5 +1,6 @@
 Current
     * Fix font.add_directory()
+    * Linux: Small refactoring of window event dispatch
 
 1.0alpha2
 
