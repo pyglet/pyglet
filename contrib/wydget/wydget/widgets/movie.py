@@ -15,11 +15,13 @@ class Movie(element.Element):
         self.scale = scale
 
         if file is not None:
-            source = media.load(file, streaming=True)
+            source = self.source = media.load(file, streaming=True)
         else:
             assert source is not None, 'one of file or source is required'
 
         self.player = media.Player()
+        self.player.eos_action = self.player.EOS_PAUSE
+        self.player.on_eos = self.on_eos
 
         # poke at the video format
         if not source.video_format:
@@ -62,9 +64,9 @@ class Movie(element.Element):
         # make sure we get at least one frame to display
         self.player.queue(source)
         clock.schedule(self.update)
-        self.playing = playing
+        self.playing = False
         if playing:
-            self.player.play()
+            self.play()
 
     def update(self, dt):
         self.player.dispatch_events()
@@ -81,15 +83,23 @@ class Movie(element.Element):
         if self.playing: return
         clock.schedule(self.time_update)
         self.player.play()
-        self.control.pause.setVisible(True)
         self.control.play.setVisible(False)
+        self.control.pause.setVisible(True)
         self.playing = True
 
     def render(self, rect):
-        # XXX handle scaling / clipping properly
-        if self.player.texture:
-            self.player.texture.blit(rect.x, rect.y, width=rect.width,
-                height=rect.height)
+        t = self.player.texture
+        if not t: return
+        x = float(self.width) / t.width
+        y = float(self.height) / t.height
+        s = min(x, y)
+        w = int(t.width * s)
+        h = int(t.height * s)
+        x = rect.x
+        y = rect.y
+        if w < self.width: x += self.width//2 - w//2
+        if h < self.height: y += self.height//2 - h//2
+        t.blit(x, y, width=w, height=h)
 
        # self.video_x, self.video_y,
        #     width=self.video_width, height=self.video_height)
@@ -97,20 +107,22 @@ class Movie(element.Element):
         #image = self.video.texture
         #if self.scale:
         #    glPushMatrix()
-        #    x = float(self.width) / image.width
-        #    y = float(self.height) / image.height
-        #    s = min(x, y)
-        #    w = int(image.width * s)
-        #    h = int(image.height * s)
         #    glTranslatef(self.width//2 - w//2, self.height//2 - h//2, 0)
         #    glScalef(s, s, 1)
         #image.blit(0, 0, 0)
         #if self.scale:
         #    glPopMatrix()
 
+    def on_eos(self):
+        self.pause()
+        self.player.seek(0)
+        self.control.position.x = self.control.range.x
+        self.control.time.text = '00:00'
+        self.getGUI().dispatch_event(self, 'on_eos')
 
     def time_update(self, ts):
-        if not self.control.isVisible(): return
+        if not self.control.isVisible():
+            return
         t = self.player.time
 
         # time display

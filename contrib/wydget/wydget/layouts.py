@@ -313,6 +313,8 @@ class Grid(Layout):
     def columnWidths(self):
         columns = []
         children = self.getChildren()
+        if not children:
+            return []
         N = len(children[0].children)
         for i in range(N):
             w = []

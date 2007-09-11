@@ -27,7 +27,8 @@ class Dialog(widgets.Frame):
         return change
 
     def run(self):
-        '''Invoke to make this dialog become modal.
+        '''Invoke to position the dialog in the middle of the parent
+        (presumably the window) and make the dialog become modal.
         '''
         self.position()
         self.getGUI().setModal(self)

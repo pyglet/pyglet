@@ -1,3 +1,3 @@
 
-from wydget.dialogs.question import QuestionDialog
-from wydget.dialogs.file import FileOpenDialog
+from wydget.dialogs.question import Question, Message
+from wydget.dialogs.file import FileOpen

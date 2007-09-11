@@ -164,7 +164,7 @@ class TextButton(ButtonCommon, LabelCommon):
 
     _default = []
     def __init__(self, parent, text, bgcolor='white', color='black',
-            border='black', focus_border=(.7, .3, .3, 1),
+            border='black', focus_border=(.3, .3, .7, 1),
             pressed_bgcolor=(1, .9, .9, 1), over_bgcolor=(.9, .9, 1, 1),
             **kw):
 

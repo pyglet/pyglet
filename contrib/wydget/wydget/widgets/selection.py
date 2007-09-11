@@ -30,7 +30,7 @@ class Selection(SelectionCommon):
 
     def __init__(self, parent, items=[], size=None, is_exclusive=False,
             color='black', bgcolor='white', is_vertical=True,
-            alt_bgcolor='ccc', active_bgcolor='ffc', item_pad=0,
+            alt_bgcolor='eee', active_bgcolor='ffc', item_pad=0,
             is_transparent=True, scrollable=True, font_size=None, **kw):
         self.is_vertical = is_vertical
         self.is_exclusive = is_exclusive
@@ -103,9 +103,8 @@ class ComboBox(SelectionCommon):
 
     is_vertical = True
     def __init__(self, parent, items, font_size=None, border="black",
-            color='black', bgcolor='white', 
-            alt_bgcolor='ccc', active_bgcolor='ffc', item_pad=0,
-            **kw):
+            color='black', bgcolor='white', alt_bgcolor='eee',
+            active_bgcolor='ffc', item_pad=0, **kw):
         super(ComboBox, self).__init__(parent, border=border,
             bgcolor=bgcolor, **kw)
         self.layout = layouts.Horizontal(self, valign='center',

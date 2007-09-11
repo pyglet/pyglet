@@ -117,7 +117,7 @@ def run(xml_file):
             m = widgets.Music(gui, file, id='music-test', playing=True)
             m.gainFocus()
 
-        dialogs.FileOpenDialog(gui, callback=load_music)
+        dialogs.FileOpen(gui, callback=load_music)
         return event.EVENT_HANDLED
 
     @gui.select('#movie-test')
@@ -132,7 +132,7 @@ def run(xml_file):
             # XXX handle scaling!
             m.gainFocus()
 
-        dialogs.FileOpenDialog(gui, callback=load_movie)
+        dialogs.FileOpen(gui, callback=load_movie)
         return event.EVENT_HANDLED
 
     @gui.select('#movie-test')

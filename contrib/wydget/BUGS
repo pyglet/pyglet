@@ -6,6 +6,7 @@ KNOWN BUGS
 - assets are poorly-located for packaging
 - elements with negative padding are not rendered "correctly"
   . reject negative padding?
+- element modality needs to be done on a stack
 - Layouts:
   . columns & horizontal fill layouts have bogus RHS padding
 - Tables:

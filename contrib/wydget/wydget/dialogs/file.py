@@ -10,7 +10,7 @@ elif sys.platform in ('win32', 'cygwin'):
 else:
     default_dir = os.path.expanduser('~/Desktop')
 
-class FileOpenDialog(base.Dialog):
+class FileOpen(base.Dialog):
     id = '-file-dialog'
     name = 'file-dialog'
     classes = ('dialog', )
@@ -20,7 +20,7 @@ class FileOpenDialog(base.Dialog):
         kw['bgcolor'] = 'white'
         kw['padding'] = 2
         kw['width'] = 300
-        super(FileOpenDialog, self).__init__(parent, **kw)
+        super(FileOpen, self).__init__(parent, **kw)
         self.callback = callback
 
         label = widgets.Label(self, 'Select File to Open',

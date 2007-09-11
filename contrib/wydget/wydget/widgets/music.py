@@ -68,9 +68,9 @@ class Music(Frame):
         # make sure we get at least one frame to display
         self.player.queue(source)
         clock.schedule(self.update)
-        self.playing = playing
+        self.playing = False
         if playing:
-            self.player.play()
+            self.play()
 
     def update(self, dt):
         self.player.dispatch_events()
@@ -79,8 +79,8 @@ class Music(Frame):
         if not self.playing: return
         clock.unschedule(self.time_update)
         self.player.pause()
-        self.control.play.setVisible(True)
         self.control.pause.setVisible(False)
+        self.control.play.setVisible(True)
         self.playing = False
 
     def play(self):
@@ -90,6 +90,13 @@ class Music(Frame):
         self.control.pause.setVisible(True)
         self.control.play.setVisible(False)
         self.playing = True
+
+    def on_eos(self):
+        self.pause()
+        self.player.seek(0)
+        self.control.position.x = self.control.range.x
+        self.control.time.text = '00:00'
+        self.getGUI().dispatch_event(self, 'on_eos', self)
 
     def time_update(self, ts):
         if not self.control.isVisible(): return

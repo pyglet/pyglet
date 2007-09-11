@@ -3,14 +3,14 @@ from wydget import widgets
 from wydget import layouts
 from wydget.dialogs import base
 
-class QuestionDialog(base.Dialog):
+class Question(base.Dialog):
     id = '-question-dialog'
     name = 'question-dialog'
     classes = ('dialog', )
 
     def __init__(self, parent, text, callback=None, cancel=True,
             font_size=None, padding=10, **kw):
-        super(QuestionDialog, self).__init__(parent, padding=padding, **kw)
+        super(Question, self).__init__(parent, padding=padding, **kw)
         self.callback = callback
 
         self.layout = layouts.Vertical(self, padding=10)
@@ -38,6 +38,10 @@ class QuestionDialog(base.Dialog):
     def on_cancel(self):
         if self.callback is not None:
             self.callback(False)
+
+def Message(*args, **kw):
+    kw['cancel'] = False
+    return Question(*args, **kw)
 
 @event.default('.-question-dialog-ok')
 def on_click(widget, *args):

@@ -90,6 +90,9 @@ class Frame(element.Element):
             obj.layout()
         return obj
 
+    def delete(self):
+        self.layout = None
+        super(Frame, self).delete()
 
 @event.default('frame')
 def on_mouse_scroll(widget, x, y, dx, dy):
@@ -273,7 +276,7 @@ class TabFrame(Frame):
 
     def delete(self):
         self._button = None
-        super(Frame, self).delete()
+        super(TabFrame, self).delete()
 
     def layoutDimensionsChanged(self, layout):
         '''Let the tabs container know that this frame has changed size.
@@ -332,7 +335,7 @@ class TabButton(Frame):
     def delete(self):
         self._frame = None
         self._top = None
-        super(Frame, self).delete()
+        super(TabButton, self).delete()
 
 class TabsLayout(layouts.Layout):
     '''A special layout that overlaps TabFrames.

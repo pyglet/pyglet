@@ -272,7 +272,7 @@ class TextInput(Frame):
     def __init__(self, parent, text='', font_size=None, size=None,
             x=0, y=0, z=0, width=None, height=None, border='black',
             padding=2, bgcolor='white', color='black',
-            focus_border=(.7, .3, .3, 1), **kw):
+            focus_border=(.3, .3, .7, 1), **kw):
         style = parent.getStyle()
         if font_size is None:
             font_size = style.font_size
@@ -422,7 +422,6 @@ def on_text_motion(widget, motion):
             key.MOTION_END_OF_FILE):
         widget.ti.setCursorPosition(len(widget.ti.text))
     elif motion == key.MOTION_BACKSPACE:
-        print 'hi', widget.ti.text, widget.ti.highlight
         text = widget.ti.text
         if widget.ti.highlight is not None:
             start, end = widget.ti.highlight
