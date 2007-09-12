@@ -10,6 +10,17 @@
       <link rel="stylesheet" href="pyglet-ie6.css" type="text/css" />
     <![endif]-->
     <link rel="alternate" href="news.xml" type="application/atom+xml" />
+    <script src="pyglet.js" type="text/javascript"><!-- nocollapse --></script>
+    <script type="text/javascript">
+      //<![CDATA[
+      var _timer = setInterval(function() {
+        clearInterval(_timer);
+        var gallery = new Gallery(document.getElementById('sidebar'), 4, 1);
+        gallery.random = true;
+        gallery.populate(); 
+      }, 10);
+      //]]>
+    </script>
   </head>
 
   <body>
@@ -37,7 +48,7 @@
       </div>
     </div>
 
-    <div id="navigation">
+    <div id="sidebar">
     </div>
 
     <div id="content">

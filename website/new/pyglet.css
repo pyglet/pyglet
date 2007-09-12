@@ -115,6 +115,22 @@ body {
   border: 0px;
 }
 
+.gallery-buttons {
+  text-align: right;
+}
+
+.gallery-buttons a {
+  text-decoration: none;
+}
+
+.gallery-buttons a:visited {
+  color: black;
+}
+
+.gallery-buttons a {
+  color: black;
+}
+
 .discussion-entry {
   clear: right;
 }
