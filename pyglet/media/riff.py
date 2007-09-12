@@ -49,8 +49,8 @@ __version__ = '$Id$'
 
 from pyglet.media import StreamingSource, AudioData, AudioFormat
 from pyglet.media import MediaFormatException
-from pyglet.media.openal import buffer_pool
-from pyglet.media import lib_openal as al
+from pyglet.media.drivers.openal import buffer_pool
+from pyglet.media.drivers.openal import lib_openal as al
 
 import ctypes
 import struct
