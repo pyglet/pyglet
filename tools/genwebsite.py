@@ -39,8 +39,8 @@ def element_text(elem):
 
 if __name__ == '__main__':
     root = os.path.join(os.path.dirname(__file__), '..')
-    input_dir = os.path.join(root, 'website/new')
-    output_dir = os.path.join(root, 'website/new/dist')
+    input_dir = os.path.join(root, 'website')
+    output_dir = os.path.join(root, 'website/dist')
     template_filename = os.path.join(input_dir, 'template.xhtml')
     news_items_filename = os.path.join(input_dir, 'news-items.xml')
     exclude_files = ('template.xhtml', 'news-items.xml')
