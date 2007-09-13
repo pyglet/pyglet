@@ -1,13 +1,146 @@
-body { background-color: #ffd}
-table#news { width: 40em; margin-top: 2em}
-table#news td { vertical-align: top; width: 75%; text-align: left}
-table#news td.first { width: 25%; text-align: right}
-table#overview {border-collapse: separate; border-spacing: 0px 0px;}
-table#overview td {background: #eee; padding: 5px 1em 5px 1em; text-align: center; font-weight: bold; border: 1px solid #666}
-table#overview tr.pyglet td {background: #FFBF54;}
-table#status {border-collapse: separate; border-spacing: 0px 0px;}
-table#status th {background: #FFBF54; padding: 2px .5em 2px .5em;}
-table#status td {padding: 2px .5em 2px .5em; text-align: center; border-left: 1px solid #666; border-bottom: 1px solid #666;}
-table#status td:first-child {text-align: right; border:none}
-table#status td:last-child {border-right: 1px solid #666;}
+#banner {
+  font-family: Arial, sans-serif;
+  margin-bottom: 3em;
+}
 
+#banner-title {
+  font-size: 64pt;
+}
+
+#banner-rule {
+  border-top: 5px solid black;
+  position: absolute;
+  left: 0px;
+  width: 100%;
+  
+}
+
+#banner-logo-container {
+  position: relative;
+}
+
+#banner-logo {
+  position: absolute;
+  left: -128px;
+  top: -100px;
+}
+
+#banner-tabs {
+  font-size: 16pt;
+  margin-top: 5px;
+  padding: 0px;
+}
+
+#banner-tabs span {
+  margin-left: 0px;
+  margin-right: 20px;
+}
+
+#banner-tabs span a {
+  color: black;
+  text-decoration: none;
+  border-bottom: none;
+}
+
+#banner-tabs span.selected a {
+  color: #ff6161;
+}
+
+#banner-tabs a:hover {
+  border-bottom: 5px solid #ff6161;
+}
+
+#sidebar {
+  position: absolute;
+  left: 10px;
+  width: 160px;
+  font-size: 9pt;
+}
+
+#sidebar > * {
+  position: relative;
+  top: 4em;
+}
+
+body {
+  margin-left: 180px;
+  margin-right: 60px;
+  font-family: Verdana;
+  font-size: 11pt;
+}
+
+#content p {
+  margin-bottom: 1.5em;
+}
+
+#content li {
+  margin-bottom: 1.5em;
+}
+
+#content h2 {
+  font-size: 18pt;
+  font-weight: normal;
+  color: #ff6161;
+}
+
+#content .console {
+  font-family: monospace;
+  font-size: 10pt;
+  /*background-color: #ff9191;*/
+  border: 1px solid #ff6161;
+  padding: 5px;
+}
+
+.news-item {
+  clear: right;
+}
+
+.news-title {
+  font-weight: bold;
+}
+
+.news-attribution {
+  font-size: 10pt;
+  float: right;
+  margin-bottom: 1em;
+}
+
+.gallery td {
+  padding-bottom: 0.5em;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.gallery img {
+  border: 0px;
+}
+
+.gallery-buttons {
+  text-align: right;
+}
+
+.gallery-buttons a {
+  text-decoration: none;
+}
+
+.gallery-buttons a:visited {
+  color: black;
+}
+
+.gallery-buttons a {
+  color: black;
+}
+
+.discussion-entry {
+  clear: right;
+}
+
+.discussion-title {
+  font-weight: bold;
+}
+
+.discussion-attribution {
+  font-size: 10pt;
+  float: right;
+  margin-bottom: 1em;
+}
