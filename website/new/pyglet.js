@@ -168,6 +168,8 @@ Gallery.prototype.repopulate = function() {
     var i = this.start;
     var tableElement = document.createElement('table');
     tableElement.setAttribute('class', 'gallery');
+    tableBody = document.createElement('tbody');
+    tableElement.appendChild(tableBody);
     for (var row = 0; row < this.maxRows; row++) {
         var rowElement = document.createElement('tr');
         for (var col = 0; col < this.cols; col++) {
@@ -184,7 +186,7 @@ Gallery.prototype.repopulate = function() {
             rowElement.appendChild(cellElement);
             i += 1;
         }
-        tableElement.appendChild(rowElement);
+        tableBody.appendChild(rowElement);
     }
     this.container.appendChild(tableElement);
     this.tableElement = tableElement;
