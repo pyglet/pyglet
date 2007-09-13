@@ -45,10 +45,11 @@ function get_page_image($url)
 
 function update_gallery()
 {
-  $gallery_fp = fopen('gallery-items.txt', 'w');
   $pages = get_pages();
   echo "Result:<p>\n";
   echo "<pre>\n";
+  $gallery_fp = fopen('gallery-items.txt', 'w');
+  echo $gallery_fp . "\n";
   foreach ($pages as $page)
   {
     list($name, $url, $image) = $page;
@@ -90,5 +91,5 @@ function update_discussion()
 
 ob_end_flush();
 update_gallery();
-update_discussion();
+//update_discussion();
 ?>

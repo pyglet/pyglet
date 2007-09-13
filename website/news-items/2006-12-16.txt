@@ -1,3 +1,0 @@
-title=GLU 1.2 compatibility fixes -- blur.py works on Windows
-date=2006-12-16
-author=richard

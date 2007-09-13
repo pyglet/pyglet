@@ -1,6 +1,0 @@
-title=new resource loader
-date=2007-01-12
-author=richard
-
-The purpose-specific XML map / tileset loading has been replaced by
-pyglet.resource which is a smarter, extensible facility.

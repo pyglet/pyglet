@@ -1,8 +1,0 @@
-title=improved GL
-date=2007-02-09
-author=alex
-
-When you use OpenGL through pyglet now, you'll get access to all of the latest
-extensions.  This includes, for example, the nVidia 8800 geometry shader.  A
-new tool that generates this layer will ensure that it is kept up-to-date as the
-latest versions of OpenGL and more ARB and proprietary extensions are released.
