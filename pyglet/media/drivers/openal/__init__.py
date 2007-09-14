@@ -542,7 +542,7 @@ class OpenALListener(Listener):
         self._velocity = velocity 
 
     def _set_forward_orientation(self, orientation):
-        val = (ALfloat * 6)(*(orientation + self._up_orientation))
+        val = (al.ALfloat * 6)(*(orientation + self._up_orientation))
         al.alListenerfv(al.AL_ORIENTATION, val)
         self._forward_orientation = orientation
 
