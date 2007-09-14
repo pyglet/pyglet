@@ -6,7 +6,6 @@ from wydget.widgets.label import Label, Image
 
 class Frame(element.Element):
     name='frame'
-    layout = None
     h_slider = None
     v_slider = None
 
@@ -23,6 +22,10 @@ class Frame(element.Element):
             contents.setViewClip((0, 0, self.width, self.height))
         else:
             self.layout = layouts.Layout(self)
+
+    def layout(self):
+        # invoke contents layout
+        self.contents.layout()
 
     def parentDimensionsChanged(self):
         ir = self.parent.inner_rect
@@ -370,7 +373,7 @@ class TabbedFrame(Frame):
             padding=2)
         self.bottom = Frame(self, is_transparent=True)
         self.bottom.layout = TabsLayout(self.bottom)
-        self.layout = layouts.Vertical(self)
+        self.layout = layouts.Vertical(self, valign='bottom', padding=0)
         self._active_frame = None
 
     def get_active(self):
@@ -389,12 +392,22 @@ class TabbedFrame(Frame):
         self.top.layout()
         b._top = self
 
+        # if the tabbed frame is constrained in height then we must pass
+        # that on
+        if self.height_spec:
+            content_height = self.inner_rect.height - self.top.height
+        else:
+            content_height = None
+
         if scrollable:
             f = self.frame_class(self.bottom, scrollable=True,
-                border=border, bgcolor=bgcolor, padding=2)
+                border=border, bgcolor=bgcolor, padding=2,
+                height=content_height)
         else:
             f = self.frame_class(self.bottom, border=border,
-                bgcolor=bgcolor, padding=2)
+                bgcolor=bgcolor, padding=2, height=content_height)
+        if content_height:
+            self.bottom.layout()
         b._frame = f
         f._button = b
         if self._active_frame is None:
