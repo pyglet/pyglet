@@ -52,7 +52,7 @@ associated with a single player by "queuing" it::
     source = load('background_music.mp3')
     player.queue(source)
 
-GUse the `Player` to control playback.  Within your main run loop, you must
+Use the `Player` to control playback.  Within your main run loop, you must
 periodically call `dispatch_events` to ensure the audio buffers are refilled::
 
     player.play()
