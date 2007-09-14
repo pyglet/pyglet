@@ -52,7 +52,7 @@ associated with a single player by "queuing" it::
     source = load('background_music.mp3')
     player.queue(source)
 
-Use the `Player` to control playback.  Within your main run loop, you must
+GUse the `Player` to control playback.  Within your main run loop, you must
 periodically call `dispatch_events` to ensure the audio buffers are refilled::
 
     player.play()
@@ -366,7 +366,7 @@ class StaticMemorySource(StaticSource):
         # Align to sample
         if self.audio_format.bytes_per_sample == 2:
             offset &= 0xfffffffe
-        elif self.audio_foramt.bytes_per_sample == 4:
+        elif self.audio_format.bytes_per_sample == 4:
             offset &= 0xfffffffc
 
         self._file.seek(offset)
