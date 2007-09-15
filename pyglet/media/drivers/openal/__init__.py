@@ -531,6 +531,10 @@ class OpenALManagedSoundPlayer(OpenALPlayer, ManagedSoundPlayerMixIn):
     pass
 
 class OpenALListener(Listener):
+    def _set_volume(self, volume):
+        al.alListenerf(al.AL_GAIN, volume)
+        self._volume = volume
+
     def _set_position(self, position):
         x, y, z = position
         al.alListener3f(al.AL_POSITION, x, y, z)
@@ -547,7 +551,7 @@ class OpenALListener(Listener):
         self._forward_orientation = orientation
 
     def _set_up_orientation(self, orientation):
-        val = (ALfloat * 6)(*(self._forward_orientation + orientation))
+        val = (al.ALfloat * 6)(*(self._forward_orientation + orientation))
         al.alListenerfv(al.AL_ORIENTATION, val)
         self._up_orientation = orientation
 
