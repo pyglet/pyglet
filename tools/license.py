@@ -74,7 +74,7 @@ def update_license(filename):
 
 if __name__ == '__main__':
     op = optparse.OptionParser()
-    op.add_option('--exclude', action='append')
+    op.add_option('--exclude', action='append', default=[])
     options, args = op.parse_args()
     
     if len(args) < 1:
