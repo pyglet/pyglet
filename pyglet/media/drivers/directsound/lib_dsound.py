@@ -59,7 +59,7 @@ class D3DVECTOR(ctypes.Structure):
 PD3DVECTOR = ctypes.POINTER(D3DVECTOR)
 
 class WAVEFORMATEX(ctypes.Structure):
-    _fields = [
+    _fields_ = [
         ('wFormatTag', WORD),
         ('nChannels', WORD),
         ('nSamplesPerSec', DWORD),
@@ -69,6 +69,7 @@ class WAVEFORMATEX(ctypes.Structure):
         ('cbSize', WORD), 
     ]
 LPWAVEFORMATEX = ctypes.POINTER(WAVEFORMATEX)
+WAVE_FORMAT_PCM = 1
 
 class DSCAPS(ctypes.Structure):
     _fields_ = [
@@ -114,8 +115,8 @@ class DSBUFFERDESC(ctypes.Structure):
         ('dwSize', DWORD),
         ('dwFlags', DWORD),
         ('dwBufferBytes', DWORD),
-        ('dwUnlockTransferRate', DWORD),
-        ('dwPlayCpuOverhead', DWORD),
+        ('dwReserved', DWORD),
+        ('lpwfxFormat', LPWAVEFORMATEX),
     ]
 LPDSBUFFERDESC = ctypes.POINTER(DSBUFFERDESC)
 
@@ -166,10 +167,12 @@ class IDirectSoundBuffer(com.IUnknown):
         ('Initialize',
          com.STDMETHOD(ctypes.c_void_p, LPDSBUFFERDESC)),
         ('Lock',
-         com.STDMETHOD(DWORD, DWORD, ctypes.POINTER(ctypes.c_void_p), 
-                       LPDWORD, DWORD)),
+         com.STDMETHOD(DWORD, DWORD, 
+                       ctypes.POINTER(ctypes.c_void_p), LPDWORD, 
+                       ctypes.POINTER(ctypes.c_void_p), LPDWORD, 
+                       DWORD)),
         ('Play',
-         com.STDMETHOD(DWORD, DWORD)),
+         com.STDMETHOD(DWORD, DWORD, DWORD)),
         ('SetCurrentPosition',
          com.STDMETHOD(DWORD)),
         ('SetFormat',

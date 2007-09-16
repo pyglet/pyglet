@@ -46,6 +46,9 @@ from pyglet.media import MediaException
 from pyglet.media.drivers.directsound import lib_dsound as lib
 
 class DirectSoundPlayer(BasePlayer):
+    _buffer_size = 44800 * 8 # 1 sec of 16 bit 44.8 kHz stereo 
+    _update_buffer_size = _buffer_size // 4
+    
     def __init__(self):
         super(DirectSoundPlayer, self).__init__()
 
@@ -54,11 +57,123 @@ class DirectSoundPlayer(BasePlayer):
         self._timestamp = 0.
         self._timestamp_time = None
 
+        self._buffer = None
+        self._buffer_playing = False
+        self._write_cursor = 0
+        self._source_read_index = 0
+        self._next_audio_data = None
+
+    def _create_buffer(self, audio_format):
+        if not audio_format:
+            return
+
+        wfx = lib.WAVEFORMATEX()
+        wfx.wFormatTag = lib.WAVE_FORMAT_PCM
+        wfx.nChannels = audio_format.channels
+        wfx.nSamplesPerSec = audio_format.sample_rate
+        wfx.wBitsPerSample = audio_format.sample_size
+        wfx.nBlockAlign = wfx.wBitsPerSample * wfx.nChannels // 8
+        wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign
+
+        dsbdesc = lib.DSBUFFERDESC()
+        dsbdesc.dwSize = ctypes.sizeof(dsbdesc)
+        dsbdesc.dwFlags = lib.DSBCAPS_GLOBALFOCUS | lib.DSBCAPS_CTRLVOLUME
+        if audio_format.channels == 1:
+            dsbdesc.dwFlags |= lib.DSBCAPS_CTRL3D
+        dsbdesc.dwBufferBytes = self._buffer_size
+        dsbdesc.lpwfxFormat = ctypes.pointer(wfx)
+
+        dsb = lib.IDirectSoundBuffer()
+        dsound.CreateSoundBuffer(dsbdesc, ctypes.byref(dsb), None)
+        self._buffer = dsb
+
+    def _get_audio_data(self, bytes):
+        if self._next_audio_data:
+            audio_data = self._next_audio_data
+            self._next_audio_data = None
+            bytes -= audio_data.length
+            yield audio_data
+
+        try:
+            source = self._sources[self._source_read_index]
+        except IndexError:
+            source = None
+
+        while source:
+            audio_data = source._get_audio_data(bytes)
+            if audio_data:
+                bytes -= audio_data.length
+                yield audio_data
+            else:
+                if self._eos_action == self.EOS_NEXT:
+                    self._source_read_index += 1
+                    try:
+                        source = self._sources[self._source_read_index]
+                        source._play()
+                    except IndexError:
+                        source = None
+                elif self._eos_action == self.EOS_LOOP:
+                    source.seek(0)
+                elif self._eos_action == self.EOS_PAUSE:
+                    source = None
+                elif self._eos_action == self.EOS_STOP:
+                    source = None
+                else:
+                    assert False, 'Invalid eos_action'
+                    source = None
+
+    def _fill_buffer(self):
+        if self._buffer:
+            play_cursor = lib.DWORD()
+            self._buffer.GetCurrentPosition(play_cursor, None)
+            if self._write_cursor > play_cursor.value:
+                write_size = self._write_cursor - play_cursor.value
+            else:
+                write_size = self._buffer_size - self._write_cursor + \
+                    play_cursor.value
+        else:
+            write_size = self._buffer_size
+            self._create_buffer(
+                self.sources[self._source_read_index].audio_format)
+
+        if write_size < self._update_buffer_size:
+            return
+
+        for audio_data in self._get_audio_data(write_size):
+            length = min(write_size, audio_data.length)
+
+            p1 = ctypes.c_void_p()
+            l1 = lib.DWORD()
+            p2 = ctypes.c_void_p()
+            l2 = lib.DWORD()
+            self._buffer.Lock(self._write_cursor, length, 
+                ctypes.byref(p1), l1, ctypes.byref(p2), l2, 0)
+            assert length == l1.value + l2.value
+            ctypes.memmove(p1, audio_data.data, l1.value)
+            if l2.value:
+                audio_data.consume(l1)
+                ctypes.memmove(p2, audio_data.data, l2.value)
+            self._buffer.Unlock(p1, l1, p2, l2)
+
+            self._write_cursor += length
+            self._write_cursor %= self._buffer_size
+
+            if length < audio_data.length:
+                audio_data.consume(length,
+                    self._sources[self._source_read_index].audio_format)
+                self._next_audio_data = audio_data
+
+            write_size -= length
+            if write_size <= 0:
+                break
+
     def queue(self, source):
         source = source._get_queue_source()
 
         if not self._sources:
             source._init_texture(self)
+            self._create_buffer(source.audio_format)
+            
         self._sources.append(source)
 
     def next(self):
@@ -66,6 +181,7 @@ class DirectSoundPlayer(BasePlayer):
             old_source = self._sources.pop(0)
             old_source._release_texture(self)
             old_source._stop()
+            self._source_read_index -= 1
 
         if self._sources:
             self._sources[0]._init_texture(self)
@@ -78,6 +194,8 @@ class DirectSoundPlayer(BasePlayer):
             now = time.time()
             self._timestamp += now - self._timestamp_time
             self._timestamp_time = now
+
+        self._fill_buffer()
 
         if self._texture:
             self._sources[0]._update_texture(self, self._timestamp)
@@ -100,6 +218,10 @@ class DirectSoundPlayer(BasePlayer):
 
         if not self._sources:
             return
+
+        if self._buffer:
+            self._buffer.Play(0, 0, lib.DSBPLAY_LOOPING)
+            self._buffer_playing = True
 
         self._timestamp_time = time.time()
 
@@ -174,9 +296,14 @@ class DirectSoundListener(Listener):
 
 def driver_init():
     global dsound
-    ctypes.oledll.ole32.CoInitialize(None)
-    dsound = IDirectSound8()
-    lib.DirectSoundCreate8(None, ctypes.byref(dsound), None)
+    dsound = lib.IDirectSound()
+    lib.DirectSoundCreate(None, ctypes.byref(dsound), None)
+
+    # TODO
+    from pyglet import window
+    w = window.Window(visible=False)
+
+    dsound.SetCooperativeLevel(w._hwnd, lib.DSSCL_NORMAL)
 
 driver_listener = DirectSoundListener()
 DriverPlayer = DirectSoundPlayer
