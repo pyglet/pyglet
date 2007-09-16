@@ -60,6 +60,7 @@ class DirectSoundPlayer(BasePlayer):
         self._buffer = None
         self._buffer_playing = False
         self._write_cursor = 0
+        self._dirty_size = 0
         self._source_read_index = 0
         self._next_audio_data = None
 
@@ -92,7 +93,8 @@ class DirectSoundPlayer(BasePlayer):
             audio_data = self._next_audio_data
             self._next_audio_data = None
             bytes -= audio_data.length
-            yield audio_data
+            yield (audio_data,
+                   self._sources[self._source_read_index].audio_format)
 
         try:
             source = self._sources[self._source_read_index]
@@ -103,7 +105,7 @@ class DirectSoundPlayer(BasePlayer):
             audio_data = source._get_audio_data(bytes)
             if audio_data:
                 bytes -= audio_data.length
-                yield audio_data
+                yield audio_data, source.audio_format
             else:
                 if self._eos_action == self.EOS_NEXT:
                     self._source_read_index += 1
@@ -126,53 +128,68 @@ class DirectSoundPlayer(BasePlayer):
         if self._buffer:
             play_cursor = lib.DWORD()
             self._buffer.GetCurrentPosition(play_cursor, None)
-            if self._write_cursor > play_cursor.value:
-                write_size = self._write_cursor - play_cursor.value
+            if self._write_cursor < play_cursor.value:
+                write_size = play_cursor.value - self._write_cursor
             else:
                 write_size = self._buffer_size - self._write_cursor + \
                     play_cursor.value
         else:
             write_size = self._buffer_size
             self._create_buffer(
-                self.sources[self._source_read_index].audio_format)
+                self._sources[self._source_read_index].audio_format)
 
         if write_size < self._update_buffer_size:
             return
 
-        for audio_data in self._get_audio_data(write_size):
+        for audio_data, audio_format in self._get_audio_data(write_size):
             length = min(write_size, audio_data.length)
-
-            p1 = ctypes.c_void_p()
-            l1 = lib.DWORD()
-            p2 = ctypes.c_void_p()
-            l2 = lib.DWORD()
-            self._buffer.Lock(self._write_cursor, length, 
-                ctypes.byref(p1), l1, ctypes.byref(p2), l2, 0)
-            assert length == l1.value + l2.value
-            ctypes.memmove(p1, audio_data.data, l1.value)
-            if l2.value:
-                audio_data.consume(l1)
-                ctypes.memmove(p2, audio_data.data, l2.value)
-            self._buffer.Unlock(p1, l1, p2, l2)
-
-            self._write_cursor += length
-            self._write_cursor %= self._buffer_size
-
+            self._write(audio_data, audio_format, length)
+            self._dirty_size = self._buffer_size
             if length < audio_data.length:
-                audio_data.consume(length,
-                    self._sources[self._source_read_index].audio_format)
+                audio_data.consume(length, audio_format)
                 self._next_audio_data = audio_data
 
             write_size -= length
             if write_size <= 0:
-                break
+                return
+
+        # No more audio_data, start writing silence
+        if self._dirty_size:
+            length = min(write_size, self._dirty_size)
+            self._write(None, None, length)
+            self._dirty_size -= length
+            if self._dirty_size < 0:
+                self._dirty_size = 0
+        
+    def _write(self, audio_data, audio_format, length):
+        p1 = ctypes.c_void_p()
+        l1 = lib.DWORD()
+        p2 = ctypes.c_void_p()
+        l2 = lib.DWORD()
+        self._buffer.Lock(self._write_cursor, length, 
+            ctypes.byref(p1), l1, ctypes.byref(p2), l2, 0)
+        assert length == l1.value + l2.value
+
+        if audio_data:
+            ctypes.memmove(p1, audio_data.data, l1.value)
+            if l2.value:
+                audio_data.consume(l1.value, audio_format)
+                ctypes.memmove(p2, audio_data.data, l2.value)
+        else:
+            ctypes.memset(p1, 0, l1.value)
+            if l2.value:
+                ctypes.memset(p2, 0, l2.value)
+                pass
+        self._buffer.Unlock(p1, l1, p2, l2)
+
+        self._write_cursor += length
+        self._write_cursor %= self._buffer_size
 
     def queue(self, source):
         source = source._get_queue_source()
 
         if not self._sources:
             source._init_texture(self)
-            self._create_buffer(source.audio_format)
             
         self._sources.append(source)
 
@@ -196,6 +213,10 @@ class DirectSoundPlayer(BasePlayer):
             self._timestamp_time = now
 
         self._fill_buffer()
+
+        if self._playing and not self._buffer_playing:
+            self._buffer.Play(0, 0, lib.DSBPLAY_LOOPING)
+            self._buffer_playing = True
 
         if self._texture:
             self._sources[0]._update_texture(self, self._timestamp)
@@ -230,6 +251,10 @@ class DirectSoundPlayer(BasePlayer):
 
         if not self._sources:
             return
+
+        if self._buffer:
+            self._buffer.Stop()
+            self._buffer_playing = False
 
     def seek(self, timestamp):
         if self._sources:
