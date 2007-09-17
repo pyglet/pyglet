@@ -344,6 +344,9 @@ class ALSAPlayer(BasePlayer):
     def _set_cone_inner_angle(self, cone_inner_angle):
         self._cone_inner_angle = cone_inner_angle
 
+    def _set_cone_outer_angle(self, cone_outer_angle):
+        self._cone_outer_angle = cone_outer_angle
+
     def _set_cone_outer_gain(self, cone_outer_gain):
         self._cone_outer_gain = cone_outer_gain
 
@@ -351,28 +354,28 @@ class ALSAManagedSoundPlayer(ALSAPlayer, ManagedSoundPlayerMixIn):
     pass
 
 class ALSAListener(Listener):
-    def set_volume(self, volume):
+    def _set_volume(self, volume):
         # TODO master volume
         self._volume = volume
 
     # All other properties are silently ignored.
 
-    def set_position(self, position):
+    def _set_position(self, position):
         self._position = position
 
-    def set_velocity(self, velocity):
+    def _set_velocity(self, velocity):
         self._velocity = velocity
 
-    def set_forward_orientation(self, orientation):
+    def _set_forward_orientation(self, orientation):
         self._forward_orientation = orientation
 
-    def set_up_orientation(self, orientation):
+    def _set_up_orientation(self, orientation):
         self._up_orientation = orientation
 
-    def set_doppler_factor(self, factor):
+    def _set_doppler_factor(self, factor):
         self._doppler_factor = factor
 
-    def set_speed_of_sound(self, speed_of_sound):
+    def _set_speed_of_sound(self, speed_of_sound):
         self._speed_of_sound = speed_of_sound
 
 def driver_init():
