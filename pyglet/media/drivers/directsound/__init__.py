@@ -59,7 +59,9 @@ class DirectSoundPlayer(BasePlayer):
 
         self._buffer = None
         self._buffer_playing = False
+        self._play_cursor = 0
         self._write_cursor = 0
+        self._eos_cursors = []
         self._dirty_size = 0
         self._source_read_index = 0
         self._next_audio_data = None
@@ -126,13 +128,11 @@ class DirectSoundPlayer(BasePlayer):
 
     def _fill_buffer(self):
         if self._buffer:
-            play_cursor = lib.DWORD()
-            self._buffer.GetCurrentPosition(play_cursor, None)
-            if self._write_cursor < play_cursor.value:
-                write_size = play_cursor.value - self._write_cursor
+            if self._write_cursor < self._play_cursor:
+                write_size = self._play_cursor - self._write_cursor
             else:
                 write_size = self._buffer_size - self._write_cursor + \
-                    play_cursor.value
+                    self._play_cursor
         else:
             write_size = self._buffer_size
             self._create_buffer(
@@ -152,6 +152,10 @@ class DirectSoundPlayer(BasePlayer):
             write_size -= length
             if write_size <= 0:
                 return
+
+        # Write EOS marker?
+        if self._dirty_size == self._buffer_size:
+            self._eos_cursors.append(self._write_cursor - self._buffer_size)
 
         # No more audio_data, start writing silence
         if self._dirty_size:
@@ -185,6 +189,12 @@ class DirectSoundPlayer(BasePlayer):
         self._write_cursor += length
         self._write_cursor %= self._buffer_size
 
+    def _stop_buffer(self):
+        if self._buffer:
+            self._buffer.Stop()
+            self._buffer.Release()
+            self._buffer = None
+
     def queue(self, source):
         source = source._get_queue_source()
 
@@ -202,6 +212,8 @@ class DirectSoundPlayer(BasePlayer):
 
         if self._sources:
             self._sources[0]._init_texture(self)
+        else:
+            self._stop_buffer()
 
     def dispatch_events(self):
         if not self._sources:
@@ -212,6 +224,25 @@ class DirectSoundPlayer(BasePlayer):
             self._timestamp += now - self._timestamp_time
             self._timestamp_time = now
 
+        # Update play cursor, check for wraparound and EOS markers
+        if self._buffer:
+            play_cursor = lib.DWORD()
+            self._buffer.GetCurrentPosition(play_cursor, None)
+            if play_cursor.value < self._play_cursor:
+                # Wrapped around
+                self._eos_cursors = \
+                    [c + self._buffer_size for c in self._eos_cursors]
+            self._play_cursor = play_cursor.value
+
+            # Handle EOSs
+            while (self._eos_cursors and 
+                   self._eos_cursors[0] >= self._play_cursor):
+                self._eos_cursors.pop(0)
+                if self._eos_action == self.EOS_NEXT:
+                    self.next()
+                elif self._eos_action == self.EOS_STOP:
+                    self._stop_buffer()
+
         self._fill_buffer()
 
         if self._playing and not self._buffer_playing:
@@ -220,10 +251,6 @@ class DirectSoundPlayer(BasePlayer):
 
         if self._texture:
             self._sources[0]._update_texture(self, self._timestamp)
-
-        if self._timestamp > self._sources[0].duration:
-            self.next()
-            self._timestamp = 0.
 
     def _get_time(self):
         if not self._playing:
