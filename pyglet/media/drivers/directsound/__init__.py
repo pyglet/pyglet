@@ -46,7 +46,7 @@ from pyglet.media import MediaException
 from pyglet.media.drivers.directsound import lib_dsound as lib
 
 class DirectSoundPlayer(BasePlayer):
-    _buffer_size = 44800 * 8 # 1 sec of 16 bit 44.8 kHz stereo 
+    _buffer_size = 44800 * 2# .15 sec of 16 bit 44.8 kHz stereo 
     _update_buffer_size = _buffer_size // 4
     
     def __init__(self):
@@ -60,6 +60,9 @@ class DirectSoundPlayer(BasePlayer):
         self._buffer = None
         self._buffer_playing = False
         self._play_cursor = 0
+        self._cum_play_cursor = 0  # total bytes played = pc + cpc
+        self._buffer_time = 0.  # ts of buffer offset 0
+        self._buffer_end_time = 0.
         self._write_cursor = 0
         self._eos_cursors = []
         self._dirty_size = 0
@@ -128,7 +131,9 @@ class DirectSoundPlayer(BasePlayer):
 
     def _fill_buffer(self):
         if self._buffer:
-            if self._write_cursor < self._play_cursor:
+            if self._write_cursor == self._play_cursor:
+                return
+            elif self._write_cursor < self._play_cursor:
                 write_size = self._play_cursor - self._write_cursor
             else:
                 write_size = self._buffer_size - self._write_cursor + \
@@ -138,13 +143,18 @@ class DirectSoundPlayer(BasePlayer):
             self._create_buffer(
                 self._sources[self._source_read_index].audio_format)
 
-        if write_size < self._update_buffer_size:
+        if write_size < self._update_buffer_size and self._playing:
             return
 
         for audio_data, audio_format in self._get_audio_data(write_size):
+            self._buffer_end_time = (audio_data.timestamp + 
+                (self._buffer_size - self._write_cursor) / 
+                    float(audio_format.bytes_per_second))
+
             length = min(write_size, audio_data.length)
             self._write(audio_data, audio_format, length)
             self._dirty_size = self._buffer_size
+            
             if length < audio_data.length:
                 audio_data.consume(length, audio_format)
                 self._next_audio_data = audio_data
@@ -219,17 +229,14 @@ class DirectSoundPlayer(BasePlayer):
         if not self._sources:
             return
 
-        if self._playing:
-            now = time.time()
-            self._timestamp += now - self._timestamp_time
-            self._timestamp_time = now
-
         # Update play cursor, check for wraparound and EOS markers
         if self._buffer:
             play_cursor = lib.DWORD()
             self._buffer.GetCurrentPosition(play_cursor, None)
             if play_cursor.value < self._play_cursor:
                 # Wrapped around
+                self._cum_play_cursor += self._buffer_size
+                self._buffer_time = self._buffer_end_time
                 self._eos_cursors = \
                     [c + self._buffer_size for c in self._eos_cursors]
             self._play_cursor = play_cursor.value
@@ -237,11 +244,22 @@ class DirectSoundPlayer(BasePlayer):
             # Handle EOSs
             while (self._eos_cursors and 
                    self._eos_cursors[0] >= self._play_cursor):
-                self._eos_cursors.pop(0)
+                eos = self._eos_cursors.pop(0)
+                self._cum_play_cursor = -eos
+                self._buffer_time = 0. # FIXME XXX
                 if self._eos_action == self.EOS_NEXT:
                     self.next()
                 elif self._eos_action == self.EOS_STOP:
                     self._stop_buffer()
+
+        if self._sources and self._sources[0].audio_format:
+            self._timestamp = self._buffer_time + self._play_cursor \
+                / float(self._sources[0].audio_format.bytes_per_second)
+        elif self._sources and self._playing:
+            # XXX Silent timestamp.. clean me up
+            now = time.time()
+            self._timestamp += now - self._timestamp_time
+            self._timestamp_time = now
 
         self._fill_buffer()
 
@@ -253,10 +271,7 @@ class DirectSoundPlayer(BasePlayer):
             self._sources[0]._update_texture(self, self._timestamp)
 
     def _get_time(self):
-        if not self._playing:
-            return self._timestamp
-
-        return self._timestamp + time.time() - self._timestamp_time
+        return self._timestamp
 
     def play(self):
         if self._playing:
