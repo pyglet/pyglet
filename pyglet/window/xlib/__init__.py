@@ -545,6 +545,16 @@ class XlibWindow(BaseWindow):
         if self._visible:
             self.set_visible(True)
 
+        # Create input context.  A good but very outdated reference for this
+        # is http://www.sbin.org/doc/Xlib/chapt_11.html
+        if _have_utf8:
+            self._x_im = xlib.XOpenIM(self._x_display, None, None, None)
+            # TODO select best input style.
+            self._x_ic = xlib.XCreateIC(self._x_im, 
+                'inputStyle', xlib.XIMPreeditNothing|xlib.XIMStatusNothing,
+                None)
+            xlib.XSetICFocus(self._x_ic)
+
     def _map(self):
         if self._mapped:
             return
@@ -609,6 +619,10 @@ class XlibWindow(BaseWindow):
 
         self._window = None
         self._glx_window = None
+
+        if _have_utf8:
+            xlib.XDestroyIC(self._x_ic)
+            xlib.XCloseIM(self._x_im)
 
     def switch_to(self):
         if self._glx_1_3:
@@ -981,6 +995,8 @@ class XlibWindow(BaseWindow):
         # Check for the events specific to this window
         while xlib.XCheckWindowEvent(_x_display, _window,
                 0x1ffffff, byref(e)):
+            if xlib.XFilterEvent(e, 0):
+                continue
             event_handler = self._event_handlers.get(e.type)
             if event_handler:
                 event_handler(e)
@@ -1023,16 +1039,22 @@ class XlibWindow(BaseWindow):
     def _event_text(self, event):
         if event.type == xlib.KeyPress:
             buffer = create_string_buffer(16)
-            # TODO lookup UTF8
-            count = xlib.XLookupString(event.xkey,
-                                       buffer,
-                                       len(buffer),
-                                       None,
-                                       None)
-            if count:
-                text = unicode(buffer.value[:count])
-                if unicodedata.category(text) != 'Cc' or text == '\r':
-                    return text
+            text = None
+            if _have_utf8:
+                count = xlib.Xutf8LookupString(self._x_ic,
+                                               event.xkey,
+                                               buffer, len(buffer),
+                                               None, None)
+                if count > 0:
+                    text = buffer.value[:count].decode('utf8')
+            else:
+                count = xlib.XLookupString(event.xkey,
+                                           buffer, len(buffer),
+                                           None, None)
+                if count > 0:
+                    text = buffer.value[:count].decode('ascii', 'ignore')
+            if text and unicodedata.category(text) != 'Cc' or text == '\r':
+                return text
         return None
 
     def _event_text_motion(self, symbol, modifiers):
