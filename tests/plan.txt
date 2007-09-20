@@ -169,6 +169,9 @@ font
         font.KERNING
         font.ITALIC_CORRECTION
 
+    font-layout
+        font.WRAP_INVARIANT                     GENERIC
+
 media
     media-player
         media.PLAYER_QUEUE_PLAY                 DEVELOPER

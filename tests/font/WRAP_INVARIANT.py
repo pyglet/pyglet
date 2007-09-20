@@ -12,12 +12,12 @@ __version__ = '$Id: $'
 import unittest
 import base_text
 
-class TEST_WRAPPING(base_text.TextTestBase):
+class TEST_WRAP_INVARIANT(base_text.TextTestBase):
     font_name = ''
     text = 'TEST TEST'
 
     def render(self):
-        super(TEST_WRAPPING, self).render()
+        super(TEST_WRAP_INVARIANT, self).render()
         self.label.width = self.label.width
 
     def draw(self):

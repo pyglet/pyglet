@@ -170,12 +170,12 @@ class GlyphString(object):
         for i, (c, w) in enumerate(
                 zip(self.text[from_index:], 
                     self.cumulative_advance[from_index:])):
+            if c in u'\u0020\u200b':
+                to_index = i + from_index + 1
             if w > width:
                 return to_index 
             if c == '\n':
                 return i + from_index + 1
-            elif c in u'\u0020\u200b':
-                to_index = i + from_index + 1
         return to_index
 
     def get_subwidth(self, from_index, to_index):
@@ -320,6 +320,10 @@ class Text(object):
 
     def _clean(self):
         '''Resolve changed layout'''
+        # Adding a space to the end of the text simplifies the inner loop
+        # of the wrapping layout.  It ensures there is a breakpoint returned at
+        # the end of the string (GlyphString cannot guarantee this otherwise
+        # it would not be useable with styled layout algorithms). 
         text = self._text + ' '
         glyphs = self.font.get_glyphs(text)
         self._glyph_string = GlyphString(text, glyphs)
@@ -334,6 +338,7 @@ class Text(object):
                 self._text_width = max(self._text_width, 
                                        self._glyph_string.get_subwidth(i, end))
                 i = end + 1
+            # Discard the artifical appended space.
             end = len(text) - 1
             if i < end:
                 self.lines.append((i, end))
