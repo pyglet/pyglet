@@ -42,12 +42,12 @@ example, the following program draws a triangle on the screen::
 
     # The OpenGL context is created only when you create a window.  Any calls
     # to OpenGL before a window is created will fail.
-    win = win.Window(visible=False)
+    win = window.Window(visible=False)
 
     # ... perform any OpenGL state initialisation here.
 
     win.set_visible()
-    while not window.has_exit:
+    while not win.has_exit:
         win.dispatch_events()
 
         glClear(GL_COLOR_BUFFER_BIT)
