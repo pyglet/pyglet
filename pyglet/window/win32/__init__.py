@@ -797,7 +797,7 @@ class Win32Window(BaseWindow):
                 event[0](*event[1:])
 
         msg = MSG()
-        while _user32.PeekMessageW(byref(msg), self._hwnd, 0, 0, PM_REMOVE):
+        while _user32.PeekMessageW(byref(msg), 0, 0, 0, PM_REMOVE):
             _user32.TranslateMessage(byref(msg))
             _user32.DispatchMessageW(byref(msg))
         self._allow_dispatch_event = False
