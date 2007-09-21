@@ -19,12 +19,12 @@ class Progress(Label):
             valign=valign, **kw)
 
         if self.show_value:
-            self.setText('%d%%'%(value * 100))
+            self.text = '%d%%'%(value * 100)
 
     def set_value(self, value):
         self._value = value
         if self.show_value:
-            self.setText('%d%%'%(value * 100))
+            self.text = '%d%%'%(value * 100)
     value = property(lambda self: self._value, set_value)
 
     def renderBackground(self, rect):

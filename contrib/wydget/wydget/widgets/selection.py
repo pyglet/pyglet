@@ -54,11 +54,9 @@ class Selection(SelectionCommon):
         if scrollable: f = self.contents
         else: f = self
         if is_vertical:
-            f.layout = layouts.Vertical(f, valign='top', padding=item_pad,
-                halign='center')
+            f.layout = layouts.Vertical(f, padding=item_pad)
         else:
-            f.layout = layouts.Horizontal(f, valign='top',
-                padding=item_pad, halign='left')
+            f.layout = layouts.Horizontal(f, padding=item_pad)
 
         # specific attributes for Options
         self.color = util.parse_color(color)
@@ -77,8 +75,7 @@ class Selection(SelectionCommon):
     def addOption(self, label, id=None, **kw):
         if self.scrollable: f = self.contents
         else: f = self
-        o = Option(f, text=label, id=id or label, **kw)
-        f.layout()
+        Option(f, text=label, id=id or label, **kw)
 
     def get_value(self):
         if self.scrollable: f = self.contents
@@ -105,10 +102,7 @@ class ComboBox(SelectionCommon):
     def __init__(self, parent, items, font_size=None, border="black",
             color='black', bgcolor='white', alt_bgcolor='eee',
             active_bgcolor='ffc', item_pad=0, **kw):
-        super(ComboBox, self).__init__(parent, border=border,
-            bgcolor=bgcolor, **kw)
-        self.layout = layouts.Horizontal(self, valign='center',
-            only_visible=True)
+        super(ComboBox, self).__init__(parent, **kw)
 
         # specific attributes for Options
         self.color = util.parse_color(color)
@@ -117,39 +111,33 @@ class ComboBox(SelectionCommon):
         self.active_bgcolor = util.parse_color(active_bgcolor)
         self.font_size = font_size
 
-        # XXX add a an editable flag, and use a TextInput if it's true
-        self.label = Label(self, items[0][0], font_size=font_size,
-            color=color)
+        lf = Frame(self)
+        lf.layout = layouts.Horizontal(lf, halign='left', valign='top')
 
-        Image(self, self.arrow, color=(0, 0, 0, 1))
+        # XXX add a an editable flag, and use a TextInput if it's true
+        self.label = Label(lf, items[0][0], font_size=font_size,
+            color=color, bgcolor=bgcolor, border=border)
+        Image(lf, self.arrow, color=(0, 0, 0, 1), bgcolor=bgcolor,
+            border=border)
 
         # set up the popup item - try to make it appear in front
-        self.contents = Frame(self, is_visible=False, border="black", z=.5)
+        self.contents = Frame(self, is_visible=False,
+            bgcolor=bgcolor, border=border, z=.5)
         self.contents.layout = layouts.Vertical(self.contents)
+        self.layout.ignore = set([self.contents])
 
-        # add the menu items and resize the main box if necessary
-        width = height = 0
-        for n, (label, id, kw) in enumerate(items):
-            i = Option(self.contents, text=label, id=id, **kw)
-            width = max(width, i.width)
-            height = max(height, i.height)
+        # add the options
+        for label, id, kw in items:
+            Option(self.contents, text=label, id=id, **kw)
 
         self.value = self.contents.children[0].id
 
-        # fix up contents size
-        for i in self.contents.children:
-            i.width = width
-        self.contents.layout()
-
+    def resize(self):
+        while self.contents.width is None or self.contents.height is None:
+            self.contents.resize()
         # fix label width so it fits largest selection
-        self.label.width = width + self.padding*2
-        self.label.height = height + self.padding*2
-        self.layout()
-
-        # reposition so the selection drops down over first item
-        r = self.contents.rect
-        r.top = self.inner_rect.top
-        self.contents.y = r.y
+        self.label.width = self.contents.width
+        return super(ComboBox, self).resize()
 
     @classmethod
     def get_arrow(cls):
@@ -167,27 +155,31 @@ class ComboBox(SelectionCommon):
             if item.id == value: break
         else:
             raise ValueError, '%r not a valid child item id'%(value,)
-        self.label.setText(item.text)
-        self.label.width = self.inner_rect.width
+        self.label.text = item.text
         self._value = value
     value = property(get_value, set_value)
 
     def addOption(self, label, id=None, **kw):
         Option(self.contents, text=label, id=id or label, **kw)
-        self.contents.layout()
 
     @event.default('combo-box')
     def on_click(widget, x, y, button, modifiers, click_count):
         if not button & mouse.LEFT:
             return event.EVENT_UNHANDLED
         # XXX position contents so the active item is over the label
+        label = widget.label
         contents = widget.contents
         if contents.is_visible:
+            label.setVisible(True)
             contents.setVisible(False)
             contents.loseFocus()
         else:
+            label.setVisible(False)
             contents.setVisible(True)
             contents.gainFocus()
+            # reposition the selection drop down
+            contents.y = -(contents.height - widget.height)
+            contents.x = 0
         return event.EVENT_HANDLED
 
     @event.default('combo-box', 'on_gain_focus')
@@ -222,7 +214,7 @@ class Option(TextButton):
 
     def __init__(self, parent, border=None, color=None, bgcolor=None,
             active_bgcolor=None, font_size=None, is_active=False,
-            alt_bgcolor=None, id=None, **kw):
+            alt_bgcolor=None, id=None, width='100%', **kw):
         self.is_active = is_active
         assert 'text' in kw, 'text required for Option'
 
@@ -248,21 +240,14 @@ class Option(TextButton):
             n = len(parent.children)
             bgcolor = (self.bgcolor, self.alt_bgcolor)[n%2]
 
-        if select.is_vertical and select.width_spec is not None:
-            kw['width'] = select.inner_rect.width
         if font_size is None: font_size = select.font_size
         if id is None: id = kw['text']
 
         super(Option, self).__init__(parent, border=border, bgcolor=bgcolor,
             font_size=font_size, color=color, id=id, **kw)
 
-        # fix up widths
-        if select.is_vertical:
-            width = max(c.width for c in parent.children)
-            for c in parent.children: c.width = width
-
-    def setText(self, text):
-        return super(Option, self).setText(text, additional=('active', ))
+    def set_text(self, text):
+        return super(Option, self).set_text(text, additional=('active', ))
 
     @classmethod
     def fromXML(cls, element, parent):
@@ -286,11 +271,12 @@ class Option(TextButton):
 
 @event.default('combo-box option')
 def on_click(widget, *args):
-    select = widget.getParent('combo-box')
-    select.value = widget.id
-    select.contents.setVisible(False)
-    select.contents.loseFocus()
-    widget.getGUI().dispatch_event(select, 'on_change', select.value)
+    combo = widget.getParent('combo-box')
+    combo.value = widget.id
+    combo.contents.setVisible(False)
+    combo.label.setVisible(True)
+    combo.contents.loseFocus()
+    widget.getGUI().dispatch_event(combo, 'on_change', combo.value)
     return event.EVENT_HANDLED
 
 @event.default('selection option')

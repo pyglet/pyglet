@@ -1,13 +1,34 @@
 <frame is_transparent="true" height="100%" width="100%">
- <vertical halign="center" valing="center" padding="1">
+ <vertical halign="center" valign="center" padding="1">
 
-    <frame bgcolor="white" border="green">
-     <grid>
-      <frame padding="4"><label border="black">First row, first column</label><label border="black">2nd col</label><label border="black">3rd col</label></frame>
-      <frame bgcolor="gray"><label border="black">Second row, 1st column</label><label padding="10" border="black">2nd col</label><label border="black">3rd column</label></frame>
-      <frame><label border="black">Third row, first column rocks!</label><label border="black">2nd col</label><label border="black">3rd col</label></frame>
-     </grid>
+  <frame bgcolor="white" border="green">
+   <grid colaligns="lrcf">
+    <frame padding="4">
+     <label border="black">First row, first column</label>
+     <label border="black">2nd col</label>
+     <label border="black">3rd col</label>
+     <label border="black">4th col</label>
     </frame>
+    <frame bgcolor="gray">
+     <label border="black">Second row, 1st column</label>
+     <label padding="10" border="black">2nd col pad="10"</label>
+     <label border="black">3rd column</label>
+     <label border="black">4th column</label>
+    </frame>
+    <frame>
+     <label border="black">Third row, first column rocks!</label>
+     <label border="black">2nd col</label>
+     <label border="black">3rd col</label>
+     <label border="black">4th col</label>
+    </frame>
+    <frame>
+     <label border="black">left</label>
+     <label border="black">right</label>
+     <label border="black">center</label>
+     <label border="black">fill</label>
+    </frame>
+   </grid>
+  </frame>
 
  </vertical>
 </frame>

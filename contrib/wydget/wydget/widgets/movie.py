@@ -7,7 +7,7 @@ from wydget.widgets.frame import Frame
 from wydget.widgets.label import Image, Label
 from wydget.widgets.button import Button
 
-class Movie(element.Element):
+class Movie(Frame):
     name='movie'
     def __init__(self, parent, file=None, source=None, playing=False,
             x=0, y=0, z=0, width=None, height=None, scale=True, **kw):
@@ -38,28 +38,26 @@ class Movie(element.Element):
 
         super(Movie, self).__init__(parent, x, y, z, width, height, **kw)
 
-        # basic frame
+        # control frame top-level
         c = self.control = Frame(self, bgcolor=(1, 1, 1, .5),
             is_visible=False, width='100%', height=64)
-        c.play = Image(c, data.load_gui_image('media-play.png'),
+
+        # controls underlay
+        f = Frame(c, is_transparent=True, width='100%', height='100%')
+        f.layout = layouts.Horizontal(f, valign='center', halign='center',
+            padding=10)
+        c.play = Image(f, data.load_gui_image('media-play.png'),
             classes=('-play-button',), is_visible=not playing)
+        c.pause = Image(f, data.load_gui_image('media-pause.png'),
+            bgcolor=None, classes=('-pause-button',), is_visible=playing)
+        c.range = Image(f, data.load_gui_image('media-range.png'))
+        c.time = Label(f, '00:00', font_size=20)
         c.anim = None
 
-        c.range = Image(c, data.load_gui_image('media-range.png'))
-
-        c.time = Label(c, '00:00', font_size=20)
-        layouts.Horizontal(c, valign='center', halign='center',
-            padding=10).layout()
-
-        c.pause = Image(c, data.load_gui_image('media-pause.png'),
-            x=c.play.x, y=c.play.y, bgcolor=None, classes=('-pause-button',),
-            is_visible=playing)
-
-        c.position = Image(c, data.load_gui_image('media-position.png'),
+        # current position over the top
+        c.position = Image(self, data.load_gui_image('media-position.png'),
             classes=('-position',))
         c.position.range = c.range
-        c.position.y = c.range.y - 2
-        c.position.x = c.range.x
 
         # make sure we get at least one frame to display
         self.player.queue(source)
@@ -67,6 +65,12 @@ class Movie(element.Element):
         self.playing = False
         if playing:
             self.play()
+
+    def resize(self):
+        if not super(Movie, self).resize(): return False
+        p = self.control.position
+        p.y = (self.control.range.y - p.height // 2)
+        return True
 
     def update(self, dt):
         self.player.dispatch_events()

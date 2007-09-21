@@ -1,0 +1,19 @@
+<frame is_transparent="true" height="100%" width="100%">
+ <vertical halign="center" valign="center">
+  <frame border="green">
+   <vertical halign="left" valign="top">
+    <label padding="10" bgcolor="white">the quick brown fox jumped over the lazy dog and did something interesting</label>
+    <label bgcolor="gray">bgcolor="gray"</label>
+    <label bgcolor="gray" width="100%">bgcolor="gray" width="100%" (of frame, not window)</label>
+    <label padding="10" halign="center" bgcolor="white" border="black" width="100%">and with padding=10</label>
+    <frame bgcolor="gray" width="100%">
+     <horizontal halign="fill">
+      <label>100%</label>
+      <label>frame</label>
+      <label>halign="fill"</label>
+     </horizontal>
+    </frame>
+   </vertical>
+  </frame>
+ </vertical>
+</frame>

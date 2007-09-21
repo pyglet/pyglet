@@ -45,7 +45,7 @@ class PopupMenu(Frame):
             MenuItem(self, text=label, id=id,
                 bgcolor=((.95, .95, .95, 1), (1, 1, 1, 1))[n%2])
 
-        layouts.Vertical(self).layout()
+        self.layout = layouts.Vertical(self)
 
         iw = self.inner_rect.width
         for element in self.children: element.width = iw
@@ -91,12 +91,12 @@ class PopupMenu(Frame):
         return button & mouse.RIGHT
 
 @event.default('popup-menu', 'on_gain_focus')
-def on_menu_gain_focus(menu):
+def on_menu_gain_focus(menu, method):
     # catch focus
     return event.EVENT_HANDLED
 
 @event.default('popup-menu', 'on_lose_focus')
-def on_menu_lose_focus(menu):
+def on_menu_lose_focus(menu, method):
     menu.hide()
     return event.EVENT_HANDLED
 

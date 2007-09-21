@@ -5,7 +5,7 @@ from pyglet import clock
 from pyglet.window import key, mouse
 
 from wydget import element, event, util, anim, data, loadxml
-from wydget.widgets.label import ImageCommon, LabelCommon
+from wydget.widgets.label import ImageCommon, Label
 
 
 class ButtonCommon(object):
@@ -46,9 +46,7 @@ class Button(ButtonCommon, ImageCommon):
             self.pressed_bg = self.pressed_image
             # clear so we don't delete these 
             self.base_image = self.over_image = self.pressed_image = None
-            self.setText(text)
-        else:
-            self.text = text
+        self.text = text
 
     @classmethod
     def fromXML(cls, element, parent):
@@ -68,14 +66,6 @@ class Button(ButtonCommon, ImageCommon):
             loadxml.getConstructor(child.tag)(child, obj)
         return obj
 
-    def parentDimensionsChanged(self):
-        change = super(Button, self).parentDimensionsChanged()
-        if change:
-            # override default behaviour and reset width/height if changed
-            # and there was no spec
-            self.updateSize()
-        return change
-
     def setImage(self, image, attribute='base_image'):
         if isinstance(image, str):
             image = data.load_image(image).texture
@@ -84,23 +74,17 @@ class Button(ButtonCommon, ImageCommon):
         setattr(self, attribute, image)
         if attribute == 'base_image':
             self.image = self.base_image
-        self.updateSize()
+        self.setDirty()
     def setPressedImage(self, image):
         self.setImage(image, 'pressed_image')
     def setOverImage(self, image):
         self.setImage(image, 'over_image')
 
-    def setText(self, text, width=None, height=None):
+    def set_text(self, text, width=None, height=None):
         self.text = text
 
         self.over_image = None
         self.pressed_image = None
-
-        # sensible defaults for size
-        if self.width_spec is None:
-            self.width = self.bg.width
-        if self.height_spec is None:
-            self.height = self.bg.height
 
         # XXX restrict text width?
         label = self.getStyle().text(text, font_size=self.font_size,
@@ -109,10 +93,8 @@ class Button(ButtonCommon, ImageCommon):
         num_lines = len(label.lines)
 
         # center
-        bx = self.width // 2 - self.bg.width // 2
-        by = self.height // 2 - self.bg.height // 2
-        tx = self.width // 2 - label.width // 2
-        ty = self.height // 2 - (self.font_size * num_lines) // 2
+        tx = self.bg.width // 2 - label.width // 2
+        ty = self.bg.height // 2 - label.height // 2
 
         def f(bg):
             def _inner():
@@ -121,8 +103,8 @@ class Button(ButtonCommon, ImageCommon):
                 glClear(GL_COLOR_BUFFER_BIT)
                 glPushMatrix()
                 glLoadIdentity()
-                bg.blit(bx, by, 0)
-                glTranslatef(tx, ty + (self.font_size * num_lines), 0)
+                bg.blit(0, 0, 0)
+                glTranslatef(tx, ty + label.height, 0)
                 # prevent the text's alpha channel being written into the new
                 # texture
                 glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
@@ -131,15 +113,15 @@ class Button(ButtonCommon, ImageCommon):
                 glPopAttrib()
             return _inner
 
-        self.setImage(util.renderToTexture(self.width, self.height,
+        self.setImage(util.renderToTexture(self.bg.width, self.bg.height,
             f(self.bg)))
 
         if self.over_bg is not None:
-            self.setImage(util.renderToTexture(self.width, self.height,
+            self.setImage(util.renderToTexture(self.bg.width, self.bg.height,
                 f(self.over_bg)), 'over_image')
 
         if self.pressed_bg is not None:
-            self.setImage(util.renderToTexture(self.width, self.height,
+            self.setImage(util.renderToTexture(self.bg.width, self.bg.height,
                 f(self.pressed_bg)), 'pressed_image')
 
     def render(self, rect):
@@ -155,7 +137,7 @@ class Button(ButtonCommon, ImageCommon):
         super(Button, self).render(rect)
 
 
-class TextButton(ButtonCommon, LabelCommon):
+class TextButton(ButtonCommon, Label):
     '''A button with text on it.
 
     Will be rendered over the standard Element rendering.

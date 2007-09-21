@@ -1,5 +1,5 @@
 <frame is_transparent="true" height="100%" width="100%">
- <vertical halign="center" valing="center" padding="1">
+ <vertical halign="center" valign="center">
   <frame border="green">
    <label bgcolor="white">default (absolute) layout</label>
    <label y="50" bgcolor="white">y="50"</label>

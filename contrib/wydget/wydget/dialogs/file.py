@@ -23,6 +23,8 @@ class FileOpen(base.Dialog):
         super(FileOpen, self).__init__(parent, **kw)
         self.callback = callback
 
+        self.layout = layouts.Vertical(self, halign='left', padding=2)
+
         label = widgets.Label(self, 'Select File to Open',
             classes=('title',), bgcolor="aaa", padding=2, width="100%",
             halign="center")
@@ -41,20 +43,13 @@ class FileOpen(base.Dialog):
             classes=('-file-open-dialog-ok', ))
         cancel = widgets.TextButton(f, text='Cancel', border="black",
             classes=('-file-open-dialog-cancel', ))
-        layouts.Horizontal(f, padding=10, halign='right').layout()
-
-        layouts.Vertical(self, padding=2).layout()
-
-        self.x = parent.width/2 - self.width/2
-        self.y = parent.height/2 - self.height/2
+        f.layout = layouts.Horizontal(f, padding=10, halign='right')
 
         self.selected_file = None
         self.selected_widget = None
 
     def addOption(self, label):
-        f = self.listing.contents
-        FileOption(f, text=label)
-        f.layout.layout()
+        FileOption(self.listing.contents, text=label)
 
     def openPath(self, path):
         self.current_path = path
@@ -109,7 +104,7 @@ def on_click(widget, x, y, buttons, modifiers, click_count):
         if click_count > 1:
             dialog.selected_file = file
             dialog.on_ok()
-            dialog.close()
+            dialog.delete()
         elif dialog.selected_file == file:
             dialog.selected_widget = None
         else:
@@ -119,14 +114,16 @@ def on_click(widget, x, y, buttons, modifiers, click_count):
 
 @event.default('.-file-open-dialog-ok')
 def on_click(widget, *args):
-    widget.parent.parent.on_ok()
-    widget.parent.parent.close()
+    d = widget.getParent('file-dialog')
+    d.on_ok()
+    d.delete()
     return event.EVENT_HANDLED
 
 @event.default('.-file-open-dialog-cancel')
 def on_click(widget, *args):
-    widget.parent.parent.on_cancel()
-    widget.parent.parent.close()
+    d = widget.getParent('file-dialog')
+    d.on_cancel()
+    d.delete()
     return event.EVENT_HANDLED
 
 @event.default('.-file-open-path')

@@ -1,3 +1,4 @@
+import math
 
 def parse_value(value, base_value=0):
     '''Parse a numeric value spec which is one of:
@@ -13,6 +14,93 @@ def parse_value(value, base_value=0):
     elif '.' in value:
         return float(value)
     return int(value)
+
+intceil = lambda i: int(math.ceil(i))
+
+class Dimension(object):
+    def __init__(self, spec, element, parent, attribute):
+        self.spec = spec
+        self.element = element
+        self.parent = parent
+        self.attribute = attribute
+        self.percentage = None
+        self.is_fixed = True
+        if isinstance(spec, str):
+            if spec[-1] == '%':
+                self.value = None
+                self.percentage = float(spec[:-1]) / 100
+                self.is_fixed = False
+            elif spec.endswith('em'):
+                size = parse_value(spec[:-2], None)
+                style = element.getStyle()
+                self.value = size * style.getGlyphString('M').width
+                self.value += element.padding * 2
+            elif '.' in spec:
+                self.value = float(spec)
+            else:
+                self.value = int(spec)
+        elif spec is None:
+            self.value = None
+            self.is_fixed = False
+        else:
+            self.value = int(spec)
+
+    def __repr__(self):
+        return '<%s %r on %s id %s>'%(self.__class__.__name__, self.spec,
+            self.parent.__class__.__name__, self.parent.id)
+
+    def __hash__(self):
+        return hash(self.id)
+
+    def specified(self):
+        '''Return the value specified (ie. not using the intrinsic
+        dimension as a fallback.
+        '''
+        if self.percentage is not None:
+            pv = getattr(self.parent, self.attribute)
+            print 'CALCULATE %s as %s of %s %s (%s)'%(self.element.id,
+                self.percentage, self.parent.id, self.attribute, pv)
+            if pv is None:
+                return None
+            pv = getattr(self.parent, 'inner_' + self.attribute)
+            return intceil(pv * self.percentage)
+        return self.value
+
+    def calculate(self):
+        '''Determine this dimension falling back on the element's intrinsic
+        properties if necessary.
+        '''
+        if self.percentage is not None:
+            pv = getattr(self.parent, self.attribute)
+            print 'CALCULATE %s as %s of %s %s (%s)'%(self.element.id,
+                self.percentage, self.parent.id, self.attribute, pv)
+            if pv is None:
+                return None
+            pv = getattr(self.parent, 'inner_' + self.attribute)
+            return pv * self.percentage
+        elif self.value is None:
+            if self.attribute == 'width':
+                return self.element.intrinsic_width()
+            else:
+                return self.element.intrinsic_height()
+        return self.value
+
+class Position(Dimension):
+    def calculate(self):
+        '''Determine this dimension falling back on the element's intrinsic
+        properties if necessary.
+        '''
+        if self.percentage is not None:
+            print 'CALCULATE', self.element.id, '% of', self.parent.id
+            pv = getattr(self.parent, self.attribute)
+            if pv is None:
+                return None
+            pv = getattr(self.parent.inner_rect, self.attribute)
+            return pv * self.percentage
+        elif self.value is None:
+            return 0
+        return self.value
+
 
 def parse_color(value):
     '''Parse a color value which is one of:

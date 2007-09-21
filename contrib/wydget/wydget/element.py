@@ -16,8 +16,7 @@ Display Model
 -------------
 
 The basic shape of an element is defined by the x, y, width and height
-attributes. This rect may be scaled by the sx and sy properties (about the
-x, y corner - only the width and height are scaled).
+attributes.
 
 Borders are drawn on the inside of the element's rect as a single pixel
 line in the specified border colour. If no padding is specified then the
@@ -28,9 +27,36 @@ there is any. This is available as the ``inner_rect`` attribute.
 
 Finally each element may define a "view clip" which will restrict the
 rendering of the item and its children to a limited rectangle.
+
+
+Sizing 
+------
+
+Elements may specify one of the following for width and height:
+
+1. a fixed value (in pixels)            TODO: allow em sizes?
+2. a fixed value in em units using the active style for the element. This
+   method calculates an *inner* dimension, so padding is added on.
+2. a percentage of their parent size (using the inner rect of the parent)
+3. no value, thus the element is sized to be the minimum necessary to 
+   display contents correctly
+
+Elements have three properties for each of width and height:
+
+    <dimension>_spec    -- the specification, one of the above
+    min_<dimension>     -- the minimum size based on element contents and
+                           positioning
+    <dimension>         -- the calculated size
+
+Subclasses if Element define:
+
+    intrinsic_<dimension> -- the size of the element contents
+
+If <dimension> depends on parent sizing and that sizing is unknown then it
+should be None. This indicates that sizing calculation is needed.
+
 '''
 import inspect
-import math
 
 from pyglet.gl import *
 
@@ -38,14 +64,11 @@ from wydget import loadxml
 from wydget import event
 from wydget import util 
 
-intceil = lambda i: int(math.ceil(i))
-
 class Element(object):
     '''A GUI element.
 
     x, y, z         -- position *relative to parent*
     width, height   -- for hit area
-    sx, sy          -- scaling in x and y axis
     is_transparent  -- is this element displayed*?
     is_visible      -- is this element *and its children* displayed*?
     is_enabled      -- is this element *and its children* enabled?
@@ -76,8 +99,6 @@ class Element(object):
     may be specified as a 4-tuple of floats in the 0-1 range for (red, green,
     blue, alpha). Alternatively any valid CSS colour specification may be used
     ("#FFF", "red", etc).
-
-
     '''
     is_focusable = False
 
@@ -87,68 +108,53 @@ class Element(object):
 
     view_clip = None
 
-    _x = _y = _z = _width = _height = 0
+    _x = _y = _width = _height = None
 
-    def __init__(self, parent, x, y, z, width, height, padding=None,
-            sx=1., sy=1., border=None, bgcolor=None,
-            is_visible=True, is_enabled=True, is_transparent=False,
-            children=None, id=None, classes=(), render=None,
-            renderBackground=None, renderBorder=None):
+    def __init__(self, parent, x, y, z, width, height, padding=0,
+            border=None, bgcolor=None, is_visible=True, is_enabled=True,
+            is_transparent=False, children=None, id=None, classes=()):
         self.parent = parent
+        self.id = id or self.allocateID()
+        self.classes = classes
         self.children = children or []
-
-        ir = parent.inner_rect
-        self._x = util.parse_value(x, ir.width)
-        self.x_spec = x
-        self._y = util.parse_value(y, ir.height)
-        self.y_spec = y
-        self._z = util.parse_value(z)
-        self.z_spec = z
-
-        # save off the width / height specs for later recalculation
-        self._width = util.parse_value(width, ir.width)
-        self.width_spec = width
-        self._height = util.parse_value(height, ir.height)
-        self.height_spec = height
-
-        # default to the parent dimensions if we're completely stuck
-        if width is None:
-            self._width = ir.width
-        if height is None:
-            self._height = ir.height
 
         # colors, border and padding
         self.bgcolor = util.parse_color(bgcolor)
         self.border = util.parse_color(border)
-        if padding is None:
-            if border:
-                # force enough room to see the border
-                padding = 1
-            else:
-                padding = 0
-        self._padding = util.parse_value(padding, 0)
+        self._padding = util.parse_value(padding)
+        if border:
+            # force enough room to see the border
+            self._padding += 1
 
-        self._sx, self._sy = sx, sy
+        # save off the geometry specifications
+        self.x_spec = util.Position(x, self, parent, 'width')
+        self.y_spec = util.Position(y, self, parent, 'height')
+        self._z = util.parse_value(z) or 0
+        self.width_spec = util.Dimension(width, self, parent, 'width')
+        self.height_spec = util.Dimension(height, self, parent, 'height')
+
+        # attempt to calculate now what we can
+        if self.x_spec.is_fixed:
+            self.x = self.x_spec.calculate()
+        if self.y_spec.is_fixed:
+            self.y = self.y_spec.calculate()
+        if self.width_spec.is_fixed:
+            self.width = self.width_spec.calculate()
+        if self.height_spec.is_fixed:
+            self.height = self.height_spec.calculate()
 
         self.is_visible = is_visible
         self.is_enabled = is_enabled
         self.is_modal = False
         self.is_transparent = is_transparent
-        self.id = id or self.allocateID()
-        self.classes = classes
-
-        # rendering overrides
-        if render is not None:
-            self.render = render
-        if renderBackground is not None:
-            self.renderBackground = renderBackground
-        if renderBorder is not None:
-            self.renderBorder = renderBorder
 
         self._event_handlers = {}
 
         # add this new element to its parent
         self.parent.addChild(self)
+
+        # indicate we need geometry calculation 
+        self.resetGeometry()
 
     _next_id = 1
     def allocateID(self):
@@ -156,80 +162,84 @@ class Element(object):
         Element._next_id += 1
         return id
 
-    def get_x(self): return self._x
     def set_x(self, value):
         self._x = value
-        # XXX just update my rect
-        self.getGUI().setDirty()
-    x = property(get_x, set_x)
+        self.setDirty()
+    x = property(lambda self: self._x, set_x)
 
-    def get_y(self): return self._y
     def set_y(self, value):
         self._y = value
-        # XXX just update my rect
-        self.getGUI().setDirty()
-    y = property(get_y, set_y)
+        self.setDirty()
+    y = property(lambda self: self._y, set_y)
 
-    def get_z(self): return self._z
     def set_z(self, value):
         self._z = value
-        # XXX just update my rect
-        self.getGUI().setDirty()
-    z = property(get_z, set_z)
+        self.setDirty()
+    z = property(lambda self: self._z, set_z)
 
-    def get_width(self): return intceil(self._width * self._sx)
     def set_width(self, value):
         self._width = value
-        # XXX just update my rect
-        self.getGUI().setDirty()
-    width = property(get_width, set_width)
+        self.setDirty()
+    width = property(lambda self: self._width, set_width)
 
-    def get_height(self): return intceil(self._height * self._sy)
     def set_height(self, value):
         self._height = value
-        # XXX just update my rect
-        self.getGUI().setDirty()
-    height = property(get_height, set_height)
+        self.setDirty()
+    height = property(lambda self: self._height, set_height)
 
-    def get_padding(self): return self._padding * self._sx # XXX yuck
     def set_padding(self, value):
         self._padding = value
-        # XXX just update my rect
-        self.getGUI().setDirty()
-    padding = property(get_padding, set_padding)
-
-    def get_sx(self): return self._sx
-    def set_sx(self, value):
-        self._sx = float(value)
-        # XXX just update my rect
-        self.getGUI().setDirty()
-    sx = property(get_sx, set_sx)
-
-    def get_sy(self): return self._sy
-    def set_sy(self, value):
-        self._sy = float(value)
-        # XXX just update my rect
-        self.getGUI().setDirty()
-    sy = property(get_sy, set_sy)
-
-    def get_center(self):
-        return (self._x + self.width/2, self._y + self.height/2)
-    def set_center(self, (x, y)):
-        self._x = x - self.width // 2
-        self._y = y - self.height // 2
-        # XXX just update my rect
-        self.getGUI().setDirty()
-    center = property(get_center, set_center)
+        self.setDirty()
+    padding = property(lambda self: self._padding, set_padding)
 
     def get_rect(self):
         return util.Rect(self._x, self._y, self.width, self.height)
     rect = property(get_rect)
 
     def get_inner_rect(self):
-        px = self.padding * self.sx
-        py = self.padding * self.sy
-        return util.Rect(px, py, self.width - px*2, self.height - py*2)
+        p = self._padding
+        return util.Rect(p, p, self.width - p*2, self.height - p*2)
     inner_rect = property(get_inner_rect)
+
+    def get_inner_width(self):
+        return self.width - self.padding*2
+    inner_width = property(get_inner_width)
+
+    def get_inner_height(self):
+        return self.height - self.padding*2
+    inner_height = property(get_inner_height)
+
+    def get_min_width(self):
+        '''Return the minimum width required for this element.
+
+        If the width relies on some parent element's dimensions, then just
+        return the intrinsic_width for the element.
+        '''
+        if self.width_spec.value is not None:
+            return self.width_spec.value
+        width = self.width
+        if width is None:
+            width = self.intrinsic_width()
+        return width
+    min_width = property(get_min_width)
+    def intrinsic_width(self):
+        raise NotImplementedError('intrinsic_width on %r'%self.__class__)
+
+    def get_min_height(self):
+        '''Return the minimum height required for this element.
+
+        If the height relies on some parent element's dimensions, then just
+        return the intrinsic_height for the element.
+        '''
+        if self.height_spec.value is not None:
+            return self.height_spec.value
+        height = self.height
+        if height is None:
+            height = self.intrinsic_height()
+        return height
+    min_height = property(get_min_height)
+    def intrinsic_height(self):
+        raise NotImplementedError('intrinsic_height on %r'%self.__class__)
 
     @classmethod
     def fromXML(cls, element, parent):
@@ -267,51 +277,57 @@ class Element(object):
                 return True
         return False
 
-    def dump(self, s=''):
-        print s + str(self)
-        for child in self.children: child.dump(s+' ')
+    def resetGeometry(self):
+        if not self.x_spec.is_fixed:
+            self._x = None
+        if not self.y_spec.is_fixed:
+            self._y = None
+        if not self.width_spec.is_fixed:
+            self._width = None
+        if not self.height_spec.is_fixed:
+            self._height = None
+        for child in self.children:
+            child.resetGeometry()
+        # this is going to be called *a lot*
+        self.setDirty()
 
-    def __repr__(self):
-        return '<%s %r at (%s, %s, %s) (%sx%s) pad=%s>'%(
-            self.__class__.__name__, self.id, self.x, self.y, self.z,
-            self.width, self.height, self.padding)
+    def resize(self):
+        '''Determine position and dimension.
 
-    def isEnabled(self):
-        return self.is_enabled and self.parent.isEnabled()
-
-    def setEnabled(self, is_enabled):
-        self.is_enabled = is_enabled
-
-    def isVisible(self):
-        return self.is_visible and self.parent.isVisible()
-
-    def setVisible(self, is_visible):
-        self.is_visible = is_visible
-        self.getGUI().setDirty()
-
-    def isFocused(self):
-        return self is self.getGUI().focused_element
+        Return boolean whether we are able to calculate all values or
+        whether we need parent dimensions to continue.
+        '''
+        ok = True
+        if self._width is None:
+            w = self.width_spec.calculate()
+            # if we calculated the value write it through the property so
+            # that subclasses may react to the altered dimension
+            if w is None: ok = False
+            else: self.width = w
+        if self._height is None:
+            h = self.height_spec.calculate()
+            if h is None: ok = False
+            else: self.height = h
+        return ok
 
     def getRects(self, view_clip=None, exclude=None):
         '''Determine the drawing parameters for this element and its
         children.
 
-        Returns a list of (element, (x, y, z, sx, sy, clipped)) where:
+        Returns a list of (element, (x, y, z, clipped)) where:
 
            (x, y, z) is the screen location to render at
-           (sx, sy)  is the scale to render at
            clipped   is the relative rectangle to render
         '''
         if not self.is_visible: return []
 
         # figure my rect
-        r = util.Rect(self._x, self._y, self._width * self._sx,
-            self._height * self._sy)
+        r = util.Rect(self._x, self._y, self._width, self._height)
         if view_clip is not None:
             r = r.intersect(view_clip)
         if r is None: return []
 
-        x, y, z, sx, sy = self._x, self._y, self._z, self._sx, self._sy
+        x, y, z = self._x, self._y, self._z
 
         # translate the view clip into this element's coordinate space
         clipped = self.rect
@@ -327,7 +343,9 @@ class Element(object):
 
         rects = []
         if not self.is_transparent:
-            rects.append((self, (x, y, z, sx, sy, clipped)))
+            rects.append((self, (x, y, z, clipped)))
+        if not self.children:
+            return rects
 
         # shift child elements and view clip for left & bottom padding 
         pad = self._padding
@@ -349,20 +367,19 @@ class Element(object):
 
         for child in self.children:
             if exclude is child: continue
-            for obj, (ox, oy, oz, osx, osy, c) in child.getRects(view_clip,
+            for obj, (ox, oy, oz, c) in child.getRects(view_clip,
                     exclude):
-                rects.append((obj, (ox*sx+x, oy*sy+y, oz+z, osx, osy, c)))
+                rects.append((obj, (ox+x, oy+y, oz+z, c)))
         return rects
 
     def setViewClip(self, rect):
         self.view_clip = util.Rect(*rect)
 
-    def draw(self, x, y, z, sx, sy, clipped):
+    def draw(self, x, y, z, clipped):
         '''Draw me given the parameters:
 
         `rect`      -- absolute coordinates of the element on screen
                        taking into account all translation and scaling
-        `sx`, `sy`  -- scaling factors
         `z`         -- z position
         `clipped`   -- recangle to draw in *relative* coordinates
                        to pass to render()
@@ -390,10 +407,6 @@ class Element(object):
         # translate padding
         if self._padding:
             glTranslatef(self._padding, self._padding, 0)
-
-        # scale if necessary
-        if sx != 1 or sy != 1:
-            glScalef(sx, sy, 1)
 
         # now render the element
         self.render(clipped)
@@ -446,41 +459,24 @@ class Element(object):
 
         glEnd()
 
-    def parentDimensionsChanged(self):
-        '''Indicate to the child that the parent rect has changed and it
-        may have the opportunity to resize.'''
-        ir = self.parent.inner_rect
+    def isEnabled(self):
+        return self.is_enabled and self.parent.isEnabled()
 
-        # recalulate position
-        new_x = util.parse_value(self.x_spec, ir.width)
-        if new_x != self._x: self.x = new_x
-        new_y = util.parse_value(self.y_spec, ir.height)
-        if new_y != self._y: self.y = new_y
-        new_z = util.parse_value(self.z_spec)
-        if new_z != self._z: self.z = new_z
+    def setEnabled(self, is_enabled):
+        self.is_enabled = is_enabled
 
-        # recalulate width / height
-        change = False
-        if self.width_spec is not None:
-            new_width = util.parse_value(self.width_spec, ir.width)
-        else:
-            new_width = ir.width
-        if new_width != self._width:
-            self.width = new_width
-            change = True
-        if self.height_spec is not None:
-            new_height = util.parse_value(self.height_spec, ir.height)
-        else:
-            new_height = ir.height
-        if new_height != self._height:
-            self.height = new_height
-            change = True
+    def isVisible(self):
+        return self.is_visible and self.parent.isVisible()
 
-        if change:
-            for child in self.children:
-                child.parentDimensionsChanged()
+    def setVisible(self, is_visible):
+        self.is_visible = is_visible
+        self.setDirty()
 
-        return change
+    def setDirty(self):
+        self.getGUI().setDirty()
+
+    def isFocused(self):
+        return self is self.getGUI().focused_element
 
     def setModal(self, element=None):
         '''Have this element capture all user input.
@@ -522,11 +518,11 @@ class Element(object):
 
     def reparent(self, new_parent):
         x, y = self.parent.calculateAbsoluteCoords(self._x, self._y)
-        self._x, self._y = new_parent.calculateRelativeCoords(x, y)
+        self.x, self.y = new_parent.calculateRelativeCoords(x, y)
         self.parent.children.remove(self)
         new_parent.children.append(self)
         self.parent = new_parent
-        self.getGUI().setDirty()
+        self.setDirty()
 
     def replace(self, old, new):
         '''Replace the "old" widget with the "new" one.
@@ -545,6 +541,7 @@ class Element(object):
         self.children = []
 
     def delete(self):
+        self.resetGeometry()
         gui = self.getGUI()
         # clear modality?
         if self.is_modal: gui.setModal(None)
@@ -552,4 +549,13 @@ class Element(object):
         self.parent.children.remove(self)
         gui.unregister(self)
         self.clear()
+
+    def dump(self, s=''):
+        print s + str(self)
+        for child in self.children: child.dump(s+' ')
+
+    def __repr__(self):
+        return '<%s %r at (%s, %s, %s) (%sx%s) pad=%s>'%(
+            self.__class__.__name__, self.id, self._x, self._y, self._z,
+            self._width, self._height, self._padding)
 

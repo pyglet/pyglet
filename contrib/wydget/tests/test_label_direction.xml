@@ -1,33 +1,39 @@
 <frame width="100%" height="100%" bgcolor="gray">
-   <horizontal valign="center">
-    <frame width="50%">
-     <vertical>
+<horizontal valign="center" halign="center">
+<frame width="50%" border="green">
+ <vertical>
 
-      <label rotate="180" halign="left" bgcolor="white" width="100%">halign left rotate 180</label>
-      <label rotate="180" halign="center" bgcolor="white" width="100%">halign center rotate 180</label>
-      <label rotate="180" halign="right" bgcolor="white" width="100%">halign right rotate 180</label>
-      <label rotate="180" halign="left" width="100%">halign left rotate 180</label>
-      <label rotate="180" halign="center" width="100%">halign center rotate 180</label>
-      <label rotate="180" halign="right" width="100%">halign right rotate 180</label>
-     </vertical>
-    </frame>
+  <label rotate="0" halign="left" bgcolor="white" width="100%">halign left rotate 0</label>
+  <label rotate="0" halign="center" bgcolor="white" width="100%">halign center rotate 0</label>
+  <label rotate="0" halign="right" bgcolor="white" width="100%">halign right rotate 0</label>
+  <label rotate="180" halign="left" bgcolor="white" width="100%">halign left rotate 180</label>
+  <label rotate="180" halign="center" bgcolor="white" width="100%">halign center rotate 180</label>
+  <label rotate="180" halign="right" bgcolor="white" width="100%">halign right rotate 180</label>
+  <label rotate="0" halign="left" width="100%">halign left rotate 0</label>
+  <label rotate="0" halign="center" width="100%">halign center rotate 0</label>
+  <label rotate="0" halign="right" width="100%">halign right rotate 0</label>
+  <label rotate="180" halign="left" width="100%">halign left rotate 180</label>
+  <label rotate="180" halign="center" width="100%">halign center rotate 180</label>
+  <label rotate="180" halign="right" width="100%">halign right rotate 180</label>
+ </vertical>
+</frame>
 
-    <frame width="25%" height="100%">
-     <horizontal valign='center'>
-      <label rotate="90" halign="left" bgcolor="white" height="50%">halign left rotate 90</label>
-      <label rotate="90" halign="center" bgcolor="white" height="50%">halign center rotate 90</label>
-      <label rotate="90" halign="right" bgcolor="white" height="50%">halign right rotate 90</label>
-      <label rotate="270" halign="left" bgcolor="white" height="50%">halign left rotate 270</label>
-      <label rotate="270" halign="center" bgcolor="white" height="50%">halign center rotate 270</label>
-      <label rotate="270" halign="right" bgcolor="white" height="50%">halign right rotate 270</label>
-      <label rotate="90" halign="left" height="50%">halign left rotate 90</label>
-      <label rotate="90" halign="center" height="50%">halign center rotate 90</label>
-      <label rotate="90" halign="right" height="50%">halign right rotate 90</label>
-      <label rotate="270" halign="left" height="50%">halign left rotate 270</label>
-      <label rotate="270" halign="center" height="50%">halign center rotate 270</label>
-      <label rotate="270" halign="right" height="50%">halign right rotate 270</label>
-     </horizontal>
-    </frame>
+<frame width="25%" height="100%" border="red">
+ <horizontal valign="center">
+  <label rotate="90" halign="left" bgcolor="white" height="50%">halign left rotate 90</label>
+  <label rotate="90" halign="center" bgcolor="white" height="50%">halign center rotate 90</label>
+  <label rotate="90" halign="right" bgcolor="white" height="50%">halign right rotate 90</label>
+  <label rotate="270" halign="left" bgcolor="white" height="50%">halign left rotate 270</label>
+  <label rotate="270" halign="center" bgcolor="white" height="50%">halign center rotate 270</label>
+  <label rotate="270" halign="right" bgcolor="white" height="50%">halign right rotate 270</label>
+  <label rotate="90" halign="left" height="50%">halign left rotate 90</label>
+  <label rotate="90" halign="center" height="50%">halign center rotate 90</label>
+  <label rotate="90" halign="right" height="50%">halign right rotate 90</label>
+  <label rotate="270" halign="left" height="50%">halign left rotate 270</label>
+  <label rotate="270" halign="center" height="50%">halign center rotate 270</label>
+  <label rotate="270" halign="right" height="50%">halign right rotate 270</label>
+ </horizontal>
+</frame>
 
-   </horizontal>
+</horizontal>
 </frame>

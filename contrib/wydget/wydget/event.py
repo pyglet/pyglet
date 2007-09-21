@@ -338,13 +338,9 @@ class GUIEventDispatcher(EventDispatcher):
 
     # NOW THE EVENT HANDLERS
     def on_resize(self, w, h):
-        if self.width_spec is None:
-            self.width = w
-        if self.height_spec is None:
-            self.height = h
-        if self.width_spec is None or self.height_spec is None:
-            for child in self.children:
-                child.parentDimensionsChanged()
+        self.width = self.inner_width = w
+        self.height = self.inner_height = h
+        self.layout()
         # let the window do its resize handling too
         return EVENT_UNHANDLED
 
@@ -397,8 +393,8 @@ class GUIEventDispatcher(EventDispatcher):
         element = self.determineHit(x, y)
 
         if self.debug_display is not None:
-            self.debug_display.setText('%r classes=%r'%(element,
-                element and element.classes))
+            self.debug_display.text = '%r classes=%r'%(element,
+                element and element.classes)
 
         self.generateEnterLeave(x, y, element)
 

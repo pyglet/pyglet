@@ -1,5 +1,5 @@
 <frame height="100%" width="100%">
- <vertical halign="center" padding="1">
+ <vertical halign="center" valign="center" padding="1">
   <label color="white" border="white" width="50%" height="50%" halign="center" valign="center">50% size centered label
   with frame padding="1"</label>
  </vertical>

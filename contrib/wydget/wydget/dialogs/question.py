@@ -15,21 +15,22 @@ class Question(base.Dialog):
 
         self.layout = layouts.Vertical(self, padding=10)
 
-        label = widgets.Label(self, text, font_size=font_size)
+        widgets.Label(self, text, font_size=font_size)
 
-        buttons = widgets.Frame(self, width=label.width)
+        buttons = widgets.Frame(self, width='100%')
         buttons.layout = layouts.Horizontal(buttons, padding=10,
             halign='center')
-        ok = widgets.TextButton(buttons, 'Ok', border='black', padding=2,
-            classes=('-question-dialog-ok', ), font_size=font_size)
-        ok.gainFocus()
+        self.ok = widgets.TextButton(buttons, 'Ok', border='black',
+            padding=2, classes=('-question-dialog-ok', ),
+            font_size=font_size)
         if cancel:
             widgets.TextButton(buttons, 'Cancel', border='black',
                 classes=('-question-dialog-cancel', ), padding=2,
                 font_size=font_size)
-        buttons.layout()
-        self.layout()
-        self.position()
+
+    def run(self):
+        super(Question, self).run()
+        self.ok.gainFocus()
 
     def on_ok(self):
         if self.callback is not None:

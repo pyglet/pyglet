@@ -1,78 +1,59 @@
 from pyglet.gl import *
 
 from wydget import element, event, layouts, util, loadxml
-from wydget.widgets.slider import VerticalSlider, HorizontalSlider
 from wydget.widgets.label import Label, Image
 
-class Frame(element.Element):
+class FrameCommon(element.Element):
+    need_layout = True
+    def setDirty(self):
+        super(FrameCommon, self).setDirty()
+        self.need_layout = True
+
+    def intrinsic_width(self):
+        return self.layout.width + self.padding * 2
+    def intrinsic_height(self):
+        return self.layout.height + self.padding * 2
+
+    scrollable = False
+    def resize(self):
+        ok = super(FrameCommon, self).resize()
+        if not ok: return False
+
+        if self.scrollable:
+            self.contents.checkForScrollbars()
+
+        if not self.need_layout: return True
+
+        # make sure all the children have dimensions before trying
+        # layout
+        for c in self.children:
+            c.resize()
+            if c.height is None or c.width is None:
+                return False
+        self.layout()
+        self.need_layout = False
+        return True
+
+    def delete(self):
+        self.layout = None
+        super(FrameCommon, self).delete()
+
+class Frame(FrameCommon):
     name='frame'
     h_slider = None
     v_slider = None
 
-    def __init__(self, parent, x=0, y=0, z=0, width=None, height=None,
-            scrollable=False, **kw):
-
+    def __init__(self, parent, x=None, y=None, z=None, width=None,
+            height=None, scrollable=False, **kw):
+        self.layout = layouts.Layout(self)
         self.scrollable = scrollable
-
         super(Frame, self).__init__(parent, x, y, z, width, height, **kw)
 
         if self.scrollable:
-            contents = self.contents = ContainerFrame(self)
-            contents.layout = layouts.Layout(contents)
-            contents.setViewClip((0, 0, self.width, self.height))
-        else:
-            self.layout = layouts.Layout(self)
-
-    def layout(self):
-        # invoke contents layout
-        self.contents.layout()
-
-    def parentDimensionsChanged(self):
-        ir = self.parent.inner_rect
-
-        # recalulate position
-        new_x = util.parse_value(self.x_spec, ir.width)
-        if new_x != self._x: self.x = new_x
-        new_y = util.parse_value(self.y_spec, ir.height)
-        if new_y != self._y: self.y = new_y
-        new_z = util.parse_value(self.z_spec)
-        if new_z != self._z: self.z = new_z
-
-        # recalulate width / height
-        # BUT unlike basic elements, do NOT default to filling parent
-        # dimensions
-        change = False
-        if self.width_spec is not None:
-            new_width = util.parse_value(self.width_spec, ir.width)
-            if new_width != self._width:
-                self.width = new_width
-                change = True
-        if self.height_spec is not None:
-            new_height = util.parse_value(self.height_spec, ir.height)
-            if new_height != self._height:
-                self.height = new_height
-                change = True
-
-        if change:
-            for child in self.children:
-                child.parentDimensionsChanged()
-
-        if self.scrollable:
-            self.contents.layout()
-        else:
-            self.layout()
-
-    def layoutDimensionsChanged(self, layout):
-        # If our width / height weren't specified then adjust size to fit
-        # contents.
-        if self.width_spec is None:
-            self.width = layout.width + self.padding*2
-            if self.v_slider:
-                self.width += self.v_slider.width
-        if self.height_spec is None:
-            self.height = layout.height + self.padding*2
-            if self.h_slider:
-                self.height += self.h_slider.height
+            self.contents = ContainerFrame(self, 0, 0, 0, None, None,
+                is_transparent=True)
+            self.contents.layout = layouts.Layout(self.contents)
+            self.contents.setViewClip((0, 0, self.width, self.height))
 
     @classmethod
     def fromXML(cls, element, parent):
@@ -87,15 +68,7 @@ class Frame(element.Element):
                 loadxml.getConstructor(child.tag)(child, obj.contents)
             else:
                 loadxml.getConstructor(child.tag)(child, obj)
-        if obj.scrollable:
-            obj.contents.layout()
-        else:
-            obj.layout()
         return obj
-
-    def delete(self):
-        self.layout = None
-        super(Frame, self).delete()
 
 @event.default('frame')
 def on_mouse_scroll(widget, x, y, dx, dy):
@@ -113,57 +86,24 @@ def on_mouse_scroll(widget, x, y, dx, dy):
     return event.EVENT_UNHANDLED
 
 
-class ContainerFrame(element.Element):
+class ContainerFrame(FrameCommon):
     '''A special transparent frame that is used for frames with fixed size
     and scrolling contents -- this frame holds those contents.
     '''
     name = 'container-frame'
 
-    def __init__(self, parent, padding=0, is_transparent=True, **kw):
-        super(ContainerFrame, self).__init__(parent, 0, 0, 0, None, None,
-            padding=padding, is_transparent=is_transparent, **kw)
-        self.checkForScrollbars()
-
-    def layoutDimensionsChanged(self, layout):
-        # If our width / height weren't specified then adjust size to fit
-        # contents.
-        if self.width_spec is None:
-            self.width = layout.width + self.padding*2
-            changed = True
-        if self.height_spec is None:
-            self.height = layout.height + self.padding*2
-            changed = True
-
-        # pass on the resize to parent
-        # XXX perhaps the scrollbars handling should be in here...
-        self.parent.layoutDimensionsChanged(self)
-        self.checkForScrollbars()
-
-    def parentDimensionsChanged(self):
-        '''We're a scrolled frame - don't change position.
-        '''
-        ir = self.parent.inner_rect
-        # recalulate width / height
-        change = False
-        if self.width_spec is not None:
-            new_width = util.parse_value(self.width_spec, ir.width)
-            if new_width != self._width:
-                self.width = new_width
-                change = True
-        if self.height_spec is not None:
-            new_height = util.parse_value(self.height_spec, ir.height)
-            if new_height != self._height:
-                self.height = new_height
-                change = True
-
-        if change:
-            for child in self.children:
-                child.parentDimensionsChanged()
+    def intrinsic_width(self):
+        return self.layout.width + self.padding * 2
+    def intrinsic_height(self):
+        return self.layout.height + self.padding * 2
 
     def checkForScrollbars(self):
+        # avoid circular import
+        from wydget.widgets.slider import VerticalSlider, HorizontalSlider
+
         # XXX perhaps this should be on the parent
-        h = self.height
-        w = self.width
+        h = self.layout.height
+        w = self.layout.width
 
         # check to see whether the parent needs a slider
         p = self.parent
@@ -171,7 +111,7 @@ class ContainerFrame(element.Element):
 
         vc_width, vc_height = pr.width, pr.height
 
-        self.y = vc_height - self.height
+        self.y = vc_height - self.layout.height
 
         change = False          # slider added or removed
 
@@ -201,7 +141,7 @@ class ContainerFrame(element.Element):
             if p.h_slider is not None:
                 p.h_slider.delete()
             r = w - vc_width
-            p.h_slider = HorizontalSlider(p, 0, r, 0, width=vc_width,
+            p.h_slider = HorizontalSlider(p, 0, r, 0, x=0, y=0, width=vc_width,
                 step=16, classes=('-frame-horizontal-slider',))
             change = True
         elif p.h_slider is not None:
@@ -209,10 +149,17 @@ class ContainerFrame(element.Element):
             p.h_slider = None
             change = True
 
-        self.updateViewClip()
+        # XXX really do need to do something here
+        #if change:
+            #p.resetGeometry()
+            #print 'RESET'
+            #p.dump()
+        return change
 
-        if change:
-            self.parentDimensionsChanged()
+    def resize(self):
+        if not super(ContainerFrame, self).resize(): return False
+        self.updateViewClip()
+        return True
 
     def updateViewClip(self):
         p = self.parent
@@ -281,11 +228,6 @@ class TabFrame(Frame):
         self._button = None
         super(TabFrame, self).delete()
 
-    def layoutDimensionsChanged(self, layout):
-        '''Let the tabs container know that this frame has changed size.
-        '''
-        super(TabFrame, self).layoutDimensionsChanged(layout)
-        self.parent.layout()
 
 class TabButton(Frame):
     '''Special button for inside a TabbedFrame that renders its border so
@@ -305,8 +247,8 @@ class TabButton(Frame):
 
         if image is not None: Image(self, image)
         if text is not None: Label(self, text, font_size=font_size)
-        layouts.Horizontal(self, padding=2, halign=halign,
-            valign=valign).layout()
+        self.layout = layouts.Horizontal(self, padding=2, halign=halign,
+            valign=valign)
 
     def renderBorder(self, clipped):
         '''Render the border in relative coordinates clipped to the
@@ -349,8 +291,6 @@ class TabsLayout(layouts.Layout):
         for child in self.parent.children:
             child.width = self.width
             child.height = self.height
-        self.parent.layoutDimensionsChanged(self)
-        self.parent.parent.layout()
 
 class TabbedFrame(Frame):
     '''A collection of frames, one active at a time.
@@ -389,15 +329,7 @@ class TabbedFrame(Frame):
         # this will resize the height of the top frame if necessary
         b = self.button_class(self.top, text=text, image=image,
             border=border, bgcolor=bgcolor, font_size=font_size, **kw)
-        self.top.layout()
         b._top = self
-
-        # if the tabbed frame is constrained in height then we must pass
-        # that on
-        if self.height_spec:
-            content_height = self.inner_rect.height - self.top.height
-        else:
-            content_height = None
 
         if scrollable:
             f = self.frame_class(self.bottom, scrollable=True,
@@ -405,9 +337,7 @@ class TabbedFrame(Frame):
                 height=content_height)
         else:
             f = self.frame_class(self.bottom, border=border,
-                bgcolor=bgcolor, padding=2, height=content_height)
-        if content_height:
-            self.bottom.layout()
+                bgcolor=bgcolor, padding=2)
         b._frame = f
         f._button = b
         if self._active_frame is None:
@@ -438,8 +368,6 @@ class TabbedFrame(Frame):
             tab = obj.newTab(label, **kw)
             for content in child.getchildren():
                 loadxml.getConstructor(content.tag)(content, tab)
-            tab.layout()
-        obj.layout()
         return obj
 
 

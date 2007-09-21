@@ -77,12 +77,12 @@ def run(xml_file):
     @gui.select('button, text-button')
     def on_click(widget, *args):
         print 'DEBUG', widget, 'PRESSED'
-        return event.EVENT_HANDLED
+        return event.EVENT_UNHANDLED
 
     @gui.select('.show-value')
     def on_change(widget, value):
         print 'DEBUG', widget, 'VALUE CHANGED', `value`
-        return event.EVENT_HANDLED
+        return event.EVENT_UNHANDLED
 
     @gui.select('frame#menu-test', 'on_click')
     def on_menu(w, x, y, button, modifiers, click_count):
@@ -106,6 +106,21 @@ def run(xml_file):
         gui.get('#'+id).toggle_state()
         return event.EVENT_HANDLED
 
+    @gui.select('#question-dialog-test')
+    def on_click(widget, *args):
+        def f(*args):
+            print 'DIALOG SAYS', args
+        dialogs.Question(widget.getGUI(), 'Did this appear correctly?',
+            callback=f).run()
+        return event.EVENT_HANDLED
+
+    @gui.select('#message-dialog-test')
+    def on_click(widget, *args):
+        def f(*args):
+            print 'DIALOG SAYS', args
+        dialogs.Message(widget.getGUI(), 'Hello, World!', callback=f).run()
+        return event.EVENT_HANDLED
+
     @gui.select('#music-test')
     def on_click(widget, x, y, button, modifiers, click_count):
         if not button & mouse.RIGHT:
@@ -116,8 +131,10 @@ def run(xml_file):
             gui.get('#music-test').delete()
             m = widgets.Music(gui, file, id='music-test', playing=True)
             m.gainFocus()
+            # XXX hurm
+            m.getGUI().layout()
 
-        dialogs.FileOpen(gui, callback=load_music)
+        dialogs.FileOpen(gui, callback=load_music).run()
         return event.EVENT_HANDLED
 
     @gui.select('#movie-test')
@@ -126,13 +143,15 @@ def run(xml_file):
             return event.EVENT_UNHANDLED
 
         def load_movie(file=None):
+            print 'DIALOG SELECTION:', file
             if not file: return
             gui.get('#movie-test').delete()
             m = widgets.Movie(gui, file, id='movie-test', playing=True)
-            # XXX handle scaling!
             m.gainFocus()
+            # XXX hurm
+            m.getGUI().layout()
 
-        dialogs.FileOpen(gui, callback=load_movie)
+        dialogs.FileOpen(gui, callback=load_movie).run()
         return event.EVENT_HANDLED
 
     @gui.select('#movie-test')
@@ -168,7 +187,7 @@ def run(xml_file):
         def on_mouse_press(element, x, y, button, modifiers):
             print 'CLICK ON', element
             return event.EVENT_HANDLED
-        sample.layout.push_handlers(on_mouse_press)
+        sample.label.push_handlers(on_mouse_press)
 
     if gui.has('.progress-me'):
         class Progress:

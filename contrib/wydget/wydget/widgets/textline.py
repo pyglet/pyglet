@@ -116,29 +116,33 @@ class TextInputLine(Label):
     def clearSelection(self):
         self.highlight = None
 
-    def setText(self, text):
-        self._text = text
-
+    def _render(self):
+        text = self._text
         if self.is_password:
             text = u'\u2022' * len(text)
 
-        if text:
-            style = self.getStyle()
+        style = self.getStyle()
+        self.unconstrained = style.text(text, font_size=self.font_size,
+            halign=self.halign, valign='top')
+
+        if self._text:
             self.glyphs = style.getGlyphString(text, size=self.font_size)
-            self.image = style.text(text, font_size=self.font_size,
+            self.label = style.text(text, font_size=self.font_size,
                 color=self.color, valign='top')
-            self.width = self.image.width
-            self.height = self.image.height
+            self.width = self.label.width
+            self.height = self.label.height
         else:
             self.glyphs = None
-            self.image = None
+            self.label = None
             self.width = 0
             self.height = self.font_size
 
+        # just quickly force a resize on the parent to fix up its
+        # dimensions
+        self.parent.resize()
+
         # move cursor
         self.setCursorPosition(self.cursor_index)
-
-    text = property(lambda self: self._text, setText)
 
     def editText(self, text, move=0):
         '''Either insert at the current cursor position or replace the
@@ -151,7 +155,7 @@ class TextInputLine(Label):
             self.highlight = None
         else:
             text = self.text[0:i] + text + self.text[i:]
-        self.setText(text)
+        self.text = text
         self.setCursorPosition(i+move)
         self.getGUI().dispatch_event(self, 'on_change', text)
 
@@ -185,6 +189,12 @@ class TextInputLine(Label):
             diff = new_diff
         return min(len(self.text), index)
 
+    def resize(self):
+        ok = super(TextInputLine, self).resize()
+        if ok and self.parent.width is not None:
+            self.setCursorPosition(self.cursor_index)
+        return ok
+
     def setCursorPosition(self, index):
         if index >= len(self.text):
             index = len(self.text)
@@ -195,13 +205,19 @@ class TextInputLine(Label):
         # determine position in self.glyphs
         if not self.text or index == 0:
             cursor_text_width = 0
+        elif index == len(self.text):
+            cursor_text_width = self.glyphs.get_subwidth(0, index-1)
         else:
             cursor_text_width = self.glyphs.get_subwidth(0, index)
+
+        # can't do this yet - parent doesn't know its dimensions
+        if self.parent.width is None:
+            return
 
         parent_width = self.parent.inner_rect.width
         cursor_x = cursor_text_width + self.x
 
-        # offset for current self.image offset
+        # offset for current self.label offset
         if direction > 0:
             if cursor_x > parent_width:
                 self.x = - (cursor_text_width - parent_width)
@@ -289,11 +305,6 @@ class TextInput(Frame):
         self.ti = TextInputLine(self, text, font_size=font_size,
             bgcolor=bgcolor, color=color)
 
-        if width is None:
-            self.width = self.ti.width + self.padding * 2
-        if height is None:
-            self.height = self.ti.height + self.padding * 2
-
         self.base_border = self.border
         self.focus_border = util.parse_color(focus_border)
 
@@ -307,7 +318,7 @@ class TextInput(Frame):
     def get_text(self):
         return self.ti.text
     def set_text(self, text):
-        self.ti.setText(text)
+        self.ti.text = text
     text = property(get_text, set_text)
     value = property(get_text, set_text)
 
@@ -317,28 +328,19 @@ class TextInput(Frame):
         self.ti.setCursorPosition(pos)
     cursor_postion = property(get_cursor_postion, set_cursor_postion)
 
-    def get_width(self): return self._width
-    def set_width(self, value):
-        super(TextInput, self).set_width(value)
-        # set up clipping
+    def resize(self):
+        if not super(TextInput, self).resize():
+            return False
         ir = self.inner_rect
         self.setViewClip((0, 0, ir.width, ir.height))
-    width = property(get_width, set_width)
-
-    def get_height(self): return self._height
-    def set_height(self, value):
-        super(TextInput, self).set_height(value)
-        # set up clipping
-        ir = self.inner_rect
-        self.setViewClip((0, 0, ir.width, ir.height))
-    height = property(get_height, set_height)
+        return True
  
 class PasswordInput(TextInput):
     name='password'
     def __init__(self, *args, **kw):
         super(PasswordInput, self).__init__(*args, **kw)
         self.ti.is_password = True
-        self.ti.setText(self.ti.text)
+        self.ti.text = self.ti.text
 
 @event.default('textinput, password')
 def on_element_enter(widget, x, y):
@@ -433,7 +435,7 @@ def on_text_motion(widget, motion):
             widget.ti.cursor_index -= 1
             text = text[0:n-1] + text[n:]
         if text != widget.ti.text:
-            widget.ti.setText(text)
+            widget.ti.text = text
             widget.getGUI().dispatch_event(widget, 'on_change', text)
     elif motion == key.MOTION_DELETE:
         text = widget.ti.text
@@ -446,7 +448,7 @@ def on_text_motion(widget, motion):
             n = pos
             text = text[0:n] + text[n+1:]
         if text != widget.ti.text:
-            widget.ti.setText(text)
+            widget.ti.text = text
             widget.getGUI().dispatch_event(widget, 'on_change', text)
     else:
         print 'Unhandled MOTION', key.motion_string(motion)

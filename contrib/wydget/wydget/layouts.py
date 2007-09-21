@@ -22,36 +22,75 @@ class Layout(object):
     "only_visible" -- limits the layout to only those elements which are
                       is_visible (note NOT isVisible - parent visibility
                       obviously makes no sense in this context)
+    "ignore"       -- set of elements to ignore when running layout 
+
+    Child elements who do not specify their x and y coordinates will be
+    placed at 0 on the missing axis/axes.
     '''
-    def __init__(self, parent, only_visible=False):
-        self.only_visible = only_visible
+    def __init__(self, parent, only_visible=False, ignore=None):
         self.parent = parent
+        self.only_visible = only_visible
+        self.ignore = ignore
 
     def __repr__(self):
         return '<%s %dx%d>'%(self.__class__.__name__, self.width, self.height)
 
+    def _default_positions(self):
+        # determine all the simple default poisitioning, including
+        # converting None values to 0
+        for c in self.getChildren():
+            if c.x is None:
+                if c.x_spec.spec is None:
+                    c.x = 0
+                elif c.x_spec.is_fixed:
+                    c.x = c.x_spec.calculate()
+            if c.y is None:
+                if c.y_spec.spec is None:
+                    c.y = 0
+                elif c.y_spec.is_fixed:
+                    c.y = c.y_spec.calculate()
+            if c.z is None:
+                c.z = 0
+
     def layout(self):
-        # XXX use signal?
-        self.parent.layoutDimensionsChanged(self)
+        self._default_positions()
+
+        # can't layout if we don't have dimensions to layout *in*
+        assert self.parent.height is not None and self.parent.width is not None
+
+        # position
+        for c in self.getChildren():
+            if c.x is None or c.x_spec.percentage is not None:
+                c.x = c.x_spec.calculate()
+            if c.y is None or c.y_spec.percentage is not None:
+                c.y = c.y_spec.calculate()
+            if c.z is None:
+                c.z = 0
 
     def __call__(self):
         self.layout()
 
     def get_height(self):
         if not self.parent.children: return 0
-        return intceil(max(c.y + c.height for c in self.parent.children
-            if not self.only_visible or c.is_visible))
+        self._default_positions()
+        return intceil(max(c.y + c.min_height for c in self.getChildren()))
     height = property(get_height)
 
     def get_width(self):
         if not self.parent.children: return 0
-        return intceil(max(c.x + c.width for c in self.parent.children
-            if not self.only_visible or c.is_visible))
+        self._default_positions()
+        return intceil(max(c.x + c.min_width for c in self.getChildren()))
     width = property(get_width)
 
     def getChildren(self):
-        return [c for c in self.parent.children
-            if not self.only_visible or c.is_visible]
+        l = []
+        for c in self.parent.children:
+            if self.only_visible and not c.is_visible:
+                continue
+            if self.ignore is not None and c in self.ignore:
+                continue
+            l.append(c)
+        return l
 
     @classmethod
     def fromXML(cls, element, parent):
@@ -62,42 +101,39 @@ class Layout(object):
 
         for child in element.getchildren():
             loadxml.getConstructor(child.tag)(child, layout.parent)
-        layout()
-
         return layout
 
 
 class Vertical(Layout):
     name = 'vertical'
 
-    def __init__(self, parent, valign=CENTER, halign=None, padding=0,
+    def __init__(self, parent, valign=TOP, halign=LEFT, padding=0,
             wrap=None, **kw):
         self.valign = valign
         self.halign = halign
-        self.padding = util.parse_value(padding, parent.inner_rect.height)
-        self.wrap = util.parse_value(wrap, parent.inner_rect.height)
-        if wrap and halign is None:
-            # we need to align somewhere to wrap
-            self.halign = self.LEFT
+        self.padding = util.parse_value(padding)
+        self.wrap = wrap and util.Dimension(wrap, parent, parent, 'height')
         super(Vertical, self).__init__(parent, *kw)
 
     def get_height(self):
-        ph = self.parent.inner_rect.height
         if self.valign == FILL:
-            # fill means using the available height
-            return int(ph)
+            ph = self.parent.height
+            if ph is not None:
+                # fill means using the available height
+                return int(self.parent.inner_rect.height)
         vis = self.getChildren()
         if not vis: return 0
         if self.wrap:
             if self.parent.height_spec:
                 # parent height or widest child if higher than parent
-                return intceil(max(self.wrap, max(c.height for c in vis)))
+                return intceil(max(self.wrap.specified(),
+                    max(c.min_height for c in vis)))
             else:
                 # height of highest row
-                return intceil(max(sum(c.height for c in column) +
+                return intceil(max(sum(c.min_height for c in column) +
                     self.padding * (len(column)-1)
                         for column in self.determineColumns()))
-        return intceil(sum(c.height for c in vis) +
+        return intceil(sum(c.min_height for c in vis) +
             self.padding * (len(vis)-1))
     height = property(get_height)
 
@@ -106,27 +142,34 @@ class Vertical(Layout):
         if not vis: return 0
         if self.wrap:
             cols = self.determineColumns()
-            return sum(max(c.width for c in col) for col in cols) + \
+            return sum(max(c.min_width for c in col) for col in cols) + \
                 self.padding * (len(cols)-1)
-        return max(c.width for c in vis)
+        return intceil(max(c.min_width for c in vis))
     width = property(get_width)
 
     def determineColumns(self):
         cols = [[]]
         ch = 0
+        wrap = self.wrap and self.wrap.calculate()
+        print 'COLUMNS', self.wrap, wrap
         for c in self.getChildren():
-            if self.wrap and ch and ch + c.height > self.wrap:
+            if wrap and ch:
+                print '..', ch, c.min_height
+            if wrap and ch and ch + c.min_height > wrap:
                 ch = 0
                 cols.append([])
             col = cols[-1]
             col.append(c)
-            ch += c.height + self.padding
+            ch += c.min_height + self.padding
         if not cols[-1]: cols.pop()
         return cols
 
     def layout(self):
-        # give the parent a chance to resize before we layout
-        self.parent.layoutDimensionsChanged(self)
+        # can't layout if we don't have dimensions to layout *in*
+        assert self.parent.height is not None and self.parent.width is not None
+        for child in self.getChildren():
+            assert child.height is not None and child.width is not None, \
+                '%r missing dimensions'%child
 
         # now get the area available for our layout
         rect = self.parent.inner_rect
@@ -137,6 +180,8 @@ class Vertical(Layout):
             x = rect.width//2 - self.width//2
         elif self.halign == RIGHT:
             x = rect.width - self.width
+
+        wrap = self.wrap and self.wrap.calculate()
 
         fill_padding = self.padding
         for col in self.determineColumns():
@@ -176,43 +221,40 @@ class Vertical(Layout):
                 elif self.halign == RIGHT:
                     child.x = int(x + (cw - child.width))
 
-            if self.wrap:
+            if wrap:
                 x += self.padding + cw
-
-        super(Vertical, self).layout()
 
 
 class Horizontal(Layout):
     name = 'horizontal'
 
-    def __init__(self, parent, halign=CENTER, valign=None, padding=0,
+    def __init__(self, parent, halign=LEFT, valign=TOP, padding=0,
             wrap=None, **kw):
         self.halign = halign
         self.valign = valign
-        self.wrap = util.parse_value(wrap, parent.inner_rect.width)
-        if wrap and valign is None:
-            # we need to align somewhere to wrap
-            self.valign = self.BOTTOM
-        self.padding = util.parse_value(padding, parent.inner_rect.width)
+        self.padding = util.parse_value(padding)
+        self.wrap = wrap and util.Dimension(wrap, parent, parent, 'height')
         super(Horizontal, self).__init__(parent, **kw)
 
     def get_width(self):
-        pw = self.parent.inner_rect.width
         if self.halign == FILL:
-            # fill means using the available width
-            return int(pw)
+            pw = self.parent.width
+            if pw is not None:
+                # fill means using the available width
+                return int(self.parent.inner_rect.width)
         vis = self.getChildren()
         if not vis: return 0
         if self.wrap:
             if self.parent.width_spec:
                 # parent width or widest child if wider than parent
-                return intceil(max(self.wrap, max(c.width for c in vis)))
+                return intceil(max(self.wrap.specified(),
+                    max(c.min_width for c in vis)))
             else:
                 # width of widest row
-                return max(sum(c.width for c in row) +
+                return max(sum(c.min_width for c in row) +
                     self.padding * (len(row)-1)
                         for row in self.determineRows())
-        return intceil(sum(c.width for c in vis) +
+        return intceil(sum(c.min_width for c in vis) +
             self.padding * (len(vis)-1))
     width = property(get_width)
 
@@ -221,27 +263,28 @@ class Horizontal(Layout):
         if not vis: return 0
         if self.wrap:
             rows = self.determineRows()
-            return intceil(sum(max(c.height for c in row) for row in rows) +
+            return intceil(sum(max(c.min_height for c in row) for row in rows) +
                 self.padding * (len(rows)-1))
-        return intceil(max(c.height for c in vis))
+        return intceil(max(c.min_height for c in vis))
     height = property(get_height)
 
     def determineRows(self):
         rows = [[]]
         rw = 0
+        wrap = self.wrap and self.wrap.calculate()
         for c in self.getChildren():
-            if self.wrap and rw and rw + c.width > self.wrap:
+            if wrap and rw and rw + c.min_width > wrap:
                 rw = 0
                 rows.append([])
             row = rows[-1]
             row.append(c)
-            rw += c.width + self.padding
+            rw += c.min_width + self.padding
         if not rows[-1]: rows.pop()
         return rows
 
     def layout(self):
-        # give the parent a chance to resize before we layout
-        self.parent.layoutDimensionsChanged(self)
+        # can't layout if we don't have dimensions to layout *in*
+        assert self.parent.height is not None and self.parent.width is not None
 
         # now get the area available for our layout
         rect = self.parent.inner_rect
@@ -253,6 +296,8 @@ class Horizontal(Layout):
             y = rect.height//2 - self.height//2 + self.height
         elif self.valign == TOP:
             y = rect.height
+
+        wrap = self.wrap and self.wrap.calculate()
 
         fill_padding = self.padding
         for row in self.determineRows():
@@ -279,9 +324,12 @@ class Horizontal(Layout):
                     w = sum(c.width for c in row)
                     fill_padding = (rect.width - w)/float(len(row)-1)
 
-            for child in row:
-                child.x = int(x)
-                x += int(child.width + fill_padding)
+            for i, child in enumerate(row):
+                if fill_padding and i == len(row) - 1: 
+                    child.x = int(rect.width - child.width)
+                else:
+                    child.x = int(x)
+                    x += int(child.width + fill_padding)
                 if self.valign == BOTTOM:
                     child.y = int(y)
                 elif self.valign == CENTER:
@@ -289,10 +337,8 @@ class Horizontal(Layout):
                 elif self.valign == TOP:
                     child.y = int(y + (rh - child.height))
 
-            if self.wrap:
+            if wrap:
                 y -= self.padding
-
-        super(Horizontal, self).layout()
 
 
 class Grid(Layout):
@@ -305,7 +351,8 @@ class Grid(Layout):
     name = 'grid'
 
     # XXX column alignments
-    def __init__(self, parent, colpad=0, rowpad=0, **kw):
+    def __init__(self, parent, colpad=0, rowpad=0, colaligns=None, **kw):
+        self.colaligns = colaligns
         self.colpad = util.parse_value(colpad, 0)
         self.rowpad = util.parse_value(rowpad, 0)
         super(Grid, self).__init__(parent, **kw)
@@ -321,7 +368,7 @@ class Grid(Layout):
             for row in children:
                 pad = i < N-1 and self.colpad or 0
                 col = row.children[i]
-                w.append(col.width + col.padding * 2 + pad)
+                w.append(col.min_width + pad)
             columns.append(max(w))
         return columns
 
@@ -331,100 +378,63 @@ class Grid(Layout):
 
     def get_height(self):
         children = self.getChildren()
-        h = intceil(sum(max(e.height for e in c.children) + c.padding * 2
+        h = intceil(sum(max(e.min_height for e in c.children) + c.padding*2
             for c in children))
         return intceil(h + (len(children)-1) * self.rowpad)
     height = property(get_height)
 
     def layout(self):
-        # give the parent a chance to resize before we layout
-        self.parent.layoutDimensionsChanged(self)
-
         children = self.getChildren()
 
         # determine column widths
         columns = self.columnWidths()
 
+        # column alignments
+        colaligns = self.colaligns
+
         # right, now position everything
         y = self.height
         for row in children:
-            y -= max(e.height for e in row.children)
+            y -= row.height
+            rp2 = row.padding * 2
             row.y = y
+            row.x = 0
             x = 0
-            for i, col in enumerate(row.children):
-                col.x = x
+            for i, elem in enumerate(row.children):
+                elem.x = x
+                if colaligns is not None:
+                    if colaligns[i] == 'r':
+                        elem.x += columns[i] - elem.width - rp2
+                    elif colaligns[i] == 'c':
+                        elem.x += (columns[i] - rp2)//2 - elem.width//2
+                    elif colaligns[i] == 'f':
+                        elem.width = columns[i] - rp2
+                elem.y = row.inner_height - elem.height
                 x += columns[i]
-            row.layout()
             y -= self.rowpad
 
-        super(Grid, self).layout()
 
-
-class Form(Layout):
+class Form(Grid):
     name = 'form'
 
-    def __init__(self, parent, valign=TOP, label_width='25%', padding=4,
-            **kw):
-        self.valign = valign
-        self.label_width = util.parse_value(label_width,
-            parent.inner_rect.width)
-        self.padding = padding
-        self.elements = []
-        super(Form, self).__init__(parent, **kw)
+    def __init__(self, *args, **kw):
+        if 'colaligns' not in kw:
+            kw['colaligns'] = 'rl'
+        super(Form, self).__init__(*args, **kw)
 
-    def get_width(self):
-        l = [c.width + c._label_dim[0] for c in self.elements
-            if not self.only_visible or c.is_visible]
-        return intceil(max(l) + self.padding)
-    width = property(get_width)
+    def addElement(self, label, element, **kw):
+        from wydget.widgets.frame import Frame
 
-    def get_height(self):
-        l = [max(c.height, c._label_dim[1]) for c in self.elements
-            if not self.only_visible or c.is_visible]
-        return intceil(sum(l) + self.padding * (len(l)-1))
-    height = property(get_height)
-
-    def addElement(self, label, element, expand_element=False,
-            halign='right', **kw):
-        self.elements.append(element)
-        if expand_element:
-            pw = self.parent.inner_rect.width
-            element.width = pw - (self.label_width + self.padding)
-        # XXX alignment
+        row = Frame(self.parent, is_transparent=True)
         if label:
-            l = element._label = Label(self.parent, label,
-                width=self.label_width, halign=halign, **kw)
-            element._label_dim = (l.width, l.height)
+            Label(row, label, **kw)
         else:
-            element._label = None
-            element._label_dim = (self.label_width, 0)
+            Frame(row, is_transparent=True, width=0, height=0)
 
-    def layout(self):
-        # give the parent a chance to resize before we layout
-        self.parent.layoutDimensionsChanged(self)
-
-        # now get the area available for our layout
-        rect = self.parent.inner_rect
-
-        h = self.height
-
-        vis = [c for c in self.elements if c.is_visible]
-
-        if self.valign == TOP:
-            y = rect.height
-        elif self.valign == CENTER:
-            y = rect.height//2 + h//2
-        elif self.valign == BOTTOM:
-            y = h
-
-        for element in vis:
-            element.x = int(self.label_width + self.padding)
-            y -= max(element.height, element._label_dim[1])
-            element.y = int(y)
-            if element._label: element._label.y = int(y)
-            y -= self.padding
-
-        super(Form, self).layout()
+        # move the element to the row
+        element.parent.children.remove(element)
+        row.children.append(element)
+        element.parent = row
 
     @classmethod
     def fromXML(cls, element, parent):
@@ -440,9 +450,7 @@ class Form(Layout):
             if not l: return
             assert len(l) == 1, '<row> may only have one (or no) child'
             content = loadxml.getConstructor(l[0].tag)(l[0], parent)
-            layout.addElement(ckw['label'], content, ckw.get('expand'))
-
-        layout()
+            layout.addElement(ckw['label'], content)
         return layout
 
 

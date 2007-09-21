@@ -8,9 +8,19 @@ KNOWN BUGS
   . reject negative padding?
 - element modality needs to be done on a stack
 - Layouts:
-  . columns & horizontal fill layouts have bogus RHS padding
+  . detect and reject height="100%" elements in Vertical layouts, and
+    width="100%" in Horizontal layouts
+- element heirarchy mutation needs to be handled better (explicit
+  gui.layout() invocation and all that)
 - Tables:
   . table columns don't truncate
+- Tabbed Frames:
+  . tab contents aren't sized to full size of tab (so alignment isn't
+    correct)
+- Selection:
+  . background colours aren't working
+  . scrollbars going crazy (eg. h bar in response to v bar being added
+    because selection width no longer accomodates widest label)
 - Drag-and-drop:
   . drags and moves are unbounded (dx/dy continue to be generated when
     pointer hits the screen boundary, try test_drag and drag up until the
@@ -24,6 +34,7 @@ KNOWN BUGS
 - test_table
   . <ah> Width of horizontal scrollbar thumb is incorrect.
 - TextInput
+  . click beyond end of text places cursor at start of text
   . <ah> Word motion events not yet implemented.
   . <ah> Caret motion past edge of field should scroll enough to get caret
     into the center of the field (or to limit).

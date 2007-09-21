@@ -5,16 +5,15 @@ from pyglet.window import mouse
 from wydget import element, event, data, util, anim
 from wydget.widgets.button import Button, RepeaterButton
 from wydget.widgets.label import Label
+from wydget.widgets.frame import Frame
 
-class SliderCommon(element.Element):
+class SliderCommon(Frame):
     slider_size = 16
 
-    def parentDimensionsChanged(self):
-        # re-size the slider bar and its bits
-        change = super(SliderCommon, self).parentDimensionsChanged()
-        if change:
-            self.handleSizing()
-        return change
+    def resize(self):
+        ok = super(SliderCommon, self).resize()
+        if ok: self.handleSizing()
+        return ok
 
     def get_value(self):
         return self._value
@@ -23,7 +22,7 @@ class SliderCommon(element.Element):
         if position_bar:
             self.positionBar()
         if self.show_value:
-            self.bar.setText(str(self._value))
+            self.bar.tect = str(self._value)
         if event:
             self.getGUI().dispatch_event(self, 'on_change', self._value)
     value = property(get_value, set_value)
@@ -41,7 +40,7 @@ class VerticalSlider(SliderCommon):
     name='vslider'
     def __init__(self, parent, minimum, maximum, value, step=1,
             bar_size=None, show_value=False, bar_text_color='white',
-            bar_color=(.3, .3, .3, 1), x=0, y=0, z=0,
+            bar_color=(.3, .3, .3, 1), x=None, y=None, z=None,
             width=SliderCommon.slider_size, height='100%',
             bgcolor='gray', **kw):
 
@@ -58,8 +57,6 @@ class VerticalSlider(SliderCommon):
 
         super(VerticalSlider, self).__init__(parent, x, y, z, width, height,
             bgcolor=bgcolor, **kw)
-
-        self.handleSizing()
 
     def handleSizing(self):
         try:
@@ -81,9 +78,9 @@ class VerticalSlider(SliderCommon):
         if self.have_buttons:
             # do this after the call to super to allow it to set the parent etc.
             ArrowButtonDown(self, classes=('-repeater-button-min',),
-                color='black')
+                color='black').resize()
             ArrowButtonUp(self, y=self.height-bh, color='black',
-                classes=('-repeater-button-max',))
+                classes=('-repeater-button-max',)).resize()
 
         # add slider bar
         i_height = self.inner_rect.height
@@ -98,6 +95,10 @@ class VerticalSlider(SliderCommon):
         # textures
         self.bar = SliderBar(self, 'y', s, self.width, self.bar_size,
             bgcolor=self.bar_color, color=self.bar_text_color)
+        self.bar.resize()
+
+        # fix up positioning of elements
+        self.layout()
         self.positionBar()
 
     def get_inner_rect(self):
@@ -143,7 +144,7 @@ class HorizontalSlider(SliderCommon):
     name='hslider'
     def __init__(self, parent, minimum, maximum, value, step=1,
             bar_size=None, show_value=False, bar_text_color='white',
-            bar_color=(.3, .3, .3, 1), x=0, y=0, z=0, width='100%',
+            bar_color=(.3, .3, .3, 1), x=None, y=None, z=None, width='100%',
             height=SliderCommon.slider_size, bgcolor='gray', **kw):
 
         self.minimum = util.parse_value(minimum, 0)
@@ -162,8 +163,6 @@ class HorizontalSlider(SliderCommon):
 
         super(HorizontalSlider, self).__init__(parent, x, y, z, width, height,
             bgcolor=bgcolor, **kw)
-
-        self.handleSizing()
 
     def handleSizing(self):
         try:
@@ -184,9 +183,9 @@ class HorizontalSlider(SliderCommon):
         self.have_buttons = self.width > (bw * 2 + min_size)
         if self.have_buttons:
             ArrowButtonLeft(self, classes=('-repeater-button-min',),
-                color='black')
+                color='black').resize()
             ArrowButtonRight(self, x=self.width-bw, color='black',
-                classes=('-repeater-button-max',))
+                classes=('-repeater-button-max',)).resize()
 
         # slider bar size
         i_width = self.inner_rect.width
@@ -196,9 +195,12 @@ class HorizontalSlider(SliderCommon):
 
         s = self.show_value and str(self._value) or ' '
         # we force blending here so we don't generate a bazillion textures
-        self.bar = SliderBar(self, 'x', s, self.bar_size,
-            self.height, bgcolor=self.bar_color, color=self.bar_text_color)
+        self.bar = SliderBar(self, 'x', s, self.bar_size, self.height,
+            bgcolor=self.bar_color, color=self.bar_text_color)
+        self.bar.resize()
 
+        # fix up positioning of elements
+        self.layout()
         self.positionBar()
 
     def get_inner_rect(self):

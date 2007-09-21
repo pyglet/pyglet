@@ -61,10 +61,8 @@ class GUI(event.GUIEventDispatcher):
 
         # element.Element stuff
         self.x, self.y, self.z = x, y, z
-        self.width = width or window.width
-        self.width_spec = width
-        self.height = height or window.height
-        self.height_spec = height
+        self.width = self.inner_width = width or window.width
+        self.height = self.inner_height = height or window.height
         self.children = []
 
         # map Element id, class and name to Element
@@ -160,6 +158,24 @@ class GUI(event.GUIEventDispatcher):
         '''
         self._rects = None
 
+    def layout(self):
+        '''Layout the entire GUI in response to its dimensions changing or
+        the contents changing (in a way that would alter internal layout).
+        '''
+        # resize all elements
+        for element in self.children:
+            element.resetGeometry()
+        ok = False
+        while not ok:
+            ok = True
+            for element in self.children:
+                ok = ok and element.resize()
+        
+        # position top-level elements
+        for c in self.children:
+            c.x = c.x_spec.calculate()
+            c.y = c.y_spec.calculate()
+
     def getRects(self, exclude=None):
         '''Get the rects for all the children to draw & interact with.
 
@@ -168,6 +184,7 @@ class GUI(event.GUIEventDispatcher):
         if self._rects is not None and exclude is None:
             return self._rects
 
+        # now get their rects
         rects = []
         clip = self.rect
         for element in self.children:
@@ -185,7 +202,7 @@ class GUI(event.GUIEventDispatcher):
         under the cursor being dragged - we wish to know which element is
         under *that)
         '''
-        for o, (ox, oy, oz, sx, sy, clip) in reversed(self.getRects(exclude)):
+        for o, (ox, oy, oz, clip) in reversed(self.getRects(exclude)):
             ox += clip.x
             oy += clip.y
             if x < ox or y < oy: continue
@@ -196,6 +213,9 @@ class GUI(event.GUIEventDispatcher):
 
     def draw(self):
         '''Render all the elements on display.'''
+        #print '*'*75
+        #self.dump()
+        #print '*'*75
         glPushAttrib(GL_ENABLE_BIT)
         glDisable(GL_DEPTH_TEST)
 
@@ -204,17 +224,17 @@ class GUI(event.GUIEventDispatcher):
 
         # draw
         oz = 0
-        for element, (x, y, z, sx, sy, c) in rects:
+        for element, (x, y, z, c) in rects:
             if element is self.debug_display:
                 continue
-            element.draw(x, y, z, sx, sy, c)
+            element.draw(x, y, z, c)
 
         if self.debug:
             # render the debugging displays
 
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             glEnable(GL_BLEND)
-            for o, (x, y, z, sx, sy, c) in rects:
+            for o, (x, y, z, c) in rects:
                 w, h = c.width, c.height
                 x += c.x
                 y += c.y
@@ -234,7 +254,7 @@ class GUI(event.GUIEventDispatcher):
                     glRectf(x+v.x, y+v.y, x+v.x+v.width, y+v.y+v.height)
 
             glDisable(GL_BLEND)
-            self.debug_display.draw(0, 0, 0, 1, 1, util.Rect(0, 0,
+            self.debug_display.draw(0, 0, 0, util.Rect(0, 0,
                 self.width, self.debug_display.height))
 
         glPopAttrib()

@@ -1,16 +1,18 @@
-<frame is_transparent="true">
+<frame is_transparent="true" width="100%" height="100%">
+ <horizontal>
  <frame is_transparent="true" width="50%" height="100%">
   <vertical valign="center" halign="center" padding="20">
    <label class="draggable">Drag me!</label>
    <button class="draggable" id="press-me">Drag me, press me!</button>
-   <frame bgcolor="white" class="draggable"><vertical>
+   <frame id="endisabled" bgcolor="white" class="draggable"><vertical>
     <button is_enabled="false">I'm disabled</button>
     <label>I'm not</label>
    </vertical></frame>
   </vertical>
  </frame>
- <frame class="droppable" bgcolor="white" width="50%" height="100%" x="512">
+ <frame class="droppable" bgcolor="white" width="50%" height="100%">
   <label valign="center" halign="center" width="100%" height="100%">Drop here!</label>
  </frame>
+ </horizontal>
 </frame>
 

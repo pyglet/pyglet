@@ -1,0 +1,5 @@
+<frame id="message-dialog-test" width="100%" height="100%" is_transparent="true">
+ <vertical halign="center">
+  <label padding="20" bgcolor="white">Click to open a message dialog</label>
+ </vertical>
+</frame>

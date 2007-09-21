@@ -8,24 +8,16 @@ class Checkbox(element.Element):
     name='checkbox'
     is_focusable = True
 
-    def __init__(self, parent, value=False,
-            x=0, y=0, z=0, width=None, height=None, **kw):
+    def __init__(self, parent, value=False, width=16, height=16, **kw):
         self.parent = parent
         self.value = value
+        super(Checkbox, self).__init__(parent, None, None, None, width,
+            height, **kw)
 
-        self.width_spec = width
-        self.height_spec = height
-
-        # XXX this is somewhat common (see FrameCommon, and other elements probably need to do this stuff too)
-        # now calculate them if necessary
-        ir = parent.inner_rect
-        iw, ih = ir.width, ir.height
-        width = util.parse_value(width, iw)
-        if width is None: width = 16
-        height = util.parse_value(height, ih)
-        if height is None: height = 16
-
-        super(Checkbox, self).__init__(parent, x, y, z, width, height, **kw)
+    def intrinsic_width(self):
+        return self.width or 16
+    def intrinsic_height(self):
+        return self.height or 16
 
     def render(self, rect):
         # XXX handle rect (and use images...)

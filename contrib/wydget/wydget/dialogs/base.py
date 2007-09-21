@@ -17,27 +17,14 @@ class Dialog(widgets.Frame):
         new_y = self.parent.height//2 - self.height//2
         if new_y != self._y: self.y = new_y
 
-    def layoutDimensionsChanged(self, layout):
-        super(Dialog, self).layoutDimensionsChanged(layout)
-        self.position()
-
-    def parentDimensionsChanged(self):
-        change = super(Dialog, self).parentDimensionsChanged()
-        self.position()
-        return change
-
     def run(self):
         '''Invoke to position the dialog in the middle of the parent
         (presumably the window) and make the dialog become modal.
         '''
+        self.resize()
         self.position()
-        self.getGUI().setModal(self)
-
-    def close(self):
-        '''Invoke to make this dialog stop being modal and clean itself up.
-        '''
-        self.getGUI().setModal(None)
-        self.delete()
+        self.dump()
+        self.setModal()
 
 
 @event.default('.dialog > .title')

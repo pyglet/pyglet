@@ -22,7 +22,6 @@
   </frame>
  </frame>
 
-
  </frame>
 
  <frame>
@@ -43,11 +42,13 @@
    </horizontal>
   </frame>
  </frame>
+
  <frame scrollable="true" width="100" height="100" bgcolor="gray"
         border="red">
   <xhtml width="98">Some text, should appear in top-right 
   of red frame.</xhtml>
  </frame>
+
  </frame>
 
  <frame>
@@ -70,5 +71,4 @@
 
  </grid>
 
--->
 </frame>
