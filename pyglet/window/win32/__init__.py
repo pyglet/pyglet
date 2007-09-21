@@ -858,6 +858,10 @@ class Win32Window(BaseWindow):
 
         symbol = keymap.get(wParam, None)
         if symbol is None:
+            ch = _user32.MapVirtualKeyW(wParam, MAPVK_VK_TO_CHAR)
+            symbol = chmap.get(ch)
+
+        if symbol is None:
             symbol = key.user_key(wParam)
         elif symbol == key.LCTRL and lParam & (1 << 24):
             symbol = key.RCTRL
