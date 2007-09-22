@@ -303,10 +303,14 @@ class AVbinSource(StreamingSource):
                 self._buffered_packets.remove(packet)
                 return packet
 
+        # XXX This is ugly and needs tuning per-codec.  Replace with an
+        # explicit API for disabling unused streams (e.g. for silent driver).
+        '''
         # Make sure we're not buffering packets that are being ignored
         for buffer in self._buffered_packets, self._buffered_images:
             if len(buffer) > 20:
                 buffer.pop(0)
+        '''
 
         # Read more packets, buffering each interesting one until we get to 
         # the one we want or reach end of file.
