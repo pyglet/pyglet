@@ -44,10 +44,13 @@ from pyglet.media import BasePlayer, ManagedSoundPlayerMixIn, Listener
 from pyglet.media import MediaException
 
 from pyglet.media.drivers.directsound import lib_dsound as lib
+from pyglet.window.win32 import _user32
 
 class DirectSoundPlayer(BasePlayer):
-    _buffer_size = 44800 * 2# .15 sec of 16 bit 44.8 kHz stereo 
+    _buffer_size = 44800 * 1
     _update_buffer_size = _buffer_size // 4
+    _buffer_size_secs = None
+    _buffer_bytes_per_sec = None
     
     def __init__(self):
         super(DirectSoundPlayer, self).__init__()
@@ -83,7 +86,9 @@ class DirectSoundPlayer(BasePlayer):
 
         dsbdesc = lib.DSBUFFERDESC()
         dsbdesc.dwSize = ctypes.sizeof(dsbdesc)
-        dsbdesc.dwFlags = lib.DSBCAPS_GLOBALFOCUS | lib.DSBCAPS_CTRLVOLUME
+        dsbdesc.dwFlags = (lib.DSBCAPS_GLOBALFOCUS | 
+                           lib.DSBCAPS_GETCURRENTPOSITION2 |
+                           lib.DSBCAPS_CTRLVOLUME)
         if audio_format.channels == 1:
             dsbdesc.dwFlags |= lib.DSBCAPS_CTRL3D
         dsbdesc.dwBufferBytes = self._buffer_size
@@ -92,6 +97,9 @@ class DirectSoundPlayer(BasePlayer):
         dsb = lib.IDirectSoundBuffer()
         dsound.CreateSoundBuffer(dsbdesc, ctypes.byref(dsb), None)
         self._buffer = dsb
+        self._buffer_bytes_per_sec = float(audio_format.bytes_per_second)
+        self._buffer_size_secs = self._buffer_size / self._buffer_bytes_per_sec
+            
 
     def _get_audio_data(self, bytes):
         if self._next_audio_data:
@@ -147,9 +155,10 @@ class DirectSoundPlayer(BasePlayer):
             return
 
         for audio_data, audio_format in self._get_audio_data(write_size):
-            self._buffer_end_time = (audio_data.timestamp + 
-                (self._buffer_size - self._write_cursor) / 
-                    float(audio_format.bytes_per_second))
+            if self._write_cursor > self._play_cursor:
+                self._buffer_end_time = (audio_data.timestamp + 
+                    (self._buffer_size - self._write_cursor) / 
+                        self._buffer_bytes_per_sec)
 
             length = min(write_size, audio_data.length)
             self._write(audio_data, audio_format, length)
@@ -236,7 +245,8 @@ class DirectSoundPlayer(BasePlayer):
             if play_cursor.value < self._play_cursor:
                 # Wrapped around
                 self._cum_play_cursor += self._buffer_size
-                self._buffer_time = self._buffer_end_time
+                self._buffer_time = self._buffer_end_time 
+                self._buffer_end_time += self._buffer_size_secs
                 self._eos_cursors = \
                     [c + self._buffer_size for c in self._eos_cursors]
             self._play_cursor = play_cursor.value
@@ -252,9 +262,11 @@ class DirectSoundPlayer(BasePlayer):
                 elif self._eos_action == self.EOS_STOP:
                     self._stop_buffer()
 
-        if self._sources and self._sources[0].audio_format:
+        if self._buffer_bytes_per_sec:
             self._timestamp = self._buffer_time + self._play_cursor \
-                / float(self._sources[0].audio_format.bytes_per_second)
+                / self._buffer_bytes_per_sec
+            #print self._timestamp - self._buffer_time
+            #self._timestamp =  self._buffer_time
         elif self._sources and self._playing:
             # XXX Silent timestamp.. clean me up
             now = time.time()
@@ -369,11 +381,11 @@ def driver_init():
     dsound = lib.IDirectSound()
     lib.DirectSoundCreate(None, ctypes.byref(dsound), None)
 
-    # TODO
-    from pyglet import window
-    w = window.Window(visible=False)
-
-    dsound.SetCooperativeLevel(w._hwnd, lib.DSSCL_NORMAL)
+    # A trick used by mplayer.. use desktop as window handle since it would
+    # be complex to use pyglet window handles (and what to do when application
+    # is audio only?).
+    hwnd = _user32.GetDesktopWindow()
+    dsound.SetCooperativeLevel(hwnd, lib.DSSCL_NORMAL)
 
 driver_listener = DirectSoundListener()
 DriverPlayer = DirectSoundPlayer

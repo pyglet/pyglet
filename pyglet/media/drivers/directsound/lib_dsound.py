@@ -155,7 +155,7 @@ class IDirectSoundBuffer(com.IUnknown):
         ('GetCurrentPosition',
          com.STDMETHOD(LPDWORD, LPDWORD)),
         ('GetFormat',
-         com.STDMETHOD(LPWAVEFORMATEX, DWORD)),
+         com.STDMETHOD(LPWAVEFORMATEX, DWORD, LPDWORD)),
         ('GetVolume',
          com.STDMETHOD(LPLONG)),
         ('GetPan',
