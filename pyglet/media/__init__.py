@@ -107,7 +107,7 @@ class AudioFormat(object):
         `sample_size` : int
             Bits per sample; typically 8 or 16.
         `sample_rate` : int
-            Samples per second (in Herz).
+            Samples per second (in Hertz).
 
     '''
 
@@ -186,6 +186,142 @@ class AudioData(object):
         self.length -= bytes
         self.duration -= bytes / float(audio_format.bytes_per_second)
         self.timestamp += bytes / float(audio_format.bytes_per_second)
+
+class AudioPlayer(object):
+    '''Abstract low-level interface for playing audio.
+
+    AudioPlayer has no knowledge of sources or eos behaviour.  Once
+    created, its audio format cannot be modified.  Behaviour is undefined if
+    there is a data underrun.
+    
+    Applications should not use this class directly, but instead use `Player`.
+
+    :Ivariables:
+        `audio_format` : `AudioFormat`
+            The player's audio format (read-only).
+
+    '''
+    
+    def __init__(self, audio_format):
+        '''Create a new audio player for the given audio format.
+
+        :Parameters:
+            `audio_format` : `AudioFormat`
+                Audio format parameters.
+
+        '''
+        self.audio_format = audio_format
+
+    def get_write_size(self):
+        '''Return the maximum number of bytes that can be written.  
+        
+        This is used as a hint for preparing data for `write`, not as a strict
+        contract.
+        
+        :rtype: int
+        '''
+        raise NotImplementedError('abstract')
+
+    def write(self, audio_data):
+        '''Write audio_data to the stream.
+        
+        :Parameters:
+            `audio_data` : `AudioData`
+                Data to write.
+
+        :rtype: `AudioData`
+        :return: any data that was unwritten, or None.
+        '''
+        raise NotImplementedError('abstract')
+
+    def write_eos(self):
+        '''Write an EOS marker to the stream at the current write point.'''
+        raise NotImplementedError('abstract')
+
+    def write_end(self):
+        '''Mark that there will be no more audio data past the current write
+        point.
+        
+        This does not produce an EOS, but is required to prevent data
+        underrun artifacts.
+        '''
+        raise NotImplementedError('abstract')
+
+    def play(self):
+        '''Begin playback.'''
+        raise NotImplementedError('abstract')
+
+    def stop(self):
+        '''Stop playback.'''
+        raise NotImplementedError('abstract')
+
+    def clear(self):
+        '''Clear all buffered data and prepare for replacement data.
+
+        The player should be stopped before calling this method.
+        '''
+        raise NotImplementedError('abstract')
+
+    def get_time(self):
+        '''Return best guess of current playback time.  The time is relative
+        to the timestamps provided in the data supplied to `write`.  The time
+        is meaningless unless proper care has been taken to clear EOS markers.
+
+        :rtype: float
+        :return: current play cursor time, in seconds.
+        '''
+        raise NotImplementedError('abstract')
+
+    def clear_eos(self):
+        '''Check if an EOS marker has been passed, and clear it.
+        
+        This method should be called repeatedly to clear all pending EOS
+        markers.
+
+        :rtype: bool
+        :return: True if an EOS marker was cleared.
+        '''
+        raise NotImplementedError('abstract')
+
+    def _set_volume(self, volume):
+        '''See `Player.volume`.'''
+        pass
+
+    def _set_min_gain(self, min_gain):
+        '''See `Player.min_gain`.'''
+        pass
+
+    def _set_max_gain(self, max_gain):
+        '''See `Player.max_gain`.'''
+        pass
+
+    def _set_position(self, position):
+        '''See `Player.position`.'''
+        pass
+
+    def _set_velocity(self, velocity):
+        '''See `Player.velocity`.'''
+        pass
+
+    def _set_pitch(self, pitch):
+        '''See `Player.pitch`.'''
+        pass
+
+    def _set_cone_orientation(self, cone_orientation):
+        '''See `Player.cone_orientation`.'''
+        pass
+
+    def _set_cone_inner_angle(self, cone_inner_angle):
+        '''See `Player.cone_inner_angle`.'''
+        pass
+
+    def _set_cone_outer_angle(self, cone_outer_angle):
+        '''See `Player.cone_outer_angle`.'''
+        pass
+
+    def _set_cone_outer_gain(self, cone_outer_gain):
+        '''See `Player.cone_outer_gain`.'''
+        pass
 
 
 class Source(object):
