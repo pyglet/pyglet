@@ -269,8 +269,6 @@ class AVbinSource(StreamingSource):
             self._audio_buffer = \
                 (ctypes.c_uint8 * av.avbin_get_audio_buffer_size())()
             self._buffer_streams.append(self._audio_stream_index)
-            self._force_next_audio = False
-            self._next_audio_data = self._get_next_audio_data()
             
         if self.video_format:
             self._buffer_streams.append(self._video_stream_index)
@@ -292,7 +290,6 @@ class AVbinSource(StreamingSource):
         self._buffered_packets = []
         self._buffered_images = []
         self._audio_packet_size = 0
-        self._force_next_audio = True
         self._force_next_video_image = True
         self._last_video_timestamp = None
 
@@ -326,7 +323,8 @@ class AVbinSource(StreamingSource):
             elif self._packet.stream_index in self._buffer_streams:
                 self._buffered_packets.append(BufferedPacket(self._packet))
 
-    def _get_next_audio_data(self):
+    def _get_audio_data(self, bytes):
+        # XXX bytes currently ignored
         while True:
             while self._audio_packet_size > 0:
                 size_out = ctypes.c_int(len(self._audio_buffer))
@@ -350,8 +348,7 @@ class AVbinSource(StreamingSource):
                     float(len(buffer)) / self.audio_format.bytes_per_second
                 timestamp = self._audio_packet_timestamp
                 self._audio_packet_timestamp += duration
-                return AudioData(buffer, len(buffer),
-                                 timestamp, duration, False)
+                return AudioData(buffer, len(buffer), timestamp, duration)
 
             packet = self._get_packet_for_stream(self._audio_stream_index)
             if not packet:
@@ -362,24 +359,6 @@ class AVbinSource(StreamingSource):
             self._audio_packet_ptr = ctypes.cast(packet.data,
                                                  ctypes.c_void_p)
             self._audio_packet_size = packet.size
-
-    def _get_audio_data(self, bytes):
-        # XXX bytes currently ignored
-
-        if self._force_next_audio:
-            self._next_audio_data = self._get_next_audio_data()
-            self._force_next_audio = False
-
-        if not self._next_audio_data:
-            return None
-
-        audio_data = self._next_audio_data
-        self._next_audio_data = self._get_next_audio_data()
-
-        if not self._next_audio_data:
-            audio_data.is_eos = True
-
-        return audio_data
 
     def _init_texture(self, player):
         if not self.video_format:

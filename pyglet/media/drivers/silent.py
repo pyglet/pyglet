@@ -8,116 +8,77 @@ __version__ = '$Id$'
 
 import time
 
-from pyglet.media import BasePlayer, ManagedSoundPlayerMixIn, Listener
+from pyglet.media import AudioPlayer, Listener
 from pyglet.media import MediaException
 
-class SilentPlayer(BasePlayer):
-    def __init__(self):
-        super(SilentPlayer, self).__init__()
+class SilentAudioPlayer(AudioPlayer):
+    def __init__(self, audio_format):
+        super(SilentAudioPlayer, self).__init__(audio_format)
 
-        self._sources = []
         self._playing = False
-        self._timestamp = 0.
-        self._timestamp_time = None
+        self._eos_count = 0
 
-    def queue(self, source):
-        source = source._get_queue_source()
+        self._audio_data_list = []
+        self._head_time = 0.0
+        self._head_system_time = time.time()
 
-        if not self._sources:
-            source._init_texture(self)
-        self._sources.append(source)
+    def get_write_size(self):
+        return max(0, 10000 - sum([a.length for a in self._audio_data_list]))
 
-    def next(self):
-        if self._sources:
-            old_source = self._sources.pop(0)
-            old_source._release_texture(self)
-            old_source._stop()
+    def write(self, audio_data):
+        if not self._audio_data_list:
+            self._head_time = 0.0
+            self._head_system_time = time.time()
+        self._audio_data_list.append(audio_data)
+        return audio_data.length
 
-        if self._sources:
-            self._sources[0]._init_texture(self)
+    def write_eos(self):
+        self._audio_data_list.append(None)
 
-    def dispatch_events(self):
-        if not self._sources:
-            return
-
-        if self._playing:
-            now = time.time()
-            self._timestamp += now - self._timestamp_time
-            self._timestamp_time = now
-
-        if self._texture:
-            self._sources[0]._update_texture(self, self._timestamp)
-
-        if self._timestamp > self._sources[0].duration:
-            self.next()
-            self._timestamp = 0.
-
-    def _get_time(self):
-        if not self._playing:
-            return self._timestamp
-
-        return self._timestamp + time.time() - self._timestamp_time
+    def write_end(self):
+        pass
 
     def play(self):
-        if self._playing:
-            return
-
         self._playing = True
+        self._head_system_time = time.time()
 
-        if not self._sources:
-            return
-
-        self._timestamp_time = time.time()
-
-    def pause(self):
+    def stop(self):
         self._playing = False
+        self._head_time = time.time() - self._head_system_time
 
-        if not self._sources:
-            return
+    def clear(self):
+        self._audio_data_list = []
+        self._head_time = 0.0
+        self._head_system_time = time.time()
+        self._eos_count = 0
 
-    def seek(self, timestamp):
-        if self._sources:
-            self._sources[0]._seek(timestamp)
-            self._timestamp = timestamp
-            self._timestamp_time = time.time()
+    def get_time(self):
+        if not self._playing:
+            if self._audio_data_list:
+                return self._audio_data_list[0].timestamp + self._head_time
+            else:
+                return 0.0
 
-    def _get_source(self):
-        if self._sources:
-            return self._sources[0]
-        return None
+        system_time = time.time()
+        head_time = system_time - self._head_system_time
+        try:
+            head = self._audio_data_list[0]
+            while head_time >= head.duration:
+                head_time -= head.duration
+                head = self._audio_data_list.pop(0)
+                while not head:
+                    self._eos_count += 1
+                    head = self._audio_data_list.pop(0)
+            self._head_system_time = system_time - head_time
+            return head_time + head.timestamp
+        except IndexError:
+            return 0.0
 
-    def _set_volume(self, volume):
-        self._volume = volume
-
-    def _set_min_gain(self, min_gain):
-        self._min_gain = min_gain
-
-    def _set_max_gain(self, max_gain):
-        self._max_gain = max_gain
-
-    def _set_position(self, position):
-        self._position = position
-
-    def _set_velocity(self, velocity):
-        self._velocity = velocity
-
-    def _set_pitch(self, pitch):
-        self._pitch = pitch
-
-    def _set_cone_orientation(self, cone_orientation):
-        self._cone_orientation = cone_orientation
-
-    def _set_cone_inner_angle(self, cone_inner_angle):
-        self._cone_inner_angle = cone_inner_angle
-
-    def _set_cone_outer_angle(self, cone_outer_angle):
-        self._cone_outer_angle = cone_outer_angle
-
-    def _set_cone_outer_gain(self, cone_outer_gain):
-        self._cone_outer_gain = cone_outer_gain
-
-class SilentManagedSoundPlayer(SilentPlayer, ManagedSoundPlayerMixIn):
-    pass
+    def clear_eos(self):
+        if self._eos_count:
+            self._eos_count -= 1 
+            return True
+        return False
 
 class SilentListener(Listener):
     def _set_volume(self, volume):
@@ -145,5 +106,4 @@ def driver_init():
     pass
 
 driver_listener = SilentListener()
-DriverPlayer = SilentPlayer
-DriverManagedSoundPlayer = SilentManagedSoundPlayer
+driver_audio_player_class = SilentAudioPlayer

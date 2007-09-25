@@ -87,9 +87,7 @@ if getattr(sys, 'frozen', None):
 #:     within a py2exe or py2app library archive.
 #: audio_driver
 #:     A sequence of the names of audio drivers to attempt to load, in
-#:     order of preference.  The default is to prefer OpenAL, then any
-#:     platform-specific drivers such as ALSA, and finally falling back
-#:     to the "silent" driver.  Valid driver names are:
+#:     order of preference.  Valid driver names are:
 #:
 #:     * alsa, the ALSA audio driver (Linux only) 
 #:     * openal, the OpenAL audio driver
@@ -97,6 +95,6 @@ if getattr(sys, 'frozen', None):
 #:
 options = {
     'gl_error_check': not _enable_optimisations,
-    'audio_driver': ('openal', 'silent'),
+    'audio_driver': ('alsa', 'openal', 'silent'),
 }
 

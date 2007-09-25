@@ -120,6 +120,11 @@ class AudioFormat(object):
         self.bytes_per_sample = (sample_size >> 3) * channels
         self.bytes_per_second = self.bytes_per_sample * sample_rate
 
+    def __eq__(self, other):
+        return (self.channels == other.channels and 
+                self.sample_size == other.sample_size and
+                self.sample_rate == other.sample_rate)
+
 class VideoFormat(object):
     '''Video details.
 
@@ -146,7 +151,6 @@ class VideoFormat(object):
         self.height = height
         self.sample_aspect = sample_aspect
 
-
 class AudioData(object):
     '''A single packet of audio data.
 
@@ -161,16 +165,13 @@ class AudioData(object):
             Time of the first sample, in seconds.
         `duration` : float
             Total data duration, in seconds.
-        `is_eos` : bool
-            If True, this is the last audio packet in the source.
 
     '''
-    def __init__(self, data, length, timestamp, duration, is_eos=False):
+    def __init__(self, data, length, timestamp, duration):
         self.data = data
         self.length = length
         self.timestamp = timestamp
         self.duration = duration
-        self.is_eos = is_eos
 
     def consume(self, bytes, audio_format):
         '''Remove some data from beginning of packet.'''
@@ -229,8 +230,8 @@ class AudioPlayer(object):
             `audio_data` : `AudioData`
                 Data to write.
 
-        :rtype: `AudioData`
-        :return: any data that was unwritten, or None.
+        :rtype: int
+        :return: number of bytes actually written.
         '''
         raise NotImplementedError('abstract')
 
@@ -262,6 +263,11 @@ class AudioPlayer(object):
         '''
         raise NotImplementedError('abstract')
 
+    def pump(self):
+        '''Called once per loop iteration before checking for eos
+        triggers.'''
+        raise NotImplementedError('abstract')
+
     def get_time(self):
         '''Return best guess of current playback time.  The time is relative
         to the timestamps provided in the data supplied to `write`.  The time
@@ -283,46 +289,45 @@ class AudioPlayer(object):
         '''
         raise NotImplementedError('abstract')
 
-    def _set_volume(self, volume):
+    def set_volume(self, volume):
         '''See `Player.volume`.'''
         pass
 
-    def _set_min_gain(self, min_gain):
+    def set_min_gain(self, min_gain):
         '''See `Player.min_gain`.'''
         pass
 
-    def _set_max_gain(self, max_gain):
+    def set_max_gain(self, max_gain):
         '''See `Player.max_gain`.'''
         pass
 
-    def _set_position(self, position):
+    def set_position(self, position):
         '''See `Player.position`.'''
         pass
 
-    def _set_velocity(self, velocity):
+    def set_velocity(self, velocity):
         '''See `Player.velocity`.'''
         pass
 
-    def _set_pitch(self, pitch):
+    def set_pitch(self, pitch):
         '''See `Player.pitch`.'''
         pass
 
-    def _set_cone_orientation(self, cone_orientation):
+    def set_cone_orientation(self, cone_orientation):
         '''See `Player.cone_orientation`.'''
         pass
 
-    def _set_cone_inner_angle(self, cone_inner_angle):
+    def set_cone_inner_angle(self, cone_inner_angle):
         '''See `Player.cone_inner_angle`.'''
         pass
 
-    def _set_cone_outer_angle(self, cone_outer_angle):
+    def set_cone_outer_angle(self, cone_outer_angle):
         '''See `Player.cone_outer_angle`.'''
         pass
 
-    def _set_cone_outer_gain(self, cone_outer_gain):
+    def set_cone_outer_gain(self, cone_outer_gain):
         '''See `Player.cone_outer_gain`.'''
         pass
-
 
 class Source(object):
     '''An audio and/or video source.
@@ -364,7 +369,6 @@ class Source(object):
         :rtype: `ManagedSoundPlayer`
         '''
         player = ManagedSoundPlayer()
-        player.eos_action = player.EOS_STOP
         player.queue(self)
         player.play()
         return player
@@ -465,7 +469,7 @@ class StaticSource(Source):
             return
 
         # TODO enable time-insensitive playback 
-        source.play()
+        source._play()
 
         # Arbitrary: number of bytes to request at a time.
         buffer_size = 1 << 20 # 1 MB
@@ -511,19 +515,20 @@ class StaticMemorySource(StaticSource):
         offset = self._file.tell()
         timestamp = float(offset) / self.audio_format.bytes_per_second
 
+        # Align to sample size
+        if self.audio_format.bytes_per_sample == 2:
+            bytes &= 0xfffffffe
+        elif self.audio_format.bytes_per_sample == 4:
+            bytes &= 0xfffffffc
+
         data = self._file.read(bytes)
-        if not data:
+        if not len(data):
             return None
 
         duration = float(len(data)) / self.audio_format.bytes_per_second
-        is_eos = self._file.tell() == self._max_offset
-        return AudioData(data,
-                         len(data),
-                         timestamp,
-                         duration,
-                         is_eos)
+        return AudioData(data, len(data), timestamp, duration)
 
-class BasePlayer(event.EventDispatcher):
+class Player(event.EventDispatcher):
     '''A sound and/or video player.
 
     Queue sources on this player to play them.
@@ -541,11 +546,25 @@ class BasePlayer(event.EventDispatcher):
     EOS_STOP = 'stop'
 
     # Source and queuing attributes
-    _source = None
+    _source_read_index = 0
     _eos_action = EOS_NEXT
     _playing = False
 
-    # Sound and spacialisation attributes
+    # If True and _playing is False, user is currently seeking while paused;
+    # should refrain from filling the audio buffer.
+    _pause_seek = False
+
+    # Override audio timestamp for seeking and silent video
+    _timestamp = None
+
+    # Audio attributes
+    _audio = None
+    _next_audio_data = None
+
+    # Video attributes
+    _texture = None
+
+    # Spacialisation attributes, preserved between audio players
     _volume = 1.0
     _max_gain = 1.0
     _min_gain = 0.0
@@ -559,8 +578,93 @@ class BasePlayer(event.EventDispatcher):
     _cone_outer_angle = 360.
     _cone_outer_gain = 1.
 
-    # Video attributes
-    _texture = None
+    def __init__(self):
+        self._sources = []
+
+    def _create_audio(self):
+        '''Create _audio for sources[0].  
+        
+        Reuses existing _audio if it exists and is compatible.
+        '''
+        if not self._sources:
+            return
+
+        source = self._sources[0]
+        if not source.audio_format:
+            self._audio = None
+            return
+
+        if self._audio:
+            if self._audio.audio_format == source.audio_format:
+                return
+            else:
+                self._audio = None
+
+        self._audio = audio_player_class(source.audio_format)
+
+    def _fill_audio(self):
+        '''Ensure _audio is full.'''
+        if not self._audio:
+            pass
+
+        write_size = self._audio.get_write_size()
+        if not write_size:
+            return
+
+        for audio_data, audio_format in self._get_audio_data(write_size):
+            if audio_data == 'eos':
+                self._audio.write_eos()
+                continue
+            if audio_format != self._audio.audio_format:
+                return
+            length = self._audio.write(audio_data)
+            if length < audio_data.length:
+                audio_data.consume(length, self._audio.audio_format)
+                self._next_audio_data = audio_data
+
+            write_size -= length
+            if write_size <= 0:
+                return
+
+        self._audio.write_end()
+
+    def _get_audio_data(self, bytes):
+        '''Yields pairs of (audio_data, audio_format).'''
+        if self._next_audio_data:
+            audio_data = self._next_audio_data
+            self._next_audio_data = None
+            bytes -= audio_data.length
+            yield (audio_data,
+                   self._sources[self._source_read_index].audio_format)
+
+        try:
+            source = self._sources[self._source_read_index]
+        except IndexError:
+            source = None
+
+        while source and bytes > 4: # bytes > 4 compensates for alignment loss
+            audio_data = source._get_audio_data(bytes)
+            if audio_data:
+                bytes -= audio_data.length
+                yield audio_data, source.audio_format
+            else:
+                yield 'eos', source.audio_format
+                if self._eos_action == self.EOS_NEXT:
+                    self._source_read_index += 1
+                    try:
+                        source = self._sources[self._source_read_index]
+                        source._play()
+                    except IndexError:
+                        source = None
+                elif self._eos_action == self.EOS_LOOP:
+                    source._seek(0)
+                elif self._eos_action == self.EOS_PAUSE:
+                    source = None
+                elif self._eos_action == self.EOS_STOP:
+                    source = None
+                else:
+                    assert False, 'Invalid eos_action'
+                    source = None
 
     def queue(self, source):
         '''Queue the source on this player.
@@ -573,20 +677,36 @@ class BasePlayer(event.EventDispatcher):
                 The source to queue.
 
         '''
+        self._sources.append(source._get_queue_source())
+        if len(self._sources) == 1:
+            self._source_read_index = 0
+            self._begin_source()
+
+            if self._playing:
+                self.play()
 
     def play(self):
         '''Begin playing the current source.
 
         This has no effect if the player is already playing.
         '''
-        raise NotImplementedError('abstract')
+        self._playing = True
+        self._pause_seek = False
+
+        if self._audio:
+            self._timestamp = None
+            self._audio.play()
 
     def pause(self):
         '''Pause playback of the current source.
 
         This has no effect if the player is already paused.
         '''
-        raise NotImplementedError('abstract')
+        self._playing = False
+        self._pause_seek = False
+        
+        if self._audio:
+            self._audio.stop()
 
     def seek(self, timestamp):
         '''Seek for playback to the indicated timestamp in seconds on the
@@ -597,26 +717,86 @@ class BasePlayer(event.EventDispatcher):
             `timestamp` : float
                 Timestamp to seek to.
         '''
-        raise NotImplementedError('abstract')
+        if not self._sources:
+            pass
 
+        if not self._playing:
+            self._pause_seek = True
+
+        source = self._sources[0]
+        self._source_read_index = 0
+        source._seek(timestamp)
+        self._timestamp = timestamp
+
+        if self._audio:
+            self._audio.stop()
+            self._audio.clear()
+        
     def next(self):
         '''Move immediately to the next queued source.
 
-        If the `eos_action` of this player is `EOS_NEXT`, and the source has
-        been queued for long enough, there will be no gap in the audio or
-        video playback.  Otherwise, there may be some delay as the next source
-        is prerolled and the first frames decoded and buffered.
+        There may be a gap in playback while the audio buffer is refilled.
         '''
-        raise NotImplementedError('abstract')
+        if not self._sources:
+            return
+
+        if self._audio:
+            self._audio.stop()
+            self._audio.clear()
+
+        self._next_source()
+
+    def _next_source(self):
+        if not self._sources:
+            return
+
+        self._source_read_index -= 1
+        source = self._sources.pop(0)
+        source._release_texture(self)
+        source._stop()
+        self._begin_source()
+
+    def _begin_source(self):
+        if not self._sources:
+            return
+
+        source = self._sources[0]
+        source._init_texture(self)
+        self._create_audio()
+        self._fill_audio()
 
     def dispatch_events(self):
         '''Dispatch any pending events and perform regular heartbeat functions
         to maintain playback.
         '''
-        pass
+        if not self._sources:
+            return
+
+        if not self._pause_seek:
+            self._fill_audio()
+
+        if self._audio:
+            self._audio.pump()
+            while self._audio.clear_eos():
+                if self._eos_action == self.EOS_NEXT:
+                    self._next_source()
+                elif self._eos_action == self.EOS_PAUSE:
+                    self._playing = False
+                    self._timestamp = self._sources[0].duration
+                elif self._eos_action == self.EOS_STOP:
+                    self.stop()
+                    self._sources = []
+                    return
+                self.dispatch_event('on_eos')
+
+        if self._texture:
+            self._sources[0]._update_texture(self, self._get_time())
 
     def _get_time(self):
-        raise NotImplementedError('abstract')
+        if self._timestamp is not None:
+            return self._timestamp
+        elif self._audio:
+            return self._audio.get_time()
 
     time = property(lambda self: self._get_time(),
                     doc='''Retrieve the current playback time of the current
@@ -633,7 +813,8 @@ class BasePlayer(event.EventDispatcher):
          ''')
 
     def _get_source(self):
-        return self._source
+        if self._sources:
+            return self._sources[0]
 
     source = property(lambda self: self._get_source(),
                       doc='''Return the current source.
@@ -672,7 +853,9 @@ class BasePlayer(event.EventDispatcher):
         ''')
 
     def _set_volume(self, volume):
-        raise NotImplementedError('abstract')
+        self._volume = volume
+        if self._audio:
+            self._audio.set_volume(volume)
 
     volume = property(lambda self: self._volume,
                       lambda self, volume: self._set_volume(volume),
@@ -688,7 +871,9 @@ class BasePlayer(event.EventDispatcher):
          ''')
 
     def _set_min_gain(self, min_gain):
-        raise NotImplementedError('abstract')
+        self._min_gain = min_gain
+        if self._audio:
+            self._audio.set_min_gain(min_gain)
 
     min_gain = property(lambda self: self._min_gain,
                         lambda self, min_gain: self._set_min_gain(min_gain),
@@ -701,7 +886,9 @@ class BasePlayer(event.EventDispatcher):
          ''')
 
     def _set_max_gain(self, max_gain):
-        raise NotImplementedError('abstract')
+        self._max_gain = max_gain
+        if self._audio:
+            self._audio.set_max_gain(max_gain)
 
     max_gain = property(lambda self: self._max_gain,
                         lambda self, max_gain: self._set_max_gain(max_gain),
@@ -714,7 +901,9 @@ class BasePlayer(event.EventDispatcher):
          ''')
 
     def _set_position(self, position):
-        raise NotImplementedError('abstract')
+        self._position = position
+        if self._audio:
+            self._audio.set_position(position)
 
     position = property(lambda self: self._position,
                         lambda self, position: self._set_position(position),
@@ -728,7 +917,9 @@ class BasePlayer(event.EventDispatcher):
         ''')
 
     def _set_velocity(self, velocity):
-        raise NotImplementedError('abstract')
+        self._velocity = velocity
+        if self._audio:
+            self._audio.set_velocity(velocity)
 
     velocity = property(lambda self: self._velocity,
                         lambda self, velocity: self._set_velocity(velocity),
@@ -742,7 +933,9 @@ class BasePlayer(event.EventDispatcher):
         ''')
 
     def _set_pitch(self, pitch):
-        raise NotImplementedError('abstract')
+        self._pitch = pitch
+        if self._audio:
+            self._audio.set_pitch(pitch)
 
     pitch = property(lambda self: self._pitch,
                      lambda self, pitch: self._set_pitch(pitch),
@@ -758,7 +951,9 @@ class BasePlayer(event.EventDispatcher):
         ''')
 
     def _set_cone_orientation(self, cone_orientation):
-        raise NotImplementedError('abstract')
+        self._cone_orientation = cone_orientation
+        if self._audio:
+            self._audio.set_cone_orientation(cone_orientation)
 
     cone_orientation = property(lambda self: self._cone_orientation,
                                 lambda self, c: self._set_cone_orientation(c),
@@ -773,7 +968,9 @@ class BasePlayer(event.EventDispatcher):
         ''')
 
     def _set_cone_inner_angle(self, cone_inner_angle):
-        raise NotImplementedError('abstract')
+        self._cone_inner_angle = cone_inner_angle
+        if self._audio:
+            self._audio.set_cone_inner_angle(cone_inner_angle)
 
     cone_inner_angle = property(lambda self: self._cone_inner_angle,
                                 lambda self, a: self._set_cone_inner_angle(a),
@@ -787,7 +984,9 @@ class BasePlayer(event.EventDispatcher):
         ''')
 
     def _set_cone_outer_angle(self, cone_outer_angle):
-        raise NotImplementedError('abstract')
+        self._cone_outer_angle = cone_outer_angle
+        if self._audio:
+            self._audio.set_cone_outer_angle(cone_outer_angle)
 
     cone_outer_angle = property(lambda self: self._cone_outer_angle,
                                 lambda self, a: self._set_cone_outer_angle(a),
@@ -802,7 +1001,9 @@ class BasePlayer(event.EventDispatcher):
         ''')
 
     def _set_cone_outer_gain(self, cone_outer_gain):
-        raise NotImplementedError('abstract')
+        self._cone_outer_gain = cone_outer_gain
+        if self._audio:
+            self._audio.set_cone_outer_gain(cone_outer_gain)
 
     cone_outer_gain = property(lambda self: self._cone_outer_gain,
                                 lambda self, g: self._set_cone_outer_gain(g),
@@ -835,11 +1036,33 @@ class BasePlayer(event.EventDispatcher):
 
             :event:
             '''
-BasePlayer.register_event_type('on_eos')
+Player.register_event_type('on_eos')
 
-class ManagedSoundPlayerMixIn(object):
+class ManagedSoundPlayer(Player):
+    '''A player which takes care of updating its own audio buffers.
+
+    This player will continue playing the sound until the sound is
+    finished, even if the application discards the player early.
+    There is no need to call `Player.dispatch_events` on this player,
+    though you must call `pyglet.media.dispatch_events`.
+    '''
+
+    #: The only possible end of stream action for a managed player.
+    EOS_STOP = 'stop'
+
+    _eos_action = EOS_STOP
+    eos_action = property(lambda self: EOS_STOP,
+                          doc='''The fixed eos_action is `EOS_STOP`,
+        in which the player is discarded as soon as the source has
+        finished.
+
+        Read-only.
+        
+        :type: str
+        ''')
+
     def __init__(self):
-        super(ManagedSoundPlayerMixIn, self).__init__()
+        super(ManagedSoundPlayer, self).__init__()
         managed_players.append(self)
 
     def stop(self):
@@ -966,41 +1189,13 @@ class Listener(object):
         :type: float
         ''')
 
+
+
 if getattr(sys, 'is_epydoc', False):
     #: The singleton listener.
     #:
     #: :type: `Listener`
     listener = Listener()
-
-    # Document imaginary Player class
-    Player = BasePlayer
-    Player.__name__ = 'Player'
-    del BasePlayer
-
-    # Document imaginary ManagedSoundPlayer class.  (Actually implemented
-    # by ManagedSoundPlayerMixIn).
-    class ManagedSoundPlayer(Player):
-        '''A player which takes care of updating its own audio buffers.
-
-        This player will continue playing the sound until the sound is
-        finished, even if the application discards the player early.
-        There is no need to call `Player.dispatch_events` on this player,
-        though you must call `pyglet.media.dispatch_events`.
-        '''
-
-        #: The only possible end of stream action for a managed player.
-        EOS_STOP = 'stop'
-
-        eos_action = property(lambda self: EOS_STOP,
-                              doc='''The fixed eos_action is `EOS_STOP`,
-            in which the player is discarded as soon as the source has
-            finished.
-
-            Read-only.
-            
-            :type: str
-            ''')
-
 else:
     # Find best available sound driver according to user preference
     import pyglet
@@ -1012,14 +1207,14 @@ else:
             driver = sys.modules[driver_name]
             break
         except ImportError:
+            raise
             pass
 
     if not driver:
         raise ImportError('No suitable audio driver could be loaded.')
 
     driver.driver_init()
-    Player = driver.DriverPlayer
-    ManagedSoundPlayer = driver.DriverManagedSoundPlayer
+    audio_player_class = driver.driver_audio_player_class
     listener = driver.driver_listener
 
     # Find best available source loader
