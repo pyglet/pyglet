@@ -131,8 +131,6 @@ def run(xml_file):
             gui.get('#music-test').delete()
             m = widgets.Music(gui, file, id='music-test', playing=True)
             m.gainFocus()
-            # XXX hurm
-            m.getGUI().layout()
 
         dialogs.FileOpen(gui, callback=load_music).run()
         return event.EVENT_HANDLED
@@ -142,14 +140,17 @@ def run(xml_file):
         if not button & mouse.RIGHT:
             return event.EVENT_UNHANDLED
 
+        gui.get('#movie-test').delete()
+        file = '/Users/richard/Desktop/amelie_2.mp4.ff.avi'
+        m = widgets.Movie(gui, file, id='movie-test', playing=True)
+        return event.EVENT_HANDLED
+
         def load_movie(file=None):
             print 'DIALOG SELECTION:', file
             if not file: return
             gui.get('#movie-test').delete()
             m = widgets.Movie(gui, file, id='movie-test', playing=True)
             m.gainFocus()
-            # XXX hurm
-            m.getGUI().layout()
 
         dialogs.FileOpen(gui, callback=load_movie).run()
         return event.EVENT_HANDLED

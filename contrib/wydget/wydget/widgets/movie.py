@@ -50,14 +50,12 @@ class Movie(Frame):
             classes=('-play-button',), is_visible=not playing)
         c.pause = Image(f, data.load_gui_image('media-pause.png'),
             bgcolor=None, classes=('-pause-button',), is_visible=playing)
-        c.range = Image(f, data.load_gui_image('media-range.png'))
+        fi = Frame(f, is_transparent=True)
+        c.range = Image(fi, data.load_gui_image('media-range.png'))
+        im = data.load_gui_image('media-position.png')
+        c.position = Image(fi, im, x=0, y=-2, classes=('-position',))
         c.time = Label(f, '00:00', font_size=20)
         c.anim = None
-
-        # current position over the top
-        c.position = Image(self, data.load_gui_image('media-position.png'),
-            classes=('-position',))
-        c.position.range = c.range
 
         # make sure we get at least one frame to display
         self.player.queue(source)
@@ -66,18 +64,36 @@ class Movie(Frame):
         if playing:
             self.play()
 
-    def resize(self):
-        if not super(Movie, self).resize(): return False
-        p = self.control.position
-        p.y = (self.control.range.y - p.height // 2)
-        return True
-
     def update(self, dt):
         self.player.dispatch_events()
 
+        if self.control is None:
+            # the player update may have resulted in this element being
+            # culled
+            return
+
+        if not self.control.isVisible():
+            return
+        t = self.player.time
+
+        # time display
+        s = int(t)
+        m = t // 60
+        h = m // 60
+        m %= 60
+        s = s % 60
+        if h: text = '%d:%02d:%02d'%(h, m, s)
+        else: text = '%02d:%02d'%(m, s)
+        if text != self.control.time.text:
+            self.control.time.text = text
+
+        # slider position
+        p = (t/self.player.source.duration)
+        self.control.position.x = int(p * self.control.range.width)
+
     def pause(self):
         if not self.playing: return
-        clock.unschedule(self.time_update)
+        clock.unschedule(self.update)
         self.player.pause()
         self.control.play.setVisible(True)
         self.control.pause.setVisible(False)
@@ -85,7 +101,7 @@ class Movie(Frame):
 
     def play(self):
         if self.playing: return
-        clock.schedule(self.time_update)
+        clock.schedule(self.update)
         self.player.play()
         self.control.play.setVisible(False)
         self.control.pause.setVisible(True)
@@ -118,35 +134,17 @@ class Movie(Frame):
         #    glPopMatrix()
 
     def on_eos(self):
-        self.pause()
         self.player.seek(0)
-        self.control.position.x = self.control.range.x
+        self.pause()
+        self.control.position.x = 0
         self.control.time.text = '00:00'
         self.getGUI().dispatch_event(self, 'on_eos')
 
-    def time_update(self, ts):
-        if not self.control.isVisible():
-            return
-        t = self.player.time
-
-        # time display
-        s = int(t)
-        m = t // 60
-        h = m // 60
-        m %= 60
-        s = s % 60
-        if h: text = '%d:%02d:%02d'%(h, m, s)
-        else: text = '%02d:%02d'%(m, s)
-        if text != self.control.time.text:
-            self.control.time.text = text
-
-        # slider position
-        p = (t/self.player.source.duration)
-        p *= self.control.range.width
-        self.control.position.x = self.control.range.x + int(p)
-
     def delete(self):
         clock.unschedule(self.update)
+        if self.control.anim is not None:
+            self.control.anim.cancel()
+        self.control = None
         super(Movie, self).delete()
 
 
@@ -200,11 +198,10 @@ def on_mouse_release(widget, x, y, buttons, modifiers):
 @event.default('movie .-position')
 def on_drag(widget, x, y, dx, dy, buttons, modifiers):
     if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
-    rx = widget.range.x
-    rw = widget.range.width
-    widget.x = max(rx, min(rx + rw, widget.x + dx))
     movie = widget.getParent('movie')
-    p = float(widget.x - rx) / rw
+    rw = movie.control.range.width
+    widget.x = max(0, min(rw, widget.x + dx))
+    p = float(widget.x) / rw
     movie.player.seek(p * movie.player.source.duration)
     return event.EVENT_HANDLED
 

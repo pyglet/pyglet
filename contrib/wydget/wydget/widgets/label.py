@@ -200,6 +200,11 @@ class Label(LabelCommon):
             return self.unconstrained.width + self.padding * 2
         return self.unconstrained.height + self.padding * 2
 
+    def getRects(self, *args):
+        if self.label is None:
+            self._render()
+        return super(Label, self).getRects(*args)
+
     def render(self, rect):
         if self.label is None:
             self._render()

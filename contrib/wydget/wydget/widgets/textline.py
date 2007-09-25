@@ -135,7 +135,8 @@ class TextInputLine(Label):
             self.glyphs = None
             self.label = None
             self.width = 0
-            self.height = self.font_size
+            f = style.getFont(size=self.font_size)
+            self.height = f.ascent - f.descent
 
         # just quickly force a resize on the parent to fix up its
         # dimensions
@@ -156,6 +157,7 @@ class TextInputLine(Label):
         else:
             text = self.text[0:i] + text + self.text[i:]
         self.text = text
+        self._render()
         self.setCursorPosition(i+move)
         self.getGUI().dispatch_event(self, 'on_change', text)
 
@@ -178,9 +180,9 @@ class TextInputLine(Label):
             glPopAttrib()
                
     def determineIndex(self, x):
-        diff = abs(x)
         if self.glyphs is None:
             return 0
+        diff = abs(x)
         index = 0
         for advance in self.glyphs.cumulative_advance:
             new_diff = abs(x - advance)
@@ -196,6 +198,11 @@ class TextInputLine(Label):
         return ok
 
     def setCursorPosition(self, index):
+        if self.glyphs is None:
+            self.cursor.x = 0
+            self.cursor_index = 0
+            return
+
         if index >= len(self.text):
             index = len(self.text)
         direction = index - self.cursor_index
@@ -205,8 +212,6 @@ class TextInputLine(Label):
         # determine position in self.glyphs
         if not self.text or index == 0:
             cursor_text_width = 0
-        elif index == len(self.text):
-            cursor_text_width = self.glyphs.get_subwidth(0, index-1)
         else:
             cursor_text_width = self.glyphs.get_subwidth(0, index)
 
@@ -227,54 +232,6 @@ class TextInputLine(Label):
 
         if hasattr(self, 'cursor'):
             self.cursor.x = max(0, cursor_text_width)
-
-@event.default('-text-input-line')
-def on_click(widget, x, y, buttons, modifiers, click_count):
-    x, y = widget.calculateRelativeCoords(x, y)
-    if not buttons & mouse.LEFT:
-        return event.EVENT_UNHANDLED
-    if click_count == 1:
-        new = widget.determineIndex(x)
-        if modifiers & key.MOD_SHIFT:
-            old = widget.cursor_index
-            if old < new: widget.highlight = (old, new)
-            else: widget.highlight = (new, old)
-            widget.getGUI().setSelection(widget)
-        else:
-            widget.getGUI().clearSelection(widget)
-            widget.highlight = None
-            widget.cursor.enable()
-            widget.setCursorPosition(new)
-    elif click_count == 2:
-        widget.cursor.disable()
-        pos = widget.determineIndex(x)
-        widget.selectWord(pos)
-        widget.getGUI().setSelection(widget)
-    elif click_count == 3:
-        widget.cursor.disable()
-        widget.selectAll()
-        widget.getGUI().setSelection(widget)
-
-    return event.EVENT_HANDLED
-
-@event.default('-text-input-line')
-def on_mouse_drag(widget, x, y, dx, dy, buttons, modifiers):
-    if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
-    x, y = widget.calculateRelativeCoords(x, y)
-    if widget.highlight is None:
-        start = widget.determineIndex(x)
-        widget.highlight = (start, start)
-        widget.getGUI().setSelection(widget)
-        widget.cursor.disable()
-    else:
-        start, end = widget.highlight
-        now = widget.determineIndex(x)
-        if now <= start:
-            widget.highlight = (now, end)
-        else:
-            widget.highlight = (start, now)
-    return event.EVENT_HANDLED
-
 
 class TextInput(Frame):
     '''Cursor position indicates which indexed element the cursor is to the
@@ -370,6 +327,56 @@ def on_lose_focus(widget):
     widget.ti.cursor.disable()
     widget.ti.highlight = None
     return event.EVENT_HANDLED
+
+@event.default('textinput, password')
+def on_click(widget, x, y, buttons, modifiers, click_count):
+    widget = widget.ti
+    x, y = widget.calculateRelativeCoords(x, y)
+    if not buttons & mouse.LEFT:
+        return event.EVENT_UNHANDLED
+    if click_count == 1:
+        new = widget.determineIndex(x)
+        if modifiers & key.MOD_SHIFT:
+            old = widget.cursor_index
+            if old < new: widget.highlight = (old, new)
+            else: widget.highlight = (new, old)
+            widget.getGUI().setSelection(widget)
+        else:
+            widget.getGUI().clearSelection(widget)
+            widget.highlight = None
+            widget.cursor.enable()
+            widget.setCursorPosition(new)
+    elif click_count == 2:
+        widget.cursor.disable()
+        pos = widget.determineIndex(x)
+        widget.selectWord(pos)
+        widget.getGUI().setSelection(widget)
+    elif click_count == 3:
+        widget.cursor.disable()
+        widget.selectAll()
+        widget.getGUI().setSelection(widget)
+
+    return event.EVENT_HANDLED
+
+@event.default('textinput, password')
+def on_mouse_drag(widget, x, y, dx, dy, buttons, modifiers):
+    if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
+    widget = widget.ti
+    x, y = widget.calculateRelativeCoords(x, y)
+    if widget.highlight is None:
+        start = widget.determineIndex(x)
+        widget.highlight = (start, start)
+        widget.getGUI().setSelection(widget)
+        widget.cursor.disable()
+    else:
+        start, end = widget.highlight
+        now = widget.determineIndex(x)
+        if now <= start:
+            widget.highlight = (now, end)
+        else:
+            widget.highlight = (start, now)
+    return event.EVENT_HANDLED
+
 
 @event.default('textinput, password')
 def on_key_press(widget, symbol, modifiers):

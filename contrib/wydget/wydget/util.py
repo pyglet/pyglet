@@ -1,5 +1,10 @@
 import math
 
+class RestartLayout(Exception):
+    '''During layout an element has mutated the scene (eg. through adding
+    scrollbars) and thus layout must be restarted).
+    '''
+
 def parse_value(value, base_value=0):
     '''Parse a numeric value spec which is one of:
 
@@ -58,8 +63,6 @@ class Dimension(object):
         '''
         if self.percentage is not None:
             pv = getattr(self.parent, self.attribute)
-            print 'CALCULATE %s as %s of %s %s (%s)'%(self.element.id,
-                self.percentage, self.parent.id, self.attribute, pv)
             if pv is None:
                 return None
             pv = getattr(self.parent, 'inner_' + self.attribute)
@@ -72,8 +75,6 @@ class Dimension(object):
         '''
         if self.percentage is not None:
             pv = getattr(self.parent, self.attribute)
-            print 'CALCULATE %s as %s of %s %s (%s)'%(self.element.id,
-                self.percentage, self.parent.id, self.attribute, pv)
             if pv is None:
                 return None
             pv = getattr(self.parent, 'inner_' + self.attribute)
@@ -91,7 +92,6 @@ class Position(Dimension):
         properties if necessary.
         '''
         if self.percentage is not None:
-            print 'CALCULATE', self.element.id, '% of', self.parent.id
             pv = getattr(self.parent, self.attribute)
             if pv is None:
                 return None

@@ -48,13 +48,13 @@ def Message(*args, **kw):
 def on_click(widget, *args):
     dialog = widget.getParent('question-dialog')
     dialog.on_ok()
-    dialog.close()
+    dialog.delete()
     return event.EVENT_HANDLED
 
 @event.default('.-question-dialog-cancel')
 def on_click(widget, *args):
     dialog = widget.getParent('question-dialog')
     dialog.on_cancel()
-    dialog.close()
+    dialog.delete()
     return event.EVENT_HANDLED
 

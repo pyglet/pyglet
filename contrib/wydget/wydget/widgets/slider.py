@@ -54,6 +54,7 @@ class VerticalSlider(SliderCommon):
         self.bar_spec = bar_size
         self.bar_color = util.parse_color(bar_color)
         self.bar_text_color = util.parse_color(bar_text_color)
+        self.bar = self.dbut = self.ubut = None
 
         super(VerticalSlider, self).__init__(parent, x, y, z, width, height,
             bgcolor=bgcolor, **kw)
@@ -67,20 +68,22 @@ class VerticalSlider(SliderCommon):
         if self.height < min_size:
             self.height = min_size
 
-        self.clear()
-
         # assume buttons are same height
         bh = ArrowButtonUp.get_arrow().height
 
         # only have buttons if there's enough room (two buttons plus
         # scrolling room)
         self.have_buttons = self.height > (bh * 2 + min_size)
-        if self.have_buttons:
+        if self.have_buttons and self.dbut is None:
             # do this after the call to super to allow it to set the parent etc.
-            ArrowButtonDown(self, classes=('-repeater-button-min',),
-                color='black').resize()
-            ArrowButtonUp(self, y=self.height-bh, color='black',
-                classes=('-repeater-button-max',)).resize()
+            self.dbut = ArrowButtonDown(self, classes=('-repeater-button-min',),
+                color='black')
+            self.ubut = ArrowButtonUp(self, y=self.height-bh, color='black',
+                classes=('-repeater-button-max',))
+        elif not self.have_buttons and self.dbut is not None:
+            self.dbut.delete()
+            self.ubut.delete()
+            self.dbut = self.ubut = None
 
         # add slider bar
         i_height = self.inner_rect.height
@@ -91,13 +94,19 @@ class VerticalSlider(SliderCommon):
 
         s = self.show_value and str(self._value) or ' '
         # note: dimensions are funny because the bar is rotated 90 degrees
-        # also, we force blending here so we don't generate a bazillion
-        # textures
-        self.bar = SliderBar(self, 'y', s, self.width, self.bar_size,
-            bgcolor=self.bar_color, color=self.bar_text_color)
+        if self.bar is None:
+            self.bar = SliderBar(self, 'y', s, self.width, self.bar_size,
+                bgcolor=self.bar_color, color=self.bar_text_color)
+        else:
+            self.bar.text = s
+            self.bar.height = self.bar_size
+
+        # fix up sizing and positioning of elements
+        if self.dbut is not None:
+            self.dbut.resize()
+            self.ubut.resize()
         self.bar.resize()
 
-        # fix up positioning of elements
         self.layout()
         self.positionBar()
 
@@ -157,6 +166,7 @@ class HorizontalSlider(SliderCommon):
         self.bar_spec = bar_size
         self.bar_color = util.parse_color(bar_color)
         self.bar_text_color = util.parse_color(bar_text_color)
+        self.bar = self.lbut = self.rbut = None
 
         # for step repeat when clicking in the bar
         self.delay_timer = None
@@ -164,6 +174,7 @@ class HorizontalSlider(SliderCommon):
         super(HorizontalSlider, self).__init__(parent, x, y, z, width, height,
             bgcolor=bgcolor, **kw)
 
+    # XXX this really should be resize()
     def handleSizing(self):
         try:
             # if the bar size spec is a straight integer, use it
@@ -173,19 +184,21 @@ class HorizontalSlider(SliderCommon):
         if self.width < min_size:
             self.width = min_size
 
-        self.clear()
-
         # assume buttons are same width
         bw = ArrowButtonLeft.get_arrow().width
 
         # only have buttons if there's enough room (two buttons plus
         # scrolling room)
         self.have_buttons = self.width > (bw * 2 + min_size)
-        if self.have_buttons:
-            ArrowButtonLeft(self, classes=('-repeater-button-min',),
-                color='black').resize()
-            ArrowButtonRight(self, x=self.width-bw, color='black',
-                classes=('-repeater-button-max',)).resize()
+        if self.have_buttons and self.lbut is None:
+            self.lbut = ArrowButtonLeft(self, classes=('-repeater-button-min',),
+                color='black')
+            self.rbut = ArrowButtonRight(self, x=self.width-bw, color='black',
+                classes=('-repeater-button-max',))
+        elif not self.have_buttons and self.lbut is not None:
+            self.lbut.delete()
+            self.rbut.delete()
+            self.lbut = self.rbut = None
 
         # slider bar size
         i_width = self.inner_rect.width
@@ -195,11 +208,17 @@ class HorizontalSlider(SliderCommon):
 
         s = self.show_value and str(self._value) or ' '
         # we force blending here so we don't generate a bazillion textures
-        self.bar = SliderBar(self, 'x', s, self.bar_size, self.height,
-            bgcolor=self.bar_color, color=self.bar_text_color)
-        self.bar.resize()
+        if self.bar is None:
+            self.bar = SliderBar(self, 'x', s, self.bar_size, self.height,
+                bgcolor=self.bar_color, color=self.bar_text_color)
+        else:
+            self.bar.text = s
+            self.bar.width = self.bar_size
 
-        # fix up positioning of elements
+        # fix up sizing and positioning of elements
+        self.lbut.resize()
+        self.rbut.resize()
+        self.bar.resize()
         self.layout()
         self.positionBar()
 

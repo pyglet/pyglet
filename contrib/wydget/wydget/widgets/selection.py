@@ -15,14 +15,12 @@ class SelectionCommon(Frame):
         '''Create the object from the XML element and attach it to the parent.
         '''
         kw = loadxml.parseAttributes(element)
-
         items = []
         for child in element.getchildren():
             assert child.tag == 'option'
             text = xml.sax.saxutils.unescape(child.text)
             childkw = loadxml.parseAttributes(child)
             items.append((text, child.attrib.get('id'), childkw))
-
         return cls(parent, items, **kw)
 
 class Selection(SelectionCommon):
@@ -50,7 +48,8 @@ class Selection(SelectionCommon):
                 kw['width'] = size * font_size
 
         super(Selection, self).__init__(parent, bgcolor=bgcolor,
-            scrollable=scrollable, is_transparent=is_transparent, **kw)
+            scrollable=scrollable, scrollable_resize=scrollable,
+            is_transparent=is_transparent, **kw)
         if scrollable: f = self.contents
         else: f = self
         if is_vertical:
@@ -137,7 +136,10 @@ class ComboBox(SelectionCommon):
             self.contents.resize()
         # fix label width so it fits largest selection
         self.label.width = self.contents.width
-        return super(ComboBox, self).resize()
+        if not super(ComboBox, self).resize(): return False
+        self.contents.y = -(self.contents.height - self.height)
+        self.contents.x = 0
+        return True
 
     @classmethod
     def get_arrow(cls):
@@ -244,7 +246,7 @@ class Option(TextButton):
         if id is None: id = kw['text']
 
         super(Option, self).__init__(parent, border=border, bgcolor=bgcolor,
-            font_size=font_size, color=color, id=id, **kw)
+            font_size=font_size, color=color, id=id, width=width, **kw)
 
     def set_text(self, text):
         return super(Option, self).set_text(text, additional=('active', ))

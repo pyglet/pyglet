@@ -252,9 +252,16 @@ class Element(object):
         return obj
 
     def addChild(self, child):
+        '''Add the child element to this container.
+
+        The child is register()ed with the GUI and this element's geometry
+        is reset (if not fixed) so it will be reshaped upon the next
+        top-level GUI layout().
+        '''
         self.children.append(child)
         child.parent = self
         self.getGUI().register(child)
+        self.resetGeometry()
 
     def getParent(self, selector):
         '''Get the first parent selected by the selector.
@@ -262,6 +269,9 @@ class Element(object):
         XXX at the moment, just does name
         '''
         if isinstance(selector, str):
+            if selector[0] in '.#':
+                raise NotImplementedError(
+                    'lookup by id and class not yet supported')
             selector = [s.strip() for s in selector.split(',')]
         if self.name in selector: return self
         return self.parent.getParent(selector)
@@ -278,10 +288,6 @@ class Element(object):
         return False
 
     def resetGeometry(self):
-        if not self.x_spec.is_fixed:
-            self._x = None
-        if not self.y_spec.is_fixed:
-            self._y = None
         if not self.width_spec.is_fixed:
             self._width = None
         if not self.height_spec.is_fixed:
@@ -470,7 +476,7 @@ class Element(object):
 
     def setVisible(self, is_visible):
         self.is_visible = is_visible
-        self.setDirty()
+        self.getGUI().layoutNeeded()
 
     def setDirty(self):
         self.getGUI().setDirty()
@@ -533,8 +539,6 @@ class Element(object):
         old_index = self.children.index(old)
         old.delete()
         self.children.insert(old_index, new)
-        if hasattr(self, 'layout'):
-            self.layout.layout()
 
     def clear(self):
         for child in list(self.children): child.delete()

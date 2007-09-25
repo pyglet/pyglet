@@ -2,25 +2,13 @@ KNOWN BUGS
 ----------
 
 - VERY LITTLE CODE DOCUMENTATION
-- no dialog tests
 - assets are poorly-located for packaging
 - elements with negative padding are not rendered "correctly"
   . reject negative padding?
 - element modality needs to be done on a stack
-- Layouts:
-  . detect and reject height="100%" elements in Vertical layouts, and
-    width="100%" in Horizontal layouts
-- element heirarchy mutation needs to be handled better (explicit
-  gui.layout() invocation and all that)
 - Tables:
+  . are BROKEN and may not be fixed (should be replaced with Grid layout?)
   . table columns don't truncate
-- Tabbed Frames:
-  . tab contents aren't sized to full size of tab (so alignment isn't
-    correct)
-- Selection:
-  . background colours aren't working
-  . scrollbars going crazy (eg. h bar in response to v bar being added
-    because selection width no longer accomodates widest label)
 - Drag-and-drop:
   . drags and moves are unbounded (dx/dy continue to be generated when
     pointer hits the screen boundary, try test_drag and drag up until the
@@ -29,12 +17,10 @@ KNOWN BUGS
     Poss. Solution: only use the pointer position, not dx/dy - will require
     remembering the initial offset of pointer -> element being moved.
 - Element
-  . <ah> Right border is inset by one pixel (evident in test_element,
-    test_drawer and test_dropdown)
-- test_table
-  . <ah> Width of horizontal scrollbar thumb is incorrect.
+  . <ah> Right border is inset by one pixel (evident in test_element)
+- Scrollbars
+  . <ah> Width of horizontal scrollbar thumb is incorrect in test_table
 - TextInput
-  . click beyond end of text places cursor at start of text
   . <ah> Word motion events not yet implemented.
   . <ah> Caret motion past edge of field should scroll enough to get caret
     into the center of the field (or to limit).

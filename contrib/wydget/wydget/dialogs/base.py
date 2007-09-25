@@ -10,20 +10,20 @@ class Dialog(widgets.Frame):
             padding=padding, border=border, classes=classes,
             bgcolor=bgcolor, **kw)
 
-    def position(self):
+    def resize(self):
+        if not super(Dialog, self).resize():
+            return False
         # position dialog to center of parent
         new_x = self.parent.width//2 - self.width//2
         if new_x != self._x: self.x = new_x
         new_y = self.parent.height//2 - self.height//2
         if new_y != self._y: self.y = new_y
+        return True
 
     def run(self):
         '''Invoke to position the dialog in the middle of the parent
         (presumably the window) and make the dialog become modal.
         '''
-        self.resize()
-        self.position()
-        self.dump()
         self.setModal()
 
 

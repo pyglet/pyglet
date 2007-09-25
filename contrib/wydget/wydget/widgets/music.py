@@ -124,7 +124,7 @@ class Music(Frame):
         self.control.position.x = self.control.range.x + int(p)
 
     def delete(self):
-        clock.unschedule(self.update)
+        clock.unschedule(self.time_update)
         super(Music, self).delete()
 
 

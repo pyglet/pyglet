@@ -151,10 +151,7 @@ class Vertical(Layout):
         cols = [[]]
         ch = 0
         wrap = self.wrap and self.wrap.calculate()
-        print 'COLUMNS', self.wrap, wrap
         for c in self.getChildren():
-            if wrap and ch:
-                print '..', ch, c.min_height
             if wrap and ch and ch + c.min_height > wrap:
                 ch = 0
                 cols.append([])
@@ -427,8 +424,9 @@ class Form(Grid):
 
         row = Frame(self.parent, is_transparent=True)
         if label:
-            Label(row, label, **kw)
+            element._label = Label(row, label, **kw)
         else:
+            element._label = None
             Frame(row, is_transparent=True, width=0, height=0)
 
         # move the element to the row

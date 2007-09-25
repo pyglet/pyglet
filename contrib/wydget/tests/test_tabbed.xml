@@ -6,8 +6,8 @@
  <tab label="Tab 1">
   <vertical valign="center" halign="center">
    <label>Label in tab 1</label>
-   <label>Label in tab 1 which is really quite long</label>
-   <label>Label in tab 1</label>
+   <label>Label in tab 1 which is really quite long indeedy, yes</label>
+   <label>... and this tab should set the overall dimensions</label>
   </vertical>
  </tab>
  <tab label="Tab 2">
@@ -23,14 +23,28 @@
  <tab label="Tab 1">
   <vertical valign="center" halign="center">
    <label>Label in tab 1</label>
-   <label>Label in tab 1 which is really quite long</label>
-   <label>Label in tab 1</label>
+   <label>Label in tab 1 which is really quite long indeedy, yes</label>
    <label>(Inside a frame height=100)</label>
   </vertical>
  </tab>
  <tab label="Tab 2">
   <vertical valign="center" halign="center">
    <label>Label in tab 2 should be centered</label>
+  </vertical>
+ </tab>
+ <tab scrollable="true" label="Tab 3">
+  <vertical halign="center">
+   <label>Tab 3 should scroll</label>
+   <label>Tab 3 should scroll</label>
+   <label>Tab 3 should scroll</label>
+   <label>Tab 3 should scroll</label>
+   <label>Tab 3 should scroll</label>
+   <label>Tab 3 should scroll</label>
+   <label>Tab 3 should scroll</label>
+   <label>Tab 3 should scroll</label>
+   <label>Tab 3 should scroll</label>
+   <label>Tab 3 should scroll</label>
+   <label>Tab 3 should scroll</label>
   </vertical>
  </tab>
 </tabbed-frame>

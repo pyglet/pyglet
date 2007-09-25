@@ -16,13 +16,15 @@ class FrameCommon(element.Element):
 
     scrollable = False
     def resize(self):
-        ok = super(FrameCommon, self).resize()
-        if not ok: return False
+        if not super(FrameCommon, self).resize():
+            return False
 
         if self.scrollable:
-            self.contents.checkForScrollbars()
+            if self.contents.checkForScrollbars():
+                raise util.RestartLayout()
 
-        if not self.need_layout: return True
+        if not self.need_layout:
+            return True
 
         # make sure all the children have dimensions before trying
         # layout
@@ -44,9 +46,10 @@ class Frame(FrameCommon):
     v_slider = None
 
     def __init__(self, parent, x=None, y=None, z=None, width=None,
-            height=None, scrollable=False, **kw):
+            height=None, scrollable=False, scrollable_resize=False, **kw):
         self.layout = layouts.Layout(self)
         self.scrollable = scrollable
+        self.scrollable_resize = scrollable_resize
         super(Frame, self).__init__(parent, x, y, z, width, height, **kw)
 
         if self.scrollable:
@@ -113,51 +116,64 @@ class ContainerFrame(FrameCommon):
 
         self.y = vc_height - self.layout.height
 
+        # see what we need
+        v_needed = h > vc_height
+        if v_needed and not self.parent.scrollable_resize:
+            vc_width -= VerticalSlider.slider_size
+        h_needed = w > vc_width
+        if h_needed and not v_needed:
+            v_needed = h > vc_height
+
         change = False          # slider added or removed
 
         # add a vertical slider?
-        if h > vc_height:
-            if p.v_slider is not None:
-                p.v_slider.delete()
+        if v_needed:
             r = h - vc_height
-            vc_width -= VerticalSlider.slider_size
-            if w > vc_width:
+            if h_needed and not self.parent.scrollable_resize:
                 y = HorizontalSlider.slider_size
                 h = vc_height - y
                 r += y
             else:
                 y = 0
                 h = vc_height
-            p.v_slider = VerticalSlider(p, 0, r, r, x=vc_width, y=y,
-                height=h, step=16, classes=('-frame-vertical-slider',))
-            change = True
+            if p.v_slider is not None:
+                # XXX update the range more sanely
+                p.v_slider.range = r
+            else:
+                p.v_slider = VerticalSlider(p, 0, r, r, x=vc_width, y=y,
+                    height=h, step=16, classes=('-frame-vertical-slider',))
+                change = True
         elif p.v_slider is not None:
             p.v_slider.delete()
             p.v_slider = None
             change = True
 
         # add a horizontal slider?
-        if w > vc_width:
-            if p.h_slider is not None:
-                p.h_slider.delete()
+        if h_needed:
             r = w - vc_width
-            p.h_slider = HorizontalSlider(p, 0, r, 0, x=0, y=0, width=vc_width,
-                step=16, classes=('-frame-horizontal-slider',))
-            change = True
+            if p.h_slider is not None:
+                p.h_slider.range = r
+            else:
+                p.h_slider = HorizontalSlider(p, 0, r, 0, x=0, y=0,
+                    width=vc_width, step=16,
+                    classes=('-frame-horizontal-slider',))
+                change = True
         elif p.h_slider is not None:
             p.h_slider.delete()
             p.h_slider = None
             change = True
 
-        # XXX really do need to do something here
         #if change:
-            #p.resetGeometry()
-            #print 'RESET'
-            #p.dump()
+            # XXX really do need to do something here to resize contents
         return change
 
     def resize(self):
-        if not super(ContainerFrame, self).resize(): return False
+        if not super(ContainerFrame, self).resize():
+            return False
+        if self.parent.width is None:
+            return False
+        if self.parent.height is None:
+            return False
         self.updateViewClip()
         return True
 
@@ -166,9 +182,9 @@ class ContainerFrame(FrameCommon):
         pr = p.inner_rect
         vc_width, vc_height = pr.width, pr.height
         h_height = 0
-        if p.v_slider:
+        if p.v_slider and not self.parent.scrollable_resize:
             vc_width -= p.v_slider.width
-        if p.h_slider:
+        if p.h_slider and not self.parent.scrollable_resize:
             h_height = p.h_slider.height
             vc_height -= h_height
         self.setViewClip((-self.x, -self.y + h_height, vc_width, vc_height))
@@ -176,7 +192,7 @@ class ContainerFrame(FrameCommon):
     def setY(self, value):
         self.y = -value
         p = self.parent
-        if p.h_slider:
+        if p.h_slider and not self.parent.scrollable_resize:
             self.y += p.h_slider.height
         self.updateViewClip()
 
@@ -223,6 +239,12 @@ class TabFrame(Frame):
             glVertex2f(butx2-1, y2)
             glVertex2f(butx1+1, y2)
         glEnd()
+
+    def resize(self):
+        if self.scrollable:
+            self.width = self.parent.width
+            self.height = self.parent.height
+        return super(TabFrame, self).resize()
 
     def delete(self):
         self._button = None
@@ -287,10 +309,11 @@ class TabsLayout(layouts.Layout):
     '''
     name = 'tabs-layout'
 
-    def layout(self):
-        for child in self.parent.children:
-            child.width = self.width
-            child.height = self.height
+    def getChildren(self):
+        '''Don't use scrollable tabs for sizing.
+        '''
+        return [c for c in super(TabsLayout, self).getChildren()
+            if not c.scrollable]
 
 class TabbedFrame(Frame):
     '''A collection of frames, one active at a time.
@@ -332,19 +355,20 @@ class TabbedFrame(Frame):
         b._top = self
 
         if scrollable:
-            f = self.frame_class(self.bottom, scrollable=True,
+            f = self.frame_class(self.bottom, scrollable=True, x=0, y=0,
                 border=border, bgcolor=bgcolor, padding=2,
-                height=content_height)
+                height='100%', width='100%')
+            r = f.contents
         else:
-            f = self.frame_class(self.bottom, border=border,
-                bgcolor=bgcolor, padding=2)
+            r = f = self.frame_class(self.bottom, border=border, x=0, y=0,
+                bgcolor=bgcolor, padding=2, height='100%', width='100%')
         b._frame = f
         f._button = b
         if self._active_frame is None:
             self._active_frame = f
         else:
             f.setVisible(False)
-        return f
+        return r
 
     def activate(self, tab):
         self._active_frame.setVisible(False)

@@ -80,8 +80,10 @@ class Button(ButtonCommon, ImageCommon):
     def setOverImage(self, image):
         self.setImage(image, 'over_image')
 
-    def set_text(self, text, width=None, height=None):
-        self.text = text
+    _text = None
+    def set_text(self, text):
+        if text == self._text: return
+        self._text = text
 
         self.over_image = None
         self.pressed_image = None
@@ -91,6 +93,9 @@ class Button(ButtonCommon, ImageCommon):
             color=self.color, valign='top')
         label.width        # force clean
         num_lines = len(label.lines)
+
+        # size of resulting button images
+        w, h = self.width, self.height = self.bg.width, self.bg.height
 
         # center
         tx = self.bg.width // 2 - label.width // 2
@@ -113,16 +118,16 @@ class Button(ButtonCommon, ImageCommon):
                 glPopAttrib()
             return _inner
 
-        self.setImage(util.renderToTexture(self.bg.width, self.bg.height,
-            f(self.bg)))
+        self.setImage(util.renderToTexture(w, h, f(self.bg)))
 
         if self.over_bg is not None:
-            self.setImage(util.renderToTexture(self.bg.width, self.bg.height,
-                f(self.over_bg)), 'over_image')
+            self.setImage(util.renderToTexture(w, h, f(self.over_bg)),
+                'over_image')
 
         if self.pressed_bg is not None:
-            self.setImage(util.renderToTexture(self.bg.width, self.bg.height,
-                f(self.pressed_bg)), 'pressed_image')
+            self.setImage(util.renderToTexture(w, h, f(self.pressed_bg)),
+                'pressed_image')
+    text = property(lambda self: self._text, set_text)
 
     def render(self, rect):
         '''Select the correct image to render.

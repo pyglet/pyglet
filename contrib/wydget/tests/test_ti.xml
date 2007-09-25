@@ -1,6 +1,7 @@
 <frame width="100%" height="100%">
  <vertical halign="center" valign="center">
   <textinput class="show-value" size="10" font_size="40" text="Hello World!" />
+  <!--
   <frame><horizontal>
   <textinput class="show-value" size="10" font_size="40" text="MMMMMMMMM" />
   <label color="white">size="10" with 9 M chars</label>
@@ -8,5 +9,6 @@
   <textinput class="show-value" color="white" bgcolor="black"
       border="red" size="10" font_size="32" text="Hello    World!" />
   <password class="show-value" size="10" font_size="40" text="Hello World!" />
+  -->
  </vertical>
 </frame>

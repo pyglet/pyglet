@@ -42,13 +42,10 @@ class PopupMenu(Frame):
             is_visible=False, **kw)
 
         for n, (label, id) in enumerate(items):
-            MenuItem(self, text=label, id=id,
+            MenuItem(self, text=label, id=id, width='100%',
                 bgcolor=((.95, .95, .95, 1), (1, 1, 1, 1))[n%2])
 
         self.layout = layouts.Vertical(self)
-
-        iw = self.inner_rect.width
-        for element in self.children: element.width = iw
 
     def expose(self, mouse):
         w = self.getGUI().window

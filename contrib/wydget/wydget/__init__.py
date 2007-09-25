@@ -45,6 +45,7 @@ import style
 import event
 import loadxml
 import widgets
+import util
 
 class GUI(event.GUIEventDispatcher):
     '''GUI oganisation and event handling.
@@ -123,6 +124,7 @@ class GUI(event.GUIEventDispatcher):
         if element.is_focusable:
             self._focus_order.append(element.id)
         self.setDirty()
+        self._layout_needed = True
 
     def unregister(self, element):
         del self._by_id[element.id]
@@ -134,6 +136,7 @@ class GUI(event.GUIEventDispatcher):
         if element.is_focusable:
             self._focus_order.remove(element.id)
         self.setDirty()
+        self._layout_needed = True
 
     def has(self, spec):
         if spec[0] == '#':
@@ -158,23 +161,43 @@ class GUI(event.GUIEventDispatcher):
         '''
         self._rects = None
 
+    _layout_needed = True
     def layout(self):
         '''Layout the entire GUI in response to its dimensions changing or
         the contents changing (in a way that would alter internal layout).
         '''
+        #print '>'*75
+        #self.dump()
         # resize all elements
-        for element in self.children:
-            element.resetGeometry()
-        ok = False
-        while not ok:
-            ok = True
+        while True:
             for element in self.children:
-                ok = ok and element.resize()
+                element.resetGeometry()
+            ok = False
+            try:
+                while not ok:
+                    ok = True
+                    for element in self.children:
+                        ok = ok and element.resize()
+            except util.RestartLayout:
+                pass
+            else:
+                break
         
         # position top-level elements
         for c in self.children:
-            c.x = c.x_spec.calculate()
-            c.y = c.y_spec.calculate()
+            if c.x is None or c.x_spec.percentage:
+                c.x = c.x_spec.calculate()
+            if c.y is None or c.y_spec.percentage:
+                c.y = c.y_spec.calculate()
+
+        self._rects = None
+        self._layout_needed = False
+        #print '-'*75
+        #self.dump()
+        #print '<'*75
+
+    def layoutNeeded(self):
+        self._layout_needed = True
 
     def getRects(self, exclude=None):
         '''Get the rects for all the children to draw & interact with.
@@ -213,14 +236,26 @@ class GUI(event.GUIEventDispatcher):
 
     def draw(self):
         '''Render all the elements on display.'''
-        #print '*'*75
-        #self.dump()
-        #print '*'*75
+        if self._layout_needed:
+            try:
+                self.layout()
+            except:
+                print '*'*75
+                self.dump()
+                print '*'*75
+                raise
+
         glPushAttrib(GL_ENABLE_BIT)
         glDisable(GL_DEPTH_TEST)
 
         # get the rects and sort by Z (yay for stable sort!)
-        rects = self.getRects()
+        try:
+            rects = self.getRects()
+        except:
+            print '*'*75
+            self.dump()
+            print '*'*75
+            raise
 
         # draw
         oz = 0
