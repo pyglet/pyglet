@@ -9,6 +9,8 @@ KNOWN BUGS
 - Tables:
   . are BROKEN and may not be fixed (should be replaced with Grid layout?)
   . table columns don't truncate
+- Drawers:
+  . appear to have some offset view clip issue
 - Drag-and-drop:
   . drags and moves are unbounded (dx/dy continue to be generated when
     pointer hits the screen boundary, try test_drag and drag up until the
@@ -16,8 +18,6 @@ KNOWN BUGS
     from the pointer)
     Poss. Solution: only use the pointer position, not dx/dy - will require
     remembering the initial offset of pointer -> element being moved.
-- Element
-  . <ah> Right border is inset by one pixel (evident in test_element)
 - Scrollbars
   . <ah> Width of horizontal scrollbar thumb is incorrect in test_table
 - TextInput

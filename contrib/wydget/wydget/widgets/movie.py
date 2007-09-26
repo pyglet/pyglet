@@ -121,18 +121,6 @@ class Movie(Frame):
         if h < self.height: y += self.height//2 - h//2
         t.blit(x, y, width=w, height=h)
 
-       # self.video_x, self.video_y,
-       #     width=self.video_width, height=self.video_height)
-
-        #image = self.video.texture
-        #if self.scale:
-        #    glPushMatrix()
-        #    glTranslatef(self.width//2 - w//2, self.height//2 - h//2, 0)
-        #    glScalef(s, s, 1)
-        #image.blit(0, 0, 0)
-        #if self.scale:
-        #    glPopMatrix()
-
     def on_eos(self):
         self.player.seek(0)
         self.pause()
@@ -141,7 +129,7 @@ class Movie(Frame):
         self.getGUI().dispatch_event(self, 'on_eos')
 
     def delete(self):
-        clock.unschedule(self.update)
+        self.pause()
         if self.control.anim is not None:
             self.control.anim.cancel()
         self.control = None

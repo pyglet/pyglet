@@ -1,5 +1,5 @@
 <frame id="menu-test" bgcolor="white" width="100%" height="100%">
- <vertical halign="center">
+ <vertical halign="center" valign="center">
  <label>Press RMB for menu test</label>
  </vertical>
  <popup-menu id="test-menu">

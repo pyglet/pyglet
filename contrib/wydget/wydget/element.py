@@ -57,12 +57,15 @@ should be None. This indicates that sizing calculation is needed.
 
 '''
 import inspect
+import math
 
 from pyglet.gl import *
 
 from wydget import loadxml
 from wydget import event
 from wydget import util 
+
+intceil = lambda i: int(math.ceil(i))
 
 class Element(object):
     '''A GUI element.
@@ -165,48 +168,52 @@ class Element(object):
     def set_x(self, value):
         self._x = value
         self.setDirty()
-    x = property(lambda self: self._x, set_x)
+    x = property(lambda self: self._x and int(self._x), set_x)
 
     def set_y(self, value):
         self._y = value
         self.setDirty()
-    y = property(lambda self: self._y, set_y)
+    y = property(lambda self: self._y and int(self._y), set_y)
 
     def set_z(self, value):
         self._z = value
         self.setDirty()
-    z = property(lambda self: self._z, set_z)
+    z = property(lambda self: self._z and int(self._z), set_z)
 
     def set_width(self, value):
         self._width = value
         self.setDirty()
-    width = property(lambda self: self._width, set_width)
+    width = property(lambda self: self._width and intceil(self._width),
+        set_width)
 
     def set_height(self, value):
         self._height = value
         self.setDirty()
-    height = property(lambda self: self._height, set_height)
+    height = property(lambda self: self._height and intceil(self._height),
+        set_height)
 
     def set_padding(self, value):
         self._padding = value
         self.setDirty()
-    padding = property(lambda self: self._padding, set_padding)
+    padding = property(lambda self: self._padding and int(self._padding),
+        set_padding)
 
     def get_rect(self):
-        return util.Rect(self._x, self._y, self.width, self.height)
+        return util.Rect(int(self._x), int(self._y), self.width, self.height)
     rect = property(get_rect)
 
     def get_inner_rect(self):
         p = self._padding
-        return util.Rect(p, p, self.width - p*2, self.height - p*2)
+        return util.Rect(int(p), int(p), intceil(self._width - p*2),
+            intceil(self._height - p*2))
     inner_rect = property(get_inner_rect)
 
     def get_inner_width(self):
-        return self.width - self.padding*2
+        return intceil(self._width - self._padding*2)
     inner_width = property(get_inner_width)
 
     def get_inner_height(self):
-        return self.height - self.padding*2
+        return intceil(self._height - self._padding*2)
     inner_height = property(get_inner_height)
 
     def get_min_width(self):

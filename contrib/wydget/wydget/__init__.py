@@ -204,6 +204,15 @@ class GUI(event.GUIEventDispatcher):
 
         Prune the tree at "exclude" if provided.
         '''
+        if self._layout_needed:
+            try:
+                self.layout()
+            except:
+                print '*'*75
+                self.dump()
+                print '*'*75
+                raise
+
         if self._rects is not None and exclude is None:
             return self._rects
 
@@ -236,26 +245,11 @@ class GUI(event.GUIEventDispatcher):
 
     def draw(self):
         '''Render all the elements on display.'''
-        if self._layout_needed:
-            try:
-                self.layout()
-            except:
-                print '*'*75
-                self.dump()
-                print '*'*75
-                raise
-
         glPushAttrib(GL_ENABLE_BIT)
         glDisable(GL_DEPTH_TEST)
 
         # get the rects and sort by Z (yay for stable sort!)
-        try:
-            rects = self.getRects()
-        except:
-            print '*'*75
-            self.dump()
-            print '*'*75
-            raise
+        rects = self.getRects()
 
         # draw
         oz = 0

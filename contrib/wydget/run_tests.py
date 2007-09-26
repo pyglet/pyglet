@@ -140,11 +140,6 @@ def run(xml_file):
         if not button & mouse.RIGHT:
             return event.EVENT_UNHANDLED
 
-        gui.get('#movie-test').delete()
-        file = '/Users/richard/Desktop/amelie_2.mp4.ff.avi'
-        m = widgets.Movie(gui, file, id='movie-test', playing=True)
-        return event.EVENT_HANDLED
-
         def load_movie(file=None):
             print 'DIALOG SELECTION:', file
             if not file: return

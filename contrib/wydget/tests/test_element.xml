@@ -9,5 +9,27 @@
  <label border="white" padding="0">border="white" padding="0"</label>
  <label border="white" padding="10">border="white" padding="10"</label>
 
+ <frame border="red">
+  <label border="white">Mred border around white borderM</label>
+ </frame>
+
+ <frame border="white" width="250.5" height="20.5">
+  <label>frame width="250.5" height="20.5"</label>
+ </frame>
+
+ <frame border="red">
+  <label x="0.5" y="0.5">M x="0.5" y="0.5"
+should be pixel-aligned M</label>
+ </frame>
+
+ <frame border="red">
+  <label>M comparison with no offset
+should be pixel-aligned M</label>
+ </frame>
+ <frame border="red">
+  <label>M comparison with no offset
+  </label>
+ </frame>
+
  </vertical>
 </frame>

@@ -106,7 +106,6 @@ class VerticalSlider(SliderCommon):
             self.dbut.resize()
             self.ubut.resize()
         self.bar.resize()
-
         self.layout()
         self.positionBar()
 
@@ -216,8 +215,9 @@ class HorizontalSlider(SliderCommon):
             self.bar.width = self.bar_size
 
         # fix up sizing and positioning of elements
-        self.lbut.resize()
-        self.rbut.resize()
+        if self.lbut is not None:
+            self.lbut.resize()
+            self.rbut.resize()
         self.bar.resize()
         self.layout()
         self.positionBar()

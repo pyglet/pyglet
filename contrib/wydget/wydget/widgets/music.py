@@ -55,14 +55,12 @@ class Music(Frame):
             classes=('-play-button',), is_visible=not playing)
         c.pause = Image(f, data.load_gui_image('media-pause.png'),
             bgcolor=None, classes=('-pause-button',), is_visible=playing)
-        c.range = Image(f, data.load_gui_image('media-range.png'))
+        fi = Frame(f, is_transparent=True)
+        c.range = Image(fi, data.load_gui_image('media-range.png'))
+        c.position = Image(fi, data.load_gui_image('media-position.png'),
+            y=-2, classes=('-position',))
         c.time = Label(f, '00:00', font_size=20)
         c.anim = None
-
-        # current position over the top
-        c.position = Image(self, data.load_gui_image('media-position.png'),
-            classes=('-position',))
-        c.position.range = c.range
 
         # make sure we get at least one frame to display
         self.player.queue(source)
@@ -70,12 +68,6 @@ class Music(Frame):
         self.playing = False
         if playing:
             self.play()
-
-    def resize(self):
-        if not super(Music, self).resize(): return False
-        p = self.control.position
-        p.y = (self.control.range.y - p.height // 2)
-        return True
 
     def update(self, dt):
         self.player.dispatch_events()
@@ -97,9 +89,8 @@ class Music(Frame):
         self.playing = True
 
     def on_eos(self):
-        self.pause()
         self.player.seek(0)
-        self.control.position.x = self.control.range.x
+        self.pause()
         self.control.time.text = '00:00'
         self.getGUI().dispatch_event(self, 'on_eos', self)
 
@@ -120,11 +111,10 @@ class Music(Frame):
 
         # slider position
         p = (t/self.player.source.duration)
-        p *= self.control.range.width
-        self.control.position.x = self.control.range.x + int(p)
+        self.control.position.x = int(p * self.control.range.width)
 
     def delete(self):
-        clock.unschedule(self.time_update)
+        self.pause()
         super(Music, self).delete()
 
 
@@ -155,11 +145,11 @@ def on_mouse_release(widget, x, y, buttons, modifiers):
 @event.default('music .-position')
 def on_drag(widget, x, y, dx, dy, buttons, modifiers):
     if not buttons & mouse.LEFT: return event.EVENT_UNHANDLED
-    rx = widget.range.x
-    rw = widget.range.width
-    widget.x = max(rx, min(rx + rw, widget.x + dx))
     music = widget.getParent('music')
-    p = float(widget.x - rx) / rw
+    rw = music.control.range.width
+    widget.x = max(0, min(rw, widget.x + dx))
+    p = float(widget.x) / rw
     music.player.seek(p * music.player.source.duration)
     return event.EVENT_HANDLED
+
 
