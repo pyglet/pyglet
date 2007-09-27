@@ -464,7 +464,7 @@ class CarbonWindow(BaseWindow):
             fs_height = c_short(0)
             self._fullscreen_restore = c_void_p()
             quicktime.BeginFullScreen(byref(self._fullscreen_restore),
-                                      None,
+                                      self.screen.get_gdevice(),
                                       byref(fs_width),
                                       byref(fs_height),
                                       byref(self._window),
@@ -472,12 +472,13 @@ class CarbonWindow(BaseWindow):
                                       0)
             # the following may be used for debugging if you have a second
             # monitor - only the main monitor will go fullscreen
-            #agl.aglEnable(self._agl_context, agl.AGL_FS_CAPTURE_SINGLE)
+            agl.aglEnable(self._agl_context, agl.AGL_FS_CAPTURE_SINGLE)
             self._width = fs_width.value
             self._height = fs_height.value
+            #self._width = self.screen.width
+            #self._height = self.screen.height
             agl.aglSetFullScreen(self._agl_context, 
                                  self._width, self._height, 0, 0)
-
             self.dispatch_event('on_resize', self._width, self._height)
             self.dispatch_event('on_show')
             self.dispatch_event('on_expose')
@@ -1269,5 +1270,5 @@ def _oscheck(result):
 def _aglcheck():
     err = agl.aglGetError()
     if err != agl.AGL_NO_ERROR:
-        raise CarbonException(agl.aglErrorString(err))
+        raise CarbonException(cast(agl.aglErrorString(err), c_char_p).value)
 
