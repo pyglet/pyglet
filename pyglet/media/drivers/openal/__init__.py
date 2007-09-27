@@ -161,7 +161,8 @@ class OpenALAudioPlayer(AudioPlayer):
         al.alSourceQueueBuffers(self._al_source, 1, ctypes.byref(buffer)) 
 
         # Begin playing if underrun previously
-        self._al_play()
+        if self._playing:
+            self._al_play()
 
         self._buffered_time += audio_data.duration
         self._timestamps.append((audio_data.timestamp, audio_data.duration))
@@ -178,7 +179,6 @@ class OpenALAudioPlayer(AudioPlayer):
         if self._playing:
             return
 
-        #al.alSourcePlay(self._al_source)
         self._playing = True
         self._al_play()
         if not _have_1_1:
