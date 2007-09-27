@@ -242,8 +242,8 @@ class OpenALAudioPlayer(AudioPlayer):
         if _have_1_1:
             samples = al.ALint()
             al.alGetSourcei(self._al_source, al.AL_SAMPLE_OFFSET, samples)
-            self._current_buffer_time = buffer_samples.value / \
-                float(self.audio_format.samples_per_second)
+            self._current_buffer_time = samples.value / \
+                float(self.audio_format.sample_rate)
         else:
             # Interpolate system time past buffer timestamp
             self._current_buffer_time = time.time() - \
