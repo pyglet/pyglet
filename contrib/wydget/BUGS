@@ -9,8 +9,8 @@ KNOWN BUGS
 - Tables:
   . are BROKEN and may not be fixed (should be replaced with Grid layout?)
   . table columns don't truncate
-- Drawers:
-  . appear to have some offset view clip issue
+- Scrollbar:
+  . allow images for buttons & slider & background
 - Drag-and-drop:
   . drags and moves are unbounded (dx/dy continue to be generated when
     pointer hits the screen boundary, try test_drag and drag up until the

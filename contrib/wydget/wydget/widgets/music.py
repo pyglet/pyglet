@@ -2,10 +2,6 @@ import os
 
 from pyglet.gl import *
 from pyglet.window import mouse
-from pyglet.media.drivers import openal
-
-# XXX hack - openal 1.1 code has issues reporting playback time
-openal._have_1_1 = False
 
 from pyglet import media, clock
 
