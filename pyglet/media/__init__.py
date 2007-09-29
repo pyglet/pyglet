@@ -1207,7 +1207,6 @@ else:
             driver = sys.modules[driver_name]
             break
         except ImportError:
-            raise
             pass
 
     if not driver:

@@ -23,7 +23,8 @@ class SilentAudioPlayer(AudioPlayer):
         self._head_system_time = time.time()
 
     def get_write_size(self):
-        return max(0, 10000 - sum([a.length for a in self._audio_data_list]))
+        return max(0, 10000 - sum(
+            [a.length for a in self._audio_data_list if a is not None]))
 
     def write(self, audio_data):
         if not self._audio_data_list:
@@ -33,7 +34,8 @@ class SilentAudioPlayer(AudioPlayer):
         return audio_data.length
 
     def write_eos(self):
-        self._audio_data_list.append(None)
+        if self._audio_data_list:
+            self._audio_data_list.append(None)
 
     def write_end(self):
         pass
@@ -52,27 +54,33 @@ class SilentAudioPlayer(AudioPlayer):
         self._head_system_time = time.time()
         self._eos_count = 0
 
-    def get_time(self):
+    def pump(self):
         if not self._playing:
-            if self._audio_data_list:
-                return self._audio_data_list[0].timestamp + self._head_time
-            else:
-                return 0.0
-
+            return
         system_time = time.time()
         head_time = system_time - self._head_system_time
         try:
-            head = self._audio_data_list[0]
-            while head_time >= head.duration:
-                head_time -= head.duration
-                head = self._audio_data_list.pop(0)
-                while not head:
+            while head_time >= self._audio_data_list[0].duration:
+                head_time -= self._audio_data_list[0].duration
+                self._audio_data_list.pop(0)
+                while self._audio_data_list[0] is None:
                     self._eos_count += 1
-                    head = self._audio_data_list.pop(0)
+                    self._audio_data_list.pop(0)
             self._head_system_time = system_time - head_time
-            return head_time + head.timestamp
+            return head_time + self._audio_data_list[0].timestamp
         except IndexError:
             return 0.0
+
+    def get_time(self):
+        if not self._audio_data_list:
+            return 0.0
+
+        if self._playing:
+            system_time = time.time()
+            head_time = system_time - self._head_system_time
+            return head_time + self._audio_data_list[0].timestamp 
+        else:
+            return self._audio_data_list[0].timestamp + self._head_time
 
     def clear_eos(self):
         if self._eos_count:
