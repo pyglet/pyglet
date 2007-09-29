@@ -4681,6 +4681,7 @@ snd_card_get_longname = _lib.snd_card_get_longname
 snd_card_get_longname.restype = c_int
 snd_card_get_longname.argtypes = [c_int, POINTER(c_char_p)]
 
+''' Issue 144: These were added in 1.0.14
 # /usr/include/alsa/control.h:217
 snd_device_name_hint = _lib.snd_device_name_hint
 snd_device_name_hint.restype = c_int
@@ -4695,6 +4696,7 @@ snd_device_name_free_hint.argtypes = [POINTER(POINTER(None))]
 snd_device_name_get_hint = _lib.snd_device_name_get_hint
 snd_device_name_get_hint.restype = c_char_p
 snd_device_name_get_hint.argtypes = [POINTER(None), c_char_p]
+'''
 
 # /usr/include/alsa/control.h:221
 snd_ctl_open = _lib.snd_ctl_open
