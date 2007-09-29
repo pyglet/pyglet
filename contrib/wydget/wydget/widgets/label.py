@@ -1,5 +1,6 @@
 import operator
 import xml.sax.saxutils
+from xml.etree import ElementTree
 from pyglet.gl import *
 import pyglet.image
 
@@ -259,6 +260,20 @@ class XHTML(LabelCommon):
         self.parent = parent
         self.style = style
         super(XHTML, self).__init__(parent, text, **kw)
+
+    @classmethod
+    def fromXML(cls, element, parent):
+        '''Create the object from the XML element and attach it to the parent.
+        '''
+        kw = loadxml.parseAttributes(element)
+        children = element.getchildren()
+        if children:
+            text = ''.join(ElementTree.tostring(child) for child in children)
+        else:
+            text = ''
+        text = element.text + text + element.tail
+        obj = cls(parent, element.text + text + element.tail, **kw)
+        return obj
 
     def set_text(self, text):
         self._text = text
