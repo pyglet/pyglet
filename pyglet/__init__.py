@@ -98,3 +98,7 @@ options = {
     'audio_driver': ('alsa', 'openal', 'silent'),
 }
 
+# This is probably temporary, if not it should be documented.
+import os
+if 'PYGLET_AUDIO_DRIVER' in os.environ:
+    options['audio_driver'] = os.environ['PYGLET_AUDIO_DRIVER'].split(',')
