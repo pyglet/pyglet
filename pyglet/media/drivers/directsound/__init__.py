@@ -54,6 +54,9 @@ class DirectSoundAudioPlayer(AudioPlayer):
     _buffer_size = 44800 * 1
     _update_buffer_size = _buffer_size // 4
     _buffer_size_secs = None
+
+    _cone_inner_angle = 360
+    _cone_outer_angle = 360
     
     def __init__(self, audio_format):
         super(DirectSoundAudioPlayer, self).__init__(audio_format)
@@ -90,9 +93,16 @@ class DirectSoundAudioPlayer(AudioPlayer):
         dsbdesc.dwBufferBytes = self._buffer_size
         dsbdesc.lpwfxFormat = ctypes.pointer(wfx)
 
-        dsb = lib.IDirectSoundBuffer()
-        dsound.CreateSoundBuffer(dsbdesc, ctypes.byref(dsb), None)
-        self._buffer = dsb
+        self._buffer = lib.IDirectSoundBuffer()
+        dsound.CreateSoundBuffer(dsbdesc, ctypes.byref(self._buffer), None)
+
+        if audio_format.channels == 1:
+            self._buffer3d = lib.IDirectSound3DBuffer()
+            self._buffer.QueryInterface(lib.IID_IDirectSound3DBuffer, 
+                                        ctypes.byref(self._buffer3d))
+        else:
+            self._buffer3d = None
+        
         self._buffer_size_secs = \
             self._buffer_size / float(audio_format.bytes_per_second)
         self._buffer.SetCurrentPosition(0)
@@ -254,6 +264,59 @@ class DirectSoundAudioPlayer(AudioPlayer):
         if self._sources:
             return self._sources[0]
         return None
+
+    def set_volume(self, volume):
+        volume = volume # TODO
+        #self._buffer.SetVolume(volume)
+
+    def set_min_gain(self, min_gain):
+        if self._buffer3d:
+            distance = min_gain # TODO
+            #self._buffer.SetMaxDistance(distance, lib.DS3D_IMMEDIATE)
+
+    def set_max_gain(self, max_gain):
+        if self._buffer3d:
+            distance = max_gain # TODO
+            #self._buffer.SetMinDistance(distance, lib.DS3D_IMMEDIATE)
+
+    def set_position(self, position):
+        if self._buffer3d:
+            x, y, z = position
+            self._buffer3d.SetPosition(x, y, z, lib.DS3D_IMMEDIATE)
+
+    def set_velocity(self, velocity):
+        if self._buffer3d:
+            x, y, z = velocity
+            self._buffer3d.SetVelocity(x, y, z, lib.DS3D_IMMEDIATE)
+
+    def set_pitch(self, pitch):
+        frequency = pitch * self.audio_format.sample_rate
+        self._buffer.SetFrequency(frequency)
+
+    def set_cone_orientation(self, cone_orientation):
+        if self._buffer3d:
+            x, y, z = cone_orientation
+            self._buffer3d.SetConeOrientation(x, y, z, lib.DS3D_IMMEDIATE)
+
+    def set_cone_inner_angle(self, cone_inner_angle):
+        if self._buffer3d:
+            self._cone_inner_angle = int(cone_inner_angle)
+            self._set_cone_angles()
+
+    def set_cone_outer_angle(self, cone_outer_angle):
+        if self._buffer3d:
+            self._cone_outer_angle = int(cone_outer_angle)
+            self._set_cone_angles()
+
+    def _set_cone_angles(self):
+        inner = min(self._cone_inner_angle, self._cone_outer_angle)
+        outer = max(self._cone_inner_angle, self._cone_outer_angle)
+        self._buffer3d.SetConeAngles(inner, outer, lib.DS3D_IMMEDIATE)
+
+    def set_cone_outer_gain(self, cone_outer_gain):
+        if self._buffer3d:
+            volume = cone_outer_gain # TODO
+            #self._buffer3d.SetConeOutsideVolume(volume, lib.DS3D_IMMEDIATE)
 
 class DirectSoundListener(Listener):
     def _set_volume(self, volume):
