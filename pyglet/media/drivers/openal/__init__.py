@@ -166,7 +166,7 @@ class OpenALAudioPlayer(AudioPlayer):
 
         self._buffered_time += audio_data.duration
         self._timestamps.append((audio_data.timestamp, audio_data.duration))
-        return audio_data.length
+        audio_data.consume(audio_data.length, self.audio_format)
 
     def write_eos(self):
         if self._timestamps:
