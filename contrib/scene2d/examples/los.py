@@ -15,7 +15,7 @@ import sys
 import random
 
 from pyglet import options
-options['gl_error_check'] = False
+options['debug_gl'] = False
 
 from pyglet.window import Window
 from pyglet import clock

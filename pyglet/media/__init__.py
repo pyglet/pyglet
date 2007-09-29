@@ -1212,7 +1212,7 @@ else:
     # Find best available sound driver according to user preference
     import pyglet
     driver = None
-    for driver_name in pyglet.options['audio_driver']:
+    for driver_name in pyglet.options['audio']:
         try:
             driver_name = 'pyglet.media.drivers.' + driver_name
             __import__(driver_name)

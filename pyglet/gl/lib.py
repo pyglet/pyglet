@@ -108,7 +108,7 @@ def errcheck_glend(result, func, arguments):
 
 def decorate_function(func, name):
     from pyglet import options
-    if options['gl_error_check']:
+    if options['debug_gl']:
         if name == 'glBegin':
             func.errcheck = errcheck_glbegin
         elif name == 'glEnd':

@@ -95,7 +95,7 @@ importing ``pyglet.gl`` or ``pyglet.window``::
 
     # Disable error checking for increased performance
     from pyglet import options
-    options['gl_error_check'] = False
+    options['debug_gl'] = False
 
     from pyglet.gl import *
 

@@ -42,6 +42,7 @@ __version__ = '$Id$'
 from pyglet.media import (MediaFormatException, StreamingSource, 
                           VideoFormat, AudioFormat, AudioData)
 
+import pyglet
 from pyglet import gl
 from pyglet.gl import gl_info
 from pyglet import image
@@ -434,4 +435,7 @@ class AVbinSource(StreamingSource):
         player._texture = None
 
 av.avbin_init()
-av.avbin_set_log_level(AVBIN_LOG_DEBUG)
+if pyglet.options['debug_media']:
+    av.avbin_set_log_level(AVBIN_LOG_DEBUG)
+else:
+    av.avbin_set_log_level(AVBIN_LOG_QUIET)

@@ -41,6 +41,7 @@ Detailed documentation is available at http://www.pyglet.org
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import os
 import sys
 
 #: The release version of this pyglet installation.  
@@ -74,32 +75,60 @@ if getattr(sys, 'frozen', None):
 #: must import `pyglet` before any sub-packages.  For example::
 #:
 #:      import pyglet
-#:      pyglet.options['gl_error_check'] = False
+#:      pyglet.options['debug_gl'] = False
+#:
+#: The default options can be overridden from the OS environment.  The
+#: corresponding environment variable for each option key is prefaced by
+#: 'PYGLET_'.  For example, in Bash you can set the ``debug_gl`` option with::
+#:
+#:      PYGLET_DEBUG_GL=True; export PYGLET_DEBUG_GL
+#: 
+#: For options requiring a tuple of values, separate each value with a comma.
 #:
 #: The options are:
 #:
-#: gl_error_check
+#: audio
+#:     A sequence of the names of audio modules to attempt to load, in
+#:     order of preference.  Valid driver names are:
+#:
+#:     * directsound, the Windows DirectSound audio module (Windows only)
+#:     * alsa, the ALSA audio module (Linux only) 
+#:     * openal, the OpenAL audio module
+#:     * silent, no audio
+#: debug_gl
 #:     If True, all calls to OpenGL functions are checked afterwards for
 #:     errors using ``glGetError``.  This will severely impact performance,
 #:     but provides useful exceptions at the point of failure.  By default,
 #:     this option is enabled if ``__debug__`` is (i.e., if Python was not run
 #:     with the -O option).  It is disabled by default when pyglet is "frozen"
 #:     within a py2exe or py2app library archive.
-#: audio_driver
-#:     A sequence of the names of audio drivers to attempt to load, in
-#:     order of preference.  Valid driver names are:
-#:
-#:     * directsound, the Windows DirectSound audio driver (Windows only)
-#:     * alsa, the ALSA audio driver (Linux only) 
-#:     * openal, the OpenAL audio driver
-#:     * silent, no audio
+#: debug_media
+#:     If True, media modules will print large amounts of debug info and
+#:     possibly open additional log files.  Recommended only for pyglet
+#:     developers.
 #:
 options = {
-    'gl_error_check': not _enable_optimisations,
-    'audio_driver': ('directsound', 'alsa', 'openal', 'silent'),
+    'audio': ('directsound', 'alsa', 'openal', 'silent'),
+    'debug_gl': not _enable_optimisations,
+    'debug_media': False,
 }
 
-# This is probably temporary, if not it should be documented.
-import os
-if 'PYGLET_AUDIO_DRIVER' in os.environ:
-    options['audio_driver'] = os.environ['PYGLET_AUDIO_DRIVER'].split(',')
+_option_types = {
+    'audio': tuple,
+    'debug_gl': bool,
+    'debug_media': bool,
+}
+
+def _read_environment():
+    '''Read defaults for options from environment'''
+    for key in options:
+        env = 'PYGLET_%s' % key.upper()
+        try:
+            value = os.environ['PYGLET_%s' % key.upper()]
+            if _option_types[key] is tuple:
+                options[key] = value.split(',')
+            elif _option_types[key] is bool:
+                options[key] = value in ('true', 'TRUE', 'True', '1')
+        except KeyError:
+            pass
+_read_environment()
