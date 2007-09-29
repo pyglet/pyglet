@@ -63,6 +63,7 @@ class DirectSoundAudioPlayer(AudioPlayer):
 
         self._buffer = None
         self._buffer_playing = False
+        self._data_size = 0
         self._play_cursor = 0
         self._buffer_time = 0.  # ts of buffer at buffer_time_pos
         self._buffer_time_pos = 0
@@ -94,16 +95,17 @@ class DirectSoundAudioPlayer(AudioPlayer):
         self._buffer = dsb
         self._buffer_size_secs = \
             self._buffer_size / float(audio_format.bytes_per_second)
+        self._buffer.SetCurrentPosition(0)
             
     def __del__(self):
         try:
             self._buffer.Release()
-        except (NameError, AttributeError):
+        except:
             pass
 
     def get_write_size(self):
-        if not self._playing:
-            return 0
+        if self._data_size < self._buffer_size:
+            return self._buffer_size - self._data_size
 
         play_cursor = lib.DWORD()
         self._buffer.GetCurrentPosition(play_cursor, None)
@@ -128,6 +130,9 @@ class DirectSoundAudioPlayer(AudioPlayer):
             length = min(audio_data.length, write_size)
         if length == 0:
             return 0
+
+        if self._data_size < self._buffer_size:
+            self._data_size = min(self._data_size + length, self._buffer_size)
         
         p1 = ctypes.c_void_p()
         l1 = lib.DWORD()
@@ -237,6 +242,7 @@ class DirectSoundAudioPlayer(AudioPlayer):
         self._buffer.SetCurrentPosition(0)
         self._buffer_time = 0.
         self._buffer_time_pos = 0
+        self._data_size = 0
 
     def clear_eos(self):
         if self._eos_count > 0:

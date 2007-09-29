@@ -651,7 +651,6 @@ class Player(event.EventDispatcher):
         try:
             source = self._sources[self._source_read_index]
         except IndexError:
-            yield 'end', None
             source = None
 
         while source and bytes > 4: # bytes > 4 compensates for alignment loss
@@ -677,6 +676,9 @@ class Player(event.EventDispatcher):
                 else:
                     assert False, 'Invalid eos_action'
                     source = None
+
+        if not source:
+            yield 'end', None
 
     def queue(self, source):
         '''Queue the source on this player.
