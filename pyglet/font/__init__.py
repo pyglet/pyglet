@@ -189,6 +189,8 @@ class GlyphString(object):
 
         :rtype: float
         '''
+        if to_index <= from_index:
+            return 0
         width = self.cumulative_advance[to_index-1] 
         if from_index:
             width -= self.cumulative_advance[from_index-1]
