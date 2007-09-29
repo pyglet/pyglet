@@ -9,18 +9,16 @@ KNOWN BUGS
 - Tables:
   . are BROKEN and may not be fixed (should be replaced with Grid layout?)
   . table columns don't truncate
-- Scrollbar:
-  . allow images for buttons & slider & background
-- Drag-and-drop:
-  . drags and moves are unbounded (dx/dy continue to be generated when
-    pointer hits the screen boundary, try test_drag and drag up until the
-    pointer hits the top of the screen. drag down and see the element offset
-    from the pointer)
-    Poss. Solution: only use the pointer position, not dx/dy - will require
-    remembering the initial offset of pointer -> element being moved.
-- Scrollbars
   . <ah> Width of horizontal scrollbar thumb is incorrect in test_table
+- Allow images for scollbar buttons & slider & background
+- drags and moves are unbounded (dx/dy continue to be generated when
+  pointer hits the screen boundary, try test_drag and drag up until the
+  pointer hits the top of the screen. drag down and see the element offset
+  from the pointer)
+  Poss. Solution: only use the pointer position, not dx/dy - will require
+  remembering the initial offset of pointer -> element being moved.
 - TextInput
+  . element height is incorrect when field is empty
   . <ah> Word motion events not yet implemented.
   . <ah> Caret motion past edge of field should scroll enough to get caret
     into the center of the field (or to limit).
@@ -30,12 +28,12 @@ KNOWN BUGS
 - PasswordInput
   . <ah> Dot glyphs are clipped by 3 or 4 pixels on right edge.
     <rj> Appears to be a bug in pyglet.font - see pyglet/test/font/BULLET.py
-- Focusing
-  . <ah> Clicking on non-focusable background should not remove focus from
-    text field.
-  -- <rj> does this apply to *all* focusable elements?
-- XML loading
-  . files referenced in XML are not loaded relative to the XML file
+- <ah> Clicking on non-focusable background should not remove focus from
+  text field.  -- <rj> does this apply to *all* focusable elements?
+- files referenced in XML are not loaded relative to the XML file
+- Grid layout background colour for test_layout_grid second row changes
+  when resized
+
 
 
 DEFINITE AREAS OF IMPROVEMENT

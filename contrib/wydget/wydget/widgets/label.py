@@ -272,7 +272,7 @@ class XHTML(LabelCommon):
         else:
             text = ''
         text = element.text + text + element.tail
-        obj = cls(parent, element.text + text + element.tail, **kw)
+        obj = cls(parent, text, **kw)
         return obj
 
     def set_text(self, text):
