@@ -8,7 +8,7 @@ __version__ = '$Id$'
 
 import time
 
-from pyglet.media import AudioPlayer, Listener
+from pyglet.media import AudioPlayer, Listener, AudioData
 from pyglet.media import MediaException
 
 class SilentAudioPlayer(AudioPlayer):
@@ -30,8 +30,12 @@ class SilentAudioPlayer(AudioPlayer):
         if not self._audio_data_list:
             self._head_time = 0.0
             self._head_system_time = time.time()
-        self._audio_data_list.append(audio_data)
-        return audio_data.length
+        self._audio_data_list.append(
+            AudioData(None, 
+                      audio_data.length, 
+                      audio_data.timestamp,
+                      audio_data.duration))
+        audio_data.consume(audio_data.length, self.audio_format)
 
     def write_eos(self):
         if self._audio_data_list:
