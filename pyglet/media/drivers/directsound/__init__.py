@@ -40,6 +40,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import ctypes
+import math
 import time
 
 from pyglet.media import AudioPlayer, Listener, MediaException
@@ -265,9 +266,15 @@ class DirectSoundAudioPlayer(AudioPlayer):
             return self._sources[0]
         return None
 
+    @staticmethod
+    def _db(gain):
+        if gain <= 0:
+            return -10000
+        return int(1000 * math.log(min(gain, 1)))
+
     def set_volume(self, volume):
-        volume = volume # TODO
-        #self._buffer.SetVolume(volume)
+        volume = self._db(volume)
+        self._buffer.SetVolume(volume)
 
     def set_min_gain(self, min_gain):
         if self._buffer3d:
@@ -315,8 +322,8 @@ class DirectSoundAudioPlayer(AudioPlayer):
 
     def set_cone_outer_gain(self, cone_outer_gain):
         if self._buffer3d:
-            volume = cone_outer_gain # TODO
-            #self._buffer3d.SetConeOutsideVolume(volume, lib.DS3D_IMMEDIATE)
+            volume = self._db(cone_outer_gain)
+            self._buffer3d.SetConeOutsideVolume(volume, lib.DS3D_IMMEDIATE)
 
 class DirectSoundListener(Listener):
     def _set_volume(self, volume):
