@@ -220,11 +220,6 @@ class DirectSoundAudioPlayer(AudioPlayer):
 
         self._buffer.Play(0, 0, lib.DSBPLAY_LOOPING)
         self._buffer_playing = True
-        self._write_cursor = 0
-        self._buffer.SetCurrentPosition(0)
-        self._buffer_time = 0.
-        self._buffer_time_pos = 0
-
 
     def stop(self):
         if not self._playing:
@@ -237,7 +232,11 @@ class DirectSoundAudioPlayer(AudioPlayer):
 
     def clear(self):
         self._eos_count = 0
-        self._eos_cursors = []
+        self._timestamps = []
+        self._write_cursor = 0
+        self._buffer.SetCurrentPosition(0)
+        self._buffer_time = 0.
+        self._buffer_time_pos = 0
 
     def clear_eos(self):
         if self._eos_count > 0:
