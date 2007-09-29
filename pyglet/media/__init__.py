@@ -175,6 +175,15 @@ class AudioData(object):
 
     def consume(self, bytes, audio_format):
         '''Remove some data from beginning of packet.'''
+        if bytes == self.length:
+            self.data = None
+            self.length = 0
+            self.timestamp += self.duration
+            self.duration = 0.
+            return
+        elif bytes == 0:
+            return
+
         if not isinstance(self.data, str):
             # XXX Create a string buffer for the whole packet then
             #     chop it up.  Could do some pointer arith here and
@@ -225,13 +234,13 @@ class AudioPlayer(object):
 
     def write(self, audio_data):
         '''Write audio_data to the stream.
+
+        This method calls `AudioData.consume` to remove data actually written.
         
         :Parameters:
             `audio_data` : `AudioData`
                 Data to write.
 
-        :rtype: int
-        :return: number of bytes actually written.
         '''
         raise NotImplementedError('abstract')
 
@@ -615,18 +624,20 @@ class Player(event.EventDispatcher):
             if audio_data == 'eos':
                 self._audio.write_eos()
                 continue
+            elif audio_data == 'end':
+                self._audio.write_end()
+                return
             if audio_format != self._audio.audio_format:
                 return
-            length = self._audio.write(audio_data)
-            if length < audio_data.length:
-                audio_data.consume(length, self._audio.audio_format)
+            length = audio_data.length
+            self._audio.write(audio_data)
+            if audio_data.length:
                 self._next_audio_data = audio_data
+                break
 
             write_size -= length
             if write_size <= 0:
                 return
-
-        self._audio.write_end()
 
     def _get_audio_data(self, bytes):
         '''Yields pairs of (audio_data, audio_format).'''
@@ -640,6 +651,7 @@ class Player(event.EventDispatcher):
         try:
             source = self._sources[self._source_read_index]
         except IndexError:
+            yield 'end', None
             source = None
 
         while source and bytes > 4: # bytes > 4 compensates for alignment loss

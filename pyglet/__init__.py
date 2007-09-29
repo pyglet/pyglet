@@ -89,13 +89,14 @@ if getattr(sys, 'frozen', None):
 #:     A sequence of the names of audio drivers to attempt to load, in
 #:     order of preference.  Valid driver names are:
 #:
+#:     * directsound, the Windows DirectSound audio driver (Windows only)
 #:     * alsa, the ALSA audio driver (Linux only) 
 #:     * openal, the OpenAL audio driver
 #:     * silent, no audio
 #:
 options = {
     'gl_error_check': not _enable_optimisations,
-    'audio_driver': ('alsa', 'openal', 'silent'),
+    'audio_driver': ('directsound', 'alsa', 'openal', 'silent'),
 }
 
 # This is probably temporary, if not it should be documented.
