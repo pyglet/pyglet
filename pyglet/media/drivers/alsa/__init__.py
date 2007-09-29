@@ -133,10 +133,10 @@ class ALSAAudioPlayer(AudioPlayer):
                                             samples)
         if samples_out < 0:
             if samples_out == -11: # EAGAIN
-                return 0
+                return
             elif samples_out == -32: # EPIPE (xrun)
                 check(asound.snd_pcm_prepare(self.pcm))
-                return 0
+                return
             else:
                 raise ALSAException(asound.snd_strerror(samples_out))
 
@@ -147,7 +147,8 @@ class ALSAAudioPlayer(AudioPlayer):
 
         self._timestamps.append((alsatime, audio_data.timestamp))
 
-        return samples_out * self.audio_format.bytes_per_sample
+        audio_data.consume(samples_out * self.audio_format.bytes_per_sample,
+                           self.audio_format)
 
     def write_eos(self):
         if self._timestamps:
