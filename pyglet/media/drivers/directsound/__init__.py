@@ -358,7 +358,7 @@ class DirectSoundListener(Listener):
     def _set_orientation(self):
         x, y, z = self._forward_orientation
         ux, uy, uz = self._up_orientation
-        self._listener.SetOrientation(x, y, -z, ux, uy, uz, lib.DS3D_IMMEDIATE)
+        self._listener.SetOrientation(x, y, -z, ux, uy, -uz, lib.DS3D_IMMEDIATE)
 
 dsound = None
 def driver_init():
