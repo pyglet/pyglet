@@ -398,8 +398,9 @@ class Clock(_ClockBase):
         for i, other in enumerate(self._schedule_interval_items):
             if other.next_ts > next_ts:
                 self._schedule_interval_items.insert(i, item)
-                return
-        self._schedule_interval_items.append(item)
+                break
+        else:
+            self._schedule_interval_items.append(item)
 
         # add item to func mapping
         if func in self._schedule_functions:
