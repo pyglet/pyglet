@@ -94,6 +94,7 @@ class DirectSoundAudioPlayer(AudioPlayer):
         dsbdesc.dwSize = ctypes.sizeof(dsbdesc)
         dsbdesc.dwFlags = (lib.DSBCAPS_GLOBALFOCUS | 
                            lib.DSBCAPS_GETCURRENTPOSITION2 |
+                           lib.DSBCAPS_CTRLFREQUENCY |
                            lib.DSBCAPS_CTRLVOLUME)
         if audio_format.channels == 1:
             dsbdesc.dwFlags |= lib.DSBCAPS_CTRL3D
@@ -272,8 +273,6 @@ class DirectSoundAudioPlayer(AudioPlayer):
             return self._sources[0]
         return None
 
-    
-
     def set_volume(self, volume):
         volume = _db(volume)
         self._buffer.SetVolume(volume)
@@ -292,7 +291,7 @@ class DirectSoundAudioPlayer(AudioPlayer):
             self._buffer3d.SetMaxDistance(max_distance, lib.DS3D_IMMEDIATE)
 
     def set_pitch(self, pitch):
-        frequency = pitch * self.audio_format.sample_rate
+        frequency = int(pitch * self.audio_format.sample_rate)
         self._buffer.SetFrequency(frequency)
 
     def set_cone_orientation(self, cone_orientation):
