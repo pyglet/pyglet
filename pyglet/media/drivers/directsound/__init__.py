@@ -289,11 +289,6 @@ class DirectSoundAudioPlayer(AudioPlayer):
         if self._buffer3d:
             self._buffer3d.SetMaxDistance(max_distance, lib.DS3D_IMMEDIATE)
 
-    def set_velocity(self, velocity):
-        if self._buffer3d:
-            x, y, z = velocity
-            self._buffer3d.SetVelocity(x, y, z, lib.DS3D_IMMEDIATE)
-
     def set_pitch(self, pitch):
         frequency = pitch * self.audio_format.sample_rate
         self._buffer.SetFrequency(frequency)
@@ -324,26 +319,46 @@ class DirectSoundAudioPlayer(AudioPlayer):
             self._buffer3d.SetConeOutsideVolume(volume, lib.DS3D_IMMEDIATE)
 
 class DirectSoundListener(Listener):
+    def _init(self):
+        # Called after driver_init()    
+        buffer = lib.IDirectSoundBuffer()
+        dsbd = lib.DSBUFFERDESC()
+        dsbd.dwSize = ctypes.sizeof(dsbd)
+        dsbd.dwFlags = lib.DSBCAPS_CTRL3D | lib.DSBCAPS_PRIMARYBUFFER
+        dsound.CreateSoundBuffer(dsbd, ctypes.byref(buffer), None)
+
+        self._listener = lib.IDirectSound3DListener()
+        buffer.QueryInterface(lib.IID_IDirectSound3DListener, 
+                              ctypes.byref(self._listener))
+
+        buffer.Release()
+
+    def __del__(self):
+        try:
+            self._listener.Release()
+        except:
+            pass
+    
     def _set_volume(self, volume):
         self._volume = volume
 
     def _set_position(self, position):
         self._position = position
-
-    def _set_velocity(self, velocity):
-        self._velocity = velocity
+        x, y, z = position
+        self._listener.SetPosition(x, y, z, lib.DS3D_IMMEDIATE)
 
     def _set_forward_orientation(self, orientation):
         self._forward_orientation = orientation
+        self._set_orientation()
 
     def _set_up_orientation(self, orientation):
         self._up_orientation = orientation
+        self._set_orientation()
 
-    def _set_doppler_factor(self, factor):
-        self._doppler_factor = factor
-
-    def _set_speed_of_sound(self, speed_of_sound):
-        self._speed_of_sound = speed_of_sound
+    def _set_orientation(self):
+        x, y, z = self._forward_orientation
+        ux, uy, uz = self._up_orientation
+        self._listener.SetOrientation(x, y, z, ux, uy, uz, lib.DS3D_IMMEDIATE)
 
 dsound = None
 def driver_init():
@@ -356,6 +371,8 @@ def driver_init():
     # is audio only?).
     hwnd = _user32.GetDesktopWindow()
     dsound.SetCooperativeLevel(hwnd, lib.DSSCL_NORMAL)
+
+    driver_listener._init()
 
 driver_listener = DirectSoundListener()
 driver_audio_player_class = DirectSoundAudioPlayer

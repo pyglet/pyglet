@@ -281,10 +281,6 @@ class OpenALAudioPlayer(AudioPlayer):
     def set_max_distance(self, max_distance):
         al.alSourcef(self._al_source, al.AL_MAX_DISTANCE, max_distance)
 
-    def set_velocity(self, velocity):
-        x, y, z = velocity
-        al.alSource3f(self._al_source, al.AL_VELOCITY, x, y, z)
-
     def set_pitch(self, pitch):
         al.alSourcef(self._al_source, al.AL_PITCH, max(0, pitch))
 
@@ -311,11 +307,6 @@ class OpenALListener(Listener):
         al.alListener3f(al.AL_POSITION, x, y, z)
         self._position = position 
 
-    def _set_velocity(self, velocity):
-        x, y, z = velocity
-        al.alListener3f(al.AL_VELOCITY, x, y, z)
-        self._velocity = velocity 
-
     def _set_forward_orientation(self, orientation):
         val = (al.ALfloat * 6)(*(orientation + self._up_orientation))
         al.alListenerfv(al.AL_ORIENTATION, val)
@@ -325,14 +316,6 @@ class OpenALListener(Listener):
         val = (al.ALfloat * 6)(*(self._forward_orientation + orientation))
         al.alListenerfv(al.AL_ORIENTATION, val)
         self._up_orientation = orientation
-
-    def _set_doppler_factor(self, factor):
-        al.alDopplerFactor(factor)
-        self._doppler_factor = factor
-
-    def _set_speed_of_sound(self, speed_of_sound):
-        al.alSpeedOfSound(speed_of_sound)
-        self._speed_of_sound = speed_of_sound
 
 _device = None
 _have_1_1 = False

@@ -191,6 +191,9 @@ class IDirectSoundBuffer(com.IUnknown):
          com.STDMETHOD()),
     ]
 
+IID_IDirectSound3DListener = com.GUID(
+    0x279AFA84, 0x4981, 0x11CE, 0xA5, 0x21, 0x00, 0x20, 0xAF, 0x0B, 0xE5, 0x60)
+
 class IDirectSound3DListener(com.IUnknown):
     _methods_ = [
         ('GetAllParameters',

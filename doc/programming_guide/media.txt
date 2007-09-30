@@ -316,17 +316,15 @@ pyglet uses OpenAL for audio playback, which includes many features for
 positioning sound within a 3D space.  This is particularly effective with a
 surround-sound setup, but is also applicable to stereo systems.
 
-A `Player` in pyglet has an associated position and velocity in 3D space --
+A `Player` in pyglet has an associated position in 3D space --
 that is, it is equivalent to an OpenAL "source".  The properties for setting
 these parameters are described in more detail in the API documentation; see
-for example `Player.position`, `Player.velocity` and `Player.pitch`.
+for example `Player.position` and `Player.pitch`.
 
 The OpenAL "listener" object is provided by the `pyglet.media.listener`
 singleton, an instance of `Listener`.  This provides similar properties such
-as `Listener.position`, `Listener.velocity`, `Listener.forward_orientation`
-and `Listener.up_orientation` that describe the position of the user in 3D
-space.  Global constants such as `doppler_factor` and `speed_of_sound` are
-also defined on this object.
+as `Listener.position`, `Listener.forward_orientation` and
+`Listener.up_orientation` that describe the position of the user in 3D space.
 
 Note that only mono sounds can be positioned.  Stereo sounds will play back as
 normal, and only their volume and pitch properties will affect the sound.

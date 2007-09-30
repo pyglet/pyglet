@@ -314,10 +314,6 @@ class AudioPlayer(object):
         '''See `Player.max_distance`.'''
         pass
 
-    def set_velocity(self, velocity):
-        '''See `Player.velocity`.'''
-        pass
-
     def set_pitch(self, pitch):
         '''See `Player.pitch`.'''
         pass
@@ -579,7 +575,6 @@ class Player(event.EventDispatcher):
     _max_distance = 100000000.
 
     _position = (0, 0, 0)
-    _velocity = (0, 0, 0)
     _pitch = 1.0
 
     _cone_orientation = (0, 0, 0)
@@ -940,23 +935,6 @@ class Player(event.EventDispatcher):
         :type: float
         ''')
 
-    def _set_velocity(self, velocity):
-
-        self._velocity = velocity
-        if self._audio:
-            self._audio.set_velocity(velocity)
-
-    velocity = property(lambda self: self._velocity,
-                        lambda self, velocity: self._set_velocity(velocity),
-                        doc='''The velocity of the sound in 3D space.
-
-        The velocity is given as a tuple of floats (x, y, z).  The unit
-        defaults to meters per second, but can be modified with the listener
-        properties.
-        
-        :type: 3-tuple of float
-        ''')
-
     def _set_pitch(self, pitch):
         self._pitch = pitch
         if self._audio:
@@ -969,8 +947,6 @@ class Player(event.EventDispatcher):
         The nominal pitch is 1.0.  A pitch of 2.0 will sound one octave
         higher, and play twice as fast.  A pitch of 0.5 will sound one octave
         lower, and play twice as slow.  A pitch of 0.0 is not permitted.
-        
-        The pitch shift is applied to the source before doppler effects.
         
         :type: float
         ''')
@@ -1101,12 +1077,8 @@ class Listener(object):
     '''
     _volume = 1.0
     _position = (0, 0, 0)
-    _velocity = (0, 0, 0)
     _forward_orientation = (0, 0, -1)
     _up_orientation = (0, 1, 0)
-
-    _doppler_factor = 1.
-    _speed_of_sound = 343.3
 
     def _set_volume(self, volume):
         raise NotImplementedError('abstract')
@@ -1131,20 +1103,6 @@ class Listener(object):
 
         The position is given as a tuple of floats (x, y, z).  The unit
         defaults to meters, but can be modified with the listener
-        properties.
-        
-        :type: 3-tuple of float
-        ''')
-
-    def _set_velocity(self, velocity):
-        raise NotImplementedError('abstract')
-
-    velocity = property(lambda self: self._velocity,
-                        lambda self, velocity: self._set_velocity(velocity),
-                        doc='''The velocity of the listener in 3D space.
-
-        The velocity is given as a tuple of floats (x, y, z).  The unit
-        defaults to meters per second, but can be modified with the listener
         properties.
         
         :type: 3-tuple of float
@@ -1179,41 +1137,6 @@ class Listener(object):
         
         :type: 3-tuple of float
         ''')
-
-    def _set_doppler_factor(self, factor):
-        raise NotImplementedError('abstract')
-
-    doppler_factor = property(lambda self: self._doppler_factor,
-                              lambda self, f: self._set_doppler_factor(f),
-                              doc='''The emphasis to apply to the doppler
-        effect for sounds that move relative to the listener.
-
-        The default value is 1.0, which results in a physically-based
-        calculation.  The effect can be enhanced by using a higher factor,
-        or subdued using a fractional factor (negative factors are
-        ignored).
-        
-        :type: float
-        ''')
-
-    def _set_speed_of_sound(self, speed_of_sound):
-        raise NotImplementedError('abstract')
-
-    speed_of_sound = property(lambda self: self._speed_of_sound,
-                              lambda self, s: self._set_speed_of_sound(s),
-                              doc='''The speed of sound, in units per second.
-
-        The default value is 343.3, a typical result at sea-level on a mild
-        day, using meters as the distance unit.
-
-        The speed of sound only affects the calculation of pitch shift to 
-        apply due to doppler effects; in particular, no propogation delay
-        or relative phase adjustment is applied (in current implementations
-        of audio devices).
-
-        :type: float
-        ''')
-
 
 
 if getattr(sys, 'is_epydoc', False):
