@@ -279,7 +279,7 @@ class DirectSoundAudioPlayer(AudioPlayer):
     def set_position(self, position):
         if self._buffer3d:
             x, y, z = position
-            self._buffer3d.SetPosition(x, y, z, lib.DS3D_IMMEDIATE)
+            self._buffer3d.SetPosition(x, y, -z, lib.DS3D_IMMEDIATE)
 
     def set_min_distance(self, min_distance):
         if self._buffer3d:
@@ -296,7 +296,7 @@ class DirectSoundAudioPlayer(AudioPlayer):
     def set_cone_orientation(self, cone_orientation):
         if self._buffer3d:
             x, y, z = cone_orientation
-            self._buffer3d.SetConeOrientation(x, y, z, lib.DS3D_IMMEDIATE)
+            self._buffer3d.SetConeOrientation(x, y, -z, lib.DS3D_IMMEDIATE)
 
     def set_cone_inner_angle(self, cone_inner_angle):
         if self._buffer3d:
@@ -345,7 +345,7 @@ class DirectSoundListener(Listener):
     def _set_position(self, position):
         self._position = position
         x, y, z = position
-        self._listener.SetPosition(x, y, z, lib.DS3D_IMMEDIATE)
+        self._listener.SetPosition(x, y, -z, lib.DS3D_IMMEDIATE)
 
     def _set_forward_orientation(self, orientation):
         self._forward_orientation = orientation
@@ -358,7 +358,7 @@ class DirectSoundListener(Listener):
     def _set_orientation(self):
         x, y, z = self._forward_orientation
         ux, uy, uz = self._up_orientation
-        self._listener.SetOrientation(x, y, z, ux, uy, uz, lib.DS3D_IMMEDIATE)
+        self._listener.SetOrientation(x, y, -z, ux, uy, uz, lib.DS3D_IMMEDIATE)
 
 dsound = None
 def driver_init():
