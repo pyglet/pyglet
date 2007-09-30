@@ -51,6 +51,12 @@ from pyglet.window.win32 import _user32
 class DirectSoundException(MediaException):
     pass
 
+def _db(gain):
+    '''Convert linear gain in range [0.0, 1.0] to 100ths of dB.'''
+    if gain <= 0:
+        return -10000
+    return int(1000 * math.log(min(gain, 1)))
+
 class DirectSoundAudioPlayer(AudioPlayer):
     _buffer_size = 44800 * 1
     _update_buffer_size = _buffer_size // 4
@@ -266,14 +272,10 @@ class DirectSoundAudioPlayer(AudioPlayer):
             return self._sources[0]
         return None
 
-    @staticmethod
-    def _db(gain):
-        if gain <= 0:
-            return -10000
-        return int(1000 * math.log(min(gain, 1)))
+    
 
     def set_volume(self, volume):
-        volume = self._db(volume)
+        volume = _db(volume)
         self._buffer.SetVolume(volume)
 
     def set_position(self, position):
@@ -315,32 +317,35 @@ class DirectSoundAudioPlayer(AudioPlayer):
 
     def set_cone_outer_gain(self, cone_outer_gain):
         if self._buffer3d:
-            volume = self._db(cone_outer_gain)
+            volume = _db(cone_outer_gain)
             self._buffer3d.SetConeOutsideVolume(volume, lib.DS3D_IMMEDIATE)
 
 class DirectSoundListener(Listener):
     def _init(self):
         # Called after driver_init()    
-        buffer = lib.IDirectSoundBuffer()
+        self._buffer = lib.IDirectSoundBuffer()
         dsbd = lib.DSBUFFERDESC()
         dsbd.dwSize = ctypes.sizeof(dsbd)
-        dsbd.dwFlags = lib.DSBCAPS_CTRL3D | lib.DSBCAPS_PRIMARYBUFFER
-        dsound.CreateSoundBuffer(dsbd, ctypes.byref(buffer), None)
+        dsbd.dwFlags = (lib.DSBCAPS_CTRL3D |
+                        lib.DSBCAPS_CTRLVOLUME |
+                        lib.DSBCAPS_PRIMARYBUFFER)
+        dsound.CreateSoundBuffer(dsbd, ctypes.byref(self._buffer), None)
 
         self._listener = lib.IDirectSound3DListener()
-        buffer.QueryInterface(lib.IID_IDirectSound3DListener, 
-                              ctypes.byref(self._listener))
+        self._buffer.QueryInterface(lib.IID_IDirectSound3DListener, 
+                                    ctypes.byref(self._listener))
 
-        buffer.Release()
 
     def __del__(self):
         try:
+            self._buffer.Release()
             self._listener.Release()
         except:
             pass
     
     def _set_volume(self, volume):
         self._volume = volume
+        self._buffer.SetVolume(_db(volume))
 
     def _set_position(self, position):
         self._position = position
