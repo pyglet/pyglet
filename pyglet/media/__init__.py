@@ -302,14 +302,6 @@ class AudioPlayer(object):
         '''See `Player.volume`.'''
         pass
 
-    def set_min_gain(self, min_gain):
-        '''See `Player.min_gain`.'''
-        pass
-
-    def set_max_gain(self, max_gain):
-        '''See `Player.max_gain`.'''
-        pass
-
     def set_position(self, position):
         '''See `Player.position`.'''
         pass
@@ -575,8 +567,6 @@ class Player(event.EventDispatcher):
 
     # Spacialisation attributes, preserved between audio players
     _volume = 1.0
-    _max_gain = 1.0
-    _min_gain = 0.0
 
     _position = (0, 0, 0)
     _velocity = (0, 0, 0)
@@ -877,39 +867,8 @@ class Player(event.EventDispatcher):
 
          The nominal level is 1.0, and 0.0 is silence.
 
-         The volume level is affected by factors such as the distance from the
-         listener (if positioned), and is clamped (after distance attenuation)
-         to the range [min_gain, max_gain].
-         
-         :type: float
-         ''')
-
-    def _set_min_gain(self, min_gain):
-        self._min_gain = min_gain
-        if self._audio:
-            self._audio.set_min_gain(min_gain)
-
-    min_gain = property(lambda self: self._min_gain,
-                        lambda self, min_gain: self._set_min_gain(min_gain),
-                        doc='''The minimum gain to apply to the sound, even
-
-         The gain is clamped after distance attenuation.  The default value
-         is 0.0.
-         
-         :type: float
-         ''')
-
-    def _set_max_gain(self, max_gain):
-        self._max_gain = max_gain
-        if self._audio:
-            self._audio.set_max_gain(max_gain)
-
-    max_gain = property(lambda self: self._max_gain,
-                        lambda self, max_gain: self._set_max_gain(max_gain),
-                        doc='''The maximum gain to apply to the sound.
-         
-         The gain is clamped after distance attenuation.  The default value
-         is 1.0.
+         The volume level is affected by the distance from the listener (if
+         positioned).
          
          :type: float
          ''')

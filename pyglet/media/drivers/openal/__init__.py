@@ -272,14 +272,6 @@ class OpenALAudioPlayer(AudioPlayer):
         al.alSourcef(self._al_source, al.AL_GAIN, max(0, volume))
         self._volume = volume
 
-    def set_min_gain(self, min_gain):
-        al.alSourcef(self._al_source, al.AL_MIN_GAIN, max(0, min_gain))
-        self._min_gain = min_gain
-
-    def set_max_gain(self, max_gain):
-        al.alSourcef(self._al_source, al.AL_MAX_GAIN, max(0, max_gain))
-        self._max_gain = max_gain
-
     def set_position(self, position):
         x, y, z = position
         al.alSource3f(self._al_source, al.AL_POSITION, x, y, z)

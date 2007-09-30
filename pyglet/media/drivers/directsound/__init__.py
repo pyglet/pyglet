@@ -276,16 +276,6 @@ class DirectSoundAudioPlayer(AudioPlayer):
         volume = self._db(volume)
         self._buffer.SetVolume(volume)
 
-    def set_min_gain(self, min_gain):
-        if self._buffer3d:
-            distance = min_gain # TODO
-            #self._buffer.SetMaxDistance(distance, lib.DS3D_IMMEDIATE)
-
-    def set_max_gain(self, max_gain):
-        if self._buffer3d:
-            distance = max_gain # TODO
-            #self._buffer.SetMinDistance(distance, lib.DS3D_IMMEDIATE)
-
     def set_position(self, position):
         if self._buffer3d:
             x, y, z = position

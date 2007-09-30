@@ -411,31 +411,6 @@ class ListenerVolumeHandle(SliderHandle):
     def set_value(self, value):
         self.player.volume = value
 
-class MaxGainHandle(SliderHandle):
-    tip = 'max_gain'
-
-    def __init__(self, player):
-        super(MaxGainHandle, self).__init__(player, 1, .6)
-
-    def get_value(self):
-        return self.player.max_gain
-
-    def set_value(self, value):
-        self.player.max_gain = value
-
-
-class MinGainHandle(SliderHandle):
-    tip = 'min_gain'
-
-    def __init__(self, player):
-        super(MinGainHandle, self).__init__(player, 1, .3)
-
-    def get_value(self):
-        return self.player.min_gain
-
-    def set_value(self, value):
-        self.player.min_gain = value
-
 class ConeOuterGainHandle(SliderHandle):
     tip = 'cone_outer_gain'
 
@@ -487,8 +462,6 @@ class SoundSpaceWindow(window.Window):
         if player:
             self.more_handles = [
                 VolumeHandle(player),
-                MaxGainHandle(player),
-                MinGainHandle(player),
                 ConeOuterGainHandle(player),
             ]
         else:
