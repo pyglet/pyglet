@@ -281,6 +281,14 @@ class DirectSoundAudioPlayer(AudioPlayer):
             x, y, z = position
             self._buffer3d.SetPosition(x, y, z, lib.DS3D_IMMEDIATE)
 
+    def set_min_distance(self, min_distance):
+        if self._buffer3d:
+            self._buffer3d.SetMinDistance(min_distance, lib.DS3D_IMMEDIATE)
+
+    def set_max_distance(self, max_distance):
+        if self._buffer3d:
+            self._buffer3d.SetMaxDistance(max_distance, lib.DS3D_IMMEDIATE)
+
     def set_velocity(self, velocity):
         if self._buffer3d:
             x, y, z = velocity

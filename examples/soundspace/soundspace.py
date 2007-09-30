@@ -411,6 +411,30 @@ class ListenerVolumeHandle(SliderHandle):
     def set_value(self, value):
         self.player.volume = value
 
+class MinDistanceHandle(SliderHandle):
+    tip = 'min_distance'
+
+    def __init__(self, player):
+        super(MinDistanceHandle, self).__init__(player, 1, .6)
+
+    def get_value(self):
+        return self.player.min_distance / 5.
+
+    def set_value(self, value):
+        self.player.min_distance = value * 5.
+
+class MaxDistanceHandle(SliderHandle):
+    tip = 'max_distance'
+
+    def __init__(self, player):
+        super(MaxDistanceHandle, self).__init__(player, 1, .3)
+
+    def get_value(self):
+        return min(self.player.max_distance / 5., 1.0)
+
+    def set_value(self, value):
+        self.player.max_distance = value * 5.
+
 class ConeOuterGainHandle(SliderHandle):
     tip = 'cone_outer_gain'
 
@@ -462,6 +486,8 @@ class SoundSpaceWindow(window.Window):
         if player:
             self.more_handles = [
                 VolumeHandle(player),
+                MinDistanceHandle(player),
+                MaxDistanceHandle(player),
                 ConeOuterGainHandle(player),
             ]
         else:

@@ -270,38 +270,36 @@ class OpenALAudioPlayer(AudioPlayer):
 
     def set_volume(self, volume):
         al.alSourcef(self._al_source, al.AL_GAIN, max(0, volume))
-        self._volume = volume
 
     def set_position(self, position):
         x, y, z = position
         al.alSource3f(self._al_source, al.AL_POSITION, x, y, z)
-        self._position = position
+
+    def set_min_distance(self, min_distance):
+        al.alSourcef(self._al_source, al.AL_REFERENCE_DISTANCE, min_distance)
+
+    def set_max_distance(self, max_distance):
+        al.alSourcef(self._al_source, al.AL_MAX_DISTANCE, max_distance)
 
     def set_velocity(self, velocity):
         x, y, z = velocity
         al.alSource3f(self._al_source, al.AL_VELOCITY, x, y, z)
-        self._velocity = velocity
 
     def set_pitch(self, pitch):
         al.alSourcef(self._al_source, al.AL_PITCH, max(0, pitch))
-        self._pitch = pitch
 
     def set_cone_orientation(self, cone_orientation):
         x, y, z = cone_orientation
         al.alSource3f(self._al_source, al.AL_DIRECTION, x, y, z)
-        self._cone_orientation = cone_orientation
 
     def set_cone_inner_angle(self, cone_inner_angle):
         al.alSourcef(self._al_source, al.AL_CONE_INNER_ANGLE, cone_inner_angle)
-        self._cone_inner_angle = cone_inner_angle
 
     def set_cone_outer_angle(self, cone_outer_angle):
         al.alSourcef(self._al_source, al.AL_CONE_OUTER_ANGLE, cone_outer_angle)
-        self._cone_outer_angle = cone_outer_angle
 
     def set_cone_outer_gain(self, cone_outer_gain):
         al.alSourcef(self._al_source, al.AL_CONE_OUTER_GAIN, cone_outer_gain)
-        self._cone_outer_gain = cone_outer_gain
 
 class OpenALListener(Listener):
     def _set_volume(self, volume):

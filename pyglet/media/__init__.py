@@ -306,6 +306,14 @@ class AudioPlayer(object):
         '''See `Player.position`.'''
         pass
 
+    def set_min_distance(self, min_distance):
+        '''See `Player.min_distance`.'''
+        pass
+
+    def set_max_distance(self, max_distance):
+        '''See `Player.max_distance`.'''
+        pass
+
     def set_velocity(self, velocity):
         '''See `Player.velocity`.'''
         pass
@@ -567,6 +575,8 @@ class Player(event.EventDispatcher):
 
     # Spacialisation attributes, preserved between audio players
     _volume = 1.0
+    _min_distance = 1.0
+    _max_distance = 100000000.
 
     _position = (0, 0, 0)
     _velocity = (0, 0, 0)
@@ -889,7 +899,49 @@ class Player(event.EventDispatcher):
         :type: 3-tuple of float
         ''')
 
+    def _set_min_distance(self, min_distance):
+        self._min_distance = min_distance
+        if self._audio:
+            self._audio.set_min_distance(min_distance)
+
+    min_distance = property(lambda self: self._min_distance,
+                            lambda self, v: self._set_min_distance(v),
+                            doc='''The distance beyond which the sound volume
+        drops by half, and within which no attenuation is applied.
+
+        The minimum distance controls how quickly a sound is attenuated
+        as it moves away from the listener.  The gain is clamped at the
+        nominal value within the min distance.  By default the value is
+        1.0.
+        
+        The unit defaults to meters, but can be modified with the listener
+        properties.
+        
+        :type: float
+        ''')
+
+    def _set_max_distance(self, max_distance):
+        self._max_distance = max_distance
+        if self._audio:
+            self._audio.set_max_distance(max_distance)
+
+    max_distance = property(lambda self: self._max_distance,
+                            lambda self, v: self._set_max_distance(v),
+                            doc='''The distance at which no further attenuation
+        is applied.
+
+        When the distance from the listener to the player is greater than 
+        this value, attenuation is calculated as if the distance
+        were value.  By default the maximum distance is infinity.
+        
+        The unit defaults to meters, but can be modified with the listener
+        properties.
+        
+        :type: float
+        ''')
+
     def _set_velocity(self, velocity):
+
         self._velocity = velocity
         if self._audio:
             self._audio.set_velocity(velocity)
