@@ -45,7 +45,6 @@ The run loop is shown below::
 
     while not win.has_exit:
         win.dispatch_events()
-
         win.clear()
         text.draw()
         win.flip()
@@ -69,7 +68,6 @@ example we'll load an image and display it within the window::
 
     while not win.has_exit:
         win.dispatch_events()
-
         win.clear()
         img.blit(0, 0)
         win.flip()
