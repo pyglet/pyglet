@@ -11,9 +11,9 @@ class SliderCommon(Frame):
     slider_size = 16
 
     def resize(self):
-        ok = super(SliderCommon, self).resize()
-        if ok: self.handleSizing()
-        return ok
+        if not super(SliderCommon, self).resize(): return False
+        self.handleSizing()
+        return True
 
     def get_value(self):
         return self._value
@@ -65,20 +65,21 @@ class VerticalSlider(SliderCommon):
             min_size = int(self.bar_spec) + self.slider_size
         except:
             min_size = self.slider_size * 2
-        if self.height < min_size:
-            self.height = min_size
+        height = self.height
+        if height < min_size:
+            height = min_size
 
         # assume buttons are same height
         bh = ArrowButtonUp.get_arrow().height
 
         # only have buttons if there's enough room (two buttons plus
         # scrolling room)
-        self.have_buttons = self.height > (bh * 2 + min_size)
+        self.have_buttons = height > (bh * 2 + min_size)
         if self.have_buttons and self.dbut is None:
             # do this after the call to super to allow it to set the parent etc.
             self.dbut = ArrowButtonDown(self, classes=('-repeater-button-min',),
                 color='black')
-            self.ubut = ArrowButtonUp(self, y=self.height-bh, color='black',
+            self.ubut = ArrowButtonUp(self, y=height-bh, color='black',
                 classes=('-repeater-button-max',))
         elif not self.have_buttons and self.dbut is not None:
             self.dbut.delete()
@@ -86,7 +87,8 @@ class VerticalSlider(SliderCommon):
             self.dbut = self.ubut = None
 
         # add slider bar
-        i_height = self.inner_rect.height
+        #i_height = self.inner_rect.height
+        i_height = height
         self.bar_size = util.parse_value(self.bar_spec, i_height)
         if self.bar_size is None:
             self.bar_size = int(max(self.slider_size, i_height /
@@ -101,12 +103,13 @@ class VerticalSlider(SliderCommon):
             self.bar.text = s
             self.bar.height = self.bar_size
 
+        self.height = height
+
         # fix up sizing and positioning of elements
         if self.dbut is not None:
             self.dbut.resize()
             self.ubut.resize()
         self.bar.resize()
-        self.layout()
         self.positionBar()
 
     def get_inner_rect(self):
@@ -120,6 +123,7 @@ class VerticalSlider(SliderCommon):
     def positionBar(self):
         ir = self.inner_rect
         h = ir.height - self.bar.height
+        self.bar.x = 0
         self.bar.y = ir.y + int(self._value / float(self.range) * h)
 
 @event.default('vslider')
@@ -173,26 +177,26 @@ class HorizontalSlider(SliderCommon):
         super(HorizontalSlider, self).__init__(parent, x, y, z, width, height,
             bgcolor=bgcolor, **kw)
 
-    # XXX this really should be resize()
     def handleSizing(self):
         try:
             # if the bar size spec is a straight integer, use it
             min_size = int(self.bar_spec) + self.slider_size
         except:
             min_size = self.slider_size * 2
-        if self.width < min_size:
-            self.width = min_size
+        width = self.width
+        if width < min_size:
+            width = min_size
 
         # assume buttons are same width
         bw = ArrowButtonLeft.get_arrow().width
 
         # only have buttons if there's enough room (two buttons plus
         # scrolling room)
-        self.have_buttons = self.width > (bw * 2 + min_size)
+        self.have_buttons = width > (bw * 2 + min_size)
         if self.have_buttons and self.lbut is None:
             self.lbut = ArrowButtonLeft(self, classes=('-repeater-button-min',),
                 color='black')
-            self.rbut = ArrowButtonRight(self, x=self.width-bw, color='black',
+            self.rbut = ArrowButtonRight(self, x=width-bw, color='black',
                 classes=('-repeater-button-max',))
         elif not self.have_buttons and self.lbut is not None:
             self.lbut.delete()
@@ -200,7 +204,8 @@ class HorizontalSlider(SliderCommon):
             self.lbut = self.rbut = None
 
         # slider bar size
-        i_width = self.inner_rect.width
+        #i_width = self.inner_rect.width
+        i_width = width
         self.bar_size = util.parse_value(self.bar_spec, i_width)
         if self.bar_size is None:
             self.bar_size = int(max(self.slider_size, i_width / (self.range+1)))
@@ -214,12 +219,13 @@ class HorizontalSlider(SliderCommon):
             self.bar.text = s
             self.bar.width = self.bar_size
 
+        self.width = width
+
         # fix up sizing and positioning of elements
         if self.lbut is not None:
             self.lbut.resize()
             self.rbut.resize()
         self.bar.resize()
-        self.layout()
         self.positionBar()
 
     def get_inner_rect(self):
@@ -235,6 +241,7 @@ class HorizontalSlider(SliderCommon):
         w = ir.width - self.bar.width
         range = self.maximum - self.minimum
         self.bar.x = ir.x + int(self._value / float(range) * w)
+        self.bar.y = 0
 
     repeating = False
     def startRepeat(self, direction):
