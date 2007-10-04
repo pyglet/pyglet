@@ -301,20 +301,20 @@ You should try to avoid conversions which use ``glGetTexImage2D`` or
 transferring data in the "wrong" direction of the video bus, especially on
 older hardware.
 
-.. [1]: `ImageData` caches the texture for future use, so there is no
-         performance penalty for repeatedly blitting an `ImageData`.
+.. [1]  `ImageData` caches the texture for future use, so there is no
+        performance penalty for repeatedly blitting an `ImageData`.
 
-.. [2]: If the required texture compression extension is not present, the
-         image is decompressed in memory and then supplied to OpenGL via
-         ``glTexImage2D``.
+.. [2]  If the required texture compression extension is not present, the
+        image is decompressed in memory and then supplied to OpenGL via
+        ``glTexImage2D``.
 
-.. [3]: It is not currently possible to retrieve `ImageData` for compressed
-         texture images.  This feature may be implemented in a future release
-         of pyglet.  One workaround is to create a texture from the compressed
-         image, then read the image data from the texture; i.e.,
-         ``compressed_image.texture.image_data``.
+.. [3]  It is not currently possible to retrieve `ImageData` for compressed
+        texture images.  This feature may be implemented in a future release
+        of pyglet.  One workaround is to create a texture from the compressed
+        image, then read the image data from the texture; i.e.,
+        ``compressed_image.texture.image_data``.
 
-.. [4]: `BufferImageMask` cannot be converted to `Texture`.
+.. [4]  `BufferImageMask` cannot be converted to `Texture`.
 
 Accessing or providing pixel data
 ---------------------------------

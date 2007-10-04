@@ -1263,7 +1263,7 @@ class Texture(AbstractImage):
             `z` : int
                 For 3D textures, the image slice to retrieve.
 
-        :rtype: `ImageData`
+        :rtype: ImageData
         '''
         glBindTexture(self.target, self.id)
 
