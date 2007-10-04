@@ -23,7 +23,7 @@ def on_key_press(symbol, modifiers):
 win.on_key_press = on_key_press
 
 def on_mouse_press(x, y, button, modifiers):
-    if button == mouse.MOUSE_LEFT_BUTTON:
+    if button == mouse.LEFT:
         print 'The left mouse button was pressed.'
 
 win.on_mouse_press = on_mouse_press
