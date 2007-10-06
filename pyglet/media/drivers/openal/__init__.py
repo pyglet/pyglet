@@ -94,11 +94,10 @@ format_map = {
 class OpenALAudioPlayer(AudioPlayer):
     #: Seconds ahead to buffer audio.  Keep small for low latency, but large
     #: enough to avoid underruns. (0.05 is the minimum for my 2.2 GHz Linux)
-    _min_buffer_time = 0.3
     _update_buffer_time = 0.2
 
     #: Minimum size of an OpenAL buffer worth bothering with
-    _min_buffer_size = 3000
+    _min_buffer_size = 512
 
     #: Maximum size of an OpenAL buffer, in bytes.  TODO: use OpenAL maximum
     _max_buffer_size = 65536
@@ -159,10 +158,6 @@ class OpenALAudioPlayer(AudioPlayer):
                         audio_data.length,
                         self.audio_format.sample_rate)
         al.alSourceQueueBuffers(self._al_source, 1, ctypes.byref(buffer)) 
-
-        # Begin playing if underrun previously
-        if self._playing:
-            self._al_play()
 
         self._buffered_time += audio_data.duration
         self._timestamps.append((audio_data.timestamp, audio_data.duration))
@@ -248,6 +243,10 @@ class OpenALAudioPlayer(AudioPlayer):
             # Interpolate system time past buffer timestamp
             self._current_buffer_time = time.time() - \
                 self._timestamp_system_time
+
+        # Begin playing if underrun previously
+        if self._playing:
+            self._al_play()
 
     def get_time(self):
         state = al.ALint()
