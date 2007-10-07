@@ -1100,6 +1100,10 @@ class XlibWindow(BaseWindow):
                     for auto_event in reversed(saved):
                         xlib.XPutBackEvent(self._x_display, byref(auto_event))
                     return
+                else:
+                    # Key code of press did not match, therefore no repeating
+                    # is going on, stop searching.
+                    break
             # Whoops, put the events back, it's for real.
             for auto_event in reversed(saved):
                 xlib.XPutBackEvent(self._x_display, byref(auto_event))
