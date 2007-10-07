@@ -111,12 +111,14 @@ options = {
     'audio': ('directsound', 'alsa', 'openal', 'silent'),
     'debug_gl': not _enable_optimisations,
     'debug_media': False,
+    'debug_font': False,
 }
 
 _option_types = {
     'audio': tuple,
     'debug_gl': bool,
     'debug_media': bool,
+    'debug_font': bool,
 }
 
 def _read_environment():
