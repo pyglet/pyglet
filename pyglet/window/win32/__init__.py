@@ -448,6 +448,7 @@ class Win32Window(BaseWindow):
                 0,
                 self._window_class.hInstance,
                 0)
+            _kernel32.GetLastError()
             _check()
 
             self._dc = _user32.GetDC(self._hwnd)
@@ -811,7 +812,7 @@ class Win32Window(BaseWindow):
             else:
                 self._event_queue.append((event_handler, msg, wParam, lParam))
                 result = 0
-        if not result:
+        if not result and msg != WM_CLOSE:
             result = _user32.DefWindowProcW(c_int(hwnd), c_int(msg),
                 c_int(wParam), c_int(lParam)) 
         return result
