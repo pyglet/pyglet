@@ -109,16 +109,18 @@ if getattr(sys, 'frozen', None):
 #:
 options = {
     'audio': ('directsound', 'alsa', 'openal', 'silent'),
+    'debug_font': False,
     'debug_gl': not _enable_optimisations,
     'debug_media': False,
-    'debug_font': False,
+    'debug_win32': False,
 }
 
 _option_types = {
     'audio': tuple,
+    'debug_font': bool,
     'debug_gl': bool,
     'debug_media': bool,
-    'debug_font': bool,
+    'debug_win32': bool,
 }
 
 def _read_environment():

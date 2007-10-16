@@ -47,6 +47,7 @@ import sys
 if sys.platform not in ('cygwin', 'win32'):
     raise ImportError('Not a win32 platform.')
 
+import pyglet
 from pyglet.window import Platform, Display, Screen, BaseWindow, \
     WindowException, MouseCursor, DefaultMouseCursor
 from pyglet.window import event
@@ -64,9 +65,48 @@ from pyglet.gl import wgl
 from pyglet.gl import wglext_arb
 from pyglet.gl import wgl_info
 
-_gdi32 = windll.gdi32
-_kernel32 = windll.kernel32
-_user32 = windll.user32
+_debug_win32 = pyglet.options['debug_win32']
+
+if _debug_win32:
+    import traceback
+    _GetLastError = windll.kernel32.GetLastError
+    _FormatMessageA = windll.kernel32.FormatMessageA
+
+    _log_win32 = open('debug_win32.log', 'w')
+    
+    def format_error(err):
+        msg = create_string_buffer(256)
+        _FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM,
+                          c_void_p(),
+                          err,
+                          0,
+                          msg,
+                          len(msg),
+                          c_void_p())
+        return msg.value
+    
+    class DebugLibrary(object):
+        def __init__(self, lib):
+            self.lib = lib
+
+        def __getattr__(self, name):
+            fn = getattr(self.lib, name)
+            def f(*args):
+                result = fn(*args)
+                err = _GetLastError()
+                if err != 0:
+                    map(_log_win32.write,
+                        traceback.format_list(traceback.extract_stack()[:-1]))
+                    print >> _log_win32, format_error(err)
+                return result
+            return f
+else:
+    DebugLibrary = lambda lib: lib
+            
+_gdi32 = DebugLibrary(windll.gdi32)
+_kernel32 = DebugLibrary(windll.kernel32)
+_user32 = DebugLibrary(windll.user32)
+
 
 _user32.GetKeyState.restype = c_short
 _gdi32.CreateDIBitmap.argtypes = [HDC, POINTER(BITMAPINFOHEADER), DWORD,
@@ -425,14 +465,17 @@ class Win32Window(BaseWindow):
             self._window_class.lpfnWndProc = WNDPROC(self._wnd_proc)
             self._window_class.style = CS_VREDRAW | CS_HREDRAW
             self._window_class.hInstance = 0
-            self._window_class.hIcon = _user32.LoadIconW(module, 1)
-            self._window_class.hCursor = _user32.LoadCursorW(0, IDC_ARROW)
+            try:
+                # Fails under PYGLET_DEBUG_WIN32 when not frozen
+                #self._window_class.hIcon = _user32.LoadIconW(module, 1)
+                pass
+            except Win32Exception:
+                pass
             self._window_class.hbrBackground = white
             self._window_class.lpszMenuName = None
             self._window_class.cbClsExtra = 0
             self._window_class.cbWndExtra = 0
-            if not _user32.RegisterClassW(byref(self._window_class)):
-                _check()
+            _user32.RegisterClassW(byref(self._window_class))
         
         if not self._hwnd:
             self._hwnd = _user32.CreateWindowExW(
@@ -448,8 +491,6 @@ class Win32Window(BaseWindow):
                 0,
                 self._window_class.hInstance,
                 0)
-            _kernel32.GetLastError()
-            _check()
 
             self._dc = _user32.GetDC(self._hwnd)
         else:
@@ -1099,16 +1140,3 @@ class Win32Window(BaseWindow):
     def _event_erasebkgnd(self, msg, wParam, lParam):
         # Prevent flicker during resize.
         return 0
-
-def _check():
-    dw = _kernel32.GetLastError()
-    if dw != 0:
-        msg = create_string_buffer(256)
-        _kernel32.FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM,
-                              c_void_p(),
-                              dw,
-                              0,
-                              msg,
-                              len(msg),
-                              c_void_p())
-        raise Win32Exception(msg.value)
