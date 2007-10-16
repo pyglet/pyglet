@@ -70,6 +70,7 @@ _debug_win32 = pyglet.options['debug_win32']
 if _debug_win32:
     import traceback
     _GetLastError = windll.kernel32.GetLastError
+    _SetLastError = windll.kernel32.SetLastError
     _FormatMessageA = windll.kernel32.FormatMessageA
 
     _log_win32 = open('debug_win32.log', 'w')
@@ -92,6 +93,7 @@ if _debug_win32:
         def __getattr__(self, name):
             fn = getattr(self.lib, name)
             def f(*args):
+                _SetLastError(0)
                 result = fn(*args)
                 err = _GetLastError()
                 if err != 0:
