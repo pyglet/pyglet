@@ -467,12 +467,7 @@ class Win32Window(BaseWindow):
             self._window_class.lpfnWndProc = WNDPROC(self._wnd_proc)
             self._window_class.style = CS_VREDRAW | CS_HREDRAW
             self._window_class.hInstance = 0
-            try:
-                # Fails under PYGLET_DEBUG_WIN32 when not frozen
-                #self._window_class.hIcon = _user32.LoadIconW(module, 1)
-                pass
-            except Win32Exception:
-                pass
+            self._window_class.hIcon = _user32.LoadIconW(module, 1)
             self._window_class.hbrBackground = white
             self._window_class.lpszMenuName = None
             self._window_class.cbClsExtra = 0
