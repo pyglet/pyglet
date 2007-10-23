@@ -79,6 +79,7 @@ __version__ = '$Id$'
 
 import ctypes
 import sys
+import time
 import StringIO
 
 from pyglet import event
@@ -561,6 +562,9 @@ class Player(event.EventDispatcher):
     # Override audio timestamp for seeking and silent video
     _timestamp = None
 
+    # Used to track timestamp for silent sources
+    _last_system_time = 0.
+
     # Audio attributes
     _audio = None
     _next_audio_data = None
@@ -608,7 +612,7 @@ class Player(event.EventDispatcher):
     def _fill_audio(self):
         '''Ensure _audio is full.'''
         if not self._audio:
-            pass
+            return
 
         write_size = self._audio.get_write_size()
         if not write_size:
@@ -704,6 +708,8 @@ class Player(event.EventDispatcher):
         if self._audio:
             self._timestamp = None
             self._audio.play()
+        else:
+            self._last_system_time = time.time()
 
     def pause(self):
         '''Pause playback of the current source.
@@ -739,6 +745,8 @@ class Player(event.EventDispatcher):
         if self._audio:
             self._audio.stop()
             self._audio.clear()
+        else:
+            self._last_system_time = time.time()
         
     def next(self):
         '''Move immediately to the next queued source.
@@ -751,6 +759,9 @@ class Player(event.EventDispatcher):
         if self._audio:
             self._audio.stop()
             self._audio.clear()
+        else:
+            self._last_system_time = time.time()
+            self._timestamp = 0.
 
         self._next_source()
 
@@ -773,6 +784,24 @@ class Player(event.EventDispatcher):
         self._create_audio()
         self._fill_audio()
 
+        if not self._audio:
+            self._timestamp = 0.
+
+    def _on_eos(self):
+        '''Internal method when EOS is encountered.  Returns False if
+        dispatch_events should be immediately aborted.'''
+        if self._eos_action == self.EOS_NEXT:
+            self._next_source()
+        elif self._eos_action == self.EOS_PAUSE:
+            self._playing = False
+            self._timestamp = self._sources[0].duration
+        elif self._eos_action == self.EOS_STOP:
+            self.stop()
+            self._sources = []
+            return False
+        self.dispatch_event('on_eos')
+        return True
+
     def dispatch_events(self):
         '''Dispatch any pending events and perform regular heartbeat functions
         to maintain playback.
@@ -786,16 +815,18 @@ class Player(event.EventDispatcher):
         if self._audio:
             self._audio.pump()
             while self._audio.clear_eos():
-                if self._eos_action == self.EOS_NEXT:
-                    self._next_source()
-                elif self._eos_action == self.EOS_PAUSE:
-                    self._playing = False
-                    self._timestamp = self._sources[0].duration
-                elif self._eos_action == self.EOS_STOP:
-                    self.stop()
-                    self._sources = []
+                if not self._on_eos():
                     return
-                self.dispatch_event('on_eos')
+        else:
+            if self._playing:
+                t = time.time()
+                self._timestamp += t - self._last_system_time
+                self._last_system_time = t
+                while self._timestamp > self._sources[0].duration:
+                    if not self._on_eos():
+                        return
+                    if self._eos_action == self.EOS_LOOP:
+                        self._timestamp -= self._sources[0].duration
 
         if self._texture:
             self._sources[0]._update_texture(self, self._get_time())
@@ -1066,6 +1097,7 @@ class ManagedSoundPlayer(Player):
         managed_players.append(self)
 
     def stop(self):
+        self._timestamp = 0.
         managed_players.remove(self)
 
 class Listener(object):
