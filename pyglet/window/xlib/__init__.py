@@ -1024,6 +1024,8 @@ class XlibWindow(BaseWindow):
             modifiers |= key.MOD_NUMLOCK
         if state & xlib.Mod4Mask:
             modifiers |= key.MOD_WINDOWS
+        if state & xlib.Mod5Mask:
+            modifiers |= key.MOD_SCROLLLOCK
         return modifiers
 
     # Event handlers
