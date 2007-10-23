@@ -234,7 +234,4 @@ chmap = {
     ord('|'): key.BAR,
     ord('}'): key.BRACERIGHT,
     ord('~'): key.ASCIITILDE,
-
-    ord('\xe5'): key.ADIAERESIS,
-    ord('\xa7'): key.SECTION,
 }
