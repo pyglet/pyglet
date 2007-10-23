@@ -127,6 +127,7 @@ constants defined in `pyglet.window.key` are::
     MOD_OPTION      Available on Mac OS X only
     MOD_CAPSLOCK
     MOD_NUMLOCK
+    MOD_SCROLLLOCK
 
 For example, to test if the shift key is held down::
 

@@ -113,6 +113,8 @@ def modifiers_string(modifiers):
         mod_names.append('MOD_CAPSLOCK')
     if modifiers & MOD_NUMLOCK:
         mod_names.append('MOD_NUMLOCK')
+    if modifiers & MOD_SCROLLLOCK:
+        mod_names.append('MOD_SCROLLLOCK')
     if modifiers & MOD_COMMAND:
         mod_names.append('MOD_COMMAND')
     if modifiers & MOD_OPTION:
@@ -176,6 +178,7 @@ MOD_NUMLOCK     = 1 << 4
 MOD_WINDOWS     = 1 << 5
 MOD_COMMAND     = 1 << 6
 MOD_OPTION      = 1 << 7
+MOD_SCROLLLOCK  = 1 << 8
 
 
 
