@@ -12,6 +12,8 @@ from pyglet.gl import *
 from pyglet.image import *
 from pyglet.window import *
 
+__noninteractive = True
+
 class TestTextureGrid(unittest.TestCase):
     def set_grid_image(self, itemwidth, itemheight, rows, cols, rowpad, colpad):
         data = ''
