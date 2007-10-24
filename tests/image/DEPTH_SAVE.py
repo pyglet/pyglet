@@ -20,7 +20,6 @@ import base_save
 
 from pyglet.gl import *
 from pyglet import image
-from pyglet.ext.scene2d import *
 
 class TEST_DEPTH_SAVE(base_save.TestSave):
     def draw_original(self):
