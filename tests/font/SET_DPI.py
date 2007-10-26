@@ -37,8 +37,10 @@ class TEST_ADD_FONT(base_text.TextTestBase):
     def draw(self):
         self.text.draw()
 
-        x1, y1 = 12, 9 
-        x2, y2 = 173,27
+        x1 = self.text.x
+        x2 = self.text.x + self.text.width
+        y1 = 9
+        y2 = 27
         
         glPushAttrib(GL_CURRENT_BIT)
         glColor3f(0, 1, 0)
