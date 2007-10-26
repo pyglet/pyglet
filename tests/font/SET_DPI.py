@@ -3,8 +3,7 @@
 '''Test that a specific DPI can be set to render the text with.
 
 Some text in Action Man font will be displayed.  A green box should exactly
-bound the top and bottom of the text.  (The right edge of the box may not line
-up with the right edge of the text due to a known bug; see issue #88).
+bound the top and bottom of the text.
 
 Press ESC to end the test.
 '''
