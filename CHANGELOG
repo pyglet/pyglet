@@ -1,6 +1,31 @@
 Current
-    * Fix font.add_directory()
+    * Removed shebangs from all library files
+    * docs: Numerous formatting fixes to documentation, including restoring
+      missing tables
+    * examples: Added soundspace example
+    * pyglet: Added environment variables for default global options
+    * pyglet.clock: Fixed unschedule of clock items out of order
+    * pyglet.font: Fixed font.add_directory()
+    * pyglet.font: Fixed text wrapping in GlyphString at corner cases
+    * pyglet.media: Improved media streaming behaviour under loaded CPU
+    * pyglet.media: Implemented playback of video without sound
+    * pyglet.media: Removed redundant positional audio properties, and
+      redefined some to be compatible with both OpenAL and DirectSound
+    * pyglet.media: Fixed OpenAL 1.1 timing
+    * pyglet.media: Improved OpenAL underrun recovery
+    * pyglet.window: Removed extended Latin-1 key symbols
+    * pyglet.window: Added scroll lock key modifier
+    * OS X: Fixed fullscreen windows on non-primary monitor
+    * Linux: Fixed non-ASCII text input
+    * Linux: Added ALSA audio driver
     * Linux: Small refactoring of window event dispatch
+    * Linux: Fixed lost key events under loaded CPU
+    * Win32: Added DirectSound audio driver
+    * Win32: Fixed interaction with language bar
+    * Win32: Fixed key events for non-ASCII keys
+    * Win32: Fixed motion event being fired on key release
+    * Win32: Fixed window close event
+    * Win32: Fixed handling of system error messages
 
 1.0alpha2
 
