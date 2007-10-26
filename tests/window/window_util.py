@@ -6,7 +6,6 @@ from pyglet.gl import *
 def draw_client_border(window):
     glClearColor(0, 0, 0, 1)
     glClear(GL_COLOR_BUFFER_BIT)
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
@@ -15,7 +14,7 @@ def draw_client_border(window):
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
     def rect(x1, y1, x2, y2):
-        glBegin(GL_POLYGON)
+        glBegin(GL_LINE_LOOP)
         glVertex2f(x1, y1)
         glVertex2f(x2, y1)
         glVertex2f(x2, y2)
@@ -23,7 +22,7 @@ def draw_client_border(window):
         glEnd()
     
     glColor3f(1, 0, 0)
-    rect(-1, -1, window.width, window.height)
+    rect(0, -1, window.width + 1, window.height)
 
     glColor3f(0, 1, 0)
-    rect(0, 0, window.width - 1, window.height - 1)
+    rect(1, 0, window.width, window.height - 1)
