@@ -2,10 +2,10 @@ Sound and Video
 ===============
 
 pyglet can play many audio and video formats.  Audio is played back with
-OpenAL -- the standard hardware-accelerated API for stereo and surround-sound
-audio.  Video is played into OpenGL textures, and so can be easily be
-manipulated in real-time by applications and incorporated into 3D
-environments.
+either OpenAL, DirectSound or ALSA, permitting hardware-accelerated mixing and
+surround-sound 3D positioning.  Video is played into OpenGL textures, and so
+can be easily be manipulated in real-time by applications and incorporated
+into 3D environments.
 
 Decoding of compressed audio and video is provided by `AVbin`_, an optional
 component available for Linux, Windows and Mac OS X.  AVbin is installed
@@ -17,22 +17,116 @@ files only.  This may be sufficient for many applications that require only a
 small number of short sounds, in which case those applications need not
 distribute AVbin.
 
-OpenAL is included with Mac OS X.  Windows users can download a generic driver
-from `openal.org`_, or from their sound device's manufacturer.  Linux users can
-use the reference implementation also provided by Creative.  For example,
-Ubuntu users can ``apt-get openal``.  ALUT is not required.
-
-If OpenAL is not installed, no audio or video files (even silent ones) can be
-played.
-
-Please note that due to a long-standing bug in the reference implementation of
-OpenAL, stereo audio is downmixed to mono on Linux.  This does not affect
-Windows or Mac OS X users.  Future versions of pyglet may provide an
-alternative audio driver to address this problem.
+.. contents::
+    :local:
 
 .. _AVbin: http://code.google.com/p/avbin
 
 .. _openal.org: http://www.openal.org/downloads.html
+
+Audio drivers
+-------------
+
+pyglet can use OpenAL, DirectSound or ALSA to play back audio.  Only one of
+these drivers can be used in an application, and this must be selected before
+the `pyglet.media` module is loaded.  The available drivers depend on your
+operating system:
+
+    .. list-table::
+        :header-rows: 1
+        
+        * - Windows
+          - Mac OS X
+          - Linux
+        * - OpenAL [#openalf]_
+          - OpenAL
+          - OpenAL [#openalf]_
+        * - DirectSound
+          - 
+          -
+        * -
+          - 
+          - ALSA
+
+The audio driver can be set through the ``audio`` key of the `pyglet.options`
+dictionary.  For example::
+
+    import pyglet
+    pyglet.options['audio'] = ('openal', 'silent')
+
+This tells pyglet to use the OpenAL driver if it is available, and to
+ignore all audio output if it is not.  The ``audio`` option can be a list of
+any of these strings, giving the preference order for each driver:
+
+    .. list-table::
+        :header-rows: 1
+
+        * - String
+          - Audio driver
+        * - ``openal``
+          - OpenAL
+        * - ``directsound``
+          - DirectSound
+        * - ``alsa``
+          - ALSA
+        * - ``silent``
+          - No audio output
+
+You must set the ``audio`` option before importing `pyglet.media`.  You can
+alternatively set it through an environment variable; see 
+`Environment settings`.
+
+The following sections describe the requirements and limitations of each audio
+driver.
+
+DirectSound
+^^^^^^^^^^^
+
+DirectSound is available only on Windows, and is installed by default on
+Windows XP and later.  pyglet uses only DirectX 7 features.  On Windows Vista
+DirectSound does not support hardware audio mixing or surround sound.
+
+OpenAL
+^^^^^^
+
+OpenAL is included with Mac OS X.  Windows users can download a generic driver
+from `openal.org`_, or from their sound device's manufacturer.  Linux users can
+use the reference implementation also provided by Creative.  For example,
+Ubuntu users can ``apt-get openal``.  ALUT is not required.  pyglet makes use
+of OpenAL 1.1 features if available, but will also work with OpenAL 1.0.
+
+Due to a long-standing bug in the reference implementation of OpenAL, stereo
+audio is downmixed to mono on Linux.  This does not affect Windows or Mac OS X
+users.
+
+ALSA
+^^^^
+
+ALSA is the standard Linux audio implementation, and is installed by default
+with many distributions.  Due to limitations in ALSA all audio sources will
+play back at full volume and without any surround sound positioning.
+
+Linux Issues
+^^^^^^^^^^^^
+
+Linux users have the option of choosing between OpenAL and ALSA for audio
+output.  Unfortunately both implementations have severe limitations or
+implementation bugs that are outside the scope of pyglet's control.
+
+If your application can manage without stereo playback, or needs control over
+individual audio volumes, you should use the OpenAL driver (assuming your
+users have it installed).
+
+If your application needs stereo playback, or does not require spatialised
+sound, consider using the ALSA driver in preference to the OpenAL driver.  You
+can do this with::
+
+    import pyglet
+    pyglet.options['audio'] = ('alsa', 'openal', 'silent')
+
+.. [#openalf] OpenAL is not installed by default on Windows, nor in many Linux
+    distributions.  It can be downloaded separately from your audio device
+    manufacturer or `openal.org <http://www.openal.org/downloads.html>`_
 
 Supported media types
 ---------------------
@@ -251,7 +345,7 @@ calls its `dispatch_events` method.  This is used to update the video texture
 and to ensure the audio buffers remain full.  Typically this call is done in
 every iteration of your main loop::
 
-    while True::
+    while True:
         player.dispatch_events()
 
 Note that this `dispatch_events` method is unrelated to the
