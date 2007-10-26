@@ -59,7 +59,7 @@ def check(err):
     return err
 
 class ALSAAudioPlayer(AudioPlayer):
-    _device_name = 'plug:front'
+    _device_name = 'default'
     _buffer_time = 0.3
     _min_write_bytes = 10000
     
