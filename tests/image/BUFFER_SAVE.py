@@ -22,6 +22,8 @@ from pyglet.gl import *
 from pyglet import image
 
 class TEST_BUFFER_SAVE(base_save.TestSave):
+    alpha = False
+
     def draw_original(self):
         glBegin(GL_TRIANGLES)
         glColor4f(1, 0, 0, 1)
@@ -37,6 +39,7 @@ class TEST_BUFFER_SAVE(base_save.TestSave):
     def load_texture(self):
         print 'Drawing scene...'
         self.window.set_visible()
+        self.window.dispatch_events()
         self.draw()
 
         print 'Saving colour image...'

@@ -22,6 +22,8 @@ from pyglet.gl import *
 from pyglet import image
 
 class TEST_DEPTH_SAVE(base_save.TestSave):
+    alpha = False
+
     def draw_original(self):
         glClear(GL_DEPTH_BUFFER_BIT)
         glEnable(GL_DEPTH_TEST)
@@ -41,6 +43,7 @@ class TEST_DEPTH_SAVE(base_save.TestSave):
     def load_texture(self):
         print 'Drawing scene...'
         self.window.set_visible()
+        self.window.dispatch_events()
         self.draw()
 
         print 'Saving depth image...'
