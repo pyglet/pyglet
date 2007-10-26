@@ -53,10 +53,13 @@ if pyglet.options['debug_media']:
 class ALSAException(MediaException):
     pass
 
-def check(err):
-    if err < 0:
-        raise ALSAException(asound.snd_strerror(err))
-    return err
+if alsa_debug:
+    def check(err):
+        if err < 0:
+            raise ALSAException(asound.snd_strerror(err))
+        return err
+else:
+    check = lambda v: v
 
 class ALSAAudioPlayer(AudioPlayer):
     _device_name = 'default'
@@ -94,55 +97,18 @@ class ALSAAudioPlayer(AudioPlayer):
         check(asound.snd_pcm_hw_params_set_channels(self.pcm, self.hwparams,
             audio_format.channels))
 
-        # ---
-        
-        # Set sample rate.  Issue 149: This doesn't work for anthony.briggs:
-        #check(asound.snd_pcm_hw_params_set_rate(self.pcm, self.hwparams,
-        #    audio_format.sample_rate, 0))
-        
-        # Apparently by default only real hardware sample rates are supported,
-        # so this disables that restriction (presumably allowing ALSA to
-        # resample the audio -- but this is not in the docs).  Try
-        # uncommenting this.
-        #check(asound.snd_pcm_hw_params_set_rate_resample(self.pcm,
-        #    self.hwparams, 0))
-
-        # This should be less picky about the exact sample rate, however the
-        # output will sound incorrect (we can address that later if this
-        # works):
         rate = ctypes.c_uint(audio_format.sample_rate)
-        if alsa_debug:
-            print 'Requested sample rate', rate.value
         dir = ctypes.c_int(0)
         check(asound.snd_pcm_hw_params_set_rate_near(self.pcm, self.hwparams,
             rate, dir))
-        if alsa_debug:
-            print 'Actual sample rate', rate.value
-        
-        # ---
+        # Note actual sample rate is in rate.value.  Ignored for now because
+        # difference is negligible.
 
-        # Set buffer size.  Issue 149: This doesn't work for andy.larrymite:
-        #check(asound.snd_pcm_hw_params_set_buffer_size(self.pcm, self.hwparams,
-        #    int(self._buffer_time * audio_format.sample_rate)))
-        
-        # This should be less picky about the exact buffer size, and will 
-        # hopefully choose a buffer size that is compatible.  This will
-        # produce bad sounding audio or even crash, but should at least get
-        # us past this configuration step:
         buffer_size = int(self._buffer_time * audio_format.sample_rate)
-        if alsa_debug:
-            print 'Requested buffer size', buffer_size
         bs = asound.snd_pcm_uframes_t(buffer_size)
         check(asound.snd_pcm_hw_params_set_buffer_size_near(self.pcm,
             self.hwparams, bs))
-        if alsa_debug:
-            print 'Actual buffer size', bs.value
-
-        # Note we could also have used
-        # snd_pcm_hw_params_get_buffer_size_max(..) to obtain the maximum
-        # buffer size.  All in good time...
-
-        # ---
+        # Actual buffer size is in bs.value.  Ignored for now.
 
         check(asound.snd_pcm_hw_params(self.pcm, self.hwparams))
 
