@@ -173,6 +173,9 @@ import sys
 import time
 import unittest
 
+# So we can find tests.regression and ensure local pyglet copy is tested.
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 import tests.regression
 import pyglet.image
 
