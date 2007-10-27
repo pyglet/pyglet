@@ -58,9 +58,9 @@ periodically call `dispatch_events` to ensure the audio buffers are refilled::
     while player.source:    # While the source hasn't finished
         player.dispatch_events()
 
-If the source contains video, its `video_format` attribute will be non-None,
-and the player's `texture` attribute will contain the current video image
-synchronised to the audio.
+If the source contains video, the `Source.video_format` attribute will be
+non-None, and the `Player.texture` attribute will contain the current video
+image synchronised to the audio.
 
 Decoding sounds can be processor-intensive and may introduce latency,
 particularly for short sounds that must be played quickly, such as bullets or
@@ -69,7 +69,7 @@ rather than streamed from disk by wrapping the source in a `StaticSource`::
 
     bullet_sound = StaticSource(load('bullet.wav'))
 
-The other advantage of a `StaticSound` is that it can be queued on any number
+The other advantage of a `StaticSource` is that it can be queued on any number
 of players, and so played many times simultaneously.
 
 '''
@@ -500,6 +500,8 @@ class StaticMemorySource(StaticSource):
     directly.'''
 
     def __init__(self, data, audio_format):
+        '''Construct a memory source over the given data buffer.
+        '''
         self._file = StringIO.StringIO(data)
         self._max_offset = len(data)
         self.audio_format = audio_format

@@ -1263,7 +1263,7 @@ class Texture(AbstractImage):
             `z` : int
                 For 3D textures, the image slice to retrieve.
 
-        :rtype: ImageData
+        :rtype: `ImageData`
         '''
         glBindTexture(self.target, self.id)
 
@@ -1285,7 +1285,16 @@ class Texture(AbstractImage):
             data = data.get_region(0, z * self.height, self.width, self.height)
         return data
 
-    image_data = property(get_image_data)
+    image_data = property(get_image_data,
+        doc='''An ImageData view of this texture.  
+        
+        Changes to the returned instance will not be reflected in this
+        texture.  If the texture is a 3D texture, the first image will be 
+        returned.  See also `get_image_data`.  Read-only.
+        
+        :type: `ImageData`
+        ''')
+
 
     texture = property(lambda self: self)
 

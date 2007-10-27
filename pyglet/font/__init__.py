@@ -251,6 +251,13 @@ class Text(object):
 
     Text can be word-wrapped by specifying a `width` to wrap into.  If the
     width is not specified, it gives the width of the text as laid out.
+
+    :Ivariables:
+        `x` : int
+            X coordinate of the text
+        `y` : int
+            Y coordinate of the text
+
     '''
 
     _layout_width = None  # Width to layout text to

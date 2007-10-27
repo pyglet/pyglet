@@ -111,7 +111,7 @@ _current_context = None
 def get_current_context():
     '''Return the active OpenGL context.
 
-    You can change the current context by calling `Context.switch_to`.
+    You can change the current context by calling `Context.set_current`.
 
     :rtype: `Context`
     :return: the context to which OpenGL commands are directed, or None
@@ -129,8 +129,8 @@ class Config(object):
     Different platforms support a different set of attributes, so these
     are set with a string key and a value which is integer or boolean.
 
-    Use `WindowFactory.get_matching_configs` or `BasePlatform.create_configs`
-    to obtain an instance of this class.
+    See also `pyglet.window.Screen.get_best_config` and 
+    `pyglet.window.Screen.get_matching_configs`.
 
     :Ivariables:
         `double_buffer` : bool

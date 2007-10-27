@@ -71,14 +71,14 @@ if getattr(sys, 'frozen', None):
     _enable_optimisations = True
 
 #: Global dict of pyglet options.  To change an option from its default, you
-#: must import `pyglet` before any sub-packages.  For example::
+#: must import ``pyglet`` before any sub-packages.  For example::
 #:
 #:      import pyglet
 #:      pyglet.options['debug_gl'] = False
 #:
 #: The default options can be overridden from the OS environment.  The
 #: corresponding environment variable for each option key is prefaced by
-#: 'PYGLET_'.  For example, in Bash you can set the ``debug_gl`` option with::
+#: ``PYGLET_``.  For example, in Bash you can set the ``debug_gl`` option with::
 #:
 #:      PYGLET_DEBUG_GL=True; export PYGLET_DEBUG_GL
 #: 

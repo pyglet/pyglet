@@ -249,7 +249,7 @@ class EventDispatcher(object):
         The event is propogated to all handlers from from the top of the stack
         until one returns `EVENT_HANDLED`.  This method should be used only by
         `EventDispatcher` implementors; applications should call
-        `dispatch_events`.
+        the ``dispatch_events`` method.
 
         :Parameters:
             `event_type` : str

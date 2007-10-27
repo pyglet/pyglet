@@ -367,7 +367,7 @@ class ImageMouseCursor(MouseCursor):
         :Parameters:
             `image` : `pyglet.image.AbstractImage`
                 Image to use for the mouse cursor.  It must have a
-                valid `texture` attribute.
+                valid ``texture`` attribute.
             `hot_x` : int
                 X coordinate of the "hot" spot in the image.
             `hot_y` : int
@@ -630,6 +630,27 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
                 List of attribute names that were changed since the last
                 `_create` or `_recreate`.  For example, ``['fullscreen']``
                 is given if the window is to be toggled to or from fullscreen. 
+        '''
+        raise NotImplementedError('abstract')
+
+    def flip(self):
+        '''Swap the OpenGL front and back buffers.
+
+        Call this method on a double-buffered window to update the
+        visible display with the back buffer.  The contents of the back buffer
+        is undefined after this operation.
+
+        Windows are double-buffered by default.
+        '''
+        raise NotImplementedError('abstract')
+
+    def switch_to(self):
+        '''Make this window the current OpenGL rendering context.
+
+        Only one OpenGL context can be active at a time.  This method sets
+        the current window's context to be current.  You should use this
+        method in preference to `pyglet.gl.Context.set_current`, as it may
+        perform additional initialisation functions.
         '''
         raise NotImplementedError('abstract')
 

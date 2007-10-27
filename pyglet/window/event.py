@@ -34,7 +34,7 @@
 
 '''Events for `pyglet.window`.
 
-See `WindowEventHandler` for a description of the window event types.
+See `Window` for a description of the window event types.
 '''
 
 __docformat__ = 'restructuredtext'
