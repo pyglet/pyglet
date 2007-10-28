@@ -569,6 +569,7 @@ class Player(event.EventDispatcher):
 
     # Audio attributes
     _audio = None
+    _audio_finished = False
     _next_audio_data = None
 
     # Video attributes
@@ -604,6 +605,7 @@ class Player(event.EventDispatcher):
             return
 
         if self._audio:
+            self._audio_finished = False
             if self._audio.audio_format == source.audio_format:
                 return
             else:
@@ -613,7 +615,7 @@ class Player(event.EventDispatcher):
 
     def _fill_audio(self):
         '''Ensure _audio is full.'''
-        if not self._audio:
+        if not self._audio or self._audio_finished:
             return
 
         write_size = self._audio.get_write_size()
@@ -626,6 +628,7 @@ class Player(event.EventDispatcher):
                 continue
             elif audio_data == 'end':
                 self._audio.write_end()
+                self._audio_finished = True
                 return
             if audio_format != self._audio.audio_format:
                 return
@@ -1234,6 +1237,5 @@ def dispatch_events():
     You must call this function regularly (typically once per run loop
     iteration) in order to keep audio buffers of managed players full.
     '''
-    print len(managed_players)
     for player in managed_players:
         player.dispatch_events()

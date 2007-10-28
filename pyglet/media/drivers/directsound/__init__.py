@@ -73,7 +73,7 @@ class DirectSoundAudioPlayer(AudioPlayer):
 
         self._buffer = None
         self._buffer_playing = False
-        self._data_size = 0
+        self._data_size = 0     # amount of buffer filled by this player
         self._play_cursor = 0
         self._buffer_time = 0.  # ts of buffer at buffer_time_pos
         self._buffer_time_pos = 0
@@ -152,8 +152,6 @@ class DirectSoundAudioPlayer(AudioPlayer):
         if self._data_size < self._buffer_size:
             self._data_size = min(self._data_size + length, self._buffer_size)
 
-        print 'write', length
-        
         p1 = ctypes.c_void_p()
         l1 = lib.DWORD()
         p2 = ctypes.c_void_p()
