@@ -37,7 +37,7 @@ Shoot the asteroids, get high score.
 
 Left/right: Turn ship
 Up: Thrusters
-Ctrl: Shoot
+Space: Shoot
 '''
 
 import math
@@ -69,7 +69,7 @@ MAX_DIFFICULTY = len(INITIAL_ASTEROIDS) - 1
 ARENA_WIDTH = 480
 ARENA_HEIGHT = 480
 
-KEY_FIRE = key.LCTRL
+KEY_FIRE = key.SPACE
 KEY_PAUSE = key.ESCAPE
 
 COLLISION_RESOLUTION = 8
@@ -87,7 +87,7 @@ INSTRUCTIONS = \
 
 Left/Right: Turn ship
 Up: Thrusters
-Ctrl: Shoot
+Space: Shoot
 
 Be careful, there's not much friction in space.'''
 
