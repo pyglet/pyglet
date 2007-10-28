@@ -12,7 +12,7 @@ class MoveWindow(object):
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         sx, sy = self.window.get_location()
         ox, oy = self.offset
-        self.window.set_location(x + sx - ox, sy - y + oy)
+        self.window.set_location(int(x + sx - ox), int(sy - y + oy))
 
     def on_mouse_release(self, x, y, button, modifiers):
         self.window.pop_handlers()
@@ -27,7 +27,7 @@ class ResizeWindow(object):
         ox, oy = self.offset
         width = x + ox
         height = self.window.height - y + oy
-        self.window.set_size(width, height)
+        self.window.set_size(int(width), int(height))
 
     def on_mouse_release(self, x, y, button, modifiers):
         self.window.pop_handlers()
@@ -51,6 +51,7 @@ class Win(window.Window):
         glRectf(w - 16, 3, w - 3, 16)
 
     def on_mouse_press(self, x, y, button, modifiers):
+        self.activate()
         if y < 16 and self.width - x < 16:
             self.push_handlers(ResizeWindow(self, x, y))
         else:
