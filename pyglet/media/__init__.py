@@ -1234,5 +1234,6 @@ def dispatch_events():
     You must call this function regularly (typically once per run loop
     iteration) in order to keep audio buffers of managed players full.
     '''
+    print len(managed_players)
     for player in managed_players:
         player.dispatch_events()

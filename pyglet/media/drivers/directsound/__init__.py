@@ -117,6 +117,7 @@ class DirectSoundAudioPlayer(AudioPlayer):
             
     def __del__(self):
         try:
+            self._buffer.Stop()
             self._buffer.Release()
         except:
             pass
@@ -142,7 +143,6 @@ class DirectSoundAudioPlayer(AudioPlayer):
  
     def write(self, audio_data, length=None):
         # Pass audio_data=None, length>0 to write silence
-
         if length is None:
             write_size = self.get_write_size()
             length = min(audio_data.length, write_size)
@@ -151,6 +151,8 @@ class DirectSoundAudioPlayer(AudioPlayer):
 
         if self._data_size < self._buffer_size:
             self._data_size = min(self._data_size + length, self._buffer_size)
+
+        print 'write', length
         
         p1 = ctypes.c_void_p()
         l1 = lib.DWORD()
