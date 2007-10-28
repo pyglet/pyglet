@@ -501,7 +501,7 @@ class CarbonWindow(BaseWindow):
                                              kWindowCloseBoxAttribute),
                 self.WINDOW_STYLE_TOOL:     (kUtilityWindowClass,
                                              kWindowCloseBoxAttribute),
-                self.WINDOW_STYLE_BORDERLESS:    (kOverlayWindowClass,
+                self.WINDOW_STYLE_BORDERLESS:    (kSimpleWindowClass,
                                                   kWindowNoAttributes)
             }
             window_class, window_attributes = \
