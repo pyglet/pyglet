@@ -51,6 +51,7 @@ setup_info = dict(
         'pyglet.media', 
         'pyglet.media.drivers', 
         'pyglet.media.drivers.alsa', 
+        'pyglet.media.drivers.directsound', 
         'pyglet.media.drivers.openal', 
         'pyglet.window', 
         'pyglet.window.carbon',
