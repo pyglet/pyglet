@@ -1258,13 +1258,13 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
             '''The mouse was moved with no buttons held down.
 
             :Parameters:
-                `x` : float
+                `x` : int
                     Distance in pixels from the left edge of the window.
-                `y` : float
+                `y` : int
                     Distance in pixels from the bottom edge of the window.
-                `dx` : float
+                `dx` : int
                     Relative X position from the previous mouse position.
-                `dy` : float
+                `dy` : int
                     Relative Y position from the previous mouse position.
 
             :event:
@@ -1277,13 +1277,13 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
             the window, so long as the drag buttons are continuously held down.
 
             :Parameters:
-                `x` : float
+                `x` : int
                     Distance in pixels from the left edge of the window.
-                `y` : float
+                `y` : int
                     Distance in pixels from the bottom edge of the window.
-                `dx` : float
+                `dx` : int
                     Relative X position from the previous mouse position.
-                `dy` : float
+                `dy` : int
                     Relative Y position from the previous mouse position.
                 `buttons` : int
                     Bitwise combination of the mouse buttons currently pressed.
@@ -1298,9 +1298,9 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
             '''A mouse button was pressed (and held down).
 
             :Parameters:
-                `x` : float
+                `x` : int
                     Distance in pixels from the left edge of the window.
-                `y` : float
+                `y` : int
                     Distance in pixels from the bottom edge of the window.
                 `button` : int
                     The mouse button that was pressed.
@@ -1315,9 +1315,9 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
             '''A mouse button was released.
 
             :Parameters:
-                `x` : float
+                `x` : int
                     Distance in pixels from the left edge of the window.
-                `y` : float
+                `y` : int
                     Distance in pixels from the bottom edge of the window.
                 `button` : int
                     The mouse button that was released.
@@ -1337,9 +1337,9 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
             both `scroll_x` and `scroll_y` movement.
 
             :Parameters:
-                `x` : float
+                `x` : int
                     Distance in pixels from the left edge of the window.
-                `y` : float
+                `y` : int
                     Distance in pixels from the bottom edge of the window.
                 `scroll_x` : int
                     Number of "clicks" towards the right (left if negative).
@@ -1365,9 +1365,9 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
             dragged.
 
             :Parameters:
-                `x` : float
+                `x` : int
                     Distance in pixels from the left edge of the window.
-                `y` : float
+                `y` : int
                     Distance in pixels from the bottom edge of the window.
 
             :event:
@@ -1381,9 +1381,9 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
             outside of the window rectangle.
 
             :Parameters:
-                `x` : float
+                `x` : int
                     Distance in pixels from the left edge of the window.
-                `y` : float
+                `y` : int
                     Distance in pixels from the bottom edge of the window.
 
             :event:

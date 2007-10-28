@@ -1013,7 +1013,7 @@ class CarbonWindow(BaseWindow):
 
         bounds = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(bounds))
-        return position.x - bounds.left, position.y - bounds.top
+        return int(position.x - bounds.left), int(position.y - bounds.top)
 
     @staticmethod
     def _get_mouse_button_and_modifiers(ev):
@@ -1153,10 +1153,10 @@ class CarbonWindow(BaseWindow):
             byref(delta))
         if axis.value == kEventMouseWheelAxisX:
             self.dispatch_event('on_mouse_scroll', 
-                x, y, float(delta.value), 0.)
+                x, y, delta.value, 0)
         else:
             self.dispatch_event('on_mouse_scroll', 
-                x, y, 0., float(delta.value))
+                x, y, 0, delta.value)
                 
         # _Don't_ call the next handler, which is application, as this then
         # calls our window handler again.
