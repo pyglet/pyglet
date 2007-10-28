@@ -2,7 +2,7 @@ Sound Space
 ===========
 
 This is a toy program for playing with positional audio in pyglet
-(http://www.pyglet.org).  Requires OpenAL.
+(http://www.pyglet.org).  On Linux, OpenAL is required.
 
 The source code is licensed under the BSD license, which is quite permissive
 (see the source headers for details).
