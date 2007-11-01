@@ -64,7 +64,7 @@ setuptools_info = dict(
     zip_safe=True,
 )
 
-if 'bdist_egg' in sys.argv:
+if 'bdist_egg' in sys.argv or 'develop' in sys.argv:
     from setuptools import setup
     _have_setuptools = True
 
