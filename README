@@ -11,8 +11,7 @@ Requirements
 
 pyglet requires one of the following operating systems:
 
-* Windows XP or Vista with the following library:
-   * OpenAL <http://openal.org/> (you will need to reboot after installation)
+* Windows XP or Vista
 * Mac OS X 10.3 or later
 * Linux, with the following libraries (most recent distributions will have
   these in a default installation):
@@ -37,23 +36,13 @@ There are no compilation steps during the installation; if you prefer, you can
 simply add this directory to your PYTHONPATH and use pyglet without
 installing it.
 
-Known issues on Windows
------------------------
-
-* The language bar (used to select another keyboard layout or input language)
-  hangs while a pyglet application has focus.  No solution to this has been
-  found yet.
-
-Alpha release known issues
---------------------------
+Alpha release
+-------------
 
 This is an alpha release, meaning it is feature-complete but not yet ready for
-production use.  This alpha release:
-
-* Lacks documentation
-* Has incomplete audio support on Windows XP
-* Has other known issues that will be fixed before Beta, please see the issue
-  tracker at http://code.google.com/p/pyglet/issues/list for details.
+production use.  Please check the issue tracker at 
+http://code.google.com/p/pyglet/issues/list for details of current and
+recently fixed issues.
 
 Please provide bug reports to the issue tracker listed above, or post to the
 mailing list at http://groups.google.com/group/pyglet-users
