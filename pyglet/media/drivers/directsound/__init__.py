@@ -119,6 +119,8 @@ class DirectSoundAudioPlayer(AudioPlayer):
         try:
             self._buffer.Stop()
             self._buffer.Release()
+            if self._buffer3d:
+                self._buffer3d.Release()
         except:
             pass
 
