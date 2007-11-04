@@ -5,7 +5,7 @@ pyglet by subclassing Window.  This is not for the faint-hearted!
 
 A message will be printed to stdout when the following events are caught:
 
- - On Mac OS X, the window resize region is clicked.
+ - On Mac OS X, the window drag region is clicked.
  - On Windows, the display resolution is changed.
  - On Linux, the window properties are changed.
 
@@ -16,7 +16,6 @@ from pyglet.window import Window
 # Check for Carbon (OS X)
 try:
     from pyglet.window.carbon import *
-    from pyglet.window.carbon.constants import *
     _have_carbon = True
 except ImportError:
     _have_carbon = False
@@ -43,9 +42,9 @@ class MyWindow(Window):
             self.dispatch_events()
 
     if _have_carbon:
-        @CarbonEventHandler(kEventClassWindow, kEventWindowClickResizeRgn)
-        def _on_window_click_resize_rgn(self, next_handler, event, data):
-            print 'Clicked resize rgn.'
+        @CarbonEventHandler(kEventClassWindow, kEventWindowClickDragRgn)
+        def _on_window_click_drag_rgn(self, next_handler, event, data):
+            print 'Clicked drag rgn.'
             carbon.CallNextEventHandler(next_handler, event)
             return noErr
 

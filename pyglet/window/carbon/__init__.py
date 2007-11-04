@@ -44,7 +44,7 @@ import unicodedata
 import warnings
 
 from pyglet.window import WindowException, Platform, Display, Screen, \
-    BaseWindow, MouseCursor, DefaultMouseCursor
+    BaseWindow, MouseCursor, DefaultMouseCursor, _PlatformEventHandler
 from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.window import event
@@ -377,22 +377,13 @@ class CarbonGLContext(gl.Context):
         super(CarbonGLContext, self).destroy()
         agl.aglDestroyContext(self._context)
 
-_carbon_event_handler_names = []
-
-def CarbonEventHandler(event_class, event_kind):
-    def handler_wrapper(f):
-        if f.__name__ not in _carbon_event_handler_names:
-            _carbon_event_handler_names.append(f.__name__)
-        if not hasattr(f, '_carbon_handler'):
-            f._carbon_handler = []
-        f._carbon_handler.append((event_class, event_kind))
-        return f
-    return handler_wrapper
-
 class CarbonMouseCursor(MouseCursor):
     drawable = False
     def __init__(self, theme):
         self.theme = theme
+
+def CarbonEventHandler(event_class, event_kind):
+    return _PlatformEventHandler((event_class, event_kind))
 
 class CarbonWindow(BaseWindow):
     _window = None                  # Carbon WindowRef
@@ -866,12 +857,12 @@ class CarbonWindow(BaseWindow):
         self._carbon_event_handlers = []
         self._carbon_event_handler_refs = []
 
-        for func_name in _carbon_event_handler_names:
+        for func_name in self._platform_event_names:
             if not hasattr(self, func_name):
-                continue  # Was added by another class
+                continue
 
             func = getattr(self, func_name)
-            for event_class, event_kind in func._carbon_handler:
+            for event_class, event_kind in func._platform_event_data:
                 # TODO: could just build up array of class/kind
                 proc = EventHandlerProcPtr(func)
                 self._carbon_event_handlers.append(proc)
