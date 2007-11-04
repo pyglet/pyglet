@@ -380,5 +380,10 @@ def driver_init():
 
     driver_listener._init()
 
+    # Force a context switch, as some Windows audio drivers don't get time
+    # to process short sounds if Python hogs all the CPU.  See issue #163.
+    from pyglet import clock
+    clock.Clock._force_sleep = True
+
 driver_listener = DirectSoundListener()
 driver_audio_player_class = DirectSoundAudioPlayer

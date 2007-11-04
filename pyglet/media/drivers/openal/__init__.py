@@ -336,6 +336,12 @@ def driver_init(device_name = None):
         # Good version info to cache
         _have_1_1 = True
 
+    # See issue #163.
+    import sys
+    if sys.platform in ('win32', 'cygwin'):
+        from pyglet import clock
+        clock.Clock._force_sleep = True
+
 driver_listener = OpenALListener()
 driver_audio_player_class = OpenALAudioPlayer
 
