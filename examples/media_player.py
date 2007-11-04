@@ -255,6 +255,8 @@ class PlayerWindow(window.Window):
         if self.player.playing:
             self.player.pause()
         else:
+            if self.player.time >= self.player.source.duration:
+                self.player.seek(0)
             self.player.play()
         self.gui_update_state()
 

@@ -742,6 +742,7 @@ class Player(event.EventDispatcher):
         if not self._playing:
             self._pause_seek = True
 
+        self._audio_finished = False
         source = self._sources[0]
         self._source_read_index = 0
         source._seek(timestamp)
