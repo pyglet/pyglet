@@ -525,12 +525,21 @@ class XlibWindow(BaseWindow):
             self.WINDOW_STYLE_DEFAULT: '_NET_WM_WINDOW_TYPE_NORMAL',
             self.WINDOW_STYLE_DIALOG: '_NET_WM_WINDOW_TYPE_DIALOG',
             self.WINDOW_STYLE_TOOL: '_NET_WM_WINDOW_TYPE_UTILITY',
-            self.WINDOW_STYLE_BORDERLESS: '_NET_WM_WINDOW_TYPE_SPLASH', 
-            # XXX BORDERLESS is inhibiting task-bar entry (Gnome)
         }
         if self._style in styles:
             self._set_atoms_property('_NET_WM_WINDOW_TYPE', 
                                      (styles[self._style],))
+        elif self._style == self.WINDOW_STYLE_BORDERLESS:
+            MWM_HINTS_DECORATIONS = 1 << 1
+            PROP_MWM_HINTS_ELEMENTS = 5
+            mwmhints = mwmhints_t()
+            mwmhints.flags = MWM_HINTS_DECORATIONS
+            mwmhints.decorations = 0
+            name = xlib.XInternAtom(self._x_display, '_MOTIF_WM_HINTS', False)
+            xlib.XChangeProperty(self._x_display, self._window,
+                name, name, 32, xlib.PropModeReplace, 
+                cast(pointer(mwmhints), POINTER(c_ubyte)),
+                PROP_MWM_HINTS_ELEMENTS)
 
         # Set resizeable
         if not self._resizable:
