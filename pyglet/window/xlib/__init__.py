@@ -581,6 +581,7 @@ class XlibWindow(BaseWindow):
         self._mapped = True
 
         if self._fullscreen:
+            # Possibly an override_redirect issue.
             self.activate()
 
         self.dispatch_event('on_resize', self._width, self._height)
@@ -1196,6 +1197,11 @@ class XlibWindow(BaseWindow):
         button = 1 << (ev.xbutton.button - 1)  # 1, 2, 3 -> 1, 2, 4
         modifiers = self._translate_modifiers(ev.xbutton.state)
         if ev.type == xlib.ButtonPress:
+            # override_redirect issue: manually activate this window if
+            # fullscreen.
+            if self._fullscreen and not self._active:
+                self.activate()
+
             if ev.xbutton.button == 4:
                 self.dispatch_event('on_mouse_scroll', x, y, 0, 1)
             elif ev.xbutton.button == 5:
