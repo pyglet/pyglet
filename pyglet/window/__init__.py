@@ -385,6 +385,44 @@ class ImageMouseCursor(MouseCursor):
         self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
         gl.glPopAttrib()
 
+def _PlatformEventHandler(data):
+    '''Decorator for platform event handlers.  
+    
+    Apply giving the platform-specific data needed by the window to associate
+    the method with an event.  See platform-specific subclasses of this
+    decorator for examples.
+
+    The following attributes are set on the function, which is returned
+    otherwise unchanged:
+
+    _platform_event
+        True
+    _platform_event_data
+        List of data applied to the function (permitting multiple decorators
+        on the same method).
+    '''
+    def _event_wrapper(f):
+        f._platform_event = True
+        if not hasattr(f, '_platform_event_data'):
+            f._platform_event_data = []
+        f._platform_event_data.append(data)
+        return f
+    return _event_wrapper
+
+class _WindowMetaclass(type):
+    '''Sets the _platform_event_names class variable on the window
+    subclass.
+    '''
+    def __init__(cls, name, bases, dict):
+        cls._platform_event_names = set()
+        for base in bases:
+            if hasattr(base, '_platform_event_names'):
+                cls._platform_event_names.update(base._platform_event_names)
+        for name, func in dict.items():
+            if hasattr(func, '_platform_event'):
+                cls._platform_event_names.add(name)
+        super(_WindowMetaclass, cls).__init__(name, bases, dict)
+
 class BaseWindow(EventDispatcher, WindowExitHandler):
     '''Platform-independent application window.
 
@@ -407,6 +445,12 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
     it the current OpenGL context.  If you use only one window in the
     application, there is no need to do this.
     '''
+    __metaclass__ = _WindowMetaclass
+
+    # Filled in by metaclass with the names of all methods on this (sub)class
+    # that are platform event handlers.
+    _platform_event_names = set()
+
     #: The default window style.
     WINDOW_STYLE_DEFAULT = None
     #: The window style for pop-up dialogs.

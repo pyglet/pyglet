@@ -32,7 +32,6 @@ except ImportError:
 # Check for Xlib (Linux)
 try:
     from pyglet.window.xlib import *
-    from pyglet.window.xlib.constants import *
     _have_xlib = True
 except ImportError:
     _have_xlib = False
@@ -57,7 +56,7 @@ class MyWindow(Window):
             return 0
 
     if _have_xlib:
-        @XlibEventHandler(PropertyNotify)
+        @XlibEventHandler(xlib.PropertyNotify)
         def _on_window_property_notify(self, event):
             print 'Property notify.'
 

@@ -41,7 +41,7 @@ import warnings
 
 from pyglet.window import WindowException, NoSuchDisplayException, \
     MouseCursorException, Platform, Display, Screen, MouseCursor, \
-    DefaultMouseCursor, ImageMouseCursor, BaseWindow
+    DefaultMouseCursor, ImageMouseCursor, BaseWindow, _PlatformEventHandler
 from pyglet.window import event
 from pyglet.window import key
 from pyglet.window import mouse
@@ -361,16 +361,8 @@ class XlibGLContext(gl.Context):
     def is_direct(self):
         return glx.glXIsDirect(self._x_display, self._context)
 
-_xlib_event_handler_names = set()
-
-def XlibEventHandler(ev):
-    def handler_wrapper(f):
-        _xlib_event_handler_names.add(f.__name__)
-        if not hasattr(f, '_xlib_handler'):
-            f._xlib_handler = []
-        f._xlib_handler.append(ev)
-        return f
-    return handler_wrapper
+# Platform event data is single item, so use platform event handler directly.
+XlibEventHandler = _PlatformEventHandler
 
 class XlibWindow(BaseWindow):
     _x_display = None       # X display connection
@@ -398,6 +390,18 @@ class XlibWindow(BaseWindow):
     _default_event_mask = (0x1ffffff 
         & ~xlib.PointerMotionHintMask
         & ~xlib.ResizeRedirectMask)
+
+    def __init__(self, *args, **kwargs):
+        # Bind event handlers
+        self._event_handlers = {}
+        for name in self._platform_event_names:
+            if not hasattr(self, name):
+                continue
+            func = getattr(self, name)
+            for message in func._platform_event_data:
+                self._event_handlers[message] = func 
+
+        super(XlibWindow, self).__init__(*args, **kwargs)
         
     def _recreate(self, changes):
         # If flipping to/from fullscreen and using override_redirect (we
@@ -428,15 +432,6 @@ class XlibWindow(BaseWindow):
         self._create()
 
     def _create(self):
-        # Bind event handlers
-        self._event_handlers = {}
-        for func_name in _xlib_event_handler_names:
-            if not hasattr(self, func_name):
-                continue
-            func = getattr(self, func_name)
-            for message in func._xlib_handler:
-                self._event_handlers[message] = func
-
         # Unmap existing window if necessary while we fiddle with it.
         if self._window and self._mapped:
             self._unmap()
