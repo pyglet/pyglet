@@ -748,8 +748,8 @@ explosion_images = image.ImageGrid(explosion_images_image, 2, 8)
 
 pointer_image = image.load(res('pointer.png'))
 
-crunch_sound = media.load(res('27504.wav'), streaming=False)
-bullet_sound = media.load(res('2096.wav'), streaming=False)
+explosion_sound = media.load(res('explosion.wav'), streaming=False)
+bullet_sound = media.load(res('bullet.wav'), streaming=False)
 
 # --------------------------------------------------------------------------
 # Global game state vars
@@ -840,7 +840,7 @@ if __name__ == '__main__':
                                             SMOKE_ANIMATION_PERIOD))
                 asteroid.destroy()
                 if enable_sound:
-                    crunch_sound.play()
+                    explosion_sound.play()
 
             # Check if the player was hit 
             if player.hit:
