@@ -255,7 +255,8 @@ def gendoc_html(input_file, html_dir, api_objects, options):
     # appropriate page.
     id_map = {} # Map id of nodes to uri
     root_page.collect_ids(id_map)
-    root_page.add_refuri(id_map)
+    # Only works for explicit section links; see future uses of id_map
+    root_page.add_refuri(id_map) 
 
     # Get page connectivity and add navigation
     pages = [n for n in root_page.preorder()]
@@ -289,7 +290,12 @@ def gendoc_html(input_file, html_dir, api_objects, options):
                 # Link to API page
                 canonical, uri = api_objects[title]
                 url = os.path.join(apidoc_dir_rel, uri)
-                link_class = None
+                link_class = 'apilink'
+            elif title.lower().replace(' ', '-') in id_map:
+                # Section link (using `xx` instead of `xx`_).
+                canonical = title
+                url = id_map[title.lower().replace(' ', '-')]
+                link_class = 'sectionlink'
 
             # Only link once per page, to avoid littering the text
             # with too many links
