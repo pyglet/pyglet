@@ -306,6 +306,10 @@ table.images th.head {
     font-weight: bold;
 }
 
+.filelink {
+    font-family: monospace;
+}
+
 /*---------------------------------------------------------------------
   Add epydoc's source coloring
   ---------------------------------------------------------------------*/

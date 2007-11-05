@@ -36,6 +36,8 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         if not isinstance(node.parent, nodes.TextElement):
             assert len(node) == 1 and isinstance(node[0], nodes.image)
             atts['class'] += ' image-reference'
+        if node.has_key('link_class'):
+            atts['class'] += ' %s' % node['link_class']
         if node.has_key('title'):
             atts['title'] = node['title']
         self.body.append(self.starttag(node, 'a', '', **atts))
@@ -277,20 +279,31 @@ def gendoc_html(input_file, html_dir, api_objects, options):
                     if isinstance(n, nodes.title_reference)]:
             title = ref.astext()
             url = None
-            if title in api_objects and api_objects[title][0]:
+            if title.endswith('.py'):
+                # Copy in referenced example program and link.
+                shutil.copy(title, html_dir)
+                url = os.path.basename(title)
+                canonical = title
+                link_class = 'filelink'
+            elif title in api_objects and api_objects[title][0]:
+                # Link to API page
                 canonical, uri = api_objects[title]
                 url = os.path.join(apidoc_dir_rel, uri)
-                # Only link once per page, to avoid littering the text
-                # with too many links
-                if url not in linked_objects:
-                    linked_objects.add(url)
+                link_class = None
 
-                    newref = nodes.reference()
-                    newref.children = [c.deepcopy() for c in ref.children]
-                    newref['refuri'] = url
-                    if canonical != title:
-                        newref['title'] = canonical # tooltip is canonical name
-                    ref.replace_self(newref)
+            # Only link once per page, to avoid littering the text
+            # with too many links
+            if url and url not in linked_objects:
+                linked_objects.add(url)
+
+                newref = nodes.reference()
+                newref.children = [c.deepcopy() for c in ref.children]
+                newref['refuri'] = url
+                if canonical != title:
+                    newref['title'] = canonical # tooltip is canonical name
+                if link_class:
+                    newref['link_class'] = link_class
+                ref.replace_self(newref)
 
         # Write page
         settings = {
