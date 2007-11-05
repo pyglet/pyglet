@@ -48,7 +48,7 @@ if sys.platform not in ('cygwin', 'win32'):
 
 import pyglet
 from pyglet.window import Platform, Display, Screen, BaseWindow, \
-    WindowException, MouseCursor, DefaultMouseCursor
+    WindowException, MouseCursor, DefaultMouseCursor, _PlatformEventHandler
 from pyglet.window import event
 from pyglet.event import EventDispatcher
 from pyglet.window import key
@@ -374,17 +374,6 @@ class Win32ContextARB(Win32Context):
         if self._share:
             assert self._share._context is not None
             wgl.wglShareLists(self._share._context, self._context)
-       
-_win32_event_handler_names = set()
-
-def Win32EventHandler(message):
-    def handler_wrapper(f):
-        _win32_event_handler_names.add(f.__name__)
-        if not hasattr(f, '_win32_handler'):
-            f._win32_handler = []
-        f._win32_handler.append(message)
-        return f
-    return handler_wrapper
 
 class Win32MouseCursor(MouseCursor):
     drawable = False
@@ -394,6 +383,8 @@ class Win32MouseCursor(MouseCursor):
 # This is global state, we have to be careful not to set the same state twice,
 # which will throw off the ShowCursor counter.
 _win32_cursor_visible = True
+
+Win32EventHandler = _PlatformEventHandler
 
 class Win32Window(BaseWindow):
     _window_class = None
@@ -420,11 +411,11 @@ class Win32Window(BaseWindow):
     def __init__(self, *args, **kwargs):
         # Bind event handlers
         self._event_handlers = {}
-        for func_name in _win32_event_handler_names:
+        for func_name in self._platform_event_names:
             if not hasattr(self, func_name):
                 continue
             func = getattr(self, func_name)
-            for message in func._win32_handler:
+            for message in func._platform_event_data:
                 self._event_handlers[message] = func
 
         super(Win32Window, self).__init__(*args, **kwargs)
