@@ -17,16 +17,7 @@
  *     defined below).
  */
 body                        { background: #ffffff; color: #000000; }
-a:link                      { color: #0000ff; }
-a:visited                   { color: #204080; }
-dt                          { font-weight: bold; }
-h1                          { font-size: +140%; font-style: italic;
-                              font-weight: bold; }
-h2                          { font-size: +125%; font-style: italic;
-                              font-weight: bold; }
-h3                          { font-size: +110%; font-style: italic;
-                              font-weight: normal; }
-code                        { font-size: 100%; }
+dt                          { font-weight: normal; }
  
 /* Page Header & Footer
  *   - The standard page header consists of a navigation bar (with
@@ -39,80 +30,110 @@ code                        { font-size: 100%; }
  *   - The footer consists of a navigation bar, a timestamp, and a
  *     pointer to epydoc's homepage.
  */ 
-h1.epydoc                   { margin: 0; font-size: +140%; font-weight: bold; }
-h2.epydoc                   { font-size: +130%; font-weight: bold; }
-h3.epydoc                   { font-size: +115%; font-weight: bold; }
-td h3.epydoc                { font-size: +115%; font-weight: bold;
-                              margin-bottom: 0; }
-table.navbar                { background: #a0c0ff; color: #000000;
-                              border: 2px groove #c0d0d0; }
-table.navbar table          { color: #000000; }
-th.navbar-select            { background: #70b0ff;
-                              color: #000000; } 
-table.navbar a              { text-decoration: none; }  
-table.navbar a:link         { color: #0000ff; }
-table.navbar a:visited      { color: #204080; }
-span.breadcrumbs            { font-size: 85%; font-weight: bold; }
+
+table.navbar {
+    border-top: 1px solid silver;
+    border-bottom: 2px solid silver;
+    padding: 0px;
+    font-family: sans-serif;
+    font-size: 80%;
+    width: 100%;
+}
+table.navbar th  {
+    padding-right: 1em;
+    font-weight: normal;
+}
+table.navbar th.last {
+    text-align: right;
+    padding-right: 0px;
+}
+table.navbar a { 
+    text-decoration: none; 
+}
+th.navbar-breadcrumbs {
+    text-align: center;
+    width: 100%;
+}
+
+/*
+.breadcrumbs {
+    font-family: sans-serif;
+}
+*/
+
+h1.epydoc {
+    font-family: Arial, sans-serif;
+    font-size: 20pt;
+    font-weight: normal;
+}
+
+h1 {
+    font-family: Aria, sans-serif;
+    font-size: 16pt;
+    font-weight: normal;
+}
+
+h2 {
+    font-size: 16pt;
+    color: #ff6161;
+    font-weight: normal;
+    font-family: sans-serif;
+}
+
+h3 {
+    margin-bottom: .5em;
+}
+
+
+/* Frames-based table of contents headers
+ *   - Consists of two frames: one for selecting modules; and
+ *     the other listing the contents of the selected module.
+ *   - h1.toc is used for each frame's heading
+ *   - h2.toc is used for subheadings within each frame.
+ */
+h1.toc {
+    font-size: 105%;
+    font-weight: bold;
+    font-family: sans-serif;
+    margin: 0; 
+    padding: 0; 
+}
+h2.toc {
+    font-size: 100%;  
+    color: black;
+    margin-bottom: 0.5em;
+    border-bottom: 1px solid black;
+}
+
+
 span.options                { font-size: 70%; }
 span.codelink               { font-size: 85%; }
 td.footer                   { font-size: 85%; }
 
-/* Table Headers
- *   - Each summary table and details section begins with a 'header'
- *     row.  This row contains a section title (marked by
- *     'span.table-header') as well as a show/hide private link
- *     (marked by 'span.options', defined above).
- *   - Summary tables that contain user-defined groups mark those
- *     groups using 'group header' rows.
- */
-td.table-header             { background: #70b0ff; color: #000000;
-                              border: 1px solid #608090; }
-td.table-header table       { color: #000000; }
-td.table-header table a:link      { color: #0000ff; }
-td.table-header table a:visited   { color: #204080; }
-span.table-header           { font-size: 120%; font-weight: bold; }
-th.group-header             { background: #c0e0f8; color: #000000;
-                              text-align: left; font-style: italic; 
+
+th.group-header             { text-align: left; font-style: italic; 
                               font-size: 115%; 
                               border: 1px solid #608090; }
 
-/* Summary Tables (functions, variables, etc)
- *   - Each object is described by a single row of the table with
- *     two cells.  The left cell gives the object's type, and is
- *     marked with 'code.summary-type'.  The right cell gives the
- *     object's name and a summary description.
- *   - CSS styles for the table's header and group headers are
- *     defined above, under 'Table Headers'
- */
+
 table.summary               { border-collapse: collapse;
-                              background: #e8f0f8; color: #000000;
-                              border: 1px solid #608090;
-                              margin-bottom: 0.5em; }
-td.summary                  { border: 1px solid #608090; }
+                              border: 1px solid silver;
+                              margin-bottom: 0.5em;
+                              width: 100%;}
+.summary td { 
+    border: 1px solid silver; 
+    padding: 5px;
+}
 code.summary-type           { font-size: 85%; }
-table.summary a:link        { color: #0000ff; }
-table.summary a:visited     { color: #204080; }
 span.inherited-from         { font-size: 85%; }
 
-/* Details Tables (functions, variables, etc)
- *   - Each object is described in its own div.
- *   - A single-row summary table w/ table-header is used as
- *     a header for each details section (CSS style for table-header
- *     is defined above, under 'Table Headers').
- */
-table.details               { border-collapse: collapse;
-                              background: #e8f0f8; color: #000000;
-                              border: 1px solid #608090;
-                              margin: .2em 0 0 0; }
-table.details table         { color: #000000; }
-table.details a:link        { color: #0000ff; }
-table.details a:visited     { color: #204080; }
 
 /* Fields */
-dl.fields                   { margin-left: 2em; margin-top: 1em;
+dl.fields                   { margin-left: 0px; margin-top: 1em;
                               margin-bottom: 1em; }
-dl.fields dd ul             { margin-left: 0em; padding-left: 0em; }
-div.fields                  { margin-left: 2em; }
+dl.fields > dt              { font-weight: bold; }
+dl.fields > dd              { margin-bottom: 1em; }
+div.fields                  { }
 div.fields p                { margin-bottom: 0.5em; }
 
 /* Index tables (identifier index, term index, etc)
@@ -124,46 +145,94 @@ div.fields p                { margin-bottom: 0.5em; }
  *     extracted from fields (namely, the bug index & todo index).
  */
 table.link-index            { border-collapse: collapse;
-                              background: #e8f0f8; color: #000000;
-                              border: 1px solid #608090; }
+                              border: 1px solid silver; }
 td.link-index               { border-width: 0px; }
-table.link-index a:link     { color: #0000ff; }
-table.link-index a:visited  { color: #204080; }
 span.index-where            { font-size: 70%; }
 table.metadata-index        { border-collapse: collapse;
-                              background: #e8f0f8; color: #000000;
                               border: 1px solid #608090; 
                               margin: .2em 0 0 0; }
 td.metadata-index           { border-width: 1px; border-style: solid; }
-table.metadata-index a:link { color: #0000ff; }
-table.metadata-index a:visited  { color: #204080; }
+.link-index a {
+    text-decoration: none;
+}
 
-/* Function signatures
- *   - sig* is used for the signature in the details section.
- *   - .summary-sig* is used for the signature in the summary 
- *     table, and when listing property accessor functions.
- * */
-.sig-name                   { color: #006080; }
-.sig-arg                    { color: #008060; }
-.sig-default                { color: #602000; }
+
+/* Summaries */
+
+.sig-name                   {  }
+.sig-arg                    {  }
+.sig-default                {  }
 .summary-sig                { font-family: monospace; }
-.summary-sig-name           { color: #006080; font-weight: bold; }
-table.summary a.summary-sig-name:link
-                            { color: #006080; font-weight: bold; }
-table.summary a.summary-sig-name:visited
-                            { color: #006080; font-weight: bold; }
-.summary-sig-arg            { color: #006040; }
-.summary-sig-default        { color: #501800; }
+.summary-sig-name           {  font-weight: bold; }
+a.summary-sig-name {  
+    text-decoration: none;
+}
+
+.summary-name {
+    font-family: monospace;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.summary-sig-arg            {  }
+.summary-sig-default        {  }
+.summary-type               { font-family: monospace; }
+.summary-description        { margin-left: 1em; }
+
+/* Details */
+
+.fspecial {
+    font-family: serif;
+    font-style: italic;
+}
+
+.detail {
+    border-top: 1px solid silver;
+}
+
+.detail-signature {
+    font-family: monospace;
+    margin-top: .5em;
+    margin-bottom: .5em;
+}
+
+.detail-description {
+    margin-top: .5em;
+    margin-left: 2em;
+}
+
+.pname {
+    font-family: monospace;
+    font-weight: bold;
+}
+
+.ptype {
+    font-family: monospace;
+}
+
+.ptype a {
+    text-decoration: none;
+}
+
+.rtype, .overrides {
+    font-family: monospace;
+}
+
+.rtype a, .overrides a {
+    text-decoration: none;
+}
+
 
 /* To render variables, classes etc. like functions */
-table.summary .summary-name { color: #006080; font-weight: bold;
+/*
+table.summary .summary-name { font-weight: bold;
                               font-family: monospace; }
 table.summary
-     a.summary-name:link    { color: #006080; font-weight: bold;
+     a.summary-name:link    { font-weight: bold;
                               font-family: monospace; }
 table.summary
-    a.summary-name:visited  { color: #006080; font-weight: bold;
-                              font-family: monospace; }
+    a.summary-name:visited  { font-weight: bold;
+                              font-family: monospace; }*/
 
 /* Variable values
  *   - In the 'variable details' sections, each varaible's value is
@@ -178,9 +247,6 @@ table.summary
  *   - If the variable is a regexp, it is syntax-highlighted using
  *     the re* CSS classes.
  */
-pre.variable                { padding: .5em; margin: 0;
-                              background: #dce4ec; color: #000000;
-                              border: 1px solid #708890; }
 .variable-linewrap          { color: #604000; font-weight: bold; }
 .variable-ellipsis          { color: #604000; font-weight: bold; }
 .variable-quote             { color: #604000; font-weight: bold; }
@@ -199,43 +265,14 @@ pre.variable                { padding: .5em; margin: 0;
  */
 pre.base-tree               { font-size: 80%; margin: 0; }
 
-/* Frames-based table of contents headers
- *   - Consists of two frames: one for selecting modules; and
- *     the other listing the contents of the selected module.
- *   - h1.toc is used for each frame's heading
- *   - h2.toc is used for subheadings within each frame.
- */
-h1.toc                      { text-align: center; font-size: 105%;
-                              margin: 0; font-weight: bold;
-                              padding: 0; }
-h2.toc                      { font-size: 100%; font-weight: bold; 
-                              margin: 0.5em 0 0 -0.3em; }
 
-/* Syntax Highlighting for Source Code
- *   - doctest examples are displayed in a 'pre.py-doctest' block.
- *     If the example is in a details table entry, then it will use
- *     the colors specified by the 'table pre.py-doctest' line.
- *   - Source code listings are displayed in a 'pre.py-src' block.
- *     Each line is marked with 'span.py-line' (used to draw a line
- *     down the left margin, separating the code from the line
- *     numbers).  Line numbers are displayed with 'span.py-lineno'.
- *     The expand/collapse block toggle button is displayed with
- *     'a.py-toggle' (Note: the CSS style for 'a.py-toggle' should not
- *     modify the font size of the text.)
- *   - If a source code page is opened with an anchor, then the
- *     corresponding code block will be highlighted.  The code
- *     block's header is highlighted with 'py-highlight-hdr'; and
- *     the code block's body is highlighted with 'py-highlight'.
- *   - The remaining py-* classes are used to perform syntax
- *     highlighting (py-string for string literals, py-name for names,
- *     etc.)
- */
-pre.py-doctest 
+/*---------------------------------------------------------------------
+  Custom epydoc source coloring
+  ---------------------------------------------------------------------*/
+pre.py-doctest, pre.variable
                             { padding: .5em; margin: 1em;
-                              background: #e8f0f8; color: #000000;
-                              border: 1px solid #708890; }
-table pre.py-doctest        { background: #dce4ec;
-                              color: #000000; }
+                              color: #000000;
+                              border-left: 2px solid silver; }
 pre.py-src                  { border: 2px solid #000000; 
                               background: #f0f0f0; color: #000000; }
 .py-line                    { border-left: 2px solid #000000; 
@@ -246,8 +283,8 @@ a.py-toggle                 { text-decoration: none; }
 div.py-highlight-hdr        { border-top: 2px solid #000000;
                               border-bottom: 2px solid #000000;
                               background: #d8e8e8; }
-div.py-highlight            { border-bottom: 2px solid #000000;
-                              background: #d0e0e0; }
+/*div.py-highlight            { border-bottom: 2px solid #000000;
+                              background: #d0e0e0; }*/
 .py-prompt                  { color: #005050; font-weight: bold;}
 .py-more                    { color: #005050; font-weight: bold;}
 .py-string                  { color: #006030; }
@@ -264,32 +301,6 @@ div.py-highlight            { border-bottom: 2px solid #000000;
 .py-param                   { color: #000060; }
 .py-docstring               { color: #006030; }
 .py-decorator               { color: #804020; }
-/* Use this if you don't want links to names underlined: */
-/*a.py-name                   { text-decoration: none; }*/
-
-/* Graphs & Diagrams
- *   - These CSS styles are used for graphs & diagrams generated using
- *     Graphviz dot.  'img.graph-without-title' is used for bare
- *     diagrams (to remove the border created by making the image
- *     clickable).
- */
-img.graph-without-title     { border: none; }
-img.graph-with-title        { border: 1px solid #000000; }
-span.graph-title            { font-weight: bold; }
-span.graph-caption          { }
-
-/* General-purpose classes
- *   - 'p.indent-wrapped-lines' defines a paragraph whose first line
- *     is not indented, but whose subsequent lines are.
- *   - The 'nomargin-top' class is used to remove the top margin (e.g.
- *     from lists).  The 'nomargin' class is used to remove both the
- *     top and bottom margin (but not the left or right margin --
- *     for lists, that would cause the bullets to disappear.)
- */
-p.indent-wrapped-lines      { padding: 0 0 0 7em; text-indent: -7em; 
-                              margin: 0; }
-.nomargin-top               { margin-top: 0; }
-.nomargin                   { margin-top: 0; margin-bottom: 0; }
 
 /* HTML Log */
 div.log-block               { padding: 0; margin: .5em 0 .5em 0;

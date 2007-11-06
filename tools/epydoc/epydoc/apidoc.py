@@ -1448,7 +1448,8 @@ class ClassDoc(NamespaceDoc):
         elif value_type == 'class':
             return [var_doc for var_doc in var_list
                     if (isinstance(var_doc.value, ClassDoc) and
-                        var_doc.is_instvar in (False, UNKNOWN))]
+                        var_doc.is_instvar in (False, UNKNOWN) and
+                        var_doc.name != '__metaclass__')]
         elif value_type == 'instancevariable':
             return [var_doc for var_doc in var_list
                     if var_doc.is_instvar is True]

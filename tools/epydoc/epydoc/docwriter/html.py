@@ -728,7 +728,7 @@ class HTMLWriter:
         # Write the page header (incl. navigation bar & breadcrumbs)
         self.write_header(out, str(longname))
         self.write_navbar(out, doc)
-        self.write_breadcrumbs(out, doc, self.url(doc))
+        #self.write_breadcrumbs(out, doc, self.url(doc))
 
         # Write the name of the module we're describing.
         if doc.is_package is True: typ = 'Package'
@@ -747,8 +747,6 @@ class HTMLWriter:
             out(self.descr(doc, 2)+'\n\n')
 
         # Write any standarad metadata (todo, author, etc.)
-        if doc.metadata is not UNKNOWN and doc.metadata:
-            out('<hr />\n')
         self.write_standard_fields(out, doc)
 
         # If it's a package, then list the modules it contains.
@@ -789,7 +787,7 @@ class HTMLWriter:
         # Header
         self.write_header(out, name)
         self.write_navbar(out, doc)
-        self.write_breadcrumbs(out, doc, self.pysrc_url(doc))
+        #self.write_breadcrumbs(out, doc, self.pysrc_url(doc))
 
         # Source code listing
         out('<h1 class="epydoc">Source Code for %s</h1>\n' %
@@ -797,7 +795,7 @@ class HTMLWriter:
         out('<pre class="py-src">\n')
         out(PythonSourceColorizer(filename, name, self.docindex,
                                   self.url, name_to_docs).colorize())
-        out('</pre>\n<br />\n')
+        out('</pre>\n')
 
         # Footer
         self.write_navbar(out, doc)
@@ -824,7 +822,7 @@ class HTMLWriter:
         # Write the page header (incl. navigation bar & breadcrumbs)
         self.write_header(out, str(longname))
         self.write_navbar(out, doc)
-        self.write_breadcrumbs(out, doc, self.url(doc))
+        #self.write_breadcrumbs(out, doc, self.url(doc))
 
         # Write the name of the class we're describing.
         if doc.is_type(): typ = 'Type'
@@ -834,7 +832,7 @@ class HTMLWriter:
             'DESCRIPTION ==================== -->\n')
         # <pyglet> Show fully-qualified name in heading
         out('<h1 class="epydoc">%s %s</h1>' % (typ, longname))
-        out(self.pysrc_link(doc) + '<br /><br />\n')
+        out(self.pysrc_link(doc) + '\n')
 
         # <pyglet> Hide private known subclasses
         subclasses = [s for s in doc.subclasses
@@ -869,15 +867,11 @@ class HTMLWriter:
                                         for c in subclasses]))
                     out('\n</dd></dl>\n\n')
 
-            out('<hr />\n')
-        
         # If the class has a description, then list it.
         if doc.descr not in (None, UNKNOWN):
-            out(self.descr(doc, 2)+'<br /><br />\n\n')
+            out(self.descr(doc, 2)+'\n\n')
 
         # Write any standarad metadata (todo, author, etc.)
-        if doc.metadata is not UNKNOWN and doc.metadata:
-            out('<hr />\n')
         self.write_standard_fields(out, doc)
 
         # Write summary tables describing the variables that the
@@ -979,12 +973,12 @@ class HTMLWriter:
         # Header material.
         self.write_header(out, title)
         self.write_navbar(out, 'trees')
-        self.write_breadcrumbs(out, 'trees', url)
+        #self.write_breadcrumbs(out, 'trees', url)
         if self.class_list and self.module_list:
             out('<center><b>\n')
             out(' [ <a href="module-tree.html">Module Hierarchy</a>\n')
             out(' | <a href="class-tree.html">Class Hierarchy</a> ]\n')
-            out('</b></center><br />\n')
+            out('</b></center>\n')
 
 
     #////////////////////////////////////////////////////////////
@@ -1031,7 +1025,6 @@ class HTMLWriter:
             out('</table>\n</br />')
 
         # Footer material.
-        out('<br />')
         self.write_navbar(out, 'indices')
         self.write_footer(out)
                 
@@ -1047,7 +1040,7 @@ class HTMLWriter:
                                     '%s-index.html' % field)
 
         # Page title.
-        out('<a name="%s"><h1 class="epydoc">%s</h1></a>\n<br />\n' %
+        out('<a name="%s"><h1 class="epydoc">%s</h1></a>\n' %
             (field, title))
 
         # Index (one section per arg)
@@ -1067,8 +1060,8 @@ class HTMLWriter:
                     out('<div class="private">\n')
                 else:
                     out('<div>\n')
-                out('<table width="100%" class="metadata-index" '
-                    'bgcolor="#e0e0e0"><tr><td class="metadata-index">')
+                out('<table class="metadata-index" '
+                    '><tr><td class="metadata-index">')
                 out('<b>%s in %s</b>' %
                     (typ, self.href(doc, label=doc.canonical_name)))
                 out('    <ul class="nomargin">\n')
@@ -1080,7 +1073,6 @@ class HTMLWriter:
             out('</dl>\n')
 
         # Footer material.
-        out('<br />')
         self.write_navbar(out, 'indices')
         self.write_footer(out)
 
@@ -1092,7 +1084,7 @@ class HTMLWriter:
         """
         self.write_header(out, title)
         self.write_navbar(out, 'indices')
-        self.write_breadcrumbs(out, 'indices', url)
+        #self.write_breadcrumbs(out, 'indices', url)
 
         if (indices['term'] or
             [1 for (name,l,l2) in self.METADATA_INDICES if indices[name]]):
@@ -1104,7 +1096,7 @@ class HTMLWriter:
                 if indices[name]:
                     out('| <a href="%s-index.html">%s</a>\n' %
                         (name, label2))
-            out(']</b></center><br />\n')
+            out(']</b></center>')
 
     def write_index_section(self, out, items, add_blankline=False):
         out('<table class="link-index" width="100%" border="1">\n')
@@ -1163,7 +1155,7 @@ class HTMLWriter:
         # Insert the help contents into a webpage.
         self.write_header(out, 'Help')
         self.write_navbar(out, 'help')
-        self.write_breadcrumbs(out, 'help', 'help.html')
+        #self.write_breadcrumbs(out, 'help', 'help.html')
         out(help)
         self.write_navbar(out, 'help')
         self.write_footer(out)
@@ -1187,8 +1179,16 @@ class HTMLWriter:
         <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
         <head>
           <title> $self._prj_name or "API Documentation"$ </title>
+          <script language="javascript">
+            function setPage() {
+                if (location.search) {
+                    var page = /page=([^&]*)/.exec(location.search)[1];
+                    frames[2].location.href = page;        
+                }
+            }
+          </script>
         </head>
-        <frameset cols="20%,80%">
+        <frameset cols="20%,80%" onLoad="setPage()">
           <frameset rows="30%,70%">
             <frame src="toc.html" name="moduleListFrame"
                    id="moduleListFrame" />
@@ -1208,12 +1208,9 @@ class HTMLWriter:
         # /------------------------- Template -------------------------\
         '''
         >>> self.write_header(out, "Table of Contents")
-        <h1 class="toc">Table&nbsp;of&nbsp;Contents</h1>
-        <hr />
-          <a target="moduleFrame" href="toc-everything.html">Everything</a>
-          <br />
+        <a target="moduleFrame" href="toc-everything.html">
+         All classes and functions</a>
         >>> self.write_toc_section(out, "Modules", self.module_list)
-        <hr />
         >>> if self._show_private:
           $self.PRIVATE_LINK$
         >>> #endif
@@ -1252,8 +1249,6 @@ class HTMLWriter:
 
     def write_project_toc(self, out):
         self.write_header(out, "Everything")
-        out('<h1 class="toc">Everything</h1>\n')
-        out('<hr />\n')
 
         # List the classes.
         self.write_toc_section(out, "All Classes", self.class_list)
@@ -1283,7 +1278,6 @@ class HTMLWriter:
         '''
 
         # Footer material.
-        out('<hr />\n')
         if self._show_private:
             out(self.PRIVATE_LINK+'\n')
         self.write_footer(out, short=True)
@@ -1298,8 +1292,6 @@ class HTMLWriter:
         name = doc.canonical_name[-1]
         self.write_header(out, name)
         out('<h1 class="toc">Module %s</h1>\n' % name)
-        out('<hr />\n')
-
 
         # List the classes.
         classes = doc.select_variables(value_type='class', imported=False,
@@ -1322,7 +1314,6 @@ class HTMLWriter:
         self.write_toc_section(out, "Variables", variables, fullname=False)
         
         # Footer material.
-        out('<hr />\n')
         if self._show_private:
             out(self.PRIVATE_LINK+'\n')
         self.write_footer(out, short=True)
@@ -1432,6 +1423,7 @@ class HTMLWriter:
         print >> jsfile, self.GET_COOKIE_JS
         print >> jsfile, self.SET_FRAME_JS
         print >> jsfile, self.HIDE_PRIVATE_JS
+        print >> jsfile, self.TOGGLE_FRAMES_JS
         print >> jsfile, self.TOGGLE_CALLGRAPH_JS
         print >> jsfile, html_colorize.PYSRC_JAVASCRIPTS
         print >> jsfile, self.GET_ANCHOR_JS
@@ -1532,6 +1524,17 @@ class HTMLWriter:
         var cmd=getCookie("EpydocPrivate");
         if (cmd && cmd.substr(0,4)!="show" && location.href.indexOf("#_") < 0)
             toggle_private();
+      }
+    '''.strip()
+
+    TOGGLE_FRAMES_JS = '''
+      function toggleFrames() {
+        if (self == top) {
+            current = location.href;
+            parent.location.href = 'frames.html?page=' + current;
+        } else {
+            parent.location.href = location.href;
+        }
       }
     '''.strip()
 
@@ -1715,8 +1718,7 @@ class HTMLWriter:
           <script type="text/javascript" src="epydoc.js"></script>
         </head>
         
-        <body bgcolor="white" text="black" link="blue" vlink="#204080"
-              alink="#204080">
+        <body>
         ''')
         # \------------------------------------------------------------/
 
@@ -1790,57 +1792,47 @@ class HTMLWriter:
         # /------------------------- Template -------------------------\
         '''
         <!-- ==================== NAVIGATION BAR ==================== -->
-        <table class="navbar" border="0" width="100%" cellpadding="0"
-               bgcolor="#a0c0ff" cellspacing="0">
+        <table class="navbar">
           <tr valign="middle">
-        >>> if self._top_page_url not in (self._trees_url, "identifier-index.html", "help.html"):
-          <!-- Home link -->
-        >>>   if (isinstance(context, ValueDoc) and
-        >>>       self._top_page_url == self.url(context.canonical_name)):
-              <th bgcolor="#70b0f0" class="navbar-select"
-                  >&nbsp;&nbsp;&nbsp;Home&nbsp;&nbsp;&nbsp;</th>
-        >>>   else:
-              <th>&nbsp;&nbsp;&nbsp;<a
-                href="$self._top_page_url$">Home</a>&nbsp;&nbsp;&nbsp;</th>
-        >>> #endif
-        
+        >>> if self._prj_link:
+          <!-- Project homepage -->
+              <!--<th class="navbar" 
+                    >$self._prj_link.strip()$</th>-->
+        >>> else:
+              <th class="navbar" width="100%"></th>
+        >>> #endif 
+
           <!-- Tree link -->
         >>> if context == "trees":
-              <th bgcolor="#70b0f0" class="navbar-select"
-                  >&nbsp;&nbsp;&nbsp;Trees&nbsp;&nbsp;&nbsp;</th>
+              <th class="navbar-select"
+                  >Trees</th>
         >>> else:
-              <th>&nbsp;&nbsp;&nbsp;<a
-                href="$self._trees_url$">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+              <th><a
+                href="$self._trees_url$">Trees</a></th>
         >>> #endif
         
           <!-- Index link -->
         >>> if context == "indices":
-              <th bgcolor="#70b0f0" class="navbar-select"
-                  >&nbsp;&nbsp;&nbsp;Indices&nbsp;&nbsp;&nbsp;</th>
+              <th class="navbar-select"
+                  >Indices</th>
         >>> else:
-              <th>&nbsp;&nbsp;&nbsp;<a
-                href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+              <th><a
+                href="identifier-index.html">Indices</a></th>
+        >>> #endif
+
+          <!-- Breadcrumbs -->
+        >>> if isinstance(context, APIDoc):
+              <th class="navbar-breadcrumbs">
+                <span class="breadcrumbs">
+        >>>   crumbs = '&nbsp;.&nbsp;'.join(self.breadcrumbs(context))
+                  $crumbs$
+                </span>
+              </th>
         >>> #endif
         
-          <!-- Help link -->
-        >>> if context == "help":
-              <th bgcolor="#70b0f0" class="navbar-select"
-                  >&nbsp;&nbsp;&nbsp;Help&nbsp;&nbsp;&nbsp;</th>
-        >>> else:
-              <th>&nbsp;&nbsp;&nbsp;<a
-                href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
-        >>> #endif
-        
-        >>> if self._prj_link:
-          <!-- Project homepage -->
-              <th class="navbar" align="right" width="100%">
-                <table border="0" cellpadding="0" cellspacing="0">
-                  <tr><th class="navbar" align="center"
-                    >$self._prj_link.strip()$</th>
-                  </tr></table></th>
-        >>> else:
-              <th class="navbar" width="100%"></th>
-        >>> #endif
+              <th class="navbar last">
+                <a href="javascript:toggleFrames()">Toggle&nbsp;frames</a>
+              </th>
           </tr>
         </table>
         ''')
@@ -1868,35 +1860,32 @@ class HTMLWriter:
         # C++y.
         # /------------------------- Template -------------------------\
         '''
-        <table width="100%" cellpadding="0" cellspacing="0">
-          <tr valign="top">
         >>> if isinstance(context, APIDoc):
-            <td width="100%">
               <span class="breadcrumbs">
         >>>   crumbs = '&nbsp;.&nbsp;'.join(self.breadcrumbs(context))
               $crumbs$
               </span>
-            </td>
-        >>> else:
-            <td width="100%">&nbsp;</td>
         >>> #endif
-            <td>
-              <table cellpadding="0" cellspacing="0">
-                <!-- hide/show private -->
-        >>> if self._show_private:
-                <tr><td align="right">$self.PRIVATE_LINK$</td></tr>
-        >>> #endif
-        >>> if self._frames_index:
-                <tr><td align="right"><span class="options"
-                    >[<a href="frames.html" target="_top">frames</a
-                    >]&nbsp;|&nbsp;<a href="$context_url$"
-                    target="_top">no&nbsp;frames</a>]</span></td></tr>
-        >>> #endif
-              </table>
-            </td>
-          </tr>
-        </table>
         ''')
+
+    '''
+        <td>
+          <table cellpadding="0" cellspacing="0">
+            <!-- hide/show private -->
+    >>> if self._show_private:
+            <tr><td align="right">$self.PRIVATE_LINK$</td></tr>
+    >>> #endif
+    >>> if self._frames_index:
+            <tr><td align="right"><span class="options"
+                >[<a href="frames.html" target="_top">frames</a
+                >]&nbsp;|&nbsp;<a href="$context_url$"
+                target="_top">no&nbsp;frames</a>]</span></td></tr>
+    >>> #endif
+          </table>
+        </td>
+      </tr>
+    </table>
+    '''
         # \------------------------------------------------------------/
 
     def breadcrumbs(self, doc):
@@ -2034,18 +2023,15 @@ class HTMLWriter:
             private_vars = [v for v in listed_inh_vars[base]
                             if not v.is_public]
             if public_vars:
-                out('    <p class="indent-wrapped-lines">'
-                    '<b>Inherited from <code>%s</code></b>:\n' %
+                out('<b>Inherited from <code>%s</code></b>:\n' %
                     self.href(base, context=doc))
                 self.write_var_list(out, public_vars)
-                out('      </p>\n')
             if private_vars and self._show_private:
                 out('    <div class="private">')
-                out('    <p class="indent-wrapped-lines">'
-                    '<b>Inherited from <code>%s</code></b> (private):\n' %
+                out('<b>Inherited from <code>%s</code></b> (private):\n' %
                     self.href(base, context=doc))
                 self.write_var_list(out, private_vars)
-                out('      </p></div>\n')
+                out('      </div>\n')
         out('    </td>\n  </tr>\n')
     
     def write_var_list(self, out, vardocs):
@@ -2108,7 +2094,8 @@ class HTMLWriter:
 
         # Add the summary to the description (if there is one).
         summary = self.summary(var_doc, indent=6)
-        if summary: description += '<br />\n      %s' % summary
+        if summary: description += ('\n<div ' +
+            'class="summary-description">%s</div>' % summary)
         
         # If it's inherited, then add a note to the description.
         # <pyglet> Allow this text to be styled separately.
@@ -2117,8 +2104,8 @@ class HTMLWriter:
                "(Inherited from " + self.href(var_doc.container) + ")</span>")
 
         # Write the summary line.
-        self._write_summary_line(out, typ, description, tr_class, pysrc_link,
-                                 callgraph)
+        self._write_summary_line(out, typ, description, tr_class,
+                                 pysrc_link=None, callgraph=None)
 
     _write_summary_line = compile_template(
         "_write_summary_line(self, out, typ, description, tr_class, "
@@ -2179,7 +2166,7 @@ class HTMLWriter:
     def write_details_entry(self, out, var_doc):
         descr = self.descr(var_doc, indent=2) or ''
         if var_doc.is_public: div_class = ''
-        else: div_class = ' class="private"'
+        else: div_class = 'private'
 
         # Functions
         if isinstance(var_doc.value, RoutineDoc):
@@ -2248,11 +2235,11 @@ class HTMLWriter:
         the arg name is associated with a type, then adds it
         parenthetically after the name.
         """
-        s = '<strong class="pname"><code>%s</code></strong>' % arg_name
+        s = '<span class="pname">%s</span>' % arg_name
         if arg_name in func_doc.arg_types:
             typ = func_doc.arg_types[arg_name]
             typ_html = self.docstring_to_html(typ, func_doc, 10)
-            s += " (%s)" % typ_html
+            s += " : <span class='ptype'>%s</span>" % typ_html
         return s
 
     write_function_details_entry = compile_template(
@@ -2264,42 +2251,37 @@ class HTMLWriter:
         '''
         >>> func_doc = var_doc.value
         <a name="$var_doc.name$"></a>
-        <div$div_class$>
-        >>> self.write_table_header(out, "details")
-        <tr><td>
-          <table width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr valign="top"><td>
-          <h3 class="epydoc">$self.function_signature(var_doc)$
+        <div class="$div_class$ detail">
+          <h3>$var_doc.name$</h3>
+          <div class="detail-signature">
         >>> if var_doc.name in self.SPECIAL_METHODS:
-            <br /><em class="fname">($self.SPECIAL_METHODS[var_doc.name]$)</em>
+            <span class="fspecial">($self.SPECIAL_METHODS[var_doc.name]$)</span>
         >>> #endif
         >>> if isinstance(func_doc, ClassMethodDoc):
-            <br /><em class="fname">Class Method</em>
+            <span class="fspecial">Class Method</span>
         >>> #endif
         >>> if isinstance(func_doc, StaticMethodDoc):
-            <br /><em class="fname">Static Method</em>
+            <span class="fspecial">Static Method</span>
         >>> #endif
-          </h3>
-          </td><td align="right" valign="top"
-            >$self.pysrc_link(func_doc)$&nbsp;
-            $self.callgraph_link(callgraph)$</td>
-          </table>
-          $self.render_callgraph(callgraph)$
+            $self.function_signature(var_doc)$
+            </div>
+          <div class="detail-description">
           $descr$
           <dl class="fields">
         >>> # === parameters ===
         >>> if arg_descrs:
             <dt>Parameters:</dt>
-            <dd><ul class="nomargin-top">
+            <dd><dl class="parameters">
         >>>   for lhs, rhs in arg_descrs:
-                $self.labelled_list_item(lhs, rhs)$
+                <dt>$lhs$</dt>
+                <dd>$rhs$</dd>
         >>>   #endfor
-            </ul></dd>
+            </dl></dd>
         >>> #endif
         >>> # === return type ===
         >>> if rdescr and rtype:
-            <dt>Returns: $rtype$</dt>
-                <dd>$rdescr$</dd>
+            <dt>Returns:</dt>
+                <dd><span class="rtype">$rtype$</span>: $rdescr$</dd>
         >>> elif rdescr:
             <dt>Returns:</dt>
                 <dd>$rdescr$</dd>
@@ -2344,18 +2326,15 @@ class HTMLWriter:
         >>> #endif
         >>> # === overrides ===
         >>> if var_doc.overrides not in (None, UNKNOWN):
-            <dt>Overrides:
+            <dt>Overrides:</dt>
+            <dd class="overrides">
               $self.href(var_doc.overrides.value, context=var_doc)$
-        >>>   if (func_doc.docstring in (None, UNKNOWN) and
-        >>>       var_doc.overrides.value.docstring not in (None, UNKNOWN)):
-                <dd><em class="note">(inherited documentation)</em></dd>
-        >>>   #endif
-            </dt>
+            </dd>
         >>> #endif
           </dl>
         >>> # === metadata ===
         >>> self.write_standard_fields(out, func_doc)
-        </td></tr></table>
+          </div>
         </div>
         ''')
         # \------------------------------------------------------------/
@@ -2401,11 +2380,11 @@ class HTMLWriter:
         '''
         >>> prop_doc = var_doc.value
         <a name="$var_doc.name$"></a>
-        <div$div_class$>
-        >>> self.write_table_header(out, "details")
-        <tr><td>
-          <h3 class="epydoc">$var_doc.name$</h3>
+        <div class="$div_class$ detail">
+          <h3>$var_doc.name$</h3>
+          <div class="detail-description">
           $descr$
+        >>> self.write_standard_fields(out, prop_doc)
           <dl class="fields">
         >>> for (name, val, summary) in accessors:
             <dt>$name$ Method:</dt>
@@ -2420,8 +2399,7 @@ class HTMLWriter:
               <dd>$self.type_descr(var_doc, indent=6)$</dd>
         >>> #endif
           </dl>
-        >>> self.write_standard_fields(out, prop_doc)
-        </td></tr></table>
+          </div>
         </div>
         ''')
         # \------------------------------------------------------------/
@@ -2433,25 +2411,22 @@ class HTMLWriter:
         # /------------------------- Template -------------------------\
         '''
         <a name="$var_doc.name$"></a>
-        <div$div_class$>
-        >>> self.write_table_header(out, "details")
-        <tr><td>
-          <h3 class="epydoc">$var_doc.name$</h3>
+        <div class="$div_class$ detail">
+          <h3>$var_doc.name$</h3>
+          <div class="detail-description">
           $descr$
+        >>> self.write_standard_fields(out, var_doc)
           <dl class="fields">
         >>> if var_doc.type_descr not in (None, UNKNOWN):
             <dt>Type:</dt>
               <dd>$self.type_descr(var_doc, indent=6)$</dd>
         >>> #endif
-          </dl>
-        >>> self.write_standard_fields(out, var_doc)
         >>> if var_doc.value is not UNKNOWN:
-          <dl class="fields">
             <dt>Value:</dt>
               <dd>$self.pprint_value(var_doc.value)$</dd>
           </dl>
         >>> #endif
-        </td></tr></table>
+          </div>
         </div>
         ''')
         # \------------------------------------------------------------/
@@ -2683,37 +2658,35 @@ class HTMLWriter:
 
     def write_module_list(self, out, doc):
         if len(doc.submodules) == 0: return
+
         self.write_table_header(out, "summary", "Submodules")
 
         for group_name in doc.group_names():
             if not doc.submodule_groups[group_name]: continue
             if group_name:
                 self.write_group_header(out, group_name)
-            out('  <tr><td class="summary">\n'
-                '  <ul class="nomargin">\n')
+            #out('  <tr><td class="summary">\n'
+            #    '  <ul class="nomargin">\n')
             for submodule in doc.submodule_groups[group_name]:
                 self.write_module_tree_item(out, submodule, package=doc)
-            out('  </ul></td></tr>\n')
+            #out('  </ul></td></tr>\n')
                 
-        out(self.TABLE_FOOTER+'\n<br />\n')
+        out(self.TABLE_FOOTER)
 
     def write_module_tree_item(self, out, doc, package=None):
         # If it's a private variable, then mark its <li>.
         var = package and package.variables.get(doc.canonical_name[-1])
         priv = ((var is not None and var.is_public is False) or
                 (var is None and doc.canonical_name[-1].startswith('_')))
-        out('    <li%s> <strong class="uidlink">%s</strong>'
-            % (priv and ' class="private"' or '', self.href(doc)))
+        out('<tr><td width="15%%"></td><td>%s' % self.summary_name(doc,
+            link_name=True))
         if doc.summary not in (None, UNKNOWN):
-            out(': <em class="summary">'+
-                self.description(doc.summary, doc, 8)+'</em>')
+            out('<div class="summary-description">'+
+                self.description(doc.summary, doc, 8)+'</div>')
+        out('</td></tr>')
         if doc.submodules != UNKNOWN and doc.submodules:
-            if priv: out('\n    <ul class="private">\n')
-            else: out('\n    <ul>\n')
             for submodule in doc.submodules:
                 self.write_module_tree_item(out, submodule, package=doc)
-            out('    </ul>\n')
-        out('    </li>\n')
 
     #////////////////////////////////////////////////////////////
     #{ Class trees
@@ -3037,29 +3010,11 @@ class HTMLWriter:
         <!-- ==================== $heading.upper()$ ==================== -->
         <a name="$anchor$"></a>
         >>> #endif
-        <table class="$css_class$" border="1" cellpadding="3"
-               cellspacing="0" width="100%" bgcolor="white">
         >>> if heading is not None:
-        <tr bgcolor="#70b0f0" class="table-header">
-        >>>     if private_link and self._show_private:
-          <td colspan="$colspan$" class="table-header">
-            <table border="0" cellpadding="0" cellspacing="0" width="100%">
-              <tr valign="top">
-                <td align="left"><span class="table-header">$heading$</span></td>
-                <td align="right" valign="top"
-                 ><span class="options">[<a href="#$anchor$"
-                 class="privatelink" onclick="toggle_private();"
-                 >hide private</a>]</span></td>
-              </tr>
-            </table>
-          </td>
-        >>>     else:
-          <td align="left" colspan="2" class="table-header">
-            <span class="table-header">$heading$</span></td>
-        >>>     #endif
-        </tr>
+                <h2>$heading$</h2>
         >>> #endif
-        ''')
+        <table class="$css_class$">
+       ''')
         # \------------------------------------------------------------/
 
     TABLE_FOOTER = '</table>\n'
@@ -3075,9 +3030,9 @@ class HTMLWriter:
         ''',
         # /------------------------- Template -------------------------\
         '''
-        <tr bgcolor="#e8f0f8" $tr_class$>
+        <tr $tr_class$>
           <th colspan="2" class="group-header"
-            >&nbsp;&nbsp;&nbsp;&nbsp;$group$</th></tr>
+            >$group$</th></tr>
         ''')
         # \------------------------------------------------------------/
 
