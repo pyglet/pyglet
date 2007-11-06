@@ -84,7 +84,7 @@ if getattr(sys, 'frozen', None):
 #: 
 #: For options requiring a tuple of values, separate each value with a comma.
 #:
-#: The options are:
+#: The non-development options are:
 #:
 #: audio
 #:     A sequence of the names of audio modules to attempt to load, in
@@ -101,10 +101,6 @@ if getattr(sys, 'frozen', None):
 #:     this option is enabled if ``__debug__`` is (i.e., if Python was not run
 #:     with the -O option).  It is disabled by default when pyglet is "frozen"
 #:     within a py2exe or py2app library archive.
-#: debug_media
-#:     If True, media modules will print large amounts of debug info and
-#:     possibly open additional log files.  Recommended only for pyglet
-#:     developers.
 #:
 options = {
     'audio': ('directsound', 'openal', 'alsa', 'silent'),
@@ -135,3 +131,13 @@ def _read_environment():
         except KeyError:
             pass
 _read_environment()
+
+if sys.platform == 'cygwin':
+    # This hack pretends that the posix-like ctypes provides windows
+    # functionality.  COM does not work with this hack, so there is no
+    # DirectSound support.
+    import ctypes
+    ctypes.windll = ctypes.cdll
+    ctypes.oledll = ctypes.cdll
+    ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE
+    ctypes.HRESULT = ctypes.c_long
