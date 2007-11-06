@@ -1,6 +1,14 @@
 pyglet Documentation Index
 --------------------------
 
-  * `pyglet Programming Guide <programming_guide/index.html>`_
+pyglet documentation:
+
+  * `Programming Guide <programming_guide/index.html>`_
   * `API Reference <api/index.html>`_
 
+Related documentation:
+
+  * `OpenGL Documentation Index <http://opengl.org/sdk/docs/>`_
+  * `OpenGL Reference Pages <http://opengl.org/sdk/docs/man/>`_
+  * `ctypes Reference <http://docs.python.org/lib/module-ctypes.html>`_
+  * `Python Documentation <http://docs.python.org/>`_
