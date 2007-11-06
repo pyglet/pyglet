@@ -60,6 +60,39 @@ example, the following program draws a triangle on the screen::
 
         win.flip()
 
+Some OpenGL functions require an array of data.  These arrays must be
+constructed as ``ctypes`` arrays of the correct type.  The following example
+draw the same triangle as above, but uses a vertex array instead of the
+immediate-mode functions.  Note the construction of the vertex array using a
+one-dimensional ``ctypes`` array of ``GLfloat``::
+
+    from pyglet.gl import *
+    from pyglet import window
+
+    win = window.Window(visible=False)
+
+    vertices = [
+        0, 0,
+        win.width, 0,
+        win.width, win.height]
+    vertices_gl = (GLfloat * len(vertices))(*vertices)
+
+    glEnableClientState(GL_VERTEX_ARRAY)
+    glVertexPointer(2, GL_FLOAT, 0, vertices_gl)
+
+    win.set_visible()
+    while not win.has_exit:
+        win.dispatch_events()
+
+        glClear(GL_COLOR_BUFFER_BIT)
+        glLoadIdentity()
+        glDrawArrays(GL_TRIANGLES, 0, len(vertices) // 2)
+
+        win.flip()
+
+Similar array constructions can be used to create data for vertex buffer
+objects, texture data, polygon stipple data and the map functions.
+
 .. _OpenGL Website: http://www.opengl.org
 .. _OpenGL Programming Guide: http://opengl.org/documentation/red_book/
 
