@@ -3,11 +3,15 @@ Making a pyglet release
 
 1. svn up
 2. Update version string in setup.py, pyglet/__init__.py and CHANGELOG
+   Update README, and the two readme.rtf files on Windows and Mac.
 3. svn ci
 4. svn copy https://pyglet.googlecode.com/svn/trunk \
             https://pyglet.googlecode.com/svn/tags/pyglet-**VERSION**
 5. tools/gendoc.sh
 6. Mac OS X release (requires OS X 10.4 and developer tools installed)::
+   NOTE for 10.5:  bdist_mpkg doesn't quite work, needs a hack to avoid
+                   doing the admin write check (you'll see when you get the
+                   traceback).
 
         tools/genmpkg/genmpkg.sh
 
@@ -31,8 +35,14 @@ Making a pyglet release
         python tools/upload/upload.sh
 
 10. Copy URLs reported from upload into website/download.xml
-11. Sync website with pyglet.org.
-12. Tell people!
+11. Add news item to website/news-items.xml
+12. Regenerate website with tools/genwebsite.sh
+13. Update pyglet.org from website/dist/ to /: 
+      download.html, news.html, news.xml, index.html
+    From doc/ to doc/:
+      html/api/*,  html/programming_guide/*
+      pdf/programming_guide.pdf
+14. Tell people!
 
 Untested AFAIK:
   * Source distros on any platform

@@ -37,23 +37,36 @@ if __name__ == '__main__':
                 print 'No description for %s' % filename
                 sys.exit(1)
             description = '%s %s' % (pyglet.version, description)
-            files[filename] = description
+            
+            labels = []
+            if filename.endswith('.tar.gz') or filename.endswith('.zip') and\
+               'docs' not in filename:
+                labels.append('Type-Source')
+            elif filename.endswith('.msi'):
+                labels.append('OpSys-Windows')
+            elif filename.endswith('.dmg'):
+                labels.append('OpSys-OSX')
+            if not filename.endswith('.egg'):
+                labels.append('Featured')
+            files[filename] = description, labels
+
             print filename
             print '   %s' % description
+            print '   %s' % ', '.join(labels)
 
     print 'Ok to upload? [type "y"]'
     if raw_input().strip() != 'y':
         print 'Aborted.'
         sys.exit(1)
 
-    for filename, description in files.items():
+    for filename, (description, labels) in files.items():
         status, reason, url = googlecode_upload.upload(
             os.path.join(dist, filename),
             'pyglet',
             'Alex.Holkner',
             password,
             description,
-            None)
+            labels)
         if url:
             print 'OK: %s' % url
         else:

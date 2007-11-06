@@ -1,4 +1,11 @@
 <news>
+  <item date="6-November-2007" author="Alex"
+        title="pyglet 1.0 beta 1 released">
+    The Beta release is now available from the <a
+    href="download.html">downloads</a> page.  This release contains hundreds
+    of bug fixes from the previous release, new audio drivers for Windows
+    and Linux, and greater platform compatibility.
+  </item>
   <item date="18-August-2007" author="Alex"
         title="pyglet 1.0 alpha 2 released">
     This alpha release fixes many bugs, includes a new audio and video
