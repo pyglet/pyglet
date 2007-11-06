@@ -36,11 +36,11 @@ There are no compilation steps during the installation; if you prefer, you can
 simply add this directory to your PYTHONPATH and use pyglet without
 installing it.
 
-Alpha release
--------------
+Beta release
+------------
 
-This is an alpha release, meaning it is feature-complete but not yet ready for
-production use.  Please check the issue tracker at 
+This is a beta release, meaning it is feature-complete but not yet ready for
+production use.  Please check the issue tracker at
 http://code.google.com/p/pyglet/issues/list for details of current and
 recently fixed issues.
 
