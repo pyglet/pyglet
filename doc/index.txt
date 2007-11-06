@@ -8,7 +8,7 @@ pyglet documentation:
 
 Related documentation:
 
-  * `OpenGL Documentation Index <http://opengl.org/sdk/docs/>`_
+  * `OpenGL Programming Guide <http://www.glprogramming.com/red/>`_
   * `OpenGL Reference Pages <http://opengl.org/sdk/docs/man/>`_
   * `ctypes Reference <http://docs.python.org/lib/module-ctypes.html>`_
   * `Python Documentation <http://docs.python.org/>`_
