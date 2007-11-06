@@ -1,8 +1,13 @@
 Current
     * Removed shebangs from all library files
     * docs: Numerous formatting fixes to documentation, including restoring
-      missing tables
+      missing tables and linking in program examples
     * examples: Added soundspace example
+    * examples: Sounds for astraea and noisy are no longer license-encumbered
+    * examples: "Fire" key in astraea moved to spacebar to avoid hotkey in
+      Lepoard
+    * examples: Fixed rewind/seek behaviour of media_player
+    * tests: Fixed import of tests.regression module regardless of PYTHONPATH
     * pyglet: Added environment variables for default global options
     * pyglet.clock: Fixed unschedule of clock items out of order
     * pyglet.font: Fixed font.add_directory()
@@ -15,17 +20,23 @@ Current
     * pyglet.media: Improved OpenAL underrun recovery
     * pyglet.window: Removed extended Latin-1 key symbols
     * pyglet.window: Added scroll lock key modifier
+    * pyglet.window: Fixed data type of mouse coordinates to int
+    * pyglet.window: Unified and fixed platform-specific event decorator
     * OS X: Fixed fullscreen windows on non-primary monitor
     * Linux: Fixed non-ASCII text input
     * Linux: Added ALSA audio driver
     * Linux: Small refactoring of window event dispatch
     * Linux: Fixed lost key events under loaded CPU
+    * Linux: Fixed borderless window behaviour
+    * Linux: Fixed fullscreen window reactivation
     * Win32: Added DirectSound audio driver
     * Win32: Fixed interaction with language bar
     * Win32: Fixed key events for non-ASCII keys
     * Win32: Fixed motion event being fired on key release
     * Win32: Fixed window close event
     * Win32: Fixed handling of system error messages
+    * Win32: Improved playback of sound with software-based audio devices
+    * Win32: Fixed support for cygming special build of Python
 
 1.0alpha2
 
