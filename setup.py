@@ -11,7 +11,7 @@ import shutil
 import sys
 
 # Bump pyglet/__init__.py version as well.
-VERSION = '1.0alpha2'
+VERSION = '1.0beta1'
 
 long_description = '''pyglet provides an object-oriented programming
 interface for developing games and other visually-rich applications
@@ -27,7 +27,7 @@ setup_info = dict(
     description='Cross-platform windowing and multimedia library',
     long_description=long_description,
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Mac OS X',
         'Environment :: Win32 (MS Windows)',
         'Environment :: X11 Applications',

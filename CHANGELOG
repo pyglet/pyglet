@@ -1,4 +1,5 @@
-Current
+1.0beta1
+
     * Removed shebangs from all library files
     * docs: Numerous formatting fixes to documentation, including restoring
       missing tables and linking in program examples
