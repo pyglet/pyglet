@@ -107,7 +107,7 @@ if getattr(sys, 'frozen', None):
 #:     developers.
 #:
 options = {
-    'audio': ('directsound', 'alsa', 'openal', 'silent'),
+    'audio': ('directsound', 'openal', 'alsa', 'silent'),
     'debug_font': False,
     'debug_gl': not _enable_optimisations,
     'debug_media': False,

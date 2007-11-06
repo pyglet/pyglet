@@ -183,7 +183,7 @@ pushed on and popped off of a window::
 Creating your own event dispatcher
 ----------------------------------
 
-pyglet provides only the `Window` and `MediaInstance` event dispatchers, but
+pyglet provides only the `Window` and `Player` event dispatchers, but
 exposes a public interface for creating and dispatching your own events.
 
 The steps for creating an event dispatcher are:
