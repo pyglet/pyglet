@@ -22,7 +22,7 @@ def draw_client_border(window):
         glEnd()
     
     glColor3f(1, 0, 0)
-    rect(0, -1, window.width + 1, window.height)
+    rect(-1, -1, window.width + 1, window.height - 1)
 
     glColor3f(0, 1, 0)
-    rect(1, 0, window.width, window.height - 1)
+    rect(0, 0, window.width - 1, window.height - 1)
