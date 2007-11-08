@@ -29,7 +29,8 @@
       fullscreen games.</li>
 
       <li><strong>Load images, sound, music and video in almost any
-      format.</strong>  pyglet can optionally use AVbin to play back audio
+      format.</strong>  pyglet can optionally use 
+      <a href="http://code.google.com/p/avbin">AVbin</a> to play back audio
       formats such as MP3, OGG/Vorbis and WMA, and video formats such as DivX,
       MPEG-2, H.264, WMV and Xvid.</li>
     </ul>
