@@ -223,7 +223,7 @@ class XlibScreen(Screen):
         else:
             try:
                 return [config_class(self, attrib_list)]
-            except ContextException:
+            except gl.ContextException:
                 return []
 
     def __repr__(self):
