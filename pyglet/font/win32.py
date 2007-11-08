@@ -238,12 +238,6 @@ class Win32GlyphRenderer(base.GlyphRenderer):
         image = pyglet.image.ImageData(width, height, 
             'RGBA', self._bitmap_data, self._bitmap_rect.right * 4)
 
-        pitch_old = image.pitch
-        image.pitch = image.width * len(image.format)
-        image.data
-        image.pitch = pitch_old
-        image.data
-        
         if _debug_font:
             _debug('%r.render(%s)' % (self, text))
             _debug('abc.abcA = %r' % abc.abcA)
