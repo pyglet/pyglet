@@ -221,7 +221,10 @@ class XlibScreen(Screen):
 
             return result
         else:
-            return [config_class(self, attrib_list)]
+            try:
+                return [config_class(self, attrib_list)]
+            except ContextException:
+                return []
 
     def __repr__(self):
         return 'XlibScreen(screen=%d, x=%d, y=%d, ' \
