@@ -268,12 +268,12 @@
     <Binary Id="InfoIcon" SourceFile="res\info.ico" />
     
     <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="AVbinDir" Name="[SystemFolder]">
+      <Directory Id="SystemFolder">
         <Component Id="AVbinComponent" Guid="AEEC09B3-FC40-4841-9805-32ABC272945D">
           <File Id="AVbinDLL" Name="avbin.dll" DiskId="1" Source="res\avbin.dll" />
         </Component>
       </Directory>
-    <!-- pyglet modules are inserted here -->
+      <!-- pyglet modules are inserted here -->
     </Directory>
 
     <Feature Id="RuntimeFeature" Title="pyglet runtime" 
