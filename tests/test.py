@@ -63,8 +63,7 @@ When the test is complete, assuming there were no detectable errors
 to enter a [P]ass or [F]ail.  You should Fail the test if the behaviour
 was not as described, and enter a short reason.
 
-Details of each test session are logged for future use. [TODO: set up
-default log files].
+Details of each test session are logged for future use.
 
 Command-line options:
 
@@ -80,7 +79,7 @@ Command-line options:
 --log-level=
     Specify the minimum log level to write (defaults to 10: info)
 --log-file=
-    Specify log file to write to (defaults to stderr [TODO])
+    Specify log file to write to (defaults to "pyglet.%d.log")
 --regression-capture
     Save regression images to disk.  Use this only if the tests have
     already been shown to pass.
@@ -455,7 +454,8 @@ def main():
         default=','.join(capabilities))
     op.add_option('--log-level', help='verbosity of logging',
         default=10, type='int')
-    op.add_option('--log-file', help='log to FILE', metavar='FILE')
+    op.add_option('--log-file', help='log to FILE', metavar='FILE', 
+        default='pyglet.%d.log')
     op.add_option('--regression-path', metavar='DIR', default=regressions_path,
         help='locate regression images in DIR')
     op.add_option('--regression-tolerance', type='int', default=2,
@@ -482,6 +482,12 @@ def main():
             os.makedirs(regressions_path)
         except OSError:
             pass
+
+    if '%d' in options.log_file: 
+        i = 1
+        while os.path.exists(options.log_file % i):
+            i += 1
+        options.log_file = options.log_file % i
 
     logging.basicConfig(filename=options.log_file, level=options.log_level)
     options.log = logging.getLogger()
