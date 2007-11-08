@@ -44,6 +44,13 @@ from pyglet import window
 
 import reader
 
+# Check for AVbin
+try:
+    from pyglet.media import avbin
+except ImportError:
+    raise ImportError('AVbin is required for this example, see '
+        'http://code.google.com/p/avbin')
+
 def disc(r, x, y, slices=20, start=0, end=2*math.pi):
     d = (end - start) / (slices - 1)
     s = start
