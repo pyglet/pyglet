@@ -237,6 +237,12 @@ class Win32GlyphRenderer(base.GlyphRenderer):
         # Create glyph object and copy bitmap data to texture
         image = pyglet.image.ImageData(width, height, 
             'RGBA', self._bitmap_data, self._bitmap_rect.right * 4)
+
+        pitch_old = image.pitch
+        image.pitch = image.width * len(image.format)
+        image.data
+        image.pitch = pitch_old
+        image.data
         
         if _debug_font:
             _debug('%r.render(%s)' % (self, text))
@@ -251,6 +257,9 @@ class Win32GlyphRenderer(base.GlyphRenderer):
         
         glyph = self.font.create_glyph(image)
         glyph.set_bearings(-self.font.descent, lsb, advance)
+
+        if _debug_font:
+            _debug_image(self.font.textures[0], 'tex_%s' % text)
 
         return glyph
         
