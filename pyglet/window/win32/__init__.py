@@ -546,8 +546,8 @@ class Win32Window(BaseWindow):
             warnings.warn('Could not set vsync; unsupported extension.')
 
     def switch_to(self):
-        self._context.set_current()
         wgl.wglMakeCurrent(self._dc, self._wgl_context)
+        self._context.set_current()
         gl_info.set_active_context()
         glu_info.set_active_context()
 
