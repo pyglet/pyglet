@@ -280,6 +280,19 @@ class Context(object):
     # Ignored if error checking is disabled.
     _gl_begin = False
 
+    # gl_info.GLInfo instance, filled in on first set_current
+    _info = None
+
+    # List of (attr, check) for each driver/device-specific workaround that is
+    # implemented.  The `attr` attribute on this context is set to the result
+    # of evaluating `check(gl_info)` the first time this context is used.
+    _workaround_checks = [
+        # GDI Generic renderer on Windows does not implement
+        # GL_UNPACK_ROW_LENGTH correctly.
+        ('_workaround_unpack_row_length',
+             lambda info: info.get_renderer() == 'GDI Generic'),
+    ]
+
     def __init__(self, context_share=None):
         self.window = None
         _contexts.append(self)
@@ -296,6 +309,13 @@ class Context(object):
         global _current_context
         assert self in _contexts
         _current_context = self
+
+        # Implement workarounds
+        if not self._info:
+            self._info = gl_info.GLInfo()
+            self._info.set_active_context()
+            for attr, check in self._workaround_checks:
+                setattr(self, attr, check(self._info))
 
         # Release textures on this context scheduled for deletion
         if self.object_space._doomed_textures:

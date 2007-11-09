@@ -754,6 +754,11 @@ class ImageData(AbstractImage):
                     4: 'RGBA'}.get(len(data_format))
                 format, type = self._get_gl_format_and_type(data_format)
 
+        # Workaround: don't use GL_UNPACK_ROW_LENGTH
+        if gl._current_context._workaround_unpack_row_length:
+            print 'workaround!'
+            data_pitch = self.width * len(data_format)
+
         # Get data in required format (hopefully will be the same format it's
         # already in, unless that's an obscure format, upside-down or the
         # driver is old).
