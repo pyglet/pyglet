@@ -21,7 +21,8 @@ from pyglet import window
 
 try:
     # Try and create a window with multisampling (antialiasing)
-    config = Config(sample_buffers=1, samples=4)
+    config = Config(sample_buffers=1, samples=4, 
+                    depth_size=16, double_buffer=True,)
     w = window.Window(resizable=True, config=config)
 except window.NoSuchConfigException:
     # Fall back to no multisampling for old hardware
@@ -116,8 +117,8 @@ class Torus(object):
         glNewList(self.list, GL_COMPILE)
 
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        glEnable(GL_VERTEX_ARRAY)
-        glEnable(GL_NORMAL_ARRAY)
+        glEnableClientState(GL_VERTEX_ARRAY)
+        glEnableClientState(GL_NORMAL_ARRAY)
         glVertexPointer(3, GL_FLOAT, 0, vertices)
         glNormalPointer(GL_FLOAT, 0, normals)
         glDrawElements(GL_TRIANGLES, len(indices), GL_UNSIGNED_INT, indices)
