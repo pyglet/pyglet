@@ -7,34 +7,33 @@ from pyglet.gl import *
 from pyglet import window
 from pyglet import clock
 
-def setup(w, h):
+def on_resize(width, height):
+    glViewport(0, 0, width, height)
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(60., 1., 1., 100.)
-
+    gluPerspective(60., width / float(height), 1., 100.)
     glMatrixMode(GL_MODELVIEW)
+
+def setup():
     glClearColor(1, 1, 1, 1)
-    glColor4f(.5, .5, .5, .5)
+    glColor3f(.5, .5, .5)
 
 def draw():
     glClear(GL_COLOR_BUFFER_BIT)
     glLoadIdentity()
-
+    glTranslatef(0, 0, -5)
     glRotatef(r, 0, 0, 1)
-    glBegin(GL_QUADS)
-    glVertex3f(-1., -1., -5.)
-    glVertex3f(-1., 1., -5.)
-    glVertex3f(1., 1., -5.)
-    glVertex3f(1., -1., -5.)
-    glEnd()
+    glRectf(-1, -1, 1, 1)
 
-w1 = window.Window(200, 200, caption='First window')
-w1.on_resize = setup
+w1 = window.Window(200, 200, caption='First window', resizable=True)
+w1.on_resize = on_resize
 w1.switch_to()
+setup()
 
-w2 = window.Window(300, 300, caption='Second window')
-w2.on_resize = setup
+w2 = window.Window(300, 300, caption='Second window', resizable=True)
+w2.on_resize = on_resize
 w2.switch_to()
+setup()
 
 r = 0
 clock.set_fps_limit(30)
