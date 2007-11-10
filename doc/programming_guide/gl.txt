@@ -100,17 +100,31 @@ Resizing the window
 -------------------
 
 pyglet sets up the viewport and an orthographic projection on each window
-automatically.  If you define your own projection (for example, to use
-a perspective projection), you will also need to add a handler for
-the resize event to update this matrix::
+automatically.  It does this in a default `on_resize` handler defined on
+`Window`::
 
     def on_resize(width, height):
+        glViewport(0, 0, width, height)
+        glMatrixMode(gl.GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(0, width, 0, height, -1, 1)
+        glMatrixMode(gl.GL_MODELVIEW)
+
+If you need to define your own projection (for example, to use
+a 3-dimensional perspective projection), you should override this
+event with your own; for example::
+
+    def on_resize(width, height):
+        glViewport(0, 0, width, height)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(65, width / float(height), .1, 1000)
         glMatrixMode(GL_MODELVIEW)
 
     win.on_resize = on_resize
+
+Note that the `on_resize` handler is called for a window the first time
+it is displayed, as well as any time it is later resized.
 
 Error checking
 --------------
