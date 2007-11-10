@@ -3,7 +3,7 @@
 '''Test rearrangement of color components using the OpenGL color matrix.
 The test will be skipped if the GL_ARB_imaging extension is not present.
 
-You should see the RGBA test image correctly rendered.  Press ESC to
+You should see the RGB test image correctly rendered.  Press ESC to
 end the test.
 '''
 
