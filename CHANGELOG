@@ -1,4 +1,4 @@
-Current
+1.0beta2
     * examples: soundspace gives error if AVbin is not available
     * examples: opengl.py made to demonstrate more OpenGL features
     * tests: Logs to a file by default
