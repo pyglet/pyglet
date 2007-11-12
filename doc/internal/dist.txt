@@ -32,7 +32,7 @@ Making a pyglet release
 
 9. Upload files to googlecode::
 
-        python tools/upload/upload.sh
+        python tools/upload/upload.py
 
 10. Copy URLs reported from upload into website/download.xml
 11. Add news item to website/news-items.xml
@@ -42,7 +42,8 @@ Making a pyglet release
     From doc/ to doc/:
       html/api/*,  html/programming_guide/*
       pdf/programming_guide.pdf
-14. Tell people!
+14. python setup.py register
+15. Tell people!
 
 Untested AFAIK:
   * Source distros on any platform
