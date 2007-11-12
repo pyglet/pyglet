@@ -1,3 +1,12 @@
+Current
+    * examples: soundspace gives error if AVbin is not available
+    * examples: opengl.py made to demonstrate more OpenGL features
+    * tests: Logs to a file by default
+    * pyglet.image: Fixed image data pitch and row-ordering conversion
+    * Linux: Fixed 16-bit GLX 1.0 configuration
+    * Win32: avbin.dll is installed into the correct system directory
+    * Win32: Workaround for "GDI Generic" driver glTexSubImage2D bug
+
 1.0beta1
 
     * Removed shebangs from all library files
