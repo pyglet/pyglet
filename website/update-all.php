@@ -33,11 +33,11 @@ function get_page_image($url)
   global $BASE_URL;
 
   $html = file_get_contents($url);
-  $count = preg_match('|<img src="(/group/pyglet-users/web/[^?"]*)|', $html,
+  $count = preg_match('|<img src="(http://groups.google.com)?(/group/pyglet-users/web/[^?"]*)|', $html,
                       $matches);
   if ($count)
   {
-    return $BASE_URL . $matches[1];
+    return $BASE_URL . $matches[2];
   }
 
   return NULL;
