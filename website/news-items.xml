@@ -1,4 +1,10 @@
 <news>
+  <item date="12-November-2007" author="Alex"
+        title="pyglet 1.0 beta 2 released">
+    This <a href="download.html">latest beta release</a> fixes a serious
+    Windows installer bug and contains several other critical patches for
+    Windows and Linux users on some systems.
+  </item>
   <item date="6-November-2007" author="Alex"
         title="pyglet 1.0 beta 1 released">
     The Beta release is now available from the <a

@@ -1,6 +1,6 @@
 <div>
   <p>
-    The current version of pyglet is <strong>1.0 beta 1</strong>.
+    The current version of pyglet is <strong>1.0 beta 2</strong>.
   </p>
 
 <!--
@@ -10,10 +10,10 @@
   </p>
   <ul>
     <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.0beta1-py2.4.egg">pyglet-1.0beta1-py2.4.egg</a>:
+    href="http://pyglet.googlecode.com/files/pyglet-1.0beta2-py2.4.egg">pyglet-1.0beta2-py2.4.egg</a>:
     Runtime for Python 2.4</li>
     <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.0beta1-py2.5.egg">pyglet-1.0beta1-py2.5.egg</a>:
+    href="http://pyglet.googlecode.com/files/pyglet-1.0beta2-py2.5.egg">pyglet-1.0beta2-py2.5.egg</a>:
     Runtime for Python 2.5</li>
   </ul>
 -->
@@ -24,9 +24,9 @@
     file to install pyglet.
   </p>
   <ul>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0beta1.msi">pyglet-1.0beta1.msi</a>: Windows
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0beta2.msi">pyglet-1.0beta2.msi</a>: Windows
     installer, includes AVbin-2</li>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0beta1.dmg">pyglet-1.0beta1.dmg</a>: Mac OS X
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0beta2.dmg">pyglet-1.0beta2.dmg</a>: Mac OS X
     disk image, includes AVbin-2</li>
   </ul>
 
@@ -36,7 +36,7 @@
     the above platform distributions.
   </p>
   <ul>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0beta1-docs.zip">pyglet-1.0beta1-docs.zip</a></li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0beta2-docs.zip">pyglet-1.0beta2-docs.zip</a></li>
   </ul>
 
   <h2>source distributions</h2>
@@ -52,8 +52,8 @@
     href="http://code.google.com/p/avbin">AVbin</a>.
   </p>
   <ul>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0beta1.tar.gz">pyglet-1.0beta1.tar.gz</a></li>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0beta1.zip">pyglet-1.0beta1.zip</a></li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0beta2.tar.gz">pyglet-1.0beta2.tar.gz</a></li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0beta2.zip">pyglet-1.0beta2.zip</a></li>
   </ul>
 
 </div>
