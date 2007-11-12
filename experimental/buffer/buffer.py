@@ -7,17 +7,28 @@ import re
 from pyglet.gl import *
 from pyglet.gl import gl_info
 
+_c_types = {
+    GL_BYTE: ctypes.c_byte,
+    GL_UNSIGNED_BYTE: ctypes.c_ubyte,
+    GL_SHORT: ctypes.c_short,
+    GL_UNSIGNED_SHORT: ctypes.c_ushort,
+    GL_INT: ctypes.c_int,
+    GL_UNSIGNED_INT: ctypes.c_uint,
+    GL_FLOAT: ctypes.c_float,
+    GL_DOUBLE: ctypes.c_double,
+}
+
 def create(count, *attribute_formats, **kwargs):
     '''Create a buffer of vertex data.
 
     Example::
 
-        create(120, 'v:3f', 'c:2b', 't:2f', 'a0:n2H', 'a2:f')
+        create(120, 'v:3f', 'c:4b', 't:2f', 'a0:n2H', 'a2:f')
 
     Creates a buffer of 120 vertices, with each vertex containing:
 
     * 3 vertex position floats
-    * 2 color bytes
+    * 4 color bytes
     * 2 texture coordinate floats
     * 2 normalized unsigned ints for generic vertex attribute 0
     * 2 floats for generic vertex attribute 2
@@ -25,7 +36,7 @@ def create(count, *attribute_formats, **kwargs):
     :rtype: AbstractBufferAccessor
     '''
     interleaved = kwargs.get('interleaved')
-    attributes = [Attribute.from_string(format) \
+    attributes = [VertexAttribute.from_string(format) \
                   for format in attribute_formats]
 
     stride = sum(attribute.size for attribute in attributes)
@@ -46,13 +57,43 @@ def create(count, *attribute_formats, **kwargs):
     have_vbo = gl_info.have_version(1, 5)
     
     if have_vbo:
-        buffer = VertexBufferObject(attributes, stride, size)
+        buffer = VertexBufferObject(size)
     else:
-        buffer = VertexArray(attributes, stride, size)
+        buffer = VertexArray(size)
 
-    return buffer
+    return VertexAttributeAccessor(buffer, attributes, stride)
+
+def create_index(count, gl_type=GL_UNSIGNED_INT):
+    '''Create an element index array.
+    '''
+    have_vbo = gl_info.have_version(1, 5)
+    size = ctypes.sizeof(_c_types[gl_type]) * count
+    
+    if have_vbo:
+        buffer = VertexBufferObject(size, target=GL_ELEMENT_ARRAY_BUFFER)
+    else:
+        buffer = VertexArray(size)
+
+    return ElementIndexAccessor(buffer, gl_type, count)
+
 
 class Attribute(object):
+
+
+    c_type = None
+    size = 0
+    count = 0
+   
+    def set_pointer(self, stride, offset):
+        '''Access this attribute at the given stride and offset.  Calls
+        gl*Pointer with the appropriate arguments.'''
+        raise NotImplementedError('abstract')
+
+    def enable(self):
+        '''Enable this attribute.'''
+        raise NotImplementedError('abstract')
+
+class VertexAttribute(Attribute):
     _pointer_functions = {
         'c': (lambda count, gl_type:
                (lambda stride, offset:
@@ -113,28 +154,6 @@ class Attribute(object):
         'd': GL_DOUBLE,
     }
 
-    _c_types = {
-        GL_BYTE: ctypes.c_byte,
-        GL_UNSIGNED_BYTE: ctypes.c_ubyte,
-        GL_SHORT: ctypes.c_short,
-        GL_UNSIGNED_SHORT: ctypes.c_ushort,
-        GL_INT: ctypes.c_int,
-        GL_UNSIGNED_INT: ctypes.c_uint,
-        GL_FLOAT: ctypes.c_float,
-        GL_DOUBLE: ctypes.c_double,
-    }
-    
-    _gl_type_sizes = {
-        GL_BYTE: 1,
-        GL_UNSIGNED_BYTE: 1,
-        GL_SHORT: 2,
-        GL_UNSIGNED_SHORT: 2,
-        GL_INT: 4,
-        GL_UNSIGNED_INT: 4,
-        GL_FLOAT: 4,
-        GL_DOUBLE: 8,
-    }
-
     _format_re = re.compile(r'''
         (?P<dest>
            [cefnstv] | 
@@ -191,7 +210,7 @@ class Attribute(object):
             enable_bit = self._enable_bits[dest]
             self.enable = lambda: glEnableClientState(enable_bit)
 
-        self.c_type = self._c_types[gl_type]
+        self.c_type = _c_types[gl_type]
         self.size = count * ctypes.sizeof(self.c_type)
         self.count = count
 
@@ -214,21 +233,111 @@ class Attribute(object):
             'Length of data array is not multiple of element count.')
         return (self.c_type * n)(*array)
 
-    def set_pointer(self, stride, offset):
-        '''Access this attribute at the given stride and offset.  Calls
-        gl*Pointer with the appropriate arguments.'''
-        # Actually set on the instance during __init__.
-
-    def enable(self):
-        '''Enable this attribute.'''
-        # Actually set on the instance during __init__.
-
 class AbstractBuffer(object):
+    one_time_configure = False
+    
+    def configure(self, attributes):
+        raise NotImplementedError('abstract')
+    
+    def bind(self):
+        raise NotImplementedError('abstract')
+
+    def unbind(self):
+        raise NotImplementedError('abstract')
+
+    def set_data(self, data):
+        raise NotImplementedError('abstract')
+
+    def set_data_region(self, data, start, length):
+        raise NotImplementedError('abstract')
+
+    def map(self):
+        raise NotImplementedError('abstract')
+
+    def unmap(self):
+        raise NotImplementedError('abstract')
+
+class VertexBufferObject(AbstractBuffer):
+    configured = False
+    ptr = 0
+    
+    def __init__(self, size, target=GL_ARRAY_BUFFER):
+        self.size = size
+        self.target = target
+
+        id = GLuint()
+        glGenBuffers(1, id)
+        self.id = id.value
+        glBindBuffer(GL_ARRAY_BUFFER, self.id)
+        glBufferData(GL_ARRAY_BUFFER, self.size, None, GL_DYNAMIC_DRAW)
+
+    def configure(self, attributes):
+        # nvidia driver does not require config every bind; once per VBO is
+        # enough (is this in spec?)
+        if not self.configured:
+            for attribute in attributes:
+                attribute.enable()
+                attribute.set_pointer(0)
+            configured = True
+
+    def bind(self):
+        glBindBuffer(self.target, self.id)
+
+    def unbind(self):
+        glBindBuffer(self.target, 0)
+
+    def set_data(self, data):
+        glBufferData(self.target, self.size, data, GL_DYNAMIC_DRAW)
+
+    def set_data_region(self, data, start, length):
+        glBufferSubData(self.target, start, length, data)
+
+    def map(self):
+        return ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY),
+                           ctypes.c_byte * self.size)
+
+    def unmap(self):
+        glUnmapBuffer(self.target)
+
+class VertexArray(AbstractBuffer):
+    def __init__(self, size):
+        self.size = size
+
+        self.array = (ctypes.c_byte * size)()
+        self.ptr = ctypes.cast(self.array, ctypes.c_void_p).value
+
+    def configure(self, attributes):
+        for attribute in self.attributes:
+            attribute.enable()
+            attribute.set_pointer(self.ptr)
+
+    def bind(self):
+        pass
+
+    def unbind(self):
+        pass
+    
+    def set_data(self, data):
+        ctypes.memmove(self.ptr, data)
+
+    def set_data_region(self, data, start, length):
+        ctypes.memmove(self.ptr + start, data, length)
+
+    def map(self):
+        return self.array
+
+    def unmap(self):
+        pass
+
+class VertexAttributeAccessor(object):
+    attributes = None
     attribute_map = None
     generic_attribute_map = None
 
-    def __init__(self, attributes, stride):
+    def __init__(self, buffer, attributes, stride):
+        self.buffer = buffer
         self.stride = stride
+        self.attributes = attributes
         self.attribute_map = {}
         for attribute in attributes:
             if attribute.dest == 'a':
@@ -240,100 +349,49 @@ class AbstractBuffer(object):
                     'Attribute %s given more than once' % attribute.dest)
                 self.attribute_map[attribute.dest] = attribute
 
+    def set_data(self, *data):
+        blergh
+
     def set_vertex_data(self, data):
         assert self.stride == 0
         attribute = self.attribute_map['v']
         data = attribute.to_array(data)
         length = len(data) * ctypes.sizeof(attribute.c_type)
-        self._bind_buffer()
-        self._set_data_region(data, attribute.offset, length)
-        self._unbind_buffer()
+        self.buffer.bind()
+        self.buffer.set_data_region(data, attribute.offset, length)
+        self.buffer.unbind()
 
     def set_normal_data(self, data):
         assert self.stride == 0
         attribute = self.attribute_map['n']
         data = attribute.to_array(data)
         length = len(data) * ctypes.sizeof(attribute.c_type)
-        self._bind_buffer()
-        self._set_data_region(data, attribute.offset, length)
-        self._unbind_buffer()
+        self.buffer.bind()
+        self.buffer.set_data_region(data, attribute.offset, length)
+        self.buffer.unbind()
 
-    def _bind_buffer(self):
-        raise NotImplementedError('abstract')
+class ElementIndexAccessor(object):
+    def __init__(self, buffer, gl_type, count):
+        self.buffer = buffer
+        self.gl_type = gl_type
+        self.c_type = _c_types[gl_type]
+        self.count = count
+        
+    def set_data(self, data):
+        data = (self.c_type * self.count)(*data)
+        self.buffer.bind()
+        self.buffer.set_data(data)
+        self.buffer.unbind()
 
-    def _set_data(self, data):
-        raise NotImplementedError('abstract')
-
-    def _set_data_region(self, data, start, length):
-        raise NotImplementedError('abstract')
-
-    def _map(self):
-        raise NotImplementedError('abstract')
-
-    def _unmap(self):
-        raise NotImplementedError('abstract')
-
-class VertexBufferObject(AbstractBuffer):
-    def __init__(self, attributes, stride, size):
-        super(VertexBufferObject, self).__init__(attributes, stride)
-        self.size = size
-        self.attributes = attributes
-
-        id = GLuint()
-        glGenBuffers(1, id)
-        self.id = id.value
-        glBindBuffer(GL_ARRAY_BUFFER, self.id)
-        glBufferData(GL_ARRAY_BUFFER, self.size, None, GL_DYNAMIC_DRAW)
-        for attribute in self.attributes:
-            attribute.enable()
-            attribute.set_pointer(0)
-
-    def _bind_buffer(self):
-        glBindBuffer(GL_ARRAY_BUFFER, self.id)
-
-    def _unbind_buffer(self):
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-
-    def _set_data(self, data):
-        glBufferData(GL_ARRAY_BUFFER, self.size, data, GL_DYNAMIC_DRAW)
-
-    def _set_data_region(self, data, start, length):
-        glBufferSubData(GL_ARRAY_BUFFER, start, length, data)
-
-    def _map(self):
-        return ctypes.cast(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY),
-                           ctypes.c_byte * self.size)
-
-    def _unmap(self):
-        glUnmapBuffer(GL_ARRAY_BUFFER)
-
-class VertexArray(AbstractBuffer):
-    def __init__(self, attributes, stride, size):
-        super(VertexArray, self).__init__(attributes, stride)
-        self.size = size
-        self.attributes = attributes
-
-        self.array = (ctypes.c_byte * size)()
-        self.ptr = ctypes.cast(self.array, ctypes.c_void_p).value
-
-    def _bind_buffer(self):
+    def draw(self, mode, vertices, start=0, count=None):
+        if count is None:
+            count = self.count - start
+        
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        for attribute in self.attributes:
-            attribute.enable()
-            attribute.set_pointer(self.ptr)
-
-    def _unbind_buffer(self):
+        vertices.buffer.bind()
+        vertices.buffer.configure(vertices.attributes)
+        self.buffer.bind()
+        glDrawElements(mode, count, self.gl_type, self.buffer.ptr + start)
+        self.buffer.unbind()
+        vertices.buffer.unbind()
         glPopClientAttrib()
-    
-    def _set_data(self, data):
-        ctypes.memmove(self.ptr, data)
-
-    def _set_data_region(self, data, start, length):
-        ctypes.memmove(self.ptr + start, data, length)
-
-    def _map(self):
-        return self.array
-
-    def _unmap(self):
-        pass
-

@@ -104,17 +104,16 @@ class Torus(object):
                 p = i * inner_slices + j
                 indices.extend([p, p + inner_slices, p + inner_slices + 1])
                 indices.extend([p, p + 1, p + inner_slices + 1])
-        self.indices = (GLuint * len(indices))(*indices)
+        self.index_buffer = buffer.create_index(len(indices),
+            GL_UNSIGNED_SHORT)
+        self.index_buffer.set_data(indices)
 
 
     def draw(self):
-        self.buffer._bind_buffer()
-        glDrawElements(GL_TRIANGLES, len(self.indices), 
-            GL_UNSIGNED_INT, self.indices)
-        self.buffer._unbind_buffer()
+        self.index_buffer.draw(GL_TRIANGLES, self.buffer)
 
 setup()
-torus = Torus(1, 0.3, 500, 300)
+torus = Torus(1, 0.3, 200, 300)
 rx = ry = rz = 0
 count = 0
 
