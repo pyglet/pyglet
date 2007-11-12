@@ -238,6 +238,9 @@ class Win32GlyphRenderer(base.GlyphRenderer):
         image = pyglet.image.ImageData(width, height, 
             'RGBA', self._bitmap_data, self._bitmap_rect.right * 4)
 
+        glyph = self.font.create_glyph(image)
+        glyph.set_bearings(-self.font.descent, lsb, advance)
+
         if _debug_font:
             _debug('%r.render(%s)' % (self, text))
             _debug('abc.abcA = %r' % abc.abcA)
@@ -248,11 +251,6 @@ class Win32GlyphRenderer(base.GlyphRenderer):
             _debug('lsb = %r' % lsb)
             _debug('advance = %r' % advance)
             _debug_image(image, 'glyph_%s' % text)
-        
-        glyph = self.font.create_glyph(image)
-        glyph.set_bearings(-self.font.descent, lsb, advance)
-
-        if _debug_font:
             _debug_image(self.font.textures[0], 'tex_%s' % text)
 
         return glyph

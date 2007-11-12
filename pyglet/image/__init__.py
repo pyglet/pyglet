@@ -756,7 +756,6 @@ class ImageData(AbstractImage):
 
         # Workaround: don't use GL_UNPACK_ROW_LENGTH
         if gl._current_context._workaround_unpack_row_length:
-            print 'workaround!'
             data_pitch = self.width * len(data_format)
 
         # Get data in required format (hopefully will be the same format it's
