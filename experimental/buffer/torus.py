@@ -89,13 +89,15 @@ class Torus(object):
                 v += v_step
             u += u_step
 
-        self.buffer = buffer.create(len(vertices), 'v:3f', 'n:3f')
-        self.buffer.set_vertex_data(vertices)
-        self.buffer.set_normal_data(normals)
+        self.buffer = buffer.create(len(vertices) * 32,
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW)
+        self.vertices, self.normals = buffer.serialized(
+            len(vertices), 'V3F', 'N3F')
 
-        # Create ctypes arrays of the lists
-        #vertices = (GLfloat * len(vertices))(*vertices)
-        #normals = (GLfloat * len(normals))(*normals)
+        self.buffer.bind()
+        self.vertices.set(self.buffer, vertices)
+        self.normals.set(self.buffer, normals)
+        self.buffer.unbind()
 
         # Create a list of triangle indices.
         indices = []
@@ -104,13 +106,24 @@ class Torus(object):
                 p = i * inner_slices + j
                 indices.extend([p, p + inner_slices, p + inner_slices + 1])
                 indices.extend([p, p + 1, p + inner_slices + 1])
-        self.index_buffer = buffer.create_index(len(indices),
-            GL_UNSIGNED_SHORT)
-        self.index_buffer.set_data(indices)
+        #self.index_buffer = buffer.create_index(len(indices),
+        #    GL_UNSIGNED_SHORT)
+        #self.index_buffer.set_data(indices)
 
+        self.index_buffer = buffer.create(len(indices) * 2, 
+            GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW)
+        self.indices = buffer.ElementIndexAccessor(GL_UNSIGNED_SHORT)
+        self.indices.set(self.index_buffer, indices)
+        self.index_count = len(indices)
 
     def draw(self):
-        self.index_buffer.draw(GL_TRIANGLES, self.buffer)
+        self.buffer.bind()
+        self.vertices.enable()
+        self.normals.enable()
+        self.vertices.set_pointer(self.buffer.ptr)
+        self.normals.set_pointer(self.buffer.ptr)
+        self.index_buffer.bind()
+        self.indices.draw(self.index_buffer, GL_TRIANGLES, 0, self.index_count)
 
 setup()
 torus = Torus(1, 0.3, 200, 300)

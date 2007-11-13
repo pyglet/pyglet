@@ -18,119 +18,139 @@ _c_types = {
     GL_DOUBLE: ctypes.c_double,
 }
 
-def create(count, *attribute_formats, **kwargs):
+def create(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW):
     '''Create a buffer of vertex data.
-
-    Example::
-
-        create(120, 'v:3f', 'c:4b', 't:2f', 'a0:n2H', 'a2:f')
-
-    Creates a buffer of 120 vertices, with each vertex containing:
-
-    * 3 vertex position floats
-    * 4 color bytes
-    * 2 texture coordinate floats
-    * 2 normalized unsigned ints for generic vertex attribute 0
-    * 2 floats for generic vertex attribute 2
-
-    :rtype: AbstractBufferAccessor
     '''
-    interleaved = kwargs.get('interleaved')
-    attributes = [VertexAttribute.from_string(format) \
-                  for format in attribute_formats]
+    if gl_info.have_version(1, 5):
+        return VertexBufferObject(size, target, usage)
+    else:
+        return VertexArray(size)
 
-    stride = sum(attribute.size for attribute in attributes)
-    size = stride * count
+
+class AbstractBuffer(object):
+    def bind(self):
+        raise NotImplementedError('abstract')
+
+    def unbind(self):
+        raise NotImplementedError('abstract')
+
+    def set_data(self, data):
+        raise NotImplementedError('abstract')
+
+    def set_data_region(self, data, start, length):
+        raise NotImplementedError('abstract')
+
+    def map(self, invalidate=False):
+        raise NotImplementedError('abstract')
+
+    def unmap(self):
+        raise NotImplementedError('abstract')
+
+class VertexBufferObject(AbstractBuffer):
+    ptr = 0
+    
+    def __init__(self, size, target, usage):
+        self.size = size
+        self.target = target
+        self.usage = usage
+
+        id = GLuint()
+        glGenBuffers(1, id)
+        self.id = id.value
+        glBindBuffer(target, self.id)
+        glBufferData(target, self.size, None, self.usage)
+
+    def bind(self):
+        glBindBuffer(self.target, self.id)
+
+    def unbind(self):
+        glBindBuffer(self.target, 0)
+
+    def set_data(self, data):
+        glBufferData(self.target, self.size, data, self.usage)
+
+    def set_data_region(self, data, start, length):
+        glBufferSubData(self.target, start, length, data)
+
+    def map(self, invalidate=False):
+        if invalidate:
+            glBufferData(self.target, self.size, None, self.usage)
+        return ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY),
+                           ctypes.c_byte * self.size)
+
+    def unmap(self):
+        glUnmapBuffer(self.target)
+
+class VertexArray(AbstractBuffer):
+    def __init__(self, size):
+        self.size = size
+
+        self.array = (ctypes.c_byte * size)()
+        self.ptr = ctypes.cast(self.array, ctypes.c_void_p).value
+
+    def bind(self):
+        pass
+
+    def unbind(self):
+        pass
+    
+    def set_data(self, data):
+        ctypes.memmove(self.ptr, data, self.size)
+
+    def set_data_region(self, data, start, length):
+        ctypes.memmove(self.ptr + start, data, length)
+
+    def map(self, invalidate=False):
+        return self.array
+
+    def unmap(self):
+        pass
+
+def align(v, align):
+    return ((v - 1) & ~(align - 1)) + align
+
+def serialized(count, *formats):
+    accessors = [Accessor.from_string(format) for format in formats]
     offset = 0
-    if interleaved:
-        for attribute in attributes:
-            attribute.set_pointer = attribute.set_pointer(stride, offset)
-            attribute.offset = offset
-            offset += attribute.size
-    else:
-        for attribute in attributes:
-            attribute.set_pointer = attribute.set_pointer(0, offset)
-            attribute.offset = offset
-            offset += attribute.size * count
-        stride = 0
+    for accessor in accessors:
+        offset = align(offset, accessor.align)
+        accessor.offset = offset
+        offset += count * accessor.size
+    return accessors
 
-    have_vbo = gl_info.have_version(1, 5)
-    
-    if have_vbo:
-        buffer = VertexBufferObject(size)
-    else:
-        buffer = VertexArray(size)
+def interleaved(*formats):
+    accessors = [Accessor.from_string(format) for format in formats]
+    stride = 0
+    for accessor in accessors:
+        stride = align(stride, accessor.align)    
+        accessor.offset = stride
+        stride += accessor.size
+    for accessor in accessors:
+        accessor.stride = stride
+    return accessors
 
-    return VertexAttributeAccessor(buffer, attributes, stride)
-
-def create_index(count, gl_type=GL_UNSIGNED_INT):
-    '''Create an element index array.
-    '''
-    have_vbo = gl_info.have_version(1, 5)
-    size = ctypes.sizeof(_c_types[gl_type]) * count
-    
-    if have_vbo:
-        buffer = VertexBufferObject(size, target=GL_ELEMENT_ARRAY_BUFFER)
-    else:
-        buffer = VertexArray(size)
-
-    return ElementIndexAccessor(buffer, gl_type, count)
-
-
-class Attribute(object):
-
-
-    c_type = None
-    size = 0
-    count = 0
-   
-    def set_pointer(self, stride, offset):
-        '''Access this attribute at the given stride and offset.  Calls
-        gl*Pointer with the appropriate arguments.'''
-        raise NotImplementedError('abstract')
-
-    def enable(self):
-        '''Enable this attribute.'''
-        raise NotImplementedError('abstract')
-
-class VertexAttribute(Attribute):
+class Accessor(object):
     _pointer_functions = {
-        'c': (lambda count, gl_type:
-               (lambda stride, offset:
-                 (lambda pointer:
-                    glColorPointer(count, gl_type, stride, pointer + offset)
-             ))),
-        'e': (lambda count, gl_type: 
-               (lambda stride, offset:
-                 (lambda pointer:
-                    glEdgeFlagPointer(stride, pointer + offset)
-             ))),
-        'f': (lambda count, gl_type:
-               (lambda stride, offset:
-                 (lambda pointer:
-                    glFogCoordPointer(gl_type, stride, pointer + offset)
-             ))),
-        'n': (lambda count, gl_type:
-               (lambda stride, offset:
-                 (lambda pointer:
-                    glNormalPointer(gl_type, stride, pointer + offset)
-             ))),
-        's': (lambda count, gl_type:
-               (lambda stride, offset:
-                 (lambda pointer:
-                    glSecondaryColorPointer(count, gl_type, stride, 
-                                            pointer + offset)
-             ))),
-        't': (lambda count, gl_type:
-               (lambda stride, offset:
-                 (lambda pointer:
-                    glTexCoordPointer(count, gl_type, stride, pointer + offset)
-             ))),
-        'v': (lambda count, gl_type:
-               (lambda stride, offset:
-                 (lambda pointer:
-                    glVertexPointer(count, gl_type, stride, pointer + offset)
-             ))),
+        'c': (lambda self: lambda pointer:
+                glColorPointer(self.count, self.gl_type, 
+                               self.stride, self.offset + pointer)),
+        'e': (lambda self: lambda pointer:
+                glEdgeFlagPointer(self.stride, self.offset + pointer)),
+        'f': (lambda self: lambda pointer:
+                glFogCoordPointer(self.gl_type, self.stride, 
+                                  self.offset + pointer)),
+        'n': (lambda self: lambda pointer:
+                glNormalPointer(self.gl_type, self.stride, 
+                                self.offset + pointer)),
+        's': (lambda self: lambda pointer:
+                glSecondaryColorPointer(self.count, self.gl_type, 
+                                        self.stride, self.offset + pointer)),
+        't': (lambda self: lambda pointer:
+                glTexCoordPointer(self.count, self.gl_type, self.stride, 
+                                  self.offset + pointer)),
+        'v': (lambda self: lambda pointer:
+                glVertexPointer(self.count, self.gl_type, self.stride,
+                                self.offset + pointer)),
     }
 
     _enable_bits = {
@@ -157,14 +177,14 @@ class VertexAttribute(Attribute):
     _format_re = re.compile(r'''
         (?P<dest>
            [cefnstv] | 
-           a(?P<dest_index>[0-9]+))
-        : (?P<normalized>n?)
-          (?P<count>[1234])
-          (?P<type>[bBsSiIfd])
+           (?P<dest_index>[0-9]+)a)
+        (?P<normalized>n?)
+        (?P<count>[1234])
+        (?P<type>[bBsSiIfd])
     ''', re.VERBOSE)
     
-    def __init__(self, dest, count, gl_type, normalized=False,
-                 dest_index=None):
+    def __init__(self, dest, count, gl_type, 
+                 normalized=False, dest_index=None):
         assert (count in (1, 2, 3, 4),
             'Element count out of range')
         assert (dest == 'a' or not normalized,
@@ -194,29 +214,31 @@ class VertexAttribute(Attribute):
             GL_SHORT, GL_INT, GL_INT, GL_DOUBLE),
             'Vertex attribute must have signed type larger than byte')
         
-        self.dest = dest
         if dest == 'a':
-            self.dest_index = dest_index
             self.set_pointer = \
-                (lambda stride, offset: 
                   (lambda pointer:
-                     glVertexAttribPointer(dest_index, count, gl_type,
-                                           normalized, stride, 
-                                           pointer + offset)
-                 ))
+                     glVertexAttribPointer(dest_index, self.count, self.gl_type,
+                                           normalized, self.stride, 
+                                           pointer))
             self.enable = lambda: glEnableVertexAttribArray(dest_index)
         else:
-            self.set_pointer = self._pointer_functions[dest](count, gl_type)
+            self.set_pointer = self._pointer_functions[dest](self)
             enable_bit = self._enable_bits[dest]
             self.enable = lambda: glEnableClientState(enable_bit)
 
+        self.gl_type = gl_type
         self.c_type = _c_types[gl_type]
-        self.size = count * ctypes.sizeof(self.c_type)
         self.count = count
+        self.align = ctypes.sizeof(self.c_type)
+        self.size = count * self.align
+
+        # Defaults
+        self.stride = self.size
+        self.offset = 0
 
     @classmethod
     def from_string(cls, format):
-        match = cls._format_re.match(format)
+        match = cls._format_re.match(format.lower())
         dest = match.group('dest')
         count = int(match.group('count'))
         gl_type = cls._gl_types[match.group('type')]
@@ -233,165 +255,22 @@ class VertexAttribute(Attribute):
             'Length of data array is not multiple of element count.')
         return (self.c_type * n)(*array)
 
-class AbstractBuffer(object):
-    one_time_configure = False
-    
-    def configure(self, attributes):
-        raise NotImplementedError('abstract')
-    
-    def bind(self):
-        raise NotImplementedError('abstract')
-
-    def unbind(self):
-        raise NotImplementedError('abstract')
-
-    def set_data(self, data):
-        raise NotImplementedError('abstract')
-
-    def set_data_region(self, data, start, length):
-        raise NotImplementedError('abstract')
-
-    def map(self):
-        raise NotImplementedError('abstract')
-
-    def unmap(self):
-        raise NotImplementedError('abstract')
-
-class VertexBufferObject(AbstractBuffer):
-    configured = False
-    ptr = 0
-    
-    def __init__(self, size, target=GL_ARRAY_BUFFER):
-        self.size = size
-        self.target = target
-
-        id = GLuint()
-        glGenBuffers(1, id)
-        self.id = id.value
-        glBindBuffer(GL_ARRAY_BUFFER, self.id)
-        glBufferData(GL_ARRAY_BUFFER, self.size, None, GL_DYNAMIC_DRAW)
-
-    def configure(self, attributes):
-        # nvidia driver does not require config every bind; once per VBO is
-        # enough (is this in spec?)
-        if not self.configured:
-            for attribute in attributes:
-                attribute.enable()
-                attribute.set_pointer(0)
-            configured = True
-
-    def bind(self):
-        glBindBuffer(self.target, self.id)
-
-    def unbind(self):
-        glBindBuffer(self.target, 0)
-
-    def set_data(self, data):
-        glBufferData(self.target, self.size, data, GL_DYNAMIC_DRAW)
-
-    def set_data_region(self, data, start, length):
-        glBufferSubData(self.target, start, length, data)
-
-    def map(self):
-        return ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY),
-                           ctypes.c_byte * self.size)
-
-    def unmap(self):
-        glUnmapBuffer(self.target)
-
-class VertexArray(AbstractBuffer):
-    def __init__(self, size):
-        self.size = size
-
-        self.array = (ctypes.c_byte * size)()
-        self.ptr = ctypes.cast(self.array, ctypes.c_void_p).value
-
-    def configure(self, attributes):
-        for attribute in attributes:
-            attribute.enable()
-            attribute.set_pointer(self.ptr)
-
-    def bind(self):
-        pass
-
-    def unbind(self):
-        pass
-    
-    def set_data(self, data):
-        ctypes.memmove(self.ptr, data, self.size)
-
-    def set_data_region(self, data, start, length):
-        ctypes.memmove(self.ptr + start, data, length)
-
-    def map(self):
-        return self.array
-
-    def unmap(self):
-        pass
-
-class VertexAttributeAccessor(object):
-    attributes = None
-    attribute_map = None
-    generic_attribute_map = None
-
-    def __init__(self, buffer, attributes, stride):
-        self.buffer = buffer
-        self.stride = stride
-        self.attributes = attributes
-        self.attribute_map = {}
-        for attribute in attributes:
-            if attribute.dest == 'a':
-                if not self.generic_attribute_map:
-                    self.generic_attribute_map = {}
-                self.generic_attribute_map[attribute.dest_index] = attribute
-            else:
-                assert (attribute.dest not in self.attribute_map,
-                    'Attribute %s given more than once' % attribute.dest)
-                self.attribute_map[attribute.dest] = attribute
-
-    def set_data(self, *data):
-        blergh
-
-    def set_vertex_data(self, data):
-        assert self.stride == 0
-        attribute = self.attribute_map['v']
-        data = attribute.to_array(data)
-        length = len(data) * ctypes.sizeof(attribute.c_type)
-        self.buffer.bind()
-        self.buffer.set_data_region(data, attribute.offset, length)
-        self.buffer.unbind()
-
-    def set_normal_data(self, data):
-        assert self.stride == 0
-        attribute = self.attribute_map['n']
-        data = attribute.to_array(data)
-        length = len(data) * ctypes.sizeof(attribute.c_type)
-        self.buffer.bind()
-        self.buffer.set_data_region(data, attribute.offset, length)
-        self.buffer.unbind()
+    def set(self, buffer, data):
+        data = self.to_array(data)
+        assert self.size == self.stride # for now, can't set interleaved data
+        buffer.set_data_region(data, self.offset, len(data) * self.align)
 
 class ElementIndexAccessor(object):
-    def __init__(self, buffer, gl_type, count):
-        self.buffer = buffer
+    def __init__(self, gl_type):
         self.gl_type = gl_type
         self.c_type = _c_types[gl_type]
-        self.count = count
+        self.size = ctypes.sizeof(self.c_type)
+        self.offset = 0
         
-    def set_data(self, data):
-        data = (self.c_type * self.count)(*data)
-        self.buffer.bind()
-        self.buffer.set_data(data)
-        self.buffer.unbind()
+    def set(self, buffer, data):
+        data = (self.c_type * len(data))(*data)
+        buffer.set_data_region(data, self.offset, len(data) * self.size)
 
-    def draw(self, mode, vertices, start=0, count=None):
-        if count is None:
-            count = self.count - start
-        
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        vertices.buffer.bind()
-        vertices.buffer.configure(vertices.attributes)
-        self.buffer.bind()
-        glDrawElements(mode, count, self.gl_type, self.buffer.ptr + start)
-        self.buffer.unbind()
-        vertices.buffer.unbind()
-        glPopClientAttrib()
+    def draw(self, buffer, mode, start, count):
+        glDrawElements(mode, count, self.gl_type, buffer.ptr +
+                       self.offset + start)
