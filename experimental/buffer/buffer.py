@@ -307,7 +307,7 @@ class VertexArray(AbstractBuffer):
         self.ptr = ctypes.cast(self.array, ctypes.c_void_p).value
 
     def configure(self, attributes):
-        for attribute in self.attributes:
+        for attribute in attributes:
             attribute.enable()
             attribute.set_pointer(self.ptr)
 
@@ -318,7 +318,7 @@ class VertexArray(AbstractBuffer):
         pass
     
     def set_data(self, data):
-        ctypes.memmove(self.ptr, data)
+        ctypes.memmove(self.ptr, data, self.size)
 
     def set_data_region(self, data, start, length):
         ctypes.memmove(self.ptr + start, data, length)
