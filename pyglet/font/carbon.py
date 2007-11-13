@@ -362,10 +362,10 @@ class CarbonFont(base.Font):
         value = ATSUTextMeasurement()
         carbon.ATSUGetLineControl(layout, 0, kATSULineAscentTag, 
             sizeof(value), byref(value), None)
-        self.ascent = math.ceil(fix2float(value))
+        self.ascent = int(math.ceil(fix2float(value)))
         carbon.ATSUGetLineControl(layout, 0, kATSULineDescentTag,
             sizeof(value), byref(value), None)
-        self.descent = -math.ceil(fix2float(value))
+        self.descent = -int(math.ceil(fix2float(value)))
 
     @classmethod
     def add_font_data(cls, data):
