@@ -18,10 +18,10 @@ _c_types = {
     GL_DOUBLE: ctypes.c_double,
 }
 
-def create(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW):
+def create(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW, vbo=True):
     '''Create a buffer of vertex data.
     '''
-    if gl_info.have_version(1, 5):
+    if vbo and gl_info.have_version(1, 5):
         return VertexBufferObject(size, target, usage)
     else:
         return VertexArray(size)
@@ -76,7 +76,7 @@ class VertexBufferObject(AbstractBuffer):
         if invalidate:
             glBufferData(self.target, self.size, None, self.usage)
         return ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY),
-                           ctypes.c_byte * self.size)
+                           ctypes.POINTER(ctypes.c_byte * self.size)).contents
 
     def unmap(self):
         glUnmapBuffer(self.target)
@@ -249,7 +249,7 @@ class Accessor(object):
         return cls(dest, count, gl_type, normalized, dest_index)
 
     def to_array(self, array):
-        '''Convert a Python sequence into a ctypes byte array.'''
+        '''Convert a Python sequence into a ctypes array.'''
         n = len(array)
         assert (n % self.count == 0,
             'Length of data array is not multiple of element count.')
@@ -257,8 +257,23 @@ class Accessor(object):
 
     def set(self, buffer, data):
         data = self.to_array(data)
-        assert self.size == self.stride # for now, can't set interleaved data
-        buffer.set_data_region(data, self.offset, len(data) * self.align)
+        if self.stride == self.size:
+            buffer.set_data_region(data, self.offset, len(data) * self.align)
+        else:
+            c = self.count
+            n = len(data)
+            offset = self.offset // self.align
+            stride = self.stride // self.align
+            dest_n = n // self.count * stride 
+            dest_bytes = buffer.map()
+            dest_data = ctypes.cast(dest_bytes, 
+                ctypes.POINTER(self.c_type * dest_n)).contents
+            for i in range(n // c):
+                s = offset + i * stride
+                t = i * c
+                for j in range(c):
+                    dest_data[s + j] = data[t + j]
+            buffer.unmap()
 
 class ElementIndexAccessor(object):
     def __init__(self, gl_type):

@@ -9,6 +9,9 @@ from pyglet import window
 
 import buffer
 
+vbo = True
+interleaved = True
+
 try:
     # Try and create a window with multisampling (antialiasing)
     config = Config(sample_buffers=1, samples=4, 
@@ -89,10 +92,13 @@ class Torus(object):
                 v += v_step
             u += u_step
 
-        self.buffer = buffer.create(len(vertices) * 32,
-            GL_ARRAY_BUFFER, GL_STATIC_DRAW)
-        self.vertices, self.normals = buffer.serialized(
-            len(vertices), 'V3F', 'N3F')
+        self.buffer = buffer.create(len(vertices) * 24,
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW, vbo=vbo)
+        if interleaved:
+            self.vertices, self.normals = buffer.interleaved('V3F', 'N3F')
+        else:
+            self.vertices, self.normals = buffer.serialized(
+                len(vertices), 'V3F', 'N3F')
 
         self.buffer.bind()
         self.vertices.set(self.buffer, vertices)
@@ -110,11 +116,15 @@ class Torus(object):
         #    GL_UNSIGNED_SHORT)
         #self.index_buffer.set_data(indices)
 
-        self.index_buffer = buffer.create(len(indices) * 2, 
+        self.index_buffer = buffer.create(len(indices) * 4, 
             GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW)
-        self.indices = buffer.ElementIndexAccessor(GL_UNSIGNED_SHORT)
+        self.indices = buffer.ElementIndexAccessor(GL_UNSIGNED_INT)
         self.indices.set(self.index_buffer, indices)
         self.index_count = len(indices)
+        print 'vbo = ', vbo
+        print 'interleaved = ', interleaved
+        print 'vertices', (len(vertices) // 3)
+        print 'indices', self.index_count
 
     def draw(self):
         self.buffer.bind()
@@ -126,7 +136,7 @@ class Torus(object):
         self.indices.draw(self.index_buffer, GL_TRIANGLES, 0, self.index_count)
 
 setup()
-torus = Torus(1, 0.3, 200, 300)
+torus = Torus(1, 0.3, 500, 500)
 rx = ry = rz = 0
 count = 0
 
