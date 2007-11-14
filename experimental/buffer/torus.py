@@ -9,8 +9,9 @@ from pyglet import window
 
 import buffer
 
-vbo = True
-interleaved = True
+vbo = False
+interleaved = False
+dl = True
 
 try:
     # Try and create a window with multisampling (antialiasing)
@@ -123,8 +124,16 @@ class Torus(object):
         self.index_count = len(indices)
         print 'vbo = ', vbo
         print 'interleaved = ', interleaved
+        print 'dl = ', dl
         print 'vertices', (len(vertices) // 3)
         print 'indices', self.index_count
+
+        if dl:
+            list = glGenLists(1)
+            glNewList(list, GL_COMPILE)
+            self.draw()
+            glEndList()
+            self.draw = lambda: glCallList(list)
 
     def draw(self):
         self.buffer.bind()
