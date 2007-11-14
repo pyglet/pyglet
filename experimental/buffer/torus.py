@@ -9,9 +9,11 @@ from pyglet import window
 
 import buffer
 
-vbo = False
-interleaved = False
-dl = True
+vbo = True
+interleaved = True
+index_vbo = True
+dl = False
+usage = GL_STATIC_DRAW
 
 try:
     # Try and create a window with multisampling (antialiasing)
@@ -94,7 +96,7 @@ class Torus(object):
             u += u_step
 
         self.buffer = buffer.create(len(vertices) * 24,
-            GL_ARRAY_BUFFER, GL_STATIC_DRAW, vbo=vbo)
+            GL_ARRAY_BUFFER, usage, vbo=vbo)
         if interleaved:
             self.vertices, self.normals = buffer.interleaved('V3F', 'N3F')
         else:
@@ -118,7 +120,7 @@ class Torus(object):
         #self.index_buffer.set_data(indices)
 
         self.index_buffer = buffer.create(len(indices) * 4, 
-            GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW)
+            GL_ELEMENT_ARRAY_BUFFER, usage, vbo=vbo)
         self.indices = buffer.ElementIndexAccessor(GL_UNSIGNED_INT)
         self.indices.set(self.index_buffer, indices)
         self.index_count = len(indices)
