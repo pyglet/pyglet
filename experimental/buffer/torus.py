@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-
 from math import pi, sin, cos
+import sys
 
 from pyglet.gl import *
 from pyglet import clock
@@ -14,6 +14,14 @@ interleaved = True
 index_vbo = True
 dl = False
 usage = GL_STATIC_DRAW
+index_usage = GL_STATIC_DRAW
+
+usage_names = {
+    GL_STATIC_DRAW: 'static',
+    GL_DYNAMIC_DRAW: 'dynamic',
+    GL_STREAM_DRAW: 'stream',
+    None: '---'
+}
 
 try:
     # Try and create a window with multisampling (antialiasing)
@@ -65,6 +73,7 @@ def setup():
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50)
 
 class Torus(object):
+    list = None
     def __init__(self, radius, inner_radius, slices, inner_slices):
         # Create the vertex and normal arrays.
         vertices = []
@@ -120,18 +129,19 @@ class Torus(object):
         #self.index_buffer.set_data(indices)
 
         self.index_buffer = buffer.create(len(indices) * 4, 
-            GL_ELEMENT_ARRAY_BUFFER, usage, vbo=vbo)
+            GL_ELEMENT_ARRAY_BUFFER, index_usage, vbo=index_vbo)
         self.indices = buffer.ElementIndexAccessor(GL_UNSIGNED_INT)
         self.indices.set(self.index_buffer, indices)
         self.index_count = len(indices)
-        print 'vbo = ', vbo
-        print 'interleaved = ', interleaved
-        print 'dl = ', dl
-        print 'vertices', (len(vertices) // 3)
-        print 'indices', self.index_count
+        n_vertices = len(vertices) // 3
+        n_indices = len(indices)
+        print dl,
+        print n_vertices, n_indices, interleaved,
+        print vbo, usage_names[usage], 
+        print index_vbo, usage_names[index_usage],
 
         if dl:
-            list = glGenLists(1)
+            list = self.list = glGenLists(1)
             glNewList(list, GL_COMPILE)
             self.draw()
             glEndList()
@@ -146,34 +156,69 @@ class Torus(object):
         self.index_buffer.bind()
         self.indices.draw(self.index_buffer, GL_TRIANGLES, 0, self.index_count)
 
-setup()
-torus = Torus(1, 0.3, 500, 500)
-rx = ry = rz = 0
-count = 0
+    def cleanup(self):
+        self.buffer.unbind()
+        self.index_buffer.unbind()
+        self.buffer.delete()
+        self.index_buffer.delete()
+        if self.list:
+            glDeleteLists(1, self.list)
 
-while not w.has_exit:
-    dt = clock.tick()
-    rx += dt * 1
-    ry += dt * 80
-    rz += dt * 30
-    rx %= 360
-    ry %= 360
-    rz %= 360
-
+def run(runs=3):
+    torus = Torus(1, 0.3, 500, 500)
+    rx = ry = rz = 0
+    count = 0
     w.dispatch_events()
+    clock.tick()
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glLoadIdentity()
-    glTranslatef(0, 0, -4)
-    glRotatef(rz, 0, 0, 1)
-    glRotatef(ry, 0, 1, 0)
-    glRotatef(rx, 1, 0, 0)
-    torus.draw()
+    while not w.has_exit:
+        dt = clock.tick()
+        rx += dt * 1
+        ry += dt * 80
+        rz += dt * 30
+        rx %= 360
+        ry %= 360
+        rz %= 360
 
-    w.flip()
+        w.dispatch_events()
 
-    if count > 1.:
-        count = 0
-        print clock.get_fps()
-    count += dt
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glLoadIdentity()
+        glTranslatef(0, 0, -4)
+        glRotatef(rz, 0, 0, 1)
+        glRotatef(ry, 0, 1, 0)
+        glRotatef(rx, 1, 0, 0)
+        torus.draw()
 
+        w.flip()
+
+        if count > 2.:
+            count = 0.
+            print clock.get_fps(),
+            runs -= 1
+            if runs == 0:
+                break
+        count += dt
+
+    torus.cleanup()
+    return w.has_exit
+
+setup()
+print 'dl vertices indices interleaved vbo usage index_vbo index_usage'
+for dl in False, True:
+    for vbo in False, True:
+        for index_vbo in False, True:
+            for interleaved in False, True:
+                if vbo:
+                    usages = (GL_STATIC_DRAW,)
+                else:
+                    usages = (None,)
+                for usage in usages:
+                    if index_vbo:
+                        index_usages = (GL_STATIC_DRAW,)
+                    else:
+                        index_usages = (None,)
+                    for index_usage in index_usages:
+                        if run():
+                            sys.exit(0)
+                        print 

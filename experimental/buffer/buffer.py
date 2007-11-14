@@ -46,6 +46,9 @@ class AbstractBuffer(object):
     def unmap(self):
         raise NotImplementedError('abstract')
 
+    def delete(self):
+        raise NotImplementedError('abstract')
+
 class VertexBufferObject(AbstractBuffer):
     ptr = 0
     
@@ -81,6 +84,10 @@ class VertexBufferObject(AbstractBuffer):
     def unmap(self):
         glUnmapBuffer(self.target)
 
+    def delete(self):
+        id = gl.GLuint(self.id)
+        glDeleteBuffers(1, id)
+
 class VertexArray(AbstractBuffer):
     def __init__(self, size):
         self.size = size
@@ -104,6 +111,9 @@ class VertexArray(AbstractBuffer):
         return self.array
 
     def unmap(self):
+        pass
+
+    def delete(self):
         pass
 
 def align(v, align):
