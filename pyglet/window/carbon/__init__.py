@@ -615,7 +615,14 @@ class CarbonWindow(BaseWindow):
             result = carbon.ReceiveNextEvent(0, c_void_p(), 0, True, byref(e))
 
         self._allow_dispatch_event = False
-        if result != eventLoopTimedOutErr:
+
+        # Return value from ReceiveNextEvent can be ignored if not
+        # noErr; we check here only to look for new bugs.
+        # eventLoopQuitErr: the inner event loop was quit, see
+        # http://lists.apple.com/archives/Carbon-dev/2006/Jun/msg00850.html
+        # Can occur when mixing with other toolkits, e.g. Tk.
+        # Fixes issue 180.
+        if result not in (eventLoopTimedOutErr, eventLoopQuitErr):
             raise 'Error %d' % result
 
     def set_caption(self, caption):
