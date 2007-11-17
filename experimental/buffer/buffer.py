@@ -3,6 +3,7 @@
 
 import ctypes
 import re
+import sys
 
 from pyglet.gl import *
 from pyglet.gl import gl_info
@@ -137,26 +138,36 @@ class BackedVertexBufferObject(VertexBufferObject):
         super(BackedVertexBufferObject, self).__init__(size, target, usage)
         self.data = (ctypes.c_byte * size)()
         self.data_ptr = ctypes.cast(self.data, ctypes.c_void_p).value
-        self._dirty = False
+        self._dirty_min = sys.maxint
+        self._dirty_max = 0
 
     def bind(self):
         # Commit pending data
         super(BackedVertexBufferObject, self).bind()
-        if self._dirty:
-            glBufferData(self.target, self.size, self.data, self.usage)
-            self._dirty = False
+        size = self._dirty_max - self._dirty_min
+        if size > 0:
+            if size == self.size:
+                glBufferData(self.target, self.size, self.data, self.usage)
+            else:
+                glBufferSubData(self.target, self._dirty_min, size,
+                    self.data_ptr + self._dirty_min)
+            self._dirty_min = sys.maxint
+            self._dirty_max = 0
 
     def set_data(self, data):
         super(VertexBufferObject, self).set_data(data)
         ctypes.memmove(self.data, data, self.size)
-        self._dirty = True
+        self._dirty_min = 0
+        self._dirty_max = self.size
 
     def set_data_region(self, data, start, length):
         ctypes.memmove(self.data_ptr + start, data, length)
-        self._dirty = True
+        self._dirty_min = min(start, self._dirty_min)
+        self._dirty_max = max(start + length, self._dirty_max)
 
     def map(self, invalidate=False):
-        self._dirty = True
+        self._dirty_min = 0
+        self._dirty_max = self.size
         return self.data
         
     def unmap(self):
@@ -174,6 +185,8 @@ class BackedVertexBufferObject(VertexBufferObject):
         glBufferData(self.target, self.size, self.data, self.usage)
         glPopClientAttrib()
 
+        self._dirty_min = sys.maxint
+        self._dirty_max = 0
 
 class VertexArray(AbstractBuffer):
     def __init__(self, size):

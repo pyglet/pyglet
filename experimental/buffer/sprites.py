@@ -14,9 +14,15 @@ import buffer
 if len(sys.argv) > 1:
     SPRITES = int(sys.argv[1])
 else:
-    SPRITES = 1000
+    SPRITES = 2000
 SPRITE_IMAGE = 'examples/noisy/ball.png'
-SPRITE_UPDATE_N = 1
+
+# How many sprites to move each frame.  e.g.
+#   0 -- all sprites are static
+#   1 -- all sprites move every frame (all are dynamic)
+#   2 -- only 2 sprites move every frame
+#  50 -- 50 sprites move every frame
+SPRITE_UPDATE_N = 500
 
 INTERLEAVED = False
 
@@ -53,8 +59,8 @@ class Sprite(object):
             self.dy = -self.dy
             self.y += self.dy * dt * 2
         
-        x = int(self.x)
-        y = int(self.y)
+        x = self.x
+        y = self.y
         rx = self.width // 2
         ry = self.height // 2
         self.region.vertices = [
@@ -88,14 +94,16 @@ if __name__ == '__main__':
     
     while not win.has_exit:
         dt = clock.tick()
+        if dt == 0:
+            dt = 0.01
 
         win.dispatch_events()
 
         if SPRITE_UPDATE_N > 1:
-            # Update every n'th sprite
-            for sprite in sprites[update_n::SPRITE_UPDATE_N]:
+            # Update small number of sprites
+            for sprite in sprites[update_n:update_n+SPRITE_UPDATE_N]:
                 sprite.update(dt)
-            update_n = (update_n + 1) % SPRITE_UPDATE_N
+            update_n = (update_n + SPRITE_UPDATE_N) % len(sprites)
         elif SPRITE_UPDATE_N:
             # Update all sprites
             for sprite in sprites:
