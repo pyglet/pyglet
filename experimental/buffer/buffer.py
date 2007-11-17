@@ -67,8 +67,10 @@ class VertexBufferObject(AbstractBuffer):
         id = GLuint()
         glGenBuffers(1, id)
         self.id = id.value
+        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glBindBuffer(target, self.id)
         glBufferData(target, self.size, None, self.usage)
+        glPopClientAttrib()
 
     def bind(self):
         glBindBuffer(self.target, self.id)
@@ -77,22 +79,30 @@ class VertexBufferObject(AbstractBuffer):
         glBindBuffer(self.target, 0)
 
     def set_data(self, data):
+        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glBindBuffer(self.target, self.id)
         glBufferData(self.target, self.size, data, self.usage)
+        glPopClientAttrib()
 
     def set_data_region(self, data, start, length):
+        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glBindBuffer(self.target, self.id)
         glBufferSubData(self.target, start, length, data)
+        glPopClientAttrib()
 
     def map(self, invalidate=False):
+        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glBindBuffer(self.target, self.id)
         if invalidate:
             glBufferData(self.target, self.size, None, self.usage)
+        glPopClientAttrib()
         return ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY),
                            ctypes.POINTER(ctypes.c_byte * self.size)).contents
 
     def unmap(self):
+        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glUnmapBuffer(self.target)
+        glPopClientAttrib()
 
     def delete(self):
         id = gl.GLuint(self.id)
@@ -102,6 +112,7 @@ class VertexBufferObject(AbstractBuffer):
         # Map, create a copy, then reinitialize.
         temp = (ctypes.c_byte * size)()
 
+        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glBindBuffer(self.target, self.id)
         data = glMapBuffer(self.target, GL_READ_ONLY)
         ctypes.memmove(temp, data, min(size, self.size))
@@ -109,6 +120,7 @@ class VertexBufferObject(AbstractBuffer):
 
         self.size = size
         glBufferData(self.target, self.size, temp, self.usage)
+        glPopClientAttrib()
 
 class BackedVertexBufferObject(VertexBufferObject):
     '''A VBO with system-memory backed store.
@@ -157,8 +169,10 @@ class BackedVertexBufferObject(VertexBufferObject):
         self.data_ptr = ctypes.cast(self.data, ctypes.c_void_p).value
         
         self.size = size
+        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glBindBuffer(self.target, self.id)
         glBufferData(self.target, self.size, self.data, self.usage)
+        glPopClientAttrib()
 
 
 class VertexArray(AbstractBuffer):
