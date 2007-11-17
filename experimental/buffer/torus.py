@@ -124,9 +124,6 @@ class Torus(object):
                 p = i * inner_slices + j
                 indices.extend([p, p + inner_slices, p + inner_slices + 1])
                 indices.extend([p, p + 1, p + inner_slices + 1])
-        #self.index_buffer = buffer.create_index(len(indices),
-        #    GL_UNSIGNED_SHORT)
-        #self.index_buffer.set_data(indices)
 
         self.index_buffer = buffer.create(len(indices) * 4, 
             GL_ELEMENT_ARRAY_BUFFER, index_usage, vbo=index_vbo)

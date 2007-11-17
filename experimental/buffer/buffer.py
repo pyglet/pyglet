@@ -18,16 +18,25 @@ _c_types = {
     GL_DOUBLE: ctypes.c_double,
 }
 
-def create(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW, vbo=True):
+def create(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW, 
+           vbo=True, backed=False):
     '''Create a buffer of vertex data.
     '''
     if vbo and gl_info.have_version(1, 5):
-        return VertexBufferObject(size, target, usage)
+        if backed:
+            return BackedVertexBufferObject(size, target, usage)
+        else:
+            return VertexBufferObject(size, target, usage)
     else:
         return VertexArray(size)
 
 
 class AbstractBuffer(object):
+    #: Memory offset of buffer needed by glVertexPointer etc.
+    ptr = 0
+    #: Size of buffer, in bytes.
+    size = 0
+
     def bind(self):
         raise NotImplementedError('abstract')
 
@@ -50,8 +59,6 @@ class AbstractBuffer(object):
         raise NotImplementedError('abstract')
 
 class VertexBufferObject(AbstractBuffer):
-    ptr = 0
-    
     def __init__(self, size, target, usage):
         self.size = size
         self.target = target
@@ -70,12 +77,15 @@ class VertexBufferObject(AbstractBuffer):
         glBindBuffer(self.target, 0)
 
     def set_data(self, data):
+        glBindBuffer(self.target, self.id)
         glBufferData(self.target, self.size, data, self.usage)
 
     def set_data_region(self, data, start, length):
+        glBindBuffer(self.target, self.id)
         glBufferSubData(self.target, start, length, data)
 
     def map(self, invalidate=False):
+        glBindBuffer(self.target, self.id)
         if invalidate:
             glBufferData(self.target, self.size, None, self.usage)
         return ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY),
@@ -87,6 +97,69 @@ class VertexBufferObject(AbstractBuffer):
     def delete(self):
         id = gl.GLuint(self.id)
         glDeleteBuffers(1, id)
+
+    def resize(self, size):
+        # Map, create a copy, then reinitialize.
+        temp = (ctypes.c_byte * size)()
+
+        glBindBuffer(self.target, self.id)
+        data = glMapBuffer(self.target, GL_READ_ONLY)
+        ctypes.memmove(temp, data, min(size, self.size))
+        glUnmapBuffer(self.target)
+
+        self.size = size
+        glBufferData(self.target, self.size, temp, self.usage)
+
+class BackedVertexBufferObject(VertexBufferObject):
+    '''A VBO with system-memory backed store.
+    
+    Updates to the data via `set_data`, `set_data_region` and `map` will be
+    held in local memory until `bind` is called.  The advantage is that fewer
+    OpenGL calls are needed, increasing performance.  
+    
+    There may also be less performance penalty for resizing this buffer.
+
+    Updates to data via `map` are committed immediately.
+    '''
+    def __init__(self, size, target, usage):
+        super(BackedVertexBufferObject, self).__init__(size, target, usage)
+        self.data = (ctypes.c_byte * size)()
+        self.data_ptr = ctypes.cast(self.data, ctypes.c_void_p).value
+        self._dirty = False
+
+    def bind(self):
+        # Commit pending data
+        super(BackedVertexBufferObject, self).bind()
+        if self._dirty:
+            glBufferData(self.target, self.size, self.data, self.usage)
+            self._dirty = False
+
+    def set_data(self, data):
+        super(VertexBufferObject, self).set_data(data)
+        ctypes.memmove(self.data, data, self.size)
+        self._dirty = True
+
+    def set_data_region(self, data, start, length):
+        ctypes.memmove(self.data_ptr + start, data, length)
+        self._dirty = True
+
+    def map(self, invalidate=False):
+        self._dirty = True
+        return self.data
+        
+    def unmap(self):
+        pass
+
+    def resize(self, size):
+        data = (ctypes.c_byte * size)()
+        ctypes.memmove(data, self.data, min(size, self.size))
+        self.data = data
+        self.data_ptr = ctypes.cast(self.data, ctypes.c_void_p).value
+        
+        self.size = size
+        glBindBuffer(self.target, self.id)
+        glBufferData(self.target, self.size, self.data, self.usage)
+
 
 class VertexArray(AbstractBuffer):
     def __init__(self, size):
@@ -115,6 +188,13 @@ class VertexArray(AbstractBuffer):
 
     def delete(self):
         pass
+
+    def resize(self, size):
+        array = (ctypes.c_byte * size)()
+        ctypes.memmove(array, self.array, min(size, self.size))
+        self.size = size
+        self.array = array
+        self.ptr = ctypes.cast(self.array, ctypes.c_void_p).value
 
 def align(v, align):
     return ((v - 1) & ~(align - 1)) + align
@@ -231,11 +311,13 @@ class Accessor(object):
                                            normalized, self.stride, 
                                            pointer))
             self.enable = lambda: glEnableVertexAttribArray(dest_index)
+            self.dest_index = dest_index
         else:
             self.set_pointer = self._pointer_functions[dest](self)
             enable_bit = self._enable_bits[dest]
             self.enable = lambda: glEnableClientState(enable_bit)
 
+        self.dest = dest # used by allocator
         self.gl_type = gl_type
         self.c_type = _c_types[gl_type]
         self.count = count
@@ -248,6 +330,80 @@ class Accessor(object):
 
     @classmethod
     def from_string(cls, format):
+        '''Create an accessor given a format description such as "V3F".
+        The initial stride and offset of the accessor will be 0.
+
+        Format strings have the following syntax::
+
+            destination count type
+
+        ``destination`` gives the type of vertex attribute this accessor
+        describes.  A number followed by ``A`` specifies a generic vertex
+        attribute.  For example, ``3A`` is generic vertex attribute with
+        index 3.  The predefined vertex attributes are specified as follows:
+
+        ``C``
+            Vertex color
+        ``E``
+            Edge flag
+        ``F``
+            Fog coordinate
+        ``N``
+            Normal vector
+        ``S``
+            Secondary color
+        ``T``
+            Texture coordinate
+        ``V``
+            Vertex coordinate
+
+        ``count`` gives the number of data items in the attribute.  For
+        example, a 3D vertex position has a count of 3.  Some destinations
+        constrain the possible counts that can be used; for example, a normal
+        vector must have a count of 3.
+
+        ``type`` gives the data type of each component of the attribute.  The
+        following types can be used:
+
+        ``b``
+            GLbyte
+        ``B``
+            GLubyte
+        ``s``
+            GLshort
+        ``S``
+            GLushort
+        ``i``
+            GLint
+        ``I``
+            GLuint
+        ``f``
+            GLfloat
+        ``d``
+            GLdouble
+
+        Some destinations constrain the possible data types; for example,
+        normal vectors must use one of the signed data types.  The use of
+        some data types, while not illegal, may have severe performance
+        concerns.  For example, the use of ``GLdouble`` is discouraged,
+        and colours should be specified with ``GLubyte``.
+
+        The format string is case-insensitive and whitespace is prohibited.
+
+        Some examples follow:
+
+        ``V3F``
+            3-float vertex position
+        ``C4B``
+            4-byte colour
+        ``1Eb``
+            Edge flag
+        ``0A3F``
+            3-float generic vertex attribute 0
+        ``1A1I``
+            Integer generic vertex attribute 1
+
+        '''
         match = cls._format_re.match(format.lower())
         dest = match.group('dest')
         count = int(match.group('count'))
@@ -265,16 +421,18 @@ class Accessor(object):
             'Length of data array is not multiple of element count.')
         return (self.c_type * n)(*array)
 
-    def set(self, buffer, data):
+    def set(self, buffer, data, start=0):
         data = self.to_array(data)
         if self.stride == self.size:
-            buffer.set_data_region(data, self.offset, len(data) * self.align)
+            buffer.set_data_region(data, 
+                                   self.offset + start * self.stride, 
+                                   len(data) * self.align)
         else:
             c = self.count
             n = len(data)
-            offset = self.offset // self.align
+            offset = (self.offset + start * self.stride) // self.align
             stride = self.stride // self.align
-            dest_n = n // self.count * stride 
+            dest_n =  (n // self.count + start) * stride 
             dest_bytes = buffer.map()
             dest_data = ctypes.cast(dest_bytes, 
                 ctypes.POINTER(self.c_type * dest_n)).contents
@@ -299,3 +457,124 @@ class ElementIndexAccessor(object):
     def draw(self, buffer, mode, start, count):
         glDrawElements(mode, count, self.gl_type, buffer.ptr +
                        self.offset + start)
+
+class Allocator(object):
+    _accessor_names = {
+        'c': 'color',
+        'e': 'edge_flag',
+        'f': 'fog_coord',
+        'n': 'normal',
+        's': 'secondary_color',
+        't': 'tex_coord',
+        'v': 'vertex'
+    }
+
+    def __init__(self, interleaved_formats, serialized_formats, 
+                 initial_count=16):
+        self.count = 0
+        self.max_count = initial_count
+        self.buffers = []
+        
+        # Serialized accessors each get their own buffer, to make
+        # growing easier.
+        serialized_accessors = \
+            [Accessor.from_string(format) for format in serialized_formats]
+       
+        # Create buffer for interleaved data
+        if interleaved_formats:
+            interleaved_accessors = interleaved(*interleaved_formats)
+            interleaved_vertex_size = interleaved_accessors[0].stride
+            interleaved_buffer = create(
+                interleaved_vertex_size * self.max_count)
+            for accessor in interleaved_accessors:
+                accessor.buffer = interleaved_buffer
+
+            interleaved_buffer.element_size = interleaved_vertex_size
+            self.buffers.append(interleaved_buffer)
+        else:
+            interleaved_accessors = []
+
+        # Create buffers for serialized data
+        for accessor in serialized_accessors:
+            accessor.buffer = create(accessor.stride * self.max_count,
+                vbo=True, backed=True)
+            accessor.buffer.element_size = accessor.stride
+            self.buffers.append(accessor.buffer)
+
+        # Create named attributes for each accessor
+        self.accessors = {}
+        for accessor in serialized_accessors + interleaved_accessors:
+            if accessor.dest == 'a':
+                index = attribute.dest_index
+                if 'generic' not in self.accessors:
+                    self.accessors['generic'] = {}
+                assert (index not in self.accessors['generic'],
+                    'More than one generic attribute with index %d' % index)
+                self.accessors['generic'][index] = accessor
+            else:
+                name = self._accessor_names[accessor.dest]
+                assert (name not in self.accessors,
+                    'More than one "%s" attribute given' % name)
+                self.accessors[name] = accessor
+
+    def alloc(self, count):
+        '''Allocate `count` vertices.
+
+        :rtype: AllocatorRegion
+        '''
+        index = self.count
+
+        if index + self.count >= self.max_count:
+            # Reallocate the buffers
+            self.max_count *= 2
+            for buffer in self.buffers:
+                buffer.resize(self.max_count * buffer.element_size)
+        
+        self.count += count
+
+        return AllocatorRegion(self, index, count)
+
+    def draw(self, mode):
+        '''Draw all vertices currently allocated without indexing.
+
+        All vertices are drawn using the given `mode`, e.g. ``GL_QUADS``.
+        '''
+        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+        for accessor in self.accessors.values():
+            # TODO Sort by buffer, bind each buffer once only
+            accessor.buffer.bind()
+            accessor.enable()
+            accessor.set_pointer(accessor.buffer.ptr)
+
+        # TODO free lists
+        glDrawArrays(mode, 0, self.count)
+        
+        glPopClientAttrib()
+        for accessor in self.accessors.values():
+            accessor.buffer.unbind()
+
+class AllocatorRegion(object):
+    '''Small region of the buffers managed by an `Allocator`.  Create
+    with `Allocator.alloc`.
+    '''
+    
+    # This object must be small and fast to initialise, as it should be
+    # suitable for individual sprites and text strings.
+    __slots__ = ('allocator', 'start', 'count')
+    
+    def __init__(self, allocator, start, count):
+        self.allocator = allocator
+        self.start = start
+        self.count = count
+
+    def set_vertices(self, data):
+        accessor = self.allocator.accessors['vertex']
+        accessor.set(accessor.buffer, data, self.start)
+    
+    vertices = property(None, set_vertices)
+
+    def set_tex_coords(self, data):
+        accessor = self.allocator.accessors['tex_coord']
+        accessor.set(accessor.buffer, data, self.start)
+
+    tex_coords = property(None, set_tex_coords)
