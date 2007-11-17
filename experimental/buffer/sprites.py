@@ -76,10 +76,7 @@ def draw_sprites(allocator, texture):
     glPopAttrib()
 
 if __name__ == '__main__':
-    if INTERLEAVED:
-        allocator = buffer.Allocator(('V2F', 'T2F'), ())
-    else:
-        allocator = buffer.Allocator((), ('V2F', 'T2F'))
+    allocator = buffer.Allocator('V2F/stream', 'T2F/static')
 
     sprites = [Sprite(allocator) for i in range(SPRITES)]
     fps = clock.ClockDisplay(color=(1, 1, 1, 1))

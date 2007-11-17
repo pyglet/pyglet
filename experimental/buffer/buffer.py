@@ -460,50 +460,70 @@ class ElementIndexAccessor(object):
 
 class Allocator(object):
     _accessor_names = {
-        'c': 'color',
-        'e': 'edge_flag',
-        'f': 'fog_coord',
-        'n': 'normal',
-        's': 'secondary_color',
-        't': 'tex_coord',
-        'v': 'vertex'
+        'c': 'colors',
+        'e': 'edge_flags',
+        'f': 'fog_coords',
+        'n': 'normals',
+        's': 'secondary_colors',
+        't': 'tex_coords',
+        'v': 'vertices'
     }
 
-    def __init__(self, interleaved_formats, serialized_formats, 
-                 initial_count=16):
+    _gl_usage = {
+        'static': GL_STATIC_DRAW,
+        'dynamic': GL_DYNAMIC_DRAW,
+        'stream': GL_STREAM_DRAW,
+    }
+
+    _initial_count = 16
+
+    def __init__(self, *formats):
         self.count = 0
-        self.max_count = initial_count
-        self.buffers = []
-        
-        # Serialized accessors each get their own buffer, to make
-        # growing easier.
-        serialized_accessors = \
-            [Accessor.from_string(format) for format in serialized_formats]
-       
+        self.max_count = self._initial_count
+
+        interleaved_formats = []
+        accessors = []
+        self.buffer_accessors = []   # list of (buffer, accessors)
+        for format in formats:
+            if '/' in format:
+                format, usage = format.split('/', 1)
+                assert usage in self._gl_usage, 'Invalid usage "%s"' % usage
+                usage = self._gl_usage[usage]
+            else:
+                usage = GL_DYNAMIC_DRAW
+
+            if usage == GL_STATIC_DRAW:
+                # Group static usages into an interleaved buffer
+                interleaved_formats.append(format)
+            else:
+                # Create non-interlaved buffer
+                accessor = Accessor.from_string(format)
+                accessors.append(accessor)
+                accessor.buffer = create(accessor.stride * self.max_count,
+                                         usage=usage,
+                                         backed=True)
+                accessor.buffer.element_size = accessor.stride
+                accessor.buffer.accessors = (accessor,)
+                self.buffer_accessors.append(
+                    (accessor.buffer, (accessor,)))
+
         # Create buffer for interleaved data
         if interleaved_formats:
             interleaved_accessors = interleaved(*interleaved_formats)
-            interleaved_vertex_size = interleaved_accessors[0].stride
-            interleaved_buffer = create(
-                interleaved_vertex_size * self.max_count)
+            buffer = create(interleaved_accessors[0].stride * self.max_count,
+                            usage=GL_STATIC_DRAW,
+                            backed=False)
+            buffer.element_size = interleaved_accessors[0].stride
+            self.buffer_accessors.append(
+                (buffer, interleaved_accessors))
+
+            accessors.extend(interleaved_accessors)
             for accessor in interleaved_accessors:
-                accessor.buffer = interleaved_buffer
-
-            interleaved_buffer.element_size = interleaved_vertex_size
-            self.buffers.append(interleaved_buffer)
-        else:
-            interleaved_accessors = []
-
-        # Create buffers for serialized data
-        for accessor in serialized_accessors:
-            accessor.buffer = create(accessor.stride * self.max_count,
-                vbo=True, backed=True)
-            accessor.buffer.element_size = accessor.stride
-            self.buffers.append(accessor.buffer)
+                accessor.buffer = buffer
 
         # Create named attributes for each accessor
         self.accessors = {}
-        for accessor in serialized_accessors + interleaved_accessors:
+        for accessor in accessors:
             if accessor.dest == 'a':
                 index = attribute.dest_index
                 if 'generic' not in self.accessors:
@@ -527,7 +547,7 @@ class Allocator(object):
         if index + self.count >= self.max_count:
             # Reallocate the buffers
             self.max_count *= 2
-            for buffer in self.buffers:
+            for buffer, _ in self.buffer_accessors:
                 buffer.resize(self.max_count * buffer.element_size)
         
         self.count += count
@@ -540,18 +560,18 @@ class Allocator(object):
         All vertices are drawn using the given `mode`, e.g. ``GL_QUADS``.
         '''
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        for accessor in self.accessors.values():
-            # TODO Sort by buffer, bind each buffer once only
-            accessor.buffer.bind()
-            accessor.enable()
-            accessor.set_pointer(accessor.buffer.ptr)
+        for buffer, accessors in self.buffer_accessors:
+            buffer.bind()
+            for accessor in accessors:
+                accessor.enable()
+                accessor.set_pointer(accessor.buffer.ptr)
 
         # TODO free lists
         glDrawArrays(mode, 0, self.count)
         
+        for buffer, _ in self.buffer_accessors:
+            buffer.unbind()
         glPopClientAttrib()
-        for accessor in self.accessors.values():
-            accessor.buffer.unbind()
 
 class AllocatorRegion(object):
     '''Small region of the buffers managed by an `Allocator`.  Create
@@ -568,13 +588,13 @@ class AllocatorRegion(object):
         self.count = count
 
     def set_vertices(self, data):
-        accessor = self.allocator.accessors['vertex']
+        accessor = self.allocator.accessors['vertices']
         accessor.set(accessor.buffer, data, self.start)
     
     vertices = property(None, set_vertices)
 
     def set_tex_coords(self, data):
-        accessor = self.allocator.accessors['tex_coord']
+        accessor = self.allocator.accessors['tex_coords']
         accessor.set(accessor.buffer, data, self.start)
 
     tex_coords = property(None, set_tex_coords)
