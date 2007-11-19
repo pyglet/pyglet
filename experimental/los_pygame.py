@@ -19,7 +19,7 @@ pygame.init()
 win = pygame.display.set_mode((600, 600))
 ww, wh = win.get_size()
 
-img = pygame.image.load('examples/car.png')
+img = pygame.image.load('examples/noisy/ball.png')
 
 class BouncySprite(pygame.sprite.Sprite):
     def update(self, dt):

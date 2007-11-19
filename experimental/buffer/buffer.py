@@ -19,9 +19,25 @@ _c_types = {
     GL_DOUBLE: ctypes.c_double,
 }
 
-def create(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW, 
-           vbo=True, backed=False):
+def create_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW, 
+                  vbo=True, backed=False):
     '''Create a buffer of vertex data.
+
+    :Parameters:
+        `size` : int
+            Size of the buffer, in bytes
+        `target` : int
+            OpenGL target buffer
+        `usage` : int
+            OpenGL usage constant
+        `vbo` : bool
+            True if a `VertexBufferObject` should be created if the driver
+            supports it; otherwise only a `VertexArray` is created.
+        `backed` : bool
+            True if a VBO should be backed by a system store using
+            `BackedVertexBufferObject`.
+
+    :rtype: `AbstractBuffer`
     '''
     if vbo and gl_info.have_version(1, 5):
         if backed:
@@ -30,7 +46,6 @@ def create(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW,
             return VertexBufferObject(size, target, usage)
     else:
         return VertexArray(size)
-
 
 class AbstractBuffer(object):
     #: Memory offset of buffer needed by glVertexPointer etc.
@@ -54,6 +69,13 @@ class AbstractBuffer(object):
         raise NotImplementedError('abstract')
 
     def unmap(self):
+        raise NotImplementedError('abstract')
+
+    def map_region(self, start, size, ptr_type):
+        '''Map a region of the buffer into a ctypes array of the desired
+        type.  This region does not need to be unmapped, but will become
+        invalid if the buffer is resized.
+        '''
         raise NotImplementedError('abstract')
 
     def delete(self):
@@ -96,14 +118,18 @@ class VertexBufferObject(AbstractBuffer):
         glBindBuffer(self.target, self.id)
         if invalidate:
             glBufferData(self.target, self.size, None, self.usage)
+        ptr = ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY),
+                          ctypes.POINTER(ctypes.c_byte * self.size)).contents
         glPopClientAttrib()
-        return ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY),
-                           ctypes.POINTER(ctypes.c_byte * self.size)).contents
+        return ptr
 
     def unmap(self):
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glUnmapBuffer(self.target)
         glPopClientAttrib()
+
+    def map_region(self, start, size, ptr_type):
+        raise NotImplementedError('Not supported, use BackedVertexBufferObject')
 
     def delete(self):
         id = gl.GLuint(self.id)
@@ -173,6 +199,15 @@ class BackedVertexBufferObject(VertexBufferObject):
     def unmap(self):
         pass
 
+    def map_region(self, start, size, ptr_type):
+        self._dirty_min = min(self._dirty_min, start)
+        self._dirty_max = max(self._dirty_max, start + size)
+        return ctypes.cast(self.data_ptr + start, ptr_type).contents
+
+    def invalidate_region(self, start, size):
+        self._dirty_min = min(self._dirty_min, start)
+        self._dirty_max = max(self._dirty_max, start + size)
+
     def resize(self, size):
         data = (ctypes.c_byte * size)()
         ctypes.memmove(data, self.data, min(size, self.size))
@@ -213,6 +248,9 @@ class VertexArray(AbstractBuffer):
     def unmap(self):
         pass
 
+    def map_region(self, start, size, ptr_type):
+        return ctypes.cast(self.ptr + start, ptr_type).contents
+
     def delete(self):
         pass
 
@@ -226,226 +264,177 @@ class VertexArray(AbstractBuffer):
 def align(v, align):
     return ((v - 1) & ~(align - 1)) + align
 
-def serialized(count, *formats):
-    accessors = [Accessor.from_string(format) for format in formats]
-    offset = 0
-    for accessor in accessors:
-        offset = align(offset, accessor.align)
-        accessor.offset = offset
-        offset += count * accessor.size
-    return accessors
-
-def interleaved(*formats):
-    accessors = [Accessor.from_string(format) for format in formats]
+def interleave_attributes(attributes):
+    '''Adjust the offsets and strides of the given attributes so that
+    they are interleaved.  Alignment constraints are respected.
+    '''
     stride = 0
-    for accessor in accessors:
-        stride = align(stride, accessor.align)    
-        accessor.offset = stride
-        stride += accessor.size
-    for accessor in accessors:
-        accessor.stride = stride
-    return accessors
+    for attribute in attributes:
+        stride = align(stride, attribute.align)    
+        attribute.offset = stride
+        stride += attribute.size
+    for attribute in attributes:
+        attribute.stride = stride
 
-class Accessor(object):
-    _pointer_functions = {
-        'c': (lambda self: lambda pointer:
-                glColorPointer(self.count, self.gl_type, 
-                               self.stride, self.offset + pointer)),
-        'e': (lambda self: lambda pointer:
-                glEdgeFlagPointer(self.stride, self.offset + pointer)),
-        'f': (lambda self: lambda pointer:
-                glFogCoordPointer(self.gl_type, self.stride, 
-                                  self.offset + pointer)),
-        'n': (lambda self: lambda pointer:
-                glNormalPointer(self.gl_type, self.stride, 
-                                self.offset + pointer)),
-        's': (lambda self: lambda pointer:
-                glSecondaryColorPointer(self.count, self.gl_type, 
-                                        self.stride, self.offset + pointer)),
-        't': (lambda self: lambda pointer:
-                glTexCoordPointer(self.count, self.gl_type, self.stride, 
-                                  self.offset + pointer)),
-        'v': (lambda self: lambda pointer:
-                glVertexPointer(self.count, self.gl_type, self.stride,
-                                self.offset + pointer)),
-    }
+def serialize_attributes(count, attributes):
+    '''Adjust the offsets of the given attributes so that they are
+    packed serially against each other for `count` vertices.
+    '''
+    offset = 0
+    for attribute in attributes:
+        offset = align(offset, attribute.align)
+        attribute.offset = offset
+        offset += count * attribute.stride
 
-    _enable_bits = {
-        'c': GL_COLOR_ARRAY,
-        'e': GL_EDGE_FLAG_ARRAY,
-        'f': GL_FOG_COORD_ARRAY,
-        'n': GL_NORMAL_ARRAY,
-        's': GL_SECONDARY_COLOR_ARRAY,
-        't': GL_TEXTURE_COORD_ARRAY,
-        'v': GL_VERTEX_ARRAY,
-    }
+_gl_types = {
+    'b': GL_BYTE,
+    'B': GL_UNSIGNED_BYTE,
+    's': GL_SHORT,
+    'S': GL_UNSIGNED_SHORT,
+    'i': GL_INT,
+    'I': GL_UNSIGNED_INT,
+    'f': GL_FLOAT,
+    'd': GL_DOUBLE,
+}
 
-    _gl_types = {
-        'b': GL_BYTE,
-        'B': GL_UNSIGNED_BYTE,
-        's': GL_SHORT,
-        'S': GL_UNSIGNED_SHORT,
-        'i': GL_INT,
-        'I': GL_UNSIGNED_INT,
-        'f': GL_FLOAT,
-        'd': GL_DOUBLE,
-    }
+_attribute_format_re = re.compile(r'''
+    (?P<name>
+       [cefnstv] | 
+       (?P<generic_index>[0-9]+) g
+       (?P<generic_normalized>n?))
+    (?P<count>[1234])
+    (?P<type>[bBsSiIfd])
+''', re.VERBOSE)
 
-    _format_re = re.compile(r'''
-        (?P<dest>
-           [cefnstv] | 
-           (?P<dest_index>[0-9]+)a)
-        (?P<normalized>n?)
-        (?P<count>[1234])
-        (?P<type>[bBsSiIfd])
-    ''', re.VERBOSE)
-    
-    def __init__(self, dest, count, gl_type, 
-                 normalized=False, dest_index=None):
-        assert (count in (1, 2, 3, 4),
-            'Element count out of range')
-        assert (dest == 'a' or not normalized,
-            'Only generic vertex attributes can be normalized')
-        assert (dest == 'a' or dest_index is None,
-            'Dest index was specified for non-generic vertex attribute')
-        assert (dest != 'c' or count in (3, 4),
-            'Color attributes must have count of 3 or 4')
-        assert (dest != 'e' or count == 1,
-            'Edge flag attribute must have count of 1')
-        assert (dest != 'e' or gl_type in (
-            GL_BYTE, GL_UNSIGNED_BYTE, GL_BOOLEAN),
-            'Edge flag attribute must have boolean type')
-        assert (dest != 'n' or count == 3,
-            'Normal attribute must have count of 3')
-        assert (dest != 'n' or gl_type in (
-            GL_BYTE, GL_SHORT, GL_INT, GL_FLOAT, GL_DOUBLE),
-            'Normal attribute must have signed type')
-        assert (dest != 's' or count == 3,
-            'Secondary color must have count of 3')
-        assert (dest != 't' or gl_type in (
-            GL_SHORT, GL_INT, GL_INT, GL_DOUBLE),
-            'Texture coord attribute must have signed type larger than byte')
-        assert (dest != 'v' or count in (2, 3, 4),
-            'Vertex attribute must have count of 2, 3 or 4')
-        assert (dest != 'v' or gl_type in (
-            GL_SHORT, GL_INT, GL_INT, GL_DOUBLE),
-            'Vertex attribute must have signed type larger than byte')
-        
-        if dest == 'a':
-            self.set_pointer = \
-                  (lambda pointer:
-                     glVertexAttribPointer(dest_index, self.count, self.gl_type,
-                                           normalized, self.stride, 
-                                           pointer))
-            self.enable = lambda: glEnableVertexAttribArray(dest_index)
-            self.dest_index = dest_index
+ 
+def create_attribute(format):
+    '''Create a vertex attribute description given a format string such as
+    "v3f".  The initial stride and offset of the attribute will be 0.
+
+    Format strings have the following syntax::
+
+        attribute ::= ( name | index 'g' 'n'? ) count type
+
+    ``name`` describes the vertex attribute, and is one of the following
+    constants for the predefined attributes:
+
+    ``c``
+        Vertex color
+    ``e``
+        Edge flag
+    ``f``
+        Fog coordinate
+    ``n``
+        Normal vector
+    ``s``
+        Secondary color
+    ``t``
+        Texture coordinate
+    ``v``
+        Vertex coordinate
+
+    You can alternatively create a generic indexed vertex attribute by
+    specifying its index in decimal followed by the constant ``g``.  For
+    example, ``0g`` specifies the generic vertex attribute with index 0.
+    If the optional constant ``n`` is present after the ``g``, the
+    attribute is normalised to the range ``[0, 1]`` or ``[-1, 1]`` within
+    the range of the data type.
+
+    ``count`` gives the number of data components in the attribute.  For
+    example, a 3D vertex position has a count of 3.  Some attributes
+    constrain the possible counts that can be used; for example, a normal
+    vector must have a count of 3.
+
+    ``type`` gives the data type of each component of the attribute.  The
+    following types can be used:
+
+    ``b``
+        GLbyte
+    ``B``
+        GLubyte
+    ``s``
+        GLshort
+    ``S``
+        GLushort
+    ``i``
+        GLint
+    ``I``
+        GLuint
+    ``f``
+        GLfloat
+    ``d``
+        GLdouble
+
+    Some attributes constrain the possible data types; for example,
+    normal vectors must use one of the signed data types.  The use of
+    some data types, while not illegal, may have severe performance
+    concerns.  For example, the use of ``GLdouble`` is discouraged,
+    and colours should be specified with ``GLubyte``.
+
+    Whitespace is prohibited within the format string.
+
+    Some examples follow:
+
+    ``v3f``
+        3-float vertex position
+    ``c4b``
+        4-byte colour
+    ``1eb``
+        Edge flag
+    ``0g3f``
+        3-float generic vertex attribute 0
+    ``1gn1i``
+        Integer generic vertex attribute 1, normalized to [-1, 1]
+    ``2gn4B``
+        4-byte generic vertex attribute 2, normalized to [0, 1] (because
+        the type is unsigned)
+
+    '''
+
+    match = _attribute_format_re.match(format)
+    assert match, 'Invalid attribute format %r' % format
+    count = int(match.group('count'))
+    gl_type = _gl_types[match.group('type')]
+    generic_index = match.group('generic_index')
+    if generic_index:
+        normalized = match.group('generic_normalized')
+        return GenericAttribute(
+            int(generic_index), normalized, count, gl_type)
+    else:
+        name = match.group('name')
+        attr_class = _attribute_classes[name]
+        if attr_class._fixed_count:
+            assert count == attr_class._fixed_count, \
+                'Attributes named "%s" must have count of %d' % (
+                    name, attr_class._fixed_count)
+            return attr_class(gl_type)
         else:
-            self.set_pointer = self._pointer_functions[dest](self)
-            enable_bit = self._enable_bits[dest]
-            self.enable = lambda: glEnableClientState(enable_bit)
+            return attr_class(count, gl_type)
 
-        self.dest = dest # used by allocator
+class AbstractAttribute(object):
+    _fixed_count = None
+    
+    def __init__(self, count, gl_type):
+        assert count in (1, 2, 3, 4), 'Component count out of range'
         self.gl_type = gl_type
         self.c_type = _c_types[gl_type]
         self.count = count
         self.align = ctypes.sizeof(self.c_type)
         self.size = count * self.align
-
-        # Defaults
         self.stride = self.size
         self.offset = 0
 
-    @classmethod
-    def from_string(cls, format):
-        '''Create an accessor given a format description such as "V3F".
-        The initial stride and offset of the accessor will be 0.
+    def enable(self):
+        raise NotImplementedError('abstract')
 
-        Format strings have the following syntax::
-
-            destination count type
-
-        ``destination`` gives the type of vertex attribute this accessor
-        describes.  A number followed by ``A`` specifies a generic vertex
-        attribute.  For example, ``3A`` is generic vertex attribute with
-        index 3.  The predefined vertex attributes are specified as follows:
-
-        ``C``
-            Vertex color
-        ``E``
-            Edge flag
-        ``F``
-            Fog coordinate
-        ``N``
-            Normal vector
-        ``S``
-            Secondary color
-        ``T``
-            Texture coordinate
-        ``V``
-            Vertex coordinate
-
-        ``count`` gives the number of data items in the attribute.  For
-        example, a 3D vertex position has a count of 3.  Some destinations
-        constrain the possible counts that can be used; for example, a normal
-        vector must have a count of 3.
-
-        ``type`` gives the data type of each component of the attribute.  The
-        following types can be used:
-
-        ``b``
-            GLbyte
-        ``B``
-            GLubyte
-        ``s``
-            GLshort
-        ``S``
-            GLushort
-        ``i``
-            GLint
-        ``I``
-            GLuint
-        ``f``
-            GLfloat
-        ``d``
-            GLdouble
-
-        Some destinations constrain the possible data types; for example,
-        normal vectors must use one of the signed data types.  The use of
-        some data types, while not illegal, may have severe performance
-        concerns.  For example, the use of ``GLdouble`` is discouraged,
-        and colours should be specified with ``GLubyte``.
-
-        The format string is case-insensitive and whitespace is prohibited.
-
-        Some examples follow:
-
-        ``V3F``
-            3-float vertex position
-        ``C4B``
-            4-byte colour
-        ``1Eb``
-            Edge flag
-        ``0A3F``
-            3-float generic vertex attribute 0
-        ``1A1I``
-            Integer generic vertex attribute 1
-
-        '''
-        match = cls._format_re.match(format.lower())
-        dest = match.group('dest')
-        count = int(match.group('count'))
-        gl_type = cls._gl_types[match.group('type')]
-        normalized = match.group('normalized')
-        dest_index = match.group('dest_index')
-        if dest_index:
-            dest_index = int(dest_index)
-        return cls(dest, count, gl_type, normalized, dest_index)
+    def set_pointer(self, offset):
+        raise NotImplementedError('abstract')
 
     def to_array(self, array):
         '''Convert a Python sequence into a ctypes array.'''
         n = len(array)
-        assert (n % self.count == 0,
-            'Length of data array is not multiple of element count.')
+        assert n % self.count == 0, \
+            'Length of data array is not multiple of element count.'
         return (self.c_type * n)(*array)
 
     def set(self, buffer, data, start=0):
@@ -470,7 +459,134 @@ class Accessor(object):
                     dest_data[s + j] = data[t + j]
             buffer.unmap()
 
-class ElementIndexAccessor(object):
+class ColorAttribute(AbstractAttribute):
+    plural = 'colors'
+    
+    def __init__(self, count, gl_type):
+        assert count in (3, 4), 'Color attributes must have count of 3 or 4'
+        super(ColorAttribute, self).__init__(count, gl_type)
+
+    def enable(self):
+        glEnableClientState(GL_COLOR_ARRAY)
+    
+    def set_pointer(self, pointer):
+        glColorPointer(self.count, self.gl_type, self.stride,
+                       self.offset + pointer)
+
+class EdgeFlagAttribute(AbstractAttribute):
+    plural = 'edge_flags'
+    _fixed_count = 1
+    
+    def __init__(self, gl_type):
+        assert gl_type in (GL_BYTE, GL_UNSIGNED_BYTE, GL_BOOLEAN), \
+            'Edge flag attribute must have boolean type'
+        super(EdgeFlagAttribute, self).__init__(1, gl_type)
+
+    def enable(self):
+        glEnableClientState(GL_EDGE_FLAG_ARRAY)
+    
+    def set_pointer(self, pointer):
+        glEdgeFlagPointer(self.stride, self.offset + pointer)
+
+class FogCoordAttribute(AbstractAttribute):
+    plural = 'fog_coords'
+    
+    def __init__(self, count, gl_type):
+        super(FogCoordAttribute, self).__init__(count, gl_type)
+
+    def enable(self):
+        glEnableClientState(GL_FOG_COORD_ARRAY)
+    
+    def set_pointer(self, pointer):
+        glFogCoordPointer(self.count, self.gl_type, self.stride,
+                          self.offset + pointer)
+
+class NormalAttribute(AbstractAttribute):
+    plural = 'normals'
+    _fixed_count = 3
+
+    def __init__(self, gl_type):
+        assert gl_type in (GL_BYTE, GL_SHORT, GL_INT, GL_FLOAT, GL_DOUBLE), \
+            'Normal attribute must have signed type'
+        super(NormalAttribute, self).__init__(3, gl_type)
+
+    def enable(self):
+        glEnableClientState(GL_NORMAL_ARRAY)
+    
+    def set_pointer(self, pointer):
+        glPNormalointer(self.gl_type, self.stride, self.offset + pointer)
+
+class SecondaryColorAttribute(AbstractAttribute):
+    plural = 'secondary_colors'
+    _fixed_count = 3
+
+    def __init__(self, gl_type):
+        super(SecondaryColorAttribute, self).__init__(3, gl_type)
+
+    def enable(self):
+        glEnableClientState(GL_SECONDARY_COLOR_ARRAY)
+    
+    def set_pointer(self, pointer):
+        glSecondaryColorPointer(self.gl_type, self.stride,
+                                self.offset + pointer)
+
+class TexCoordAttribute(AbstractAttribute):
+    plural = 'tex_coords'
+
+    def __init__(self, count, gl_type):
+        assert gl_type in (GL_SHORT, GL_INT, GL_INT, GL_FLOAT, GL_DOUBLE), \
+            'Texture coord attribute must have non-byte signed type'
+        super(TexCoordAttribute, self).__init__(count, gl_type)
+
+    def enable(self):
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY)
+    
+    def set_pointer(self, pointer):
+        glTexCoordPointer(self.count, self.gl_type, self.stride,
+                       self.offset + pointer)
+
+class VertexAttribute(AbstractAttribute):
+    plural = 'vertices'
+
+    def __init__(self, count, gl_type):
+        assert count > 1, \
+            'Vertex attribute must have count of 2, 3 or 4'
+        assert gl_type in (GL_SHORT, GL_INT, GL_INT, GL_FLOAT, GL_DOUBLE), \
+            'Vertex attribute must have signed type larger than byte'
+        super(VertexAttribute, self).__init__(count, gl_type)
+
+    def enable(self):
+        glEnableClientState(GL_VERTEX_ARRAY)
+
+    def set_pointer(self, pointer):
+        glVertexPointer(self.count, self.gl_type, self.stride,
+                        self.offset + pointer)
+
+_attribute_classes = {
+    'c': ColorAttribute,
+    'e': EdgeFlagAttribute,
+    'f': FogCoordAttribute,
+    'n': NormalAttribute,
+    's': SecondaryColorAttribute,
+    't': TexCoordAttribute,
+    'v': VertexAttribute,
+}
+
+class GenericAttribute(AbstractAttribute):
+    def __init__(self, index, normalized, count, gl_type):
+        self.normalized = normalized
+        self.index = index
+        super(GenericAttribute, self).__init__(count, gl_type)
+
+    def enable(self):
+        glEnableVertexAttribArray(self.generic_index)
+
+    def set_pointer(self, pointer):
+        glVertexAttribPointer(self.index, self.count, self.gl_type,
+                              self.normalized, self.stride, 
+                              self.offset + pointer)
+
+class ElementIndex(object):
     def __init__(self, gl_type):
         self.gl_type = gl_type
         self.c_type = _c_types[gl_type]
@@ -485,101 +601,134 @@ class ElementIndexAccessor(object):
         glDrawElements(mode, count, self.gl_type, buffer.ptr +
                        self.offset + start)
 
-class Allocator(object):
-    _accessor_names = {
-        'c': 'colors',
-        'e': 'edge_flags',
-        'f': 'fog_coords',
-        'n': 'normals',
-        's': 'secondary_colors',
-        't': 'tex_coords',
-        'v': 'vertices'
-    }
 
-    _gl_usage = {
-        'static': GL_STATIC_DRAW,
-        'dynamic': GL_DYNAMIC_DRAW,
-        'stream': GL_STREAM_DRAW,
-    }
+_usage_format_re = re.compile(r'''
+    (?P<attribute>[^/]*)
+    (/ (?P<usage> static|dynamic|stream))?
+''', re.VERBOSE)
 
+_gl_usages = {
+    'static': GL_STATIC_DRAW,
+    'dynamic': GL_DYNAMIC_DRAW,
+    'stream': GL_STREAM_DRAW,
+}
+
+def create_attribute_usage(format):
+    '''Create an attribute and usage pair from a format string.  The
+    format string is the same as that used for `create_attribute`, with
+    the addition of an optional usage component::
+
+        usage ::= attribute ( '/' ('static' | 'dynamic' | 'stream') )?
+
+    If the usage is not given it defaults to 'dynamic'.
+    
+    Some examples:
+
+    ``v3f/stream``
+        3D vertex position using floats, for stream usage
+    ``c4b/static``
+        4-byte color attribute, for static usage
+
+    :return: attribute, usage  
+    '''
+    match = _usage_format_re.match(format)
+    attribute_format = match.group('attribute')
+    attribute = create_attribute(attribute_format)
+    usage = match.group('usage')
+    if usage:
+        usage = _gl_usages[usage]
+    else:
+        usage = GL_DYNAMIC_DRAW
+
+    return (attribute, usage)
+
+def create_domain(*attribute_usage_formats):
+    '''Create a vertex domain covering the given attribute usage formats.
+    See documentation for `create_attribute_usage` and `create_attribute` for
+    the grammar of these format strings.
+
+    :rtype: `VertexDomain`
+    '''
+    attribute_usages = [create_attribute_usage(f) \
+                        for f in attribute_usage_formats]
+    return VertexDomain(attribute_usages)
+
+class VertexDomain(object):
+    _version = 0
     _initial_count = 16
 
-    def __init__(self, *formats):
+    def __init__(self, attribute_usages):
         self.count = 0
         self.max_count = self._initial_count
 
-        interleaved_formats = []
-        accessors = []
-        self.buffer_accessors = []   # list of (buffer, accessors)
-        for format in formats:
-            if '/' in format:
-                format, usage = format.split('/', 1)
-                assert usage in self._gl_usage, 'Invalid usage "%s"' % usage
-                usage = self._gl_usage[usage]
-            else:
-                usage = GL_DYNAMIC_DRAW
-
+        static_attributes = []
+        attributes = []
+        self.buffer_attributes = []   # list of (buffer, attributes)
+        for attribute, usage in attribute_usages:
             if usage == GL_STATIC_DRAW:
-                # Group static usages into an interleaved buffer
-                interleaved_formats.append(format)
+                # Group attributes for interleaved buffer
+                static_attributes.append(attribute)
             else:
-                # Create non-interlaved buffer
-                accessor = Accessor.from_string(format)
-                accessors.append(accessor)
-                accessor.buffer = create(accessor.stride * self.max_count,
-                                         usage=usage,
-                                         backed=True)
-                accessor.buffer.element_size = accessor.stride
-                accessor.buffer.accessors = (accessor,)
-                self.buffer_accessors.append(
-                    (accessor.buffer, (accessor,)))
+                # Create non-interleaved buffer
+                attributes.append(attribute)
+                attribute.buffer = create_buffer(
+                    attribute.stride * self.max_count, usage=usage, backed=True)
+                attribute.buffer.element_size = attribute.stride
+                attribute.buffer.attributes = (attribute,)
+                self.buffer_attributes.append(
+                    (attribute.buffer, (attribute,)))
 
         # Create buffer for interleaved data
-        if interleaved_formats:
-            interleaved_accessors = interleaved(*interleaved_formats)
-            buffer = create(interleaved_accessors[0].stride * self.max_count,
-                            usage=GL_STATIC_DRAW,
-                            backed=False)
-            buffer.element_size = interleaved_accessors[0].stride
-            self.buffer_accessors.append(
-                (buffer, interleaved_accessors))
+        if static_attributes:
+            interleave_attributes(static_attributes)
+            stride = static_attributes[0].stride
+            buffer = create_buffer(
+                stride * self.max_count, usage=GL_STATIC_DRAW, backed=False)
+            buffer.element_size = stride
+            self.buffer_attributes.append(
+                (buffer, static_attributes))
 
-            accessors.extend(interleaved_accessors)
-            for accessor in interleaved_accessors:
-                accessor.buffer = buffer
+            attributes.extend(static_attributes)
+            for attribute in static_attributes:
+                attribute.buffer = buffer
 
-        # Create named attributes for each accessor
-        self.accessors = {}
-        for accessor in accessors:
-            if accessor.dest == 'a':
-                index = attribute.dest_index
-                if 'generic' not in self.accessors:
-                    self.accessors['generic'] = {}
-                assert (index not in self.accessors['generic'],
-                    'More than one generic attribute with index %d' % index)
-                self.accessors['generic'][index] = accessor
+        # Create named attributes for each attribute
+        self.attributes = {}
+        for attribute in attributes:
+            if isinstance(attribute, GenericAttribute):
+                index = attribute.index
+                if 'generic' not in self.attributes:
+                    self.attributes['generic'] = {}
+                assert index not in self.attributes['generic'], \
+                    'More than one generic attribute with index %d' % index
+                self.attributes['generic'][index] = attribute
             else:
-                name = self._accessor_names[accessor.dest]
-                assert (name not in self.accessors,
-                    'More than one "%s" attribute given' % name)
-                self.accessors[name] = accessor
+                name = attribute.plural
+                assert name not in self.attributes, \
+                    'More than one "%s" attribute given' % name
+                self.attributes[name] = attribute
 
-    def alloc(self, count):
-        '''Allocate `count` vertices.
+    def add(self, **data):
+        '''Create vertices in this domain and initialise them with
+        given attribute data.'''
 
-        :rtype: AllocatorRegion
+    def create_group(self, count):
+        '''Create a `VertexGroup` in this domain of size `count`.
+
+        :rtype: `VertexGroup`
         '''
         index = self.count
 
         if index + self.count >= self.max_count:
             # Reallocate the buffers
             self.max_count *= 2
-            for buffer, _ in self.buffer_accessors:
+            self._version += 1
+            for buffer, _ in self.buffer_attributes:
                 buffer.resize(self.max_count * buffer.element_size)
         
         self.count += count
 
-        return AllocatorRegion(self, index, count)
+        return VertexGroup(self, index, count)
 
     def draw(self, mode):
         '''Draw all vertices currently allocated without indexing.
@@ -587,41 +736,64 @@ class Allocator(object):
         All vertices are drawn using the given `mode`, e.g. ``GL_QUADS``.
         '''
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        for buffer, accessors in self.buffer_accessors:
+        for buffer, attributes in self.buffer_attributes:
             buffer.bind()
-            for accessor in accessors:
-                accessor.enable()
-                accessor.set_pointer(accessor.buffer.ptr)
+            for attribute in attributes:
+                attribute.enable()
+                attribute.set_pointer(attribute.buffer.ptr)
 
         # TODO free lists
         glDrawArrays(mode, 0, self.count)
         
-        for buffer, _ in self.buffer_accessors:
+        for buffer, _ in self.buffer_attributes:
             buffer.unbind()
         glPopClientAttrib()
 
-class AllocatorRegion(object):
-    '''Small region of the buffers managed by an `Allocator`.  Create
-    with `Allocator.alloc`.
+class VertexGroup(object):
+    '''Small region of the buffers managed by a `VertexDomain`.  Create
+    with `VertexDomain.create`.
     '''
     
-    # This object must be small and fast to initialise, as it should be
-    # suitable for individual sprites and text strings.
-    __slots__ = ('allocator', 'start', 'count')
-    
-    def __init__(self, allocator, start, count):
-        self.allocator = allocator
+    def __init__(self, domain, start, count):
+        self.domain = domain
         self.start = start
         self.count = count
 
+    def resize(self, count):
+        '''Resize this group.'''
+
+    def delete(self):
+        '''Delete this group.'''
+
+    _vertices_cache = None
+    _vertices_cache_version = None
+
+    def get_vertices(self):
+        if (self._vertices_cache_version != self.domain._version):
+            attribute = self.domain.attributes['vertices']
+            start = attribute.stride * self.start
+            count = attribute.count * self.count
+            size = attribute.stride * self.count
+            ptr_type = ctypes.POINTER(attribute.c_type * count)
+
+            self._vertices_cache = (
+                attribute.buffer, start, size,
+                attribute.buffer.map_region(start, size, ptr_type))
+            self._vertices_cache_version = self.domain._version
+
+        buffer, start, size, cache = self._vertices_cache
+        buffer.invalidate_region(start, size)
+        return cache
+
     def set_vertices(self, data):
-        accessor = self.allocator.accessors['vertices']
-        accessor.set(accessor.buffer, data, self.start)
+        attribute = self.domain.attributes['vertices']
+        attribute.set(attribute.buffer, data, self.start)
     
-    vertices = property(None, set_vertices)
+    vertices = property(get_vertices, set_vertices)
 
     def set_tex_coords(self, data):
-        accessor = self.allocator.accessors['tex_coords']
-        accessor.set(accessor.buffer, data, self.start)
+        attribute = self.domain.attributes['tex_coords']
+        attribute.set(attribute.buffer, data, self.start)
 
     tex_coords = property(None, set_tex_coords)
+

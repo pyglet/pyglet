@@ -22,7 +22,7 @@ SPRITE_IMAGE = 'examples/noisy/ball.png'
 #   1 -- all sprites move every frame (all are dynamic)
 #   2 -- only 2 sprites move every frame
 #  50 -- 50 sprites move every frame
-SPRITE_UPDATE_N = 500
+SPRITE_UPDATE_N = 1
 
 INTERLEAVED = False
 
@@ -32,14 +32,14 @@ class Sprite(object):
     width = 32
     height = 32
     
-    def __init__(self, allocator):
-        self.region = allocator.alloc(4)
+    def __init__(self, domain):
+        self.group = domain.create_group(4)
         self.x = win.width * random.random()
         self.y = win.height * random.random()
         self.dx = (random.random() - .5) * 200
         self.dy = (random.random() - .5) * 200
 
-        self.region.tex_coords = [
+        self.group.tex_coords = [
             0, 0,
             1, 0, 
             1, 1,
@@ -63,28 +63,28 @@ class Sprite(object):
         y = self.y
         rx = self.width // 2
         ry = self.height // 2
-        self.region.vertices = [
+        self.group.vertices[:] = [
             x - rx, y - ry,
             x + rx, y - ry,
             x + rx, y + rx,
             x - rx, y + rx
         ]
 
-def draw_sprites(allocator, texture):
+def draw_sprites(domain, texture):
     glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT)
 
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, texture.id)
-    allocator.draw(GL_QUADS)
+    domain.draw(GL_QUADS)
 
     glPopAttrib()
 
 if __name__ == '__main__':
-    allocator = buffer.Allocator('V2F/stream', 'T2F/static')
+    domain = buffer.create_domain('v2f/dynamic', 't2f/static')
 
-    sprites = [Sprite(allocator) for i in range(SPRITES)]
+    sprites = [Sprite(domain) for i in range(SPRITES)]
     fps = clock.ClockDisplay(color=(1, 1, 1, 1))
 
     texture = image.load(SPRITE_IMAGE).texture
@@ -111,6 +111,6 @@ if __name__ == '__main__':
         # Otherwise, update no sprites (static)
 
         win.clear()
-        draw_sprites(allocator, texture)
+        draw_sprites(domain, texture)
         fps.draw()
         win.flip()
