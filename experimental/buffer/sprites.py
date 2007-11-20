@@ -24,8 +24,6 @@ SPRITE_IMAGE = 'examples/noisy/ball.png'
 #  50 -- 50 sprites move every frame
 SPRITE_UPDATE_N = 1
 
-INTERLEAVED = False
-
 win = window.Window(vsync=False)
 
 class Sprite(object):
@@ -63,7 +61,7 @@ class Sprite(object):
         y = self.y
         rx = self.width // 2
         ry = self.height // 2
-        self.group.vertices[:] = [
+        self.group.vertices = [
             x - rx, y - ry,
             x + rx, y - ry,
             x + rx, y + rx,
@@ -74,7 +72,8 @@ def draw_sprites(domain, texture):
     glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT)
 
     glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
+    glColor4f(.2, .2, .2, .2)
     glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, texture.id)
     domain.draw(GL_QUADS)
@@ -82,7 +81,7 @@ def draw_sprites(domain, texture):
     glPopAttrib()
 
 if __name__ == '__main__':
-    domain = buffer.create_domain('v2f/dynamic', 't2f/static')
+    domain = buffer.create_domain('v2f/static', 't2f/static')
 
     sprites = [Sprite(domain) for i in range(SPRITES)]
     fps = clock.ClockDisplay(color=(1, 1, 1, 1))

@@ -71,7 +71,7 @@ class AbstractBuffer(object):
     def unmap(self):
         raise NotImplementedError('abstract')
 
-    def map_region(self, start, size, ptr_type):
+    def get_region(self, start, size, ptr_type):
         '''Map a region of the buffer into a ctypes array of the desired
         type.  This region does not need to be unmapped, but will become
         invalid if the buffer is resized.
@@ -81,6 +81,86 @@ class AbstractBuffer(object):
     def delete(self):
         raise NotImplementedError('abstract')
 
+class AbstractBufferRegion(object):
+    array = None
+    
+    def invalidate(self):
+        '''Mark this region as changed.'''
+        pass
+
+class VertexBufferObjectRegion(AbstractBufferRegion):
+    def __init__(self, buffer, start, end, array):
+        self.buffer = buffer
+        self.start = start
+        self.end = end
+        self.array = array
+
+    def invalidate(self):
+        buffer = self.buffer
+        buffer._dirty_min = min(buffer._dirty_min, self.start)
+        buffer._dirty_max = max(buffer._dirty_max, self.end)
+
+class VertexArrayRegion(AbstractBufferRegion):
+    def __init__(self, array):
+        self.array = array
+
+class IndirectArrayRegion(AbstractBufferRegion):
+    def __init__(self, region, size, component_count, component_stride):
+        self.region = region
+        self.size = size
+        self.count = component_count
+        self.stride = component_stride
+        self.array = self
+
+    def __getitem__(self, index):
+        if not isinstance(index, slice):
+            elem = index // self.count
+            j = index % self.count
+            return self.region.array[elem * self.stride + j]
+
+        start = index.start or 0
+        stop = index.stop
+        step = index.step or 1
+        if stop is None:
+            stop = self.size
+
+        # ctypes does not support stepped slicing, so do the work in a list
+        # and copy it back.
+        data = self.region.array[:]
+        value = [0] * ((stop - start) // step)
+        stride = self.stride
+        count = self.count
+        for i in range(self.count):
+            value[start + i:stop + i:count * step] = \
+                data[start * stride + i:stop * stride + i:stride * step]
+        return value
+
+    def __setitem__(self, index, value):
+        if not isinstance(index, slice):
+            elem = index // self.count
+            j = index % self.count
+            self.region.array[elem * self.stride + j] = value
+            return
+
+        start = index.start or 0
+        stop = index.stop
+        step = index.step or 1
+        if stop is None:
+            stop = self.size
+
+        # ctypes does not support stepped slicing, so do the work in a list
+        # and copy it back.
+        data = self.region.array[:]
+        stride = self.stride
+        count = self.count
+        for i in range(self.count):
+            data[start * stride + i:stop * stride + i:stride * step] = \
+                value[start + i:stop + i:count * step]
+        self.region.array[:] = data
+
+    def invalidate(self):
+        self.region.invalidate()
+        
 class VertexBufferObject(AbstractBuffer):
     def __init__(self, size, target, usage):
         self.size = size
@@ -128,7 +208,7 @@ class VertexBufferObject(AbstractBuffer):
         glUnmapBuffer(self.target)
         glPopClientAttrib()
 
-    def map_region(self, start, size, ptr_type):
+    def get_region(self, start, size, ptr_type):
         raise NotImplementedError('Not supported, use BackedVertexBufferObject')
 
     def delete(self):
@@ -199,14 +279,9 @@ class BackedVertexBufferObject(VertexBufferObject):
     def unmap(self):
         pass
 
-    def map_region(self, start, size, ptr_type):
-        self._dirty_min = min(self._dirty_min, start)
-        self._dirty_max = max(self._dirty_max, start + size)
-        return ctypes.cast(self.data_ptr + start, ptr_type).contents
-
-    def invalidate_region(self, start, size):
-        self._dirty_min = min(self._dirty_min, start)
-        self._dirty_max = max(self._dirty_max, start + size)
+    def get_region(self, start, size, ptr_type):
+        array = ctypes.cast(self.data_ptr + start, ptr_type).contents
+        return VertexBufferObjectRegion(self, start, start + size, array)
 
     def resize(self, size):
         data = (ctypes.c_byte * size)()
@@ -222,6 +297,7 @@ class BackedVertexBufferObject(VertexBufferObject):
 
         self._dirty_min = sys.maxint
         self._dirty_max = 0
+
 
 class VertexArray(AbstractBuffer):
     def __init__(self, size):
@@ -248,8 +324,9 @@ class VertexArray(AbstractBuffer):
     def unmap(self):
         pass
 
-    def map_region(self, start, size, ptr_type):
-        return ctypes.cast(self.ptr + start, ptr_type).contents
+    def get_region(self, start, size, ptr_type):
+        array = ctypes.cast(self.ptr + start, ptr_type).contents
+        return VertexArrayRegion(array)
 
     def delete(self):
         pass
@@ -269,10 +346,13 @@ def interleave_attributes(attributes):
     they are interleaved.  Alignment constraints are respected.
     '''
     stride = 0
+    max_size = 0
     for attribute in attributes:
         stride = align(stride, attribute.align)    
         attribute.offset = stride
         stride += attribute.size
+        max_size = max(max_size, attribute.size)
+    stride = align(stride, max_size)
     for attribute in attributes:
         attribute.stride = stride
 
@@ -430,6 +510,23 @@ class AbstractAttribute(object):
     def set_pointer(self, offset):
         raise NotImplementedError('abstract')
 
+    def get_region(self, buffer, start, count):
+        byte_start = self.stride * start
+        byte_size = self.stride * count
+        if self.stride == self.size:
+            # non-interleaved
+            array_count = self.count * count
+            ptr_type = ctypes.POINTER(self.c_type * array_count)
+            return buffer.get_region(byte_start, byte_size, ptr_type)
+        else:
+            # interleaved
+            byte_start += self.offset
+            elem_stride = self.stride // ctypes.sizeof(self.c_type)
+            array_count = elem_stride * count
+            ptr_type = ctypes.POINTER(self.c_type * array_count)
+            region = buffer.get_region(byte_start, byte_size, ptr_type)
+            return IndirectArrayRegion(region, array_count, self.count, elem_stride)
+
     def to_array(self, array):
         '''Convert a Python sequence into a ctypes array.'''
         n = len(array)
@@ -478,7 +575,7 @@ class EdgeFlagAttribute(AbstractAttribute):
     _fixed_count = 1
     
     def __init__(self, gl_type):
-        assert gl_type in (GL_BYTE, GL_UNSIGNED_BYTE, GL_BOOLEAN), \
+        assert gl_type in (GL_BYTE, GL_UNSIGNED_BYTE, GL_BOOL), \
             'Edge flag attribute must have boolean type'
         super(EdgeFlagAttribute, self).__init__(1, gl_type)
 
@@ -514,7 +611,7 @@ class NormalAttribute(AbstractAttribute):
         glEnableClientState(GL_NORMAL_ARRAY)
     
     def set_pointer(self, pointer):
-        glPNormalointer(self.gl_type, self.stride, self.offset + pointer)
+        glNormalPointer(self.gl_type, self.stride, self.offset + pointer)
 
 class SecondaryColorAttribute(AbstractAttribute):
     plural = 'secondary_colors'
@@ -527,7 +624,7 @@ class SecondaryColorAttribute(AbstractAttribute):
         glEnableClientState(GL_SECONDARY_COLOR_ARRAY)
     
     def set_pointer(self, pointer):
-        glSecondaryColorPointer(self.gl_type, self.stride,
+        glSecondaryColorPointer(3, self.gl_type, self.stride,
                                 self.offset + pointer)
 
 class TexCoordAttribute(AbstractAttribute):
@@ -683,7 +780,7 @@ class VertexDomain(object):
             interleave_attributes(static_attributes)
             stride = static_attributes[0].stride
             buffer = create_buffer(
-                stride * self.max_count, usage=GL_STATIC_DRAW, backed=False)
+                stride * self.max_count, usage=GL_STATIC_DRAW, backed=True)
             buffer.element_size = stride
             self.buffer_attributes.append(
                 (buffer, static_attributes))
@@ -768,32 +865,41 @@ class VertexGroup(object):
     _vertices_cache = None
     _vertices_cache_version = None
 
-    def get_vertices(self):
+    def _get_vertices(self):
         if (self._vertices_cache_version != self.domain._version):
-            attribute = self.domain.attributes['vertices']
-            start = attribute.stride * self.start
-            count = attribute.count * self.count
-            size = attribute.stride * self.count
-            ptr_type = ctypes.POINTER(attribute.c_type * count)
+            domain = self.domain
+            attribute = domain.attributes['vertices']
+            self._vertices_cache = attribute.get_region(
+                attribute.buffer, self.start, self.count)
+            self._vertices_cache_version = domain._version
 
-            self._vertices_cache = (
-                attribute.buffer, start, size,
-                attribute.buffer.map_region(start, size, ptr_type))
-            self._vertices_cache_version = self.domain._version
+        region = self._vertices_cache
+        region.invalidate()
+        return region.array
 
-        buffer, start, size, cache = self._vertices_cache
-        buffer.invalidate_region(start, size)
-        return cache
-
-    def set_vertices(self, data):
-        attribute = self.domain.attributes['vertices']
-        attribute.set(attribute.buffer, data, self.start)
+    def _set_vertices(self, data):
+        self._get_vertices()[:] = data
     
-    vertices = property(get_vertices, set_vertices)
+    vertices = property(_get_vertices, _set_vertices)
 
-    def set_tex_coords(self, data):
-        attribute = self.domain.attributes['tex_coords']
-        attribute.set(attribute.buffer, data, self.start)
+    _tex_coords_cache = None
+    _tex_coords_cache_version = None
 
-    tex_coords = property(None, set_tex_coords)
+    def _get_tex_coords(self):
+        if (self._tex_coords_cache_version != self.domain._version):
+            domain = self.domain
+            attribute = domain.attributes['tex_coords']
+            self._tex_coords_cache = attribute.get_region(
+                attribute.buffer, self.start, self.count)
+            self._tex_coords_cache_version = domain._version
+
+        region = self._tex_coords_cache
+        region.invalidate()
+        return region.array
+
+    def _set_tex_coords(self, data):
+        self._get_tex_coords()[:] = data
+
+    tex_coords = property(_get_tex_coords, _set_tex_coords)
+
 
