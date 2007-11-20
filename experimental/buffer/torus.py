@@ -9,20 +9,6 @@ from pyglet import window
 
 import buffer
 
-vbo = True
-interleaved = True
-index_vbo = True
-dl = False
-usage = GL_STATIC_DRAW
-index_usage = GL_STATIC_DRAW
-
-usage_names = {
-    GL_STATIC_DRAW: 'static',
-    GL_DYNAMIC_DRAW: 'dynamic',
-    GL_STREAM_DRAW: 'stream',
-    None: '---'
-}
-
 try:
     # Try and create a window with multisampling (antialiasing)
     config = Config(sample_buffers=1, samples=4, 
@@ -104,19 +90,6 @@ class Torus(object):
                 v += v_step
             u += u_step
 
-        self.buffer = buffer.create(len(vertices) * 24,
-            GL_ARRAY_BUFFER, usage, vbo=vbo)
-        if interleaved:
-            self.vertices, self.normals = buffer.interleaved('V3F', 'N3F')
-        else:
-            self.vertices, self.normals = buffer.serialized(
-                len(vertices), 'V3F', 'N3F')
-
-        self.buffer.bind()
-        self.vertices.set(self.buffer, vertices)
-        self.normals.set(self.buffer, normals)
-        self.buffer.unbind()
-
         # Create a list of triangle indices.
         indices = []
         for i in range(slices - 1):
@@ -125,41 +98,17 @@ class Torus(object):
                 indices.extend([p, p + inner_slices, p + inner_slices + 1])
                 indices.extend([p, p + 1, p + inner_slices + 1])
 
-        self.index_buffer = buffer.create(len(indices) * 4, 
-            GL_ELEMENT_ARRAY_BUFFER, index_usage, vbo=index_vbo)
-        self.indices = buffer.ElementIndexAccessor(GL_UNSIGNED_INT)
-        self.indices.set(self.index_buffer, indices)
-        self.index_count = len(indices)
-        n_vertices = len(vertices) // 3
-        n_indices = len(indices)
-        print dl,
-        print n_vertices, n_indices, interleaved,
-        print vbo, usage_names[usage], 
-        print index_vbo, usage_names[index_usage],
-
-        if dl:
-            list = self.list = glGenLists(1)
-            glNewList(list, GL_COMPILE)
-            self.draw()
-            glEndList()
-            self.draw = lambda: glCallList(list)
-
+        self.domain = buffer.create_indexed_domain('v3f/static', 'n3f/static')
+        group = self.domain.create_group(len(vertices)//3, len(indices))
+        group.vertices = vertices
+        group.normals = normals
+        group.indices = indices
+       
     def draw(self):
-        self.buffer.bind()
-        self.vertices.enable()
-        self.normals.enable()
-        self.vertices.set_pointer(self.buffer.ptr)
-        self.normals.set_pointer(self.buffer.ptr)
-        self.index_buffer.bind()
-        self.indices.draw(self.index_buffer, GL_TRIANGLES, 0, self.index_count)
+        self.domain.draw(GL_TRIANGLES)
 
     def cleanup(self):
-        self.buffer.unbind()
-        self.index_buffer.unbind()
-        self.buffer.delete()
-        self.index_buffer.delete()
-        if self.list:
-            glDeleteLists(1, self.list)
+        pass
 
 def run(runs=3):
     torus = Torus(1, 0.3, 500, 500)
@@ -191,31 +140,16 @@ def run(runs=3):
 
         if count > 2.:
             count = 0.
-            print clock.get_fps(),
+            print clock.get_fps()
             runs -= 1
             if runs == 0:
-                break
+                #break
+                pass
         count += dt
 
     torus.cleanup()
     return w.has_exit
 
-setup()
-print 'dl vertices indices interleaved vbo usage index_vbo index_usage'
-for dl in False, True:
-    for vbo in False, True:
-        for index_vbo in False, True:
-            for interleaved in False, True:
-                if vbo:
-                    usages = (GL_STATIC_DRAW,)
-                else:
-                    usages = (None,)
-                for usage in usages:
-                    if index_vbo:
-                        index_usages = (GL_STATIC_DRAW,)
-                    else:
-                        index_usages = (None,)
-                    for index_usage in index_usages:
-                        if run():
-                            sys.exit(0)
-                        print 
+if __name__ == '__main__':
+    setup()
+    run(1)

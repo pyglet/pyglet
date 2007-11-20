@@ -39,7 +39,7 @@ def create_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW,
 
     :rtype: `AbstractBuffer`
     '''
-    if vbo and gl_info.have_version(1, 5):
+    if vbo and gl_info.have_version(1, 5) and False:
         if backed:
             return BackedVertexBufferObject(size, target, usage)
         else:
@@ -683,22 +683,6 @@ class GenericAttribute(AbstractAttribute):
                               self.normalized, self.stride, 
                               self.offset + pointer)
 
-class ElementIndex(object):
-    def __init__(self, gl_type):
-        self.gl_type = gl_type
-        self.c_type = _c_types[gl_type]
-        self.size = ctypes.sizeof(self.c_type)
-        self.offset = 0
-        
-    def set(self, buffer, data):
-        data = (self.c_type * len(data))(*data)
-        buffer.set_data_region(data, self.offset, len(data) * self.size)
-
-    def draw(self, buffer, mode, start, count):
-        glDrawElements(mode, count, self.gl_type, buffer.ptr +
-                       self.offset + start)
-
-
 _usage_format_re = re.compile(r'''
     (?P<attribute>[^/]*)
     (/ (?P<usage> static|dynamic|stream))?
@@ -749,6 +733,12 @@ def create_domain(*attribute_usage_formats):
     attribute_usages = [create_attribute_usage(f) \
                         for f in attribute_usage_formats]
     return VertexDomain(attribute_usages)
+
+def create_indexed_domain(*attribute_usage_formats):
+    attribute_usages = [create_attribute_usage(f) \
+                        for f in attribute_usage_formats]
+    return IndexedVertexDomain(attribute_usages)
+
 
 class VertexDomain(object):
     _version = 0
@@ -816,9 +806,10 @@ class VertexDomain(object):
         '''
         index = self.count
 
-        if index + self.count >= self.max_count:
+        if index + count >= self.max_count:
             # Reallocate the buffers
-            self.max_count *= 2
+            while self.max_count < index + count:
+                self.max_count *= 2
             self._version += 1
             for buffer, _ in self.buffer_attributes:
                 buffer.resize(self.max_count * buffer.element_size)
@@ -845,6 +836,70 @@ class VertexDomain(object):
         for buffer, _ in self.buffer_attributes:
             buffer.unbind()
         glPopClientAttrib()
+
+class IndexedVertexDomain(VertexDomain):
+    _initial_index_count = 16
+
+    def __init__(self, attribute_usages, index_gl_type=GL_UNSIGNED_INT):
+        super(IndexedVertexDomain, self).__init__(attribute_usages)
+
+        self.index_count = 0
+        self.max_index_count = self._initial_index_count
+        
+        self.index_gl_type = index_gl_type
+        self.index_c_type = _c_types[index_gl_type]
+        self.index_element_size = ctypes.sizeof(self.index_c_type)
+        self.index_buffer = create_buffer(
+            self.max_index_count * self.index_element_size, 
+            target=GL_ELEMENT_ARRAY_BUFFER, backed=True)
+
+    def create_group(self, count, index_count):
+        index = self.count
+        if index + count >= self.max_count:
+            # Reallocate the buffers
+            while self.max_count < index + count:
+                self.max_count *= 2
+            self._version += 1
+            for buffer, _ in self.buffer_attributes:
+                buffer.resize(self.max_count * buffer.element_size)
+        self.count += count
+
+        index_start = self.index_count
+        if index_start + index_count > self.max_index_count:
+            # Reallocate index buffer
+            while self.max_index_count < index_start + index_count:
+                self.max_index_count *= 2
+            self._version += 1
+            self.index_buffer.resize(
+                self.max_index_count * self.index_element_size)
+        self.index_count += index_count
+
+        return IndexedVertexGroup(self, index, count, index_start, index_count) 
+
+    def get_index_region(self, start, count):
+        byte_start = self.index_element_size * start
+        byte_count = self.index_element_size * count
+        ptr_type = ctypes.POINTER(self.index_c_type * count)
+        return self.index_buffer.get_region(byte_start, byte_count, ptr_type)
+
+    def draw(self, mode):
+        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+        for buffer, attributes in self.buffer_attributes:
+            buffer.bind()
+            for attribute in attributes:
+                attribute.enable()
+                attribute.set_pointer(attribute.buffer.ptr)
+
+        # TODO free lists
+        self.index_buffer.bind()
+        glDrawElements(mode, self.index_count, self.index_gl_type,
+            self.index_buffer.ptr)
+        
+        self.index_buffer.unbind()
+        for buffer, _ in self.buffer_attributes:
+            buffer.unbind()
+        glPopClientAttrib()
+
 
 class VertexGroup(object):
     '''Small region of the buffers managed by a `VertexDomain`.  Create
@@ -882,6 +937,26 @@ class VertexGroup(object):
     
     vertices = property(_get_vertices, _set_vertices)
 
+    _normals_cache = None
+    _normals_cache_version = None
+
+    def _get_normals(self):
+        if (self._normals_cache_version != self.domain._version):
+            domain = self.domain
+            attribute = domain.attributes['normals']
+            self._normals_cache = attribute.get_region(
+                attribute.buffer, self.start, self.count)
+            self._normals_cache_version = domain._version
+
+        region = self._normals_cache
+        region.invalidate()
+        return region.array
+
+    def _set_normals(self, data):
+        self._get_normals()[:] = data
+
+    normals = property(_get_normals, _set_normals)
+
     _tex_coords_cache = None
     _tex_coords_cache_version = None
 
@@ -902,4 +977,28 @@ class VertexGroup(object):
 
     tex_coords = property(_get_tex_coords, _set_tex_coords)
 
+class IndexedVertexGroup(VertexGroup):
+    def __init__(self, domain, start, count, index_start, index_count):
+        super(IndexedVertexGroup, self).__init__(domain, start, count)
 
+        self.index_start = index_start
+        self.index_count = index_count
+
+    _indices_cache = None
+    _indices_cache_version = None
+
+    def _get_indices(self):
+        if self._indices_cache_version != self.domain._version:
+            domain = self.domain
+            self._indices_cache = domain.get_index_region(
+                self.index_start, self.index_count)
+            self._indices_cache_version = domain._version
+
+        region = self._indices_cache
+        region.invalidate()
+        return region.array
+
+    def _set_indices(self, data):
+        self._get_indices()[:] = data
+
+    indices = property(_get_indices, _set_indices)
