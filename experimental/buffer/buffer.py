@@ -39,7 +39,7 @@ def create_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW,
 
     :rtype: `AbstractBuffer`
     '''
-    if vbo and gl_info.have_version(1, 5) and False:
+    if vbo and gl_info.have_version(1, 5):
         if backed:
             return BackedVertexBufferObject(size, target, usage)
         else:
