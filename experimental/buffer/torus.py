@@ -7,7 +7,7 @@ from pyglet.gl import *
 from pyglet import clock
 from pyglet import window
 
-import buffer
+from graphics import vertexdomain
 
 try:
     # Try and create a window with multisampling (antialiasing)
@@ -98,11 +98,12 @@ class Torus(object):
                 indices.extend([p, p + inner_slices, p + inner_slices + 1])
                 indices.extend([p, p + 1, p + inner_slices + 1])
 
-        self.domain = buffer.create_indexed_domain('v3f/static', 'n3f/static')
-        group = self.domain.create_group(len(vertices)//3, len(indices))
-        group.vertices = vertices
-        group.normals = normals
-        group.indices = indices
+        self.domain = vertexdomain.create_indexed_domain('v3f/static', 
+                                                         'n3f/static')
+        primitive = self.domain.create(len(vertices)//3, len(indices))
+        primitive.vertices = vertices
+        primitive.normals = normals
+        primitive.indices = indices
        
     def draw(self):
         self.domain.draw(GL_TRIANGLES)

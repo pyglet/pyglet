@@ -9,7 +9,7 @@ from pyglet import clock
 from pyglet import image
 from pyglet import window
 
-import buffer
+from graphics import vertexdomain
 
 if len(sys.argv) > 1:
     SPRITES = int(sys.argv[1])
@@ -31,13 +31,13 @@ class Sprite(object):
     height = 32
     
     def __init__(self, domain):
-        self.group = domain.create_group(4)
+        self.primitive = domain.create(4)
         self.x = win.width * random.random()
         self.y = win.height * random.random()
         self.dx = (random.random() - .5) * 200
         self.dy = (random.random() - .5) * 200
 
-        self.group.tex_coords = [
+        self.primitive.tex_coords = [
             0, 0,
             1, 0, 
             1, 1,
@@ -61,7 +61,7 @@ class Sprite(object):
         y = self.y
         rx = self.width // 2
         ry = self.height // 2
-        self.group.vertices = [
+        self.primitive.vertices = [
             x - rx, y - ry,
             x + rx, y - ry,
             x + rx, y + rx,
@@ -81,7 +81,7 @@ def draw_sprites(domain, texture):
     glPopAttrib()
 
 if __name__ == '__main__':
-    domain = buffer.create_domain('v2f/static', 't2f/static')
+    domain = vertexdomain.create_domain('v2f/static', 't2f/static')
 
     sprites = [Sprite(domain) for i in range(SPRITES)]
     fps = clock.ClockDisplay(color=(1, 1, 1, 1))
