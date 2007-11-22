@@ -10,10 +10,12 @@ import vertexbuffer
 import vertexattribute
 import vertexdomain
 
-def draw(mode, *data, **kwargs):
+def draw(size, mode, *data, **kwargs):
     '''Draw a primitive immediately.
 
     :Parameters:
+        `size` : int
+            Number of vertices given
         `mode` : int
             OpenGL drawing mode, e.g. ``GL_TRIANGLES``
         `data` : (str, sequence)
@@ -26,17 +28,14 @@ def draw(mode, *data, **kwargs):
 
     '''
     indices = kwargs.get('indices')
-    size = None
 
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
     #import pdb; pdb.set_trace()
 
     for format, array in data:
         attribute = vertexattribute.create_attribute(format)
-        assert size is None or size == len(array) // attribute.count, \
-            'Lengths of arrays are inconsistent, cannot determine number ' \
-            'of vertices.'
-        size = len(array) // attribute.count
+        assert size == len(array) // attribute.count, \
+            'Data for %s is incorrect length' % format
         buffer = vertexbuffer.create_mappable_buffer(
             size * attribute.stride, vbo=False)
 
@@ -65,3 +64,78 @@ def draw(mode, *data, **kwargs):
     
     glPopClientAttrib()
 
+class Batch(object):
+    def __init__(self):
+        # Mapping to find domain.  
+        # state -> (attributes, mode, indexed) -> domain
+        self.state_map = {}
+
+    def add(self, count, mode, state, *data):
+        assert data, 'No attribute formats given'
+
+        if state is None:
+            state = null_state
+        
+        # Batch state
+        if state not in self.state_map:
+            self.state_map[state] = {}
+        domain_map = self.state_map[state]
+
+        # Split out attribute formats
+        formats = []
+        initial_arrays = []
+        for i, format in enumerate(data):
+            if isinstance(format, tuple):
+                format, array = format
+                initial_arrays.append((i, array))
+            formats.append(format)
+        formats = tuple(formats)
+
+        # Find domain given formats, indices and mode
+        key = (formats, mode, False)
+        try:
+            domain = domain_map[key]
+        except KeyError:
+            # Create domain
+            domain = vertexdomain.create_domain(*formats)
+            domain_map[key] = domain
+            
+        # Create vertex list and initialize
+        vlist = domain.create(count)
+        for i, array in initial_arrays:
+            vlist.set_attribute_data(i, array)
+
+        return vlist
+
+    def add_indexed(self, mode, state, indices, *data):
+        pass # TODO
+        
+    def draw(self):
+        for state, domain_map in self.state_map.items():
+            state.set()
+            for (_, mode, _), domain in domain_map.items():
+                domain.draw(mode)
+            state.unset()
+
+class AbstractState(object):
+    def set(self):
+        pass
+
+    def unset(self):
+        pass
+
+class NullState(AbstractState):
+    pass
+
+null_state = NullState()
+
+class TextureState(AbstractState):
+    def __init__(self, texture):
+        self.texture = texture
+
+    def set(self):
+        glEnable(self.texture.target)
+        glBindTexture(self.texture.target, self.texture.id)
+
+    def unset(self):
+        glDisable(self.texture.target)

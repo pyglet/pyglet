@@ -31,7 +31,7 @@ Internally, the `draw` function constructs vertex arrays of the given formats
 and copies the given list data into them before calling glDrawArrays.  Indexed
 arrays can also be drawn in immediate mode:
 
-    graphics.draw(GL_TRIANGLE_STRIP,
+    graphics.draw_indexed(GL_TRIANGLE_STRIP,
         ('v3f', [ ... ]),
         ('n3f', [ ... ]),
         indices=[0, 1, 2, 0, 2, 3, ... ])
@@ -59,7 +59,7 @@ better than display lists on current generation hardware.
 For example, to add the shaded triangle from the previous example to the batch
 object::
 
-    batch.add(GL_TRIANGLES,
+    batch.add(3, GL_TRIANGLES,
         ('v2f', [10., 10., 
                  40., 10., 
                  40., 40.]),
@@ -71,7 +71,7 @@ The `add` method actually returns a `Primitive` object, which can subsequently
 be modified.  In fact, no initial data for the primitive needs to be given at
 all.  The following is equivalent to the previous example::
 
-    prim = batch.add(GL_TRIANGLES, 'v2f', 'c3b')
+    prim = batch.add(3, GL_TRIANGLES, 'v2f', 'c3b')
     prim.vertices = [10., 10.,
                      40., 10.,
                      40., 40.]
@@ -125,7 +125,7 @@ This state can be associated with a primitive when it is added to the batch
 object::
 
     kitten = image.load('kitten.jpg').texture
-    batch.add(GL_QUADS, 'v2f', 't2f', state=TextureState(kitten))
+    batch.add(1, GL_QUADS, 'v2f', 't2f', state=TextureState(kitten))
 
 The batch object will call the `set` and `unset` methods of the state objects
 before and after rendering the primitive, and will group primitives having the

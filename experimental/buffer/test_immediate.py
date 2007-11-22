@@ -11,7 +11,7 @@ win = window.Window()
 while not win.has_exit:
     win.dispatch_events()
     win.clear()
-    graphics.draw(GL_TRIANGLES,
+    graphics.draw(3, GL_TRIANGLES,
         ('v2f', [10., 10., 
                  100., 10., 
                  100., 100.]),

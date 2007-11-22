@@ -136,7 +136,8 @@ class VertexDomain(object):
                 attribute.buffer = buffer
 
         # Create named attributes for each attribute
-        self.attributes = {}
+        self.attributes = attributes
+        self.attribute_names = {}
         for attribute in attributes:
             if isinstance(attribute, vertexattribute.GenericAttribute):
                 index = attribute.index
@@ -144,12 +145,12 @@ class VertexDomain(object):
                     self.attributes['generic'] = {}
                 assert index not in self.attributes['generic'], \
                     'More than one generic attribute with index %d' % index
-                self.attributes['generic'][index] = attribute
+                self.attribute_names['generic'][index] = attribute
             else:
                 name = attribute.plural
                 assert name not in self.attributes, \
                     'More than one "%s" attribute given' % name
-                self.attributes[name] = attribute
+                self.attribute_names[name] = attribute
 
     def add(self, **data):
         '''Create vertices in this domain and initialise them with
@@ -213,13 +214,20 @@ class VertexList(object):
     def delete(self):
         '''Delete this group.'''
 
+    def set_attribute_data(self, i, data):
+        attribute = self.domain.attributes[i]
+        # TODO without region
+        region = attribute.get_region(attribute.buffer, self.start, self.count)
+        region.array[:] = data
+        region.invalidate()
+
     _vertices_cache = None
     _vertices_cache_version = None
 
     def _get_vertices(self):
         if (self._vertices_cache_version != self.domain._version):
             domain = self.domain
-            attribute = domain.attributes['vertices']
+            attribute = domain.attribute_names['vertices']
             self._vertices_cache = attribute.get_region(
                 attribute.buffer, self.start, self.count)
             self._vertices_cache_version = domain._version
@@ -239,7 +247,7 @@ class VertexList(object):
     def _get_normals(self):
         if (self._normals_cache_version != self.domain._version):
             domain = self.domain
-            attribute = domain.attributes['normals']
+            attribute = domain.attribute_names['normals']
             self._normals_cache = attribute.get_region(
                 attribute.buffer, self.start, self.count)
             self._normals_cache_version = domain._version
@@ -259,7 +267,7 @@ class VertexList(object):
     def _get_tex_coords(self):
         if (self._tex_coords_cache_version != self.domain._version):
             domain = self.domain
-            attribute = domain.attributes['tex_coords']
+            attribute = domain.attribute_names['tex_coords']
             self._tex_coords_cache = attribute.get_region(
                 attribute.buffer, self.start, self.count)
             self._tex_coords_cache_version = domain._version
