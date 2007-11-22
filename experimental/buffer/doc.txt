@@ -19,7 +19,7 @@ Example of drawing a shaded triangle using the graphics API::
 
     from pyglet import graphics
 
-    graphics.draw(GL_TRIANGLES,
+    graphics.draw(3, GL_TRIANGLES,
         ('v2f', [10., 10., 
                  40., 10., 
                  40., 40.]),
@@ -32,9 +32,9 @@ and copies the given list data into them before calling glDrawArrays.  Indexed
 arrays can also be drawn in immediate mode:
 
     graphics.draw_indexed(GL_TRIANGLE_STRIP,
+        [0, 1, 2, 0, 2, 3, ... ],
         ('v3f', [ ... ]),
         ('n3f', [ ... ]),
-        indices=[0, 1, 2, 0, 2, 3, ... ])
 
 Use of this API will replace the existing ad-hoc implementation of
 Texture.blit().
