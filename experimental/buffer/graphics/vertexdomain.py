@@ -30,6 +30,7 @@ import re
 from pyglet.gl import *
 
 # Local imports
+import allocation
 import vertexattribute
 import vertexbuffer
 
@@ -43,6 +44,17 @@ _gl_usages = {
     'dynamic': GL_DYNAMIC_DRAW,
     'stream': GL_STREAM_DRAW,
 }
+
+def _nearest_pow2(v):
+    # From http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+    # Credit: Sean Anderson
+    v -= 1
+    v |= v >> 1
+    v |= v >> 2
+    v |= v >> 4
+    v |= v >> 8
+    v |= v >> 16
+    return v + 1
 
 def create_attribute_usage(format):
     '''Create an attribute and usage pair from a format string.  The
@@ -95,14 +107,12 @@ def create_indexed_domain(*attribute_usage_formats):
                         for f in attribute_usage_formats]
     return IndexedVertexDomain(attribute_usages)
 
-
 class VertexDomain(object):
     _version = 0
     _initial_count = 16
 
     def __init__(self, attribute_usages):
-        self.count = 0
-        self.max_count = self._initial_count
+        self.allocator = allocation.Allocator(self._initial_count)
 
         static_attributes = []
         attributes = []
@@ -115,7 +125,7 @@ class VertexDomain(object):
                 # Create non-interleaved buffer
                 attributes.append(attribute)
                 attribute.buffer = vertexbuffer.create_mappable_buffer(
-                    attribute.stride * self.max_count, usage=usage)
+                    attribute.stride * self.allocator.capacity, usage=usage)
                 attribute.buffer.element_size = attribute.stride
                 attribute.buffer.attributes = (attribute,)
                 self.buffer_attributes.append(
@@ -126,7 +136,7 @@ class VertexDomain(object):
             vertexattribute.interleave_attributes(static_attributes)
             stride = static_attributes[0].stride
             buffer = vertexbuffer.create_mappable_buffer(
-                stride * self.max_count, usage=GL_STATIC_DRAW)
+                stride * self.allocator.capacity, usage=GL_STATIC_DRAW)
             buffer.element_size = stride
             self.buffer_attributes.append(
                 (buffer, static_attributes))
@@ -155,6 +165,7 @@ class VertexDomain(object):
     def add(self, **data):
         '''Create vertices in this domain and initialise them with
         given attribute data.'''
+        raise NotImplementedError('TODO')
 
     def create(self, count):
         '''Create a `VertexList` in this domain.
@@ -165,19 +176,17 @@ class VertexDomain(object):
 
         :rtype: `VertexList`
         '''
-        index = self.count
-
-        if index + count >= self.max_count:
-            # Reallocate the buffers
-            while self.max_count < index + count:
-                self.max_count *= 2
+        try:
+            start = self.allocator.alloc(count)
+        except allocation.AllocatorMemoryException, e:
+            capacity = _nearest_pow2(e.requested_capacity)
             self._version += 1
             for buffer, _ in self.buffer_attributes:
-                buffer.resize(self.max_count * buffer.element_size)
-        
-        self.count += count
+                buffer.resize(capacity * buffer.element_size)
+            self.allocator.set_capacity(capacity)
+            start = self.allocator.alloc(count)
 
-        return VertexList(self, index, count)
+        return VertexList(self, start, count)
 
     def draw(self, mode):
         '''Draw all vertices currently allocated without indexing.
@@ -191,8 +200,20 @@ class VertexDomain(object):
                 attribute.enable()
                 attribute.set_pointer(attribute.buffer.ptr)
 
-        # TODO free lists
-        glDrawArrays(mode, 0, self.count)
+        starts, sizes = self.allocator.get_allocated_regions()
+        primcount = len(starts)
+        if primcount == 0:
+            pass
+        elif primcount == 1:
+            # Common case
+            glDrawArrays(mode, starts[0], sizes[0])
+        elif gl_info.have_version(1, 4):
+            starts = (GLint * primcount)(*starts)
+            sizes = (GLsizei * primcount)(*sizes)
+            glMultiDrawArrays(mode, starts, sizes, primcount)
+        else:
+            for start, size in zip(starts, sizes):
+                glDrawArrays(mode, start, primcount)
         
         for buffer, _ in self.buffer_attributes:
             buffer.unbind()
@@ -210,9 +231,11 @@ class VertexList(object):
 
     def resize(self, count):
         '''Resize this group.'''
+        raise NotImplementedError('TODO')
 
     def delete(self):
         '''Delete this group.'''
+        self.domain.allocator.dealloc(self.start, self.count)
 
     def set_attribute_data(self, i, data):
         attribute = self.domain.attributes[i]
@@ -288,14 +311,13 @@ class IndexedVertexDomain(VertexDomain):
     def __init__(self, attribute_usages, index_gl_type=GL_UNSIGNED_INT):
         super(IndexedVertexDomain, self).__init__(attribute_usages)
 
-        self.index_count = 0
-        self.max_index_count = self._initial_index_count
+        self.index_allocator = allocation.Allocator(self._initial_index_count)
         
         self.index_gl_type = index_gl_type
         self.index_c_type = vertexattribute._c_types[index_gl_type]
         self.index_element_size = ctypes.sizeof(self.index_c_type)
         self.index_buffer = vertexbuffer.create_mappable_buffer(
-            self.max_index_count * self.index_element_size, 
+            self.index_allocator.capacity * self.index_element_size, 
             target=GL_ELEMENT_ARRAY_BUFFER)
 
     def create(self, count, index_count):
@@ -308,27 +330,26 @@ class IndexedVertexDomain(VertexDomain):
                 Number of indices to create
 
         '''
-        index = self.count
-        if index + count >= self.max_count:
-            # Reallocate the buffers
-            while self.max_count < index + count:
-                self.max_count *= 2
+        try:
+            start = self.allocator.alloc(count)
+        except allocation.AllocatorMemoryException, e:
+            capacity = _nearest_pow2(e.requested_capacity)
             self._version += 1
             for buffer, _ in self.buffer_attributes:
-                buffer.resize(self.max_count * buffer.element_size)
-        self.count += count
+                buffer.resize(capacity * buffer.element_size)
+            self.allocator.set_capacity(capacity)
+            start = self.allocator.alloc(count)
 
-        index_start = self.index_count
-        if index_start + index_count > self.max_index_count:
-            # Reallocate index buffer
-            while self.max_index_count < index_start + index_count:
-                self.max_index_count *= 2
+        try:
+            index_start = self.index_allocator.alloc(index_count)
+        except allocation.AllocatorMemoryException, e:
+            capacity = _nearest_pow2(e.requested_capacity)
             self._version += 1
-            self.index_buffer.resize(
-                self.max_index_count * self.index_element_size)
-        self.index_count += index_count
+            self.index_buffer.resize(capacity * self.index_element_size)
+            self.index_allocator.set_capacity(capacity)
+            index_start = self.index_allocator.alloc(index_count)
 
-        return IndexedVertexList(self, index, count, index_start, index_count) 
+        return IndexedVertexList(self, start, count, index_start, index_count) 
 
     def get_index_region(self, start, count):
         byte_start = self.index_element_size * start
@@ -343,11 +364,28 @@ class IndexedVertexDomain(VertexDomain):
             for attribute in attributes:
                 attribute.enable()
                 attribute.set_pointer(attribute.buffer.ptr)
-
-        # TODO free lists
         self.index_buffer.bind()
-        glDrawElements(mode, self.index_count, self.index_gl_type,
-            self.index_buffer.ptr)
+
+        starts, sizes = self.index_allocator.get_allocated_regions()
+        primcount = len(starts)
+        if primcount == 0:
+            pass
+        elif primcount == 1:
+            # Common case
+            glDrawElements(mode, sizes[0], self.index_gl_type,
+                self.index_buffer.ptr + starts[0])
+        elif gl_info.have_version(1, 4):
+            if not isinstance(self.index_buffer, 
+                              vertexbuffer.VertexBufferObject):
+                starts = [s + self.index_buffer.ptr for s in starts]
+            starts = (GLuint * primcount)(*starts) # actually need to be void*
+            sizes = (GLsizei * primcount)(*sizes)
+            glMultiDrawElements(mode, sizes, self.index_gl_type, starts,
+                                primcount)
+        else:
+            for start, size in zip(starts, sizes):
+                glDrawElements(mode, size, self.index_gl_type,
+                    self.index_buffer.ptr + start)
         
         self.index_buffer.unbind()
         for buffer, _ in self.buffer_attributes:

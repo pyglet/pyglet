@@ -175,6 +175,7 @@ class Allocator(object):
 
     def dealloc(self, start, size):
         assert size > 0
+        assert self.starts
         
         # Find which block needs to be split
         for i, (alloc_start, alloc_size) in \
@@ -247,9 +248,12 @@ class Allocator(object):
 
     def get_usage(self):
         '''Return fraction of capacity currently allocated.'''
-        return self.get_free_size() / float(self.capacity)
+        return 1. - self.get_free_size() / float(self.capacity)
 
     def get_fragmentation(self):
         '''Return fraction of free space that is not expandable.'''
+        free_size = self.get_free_size()
+        if free_size == 0:
+            return 0.
         return self.get_fragmented_free_size() / float(self.get_free_size())
 
