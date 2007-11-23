@@ -81,9 +81,21 @@ class Allocator(object):
         free_start = self.starts[0] + self.sizes[0]
         for i, (alloc_start, alloc_size) in \
                 enumerate(zip(self.starts[1:], self.sizes[1:])):
+            # Danger!  
+            # i is actually index - 1 because of slicing above...
+            # starts[i]   points to the block before this free space
+            # starts[i+1] points to the block after this free space, and is
+            #             always valid.
             free_size = alloc_start - free_start
-            if free_size >= size:
-                # TODO try to merge with adjacent region to the right
+            if free_size == size:
+                # Merge previous block with this one (removing this free space)
+                self.starts[i].size += free_size + alloc_size
+                del self.starts[i+1]
+                del self.sizes[i+1]
+                return free_start
+            elif free_size > size:
+                # Increase size of previous block to intrude into this free
+                # space.
                 self.sizes[i] += size
                 return free_start
             free_start = alloc_start + alloc_size
@@ -118,12 +130,20 @@ class Allocator(object):
         if size == alloc_size - p:
             # Region is at end of block.  Find how much free space is after
             # it.
-            if i < len(self.starts) - 1:
+            is_final_block = i == len(self.starts) - 1
+            if not is_final_block:
                 free_size = self.starts[i + 1] - (start + size)
             else:
                 free_size = self.capacity - (start + size)
 
-            if free_size >= new_size - size:
+            if free_size == new_size - size and not is_final_block:
+                # Merge block with next (region is expanded in place to
+                # exactly fill the free space)
+                self.sizes[i] += free_size + self.sizes[i + 1]
+                del self.starts[i + 1]
+                del self.sizes[i + 1]
+                return start
+            elif free_size > new_size - size:
                 # Expand region in place
                 self.sizes[i] += new_size - size
                 return start

@@ -83,12 +83,25 @@ class RegionAllocator(object):
         except StopIteration:
             pass
 
+    def check_redundancy(self):
+        # Ensure there are no adjacent blocks (they should have been merged)
+        starts, sizes = self.allocator.get_allocated_regions()
+
+        last = -1
+        for start, size in zip(starts, sizes):
+            if start < last:
+                fixture.fail('Block at %d is out of order' % start)
+            if start == last:
+                fixture.fail('Block at %d is redundant' % start)
+            last = start + size
+
     def alloc(self, size):
         start = self.allocator.alloc(size)
         region = Region(start, size)
         self.check_region(region)
         self.regions.append(region)
         self.check_coverage()
+        self.check_redundancy()
         return region
         
     def dealloc(self, region):
@@ -96,6 +109,7 @@ class RegionAllocator(object):
         self.allocator.dealloc(region.start, region.size)
         self.regions.remove(region)
         self.check_coverage()
+        self.check_redundancy()
 
     def realloc(self, region, size):
         assert region in self.regions
@@ -103,6 +117,7 @@ class RegionAllocator(object):
         region.size = size
         self.check_region(region)
         self.check_coverage()
+        self.check_redundancy()
 
     def get_free_size(self):
         return self.allocator.get_free_size()
