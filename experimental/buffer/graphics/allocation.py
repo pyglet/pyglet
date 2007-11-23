@@ -73,9 +73,12 @@ class Allocator(object):
         # or raise AllocatorMemoryException
 
         if not self.starts:
-            self.starts.append(0)
-            self.sizes.append(size)
-            return 0
+            if size <= self.capacity:
+                self.starts.append(0)
+                self.sizes.append(size)
+                return 0
+            else:
+                raise AllocatorMemoryException(size)
 
         # Allocate in a free space
         free_start = self.starts[0] + self.sizes[0]
@@ -89,7 +92,7 @@ class Allocator(object):
             free_size = alloc_start - free_start
             if free_size == size:
                 # Merge previous block with this one (removing this free space)
-                self.starts[i].size += free_size + alloc_size
+                self.sizes[i] += free_size + alloc_size
                 del self.starts[i+1]
                 del self.sizes[i+1]
                 return free_start
@@ -106,7 +109,7 @@ class Allocator(object):
             self.sizes[-1] += size
             return free_start
         
-        raise AllocatorMemoryException(size - free_size)
+        raise AllocatorMemoryException(self.capacity + size - free_size)
 
     def realloc(self, start, size, new_size):
         assert size > 0 and new_size > 0
@@ -125,6 +128,10 @@ class Allocator(object):
             p = start - alloc_start
             if p >= 0 and size <= alloc_size - p:
                 break
+        if not (p >= 0 and size <= alloc_size - p):
+            print zip(self.starts, self.sizes)
+            print start, size, new_size
+            print p, alloc_start, alloc_size
         assert p >= 0 and size <= alloc_size - p, 'Region not allocated'
 
         if size == alloc_size - p:
@@ -135,6 +142,9 @@ class Allocator(object):
                 free_size = self.starts[i + 1] - (start + size)
             else:
                 free_size = self.capacity - (start + size)
+
+            # TODO If region is an entire block being an island in free space, 
+            # can possibly extend in both directions.
 
             if free_size == new_size - size and not is_final_block:
                 # Merge block with next (region is expanded in place to
@@ -149,11 +159,19 @@ class Allocator(object):
                 return start
 
         # The block must be repositioned.  Dealloc then alloc.
-        # TODO the first loop in dealloc() has already been computed; inline
-        # the rest of the method here.
         
+        # But don't do this!  If alloc fails, we've already silently dealloc'd
+        # the original block.
+        #   self.dealloc(start, size)
+        #   return self.alloc(new_size)
+
+        # It must be alloc'd first.  We're not missing an optimisation 
+        # here, because if freeing the block would've allowed for the block to 
+        # be placed in the resulting free space, one of the above in-place
+        # checks would've found it.
+        result = self.alloc(new_size)
         self.dealloc(start, size)
-        return self.alloc(new_size)
+        return result
 
     def dealloc(self, start, size):
         assert size > 0

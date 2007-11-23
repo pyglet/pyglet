@@ -119,6 +119,20 @@ class RegionAllocator(object):
         self.check_coverage()
         self.check_redundancy()
 
+    def force_alloc(self, size):
+        try:
+            return self.alloc(size)
+        except allocation.AllocatorMemoryException, e:
+            self.allocator.set_capacity(e.requested_capacity)
+            return self.alloc(size)
+
+    def force_realloc(self, region, size):
+        try:
+            self.realloc(region, size)
+        except allocation.AllocatorMemoryException, e:
+            self.allocator.set_capacity(e.requested_capacity)
+            self.realloc(region, size)
+
     def get_free_size(self):
         return self.allocator.get_free_size()
 
@@ -329,9 +343,10 @@ class TestAllocation(unittest.TestCase):
             allocator.realloc(region, 1)
         for region in regions:
             allocator.dealloc(region) 
+        self.assertTrue(allocator.get_free_size() == allocator.capacity)
 
     def test_realloc_2_1_2(self):
-        allocator = RegionAllocator(20)
+        allocator = RegionAllocator(30)
         regions = []
         for i in range(10):
             regions.append(allocator.alloc(2))
@@ -341,6 +356,71 @@ class TestAllocation(unittest.TestCase):
             allocator.realloc(region, 2)
         for region in regions:
             allocator.dealloc(region) 
+        self.assertTrue(allocator.get_free_size() == allocator.capacity)
+
+    def test_realloc_3_1_5_4_6(self):
+        allocator = RegionAllocator(1000)
+        regions = []
+        for i in range(10):
+            regions.append(allocator.alloc(3))
+        for region in regions:
+            allocator.realloc(region, 1)
+        for region in regions:
+            allocator.realloc(region, 5)
+        for region in regions:
+            allocator.realloc(region, 4)
+        for region in regions:
+            allocator.realloc(region, 6)
+        for region in regions:
+            allocator.dealloc(region) 
+        self.assertTrue(allocator.get_free_size() == allocator.capacity)
+
+    def test_realloc_3_1_5_4_6_sequential(self):
+        allocator = RegionAllocator(1000)
+        regions = []
+        for i in range(10):
+            regions.append(allocator.alloc(3))
+        for region in regions:
+            allocator.realloc(region, 1)
+            allocator.realloc(region, 5)
+            allocator.realloc(region, 4)
+            allocator.realloc(region, 6)
+        for region in regions:
+            allocator.dealloc(region) 
+        self.assertTrue(allocator.get_free_size() == allocator.capacity)
+
+    def test_resize1(self):
+        allocator = RegionAllocator(1)
+        regions = []
+        for i in range(10):
+            regions.append(allocator.force_alloc(3))
+        for region in regions:
+            allocator.dealloc(region) 
+        self.assertTrue(allocator.get_free_size() == allocator.capacity)
+
+    def test_mix_resize(self):
+        # Try a bunch of stuff.  There is not much method to this madness.
+        allocator = RegionAllocator(1)
+        regions = []
+        for i in range(10):
+            regions.append(allocator.force_alloc(3))
+        for region in regions[:5]:
+            #import pdb; pdb.set_trace()
+            allocator.force_realloc(region, 8)
+        for i in range(10):
+            regions.append(allocator.force_alloc(i + 1))
+        for region in regions[5:15]:
+            allocator.force_realloc(region, 5)
+        for region in regions[3:18:2]:
+            allocator.dealloc(region)
+            regions.remove(region)
+        for i in range(5):
+            regions.append(allocator.force_alloc(3))
+        for region in regions[-10:]:
+            allocator.force_realloc(region, 6)
+        for region in regions:
+            allocator.dealloc(region) 
+        self.assertTrue(allocator.get_free_size() == allocator.capacity)
 
 if __name__ == '__main__':
     unittest.main()
