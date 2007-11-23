@@ -40,8 +40,8 @@ class AllocatorMemoryException(Exception):
         self.requested_capacity = requested_capacity
 
 class Allocator(object):
-    def __init__(self, size):
-        self.capacity = size
+    def __init__(self, capacity):
+        self.capacity = capacity
 
         # Allocated blocks.  Start index and size in parallel lists.
         #
@@ -57,7 +57,7 @@ class Allocator(object):
         # for i in range(0, len(starts)):
         #   free_start[i] = starts[i] + sizes[i]
         #   free_size[i] =  starts[i+1] - free_start[i]
-        # free_size[i+1] = self.capacity - (free_start[-1] + free_size[-1])
+        # free_size[i+1] = self.capacity - free_start[-1]
 
         self.starts = []
         self.sizes = []
@@ -89,7 +89,7 @@ class Allocator(object):
             free_start = alloc_start + alloc_size
         
         # Allocate at end of capacity
-        free_size = self.capacity - (free_start + free_size)
+        free_size = self.capacity - free_start
         if free_size >= size:
             self.sizes[-1] += size
             return free_start
@@ -105,19 +105,28 @@ class Allocator(object):
         # Truncation is the same as deallocating the tail cruft
         if new_size < size:
             self.dealloc(start + new_size, size - new_size)
-            return
+            return start
             
         # Find which block it lives in
-        for i, (alloc_start, alloc_size) in enumerate(self.starts, self.sizes):
+        for i, (alloc_start, alloc_size) in \
+                enumerate(zip(*(self.starts, self.sizes))):
             p = start - alloc_start
             if p >= 0 and size <= alloc_size - p:
                 break
         assert p >= 0 and size <= alloc_size - p, 'Region not allocated'
 
-        if size == alloc_size - p and alloc_size - p >= new_size:
-            # Expand region in place
-            self.sizes[i] += new_size - size
-            return
+        if size == alloc_size - p:
+            # Region is at end of block.  Find how much free space is after
+            # it.
+            if i < len(self.starts) - 1:
+                free_size = self.starts[i + 1] - (start + size)
+            else:
+                free_size = self.capacity - (start + size)
+
+            if free_size >= new_size - size:
+                # Expand region in place
+                self.sizes[i] += new_size - size
+                return start
 
         # The block must be repositioned.  Dealloc then alloc.
         # TODO the first loop in dealloc() has already been computed; inline
@@ -130,7 +139,8 @@ class Allocator(object):
         assert size > 0
         
         # Find which block needs to be split
-        for i, (alloc_start, alloc_size) in enumerate(self.starts, self.sizes):
+        for i, (alloc_start, alloc_size) in \
+                enumerate(zip(*(self.starts, self.sizes))):
             p = start - alloc_start
             if p >= 0 and size <= alloc_size - p:
                 break
@@ -138,7 +148,11 @@ class Allocator(object):
         # Assert we left via the break
         assert p >= 0 and size <= alloc_size - p, 'Region not allocated'
 
-        if p == 0:
+        if p == 0 and size == alloc_size:
+            # Remove entire block
+            del self.starts[i]
+            del self.sizes[i]
+        elif p == 0:
             # Truncate beginning of block
             self.starts[i] += size
             self.sizes[i] -= size
@@ -146,14 +160,30 @@ class Allocator(object):
             # Truncate end of block
             self.sizes[i] -= size
         else:
-            # Reduce size of left side, insert region at right side
+            # Reduce size of left side, insert block at right side
+            #   $ = dealloc'd block, # = alloc'd region from same block
+            #
+            #   <------8------>
+            #   <-5-><-6-><-7->
+            #   1    2    3    4
+            #   #####$$$$$#####
+            #
+            #   1 = alloc_start
+            #   2 = start
+            #   3 = start + size
+            #   4 = alloc_start + alloc_size
+            #   5 = start - alloc_start = p
+            #   6 = size
+            #   7 = {8} - ({5} + {6}) = alloc_size - (p + size)
+            #   8 = alloc_size
+            #
             self.sizes[i] = p
-            self.starts.insert(i + 1, p + size)
-            self.sizes.insert(i + 1, alloc_size - (p + size)
+            self.starts.insert(i + 1, start + size)
+            self.sizes.insert(i + 1, alloc_size - (p + size))
 
     def get_allocated_regions(self):
         # return (starts, sizes); len(starts) == len(sizes)
-        return self.starts, self.sizes
+        return (self.starts, self.sizes)
 
     def get_fragmented_free_size(self):
         '''Returns the amount of space unused, not including the final
