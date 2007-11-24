@@ -183,7 +183,6 @@ class AbstractAttribute(object):
     '''
     
     _fixed_count = None
-    _component_names = ['x', 'y', 'z', 'w']
     
     def __init__(self, count, gl_type):
         assert count in (1, 2, 3, 4), 'Component count out of range'
@@ -194,14 +193,6 @@ class AbstractAttribute(object):
         self.size = count * self.align
         self.stride = self.size
         self.offset = 0
-
-        class struct_type(ctypes.Structure):
-            _slots_ = self._component_names[:self.count]
-            _fields_ = [ \
-                (self._component_names[i], self.c_type) \
-                for i in range(count) \
-            ]
-        self.struct_type = struct_type
 
     def enable(self):
         '''Enable the attribute using ``glEnableClientState``.'''
@@ -261,18 +252,8 @@ class AbstractAttribute(object):
             return vertexbuffer.IndirectArrayRegion(
                 region, array_count, self.count, elem_stride)
 
-    def get_struct_region(self, buffer, start, count):
-        byte_start = self.stride * start
-        byte_size = self.stride * count
-        assert self.stride == self.size
-        
-        ptr_type = ctypes.POINTER(self.struct_type * count)
-        return buffer.get_region(byte_start, byte_size, ptr_type)
-
-
 class ColorAttribute(AbstractAttribute):
     plural = 'colors'
-    _component_names = ['r', 'g', 'b', 'a']
     
     def __init__(self, count, gl_type):
         assert count in (3, 4), 'Color attributes must have count of 3 or 4'
@@ -358,7 +339,6 @@ class TexCoordAttribute(AbstractAttribute):
                        self.offset + pointer)
 
 class VertexAttribute(AbstractAttribute):
-    _component_names = ['x', 'y', 'z', 'w']
     plural = 'vertices'
 
     def __init__(self, count, gl_type):

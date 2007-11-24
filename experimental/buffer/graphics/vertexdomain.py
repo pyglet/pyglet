@@ -264,30 +264,6 @@ class VertexList(object):
     
     vertices = property(_get_vertices, _set_vertices)
 
-    # ---- EXPERIMENT
-
-    _vertex_structs_cache = None
-    _vertex_structs_cache_version = None
-
-    def _get_vertex_structs(self):
-        if (self._vertex_structs_cache_version != self.domain._version):
-            domain = self.domain
-            attribute = domain.attribute_names['vertices']
-            self._vertex_structs_cache = attribute.get_struct_region(
-                attribute.buffer, self.start, self.count)
-            self._vertex_structs_cache_version = domain._version
-
-        region = self._vertex_structs_cache
-        region.invalidate()
-        return region.array
-
-    def _set_vertex_structs(self, data):
-        self._get_vertex_structs()[:] = data
-    
-    vertex_structs = property(_get_vertex_structs, _set_vertex_structs)
-
-    # ---- END EXPERIMENT
-
     _normals_cache = None
     _normals_cache_version = None
 
