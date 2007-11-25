@@ -167,6 +167,30 @@ class VertexDomain(object):
         given attribute data.'''
         raise NotImplementedError('TODO')
 
+    def _safe_alloc(self, count):
+        '''Allocate vertices, resizing the buffers if necessary.'''
+        try:
+            return self.allocator.alloc(count)
+        except allocation.AllocatorMemoryException, e:
+            capacity = _nearest_pow2(e.requested_capacity)
+            self._version += 1
+            for buffer, _ in self.buffer_attributes:
+                buffer.resize(capacity * buffer.element_size)
+            self.allocator.set_capacity(capacity)
+            return self.allocator.alloc(count)
+
+    def _safe_realloc(self, start, count, new_count):
+        '''Reallocate vertices, resizing the buffers if necessary.'''
+        try:
+            return self.allocator.realloc(start, count, new_count)
+        except allocation.AllocatorMemoryException, e:
+            capacity = _nearest_pow2(e.requested_capacity)
+            self._version += 1
+            for buffer, _ in self.buffer_attributes:
+                buffer.resize(capacity * buffer.element_size)
+            self.allocator.set_capacity(capacity)
+            return self.allocator.realloc(start, count, new_count) 
+
     def create(self, count):
         '''Create a `VertexList` in this domain.
 
@@ -176,16 +200,7 @@ class VertexDomain(object):
 
         :rtype: `VertexList`
         '''
-        try:
-            start = self.allocator.alloc(count)
-        except allocation.AllocatorMemoryException, e:
-            capacity = _nearest_pow2(e.requested_capacity)
-            self._version += 1
-            for buffer, _ in self.buffer_attributes:
-                buffer.resize(capacity * buffer.element_size)
-            self.allocator.set_capacity(capacity)
-            start = self.allocator.alloc(count)
-
+        start = self._safe_alloc(count)
         return VertexList(self, start, count)
 
     def draw(self, mode):
@@ -231,7 +246,20 @@ class VertexList(object):
 
     def resize(self, count):
         '''Resize this group.'''
-        raise NotImplementedError('TODO')
+        new_start = self.domain._safe_realloc(self.start, self.count, count)
+        if new_start != self.start:
+            # Copy contents to new location
+            for attribute in self.domain.attributes:
+                old = attribute.get_region(attribute.buffer, 
+                                           self.start, self.count)
+                new = attribute.get_region(attribute.buffer, 
+                                           new_start, self.count)
+                new.array[:] = old.array[:]
+                new.invalidate()
+        self.start = new_start
+        self.count = count
+        self._colors_cache_version = None
+        self._vertices_cache_version = None
 
     def delete(self):
         '''Delete this group.'''
@@ -244,6 +272,30 @@ class VertexList(object):
         region.array[:] = data
         region.invalidate()
 
+    # ---
+
+    _colors_cache = None
+    _colors_cache_version = None
+
+    def _get_colors(self):
+        if (self._colors_cache_version != self.domain._version):
+            domain = self.domain
+            attribute = domain.attribute_names['colors']
+            self._colors_cache = attribute.get_region(
+                attribute.buffer, self.start, self.count)
+            self._colors_cache_version = domain._version
+
+        region = self._colors_cache
+        region.invalidate()
+        return region.array
+
+    def _set_colors(self, data):
+        self._get_colors()[:] = data
+
+    colors = property(_get_colors, _set_colors)
+
+    # ---
+    
     _vertices_cache = None
     _vertices_cache_version = None
 
@@ -264,6 +316,8 @@ class VertexList(object):
     
     vertices = property(_get_vertices, _set_vertices)
 
+    # ---
+
     _normals_cache = None
     _normals_cache_version = None
 
@@ -283,6 +337,8 @@ class VertexList(object):
         self._get_normals()[:] = data
 
     normals = property(_get_normals, _set_normals)
+
+    # ---
 
     _tex_coords_cache = None
     _tex_coords_cache_version = None
