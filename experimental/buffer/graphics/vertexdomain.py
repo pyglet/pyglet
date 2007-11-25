@@ -162,11 +162,6 @@ class VertexDomain(object):
                     'More than one "%s" attribute given' % name
                 self.attribute_names[name] = attribute
 
-    def add(self, **data):
-        '''Create vertices in this domain and initialise them with
-        given attribute data.'''
-        raise NotImplementedError('TODO')
-
     def _safe_alloc(self, count):
         '''Allocate vertices, resizing the buffers if necessary.'''
         try:
@@ -243,6 +238,9 @@ class VertexList(object):
         self.domain = domain
         self.start = start
         self.count = count
+    
+    def get_size(self):
+        return self.count
 
     def resize(self, count):
         '''Resize this group.'''
@@ -274,9 +272,6 @@ class VertexList(object):
 
     # ---
 
-    _colors_cache = None
-    _colors_cache_version = None
-
     def _get_colors(self):
         if (self._colors_cache_version != self.domain._version):
             domain = self.domain
@@ -292,34 +287,74 @@ class VertexList(object):
     def _set_colors(self, data):
         self._get_colors()[:] = data
 
+    _colors_cache = None
+    _colors_cache_version = None
     colors = property(_get_colors, _set_colors)
 
     # ---
-    
-    _vertices_cache = None
-    _vertices_cache_version = None
 
-    def _get_vertices(self):
-        if (self._vertices_cache_version != self.domain._version):
+    def _get_edge_flags(self):
+        if (self._edge_flags_cache_version != self.domain._version):
             domain = self.domain
-            attribute = domain.attribute_names['vertices']
-            self._vertices_cache = attribute.get_region(
+            attribute = domain.attribute_names['edge_flags']
+            self._edge_flags_cache = attribute.get_region(
                 attribute.buffer, self.start, self.count)
-            self._vertices_cache_version = domain._version
+            self._edge_flags_cache_version = domain._version
 
-        region = self._vertices_cache
+        region = self._edge_flags_cache
         region.invalidate()
         return region.array
 
-    def _set_vertices(self, data):
-        self._get_vertices()[:] = data
-    
-    vertices = property(_get_vertices, _set_vertices)
+    def _set_edge_flags(self, data):
+        self._get_edge_flags()[:] = data
+
+    _edge_flags_cache = None
+    _edge_flags_cache_version = None
+    edge_flags = property(_get_edge_flags, _set_edge_flags)
 
     # ---
 
-    _normals_cache = None
-    _normals_cache_version = None
+    def _get_fog_coords(self):
+        if (self._fog_coords_cache_version != self.domain._version):
+            domain = self.domain
+            attribute = domain.attribute_names['fog_coords']
+            self._fog_coords_cache = attribute.get_region(
+                attribute.buffer, self.start, self.count)
+            self._fog_coords_cache_version = domain._version
+
+        region = self._fog_coords_cache
+        region.invalidate()
+        return region.array
+
+    def _set_fog_coords(self, data):
+        self._get_fog_coords()[:] = data
+
+    _fog_coords_cache = None
+    _fog_coords_cache_version = None
+    fog_coords = property(_get_fog_coords, _set_fog_coords)
+
+    # ---
+
+    def _get_edge_flags(self):
+        if (self._edge_flags_cache_version != self.domain._version):
+            domain = self.domain
+            attribute = domain.attribute_names['edge_flags']
+            self._edge_flags_cache = attribute.get_region(
+                attribute.buffer, self.start, self.count)
+            self._edge_flags_cache_version = domain._version
+
+        region = self._edge_flags_cache
+        region.invalidate()
+        return region.array
+
+    def _set_edge_flags(self, data):
+        self._get_edge_flags()[:] = data
+
+    _edge_flags_cache = None
+    _edge_flags_cache_version = None
+    edge_flags = property(_get_edge_flags, _set_edge_flags)
+
+    # ---
 
     def _get_normals(self):
         if (self._normals_cache_version != self.domain._version):
@@ -336,7 +371,30 @@ class VertexList(object):
     def _set_normals(self, data):
         self._get_normals()[:] = data
 
+    _normals_cache = None
+    _normals_cache_version = None
     normals = property(_get_normals, _set_normals)
+
+    # ---
+
+    def _get_secondary_colors(self):
+        if (self._secondary_colors_cache_version != self.domain._version):
+            domain = self.domain
+            attribute = domain.attribute_names['secondary_colors']
+            self._secondary_colors_cache = attribute.get_region(
+                attribute.buffer, self.start, self.count)
+            self._secondary_colors_cache_version = domain._version
+
+        region = self._secondary_colors_cache
+        region.invalidate()
+        return region.array
+
+    def _set_secondary_colors(self, data):
+        self._get_secondary_colors()[:] = data
+
+    _secondary_colors_cache = None
+    _secondary_colors_cache_version = None
+    secondary_colors = property(_get_secondary_colors, _set_secondary_colors)
 
     # ---
 
@@ -360,6 +418,27 @@ class VertexList(object):
 
     tex_coords = property(_get_tex_coords, _set_tex_coords)
 
+    # ---
+    
+    _vertices_cache = None
+    _vertices_cache_version = None
+
+    def _get_vertices(self):
+        if (self._vertices_cache_version != self.domain._version):
+            domain = self.domain
+            attribute = domain.attribute_names['vertices']
+            self._vertices_cache = attribute.get_region(
+                attribute.buffer, self.start, self.count)
+            self._vertices_cache_version = domain._version
+
+        region = self._vertices_cache
+        region.invalidate()
+        return region.array
+
+    def _set_vertices(self, data):
+        self._get_vertices()[:] = data
+    
+    vertices = property(_get_vertices, _set_vertices)
 
 class IndexedVertexDomain(VertexDomain):
     _initial_index_count = 16
@@ -376,6 +455,28 @@ class IndexedVertexDomain(VertexDomain):
             self.index_allocator.capacity * self.index_element_size, 
             target=GL_ELEMENT_ARRAY_BUFFER)
 
+    def _safe_index_alloc(self, count):
+        '''Allocate indices, resizing the buffers if necessary.'''
+        try:
+            return self.index_allocator.alloc(count)
+        except allocation.AllocatorMemoryException, e:
+            capacity = _nearest_pow2(e.requested_capacity)
+            self._version += 1
+            self.index_buffer.resize(capacity * self.index_element_size)
+            self.index_allocator.set_capacity(capacity)
+            return self.index_allocator.alloc(count)
+
+    def _safe_index_realloc(self, start, count, new_count):
+        '''Reallocate indices, resizing the buffers if necessary.'''
+        try:
+            return self.index_allocator.realloc(start, count, new_count)
+        except allocation.AllocatorMemoryException, e:
+            capacity = _nearest_pow2(e.requested_capacity)
+            self._version += 1
+            self.index_buffer.resize(capacity * self.index_element_size)
+            self.index_allocator.set_capacity(capacity)
+            return self.index_allocator.realloc(start, count, new_count)
+
     def create(self, count, index_count):
         '''Create an `IndexedVertexList` in this domain.
 
@@ -386,25 +487,8 @@ class IndexedVertexDomain(VertexDomain):
                 Number of indices to create
 
         '''
-        try:
-            start = self.allocator.alloc(count)
-        except allocation.AllocatorMemoryException, e:
-            capacity = _nearest_pow2(e.requested_capacity)
-            self._version += 1
-            for buffer, _ in self.buffer_attributes:
-                buffer.resize(capacity * buffer.element_size)
-            self.allocator.set_capacity(capacity)
-            start = self.allocator.alloc(count)
-
-        try:
-            index_start = self.index_allocator.alloc(index_count)
-        except allocation.AllocatorMemoryException, e:
-            capacity = _nearest_pow2(e.requested_capacity)
-            self._version += 1
-            self.index_buffer.resize(capacity * self.index_element_size)
-            self.index_allocator.set_capacity(capacity)
-            index_start = self.index_allocator.alloc(index_count)
-
+        start = self._safe_alloc(count)
+        index_start = self._safe_index_alloc(index_count)
         return IndexedVertexList(self, start, count, index_start, index_count) 
 
     def get_index_region(self, start, count):
@@ -458,8 +542,37 @@ class IndexedVertexList(VertexList):
         self.index_start = index_start
         self.index_count = index_count
 
-    _indices_cache = None
-    _indices_cache_version = None
+    def resize(self, count, index_count):
+        '''Resize this group.'''
+        super(IndexedVertexList, self).resize(count)
+        
+        # Resize indices
+        new_start = self.domain._safe_index_realloc(
+            self.index_start, self.index_count, index_count)
+        if new_start != self.index_start:
+            old = self.domain.get_index_region(
+                self.index_start, self.index_count)
+            new = self.domain.get_index_region(
+                self.index_start, self.index_count)
+            new.array[:] = old.array[:]
+            new.invalidate()
+        self.index_start = new_start
+        self.index_count = index_count
+        self._indices_cache_version = None
+
+    def delete(self):
+        '''Delete this group.'''
+        super(IndexedVertexList, self).delete()
+        self.domain.index_allocator.dealloc(self.index_start, self.index_count)
+
+    def set_index_data(self, data):
+        # TODO without region
+        region = self.domain.get_index_region(
+            self.index_start, self.index_count)
+        region.array[:] = data
+        region.invalidate()
+
+    # ---
 
     def _get_indices(self):
         if self._indices_cache_version != self.domain._version:
@@ -475,4 +588,6 @@ class IndexedVertexList(VertexList):
     def _set_indices(self, data):
         self._get_indices()[:] = data
 
+    _indices_cache = None
+    _indices_cache_version = None
     indices = property(_get_indices, _set_indices)
