@@ -125,8 +125,8 @@ it, the application keeps the default behaviour while adding additional
 functionality.
 
 You can prevent the remaining event handlers in the stack from receiving the
-event by returning ``True``.  The following event handler, when pushed onto
-the window, will prevent the escape key from exiting the program::
+event by returning a true value.  The following event handler, when pushed
+onto the window, will prevent the escape key from exiting the program::
 
     def on_key_press(symbol, modifiers):
         if symbol == key.ESCAPE:
