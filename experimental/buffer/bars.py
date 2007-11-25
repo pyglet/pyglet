@@ -45,7 +45,7 @@ def create_bars():
 
         bar = batch.add(4, GL_TRIANGLE_STRIP, None, 
             ('v2f/dynamic', position),
-            ('c3B/static', color))
+            ('c3B/dynamic', color))
         bars.append(bar)
 
 

@@ -237,17 +237,16 @@ class AbstractAttribute(object):
         '''
         byte_start = self.stride * start
         byte_size = self.stride * count
+        array_count = self.count * count
         if self.stride == self.size:
             # non-interleaved
-            array_count = self.count * count
             ptr_type = ctypes.POINTER(self.c_type * array_count)
             return buffer.get_region(byte_start, byte_size, ptr_type)
         else:
             # interleaved
             byte_start += self.offset
             elem_stride = self.stride // ctypes.sizeof(self.c_type)
-            array_count = elem_stride * count
-            ptr_type = ctypes.POINTER(self.c_type * array_count)
+            ptr_type = ctypes.POINTER(self.c_type * (count * elem_stride))
             region = buffer.get_region(byte_start, byte_size, ptr_type)
             return vertexbuffer.IndirectArrayRegion(
                 region, array_count, self.count, elem_stride)

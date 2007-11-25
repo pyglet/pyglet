@@ -434,7 +434,7 @@ class IndirectArrayRegion(AbstractBufferRegion):
             `region` : `AbstractBufferRegion`
                 The region with interleaved data
             `size` : int
-                The number of elements that this region will access.
+                The number of elements that this region will provide access to.
             `component_count` : int 
                 The number of elements that are contiguous before some must
                 be skipped.
@@ -449,50 +449,80 @@ class IndirectArrayRegion(AbstractBufferRegion):
         self.stride = component_stride
         self.array = self
 
+    def __repr__(self):
+        return 'IndirectArrayRegion(size=%d, count=%d, stride=%d)' % (
+            self.size, self.count, self.stride)
+
     def __getitem__(self, index):
+        count = self.count
         if not isinstance(index, slice):
-            elem = index // self.count
-            j = index % self.count
+            elem = index // count
+            j = index % count
             return self.region.array[elem * self.stride + j]
 
         start = index.start or 0
         stop = index.stop
         step = index.step or 1
+        if start < 0:
+            start = self.size + start
         if stop is None:
             stop = self.size
+        elif stop < 0:
+            stop = self.size + stop
+
+        assert step == 1 or step % count == 0, \
+            'Step must be multiple of component count'
+
+        data_start = (start // count) * self.stride + start % count
+        data_stop = (stop // count) * self.stride + stop % count
+        data_step = step * self.stride
+
+        value_step = step * count
 
         # ctypes does not support stepped slicing, so do the work in a list
         # and copy it back.
         data = self.region.array[:]
         value = [0] * ((stop - start) // step)
         stride = self.stride
-        count = self.count
-        for i in range(self.count):
-            value[start + i:stop + i:count * step] = \
-                data[start * stride + i:stop * stride + i:stride * step]
+        for i in range(count):
+            value[i::value_step] = \
+                data[data_start + i:data_stop + i:data_step]
         return value
 
     def __setitem__(self, index, value):
+        count = self.count
         if not isinstance(index, slice):
-            elem = index // self.count
-            j = index % self.count
+            elem = index // count
+            j = index % count
             self.region.array[elem * self.stride + j] = value
             return
 
         start = index.start or 0
         stop = index.stop
         step = index.step or 1
+        if start < 0:
+            start = self.size + start
         if stop is None:
             stop = self.size
+        elif stop < 0:
+            stop = self.size + stop
+
+        assert step == 1 or step % count == 0, \
+            'Step must be multiple of component count'
+        
+        data_start = (start // count) * self.stride + start % count
+        data_stop = (stop // count) * self.stride + stop % count
+        data_step = step * self.stride
+
+        value_step = step * count
 
         # ctypes does not support stepped slicing, so do the work in a list
         # and copy it back.
         data = self.region.array[:]
         stride = self.stride
-        count = self.count
-        for i in range(self.count):
-            data[start * stride + i:stop * stride + i:stride * step] = \
-                value[start + i:stop + i:count * step]
+        for i in range(count):
+            data[data_start + i:data_stop + i:data_step] =  \
+                value[i::value_step]
         self.region.array[:] = data
 
     def invalidate(self):
