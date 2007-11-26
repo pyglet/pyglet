@@ -225,6 +225,12 @@ elif 'bdist_mpkg' in sys.argv:
             add_package('/Library/Frameworks/Python.framework/Versions/2.5',
                         '2.5', 'pyglet-py2.5',
                         'pyglet for Python 2.5 in /Library')
+            add_package('/opt/local/',
+                        '2.4', 'pyglet-macports-py2.4',
+                        'pyglet for MacPorts Python 2.4 in /opt/local')
+            add_package('/opt/local/',
+                        '2.5', 'pyglet-macports-py2.5',
+                        'pyglet for MacPorts Python 2.5 in /opt/local')
             
         # Don't build to an absolute path, assume within site-packages (makes
         # it easier to symlink the same archive for all packages)
