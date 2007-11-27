@@ -264,15 +264,12 @@ class EventDispatcher(object):
         for frame in self._event_stack[:]:
             handler = frame.get(event_type, None)
             if handler:
-                ret = handler(*args)
-                if ret != EVENT_UNHANDLED:
+                if handler(*args):
                     return
 
         # Check instance for an event handler
         if hasattr(self, event_type):
             getattr(self, event_type)(*args)
-
-
 
     def event(self, *args):
         '''Function decorator for an event handler.  
