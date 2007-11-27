@@ -223,7 +223,7 @@ class VertexDomain(object):
             glMultiDrawArrays(mode, starts, sizes, primcount)
         else:
             for start, size in zip(starts, sizes):
-                glDrawArrays(mode, start, primcount)
+                glDrawArrays(mode, start, size)
         
         for buffer, _ in self.buffer_attributes:
             buffer.unbind()
