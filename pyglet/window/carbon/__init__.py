@@ -65,7 +65,7 @@ class CarbonException(WindowException):
 carbon = pyglet.lib.load_library(
     framework='/System/Library/Frameworks/Carbon.framework')
 quicktime = pyglet.lib.load_library(
-    framework='/System/Library/Frameworks/Quicktime.framework')
+    framework='/System/Library/Frameworks/QuickTime.framework')
 
 carbon.GetEventDispatcherTarget.restype = EventTargetRef
 carbon.ReceiveNextEvent.argtypes = \
