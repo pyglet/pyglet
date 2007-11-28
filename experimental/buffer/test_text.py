@@ -6,31 +6,6 @@ import text
 import unittest
 
 class TestStyleRuns(unittest.TestCase):
-    def test_zero(self):
-        runs = text.StyleRuns(0, 'x')
-        it = iter(runs)
-        
-        start, end, style = it.next()
-        self.assertTrue(start == 0)
-        self.assertTrue(end == 0)
-        self.assertTrue(style == 'x')
-
-        self.assertRaises(StopIteration, it.next)
-        self.check_optimal(runs)
-
-    def test_initial(self):
-        runs = text.StyleRuns(10, 'x')
-        it = iter(runs)
-
-        start, end, style = it.next()
-        self.assertTrue(start == 0)
-        self.assertTrue(end == 10)
-        self.assertTrue(style == 'x')
-
-        self.assertRaises(StopIteration, it.next)
-
-        self.check_value(runs, 'x' * 10)
-
     def check_value(self, runs, value):
         for i, style in enumerate(value):
             self.assertTrue(runs.get_style_at(i) == style, repr(runs.runs))
@@ -63,6 +38,31 @@ class TestStyleRuns(unittest.TestCase):
                 for s, e, style in runs.iter_range(start, end):
                     for v in value[s:e]:
                         self.assertTrue(v == style, (start, end, s, e, style))
+
+    def test_zero(self):
+        runs = text.StyleRuns(0, 'x')
+        it = iter(runs)
+        
+        start, end, style = it.next()
+        self.assertTrue(start == 0)
+        self.assertTrue(end == 0)
+        self.assertTrue(style == 'x')
+
+        self.assertRaises(StopIteration, it.next)
+        self.check_optimal(runs)
+
+    def test_initial(self):
+        runs = text.StyleRuns(10, 'x')
+        it = iter(runs)
+
+        start, end, style = it.next()
+        self.assertTrue(start == 0)
+        self.assertTrue(end == 10)
+        self.assertTrue(style == 'x')
+
+        self.assertRaises(StopIteration, it.next)
+
+        self.check_value(runs, 'x' * 10)
 
     def test_set1(self):
         runs = text.StyleRuns(10, 'a')
@@ -109,6 +109,128 @@ class TestStyleRuns(unittest.TestCase):
         self.check_value(runs, 'biiiiiiiic')
         runs.set_style(0, 10, 'j')
         self.check_value(runs, 'jjjjjjjjjj')
+
+    def test_insert_empty(self):
+        runs = text.StyleRuns(0, 'a')
+        runs.insert(0, 10)
+        self.check_value(runs, 'aaaaaaaaaa')
+
+    def test_insert_beginning(self):
+        runs = text.StyleRuns(5, 'a')
+        runs.set_style(1, 4, 'b')
+        self.check_value(runs, 'abbba')
+        runs.insert(0, 3)
+        self.check_value(runs, 'aaaabbba')
+
+    def test_insert_1(self):
+        runs = text.StyleRuns(5, 'a')
+        runs.set_style(1, 4, 'b')
+        self.check_value(runs, 'abbba')
+        runs.insert(1, 3)
+        self.check_value(runs, 'aaaabbba')
+
+    def test_insert_2(self):
+        runs = text.StyleRuns(5, 'a')
+        runs.set_style(1, 2, 'b')
+        self.check_value(runs, 'abaaa')
+        runs.insert(2, 3)
+        self.check_value(runs, 'abbbbaaa')
+
+    def test_insert_end(self):
+        runs = text.StyleRuns(5, 'a')
+        runs.set_style(4, 5, 'b')
+        self.check_value(runs, 'aaaab')
+        runs.insert(5, 3)
+        self.check_value(runs, 'aaaabbbb')
+
+    def test_insert_almost_end(self):
+        runs = text.StyleRuns(5, 'a')
+        runs.set_style(0, 3, 'b')
+        runs.set_style(4, 5, 'c')
+        self.check_value(runs, 'bbbac')
+        runs.insert(4, 3)
+        self.check_value(runs, 'bbbaaaac') 
+
+    def test_delete_1_beginning(self):
+        runs = text.StyleRuns(5, 'a')
+        self.check_value(runs, 'aaaaa') 
+        runs.delete(0, 3)
+        self.check_value(runs, 'aa') 
+
+    def test_delete_1_middle(self):
+        runs = text.StyleRuns(5, 'a')
+        self.check_value(runs, 'aaaaa') 
+        runs.delete(1, 4)
+        self.check_value(runs, 'aa') 
+         
+    def test_delete_1_end(self):
+        runs = text.StyleRuns(5, 'a')
+        self.check_value(runs, 'aaaaa') 
+        runs.delete(2, 5)
+        self.check_value(runs, 'aa') 
+
+    def test_delete_1_all(self):
+        runs = text.StyleRuns(5, 'a')
+        self.check_value(runs, 'aaaaa') 
+        runs.delete(0, 5)
+        self.check_value(runs, '') 
+
+    def create_runs1(self):
+        runs = text.StyleRuns(10, 'a')
+        runs.set_style(1, 10, 'b')
+        runs.set_style(2, 10, 'c')
+        runs.set_style(3, 10, 'd')
+        runs.set_style(4, 10, 'e')
+        runs.set_style(5, 10, 'f')
+        runs.set_style(6, 10, 'g')
+        runs.set_style(7, 10, 'h')
+        runs.set_style(8, 10, 'i')
+        runs.set_style(9, 10, 'j')
+        self.check_value(runs, 'abcdefghij')
+        return runs
+
+    def create_runs2(self):
+        runs = text.StyleRuns(10, 'a')
+        runs.set_style(4, 7, 'b')
+        runs.set_style(7, 10, 'c')
+        self.check_value(runs, 'aaaabbbccc')
+        return runs
+
+    def test_delete2(self):
+        runs = self.create_runs1()
+        runs.delete(0, 5)
+        self.check_value(runs, 'fghij')
+
+    def test_delete3(self):
+        runs = self.create_runs1()
+        runs.delete(2, 8)
+        self.check_value(runs, 'abij')
+
+    def test_delete4(self):
+        runs = self.create_runs2()
+        runs.delete(0, 5)
+        self.check_value(runs, 'bbccc')
+       
+    def test_delete5(self):
+        runs = self.create_runs2()
+        runs.delete(5, 10)
+        self.check_value(runs, 'aaaab') 
+
+    def test_delete6(self):
+        runs = self.create_runs2()
+        runs.delete(0, 8)
+        self.check_value(runs, 'cc') 
+
+    def test_delete7(self):
+        runs = self.create_runs2()
+        runs.delete(2, 10)
+        self.check_value(runs, 'aa') 
+
+    def test_delete8(self):
+        runs = self.create_runs2()
+        runs.delete(3, 8)
+        self.check_value(runs, 'aaacc')
+
 
 if __name__ == '__main__':
     unittest.main()

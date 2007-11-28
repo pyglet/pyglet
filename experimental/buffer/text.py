@@ -21,13 +21,55 @@ class StyleRuns(object):
         self.runs = [StyleRun(0, initial)]
 
     def insert(self, pos, length):
-        # TODO
-        pass
+        assert 0 <= pos <= self.size, 'Index not in range'
+    
+        # Push along all runs after the insertion point, ends up using the
+        # usual style for interactive insertion.
+        for run in self.runs:
+            if run.start >= pos and run.start != 0:
+                run.start += length        
+        self.size += length
 
-    def remove(self, start, end):
-        # TODO
-        pass
+    def delete(self, start, end):
+        assert 0 <= start < end <= self.size, 'Slice not in range'
 
+        # Delete everything?
+        if start == 0 and end == self.size:
+            self.size = 0
+            del self.runs[1:]
+            return
+
+        # Find indices of style runs that hold start and end slice.
+        start_index = None
+        end_index = None
+        for i, run in enumerate(self.runs):
+            if run.start >= start and start_index is None:
+                start_index = i
+            if run.start == end:
+                end_index = i
+                break
+            elif run.start > end:
+                end_index = i - 1
+                break
+        if end_index is None:
+            end_index = len(self.runs) - 1
+        if start_index is None:
+            start_index = end_index
+
+        # Remove old styles (may be nothing)
+        del self.runs[start_index:end_index]
+
+        # Pull back all runs after end point (now the start point after
+        # deletion)
+        if end_index == 0:
+            self.runs[0].start = 0
+        elif start_index < len(self.runs):
+            self.runs[start_index].start  = start
+        d = end - start
+        for run in self.runs[start_index + 1:]:
+            run.start -= d
+        self.size -= d
+ 
     def set_style(self, start, end, style):
         assert 0 <= start < end <= self.size, 'Slice not in range'
 
@@ -87,7 +129,7 @@ class StyleRuns(object):
         yield last_run.start, end, last_run.style
 
     def get_style_at(self, index):
-        assert 0 <= index < self.size, 'Index not in range'
+        assert 0 <= index <= self.size, 'Index not in range'
         last_run = None
         for run in self.runs:
             if run.start > index:
@@ -280,9 +322,10 @@ class Text2(object):
                     tex_coords.extend(t[0] + t[1] + t[2] + t[3])
                     x += glyph.advance
                 
+                # Blergh, what a mess.  Create the colors needed for these
+                # glyphs by continuing the color_runs iteration.
                 colors = []
                 ng = n_glyphs
-                #import pdb; pdb.set_trace()
                 while ng:
                     if n_colors == 0:
                         color_start, color_end, color = colors_iter.next()
