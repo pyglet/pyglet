@@ -33,9 +33,11 @@ class TestStyleRuns(unittest.TestCase):
                 self.assertTrue(v == style)
 
     def check_iter_range(self, runs, value):
-        for start in range(0, runs.size):
-            for end in range(start, runs.size):
-                for s, e, style in runs.iter_range(start, end):
+        for interval in range(1, len(value)):
+            it = runs.get_range_iterator()
+            for start in range(0, len(value), interval):
+                end = min(start + interval, len(value))
+                for s, e, style in it.iter_range(start, end):
                     for v in value[s:e]:
                         self.assertTrue(v == style, (start, end, s, e, style))
 

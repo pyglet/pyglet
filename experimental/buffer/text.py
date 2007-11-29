@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # $Id:$
 
+import sys
+
 import graphics
 
 from pyglet.gl import *
@@ -114,19 +116,8 @@ class StyleRuns(object):
             last_run = run
         yield last_run.start, self.size, last_run.style
 
-    def iter_range(self, start, end):
-        assert 0 <= start <= end <= self.size, 'Slice not in range'
-        if start == end:
-            raise StopIteration()
-
-        last_run = None
-        for run in self.runs:
-            if run.start >= end:
-                break
-            if run.start > start:
-                yield max(start, last_run.start), run.start, last_run.style
-            last_run = run
-        yield last_run.start, end, last_run.style
+    def get_range_iterator(self):
+        return StyleRunsRangeIterator(self)
 
     def get_style_at(self, index):
         assert 0 <= index <= self.size, 'Index not in range'
@@ -136,6 +127,22 @@ class StyleRuns(object):
                 return last_run.style
             last_run = run
         return last_run.style
+
+class StyleRunsRangeIterator(object):
+    '''Perform sequential range iterations over a StyleRuns.'''
+    def __init__(self, style_runs):
+        self.iter = iter(style_runs)
+        self.curr_start, self.curr_end, self.curr_style = self.iter.next()
+    
+    def iter_range(self, start, end):
+        '''Iterate over range [start:end].  The range must be sequential from
+        the previous `iter_range` call.'''
+        while start >= self.curr_end:
+            self.curr_start, self.curr_end, self.curr_style = self.iter.next()
+        yield start, min(self.curr_end, end), self.curr_style
+        while end > self.curr_end:
+            self.curr_start, self.curr_end, self.curr_style = self.iter.next()
+            yield self.curr_start, min(self.curr_end, end), self.curr_style
 
 class Line(object):
     def __init__(self):
@@ -293,9 +300,8 @@ class Text2(object):
     def _create_vertex_lists(self):
         batch = self.batch
 
-        colors_iter = iter(self.color_runs)
-        _, color_end, color = colors_iter.next()
-        n_colors = color_end
+        colors_iter = self.color_runs.get_range_iterator()
+        i = 0
         
         for line in self.lines:
             x = line.x
@@ -322,24 +328,17 @@ class Text2(object):
                     tex_coords.extend(t[0] + t[1] + t[2] + t[3])
                     x += glyph.advance
                 
-                # Blergh, what a mess.  Create the colors needed for these
-                # glyphs by continuing the color_runs iteration.
                 colors = []
-                ng = n_glyphs
-                while ng:
-                    if n_colors == 0:
-                        color_start, color_end, color = colors_iter.next()
-                        n_colors = color_end - color_start
-                    nc = min(ng, n_colors)
-                    colors.extend(color * (nc * 4))
-                    n_colors -= nc
-                    ng -= nc
+                for start, end, color in colors_iter.iter_range(i, i+n_glyphs):
+                    colors.extend(color * ((end - start) * 4))
 
                 list = batch.add(n_glyphs * 4, GL_QUADS, state, 
                     ('v2f/dynamic', vertices),
                     ('t3f/dynamic', tex_coords),
                     ('c4B/dynamic', colors))
                 line.vertex_lists.append(list)
+
+                i += n_glyphs
 
 def test_text1(batch, width):
     from pyglet import font
@@ -366,7 +365,7 @@ def main():
     w = window.Window()
 
     batch = graphics.Batch()
-    text = test_text1(batch, w.width)
+    text = test_text2(batch, w.width)
     
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
