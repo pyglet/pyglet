@@ -469,6 +469,7 @@ class CarbonWindow(BaseWindow):
             #self._height = self.screen.height
             agl.aglSetFullScreen(self._agl_context, 
                                  self._width, self._height, 0, 0)
+            self._mouse_in_window = True
             self.dispatch_event('on_resize', self._width, self._height)
             self.dispatch_event('on_show')
             self.dispatch_event('on_expose')
@@ -1124,13 +1125,14 @@ class CarbonWindow(BaseWindow):
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseExited)
     def _on_mouse_exited(self, next_handler, ev, data):
-        x, y = self._get_mouse_position(ev)
-        y = self.height - y
+        if not self._fullscreen:
+            x, y = self._get_mouse_position(ev)
+            y = self.height - y
 
-        self._mouse_in_window = False
-        self.set_mouse_platform_visible()
+            self._mouse_in_window = False
+            self.set_mouse_platform_visible()
 
-        self.dispatch_event('on_mouse_leave', x, y)
+            self.dispatch_event('on_mouse_leave', x, y)
 
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
