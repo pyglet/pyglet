@@ -75,7 +75,7 @@ the `Window` constructor to render to the entire screen rather than opening a
 window::
 
     win = Window(fullscreen=True)
-    win.set_mouse_exclusive()
+    win.set_exclusive_mouse()
 
 Working with multiple windows
 -----------------------------
