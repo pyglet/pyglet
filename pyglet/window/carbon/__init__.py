@@ -1036,15 +1036,15 @@ class CarbonWindow(BaseWindow):
 
     @staticmethod
     def _get_mouse_in_content(ev):
-       position = Point()
-       carbon.GetEventParameter(ev, kEventParamMouseLocation,
+        position = Point()
+        carbon.GetEventParameter(ev, kEventParamMouseLocation,
             typeQDPoint, c_void_p(), sizeof(position), c_void_p(),
             byref(position)) 
-       return carbon.FindWindow(position, None) == inContent 
+        return carbon.FindWindow(position, None) == inContent 
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseDown)
     def _on_mouse_down(self, next_handler, ev, data):
-        if self._get_mouse_in_content(ev):
+        if self._fullscreen or self._get_mouse_in_content(ev):
             button, modifiers = self._get_mouse_button_and_modifiers(ev)
             x, y = self._get_mouse_position(ev)
             y = self.height - y
@@ -1067,7 +1067,7 @@ class CarbonWindow(BaseWindow):
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseMoved)
     def _on_mouse_moved(self, next_handler, ev, data):
-        if self._get_mouse_in_content(ev):
+        if self._fullscreen or self._get_mouse_in_content(ev):
             x, y = self._get_mouse_position(ev)
             y = self.height - y
 
