@@ -237,7 +237,7 @@ class FreeTypeFont(base.Font):
             dpi = 0  # Select default DPI of 72 by specifying 0.
 
         # Check if font name/style matches a font loaded into memory by user
-        lname = name.lower()
+        lname = name and name.lower() or ''
         if (lname, bold, italic) in self._memory_fonts:
             font = self._memory_fonts[lname, bold, italic]
             self._set_face(font.face, size, dpi)
