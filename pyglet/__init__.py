@@ -104,6 +104,7 @@ if getattr(sys, 'frozen', None):
 #:
 options = {
     'audio': ('directsound', 'openal', 'alsa', 'silent'),
+    'font': ('win32', 'gdiplus'), # ignored outside win32
     'debug_font': False,
     'debug_gl': not _enable_optimisations,
     'debug_media': False,
@@ -112,6 +113,7 @@ options = {
 
 _option_types = {
     'audio': tuple,
+    'font': tuple,
     'debug_font': bool,
     'debug_gl': bool,
     'debug_media': bool,

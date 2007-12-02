@@ -75,6 +75,7 @@ import sys
 import os
 import math
 
+import pyglet
 from pyglet.gl import *
 from pyglet import window
 from pyglet import image
@@ -495,8 +496,14 @@ if not getattr(sys, 'is_epydoc', False):
         from pyglet.font.carbon import CarbonFont
         _font_class = CarbonFont
     elif sys.platform in ('win32', 'cygwin'):
-        from pyglet.font.win32 import Win32Font
-        _font_class = Win32Font
+        if pyglet.options['font'][0] == 'win32':
+            from pyglet.font.win32 import Win32Font
+            _font_class = Win32Font
+        elif pyglet.options['font'][0] == 'gdiplus':
+            from pyglet.font.win32 import GDIPlusFont
+            _font_class = GDIPlusFont
+        else:
+            assert False, 'Unknown font driver'
     else:
         from pyglet.font.freetype import FreeTypeFont
         _font_class = FreeTypeFont
