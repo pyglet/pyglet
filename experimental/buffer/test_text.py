@@ -124,6 +124,32 @@ class TestStyleRuns(unittest.TestCase):
         runs.insert(0, 3)
         self.check_value(runs, 'aaaabbba')
 
+    def test_insert_beginning_1(self):
+        runs = text.StyleRuns(5, 'a')
+        self.check_value(runs, 'aaaaa')
+        runs.insert(0, 1)
+        runs.set_style(0, 1, 'a')
+        self.check_value(runs, 'aaaaaa')
+        runs.insert(0, 1)
+        runs.set_style(0, 1, 'a')
+        self.check_value(runs, 'aaaaaaa')
+        runs.insert(0, 1)
+        runs.set_style(0, 1, 'a')
+        self.check_value(runs, 'aaaaaaaa')
+
+    def test_insert_beginning_2(self):
+        runs = text.StyleRuns(5, 'a')
+        self.check_value(runs, 'aaaaa')
+        runs.insert(0, 1)
+        runs.set_style(0, 1, 'b')
+        self.check_value(runs, 'baaaaa')
+        runs.insert(0, 1)
+        runs.set_style(0, 1, 'c')
+        self.check_value(runs, 'cbaaaaa')
+        runs.insert(0, 1)
+        runs.set_style(0, 1, 'c')
+        self.check_value(runs, 'ccbaaaaa')
+
     def test_insert_1(self):
         runs = text.StyleRuns(5, 'a')
         runs.set_style(1, 4, 'b')

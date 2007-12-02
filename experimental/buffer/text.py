@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # $Id:$
 
+import itertools
 import sys
 
 import graphics
@@ -103,10 +104,10 @@ class StyleRuns(object):
             return
 
         # Insert following style unless unnecessary
-        if len(self.runs) <= start_index + 1 or \
-           self.runs[start_index + 1].style != end_style:
+        if end_style != style and (
+            len(self.runs) <= start_index + 1 or
+            self.runs[start_index + 1].style != end_style):
             self.runs.insert(start_index + 1, StyleRun(end, end_style))
-
     
     def __iter__(self):
         last_run = None
@@ -144,8 +145,31 @@ class StyleRunsRangeIterator(object):
             self.curr_start, self.curr_end, self.curr_style = self.iter.next()
             yield self.curr_start, min(self.curr_end, end), self.curr_style
 
+    def get_style_at(self, index):
+        while index >= self.curr_end:
+            self.curr_start, self.curr_end, self.curr_style = self.iter.next()
+        return self.curr_style
+
 class Line(object):
-    def __init__(self):
+    def __init__(self, start):
+        self.clear(start, delete_lists=False)
+
+    def __repr__(self):
+        return 'Line(%r)' % self.glyph_runs
+
+    def add_glyph_run(self, glyph_run):
+        self.glyph_runs.append(glyph_run)
+        self.ascent = max(self.ascent, glyph_run.font.ascent)
+        self.descent = min(self.descent, glyph_run.font.descent)
+        self.width += glyph_run.width
+
+    def clear(self, start, delete_lists=True):
+        if delete_lists:
+            for list in self.vertex_lists:
+                list.delete()
+
+        self.start = start
+        
         self.glyph_runs = []
         self.ascent = 0
         self.descent = 0
@@ -156,24 +180,12 @@ class Line(object):
 
         self.vertex_lists = []
 
-    def __repr__(self):
-        return 'Line(%r)' % self.glyph_runs
-
-    def add_word(self, word):
-        self.glyph_runs.extend(word.glyph_runs)
-        self.ascent = max(self.ascent, word.ascent)
-        self.descent = min(self.descent, word.descent)
-
-    def add_glyph_run(self, glyph_run):
-        self.glyph_runs.append(glyph_run)
-        self.ascent = max(self.ascent, glyph_run.font.ascent)
-        self.descent = min(self.descent, glyph_run.font.descent)
-
 class GlyphRun(object):
     def __init__(self, owner, font, glyphs):
         self.owner = owner
         self.font = font
         self.glyphs = glyphs
+        self.width = sum(g.advance for g in glyphs) # XXX
 
     def add_glyphs(self, glyphs):
         self.glyphs.extend(glyphs)
@@ -181,12 +193,14 @@ class GlyphRun(object):
     def __repr__(self):
         return 'GlyphRun(%r)' % self.glyphs
 
-class Word(object):
+class FlowCookie(object):
     def __init__(self):
         self.glyph_runs = [] 
         self.ascent = 0
         self.descent = 0
         self.width = 0
+        self.start = 0
+        self.end = 0
 
     def add_glyph_run(self, glyph_run):
         self.glyph_runs.append(glyph_run)
@@ -194,116 +208,216 @@ class Word(object):
         self.descent = min(self.descent, glyph_run.font.descent)
         self.width += sum(g.advance for g in glyph_run.glyphs)
 
+class InvalidRange(object):
+    def __init__(self):
+        self.start = sys.maxint
+        self.end = 0
+
+    def insert(self, start, length):
+        if self.start >= start:
+            self.start += length
+        if self.end >= start:
+            self.end += length
+        self.invalidate(start, start + length)
+
+    def invalidate(self, start, end):
+        self.start = min(self.start, start)
+        self.end = max(self.end, end)
+
+    def validate(self):
+        start, end = self.start, self.end
+        self.start = sys.maxint
+        self.end = 0
+        return start, end
+
 class Text2(object):
     def __init__(self, font, text, color=(255, 255, 255, 255), width=400,
                  batch=None):
-        self.text = text
         self.width = width
         self.y = 480
         self.x = 0
-
-        self.font_runs = StyleRuns(len(text), font)
-        self.color_runs = StyleRuns(len(text), color)
 
         if batch is None:
             batch = graphics.Batch()
         self.batch = batch
 
+        self.text = ''
+        self.glyphs = []
         self.lines = []
         self.states = {}
 
-    def _flow(self):
-        self.lines = []
-        self._build_line = None
-        self._build_word = None
+        self.invalid_glyphs = InvalidRange()
+        self.invalid_lines = InvalidRange()
+        self.invalid_vertex_lines = InvalidRange()
 
-        for start, end, font in self.font_runs:
-            self._flow_text(start, end, font)
-        if self._build_word:
-            self._build_line.add_word(self._build_word)
-        if self._build_line.glyph_runs:
-            self.lines.append(self._build_line)
+        self.font_runs = StyleRuns(0, font)
+        self.owner_runs = StyleRuns(0, None)
+        self.color_runs = StyleRuns(0, color)
 
-        self._flow_lines()
-        self._create_vertex_lists()
+        self.insert_text(0, text)
 
-    def _flow_text(self, start, end, font):
-        text = self.text[start:end]
-        glyphs = font.get_glyphs(text)
+    def insert_text(self, start, text):
+        len_text = len(text)
+        self.text = ''.join((self.text[:start], text, self.text[start:]))
+        self.glyphs[start:start] = [None] * len_text
 
-        owner = glyphs[0].owner
-        glyph_chars = []
-        for c, glyph in zip(text, glyphs):
-            if glyph.owner is not owner:
-                self._flow_glyphs(glyph_chars, owner, font)
-                owner = glyph.owner
-                glyph_chars = []
-            glyph_chars.append((glyph, c))
-        self._flow_glyphs(glyph_chars, owner, font)
-
-    def _flow_glyphs(self, glyph_chars, owner, font):
-        if not self._build_line:
-            self._build_line = Line()
-
-        width = self.width
-        line = self._build_line
-        word = self._build_word
-        run = GlyphRun(owner, font, [])
-        accum = []
-        x = line.width
-        if word:
-            x += word.width
+        self.invalid_glyphs.insert(start, len_text)
+        self.font_runs.insert(start, len_text)
+        self.owner_runs.insert(start, len_text)
+        self.color_runs.insert(start, len_text)
         
-        for glyph, c in glyph_chars:
-            if c in u'\u0020\u200b':
-                if word:
-                    line.add_word(word)
-                    word = self._build_word = None
-                x += glyph.advance
-                line.width = x
-                accum.append(glyph)
-                run.add_glyphs(accum)
-                accum = []
-            elif glyph.advance + x >= width:
-                if run.glyphs:
-                    line.add_glyph_run(run)
-                self.lines.append(line)
-                self._build_line = line = Line()
-                run = GlyphRun(owner, font, [])
-                x = sum(g.advance for g in accum)
-                accum.append(glyph)
-                x += glyph.advance
-            else:
-                accum.append(glyph)
-                x += glyph.advance
+        for line in self.lines:
+            if line.start >= start:
+                line.start += len_text
 
-        if run.glyphs:
+        self._update()
+
+    def _update(self):
+        invalid_start, invalid_end = self.invalid_glyphs.validate()
+
+        if invalid_end - invalid_start <= 0:
+            return
+        
+        # Update glyphs
+        font_range_iter = self.font_runs.get_range_iterator()
+        for start, end, font in \
+                font_range_iter.iter_range(invalid_start, invalid_end):
+            text = self.text[start:end]
+            self.glyphs[start:end] = font.get_glyphs(text)
+
+        # Update owner runs
+        owner = self.glyphs[start].owner
+        run_start = start
+        for i, glyph in enumerate(self.glyphs[invalid_start:invalid_end]):
+            if owner != glyph.owner:
+                self.owner_runs.set_style(run_start, i + invalid_start, owner)
+                owner = glyph.owner
+                run_start = i + start
+        self.owner_runs.set_style(run_start, invalid_end, owner)            
+
+        # Reflow
+        self._flow_glyphs(invalid_start, invalid_end)
+        self._flow_lines()
+        self._update_vertex_lists()
+
+    def _flow_glyphs(self, invalid_start, invalid_end):
+        # Find first invalid line
+        line_index = 0
+        for i, line in enumerate(self.lines):
+            if line.start > invalid_start:
+                break
+            line_index = i
+
+        try:
+            line = self.lines[line_index]
+            invalid_start = min(invalid_start, line.start)
+            line.clear(invalid_start)
+            self.invalid_lines.invalidate(line_index, line_index + 1)
+        except IndexError:
+            line_index = 0
+            invalid_start = 0
+            line = Line(0)
+            self.lines.append(line)
+            self.invalid_lines.insert(0, 1)
+
+        owner_iterator = self.owner_runs.get_range_iterator().iter_range(
+            invalid_start, len(self.text))
+        font_iterator = self.font_runs.get_range_iterator()
+        x = 0
+
+        run_accum = []
+        for start, end, owner in owner_iterator:
+            font = font_iterator.get_style_at(start)
+            owner_accum = []
+            owner_accum_commit = []
+            index = start
+            for (text, glyph) in zip(self.text[start:end],
+                                        self.glyphs[start:end]):
+                if text in u'\u0020\u200b':
+                    for run in run_accum:
+                        line.add_glyph_run(run)
+                    run_accum = []
+                    owner_accum.append(glyph)
+                    owner_accum_commit.extend(owner_accum)
+                    owner_accum = []
+
+                    line.width = x # Do not include trailing space in line width
+                    x += glyph.advance
+                    index += 1
+                    
+                    next_start = index
+                else:
+                    if x + glyph.advance >= self.width:
+                        if owner_accum_commit:
+                            line.add_glyph_run(
+                                GlyphRun(owner, font, owner_accum_commit))
+                            owner_accum_commit = []
+                        if line.glyph_runs:
+                            line_index += 1
+                            try:
+                                line = self.lines[line_index]
+                                if (next_start == line.start and
+                                    next_start > invalid_end):
+                                    # No more lines need to be modified, early
+                                    # exit.
+                                    return
+                                line.clear(next_start) # XXX early exit
+                                self.invalid_lines.invalidate(
+                                    line_index, line_index + 1)
+                            except IndexError:
+                                line = Line(next_start)
+                                self.lines.append(line)
+                                self.invalid_lines.insert(line_index, 1)
+                            x = sum(r.width for r in run_accum) # XXX
+                            x += sum(g.advance for g in owner_accum) # XXX
+                    owner_accum.append(glyph)
+                    x += glyph.advance
+                    index += 1
+
+            if owner_accum_commit:
+                line.add_glyph_run(GlyphRun(owner, font, owner_accum_commit))
+            if owner_accum:
+                run_accum.append(GlyphRun(owner, font, owner_accum))
+
+        for run in run_accum:
             line.add_glyph_run(run)
 
-        if x > width:
-            self.lines.append(line)
-            self.build_line = Line()
-
-        if accum:
-            if not word:
-                self._build_word = word = Word()
-            word.add_glyph_run(GlyphRun(owner, font, accum))
-
     def _flow_lines(self):
-        y = self.y
-        for line in self.lines:
+        invalid_start, invalid_end = self.invalid_lines.validate()
+        if invalid_end - invalid_start <= 0:
+            return
+
+        if invalid_start == 0:
+            y = self.y
+        else:
+            last = self.lines[invalid_start - 1]
+            y = last.y + last.descent
+        
+        line_index = invalid_start
+        for line in self.lines[invalid_start:]:
             y -= line.ascent
             line.x = self.x
+            if line.y == y and line_index >= invalid_end:
+                break
             line.y = y
             y += line.descent
+            line_index += 1
 
-    def _create_vertex_lists(self):
+        # Invalidate lines that need new vertex lists.
+        self.invalid_vertex_lines.invalidate(invalid_start, line_index)
+
+    def _update_vertex_lists(self):
+        invalid_start, invalid_end = self.invalid_vertex_lines.validate()
+        if invalid_end - invalid_start <= 0:
+            return
+
         batch = self.batch
 
         colors_iter = self.color_runs.get_range_iterator()
         i = 0
         
-        for line in self.lines:
+        for line in self.lines[invalid_start:invalid_end]:
+            assert not line.vertex_lists
             x = line.x
             y = line.y
             for glyph_run in line.glyph_runs:
@@ -350,19 +464,31 @@ def test_text1(batch, width):
     text.color_runs.set_style(0, 5, (255, 100, 100, 255))
     text.font_runs.set_style(8, 11, ft2)
     text.font_runs.set_style(9, 10, ft3)
-    text._flow()
     return text
 
 def test_text2(batch, width):
     from pyglet import font
-    ft = font.load('Georgia', 72)
+    ft = font.load('Georgia', 12)
     text = Text2(ft, frog_prince.replace('\n', ' '), batch=batch, width=width)
-    text._flow()
     return text
 
+def test_text3(batch, width):
+    from pyglet import font
+    ft = font.load('Georgia', 128)
+    text = Text2(ft, 'ab cdefhijklm nop qrs tuv wxyz', 
+        batch=batch, width=width)
+    return text
+
+cursor_pos = 200 
 def main():
     from pyglet import window
     w = window.Window()
+
+    @w.event
+    def on_text(t):
+        global cursor_pos
+        text.insert_text(cursor_pos, t)
+        cursor_pos += len(t)
 
     batch = graphics.Batch()
     text = test_text2(batch, w.width)
