@@ -392,17 +392,15 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         gdiplus.GdipGetImageGraphicsContext(self._bitmap,
             ctypes.byref(self._graphics))
 
-        self._dc = ctypes.c_ulong()
-        gdiplus.GdipGetDC(self._graphics, ctypes.byref(self._dc))
-        gdiplus.GdipReleaseDC(self._graphics, self._dc)
+        #self._dc = ctypes.c_ulong()
+        #gdiplus.GdipGetDC(self._graphics, ctypes.byref(self._dc))
+        #gdiplus.GdipReleaseDC(self._graphics, self._dc)
+        self._dc = user32.GetDC(0)
+        gdi32.SelectObject(self._dc, self.font.hfont)
 
         gdiplus.GdipSetTextRenderingHint(self._graphics,
             TextRenderingHintAntiAliasGridFit)
-        
-        self._gdipfont = ctypes.c_void_p()
-        gdiplus.GdipCreateFontFromLogfontA(user32.GetDC(0),
-            ctypes.byref(self.font.logfont),
-            ctypes.byref(self._gdipfont))
+
 
         self._brush = ctypes.c_void_p()
         gdiplus.GdipCreateSolidFill(0xffffffff, ctypes.byref(self._brush))
@@ -424,7 +422,7 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         origin = Pointf(-lsb, self.font.ascent)
         gdiplus.GdipGraphicsClear(self._graphics, 0x00000000)
         gdiplus.GdipDrawDriverString(self._graphics, ctypes.byref(ch), 1,
-            self._gdipfont, self._brush, ctypes.byref(origin),
+            self.font._gdipfont, self._brush, ctypes.byref(origin),
             self._flags, self._matrix)
         gdiplus.GdipFlush(self._graphics, 1)
 
@@ -445,23 +443,64 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
             'BGRA', buffer, -bitmap_data.Stride)
 
         return image
+
+FontStyleBold = 1
+FontStyleItalic = 2
+UnitPixel = 2
+UnitPoint = 3
         
 class GDIPlusFont(Win32Font):
     glyph_renderer_class = GDIPlusGlyphRenderer
 
-    '''
-    def __init__(self, name, size, bold=False, italic=False, dpi=None):
-        super(GDIPlusFont, self).__init__(name, size, bold, italic, dpi)
-    
-        self.logfont = self.get_logfont(name, size, bold, italic, dpi)
-        hfont = gdi32.CreateFontIndirectA(byref(self.logfont))
+    _private_fonts = None
 
-        # Create a dummy DC for coordinate mapping
-        dc = user32.GetDC(0)
-        metrics = TEXTMETRIC()
-        gdi32.SelectObject(dc, hfont)
-        gdi32.GetTextMetricsA(dc, byref(metrics))
-        self.ascent = metrics.tmAscent
-        self.descent = -metrics.tmDescent
-        self.max_glyph_width = metrics.tmMaxCharWidth 
-    '''
+    _default_name = 'Arial'
+
+    def __init__(self, name, size, bold=False, italic=False, dpi=None):
+        if not name:
+            name = self._default_name
+        super(GDIPlusFont, self).__init__(name, size, bold, italic, dpi)
+
+        family = ctypes.c_void_p()
+        name = ctypes.c_wchar_p(name)
+
+        # Look in private collection first:
+        if self._private_fonts:
+            gdiplus.GdipCreateFontFamilyFromName(name,
+                self._private_fonts, ctypes.byref(family)) 
+
+        # Then in system collection:
+        if not family:
+            gdiplus.GdipCreateFontFamilyFromName(name,
+                None, ctypes.byref(family)) 
+
+        # Nothing found, use default font.
+        if not family:
+            name = self._default_name
+            gdiplus.GdipCreateFontFamilyFromName(ctypes.c_wchar_p(name),
+                None, ctypes.byref(family)) 
+
+        if dpi is None:
+            unit = UnitPoint
+        else:
+            unit = UnitPixel
+            size = size * dpi / 72
+
+        style = 0
+        if bold:
+            style |= FontStyleBold
+        if italic:
+            style |= FontStyleItalic
+        self._gdipfont = ctypes.c_void_p()
+        gdiplus.GdipCreateFont(family, ctypes.c_float(size),
+            style, unit, ctypes.byref(self._gdipfont))
+
+    @classmethod
+    def add_font_data(cls, data):
+        super(GDIPlusFont, cls).add_font_data(data)
+
+        if not cls._private_fonts:
+            cls._private_fonts = ctypes.c_void_p()
+            gdiplus.GdipNewPrivateFontCollection(
+                ctypes.byref(cls._private_fonts))
+        gdiplus.GdipPrivateAddMemoryFont(cls._private_fonts, data, len(data))
