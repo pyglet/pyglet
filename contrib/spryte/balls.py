@@ -13,7 +13,7 @@ layer = spryte.Layer()
 balls = []
 for i in range(200):
     balls.append(spryte.Sprite('ball.png', layer,
-        win.width * random.random(), win.height * random.random(),
+        (win.width - 64) * random.random(), (win.height - 64) * random.random(),
         dx=-50 + 100*random.random(), dy=-50 + 100*random.random(),
         dead=False))
 
@@ -22,8 +22,8 @@ def animate(dt):
         ball.x += ball.dx * dt
         ball.y += ball.dy * dt
 
-        if ball.x > win.width or ball.x < 0: ball.dx *= -1
-        if ball.y > win.height or ball.y < 0: ball.dy *= -1
+        if ball.x + ball.width > win.width or ball.x < 0: ball.dx *= -1
+        if ball.y + ball.height > win.height or ball.y < 0: ball.dy *= -1
 clock.schedule(animate)
 
 layer2 = spryte.Layer()
