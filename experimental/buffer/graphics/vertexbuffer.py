@@ -477,6 +477,7 @@ class IndirectArrayRegion(AbstractBufferRegion):
         data_stop = (stop // count) * self.stride + stop % count
         data_step = step * self.stride
 
+        #  TODO stepped getitem is probably wrong, see setitem for correct.
         value_step = step * count
 
         # ctypes does not support stepped slicing, so do the work in a list
