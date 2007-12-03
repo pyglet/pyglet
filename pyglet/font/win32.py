@@ -419,7 +419,7 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
     def _get_image(self, text, width, height, lsb):
         ch = ctypes.c_wchar(text)
         
-        origin = Pointf(-lsb, self.font.ascent)
+        origin = Pointf(-lsb, self._bitmap_height + self.font.descent)
         gdiplus.GdipGraphicsClear(self._graphics, 0x00000000)
         gdiplus.GdipDrawDriverString(self._graphics, ctypes.byref(ch), 1,
             self.font._gdipfont, self._brush, ctypes.byref(origin),
