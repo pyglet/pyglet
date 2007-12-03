@@ -193,21 +193,6 @@ class GlyphRun(object):
     def __repr__(self):
         return 'GlyphRun(%r)' % self.glyphs
 
-class FlowCookie(object):
-    def __init__(self):
-        self.glyph_runs = [] 
-        self.ascent = 0
-        self.descent = 0
-        self.width = 0
-        self.start = 0
-        self.end = 0
-
-    def add_glyph_run(self, glyph_run):
-        self.glyph_runs.append(glyph_run)
-        self.ascent = max(self.ascent, glyph_run.font.ascent)
-        self.descent = min(self.descent, glyph_run.font.descent)
-        self.width += sum(g.advance for g in glyph_run.glyphs)
-
 class InvalidRange(object):
     def __init__(self):
         self.start = sys.maxint
@@ -230,7 +215,7 @@ class InvalidRange(object):
         self.end = 0
         return start, end
 
-class Text2(object):
+class TextView(object):
     def __init__(self, font, text, color=(255, 255, 255, 255), width=400,
                  batch=None):
         self.width = width
@@ -241,7 +226,7 @@ class Text2(object):
             batch = graphics.Batch()
         self.batch = batch
 
-        self.text = ''
+        self._text = ''
         self.glyphs = []
         self.lines = []
         self.states = {}
@@ -258,7 +243,7 @@ class Text2(object):
 
     def insert_text(self, start, text):
         len_text = len(text)
-        self.text = ''.join((self.text[:start], text, self.text[start:]))
+        self._text = ''.join((self._text[:start], text, self._text[start:]))
         self.glyphs[start:start] = [None] * len_text
 
         self.invalid_glyphs.insert(start, len_text)
@@ -282,7 +267,7 @@ class Text2(object):
         font_range_iter = self.font_runs.get_range_iterator()
         for start, end, font in \
                 font_range_iter.iter_range(invalid_start, invalid_end):
-            text = self.text[start:end]
+            text = self._text[start:end]
             self.glyphs[start:end] = font.get_glyphs(text)
 
         # Update owner runs
@@ -321,7 +306,7 @@ class Text2(object):
             self.invalid_lines.insert(0, 1)
 
         owner_iterator = self.owner_runs.get_range_iterator().iter_range(
-            invalid_start, len(self.text))
+            invalid_start, len(self._text))
         font_iterator = self.font_runs.get_range_iterator()
         x = 0
 
@@ -331,7 +316,7 @@ class Text2(object):
             owner_accum = []
             owner_accum_commit = []
             index = start
-            for (text, glyph) in zip(self.text[start:end],
+            for (text, glyph) in zip(self._text[start:end],
                                         self.glyphs[start:end]):
                 if text in u'\u0020\u200b':
                     for run in run_accum:
@@ -454,12 +439,132 @@ class Text2(object):
 
                 i += n_glyphs
 
+    # Coordinate translation
+
+    def get_position_from_point(self, x, y):
+        for line in self.lines:
+            if y > line.y + line.descent:
+                break
+        
+        position = line.start
+        last_glyph_x = line.x
+        for glyph_run in line.glyph_runs:
+            for glyph in glyph_run.glyphs:
+                if x < last_glyph_x + glyph.advance/2:
+                    return position
+                position += 1
+                last_glyph_x += glyph.advance
+        return position
+    
+    def get_point_from_position(self, position):
+        line = self.lines[0]
+        for next_line in self.lines:
+            if next_line.start > position:
+                break
+            line = next_line
+
+        x = line.x
+        
+        position -= line.start
+        for glyph_run in line.glyph_runs:
+            for glyph in glyph_run.glyphs:
+                if position == 0:
+                    break
+                position -= 1
+                x += glyph.advance 
+        return x, line.y
+
+    def get_line_from_position(self, position):
+        line = 0
+        for next_line in self.lines:
+            if next_line.start > position:
+                break
+            line += 1
+        return line
+
+    def get_position_from_line(self, line):
+        return line.start
+
+    def get_point_from_line(self, line):
+        line = self.lines[line]
+        return line.x, line.y
+
+    # Styled text access
+
+    def _get_text(self):
+        return self._text
+
+    text = property(_get_text)
+
+    def set_font(self, font, start=0, end=None):
+        if end is None:
+            end = len(self._text)
+        self.font_runs.set_style(start, end, font)
+        self.invalid_glyphs.invalidate(start, end)
+        self._update()
+
+    def get_font(self, position=None):
+        if position is None:
+            raise NotImplementedError('TODO') # if only one font used, else
+                # indeterminate
+        return self.font_runs.get_style_at(position)
+
+class Caret(object):
+    def __init__(self, text_view, batch=None):
+        self._text_view = text_view
+        if batch is None:
+            batch = text_view.batch
+        self._list = batch.add(2, GL_LINES, None, 'v2f', 'c4B')
+    
+    def _set_color(self, color):
+        self._list.colors[:3] = color
+        self._list.colors[4:7] = color
+
+    def _get_color(self):
+        return self._list.colors[:3]
+
+    color = property(_get_color, _set_color)
+
+    def _set_visible(self, visible=True):
+        alpha = visible and 255 or 0
+        self._list.colors[3] = alpha
+        self._list.colors[7] = alpha
+
+    def _get_visible(self):
+        return self._list.colors[3] == 255
+
+    visible = property(_get_visible, _set_visible)
+
+    _position = 0
+    def _set_position(self, index):
+        self._position = index
+        self._update()
+
+    def _get_position(self):
+        return self._position
+
+    position = property(_get_position, _set_position)
+
+    def move(self, motion):
+        from pyglet.window import key
+        if motion == key.LEFT:
+            self.position = max(0, self.position - 1)
+        elif motion == key.RIGHT:
+            self.position = min(len(self._text_view._text), self.position + 1) 
+
+    def _update(self):
+        x, y = self._text_view.get_point_from_position(self._position)
+        font = self._text_view.get_font(max(0, self._position - 1))
+        self._list.vertices[:] = [x, y + font.descent, x, y + font.ascent]
+                
+
 def test_text1(batch, width):
     from pyglet import font
     ft = font.load('Times New Roman', 36)
     ft2 = font.load('Times New Roman', 48, italic=True)
     ft3 = font.load('Times New Roman', 72, italic=True)
-    text = Text2(ft, 'Hello, world!', batch=batch, width=width) 
+    text = TextView(ft, 'Hello, world!', batch=batch, width=width, 
+        color=(0, 0, 0, 255)) 
     text.color_runs.set_style(7, 12, (100, 255, 255, 255))
     text.color_runs.set_style(0, 5, (255, 100, 100, 255))
     text.font_runs.set_style(8, 11, ft2)
@@ -468,37 +573,77 @@ def test_text1(batch, width):
 
 def test_text2(batch, width):
     from pyglet import font
-    ft = font.load('Georgia', 12)
-    text = Text2(ft, frog_prince.replace('\n', ' '), batch=batch, width=width)
+    ft = font.load('Times New Roman', 16)
+    ft2 = font.load('Times New Roman', 48)
+    text = TextView(ft, frog_prince.replace('\n', ' '), batch=batch,
+        width=width, color=(0, 0, 0, 255)) 
+    text.set_font(ft2, 101, 134)
     return text
 
 def test_text3(batch, width):
     from pyglet import font
     ft = font.load('Georgia', 128)
-    text = Text2(ft, 'ab cdefhijklm nop qrs tuv wxyz', 
-        batch=batch, width=width)
+    text = TextView(ft, 'ab cdefhijklm nop qrs tuv wxyz', 
+        color=(0, 0, 0, 255), batch=batch, width=width)
     return text
 
-cursor_pos = 200 
 def main():
+    from pyglet import clock
     from pyglet import window
-    w = window.Window()
+    from pyglet.window import key
+
+    w = window.Window(vsync=False)
+    w.set_mouse_cursor(w.get_system_mouse_cursor('text'))
 
     @w.event
     def on_text(t):
-        global cursor_pos
-        text.insert_text(cursor_pos, t)
-        cursor_pos += len(t)
+        text.insert_text(caret.position, t)
+        caret.position += len(t)
+        cursor_not_idle()
+
+    @w.event
+    def on_text_motion(motion):
+        caret.move(motion)
+        cursor_not_idle()
+
+    @w.event
+    def on_mouse_press(x, y, button, modifiers):
+        caret.position = text.get_position_from_point(x, y)
+        cursor_not_idle()
+
+    def blink_cursor(dt):
+        caret.visible = not caret.visible
+
+    def cursor_idle(dt):
+        clock.schedule_interval(blink_cursor, 0.5)
+
+    def cursor_not_idle():
+        clock.unschedule(blink_cursor)
+        clock.unschedule(cursor_idle)
+        clock.schedule_once(cursor_idle, 0.1)
+        caret.visible = True
 
     batch = graphics.Batch()
     text = test_text2(batch, w.width)
+    caret = Caret(text)
+    caret.color = (0, 0, 0)
+    caret.visible = True
+    caret.position = 0
+
+    fps = clock.ClockDisplay()
     
+    cursor_idle(0)
+
+    glClearColor(1, 1, 1, 1)
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
     while not w.has_exit:
+        clock.tick()
         w.dispatch_events()
         w.clear()
         batch.draw()
+        fps.draw()
         w.flip()
 
 frog_prince = '''In olden times when wishing still
