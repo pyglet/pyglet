@@ -1,0 +1,118 @@
+Introduction
+------------
+
+>>> layer = SpriteLayer()
+>>> car = Sprite('car.png', layer, 100, 200, dx=10, dy=0)
+
+>>> # keyword args are made atttributes
+>>> car.x += car.dx
+
+>>> layer.draw()
+
+
+>>> car.rotation = 45
+>>> car.rothandle = 'center'
+
+
+>>> # replace new car image
+>>> car.image = SpriteImage('car-damaged.png')
+
+
+>>> # load animation from an animation strip
+>>> explosion = AnimatedImage('explosion.png', frames=8, loop=False)
+>>> explosion.play()
+
+
+
+
+
+
+
+--------------------------------
+
+Sprites are organised into z-valued SpriteLayers.
+
+>>> layer = SpriteLayer(z=0, visible=True)
+>>> car_image = SpriteImage('car.png')		# aggregate images into one tex
+>>> car1 = Sprite(car_image, layer, 100, 200)	# place a car at (100, 200)
+
+>>> car1 = layer[0]
+>>> car1 = image[0]
+
+>>> smoke_image.animate()	# animates all sprites of this image
+
+??? image.animate? sprite.animate? spryte.animate? layer.animate?
+
+
+>>> for sprite in bullet_image:
+...   if sprite.collide(stuff):
+...     stuff.blowup()
+...     sprite.destroy()
+...
+
+
+>>> car_image.color
+>>> car_image.scale
+>>> car_image.rotation
+>>> car_image.rotanchor		# ... used when creating new sprites
+>>> car_image.blendmode		# applies to all sprites, is part of state
+
+>>> car1.color
+>>> car1.position
+>>> car1.rotanchor
+>>> car1.scale
+>>> car1.rotation			# per-sprite rw attributes
+>>> y = car1.top; w = car1.width        # full set of "rect" attributes
+>>> car1.right = x			# ... which are assignable
+
+
+Moving sprites between layers:
+
+>>> layer2.add(layer1.remove(sprite))
+>>> sprite.moveto(layer2)
+
+
+Draw layer on demand:
+
+>>> layer.draw()
+
+Convenience?
+
+>>> layer.visible = True
+>>> layer.z = -100
+>>> spryte.draw()
+
+(Is there any reason Z should be used in drawing calls?)
+
+
+[The following not really updated...]
+
+
+TileMap is an extension of SpriteLayer with map coordinate handling:
+
+>>> image = pyglet.image.load('tileset.png')
+>>> tiles = pyglet.image.ImageGrid(image, 10, 10, ...)
+>>> grid = [[(0, 0), (0, 0), ...	# 2d selection of tiles from the image
+>>> map = TileMap(tiles, grid)	# tilemap using tiles & grid
+>>> map = TileMap.from_xml(tiles, file)	# from an XML file
+
+Different ways to initialise a tile map.
+
+>>> map.set((1, 1), (0, 0))          # choose tile 1, 1 at position 0, 0
+>>> call2 = map.set((0, 0), (0, 1))  # choose tile 0, 0 at position 0, 1
+
+Set the image from the tiles grid at the position in the map. set() returns a proxy to the internals of the TileMap for later manipulation.
+
+>>> map.draw()			# render the map
+>>> map.clear()			# clear the map
+
+>>> TileMap.load('map-file.png', 'tileset.png')
+
+Use the R, G channels from the first PNG to select tiles from the second. The B channel is also loaded as an additional attribute of the map elements (possibly for event handling - depends on the game programmer)
+
+>>> tiles.load_xml('map-file.xml')      # use the XML file for tile selection (bonus: tiles can have attributes)
+>>> cell = map[0, 1]                	# map cell at position 0, 1
+>>> y = cell.top; w = cell.width        # full set of "rect" attributes
+>>> cell.color = (.5, .5, .5, 1)        # half bright (cells have same attrs as sprites)
+>>> map[0, 1]['attribute']              # the XML attribute for the cell
+
