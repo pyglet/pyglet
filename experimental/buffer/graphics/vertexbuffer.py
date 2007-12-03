@@ -512,17 +512,19 @@ class IndirectArrayRegion(AbstractBufferRegion):
         
         data_start = (start // count) * self.stride + start % count
         data_stop = (stop // count) * self.stride + stop % count
-        data_step = step * self.stride
-
-        value_step = step * count
 
         # ctypes does not support stepped slicing, so do the work in a list
         # and copy it back.
         data = self.region.array[:]
-        stride = self.stride
-        for i in range(count):
-            data[data_start + i:data_stop + i:data_step] =  \
-                value[i::value_step]
+        if step == 1:
+            data_step = self.stride
+            value_step = count
+            for i in range(count):
+                data[data_start + i:data_stop + i:data_step] = \
+                    value[i::value_step]
+        else:
+            data_step = (step // count) * self.stride
+            data[data_start:data_stop:data_step] = value
         self.region.array[:] = data
 
     def invalidate(self):
