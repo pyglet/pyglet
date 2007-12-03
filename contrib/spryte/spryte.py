@@ -89,55 +89,50 @@ class Sprite(rect.Rect):
 
     def set_x(self, value):
         self._x = value
-        iv = int(value)
-        w = self._width
-        # use this if/when ctypes supports it
-        #self.primitive.vertices[0::2] = [iv, iv + w, iv + w, iv]
-        self.primitive.vertices[0] = self.primitive.vertices[6] = iv
-        self.primitive.vertices[2] = self.primitive.vertices[4] = iv + w
+        x = int(value)
+        w = int(self._width)
+        vertices = self.primitive.vertices
+        vertices[0] = vertices[6] = x
+        vertices[2] = vertices[4] = x + w
     x = property(lambda self: self._x, set_x)
 
     def set_y(self, value):
         self._y = value
-        iv = int(value)
-        # XXX intify width and height
-        h = self._height
-        # use this if/when ctypes supports it
-        #self.primitive.vertices[1::2] = [iv, iv, iv + h, iv + h]
-        self.primitive.vertices[1] = self.primitive.vertices[3] = iv
-        self.primitive.vertices[5] = self.primitive.vertices[7] = iv + h
+        y = int(value)
+        h = int(self._height)
+        vertices = self.primitive.vertices
+        vertices[1] = vertices[3] = y
+        vertices[5] = vertices[7] = y + h
     y = property(lambda self: self._y, set_y)
 
     def set_pos(self, pos):
         self._x, self._y = pos
-        ix = int(self._x)
-        iy = int(self._y)
-        w, h = self._width, self._height
-        self.primitive.vertices[:] = [
-            ix, iy,
-            ix + w, iy,
-            ix + w, iy + h,
-            ix, iy + h,
-        ]
+        x = int(self._x)
+        y = int(self._y)
+        w = int(self._width)
+        h = int(self._height)
+        self.primitive.vertices[:] = [x, y, x + w, y, x + w, y + h, x, iy + h]
     pos = property(lambda self: (self._x, self._y), set_pos)
 
     def set_width(self, value):
         self._width = value
         ix = int(self._x)
-        w = self._width
-        # use this if/when ctypes supports it
-        #self.primitive.vertices[0::2] = [ix, ix + w, ix + w, ix]
-        self.primitive.vertices[0] = self.primitive.vertices[6] = ix
-        self.primitive.vertices[2] = self.primitive.vertices[4] = ix + w
+        w = int(self._width)
+        vertices = self.primitive.vertices
+        vertices[0] = vertices[6] = ix
+        vertices[2] = vertices[4] = ix + w
     width = property(lambda self: self._width, set_width)
 
     def set_height(self, value):
         self._height = value
         iy = int(self._y)
-        h = self._height
-        # use this if/when ctypes supports it
-        #self.primitive.vertices[1::2] = [iy, iy, iy + h, iy + h]
-        self.primitive.vertices[1] = self.primitive.vertices[3] = iy
-        self.primitive.vertices[5] = self.primitive.vertices[7] = iy + h
+        h = int(self._height)
+        vertices = self.primitive.vertices
+        vertices[1] = vertices[3] = iy
+        vertices[5] = vertices[7] = iy + h
     height = property(lambda self: self._height, set_height)
+
+    # XXX set_dimensions
+    # XXX set_rect
+
 
