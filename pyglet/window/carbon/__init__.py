@@ -661,6 +661,8 @@ class CarbonWindow(BaseWindow):
         self.dispatch_event('on_expose')
 
     def get_size(self):
+        if self._fullscreen:
+            return self._width, self._height
         rect = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
         return rect.right - rect.left, rect.bottom - rect.top
