@@ -125,6 +125,14 @@ class AudioFormat(object):
                 self.sample_size == other.sample_size and
                 self.sample_rate == other.sample_rate)
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        return '%s(channels=%d, sample_size=%d, sample_rate=%d)' % (
+            self.__class__.__name__, self.channels, self.sample_size,
+            self.sample_rate)
+
 class VideoFormat(object):
     '''Video details.
 
@@ -631,6 +639,8 @@ class Player(event.EventDispatcher):
                 self._audio_finished = True
                 return
             if audio_format != self._audio.audio_format:
+                # TODO This seems like it will miss packets.  should save
+                # audio data for when _audio is reconstructed?
                 return
             length = audio_data.length
             self._audio.write(audio_data)
