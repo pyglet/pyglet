@@ -25,7 +25,6 @@ class TestStyleRuns(unittest.TestCase):
         for start, end, _ in runs:
             self.assertTrue(start == next_start)
             next_start = end
-        self.assertTrue(next_start == runs.size)
 
     def check_iter(self, runs, value):
         for start, end, style in runs:
@@ -259,6 +258,35 @@ class TestStyleRuns(unittest.TestCase):
         runs.delete(3, 8)
         self.check_value(runs, 'aaacc')
 
+    def test_delete9(self):
+        runs = self.create_runs2()
+        runs.delete(7, 8)
+        self.check_value(runs, 'aaaabbbcc')
+
+    def test_delete10(self):
+        runs = self.create_runs2()
+        runs.delete(8, 9) 
+        self.check_value(runs, 'aaaabbbcc')
+
+    def test_delete11(self):
+        runs = self.create_runs2()
+        runs.delete(9, 10)
+        self.check_value(runs, 'aaaabbbcc')
+
+    def test_delete12(self):
+        runs = self.create_runs2()
+        runs.delete(4, 5)
+        self.check_value(runs, 'aaaabbccc')
+
+    def test_delete13(self):
+        runs = self.create_runs2()
+        runs.delete(5, 6)
+        self.check_value(runs, 'aaaabbccc')
+
+    def test_delete14(self):
+        runs = self.create_runs2()
+        runs.delete(6, 7)
+        self.check_value(runs, 'aaaabbccc')
 
 if __name__ == '__main__':
     unittest.main()

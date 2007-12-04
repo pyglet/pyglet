@@ -12,6 +12,106 @@ from pyglet.gl import *
 TextState = graphics.TextureState
 
 class StyleRun(object):
+    def __init__(self, style, count):
+        self.style = style
+        self.count = count
+
+    def __repr__(self):
+        return 'StyleRun(%r, %d)' % (self.style, self.count)
+
+class StyleRuns(object):
+    def __init__(self, size, initial):
+        self.runs = [StyleRun(initial, size)]
+
+    def insert(self, pos, length):
+        i = 0
+        for run in self.runs:
+            if i <= pos <= i + run.count:
+                run.count += length
+            i += run.count
+
+    def delete(self, start, end):
+        i = 0
+        for run in self.runs:
+            if end - start == 0:
+                break
+            if i <= start <= i + run.count:
+                trim = min(end - start, i + run.count - start)
+                run.count -= trim
+                end -= trim
+            i += run.count
+        self.runs = [r for r in self.runs if r.count > 0]
+
+    def set_style(self, start, end, style):
+        if end - start <= 0:
+            return
+        
+        # Find runs that need to be split
+        i = 0
+        start_i = None
+        start_trim = 0
+        end_i = None
+        end_trim = 0
+        for run_i, run in enumerate(self.runs):
+            count = run.count
+            if i < start < i + count:
+                start_i = run_i
+                start_trim = start - i
+            if i < end < i + count:
+                end_i = run_i
+                end_trim = end - i
+            i += count
+        
+        # Split runs
+        if start_i is not None:
+            run = self.runs[start_i]
+            self.runs.insert(start_i, StyleRun(run.style, start_trim))
+            run.count -= start_trim
+            if end_i is not None:
+                if end_i == start_i:
+                    end_trim -= start_trim
+                end_i += 1
+        if end_i is not None:
+            run = self.runs[end_i]
+            self.runs.insert(end_i, StyleRun(run.style, end_trim))
+            run.count -= end_trim
+                
+        # Set new style on runs
+        i = 0
+        for run in self.runs:
+            if start <= i and i + run.count <= end: 
+                run.style = style
+            i += run.count 
+
+        # Merge adjacent runs
+        last_run = self.runs[0]
+        for run in self.runs[1:]:
+            if run.style == last_run.style:
+                run.count += last_run.count
+                last_run.count = 0
+            last_run = run
+
+        # Delete collapsed runs
+        self.runs = [r for r in self.runs if r.count > 0]
+
+    def __iter__(self):
+        i = 0
+        for run in self.runs:
+            yield i, i + run.count, run.style
+            i += run.count
+
+    def get_range_iterator(self):
+        return StyleRunsRangeIterator(self)
+    
+    def get_style_at(self, index):
+        i = 0
+        for run in self.runs:
+            if i <= index < i + run.count:
+                return run.style
+            i += run.count
+        assert False, 'Index not in range'
+
+class StyleRunOld(object):
     def __init__(self, start, style):
         self.start = start
         self.style = style
@@ -19,7 +119,8 @@ class StyleRun(object):
     def __repr__(self):
         return 'StyleRun(%d, %r)' % (self.start, self.style)
 
-class StyleRuns(object):
+
+class StyleRunsOld(object):
     def __init__(self, size, initial):
         self.size = size
         self.runs = [StyleRun(0, initial)]
@@ -68,7 +169,10 @@ class StyleRuns(object):
         if end_index == 0:
             self.runs[0].start = 0
         elif start_index < len(self.runs):
-            self.runs[start_index].start  = start
+            if end_index < start_index:
+                import pdb; pdb.set_trace()
+            elif start_index != end_index:
+                self.runs[start_index].start = start
         d = end - start
         for run in self.runs[start_index + 1:]:
             run.start -= d
@@ -206,6 +310,16 @@ class InvalidRange(object):
             self.end += length
         self.invalidate(start, start + length)
 
+    def delete(self, start, end):
+        if self.start > end:
+            self.start -= end - start
+        elif self.start > start:
+            self.start = start
+        if self.end > end:
+            self.end -= end - start
+        elif self.end > start:
+            self.end = start
+
     def invalidate(self, start, end):
         self.start = min(self.start, start)
         self.end = max(self.end, end)
@@ -258,31 +372,48 @@ class TextView(object):
 
         self._update()
 
+    def remove_text(self, start, end):
+        self._text = self._text[:start] + self._text[end:]
+        self.glyphs[start:end] = []
+
+        self.invalid_glyphs.delete(start, end)
+        self.font_runs.delete(start, end)
+        self.owner_runs.delete(start, end)
+        self.color_runs.delete(start, end)
+
+        size = end - start
+        for line in self.lines:
+            if line.start > start:
+                line.start -= size
+
+        self.invalid_glyphs.invalidate(start, start + 1)
+        self._update()
+
     def _update(self):
         invalid_start, invalid_end = self.invalid_glyphs.validate()
 
-        if invalid_end - invalid_start <= 0:
-            return
-        
-        # Update glyphs
-        font_range_iter = self.font_runs.get_range_iterator()
-        for start, end, font in \
-                font_range_iter.iter_range(invalid_start, invalid_end):
-            text = self._text[start:end]
-            self.glyphs[start:end] = font.get_glyphs(text)
+        if invalid_end - invalid_start > 0:
+            # Update glyphs
+            font_range_iter = self.font_runs.get_range_iterator()
+            for start, end, font in \
+                    font_range_iter.iter_range(invalid_start, invalid_end):
+                text = self._text[start:end]
+                self.glyphs[start:end] = font.get_glyphs(text)
 
-        # Update owner runs
-        owner = self.glyphs[start].owner
-        run_start = start
-        for i, glyph in enumerate(self.glyphs[invalid_start:invalid_end]):
-            if owner != glyph.owner:
-                self.owner_runs.set_style(run_start, i + invalid_start, owner)
-                owner = glyph.owner
-                run_start = i + start
-        self.owner_runs.set_style(run_start, invalid_end, owner)            
+            # Update owner runs
+            owner = self.glyphs[start].owner
+            run_start = start
+            for i, glyph in enumerate(self.glyphs[invalid_start:invalid_end]):
+                if owner != glyph.owner:
+                    self.owner_runs.set_style(
+                        run_start, i + invalid_start, owner)
+                    owner = glyph.owner
+                    run_start = i + start
+            self.owner_runs.set_style(run_start, invalid_end, owner)            
 
-        # Reflow
-        self._flow_glyphs(invalid_start, invalid_end)
+            # Reflow
+            self._flow_glyphs(invalid_start, invalid_end)
+
         self._flow_lines()
         self._update_vertex_lists()
 
@@ -667,7 +798,16 @@ def main():
 
     @w.event
     def on_text_motion(motion):
-        caret.move(motion)
+        if motion == key.MOTION_BACKSPACE:
+            if caret.position > 0:
+                text.remove_text(caret.position - 1, caret.position)
+                caret.position -= 1
+        elif motion == key.MOTION_DELETE:
+            if caret.position < len(text.text) - 1:
+                text.remove_text(caret.position, caret.position + 1)
+                caret._update()
+        else:
+            caret.move(motion)
         cursor_not_idle()
 
     @w.event
