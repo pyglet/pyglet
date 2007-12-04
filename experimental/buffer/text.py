@@ -2,6 +2,7 @@
 # $Id:$
 
 import itertools
+import re
 import sys
 
 import graphics
@@ -442,19 +443,8 @@ class TextView(object):
     # Coordinate translation
 
     def get_position_from_point(self, x, y):
-        for line in self.lines:
-            if y > line.y + line.descent:
-                break
-        
-        position = line.start
-        last_glyph_x = line.x
-        for glyph_run in line.glyph_runs:
-            for glyph in glyph_run.glyphs:
-                if x < last_glyph_x + glyph.advance/2:
-                    return position
-                position += 1
-                last_glyph_x += glyph.advance
-        return position
+        line = self.get_line_from_point(x, y)
+        return self.get_position_on_line(line, x)
     
     def get_point_from_position(self, position):
         line = self.lines[0]
@@ -474,8 +464,16 @@ class TextView(object):
                 x += glyph.advance 
         return x, line.y
 
+    def get_line_from_point(self, x, y):
+        line_index = 0
+        for line in self.lines:
+            if y > line.y + line.descent:
+                break
+            line_index += 1
+        return line_index
+
     def get_line_from_position(self, position):
-        line = 0
+        line = -1
         for next_line in self.lines:
             if next_line.start > position:
                 break
@@ -483,11 +481,27 @@ class TextView(object):
         return line
 
     def get_position_from_line(self, line):
-        return line.start
+        return self.lines[line].start
+
+    def get_position_on_line(self, line, x):
+        line = self.lines[line]
+
+        position = line.start
+        last_glyph_x = line.x
+        for glyph_run in line.glyph_runs:
+            for glyph in glyph_run.glyphs:
+                if x < last_glyph_x + glyph.advance/2:
+                    return position
+                position += 1
+                last_glyph_x += glyph.advance
+        return position
 
     def get_point_from_line(self, line):
         line = self.lines[line]
         return line.x, line.y
+
+    def get_line_count(self):
+        return len(self.lines)
 
     # Styled text access
 
@@ -510,11 +524,16 @@ class TextView(object):
         return self.font_runs.get_style_at(position)
 
 class Caret(object):
+    _next_word_re = re.compile(r'(?<=\W)\w')
+    _previous_word_re = re.compile(r'(?<=\W)\w+\W*$')
+    
     def __init__(self, text_view, batch=None):
         self._text_view = text_view
         if batch is None:
             batch = text_view.batch
         self._list = batch.add(2, GL_LINES, None, 'v2f', 'c4B')
+
+        self._ideal_x = None
     
     def _set_color(self, color):
         self._list.colors[:3] = color
@@ -547,13 +566,58 @@ class Caret(object):
 
     def move(self, motion):
         from pyglet.window import key
-        if motion == key.LEFT:
+        if motion == key.MOTION_LEFT:
             self.position = max(0, self.position - 1)
-        elif motion == key.RIGHT:
+        elif motion == key.MOTION_RIGHT:
             self.position = min(len(self._text_view._text), self.position + 1) 
+        elif motion == key.MOTION_UP:
+            line = self._text_view.get_line_from_position(self._position)
+            self.move_to_line(max(0, line - 1))
+        elif motion == key.MOTION_DOWN:
+            line = self._text_view.get_line_from_position(self._position)
+            if line < self._text_view.get_line_count() - 1:
+                self.move_to_line(line + 1)
+        elif motion == key.MOTION_BEGINNING_OF_LINE:
+            line = self._text_view.get_line_from_position(self._position)
+            self.position = self._text_view.get_position_on_line(line, 0)
+        elif motion == key.MOTION_END_OF_LINE:
+            line = self._text_view.get_line_from_position(self._position)
+            if line < self._text_view.get_line_count() - 1:
+                self.position = \
+                    self._text_view.get_position_on_line(line + 1, 0) - 1
+            else:
+                self.position = len(self._text_view.text)
+        elif motion == key.MOTION_BEGINNING_OF_FILE:
+            self.position = 0
+        elif motion == key.MOTION_END_OF_FILE:
+            self.position = len(self._text_view.text)
+        elif motion == key.MOTION_NEXT_WORD:
+            pos = self._position + 1
+            m = self._next_word_re.search(self._text_view.text, pos)
+            if not m:
+                self.position = len(self._text_view.text)
+            else:
+                self.position = m.start()
+        elif motion == key.MOTION_PREVIOUS_WORD:
+            pos = self._position
+            m = self._previous_word_re.search(self._text_view.text, 0, pos)
+            if not m:
+                self.position = 0
+            else:
+                self.position = m.start()
 
-    def _update(self):
+    def move_to_line(self, line):
+        if self._ideal_x is None:
+            self._ideal_x, _ = \
+                self._text_view.get_point_from_position(self._position)
+        self._position = \
+            self._text_view.get_position_on_line(line, self._ideal_x)
+        self._update(update_ideal_x=False)
+        
+    def _update(self, update_ideal_x=True):
         x, y = self._text_view.get_point_from_position(self._position)
+        if update_ideal_x:
+            self._ideal_x = x
         font = self._text_view.get_font(max(0, self._position - 1))
         self._list.vertices[:] = [x, y + font.descent, x, y + font.ascent]
                 
