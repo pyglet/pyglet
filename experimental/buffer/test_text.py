@@ -40,6 +40,12 @@ class TestStyleRuns(unittest.TestCase):
                     for v in value[s:e]:
                         self.assertTrue(v == style, (start, end, s, e, style))
 
+    def check_empty(self, runs, value):
+        start, end, style = iter(runs).next()
+        self.assertTrue(start == 0)
+        self.assertTrue(end == 0)
+        self.assertTrue(style == value)
+
     def test_zero(self):
         runs = text.StyleRuns(0, 'x')
         it = iter(runs)
@@ -201,6 +207,7 @@ class TestStyleRuns(unittest.TestCase):
         self.check_value(runs, 'aaaaa') 
         runs.delete(0, 5)
         self.check_value(runs, '') 
+        self.check_empty(runs, 'a')
 
     def create_runs1(self):
         runs = text.StyleRuns(10, 'a')

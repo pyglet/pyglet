@@ -42,6 +42,10 @@ class StyleRuns(object):
             i += run.count
         self.runs = [r for r in self.runs if r.count > 0]
 
+        # Don't leave an empty list
+        if not self.runs:
+            self.runs = [StyleRun(run.style, 0)]
+
     def set_style(self, start, end, style):
         if end - start <= 0:
             return
@@ -109,130 +113,12 @@ class StyleRuns(object):
             if i <= index < i + run.count:
                 return run.style
             i += run.count
+
+        # If runs are empty, first position still returns default style
+        if index == 0 and self.runs[0].count == 0:
+            return self.runs[0].style
+
         assert False, 'Index not in range'
-
-class StyleRunOld(object):
-    def __init__(self, start, style):
-        self.start = start
-        self.style = style
-
-    def __repr__(self):
-        return 'StyleRun(%d, %r)' % (self.start, self.style)
-
-
-class StyleRunsOld(object):
-    def __init__(self, size, initial):
-        self.size = size
-        self.runs = [StyleRun(0, initial)]
-
-    def insert(self, pos, length):
-        assert 0 <= pos <= self.size, 'Index not in range'
-    
-        # Push along all runs after the insertion point, ends up using the
-        # usual style for interactive insertion.
-        for run in self.runs:
-            if run.start >= pos and run.start != 0:
-                run.start += length        
-        self.size += length
-
-    def delete(self, start, end):
-        assert 0 <= start < end <= self.size, 'Slice not in range'
-
-        # Delete everything?
-        if start == 0 and end == self.size:
-            self.size = 0
-            del self.runs[1:]
-            return
-
-        # Find indices of style runs that hold start and end slice.
-        start_index = None
-        end_index = None
-        for i, run in enumerate(self.runs):
-            if run.start >= start and start_index is None:
-                start_index = i
-            if run.start == end:
-                end_index = i
-                break
-            elif run.start > end:
-                end_index = i - 1
-                break
-        if end_index is None:
-            end_index = len(self.runs) - 1
-        if start_index is None:
-            start_index = end_index
-
-        # Remove old styles (may be nothing)
-        del self.runs[start_index:end_index]
-
-        # Pull back all runs after end point (now the start point after
-        # deletion)
-        if end_index == 0:
-            self.runs[0].start = 0
-        elif start_index < len(self.runs):
-            if end_index < start_index:
-                import pdb; pdb.set_trace()
-            elif start_index != end_index:
-                self.runs[start_index].start = start
-        d = end - start
-        for run in self.runs[start_index + 1:]:
-            run.start -= d
-        self.size -= d
- 
-    def set_style(self, start, end, style):
-        assert 0 <= start < end <= self.size, 'Slice not in range'
-
-        # Find indices of style runs before and after new style range
-        start_index = None
-        end_index = None
-        end_style = None
-        for i, run in enumerate(self.runs):
-            if run.start >= start and start_index is None:
-                start_index = i
-            if run.start >= end:
-                end_index = i
-                break
-            end_style = run.style
-        if end_index is None:
-            end_index = len(self.runs)
-        if start_index is None:
-            start_index = end_index
-            
-        # Remove old styles (may be nothing)
-        del self.runs[start_index:end_index]
-        
-        # Insert new style unless unnecessary
-        if len(self.runs) <= start_index or \
-           self.runs[start_index].style != style:
-            self.runs.insert(start_index, StyleRun(start, style))
-
-        if end == self.size:
-            return
-
-        # Insert following style unless unnecessary
-        if end_style != style and (
-            len(self.runs) <= start_index + 1 or
-            self.runs[start_index + 1].style != end_style):
-            self.runs.insert(start_index + 1, StyleRun(end, end_style))
-    
-    def __iter__(self):
-        last_run = None
-        for run in self.runs:
-            if last_run:
-                yield last_run.start, run.start, last_run.style
-            last_run = run
-        yield last_run.start, self.size, last_run.style
-
-    def get_range_iterator(self):
-        return StyleRunsRangeIterator(self)
-
-    def get_style_at(self, index):
-        assert 0 <= index <= self.size, 'Index not in range'
-        last_run = None
-        for run in self.runs:
-            if run.start > index:
-                return last_run.style
-            last_run = run
-        return last_run.style
 
 class StyleRunsRangeIterator(object):
     '''Perform sequential range iterations over a StyleRuns.'''
@@ -257,7 +143,8 @@ class StyleRunsRangeIterator(object):
 
 class Line(object):
     def __init__(self, start):
-        self.clear(start, delete_lists=False)
+        self.vertex_lists = []
+        self.clear(start)
 
     def __repr__(self):
         return 'Line(%r)' % self.glyph_runs
@@ -268,11 +155,13 @@ class Line(object):
         self.descent = min(self.descent, glyph_run.font.descent)
         self.width += glyph_run.width
 
-    def clear(self, start, delete_lists=True):
-        if delete_lists:
-            for list in self.vertex_lists:
-                list.delete()
+    def delete_vertex_lists(self):
+        for list in self.vertex_lists:
+            list.delete()
 
+        self.vertex_lists = []
+
+    def clear(self, start):
         self.start = start
         
         self.glyph_runs = []
@@ -283,7 +172,7 @@ class Line(object):
         self.x = None
         self.y = None
 
-        self.vertex_lists = []
+        self.delete_vertex_lists()
 
 class GlyphRun(object):
     def __init__(self, owner, font, glyphs):
@@ -386,10 +275,24 @@ class TextView(object):
             if line.start > start:
                 line.start -= size
 
-        self.invalid_glyphs.invalidate(start, start + 1)
+        if start == 0:
+            self.invalid_glyphs.invalidate(0, 1)
+        else:
+            self.invalid_glyphs.invalidate(start - 1, start)
         self._update()
 
     def _update(self):
+        # Special care if there is no text:
+        if not self.glyphs:
+            for line in self.lines:
+                line.delete_vertex_lists()
+            del self.lines[1:]
+            self.lines[0].clear(0)
+            self.invalid_lines.invalidate(0, 1)
+            self._flow_lines()
+            self._update_vertex_lists()
+            return
+        
         invalid_start, invalid_end = self.invalid_glyphs.validate()
 
         if invalid_end - invalid_start > 0:
@@ -499,6 +402,12 @@ class TextView(object):
         for run in run_accum:
             line.add_glyph_run(run)
 
+        # The last line is at line_index, if there are any more lines after
+        # that they are stale and need to be deleted.
+        for line in self.lines[line_index + 1:]:
+            line.delete_vertex_lists()
+        del self.lines[line_index + 1:]
+
     def _flow_lines(self):
         invalid_start, invalid_end = self.invalid_lines.validate()
         if invalid_end - invalid_start <= 0:
@@ -514,10 +423,11 @@ class TextView(object):
         for line in self.lines[invalid_start:]:
             y -= line.ascent
             line.x = self.x
-            if line.y == y and line_index >= invalid_end:
+            if line.y == y and line_index >= invalid_end: 
                 break
             line.y = y
             y += line.descent
+
             line_index += 1
 
         # Invalidate lines that need new vertex lists.
@@ -534,7 +444,8 @@ class TextView(object):
         i = 0
         
         for line in self.lines[invalid_start:invalid_end]:
-            assert not line.vertex_lists
+            line.delete_vertex_lists()
+
             x = line.x
             y = line.y
             for glyph_run in line.glyph_runs:
@@ -601,6 +512,8 @@ class TextView(object):
             if y > line.y + line.descent:
                 break
             line_index += 1
+        if line_index >= len(self.lines):
+            line_index = len(self.lines) - 1
         return line_index
 
     def get_line_from_position(self, position):
@@ -803,7 +716,7 @@ def main():
                 text.remove_text(caret.position - 1, caret.position)
                 caret.position -= 1
         elif motion == key.MOTION_DELETE:
-            if caret.position < len(text.text) - 1:
+            if caret.position < len(text.text):
                 text.remove_text(caret.position, caret.position + 1)
                 caret._update()
         else:
