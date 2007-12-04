@@ -488,13 +488,16 @@ class TextView(object):
         line = self.get_line_from_point(x, y)
         return self.get_position_on_line(line, x)
     
-    def get_point_from_position(self, position):
-        line = self.lines[0]
-        for next_line in self.lines:
-            if next_line.start > position:
-                break
-            line = next_line
-
+    def get_point_from_position(self, position, line=None):
+        if line is None:
+            line = self.lines[0]
+            for next_line in self.lines:
+                if next_line.start > position:
+                    break
+                line = next_line
+        else:
+            line = self.lines[line]
+            
         x = line.x
         
         position -= line.start
@@ -515,6 +518,10 @@ class TextView(object):
         if line_index >= len(self.lines):
             line_index = len(self.lines) - 1
         return line_index
+
+    def get_point_from_line(self, line):
+        line = self.lines[line]
+        return line.x, line.y
 
     def get_line_from_position(self, position):
         line = -1
@@ -539,10 +546,6 @@ class TextView(object):
                 position += 1
                 last_glyph_x += glyph.advance
         return position
-
-    def get_point_from_line(self, line):
-        line = self.lines[line]
-        return line.x, line.y
 
     def get_line_count(self):
         return len(self.lines)
@@ -578,6 +581,7 @@ class Caret(object):
         self._list = batch.add(2, GL_LINES, None, 'v2f', 'c4B')
 
         self._ideal_x = None
+        self._ideal_line = None
     
     def _set_color(self, color):
         self._list.colors[:3] = color
@@ -608,6 +612,22 @@ class Caret(object):
 
     position = property(_get_position, _set_position)
 
+    def _set_line(self, line):
+        if self._ideal_x is None:
+            self._ideal_x, _ = \
+                self._text_view.get_point_from_position(self._position)
+        self._position = \
+            self._text_view.get_position_on_line(line, self._ideal_x)
+        self._update(line=line, update_ideal_x=False)
+
+    def _get_line(self):
+        if self._ideal_line:
+            return self._ideal_line
+        else:
+            return self._text_view.get_line_from_position(self._position)
+
+    line = property(_get_line, _set_line)
+
     def move(self, motion):
         from pyglet.window import key
         if motion == key.MOTION_LEFT:
@@ -615,17 +635,15 @@ class Caret(object):
         elif motion == key.MOTION_RIGHT:
             self.position = min(len(self._text_view._text), self.position + 1) 
         elif motion == key.MOTION_UP:
-            line = self._text_view.get_line_from_position(self._position)
-            self.move_to_line(max(0, line - 1))
+            self.line = max(0, self.line - 1)
         elif motion == key.MOTION_DOWN:
-            line = self._text_view.get_line_from_position(self._position)
+            line = self.line
             if line < self._text_view.get_line_count() - 1:
-                self.move_to_line(line + 1)
+                self.line = line + 1
         elif motion == key.MOTION_BEGINNING_OF_LINE:
-            line = self._text_view.get_line_from_position(self._position)
-            self.position = self._text_view.get_position_on_line(line, 0)
+            self.position = self._text_view.get_position_on_line(self.line, 0)
         elif motion == key.MOTION_END_OF_LINE:
-            line = self._text_view.get_line_from_position(self._position)
+            line = self.line
             if line < self._text_view.get_line_count() - 1:
                 self.position = \
                     self._text_view.get_position_on_line(line + 1, 0) - 1
@@ -650,18 +668,16 @@ class Caret(object):
             else:
                 self.position = m.start()
 
-    def move_to_line(self, line):
-        if self._ideal_x is None:
-            self._ideal_x, _ = \
-                self._text_view.get_point_from_position(self._position)
-        self._position = \
-            self._text_view.get_position_on_line(line, self._ideal_x)
-        self._update(update_ideal_x=False)
+    def move_to_point(self, x, y):
+        line = self._text_view.get_line_from_point(x, y)
+        self._position = self._text_view.get_position_on_line(line, x)
+        self._update(line=line)
         
-    def _update(self, update_ideal_x=True):
-        x, y = self._text_view.get_point_from_position(self._position)
+    def _update(self, line=None, update_ideal_x=True):
+        x, y = self._text_view.get_point_from_position(self._position, line)
         if update_ideal_x:
             self._ideal_x = x
+        self._ideal_line = line
         font = self._text_view.get_font(max(0, self._position - 1))
         self._list.vertices[:] = [x, y + font.descent, x, y + font.ascent]
                 
@@ -725,7 +741,7 @@ def main():
 
     @w.event
     def on_mouse_press(x, y, button, modifiers):
-        caret.position = text.get_position_from_point(x, y)
+        caret.move_to_point(x, y)
         cursor_not_idle()
 
     def blink_cursor(dt):
