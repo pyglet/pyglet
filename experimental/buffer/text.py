@@ -222,7 +222,7 @@ class InvalidRange(object):
 class TextView(object):
     def __init__(self, font, text, color=(255, 255, 255, 255), width=400,
                  batch=None):
-        self.width = width
+        self._width = width
         self.y = 480
         self.x = 0
 
@@ -236,6 +236,7 @@ class TextView(object):
         self.states = {}
 
         self.invalid_glyphs = InvalidRange()
+        self.invalid_flow = InvalidRange()
         self.invalid_lines = InvalidRange()
         self.invalid_vertex_lines = InvalidRange()
 
@@ -251,6 +252,8 @@ class TextView(object):
         self.glyphs[start:start] = [None] * len_text
 
         self.invalid_glyphs.insert(start, len_text)
+        self.invalid_flow.insert(start, len_text)
+
         self.font_runs.insert(start, len_text)
         self.owner_runs.insert(start, len_text)
         self.color_runs.insert(start, len_text)
@@ -266,6 +269,8 @@ class TextView(object):
         self.glyphs[start:end] = []
 
         self.invalid_glyphs.delete(start, end)
+        self.invalid_flow.delete(start, end)
+
         self.font_runs.delete(start, end)
         self.owner_runs.delete(start, end)
         self.color_runs.delete(start, end)
@@ -276,9 +281,9 @@ class TextView(object):
                 line.start -= size
 
         if start == 0:
-            self.invalid_glyphs.invalidate(0, 1)
+            self.invalid_flow.invalidate(0, 1)
         else:
-            self.invalid_glyphs.invalidate(start - 1, start)
+            self.invalid_flow.invalidate(start - 1, start)
         self._update()
 
     def _update(self):
@@ -292,35 +297,45 @@ class TextView(object):
             self._flow_lines()
             self._update_vertex_lists()
             return
-        
-        invalid_start, invalid_end = self.invalid_glyphs.validate()
 
-        if invalid_end - invalid_start > 0:
-            # Update glyphs
-            font_range_iter = self.font_runs.get_range_iterator()
-            for start, end, font in \
-                    font_range_iter.iter_range(invalid_start, invalid_end):
-                text = self._text[start:end]
-                self.glyphs[start:end] = font.get_glyphs(text)
-
-            # Update owner runs
-            owner = self.glyphs[start].owner
-            run_start = start
-            for i, glyph in enumerate(self.glyphs[invalid_start:invalid_end]):
-                if owner != glyph.owner:
-                    self.owner_runs.set_style(
-                        run_start, i + invalid_start, owner)
-                    owner = glyph.owner
-                    run_start = i + start
-            self.owner_runs.set_style(run_start, invalid_end, owner)            
-
-            # Reflow
-            self._flow_glyphs(invalid_start, invalid_end)
-
+        self._update_glyphs()
+        self._flow_glyphs()
         self._flow_lines()
         self._update_vertex_lists()
 
-    def _flow_glyphs(self, invalid_start, invalid_end):
+    def _update_glyphs(self):
+        invalid_start, invalid_end = self.invalid_glyphs.validate()
+
+        if invalid_end - invalid_start <= 0:
+            return
+
+        # Update glyphs
+        font_range_iter = self.font_runs.get_range_iterator()
+        for start, end, font in \
+                font_range_iter.iter_range(invalid_start, invalid_end):
+            text = self._text[start:end]
+            self.glyphs[start:end] = font.get_glyphs(text)
+
+        # Update owner runs
+        owner = self.glyphs[start].owner
+        run_start = start
+        for i, glyph in enumerate(self.glyphs[invalid_start:invalid_end]):
+            if owner != glyph.owner:
+                self.owner_runs.set_style(
+                    run_start, i + invalid_start, owner)
+                owner = glyph.owner
+                run_start = i + start
+        self.owner_runs.set_style(run_start, invalid_end, owner)            
+
+        # Updated glyphs need flowing
+        self.invalid_flow.invalidate(invalid_start, invalid_end)
+
+    def _flow_glyphs(self):
+        invalid_start, invalid_end = self.invalid_flow.validate()
+
+        if invalid_end - invalid_start <= 0:
+            return
+        
         # Find first invalid line
         line_index = 0
         for i, line in enumerate(self.lines):
@@ -367,7 +382,7 @@ class TextView(object):
                     
                     next_start = index
                 else:
-                    if x + glyph.advance >= self.width:
+                    if x + glyph.advance >= self._width:
                         if owner_accum_commit:
                             line.add_glyph_run(
                                 GlyphRun(owner, font, owner_accum_commit))
@@ -481,6 +496,18 @@ class TextView(object):
                 line.vertex_lists.append(list)
 
                 i += n_glyphs
+
+    # Viewport attributes
+
+    def _set_width(self, width):
+        self._width = width
+        self.invalid_flow.invalidate(0, len(self.text))
+        self._update()
+
+    def _get_width(self):
+        return self._width
+
+    width = property(_get_width, _set_width)
 
     # Coordinate translation
 
@@ -716,7 +743,7 @@ def main():
     from pyglet import window
     from pyglet.window import key
 
-    w = window.Window(vsync=False)
+    w = window.Window(vsync=False, resizable=True)
     w.set_mouse_cursor(w.get_system_mouse_cursor('text'))
 
     @w.event
@@ -743,6 +770,12 @@ def main():
     def on_mouse_press(x, y, button, modifiers):
         caret.move_to_point(x, y)
         cursor_not_idle()
+
+    def on_resize(width, height):
+        text.y = height
+        text.width = width
+        caret._update()
+    w.push_handlers(on_resize)
 
     def blink_cursor(dt):
         caret.visible = not caret.visible
