@@ -104,7 +104,7 @@ if getattr(sys, 'frozen', None):
 #:
 options = {
     'audio': ('directsound', 'openal', 'alsa', 'silent'),
-    'font': ('win32', 'gdiplus'), # ignored outside win32
+    'font': ('gdiplus', 'win32'), # ignored outside win32
     'debug_font': False,
     'debug_gl': not _enable_optimisations,
     'debug_media': False,
