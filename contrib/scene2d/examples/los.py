@@ -24,8 +24,7 @@ from pyglet.gl import *
 
 w = Window(600, 600, vsync=False)
 
-dirname = os.path.dirname(__file__)
-img = Image2d.load(os.path.join(dirname, 'car.png'))
+img = Image2d.load('examples/noisy/ball.png')
 
 class BouncySprite(Sprite):
     dx = dy = 0
