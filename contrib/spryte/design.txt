@@ -20,8 +20,9 @@ Introduction
 
 >>> # load animation from an animation strip
 >>> explosion = AnimatedImage('explosion.png', frames=8, loop=False)
->>> explosion.play()
 
+
+>>> explosion = Sprite('explosion.png', rows=2, frames=8, period=.5, loop=False)
 
 
 

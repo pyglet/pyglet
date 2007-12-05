@@ -29,6 +29,8 @@ clock.schedule(animate)
 layer2 = spryte.Layer()
 car = spryte.Sprite('car.png', layer2, win.width/2, win.height/2)
 
+layer3 = spryte.Layer()
+
 keyboard = key.KeyStateHandler()
 win.push_handlers(keyboard)
 def animate(dt):
@@ -36,15 +38,20 @@ def animate(dt):
     car.y += (keyboard[key.UP] - keyboard[key.DOWN]) * 200 * dt
     for i, ball in enumerate(balls):
         if ball.intersects(car):
-            if ball.width > ball.image.width * 2:
+            if True: #ball.width > ball.texture.width * 3:
                 # pop!
+                explosion = spryte.AnimatedSprite('explosion.png', 2, 8, layer3,
+                    0, 0, .01)
+                explosion.center = balls[i].center
                 balls[i].delete()
                 balls[i] = spryte.Sprite('ball.png', layer,
                     win.width * random.random(), win.height * random.random(),
                     dx=-50 + 100*random.random(), dy=-50 + 100*random.random())
             else:
+                center = ball.center
                 ball.width += 1
                 ball.height += 1
+                ball.center = center
 
 clock.schedule(animate)
 
@@ -53,12 +60,9 @@ while not win.has_exit:
     win.dispatch_events()
     win.clear()
 
-    gl.glPushAttrib(gl.GL_ENABLE_BIT)
-    gl.glEnable(gl.GL_BLEND)
-    gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
     layer.draw()
     layer2.draw()
-    gl.glPopAttrib()
+    layer3.draw()
 
     fps.draw()
     win.flip()

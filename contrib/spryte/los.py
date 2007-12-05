@@ -38,8 +38,8 @@ layer = Layer()
 sprites = []
 numsprites = int(sys.argv[1])
 for i in range(numsprites):
-    s = BouncySprite('car.png', layer, 0, 0, dx=random.randint(-10, 10),
-        dy=random.randint(-10, 10))
+    s = BouncySprite('examples/noisy/ball.png', layer, 0, 0,
+        dx=random.randint(-10, 10), dy=random.randint(-10, 10))
     s.x = random.randint(0, w.width - s.width)
     s.y = random.randint(0, w.height - s.height)
     sprites.append(s)
