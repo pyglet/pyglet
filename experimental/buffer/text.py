@@ -210,6 +210,8 @@ class InvalidRange(object):
             self.end = start
 
     def invalidate(self, start, end):
+        if end <= start:
+            return
         self.start = min(self.start, start)
         self.end = max(self.end, end)
 
@@ -229,6 +231,7 @@ class TextView(object):
         if batch is None:
             batch = graphics.Batch()
         self.batch = batch
+        self.background_batch = graphics.Batch() # TODO XXX
 
         self._text = ''
         self.glyphs = []
@@ -238,6 +241,7 @@ class TextView(object):
         self.invalid_glyphs = InvalidRange()
         self.invalid_flow = InvalidRange()
         self.invalid_lines = InvalidRange()
+        self.invalid_style = InvalidRange()
         self.invalid_vertex_lines = InvalidRange()
 
         self.font_runs = StyleRuns(0, font)
@@ -253,6 +257,7 @@ class TextView(object):
 
         self.invalid_glyphs.insert(start, len_text)
         self.invalid_flow.insert(start, len_text)
+        self.invalid_style.insert(start, len_text)
 
         self.font_runs.insert(start, len_text)
         self.owner_runs.insert(start, len_text)
@@ -270,6 +275,7 @@ class TextView(object):
 
         self.invalid_glyphs.delete(start, end)
         self.invalid_flow.delete(start, end)
+        self.invalid_style.delete(start, end)
 
         self.font_runs.delete(start, end)
         self.owner_runs.delete(start, end)
@@ -449,6 +455,12 @@ class TextView(object):
         self.invalid_vertex_lines.invalidate(invalid_start, line_index)
 
     def _update_vertex_lists(self):
+        # Find lines that have been affected by style changes
+        style_invalid_start, style_invalid_end = self.invalid_style.validate()
+        self.invalid_vertex_lines.invalidate(
+            self.get_line_from_position(style_invalid_start),
+            self.get_line_from_position(style_invalid_end) + 1)
+        
         invalid_start, invalid_end = self.invalid_vertex_lines.validate()
         if invalid_end - invalid_start <= 0:
             return
@@ -456,9 +468,9 @@ class TextView(object):
         batch = self.batch
 
         colors_iter = self.color_runs.get_range_iterator()
-        i = 0
         
         for line in self.lines[invalid_start:invalid_end]:
+            i = line.start
             line.delete_vertex_lists()
 
             x = line.x
@@ -489,6 +501,26 @@ class TextView(object):
                 for start, end, color in colors_iter.iter_range(i, i+n_glyphs):
                     colors.extend(color * ((end - start) * 4))
 
+                # Selection color override
+                over_start = (max(i, self._selection_start) - i) * 4
+                over_end = (min(i + n_glyphs, self._selection_end) - i) * 4
+                if over_end > over_start:
+                    colors[over_start*4:over_end*4] = \
+                        self._selection_color * (over_end - over_start)
+
+                    # Background vertices
+                    background_vertices = vertices[over_start*2:over_end*2]
+                    # Join the glyph boxes
+                    background_vertices[8::8] = background_vertices[2:-8:8]
+                    background_vertices[14::8] = background_vertices[6:-8:8]
+                    background_colors = self._selection_background_color * \
+                        (over_end - over_start)
+                    background_list = self.background_batch.add(
+                        over_end - over_start, GL_QUADS, None,
+                        ('v2f/dynamic', background_vertices),
+                        ('c4B/dynamic', background_colors))
+                    line.vertex_lists.append(background_list)
+
                 list = batch.add(n_glyphs * 4, GL_QUADS, state, 
                     ('v2f/dynamic', vertices),
                     ('t3f/dynamic', tex_coords),
@@ -508,6 +540,26 @@ class TextView(object):
         return self._width
 
     width = property(_get_width, _set_width)
+
+    # Visible selection
+
+    _selection_start = 0
+    _selection_end = 0
+
+    def set_selection(self, start, end):
+        if start == self._selection_start and end == self._selection_end:
+            return
+        
+        if self._selection_start != self._selection_end:
+            self.invalid_style.invalidate(self._selection_start,
+                                              self._selection_end)
+        self._selection_start = start
+        self._selection_end = end
+        self.invalid_style.invalidate(start, end)
+        self._update()
+
+    _selection_color = [255, 255, 255, 255]
+    _selection_background_color = [46, 106, 197, 255]
 
     # Coordinate translation
 
@@ -639,11 +691,21 @@ class Caret(object):
 
     position = property(_get_position, _set_position)
 
+    _mark = None
+    def _set_mark(self, mark):
+        self._mark = mark
+        self._update()
+    
+    def _get_mark(self):
+        return self._mark
+
+    mark = property(_get_mark, _set_mark)
+
     def _set_line(self, line):
         if self._ideal_x is None:
             self._ideal_x, _ = \
                 self._text_view.get_point_from_position(self._position)
-        self._position = \
+        self._position = self._mark = \
             self._text_view.get_position_on_line(line, self._ideal_x)
         self._update(line=line, update_ideal_x=False)
 
@@ -657,6 +719,11 @@ class Caret(object):
 
     def move(self, motion):
         from pyglet.window import key
+
+        if self._mark:
+            self._mark = None
+            self._text_view.set_selection(0, 0)
+
         if motion == key.MOTION_LEFT:
             self.position = max(0, self.position - 1)
         elif motion == key.MOTION_RIGHT:
@@ -697,6 +764,12 @@ class Caret(object):
 
     def move_to_point(self, x, y):
         line = self._text_view.get_line_from_point(x, y)
+        self._mark = None
+        self._position = self._text_view.get_position_on_line(line, x)
+        self._update(line=line)
+
+    def select_to_point(self, x, y):
+        line = self._text_view.get_line_from_point(x, y)
         self._position = self._text_view.get_position_on_line(line, x)
         self._update(line=line)
         
@@ -705,9 +778,13 @@ class Caret(object):
         if update_ideal_x:
             self._ideal_x = x
         self._ideal_line = line
+
         font = self._text_view.get_font(max(0, self._position - 1))
         self._list.vertices[:] = [x, y + font.descent, x, y + font.ascent]
-                
+
+        if self._mark is not None:
+            self._text_view.set_selection(min(self._position, self._mark),
+                                          max(self._position, self._mark))
 
 def test_text1(batch, width):
     from pyglet import font
@@ -724,8 +801,8 @@ def test_text1(batch, width):
 
 def test_text2(batch, width):
     from pyglet import font
-    ft = font.load('Times New Roman', 16)
-    ft2 = font.load('Times New Roman', 48)
+    ft = font.load('Times New Roman', 12)
+    ft2 = font.load('Times New Roman', 16)
     text = TextView(ft, frog_prince.replace('\n', ' '), batch=batch,
         width=width, color=(0, 0, 0, 255)) 
     text.set_font(ft2, 101, 134)
@@ -748,6 +825,7 @@ def main():
 
     @w.event
     def on_text(t):
+        caret.mark = None
         text.insert_text(caret.position, t)
         caret.position += len(t)
         cursor_not_idle()
@@ -769,6 +847,12 @@ def main():
     @w.event
     def on_mouse_press(x, y, button, modifiers):
         caret.move_to_point(x, y)
+        caret.mark = caret.position
+        cursor_not_idle()
+
+    @w.event
+    def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
+        caret.select_to_point(x, y)
         cursor_not_idle()
 
     def on_resize(width, height):
@@ -808,6 +892,7 @@ def main():
         clock.tick()
         w.dispatch_events()
         w.clear()
+        text.background_batch.draw()
         batch.draw()
         fps.draw()
         w.flip()
