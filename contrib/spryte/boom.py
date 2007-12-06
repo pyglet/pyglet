@@ -35,4 +35,4 @@ while not win.has_exit:
     layer.draw()
     fps.draw()
     win.flip()
-
+win.close()

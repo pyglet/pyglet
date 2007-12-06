@@ -267,13 +267,18 @@ class AnimatedSprite(Sprite):
     def __init__(self, im, rows, frames, layer, x, y, period, file=None,
             blended=True, loop=False, callback=None, **attributes):
         '''
+
+        "im" may be a filename or a pyglet.image.UniformTextureSequence
+
         >>> explosion = Sprite('explosion.png', 2, 8, layer, 100, 100)
         '''
-        assert isinstance(im, str)
-        if im not in texture_cache:
-            texture_cache[im] = image.ImageGrid(image.load(im, file),
-                rows, frames).texture_sequence
-        self.texture_sequence = texture_cache[im]
+        if isinstance(im, image.UniformTextureSequence):
+            self.texture_sequence = im.self.texture_sequence
+        else:
+            if im not in texture_cache:
+                texture_cache[im] = image.ImageGrid(image.load(im, file),
+                    rows, frames).texture_sequence
+            self.texture_sequence = texture_cache[im]
 
         # animation controls
         self.period = period

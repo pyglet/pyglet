@@ -78,4 +78,4 @@ while not win.has_exit:
 
     fps.draw()
     win.flip()
-
+win.close()
