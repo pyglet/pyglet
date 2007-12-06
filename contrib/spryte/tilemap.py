@@ -28,10 +28,8 @@ class Map(spryte.Layer):
             return None
 
     def get_in_region(self, x1, y1, x2, y2):
-        '''Return cells (in [column][row]) that are within the
-        pixel bounds specified by the bottom-left (x1, y1) and top-right
-        (x2, y2) corners.
-
+        '''Return cells that are within the pixel bounds specified by the
+        bottom-left (x1, y1) and top-right (x2, y2) corners.
         '''
         x1 = max(0, x1 // self.cell_width)
         y1 = max(0, y1 // self.cell_height)

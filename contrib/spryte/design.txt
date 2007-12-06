@@ -5,29 +5,41 @@ Introduction
 >>> car = Sprite('car.png', layer, 100, 200, dx=10, dy=0)
 
 >>> # keyword args are made atttributes
->>> car.x += car.dx
+>>> car.x += car.dx * dt
+>>> car.update_kinematics(dt)
 
 >>> layer.draw()
 
-
->>> car.rotation = 45
+>>> # rotate the sprite around center (32px dims)
+>>> car.rotation = math.pi / 4
 >>> car.rothandle = (16, 16)
 
 >>> # replace new car image
 >>> car.image = SpriteImage('car-damaged.png')
 
-
 >>> # load animation from an animation strip
->>> explosion = AnimatedImage('explosion.png', frames=8, loop=False)
+>>> e = AnimatedImage('explosion.png', rows=2, frames=8, period=.05, loop=False)
 
->>> explosion = Sprite('explosion.png', rows=2, frames=8, period=.5, loop=False)
+
+OOH
+
+>>> v = View.from_window(win)
+>>> v = View.create(...window create arguments...) ?? keyboard handler etc. ??
+>>> car = v.add_sprite('car.png', ..., z=1, ...)
+>>> ground = v.add_map('ground-tiles.png', ..., z=0, ...)
+
+>>> v.remove(ground)
+>>> v.add(ground)
 
 
 
 TODO - Maybe
 ------------
 
+- organise sprites in a layer into quadtree or similar
 - allow collision detection including rotation as an option?
+- layer blendmode
+- maps from XML files
 
 
 
