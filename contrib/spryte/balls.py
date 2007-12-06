@@ -1,5 +1,6 @@
 
 import random
+import math
 
 from pyglet import window, clock, gl, event
 from pyglet.window import key
@@ -27,31 +28,43 @@ def animate(dt):
 clock.schedule(animate)
 
 layer2 = spryte.Layer()
-car = spryte.Sprite('car.png', layer2, win.width/2, win.height/2)
+car = spryte.Sprite('car.png', layer2, win.width/2, win.height/2,
+    rothandle=(16, 16))
 
 layer3 = spryte.Layer()
 
 keyboard = key.KeyStateHandler()
 win.push_handlers(keyboard)
 def animate(dt):
-    car.x += (keyboard[key.RIGHT] - keyboard[key.LEFT]) * 200 * dt
-    car.y += (keyboard[key.UP] - keyboard[key.DOWN]) * 200 * dt
+    # handle car controls / movement
+    r = car.rotation
+    r += (keyboard[key.LEFT] - keyboard[key.RIGHT]) * 5 * dt
+    if r < 0: r += math.pi * 2
+    elif r > math.pi * 2: r -= math.pi * 2
+    car.rotation = r
+    x, y = car.pos
+    speed = (keyboard[key.UP] - keyboard[key.DOWN]) * 200 * dt
+    cr = math.cos(r)
+    sr = math.sin(r)
+    car.pos = (x - sr * speed, y + cr * speed)
+
+    # handle balls
     for i, ball in enumerate(balls):
-        if ball.intersects(car):
-            if True: #ball.width > ball.texture.width * 3:
-                # pop!
-                explosion = spryte.AnimatedSprite('explosion.png', 2, 8, layer3,
-                    0, 0, .01)
-                explosion.center = balls[i].center
-                balls[i].delete()
-                balls[i] = spryte.Sprite('ball.png', layer,
-                    win.width * random.random(), win.height * random.random(),
-                    dx=-50 + 100*random.random(), dy=-50 + 100*random.random())
-            else:
-                center = ball.center
-                ball.width += 1
-                ball.height += 1
-                ball.center = center
+        if not ball.intersects(car): continue
+        if ball.width > ball.texture.width * 2:
+            # pop!
+            explosion = spryte.AnimatedSprite('explosion.png', 2, 8, layer3,
+                0, 0, .01)
+            explosion.center = balls[i].center
+            balls[i].delete()
+            balls[i] = spryte.Sprite('ball.png', layer,
+                win.width * random.random(), win.height * random.random(),
+                dx=-50 + 100*random.random(), dy=-50 + 100*random.random())
+        else:
+            center = ball.center
+            ball.width += 1
+            ball.height += 1
+            ball.center = center
 
 clock.schedule(animate)
 

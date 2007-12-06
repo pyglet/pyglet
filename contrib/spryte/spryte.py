@@ -1,6 +1,7 @@
 
 import os
 import weakref
+import math
 
 from pyglet import image, gl, clock
 import graphics
@@ -68,7 +69,8 @@ class TextureState(graphics.AbstractState):
 
 
 class Sprite(rect.Rect):
-    def __init__(self, im, layer, x, y, file=None, blended=True, **attributes):
+    def __init__(self, im, layer, x, y, file=None, blended=True, rotation=0,
+            rothandle=(0, 0), **attributes):
         '''
         >>> sprite = Sprite('car.png', layer, 100, 100)
         '''
@@ -104,6 +106,8 @@ class Sprite(rect.Rect):
         self.layer = layer
         self._x = x
         self._y = y
+        self._rotation = rotation
+        self._rothandle = rothandle
         self.__dict__.update(attributes)
 
     def delete(self):
@@ -134,59 +138,87 @@ class Sprite(rect.Rect):
 
     def set_x(self, value):
         self._x = value
-        x = int(value)
-        w = int(self._width)
-        vertices = self.primitive.vertices
-        vertices[0] = vertices[6] = x
-        vertices[2] = vertices[4] = x + w
+        self._set_vertices()
     x = property(lambda self: self._x, set_x)
 
     def set_y(self, value):
         self._y = value
-        y = int(value)
-        h = int(self._height)
-        vertices = self.primitive.vertices
-        vertices[1] = vertices[3] = y
-        vertices[5] = vertices[7] = y + h
+        self._set_vertices()
     y = property(lambda self: self._y, set_y)
 
     def set_pos(self, pos):
         self._x, self._y = pos
-        x = int(self._x)
-        y = int(self._y)
-        w = int(self._width)
-        h = int(self._height)
-        self.primitive.vertices[:] = [x, y, x + w, y, x + w, y + h, x, y + h]
+        self._set_vertices()
     pos = property(lambda self: (self._x, self._y), set_pos)
 
     def set_width(self, value):
         self._width = value
-        ix = int(self._x)
-        w = int(self._width)
-        vertices = self.primitive.vertices
-        vertices[0] = vertices[6] = ix
-        vertices[2] = vertices[4] = ix + w
+        self._set_vertices()
     width = property(lambda self: self._width, set_width)
 
     def set_height(self, value):
         self._height = value
-        iy = int(self._y)
-        h = int(self._height)
-        vertices = self.primitive.vertices
-        vertices[1] = vertices[3] = iy
-        vertices[5] = vertices[7] = iy + h
+        self._set_vertices()
     height = property(lambda self: self._height, set_height)
 
     def set_size(self, value):
         self._width, self._height = value
-        x = int(self._x)
-        y = int(self._y)
-        w = int(self._width)
-        h = int(self._height)
-        self.primitive.vertices[:] = [x, y, x + w, y, x + w, y + h, x, y + h]
+        self._set_vertices()
     size = property(lambda self: (self._width, self._height), set_size)
 
+    # XXX set_scale
     # XXX set_rect
+
+    def set_rotation(self, rotation):
+        self._rotation = rotation
+        self._set_vertices()
+    rotation = property(lambda self: self._rotation, set_rotation)
+
+    def _set_vertices(self):
+        r = self._rotation
+        if r:
+            sr = math.sin(r)
+            cr = math.cos(r)
+            x = self._x
+            y = self._y
+            w = self._width
+            h = self._height
+            if self._rothandle == (0, 0):
+                crw = cr * w
+                srh = sr * h
+                srw = sr * w
+                crh = cr * h
+                self.primitive.vertices[:] = [
+                    int(x), int(y),
+                    int(x + crw), int(y + srw),
+                    int(x + crw - srh), int(y + srw + crh),
+                    int(x - srh), int(y + crh)
+                ]
+            else:
+                vertices = []
+                rx, ry = self._rothandle
+                x += rx
+                y += ry
+                px = -rx
+                py = -ry
+                vertices.append(int(x + cr * px - sr * py))
+                vertices.append(int(y + sr * px + cr * py))
+                px = w - rx
+                vertices.append(int(x + cr * px - sr * py))
+                vertices.append(int(y + sr * px + cr * py))
+                py = h - ry
+                vertices.append(int(x + cr * px - sr * py))
+                vertices.append(int(y + sr * px + cr * py))
+                px = -rx
+                vertices.append(int(x + cr * px - sr * py))
+                vertices.append(int(y + sr * px + cr * py))
+                self.primitive.vertices[:] = vertices
+        else:
+            x = int(self._x)
+            y = int(self._y)
+            w = int(self._width)
+            h = int(self._height)
+            self.primitive.vertices[:] = [x, y, x + w, y, x + w, y + h, x, y + h]
 
 
 class AnimatedSprite(Sprite):
