@@ -11,8 +11,7 @@ Introduction
 
 
 >>> car.rotation = 45
->>> car.rothandle = 'center'
-
+>>> car.rothandle = (16, 16)
 
 >>> # replace new car image
 >>> car.image = SpriteImage('car-damaged.png')
@@ -21,11 +20,14 @@ Introduction
 >>> # load animation from an animation strip
 >>> explosion = AnimatedImage('explosion.png', frames=8, loop=False)
 
-
 >>> explosion = Sprite('explosion.png', rows=2, frames=8, period=.5, loop=False)
 
 
 
+TODO - Maybe
+------------
+
+- allow collision detection including rotation as an option?
 
 
 

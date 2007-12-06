@@ -36,17 +36,16 @@ layer3 = spryte.Layer()
 keyboard = key.KeyStateHandler()
 win.push_handlers(keyboard)
 def animate(dt):
-    # handle car controls / movement
+    # update car rotation & speed
     r = car.rotation
     r += (keyboard[key.LEFT] - keyboard[key.RIGHT]) * 5 * dt
     if r < 0: r += math.pi * 2
     elif r > math.pi * 2: r -= math.pi * 2
     car.rotation = r
-    x, y = car.pos
-    speed = (keyboard[key.UP] - keyboard[key.DOWN]) * 200 * dt
-    cr = math.cos(r)
-    sr = math.sin(r)
-    car.pos = (x - sr * speed, y + cr * speed)
+    car.dy = (keyboard[key.UP] - keyboard[key.DOWN]) * 200 * dt
+
+    # ... and the rest
+    car.update_kinematics(dt)
 
     # handle balls
     for i, ball in enumerate(balls):

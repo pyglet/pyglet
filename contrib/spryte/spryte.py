@@ -70,7 +70,7 @@ class TextureState(graphics.AbstractState):
 
 class Sprite(rect.Rect):
     def __init__(self, im, layer, x, y, file=None, blended=True, rotation=0,
-            rothandle=(0, 0), **attributes):
+            rothandle=(0, 0), dx=0, dy=0, ddx=0, ddy=0, **attributes):
         '''
         >>> sprite = Sprite('car.png', layer, 100, 100)
         '''
@@ -106,6 +106,10 @@ class Sprite(rect.Rect):
         self.layer = layer
         self._x = x
         self._y = y
+        self.dx = dx
+        self.dy = dy
+        self.ddx = ddx
+        self.ddy = ddy
         self._rotation = rotation
         self._rothandle = rothandle
         self.__dict__.update(attributes)
@@ -166,6 +170,15 @@ class Sprite(rect.Rect):
         self._set_vertices()
     size = property(lambda self: (self._width, self._height), set_size)
 
+    def set_velocity(self, value):
+        self.dx, self.dy = value
+    velocity = property(lambda self: (self.dx, self.dy), set_velocity)
+
+    def set_acceleration(self, value):
+        self.ddx, self.ddy = value
+    acceleration = property(lambda self: (self.ddx, self.ddy),
+        set_acceleration)
+
     # XXX set_scale
     # XXX set_rect
 
@@ -219,6 +232,35 @@ class Sprite(rect.Rect):
             w = int(self._width)
             h = int(self._height)
             self.primitive.vertices[:] = [x, y, x + w, y, x + w, y + h, x, y + h]
+
+    def update_kinematics(self, dt):
+        '''Update the sprite with simple kinematics for the passage of "dt"
+        seconds.
+
+        The sprite's acceleration (.ddx and .ddy) are added to the sprite's
+        velocity.
+        
+        The sprite's veclocity (.dx and .dy) are added to the sprite's
+        position.
+
+        Sprite rotation is included in the calculations. That is, positive dy
+        is always pointing up from the top of the sprite and positive dx is
+        always pointing right from the sprite.
+        '''
+        if self.ddx: self.dx += self.ddx * dt
+        if self.ddy: self.dy += self.ddy * dt
+        if self.dx == self.dy == 0: return
+
+        r = self._rotation
+        x, y = self._x, self._y
+        if not r:
+            self.pos = (x + self.dx, y + self.dy)
+        else:
+            x, y = self.pos
+            cr = math.cos(r)
+            sr = math.sin(r)
+            self.pos = (x + cr * self.dx - sr * self.dy,
+                y + sr * self.dx + cr * self.dy)
 
 
 class AnimatedSprite(Sprite):
