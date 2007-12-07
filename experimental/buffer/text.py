@@ -23,6 +23,7 @@ class StyleRuns(object):
     def __init__(self, size, initial):
         self.runs = [StyleRun(initial, size)]
 
+
     def insert(self, pos, length):
         i = 0
         for run in self.runs:
@@ -119,6 +120,42 @@ class StyleRuns(object):
             return self.runs[0].style
 
         assert False, 'Index not in range'
+
+class OverridableStyleRuns(StyleRuns):
+    def __init__(self, size, initial):
+        super(OverridableStyleRuns, self).__init__(size, initial)
+        self.override_start = -1 
+        self.override_end = -1
+        self.override_style = None
+
+    def set_override(self, style, start, end):
+        self.override_style = style
+        self.override_start = start
+        self.override_end = end
+
+    def __iter__(self):
+        i = 0
+        for run in self.runs:
+            # Some overlap with override
+            if i < self.override_start < i + run.count:
+                yield i, self.override_start, run.style
+            if i <= self.override_start < i + run.count:
+                yield self.override_start, \
+                      self.override_end, self.override_style
+            if i <= self.override_end < i + run.count:
+                yield self.override_end, i + run.count, run.style
+
+            # No overlap with override
+            if i + run.count < self.override_start or \
+               i >= self.override_end:
+                yield i, i + run.count, run.style
+            i += run.count
+
+    def get_style_at(self, index):
+        if self.override_start <= index < self.override_end:
+            return self.override_style
+
+        return super(OverridableStyleRuns, self).get_style_at(index)
 
 class StyleRunsRangeIterator(object):
     '''Perform sequential range iterations over a StyleRuns.'''
@@ -246,7 +283,8 @@ class TextView(object):
 
         self.font_runs = StyleRuns(0, font)
         self.owner_runs = StyleRuns(0, None)
-        self.color_runs = StyleRuns(0, color)
+        self.color_runs = OverridableStyleRuns(0, color)
+        self.background_runs = OverridableStyleRuns(0, None)
 
         self.insert_text(0, text)
 
@@ -262,6 +300,7 @@ class TextView(object):
         self.font_runs.insert(start, len_text)
         self.owner_runs.insert(start, len_text)
         self.color_runs.insert(start, len_text)
+        self.background_runs.insert(start, len_text)
         
         for line in self.lines:
             if line.start >= start:
@@ -280,6 +319,7 @@ class TextView(object):
         self.font_runs.delete(start, end)
         self.owner_runs.delete(start, end)
         self.color_runs.delete(start, end)
+        self.background_runs.delete(start, end)
 
         size = end - start
         for line in self.lines:
@@ -468,12 +508,13 @@ class TextView(object):
         batch = self.batch
 
         colors_iter = self.color_runs.get_range_iterator()
+        background_iter = self.background_runs.get_range_iterator()
         
         for line in self.lines[invalid_start:invalid_end]:
             i = line.start
             line.delete_vertex_lists()
 
-            x = line.x
+            x0 = x1 = line.x
             y = line.y
             for glyph_run in line.glyph_runs:
                 assert glyph_run.glyphs
@@ -488,44 +529,54 @@ class TextView(object):
                 tex_coords = []
                 for glyph in glyph_run.glyphs:
                     v0, v1, v2, v3 = glyph.vertices
-                    v0 += x
-                    v2 += x
+                    v0 += x0
+                    v2 += x0
                     v1 += y
                     v3 += y
                     vertices.extend([v0, v1, v2, v1, v2, v3, v0, v3])
                     t = glyph.tex_coords
                     tex_coords.extend(t[0] + t[1] + t[2] + t[3])
-                    x += glyph.advance
+                    x0 += glyph.advance
                 
+                # Text color
                 colors = []
                 for start, end, color in colors_iter.iter_range(i, i+n_glyphs):
                     colors.extend(color * ((end - start) * 4))
-
-                # Selection color override
-                over_start = (max(i, self._selection_start) - i) * 4
-                over_end = (min(i + n_glyphs, self._selection_end) - i) * 4
-                if over_end > over_start:
-                    colors[over_start*4:over_end*4] = \
-                        self._selection_color * (over_end - over_start)
-
-                    # Background vertices
-                    background_vertices = vertices[over_start*2:over_end*2]
-                    # Join the glyph boxes
-                    background_vertices[8::8] = background_vertices[2:-8:8]
-                    background_vertices[14::8] = background_vertices[6:-8:8]
-                    background_colors = self._selection_background_color * \
-                        (over_end - over_start)
-                    background_list = self.background_batch.add(
-                        over_end - over_start, GL_QUADS, None,
-                        ('v2f/dynamic', background_vertices),
-                        ('c4B/dynamic', background_colors))
-                    line.vertex_lists.append(background_list)
 
                 list = batch.add(n_glyphs * 4, GL_QUADS, state, 
                     ('v2f/dynamic', vertices),
                     ('t3f/dynamic', tex_coords),
                     ('c4B/dynamic', colors))
                 line.vertex_lists.append(list)
+
+                # Background color
+                background_vertices = []
+                background_colors = []
+                background_vertex_count = 0
+                for start, end, bg in background_iter.iter_range(i, i+n_glyphs):
+                    if bg is None:
+                        for glyph in glyph_run.glyphs[start - i:end - i]:
+                            x1 += glyph.advance
+                        continue
+                    
+                    y1 = y + glyph_run.font.descent
+                    y2 = y + glyph_run.font.ascent
+                    x2 = x1
+                    for glyph in glyph_run.glyphs[start - i:end - i]:
+                        x2 += glyph.advance
+                        background_vertices.extend(
+                            [x1, y1, x2, y1, x2, y2, x1, y2])
+                        x1 += glyph.advance
+                    background_colors.extend(bg * ((end - start) * 4))
+                    background_vertex_count += (end - start) * 4
+
+                if background_vertex_count:
+                    background_list = self.background_batch.add(
+                        background_vertex_count, GL_QUADS, None,
+                        ('v2f/dynamic', background_vertices),
+                        ('c4B/dynamic', background_colors))
+                    line.vertex_lists.append(background_list)
+
 
                 i += n_glyphs
 
@@ -549,13 +600,26 @@ class TextView(object):
     def set_selection(self, start, end):
         if start == self._selection_start and end == self._selection_end:
             return
-        
-        if self._selection_start != self._selection_end:
-            self.invalid_style.invalidate(self._selection_start,
-                                              self._selection_end)
+
+        if end > self._selection_start and start < self._selection_end:
+            # Overlapping, only invalidate difference
+            self.invalid_style.invalidate(min(start, self._selection_start),
+                                          max(start, self._selection_start))
+            self.invalid_style.invalidate(min(end, self._selection_end),
+                                          max(end, self._selection_end))
+        else:
+            # Non-overlapping, invalidate both ranges
+            self.invalid_style.invalidate(self._selection_start, 
+                                          self._selection_end)
+            self.invalid_style.invalidate(start, end)
+
         self._selection_start = start
         self._selection_end = end
-        self.invalid_style.invalidate(start, end)
+
+        self.color_runs.set_override(self._selection_color, start, end)
+        self.background_runs.set_override(self._selection_background_color, 
+            start, end)
+        
         self._update()
 
     _selection_color = [255, 255, 255, 255]
@@ -648,6 +712,13 @@ class TextView(object):
             raise NotImplementedError('TODO') # if only one font used, else
                 # indeterminate
         return self.font_runs.get_style_at(position)
+
+    def set_background_color(self, color, start=0, end=None):
+        if end is None:
+            end = len(self._text)
+        self.background_runs.set_style(start, end, color)
+        self.invalid_style.invalidate(start, end)
+        self._update()
 
 class Caret(object):
     _next_word_re = re.compile(r'(?<=\W)\w')
@@ -806,6 +877,7 @@ def test_text2(batch, width):
     text = TextView(ft, frog_prince.replace('\n', ' '), batch=batch,
         width=width, color=(0, 0, 0, 255)) 
     text.set_font(ft2, 101, 134)
+    text.set_background_color([255, 255, 100, 255], 100, 150)
     return text
 
 def test_text3(batch, width):
