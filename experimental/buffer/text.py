@@ -129,6 +129,8 @@ class OverridableStyleRuns(StyleRuns):
         self.override_style = None
 
     def set_override(self, style, start, end):
+        if start == end:
+            start = end = -1
         self.override_style = style
         self.override_start = start
         self.override_end = end
@@ -146,8 +148,7 @@ class OverridableStyleRuns(StyleRuns):
                 yield self.override_end, i + run.count, run.style
 
             # No overlap with override
-            if i + run.count < self.override_start or \
-               i >= self.override_end:
+            if i + run.count < self.override_start or i >= self.override_end:
                 yield i, i + run.count, run.style
             i += run.count
 
@@ -156,6 +157,11 @@ class OverridableStyleRuns(StyleRuns):
             return self.override_style
 
         return super(OverridableStyleRuns, self).get_style_at(index)
+
+    def __repr__(self):
+        return '%s(%r, override_style=%r, override_start=%r, override_end=%r)'\
+            % (self.__class__.__name__, self.runs,
+               self.override_style, self.override_start, self.override_end)
 
 class StyleRunsRangeIterator(object):
     '''Perform sequential range iterations over a StyleRuns.'''
@@ -619,7 +625,7 @@ class TextView(object):
         self.color_runs.set_override(self._selection_color, start, end)
         self.background_runs.set_override(self._selection_background_color, 
             start, end)
-        
+
         self._update()
 
     _selection_color = [255, 255, 255, 255]
