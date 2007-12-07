@@ -205,6 +205,15 @@ class AudioData(object):
         self.duration -= bytes / float(audio_format.bytes_per_second)
         self.timestamp += bytes / float(audio_format.bytes_per_second)
 
+    def get_string_data(self):
+        '''Return data as a string.'''
+        if type(self.data) is str:
+            return self.data
+
+        buf = ctypes.create_string_buffer(self.length)
+        ctypes.memmove(buf, self.data, self.length)
+        return buf.raw
+
 class AudioPlayer(object):
     '''Abstract low-level interface for playing audio.
 
@@ -494,7 +503,7 @@ class StaticSource(Source):
             audio_data = source._get_audio_data(buffer_size)
             if not audio_data:
                 break
-            data.write(audio_data.data)
+            data.write(audio_data.get_string_data())
         self._data = data.getvalue()
 
     def _get_queue_source(self):
