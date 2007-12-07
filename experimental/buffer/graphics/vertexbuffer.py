@@ -335,7 +335,7 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
             self._dirty_max = 0
 
     def set_data(self, data):
-        super(VertexBufferObject, self).set_data(data)
+        super(MappableVertexBufferObject, self).set_data(data)
         ctypes.memmove(self.data, data, self.size)
         self._dirty_min = 0
         self._dirty_max = self.size
