@@ -536,9 +536,14 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
     _event_queue = None
     _allow_dispatch_event = False # controlled by dispatch_events stack frame
 
+    # Class attributes
+
+    _default_width = 640
+    _default_height = 480
+
     def __init__(self, 
-                 width=640,
-                 height=480,
+                 width=None,
+                 height=None,
                  caption=None,
                  resizable=False,
                  style=WINDOW_STYLE_DEFAULT,
@@ -569,10 +574,10 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
 
         :Parameters:
             `width` : int
-                Width of the window, in pixels.  Ignored if `fullscreen`
+                Width of the window, in pixels.  Not valid if `fullscreen`
                 is True.  Defaults to 640.
             `height` : int
-                Height of the window, in pixels.  Ignored if `fullscreen`
+                Height of the window, in pixels.  Not valid if `fullscreen`
                 is True.  Defaults to 480.
             `caption` : str or unicode
                 Initial caption (title) of the window.  Defaults to
@@ -633,9 +638,17 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
             context = config.create_context(gl.get_current_context())
 
         if fullscreen:
-            self._windowed_size = width, height
+            if width is not None or height is not None:
+                raise WindowException(
+                    'Width and height cannot be specified with fullscreen.')
+            self._windowed_size = self._default_width, self._default_height
             width = screen.width
             height = screen.height
+        else:
+            if width is None:
+                width = self._default_width
+            if height is None:
+                height = self._default_height
 
         self._width = width
         self._height = height
