@@ -814,6 +814,12 @@ def merge_docs(introspect_doc, parse_doc, cyclecheck=None, path=None):
     # If both values are GenericValueDoc, then we don't want to merge
     # them.  E.g., we don't want to merge 2+2 with 4.  So just copy
     # the inspect_doc's pyval to the parse_doc, and return the parse_doc.
+
+    #<ah> NO! Because parse_doc will reuse the same ValueDoc for a value
+    #     it doesn't parse, such as default parameter values, overwriting
+    #     pyval affects other values at the same time.  Nasty!  Grr.  Bad
+    #     epydoc.  I can live with 2+2 being merged with 4, thanks.
+    '''
     if type(introspect_doc) == type(parse_doc) == GenericValueDoc:
         if introspect_doc.pyval is not UNKNOWN:
             parse_doc.pyval = introspect_doc.pyval
@@ -821,6 +827,7 @@ def merge_docs(introspect_doc, parse_doc, cyclecheck=None, path=None):
             parse_doc.parse_repr = introspect_doc.parse_repr
         parse_doc.docs_extracted_by = 'both'
         return parse_doc.merge_and_overwrite(introspect_doc)
+    '''
 
     # Perform several sanity checks here -- if we accidentally
     # merge values that shouldn't get merged, then bad things can
@@ -881,7 +888,7 @@ def _merge_posargs_and_defaults(introspect_doc, parse_doc, path):
     # If either is unknown, then let merge_attrib handle it.
     if introspect_doc.posargs is UNKNOWN or parse_doc.posargs is UNKNOWN:
         return 
-        
+
     # If the introspected doc just has '...', then trust the parsed doc.
     if introspect_doc.posargs == ['...'] and parse_doc.posargs != ['...']:
         introspect_doc.posargs = parse_doc.posargs
