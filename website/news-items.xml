@@ -1,4 +1,11 @@
 <news>
+  <item date="8-December-2007" author="Alex"
+        title="pyglet 1.0 beta 3 released">
+    Get your hands on the latest <a href="download.html">Beta release</a>.
+    OS X users will be pleased by the installer improvements.  Windows
+    users will be pleased by the improved font rendering.  All users will
+    enjoy the multide of miscellaneous fixes to the library code.
+  </item>
   <item date="12-November-2007" author="Alex"
         title="pyglet 1.0 beta 2 released">
     This <a href="download.html">latest beta release</a> fixes a serious
