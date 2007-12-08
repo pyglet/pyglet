@@ -184,6 +184,13 @@ class StyleRunsRangeIterator(object):
             self.curr_start, self.curr_end, self.curr_style = self.iter.next()
         return self.curr_style
 
+class Paragraph(object):
+    def __init__(self):
+        pass
+
+    def clone(self):
+        return Paragraph()
+
 class Line(object):
     def __init__(self, start):
         self.vertex_lists = []
@@ -265,6 +272,8 @@ class InvalidRange(object):
         return start, end
 
 class TextView(object):
+    _paragraph_re = re.compile(r'\n', flags=re.DOTALL)
+
     def __init__(self, font, text, color=(255, 255, 255, 255), width=400,
                  batch=None):
         self._width = width
@@ -291,6 +300,7 @@ class TextView(object):
         self.owner_runs = StyleRuns(0, None)
         self.color_runs = OverridableStyleRuns(0, color)
         self.background_runs = OverridableStyleRuns(0, None)
+        self.paragraph_runs = StyleRuns(0, Paragraph())
 
         self.insert_text(0, text)
 
@@ -307,11 +317,31 @@ class TextView(object):
         self.owner_runs.insert(start, len_text)
         self.color_runs.insert(start, len_text)
         self.background_runs.insert(start, len_text)
-        
+        self.paragraph_runs.insert(start, len_text)
+
         for line in self.lines:
             if line.start >= start:
                 line.start += len_text
 
+        # Insert paragraph breaks
+        last_para_start = None
+        for match in self._paragraph_re.finditer(text):
+            prototype = self.paragraph_runs.get_style_at(start)
+            para_start = start + match.start() + 1
+            if last_para_start is not None:
+                self.paragraph_runs.set_style(last_para_start, para_start, 
+                    prototype.clone())
+            last_para_start = para_start
+
+        if last_para_start is not None:
+            match = self._paragraph_re.search(self._text, last_para_start)
+            if match:
+                para_end = match.start()
+            else:
+                para_end = len_text
+            self.paragraph_runs.set_style(last_para_start, para_end, 
+                prototype.clone())
+ 
         self._update()
 
     def remove_text(self, start, end):
@@ -326,11 +356,14 @@ class TextView(object):
         self.owner_runs.delete(start, end)
         self.color_runs.delete(start, end)
         self.background_runs.delete(start, end)
+        self.paragraph_runs.delete(start, end)
 
         size = end - start
         for line in self.lines:
             if line.start > start:
                 line.start -= size
+
+        # TODO merge paragraph styles
 
         if start == 0:
             self.invalid_flow.invalidate(0, 1)
@@ -434,12 +467,27 @@ class TextView(object):
                     
                     next_start = index
                 else:
-                    if x + glyph.advance >= self._width:
+                    if x + glyph.advance >= self._width or text == '\n':
+                        if text == '\n':
+                            for run in run_accum:
+                                line.add_glyph_run(run)
+                            run_accum = []
+                            owner_accum_commit.extend(owner_accum)
+                            owner_accum = []
+
+                            line.width = x 
+                            next_start = index + 1
+
                         if owner_accum_commit:
                             line.add_glyph_run(
                                 GlyphRun(owner, font, owner_accum_commit))
                             owner_accum_commit = []
-                        if line.glyph_runs:
+
+                        if text == '\n' and not line.glyph_runs:
+                            line.ascent = font.ascent
+                            line.descent = font.descent
+
+                        if line.glyph_runs or text == '\n':
                             line_index += 1
                             try:
                                 line = self.lines[line_index]
@@ -457,8 +505,9 @@ class TextView(object):
                                 self.invalid_lines.insert(line_index, 1)
                             x = sum(r.width for r in run_accum) # XXX
                             x += sum(g.advance for g in owner_accum) # XXX
-                    owner_accum.append(glyph)
-                    x += glyph.advance
+                    if text != '\n':
+                        owner_accum.append(glyph)
+                        x += glyph.advance
                     index += 1
 
             if owner_accum_commit:
@@ -880,7 +929,7 @@ def test_text2(batch, width):
     from pyglet import font
     ft = font.load('Times New Roman', 12)
     ft2 = font.load('Times New Roman', 16)
-    text = TextView(ft, frog_prince.replace('\n', ' '), batch=batch,
+    text = TextView(ft, frog_prince, batch=batch,
         width=width, color=(0, 0, 0, 255)) 
     text.set_font(ft2, 101, 134)
     text.set_background_color([255, 255, 100, 255], 100, 150)
@@ -903,6 +952,7 @@ def main():
 
     @w.event
     def on_text(t):
+        t = t.replace('\r', '\n')
         caret.mark = None
         text.insert_text(caret.position, t)
         caret.position += len(t)
@@ -975,15 +1025,9 @@ def main():
         fps.draw()
         w.flip()
 
-frog_prince = '''In olden times when wishing still
-helped one, there lived a king whose daughters were all beautiful, but the
-youngest was so beautiful that the sun itself, which has seen so much, was
-astonished whenever it shone in her face.  Close by
-the king's castle lay a great dark forest, and under an old lime-tree in the
-forest was a well, and when the day was very warm, the king's child went out
-into the forest and sat down by the side of the cool fountain, and when she
-was bored she took a golden ball, and threw it up on high and caught it, and
-this ball was her favorite plaything.'''
+frog_prince = '''In olden times when wishing still helped one, there lived a king whose daughters were all beautiful, but the youngest was so beautiful that the sun itself, which has seen so much, was astonished whenever it shone in her face.  Close by the king's castle lay a great dark forest, and under an old lime-tree in the forest was a well, and when the day was very warm, the king's child went out into the forest and sat down by the side of the cool fountain, and when she was bored she took a golden ball, and threw it up on high and caught it, and this ball was her favorite plaything.
+This is the next pararaph.
+And here's another one.'''
 
 if __name__ == '__main__':
     main()
