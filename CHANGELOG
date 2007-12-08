@@ -1,3 +1,24 @@
+Current
+    * docs: Fixed the documentation of default parameter values
+    * examples: Added fixed_resolution example
+    * pyglet.event: Allow EVENT_HANDLED to be any true value
+    * pyglet.font: Ascent and descent are integer on all platforms now
+    * pyglet.media: Several fixes to procedural sounds
+    * pyglet.media: Fixed StaticSource usage with non-string source data
+    * pyglet.window: Providing width or height with fullscreen parameter to
+      constructor will now raise an exception
+    * OS X: Fixed interaction with non-pyglet window event loops
+    * OS X: Installer will use the system-installed and MacPorts versions of 
+      Python if found
+    * OS X: Fixed library paths for systems with a case-sensitive file system
+    * OS X: Fixed mouse events in fullscreen windows
+    * OS X: Fixed reported window size of fullscreen windows
+    * Linux: Fixed error with >3 button mice
+    * Linux: Fixed default font use
+    * Win32: GDI+ is now used for font rendering, fixing antialiasing issues
+    * Win32: Font glyphs are now correctly aligned to the baseline
+    * Win32: Fixed queued media playback
+
 1.0beta2
     * examples: soundspace gives error if AVbin is not available
     * examples: opengl.py made to demonstrate more OpenGL features
