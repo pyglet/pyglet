@@ -27,7 +27,7 @@ w = kitten.width
 h = kitten.height
 batch.add(4, GL_QUADS, TextureState(kitten),
     ('v3f', (0., 0., 0.) + (w, 0., 0.) + (w, h, 0.) + (0., h, 0.)),
-    ('t3f', t[0] + t[1] + t[2] + t[3]))
+    ('t3f', t))
 
 while not win.has_exit:
     win.dispatch_events()

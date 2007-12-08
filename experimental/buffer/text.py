@@ -541,7 +541,7 @@ class TextView(object):
                     v3 += y
                     vertices.extend([v0, v1, v2, v1, v2, v3, v0, v3])
                     t = glyph.tex_coords
-                    tex_coords.extend(t[0] + t[1] + t[2] + t[3])
+                    tex_coords.extend(t)
                     x0 += glyph.advance
                 
                 # Text color

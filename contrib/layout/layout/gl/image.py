@@ -59,14 +59,14 @@ class ImageReplacedElementDrawable(ReplacedElementDrawable):
         # Create interleaved array in T4F_V4F format
         t = self.texture.tex_coords
         array = (GLfloat * 32)(
-             t[0][0], t[0][1], t[0][2], 1.,
-             left,    bottom,  0,       1.,
-             t[1][0], t[1][1], t[1][2], 1., 
-             right,   bottom,  0,       1.,
-             t[2][0], t[2][1], t[2][2], 1., 
-             right,   top,     0,       1.,
-             t[3][0], t[3][1], t[3][2], 1., 
-             left,    top,     0,       1.)
+             t[0],    t[1],    t[2],  1.,
+             left,    bottom,  0,     1.,
+             t[3],    t[4],    t[5],  1., 
+             right,   bottom,  0,     1.,
+             t[6],    t[7],    t[8],  1., 
+             right,   top,     0,     1.,
+             t[9],    t[10],   t[11], 1., 
+             left,    top,     0,     1.)
 
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glInterleavedArrays(GL_T4F_V4F, 0, array)

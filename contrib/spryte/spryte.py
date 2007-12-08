@@ -87,13 +87,7 @@ class Sprite(rect.Rect):
         w, h = self._width, self._height
 
         vertices = [x, y,   x+w,   y,    x+w,   y+h,    x,    y+h]
-        t = texture.tex_coords
-        tex_coords = [
-             t[0][0], t[0][1],
-             t[1][0], t[1][1],
-             t[2][0], t[2][1],
-             t[3][0], t[3][1],
-        ]
+        tex_coords = texture.tex_coords
 
         # XXX use point sprites if they're available
 
@@ -101,7 +95,7 @@ class Sprite(rect.Rect):
         self.graphics_state = TextureState(texture, self.blended)
         self.primitive = layer.add(4, gl.GL_QUADS, self.graphics_state,
             ('v2f/stream', vertices),
-            ('t2f/stream', tex_coords),         # allow animation
+            ('t3f/stream', tex_coords),         # allow animation
         )
         self.layer = layer
         self._x = x
@@ -119,13 +113,7 @@ class Sprite(rect.Rect):
         self.primitive.delete()
 
     def set_texture(self, texture):
-        t = texture.tex_coords
-        tex_coords = [
-             t[0][0], t[0][1],
-             t[1][0], t[1][1],
-             t[2][0], t[2][1],
-             t[3][0], t[3][1],
-        ]
+        tex_coords = texture.tex_coords
         new_state = TextureState(texture, self.blended)
         if new_state != self.graphics_state:
             # the texture has changed, acknowledge new state
@@ -134,7 +122,7 @@ class Sprite(rect.Rect):
             self.graphics_state = new_state
             self.primitive = layer.add(4, gl.GL_QUADS, new_state,
                 ('v2f/stream', vertices),
-                ('t2f/stream', tex_coords),         # allow animation
+                ('t3f/stream', tex_coords),         # allow animation
             )
         else:
             self.primitive.tex_coords[:] = tex_coords

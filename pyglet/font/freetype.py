@@ -195,10 +195,8 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         img = image.ImageData(width, height, 'A', data, pitch)
         glyph = self.font.create_glyph(img) 
         glyph.set_bearings(baseline, lsb, advance)
-        glyph.tex_coords = (glyph.tex_coords[3],
-                            glyph.tex_coords[2],
-                            glyph.tex_coords[1],
-                            glyph.tex_coords[0])
+        t = list(glyph.tex_coords)
+        glyph.tex_coords = t[9:12] + t[6:9] + t[3:6] + t[:3]
 
         return glyph
 

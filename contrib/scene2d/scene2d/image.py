@@ -93,10 +93,7 @@ class Image2d(Drawable):
         self.y = y
         self.width = texture.width
         self.height = texture.height
-        self.uvs = (texture.tex_coords[0], 
-                    texture.tex_coords[3],
-                    texture.tex_coords[2],
-                    texture.tex_coords[1])
+        self.uvs = texture.tex_coords
 
     @classmethod
     def load(cls, filename=None, file=None):
@@ -130,13 +127,13 @@ class Image2d(Drawable):
         glNewList(self.__quad_list, GL_COMPILE)
         #self.texture.blit(0, 0, 0)  # This does same as QUADS below
         glBegin(GL_QUADS)
-        glTexCoord3f(*self.uvs[0])
+        glTexCoord3f(*self.uvs[:3])
         glVertex2f(0, 0)
-        glTexCoord3f(*self.uvs[1])
+        glTexCoord3f(*self.uvs[3:6])
         glVertex2f(0, self.height)
-        glTexCoord3f(*self.uvs[2])
+        glTexCoord3f(*self.uvs[6:9])
         glVertex2f(self.width, self.height)
-        glTexCoord3f(*self.uvs[3])
+        glTexCoord3f(*self.uvs[9:12])
         glVertex2f(self.width, 0)
         glEnd()
         glEndList()
@@ -149,6 +146,7 @@ class Image2d(Drawable):
         # for other scene2d objects that *is* what .x/y are for - perhaps
         # that's what they should be for here...
         return DrawStyle(color=(1, 1, 1, 1), texture=self.texture,
+            # <ah> uvs looks quite wrong here
             width=self.width, height=self.height, uvs=(0,0,0,0),
             draw_list=self.quad_list, draw_env=DRAW_BLENDED)
 

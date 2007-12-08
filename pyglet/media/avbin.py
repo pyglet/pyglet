@@ -378,8 +378,8 @@ class AVbinSource(StreamingSource):
         player._texture = texture
 
         # Flip texture coords (good enough for simple apps).
-        bl, br, tr, tl = player._texture.tex_coords
-        player._texture.tex_coords = tl, tr, br, bl
+        t = list(player._texture.tex_coords)
+        player._texture.tex_coords = t[9:12] + t[6:9] + t[3:6] + t[:3]
 
     def _decode_video_packet(self, packet):
         timestamp = timestamp_from_avbin(packet.timestamp)

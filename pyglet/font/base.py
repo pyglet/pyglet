@@ -99,13 +99,13 @@ class Glyph(image.TextureRegion):
 
         Use the higher level APIs for performance and kerning.
         '''
-        glTexCoord2f(self.tex_coords[0][0], self.tex_coords[0][1])
+        glTexCoord3f(*self.tex_coords[:3])
         glVertex2f(self.vertices[0], self.vertices[1])
-        glTexCoord2f(self.tex_coords[1][0], self.tex_coords[1][1])
+        glTexCoord3f(*self.tex_coords[3:6])
         glVertex2f(self.vertices[2], self.vertices[1])
-        glTexCoord2f(self.tex_coords[2][0], self.tex_coords[2][1])
+        glTexCoord3f(*self.tex_coords[6:9])
         glVertex2f(self.vertices[2], self.vertices[3])
-        glTexCoord2f(self.tex_coords[3][0], self.tex_coords[3][1])
+        glTexCoord3f(*self.tex_coords[9:12])
         glVertex2f(self.vertices[0], self.vertices[3])
 
     def get_kerning_pair(self, right_glyph):

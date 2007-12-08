@@ -126,14 +126,15 @@ class GlyphString(object):
                 state_from = i
                 state_length = 0
             state_length += 1
-            lst += [glyph.tex_coords[0][0], glyph.tex_coords[0][1],
-                    x + glyph.vertices[0], y + glyph.vertices[1], 0.,
-                    glyph.tex_coords[1][0], glyph.tex_coords[1][1],
-                    x + glyph.vertices[2], y + glyph.vertices[1], 0.,
-                    glyph.tex_coords[2][0], glyph.tex_coords[2][1],
-                    x + glyph.vertices[2], y + glyph.vertices[3], 0.,
-                    glyph.tex_coords[3][0], glyph.tex_coords[3][1],
-                    x + glyph.vertices[0], y + glyph.vertices[3], 0.]
+            t = glyph.tex_coords
+            lst += [t[0], t[1], t[2], 1.,
+                    x + glyph.vertices[0], y + glyph.vertices[1], 0., 1.,
+                    t[3], t[4], t[5], 1.,
+                    x + glyph.vertices[2], y + glyph.vertices[1], 0., 1.,
+                    t[6], t[7], t[8], 1.,
+                    x + glyph.vertices[2], y + glyph.vertices[3], 0., 1.,
+                    t[9], t[10], t[11], 1.,
+                    x + glyph.vertices[0], y + glyph.vertices[3], 0., 1.]
             x += glyph.advance
             self.cumulative_advance.append(x)
         self.states.append((state_from, state_length, texture))
@@ -227,7 +228,7 @@ class GlyphString(object):
             to_index = len(self.text)
 
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        glInterleavedArrays(GL_T2F_V3F, 0, self.array)
+        glInterleavedArrays(GL_T4F_V4F, 0, self.array)
         for state_from, state_length, texture in self.states:
             if state_from + state_length < from_index:
                 continue
