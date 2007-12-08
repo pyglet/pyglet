@@ -1,4 +1,4 @@
-Current
+1.0beta3
     * docs: Fixed the documentation of default parameter values
     * examples: Added fixed_resolution example
     * pyglet.event: Allow EVENT_HANDLED to be any true value

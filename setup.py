@@ -11,7 +11,7 @@ import shutil
 import sys
 
 # Bump pyglet/__init__.py version as well.
-VERSION = '1.0beta2'
+VERSION = '1.0beta3'
 
 long_description = '''pyglet provides an object-oriented programming
 interface for developing games and other visually-rich applications
