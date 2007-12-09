@@ -9,7 +9,9 @@ import graphics
 import rect
 
 class Layer(graphics.Batch):
-    pass
+    def draw(self):
+        # XXX update all dirty sprites
+        super(Layer, self).draw()
 
 
 class TextureCache(object):
@@ -73,6 +75,9 @@ class Sprite(rect.Rect):
             rothandle=(0, 0), dx=0, dy=0, ddx=0, ddy=0, **attributes):
         '''
         >>> sprite = Sprite('car.png', layer, 100, 100)
+
+        rotation (in degrees)
+
         '''
         if isinstance(im, image.Texture):
             # assume we've been passed a cached texture
@@ -104,7 +109,7 @@ class Sprite(rect.Rect):
         self.dy = dy
         self.ddx = ddx
         self.ddy = ddy
-        self._rotation = rotation
+        self._rotation = math.radians(rotation)
         self._rothandle = rothandle
         self.__dict__.update(attributes)
 
@@ -130,6 +135,7 @@ class Sprite(rect.Rect):
 
     def set_x(self, value):
         self._x = value
+        # XXX self._dirty = True
         self._set_vertices()
     x = property(lambda self: self._x, set_x)
 
@@ -171,9 +177,10 @@ class Sprite(rect.Rect):
     # XXX set_rect
 
     def set_rotation(self, rotation):
-        self._rotation = rotation
+        self._rotation = math.radians(rotation)
         self._set_vertices()
-    rotation = property(lambda self: self._rotation, set_rotation)
+    rotation = property(lambda self: math.degrees(self._rotation),
+        set_rotation)
 
     def _set_vertices(self):
         r = self._rotation
@@ -227,7 +234,7 @@ class Sprite(rect.Rect):
 
         The sprite's acceleration (.ddx and .ddy) are added to the sprite's
         velocity.
-        
+
         The sprite's veclocity (.dx and .dy) are added to the sprite's
         position.
 
@@ -294,7 +301,7 @@ class AnimatedSprite(Sprite):
             self.time -= self.period
             self.frame += 1
             if self.frame == len(self.texture_sequence):
-                self.frame = 0 
+                self.frame = 0
                 if not self.loop:
                     self.finished = True
                     if self.callback is not None:

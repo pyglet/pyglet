@@ -36,10 +36,12 @@ OOH
 TODO - Maybe
 ------------
 
+- picking on tilemap
 - organise sprites in a layer into quadtree or similar
 - allow collision detection including rotation as an option?
 - layer blendmode
 - maps from XML files
+- reorganise modules
 
 
 
