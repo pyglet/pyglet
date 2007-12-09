@@ -30,7 +30,6 @@ def draw(size, mode, *data, **kwargs):
     indices = kwargs.get('indices')
 
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-    #import pdb; pdb.set_trace()
 
     for format, array in data:
         attribute = vertexattribute.create_attribute(format)
@@ -70,6 +69,15 @@ class Batch(object):
         # state -> (attributes, mode, indexed) -> domain
         self.state_map = {}
 
+        # Mapping of state to list of children.
+        self.state_children = {}
+
+        # List of top-level states
+        self.top_states = []
+
+        self._draw_list = []
+        self._draw_list_dirty = False
+
     def add(self, count, mode, state, *data):
         assert data, 'No attribute formats given'
 
@@ -78,7 +86,8 @@ class Batch(object):
         
         # Batch state
         if state not in self.state_map:
-            self.state_map[state] = {}
+            self._add_state(state)
+
         domain_map = self.state_map[state]
 
         # Split out attribute formats
@@ -99,6 +108,7 @@ class Batch(object):
             # Create domain
             domain = vertexdomain.create_domain(*formats)
             domain_map[key] = domain
+            self._draw_list_dirty = True
             
         # Create vertex list and initialize
         vlist = domain.create(count)
@@ -109,15 +119,60 @@ class Batch(object):
 
     def add_indexed(self, mode, state, indices, *data):
         pass # TODO
+
+    def _add_state(self, state):
+        self.state_map[state] = {}
+        if state.parent is None:
+            self.top_states.append(state)
+        else:
+            if state.parent not in self.state_map:
+                self._add_state(state.parent)
+            if state.parent not in self.state_children:
+                self.state_children[state.parent] = []
+            self.state_children[state.parent].append(state)
+        self._draw_list_dirty = True
+
+    def _update_draw_list(self):
+        # Visit state tree in preorder and create a list of bound methods
+        # to call.
+        draw_list = []
+
+        def visit(state):
+            draw_list.append(state.set)
+
+            # Draw domains using this state
+            domain_map = self.state_map[state]
+            for (_, mode, _), domain in domain_map.items():
+                draw_list.append(
+                    (lambda d, m: lambda: d.draw(m))(domain, mode))
+
+            # Sort and visit child states of this state
+            children = self.state_children.get(state)
+            if children:
+                children.sort()
+                for child in children:
+                    visit(child)
+
+            draw_list.append(state.unset)
+
+        self.top_states.sort()
+        for state in self.top_states:
+            visit(state)
+
+        self._draw_list = draw_list
+        self._draw_list_dirty = False
         
     def draw(self):
-        for state, domain_map in self.state_map.items():
-            state.set()
-            for (_, mode, _), domain in domain_map.items():
-                domain.draw(mode)
-            state.unset()
+        if self._draw_list_dirty:
+            self._update_draw_list()
+
+        for func in self._draw_list:
+            func()
 
 class AbstractState(object):
+    def __init__(self, parent=None):
+        self.parent = parent
+        
     def set(self):
         pass
 
@@ -130,7 +185,8 @@ class NullState(AbstractState):
 null_state = NullState()
 
 class TextureState(AbstractState):
-    def __init__(self, texture):
+    def __init__(self, texture, parent=None):
+        super(TextureState, self).__init__(parent)
         self.texture = texture
 
     def set(self):

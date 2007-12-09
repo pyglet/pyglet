@@ -271,19 +271,42 @@ class InvalidRange(object):
         self.end = 0
         return start, end
 
+class TextViewTopState(graphics.AbstractState):
+    x = 0
+    y = 0
+
+    def set(self):
+        glPushAttrib(GL_ENABLE_BIT)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glTranslatef(self.x, self.y, 0)
+
+    def unset(self):
+        glTranslatef(-self.x, -self.y, 0)
+        glPopAttrib(GL_ENABLE_BIT)
+
+class TextViewOrderedState(graphics.AbstractState):
+    def __init__(self, order, parent):
+        super(TextViewOrderedState, self).__init__(parent)
+        self.order = order
+
+    def __cmp__(self, other):
+        return cmp(self.order, other.order)
+
 class TextView(object):
     _paragraph_re = re.compile(r'\n', flags=re.DOTALL)
 
     def __init__(self, font, text, color=(255, 255, 255, 255), width=400,
                  batch=None):
         self._width = width
-        self.y = 480
-        self.x = 0
+        self.top_state = TextViewTopState()
+
+        self.background_state = TextViewOrderedState(0, self.top_state)
+        self.foreground_state = TextViewOrderedState(1, self.top_state)
 
         if batch is None:
             batch = graphics.Batch()
         self.batch = batch
-        self.background_batch = graphics.Batch() # TODO XXX
 
         self._text = ''
         self.glyphs = []
@@ -303,6 +326,22 @@ class TextView(object):
         self.paragraph_runs = StyleRuns(0, Paragraph())
 
         self.insert_text(0, text)
+
+    def _set_x(self, x):
+        self.top_state.x = x
+
+    def _get_x(self):
+        return self.top_state.x
+
+    x = property(_get_x, _set_x)
+
+    def _set_y(self, y):
+        self.top_state.y = y
+
+    def _get_y(self):
+        return self.top_state.y
+
+    y = property(_get_y, _set_y)
 
     def insert_text(self, start, text):
         len_text = len(text)
@@ -530,7 +569,7 @@ class TextView(object):
             return
 
         if invalid_start == 0:
-            y = self.y
+            y = 0
         else:
             last = self.lines[invalid_start - 1]
             y = last.y + last.descent
@@ -538,7 +577,7 @@ class TextView(object):
         line_index = invalid_start
         for line in self.lines[invalid_start:]:
             y -= line.ascent
-            line.x = self.x
+            line.x = 0
             if line.y == y and line_index >= invalid_end: 
                 break
             line.y = y
@@ -577,7 +616,8 @@ class TextView(object):
                     state = self.states[glyph_run.owner]
                 except KeyError:
                     owner = glyph_run.owner
-                    self.states[owner] = state = TextState(owner)
+                    self.states[owner] = state = \
+                        TextState(owner, self.foreground_state)
 
                 n_glyphs = len(glyph_run.glyphs)
                 vertices = []
@@ -626,8 +666,9 @@ class TextView(object):
                     background_vertex_count += (end - start) * 4
 
                 if background_vertex_count:
-                    background_list = self.background_batch.add(
-                        background_vertex_count, GL_QUADS, None,
+                    background_list = self.batch.add(
+                        background_vertex_count, GL_QUADS,
+                        self.background_state,
                         ('v2f/dynamic', background_vertices),
                         ('c4B/dynamic', background_colors))
                     line.vertex_lists.append(background_list)
@@ -705,9 +746,12 @@ class TextView(object):
                     break
                 position -= 1
                 x += glyph.advance 
-        return x, line.y
+        return x + self.x, line.y + self.y
 
     def get_line_from_point(self, x, y):
+        x -= self.x
+        y -= self.y
+
         line_index = 0
         for line in self.lines:
             if y > line.y + line.descent:
@@ -719,7 +763,7 @@ class TextView(object):
 
     def get_point_from_line(self, line):
         line = self.lines[line]
-        return line.x, line.y
+        return line.x + self.x, line.y + self.y
 
     def get_line_from_position(self, position):
         line = -1
@@ -734,6 +778,7 @@ class TextView(object):
 
     def get_position_on_line(self, line, x):
         line = self.lines[line]
+        x -= self.x
 
         position = line.start
         last_glyph_x = line.x
@@ -783,6 +828,7 @@ class Caret(object):
         self._text_view = text_view
         if batch is None:
             batch = text_view.batch
+        #self._list = batch.add(2, GL_LINES, None, 'v2f', 'c4B')
         self._list = batch.add(2, GL_LINES, None, 'v2f', 'c4B')
 
         self._ideal_x = None
@@ -1013,14 +1059,11 @@ def main():
     cursor_idle(0)
 
     glClearColor(1, 1, 1, 1)
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
     while not w.has_exit:
         clock.tick()
         w.dispatch_events()
         w.clear()
-        text.background_batch.draw()
         batch.draw()
         fps.draw()
         w.flip()
