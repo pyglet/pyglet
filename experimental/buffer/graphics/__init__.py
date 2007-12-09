@@ -195,3 +195,15 @@ class TextureState(AbstractState):
 
     def unset(self):
         glDisable(self.texture.target)
+
+    def __hash__(self):
+        return hash((self.texture.target, self.texture.id))
+
+    def __cmp__(self, other):
+        return cmp((self.texture.target, self.texture.id),
+            (other.texture.target, other.texture.id))
+
+    def __eq__(self, other):
+        return (self.texture.target == other.texture.target and
+            self.texture.id == other.texture.id)
+
