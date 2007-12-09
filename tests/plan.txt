@@ -141,6 +141,7 @@ image
         image.DDS_RGBA_DXT5_LOAD                GENERIC
 
     image-buffer
+        image.BUFFER_COPY                       X11 WIN OSX
         image.BUFFER_SAVE                       X11 WIN OSX
         image.DEPTH_SAVE                        X11 WIN OSX
 

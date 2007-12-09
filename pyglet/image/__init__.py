@@ -1213,6 +1213,7 @@ class Texture(AbstractImage):
     def create_for_size(cls, target, min_width, min_height,
                         internalformat=None):
         '''Create a Texture with dimensions at least min_width, min_height.
+        On return, the texture will be bound.
 
         :Parameters:
             `target` : int
@@ -1244,11 +1245,11 @@ class Texture(AbstractImage):
                           0., height, 0.)
         id = GLuint()
         glGenTextures(1, byref(id))
+        glBindTexture(target, id.value)
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
 
         if internalformat is not None:
             blank = (GLubyte * (width * height * 4))()
-            glBindTexture(target, id.value)
-            glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
             glTexImage2D(target, 0,
                          internalformat,
                          width, height,
@@ -1681,7 +1682,6 @@ class ColorBufferImage(BufferImage):
     def _get_texture(self):
         texture = Texture.create_for_size(GL_TEXTURE_2D, 
             self.width, self.height)
-        glBindTexture(texture.target, texture.id)
 
         if texture.width != self.width or texture.height != self.height:
             texture = texture.get_region(0, 0, self.width, self.height)
@@ -1697,10 +1697,11 @@ class ColorBufferImage(BufferImage):
             self.blit_to_texture(texture.target, texture.level, 0, 0, 0)
         else:
             glReadBuffer(self.gl_buffer)
-            glCopyTexImage2D(texture.target, 0,
+            glCopyTexImage2D(texture.target, texture.level,
                              GL_RGBA,
                              self.x, self.y, self.width, self.height,
                              0)
+        return texture
 
     texture = property(_get_texture)
 
@@ -1723,7 +1724,6 @@ class DepthBufferImage(BufferImage):
         
         texture = DepthTexture.create_for_size(GL_TEXTURE_2D,
             self.width, self.height)
-        glBindTexture(texture.target, texture.id)
         glReadBuffer(self.gl_buffer)
         glCopyTexImage2D(texture.target, 0,
                          GL_DEPTH_COMPONENT,
