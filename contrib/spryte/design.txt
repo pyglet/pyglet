@@ -42,6 +42,7 @@ TODO - Maybe
 - layer blendmode
 - maps from XML files
 - reorganise modules
+- store x1, y1 and x2, y2 (instead of x,y and w,h)
 
 
 
