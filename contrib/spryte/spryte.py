@@ -8,11 +8,39 @@ import graphics
 
 import rect
 
+class LayerState(graphics.AbstractState):
+    def __init__(self, x, y, blend, parent=None):
+        super(LayerState, self).__init__(parent)
+        self.x, self.y, self.blend = x, y, blend
+
+    def set(self):
+        gl.glPushAttrib(gl.GL_ENABLE_BIT)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glTranslatef(self.x, self.y, 0)
+
+    def unset(self):
+        gl.glTranslatef(-self.x, -self.y, 0)
+        gl.glPopAttrib(gl.GL_ENABLE_BIT)
+
 class Layer(graphics.Batch):
+    def __init__(self, x=0, y=0, blended=False):
+        super(Layer, self).__init__()
+        self.state = LayerState(x, y, blended)
+        self.sprites = []
+
+    def add_sprite(self, sprite):
+        # XXX spatial divsion
+        self.sprites.append(sprite)
+
+    def remove_sprite(self, sprite):
+        # XXX spatial divsion
+        self.sprites.remove(sprite)
+
     def draw(self):
-        # XXX update all dirty sprites
         super(Layer, self).draw()
 
+    # XXX delete? self.sprites = []
 
 class TextureCache(object):
     _cache = None
@@ -41,39 +69,19 @@ class TextureCache(object):
 texture_cache = TextureCache()
 
 
-class TextureState(graphics.AbstractState):
-    def __init__(self, texture, blended):
-        self.texture = texture
-        self.blended = blended
-
-    def set(self):
-        gl.glPushAttrib(gl.GL_ENABLE_BIT)
-        if self.blended:
-            gl.glEnable(gl.GL_BLEND)
-            gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        gl.glEnable(self.texture.target)
-        gl.glBindTexture(self.texture.target, self.texture.id)
-
-    def unset(self):
-        gl.glPopAttrib()
-
-    def __hash__(self):
-        return hash((self.texture.target, self.texture.id, self.blended))
-
-    def __cmp__(self, other):
-        return cmp((self.texture.target, self.texture.id, self.blended),
-            (other.texture.target, other.texture.id, self.blended))
-
-    def __eq__(self, other):
-        return (self.texture.target == other.texture.target and
-            self.texture.id == other.texture.id and
-            self.blended == other.blended)
-
-
 class Sprite(rect.Rect):
     def __init__(self, im, layer, x, y, file=None, blended=True, rotation=0,
             rothandle=(0, 0), dx=0, dy=0, ddx=0, ddy=0, **attributes):
         '''
+
+        "im" is either a filename (and may be accompanied by the "file"
+        argument file object) *or* a pyglet.image.Texture instance. If it's
+        the former then spryte will handle caching of images loaded. If it's
+        the latter it's assumed the application developer is handling image
+        loading and caching.
+
+        Example usage:
+
         >>> sprite = Sprite('car.png', layer, 100, 100)
 
         rotation (in degrees)
@@ -95,14 +103,17 @@ class Sprite(rect.Rect):
         tex_coords = texture.tex_coords
 
         # XXX use point sprites if they're available
+        # PointSpriteState
+        # GL_POINTS
 
         self.blended = blended
-        self.graphics_state = TextureState(texture, self.blended)
+        self.graphics_state = graphics.TextureState(texture, parent=layer.state)
         self.primitive = layer.add(4, gl.GL_QUADS, self.graphics_state,
             ('v2f/stream', vertices),
             ('t3f/stream', tex_coords),         # allow animation
         )
         self.layer = layer
+        self.layer.add_sprite(self)
         self._x = x
         self._y = y
         self.dx = dx
@@ -115,13 +126,14 @@ class Sprite(rect.Rect):
 
     def delete(self):
         self.graphics_state = None
+        self.layer.remove_sprite(self)
         self.primitive.delete()
 
     def set_texture(self, texture):
         tex_coords = texture.tex_coords
-        new_state = TextureState(texture, self.blended)
-        if new_state != self.graphics_state:
+        if texture.id != self.graphics_state.texture.id:
             # the texture has changed, acknowledge new state
+            new_state = graphics.TextureState(texture, parent=self.layer.state)
             vertices = self.primitive.vertices[:]
             self.primitive.delete()
             self.graphics_state = new_state
@@ -135,7 +147,6 @@ class Sprite(rect.Rect):
 
     def set_x(self, value):
         self._x = value
-        # XXX self._dirty = True
         self._set_vertices()
     x = property(lambda self: self._x, set_x)
 
@@ -182,51 +193,55 @@ class Sprite(rect.Rect):
     rotation = property(lambda self: math.degrees(self._rotation),
         set_rotation)
 
-    def _set_vertices(self):
+    def get_rotated_rect(self):
         r = self._rotation
-        if r:
-            sr = math.sin(r)
-            cr = math.cos(r)
-            x = self._x
-            y = self._y
-            w = self._width
-            h = self._height
-            if self._rothandle == (0, 0):
-                crw = cr * w
-                srh = sr * h
-                srw = sr * w
-                crh = cr * h
-                self.primitive.vertices[:] = [
-                    int(x), int(y),
-                    int(x + crw), int(y + srw),
-                    int(x + crw - srh), int(y + srw + crh),
-                    int(x - srh), int(y + crh)
-                ]
-            else:
-                vertices = []
-                rx, ry = self._rothandle
-                x += rx
-                y += ry
-                px = -rx
-                py = -ry
-                vertices.append(int(x + cr * px - sr * py))
-                vertices.append(int(y + sr * px + cr * py))
-                px = w - rx
-                vertices.append(int(x + cr * px - sr * py))
-                vertices.append(int(y + sr * px + cr * py))
-                py = h - ry
-                vertices.append(int(x + cr * px - sr * py))
-                vertices.append(int(y + sr * px + cr * py))
-                px = -rx
-                vertices.append(int(x + cr * px - sr * py))
-                vertices.append(int(y + sr * px + cr * py))
-                self.primitive.vertices[:] = vertices
-        else:
+        if not r:
             x = int(self._x)
             y = int(self._y)
             w = int(self._width)
             h = int(self._height)
-            self.primitive.vertices[:] = [x, y, x + w, y, x + w, y + h, x, y + h]
+            return [x, y, x + w, y, x + w, y + h, x, y + h]
+
+        sr = math.sin(r)
+        cr = math.cos(r)
+        x = self._x
+        y = self._y
+        w = self._width
+        h = self._height
+
+        if self._rothandle == (0, 0):
+            crw = cr * w
+            srh = sr * h
+            srw = sr * w
+            crh = cr * h
+            return [
+                int(x), int(y),
+                int(x + crw), int(y + srw),
+                int(x + crw - srh), int(y + srw + crh),
+                int(x - srh), int(y + crh)
+            ]
+
+        vertices = []
+        rx, ry = self._rothandle
+        x += rx
+        y += ry
+        px = -rx
+        py = -ry
+        vertices.append(int(x + cr * px - sr * py))
+        vertices.append(int(y + sr * px + cr * py))
+        px = w - rx
+        vertices.append(int(x + cr * px - sr * py))
+        vertices.append(int(y + sr * px + cr * py))
+        py = h - ry
+        vertices.append(int(x + cr * px - sr * py))
+        vertices.append(int(y + sr * px + cr * py))
+        px = -rx
+        vertices.append(int(x + cr * px - sr * py))
+        vertices.append(int(y + sr * px + cr * py))
+        return vertices
+
+    def _set_vertices(self):
+        self.primitive.vertices[:] = self.get_rotated_rect()
 
     def update_kinematics(self, dt):
         '''Update the sprite with simple kinematics for the passage of "dt"
@@ -263,7 +278,13 @@ class AnimatedSprite(Sprite):
             blended=True, loop=False, callback=None, **attributes):
         '''
 
-        "im" may be a filename or a pyglet.image.UniformTextureSequence
+        "im" is either a filename (and may be accompanied by the "file"
+        argument file object) *or* a pyglet.image.UniformTextureSequence
+        instance. If it's a filename then spryte will handle caching of
+        images loaded. If it's the latter it's assumed the application
+        developer is handling image loading and caching.
+
+        Example usage:
 
         >>> explosion = Sprite('explosion.png', 2, 8, layer, 100, 100)
         '''
@@ -297,6 +318,7 @@ class AnimatedSprite(Sprite):
     def update(self, dt):
         self.time += dt
         old_frame = self.frame
+        # XXX instead of running every tick, perhaps schedule delay
         while self.time >= self.period:
             self.time -= self.period
             self.frame += 1

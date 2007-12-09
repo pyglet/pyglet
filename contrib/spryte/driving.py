@@ -5,7 +5,7 @@ from pyglet import window
 from pyglet.window import key
 from pyglet import clock
 
-import spryte, tilemap, view
+import view
 
 win = window.Window(vsync=False)
 fps = clock.ClockDisplay(color=(1, 1, 1, 1))
@@ -18,12 +18,10 @@ tiles = [
     [10, 11,  1,  1, 12, 13],
     [15, 16, 16, 16, 17, 18],
 ]
-m = tilemap.Map.from_imagegrid('road-tiles.png', 4, 5, tiles)
 
-layer = spryte.Layer()
-car = spryte.Sprite('car.png', layer, 0, 0, rothandle=(16, 16))
-
-v = view.View.from_window(win, layers=[m, layer])
+v = view.View.from_window(win)
+v.add_map('road-tiles.png', 4, 5, tiles)
+car = v.add_sprite('car.png', 0, 0, z=1, rothandle=(16, 16))
 
 keyboard = key.KeyStateHandler()
 win.push_handlers(keyboard)
@@ -31,9 +29,9 @@ win.push_handlers(keyboard)
 def animate(dt):
     # update car rotation & speed
     r = car.rotation
-    r += (keyboard[key.LEFT] - keyboard[key.RIGHT]) * 5 * dt
-    if r < 0: r += math.pi * 2
-    elif r > math.pi * 2: r -= math.pi * 2
+    r += (keyboard[key.LEFT] - keyboard[key.RIGHT]) * 200 * dt
+    if r < 0: r += 360
+    elif r > 360: r -= 360
     car.rotation = r
     car.dy = (keyboard[key.UP] - keyboard[key.DOWN]) * 300 * dt
 

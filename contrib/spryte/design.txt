@@ -36,6 +36,8 @@ OOH
 TODO - Maybe
 ------------
 
+- automatically handle splitting & culling of maps larger than viewport
+  using a uniform grid (benchmark different approaches)
 - picking on tilemap
 - organise sprites in a layer into quadtree or similar
 - allow collision detection including rotation as an option?
@@ -43,7 +45,6 @@ TODO - Maybe
 - maps from XML files
 - reorganise modules
 - store x1, y1 and x2, y2 (instead of x,y and w,h)
-
 
 
 --------------------------------

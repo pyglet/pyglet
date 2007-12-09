@@ -81,13 +81,13 @@ class Map(spryte.Layer):
             texture_sequence = spryte.texture_cache[im]
         l = []
         cw, ch = texture_sequence.item_width, texture_sequence.item_height
-        inst = cls()
+        inst = cls(blended=False)
         for y, row in enumerate(cells):
             m = []
             l.append(m)
             for x, num in enumerate(row):
                 m.append(spryte.Sprite(texture_sequence[num], inst, x*cw, y*ch,
-                    blended=blended, map=inst))
+                    map=inst))
         inst.set_cells(cw, ch, l, origin)
         return inst
 

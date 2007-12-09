@@ -1,28 +1,9 @@
+import operator
 
 from pyglet import gl, event
 
-class Camera(object):
-    def __init__(self, x, y, width, height, near=-50, far=50):
-        self.x, self.y = x, y
-        self.width, self.height = width, height
-        self.near, self.far = near, far
-
-    def project(self):
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
-        gl.glViewport(self.x, self.y, self.width, self.height)
-        gl.glOrtho(0, self.width, 0, self.height, self.near, self.far)
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-
-    def on_resize(self, width, height):
-        self.width, self.height = width, height
-        return event.EVENT_UNHANDLED
-
-    def __repr__(self):
-        return '<%s object at 0x%x pos=(%d,%d) size=(%d,%d)>'%(
-            self.__class__.__name__, id(self), self.x, self.y, self.width,
-            self.height)
-
+from tilemap import Map
+from spryte import Layer, Sprite, AnimatedSprite
 
 class View(object):
     '''Render a flat view of a scene2d.Scene.
@@ -30,29 +11,33 @@ class View(object):
     Attributes:
 
         scene           -- a scene2d.Scene instance
-        camera          -- a scene2d.FlatCamera instance
         allow_oob       -- indicates whether the viewport will allow
                            viewing of out-of-bounds tile positions (ie.
                            for which there is no tile image). If set to
                            False then the map will not scroll to attempt
                            to display oob tiles.
-        fx, fy          -- pixel point to center in the viewport, subject
+        fx, fy | focus  -- pixel point to center in the viewport, subject
                            to OOB checks
     '''
     def __init__(self, x, y, width, height, allow_oob=False,
-            fx=0, fy=0, layers=None, sprites=None):
+            fx=0, fy=0, layers=None, near=-50, far=50):
         super(View, self).__init__()
-        self.camera = Camera(x, y, width, height)
+        self.x, self.y = x, y
+        self.width, self.height = width, height
+        self.near, self.far = near, far
         self.allow_oob = allow_oob
         self.fx, self.fy = fx, fy
         if layers is None:
             self.layers = []
         else:
             self.layers = layers
-        if sprites is None:
-            self.sprites = []
-        else:
-            self.sprites = sprites
+            for layer in layers:
+                if not hasattr(layer, 'z'): layer.z = 0
+            self.layers.sort(key=operator.attrgetter('z'))
+
+    def on_resize(self, width, height):
+        self.width, self.height = width, height
+        return event.EVENT_UNHANDLED
 
     @classmethod
     def from_window(cls, window, **kw):
@@ -72,7 +57,7 @@ class View(object):
         '''Translate the on-screen pixel position to a scene pixel
         position.'''
         fx, fy = self._determine_focus()
-        ox, oy = self.camera.width/2-fx, self.camera.height/2-fy
+        ox, oy = self.width/2-fx, self.height/2-fy
         return (int(x - ox), int(y - oy))
 
     def get(self, x, y):
@@ -83,13 +68,39 @@ class View(object):
             if sprite.contains(x, y):
                 r.append(sprite)
 
-        self.layers.sort(key=operator.attrgetter('z'))
         for layer in self.layers:
             cell = layer.get(x, y)
             if cell:
                 r.append(cell)
 
         return r
+
+    def _get_layer(self, z, blended=False):
+        for layer in self.layers:
+            if layer.z == z:
+                # XXX assert layer.blended == blended or raise error about z values
+                break
+        else:
+            layer = Layer(blended=blended)
+            layer.z = 0
+            self.layers.append(layer)
+            self.layers.sort(key=operator.attrgetter('z'))
+        return layer
+
+    def add_sprite(self, im, x, y, z=0, klass=Sprite, **kw):
+        layer = self._get_layer(z, blended=True)
+        return Sprite(im, layer, x, y, **kw)
+
+    def add_animsprite(self, im, rows, frames, x, y, period, z=0, **kw):
+        layer = self._get_layer(z, blended=True)
+        return AnimatedSprite(im, rows, frames, layer, x, y, period, **kw)
+
+    def add_map(self, im, rows, frames, cells, z=0, **kw):
+        map = Map.from_imagegrid(im, rows, frames, cells, **kw)
+        map.z = z
+        self.layers.append(map)
+        self.layers.sort(key=operator.attrgetter('z'))
+        return map
 
     def cell_at(self, x, y):
         ' query for a map cell at given screen pixel position '
@@ -137,8 +148,8 @@ class View(object):
             b_max_y = min(b_max_y, m.y + m.pixel_height)
 
         # figure the view min/max based on focus
-        w2 = self.camera.width/2
-        h2 = self.camera.height/2
+        w2 = self.width/2
+        h2 = self.height/2
 
         v_min_x = fx - w2
         v_min_y = fy - h2
@@ -166,17 +177,22 @@ class View(object):
 
 
     def draw(self):
-        self.camera.project()
+        # set up projection
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
+        gl.glViewport(self.x, self.y, self.width, self.height)
+        gl.glOrtho(0, self.width, 0, self.height, self.near, self.far)
+        gl.glMatrixMode(gl.GL_MODELVIEW)
 
         fx, fy = self._determine_focus()
 
-        w2 = self.camera.width/2
-        h2 = self.camera.height/2
+        w2 = self.width/2
+        h2 = self.height/2
         x1, y1 = fx - w2, fy - h2
         x2, y2 = fx + w2, fy + h2
 
         gl.glPushMatrix()
-        gl.glTranslatef(self.camera.width/2-fx, self.camera.height/2-fy, 0)
+        gl.glTranslatef(self.width/2-fx, self.height/2-fy, 0)
         for layer in self.layers:
             if hasattr(layer, 'x'):
                 translate = layer.x or layer.y

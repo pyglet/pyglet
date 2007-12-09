@@ -38,9 +38,9 @@ win.push_handlers(keyboard)
 def animate(dt):
     # update car rotation & speed
     r = car.rotation
-    r += (keyboard[key.LEFT] - keyboard[key.RIGHT]) * 5 * dt
-    if r < 0: r += math.pi * 2
-    elif r > math.pi * 2: r -= math.pi * 2
+    r += (keyboard[key.LEFT] - keyboard[key.RIGHT]) * 200 * dt
+    if r < 0: r += 360
+    elif r > 360: r -= 360
     car.rotation = r
     car.dy = (keyboard[key.UP] - keyboard[key.DOWN]) * 200 * dt
 
