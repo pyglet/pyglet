@@ -1101,6 +1101,9 @@ class ManagedSoundPlayer(Player):
     finished, even if the application discards the player early.
     There is no need to call `Player.dispatch_events` on this player,
     though you must call `pyglet.media.dispatch_events`.
+
+    Only one source can be queued on the player; the player will be 
+    discarded when the source finishes.
     '''
 
     #: The only possible end of stream action for a managed player.
