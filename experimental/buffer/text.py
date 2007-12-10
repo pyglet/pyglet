@@ -9,8 +9,6 @@ import graphics
 
 from pyglet.gl import *
 
-TextState = graphics.TextureState
-
 class StyleRun(object):
     def __init__(self, style, count):
         self.style = style
@@ -271,7 +269,22 @@ class InvalidRange(object):
         self.end = 0
         return start, end
 
-class TextViewTopState(graphics.AbstractState):
+class TextViewOrderedState(graphics.AbstractState):
+    def __init__(self, order, parent):
+        super(TextViewOrderedState, self).__init__(parent)
+        self.order = order
+
+    def __cmp__(self, other):
+        return cmp(self.order, other.order)
+
+# TextViewState(OrderedState) order = user-defined
+#   OrderedState; order = 0
+#   TextViewForegroundState(OrderedState); order = 1
+#     TextViewTextureState(AbstractState)  
+#     ... [one for each font texture used] 
+#     ...
+
+class TextViewState(graphics.OrderedState):
     x = 0
     y = 0
 
@@ -285,24 +298,37 @@ class TextViewTopState(graphics.AbstractState):
         glTranslatef(-self.x, -self.y, 0)
         glPopAttrib(GL_ENABLE_BIT)
 
-class TextViewOrderedState(graphics.AbstractState):
-    def __init__(self, order, parent):
-        super(TextViewOrderedState, self).__init__(parent)
-        self.order = order
+class TextViewForegroundState(graphics.OrderedState):
+    def set(self):
+        glEnable(GL_TEXTURE_2D)
 
-    def __cmp__(self, other):
-        return cmp(self.order, other.order)
+    # unset not needed, as parent state will pop enable bit (background is
+    # ordered before foreground)
+
+class TextViewTextureState(graphics.AbstractState):
+    def __init__(self, texture, parent):
+        assert texture.target == GL_TEXTURE_2D
+        super(TextViewTextureState, self).__init__(parent)
+
+        self.texture = texture
+
+    def set(self):
+        glBindTexture(GL_TEXTURE_2D, self.texture.id)
+
+    # unset not needed, as next state will either bind a new texture or pop
+    # enable bit.
 
 class TextView(object):
     _paragraph_re = re.compile(r'\n', flags=re.DOTALL)
 
     def __init__(self, font, text, color=(255, 255, 255, 255), width=400,
-                 batch=None):
+                 batch=None, state_order=0):
         self._width = width
-        self.top_state = TextViewTopState()
 
-        self.background_state = TextViewOrderedState(0, self.top_state)
-        self.foreground_state = TextViewOrderedState(1, self.top_state)
+        self.top_state = TextViewState(state_order)
+
+        self.background_state = graphics.OrderedState(0, self.top_state)
+        self.foreground_state = TextViewForegroundState(1, self.top_state)
 
         if batch is None:
             batch = graphics.Batch()
@@ -617,7 +643,7 @@ class TextView(object):
                 except KeyError:
                     owner = glyph_run.owner
                     self.states[owner] = state = \
-                        TextState(owner, self.foreground_state)
+                        TextViewTextureState(owner, self.foreground_state)
 
                 n_glyphs = len(glyph_run.glyphs)
                 vertices = []
@@ -828,8 +854,8 @@ class Caret(object):
         self._text_view = text_view
         if batch is None:
             batch = text_view.batch
-        #self._list = batch.add(2, GL_LINES, None, 'v2f', 'c4B')
-        self._list = batch.add(2, GL_LINES, None, 'v2f', 'c4B')
+        self._list = batch.add(2, GL_LINES, text_view.background_state, 
+            'v2f', 'c4B')
 
         self._ideal_x = None
         self._ideal_line = None
@@ -951,6 +977,8 @@ class Caret(object):
             self._ideal_x = x
         self._ideal_line = line
 
+        x -= self._text_view.x
+        y -= self._text_view.y
         font = self._text_view.get_font(max(0, self._position - 1))
         self._list.vertices[:] = [x, y + font.descent, x, y + font.ascent]
 

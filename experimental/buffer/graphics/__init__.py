@@ -201,6 +201,7 @@ class TextureState(AbstractState):
     def __hash__(self):
         return hash((self.texture.target, self.texture.id, self.parent))
 
+    # Why is cmp needed btw?
     def __cmp__(self, other):
         return cmp((self.texture.target, self.texture.id, self.parent),
             (other.texture.target, other.texture.id, self.parent))
@@ -210,3 +211,18 @@ class TextureState(AbstractState):
             self.texture.id == other.texture.id and
             self.parent == self.parent)
 
+class OrderedState(AbstractState):
+    # This can be useful as a top-level state, or as a superclass for other
+    # states that need to be ordered.
+    #
+    # As a top-level state it's useful because graphics can be composited in a
+    # known order even if they don't know about each other or share any known
+    # state.
+    def __init__(self, order, parent=None):
+        super(OrderedState, self).__init__(parent)
+        self.order = order
+
+    def __cmp__(self, other):
+        if isinstance(other, OrderedState):
+            return cmp(self.order, other.order)
+        return -1
