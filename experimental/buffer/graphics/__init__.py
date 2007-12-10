@@ -185,6 +185,8 @@ class NullState(AbstractState):
 null_state = NullState()
 
 class TextureState(AbstractState):
+    # Don't use this, create your own state classes that are more specific.
+    # This is just an example.
     def __init__(self, texture, parent=None):
         super(TextureState, self).__init__(parent)
         self.texture = texture
@@ -197,13 +199,14 @@ class TextureState(AbstractState):
         glDisable(self.texture.target)
 
     def __hash__(self):
-        return hash((self.texture.target, self.texture.id))
+        return hash((self.texture.target, self.texture.id, self.parent))
 
     def __cmp__(self, other):
-        return cmp((self.texture.target, self.texture.id),
-            (other.texture.target, other.texture.id))
+        return cmp((self.texture.target, self.texture.id, self.parent),
+            (other.texture.target, other.texture.id, self.parent))
 
     def __eq__(self, other):
         return (self.texture.target == other.texture.target and
-            self.texture.id == other.texture.id)
+            self.texture.id == other.texture.id and
+            self.parent == self.parent)
 
