@@ -171,10 +171,9 @@ elif 'bdist_mpkg' in sys.argv:
             # pyglet packages
             files, common, prefix = self.get_scheme_root(scheme)
 
-            def add_package(python_prefix, pyver, pkgname, description):
-                scheme_prefix = (
-                    python_prefix + 
-                    '/lib/python%s/site-packages' % pyver)
+            def add_package(python_dir, package_dir, 
+                            pyver, pkgname, description):
+                scheme_prefix = package_dir
                 pkgfile = pkgname + '.pkg'
                 self.packages.append((pkgfile, self.get_scheme_status(scheme)))
                 pkgdir = os.path.join(self.packagesdir, pkgfile)
@@ -183,7 +182,7 @@ elif 'bdist_mpkg' in sys.argv:
 
                 requirements = [
                     plists.python_requirement(self.get_name(),
-                        prefix=python_prefix,
+                        prefix=python_dir,
                         version=pyver)]
                 if pyver == '2.4':
                     requirements.append(ctypes_requirement(self.get_name(),
@@ -217,22 +216,33 @@ elif 'bdist_mpkg' in sys.argv:
                     prefix, pkgdir)
 
             add_package(
-                        '/Library/Python/2.5/',
-                        '2.5', 'pyglet-syspy2.5',
-                        'pyglet for Python 2.5 in /System/Library')
-            add_package('/Library/Frameworks/Python.framework/Versions/2.4',
-                        '2.4', 'pyglet-py2.4',
-                        'pyglet for Python 2.4 in /Library')
-            add_package('/Library/Frameworks/Python.framework/Versions/2.5',
-                        '2.5', 'pyglet-py2.5',
-                        'pyglet for Python 2.5 in /Library')
-            add_package('/opt/local/',
-                        '2.4', 'pyglet-macports-py2.4',
-                        'pyglet for MacPorts Python 2.4 in /opt/local')
-            add_package('/opt/local/',
-                        '2.5', 'pyglet-macports-py2.5',
-                        'pyglet for MacPorts Python 2.5 in /opt/local')
-            
+                '/System/Library/Frameworks/Python.framework/Versions/2.5',
+                '/Library/Python/2.5/site_packages', 
+                '2.5', 'pyglet-syspy2.5',
+                'pyglet for Python 2.5 in /System/Library')
+            add_package(
+                '/Library/Frameworks/Python.framework/Versions/2.4',
+                '/Library/Frameworks/Python.framework/Versions/2.4' \
+                    '/lib/python2.4/site-packages',
+                '2.4', 'pyglet-py2.4',
+                'pyglet for Python 2.4 in /Library')
+            add_package(
+                '/Library/Frameworks/Python.framework/Versions/2.5',
+                '/Library/Frameworks/Python.framework/Versions/2.5' \
+                    '/lib/python2.5/site-packages',
+                '2.5', 'pyglet-py2.5',
+                'pyglet for Python 2.5 in /Library')
+            add_package(
+                '/opt/local/',
+                '/opt/local/lib/python2.4/site-packages',
+                '2.4', 'pyglet-macports-py2.4',
+                'pyglet for MacPorts Python 2.4 in /opt/local')
+            add_package(
+                '/opt/local/',
+                '/opt/local/lib/python2.5/site-packages',
+                '2.5', 'pyglet-macports-py2.5',
+                'pyglet for MacPorts Python 2.5 in /opt/local')
+ 
         # Don't build to an absolute path, assume within site-packages (makes
         # it easier to symlink the same archive for all packages)
         def get_scheme_install_prefix(self, scheme):
