@@ -175,8 +175,9 @@ font
 
 media
     media-player
-        media.PLAYER_QUEUE_PLAY                 DEVELOPER
-        media.PLAYER_PLAY_QUEUE                 DEVELOPER
-        media.PLAYER_PAUSE                      DEVELOPER
-        media.PLAYER_PAUSE_QUEUE                DEVELOPER
-        media.PLAYER_EOS_NEXT                   DEVELOPER
+        media.PLAYER_QUEUE_PLAY                 X11 WIN OSX
+        media.PLAYER_PLAY_QUEUE                 X11 WIN OSX
+        media.PLAYER_PAUSE                      X11 WIN OSX
+        media.PLAYER_PAUSE_QUEUE                X11 WIN OSX
+        media.PLAYER_EOS_NEXT                   X11 WIN OSX
+        media.PLAYER_STATIC_STATIC              GENERIC

@@ -482,6 +482,7 @@ class StaticSource(Source):
                 The source to read and decode audio and video data from.
 
         '''
+        source = source._get_queue_source()
         if source.video_format:
             raise NotImplementedException(
                 'Static sources not supported for video yet.')
