@@ -24,6 +24,7 @@ setup_info = dict(
     author='Alex Holkner',
     author_email='Alex.Holkner@gmail.com',
     url='http://www.pyglet.org/',
+    download_url='http://www.pyglet.org/download.html',
     description='Cross-platform windowing and multimedia library',
     long_description=long_description,
     classifiers=[
