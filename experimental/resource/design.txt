@@ -29,17 +29,15 @@ Anti-features:
 Module usage::
 
     from pyglet import resource
-
-    # Add a dir to the resource path
-    resource.add_path('res/images')
-    resource.add_path('res/sounds')
-    resource.add_path('.')
-
-    # Add a zip to the resource path
-    resource.add_path('resources.zip')
-
-    # Add a package to the resource path
-    resource.add_path('@wydget.skins.marble')
+    
+    resource.path = [
+        'res/images',               # Filesystem directories
+        'res/sounds',
+        '.',
+        'resources.zip',            # ZIP files
+        'resources.zip/images',     # Directories within ZIP
+        '@widget.skins.marble',     # Python packages
+    ]
 
     # Load an image (returns a TextureRegion)
     car = resource.image('car.png')
@@ -68,13 +66,21 @@ Module usage::
     # Load all fonts that are in the resource path
     resource.preload_fonts()
 
-Multiple path usage::
+    # Open a file using the same resource search path
+    story = resource.file('story.txt')
 
-    # Create an isolated resource path
-    level1_res = resource.Path('level1')
+    # Can also write files.  If file is not found anywhere, created in first
+    # writeable directory on path.  If file is found in a read-only path (e.g.
+    # a ZIP file), exception is raised.
+    hs = resource.file('highscores.txt', 'wt')
 
-    # The Path object supports all the methods shown above on the module
-    # (which really just match to some default path).
+Multiple loader usage::
+
+    # Create an isolated resource loader
+    level1_res = resource.Loader('level1')
+
+    # The Loader object supports all the methods shown above on the module
+    # (which really just match to some default unseen Loader).
     level1_res.preload_images()
 
     # This might be handy for loading screens:
@@ -100,9 +106,6 @@ Debug methods::
     
 Unresolved:
 
-* Are paths added in increasing or decreasing priority?  Should this be
-  explicit?
-* Can paths be removed? (would wreak havok with caches.. is there a use-case?)
 * What's the default path? (I suggest ['.', '@%s' % __main__])
 * How are paths expected to reside within py2exe exe or py2app resource
   specified (to disambiguate from file-system paths); or do we only allow
@@ -110,8 +113,4 @@ Unresolved:
   resource dirs would need __init__.py.. bit weird).
 * Hey, wouldn't warnings for case-mismatches on case-insensitive filesystems 
   be a honking great idea?
-* Text resources could also be useful, e.g. for i18n and also wordy games
-  (mission objectives).
-* I'm pretty sure we don't want to make i18n stuff explicit in path
-  specification (a la Java resources), but raise your objection if you have it
 
