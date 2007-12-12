@@ -1,0 +1,117 @@
+Resource (image, font, sound) loading for pyglet.  
+
+Features:
+
+* resources are named by their filename
+* resources can be packed into a directory (boring), a python package (aha,
+  examples/*.py boilerplate removal), a zip (useful)
+* multiple resource locations can be specified intially, facilitating
+  "override" directories (for modding and debugging and monkeypatching)
+* should ideally also work nicely with py2exe (resources either inside exe
+  or library.zip), py2app (resources inside bundle) and eggs (shudder --
+  hopefully also without using pkg_resources).
+
+* (heuristically) small images are packed onto single, larger textures
+* images can be loaded with optional 90-degree rotation or flip (tex coord
+  manipulation) -- the same image loaded twice at different rotations uses
+  a single texture
+* it should be straightforward to view the current textures that have been
+  allocated (for debugging, to see how images are being packed).
+
+Anti-features:
+
+* fonts will still need to be loaded by filename but then used by family name,
+  there's no nice way around this (except on windows).
+* compressed audio and video won't be loadable from zips, this requires more
+  code in AVbin which is not a priority atm. (and extracting to a temp file
+  would be weird and ugly).
+
+Module usage::
+
+    from pyglet import resource
+
+    # Add a dir to the resource path
+    resource.add_path('res/images')
+    resource.add_path('res/sounds')
+    resource.add_path('.')
+
+    # Add a zip to the resource path
+    resource.add_path('resources.zip')
+
+    # Add a package to the resource path
+    resource.add_path('@wydget.skins.marble')
+
+    # Load an image (returns a TextureRegion)
+    car = resource.image('car.png')
+    car_backwards = resource.image('car.png', flip_x=True)
+    car_sideways = resource.image('car.png', rotate=90) # clockwise
+
+    # Preload some images (they will be packed optimally)
+    resource.preload_images('car.png', 'bike.png', 'boss.png')
+
+    # Preload all images in resource path (more useful than you think... see
+    # below):
+    resource.preload_images()
+
+    # Load a texture (returns a Texture or CompressedTexture, does not pack)
+    # intended for 3D usage or other places where you know what you're doing
+    marble = resource.texture('marble.png')
+
+    # Load a media source (returns a Source; streaming as for media.load)
+    # Media sources are not cached.
+    explosion = resource.media('explosion.wav', streaming=False)
+
+    # Load a font (returns nothing, same as font.add_font).
+    resource.preload_font('action_man.ttf')
+    resource.preload_font('action_man.ttf', bold=True)
+
+    # Load all fonts that are in the resource path
+    resource.preload_fonts()
+
+Multiple path usage::
+
+    # Create an isolated resource path
+    level1_res = resource.Path('level1')
+
+    # The Path object supports all the methods shown above on the module
+    # (which really just match to some default path).
+    level1_res.preload_images()
+
+    # This might be handy for loading screens:
+    for progress in level1_res.preload_images_iter():
+        print progress # in range 0.0 to 1.0
+
+Manual control over texture packing::
+
+    atlas = resource.TextureAtlas(256, 256)
+    
+    # Raises exception if it doesn't fit into that atlas
+    car = resource.image('car.png', atlas=atlas)
+
+    # If you're going to be needing interpolation:
+    car = resource.image('car.png', pad=2) # 2 pixel border of (0,0,0,0)
+
+Debug methods::
+
+    resource.get_texture_atlases()                # list of Texture
+    resource.get_texture_atlas_usage()            # in range 0.0 to 1.0
+    resource.get_texture_atlas_fragmentation()    # in range 0.0 to 1.0
+    resource.get_cached_image_names()             # list of str
+    
+Unresolved:
+
+* Are paths added in increasing or decreasing priority?  Should this be
+  explicit?
+* Can paths be removed? (would wreak havok with caches.. is there a use-case?)
+* What's the default path? (I suggest ['.', '@%s' % __main__])
+* How are paths expected to reside within py2exe exe or py2app resource
+  specified (to disambiguate from file-system paths); or do we only allow
+  this magic when those resources are inside a python package? (would mean
+  resource dirs would need __init__.py.. bit weird).
+* Hey, wouldn't warnings for case-mismatches on case-insensitive filesystems 
+  be a honking great idea?
+* Text resources could also be useful, e.g. for i18n and also wordy games
+  (mission objectives).
+* I'm pretty sure we don't want to make i18n stuff explicit in path
+  specification (a la Java resources), but raise your objection if you have it
+
