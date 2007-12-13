@@ -29,7 +29,7 @@ Anti-features:
 Module usage::
 
     from pyglet import resource
-    
+
     resource.path = [
         'res/images',               # Filesystem directories
         'res/sounds',
@@ -103,7 +103,7 @@ Debug methods::
     resource.get_texture_atlas_usage()            # in range 0.0 to 1.0
     resource.get_texture_atlas_fragmentation()    # in range 0.0 to 1.0
     resource.get_cached_image_names()             # list of str
-    
+
 Unresolved:
 
 * What's the default path? (I suggest ['.', '@%s' % __main__])
@@ -113,4 +113,10 @@ Unresolved:
   resource dirs would need __init__.py.. bit weird).
 * Hey, wouldn't warnings for case-mismatches on case-insensitive filesystems 
   be a honking great idea?
+* How about something to help / guide prepending a save/override path to
+  the front of a path::
+
+	'~/mycoolgame'				# if sys.platform in ('win32', 'cygwin')
+	'~/Library/mycoolgame'		# if sys.platform == 'darwin'
+	'~/.mycoolgame'				# otherwise
 
