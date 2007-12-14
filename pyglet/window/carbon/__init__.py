@@ -575,8 +575,8 @@ class CarbonWindow(BaseWindow):
         self._window = None
 
     def switch_to(self):
-        self._context.set_current()
         agl.aglSetCurrentContext(self._agl_context)
+        self._context.set_current()
         _aglcheck()
         gl_info.set_active_context()
         glu_info.set_active_context()
