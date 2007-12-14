@@ -101,6 +101,7 @@ from pyglet.gl.gl import *
 from pyglet.gl.glu import *
 from pyglet.gl.glext_arb import *
 from pyglet.gl.glext_missing import *
+from pyglet.gl import gl_info
 
 # List of contexts currently in use, so we can create new contexts that
 # share objects with.  Remember to remove from this list when context is
