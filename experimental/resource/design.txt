@@ -111,8 +111,21 @@ Unresolved:
   specified (to disambiguate from file-system paths); or do we only allow
   this magic when those resources are inside a python package? (would mean
   resource dirs would need __init__.py.. bit weird).
+  - py2exe doesn't really provide a way to include bulk data inside the 
+    executable; developers will provide assets alongside the executable
+    in the same directory (or subdirectory).
+  - py2app always changes the working dir to RESOURCEPATH (the Resources dir
+    inside the bundle) before starting the main script, so this is where
+    assets go.
+  - so (for py2exe and possible py2app hacks) it would be best to allow
+    a simple way to specify assets relative to the script dir (not the working
+    dir).  w/ py2exe the script dir is the exe's dir.  w/ py2app the script
+    dir is the Resource dir.
 * Hey, wouldn't warnings for case-mismatches on case-insensitive filesystems 
   be a honking great idea?
+  - in my implementation so far these will generate an file-not-found error,
+    not a case warning.. to me this seems just as good, and will probably 
+    get the problem fixed faster anyway.
 * How about something to help / guide prepending a save/override path to
   the front of a path::
 
@@ -120,3 +133,24 @@ Unresolved:
 	'~/Library/mycoolgame'		# if sys.platform == 'darwin'
 	'~/.mycoolgame'				# otherwise
 
+Path specification:
+
+We want to support the following base directories:
+
+* Script dir
+* User application settings dir
+
+Because resource module is only for loading assets, not general files, there's
+no need to support the working dir or the user's home directory.  Also no need
+for absolute paths, but I guess there's no point preventing them (maybe an app
+will want to store absolute paths somewhere else such as the windows registry
+and then use those paths with resource module).
+
+How about:
+
+* 'foo/bar' (relative path) uses script dir as base
+* '/foo/bar' or 'c:\\foo\\bar' (absolute path) is absolute
+* '@foo.bar' is a Python package
+* resource.get_settings_path('mycoolgame') returns an absolute path to the
+  game-specific settings dir and creates it if it doesn't exist
+* backslashes are disallowed except in absolute paths.
