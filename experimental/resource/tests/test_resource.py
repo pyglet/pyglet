@@ -1,0 +1,122 @@
+#!/usr/bin/env python
+
+'''
+'''
+
+__docformat__ = 'restructuredtext'
+__version__ = '$Id: $'
+
+'''
+Layout:
+
+.                               (script home)
+    file.txt                    F1
+    dir1/
+        file.txt                F2
+        dir1/
+            file.txt            F3
+        res.zip/
+            file.txt            F7
+            dir1/
+                file.txt        F8
+                dir1/
+                    file.txt    F9
+    dir2/
+        file.txt                F6
+
+'''
+
+import os
+import sys
+import unittest
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+import resource
+
+class TestCase(unittest.TestCase):
+    def setUp(self):
+        self.script_home = os.path.dirname(__file__)
+
+    def check(self, path, result):
+        loader = resource.Loader(path, script_home=self.script_home)
+        self.assertTrue(loader.file('file.txt').read() == '%s\n' % result)
+
+    def checkFail(self, path):
+        loader = resource.Loader(path, script_home=self.script_home)
+        self.assertRaises(resource.ResourceNotFoundException,
+                          loader.file, 'file.txt')
+
+    def test1(self):
+        self.check(None, 'F1')
+
+    def test2(self):
+        self.check('', 'F1')
+
+    def test2a(self):
+        self.check('.', 'F1')
+
+    def test2b(self):
+        self.checkFail(())
+
+    def test2c(self):
+        self.checkFail('foo')
+
+    def test2d(self):
+        self.checkFail(['foo'])
+
+    def test2e(self):
+        self.check(['foo', '.'], 'F1')
+
+    def test3(self):
+        self.check(['.', 'dir1'], 'F1')
+
+    def test4(self):
+        self.check(['dir1'], 'F2')
+
+    def test5(self):
+        self.check(['dir1', '.'], 'F2')
+
+    def test6(self):
+        self.check(['dir1/dir1'], 'F3')
+
+    def test7(self):
+        self.check(['dir1', 'dir1/dir1'], 'F2')
+
+    def test8(self):
+        self.check(['dir1/dir1', 'dir1'], 'F3')
+
+    def test9(self):
+        self.check('dir1/res.zip', 'F7')
+
+    def test9a(self):
+        self.check('dir1/res.zip/', 'F7')
+
+    def test10(self):
+        self.check('dir1/res.zip/dir1', 'F8')
+
+    def test10a(self):
+        self.check('dir1/res.zip/dir1/', 'F8')
+
+    def test11(self):
+        self.check(['dir1/res.zip/dir1', 'dir1/res.zip'], 'F8')
+
+    def test12(self):
+        self.check(['dir1/res.zip', 'dir1/res.zip/dir1'], 'F7')
+
+    def test12a(self):
+        self.check(['dir1/res.zip', 'dir1/res.zip/dir1/dir1'], 'F7')
+
+    def test12b(self):
+        self.check(['dir1/res.zip/dir1/dir1/', 'dir1/res.zip/dir1'], 'F9')
+
+    def test12c(self):
+        self.check(['dir1/res.zip/dir1/dir1', 'dir1/res.zip/dir1'], 'F9')
+
+    def test13(self):
+        self.check(['dir1', 'dir2'], 'F2')
+
+    def test14(self):
+        self.check(['dir2', 'dir1'], 'F6')
+
+if __name__ == '__main__':
+    unittest.main()

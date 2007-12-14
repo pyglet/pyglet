@@ -106,6 +106,8 @@ Debug methods::
 
 Unresolved:
 
+* Name "resource" conflicts with a .so module on OS X.  Probably not worth
+  worrying about.
 * What's the default path? (I suggest ['.', '@%s' % __main__])
 * How are paths expected to reside within py2exe exe or py2app resource
   specified (to disambiguate from file-system paths); or do we only allow
