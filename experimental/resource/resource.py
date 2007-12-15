@@ -49,6 +49,17 @@ def get_script_home():
     # Probably interactive
     return ''
 
+def get_settings_path(name):
+    if sys.platform in ('cygwin', 'win32'):
+        if 'APPDATA' in os.environ:
+            return os.path.join(os.environ['APPDATA'], name)
+        else:
+            return os.path.expanduser('~/%s' % name)
+    elif sys.platform == 'darwin':
+        return os.path.expanduser('~/Library/Application Support/%s' % name)
+    else:
+        return os.path.expanduser('~/.%s' % name)
+
 class Loader(object):
     '''Load program resource files from disk.
 
