@@ -6,10 +6,13 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
+import operator
 import os
 import sys
 import zipfile
 import StringIO
+
+import rectallocator
 
 class ResourceNotFoundException(Exception):
     '''The named resource was not found on the search path.'''
@@ -95,8 +98,12 @@ class Loader(object):
         self._script_home = script_home
         self.reindex()
 
-        self._textures = {}
+        # Map name to image
+        self._cached_textures = {}
         self._cached_images = {}
+
+        # Map bin size to list of atlases
+        self._texture_atlas_bins = {}
 
     def reindex(self):
         '''Refresh the file index.
@@ -200,8 +207,44 @@ class Loader(object):
         from pyglet import image
         file = self.file(name)
         img = image.load(name, file=file)
-        # TODO alloc within texture if small enough
-        return img.texture
+        bin = self._get_texture_atlas_bin(img.width, img.height)
+        if bin is None:
+            return img.texture
+
+        # Try atlases until image fits
+        for atlas in bin:
+            try:
+                return atlas.add(img)
+            except rectallocator.AllocatorException:
+                pass
+
+        # No atlases could accept image, create a new one (all atlases are
+        # 256x256, an arbitrary choice).
+        atlas = TextureAtlas(256, 256)
+        bin.append(atlas)
+        return atlas.add(img)
+
+    def _get_texture_atlas_bin(self, width, height):
+        '''A heuristic for determining the atlas bin to use for a given image
+        size.  Returns None if the image should not be placed in an atlas (too
+        big), otherwise the bin (a list of TextureAtlas).
+        ''' 
+        # Large images are not placed in an atlas
+        if width > 128 or height > 128:
+            return None
+
+        # Group images with small height separately to larger height (as the
+        # allocator can't stack within a single row).
+        bin_size = 1
+        if height > 32:
+            bin_size = 2
+
+        if bin_size in self._texture_atlas_bins:
+            bin = self._texture_atlas_bins[bin_size]
+        else:
+            bin = self._texture_atlas_bins[bin_size] = []
+
+        return bin
 
     def image(self, name, pad=0, flip_x=False, flip_y=False, rotate=0):
         '''
@@ -247,16 +290,28 @@ class Loader(object):
         raise NotImplementedError('TODO')
 
     def get_cached_image_names(self):
-        raise NotImplementedError('TODO')
+        return self._cached_images.keys()
 
     def get_texture_atlases(self):
-        raise NotImplementedError('TODO')
+        return reduce(operator.add, self._texture_atlas_bins.values())
 
     def get_texture_atlas_usage(self):
-        raise NotImplementedError('TODO')
+        usage = 0.0
+        count = 0
+        for bin in self._texture_atlas_bins:
+            for atlas in bin:
+                usage += atlas.allocator.get_usage()
+                count += 1
+        return usage / count
 
     def get_texture_atlas_fragmentation(self):
-        raise NotImplementedError('TODO')
+        fragmentation = 0.0
+        count = 0
+        for bin in self._texture_atlas_bins:
+            for atlas in bin:
+                usage += atlas.allocator.get_fragmentation()
+                count += 1
+        return fragmentation / count 
         
     def media(self, name, streaming=True):
         '''Load a sound or video resource.
@@ -298,12 +353,12 @@ class Loader(object):
         :rtype: `Texture`
         '''
         from pyglet import image
-        if name in self._textures:
-            return self._textures[name]
+        if name in self._cached_textures:
+            return self._cached_textures[name]
 
         file = self.file(name)
         texture = image.load(name, file=file).texture
-        self._textures[name] = texture
+        self._cached_textures[name] = texture
         return texture
 
     def get_cached_texture_names(self):
@@ -311,14 +366,20 @@ class Loader(object):
 
         :rtype: list of str
         '''
-        return self._textures.keys()
+        return self._cached_textures.keys()
 
 class TextureAtlas(object):
     def __init__(self, width, height):
         from pyglet import gl
         from pyglet import image
-        self.texture = image.Texture.create_for_size(width, height,
-            internalformat=gl.GL_RGBA)
+        self.texture = image.Texture.create_for_size(
+            gl.GL_TEXTURE_2D, width, height, internalformat=gl.GL_RGBA)
+        self.allocator = rectallocator.RectAllocator(width, height)
+
+    def add(self, img):
+        x, y = self.allocator.alloc(img.width, img.height)
+        self.texture.blit_into(img, x, y, 0)
+        return self.texture.get_region(x, y, img.width, img.height)
 
 #: Default resource search path.
 #:
