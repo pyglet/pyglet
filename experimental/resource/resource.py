@@ -15,7 +15,10 @@ from pyglet import image
 
 class ResourceNotFoundException(Exception):
     '''The named resource was not found on the search path.'''
-    pass
+    def __init__(self, name):
+        message = ('Resource "%s" was not found on the path.  '
+            'Ensure that the filename has the correct captialisation.') % name
+        super(ResourceNotFoundException, self).__init__(message)
 
 def get_script_home():
     '''Get the directory containing the program entry module.
