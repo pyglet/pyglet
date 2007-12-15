@@ -128,7 +128,7 @@ class Loader(object):
                 dir = ''
                 while path and not os.path.isfile(path):
                     path, tail_dir = os.path.split(path)
-                    dir = os.path.join(tail_dir, dir)
+                    dir = '/'.join((tail_dir, dir))
                 dir = dir.rstrip('/')
 
                 # path is a ZIP file, dir resides within ZIP
