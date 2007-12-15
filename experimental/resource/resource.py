@@ -7,11 +7,9 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import os
+import sys
 import zipfile
 import StringIO
-
-from pyglet import font
-from pyglet import image
 
 class ResourceNotFoundException(Exception):
     '''The named resource was not found on the search path.'''
@@ -53,6 +51,15 @@ class Loader(object):
 
     The loader contains a search path which can include filesystem
     directories, ZIP archives and Python packages.
+
+    :Ivariables:
+        `path` : list of str
+            List of search locations.  After modifying the path you must
+            call the `reindex` method.
+        `script_home` : str
+            Base resource location, defaulting to the location of the
+            application script.
+
     '''
     def __init__(self, path=None, script_home=None):
         '''Create a loader for the given path.
@@ -76,9 +83,6 @@ class Loader(object):
         :Parameters:
             `path` : list of str
                 List of locations to search for resources.
-            `script_home` : str
-                Root of relative locations; defaults to the result of 
-                `get_script_home`.
 
         '''
         if path is None:
@@ -88,8 +92,10 @@ class Loader(object):
         self.path = list(path)
         if script_home is None:
             script_home = get_script_home()
-        self.script_home = script_home
+        self._script_home = script_home
         self.reindex()
+
+        self._textures = {}
 
     def reindex(self):
         '''Refresh the file index.
@@ -111,7 +117,7 @@ class Loader(object):
             if not os.path.isabs(path):
                 assert '\\' not in path, \
                     'Backslashes not permitted in relative path'
-                path = os.path.join(self.script_home, path)
+                path = os.path.join(self._script_home, path)
 
             if os.path.isdir(path):
                 # Filesystem directory
@@ -158,3 +164,153 @@ class Loader(object):
             return func(path, mode)
         except KeyError:
             raise ResourceNotFoundException(name)
+
+    def preload_font(self, name):
+        '''Add a font resource to the application.
+
+        Fonts not installed on the system must be preloaded before they
+        can be used with `font.load`.  Although the font is preloaded with
+        its filename using this function, it is loaded by specifying its
+        family name.  For example::
+
+            resource.preload_font('action_man.ttf')
+            action_man = font.load('Action Man')
+
+        :Parameters:
+            `name` : str
+                Filename of the font resource to preload.
+
+        '''
+        from pyglet import font
+        file = self.file(name)
+        font.add_file(file)
+
+    def preload_fonts(self, *names):
+        if names:
+            for name in names:
+                self.preload_font(name)
+        else:
+            raise NotImplementedError('TODO')
+
+    def preload_fonts_iter(self, *names):
+        raise NotImplementedError('TODO')
+
+    def image(self, name, atlas=None, pad=0, 
+              rotate=0, flip_x=False, flip_y=False):
+        raise NotImplementedError('TODO')
+
+    def preload_images(self, *names):
+        raise NotImplementedError('TODO')
+
+    def preload_images_iter(self, *names):
+        raise NotImplementedError('TODO')
+
+    def get_cached_image_names(self):
+        raise NotImplementedError('TODO')
+
+    def get_texture_atlases(self):
+        raise NotImplementedError('TODO')
+
+    def get_texture_atlas_usage(self):
+        raise NotImplementedError('TODO')
+
+    def get_texture_atlas_fragmentation(self):
+        raise NotImplementedError('TODO')
+        
+    def media(self, name, streaming=True):
+        '''Load a sound or video resource.
+
+        The meaning of `streaming` is as for `media.load`.  Compressed
+        sources cannot be streamed (that is, video and compressed audio
+        cannot be streamed from a ZIP archive).
+
+        :Parameters:
+            `name` : str
+                Filename of the media source to load.
+            `streaming` : bool
+                True if the source should be streamed from disk, False if
+                it should be entirely decoded into memory immediately.
+
+        :rtype: `media.Source`
+        '''
+        from pyglet import media
+        try:
+            func, path = self._index[name]
+            if func is open:
+                return media.load(path, streaming=streaming)
+            else:
+                return media.load(name, file=file, streaming=streaming)
+        except KeyError:
+            raise ResourceNotFoundException(name)
+
+    def texture(self, name):
+        '''Load a texture.
+
+        The named image will be loaded as a single OpenGL texture.  If the
+        dimensions of the image are not powers of 2 a `TextureRegion` will
+        be returned.
+
+        :Parameters:
+            `name` : str
+                Filename of the image resource to load.
+
+        :rtype: `Texture`
+        '''
+        from pyglet import image
+        if name in self._textures:
+            return self._textures[name]
+
+        file = self.file(name)
+        texture = image.load(name, file=file).texture
+        self._textures[name] = texture
+        return texture
+
+    def get_cached_texture_names(self):
+        '''Get the names of textures currently cached.
+
+        :rtype: list of str
+        '''
+        return self._textures.keys()
+
+class TextureAtlas(object):
+    def __init__(self, width, height):
+        from pyglet import gl
+        from pyglet import image
+        self.texture = image.Texture.create_for_size(width, height,
+            internalformat=gl.GL_RGBA)
+
+#: Default resource search path.
+#:
+#: Locations in the search path are searched in order and are always
+#: case-sensitive.  After changing the path you must call `reindex`.
+#:
+#: :type: list of str
+path = []
+
+class _DefaultLoader(Loader):
+    def _get_path(self):
+        return path
+
+    def _set_path(self, value):
+        global path
+        path = value
+
+    path = property(_get_path, _set_path)
+
+_default_loader = _DefaultLoader()
+reindex = _default_loader.reindex
+file = _default_loader.file
+preload_font = _default_loader.preload_font
+preload_fonts = _default_loader.preload_fonts
+preload_fonts_iter = _default_loader.preload_fonts_iter
+image = _default_loader.image
+preload_images = _default_loader.preload_images
+preload_images_iter = _default_loader.preload_images_iter
+get_cached_image_names = _default_loader.get_cached_image_names
+get_texture_atlases = _default_loader.get_texture_atlases
+get_texture_atlas_usage = _default_loader.get_texture_atlas_usage
+get_texture_atlas_fragmentation = \
+    _default_loader.get_texture_atlas_fragmentation
+media = _default_loader.media
+texture = _default_loader.texture
+get_cached_texture_names = _default_loader.get_cached_texture_names
