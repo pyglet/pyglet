@@ -333,6 +333,7 @@ class TextView(object):
     def __init__(self, font, text, width, height, color=(255, 255, 255, 255), 
                  batch=None, state_order=0):
         self._width = width
+        self._height = height
         self.content_width = 0
         self.content_height = 0
 
@@ -765,6 +766,15 @@ class TextView(object):
 
     view_y = property(_get_view_y, _set_view_y)
 
+    def ensure_line_visible(self, line):
+        line = self.lines[line]
+        y1 = line.y + line.ascent
+        y2 = line.y + line.descent
+        if y1 > self.view_y:
+            self.view_y = y1
+        elif y2 < self.view_y - self.height:
+            self.view_y = y2  + self.height
+
     # Visible selection
 
     _selection_start = 0
@@ -1025,10 +1035,13 @@ class Caret(object):
         self._update(line=line)
         
     def _update(self, line=None, update_ideal_x=True):
+        if line is None:
+            line = self._text_view.get_line_from_position(self._position)
+        else:
+            self._ideal_line = line
         x, y = self._text_view.get_point_from_position(self._position, line)
         if update_ideal_x:
             self._ideal_x = x
-        self._ideal_line = line
 
         x -= self._text_view.top_state.translate_x
         y -= self._text_view.top_state.translate_y
@@ -1038,6 +1051,8 @@ class Caret(object):
         if self._mark is not None:
             self._text_view.set_selection(min(self._position, self._mark),
                                           max(self._position, self._mark))
+
+        self._text_view.ensure_line_visible(line)
 
 def main():
     from pyglet import clock
