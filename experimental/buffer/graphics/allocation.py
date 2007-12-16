@@ -227,6 +227,8 @@ class Allocator(object):
     def get_fragmented_free_size(self):
         '''Returns the amount of space unused, not including the final
         free block.'''
+        if not self.starts:
+            return 0
 
         # Variation of search for free block.
         total_free = 0

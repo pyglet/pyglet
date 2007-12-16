@@ -1087,6 +1087,7 @@ class Caret(object):
 
         self._text_view.ensure_line_visible(line)
 
+
 def main():
     from pyglet import clock
     from pyglet import font
@@ -1171,10 +1172,39 @@ def main():
     caret.color = (0, 0, 0)
     caret.visible = True
     caret.position = 0
-
-    fps = clock.ClockDisplay()
-    
     cursor_idle(0)
+
+    fps = clock.ClockDisplay(font=font.load('', 10, dpi=96), 
+        color=(0, 0, 0, 1), interval=1., format='FPS: %(fps)d')
+    fps.label.x = 2
+    fps.label.y = 15
+    stats_text = font.Text(font.load('', 10, dpi=96), '', 
+        x=2, y=2, color=(0, 0, 0, 1))
+   
+    def update_stats(dt):
+        states = batch.state_map.values()
+        usage = 0.
+        blocks = 0
+        domains = 0
+
+        fragmentation = 0.
+        free_space = 0.
+        capacity = 0.
+
+        for state in states:
+            for domain in state.values():
+                domains += 1
+                free_space += domain.allocator.get_free_size()
+                fragmentation += domain.allocator.get_fragmented_free_size()
+                capacity += domain.allocator.capacity
+                blocks += len(domain.allocator.starts)
+        fragmentation /= free_space
+        free_space /= capacity
+        usage = 1. - free_space
+        stats_text.text = \
+            'States: %d  Domains: %d  Blocks: %d  Usage: %d%%  Fragmentation: %d%%' % \
+            (len(states), domains, blocks, usage * 100, fragmentation * 100)
+    clock.schedule_interval(update_stats, 1) 
 
     glClearColor(1, 1, 1, 1)
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
@@ -1184,6 +1214,7 @@ def main():
         w.clear()
         batch.draw()
         fps.draw()
+        stats_text.draw()
 
         glPushAttrib(GL_CURRENT_BIT)
         glColor3f(0, 0, 0)
