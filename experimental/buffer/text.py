@@ -945,7 +945,7 @@ class Caret(object):
     _mark = None
     def _set_mark(self, mark):
         self._mark = mark
-        self._update()
+        self._update(line=self._ideal_line)
     
     def _get_mark(self):
         return self._mark
@@ -1140,7 +1140,8 @@ def main():
         glPushAttrib(GL_CURRENT_BIT)
         glColor3f(0, 0, 0)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-        glRectf(border, border, w.width - border, w.height - border)
+        glRectf(border - 2, border - 2, 
+                w.width - border + 4, w.height - border + 4)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         glPopAttrib()
 
