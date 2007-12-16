@@ -285,18 +285,27 @@ class TextViewOrderedState(graphics.AbstractState):
 #     ...
 
 class TextViewState(graphics.OrderedState):
-    x = 0
-    y = 0
+    scissor_x = 0
+    scissor_y = 0
+    scissor_width = 0
+    scissor_height = 0
+    view_x = 0
+    view_y = 0
+    translate_x = 0 # x - view_x
+    translate_y = 0 # y - view_y
 
     def set(self):
-        glPushAttrib(GL_ENABLE_BIT)
+        glPushAttrib(GL_ENABLE_BIT | GL_SCISSOR_BIT)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glTranslatef(self.x, self.y, 0)
+        glEnable(GL_SCISSOR_TEST)
+        glScissor(self.scissor_x, self.scissor_y - self.scissor_height, 
+                  self.scissor_width, self.scissor_height)
+        glTranslatef(self.translate_x, self.translate_y, 0)
 
     def unset(self):
-        glTranslatef(-self.x, -self.y, 0)
-        glPopAttrib(GL_ENABLE_BIT)
+        glTranslatef(-self.translate_x, -self.translate_y, 0)
+        glPopAttrib()
 
 class TextViewForegroundState(graphics.OrderedState):
     def set(self):
@@ -321,9 +330,11 @@ class TextViewTextureState(graphics.AbstractState):
 class TextView(object):
     _paragraph_re = re.compile(r'\n', flags=re.DOTALL)
 
-    def __init__(self, font, text, color=(255, 255, 255, 255), width=400,
+    def __init__(self, font, text, width, height, color=(255, 255, 255, 255), 
                  batch=None, state_order=0):
         self._width = width
+        self.content_width = 0
+        self.content_height = 0
 
         self.top_state = TextViewState(state_order)
 
@@ -353,21 +364,6 @@ class TextView(object):
 
         self.insert_text(0, text)
 
-    def _set_x(self, x):
-        self.top_state.x = x
-
-    def _get_x(self):
-        return self.top_state.x
-
-    x = property(_get_x, _set_x)
-
-    def _set_y(self, y):
-        self.top_state.y = y
-
-    def _get_y(self):
-        return self.top_state.y
-
-    y = property(_get_y, _set_y)
 
     def insert_text(self, start, text):
         len_text = len(text)
@@ -611,6 +607,10 @@ class TextView(object):
 
             line_index += 1
 
+        # Update content height
+        if line_index == len(self.lines):
+            self.content_height = -y    
+
         # Invalidate lines that need new vertex lists.
         self.invalid_vertex_lines.invalidate(invalid_start, line_index)
 
@@ -704,8 +704,27 @@ class TextView(object):
 
     # Viewport attributes
 
+    def _set_x(self, x):
+        self.top_state.scissor_x = x
+        self.top_state.translate_x = x - self.top_state.view_x
+
+    def _get_x(self):
+        return self.top_state.scissor_x
+
+    x = property(_get_x, _set_x)
+
+    def _set_y(self, y):
+        self.top_state.scissor_y = y
+        self.top_state.translate_y = y - self.top_state.view_y
+
+    def _get_y(self):
+        return self.top_state.scissor_y
+
+    y = property(_get_y, _set_y)
+
     def _set_width(self, width):
         self._width = width
+        self.top_state.scissor_width = width
         self.invalid_flow.invalidate(0, len(self.text))
         self._update()
 
@@ -713,6 +732,38 @@ class TextView(object):
         return self._width
 
     width = property(_get_width, _set_width)
+
+    def _set_height(self, height):
+        self._height = height
+        self.top_state.scissor_height = height
+
+    def _get_height(self):
+        return self._height
+
+    height = property(_get_height, _set_height)
+
+    # Offset of content within viewport
+
+    def _set_view_x(self, view_x):
+        view_x = max(0, min(self.content_width - self.width, view_x))
+        self.top_state.view_x = view_x
+        self.top_state.translate_x = self.top_state.scissor_x - view_x
+
+    def _get_view_x(self):
+        return self.top_state.view_x
+
+    view_x = property(_get_view_x, _set_view_x)
+
+    def _set_view_y(self, view_y):
+        # view_y must be negative.
+        view_y = min(0, max(self.height - self.content_height, view_y))
+        self.top_state.view_y = view_y
+        self.top_state.translate_y = self.top_state.scissor_y - view_y
+
+    def _get_view_y(self):
+        return self.top_state.view_y
+
+    view_y = property(_get_view_y, _set_view_y)
 
     # Visible selection
 
@@ -772,11 +823,12 @@ class TextView(object):
                     break
                 position -= 1
                 x += glyph.advance 
-        return x + self.x, line.y + self.y
+        return (x + self.top_state.translate_x, 
+                line.y + self.top_state.translate_y)
 
     def get_line_from_point(self, x, y):
-        x -= self.x
-        y -= self.y
+        x -= self.top_state.translate_x
+        y -= self.top_state.translate_y
 
         line_index = 0
         for line in self.lines:
@@ -789,7 +841,8 @@ class TextView(object):
 
     def get_point_from_line(self, line):
         line = self.lines[line]
-        return line.x + self.x, line.y + self.y
+        return (line.x + self.top_state.translate_x, 
+                line.y + self.top_state.translate_y)
 
     def get_line_from_position(self, position):
         line = -1
@@ -804,7 +857,7 @@ class TextView(object):
 
     def get_position_on_line(self, line, x):
         line = self.lines[line]
-        x -= self.x
+        x -= self.top_state.translate_x
 
         position = line.start
         last_glyph_x = line.x
@@ -977,8 +1030,8 @@ class Caret(object):
             self._ideal_x = x
         self._ideal_line = line
 
-        x -= self._text_view.x
-        y -= self._text_view.y
+        x -= self._text_view.top_state.translate_x
+        y -= self._text_view.top_state.translate_y
         font = self._text_view.get_font(max(0, self._position - 1))
         self._list.vertices[:] = [x, y + font.descent, x, y + font.ascent]
 
@@ -986,38 +1039,9 @@ class Caret(object):
             self._text_view.set_selection(min(self._position, self._mark),
                                           max(self._position, self._mark))
 
-def test_text1(batch, width):
-    from pyglet import font
-    ft = font.load('Times New Roman', 36)
-    ft2 = font.load('Times New Roman', 48, italic=True)
-    ft3 = font.load('Times New Roman', 72, italic=True)
-    text = TextView(ft, 'Hello, world!', batch=batch, width=width, 
-        color=(0, 0, 0, 255)) 
-    text.color_runs.set_style(7, 12, (100, 255, 255, 255))
-    text.color_runs.set_style(0, 5, (255, 100, 100, 255))
-    text.font_runs.set_style(8, 11, ft2)
-    text.font_runs.set_style(9, 10, ft3)
-    return text
-
-def test_text2(batch, width):
-    from pyglet import font
-    ft = font.load('Times New Roman', 12)
-    ft2 = font.load('Times New Roman', 16)
-    text = TextView(ft, frog_prince, batch=batch,
-        width=width, color=(0, 0, 0, 255)) 
-    text.set_font(ft2, 101, 134)
-    text.set_background_color([255, 255, 100, 255], 100, 150)
-    return text
-
-def test_text3(batch, width):
-    from pyglet import font
-    ft = font.load('Georgia', 128)
-    text = TextView(ft, 'ab cdefhijklm nop qrs tuv wxyz', 
-        color=(0, 0, 0, 255), batch=batch, width=width)
-    return text
-
 def main():
     from pyglet import clock
+    from pyglet import font
     from pyglet import window
     from pyglet.window import key
 
@@ -1057,9 +1081,16 @@ def main():
         caret.select_to_point(x, y)
         cursor_not_idle()
 
+    @w.event
+    def on_mouse_scroll(x, y, scroll_x, scroll_y):
+        text.view_x -= scroll_x
+        text.view_y += scroll_y * (12 * 96 / 72) # scroll 12pt @ 96dpi
+
     def on_resize(width, height):
-        text.y = height
-        text.width = width
+        text.x = border
+        text.y = height - border
+        text.width = width - border * 2
+        text.height = height - border * 2
         caret._update()
     w.push_handlers(on_resize)
 
@@ -1075,8 +1106,19 @@ def main():
         clock.schedule_once(cursor_idle, 0.1)
         caret.visible = True
 
+    if len(sys.argv) > 1:
+        content = open(sys.argv[1]).read()
+    else:
+        content = 'Specify a text file for input as argv[1].'
+
+    # Draw to this border so we can test clipping.
+    border = 50
+
     batch = graphics.Batch()
-    text = test_text2(batch, w.width)
+    ft = font.load('Times New Roman', 12, dpi=96)
+    text = TextView(ft, content, 
+                    w.width-border*2, w.height-border*2, batch=batch,
+                    color=(0, 0, 0, 255)) 
     caret = Caret(text)
     caret.color = (0, 0, 0)
     caret.visible = True
@@ -1094,11 +1136,15 @@ def main():
         w.clear()
         batch.draw()
         fps.draw()
-        w.flip()
 
-frog_prince = '''In olden times when wishing still helped one, there lived a king whose daughters were all beautiful, but the youngest was so beautiful that the sun itself, which has seen so much, was astonished whenever it shone in her face.  Close by the king's castle lay a great dark forest, and under an old lime-tree in the forest was a well, and when the day was very warm, the king's child went out into the forest and sat down by the side of the cool fountain, and when she was bored she took a golden ball, and threw it up on high and caught it, and this ball was her favorite plaything.
-This is the next pararaph.
-And here's another one.'''
+        glPushAttrib(GL_CURRENT_BIT)
+        glColor3f(0, 0, 0)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+        glRectf(border, border, w.width - border, w.height - border)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+        glPopAttrib()
+
+        w.flip()
 
 if __name__ == '__main__':
     main()
