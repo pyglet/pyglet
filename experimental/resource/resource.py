@@ -19,7 +19,7 @@ class ResourceNotFoundException(Exception):
     def __init__(self, name):
         message = ('Resource "%s" was not found on the path.  '
             'Ensure that the filename has the correct captialisation.') % name
-        super(ResourceNotFoundException, self).__init__(message)
+        Exception.__init__(self, message)
 
 def get_script_home():
     '''Get the directory containing the program entry module.
