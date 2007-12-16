@@ -298,6 +298,7 @@ class TextViewState(graphics.OrderedState):
         glPushAttrib(GL_ENABLE_BIT | GL_SCISSOR_BIT)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        # Disable scissor to check culling.
         glEnable(GL_SCISSOR_TEST)
         glScissor(self.scissor_x, self.scissor_y - self.scissor_height, 
                   self.scissor_width, self.scissor_height)
@@ -356,6 +357,7 @@ class TextView(object):
         self.invalid_lines = InvalidRange()
         self.invalid_style = InvalidRange()
         self.invalid_vertex_lines = InvalidRange()
+        self.visible_lines = InvalidRange()
 
         self.font_runs = StyleRuns(0, font)
         self.owner_runs = StyleRuns(0, None)
@@ -364,7 +366,6 @@ class TextView(object):
         self.paragraph_runs = StyleRuns(0, Paragraph())
 
         self.insert_text(0, text)
-
 
     def insert_text(self, start, text):
         len_text = len(text)
@@ -448,6 +449,7 @@ class TextView(object):
         self._update_glyphs()
         self._flow_glyphs()
         self._flow_lines()
+        self._update_visible_lines()
         self._update_vertex_lists()
 
     def _update_glyphs(self):
@@ -615,6 +617,28 @@ class TextView(object):
         # Invalidate lines that need new vertex lists.
         self.invalid_vertex_lines.invalidate(invalid_start, line_index)
 
+    def _update_visible_lines(self):
+        start = sys.maxint
+        end = 0
+        for i, line in enumerate(self.lines):
+            if line.y + line.descent < self.view_y:
+                start = min(start, i)
+            if line.y + line.ascent > self.view_y - self.height:
+                end = max(end, i) + 1
+
+        # Delete newly invisible lines
+        for i in range(self.visible_lines.start, start):
+            self.lines[i].delete_vertex_lists()
+        for i in range(end, self.visible_lines.end):
+            self.lines[i].delete_vertex_lists()
+        
+        # Invalidate newly visible lines
+        self.invalid_vertex_lines.invalidate(start, self.visible_lines.start)
+        self.invalid_vertex_lines.invalidate(self.visible_lines.end, end)
+
+        self.visible_lines.start = start
+        self.visible_lines.end = end
+
     def _update_vertex_lists(self):
         # Find lines that have been affected by style changes
         style_invalid_start, style_invalid_end = self.invalid_style.validate()
@@ -637,6 +661,13 @@ class TextView(object):
 
             x0 = x1 = line.x
             y = line.y
+            
+            # Early out if not visible
+            if y + line.descent > self.view_y:
+                continue
+            elif y + line.ascent < self.view_y - self.height:
+                break
+
             for glyph_run in line.glyph_runs:
                 assert glyph_run.glyphs
                 try:
@@ -760,6 +791,8 @@ class TextView(object):
         view_y = min(0, max(self.height - self.content_height, view_y))
         self.top_state.view_y = view_y
         self.top_state.translate_y = self.top_state.scissor_y - view_y
+        self._update_visible_lines()
+        self._update_vertex_lists()
 
     def _get_view_y(self):
         return self.top_state.view_y
