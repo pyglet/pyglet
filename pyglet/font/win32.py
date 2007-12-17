@@ -223,7 +223,18 @@ class Win32GlyphRenderer(base.GlyphRenderer):
         # Can't get glyph-specific dimensions, use whole line-height.
         height = self._bitmap_height
 
-        image = self._get_image(text, width, height, lsb)
+        # HACK to fix GDI+ clipping small fonts (e.g. Arial <= 10pt @ 96dpi)
+        #
+        # Note that this hack does not affect metrics or tracking, it only
+        # allocates an extra column of bitmap on the left of the glyph.
+        #
+        # The tracking of small fonts is still wrong (not unreadable, but not
+        # correct); hopefully this will be fixed by pairwise kerning.
+        if isinstance(self, GDIPlusGlyphRenderer):
+            width += 1
+            image = self._get_image(text, width, height, lsb - 1)
+        else:
+            image = self._get_image(text, width, height, lsb)
         
         glyph = self.font.create_glyph(image)
         glyph.set_bearings(-self.font.descent, lsb, advance)
