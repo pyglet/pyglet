@@ -345,7 +345,7 @@ class TextView(object):
                  batch=None, state_order=0):
         self._width = width
         self._height = height
-        self.content_width = 0
+        self.content_width = 10000 # TODO
         self.content_height = 0
 
         self.top_state = TextViewState(state_order)
@@ -869,6 +869,12 @@ class TextView(object):
         elif y2 < self.view_y - self.height:
             self.view_y = y2  + self.height
 
+    def ensure_x_visible(self, x):
+        if x <= self.view_x + 2:
+            self.view_x = x - 2
+        elif x >= self.view_x + self.width - 2:
+            self.view_x = x - self.width + 2
+
     # Visible selection
 
     _selection_start = 0
@@ -1147,6 +1153,7 @@ class Caret(object):
                                           max(self._position, self._mark))
 
         self._text_view.ensure_line_visible(line)
+        self._text_view.ensure_x_visible(x)
 
 
 def main():
