@@ -328,6 +328,16 @@ class TextViewTextureState(graphics.AbstractState):
     # unset not needed, as next state will either bind a new texture or pop
     # enable bit.
 
+def _iter_paragraphs(text, start=0):
+    try:
+        while True:
+            end = text.index('\n', start)
+            yield start, end
+            start = end + 1
+    except ValueError:
+        end = len(text)
+        yield start, end
+
 class TextView(object):
     _paragraph_re = re.compile(r'\n', flags=re.DOTALL)
 
@@ -486,6 +496,9 @@ class TextView(object):
             return
         
         # Find first invalid line
+        # TODO find last invalid line (use paragraph breaks); doesn't help
+        # current case but will when paragraph style needs to use
+        # different flow methods.
         line_index = 0
         for i, line in enumerate(self.lines):
             if line.start > invalid_start:
@@ -504,9 +517,17 @@ class TextView(object):
             self.lines.append(line)
             self.invalid_lines.insert(0, 1)
 
+        #self._flow_glyphs_wrap(invalid_start, invalid_end, line_index)
+        self._flow_glyphs_nowrap(invalid_start, invalid_end, line_index)
+
+    def _flow_glyphs_wrap(self, invalid_start, invalid_end, line_index):
+        # TODO owner_iterator range only to invalid_end, when invalid_end is
+        # extended to end on paragraph boundary.
         owner_iterator = self.owner_runs.get_range_iterator().iter_range(
             invalid_start, len(self._text))
         font_iterator = self.font_runs.get_range_iterator()
+
+        line = self.lines[line_index]
         x = 0
 
         run_accum = []
@@ -588,6 +609,46 @@ class TextView(object):
             line.delete_vertex_lists()
         del self.lines[line_index + 1:]
 
+    def _flow_glyphs_nowrap(self, invalid_start, invalid_end, line_index):
+        owners = self.owner_runs.get_range_iterator()
+        font_iterator = self.font_runs.get_range_iterator()
+
+        x = 0
+
+        # Needed in case of blank line at beginning
+        font = font_iterator.get_style_at(invalid_start)
+
+        for para_start, para_end in _iter_paragraphs(self._text, invalid_start):
+            try:
+                line = self.lines[line_index]
+                if para_start >= invalid_end and line.start == para_start:
+                    return
+
+                line.clear(para_start)
+                self.invalid_lines.invalidate(line_index, line_index + 1)
+            except IndexError:
+                line = Line(para_start)
+                self.lines.append(line)
+                self.invalid_lines.insert(line_index, 1)
+
+            for start, end, owner in owners.iter_range(para_start, para_end):
+                font = font_iterator.get_style_at(start)
+                glyphs = self.glyphs[start:end]
+                if glyphs:
+                    line.add_glyph_run(GlyphRun(owner, font, glyphs))
+
+            if not line.glyph_runs:
+                line.ascent = font.ascent
+                line.descent = font.descent
+            
+            line_index += 1
+
+        # The last line is at line_index, if there are any more lines after
+        # that they are stale and need to be deleted.
+        for line in self.lines[line_index + 1:]:
+            line.delete_vertex_lists()
+        del self.lines[line_index + 1:]
+ 
     def _flow_lines(self):
         invalid_start, invalid_end = self.invalid_lines.validate()
         if invalid_end - invalid_start <= 0:
