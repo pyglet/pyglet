@@ -348,6 +348,9 @@ class AbstractDocument(event.EventDispatcher):
         '''
         raise NotImplementedError('abstract')
 
+    def get_font(self, position=None):
+        raise NotImplementedError('abstract')
+
     def get_color_runs(self):
         raise NotImplementedError('abstract')
     
@@ -403,6 +406,9 @@ class UnformattedDocument(AbstractDocument):
 
     def get_paragraph_runs(self):
         return StyleRunsRangeIterator(((0, len(self.text), self.paragraph),))
+
+    def get_font(self, position=None):
+        return self.font
 
 class FormattedDocument(AbstractDocument):
     _paragraph_re = re.compile(r'\n', flags=re.DOTALL)
@@ -1329,7 +1335,7 @@ def main():
 
     batch = graphics.Batch()
     ft = font.load('Times New Roman', 12, dpi=96)
-    document = FormattedDocument(content, ft, (0, 0, 0, 255))
+    document = UnformattedDocument(content, ft, (0, 0, 0, 255))
     text = TextView(document,  
                     w.width-border*2, w.height-border*2, batch=batch) 
     caret = Caret(text)
