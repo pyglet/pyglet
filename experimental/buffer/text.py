@@ -8,6 +8,7 @@ import sys
 import graphics
 
 from pyglet.gl import *
+from pyglet import event
 
 class StyleRun(object):
     def __init__(self, style, count):
@@ -119,48 +120,6 @@ class StyleRuns(object):
 
         assert False, 'Index not in range'
 
-class OverridableStyleRuns(StyleRuns):
-    def __init__(self, size, initial):
-        super(OverridableStyleRuns, self).__init__(size, initial)
-        self.override_start = -1 
-        self.override_end = -1
-        self.override_style = None
-
-    def set_override(self, style, start, end):
-        if start == end:
-            start = end = -1
-        self.override_style = style
-        self.override_start = start
-        self.override_end = end
-
-    def __iter__(self):
-        i = 0
-        for run in self.runs:
-            # Some overlap with override
-            if i < self.override_start < i + run.count:
-                yield i, self.override_start, run.style
-            if i <= self.override_start < i + run.count:
-                yield self.override_start, \
-                      self.override_end, self.override_style
-            if i <= self.override_end < i + run.count:
-                yield self.override_end, i + run.count, run.style
-
-            # No overlap with override
-            if i + run.count < self.override_start or i >= self.override_end:
-                yield i, i + run.count, run.style
-            i += run.count
-
-    def get_style_at(self, index):
-        if self.override_start <= index < self.override_end:
-            return self.override_style
-
-        return super(OverridableStyleRuns, self).get_style_at(index)
-
-    def __repr__(self):
-        return '%s(%r, override_style=%r, override_start=%r, override_end=%r)'\
-            % (self.__class__.__name__, self.runs,
-               self.override_style, self.override_start, self.override_end)
-
 class StyleRunsRangeIterator(object):
     '''Perform sequential range iterations over a StyleRuns.'''
     def __init__(self, style_runs):
@@ -181,6 +140,36 @@ class StyleRunsRangeIterator(object):
         while index >= self.curr_end:
             self.curr_start, self.curr_end, self.curr_style = self.iter.next()
         return self.curr_style
+
+class OverriddenStyleRunsRangeIterator(object):
+    def __init__(self, base_iterator, start, end, style):
+        self.iter = base_iterator
+        self.override_start = start
+        self.override_end = end
+        self.override_style = style
+
+    def iter_range(self, start, end):
+        if end <= self.override_start or start >= self.override_end:
+            # No overlap
+            for r in self.iter.iter_range(start, end):
+                yield r
+        else:
+            # Overlap: before, override, after
+            if start < self.override_start < end:
+                for r in self.iter.iter_range(start, self.override_start):
+                    yield r
+            yield (max(self.override_start, start),
+                   min(self.override_end, end),
+                   self.override_style)
+            if start < self.override_end < end:
+                for r in self.iter.iter_range(self.override_end, end):
+                    yield r
+        
+    def get_style_at(self, index):
+        if self.override_start <= index < self.override_end:
+            return self.override_style
+        else:
+            return self.iter.get_style_at(index)
 
 class Paragraph(object):
     def __init__(self):
@@ -338,11 +327,169 @@ def _iter_paragraphs(text, start=0):
         end = len(text)
         yield start, end
 
-class TextView(object):
+class AbstractDocument(event.EventDispatcher):
+    def __init__(self, text):
+        super(AbstractDocument, self).__init__()
+        self._text = ''
+        self.insert_text(0, text)
+
+    def _get_text(self):
+        return self._text
+
+    def _set_text(self, text):
+        self.remove_text(0, len(self._text))
+        self.insert_text(0, text)
+    
+    text = property(_get_text, _set_text)
+
+    def get_font_runs(self):
+        '''
+        :rtype: StyleRunsRangeIterator
+        '''
+        raise NotImplementedError('abstract')
+
+    def get_color_runs(self):
+        raise NotImplementedError('abstract')
+    
+    def get_background_color_runs(self):
+        raise NotImplementedError('abstract')
+
+    def get_paragraph_runs(self):
+        raise NotImplementedError('abstract')
+
+    def insert_text(self, start, text):
+        self._insert_text(start, text)
+        self.dispatch_event('on_insert_text', start, text)
+
+    def _insert_text(self, start, text):
+        self._text = ''.join((self._text[:start], text, self._text[start:]))
+
+    def remove_text(self, start, end):
+        self._remove_text(start, end)
+        self.dispatch_event('on_remove_text', start, end)
+
+    def _remove_text(self, start, end):
+        self._text = self._text[:start] + self._text[end:]
+
+    def on_insert_text(self, start, text):
+        '''
+        :event:
+        '''
+
+    def on_remove_text(self, start, end):
+        '''
+        :event:
+        '''
+
+AbstractDocument.register_event_type('on_insert_text')
+AbstractDocument.register_event_type('on_remove_text')
+
+class UnformattedDocument(AbstractDocument):
+    paragraph = Paragraph()
+    
+    def __init__(self, text, font, color):
+        super(UnformattedDocument, self).__init__(text)
+        self.font = font
+        self.color = color
+
+    def get_font_runs(self):
+        return StyleRunsRangeIterator(((0, len(self.text), self.font),))
+
+    def get_color_runs(self):
+        return StyleRunsRangeIterator(((0, len(self.text), self.color),))
+
+    def get_background_color_runs(self):
+        return StyleRunsRangeIterator(((0, len(self.text), None),))
+
+    def get_paragraph_runs(self):
+        return StyleRunsRangeIterator(((0, len(self.text), self.paragraph),))
+
+class FormattedDocument(AbstractDocument):
     _paragraph_re = re.compile(r'\n', flags=re.DOTALL)
 
-    def __init__(self, font, text, width, height, color=(255, 255, 255, 255), 
-                 batch=None, state_order=0):
+    def __init__(self, text, font, color):
+        self._font_runs = StyleRuns(0, font)
+        self._color_runs = StyleRuns(0, color)
+        self._background_color_runs = StyleRuns(0, None)
+        self._paragraph_runs = StyleRuns(0, Paragraph())
+        super(FormattedDocument, self).__init__(text)
+
+    def get_font_runs(self):
+        return self._font_runs.get_range_iterator()
+
+    def get_color_runs(self):
+        return self._color_runs.get_range_iterator()
+        
+    def get_background_color_runs(self):
+        return self._background_color_runs.get_range_iterator()
+
+    def get_paragraph_runs(self):
+        return self._paragraph_runs.get_range_iterator()
+
+    def _insert_text(self, start, text):
+        super(FormattedDocument, self)._insert_text(start, text)
+
+        len_text = len(text)
+        self._font_runs.insert(start, len_text)
+        self._color_runs.insert(start, len_text)
+        self._background_color_runs.insert(start, len_text)
+        self._paragraph_runs.insert(start, len_text)
+
+        # Insert paragraph breaks
+        last_para_start = None
+        for match in self._paragraph_re.finditer(text):
+            prototype = self._paragraph_runs.get_style_at(start)
+            para_start = start + match.start() + 1
+            if last_para_start is not None:
+                self._paragraph_runs.set_style(last_para_start, para_start, 
+                    prototype.clone())
+            last_para_start = para_start
+
+        if last_para_start is not None:
+            match = self._paragraph_re.search(self._text, last_para_start)
+            if match:
+                para_end = match.start()
+            else:
+                para_end = len_text
+            self._paragraph_runs.set_style(last_para_start, para_end, 
+                prototype.clone())
+
+    def _remove_text(self, start, end):
+        super(FormattedDocument, self)._remove_text(start, end)
+        self._font_runs.delete(start, end)
+        self._color_runs.delete(start, end)
+        self._background_color_runs.delete(start, end)
+        self._paragraph_runs.delete(start, end)
+
+        # TODO merge paragraph styles
+
+
+    def get_font(self, position=None):
+        if position is None:
+            raise NotImplementedError('TODO') # if only one font used, else
+                # indeterminate
+        return self._font_runs.get_style_at(position)
+
+    ''' TODO
+    def set_font(self, font, start=0, end=None):
+        if end is None:
+            end = len(self._text)
+        self.font_runs.set_style(start, end, font)
+        self.invalid_glyphs.invalidate(start, end)
+        self._update()
+    '''
+    ''' TODO
+    def set_background_color(self, color, start=0, end=None):
+        if end is None:
+            end = len(self._text)
+        self.background_runs.set_style(start, end, color)
+        self.invalid_style.invalidate(start, end)
+        self._update()
+    '''
+
+
+class TextView(object):
+    def __init__(self, document, width, height, batch=None, state_order=0):
         self._width = width
         self._height = height
         self.content_width = 10000 # TODO
@@ -357,7 +504,6 @@ class TextView(object):
             batch = graphics.Batch()
         self.batch = batch
 
-        self._text = ''
         self.glyphs = []
         self.lines = []
         self.states = {}
@@ -369,74 +515,42 @@ class TextView(object):
         self.invalid_vertex_lines = InvalidRange()
         self.visible_lines = InvalidRange()
 
-        self.font_runs = StyleRuns(0, font)
         self.owner_runs = StyleRuns(0, None)
-        self.color_runs = OverridableStyleRuns(0, color)
-        self.background_runs = OverridableStyleRuns(0, None)
-        self.paragraph_runs = StyleRuns(0, Paragraph())
 
-        self.insert_text(0, text)
+        self.document = document
+        self.document.push_handlers(self)
+        # HACK initial setup
+        self.on_insert_text(0, self.document.text)
 
-    def insert_text(self, start, text):
+    def on_insert_text(self, start, text):
         len_text = len(text)
-        self._text = ''.join((self._text[:start], text, self._text[start:]))
         self.glyphs[start:start] = [None] * len_text
 
         self.invalid_glyphs.insert(start, len_text)
         self.invalid_flow.insert(start, len_text)
         self.invalid_style.insert(start, len_text)
 
-        self.font_runs.insert(start, len_text)
         self.owner_runs.insert(start, len_text)
-        self.color_runs.insert(start, len_text)
-        self.background_runs.insert(start, len_text)
-        self.paragraph_runs.insert(start, len_text)
 
         for line in self.lines:
             if line.start >= start:
                 line.start += len_text
 
-        # Insert paragraph breaks
-        last_para_start = None
-        for match in self._paragraph_re.finditer(text):
-            prototype = self.paragraph_runs.get_style_at(start)
-            para_start = start + match.start() + 1
-            if last_para_start is not None:
-                self.paragraph_runs.set_style(last_para_start, para_start, 
-                    prototype.clone())
-            last_para_start = para_start
-
-        if last_para_start is not None:
-            match = self._paragraph_re.search(self._text, last_para_start)
-            if match:
-                para_end = match.start()
-            else:
-                para_end = len_text
-            self.paragraph_runs.set_style(last_para_start, para_end, 
-                prototype.clone())
- 
         self._update()
 
-    def remove_text(self, start, end):
-        self._text = self._text[:start] + self._text[end:]
+    def on_remove_text(self, start, end):
         self.glyphs[start:end] = []
 
         self.invalid_glyphs.delete(start, end)
         self.invalid_flow.delete(start, end)
         self.invalid_style.delete(start, end)
 
-        self.font_runs.delete(start, end)
         self.owner_runs.delete(start, end)
-        self.color_runs.delete(start, end)
-        self.background_runs.delete(start, end)
-        self.paragraph_runs.delete(start, end)
 
         size = end - start
         for line in self.lines:
             if line.start > start:
                 line.start -= size
-
-        # TODO merge paragraph styles
 
         if start == 0:
             self.invalid_flow.invalidate(0, 1)
@@ -469,10 +583,9 @@ class TextView(object):
             return
 
         # Update glyphs
-        font_range_iter = self.font_runs.get_range_iterator()
-        for start, end, font in \
-                font_range_iter.iter_range(invalid_start, invalid_end):
-            text = self._text[start:end]
+        runs = self.document.get_font_runs()
+        for start, end, font in runs.iter_range(invalid_start, invalid_end):
+            text = self.document.text[start:end]
             self.glyphs[start:end] = font.get_glyphs(text)
 
         # Update owner runs
@@ -524,8 +637,8 @@ class TextView(object):
         # TODO owner_iterator range only to invalid_end, when invalid_end is
         # extended to end on paragraph boundary.
         owner_iterator = self.owner_runs.get_range_iterator().iter_range(
-            invalid_start, len(self._text))
-        font_iterator = self.font_runs.get_range_iterator()
+            invalid_start, len(self.document.text))
+        font_iterator = self.document.get_font_runs()
 
         line = self.lines[line_index]
         x = 0
@@ -536,8 +649,8 @@ class TextView(object):
             owner_accum = []
             owner_accum_commit = []
             index = start
-            for (text, glyph) in zip(self._text[start:end],
-                                        self.glyphs[start:end]):
+            for (text, glyph) in zip(self.document.text[start:end],
+                                     self.glyphs[start:end]):
                 if text in u'\u0020\u200b':
                     for run in run_accum:
                         line.add_glyph_run(run)
@@ -611,14 +724,14 @@ class TextView(object):
 
     def _flow_glyphs_nowrap(self, invalid_start, invalid_end, line_index):
         owners = self.owner_runs.get_range_iterator()
-        font_iterator = self.font_runs.get_range_iterator()
+        font_iterator = self.document.get_font_runs()
 
         x = 0
 
         # Needed in case of blank line at beginning
         font = font_iterator.get_style_at(invalid_start)
 
-        for para_start, para_end in _iter_paragraphs(self._text, invalid_start):
+        for para_start, para_end in _iter_paragraphs(self.document.text, invalid_start):
             try:
                 line = self.lines[line_index]
                 if para_start >= invalid_end and line.start == para_start:
@@ -713,8 +826,19 @@ class TextView(object):
 
         batch = self.batch
 
-        colors_iter = self.color_runs.get_range_iterator()
-        background_iter = self.background_runs.get_range_iterator()
+        colors_iter = self.document.get_color_runs()
+        background_iter = self.document.get_background_color_runs()
+        if self._selection_end - self._selection_start > 0:
+            colors_iter = OverriddenStyleRunsRangeIterator(
+                colors_iter,
+                self._selection_start, 
+                self._selection_end,
+                self._selection_color)
+            background_iter = OverriddenStyleRunsRangeIterator(
+                background_iter,
+                self._selection_start, 
+                self._selection_end,
+                self._selection_background_color)
         
         for line in self.lines[invalid_start:invalid_end]:
             i = line.start
@@ -818,7 +942,7 @@ class TextView(object):
     def _set_width(self, width):
         self._width = width
         self.top_state.scissor_width = width
-        self.invalid_flow.invalidate(0, len(self.text))
+        self.invalid_flow.invalidate(0, len(self.document.text))
         self._update()
 
     def _get_width(self):
@@ -870,10 +994,10 @@ class TextView(object):
             self.view_y = y2  + self.height
 
     def ensure_x_visible(self, x):
-        if x <= self.view_x + 2:
-            self.view_x = x - 2
-        elif x >= self.view_x + self.width - 2:
-            self.view_x = x - self.width + 2
+        if x <= self.view_x + 10:
+            self.view_x = x - 10
+        elif x >= self.view_x + self.width - 10:
+            self.view_x = x - self.width + 10 
 
     # Visible selection
 
@@ -881,6 +1005,8 @@ class TextView(object):
     _selection_end = 0
 
     def set_selection(self, start, end):
+        start = max(0, start)
+        end = min(end, len(self.document.text))
         if start == self._selection_start and end == self._selection_end:
             return
 
@@ -898,10 +1024,6 @@ class TextView(object):
 
         self._selection_start = start
         self._selection_end = end
-
-        self.color_runs.set_override(self._selection_color, start, end)
-        self.background_runs.set_override(self._selection_background_color, 
-            start, end)
 
         self._update()
 
@@ -982,32 +1104,6 @@ class TextView(object):
     def get_line_count(self):
         return len(self.lines)
 
-    # Styled text access
-
-    def _get_text(self):
-        return self._text
-
-    text = property(_get_text)
-
-    def set_font(self, font, start=0, end=None):
-        if end is None:
-            end = len(self._text)
-        self.font_runs.set_style(start, end, font)
-        self.invalid_glyphs.invalidate(start, end)
-        self._update()
-
-    def get_font(self, position=None):
-        if position is None:
-            raise NotImplementedError('TODO') # if only one font used, else
-                # indeterminate
-        return self.font_runs.get_style_at(position)
-
-    def set_background_color(self, color, start=0, end=None):
-        if end is None:
-            end = len(self._text)
-        self.background_runs.set_style(start, end, color)
-        self.invalid_style.invalidate(start, end)
-        self._update()
 
 class Caret(object):
     _next_word_re = re.compile(r'(?<=\W)\w')
@@ -1088,7 +1184,7 @@ class Caret(object):
         if motion == key.MOTION_LEFT:
             self.position = max(0, self.position - 1)
         elif motion == key.MOTION_RIGHT:
-            self.position = min(len(self._text_view._text), self.position + 1) 
+            self.position = min(len(self._text_view.document.text), self.position + 1) 
         elif motion == key.MOTION_UP:
             self.line = max(0, self.line - 1)
         elif motion == key.MOTION_DOWN:
@@ -1103,21 +1199,21 @@ class Caret(object):
                 self.position = \
                     self._text_view.get_position_on_line(line + 1, 0) - 1
             else:
-                self.position = len(self._text_view.text)
+                self.position = len(self._text_view.document.text)
         elif motion == key.MOTION_BEGINNING_OF_FILE:
             self.position = 0
         elif motion == key.MOTION_END_OF_FILE:
-            self.position = len(self._text_view.text)
+            self.position = len(self._text_view.document.text)
         elif motion == key.MOTION_NEXT_WORD:
             pos = self._position + 1
-            m = self._next_word_re.search(self._text_view.text, pos)
+            m = self._next_word_re.search(self._text_view.document.text, pos)
             if not m:
-                self.position = len(self._text_view.text)
+                self.position = len(self._text_view.document.text)
             else:
                 self.position = m.start()
         elif motion == key.MOTION_PREVIOUS_WORD:
             pos = self._position
-            m = self._previous_word_re.search(self._text_view.text, 0, pos)
+            m = self._previous_word_re.search(self._text_view.document.text, 0, pos)
             if not m:
                 self.position = 0
             else:
@@ -1145,7 +1241,7 @@ class Caret(object):
 
         x -= self._text_view.top_state.translate_x
         y -= self._text_view.top_state.translate_y
-        font = self._text_view.get_font(max(0, self._position - 1))
+        font = self._text_view.document.get_font(max(0, self._position - 1))
         self._list.vertices[:] = [x, y + font.descent, x, y + font.ascent]
 
         if self._mark is not None:
@@ -1169,7 +1265,7 @@ def main():
     def on_text(t):
         t = t.replace('\r', '\n')
         caret.mark = None
-        text.insert_text(caret.position, t)
+        text.document.insert_text(caret.position, t)
         caret.position += len(t)
         cursor_not_idle()
 
@@ -1177,11 +1273,11 @@ def main():
     def on_text_motion(motion):
         if motion == key.MOTION_BACKSPACE:
             if caret.position > 0:
-                text.remove_text(caret.position - 1, caret.position)
+                text.document.remove_text(caret.position - 1, caret.position)
                 caret.position -= 1
         elif motion == key.MOTION_DELETE:
             if caret.position < len(text.text):
-                text.remove_text(caret.position, caret.position + 1)
+                text.document.remove_text(caret.position, caret.position + 1)
                 caret._update()
         else:
             caret.move(motion)
@@ -1233,9 +1329,9 @@ def main():
 
     batch = graphics.Batch()
     ft = font.load('Times New Roman', 12, dpi=96)
-    text = TextView(ft, content, 
-                    w.width-border*2, w.height-border*2, batch=batch,
-                    color=(0, 0, 0, 255)) 
+    document = FormattedDocument(content, ft, (0, 0, 0, 255))
+    text = TextView(document,  
+                    w.width-border*2, w.height-border*2, batch=batch) 
     caret = Caret(text)
     caret.color = (0, 0, 0)
     caret.visible = True
