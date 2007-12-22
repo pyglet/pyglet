@@ -258,22 +258,22 @@ class InvalidRange(object):
         self.end = 0
         return start, end
 
-class TextViewOrderedState(graphics.AbstractState):
+class TextLayoutOrderedState(graphics.AbstractState):
     def __init__(self, order, parent):
-        super(TextViewOrderedState, self).__init__(parent)
+        super(TextLayoutOrderedState, self).__init__(parent)
         self.order = order
 
     def __cmp__(self, other):
         return cmp(self.order, other.order)
 
-# TextViewState(OrderedState) order = user-defined
+# TextLayoutState(OrderedState) order = user-defined
 #   OrderedState; order = 0
-#   TextViewForegroundState(OrderedState); order = 1
-#     TextViewTextureState(AbstractState)  
+#   TextLayoutForegroundState(OrderedState); order = 1
+#     TextLayoutTextureState(AbstractState)  
 #     ... [one for each font texture used] 
 #     ...
 
-class TextViewState(graphics.OrderedState):
+class TextLayoutState(graphics.OrderedState):
     scissor_x = 0
     scissor_y = 0
     scissor_width = 0
@@ -297,17 +297,17 @@ class TextViewState(graphics.OrderedState):
         glTranslatef(-self.translate_x, -self.translate_y, 0)
         glPopAttrib()
 
-class TextViewForegroundState(graphics.OrderedState):
+class TextLayoutForegroundState(graphics.OrderedState):
     def set(self):
         glEnable(GL_TEXTURE_2D)
 
     # unset not needed, as parent state will pop enable bit (background is
     # ordered before foreground)
 
-class TextViewTextureState(graphics.AbstractState):
+class TextLayoutTextureState(graphics.AbstractState):
     def __init__(self, texture, parent):
         assert texture.target == GL_TEXTURE_2D
-        super(TextViewTextureState, self).__init__(parent)
+        super(TextLayoutTextureState, self).__init__(parent)
 
         self.texture = texture
 
@@ -493,160 +493,99 @@ class FormattedDocument(AbstractDocument):
         self._update()
     '''
 
-
-class TextView(object):
+class TextLayout(object):
+    _document = None
+    _vertex_lists = ()
+    
     def __init__(self, document, width, height, batch=None, state_order=0):
         self._width = width
         self._height = height
         self.content_width = 10000 # TODO
         self.content_height = 0
 
-        self.top_state = TextViewState(state_order)
+        self.states = {}
+        self.top_state = TextLayoutState(state_order)
 
         self.background_state = graphics.OrderedState(0, self.top_state)
-        self.foreground_state = TextViewForegroundState(1, self.top_state)
+        self.foreground_state = TextLayoutForegroundState(1, self.top_state)
 
         if batch is None:
             batch = graphics.Batch()
         self.batch = batch
 
-        self.glyphs = []
-        self.lines = []
-        self.states = {}
-
-        self.invalid_glyphs = InvalidRange()
-        self.invalid_flow = InvalidRange()
-        self.invalid_lines = InvalidRange()
-        self.invalid_style = InvalidRange()
-        self.invalid_vertex_lines = InvalidRange()
-        self.visible_lines = InvalidRange()
-
-        self.owner_runs = StyleRuns(0, None)
-
         self.document = document
-        self.document.push_handlers(self)
-        # HACK initial setup
-        self.on_insert_text(0, self.document.text)
+
+    def _get_document(self):
+        return self._document
+
+    def _set_document(self, document):
+        if self._document:
+            # TODO
+            assert False, 'Requires pyglet 1.1 feature'
+            self._document.remove_handlers(self)
+            self._uninit_document(self._document)
+        document.push_handlers(document)
+        self._document = document
+        self._init_document()
+    
+    document = property(_get_document, _set_document)
+
+    def _init_document(self):
+        for _vertex_list in self._vertex_lists:
+            _vertex_list.delete()
+        
+        if self._document:
+            len_text = len(self._document.text)
+            glyphs = self._get_glyphs()
+            owner_runs = StyleRuns(len_text, None)
+            self._get_owner_runs(owner_runs, glyphs, 0, len_text)
+            owner_iterator = owner_runs.get_range_iterator().iter_range(
+                0, len_text)
+            lines = [line for line in self._flow_glyphs(0, owner_iterator)]
+            self._flow_lines(lines)
+            self.vertex_lists = self._get_vertex_lists( )# TODO 
+
+    def _uninit_document(self):
+        pass
 
     def on_insert_text(self, start, text):
-        len_text = len(text)
-        self.glyphs[start:start] = [None] * len_text
-
-        self.invalid_glyphs.insert(start, len_text)
-        self.invalid_flow.insert(start, len_text)
-        self.invalid_style.insert(start, len_text)
-
-        self.owner_runs.insert(start, len_text)
-
-        for line in self.lines:
-            if line.start >= start:
-                line.start += len_text
-
-        self._update()
+        self._init_document()
 
     def on_remove_text(self, start, end):
-        self.glyphs[start:end] = []
+        self._init_document()
 
-        self.invalid_glyphs.delete(start, end)
-        self.invalid_flow.delete(start, end)
-        self.invalid_style.delete(start, end)
+    def _get_glyphs(self):
+        glyphs = []
+        runs = self._document.get_font_runs()
+        text = self._document.text
+        for start, end, font in runs.iter_range(0, len(text)):
+            glyphs.extend(font.get_glyphs(text[start:end]))
+        return glyphs
 
-        self.owner_runs.delete(start, end)
-
-        size = end - start
-        for line in self.lines:
-            if line.start > start:
-                line.start -= size
-
-        if start == 0:
-            self.invalid_flow.invalidate(0, 1)
-        else:
-            self.invalid_flow.invalidate(start - 1, start)
-        self._update()
-
-    def _update(self):
-        # Special care if there is no text:
-        if not self.glyphs:
-            for line in self.lines:
-                line.delete_vertex_lists()
-            del self.lines[1:]
-            self.lines[0].clear(0)
-            self.invalid_lines.invalidate(0, 1)
-            self._flow_lines()
-            self._update_vertex_lists()
-            return
-
-        self._update_glyphs()
-        self._flow_glyphs()
-        self._flow_lines()
-        self._update_visible_lines()
-        self._update_vertex_lists()
-
-    def _update_glyphs(self):
-        invalid_start, invalid_end = self.invalid_glyphs.validate()
-
-        if invalid_end - invalid_start <= 0:
-            return
-
-        # Update glyphs
-        runs = self.document.get_font_runs()
-        for start, end, font in runs.iter_range(invalid_start, invalid_end):
-            text = self.document.text[start:end]
-            self.glyphs[start:end] = font.get_glyphs(text)
-
-        # Update owner runs
-        owner = self.glyphs[start].owner
+    def _get_owner_runs(self, owner_runs, glyphs, start, end):
+        owner = glyphs[start].owner
         run_start = start
-        for i, glyph in enumerate(self.glyphs[invalid_start:invalid_end]):
+        # TODO avoid glyph slice on non-incremental
+        for i, glyph in enumerate(glyphs[start:end]):
             if owner != glyph.owner:
-                self.owner_runs.set_style(
-                    run_start, i + invalid_start, owner)
+                owner_runs.set_style(run_start, i + start, owner)
                 owner = glyph.owner
                 run_start = i + start
-        self.owner_runs.set_style(run_start, invalid_end, owner)            
+        owner_runs.set_style(run_start, end, owner)    
 
-        # Updated glyphs need flowing
-        self.invalid_flow.invalidate(invalid_start, invalid_end)
+    def _flow_glyphs(self, start, owner_iterator):
+        # XXX start param is weird
+        # TODO wrap/nowrap per-paragraph style
+        # TODO owner_iterator stops at paragraph boundary, esp. during
+        #   incremental.
+        for line in self._flow_glyphs_wrap(start, owner_iterator):
+            yield line
+        #self._flow_glyphs_nowrap(invalid_start, invalid_end, line_index)
 
-    def _flow_glyphs(self):
-        invalid_start, invalid_end = self.invalid_flow.validate()
+    def _flow_glyphs_wrap(self, start, owner_iterator):
+        font_iterator = self._document.get_font_runs()
 
-        if invalid_end - invalid_start <= 0:
-            return
-        
-        # Find first invalid line
-        # TODO find last invalid line (use paragraph breaks); doesn't help
-        # current case but will when paragraph style needs to use
-        # different flow methods.
-        line_index = 0
-        for i, line in enumerate(self.lines):
-            if line.start > invalid_start:
-                break
-            line_index = i
-
-        try:
-            line = self.lines[line_index]
-            invalid_start = min(invalid_start, line.start)
-            line.clear(invalid_start)
-            self.invalid_lines.invalidate(line_index, line_index + 1)
-        except IndexError:
-            line_index = 0
-            invalid_start = 0
-            line = Line(0)
-            self.lines.append(line)
-            self.invalid_lines.insert(0, 1)
-
-        #self._flow_glyphs_wrap(invalid_start, invalid_end, line_index)
-        self._flow_glyphs_nowrap(invalid_start, invalid_end, line_index)
-
-    def _flow_glyphs_wrap(self, invalid_start, invalid_end, line_index):
-        # TODO owner_iterator range only to invalid_end, when invalid_end is
-        # extended to end on paragraph boundary.
-        owner_iterator = self.owner_runs.get_range_iterator().iter_range(
-            invalid_start, len(self.document.text))
-        font_iterator = self.document.get_font_runs()
-
-        line = self.lines[line_index]
+        line = Line(start)
         x = 0
 
         run_accum = []
@@ -692,21 +631,8 @@ class TextView(object):
                             line.descent = font.descent
 
                         if line.glyph_runs or text == '\n':
-                            line_index += 1
-                            try:
-                                line = self.lines[line_index]
-                                if (next_start == line.start and
-                                    next_start > invalid_end):
-                                    # No more lines need to be modified, early
-                                    # exit.
-                                    return
-                                line.clear(next_start) # XXX early exit
-                                self.invalid_lines.invalidate(
-                                    line_index, line_index + 1)
-                            except IndexError:
-                                line = Line(next_start)
-                                self.lines.append(line)
-                                self.invalid_lines.insert(line_index, 1)
+                            yield line
+                            line = Line(next_start)
                             x = sum(r.width for r in run_accum) # XXX
                             x += sum(g.advance for g in owner_accum) # XXX
                     if text != '\n':
@@ -722,11 +648,8 @@ class TextView(object):
         for run in run_accum:
             line.add_glyph_run(run)
 
-        # The last line is at line_index, if there are any more lines after
-        # that they are stale and need to be deleted.
-        for line in self.lines[line_index + 1:]:
-            line.delete_vertex_lists()
-        del self.lines[line_index + 1:]
+        if line.glyph_runs:
+            yield line
 
     def _flow_glyphs_nowrap(self, invalid_start, invalid_end, line_index):
         owners = self.owner_runs.get_range_iterator()
@@ -767,8 +690,240 @@ class TextView(object):
         for line in self.lines[line_index + 1:]:
             line.delete_vertex_lists()
         del self.lines[line_index + 1:]
- 
-    def _flow_lines(self):
+        
+    def _create_vertex_lists(self, x, y, glyph_runs, 
+                             i, colors_iter, background_iter):
+        x0 = x1 = x
+        vertex_lists = []
+        batch = self.batch
+
+        for glyph_run in glyph_runs:
+            assert glyph_run.glyphs
+            try:
+                state = self.states[glyph_run.owner]
+            except KeyError:
+                owner = glyph_run.owner
+                self.states[owner] = state = \
+                    TextLayoutTextureState(owner, self.foreground_state)
+
+            n_glyphs = len(glyph_run.glyphs)
+            vertices = []
+            tex_coords = []
+            for glyph in glyph_run.glyphs:
+                v0, v1, v2, v3 = glyph.vertices
+                v0 += x0
+                v2 += x0
+                v1 += y
+                v3 += y
+                vertices.extend([v0, v1, v2, v1, v2, v3, v0, v3])
+                t = glyph.tex_coords
+                tex_coords.extend(t)
+                x0 += glyph.advance
+            
+            # Text color
+            colors = []
+            for start, end, color in colors_iter.iter_range(i, i+n_glyphs):
+                colors.extend(color * ((end - start) * 4))
+
+            list = batch.add(n_glyphs * 4, GL_QUADS, state, 
+                ('v2f/dynamic', vertices),
+                ('t3f/dynamic', tex_coords),
+                ('c4B/dynamic', colors))
+            vertex_lists.append(list)
+
+            # Background color
+            background_vertices = []
+            background_colors = []
+            background_vertex_count = 0
+            for start, end, bg in background_iter.iter_range(i, i+n_glyphs):
+                if bg is None:
+                    for glyph in glyph_run.glyphs[start - i:end - i]:
+                        x1 += glyph.advance
+                    continue
+                
+                y1 = y + glyph_run.font.descent
+                y2 = y + glyph_run.font.ascent
+                x2 = x1
+                for glyph in glyph_run.glyphs[start - i:end - i]:
+                    x2 += glyph.advance
+                    background_vertices.extend(
+                        [x1, y1, x2, y1, x2, y2, x1, y2])
+                    x1 += glyph.advance
+                background_colors.extend(bg * ((end - start) * 4))
+                background_vertex_count += (end - start) * 4
+
+            if background_vertex_count:
+                background_list = self.batch.add(
+                    background_vertex_count, GL_QUADS,
+                    self.background_state,
+                    ('v2f/dynamic', background_vertices),
+                    ('c4B/dynamic', background_colors))
+                vertex_lists.append(background_list)
+
+            i += n_glyphs
+
+        return vertex_lists
+
+
+class IncrementalTextLayout(TextLayout):
+    '''Displayed text suitable for interactive editing and/or scrolling
+    large documents.'''
+    def __init__(self, document, width, height, batch=None, state_order=0):
+        self.glyphs = []
+        self.lines = []
+
+        self.invalid_glyphs = InvalidRange()
+        self.invalid_flow = InvalidRange()
+        self.invalid_lines = InvalidRange()
+        self.invalid_style = InvalidRange()
+        self.invalid_vertex_lines = InvalidRange()
+        self.visible_lines = InvalidRange()
+
+        self.owner_runs = StyleRuns(0, None)
+
+        super(IncrementalTextLayout, self).__init__(
+            document, width, height, batch, state_order)
+
+    def _init_document(self):
+        assert self._document, \
+            'Cannot remove document from IncrementalTextLayout'
+        self.on_insert_text(0, self._document.text)
+
+    def _uninit_document(self):
+        self.on_remove_text(0, len(self._document.text))
+
+    def on_insert_text(self, start, text):
+        len_text = len(text)
+        self.glyphs[start:start] = [None] * len_text
+
+        self.invalid_glyphs.insert(start, len_text)
+        self.invalid_flow.insert(start, len_text)
+        self.invalid_style.insert(start, len_text)
+
+        self.owner_runs.insert(start, len_text)
+
+        for line in self.lines:
+            if line.start >= start:
+                line.start += len_text
+
+        self._update()
+
+    def on_remove_text(self, start, end):
+        self.glyphs[start:end] = []
+
+        self.invalid_glyphs.delete(start, end)
+        self.invalid_flow.delete(start, end)
+        self.invalid_style.delete(start, end)
+
+        self.owner_runs.delete(start, end)
+
+        size = end - start
+        for line in self.lines:
+            if line.start > start:
+                line.start -= size
+
+        if start == 0:
+            self.invalid_flow.invalidate(0, 1)
+        else:
+            self.invalid_flow.invalidate(start - 1, start)
+        self._update()
+
+    def _update(self):
+        # Special care if there is no text:
+        if not self.glyphs:
+            for line in self.lines:
+                line.delete_vertex_lists()
+            del self.lines[1:]
+            self.lines[0].clear(0)
+            self.invalid_lines.invalidate(0, 1)
+            self._update_flow_lines()
+            self._update_vertex_lists()
+            return
+
+        self._update_glyphs()
+        self._update_flow_glyphs()
+        self._update_flow_lines()
+        self._update_visible_lines()
+        self._update_vertex_lists()
+
+    def _update_glyphs(self):
+        invalid_start, invalid_end = self.invalid_glyphs.validate()
+
+        if invalid_end - invalid_start <= 0:
+            return
+
+        # Update glyphs
+        runs = self.document.get_font_runs()
+        for start, end, font in runs.iter_range(invalid_start, invalid_end):
+            text = self.document.text[start:end]
+            self.glyphs[start:end] = font.get_glyphs(text)
+
+        # Update owner runs
+        self._get_owner_runs(
+            self.owner_runs, self.glyphs, invalid_start, invalid_end)
+
+        # Updated glyphs need flowing
+        self.invalid_flow.invalidate(invalid_start, invalid_end)
+
+    def _update_flow_glyphs(self):
+        invalid_start, invalid_end = self.invalid_flow.validate()
+
+        if invalid_end - invalid_start <= 0:
+            return
+        
+        # Find first invalid line
+        # TODO find last invalid line (use paragraph breaks); doesn't help
+        # current case but will when paragraph style needs to use
+        # different flow methods.
+        line_index = 0
+        for i, line in enumerate(self.lines):
+            if line.start > invalid_start:
+                break
+            line_index = i
+
+        try:
+            line = self.lines[line_index]
+            invalid_start = min(invalid_start, line.start)
+            line.clear(invalid_start)
+            self.invalid_lines.invalidate(line_index, line_index + 1)
+        except IndexError:
+            line_index = 0
+            invalid_start = 0
+            line = Line(0)
+            self.lines.append(line)
+            self.invalid_lines.insert(0, 1)
+
+        
+        owner_iterator = self.owner_runs.get_range_iterator().iter_range(
+            invalid_start, invalid_end)
+        for line in self._flow_glyphs(invalid_start, owner_iterator):
+            try:
+                self.lines[line_index] = line
+                self.invalid_lines.invalidate(line_index, line_index + 1)
+            except IndexError:
+                self.lines.append(line)
+                self.invalid_lines.insert(line_index, 1)
+                
+            # XXX precompute
+            line_len = sum(len(r.glyphs) for r in line.glyph_runs)
+            next_start = line_len + line.start
+            line_index += 1
+                
+            try:
+                next_line = lines[line_index]
+                if next_start == next_line.start and next_start > invalid_end:
+                    # No more lines need to be modified, early exit.
+                    break
+            except IndexError:
+                pass
+        else:
+            # The last line is at line_index - 1, if there are any more lines
+            # after that they are stale and need to be deleted.
+            for line in lines[line_index:]:
+                line.delete_vertex_lists()
+            del lines[line_index:]
+
+    def _update_flow_lines(self):
         invalid_start, invalid_end = self.invalid_lines.validate()
         if invalid_end - invalid_start <= 0:
             return
@@ -845,85 +1000,19 @@ class TextView(object):
                 self._selection_start, 
                 self._selection_end,
                 self._selection_background_color)
-        
-        for line in self.lines[invalid_start:invalid_end]:
-            i = line.start
-            line.delete_vertex_lists()
 
-            x0 = x1 = line.x
+        for line in self.lines[invalid_start:invalid_end]:
+            line.delete_vertex_lists()
             y = line.y
-            
+
             # Early out if not visible
             if y + line.descent > self.view_y:
                 continue
             elif y + line.ascent < self.view_y - self.height:
                 break
 
-            for glyph_run in line.glyph_runs:
-                assert glyph_run.glyphs
-                try:
-                    state = self.states[glyph_run.owner]
-                except KeyError:
-                    owner = glyph_run.owner
-                    self.states[owner] = state = \
-                        TextViewTextureState(owner, self.foreground_state)
-
-                n_glyphs = len(glyph_run.glyphs)
-                vertices = []
-                tex_coords = []
-                for glyph in glyph_run.glyphs:
-                    v0, v1, v2, v3 = glyph.vertices
-                    v0 += x0
-                    v2 += x0
-                    v1 += y
-                    v3 += y
-                    vertices.extend([v0, v1, v2, v1, v2, v3, v0, v3])
-                    t = glyph.tex_coords
-                    tex_coords.extend(t)
-                    x0 += glyph.advance
-                
-                # Text color
-                colors = []
-                for start, end, color in colors_iter.iter_range(i, i+n_glyphs):
-                    colors.extend(color * ((end - start) * 4))
-
-                list = batch.add(n_glyphs * 4, GL_QUADS, state, 
-                    ('v2f/dynamic', vertices),
-                    ('t3f/dynamic', tex_coords),
-                    ('c4B/dynamic', colors))
-                line.vertex_lists.append(list)
-
-                # Background color
-                background_vertices = []
-                background_colors = []
-                background_vertex_count = 0
-                for start, end, bg in background_iter.iter_range(i, i+n_glyphs):
-                    if bg is None:
-                        for glyph in glyph_run.glyphs[start - i:end - i]:
-                            x1 += glyph.advance
-                        continue
-                    
-                    y1 = y + glyph_run.font.descent
-                    y2 = y + glyph_run.font.ascent
-                    x2 = x1
-                    for glyph in glyph_run.glyphs[start - i:end - i]:
-                        x2 += glyph.advance
-                        background_vertices.extend(
-                            [x1, y1, x2, y1, x2, y2, x1, y2])
-                        x1 += glyph.advance
-                    background_colors.extend(bg * ((end - start) * 4))
-                    background_vertex_count += (end - start) * 4
-
-                if background_vertex_count:
-                    background_list = self.batch.add(
-                        background_vertex_count, GL_QUADS,
-                        self.background_state,
-                        ('v2f/dynamic', background_vertices),
-                        ('c4B/dynamic', background_colors))
-                    line.vertex_lists.append(background_list)
-
-
-                i += n_glyphs
+            line.vertex_lists = self._create_vertex_lists(line.x, y, 
+                line.glyph_runs, line.start, colors_iter, background_iter)
 
     # Viewport attributes
 
@@ -1336,7 +1425,7 @@ def main():
     batch = graphics.Batch()
     ft = font.load('Times New Roman', 12, dpi=96)
     document = UnformattedDocument(content, ft, (0, 0, 0, 255))
-    text = TextView(document,  
+    text = IncrementalTextLayout(document,  
                     w.width-border*2, w.height-border*2, batch=batch) 
     caret = Caret(text)
     caret.color = (0, 0, 0)
