@@ -288,7 +288,7 @@ class TextLayoutState(graphics.OrderedState):
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         # Disable scissor to check culling.
-        #glEnable(GL_SCISSOR_TEST)
+        glEnable(GL_SCISSOR_TEST)
         glScissor(self.scissor_x, self.scissor_y - self.scissor_height, 
                   self.scissor_width, self.scissor_height)
         glTranslatef(self.translate_x, self.translate_y, 0)
@@ -524,7 +524,7 @@ class TextLayout(object):
             assert False, 'Requires pyglet 1.1 feature'
             self._document.remove_handlers(self)
             self._uninit_document(self._document)
-        document.push_handlers(document)
+        document.push_handlers(self)
         self._document = document
         self._init_document()
     
@@ -707,7 +707,7 @@ class TextLayout(object):
 
     def _flow_lines(self, lines, y, start, end):
         line_index = start
-        for line in lines:
+        for line in lines[start:]:
             y -= line.ascent
             line.x = 0
             if line.y == y and line_index >= end: 
@@ -999,12 +999,12 @@ class IncrementalTextLayout(TextLayout):
             self.lines.append(line)
             self.invalid_lines.insert(0, 1)
 
-        
         owner_iterator = self.owner_runs.get_range_iterator().iter_range(
-            invalid_start, invalid_end)
+            invalid_start, len(self._document.text))
         for line in self._flow_glyphs(
                 invalid_start, owner_iterator, self.glyphs):
             try:
+                self.lines[line_index].delete_vertex_lists()
                 self.lines[line_index] = line
                 self.invalid_lines.invalidate(line_index, line_index + 1)
             except IndexError:
@@ -1026,9 +1026,10 @@ class IncrementalTextLayout(TextLayout):
         else:
             # The last line is at line_index - 1, if there are any more lines
             # after that they are stale and need to be deleted.
-            for line in self.lines[line_index:]:
-                line.delete_vertex_lists()
-            del self.lines[line_index:]
+            if invalid_end == len(self._document.text):
+                for line in self.lines[line_index:]:
+                    line.delete_vertex_lists()
+                del self.lines[line_index:]
 
     def _update_flow_lines(self):
         invalid_start, invalid_end = self.invalid_lines.validate()
