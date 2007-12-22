@@ -288,7 +288,7 @@ class TextLayoutState(graphics.OrderedState):
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         # Disable scissor to check culling.
-        glEnable(GL_SCISSOR_TEST)
+        #glEnable(GL_SCISSOR_TEST)
         glScissor(self.scissor_x, self.scissor_y - self.scissor_height, 
                   self.scissor_width, self.scissor_height)
         glTranslatef(self.translate_x, self.translate_y, 0)
@@ -530,7 +530,7 @@ class TextLayout(object):
     
     document = property(_get_document, _set_document)
 
-    def _init_document(self):
+    def _update(self):
         for _vertex_list in self._vertex_lists:
             _vertex_list.delete()
         
@@ -541,9 +541,22 @@ class TextLayout(object):
             self._get_owner_runs(owner_runs, glyphs, 0, len_text)
             owner_iterator = owner_runs.get_range_iterator().iter_range(
                 0, len_text)
-            lines = [line for line in self._flow_glyphs(0, owner_iterator)]
-            self._flow_lines(lines)
-            self.vertex_lists = self._get_vertex_lists( )# TODO 
+            lines = [line for line in self._flow_glyphs(
+                        0, owner_iterator, glyphs)]
+            self._flow_lines(lines, 0, 0, len(lines))
+
+            self._vertex_lists = []
+            colors_iter = self._document.get_color_runs()
+            background_iter = self._document.get_background_color_runs()
+            for line in lines:
+                self._vertex_lists.extend(self._create_vertex_lists(
+                    line.x, line.y, line.glyph_runs, line.start,
+                    colors_iter, background_iter))
+        else:
+            self._vertex_lists = []
+
+    def _init_document(self):
+        pass
 
     def _uninit_document(self):
         pass
@@ -573,16 +586,16 @@ class TextLayout(object):
                 run_start = i + start
         owner_runs.set_style(run_start, end, owner)    
 
-    def _flow_glyphs(self, start, owner_iterator):
+    def _flow_glyphs(self, start, owner_iterator, glyphs):
         # XXX start param is weird
         # TODO wrap/nowrap per-paragraph style
         # TODO owner_iterator stops at paragraph boundary, esp. during
         #   incremental.
-        for line in self._flow_glyphs_wrap(start, owner_iterator):
+        for line in self._flow_glyphs_wrap(start, owner_iterator, glyphs):
             yield line
         #self._flow_glyphs_nowrap(invalid_start, invalid_end, line_index)
 
-    def _flow_glyphs_wrap(self, start, owner_iterator):
+    def _flow_glyphs_wrap(self, start, owner_iterator, glyphs):
         font_iterator = self._document.get_font_runs()
 
         line = Line(start)
@@ -595,7 +608,7 @@ class TextLayout(object):
             owner_accum_commit = []
             index = start
             for (text, glyph) in zip(self.document.text[start:end],
-                                     self.glyphs[start:end]):
+                                     glyphs[start:end]):
                 if text in u'\u0020\u200b':
                     for run in run_accum:
                         line.add_glyph_run(run)
@@ -652,6 +665,7 @@ class TextLayout(object):
             yield line
 
     def _flow_glyphs_nowrap(self, invalid_start, invalid_end, line_index):
+        # TODO
         owners = self.owner_runs.get_range_iterator()
         font_iterator = self.document.get_font_runs()
 
@@ -690,6 +704,21 @@ class TextLayout(object):
         for line in self.lines[line_index + 1:]:
             line.delete_vertex_lists()
         del self.lines[line_index + 1:]
+
+    def _flow_lines(self, lines, y, start, end):
+        line_index = start
+        for line in lines:
+            y -= line.ascent
+            line.x = 0
+            if line.y == y and line_index >= end: 
+                break
+            line.y = y
+            y += line.descent
+            line_index += 1
+        else:
+            self.content_height = -y
+
+        return line_index
         
     def _create_vertex_lists(self, x, y, glyph_runs, 
                              i, colors_iter, background_iter):
@@ -763,6 +792,83 @@ class TextLayout(object):
             i += n_glyphs
 
         return vertex_lists
+
+    # Viewport attributes
+
+    def _set_x(self, x):
+        self.top_state.scissor_x = x
+        self.top_state.translate_x = x - self.top_state.view_x
+
+    def _get_x(self):
+        return self.top_state.scissor_x
+
+    x = property(_get_x, _set_x)
+
+    def _set_y(self, y):
+        self.top_state.scissor_y = y
+        self.top_state.translate_y = y - self.top_state.view_y
+
+    def _get_y(self):
+        return self.top_state.scissor_y
+
+    y = property(_get_y, _set_y)
+
+    def _set_width(self, width):
+        self._width = width
+        self.top_state.scissor_width = width
+        self._update()
+
+    def _get_width(self):
+        return self._width
+
+    width = property(_get_width, _set_width)
+
+    def _set_height(self, height):
+        self._height = height
+        self.top_state.scissor_height = height
+
+    def _get_height(self):
+        return self._height
+
+    height = property(_get_height, _set_height)
+
+    # Offset of content within viewport
+
+    def _set_view_x(self, view_x):
+        view_x = max(0, min(self.content_width - self.width, view_x))
+        self.top_state.view_x = view_x
+        self.top_state.translate_x = self.top_state.scissor_x - view_x
+
+    def _get_view_x(self):
+        return self.top_state.view_x
+
+    view_x = property(_get_view_x, _set_view_x)
+
+    def _set_view_y(self, view_y):
+        # view_y must be negative.
+        view_y = min(0, max(self.height - self.content_height, view_y))
+        self.top_state.view_y = view_y
+        self.top_state.translate_y = self.top_state.scissor_y - view_y
+
+    def _get_view_y(self):
+        return self.top_state.view_y
+
+    view_y = property(_get_view_y, _set_view_y)
+
+    def ensure_line_visible(self, line):
+        line = self.lines[line]
+        y1 = line.y + line.ascent
+        y2 = line.y + line.descent
+        if y1 > self.view_y:
+            self.view_y = y1
+        elif y2 < self.view_y - self.height:
+            self.view_y = y2  + self.height
+
+    def ensure_x_visible(self, x):
+        if x <= self.view_x + 10:
+            self.view_x = x - 10
+        elif x >= self.view_x + self.width - 10:
+            self.view_x = x - self.width + 10 
 
 
 class IncrementalTextLayout(TextLayout):
@@ -896,7 +1002,8 @@ class IncrementalTextLayout(TextLayout):
         
         owner_iterator = self.owner_runs.get_range_iterator().iter_range(
             invalid_start, invalid_end)
-        for line in self._flow_glyphs(invalid_start, owner_iterator):
+        for line in self._flow_glyphs(
+                invalid_start, owner_iterator, self.glyphs):
             try:
                 self.lines[line_index] = line
                 self.invalid_lines.invalidate(line_index, line_index + 1)
@@ -910,7 +1017,7 @@ class IncrementalTextLayout(TextLayout):
             line_index += 1
                 
             try:
-                next_line = lines[line_index]
+                next_line = self.lines[line_index]
                 if next_start == next_line.start and next_start > invalid_end:
                     # No more lines need to be modified, early exit.
                     break
@@ -919,9 +1026,9 @@ class IncrementalTextLayout(TextLayout):
         else:
             # The last line is at line_index - 1, if there are any more lines
             # after that they are stale and need to be deleted.
-            for line in lines[line_index:]:
+            for line in self.lines[line_index:]:
                 line.delete_vertex_lists()
-            del lines[line_index:]
+            del self.lines[line_index:]
 
     def _update_flow_lines(self):
         invalid_start, invalid_end = self.invalid_lines.validate()
@@ -934,23 +1041,11 @@ class IncrementalTextLayout(TextLayout):
             last = self.lines[invalid_start - 1]
             y = last.y + last.descent
         
-        line_index = invalid_start
-        for line in self.lines[invalid_start:]:
-            y -= line.ascent
-            line.x = 0
-            if line.y == y and line_index >= invalid_end: 
-                break
-            line.y = y
-            y += line.descent
-
-            line_index += 1
-
-        # Update content height
-        if line_index == len(self.lines):
-            self.content_height = -y    
+        invalid_end = self._flow_lines(self.lines, y, 
+            invalid_start, invalid_end)
 
         # Invalidate lines that need new vertex lists.
-        self.invalid_vertex_lines.invalidate(invalid_start, line_index)
+        self.invalid_vertex_lines.invalidate(invalid_start, invalid_end)
 
     def _update_visible_lines(self):
         start = sys.maxint
@@ -1014,63 +1109,22 @@ class IncrementalTextLayout(TextLayout):
             line.vertex_lists = self._create_vertex_lists(line.x, y, 
                 line.glyph_runs, line.start, colors_iter, background_iter)
 
-    # Viewport attributes
-
-    def _set_x(self, x):
-        self.top_state.scissor_x = x
-        self.top_state.translate_x = x - self.top_state.view_x
-
-    def _get_x(self):
-        return self.top_state.scissor_x
-
-    x = property(_get_x, _set_x)
-
-    def _set_y(self, y):
-        self.top_state.scissor_y = y
-        self.top_state.translate_y = y - self.top_state.view_y
-
-    def _get_y(self):
-        return self.top_state.scissor_y
-
-    y = property(_get_y, _set_y)
+    # Invalidate everything when width changes
 
     def _set_width(self, width):
-        self._width = width
-        self.top_state.scissor_width = width
         self.invalid_flow.invalidate(0, len(self.document.text))
-        self._update()
+        super(IncrementalTextLayout, self)._set_width(width)
 
     def _get_width(self):
         return self._width
 
     width = property(_get_width, _set_width)
 
-    def _set_height(self, height):
-        self._height = height
-        self.top_state.scissor_height = height
-
-    def _get_height(self):
-        return self._height
-
-    height = property(_get_height, _set_height)
-
-    # Offset of content within viewport
-
-    def _set_view_x(self, view_x):
-        view_x = max(0, min(self.content_width - self.width, view_x))
-        self.top_state.view_x = view_x
-        self.top_state.translate_x = self.top_state.scissor_x - view_x
-
-    def _get_view_x(self):
-        return self.top_state.view_x
-
-    view_x = property(_get_view_x, _set_view_x)
+    # Invalidate invisible/visible lines when y scrolls
 
     def _set_view_y(self, view_y):
         # view_y must be negative.
-        view_y = min(0, max(self.height - self.content_height, view_y))
-        self.top_state.view_y = view_y
-        self.top_state.translate_y = self.top_state.scissor_y - view_y
+        super(IncrementalTextLayout, self)._set_view_y(view_y)
         self._update_visible_lines()
         self._update_vertex_lists()
 
@@ -1078,21 +1132,6 @@ class IncrementalTextLayout(TextLayout):
         return self.top_state.view_y
 
     view_y = property(_get_view_y, _set_view_y)
-
-    def ensure_line_visible(self, line):
-        line = self.lines[line]
-        y1 = line.y + line.ascent
-        y2 = line.y + line.descent
-        if y1 > self.view_y:
-            self.view_y = y1
-        elif y2 < self.view_y - self.height:
-            self.view_y = y2  + self.height
-
-    def ensure_x_visible(self, x):
-        if x <= self.view_x + 10:
-            self.view_x = x - 10
-        elif x >= self.view_x + self.width - 10:
-            self.view_x = x - self.width + 10 
 
     # Visible selection
 
@@ -1457,7 +1496,10 @@ def main():
                 fragmentation += domain.allocator.get_fragmented_free_size()
                 capacity += domain.allocator.capacity
                 blocks += len(domain.allocator.starts)
-        fragmentation /= free_space
+        if free_space:
+            fragmentation /= free_space
+        else:
+            fragmentation = 0.
         free_space /= capacity
         usage = 1. - free_space
         stats_text.text = \
