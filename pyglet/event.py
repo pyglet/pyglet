@@ -311,10 +311,18 @@ class EventDispatcher(object):
             n_handler_args = n_args
 
         if n_handler_args != n_args:
+            if inspect.isfunction(handler) or inspect.ismethod(handler):
+                descr = '%s at %s:%d' % (
+                    handler.func_name,
+                    handler.func_code.co_filename,
+                    handler.func_code.co_firstlineno)
+            else:
+                descr = repr(handler)
+            
             raise TypeError(
                 '%s event was dispatched with %d arguments, but '
-                'handler %r has an incompatible function signature' % 
-                (event_type, len(args), handler))
+                'handler %s has an incompatible function signature' % 
+                (event_type, len(args), descr))
         else:
             raise
 
