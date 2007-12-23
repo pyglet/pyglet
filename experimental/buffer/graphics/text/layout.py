@@ -96,7 +96,7 @@ class TextLayoutOrderedState(graphics.AbstractState):
     def __cmp__(self, other):
         return cmp(self.order, other.order)
 
-# TextLayoutState(OrderedState) order = user-defined
+# Text[Viewport]LayoutState(OrderedState) order = user-defined
 #   OrderedState; order = 0
 #   TextLayoutForegroundState(OrderedState); order = 1
 #     TextLayoutTextureState(AbstractState)  
@@ -104,6 +104,15 @@ class TextLayoutOrderedState(graphics.AbstractState):
 #     ...
 
 class TextLayoutState(graphics.OrderedState):
+    def set(self):
+        glPushAttrib(GL_ENABLE_BIT)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    def unset(self):
+        glPopAttrib()
+        
+class TextViewportLayoutState(graphics.OrderedState):
     scissor_x = 0
     scissor_y = 0
     scissor_width = 0
@@ -147,6 +156,14 @@ class TextLayoutTextureState(graphics.AbstractState):
     # unset not needed, as next state will either bind a new texture or pop
     # enable bit.
 
+    def __hash__(self):
+        return hash((self.texture, self.parent))
+
+    def __eq__(self, other):
+        return (self.__class__ is other.__class__ and 
+                self.texture == other.texture and
+                self.parent == other.parent)
+
 def _iter_paragraphs(text, start=0):
     try:
         while True:
@@ -157,28 +174,32 @@ def _iter_paragraphs(text, start=0):
         end = len(text)
         yield start, end
 
-
 class TextLayout(object):
     _document = None
     _vertex_lists = ()
-    
-    def __init__(self, document, width, height, batch=None, state_order=0):
-        self._width = width
-        self._height = height
-        self.content_width = 10000 # TODO
+
+    top_state = TextLayoutState(0)
+    background_state = TextLayoutForegroundState(0, top_state)
+    foreground_state = TextLayoutForegroundState(1, top_state)
+
+    def __init__(self, document, batch=None, state_order=0):
+        self.content_width = 0
         self.content_height = 0
 
         self.states = {}
-        self.top_state = TextLayoutState(state_order)
-
-        self.background_state = graphics.OrderedState(0, self.top_state)
-        self.foreground_state = TextLayoutForegroundState(1, self.top_state)
+        self._init_states(state_order)
 
         if batch is None:
             batch = graphics.Batch()
         self.batch = batch
 
-        self.document = document
+        self.document = document       
+
+    def _init_states(self, state_order):
+        if state_order != 0:
+            self.top_state = TextLayoutState(state_order)
+            self.background_state = graphics.OrderedState(0, self.top_state)
+            self.foreground_state = TextLayoutForegroundState(1, self.top_state)
 
     def _get_document(self):
         return self._document
@@ -198,30 +219,64 @@ class TextLayout(object):
     def _update(self):
         for _vertex_list in self._vertex_lists:
             _vertex_list.delete()
+        self._vertex_lists = []
         
-        if self._document:
-            len_text = len(self._document.text)
-            glyphs = self._get_glyphs()
-            owner_runs = style.StyleRuns(len_text, None)
-            self._get_owner_runs(owner_runs, glyphs, 0, len_text)
-            owner_iterator = owner_runs.get_range_iterator().iter_range(
-                0, len_text)
-            lines = [line for line in self._flow_glyphs(
-                        0, owner_iterator, glyphs)]
-            self._flow_lines(lines, 0, 0, len(lines))
+        if not self._document:
+            return
 
-            self._vertex_lists = []
-            colors_iter = self._document.get_color_runs()
-            background_iter = self._document.get_background_color_runs()
-            for line in lines:
-                self._vertex_lists.extend(self._create_vertex_lists(
-                    line.x, line.y, line.glyph_runs, line.start,
-                    colors_iter, background_iter))
+        len_text = len(self._document.text)
+        glyphs = self._get_glyphs()
+        owner_runs = style.StyleRuns(len_text, None)
+        self._get_owner_runs(owner_runs, glyphs, 0, len_text)
+        owner_iterator = owner_runs.get_range_iterator().iter_range(0, len_text)
+        lines = [line for line in self._flow_glyphs(0, owner_iterator, glyphs)]
+        self.content_width = 0
+        self._flow_lines(lines, 0, 0, len(lines))
+
+        self._vertex_lists = []
+        colors_iter = self._document.get_color_runs()
+        background_iter = self._document.get_background_color_runs()
+
+        if self._halign == 'left':
+            offset_x = self._x
+        elif self._halign == 'center':
+            if self._width is None:
+                offset_x = self._x - self.content_width // 2
+            else:
+                offset_x = self._x + (self._width - self.content_width) // 2
+        elif self._halign == 'right':
+            if self._width is None:
+                offset_x = self._x - self.content_width
+            else:
+                offset_x = self._x + self._width - self.content_width
         else:
-            self._vertex_lists = []
+            assert False, 'Invalid halign'
+        
+        if self._valign == 'top':
+            offset_y = self._y
+        elif self._valign == 'baseline':
+            offset_y = self._y + lines[0].ascent
+        elif self._valign == 'bottom':
+            if self._height is None:
+                offset_y = self._y + self.content_height
+            else:
+                offset_y = self._y - self._height + self.content_height
+        elif self._valign == 'center':
+            if self._height is None:
+                offset_y = self._y + self.content_height // 2
+            else:
+                offset_y = self._y + (self._height + self.content_height) // 2
+        else:
+            assert False, 'Invalid valign'
+        
+        for line in lines:
+            self._vertex_lists.extend(self._create_vertex_lists(
+                offset_x + line.x, offset_y + line.y, 
+                line.glyph_runs, line.start,
+                colors_iter, background_iter))
 
     def _init_document(self):
-        pass
+        self._update()
 
     def _uninit_document(self):
         pass
@@ -256,9 +311,12 @@ class TextLayout(object):
         # TODO wrap/nowrap per-paragraph style
         # TODO owner_iterator stops at paragraph boundary, esp. during
         #   incremental.
-        for line in self._flow_glyphs_wrap(start, owner_iterator, glyphs):
-            yield line
-        #self._flow_glyphs_nowrap(invalid_start, invalid_end, line_index)
+        if self._width is None:
+            for line in self._flow_glyphs_nowrap(start, owner_iterator, glyphs):
+                yield line
+        else:
+            for line in self._flow_glyphs_wrap(start, owner_iterator, glyphs):
+                yield line
 
     def _flow_glyphs_wrap(self, start, owner_iterator, glyphs):
         font_iterator = self._document.get_font_runs()
@@ -329,52 +387,45 @@ class TextLayout(object):
         if line.glyph_runs:
             yield line
 
-    def _flow_glyphs_nowrap(self, invalid_start, invalid_end, line_index):
-        # TODO
-        owners = self.owner_runs.get_range_iterator()
+    def _flow_glyphs_nowrap(self,  start, owner_iterator, glyphs):
         font_iterator = self.document.get_font_runs()
 
+        line = Line(start)
         x = 0
 
-        # Needed in case of blank line at beginning
-        font = font_iterator.get_style_at(invalid_start)
+        for start, end, owner in owner_iterator:
+            font = font_iterator.get_style_at(start)
 
-        for para_start, para_end in _iter_paragraphs(self.document.text, invalid_start):
-            try:
-                line = self.lines[line_index]
-                if para_start >= invalid_end and line.start == para_start:
-                    return
+            while '\n' in self.document.text[start:end]:
+                para_end = self.document.text.index('\n', start)
+                owner_glyphs = glyphs[start:para_end]
+                if owner_glyphs:
+                    line.add_glyph_run(GlyphRun(owner, font, owner_glyphs))
 
-                line.clear(para_start)
-                self.invalid_lines.invalidate(line_index, line_index + 1)
-            except IndexError:
-                line = Line(para_start)
-                self.lines.append(line)
-                self.invalid_lines.insert(line_index, 1)
-
-            for start, end, owner in owners.iter_range(para_start, para_end):
-                font = font_iterator.get_style_at(start)
-                glyphs = self.glyphs[start:end]
-                if glyphs:
-                    line.add_glyph_run(GlyphRun(owner, font, glyphs))
-
-            if not line.glyph_runs:
-                line.ascent = font.ascent
-                line.descent = font.descent
-            
-            line_index += 1
-
-        # The last line is at line_index, if there are any more lines after
-        # that they are stale and need to be deleted.
-        for line in self.lines[line_index + 1:]:
-            line.delete_vertex_lists()
-        del self.lines[line_index + 1:]
+                if not line.glyph_runs:
+                    line.ascent = font.ascent
+                    line.descent = font.descent
+                yield line
+                start = para_end + 1
+                line = Line(start)
+                
+            owner_glyphs = glyphs[start:end]
+            if owner_glyphs:
+                line.add_glyph_run(GlyphRun(owner, font, owner_glyphs))
+    
+        if not line.glyph_runs:
+            line.ascent = font.ascent
+            line.descent = font.descent
+        yield line
 
     def _flow_lines(self, lines, y, start, end):
         line_index = start
         for line in lines[start:]:
             y -= line.ascent
             line.x = 0
+            # TODO incremental needs to reduce content width (trigger rescan
+            # if deleted line has content width -- yikes)
+            self.content_width = max(self.content_width, line.width)
             if line.y == y and line_index >= end: 
                 break
             line.y = y
@@ -458,7 +509,89 @@ class TextLayout(object):
 
         return vertex_lists
 
-    # Viewport attributes
+    _x = 0
+    def _set_x(self, x):
+        dx = x - self._x
+        l_dx = lambda x: x + dx
+        for vertex_list in self._vertex_lists:
+            vertices = vertex_list.vertices[:]
+            vertices[::2] = map(l_dx, vertices[::2])
+            vertex_list.vertices[:] = vertices
+        self._x = x
+
+    def _get_x(self):
+        return self._x
+
+    x = property(_get_x, _set_x)
+
+    _y = 0
+    def _set_y(self, y):
+        dy = y - self._y
+        l_dy = lambda y: y + dy
+        for vertex_list in self._vertex_lists:
+            vertices = vertex_list.vertices[:]
+            vertices[1::2] = map(l_dy, vertices[1::2])
+            vertex_list.vertices[:] = vertices
+        self._y = y
+
+    def _get_y(self):
+        return self._y
+
+    y = property(_get_y, _set_y)
+
+    _width = None
+    def _set_width(self, width):
+        self._width = width
+        self._update()
+
+    def _get_width(self):
+        return self._width
+
+    width = property(_get_width, _set_width)
+
+    _height = None
+    def _set_height(self, height):
+        self._height = height
+        self._update()
+
+    def _get_height(self):
+        return self._height
+
+    height = property(_get_height, _set_height)
+
+
+    # XXX not valid for incremental.
+    
+    _halign = 'left'
+    def _set_halign(self, halign):
+        self._halign = halign
+        self._update()
+
+    def _get_halign(self):
+        return self._halign
+
+    halign = property(_get_halign, _set_halign)
+
+    _valign = 'top'
+    def _set_valign(self, valign):
+        self._valign = valign
+        self._update()
+
+    def _get_valign(self):
+        return self._valign
+
+    valign = property(_get_valign, _set_valign)
+
+class TextViewportLayout(TextLayout):
+    def __init__(self, document, width, height, batch=None, state_order=0):
+        self._width = width
+        self._height = height
+        super(TextViewportLayout, self).__init__(document, batch, state_order)
+
+    def _init_states(self, state_order):
+        self.top_state = TextViewportLayoutState(state_order)
+        self.background_state = graphics.OrderedState(0, self.top_state)
+        self.foreground_state = TextLayoutForegroundState(1, self.top_state)
 
     def _set_x(self, x):
         self.top_state.scissor_x = x
@@ -536,7 +669,7 @@ class TextLayout(object):
             self.view_x = x - self.width + 10 
 
 
-class IncrementalTextLayout(TextLayout):
+class IncrementalTextLayout(TextViewportLayout):
     '''Displayed text suitable for interactive editing and/or scrolling
     large documents.'''
     def __init__(self, document, width, height, batch=None, state_order=0):
