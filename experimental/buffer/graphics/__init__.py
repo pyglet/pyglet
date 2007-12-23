@@ -79,8 +79,44 @@ class Batch(object):
         self._draw_list_dirty = False
 
     def add(self, count, mode, state, *data):
+        formats, initial_arrays = self._parse_data(data)
+        domain = self._get_domain(False, mode, state, formats)
+            
+        # Create vertex list and initialize
+        vlist = domain.create(count)
+        for i, array in initial_arrays:
+            vlist.set_attribute_data(i, array)
+
+        return vlist
+
+    def add_indexed(self, count, mode, state, indices, *data):
+        formats, initial_arrays = self._parse_data(data)
+        domain = self._get_domain(True, mode, state, formats)
+            
+        # Create vertex list and initialize
+        vlist = domain.create(count, len(indices))
+        start = vlist.start
+        vlist.set_index_data(map(lambda i: i + start, indices))
+        for i, array in initial_arrays:
+            vlist.set_attribute_data(i, array)
+
+        return vlist 
+
+    def _parse_data(self, data):
         assert data, 'No attribute formats given'
 
+        # Return tuple (formats, initial_arrays).
+        formats = []
+        initial_arrays = []
+        for i, format in enumerate(data):
+            if isinstance(format, tuple):
+                format, array = format
+                initial_arrays.append((i, array))
+            formats.append(format)
+        formats = tuple(formats)
+        return formats, initial_arrays
+
+    def _get_domain(self, indexed, mode, state, formats):
         if state is None:
             state = null_state
         
@@ -90,35 +126,20 @@ class Batch(object):
 
         domain_map = self.state_map[state]
 
-        # Split out attribute formats
-        formats = []
-        initial_arrays = []
-        for i, format in enumerate(data):
-            if isinstance(format, tuple):
-                format, array = format
-                initial_arrays.append((i, array))
-            formats.append(format)
-        formats = tuple(formats)
-
         # Find domain given formats, indices and mode
-        key = (formats, mode, False)
+        key = (formats, mode, indexed)
         try:
             domain = domain_map[key]
         except KeyError:
             # Create domain
-            domain = vertexdomain.create_domain(*formats)
+            if indexed:
+                domain = vertexdomain.create_indexed_domain(*formats)
+            else:
+                domain = vertexdomain.create_domain(*formats)
             domain_map[key] = domain
-            self._draw_list_dirty = True
-            
-        # Create vertex list and initialize
-        vlist = domain.create(count)
-        for i, array in initial_arrays:
-            vlist.set_attribute_data(i, array)
+            self._draw_list_dirty = True 
 
-        return vlist
-
-    def add_indexed(self, mode, state, indices, *data):
-        pass # TODO
+        return domain
 
     def _add_state(self, state):
         self.state_map[state] = {}

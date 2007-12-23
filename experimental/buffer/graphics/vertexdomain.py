@@ -544,7 +544,13 @@ class IndexedVertexList(VertexList):
 
     def resize(self, count, index_count):
         '''Resize this group.'''
+        old_start = self.start
         super(IndexedVertexList, self).resize(count)
+
+        # Change indices (because vertices moved)
+        if old_start != self.start:
+            diff = self.start - old_start
+            self.indices[:] = map(lambda i: i + diff, self.indices)
         
         # Resize indices
         new_start = self.domain._safe_index_realloc(
