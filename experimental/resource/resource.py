@@ -126,14 +126,20 @@ class Loader(object):
         for path in self.path:
             # Module
             if path.startswith('@'):
+                name = path[1:]
+
                 try:
-                    name = path[1:]
                     module = __import__(name)
-                    for component in name.split('.')[1:]:
-                        module = getattr(module, component)
-                    path = os.path.dirname(module.__file__)
                 except:
                     continue
+
+                for component in name.split('.')[1:]:
+                    module = getattr(module, component)
+
+                if hasattr(module, '__file__'):
+                    path = os.path.dirname(module.__file__)
+                else:
+                    path = '' # interactive
 
             # Add script base unless absolute
             if not os.path.isabs(path):
