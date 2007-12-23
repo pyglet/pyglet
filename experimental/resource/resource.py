@@ -127,8 +127,11 @@ class Loader(object):
             # Module
             if path.startswith('@'):
                 try:
-                    module = __import__(path[1:])
-                    path = module.__file__
+                    name = path[1:]
+                    module = __import__(name)
+                    for component in name.split('.')[1:]:
+                        module = getattr(module, component)
+                    path = os.path.dirname(module.__file__)
                 except:
                     continue
 
