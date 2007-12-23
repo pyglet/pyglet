@@ -264,12 +264,59 @@ class EventDispatcher(object):
         for frame in self._event_stack[:]:
             handler = frame.get(event_type, None)
             if handler:
-                if handler(*args):
-                    return
+                try:
+                    if handler(*args):
+                        return
+                except TypeError:
+                    self._raise_dispatch_exception(event_type, args, handler)
+
 
         # Check instance for an event handler
         if hasattr(self, event_type):
-            getattr(self, event_type)(*args)
+            try:
+                getattr(self, event_type)(*args)
+            except TypeError:
+                self._raise_dispatch_exception(
+                    event_type, args, getattr(self, event_type))
+
+    def _raise_dispatch_exception(self, event_type, args, handler):
+        # A common problem in applications is having the wrong number of
+        # arguments in an event handler.  This is caught as a TypeError in
+        # dispatch_event but the error message is obfuscated.
+        # 
+        # Here we check if there is indeed a mismatch in argument count,
+        # and construct a more useful exception message if so.  If this method
+        # doesn't find a problem with the number of arguments, the error
+        # is re-raised as if we weren't here.
+
+        n_args = len(args)
+
+        # Inspect the handler
+        handler_args, handler_varargs, _, handler_defaults = \
+            inspect.getargspec(handler)
+        n_handler_args = len(handler_args)
+
+        # Remove "self" arg from handler if it's a bound method
+        if inspect.ismethod(handler) and handler.im_self:
+            n_handler_args -= 1
+
+        # Allow *args varargs to overspecify arguments
+        if handler_varargs:
+            n_handler_args = max(n_handler_args, n_args)
+
+        # Allow default values to overspecify arguments
+        if (n_handler_args > n_args and 
+            handler_defaults and
+            n_handler_args - len(handler_defaults) <= n_args):
+            n_handler_args = n_args
+
+        if n_handler_args != n_args:
+            raise TypeError(
+                '%s event was dispatched with %d arguments, but '
+                'handler %r has an incompatible function signature' % 
+                (event_type, len(args), handler))
+        else:
+            raise
 
     def event(self, *args):
         '''Function decorator for an event handler.  
