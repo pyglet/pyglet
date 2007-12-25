@@ -211,9 +211,9 @@ class EventDispatcher(object):
                 self.set_handler(name, object)
             else:
                 # Single instance with magically named methods
-                for name, handler in inspect.getmembers(object):
+                for name in dir(object):
                     if name in self.event_types:
-                        self.set_handler(name, handler)
+                        self.set_handler(name, getattr(object, name))
         for name, handler in kwargs.items():
             # Function for handling given event (no magic)
             if name not in self.event_types:
