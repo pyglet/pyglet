@@ -195,6 +195,11 @@ class TextLayout(object):
 
         self.document = document       
 
+    def delete(self):
+        # TODO incremental
+        for vertex_list in self._vertex_lists:
+            vertex_list.delete()
+
     def _init_states(self, state_order):
         if state_order != 0:
             self.top_state = TextLayoutState(state_order)
