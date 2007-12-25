@@ -40,6 +40,7 @@
 
 from ctypes import *
 import ctypes
+import math
 
 import pyglet
 from pyglet.font import base
@@ -201,8 +202,15 @@ class Win32GlyphRenderer(base.GlyphRenderer):
     def _create_bitmap(self, width, height):
         pass
 
-    def _get_image(self, image, width, height):
+    def render(self, text):
         raise NotImplementedError('abstract')
+
+class GDIGlyphRenderer(Win32GlyphRenderer):
+    def __del__(self):
+        if self._dc:
+            gdi32.DeleteDC(self._dc)
+        if self._bitmap:
+            gdi32.DeleteObject(self._bitmap)
 
     def render(self, text):
         # Attempt to get ABC widths (only for TrueType)
@@ -222,19 +230,7 @@ class Win32GlyphRenderer(base.GlyphRenderer):
 
         # Can't get glyph-specific dimensions, use whole line-height.
         height = self._bitmap_height
-
-        # HACK to fix GDI+ clipping small fonts (e.g. Arial <= 10pt @ 96dpi)
-        #
-        # Note that this hack does not affect metrics or tracking, it only
-        # allocates an extra column of bitmap on the left of the glyph.
-        #
-        # The tracking of small fonts is still wrong (not unreadable, but not
-        # correct); hopefully this will be fixed by pairwise kerning.
-        if isinstance(self, GDIPlusGlyphRenderer):
-            width += 1
-            image = self._get_image(text, width, height, lsb - 1)
-        else:
-            image = self._get_image(text, width, height, lsb)
+        image = self._get_image(text, width, height, lsb)
         
         glyph = self.font.create_glyph(image)
         glyph.set_bearings(-self.font.descent, lsb, advance)
@@ -252,13 +248,6 @@ class Win32GlyphRenderer(base.GlyphRenderer):
             _debug_image(self.font.textures[0], 'tex_%s' % text)
 
         return glyph
-
-class GDIGlyphRenderer(Win32GlyphRenderer):
-    def __del__(self):
-        if self._dc:
-            gdi32.DeleteDC(self._dc)
-        if self._bitmap:
-            gdi32.DeleteObject(self._bitmap)
 
     def _get_image(self, text, width, height, lsb):
         # There's no such thing as a greyscale bitmap format in GDI.  We can
@@ -386,10 +375,23 @@ DriverStringOptionsRealizedAdvance = 4
 TextRenderingHintAntiAlias = 4
 TextRenderingHintAntiAliasGridFit = 3
 
-class Pointf(ctypes.Structure):
+StringFormatFlagsDirectionRightToLeft = 0x00000001
+StringFormatFlagsDirectionVertical = 0x00000002
+StringFormatFlagsNoFitBlackBox = 0x00000004
+StringFormatFlagsDisplayFormatControl = 0x00000020
+StringFormatFlagsNoFontFallback = 0x00000400
+StringFormatFlagsMeasureTrailingSpaces = 0x00000800
+StringFormatFlagsNoWrap = 0x00001000
+StringFormatFlagsLineLimit = 0x00002000
+StringFormatFlagsNoClip = 0x00004000
+
+class Rectf(ctypes.Structure):
     _fields_ = [
         ('x', ctypes.c_float),
-        ('y', ctypes.c_float)]
+        ('y', ctypes.c_float),
+        ('width', ctypes.c_float),
+        ('height', ctypes.c_float),
+    ]
 
 class GDIPlusGlyphRenderer(Win32GlyphRenderer):
     def _create_bitmap(self, width, height):
@@ -402,10 +404,8 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         self._graphics = ctypes.c_void_p()
         gdiplus.GdipGetImageGraphicsContext(self._bitmap,
             ctypes.byref(self._graphics))
+        gdiplus.GdipSetPageUnit(self._graphics, UnitPixel)
 
-        #self._dc = ctypes.c_ulong()
-        #gdiplus.GdipGetDC(self._graphics, ctypes.byref(self._dc))
-        #gdiplus.GdipReleaseDC(self._graphics, self._dc)
         self._dc = user32.GetDC(0)
         gdi32.SelectObject(self._dc, self.font.hfont)
 
@@ -427,14 +427,64 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
 
         self._bitmap_height = height
 
-    def _get_image(self, text, width, height, lsb):
-        ch = ctypes.c_wchar(text)
+    def render(self, text):
         
-        origin = Pointf(-lsb, self._bitmap_height + self.font.descent)
+        ch = ctypes.c_wchar(text)
+
+        # Layout rectangle; not clipped against so not terribly important.
+        width = 10000
+        height = self._bitmap_height
+        rect = Rectf(0, self._bitmap_height 
+                        - self.font.ascent + self.font.descent, 
+                     width, height)
+
+        # Set up GenericTypographic with 1 character measure range
+        generic = ctypes.c_void_p()
+        gdiplus.GdipStringFormatGetGenericTypographic(ctypes.byref(generic))
+        format = ctypes.c_void_p()
+        gdiplus.GdipCloneStringFormat(generic, ctypes.byref(format))
+
+        # Measure advance
+        bbox = Rectf()
+        flags = (StringFormatFlagsMeasureTrailingSpaces | 
+                 StringFormatFlagsNoClip | 
+                 StringFormatFlagsNoFitBlackBox)
+        gdiplus.GdipSetStringFormatFlags(format, flags)
+        gdiplus.GdipMeasureString(self._graphics, ctypes.byref(ch), 1,
+            self.font._gdipfont, ctypes.byref(rect), format,
+            ctypes.byref(bbox), 0, 0)
+
+        lsb = 0
+        advance = int(math.ceil(bbox.width))
+
+        # XXX HACK HACK HACK
+        # Windows GDI+ is a filthy broken toy.  No way to measure the bounding
+        # box of a string, or to obtain LSB.  What a joke.
+        # 
+        # For historical note, GDI cannot be used because it cannot composite
+        # into a bitmap with alpha.
+        #
+        # It looks like MS have abandoned GDI and GDI+ and are finally
+        # supporting accurate text measurement with alpha composition in .NET
+        # 2.0 (WinForms) via the TextRenderer class; this has no C interface
+        # though, so we're entirely screwed.
+        # 
+        # So anyway, this hack bumps up the width if the font is italic;
+        # this compensates for some common fonts.  It's also a stupid waste of
+        # texture memory.
+    
+        width = advance
+        if self.font.italic:
+            width += width // 2
+        
+        # XXX END HACK HACK HACK
+
+        # Draw character to bitmap
+        
         gdiplus.GdipGraphicsClear(self._graphics, 0x00000000)
-        gdiplus.GdipDrawDriverString(self._graphics, ctypes.byref(ch), 1,
-            self.font._gdipfont, self._brush, ctypes.byref(origin),
-            self._flags, self._matrix)
+        gdiplus.GdipDrawString(self._graphics, ctypes.byref(ch), 1,
+            self.font._gdipfont, ctypes.byref(rect), format,
+            self._brush)
         gdiplus.GdipFlush(self._graphics, 1)
 
         bitmap_data = BitmapData()
@@ -453,7 +503,10 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         image = pyglet.image.ImageData(width, height, 
             'BGRA', buffer, -bitmap_data.Stride)
 
-        return image
+        glyph = self.font.create_glyph(image)
+        glyph.set_bearings(-self.font.descent, lsb, advance)
+
+        return glyph
 
 FontStyleBold = 1
 FontStyleItalic = 2
@@ -495,13 +548,14 @@ class GDIPlusFont(Win32Font):
             unit = UnitPoint
         else:
             unit = UnitPixel
-            size = size * dpi / 72
+            size = (size * dpi) / 72
 
         style = 0
         if bold:
             style |= FontStyleBold
         if italic:
             style |= FontStyleItalic
+        self.italic = italic # XXX needed for HACK HACK HACK
         self._gdipfont = ctypes.c_void_p()
         gdiplus.GdipCreateFont(family, ctypes.c_float(size),
             style, unit, ctypes.byref(self._gdipfont))
