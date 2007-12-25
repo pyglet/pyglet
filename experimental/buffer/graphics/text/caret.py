@@ -74,7 +74,13 @@ class Caret(object):
 
     line = property(_get_line, _set_line)
 
-    def move(self, motion):
+    def on_text(self, text):
+        text = text.replace('\r', '\n')
+        self.mark = None
+        self._text_view.document.insert_text(self.position, text)
+        self.position += len(text)
+
+    def on_text_motion(self, motion):
         from pyglet.window import key
 
         if self._mark:
@@ -118,6 +124,20 @@ class Caret(object):
                 self.position = 0
             else:
                 self.position = m.start()
+        elif motion == key.MOTION_BACKSPACE:
+            if self.position > 0:
+                self._text_view.document.remove_text(
+                    self.position - 1, self.position)
+                self.position -= 1
+        elif motion == key.MOTION_DELETE:
+            if self.position < len(self._text_view.document.text):
+                self._text_view.document.remove_text(
+                    self.position, self.position + 1)
+                self._update()
+
+    def on_text_motion_select(self, motion):
+        # TODO
+        pass
 
     def move_to_point(self, x, y):
         line = self._text_view.get_line_from_point(x, y)
