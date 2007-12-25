@@ -190,6 +190,22 @@ class Batch(object):
         for func in self._draw_list:
             func()
 
+    def debug_draw_tree(self):
+        if self._draw_list_dirty:
+            self._update_draw_list()
+
+        def dump(state, indent=''):
+            print indent, 'Begin state', state
+            domain_map = self.state_map[state]
+            for _, domain in domain_map.items():
+                print indent, '  ', domain
+            for child in self.state_children.get(state, ()):
+                dump(child, indent + '  ')
+            print indent, 'End state', state
+
+        for state in self.top_states:
+            dump(state)
+
 class AbstractState(object):
     def __init__(self, parent=None):
         self.parent = parent
@@ -222,15 +238,13 @@ class TextureState(AbstractState):
     def __hash__(self):
         return hash((self.texture.target, self.texture.id, self.parent))
 
-    # Why is cmp needed btw?
-    def __cmp__(self, other):
-        return cmp((self.texture.target, self.texture.id, self.parent),
-            (other.texture.target, other.texture.id, self.parent))
-
     def __eq__(self, other):
         return (self.texture.target == other.texture.target and
             self.texture.id == other.texture.id and
             self.parent == self.parent)
+
+    def __repr__(self):
+        return '%s(id=%d)' % (self.__class__.__name__, self.texture.id)
 
 class OrderedState(AbstractState):
     # This can be useful as a top-level state, or as a superclass for other
@@ -247,3 +261,14 @@ class OrderedState(AbstractState):
         if isinstance(other, OrderedState):
             return cmp(self.order, other.order)
         return -1
+
+    def __eq__(self, other):
+        return (self.__class__ is other.__class__ and
+            self.order == other.order and
+            self.parent == other.parent)
+
+    def __hash__(self):
+        return hash((self.order, self.parent))
+
+    def __repr__(self):
+        return '%s(%d)' % (self.__class__.__name__, self.order)
