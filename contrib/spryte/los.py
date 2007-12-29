@@ -2,12 +2,8 @@
 
 '''
 Results (us per sprite per frame):
-sprites  AMD64/mesa   AMD64/nv6.6k   MacBook Pro   AMD/nv7.8k
-2000     28.3         29.3          20.6          22.0
-
-after __slots__ removal
-sprites  AMD64/mesa   AMD64/nv6.6k   MacBook Pro   AMD/nv7.8k
-2000
+sprites  AMD64/mesa   AMD64/nv6.6k   MacBook Pro   AMD/nv7.8k   EEEPC
+2000                                                            73.5
 '''
 
 import os
