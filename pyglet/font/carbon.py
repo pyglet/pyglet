@@ -259,7 +259,7 @@ class CarbonGlyphRenderer(base.GlyphRenderer):
         skip_rows = int(self._bitmap_rect.size.height - image_height)
         image = image.get_region(0, skip_rows, image.width, image_height)
         glyph = self.font.create_glyph(image)
-        glyph.set_bearings(baseline, lsb - 1, advance)
+        glyph.set_bearings(baseline, lsb - 1, int(advance))
         t = list(glyph.tex_coords)
         glyph.tex_coords = t[9:12] + t[6:9] + t[3:6] + t[:3]
         
