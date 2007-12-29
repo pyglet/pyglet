@@ -15,8 +15,8 @@ class Label(layout.TextLayout):
 
         self._x = 0
         self._y = 0
-        self._halign = 'left'
-        self._valign = 'top'
+        self._halign = halign
+        self._valign = valign
         self._update()
 
     def _get_text(self):
@@ -35,3 +35,12 @@ class Label(layout.TextLayout):
         self._update() # XXX
 
     color = property(_get_color, _set_color)
+
+    def _get_font(self):
+        return self.document.font
+
+    def _set_font(self, font):
+        self.document.font = font
+        self._update() # XXX
+
+    font = property(_get_font, _set_font)

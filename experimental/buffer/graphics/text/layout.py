@@ -136,6 +136,12 @@ class TextViewportLayoutState(graphics.OrderedState):
         glTranslatef(-self.translate_x, -self.translate_y, 0)
         glPopAttrib()
 
+    def __eq__(self, other):
+        return self is other
+
+    def __hash__(self):
+        return id(self)
+
 class TextLayoutForegroundState(graphics.OrderedState):
     def set(self):
         glEnable(GL_TEXTURE_2D)
@@ -238,7 +244,6 @@ class TextLayout(object):
         self.content_width = 0
         self._flow_lines(lines, 0, 0, len(lines))
 
-        self._vertex_lists = []
         colors_iter = self._document.get_color_runs()
         background_iter = self._document.get_background_color_runs()
 
