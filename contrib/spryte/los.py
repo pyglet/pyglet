@@ -3,7 +3,7 @@
 '''
 Results (us per sprite per frame):
 sprites  AMD64/mesa   AMD64/nv6.6k   MacBook Pro   AMD/nv7.8k   EEEPC
-2000                                                            73.5
+2000                                               23.6         73.5
 '''
 
 import os
