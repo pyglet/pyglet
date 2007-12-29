@@ -43,6 +43,7 @@ import os.path
 import unicodedata
 import warnings
 
+import pyglet
 from pyglet.window import WindowException, Platform, Display, Screen, \
     BaseWindow, MouseCursor, DefaultMouseCursor, _PlatformEventHandler
 from pyglet.window import key
@@ -593,6 +594,8 @@ class CarbonWindow(BaseWindow):
     vsync = property(_get_vsync) # overrides BaseWindow property
 
     def set_vsync(self, vsync):
+        if pyglet.options['vsync'] is not None:
+            vsync = pyglet.options['vsync']
         self._vsync = vsync # _recreate depends on this
         swap = c_long(int(vsync))
         agl.aglSetInteger(self._agl_context, agl.AGL_SWAP_INTERVAL, byref(swap))

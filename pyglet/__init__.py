@@ -101,14 +101,20 @@ if getattr(sys, 'frozen', None):
 #:     this option is enabled if ``__debug__`` is (i.e., if Python was not run
 #:     with the -O option).  It is disabled by default when pyglet is "frozen"
 #:     within a py2exe or py2app library archive.
+#: vsync
+#:     If set, the `pyglet.window.Window.vsync` property is ignored, and
+#:     this option overrides it (to either force vsync on or off).  If unset,
+#:     or set to None, the `pyglet.window.Window.vsync` property behaves
+#:     as documented.
 #:
 options = {
     'audio': ('directsound', 'openal', 'alsa', 'silent'),
-    'font': ('gdiplus', 'win32'), # ignored outside win32
+    'font': ('gdiplus', 'win32'), # ignored outside win32; win32 is deprecated
     'debug_font': False,
     'debug_gl': not _enable_optimisations,
     'debug_media': False,
     'debug_win32': False,
+    'vsync': None,
 }
 
 _option_types = {
@@ -118,6 +124,7 @@ _option_types = {
     'debug_gl': bool,
     'debug_media': bool,
     'debug_win32': bool,
+    'vsync': bool,
 }
 
 def _read_environment():

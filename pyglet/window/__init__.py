@@ -149,6 +149,7 @@ __version__ = '$Id$'
 import pprint
 import sys
 
+import pyglet
 from pyglet import gl
 from pyglet.gl import gl_info
 from pyglet.event import EventDispatcher
@@ -655,7 +656,10 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
         self._resizable = resizable
         self._fullscreen = fullscreen
         self._style = style
-        self._vsync = vsync
+        if pyglet.options['vsync'] is not None:
+            self._vsync = pyglet.options['vsync']
+        else:
+            self._vsync = vsync
 
         # Set these in reverse order to above, to ensure we get user
         # preference

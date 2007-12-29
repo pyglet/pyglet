@@ -39,6 +39,7 @@ from ctypes import *
 import unicodedata
 import warnings
 
+import pyglet
 from pyglet.window import WindowException, NoSuchDisplayException, \
     MouseCursorException, Platform, Display, Screen, MouseCursor, \
     DefaultMouseCursor, ImageMouseCursor, BaseWindow, _PlatformEventHandler
@@ -665,6 +666,8 @@ class XlibWindow(BaseWindow):
             glx.glXSwapBuffers(self._x_display, self._window)
 
     def set_vsync(self, vsync):
+        if pyglet.options['vsync'] is not None:
+            vsync = pyglet.options['vsync']
         self._vsync = vsync
         if not self._use_video_sync:
             interval = vsync and 1 or 0
