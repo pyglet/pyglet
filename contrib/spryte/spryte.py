@@ -6,7 +6,7 @@ import math
 from pyglet import image, gl, clock
 import graphics
 
-import rect
+import rect, hashmap
 
 class LayerState(graphics.AbstractState):
     def __init__(self, x, y, blend, parent=None):
@@ -27,20 +27,20 @@ class Layer(graphics.Batch):
     def __init__(self, x=0, y=0, blended=False):
         super(Layer, self).__init__()
         self.state = LayerState(x, y, blended)
-        self.sprites = []
+        self.hash_map = hashmap.HashMap(256)
 
     def add_sprite(self, sprite):
-        # XXX spatial divsion
-        self.sprites.append(sprite)
+        self.hash_map.add(sprite)
+
+    def update_sprite(self, sprite):
+        self.hash_map.add(sprite)
 
     def remove_sprite(self, sprite):
-        # XXX spatial divsion
-        self.sprites.remove(sprite)
+        self.hash_map.remove(sprite)
 
     def draw(self):
         super(Layer, self).draw()
 
-    # XXX delete? self.sprites = []
 
 class TextureCache(object):
     _cache = None
@@ -147,31 +147,37 @@ class Sprite(rect.Rect):
 
     def set_x(self, value):
         self._x = value
+        #self.layer.update_sprite(self)
         self._set_vertices()
     x = property(lambda self: self._x, set_x)
 
     def set_y(self, value):
         self._y = value
+        #self.layer.update_sprite(self)
         self._set_vertices()
     y = property(lambda self: self._y, set_y)
 
     def set_pos(self, pos):
         self._x, self._y = pos
+        #self.layer.update_sprite(self)
         self._set_vertices()
     pos = property(lambda self: (self._x, self._y), set_pos)
 
     def set_width(self, value):
         self._width = value
+        #self.layer.update_sprite(self)
         self._set_vertices()
     width = property(lambda self: self._width, set_width)
 
     def set_height(self, value):
         self._height = value
+        #self.layer.update_sprite(self)
         self._set_vertices()
     height = property(lambda self: self._height, set_height)
 
     def set_size(self, value):
         self._width, self._height = value
+        #self.layer.update_sprite(self)
         self._set_vertices()
     size = property(lambda self: (self._width, self._height), set_size)
 

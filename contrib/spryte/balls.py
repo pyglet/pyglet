@@ -1,4 +1,3 @@
-
 import random
 import math
 
@@ -7,7 +6,7 @@ from pyglet.window import key
 
 import spryte
 
-win = window.Window(vsync=False)
+win = window.Window(width=640, height=400,vsync=False)
 fps = clock.ClockDisplay(color=(1, 1, 1, 1))
 
 layer = spryte.Layer()
@@ -23,8 +22,10 @@ def animate(dt):
         ball.x += ball.dx * dt
         ball.y += ball.dy * dt
 
-        if ball.x + ball.width > win.width or ball.x < 0: ball.dx *= -1
-        if ball.y + ball.height > win.height or ball.y < 0: ball.dy *= -1
+        if ball.x + ball.width > win.width and ball.dx > 0: ball.dx *= -1
+        elif ball.x < 0 and ball.dx < 0: ball.dx *= -1
+        if ball.y + ball.height > win.height and ball.dy > 0: ball.dy *= -1
+        elif ball.y < 0 and ball.dy < 0: ball.dy *= -1
 clock.schedule(animate)
 
 layer2 = spryte.Layer()
@@ -49,20 +50,22 @@ def animate(dt):
 
     # handle balls
     for i, ball in enumerate(balls):
-        if not ball.intersects(car): continue
+        if not ball.intersects(car):
+            continue
         if ball.width > ball.texture.width * 2:
             # pop!
             explosion = spryte.AnimatedSprite('explosion.png', 2, 8, layer3,
                 0, 0, .01)
-            explosion.center = balls[i].center
-            balls[i].delete()
-            balls[i] = spryte.Sprite('ball.png', layer,
+            explosion.center = ball.center
+            ball.delete()
+            balls.remove(ball)
+            balls.append(spryte.Sprite('ball.png', layer,
                 win.width * random.random(), win.height * random.random(),
-                dx=-50 + 100*random.random(), dy=-50 + 100*random.random())
+                dx=-50 + 100*random.random(), dy=-50 + 100*random.random()))
         else:
             center = ball.center
-            ball.width += 1
-            ball.height += 1
+            ball.width += 100*dt
+            ball.height += 100*dt
             ball.center = center
 
 clock.schedule(animate)
