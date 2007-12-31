@@ -246,11 +246,11 @@ application.  Because there is no longer a mouse cursor, the `x` and `y`
 parameters of the mouse events are meaningless; you should use only the `dx`
 and `dy` parameters to determine how the mouse was moved.
 
-Activate mouse exclusive mode with `set_mouse_exclusive`::
+Activate mouse exclusive mode with `set_exclusive_mouse`::
 
     from pyglet import window
     win = window.Window()
-    win.set_mouse_exclusive(True)
+    win.set_exclusive_mouse(True)
 
 You should activate mouse exclusive mode even if your window is full-screen:
 it will prevent the window "hitting" the edges of the screen, and behave
