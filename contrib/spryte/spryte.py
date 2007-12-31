@@ -6,7 +6,8 @@ import math
 from pyglet import image, gl, clock
 import graphics
 
-import rect, hashmap
+import rect
+#import hashmap
 
 class LayerState(graphics.AbstractState):
     def __init__(self, x, y, blend, parent=None):
@@ -27,16 +28,16 @@ class Layer(graphics.Batch):
     def __init__(self, x=0, y=0, blended=False):
         super(Layer, self).__init__()
         self.state = LayerState(x, y, blended)
-        self.hash_map = hashmap.HashMap(256)
+        #self.hash_map = hashmap.HashMap(256)
 
-    def add_sprite(self, sprite):
-        self.hash_map.add(sprite)
-
-    def update_sprite(self, sprite):
-        self.hash_map.add(sprite)
-
-    def remove_sprite(self, sprite):
-        self.hash_map.remove(sprite)
+#    def add_sprite(self, sprite):
+#        self.hash_map.add(sprite)
+#
+#    def update_sprite(self, sprite):
+#        self.hash_map.add(sprite)
+#
+#    def remove_sprite(self, sprite):
+#        self.hash_map.remove(sprite)
 
     def draw(self):
         super(Layer, self).draw()
@@ -113,7 +114,7 @@ class Sprite(rect.Rect):
             ('t3f/stream', tex_coords),         # allow animation
         )
         self.layer = layer
-        self.layer.add_sprite(self)
+        #self.layer.add_sprite(self)
         self._x = x
         self._y = y
         self.dx = dx
@@ -126,7 +127,7 @@ class Sprite(rect.Rect):
 
     def delete(self):
         self.graphics_state = None
-        self.layer.remove_sprite(self)
+        #self.layer.remove_sprite(self)
         self.primitive.delete()
 
     def set_texture(self, texture):
