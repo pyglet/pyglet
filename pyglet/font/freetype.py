@@ -162,7 +162,7 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         height = glyph_slot.bitmap.rows
         baseline = height - glyph_slot.bitmap_top
         lsb = glyph_slot.bitmap_left
-        advance = f26p6_to_float(glyph_slot.advance.x)
+        advance = int(f26p6_to_float(glyph_slot.advance.x))
         mode = glyph_slot.bitmap.pixel_mode
         pitch = glyph_slot.bitmap.pitch
         
@@ -271,8 +271,8 @@ class FreeTypeFont(base.Font):
 
         FT_Set_Char_Size(self.face, 0, float_to_f26p6(size), dpi, dpi)
         metrics = self.face.size.contents.metrics
-        self.ascent = f26p6_to_float(metrics.ascender)
-        self.descent = f26p6_to_float(metrics.descender)
+        self.ascent = int(f26p6_to_float(metrics.ascender))
+        self.descent = int(f26p6_to_float(metrics.descender))
 
     @staticmethod
     def get_fontconfig_match(name, size, bold, italic):
