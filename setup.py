@@ -217,7 +217,7 @@ elif 'bdist_mpkg' in sys.argv:
 
             add_package(
                 '/System/Library/Frameworks/Python.framework/Versions/2.5',
-                '/Library/Python/2.5/site_packages', 
+                '/Library/Python/2.5/site-packages', 
                 '2.5', 'pyglet-syspy2.5',
                 'pyglet for Python 2.5 in /System/Library')
             add_package(
