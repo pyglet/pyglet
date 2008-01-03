@@ -41,7 +41,10 @@ class LibraryLoader(object):
             except OSError:
                 path = self.find_library(name)
                 if path:
-                    return ctypes.cdll.LoadLibrary(path)
+                    try:
+                        return ctypes.cdll.LoadLibrary(path)
+                    except OSError:
+                        pass
         raise ImportError('Library "%s" not found.' % names[0])
 
     find_library = lambda self, name: ctypes.util.find_library(name)
@@ -188,7 +191,7 @@ class LinuxLibraryLoader(LibraryLoader):
         # the man page.
 
         result = ctypes.util.find_library(path)
-        if result and False:
+        if result:
             return result
 
         if self._ld_so_cache is None:
