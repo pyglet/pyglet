@@ -13,15 +13,13 @@ if len(sys.argv) > 1:
 win = window.Window(vsync=False)
 fps = clock.ClockDisplay(color=(1, 1, 1, 1))
 
-layer = spryte.Layer()
-booms = []
+booms = spryte.Layer()
 def again(sprite=None):
     if sprite:
         sprite.delete()
-    booms.append(spryte.AnimatedSprite('explosion.png', 2, 8, layer,
+    spryte.AnimatedSprite('explosion.png', 2, 8, booms,
         win.width*random.random(), win.height*random.random(),
-        random.random()/20 + .02, callback=again))
-    booms[:] = [boom for boom in booms if not boom.finished]
+        random.random()/20 + .02, callback=again)
 
 again()
 
@@ -32,7 +30,7 @@ while not win.has_exit:
     if len(booms) < NUM_BOOMS: again()
 
     win.clear()
-    layer.draw()
+    booms.draw()
     fps.draw()
     win.flip()
 win.close()

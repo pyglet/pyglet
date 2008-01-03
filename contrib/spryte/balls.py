@@ -9,13 +9,11 @@ import spryte
 win = window.Window(width=640, height=400,vsync=False)
 fps = clock.ClockDisplay(color=(1, 1, 1, 1))
 
-layer = spryte.Layer()
-balls = []
+balls = spryte.Layer()
 for i in range(200):
-    balls.append(spryte.Sprite('ball.png', layer,
+    spryte.Sprite('ball.png', balls,
         (win.width - 64) * random.random(), (win.height - 64) * random.random(),
-        dx=-50 + 100*random.random(), dy=-50 + 100*random.random(),
-        dead=False))
+        dx=-50 + 100*random.random(), dy=-50 + 100*random.random())
 
 def animate(dt):
     for ball in balls:
@@ -32,7 +30,7 @@ layer2 = spryte.Layer()
 car = spryte.Sprite('car.png', layer2, win.width/2, win.height/2,
     rothandle=(16, 16))
 
-layer3 = spryte.Layer()
+explosions = spryte.Layer()
 
 keyboard = key.KeyStateHandler()
 win.push_handlers(keyboard)
@@ -54,14 +52,13 @@ def animate(dt):
             continue
         if ball.width > ball.texture.width * 2:
             # pop!
-            explosion = spryte.AnimatedSprite('explosion.png', 2, 8, layer3,
+            explosion = spryte.AnimatedSprite('explosion.png', 2, 8, explosions,
                 0, 0, .01)
             explosion.center = ball.center
             ball.delete()
-            balls.remove(ball)
-            balls.append(spryte.Sprite('ball.png', layer,
+            spryte.Sprite('ball.png', balls,
                 win.width * random.random(), win.height * random.random(),
-                dx=-50 + 100*random.random(), dy=-50 + 100*random.random()))
+                dx=-50 + 100*random.random(), dy=-50 + 100*random.random())
         else:
             center = ball.center
             ball.width += 100*dt
@@ -75,10 +72,11 @@ while not win.has_exit:
     win.dispatch_events()
     win.clear()
 
-    layer.draw()
+    balls.draw()
     layer2.draw()
-    layer3.draw()
+    explosions.draw()
 
     fps.draw()
     win.flip()
 win.close()
+
