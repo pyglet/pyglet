@@ -915,7 +915,7 @@ class XlibWindow(BaseWindow):
         xlib.XSetWMNormalHints(self._x_display, self._window, byref(hints))
 
     def _set_text_property(self, name, value, allow_utf8=True):
-        atom = xlib.XInternAtom(self._x_display, name, True)
+        atom = xlib.XInternAtom(self._x_display, name, False)
         if not atom:
             raise XlibException('Undefined atom "%s"' % name)
         assert type(value) in (str, unicode)
