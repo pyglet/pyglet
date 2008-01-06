@@ -273,7 +273,11 @@ class TextLayout(object):
                 offset_y = self._y - self._height + self.content_height
         elif self._valign == 'center':
             if self._height is None:
-                offset_y = self._y + self.content_height // 2
+                if len(lines) == 1:
+                    offset_y = \
+                        self._y + lines[0].ascent // 2 - lines[0].descent // 4
+                else:
+                    offset_y = self._y + self.content_height // 2
             else:
                 offset_y = self._y + (self._height + self.content_height) // 2
         else:
