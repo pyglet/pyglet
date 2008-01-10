@@ -649,14 +649,13 @@ class Player(event.EventDispatcher):
                 self._audio_finished = True
                 return
             if audio_format != self._audio.audio_format:
-                # TODO This seems like it will miss packets.  should save
-                # audio data for when _audio is reconstructed?
+                self._next_audio_data = audio_format, audio_data
                 return
             length = audio_data.length
             self._audio.write(audio_data)
             if audio_data.length:
-                self._next_audio_data = audio_data
-                break
+                self._next_audio_data = audio_format, audio_data
+                return
 
             write_size -= length
             if write_size <= 0:
@@ -665,11 +664,10 @@ class Player(event.EventDispatcher):
     def _get_audio_data(self, bytes):
         '''Yields pairs of (audio_data, audio_format).'''
         if self._next_audio_data:
-            audio_data = self._next_audio_data
+            audio_format, audio_data = self._next_audio_data
             self._next_audio_data = None
             bytes -= audio_data.length
-            yield (audio_data,
-                   self._sources[self._source_read_index].audio_format)
+            yield audio_data, audio_format
 
         try:
             source = self._sources[self._source_read_index]
@@ -718,9 +716,6 @@ class Player(event.EventDispatcher):
         if len(self._sources) == 1:
             self._source_read_index = 0
             self._begin_source()
-
-            if self._playing:
-                self.play()
 
     def play(self):
         '''Begin playing the current source.
@@ -812,6 +807,9 @@ class Player(event.EventDispatcher):
 
         if not self._audio:
             self._timestamp = 0.
+
+        if self._playing:
+            self.play()
 
     def _on_eos(self):
         '''Internal method when EOS is encountered.  Returns False if
