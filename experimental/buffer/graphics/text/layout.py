@@ -170,16 +170,6 @@ class TextLayoutTextureState(graphics.AbstractState):
                 self.texture == other.texture and
                 self.parent == other.parent)
 
-def _iter_paragraphs(text, start=0):
-    try:
-        while True:
-            end = text.index('\n', start)
-            yield start, end
-            start = end + 1
-    except ValueError:
-        end = len(text)
-        yield start, end
-
 class TextLayout(object):
     _document = None
     _vertex_lists = ()
@@ -188,7 +178,7 @@ class TextLayout(object):
     background_state = TextLayoutForegroundState(0, top_state)
     foreground_state = TextLayoutForegroundState(1, top_state)
 
-    def __init__(self, document, batch=None, state_order=0):
+    def __init__(self, document, multiline=False, batch=None, state_order=0):
         self.content_width = 0
         self.content_height = 0
 
@@ -199,6 +189,7 @@ class TextLayout(object):
             batch = graphics.Batch()
         self.batch = batch
 
+        self.multiline = multiline
         self.document = document       
 
     def delete(self):
@@ -325,8 +316,8 @@ class TextLayout(object):
         # TODO wrap/nowrap per-paragraph style
         # TODO owner_iterator stops at paragraph boundary, esp. during
         #   incremental.
-        if self._width is None:
-            for line in self._flow_glyphs_nowrap(start, owner_iterator, glyphs):
+        if not self.multiline:
+            for line in self._flow_glyphs_single_line(start, owner_iterator, glyphs):
                 yield line
         else:
             for line in self._flow_glyphs_wrap(start, owner_iterator, glyphs):
@@ -431,6 +422,22 @@ class TextLayout(object):
             line.ascent = font.ascent
             line.descent = font.descent
         yield line
+
+    def _flow_glyphs_single_line(self, start, owner_iterator, glyphs):
+        font_iterator = self.document.get_font_runs()
+
+        line = Line(start)
+        x = 0
+
+        for start, end, owner in owner_iterator:
+            font = font_iterator.get_style_at(start)
+            owner_glyphs = glyphs[start:end]
+            line.add_glyph_run(GlyphRun(owner, font, owner_glyphs))
+    
+        if not line.glyph_runs:
+            line.ascent = font.ascent
+            line.descent = font.descent
+        yield line 
 
     def _flow_lines(self, lines, y, start, end):
         line_index = start
@@ -555,6 +562,8 @@ class TextLayout(object):
 
     _width = None
     def _set_width(self, width):
+        if width is None:
+            self.multiline = False
         self._width = width
         self._update()
 
@@ -597,10 +606,12 @@ class TextLayout(object):
     valign = property(_get_valign, _set_valign)
 
 class TextViewportLayout(TextLayout):
-    def __init__(self, document, width, height, batch=None, state_order=0):
+    def __init__(self, document, width, height, multiline=False,
+                 batch=None, state_order=0):
         self._width = width
         self._height = height
-        super(TextViewportLayout, self).__init__(document, batch, state_order)
+        super(TextViewportLayout, self).__init__(
+            document, multiline, batch, state_order)
 
     def _init_states(self, state_order):
         self.top_state = TextViewportLayoutState(state_order)
@@ -626,6 +637,8 @@ class TextViewportLayout(TextLayout):
     y = property(_get_y, _set_y)
 
     def _set_width(self, width):
+        if width is None:
+            self.multiline = False
         self._width = width
         self.top_state.scissor_width = width
         self._update()
@@ -686,7 +699,8 @@ class TextViewportLayout(TextLayout):
 class IncrementalTextLayout(TextViewportLayout):
     '''Displayed text suitable for interactive editing and/or scrolling
     large documents.'''
-    def __init__(self, document, width, height, batch=None, state_order=0):
+    def __init__(self, document, width, height, multiline=False, 
+                 batch=None, state_order=0):
         self.glyphs = []
         self.lines = []
 
@@ -700,7 +714,7 @@ class IncrementalTextLayout(TextViewportLayout):
         self.owner_runs = style.StyleRuns(0, None)
 
         super(IncrementalTextLayout, self).__init__(
-            document, width, height, batch, state_order)
+            document, width, height, multiline, batch, state_order)
 
     def _init_document(self):
         assert self._document, \

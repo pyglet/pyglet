@@ -23,24 +23,17 @@ def main():
 
     @w.event
     def on_text(t):
-        t = t.replace('\r', '\n')
-        caret.mark = None
-        text.document.insert_text(caret.position, t)
-        caret.position += len(t)
+        caret.on_text(t)
         cursor_not_idle()
 
     @w.event
     def on_text_motion(motion):
-        if motion == key.MOTION_BACKSPACE:
-            if caret.position > 0:
-                text.document.remove_text(caret.position - 1, caret.position)
-                caret.position -= 1
-        elif motion == key.MOTION_DELETE:
-            if caret.position < len(text.text):
-                text.document.remove_text(caret.position, caret.position + 1)
-                caret._update()
-        else:
-            caret.move(motion)
+        caret.on_text_motion(motion)
+        cursor_not_idle()
+
+    @w.event
+    def on_text_motion_select(motion):
+        caret.on_text_motion_select(motion)
         cursor_not_idle()
 
     @w.event
@@ -91,7 +84,8 @@ def main():
     ft = font.load('Times New Roman', 12, dpi=96)
     doc = document.UnformattedDocument(content, ft, (0, 0, 0, 255))
     text = layout.IncrementalTextLayout(doc,  
-                    w.width-border*2, w.height-border*2, batch=batch) 
+                    w.width-border*2, w.height-border*2, multiline=True,
+                    batch=batch) 
     caret = caret_module.Caret(text)
     caret.color = (0, 0, 0)
     caret.visible = True
