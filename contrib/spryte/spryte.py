@@ -40,6 +40,9 @@ class Layer(graphics.Batch):
     def remove_sprite(self, sprite):
         self.sprites.remove(sprite)
 
+    def clear(self):
+        for s in self.sprites: s.delete()
+        self.sprites = []
 
 class TextureCache(object):
     _cache = None

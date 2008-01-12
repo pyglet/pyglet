@@ -75,24 +75,33 @@ class View(object):
 
         return r
 
-    def _get_layer(self, z, blended=False):
+    def add_layer(self, layer, z):
+        layer.z = z
+        self.layers.append(layer)
+
+    def remove_layer(self, layer):
+        self.layers.remove(layer)
+
+    def get_layer(self, z, blended=False):
+        '''Get a layer for the specified Z depth, adding it if necessary.
+        '''
         for layer in self.layers:
             if layer.z == z:
                 # XXX assert layer.blended == blended or raise error about z values
                 break
         else:
             layer = Layer(blended=blended)
-            layer.z = 0
+            layer.z = z
             self.layers.append(layer)
             self.layers.sort(key=operator.attrgetter('z'))
         return layer
 
     def add_sprite(self, im, x, y, z=0, klass=Sprite, **kw):
-        layer = self._get_layer(z, blended=True)
+        layer = self.get_layer(z, blended=True)
         return Sprite(im, layer, x, y, **kw)
 
     def add_animsprite(self, im, rows, frames, x, y, period, z=0, **kw):
-        layer = self._get_layer(z, blended=True)
+        layer = self.get_layer(z, blended=True)
         return AnimatedSprite(im, rows, frames, layer, x, y, period, **kw)
 
     def add_map(self, im, rows, frames, cells, z=0, **kw):

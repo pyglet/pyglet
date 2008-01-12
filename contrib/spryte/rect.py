@@ -1,6 +1,18 @@
 
 class Rect(object):
+    '''Define a rectangular area.
+
+    Many convenience handles and other properties are also defined - all of
+    which may be assigned to which will result in altering the position
+    and sometimes dimensions of the Rect.
+
+    The Rect area includes the bottom and left borders but not the top and
+    right borders.
+    '''
     def __init__(self, x, y, width, height):
+        '''Create a Rect with the bottom-left corner at (x, y) and
+        dimensions (width, height).
+        '''
         self._x, self._y = x, y
         self._width, self._height = width, height
 
@@ -19,11 +31,22 @@ class Rect(object):
     def set_size(self, value): self._width, self._height = value
     size = property(lambda self: (self._width, self._height), set_size)
 
+    def contains(self, x, y):
+        '''Return boolean whether the point defined by x, y is inside the
+        rect area.
+        '''
+        if x < self._x or x > self._x + self._width: return False
+        if y < self._y or y > self._y + self._height: return False
+        return True
+
     def intersects(self, other):
-        if self._x + self._width < other._x: return False
-        if other._x + other._width < self._x: return False
-        if self._y + self._height < other._y: return False
-        if other._y + other._height < self._y: return False
+        '''Return boolean whether the "other" rect (an object with .x, .y,
+        .width and .height attributes) overlaps this Rect in any way.
+        '''
+        if self._x + self._width < other.x: return False
+        if other.x + other.width < self._x: return False
+        if self._y + self._height < other.y: return False
+        if other.y + other.height < self._y: return False
         return True
 
     # r/w, in pixels, y extent
