@@ -74,16 +74,41 @@ class Caret(object):
 
     line = property(_get_line, _set_line)
 
+    def _delete_selection(self):
+        self._text_view.document.remove_text(min(self._mark, self._position),
+                                             max(self._mark, self._position))
+        self._position = min(self.position, self.mark)
+        self._mark = None
+        self._text_view.set_selection(0, 0)
+
     def on_text(self, text):
+        if self._mark is not None:
+            self._delete_selection()
+
         text = text.replace('\r', '\n')
-        self.mark = None
         self._text_view.document.insert_text(self.position, text)
         self.position += len(text)
 
-    def on_text_motion(self, motion):
+    def on_text_motion(self, motion, select=False):
         from pyglet.window import key
 
-        if self._mark:
+        if motion == key.MOTION_BACKSPACE:
+            if self.mark is not None:
+                self._delete_selection()
+                self._update()
+            elif self.position > 0:
+                self._text_view.document.remove_text(
+                    self.position - 1, self.position)
+                self.position -= 1
+        elif motion == key.MOTION_DELETE:
+            if self.mark is not None:
+                self._delete_selection()
+                self._update()
+            elif self.position < len(self._text_view.document.text):
+                self._text_view.document.remove_text(
+                    self.position, self.position + 1)
+                self._update()
+        elif self._mark is not None and not select:
             self._mark = None
             self._text_view.set_selection(0, 0)
 
@@ -98,7 +123,7 @@ class Caret(object):
             if line < self._text_view.get_line_count() - 1:
                 self.line = line + 1
         elif motion == key.MOTION_BEGINNING_OF_LINE:
-            self.position = self._text_view.get_position_on_line(self.line, 0)
+            self.position = self._text_view.get_position_from_line(self.line)
         elif motion == key.MOTION_END_OF_LINE:
             line = self.line
             if line < self._text_view.get_line_count() - 1:
@@ -124,20 +149,12 @@ class Caret(object):
                 self.position = 0
             else:
                 self.position = m.start()
-        elif motion == key.MOTION_BACKSPACE:
-            if self.position > 0:
-                self._text_view.document.remove_text(
-                    self.position - 1, self.position)
-                self.position -= 1
-        elif motion == key.MOTION_DELETE:
-            if self.position < len(self._text_view.document.text):
-                self._text_view.document.remove_text(
-                    self.position, self.position + 1)
-                self._update()
+
 
     def on_text_motion_select(self, motion):
-        # TODO
-        pass
+        if self.mark is None:
+            self.mark = self.position
+        self.on_text_motion(motion, True)
 
     def move_to_point(self, x, y):
         line = self._text_view.get_line_from_point(x, y)

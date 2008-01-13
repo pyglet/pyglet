@@ -660,7 +660,7 @@ class TextViewportLayout(TextLayout):
     # Offset of content within viewport
 
     def _set_view_x(self, view_x):
-        view_x = max(0, min(self.content_width - self.width, view_x))
+        view_x = max(0, min(self.content_width - self.width, view_x) + 1)
         self.top_state.view_x = view_x
         self.top_state.translate_x = self.top_state.scissor_x - view_x
 
@@ -694,7 +694,6 @@ class TextViewportLayout(TextLayout):
             self.view_x = x - 10
         elif x >= self.view_x + self.width - 10:
             self.view_x = x - self.width + 10 
-
 
 class IncrementalTextLayout(TextViewportLayout):
     '''Displayed text suitable for interactive editing and/or scrolling
@@ -767,6 +766,9 @@ class IncrementalTextLayout(TextViewportLayout):
                 line.delete_vertex_lists()
             del self.lines[1:]
             self.lines[0].clear(0)
+            font = self.document.get_font(0)
+            self.lines[0].ascent = font.ascent
+            self.lines[0].descent = font.descent
             self.invalid_lines.invalidate(0, 1)
             self._update_flow_lines()
             self._update_vertex_lists()
