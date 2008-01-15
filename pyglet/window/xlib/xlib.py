@@ -435,8 +435,8 @@ _Xmblen.argtypes = [c_char_p, c_int]
 
 X_HAVE_UTF8_STRING = 1 	# /usr/include/X11/Xlib.h:106
 XPointer = pyglet.gl.glx.XPointer
-Bool = 0 	# /usr/include/X11/Xlib.h:110
-Status = 0 	# /usr/include/X11/Xlib.h:111
+Bool = c_int 	# /usr/include/X11/Xlib.h:110 # XXX fixed manually
+Status = c_int 	# /usr/include/X11/Xlib.h:111 # XXX fixed manually
 True = 1 	# /usr/include/X11/Xlib.h:112
 False = 0 	# /usr/include/X11/Xlib.h:113
 QueuedAlready = 0 	# /usr/include/X11/Xlib.h:115
@@ -5217,8 +5217,6 @@ _Xmblen.restype = c_int
 _Xmblen.argtypes = [c_char_p, c_int]
 
 X_HAVE_UTF8_STRING = 1 	# /usr/include/X11/Xlib.h:106
-Bool = 0 	# /usr/include/X11/Xlib.h:110
-Status = 0 	# /usr/include/X11/Xlib.h:111
 True = 1 	# /usr/include/X11/Xlib.h:112
 False = 0 	# /usr/include/X11/Xlib.h:113
 QueuedAlready = 0 	# /usr/include/X11/Xlib.h:115
@@ -8304,7 +8302,7 @@ __all__ = ['XlibSpecificationRelease', 'X_PROTOCOL', 'X_PROTOCOL_REVISION',
 'DefaultExposures', 'ScreenSaverReset', 'ScreenSaverActive', 'HostInsert',
 'HostDelete', 'EnableAccess', 'DisableAccess', 'StaticGray', 'GrayScale',
 'StaticColor', 'PseudoColor', 'TrueColor', 'DirectColor', 'LSBFirst',
-'MSBFirst', '_Xmblen', 'X_HAVE_UTF8_STRING', 'Bool', 'Status', 'True',
+'MSBFirst', '_Xmblen', 'X_HAVE_UTF8_STRING', 'True',
 'False', 'QueuedAlready', 'QueuedAfterReading', 'QueuedAfterFlush',
 'XIMPreeditArea', 'XIMPreeditCallbacks', 'XIMPreeditPosition',
 'XIMPreeditNothing', 'XIMPreeditNone', 'XIMStatusArea', 'XIMStatusCallbacks',
