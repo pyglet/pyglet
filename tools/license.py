@@ -12,7 +12,7 @@ import os
 import sys
 
 license = '''# pyglet
-# Copyright (c) 2006-2007 Alex Holkner
+# Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -25,7 +25,7 @@ license = '''# pyglet
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
-#  * Neither the name of the pyglet nor the names of its
+#  * Neither the name of pyglet nor the names of its
 #    contributors may be used to endorse or promote products
 #    derived from this software without specific prior written
 #    permission.
@@ -66,7 +66,9 @@ def update_license(filename):
     else:
         # Add license to unmarked file
         # Skip over #! if present
-        if lines[0].startswith('#!'):
+        if not lines:
+            pass # Skip empty files
+        elif lines[0].startswith('#!'):
             lines = lines[:1] + license_lines + lines[1:]
         else:
             lines = license_lines + lines
