@@ -27,6 +27,7 @@ setup_info = dict(
     download_url='http://www.pyglet.org/download.html',
     description='Cross-platform windowing and multimedia library',
     long_description=long_description,
+    license='BSD',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: MacOS X',
