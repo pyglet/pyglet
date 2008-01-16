@@ -1,3 +1,24 @@
+Current
+    * Added easy_install download URL
+    * docs: Clarification to ManagedSoundPlayer
+    * docs: Fixed typo of set_exclusive_mouse
+    * pyglet.gl: Fixed a missing import
+    * pyglet.event: Better error message when handler has wrong parameters
+    * pyglet.event: Fixed invokation of properties during introspection
+    * pyglet.font: Fixed non-integer font metrics on all platforms
+    * pyglet.font: Improved vertical centering
+    * pyglet.image: Fixed ColorBufferImage.texture property
+    * pyglet.media: Fixed queuing of multiple StaticSources
+    * pyglet.media: Fixed sequential playback of sources with different audio
+      formats
+    * pyglet.window: Added options['vsync'] override
+    * Linux: No longer requires ldconfig to locate libraries
+    * Linux: Fixed assumption about existance of certain WM atoms
+    * OS X: Fixed install path for system Python
+    * OS X: Fixed context switch after window is deleted
+    * Win32: Fixed text inter-glyph spacing
+    * Win32: Clarified that Windows Vista is not supported in this release
+
 1.0beta3
     * docs: Fixed the documentation of default parameter values
     * examples: Added fixed_resolution example
