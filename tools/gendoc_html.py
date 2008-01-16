@@ -4,6 +4,7 @@
 import optparse
 import os
 import os.path
+import re
 import shutil
 import subprocess
 
@@ -219,6 +220,22 @@ class Page(object):
             for c in child.preorder():
                 yield c
 
+class PythonColorizer(HTMLDoctestColorizer):
+    strong_re = re.compile('(.*)\*\*STRONG_LINE\*\*')
+
+    def colorize_codeblock(self, s):
+        text = HTMLDoctestColorizer.colorize_codeblock(self, s)
+        text = self.strong_re.sub(self.sub_strong_line, text)
+        return text
+
+    def sub_strong_line(self, match):
+        return '<strong>%s</strong>' % match.group(1)
+
+    def markup(self, s, tag):
+        if tag == 'comment' and s[1:].strip() == '***':
+            return '**STRONG_LINE**'
+        return HTMLDoctestColorizer.markup(self, s, tag)
+
 def gendoc_html(input_file, html_dir, api_objects, options):
     input_dir = os.path.dirname(input_file)
     files = []
@@ -239,7 +256,7 @@ def gendoc_html(input_file, html_dir, api_objects, options):
     for block in [n for n in doctree.traverse() \
                   if (isinstance(n, nodes.literal_block))]:
         pysrc = block.astext()
-        html = HTMLDoctestColorizer().colorize_codeblock(pysrc)
+        html = PythonColorizer().colorize_codeblock(pysrc)
         raw = nodes.raw(text=html, format='html')
         block.replace_self(raw)
 

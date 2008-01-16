@@ -348,6 +348,9 @@ div.py-highlight            { border-bottom: 2px solid #000000;
 .py-docstring               { color: #006030; }
 .py-decorator               { color: #804020; }
 
+pre.py-doctest strong       { color: #cc0000; font-weight: bold}
+pre.py-doctest strong *     { color: #cc0000; font-weight: bold}
+
 /*---------------------------------------------------------------------
   Page navigation
   ---------------------------------------------------------------------*/
