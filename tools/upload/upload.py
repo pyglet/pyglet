@@ -7,6 +7,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import os
+import re
 import sys
 
 base = os.path.dirname(__file__)
@@ -30,8 +31,9 @@ if __name__ == '__main__':
         descriptions[suffix] = description.strip()
 
     files = {}
+    version_pattern = re.compile('%s[.-].*' % version)
     for filename in os.listdir(dist):
-        if filename.startswith(version):
+        if version_pattern.match(filename):
             description = descriptions.get(filename[len(version):])
             if not description:
                 print 'No description for %s' % filename
