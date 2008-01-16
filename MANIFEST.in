@@ -13,7 +13,7 @@ prune examples/**/dist
 
 # Tests
 recursive-include tests *
-prune tests/regression/images/*
+recursive-exclude tests/regression/images/ *.png
 
 # Docs
 recursive-include doc/html *
