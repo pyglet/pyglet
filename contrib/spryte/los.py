@@ -1,9 +1,13 @@
 # Lots Of Sprites
 
 '''
-Results (us per sprite per frame):
-sprites  AMD64/mesa   AMD64/nv6.6k   MacBook Pro   AMD/nv7.8k   EEEPC
-2000                                               23.6         73.5
+Results for 2000 sprites:
+
+platform                us per sprite per frame
+-----------------------------------------------
+Intel Q6600, nv7.8k     18.2478245656
+AMD/nv7.8k              23.6
+EEE PC                  73.5
 '''
 
 import os
