@@ -1,10 +1,4 @@
 <div>
-  <p>
-    pyglet is currently in beta release, and may not work perfectly on
-    all platforms.  Sign up to the mailing list for developer support.
-    Let us know when you find bugs, or if you have a feature request.
-  </p>
-
   <h2>mailing lists</h2>
   <p>
     The main forum for pyglet discussion is the <a

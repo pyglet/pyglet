@@ -1,6 +1,6 @@
 <div>
   <p>
-    The current version of pyglet is <strong>1.0 beta 3</strong>.
+    The current version of pyglet is <strong>1.0</strong>.
   </p>
 
 <!--
@@ -10,10 +10,10 @@
   </p>
   <ul>
     <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.0beta3-py2.4.egg">pyglet-1.0beta3-py2.4.egg</a>:
+    href="http://pyglet.googlecode.com/files/pyglet-1.0-py2.4.egg">pyglet-1.0-py2.4.egg</a>:
     Runtime for Python 2.4</li>
     <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.0beta3-py2.5.egg">pyglet-1.0beta3-py2.5.egg</a>:
+    href="http://pyglet.googlecode.com/files/pyglet-1.0-py2.5.egg">pyglet-1.0-py2.5.egg</a>:
     Runtime for Python 2.5</li>
   </ul>
 -->
@@ -24,9 +24,9 @@
     file to install pyglet.
   </p>
   <ul>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0beta3.msi">pyglet-1.0beta3.msi</a>: Windows
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0.msi">pyglet-1.0.msi</a>: Windows
     installer, includes AVbin-2</li>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0beta3.dmg">pyglet-1.0beta3.dmg</a>: Mac OS X
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0.dmg">pyglet-1.0.dmg</a>: Mac OS X
     disk image, includes AVbin-2</li>
   </ul>
 
@@ -36,7 +36,7 @@
     the above platform distributions.
   </p>
   <ul>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0beta3-docs.zip">pyglet-1.0beta3-docs.zip</a></li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0-docs.zip">pyglet-1.0-docs.zip</a></li>
   </ul>
 
   <h2>source distributions</h2>
@@ -52,8 +52,8 @@
     href="http://code.google.com/p/avbin">AVbin</a>.
   </p>
   <ul>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0beta3.tar.gz">pyglet-1.0beta3.tar.gz</a></li>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0beta3.zip">pyglet-1.0beta3.zip</a></li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0.tar.gz">pyglet-1.0.tar.gz</a></li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0.zip">pyglet-1.0.zip</a></li>
   </ul>
 
 </div>

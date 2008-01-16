@@ -1,4 +1,13 @@
 <news>
+  <item date="17-January-2008" author="Alex"
+        title="pyglet 1.0 released">
+    <a href="download.html">pyglet 1.0</a> has been uploaded.  Thanks to
+    the efforts of over 1000 Beta testers, we can confidently say that pyglet
+    works across a large variety of hardware running numerous configurations
+    of Linux, Windows XP and Mac OS X.  Please join the release party on the
+    <a href="http://groups.google.com/group/pyglet-users">mailing list</a>
+    for support and friendly advice.
+  </item>
   <item date="8-December-2007" author="Alex"
         title="pyglet 1.0 beta 3 released">
     Get your hands on the latest <a href="download.html">Beta release</a>.
