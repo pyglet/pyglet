@@ -1,15 +1,23 @@
 pyglet
-Copyright 2006-2007 Alex Holkner 
+Copyright 2006-2008 Alex Holkner 
 http://www.pyglet.org
 
 pyglet includes contributions from the following organisations and
 individuals:
 
 Blue Box Devices
+SR Research
+
 Anthony Baxter
+Anthony Briggs
+Ondrej Certik
 Alan Green
+Brian Grogan Jr
 Richard Jones
+George LeCompte
+Matthew Marshall
 Tobias Sargeant
+Nathan Stocks
 
 pyglet/window/win32/constants.py is derived from Python for Windows
 Extensions.  Copyright 1994-2001 Mark Hammond.
@@ -17,7 +25,7 @@ Extensions.  Copyright 1994-2001 Mark Hammond.
 pyglet/image/codecs/pypng.py is derived from png.py.  Copyright 2006
 Johann C.  Rocholl.
 
-pyglet/ext/layout/Plex is derived from Plex.  Copyright Greg Ewing.
+contrib/layout/Plex is derived from Plex.  Copyright Greg Ewing.
 
 tools/wraptypes/lex.py and tools/wraptypes/yacc.py are derived from ply.
 Copyright 2001-2006 David M.  Beazley.
