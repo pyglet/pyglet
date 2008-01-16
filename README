@@ -17,7 +17,7 @@ pyglet requires one of the following operating systems:
   these in a default installation):
     * OpenGL and GLX
     * GDK 2.0 or later (required for loading images)
-    * Gstreamer 0.10 or later (required for audio and video)
+    * OpenAL or ALSA (required for playing audio)
     
 pyglet requires either:
 
@@ -36,13 +36,14 @@ There are no compilation steps during the installation; if you prefer, you can
 simply add this directory to your PYTHONPATH and use pyglet without
 installing it.
 
-Beta release
-------------
+Support
+-------
 
-This is a beta release, meaning it is feature-complete but not yet ready for
-production use.  Please check the issue tracker at
-http://code.google.com/p/pyglet/issues/list for details of current and
-recently fixed issues.
+pyglet has an active developer and user community.  If you find a bug, please
+open an issue at http://code.google.com/p/pyglet/issues (requires a Google
+account) or email Alex.Holkner@gmail.com.
 
-Please provide bug reports to the issue tracker listed above, or post to the
-mailing list at http://groups.google.com/group/pyglet-users
+Please join us on the mailing list at 
+http://groups.google.com/group/pyglet-users
+
+For more information and an RSS news feed, visit http://www.pyglet.org
