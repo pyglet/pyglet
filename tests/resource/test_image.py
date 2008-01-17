@@ -7,10 +7,8 @@ import unittest
 
 from pyglet.gl import *
 from pyglet import image
+from pyglet import resource
 from pyglet import window
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-import resource
 
 # Test image is laid out
 #  M R

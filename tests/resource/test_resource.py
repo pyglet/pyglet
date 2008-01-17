@@ -30,8 +30,7 @@ import os
 import sys
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-import resource
+from pyglet import resource
 
 class TestCase(unittest.TestCase):
     def setUp(self):

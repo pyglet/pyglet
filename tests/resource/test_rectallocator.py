@@ -3,7 +3,7 @@
 
 import unittest
 
-import pack
+from pyglet.resource import rectallocator
 
 class Rect(object):
     def __init__(self, x1, y1, x2, y2):
@@ -24,7 +24,7 @@ class AllocatorEnvironment(object):
     def __init__(self, test_case, width, height):
         self.test_case = test_case
         self.rectes = []
-        self.allocator = pack.RectAllocator(width, height)
+        self.allocator = rectallocator.RectAllocator(width, height)
 
     def check(self, test_case):
         for i, rect in enumerate(self.rectes):
@@ -41,7 +41,7 @@ class AllocatorEnvironment(object):
         self.check(self.test_case)
 
     def add_fail(self, width, height):
-        self.test_case.assertRaises(pack.AllocatorException,
+        self.test_case.assertRaises(rectallocator.AllocatorException,
                                     self.allocator.alloc, width, height)
 
 class TestPack(unittest.TestCase):
