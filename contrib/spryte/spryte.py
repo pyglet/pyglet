@@ -34,6 +34,17 @@ class Layer(graphics.Batch):
 
     def __len__(self): return len(self.sprites)
 
+    def on_mouse_press(self, x, y, buttons, modifiers):
+        '''See if the press occurs over a sprite and if it does, invoke the
+        on_mouse_press handler on the sprite.
+
+        XXX optimise me
+        '''
+        for sprite in self.sprites:
+            if sprite.contains(x, y):
+                return sprite.on_mouse_press(x, y, buttons, modifiers)
+        return False
+
     def add_sprite(self, sprite):
         self.sprites.append(sprite)
 
@@ -73,7 +84,8 @@ texture_cache = TextureCache()
 
 class Sprite(rect.Rect):
     def __init__(self, im, layer, x, y, file=None, blended=True, rotation=0,
-            rothandle=(0, 0), dx=0, dy=0, ddx=0, ddy=0, **attributes):
+            rothandle=(0, 0), dx=0, dy=0, ddx=0, ddy=0, color=(1, )*4,
+            **attributes):
         '''
 
         "im" is either a filename (and may be accompanied by the "file"
@@ -101,7 +113,9 @@ class Sprite(rect.Rect):
         super(Sprite, self).__init__(x, y, texture.width, texture.height)
         w, h = self._width, self._height
 
-        vertices = [x, y,   x+w,   y,    x+w,   y+h,    x,    y+h]
+        vertices = [x, y,     x+w,   y,    x+w,   y+h,    x,    y+h]
+        self._color = color
+        colors =  color * 4
         tex_coords = texture.tex_coords
 
         # XXX use point sprites if they're available
@@ -113,6 +127,7 @@ class Sprite(rect.Rect):
             parent=layer.state)
         self.primitive = layer.add(4, gl.GL_QUADS, self.graphics_state,
             ('v2f/stream', vertices),
+            ('c4f/stream', colors),
             ('t3f/stream', tex_coords),         # allow animation
         )
         self.layer = layer
@@ -132,16 +147,24 @@ class Sprite(rect.Rect):
         self.layer.remove_sprite(self)
         self.primitive.delete()
 
+    def set_color(self, color):
+        if color != self._color:
+            self.primitive.colors[:] = color*4
+            self._color = color
+    color = property(lambda self: self.primitive[:4], set_color)   
+
     def set_texture(self, texture):
         tex_coords = texture.tex_coords
         if texture.id != self.graphics_state.texture.id:
             # the texture has changed, acknowledge new state
             new_state = graphics.TextureState(texture, parent=self.layer.state)
             vertices = self.primitive.vertices[:]
+            colors = self.primitive.colors[:]
             self.primitive.delete()
             self.graphics_state = new_state
             self.primitive = layer.add(4, gl.GL_QUADS, new_state,
                 ('v2f/stream', vertices),
+                ('c3f/stream', colors),
                 ('t3f/stream', tex_coords),         # allow animation
             )
         else:

@@ -15,13 +15,17 @@ tiles = [
     [ 5,  6, 16, 16,  7,  8],
     [ 5,  8,  9,  9,  5,  8],
     [ 5,  8,  9,  9,  5,  8],
+    [ 5,  8,  9,  9,  5,  8],
+    [ 5,  8,  9,  9,  5,  8],
+    [ 5,  8,  9,  9,  5,  8],
+    [ 5,  8,  9,  9,  5,  8],
     [10, 11,  1,  1, 12, 13],
     [15, 16, 16, 16, 17, 18],
 ]
 
 v = view.View.from_window(win)
 v.add_map('road-tiles.png', 4, 5, tiles)
-car = v.add_sprite('car.png', 0, 0, z=1, rothandle=(16, 16))
+car = v.add_sprite('car.png', 64, 64, z=1, rothandle=(16, 16))
 
 keyboard = key.KeyStateHandler()
 win.push_handlers(keyboard)

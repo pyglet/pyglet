@@ -63,6 +63,9 @@ def animate(dt):
             center = ball.center
             ball.width += 100*dt
             ball.height += 100*dt
+            W = ball.texture.width * 2
+            n = min(1, max(0, 1-(float(ball.width) / W)))
+            ball.color = (1, 1, 1, .5+n/2)
             ball.center = center
 
 clock.schedule(animate)
