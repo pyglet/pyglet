@@ -44,25 +44,25 @@ import random
 import sys
 
 from pyglet.gl import *
+from pyglet import clock
+from pyglet import font
+from pyglet import image
+from pyglet import media
+from pyglet import resource
 from pyglet.window import Window
 from pyglet.window import key
-from pyglet import image
-from pyglet import clock
-from pyglet import media
-from pyglet import font
 
-PKG = os.path.dirname(__file__)
-BALL_IMAGE = os.path.join(PKG, 'ball.png')
-BALL_SOUND = os.path.join(PKG, 'ball.wav')
+BALL_IMAGE = 'ball.png'
+BALL_SOUND = 'ball.wav'
 
 if len(sys.argv) > 1:
     BALL_SOUND = sys.argv[1]
 
 window = Window(640, 480)
-sound = media.load(BALL_SOUND, streaming=False)
+sound = resource.media(BALL_SOUND, streaming=False)
 
 class Ball(object):
-    ball_image = image.load(BALL_IMAGE)
+    ball_image = resource.image(BALL_IMAGE)
     width = ball_image.width
     height = ball_image.height
     def __init__(self):

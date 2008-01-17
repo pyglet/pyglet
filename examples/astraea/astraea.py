@@ -33,37 +33,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-# Copyright (c) 2006-2007 Alex Holkner
-# All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of the pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-
 '''A sprite-based game loosely based on the classic "Asteroids".
 
 Shoot the asteroids, get high score.
@@ -83,6 +52,7 @@ from pyglet import clock
 from pyglet import font
 from pyglet import image
 from pyglet import media
+from pyglet import resource
 from pyglet import window
 from pyglet.window import key
 
@@ -222,7 +192,7 @@ class WrappingObject(object):
 
 class AsteroidSize(object):
     def __init__(self, filename, points):
-        self.img = image.load(res(filename))
+        self.img = resource.image(filename)
         self.next_size = None
         self.points = points
 
@@ -440,21 +410,14 @@ class MenuItem(object):
         self.activate_func = activate_func
 
     def draw_pointer(self, x, y, color, flip=False):
-        if flip:
-            # Use the texture matrix to flip the image horizontally
-            glMatrixMode(GL_TEXTURE)
-            glPushMatrix()
-            glScalef(-1, 1, 1)
-
         # Tint the pointer image to a color
         glPushAttrib(GL_CURRENT_BIT)
         glColor3f(*color)
-        pointer_image.blit(x, y)
-        glPopAttrib()
-
         if flip:
-            glPopMatrix()
-            glMatrixMode(GL_MODELVIEW)
+            pointer_image_flip.blit(x, y)
+        else:
+            pointer_image.blit(x, y)
+        glPopAttrib()
 
     def draw(self, selected):
         self.text.draw()
@@ -749,19 +712,31 @@ def begin_clear_background():
     player.visible = False
 
 # --------------------------------------------------------------------------
+# Create window
+# --------------------------------------------------------------------------
+
+win = window.Window(ARENA_WIDTH, ARENA_HEIGHT, caption='Astraea')
+# Override default Escape key behaviour
+def on_key_press(symbol, modifiers):
+    if symbol == KEY_PAUSE and in_game:
+        if not paused:
+            pause_game()
+        else:
+            resume_game()
+        return True
+    elif symbol == key.ESCAPE:
+        sys.exit()
+win.on_key_press = on_key_press
+
+
+# --------------------------------------------------------------------------
 # Load resources
 # --------------------------------------------------------------------------
 
-def res(filename):
-    frozen = getattr(sys, 'frozen', None)
-    if frozen in ('windows_exe', 'console_exe'):
-        res_dir = os.path.join(os.path.dirname(sys.executable), 'res')
-    elif frozen == 'macosx_app':
-        res_dir = os.path.join(os.environ['RESOURCEPATH'], 'res')
-    else:
-        res_dir = os.path.join(os.path.dirname(__file__), 'res')
-    return os.path.join(res_dir, filename)
+resource.path.append('res')
+resource.reindex()
 
+resource.preload_font('saved_by_zero.ttf')
 def create_font(size):
     return font.load('Saved By Zero', size, dpi=72)
 
@@ -771,25 +746,29 @@ asteroid_sizes = [AsteroidSize('asteroid1.png', 100),
 for small, big in map(None, asteroid_sizes[:-1], asteroid_sizes[1:]):
     big.next_size = small
 
-bullet_image = image.load(res('bullet.png'))
+bullet_image = resource.image('bullet.png')
 
-smoke_images_image = image.load(res('smoke.png'))
+smoke_images_image = resource.image('smoke.png')
 smoke_images = image.ImageGrid(smoke_images_image, 1, 8)
+smoke_images = smoke_images.texture_sequence
 
-explosion_images_image = image.load(res('explosion.png'))
+explosion_images_image = resource.image('explosion.png')
 explosion_images = image.ImageGrid(explosion_images_image, 2, 8)
+explosion_images = explosion_images.texture_sequence
 
-pointer_image = image.load(res('pointer.png'))
+pointer_image = resource.image('pointer.png')
+pointer_image_flip = resource.image('pointer.png', flip_x=True)
 
-explosion_sound = media.load(res('explosion.wav'), streaming=False)
-bullet_sound = media.load(res('bullet.wav'), streaming=False)
+explosion_sound = resource.media('explosion.wav', streaming=False)
+bullet_sound = resource.media('bullet.wav', streaming=False)
+
+starfield = Starfield(resource.image('starfield.jpg'))
+player = Player(resource.image('ship.png'))
+win.push_handlers(player)
 
 # --------------------------------------------------------------------------
 # Global game state vars
 # --------------------------------------------------------------------------
-
-starfield = Starfield(image.load(res('starfield.jpg')))
-player = Player(image.load(res('ship.png')))
 
 overlay = None
 in_game = False
@@ -800,123 +779,104 @@ difficulty = 2
 show_fps = False
 enable_sound = True
 
-if __name__ == '__main__':
-    win = window.Window(ARENA_WIDTH, ARENA_HEIGHT, caption='Astraea')
+score_text = font.Text(create_font(24),
+                       '',
+                       x = ARENA_WIDTH - 10, y = ARENA_HEIGHT - 10,
+                       halign=font.Text.RIGHT, valign=font.Text.TOP)
 
-    # Override default Escape key behaviour
-    def on_key_press(symbol, modifiers):
-        if symbol == KEY_PAUSE and in_game:
-            if not paused:
-                pause_game()
-            else:
-                resume_game()
-            return True
-        elif symbol == key.ESCAPE:
-            sys.exit()
-    win.on_key_press = on_key_press
+fps_display = clock.ClockDisplay(font=create_font(36))
 
-    win.push_handlers(player)
+# --------------------------------------------------------------------------
+# Enter run loop
+# --------------------------------------------------------------------------
 
-    # Now that we have a GL context, construct textures.
-    smoke_images = smoke_images.texture_sequence
-    explosion_images = explosion_images.texture_sequence
+glEnable(GL_BLEND)
+glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-    font.add_file(res('saved_by_zero.ttf'))
+begin_menu_background()
+begin_main_menu()
 
-    score_text = font.Text(create_font(24),
-                           '',
-                           x = ARENA_WIDTH - 10, y = ARENA_HEIGHT - 10,
-                           halign=font.Text.RIGHT, valign=font.Text.TOP)
+while not win.has_exit:
+    win.dispatch_events()
+    media.dispatch_events()
 
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    # Update
+    dt = clock.tick()
+    if overlay:
+        overlay.update(dt)
 
-    begin_menu_background()
-    begin_main_menu()
-
-    fps_display = clock.ClockDisplay(font=create_font(36))
-
-    while not win.has_exit:
-        win.dispatch_events()
-        media.dispatch_events()
-
-        # Update
-        dt = clock.tick()
-        if overlay:
-            overlay.update(dt)
-
-        if not paused:
-            starfield.update(dt)
-            player.update(dt)
-            for asteroid in asteroids:
-                asteroid.update(dt)
-            for bullet in bullets:
-                bullet.update(dt)
-            for animation in animations:
-                animation.update(dt)
-
-        # Destroy bullets that have left the arena
-        bullets = [bullet for bullet in bullets if bullet.in_bounds()]
-
-        # Cancel animations that are finished
-        animations = [ani for ani in animations if not ani.finished]
-
-        if not player.invincible:
-            # Collide bullets and player with asteroids
-            check_collisions()
-
-            # Destroy asteroids that were hit
-            for asteroid in [a for a in asteroids if a.hit]:
-                animations.append(Animation(asteroid.x, asteroid.y, 
-                                            asteroid.dx, asteroid.dy,
-                                            smoke_images, 
-                                            SMOKE_ANIMATION_PERIOD))
-                asteroid.destroy()
-                if enable_sound:
-                    explosion_sound.play()
-
-            # Check if the player was hit 
-            if player.hit:
-                animations.append(Animation(player.x, player.y,
-                                            player.dx, player.dy,
-                                            explosion_images,
-                                            EXPLOSION_ANIMATION_PERIOD))
-                player.invincible = True
-                player.visible = False
-                clock.schedule_once(life_lost, LIFE_LOST_DELAY)
-
-            # Check if the area is clear
-            if not asteroids:
-                next_round()
-
-        # Render
-        starfield.draw()
-
+    if not paused:
+        starfield.update(dt)
+        player.update(dt)
         for asteroid in asteroids:
-            asteroid.draw()
-        glLoadIdentity()
+            asteroid.update(dt)
         for bullet in bullets:
-            bullet.draw()
-        player.draw()
-        glLoadIdentity()
+            bullet.update(dt)
         for animation in animations:
-            animation.draw()
+            animation.update(dt)
 
-        if in_game:
-            # HUD ship lives
-            x = 10
-            for i in range(player_lives - 1):
-                player.img.blit(x, win.height - player.img.height - 10, 0)
-                x += player.img.width + 10
-            
-            # HUD score
-            score_text.text = str(score)
-            score_text.draw()
+    # Destroy bullets that have left the arena
+    bullets = [bullet for bullet in bullets if bullet.in_bounds()]
 
-        if overlay:
-            overlay.draw()
+    # Cancel animations that are finished
+    animations = [ani for ani in animations if not ani.finished]
 
-        if show_fps:
-            fps_display.draw()
+    if not player.invincible:
+        # Collide bullets and player with asteroids
+        check_collisions()
 
-        win.flip()
+        # Destroy asteroids that were hit
+        for asteroid in [a for a in asteroids if a.hit]:
+            animations.append(Animation(asteroid.x, asteroid.y, 
+                                        asteroid.dx, asteroid.dy,
+                                        smoke_images, 
+                                        SMOKE_ANIMATION_PERIOD))
+            asteroid.destroy()
+            if enable_sound:
+                explosion_sound.play()
+
+        # Check if the player was hit 
+        if player.hit:
+            animations.append(Animation(player.x, player.y,
+                                        player.dx, player.dy,
+                                        explosion_images,
+                                        EXPLOSION_ANIMATION_PERIOD))
+            player.invincible = True
+            player.visible = False
+            clock.schedule_once(life_lost, LIFE_LOST_DELAY)
+
+        # Check if the area is clear
+        if not asteroids:
+            next_round()
+
+    # Render
+    starfield.draw()
+
+    for asteroid in asteroids:
+        asteroid.draw()
+    glLoadIdentity()
+    for bullet in bullets:
+        bullet.draw()
+    player.draw()
+    glLoadIdentity()
+    for animation in animations:
+        animation.draw()
+
+    if in_game:
+        # HUD ship lives
+        x = 10
+        for i in range(player_lives - 1):
+            player.img.blit(x, win.height - player.img.height - 10, 0)
+            x += player.img.width + 10
+        
+        # HUD score
+        score_text.text = str(score)
+        score_text.draw()
+
+    if overlay:
+        overlay.draw()
+
+    if show_fps:
+        fps_display.draw()
+
+    win.flip()

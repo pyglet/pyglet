@@ -40,9 +40,13 @@ import os
 from pyglet.gl import *
 from pyglet import font
 from pyglet import media
+from pyglet import resource
 from pyglet import window
 
 import reader
+
+resource.path.append('res')
+resource.reindex()
 
 # Check for AVbin
 try:
@@ -592,9 +596,6 @@ class PanView(object):
         self.win.tx += dx
         self.win.ty += dy
 
-def res(filename):
-    return os.path.join(os.path.dirname(__file__), 'res', filename)
-
 if __name__ == '__main__':
     # We swap Y and Z, moving to left-handed system
     media.listener.up_orientation = (0, -1, 0)
@@ -606,7 +607,7 @@ if __name__ == '__main__':
 
     w = SoundSpaceWindow()
     r = reader.SpaceReader(w)
-    r.read(res('space.txt'))
+    r.read(resource.file('space.txt'))
     for player in w.players:
         player.play()
         pass
