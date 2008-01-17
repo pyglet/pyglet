@@ -6,6 +6,8 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
+__noninteractive = True
+
 '''
 Layout:
 

@@ -181,3 +181,8 @@ media
         media.PLAYER_PAUSE_QUEUE                X11 WIN OSX
         media.PLAYER_EOS_NEXT                   X11 WIN OSX
         media.PLAYER_STATIC_STATIC              GENERIC
+
+resource
+    resource.RECTALLOCATOR                      GENERIC
+    resource.RES_LOAD                           GENERIC
+    resource.RES_LOAD_IMAGE                     GENERIC

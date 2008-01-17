@@ -10,6 +10,8 @@ from pyglet import image
 from pyglet import resource
 from pyglet import window
 
+__noninteractive = True
+
 # Test image is laid out
 #  M R
 #  B G
@@ -17,6 +19,15 @@ from pyglet import window
 #  R G B M (red, green, blue, magenta)
 
 class TestCase(unittest.TestCase):
+    def setUp(self):
+        self.w = window.Window(width=10, height=10)
+        self.w.dispatch_events()
+        resource.path.append('@' + __name__)
+        resource.reindex()
+
+    def tearDown(self):
+        self.w.close()
+
     def check(self, img, colors):
         glClear(GL_COLOR_BUFFER_BIT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
@@ -80,6 +91,4 @@ class TestCase(unittest.TestCase):
         self.check(resource.image('rgbm.png', rotate=-90), 'gbmr')
 
 if __name__ == '__main__':
-    w = window.Window(width=10, height=10, visible=True)
-    w.dispatch_events()
     unittest.main()

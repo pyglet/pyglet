@@ -124,8 +124,8 @@ class Loader(object):
         '''
         self._index = {}
         for path in self.path:
-            # Module
             if path.startswith('@'):
+                # Module
                 name = path[1:]
 
                 try:
@@ -140,9 +140,8 @@ class Loader(object):
                     path = os.path.dirname(module.__file__)
                 else:
                     path = '' # interactive
-
-            # Add script base unless absolute
-            if not os.path.isabs(path):
+            elif not os.path.isabs(path):
+                # Add script base unless absolute
                 assert '\\' not in path, \
                     'Backslashes not permitted in relative path'
                 path = os.path.join(self._script_home, path)
