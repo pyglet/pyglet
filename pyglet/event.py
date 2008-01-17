@@ -224,7 +224,7 @@ class EventDispatcher(object):
         if type(self._event_stack) is tuple:
             self._event_stack = [{}]
 
-        for name, handler in self._get_handlers(args, kwargs)
+        for name, handler in self._get_handlers(args, kwargs):
             self.set_handler(name, handler)
 
     def set_handler(self, name, handler):
@@ -262,7 +262,7 @@ class EventDispatcher(object):
         removed from the stack.  Note that this interferes with the expected
         symmetry of `push_handlers` and `pop_handlers`.
         '''
-        handlers = list(self._get_handlers(args, kwargs)
+        handlers = list(self._get_handlers(args, kwargs))
 
         # Find the first stack frame containing any of the handlers
         def find_frame():
