@@ -186,11 +186,33 @@ class EventDispatcher(object):
         '''
         # Create event stack if necessary
         if type(self._event_stack) is tuple:
-            self._event_stack = [{}]
+            self._event_stack = []
 
         # Place dict full of new handlers at beginning of stack
         self._event_stack.insert(0, {})
         self.set_handlers(*args, **kwargs)
+
+    def _get_handlers(self, args, kwargs):
+        '''Implement handler matching on arguments for set_handlers and
+        remove_handlers.
+        '''
+        for object in args:
+            if inspect.isroutine(object):
+                # Single magically named function
+                name = object.__name__
+                if name not in self.event_types:
+                    raise EventException('Unknown event "%s"' % name)
+                yield name, object
+            else:
+                # Single instance with magically named methods
+                for name in dir(object):
+                    if name in self.event_types:
+                        yield name, getattr(object, name)
+        for name, handler in kwargs.items():
+            # Function for handling given event (no magic)
+            if name not in self.event_types:
+                raise EventException('Unknown event "%s"' % name)
+            yield name, handler
 
     def set_handlers(self, *args, **kwargs):
         '''Attach one or more event handlers to the top level of the handler
@@ -202,22 +224,7 @@ class EventDispatcher(object):
         if type(self._event_stack) is tuple:
             self._event_stack = [{}]
 
-        for object in args:
-            if inspect.isroutine(object):
-                # Single magically named function
-                name = object.__name__
-                if name not in self.event_types:
-                    raise EventException('Unknown event "%s"' % name)
-                self.set_handler(name, object)
-            else:
-                # Single instance with magically named methods
-                for name in dir(object):
-                    if name in self.event_types:
-                        self.set_handler(name, getattr(object, name))
-        for name, handler in kwargs.items():
-            # Function for handling given event (no magic)
-            if name not in self.event_types:
-                raise EventException('Unknown event "%s"' % name)
+        for name, handler in self._get_handlers(args, kwargs)
             self.set_handler(name, handler)
 
     def set_handler(self, name, handler):
@@ -243,6 +250,71 @@ class EventDispatcher(object):
 
         del self._event_stack[0]
 
+    def remove_handlers(self, *args, **kwargs):
+        '''Remove event handlers from the event stack.
+
+        See `push_handlers` for the accepted argument types.  All handlers
+        are removed from the first stack frame that contains any of the given
+        handlers.  No error is raised if any handler does not appear in that
+        frame, or if no stack frame contains any of the given handlers.
+
+        If the stack frame is empty after removing the handlers, it is 
+        removed from the stack.  Note that this interferes with the expected
+        symmetry of `push_handlers` and `pop_handlers`.
+        '''
+        handlers = list(self._get_handlers(args, kwargs)
+
+        # Find the first stack frame containing any of the handlers
+        def find_frame():
+            for frame in self._event_stack:
+                for name, handler in handlers:
+                    try:
+                        if frame[name] is handler:
+                            return frame                
+                    except KeyError:
+                        pass
+        frame = find_frame()
+
+        # No frame matched; no error.
+        if not frame:
+            return
+
+        # Remove each handler from the frame.
+        for name, handler in handlers:
+            try:
+                if frame[name] is handler:
+                    del frame[name]
+            except KeyError:
+                pass
+
+        # Remove the frame if it's empty.
+        if not frame:
+            self._event_stack.remove(frame)
+
+    def remove_handler(self, name, handler):
+        '''Remove a single event handler.
+
+        The given event handler is removed from the first handler stack frame
+        it appears in.  The handler must be the exact same callable as passed
+        to `set_handler`, `set_handlers` or `push_handlers`; and the name
+        must match the event type it is bound to.
+
+        No error is raised if the event handler is not set.
+
+        :Parameters:
+            `name` : str
+                Name of the event type to remove.
+            `handler` : callable
+                Event handler to remove.
+        '''
+        for frame in self._event_stack:
+            try:
+                if frame[name] is handler:
+                    del frame[name]
+                    break
+            except KeyError:
+                pass
+
     def dispatch_event(self, event_type, *args):
         '''Dispatch a single event to the attached handlers.
         
@@ -261,7 +333,7 @@ class EventDispatcher(object):
         assert event_type in self.event_types
 
         # Search handler stack for matching event handlers
-        for frame in self._event_stack[:]:
+        for frame in self._event_stack:
             handler = frame.get(event_type, None)
             if handler:
                 try:
