@@ -3,11 +3,12 @@
 '''
 Results for 2000 sprites:
 
-platform                us per sprite per frame
------------------------------------------------
-Intel Q6600, nv7.8k     18.2478245656
-AMD/nv7.8k              23.6
-EEE PC                  73.5
+platform                                      us per sprite per frame
+---------------------------------------------------------------------
+Intel C2Quad Q6600 (2.4GHz), GeForce 7800     18.2478245656
+Intel C2Duo T7500 (2.2GHz), GeForce 8400M GS  19.115903827
+AMD 64 3500+ (1.8GHz), GeForce 7800           23.6
+EEE PC                                        73.5
 '''
 
 import os
