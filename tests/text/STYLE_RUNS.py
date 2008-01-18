@@ -5,6 +5,8 @@ from pyglet.text import style
 
 import unittest
 
+__noninteractive = True
+
 class TestStyleRuns(unittest.TestCase):
     def check_value(self, runs, value):
         for i, style in enumerate(value):

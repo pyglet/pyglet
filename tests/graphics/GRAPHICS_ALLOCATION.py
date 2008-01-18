@@ -6,6 +6,8 @@ import unittest
 
 from pyglet.graphics import allocation
 
+__noninteractive = True
+
 class Region(object):
     def __init__(self, start, size):
         self.start = start

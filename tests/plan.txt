@@ -186,3 +186,9 @@ resource
     resource.RECTALLOCATOR                      GENERIC
     resource.RES_LOAD                           GENERIC
     resource.RES_LOAD_IMAGE                     GENERIC
+
+graphics
+    graphics.GRAPHICS_ALLOCATION                GENERIC
+
+text
+    text.STYLE_RUNS                             GENERIC
