@@ -102,10 +102,10 @@ class Handle(object):
         return self
 
     def on_mouse_press(self, x, y, button, modifiers):
-        self.win.pop_handlers()
+        self.win.remove_handlers(self)
 
     def on_mouse_release(self, x, y, button, modifiers):
-        self.win.pop_handlers()
+        self.win.remove_handlers(self)
 
 class LabelHandle(Handle):
     def __init__(self, player):
@@ -351,7 +351,7 @@ class MoreHandle(Handle):
             if handle.hit_test(x, y, z):
                 return 
         self.win.set_more_player_handles(None)
-        self.win.pop_handlers()
+        self.win.remove_handlers(self)
         self.open = False
 
     def on_mouse_release(self, x, y, button, modifiers):
@@ -587,10 +587,10 @@ class PanView(object):
         self.win = window
 
     def on_mouse_release(self, x, y, button, modifiers):
-        self.win.pop_handlers()
+        self.win.remove_handlers(self)
 
     def on_mouse_press(self, x, y, button, modifiers):
-        self.win.pop_handlers()
+        self.win.remove_handlers(self)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         self.win.tx += dx

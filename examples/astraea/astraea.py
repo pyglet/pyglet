@@ -677,7 +677,7 @@ def end_game():
 def set_overlay(new_overlay):
     global overlay
     if overlay:
-        win.pop_handlers()
+        win.remove_handlers(overlay)
     overlay = new_overlay
     if overlay:
         win.push_handlers(overlay)

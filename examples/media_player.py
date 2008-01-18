@@ -72,7 +72,7 @@ class Control(event.EventDispatcher):
         self.parent.push_handlers(self)
 
     def release_events(self):
-        self.parent.pop_handlers()
+        self.parent.remove_handlers(self)
 
 class Button(Control):
     charged = False

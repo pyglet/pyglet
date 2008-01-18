@@ -269,8 +269,8 @@ class EventDispatcher(object):
             for frame in self._event_stack:
                 for name, handler in handlers:
                     try:
-                        if frame[name] is handler:
-                            return frame                
+                        if frame[name] == handler:
+                            return frame
                     except KeyError:
                         pass
         frame = find_frame()
@@ -282,7 +282,7 @@ class EventDispatcher(object):
         # Remove each handler from the frame.
         for name, handler in handlers:
             try:
-                if frame[name] is handler:
+                if frame[name] == handler:
                     del frame[name]
             except KeyError:
                 pass
