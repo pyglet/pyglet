@@ -4,9 +4,8 @@
 import sys
 
 from pyglet.gl import *
-
-import graphics
-from graphics.text import style
+from pyglet import graphics
+from pyglet.text import style
 
 class Line(object):
     def __init__(self, start):

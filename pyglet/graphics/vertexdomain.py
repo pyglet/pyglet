@@ -28,11 +28,7 @@ import ctypes
 import re
 
 from pyglet.gl import *
-
-# Local imports
-import allocation
-import vertexattribute
-import vertexbuffer
+from pyglet.graphics import allocation, vertexattribute, vertexbuffer
 
 _usage_format_re = re.compile(r'''
     (?P<attribute>[^/]*)

@@ -7,9 +7,8 @@ import sys
 from pyglet.gl import *
 from pyglet import clock
 from pyglet import font
+from pyglet import graphics
 from pyglet import window
-
-import graphics
 
 MAX_STREAMERS = 1000
 if len(sys.argv) > 1:

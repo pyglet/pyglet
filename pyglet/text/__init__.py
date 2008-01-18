@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # $Id:$
 
-from graphics.text import layout, document
+from pyglet.text import layout, document
 
 class Label(layout.TextLayout):
     def __init__(self, text='', font=None, color=(255, 255, 255, 255), 

@@ -4,7 +4,7 @@
 import random
 import unittest
 
-from graphics import allocation
+from pyglet.graphics import allocation
 
 class Region(object):
     def __init__(self, start, size):

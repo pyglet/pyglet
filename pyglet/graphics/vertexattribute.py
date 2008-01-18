@@ -11,9 +11,7 @@ import ctypes
 import re
 
 from pyglet.gl import *
-
-# Local imports
-import vertexbuffer
+from pyglet.graphics import vertexbuffer
 
 _c_types = {
     GL_BYTE: ctypes.c_byte,

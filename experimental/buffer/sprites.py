@@ -8,8 +8,8 @@ from pyglet.gl import *
 from pyglet import clock
 from pyglet import image
 from pyglet import window
+from pyglet.graphics import vertexdomain
 
-from graphics import vertexdomain
 
 if len(sys.argv) > 1:
     SPRITES = int(sys.argv[1])

@@ -2,22 +2,11 @@
 # $Id:$
 
 from pyglet.gl import *
-from pyglet import window, image
-
-import graphics
+from pyglet import graphics
+from pyglet import image
+from pyglet import window
 
 win = window.Window()
-
-class TextureState:
-    def __init__(self, texture):
-        self.texture = texture
-
-    def set(self):
-        glEnable(self.texture.target)
-        glBindTexture(self.texture.target, self.texture.id)
-
-    def unset(self):
-        glDisable(self.texture.target)
 
 kitten = image.load('examples/programming_guide/kitten.jpg').texture
 
@@ -25,7 +14,7 @@ batch = graphics.Batch()
 t = kitten.tex_coords
 w = kitten.width
 h = kitten.height
-batch.add(4, GL_QUADS, TextureState(kitten),
+batch.add(4, GL_QUADS, graphics.TextureState(kitten),
     ('v3f', (0., 0., 0.) + (w, 0., 0.) + (w, h, 0.) + (0., h, 0.)),
     ('t3f', t))
 

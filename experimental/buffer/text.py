@@ -12,10 +12,10 @@ from pyglet import font
 from pyglet import window
 from pyglet.window import key
 
-import graphics
-from graphics.text import caret as caret_module
-from graphics.text import document
-from graphics.text import layout
+from pyglet import graphics
+from pyglet.text import caret as caret_module
+from pyglet.text import document
+from pyglet.text import layout
 
 def main():
     w = window.Window(vsync=False, resizable=True)

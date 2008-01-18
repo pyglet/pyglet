@@ -5,9 +5,8 @@ import sys
 
 from pyglet.gl import *
 from pyglet import clock
+from pyglet.graphics import vertexdomain
 from pyglet import window
-
-from graphics import vertexdomain
 
 try:
     # Try and create a window with multisampling (antialiasing)

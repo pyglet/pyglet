@@ -4,8 +4,7 @@
 import re
 
 from pyglet import event
-
-from graphics.text import style
+from pyglet.text import style
 
 class Paragraph(object):
     def __init__(self):

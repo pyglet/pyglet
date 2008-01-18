@@ -2,9 +2,8 @@
 # $Id:$
 
 from pyglet.gl import *
+from pyglet import graphics
 from pyglet import window
-
-import graphics
 
 win = window.Window()
 

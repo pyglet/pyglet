@@ -4,11 +4,7 @@
 import ctypes
 
 from pyglet.gl import *
-
-# Local imports
-import vertexbuffer
-import vertexattribute
-import vertexdomain
+from pyglet.graphics import vertexbuffer, vertexattribute, vertexdomain
 
 def draw(size, mode, *data, **kwargs):
     '''Draw a primitive immediately.
