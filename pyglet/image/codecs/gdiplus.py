@@ -109,12 +109,27 @@ class Rect(Structure):
 kernel32.GlobalAlloc.restype = HGLOBAL
 kernel32.GlobalLock.restype = c_void_p
 
+PropertyTagFrameDelay = 0x5100
+
+class PropertyItem(Structure):
+    _fields_ = [
+        ('id', c_uint),
+        ('length', c_ulong),
+        ('type', c_short),
+        ('value', c_void_p)
+    ]
+
 class GDIPlusDecoder(ImageDecoder):
     def get_file_extensions(self):
         return ['.bmp', '.gif', '.jpg', '.jpeg', '.exif', '.png', '.tif', 
                 '.tiff']
 
-    def decode(self, file, filename):
+    def get_animation_file_extensions(self):
+        # TIFF also supported as a multi-page image; but that's not really an
+        # animation, is it?
+        return ['.gif']
+
+    def _load_bitmap(self, file):
         data = file.read()
 
         # Create a HGLOBAL with image data
@@ -135,6 +150,9 @@ class GDIPlusDecoder(ImageDecoder):
             raise ImageDecodeException(
                 'GDI+ cannot load %r' % (filename or file))
 
+        return bitmap
+
+    def _get_image(self, bitmap):
         # Get size of image (Bitmap subclasses Image)
         width = REAL()
         height = REAL()
@@ -179,11 +197,61 @@ class GDIPlusDecoder(ImageDecoder):
         # Unlock data
         gdiplus.GdipBitmapUnlockBits(bitmap, byref(bitmap_data))
 
+        return ImageData(width, height, format, buffer, -bitmap_data.Stride)
+
+    def _delete_bitmap(self, bitmap):
         # Release image and stream
         gdiplus.GdipDisposeImage(bitmap)
         # TODO: How to call IUnknown::Release on stream?
 
-        return ImageData(width, height, format, buffer, -bitmap_data.Stride)
+    def decode(self, file, filename):
+        bitmap = self._load_bitmap(file)
+        image = self._get_image(bitmap)
+        self._delete_bitmap(bitmap)
+        return image
+
+    def decode_animation(self, file, filename):
+        bitmap = self._load_bitmap(file)
+        
+        dimension_count = c_uint()
+        gdiplus.GdipImageGetFrameDimensionsCount(bitmap, byref(dimension_count))
+        if dimension_count.value < 1:
+            self._delete_bitmap(bitmap)
+            raise ImageDecodeException('Image has no frame dimensions')
+        
+        # XXX Make sure this dimension is time?
+        dimensions = (c_void_p * dimension_count.value)()
+        gdiplus.GdipImageGetFrameDimensionsList(bitmap, dimensions,
+                                                dimension_count.value)
+
+        frame_count = c_uint()
+        gdiplus.GdipImageGetFrameCount(bitmap, dimensions, byref(frame_count))
+
+        prop_id = PropertyTagFrameDelay
+        prop_size = c_uint()
+        gdiplus.GdipGetPropertyItemSize(bitmap, prop_id, byref(prop_size))
+
+        prop_buffer = c_buffer(prop_size.value)
+        prop_item = cast(prop_buffer, POINTER(PropertyItem)).contents 
+        gdiplus.GdipGetPropertyItem(bitmap, prop_id, prop_size.value,
+            prop_buffer)
+
+        # XXX Sure it's long?
+        n_delays = prop_item.length / sizeof(c_long)
+        delays = cast(prop_item.value, POINTER(c_long * n_delays)).contents
+
+        animation = Animation([])
+        
+        for i in range(frame_count.value):
+            gdiplus.GdipImageSelectActiveFrame(bitmap, dimensions, i)
+            image = self._get_image(bitmap)
+
+            delay = delays[i] / 100.
+            animation.frames.append(AnimationFrame(image, delay))
+
+        self._delete_bitmap(bitmap)
+
+        return animation
 
 def get_decoders():
     return [GDIPlusDecoder()]
