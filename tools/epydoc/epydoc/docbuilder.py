@@ -1328,4 +1328,5 @@ def _inherit_info(var_doc):
               getattr(val_doc, attrib) in (None, UNKNOWN)):
             setattr(val_doc, attrib, getattr(src_val, attrib))
 
-    val_doc.metadata = src_val.metadata[:]
+    if hasattr(src_val, 'metadata'):
+        val_doc.metadata = src_val.metadata[:]
