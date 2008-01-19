@@ -750,11 +750,11 @@ bullet_image = resource.image('bullet.png')
 
 smoke_images_image = resource.image('smoke.png')
 smoke_images = image.ImageGrid(smoke_images_image, 1, 8)
-smoke_images = smoke_images.texture_sequence
+smoke_images = smoke_images.get_texture_sequence()
 
 explosion_images_image = resource.image('explosion.png')
 explosion_images = image.ImageGrid(explosion_images_image, 2, 8)
-explosion_images = explosion_images.texture_sequence
+explosion_images = explosion_images.get_texture_sequence()
 
 pointer_image = resource.image('pointer.png')
 pointer_image_flip = resource.image('pointer.png', flip_x=True)

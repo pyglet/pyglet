@@ -76,7 +76,7 @@ class PNGImageEncoder(ImageEncoder):
         return ['.png']
 
     def encode(self, image, file, filename):
-        image = image.image_data
+        image = image.get_image_data()
 
         has_alpha = 'A' in image.format
         greyscale = len(image.format) < 3

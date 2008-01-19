@@ -888,7 +888,7 @@ class XlibWindow(BaseWindow):
 
         data = ''
         for image in images:
-            image = image.image_data
+            image = image.get_image_data()
             image.format = format
             image.pitch = -(image.width * len(image.format))
             s = c_buffer(sizeof(c_ulong) * 2)

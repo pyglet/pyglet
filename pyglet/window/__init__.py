@@ -375,7 +375,7 @@ class ImageMouseCursor(MouseCursor):
                 Y coordinate of the "hot" spot in the image, measured
                 from the bottom.
         '''
-        self.texture = image.texture
+        self.texture = image.get_texture()
         self.hot_x = hot_x
         self.hot_y = hot_y
 

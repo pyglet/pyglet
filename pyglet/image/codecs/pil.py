@@ -86,7 +86,7 @@ class PILImageEncoder(ImageEncoder):
         if format.lower() == 'jpg':
             format = 'JPEG'
 
-        image = image.image_data
+        image = image.get_image_data()
         if image.format != 'RGB':
             # Only save in RGB or RGBA formats.
             image.format = 'RGBA'

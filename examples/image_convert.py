@@ -52,7 +52,7 @@ def convert(src, dest):
         # A window is necessary to create a GL context so we can do
         # compressed texture conversions.
         window = window or Window(visible=False)
-        texture = image.load(src).texture
+        texture = image.load(src).get_texture()
         texture.save(dest)
     else:
         # Can do straight conversion without a window or context.

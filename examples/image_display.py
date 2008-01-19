@@ -57,7 +57,7 @@ if __name__ == '__main__':
     filename = sys.argv[1]
 
     w = window.Window(visible=False, resizable=True)
-    img = image.load(filename).texture
+    img = image.load(filename).get_texture()
 
     checks = image.create(32, 32, image.CheckerImagePattern())
     background = image.TileableTexture.create_for_image(checks)

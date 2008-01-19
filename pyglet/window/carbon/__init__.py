@@ -815,7 +815,7 @@ class CarbonWindow(BaseWindow):
                 size = img.width * img.height
                 image = img
 
-        image = image.image_data
+        image = image.get_image_data()
         image.format = 'ARGB'
         image.pitch = -len(image.format) * image.width
 

@@ -78,7 +78,7 @@ Texture access
 
 If you are using OpenGL directly, you can access the image as a texture::
 
-    texture = pic.texture
+    texture = pic.get_texture()
 
 (This is the most efficient way to obtain a texture; some images are
 immediately loaded as textures, whereas others go through an intermediate
@@ -94,7 +94,7 @@ Pixel access
 
 To access raw pixel data of an image::
 
-    rawimage = pic.image_data
+    rawimage = pic.get_image_data()
 
 (If the image has just been loaded this will be a very quick operation;
 however if the image is a texture a relatively expensive readback operation
@@ -287,41 +287,70 @@ class AbstractImage(object):
     def __repr__(self):
         return '<%s %dx%d>' % (self.__class__.__name__, self.width, self.height)
 
-    def _get_image_data(self):
-        '''Retrieve an ImageData instance for this image.'''
+    def get_image_data(self):
+        '''Get an ImageData view of this image.  
+        
+        Changes to the returned instance may or may not be reflected in this
+        image.
+
+        :rtype: `ImageData`
+
+        :since: pyglet 1.1
+        '''
         raise ImageException('Cannot retrieve image data for %r' % self)
 
-    image_data = property(_get_image_data,
+    image_data = property(lambda self: self.get_image_data(),
         doc='''An ImageData view of this image.  
         
         Changes to the returned instance may or may not be reflected in this
         image.  Read-only.
-        
+
+        :deprecated: Use `get_image_data`.
+
         :type: `ImageData`
         ''')
 
-    def _get_texture(self):
-        '''Retrieve a Texture instance for this image.'''
-        raise ImageException('Cannot retrieve texture for %r' % self)
-
-    texture = property(_get_texture,
-        doc=''' A Texture view of this image.  
+    def get_texture(self):
+        '''A Texture view of this image.  
         
         Changes to the returned instance may or may not be reflected in this
-        image.  Read-only.
+        image.
+
+        :rtype: `Texture`
+
+        :since: pyglet 1.1
+        '''
+        raise ImageException('Cannot retrieve texture for %r' % self)
+
+    texture = property(lambda self: self.get_texture(),
+        doc='''Get a Texture view of this image.  
+        
+        Changes to the returned instance may or may not be reflected in this
+        image.
+
+        :deprecated: Use `get_texture`.
 
         :type: `Texture`
         ''')
 
-    def _get_mipmapped_texture(self):
-        '''Retrieve a Texture instance with all mipmap levels filled in.'''
+    def get_mipmapped_texture(self):
+        '''Retrieve a Texture instance with all mipmap levels filled in.
+
+        Requires that image dimensions be powers of 2. 
+
+        :rtype: `Texture`
+
+        :since: pyglet 1.1
+        '''
         raise ImageException('Cannot retrieve mipmapped texture for %r' % self)
 
-    mipmapped_texture = property(_get_mipmapped_texture,
+    mipmapped_texture = property(lambda self: self.get_mipmapped_texture(),
         doc='''A Texture view of this image.  
         
         The returned Texture will have mipmaps filled in for all levels.
         Requires that image dimensions be powers of 2.  Read-only.
+
+        :deprecated: Use `get_mipmapped_texture`.
 
         :type: `Texture`
         ''')
@@ -402,14 +431,23 @@ class AbstractImageSequence(object):
     For efficient access, use the `texture_sequence` member.  The class
     also implements the sequence interface (`__len__`, `__getitem__`,
     `__setitem__`).
-    
-    :Ivariables:
-        `texture_sequence` : `TextureSequence`
-            Access this image sequence as a texture sequence.
     '''
-    def _get_texture_sequence(self):
+    def get_texture_sequence(self):
+        '''Get a TextureSequence.
+
+        :rtype: `TextureSequence`
+
+        :since: pyglet 1.1
+        '''
         raise NotImplementedError('abstract')
-    texture_sequence = property(_get_texture_sequence)
+
+    texture_sequence = property(lambda self: self.get_texture_sequence(),
+        doc='''Access this image sequence as a texture sequence.
+        
+        :deprecated: Use `get_texture_sequence`
+
+        :type: `TextureSequence`
+        ''')
 
     def __getitem__(self, slice):
         '''Retrieve a (list of) image.
@@ -439,7 +477,8 @@ class TextureSequence(AbstractImageSequence):
     Typical implementations store multiple `TextureRegion` s within one
     `Texture` so as to minimise state changes.
     '''
-    texture_sequence = property(lambda self: self)
+    def get_texture_sequence(self):
+        return self
 
 class UniformTextureSequence(TextureSequence):
     '''Interface for a sequence of textures, each with the same dimensions.
@@ -520,7 +559,8 @@ class ImageData(AbstractImage):
             'mipmap_images': self.mipmap_images
         }
 
-    image_data = property(lambda self: self)
+    def get_image_data(self):
+        return self
 
     def _set_format(self, format):
         self._desired_format = format.upper()
@@ -558,8 +598,8 @@ class ImageData(AbstractImage):
     def set_mipmap_image(self, level, image):
         '''Set a mipmap image for a particular level.
 
-        The mipmap image will be applied to textures obtained via the
-        `mipmapped_texture` property
+        The mipmap image will be applied to textures obtained via
+        `get_mipmapped_texture`.
 
         :Parameters:
             `level` : int
@@ -633,14 +673,12 @@ class ImageData(AbstractImage):
         
         return texture 
 
-    def _get_texture(self):
+    def get_texture(self):
         if not self._current_texture:
             self._current_texture = self.create_texture(Texture)
         return self._current_texture
 
-    texture = property(_get_texture)
-
-    def _get_mipmapped_texture(self):
+    def get_mipmapped_texture(self):
         '''Return a Texture with mipmaps.  
         
         If `set_mipmap_image` has been called with at least one image, the set
@@ -648,6 +686,10 @@ class ImageData(AbstractImage):
         automatically generated.
 
         The texture dimensions must be powers of 2 to use mipmaps.
+
+        :rtype: `Texture`
+
+        :since: pyglet 1.1
         '''
         if self._current_mipmap_texture:
             return self._current_mipmap_texture
@@ -685,8 +727,6 @@ class ImageData(AbstractImage):
         self._current_mipmap_texture = texture
         return texture
 
-    mipmapped_texture = property(_get_mipmapped_texture)
-
     def get_region(self, x, y, width, height):
         '''Retrieve a rectangular region of this image data.
 
@@ -705,7 +745,7 @@ class ImageData(AbstractImage):
         return ImageDataRegion(x, y, width, height, self)
 
     def blit(self, x, y, z=0, width=None, height=None):
-        self.texture.blit(x, y, z, width, height)
+        self.get_texture().blit(x, y, z, width, height)
 
     def blit_to_texture(self, target, level, x, y, z, internalformat=None):
         '''Draw this image to to the currently bound texture at `target`.
@@ -1063,7 +1103,7 @@ class CompressedImageData(AbstractImage):
             raise ImageException('%s is required to decode %r' % \
                 (self.extension, self))
 
-    def _get_texture(self):
+    def get_texture(self):
         if self._current_texture:
             return self._current_texture
 
@@ -1079,23 +1119,21 @@ class CompressedImageData(AbstractImage):
                 len(self.data), self.data)
         else:
             image = self.decoder(self.data, self.width, self.height)
-            texture = image.texture
+            texture = image.get_texture()
             assert texture.width == self.width
             assert texture.height == self.height
                 
         self._current_texture = texture
         return texture
 
-    texture = property(_get_texture)
-
-    def _get_mipmapped_texture(self):
+    def get_mipmapped_texture(self):
         if self._current_mipmap_texture:
             return self._current_mipmap_texture
 
         if not self._have_extension():
             # TODO mip-mapped software decoded compressed textures.  For now,
             # just return a non-mipmapped texture.
-            return self.texture
+            return self.get_texture()
 
         texture = Texture.create_for_size(
             GL_TEXTURE_2D, self.width, self.height)
@@ -1128,8 +1166,6 @@ class CompressedImageData(AbstractImage):
 
         self._current_mipmap_texture = texture
         return texture
-
-    mipmapped_texture = property(_get_mipmapped_texture)
 
     def blit_to_texture(self, target, level, x, y, z):
         self._verify_driver_supported()
@@ -1197,6 +1233,11 @@ class Texture(AbstractImage):
         self._context = get_current_context()
 
     def delete(self):
+        '''Delete the texture from video memory.
+
+        :deprecated: Textures are automatically released during object
+            finalization.
+        '''
         warnings.warn(
             'Texture.delete() is deprecated; textures are '
             'released through GC now')
@@ -1264,6 +1305,9 @@ class Texture(AbstractImage):
     def get_image_data(self, z=0):
         '''Get the image data of this texture.
 
+        Changes to the returned instance will not be reflected in this
+        texture.
+
         :Parameters:
             `z` : int
                 For 3D textures, the image slice to retrieve.
@@ -1296,12 +1340,14 @@ class Texture(AbstractImage):
         Changes to the returned instance will not be reflected in this
         texture.  If the texture is a 3D texture, the first image will be 
         returned.  See also `get_image_data`.  Read-only.
+
+        :deprecated: Use `get_image_data`.
         
         :type: `ImageData`
         ''')
 
-
-    texture = property(lambda self: self)
+    def get_texture(self):
+        return self
 
     # no implementation of blit_to_texture yet (could use aux buffer)
 
@@ -1358,11 +1404,9 @@ class TextureRegion(Texture):
         self.tex_coords = (u1, v1, r, u2, v1, r, u2, v2, r, u1, v2, r)
 
 
-    def _get_image_data(self):
+    def get_image_data(self):
         image_data = self.owner.get_image_data(self.z)
         return image_data.get_region(self.x, self.y, self.width, self.height)
-
-    image_data = property(_get_image_data)
 
     def get_region(self, x, y, width, height):
         x += self.x
@@ -1484,7 +1528,7 @@ class TileableTexture(Texture):
     def create_for_image(cls, image):
         if not _is_pow2(image.width) or not _is_pow2(image.height):
             # Potentially unnecessary conversion if a GL format exists.
-            image = image.image_data
+            image = image.get_image_data()
             image.format = 'RGBA'
             image.pitch = image.width * len(image.format)
             texture_width = _nearest_pow2(image.width)
@@ -1502,7 +1546,7 @@ class TileableTexture(Texture):
             image = ImageData(texture_width, texture_height, image.format,
                               newdata)
 
-        image = image.image_data
+        image = image.get_image_data()
         return image.create_texture(cls)
 
 class DepthTexture(Texture):
@@ -1642,7 +1686,7 @@ class BufferImage(AbstractImage):
         self.width = width
         self.height = height
 
-    def _get_image_data(self):
+    def get_image_data(self):
         buffer = (GLubyte * (len(self.format) * self.width * self.height))()
 
         x = self.x
@@ -1659,8 +1703,6 @@ class BufferImage(AbstractImage):
         glPopClientAttrib()
 
         return ImageData(self.width, self.height, self.format, buffer)
-
-    image_data = property(_get_image_data)
 
     def get_region(self, x, y, width, height):
         if self.owner:
@@ -1679,7 +1721,7 @@ class ColorBufferImage(BufferImage):
     gl_format = GL_RGBA
     format = 'RGBA'
 
-    def _get_texture(self):
+    def get_texture(self):
         texture = Texture.create_for_size(GL_TEXTURE_2D, 
             self.width, self.height)
 
@@ -1703,8 +1745,6 @@ class ColorBufferImage(BufferImage):
                              0)
         return texture
 
-    texture = property(_get_texture)
-
     def blit_to_texture(self, target, level, x, y, z):
         glReadBuffer(self.gl_buffer)
         glCopyTexSubImage2D(target, level, 
@@ -1717,7 +1757,7 @@ class DepthBufferImage(BufferImage):
     gl_format = GL_DEPTH_COMPONENT
     format = 'L'
 
-    def _get_texture(self):
+    def get_texture(self):
         if not _is_pow2(self.width) or not _is_pow2(self.height):
             raise ImageException(
                 'Depth texture requires that buffer dimensions be powers of 2')
@@ -1730,8 +1770,6 @@ class DepthBufferImage(BufferImage):
                          self.x, self.y, self.width, self.height,
                          0)
         return texture
-
-    texture = property(_get_texture)
 
     def blit_to_texture(self, target, level, x, y, z):
         glReadBuffer(self.gl_buffer)
@@ -1757,7 +1795,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
     as a `TextureGrid`::
 
         image_grid = ImageGrid(...)
-        texture_grid = image_grid.texture_sequence
+        texture_grid = image_grid.get_texture_sequence()
 
     or as a `Texture3D`::
 
@@ -1813,22 +1851,16 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
         self.row_padding = row_padding
         self.column_padding = column_padding
 
-    def _get_texture(self):
-        return self.image.texture
+    def get_texture(self):
+        return self.image.get_texture()
 
-    texture = property(_get_texture)
+    def get_image_data(self):
+        return self.image.get_image_data()
 
-    def _get_image_data(self):
-        return self.image.image_data
-
-    image_data = property(_get_image_data)
-
-    def _get_texture_sequence(self):
+    def get_texture_sequence(self):
         if not self._texture_grid:
             self._texture_grid = TextureGrid(self)
         return self._texture_grid
-
-    texture_sequence = property(_get_texture_sequence)
 
     def __len__(self):
         return self.rows * self.columns
@@ -1887,7 +1919,7 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
     item_height = 0
 
     def __init__(self, grid):
-        image = grid.texture
+        image = grid.get_texture()
         if isinstance(image, TextureRegion):
             owner = image.owner
         else:
