@@ -56,6 +56,8 @@ import os.path
 
 _decoders = []              # List of registered ImageDecoders
 _decoder_extensions = {}    # Map str -> list of matching ImageDecoders
+_decoder_animation_extensions = {}    
+                            # Map str -> list of matching ImageDecoders
 _encoders = []              # List of registered ImageEncoders
 _encoder_extensions = {}    # Map str -> list of matching ImageEncoders
 
@@ -72,12 +74,25 @@ class ImageDecoder(object):
         '''
         return []
 
+    def get_animation_file_extensions(self):
+        '''Return a list of accepted file extensions, e.g. ['.gif', '.flc']
+        Lower-case only.
+        '''
+        return []
+
     def decode(self, file, filename):
-        '''Decode the given file object and return an instance of Image.
+        '''Decode the given file object and return an instance of `Image`.
         Throws ImageDecodeException if there is an error.  filename
         can be a file type hint.
         '''
         raise NotImplementedError()
+
+    def decode_animation(self, file, filename):
+        '''Decode the given file object and return an instance of `Animation`.
+        Throws ImageDecodeException if there is an error.  filename
+        can be a file type hint.
+        '''
+        raise ImageDecodeException('This decoder cannot decode animations.')
 
 class ImageEncoder(object):
     def get_file_extensions(self):
@@ -116,6 +131,17 @@ def get_decoders(filename=None):
     decoders += [e for e in _decoders if e not in decoders]
     return decoders
 
+def get_animation_decoders(filename=None):
+    '''Get an ordered list of decoders to attempt.  filename can be used
+     as a hint for the filetype.
+    '''
+    decoders = []
+    if filename:
+        extension = os.path.splitext(filename)[1].lower()
+        decoders += _decoder_animation_extensions.get(extension, [])
+    decoders += [e for e in _decoders if e not in decoders]
+    return decoders
+
 def add_decoders(module):
     '''Add a decoder module.  The module must define `get_decoders`.  Once
     added, the appropriate decoders defined in the codec will be returned by
@@ -127,6 +153,10 @@ def add_decoders(module):
             if extension not in _decoder_extensions:
                 _decoder_extensions[extension] = []
             _decoder_extensions[extension].append(decoder)
+        for extension in decoder.get_animation_file_extensions():
+            if extension not in _decoder_animation_extensions:
+                _decoder_animation_extensions[extension] = []
+            _decoder_animation_extensions[extension].append(decoder)
 
 def add_encoders(module):
     '''Add an encoder module.  The module must define `get_encoders`.  Once

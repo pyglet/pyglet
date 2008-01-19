@@ -195,6 +195,28 @@ def load(filename, file=None, decoder=None):
             raise codecs.ImageDecodeException('No image decoders are available')
         raise first_exception 
 
+def load_animation(filename, file=None, decoder=None):
+    if not file:
+        file = open(filename, 'rb')
+    if not hasattr(file, 'seek'):
+        file = StringIO(file.read())
+
+    if decoder:
+        return decoder.decode(file, filename)
+    else:
+        first_exception = None
+        for decoder in codecs.get_animation_decoders(filename):
+            try:
+                image = decoder.decode_animation(file, filename)
+                return image
+            except codecs.ImageDecodeException, e:
+                first_exception = first_exception or e
+                file.seek(0)
+
+        if not first_exception:
+            raise codecs.ImageDecodeException('No image decoders are available')
+        raise first_exception  
+
 def create(width, height, pattern=None):
     '''Create an image optionally filled with the given pattern.
 
@@ -526,6 +548,21 @@ class UniformTextureSequence(TextureSequence):
     def _get_item_height(self):
         raise NotImplementedError('abstract')
     item_height = property(_get_item_height)
+
+class Animation(object):
+    def __init__(self, frames):
+        self.frames = frames
+
+    def get_duration(self):
+        return sum([frame.period for frame in self.frames])
+
+class AnimationFrame(object):
+    def __init__(self, image, delay):
+        self.image = image
+        self.delay = delay
+
+    def __repr__(self):
+        return 'AnimationFrame(%r, %r)' % (self.image, self.period)
 
 class ImageData(AbstractImage):
     '''An image represented as a string of unsigned bytes.
