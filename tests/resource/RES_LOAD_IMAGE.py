@@ -26,7 +26,8 @@ class TestCase(unittest.TestCase):
         resource.reindex()
 
     def tearDown(self):
-        self.w.close()
+        #self.w.close()
+        pass
 
     def check(self, img, colors):
         glClear(GL_COLOR_BUFFER_BIT)
