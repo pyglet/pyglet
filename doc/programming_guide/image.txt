@@ -273,22 +273,22 @@ in previous sections.
     The `AbstractImage` class hierarchy.
 
 An image of any class can be converted into a `Texture` or `ImageData` using
-the `texture` and `image_data` properties defined on `AbstractImage`.  For
+the `get_texture` and `get_image_data` methods defined on `AbstractImage`.  For
 example, to load an image and work with it as an OpenGL texture::
 
-    kitten = image.load('kitten.png').texture
+    kitten = image.load('kitten.png').get_texture()
 
-There is no penalty for accessing one of these properties if object is already
+There is no penalty for accessing one of these methods if object is already
 of the requested class.  The following table shows how concrete classes are
-converted into other classes via property access.
+converted into other classes::
 
     .. list-table::
         :header-rows: 1
         :stub-columns: 1
 
         * - Original class
-          - ``.texture``
-          - ``.image_data``
+          - ``.get_texture()``
+          - ``.get_image_data()``
         * - `Texture`
           - No change
           - ``glGetTexImage2D``
@@ -324,7 +324,7 @@ older hardware.
         texture images.  This feature may be implemented in a future release
         of pyglet.  One workaround is to create a texture from the compressed
         image, then read the image data from the texture; i.e.,
-        ``compressed_image.texture.image_data``.
+        ``compressed_image.get_texture().get_image_data()``.
 
 .. [4]  `BufferImageMask` cannot be converted to `Texture`.
 
@@ -334,9 +334,9 @@ Accessing or providing pixel data
 The `ImageData` class represents an image as a string or sequence of pixel
 data, or as a ctypes pointer.  Details such as the pitch and component layout
 are also stored in the class.  You can access an `ImageData` object for any
-image by accessing the `image_data` property::
+image with `get_image_data`::
 
-    kitten = image.load('kitten.png').image_data
+    kitten = image.load('kitten.png').get_image_data()
 
 The design of `ImageData` is to allow applications to access the detail in the
 format they prefer, rather than having to understand the many formats that
@@ -374,7 +374,7 @@ To retrieve pixel data in a particular format, set the `pitch` and `format`
 properties then read `data`.  The following example reads tightly packed rows
 in ``RGB`` format (the alpha component, if any, will be discarded)::
 
-    kitten = kitten.image_data
+    kitten = kitten.get_image_data()
     kitten.format = 'RGB'
     kitten.pitch = len(kitten.format) * kitten.width
     data = kitten.data
@@ -455,10 +455,10 @@ OpenGL imaging
 This section assumes you are familiar with texture mapping in OpenGL (for
 example, chapter 9 of the `OpenGL Programming Guide`_).
 
-To create a texture from any `AbstractImage`, access its `texture` property::
+To create a texture from any `AbstractImage`, call `get_texture`::
 
     kitten = image.load('kitten.jpg')
-    texture = kitten.texture
+    texture = kitten.get_texture()
 
 Textures are automatically created and used by `ImageData` when blitted.  It
 is useful to use textures directly when aiming for high performance or 3D
@@ -488,9 +488,9 @@ The following session demonstrates this::
     >>> rgba = image.load('tests/image/rgba.png')
     >>> rgba
     <ImageData 235x257>         # The image is 235x257
-    >>> rgba.texture
+    >>> rgba.get_texture()
     <TextureRegion 235x257>     # The returned texture is a region
-    >>> rgba.texture.owner
+    >>> rgba.get_texture().owner
     <Texture 256x512>           # The owning texture has power-2 dimensions
     >>> 
 
@@ -500,7 +500,7 @@ coordinates to use for a quad mapping the whole image.  `tex_coords` is a
 dimensions.  The following code can be used to render a quad for a texture
 region::
 
-    texture = kitten.texture
+    texture = kitten.get_texture()
     t = texture.tex_coords
     w, h = texture.width, texture.height
     array = (GLfloat * 32)(
