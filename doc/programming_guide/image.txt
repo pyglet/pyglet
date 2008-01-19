@@ -195,6 +195,14 @@ following attributes:
     The width of the image, in pixels.
 `height`
     The height of the image, in pixels.
+`anchor_x`
+    Distance of the anchor point from the left edge of the image, in pixels
+`anchor_y`
+    Distance of the anchor point from the bottom edge of the image, in pixels
+
+The anchor point defaults to (0, 0), though some image formats may contain an
+intrinsic anchor point.  The anchor point is used to align the image to a
+point in space when drawing it.
 
 You may only want to use a portion of the complete image.  You can use the
 `get_region` method to return an image of a rectangular region of a source
@@ -219,8 +227,12 @@ Use the `blit` method to draw an image to the current window::
     kitten.blit(x, y)
 
 You can use the `blit` method to draw any image, including an image region.
-The `x` and `y` coordinates locate where to draw the bottom-left corner of the
-image.  
+The `x` and `y` coordinates locate where to draw the anchor point of the
+image.  For example, to center the image at ``(x, y)``::
+
+    kitten.anchor_x = kitten.width // 2
+    kitten.anchor_y = kitten.height // 2
+    kitten.blit(x, y)
 
 You can also specify an optional `z` component to the `blit` method.  This has
 no effect unless you have changed the default projection or enabled depth

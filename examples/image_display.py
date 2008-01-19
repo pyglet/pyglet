@@ -58,6 +58,8 @@ if __name__ == '__main__':
 
     w = window.Window(visible=False, resizable=True)
     img = image.load(filename).get_texture()
+    img.anchor_x = img.width // 2
+    img.anchor_y = img.height // 2
 
     checks = image.create(32, 32, image.CheckerImagePattern())
     background = image.TileableTexture.create_for_image(checks)
@@ -73,6 +75,6 @@ if __name__ == '__main__':
         w.dispatch_events()
         
         background.blit_tiled(0, 0, 0, w.width, w.height)
-        img.blit(0, 0, 0)
+        img.blit(w.width // 2, w.height // 2, 0)
         w.flip()
 

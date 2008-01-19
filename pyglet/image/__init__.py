@@ -73,6 +73,15 @@ To draw an image at some point on the screen::
 
 This assumes an appropriate view transform and projection have been applied.
 
+Some images have an intrinsic "anchor point": this is the point which will be
+aligned to the ``x`` and ``y`` coordinates when the image is drawn.  By
+default the anchor point is the lower-left corner of the image.  You can use
+the anchor point to center an image at a given point, for example::
+
+    pic.anchor_x = pic.width // 2
+    pic.anchor_y = pic.height // 2
+    pic.blit(x, y, z)
+
 Texture access
 --------------
 
@@ -278,7 +287,13 @@ class AbstractImage(object):
             Width of image
         `height` : int
             Height of image
+        `anchor_x` : int
+            X coordinate of anchor, relative to left edge of image data
+        `anchor_y` : int
+            Y coordinate of anchor, relative to bottom edge of image data
     '''
+    anchor_x = 0
+    anchor_y = 0
 
     def __init__(self, width, height):
         self.width = width
@@ -408,11 +423,19 @@ class AbstractImage(object):
             raise first_exception
 
     def blit(self, x, y, z=0):
-        '''Draw this image to the active framebuffers.'''
+        '''Draw this image to the active framebuffers.
+        
+        The image will be drawn with the lower-left corner at 
+        (``x -`` `anchor_x`, ``y -`` `anchor_y`, ``z``).
+        '''
         raise ImageException('Cannot blit %r.' % self)
 
     def blit_into(self, source, x, y, z):
         '''Draw `source` on this image.
+
+        `source` will be copied into this image such that its anchor point
+        is aligned with the `x` and `y` parameters.  If this image is a 3D
+        texture, the `z` coordinate gives the image slice to copy into.
         
         Note that if `source` is larger than this image (or the positioning
         would cause the copy to go out of bounds) then you must pass a
@@ -421,7 +444,13 @@ class AbstractImage(object):
         raise ImageException('Cannot blit images onto %r.' % self)
 
     def blit_to_texture(self, target, level, x, y, z=0):
-        '''Draw this image on the currently bound texture at `target`.'''
+        '''Draw this image on the currently bound texture at `target`.
+        
+        This image is copied into the texture such that this image's anchor
+        point is aligned with the given `x` and `y` coordinates of the
+        destination texture.  If the currently bound texture is a 3D texture,
+        the `z` coordinate gives the image slice to blit into.
+        '''
         raise ImageException('Cannot blit %r to a texture.' % self)
 
 class AbstractImageSequence(object):
@@ -651,6 +680,10 @@ class ImageData(AbstractImage):
             texture = texture.get_region(0, 0, self.width, self.height)
             subimage = True
 
+        if self.anchor_x or self.anchor_y:
+            texture.anchor_x = self.anchor_x
+            texture.anchor_y = self.anchor_y
+
         internalformat = self._get_internalformat(self.format)
 
         glBindTexture(texture.target, texture.id)
@@ -669,7 +702,7 @@ class ImageData(AbstractImage):
             internalformat = None
 
         self.blit_to_texture(texture.target, texture.level, 
-            0, 0, 0, internalformat)
+            self.anchor_x, self.anchor_y, 0, internalformat)
         
         return texture 
 
@@ -700,6 +733,10 @@ class ImageData(AbstractImage):
         
         texture = Texture.create_for_size(
             GL_TEXTURE_2D, self.width, self.height)
+        if self.anchor_x or self.anchor_y:
+            texture.anchor_x = self.anchor_x
+            texture.anchor_y = self.anchor_y
+
         internalformat = self._get_internalformat(self.format)
 
         glBindTexture(texture.target, texture.id)
@@ -708,19 +745,19 @@ class ImageData(AbstractImage):
 
         if self.mipmap_images:
             self.blit_to_texture(texture.target, texture.level, 
-                0, 0, 0, internalformat)
+                self.anchor_x, self.anchor_y, 0, internalformat)
             level = 0
             for image in self.mipmap_images:
                 level += 1
                 if image:
                     image.blit_to_texture(texture.target, level, 
-                        0, 0, 0, internalformat)
+                        self.anchor_x, self.anchor_y, 0, internalformat)
             # TODO: should set base and max mipmap level if some mipmaps
             # are missing.
         elif gl_info.have_version(1, 4):
             glTexParameteri(texture.target, GL_GENERATE_MIPMAP, GL_TRUE)
             self.blit_to_texture(texture.target, texture.level, 
-                0, 0, 0, internalformat)
+                self.anchor_x, self.anchor_y, 0, internalformat)
         else:
             raise NotImplementedError('TODO: gluBuild2DMipmaps')
 
@@ -750,9 +787,15 @@ class ImageData(AbstractImage):
     def blit_to_texture(self, target, level, x, y, z, internalformat=None):
         '''Draw this image to to the currently bound texture at `target`.
 
+        This image's anchor point will be aligned to the given `x` and `y`
+        coordinates.  If the currently bound texture is a 3D texture, the `z`
+        parameter gives the image slice to blit into.
+
         If `internalformat` is specified, glTexImage is used to initialise
         the texture; otherwise, glTexSubImage is used to update a region.
         '''
+        x -= self.anchor_x
+        y -= self.anchor_y
 
         data_format = self.format
         data_pitch = abs(self._current_pitch)
@@ -1109,6 +1152,10 @@ class CompressedImageData(AbstractImage):
 
         texture = Texture.create_for_size(
             GL_TEXTURE_2D, self.width, self.height)
+        if self.anchor_x or self.anchor_y:
+            texture.anchor_x = self.anchor_x
+            texture.anchor_y = self.anchor_y
+
         glBindTexture(texture.target, texture.id)
         glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
 
@@ -1137,6 +1184,10 @@ class CompressedImageData(AbstractImage):
 
         texture = Texture.create_for_size(
             GL_TEXTURE_2D, self.width, self.height)
+        if self.anchor_x or self.anchor_y:
+            texture.anchor_x = self.anchor_x
+            texture.anchor_y = self.anchor_y
+
         glBindTexture(texture.target, texture.id)
 
         glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER,
@@ -1172,13 +1223,13 @@ class CompressedImageData(AbstractImage):
 
         if target == GL_TEXTURE_3D:
             glCompressedTexSubImage3DARB(target, level,
-                x, y, z,
+                x - self.anchor_x, y - self.anchor_y, z,
                 self.width, self.height, 1,
                 self.gl_format,
                 len(self.data), self.data)
         else:
             glCompressedTexSubImage2DARB(target, level, 
-                x, y,
+                x - self.anchor_x, y - self.anchor_y,
                 self.width, self.height,
                 self.gl_format,
                 len(self.data), self.data)
@@ -1354,6 +1405,8 @@ class Texture(AbstractImage):
     def blit(self, x, y, z=0, width=None, height=None):
         # Create interleaved array in T4F_V4F format
         t = self.tex_coords
+        x -= self.anchor_x
+        y -= self.anchor_y
         w = width is None and self.width or width
         h = height is None and self.height or height
         array = (GLfloat * 32)(
@@ -1445,6 +1498,10 @@ class Texture3D(Texture, UniformTextureSequence):
             depth = _nearest_pow2(depth)
 
         texture = cls.create_for_size(GL_TEXTURE_3D, item_width, item_height)
+        if self.anchor_x or self.anchor_y:
+            texture.anchor_x = self.anchor_x
+            texture.anchor_y = self.anchor_y
+
         texture.images = depth
         
         blank = (GLubyte * (texture.width * texture.height * texture.images))()
@@ -1459,7 +1516,8 @@ class Texture3D(Texture, UniformTextureSequence):
         for i, image in enumerate(images):
             item = cls.region_class(0, 0, i, item_width, item_height, texture)
             items.append(item)
-            image.blit_to_texture(texture.target, texture.level, 0, 0, i)
+            image.blit_to_texture(texture.target, texture.level, 
+                                  image.anchor_x, image.anchor_y, i)
 
         texture.items = items
         texture.item_width = item_width
@@ -1479,9 +1537,11 @@ class Texture3D(Texture, UniformTextureSequence):
     def __setitem__(self, index, value):
         if type(index) is slice:
             for item, image in zip(self[index], value):
-                image.blit_to_texture(self.target, self.level, 0, 0, item.z)
+                image.blit_to_texture(self.target, self.level, 
+                                      image.anchor_x, image.anchor_y, item.z)
         else:
-            value.blit_to_texture(self.target, self.level, 0, 0, self[index].z)
+            value.blit_to_texture(self.target, self.level, 
+                                  image.anchor_x, image.anchor_y, self[index].z)
 
 class TileableTexture(Texture):
     '''A texture that can be tiled efficiently.
@@ -1498,10 +1558,15 @@ class TileableTexture(Texture):
         raise ImageException('Cannot get region of %r' % self)
 
     def blit_tiled(self, x, y, z, width, height):
-        '''Blit this texture tiled over the given area.'''
-        u1 = v1 = 0
-        u2 = width / float(self.width)
-        v2 = height / float(self.height)
+        '''Blit this texture tiled over the given area.
+        
+        The image will be tiled with the bottom-left corner of the destination
+        rectangle aligned with the anchor point of this texture.
+        '''
+        u1 = self.anchor_x / float(self.width)
+        v1 = self.anchor_y / float(self.height)
+        u2 = u1 + width / float(self.width)
+        v2 = v1 + height / float(self.height)
         w, h = width, height
         t = self.tex_coords
         array = (GLfloat * 32)(
@@ -1724,6 +1789,9 @@ class ColorBufferImage(BufferImage):
     def get_texture(self):
         texture = Texture.create_for_size(GL_TEXTURE_2D, 
             self.width, self.height)
+        if self.anchor_x or self.anchor_y:
+            texture.anchor_x = self.anchor_x
+            texture.anchor_y = self.anchor_y
 
         if texture.width != self.width or texture.height != self.height:
             texture = texture.get_region(0, 0, self.width, self.height)
@@ -1736,7 +1804,8 @@ class ColorBufferImage(BufferImage):
                          0,
                          GL_RGBA, GL_UNSIGNED_BYTE,
                          blank)
-            self.blit_to_texture(texture.target, texture.level, 0, 0, 0)
+            self.blit_to_texture(texture.target, texture.level, 
+                                 self.anchor_x, self.anchor_y, 0)
         else:
             glReadBuffer(self.gl_buffer)
             glCopyTexImage2D(texture.target, texture.level,
@@ -1748,7 +1817,7 @@ class ColorBufferImage(BufferImage):
     def blit_to_texture(self, target, level, x, y, z):
         glReadBuffer(self.gl_buffer)
         glCopyTexSubImage2D(target, level, 
-                            x, y,
+                            x - self.anchor_x, y - self.anchor_y,
                             self.x, self.y, self.width, self.height) 
 
 class DepthBufferImage(BufferImage):
@@ -1764,6 +1833,10 @@ class DepthBufferImage(BufferImage):
         
         texture = DepthTexture.create_for_size(GL_TEXTURE_2D,
             self.width, self.height)
+        if self.anchor_x or self.anchor_y:
+            texture.anchor_x = self.anchor_x
+            texture.anchor_y = self.anchor_y
+
         glReadBuffer(self.gl_buffer)
         glCopyTexImage2D(texture.target, 0,
                          GL_DEPTH_COMPONENT,
@@ -1774,7 +1847,7 @@ class DepthBufferImage(BufferImage):
     def blit_to_texture(self, target, level, x, y, z):
         glReadBuffer(self.gl_buffer)
         glCopyTexSubImage2D(target, level,
-                            x, y,
+                            x - self.anchor_x, y - self.anchor_y,
                             self.x, self.y, self.width, self.height)
 
 
@@ -1994,13 +2067,13 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
                 if image.width != self.item_width or \
                    image.height != self.item_height:
                     raise ImageException('Image has incorrect dimensions')
-                image.blit_into(region, 0, 0, 0)
+                image.blit_into(region, image.anchor_x, image.anchor_y, 0)
         else:
             image = value
             if image.width != self.item_width or \
                image.height != self.item_height:
                 raise ImageException('Image has incorrect dimensions')
-            image.blit_into(self[index], 0, 0, 0)
+            image.blit_into(self[index], image.anchor_x, image.anchor_y, 0)
 
     def __len__(self):
         return len(self.items)

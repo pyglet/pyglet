@@ -94,6 +94,10 @@ Space: Shoot
 
 Be careful, there's not much friction in space.'''
 
+def center_anchor(img):
+    img.anchor_x = img.width // 2
+    img.anchor_y = img.height // 2
+
 class Animation(object):
     def __init__(self, x, y, dx, dy, images, period):
         self.x = x
@@ -120,7 +124,7 @@ class Animation(object):
 
     def draw(self):
         img = self.images[self.frame]
-        img.blit(self.x - img.width / 2, self.y - img.height / 2, 0)
+        img.blit(self.x , self.y, 0)
 
 # --------------------------------------------------------------------------
 # Game objects
@@ -171,7 +175,7 @@ class WrappingObject(object):
         glLoadIdentity()
         glTranslatef(x, y, 0)
         glRotatef(self.heading, 0, 0, 1)
-        self.img.blit(-self.img.width/2, -self.img.height/2, 0)
+        self.img.blit(0, 0, 0)
 
     def draw(self):
         x_positions = [self.x]
@@ -193,6 +197,7 @@ class WrappingObject(object):
 class AsteroidSize(object):
     def __init__(self, filename, points):
         self.img = resource.image(filename)
+        center_anchor(self.img)
         self.next_size = None
         self.points = points
 
@@ -222,6 +227,7 @@ class Asteroid(WrappingObject):
 class Player(WrappingObject, key.KeyStateHandler):
     def __init__(self, img):
         super(Player, self).__init__(ARENA_WIDTH / 2, ARENA_HEIGHT / 2, img)
+        center_anchor(img)
         self.reset()
 
     def reset(self):
@@ -306,8 +312,7 @@ class Bullet(object):
                 self.y >= 0 and self.y < ARENA_HEIGHT)
 
     def draw(self):
-        bullet_image.blit(self.x - bullet_image.width / 2, 
-                          self.y - bullet_image.height / 2, 0)
+        bullet_image.blit(self.x, self.y, 0)
 
 class Starfield(object):
     def __init__(self, img):
@@ -747,14 +752,17 @@ for small, big in map(None, asteroid_sizes[:-1], asteroid_sizes[1:]):
     big.next_size = small
 
 bullet_image = resource.image('bullet.png')
+center_anchor(bullet_image)
 
 smoke_images_image = resource.image('smoke.png')
 smoke_images = image.ImageGrid(smoke_images_image, 1, 8)
 smoke_images = smoke_images.get_texture_sequence()
+map(center_anchor, smoke_images)
 
 explosion_images_image = resource.image('explosion.png')
 explosion_images = image.ImageGrid(explosion_images_image, 2, 8)
 explosion_images = explosion_images.get_texture_sequence()
+map(center_anchor, explosion_images)
 
 pointer_image = resource.image('pointer.png')
 pointer_image_flip = resource.image('pointer.png', flip_x=True)
