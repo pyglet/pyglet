@@ -194,10 +194,16 @@ class VertexDomain(object):
         start = self._safe_alloc(count)
         return VertexList(self, start, count)
 
-    def draw(self, mode):
-        '''Draw all vertices currently allocated without indexing.
+    def draw(self, mode, vertex_list=None):
+        '''Draw vertices in the domain.
+        
+        If `vertex_list` is not specified, all vertices in the domain are
+        drawn.  This is the most efficient way to render primitives.
 
-        All vertices are drawn using the given `mode`, e.g. ``GL_QUADS``.
+        If `vertex_list` specifies a `VertexList`, only primitives in that
+        list will be drawn.
+
+        Vertices are drawn using the given `mode`, e.g. ``GL_QUADS``.
         '''
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         for buffer, attributes in self.buffer_attributes:
@@ -206,20 +212,23 @@ class VertexDomain(object):
                 attribute.enable()
                 attribute.set_pointer(attribute.buffer.ptr)
 
-        starts, sizes = self.allocator.get_allocated_regions()
-        primcount = len(starts)
-        if primcount == 0:
-            pass
-        elif primcount == 1:
-            # Common case
-            glDrawArrays(mode, starts[0], sizes[0])
-        elif gl_info.have_version(1, 4):
-            starts = (GLint * primcount)(*starts)
-            sizes = (GLsizei * primcount)(*sizes)
-            glMultiDrawArrays(mode, starts, sizes, primcount)
+        if vertex_list is not None:
+            glDrawArrays(mode, vertex_list.start, vertex_list.count)
         else:
-            for start, size in zip(starts, sizes):
-                glDrawArrays(mode, start, size)
+            starts, sizes = self.allocator.get_allocated_regions()
+            primcount = len(starts)
+            if primcount == 0:
+                pass
+            elif primcount == 1:
+                # Common case
+                glDrawArrays(mode, starts[0], sizes[0])
+            elif gl_info.have_version(1, 4):
+                starts = (GLint * primcount)(*starts)
+                sizes = (GLsizei * primcount)(*sizes)
+                glMultiDrawArrays(mode, starts, sizes, primcount)
+            else:
+                for start, size in zip(starts, sizes):
+                    glDrawArrays(mode, start, size)
         
         for buffer, _ in self.buffer_attributes:
             buffer.unbind()
@@ -231,13 +240,21 @@ class VertexList(object):
     '''
     
     def __init__(self, domain, start, count):
+        # TODO make private
         self.domain = domain
         self.start = start
         self.count = count
     
     def get_size(self):
+        # XXX terminology count vs size
         return self.count
 
+    def get_domain(self):
+        return self.domain
+
+    def draw(self, mode):
+        self.domain.draw(mode, self)
+    
     def resize(self, count):
         '''Resize this group.'''
         new_start = self.domain._safe_realloc(self.start, self.count, count)
@@ -493,7 +510,7 @@ class IndexedVertexDomain(VertexDomain):
         ptr_type = ctypes.POINTER(self.index_c_type * count)
         return self.index_buffer.get_region(byte_start, byte_count, ptr_type)
 
-    def draw(self, mode):
+    def draw(self, mode, vertex_list=None):
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         for buffer, attributes in self.buffer_attributes:
             buffer.bind()
@@ -501,6 +518,9 @@ class IndexedVertexDomain(VertexDomain):
                 attribute.enable()
                 attribute.set_pointer(attribute.buffer.ptr)
         self.index_buffer.bind()
+
+        if vertex_list is not None:
+            raise NotImplementedError('TODO')
 
         starts, sizes = self.index_allocator.get_allocated_regions()
         primcount = len(starts)
@@ -537,6 +557,9 @@ class IndexedVertexList(VertexList):
 
         self.index_start = index_start
         self.index_count = index_count
+
+    def draw(self, mode):
+        self.domain.draw(mode, self)
 
     def resize(self, count, index_count):
         '''Resize this group.'''

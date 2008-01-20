@@ -59,6 +59,31 @@ def draw(size, mode, *data, **kwargs):
     
     glPopClientAttrib()
 
+def _parse_data(data):
+    '''Given a list of data items, returns (formats, initial_arrays).'''
+    assert data, 'No attribute formats given'
+
+    # Return tuple (formats, initial_arrays).
+    formats = []
+    initial_arrays = []
+    for i, format in enumerate(data):
+        if isinstance(format, tuple):
+            format, array = format
+            initial_arrays.append((i, array))
+        formats.append(format)
+    formats = tuple(formats)
+    return formats, initial_arrays
+
+def vertex_list(count, *data):
+    formats, initial_arrays = _parse_data(data)
+    domain = vertexdomain.create_domain(*formats)
+    vlist = domain.create(count)
+    for i, array in initial_arrays:
+        vlist.set_attribute_data(i, array)
+    return vlist
+
+# TODO indexed_vertex_list
+
 class Batch(object):
     def __init__(self):
         # Mapping to find domain.  
@@ -75,7 +100,7 @@ class Batch(object):
         self._draw_list_dirty = False
 
     def add(self, count, mode, state, *data):
-        formats, initial_arrays = self._parse_data(data)
+        formats, initial_arrays = _parse_data(data)
         domain = self._get_domain(False, mode, state, formats)
             
         # Create vertex list and initialize
@@ -86,7 +111,7 @@ class Batch(object):
         return vlist
 
     def add_indexed(self, count, mode, state, indices, *data):
-        formats, initial_arrays = self._parse_data(data)
+        formats, initial_arrays = _parse_data(data)
         domain = self._get_domain(True, mode, state, formats)
             
         # Create vertex list and initialize
@@ -98,19 +123,6 @@ class Batch(object):
 
         return vlist 
 
-    def _parse_data(self, data):
-        assert data, 'No attribute formats given'
-
-        # Return tuple (formats, initial_arrays).
-        formats = []
-        initial_arrays = []
-        for i, format in enumerate(data):
-            if isinstance(format, tuple):
-                format, array = format
-                initial_arrays.append((i, array))
-            formats.append(format)
-        formats = tuple(formats)
-        return formats, initial_arrays
 
     def _get_domain(self, indexed, mode, state, formats):
         if state is None:
