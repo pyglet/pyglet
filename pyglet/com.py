@@ -70,6 +70,10 @@ an interface.
 '''
 
 import ctypes
+import sys
+
+if sys.platform != 'win32':
+    raise ImportError('pyglet.com requires a Windows build of Python')
 
 class GUID(ctypes.Structure):
     _fields_ = [
