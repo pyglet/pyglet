@@ -148,6 +148,7 @@ from StringIO import StringIO
 
 from pyglet.gl import *
 from pyglet.gl import gl_info
+from pyglet import graphics
 from pyglet.window import *
 
 class ImageException(Exception):
@@ -1454,30 +1455,26 @@ class Texture(AbstractImage):
 
     # no implementation of blit_to_texture yet (could use aux buffer)
 
+    _vertex_list = None
+
     def blit(self, x, y, z=0, width=None, height=None):
-        # Create interleaved array in T4F_V4F format
-        t = self.tex_coords
-        x -= self.anchor_x
-        y -= self.anchor_y
-        w = width is None and self.width or width
-        h = height is None and self.height or height
-        array = (GLfloat * 32)(
-             t[0],  t[1],  t[2],  1.,
-             x,     y,     z,     1.,
-             t[3],  t[4],  t[5],  1., 
-             x + w, y,     z,     1.,
-             t[6],  t[7],  t[8],  1., 
-             x + w, y + h, z,     1.,
-             t[9],  t[10], t[11], 1., 
-             x,     y + h, z,     1.)
+        if self._vertex_list is None:
+            self._vertex_list = graphics.vertex_list(4,
+                'v3f', ('t3f', self.tex_coords))
+
+        x1 = x - self.anchor_x
+        y1 = y - self.anchor_y
+        x2 = x1 + (width is None and self.width or width)
+        y2 = y1 + (height is None and self.height or height)
+        self._vertex_list.vertices[:] = [x1, y1, z, 
+                                         x2, y1, z,
+                                         x2, y2, z,
+                                         x1, y2, z]
 
         glPushAttrib(GL_ENABLE_BIT)
         glEnable(self.target)
         glBindTexture(self.target, self.id)
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        glInterleavedArrays(GL_T4F_V4F, 0, array)
-        glDrawArrays(GL_QUADS, 0, 4)
-        glPopClientAttrib()
+        self._vertex_list.draw(GL_QUADS)
         glPopAttrib()
 
     def blit_into(self, source, x, y, z):
@@ -1608,9 +1605,11 @@ class TileableTexture(Texture):
             raise ImageException(
                 'TileableTexture requires dimensions that are powers of 2')
         super(TileableTexture, self).__init__(width, height, target, id)
-        
+
     def get_region(self, x, y, width, height):
         raise ImageException('Cannot get region of %r' % self)
+
+    _vertex_list = None
 
     def blit_tiled(self, x, y, z, width, height):
         '''Blit this texture tiled over the given area.
@@ -1618,31 +1617,29 @@ class TileableTexture(Texture):
         The image will be tiled with the bottom-left corner of the destination
         rectangle aligned with the anchor point of this texture.
         '''
+        if self._vertex_list is None:
+            self._vertex_list = graphics.vertex_list(4, 'v3f', 't3f')
+
         u1 = self.anchor_x / float(self.width)
         v1 = self.anchor_y / float(self.height)
         u2 = u1 + width / float(self.width)
         v2 = v1 + height / float(self.height)
         w, h = width, height
         t = self.tex_coords
-        array = (GLfloat * 32)(
-             u1,      v1,      t[2],  1.,
-             x,       y,       z,     1.,
-             u2,      v1,      t[5],  1., 
-             x + w,   y,       z,     1.,
-             u2,      v2,      t[8],  1., 
-             x + w,   y + h,   z,     1.,
-             u1,      v2,      t[11], 1., 
-             x,       y + h,   z,     1.)
+        self._vertex_list.vertices[:] = [x,   y,   z, 
+                                         x+w, y,   z,
+                                         x+w, y+h, z,
+                                         x,   y+h, z]
+        self._vertex_list.tex_coords[:] = [u1, v1, t[2],
+                                           u2, v1, t[5],
+                                           u2, v2, t[8],
+                                           u1, v2, t[11]]
 
         glPushAttrib(GL_ENABLE_BIT)
         glEnable(self.target)
         glBindTexture(self.target, self.id)
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        glInterleavedArrays(GL_T4F_V4F, 0, array)
-        glDrawArrays(GL_QUADS, 0, 4)
-        glPopClientAttrib()
+        self._vertex_list.draw(GL_QUADS)
         glPopAttrib()
-        
 
     @classmethod
     def create_for_image(cls, image):
