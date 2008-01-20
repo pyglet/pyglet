@@ -521,7 +521,15 @@ class AbstractImageSequence(object):
     def __len__(self):
         raise NotImplementedError('abstract')
 
+    def __iter__(self):
+        '''Iterate over the images in sequence.
 
+        :rtype: Iterator
+
+        :since: pyglet 1.1
+        '''
+        raise NotImplementedError('abstract')
+        
 class TextureSequence(AbstractImageSequence):
     '''Interface for a sequence of textures.
 
@@ -555,6 +563,13 @@ class Animation(object):
 
     def get_duration(self):
         return sum([frame.period for frame in self.frames])
+
+    @classmethod
+    def from_image_sequence(cls, sequence, period, loop=True):
+        frames = [AnimationFrame(image, period) for image in sequence]
+        if not loop:
+            frames[-1].period = None
+        return cls(frames)
 
 class AnimationFrame(object):
     def __init__(self, image, delay):
@@ -1580,6 +1595,9 @@ class Texture3D(Texture, UniformTextureSequence):
             value.blit_to_texture(self.target, self.level, 
                                   image.anchor_x, image.anchor_y, self[index].z)
 
+    def __iter__(self):
+        return iter(self.items)
+
 class TileableTexture(Texture):
     '''A texture that can be tiled efficiently.
 
@@ -1990,6 +2008,9 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
         # TODO tuples
         return self._items[index]
 
+    def __iter__(self):
+        return iter(self._items)
+
 class TextureGrid(TextureRegion, UniformTextureSequence):
     '''A texture containing a regular grid of texture regions.
 
@@ -2114,6 +2135,9 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
 
     def __len__(self):
         return len(self.items)
+
+    def __iter__(self):
+        return iter(self.items)
 
 # Initialise default codecs
 from pyglet.image import codecs as _codecs

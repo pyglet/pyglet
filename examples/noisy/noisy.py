@@ -49,6 +49,7 @@ from pyglet import font
 from pyglet import image
 from pyglet import media
 from pyglet import resource
+from pyglet import sprite
 from pyglet.window import Window
 from pyglet.window import key
 
@@ -61,13 +62,17 @@ if len(sys.argv) > 1:
 window = Window(640, 480)
 sound = resource.media(BALL_SOUND, streaming=False)
 
-class Ball(object):
+class Ball(sprite.Sprite):
     ball_image = resource.image(BALL_IMAGE)
     width = ball_image.width
     height = ball_image.height
+
     def __init__(self):
-        self.x = random.random() * (window.width - self.width)
-        self.y = random.random() * (window.height - self.height)
+        x = random.random() * (window.width - self.width)
+        y = random.random() * (window.height - self.height)
+
+        super(Ball, self).__init__(self.ball_image, x, y)
+
         self.dx = (random.random() - 0.5) * 1000
         self.dy = (random.random() - 0.5) * 1000
 
@@ -83,9 +88,6 @@ class Ball(object):
 
         self.x = min(max(self.x, 0), window.width - self.width)
         self.y = min(max(self.y, 0), window.height - self.height)
-
-    def draw(self):
-        self.ball_image.blit(self.x, self.y, 0)
 
 balls = []
 
