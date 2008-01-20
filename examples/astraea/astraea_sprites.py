@@ -114,26 +114,23 @@ def wrap(value, width):
 def to_radians(degrees):
     return math.pi * degrees / 180.0
 
-class WrappingObject(object):
+class WrappingSprite(sprite.Sprite):
     dx = 0
     dy = 0
-    heading = 0
-    heading_speed = 0
+    rotation_speed = 0
 
-    def __init__(self, x, y, img):
-        self.x = x
-        self.y = y
-        self.img = img
-        self.collision_radius = self.img.width / COLLISION_RESOLUTION / 2 
+    def __init__(self, img, x, y, batch=None):
+        super(WrappingSprite, self).__init__(img, x, y, batch=batch)
+        self.collision_radius = self.image.width / COLLISION_RESOLUTION / 2 
 
     def update(self, dt):
-        self.x += self.dx * dt
-        self.y += self.dy * dt
-        self.heading += self.heading_speed * dt
+        x = self.x + self.dx * dt
+        y = self.y + self.dy * dt
+        rotation = self.rotation + self.rotation_speed * dt
         
-        self.x = wrap(self.x, ARENA_WIDTH)
-        self.y = wrap(self.y, ARENA_HEIGHT)
-        self.heading = wrap(self.heading, 360.)
+        self.x = wrap(x, ARENA_WIDTH)
+        self.y = wrap(y, ARENA_HEIGHT)
+        self.rotation = wrap(rotation, 360.)
 
     def collision_cells(self):
         '''Generate a sequence of (x, y) cells this object covers,
@@ -145,29 +142,6 @@ class WrappingObject(object):
             for x in range(cellx - radius, cellx + radius + 1):
                 yield x, y
 
-    def draw_at(self, x, y):
-        glLoadIdentity()
-        glTranslatef(x, y, 0)
-        glRotatef(self.heading, 0, 0, 1)
-        self.img.blit(0, 0, 0)
-
-    def draw(self):
-        x_positions = [self.x]
-        y_positions = [self.y]
-
-        if self.x < self.img.width:
-            x_positions.append(self.x + ARENA_WIDTH)
-        if self.x > ARENA_WIDTH - self.img.width:
-            x_positions.append(self.x - ARENA_WIDTH)
-        if self.y < self.img.height:
-            y_positions.append(self.y + ARENA_HEIGHT)
-        if self.y > ARENA_HEIGHT - self.img.height:
-            y_positions.append(self.y - ARENA_HEIGHT)
-
-        for x in x_positions:
-            for y in y_positions:
-                self.draw_at(x, y)
-
 class AsteroidSize(object):
     def __init__(self, filename, points):
         self.img = resource.image(filename)
@@ -175,14 +149,14 @@ class AsteroidSize(object):
         self.next_size = None
         self.points = points
 
-class Asteroid(WrappingObject):
-    def __init__(self, x, y, size):
-        super(Asteroid, self).__init__(x, y, size.img)
+class Asteroid(WrappingSprite):
+    def __init__(self, size, x, y, batch=None):
+        super(Asteroid, self).__init__(size.img, x, y, batch=batch)
         self.dx = (random.random() - 0.5) * MAX_ASTEROID_SPEED
         self.dy = (random.random() - 0.5) * MAX_ASTEROID_SPEED
         self.size = size
-        self.heading = random.random() * 360.
-        self.heading_speed = (random.random() - 0.5) * MAX_ASTEROID_SPIN_SPEED
+        self.rotation = random.random() * 360.
+        self.rotation_speed = (random.random() - 0.5) * MAX_ASTEROID_SPIN_SPEED
         self.hit = False
 
     def destroy(self):
@@ -194,13 +168,16 @@ class Asteroid(WrappingObject):
         if next_size:
             # Spawn debris
             for i in range(ASTEROID_DEBRIS_COUNT):
-                asteroids.append(Asteroid(self.x, self.y, next_size))
+                asteroids.append(Asteroid(next_size, self.x, self.y,
+                                          batch=self.batch))
 
+        self.delete()
         asteroids.remove(self)
 
-class Player(WrappingObject, key.KeyStateHandler):
-    def __init__(self, img):
-        super(Player, self).__init__(ARENA_WIDTH / 2, ARENA_HEIGHT / 2, img)
+class Player(WrappingSprite, key.KeyStateHandler):
+    def __init__(self, img, batch=None):
+        super(Player, self).__init__(img, ARENA_WIDTH / 2, ARENA_HEIGHT / 2,
+            batch=batch)
         center_anchor(img)
         self.reset()
 
@@ -209,7 +186,7 @@ class Player(WrappingObject, key.KeyStateHandler):
         self.y = ARENA_HEIGHT / 2
         self.dx = 0
         self.dy = 0
-        self.heading = 0
+        self.rotation = 0
         self.fire_timeout = 0
         self.hit = False
         self.invincible = True
@@ -219,20 +196,20 @@ class Player(WrappingObject, key.KeyStateHandler):
         self.flash_visible = False
 
     def update(self, dt):
-        # Update heading
+        # Update rotation
         if self[key.LEFT]:
-            self.heading += PLAYER_SPIN_SPEED * dt
+            self.rotation -= PLAYER_SPIN_SPEED * dt
         if self[key.RIGHT]:
-            self.heading -= PLAYER_SPIN_SPEED * dt
+            self.rotation += PLAYER_SPIN_SPEED * dt
 
         # Get x/y components of orientation
-        heading_x = math.cos(to_radians(self.heading))
-        heading_y = math.sin(to_radians(self.heading))
+        rotation_x = math.cos(to_radians(-self.rotation))
+        rotation_y = math.sin(to_radians(-self.rotation))
 
         # Update velocity
         if self[key.UP]:
-            self.dx += PLAYER_ACCEL * heading_x * dt
-            self.dy += PLAYER_ACCEL * heading_y * dt
+            self.dx += PLAYER_ACCEL * rotation_x * dt
+            self.dy += PLAYER_ACCEL * rotation_y * dt
 
         # Update position
         super(Player, self).update(dt)
@@ -246,8 +223,8 @@ class Player(WrappingObject, key.KeyStateHandler):
             # ship were bigger, or if bullets moved slower we'd adjust this
             # based on the orientation of the ship.
             bullets.append(Bullet(self.x, self.y, 
-                                  heading_x * BULLET_SPEED,
-                                  heading_y * BULLET_SPEED, batch=batch))
+                                  rotation_x * BULLET_SPEED,
+                                  rotation_y * BULLET_SPEED, batch=batch))
 
             if enable_sound:
                 bullet_sound.play()
@@ -261,9 +238,7 @@ class Player(WrappingObject, key.KeyStateHandler):
         else:
             self.flash_visible = True
 
-    def draw(self):
-        if self.visible and self.flash_visible:
-            super(Player, self).draw()
+        self.opacity = (self.visible and self.flash_visible) and 255 or 0
 
 class MovingSprite(sprite.Sprite):
     def __init__(self, image, x, y, dx, dy, batch=None):
@@ -609,7 +584,7 @@ def begin_round(*args):
     for i in range(INITIAL_ASTEROIDS[difficulty]):
         x = random.random() * ARENA_WIDTH
         y = random.random() * ARENA_HEIGHT
-        asteroids.append(Asteroid(x, y, asteroid_sizes[-1]))
+        asteroids.append(Asteroid(asteroid_sizes[-1], x, y, wrapping_batch))
 
     for bullet in bullets:
         bullet.delete()
@@ -682,7 +657,7 @@ def begin_menu_background():
     for i in range(11):
         x = random.random() * ARENA_WIDTH
         y = random.random() * ARENA_HEIGHT
-        asteroids.append(Asteroid(x, y, asteroid_sizes[i // 4]))
+        asteroids.append(Asteroid(asteroid_sizes[i // 4], x, y, wrapping_batch))
 
     for bullet in bullets:
         bullet.delete()
@@ -734,6 +709,9 @@ win.on_key_press = on_key_press
 # Load resources
 # --------------------------------------------------------------------------
 
+batch = graphics.Batch()
+wrapping_batch = graphics.Batch()
+
 resource.path.append('res')
 resource.reindex()
 
@@ -774,7 +752,7 @@ explosion_sound = resource.media('explosion.wav', streaming=False)
 bullet_sound = resource.media('bullet.wav', streaming=False)
 
 starfield = Starfield(resource.image('starfield.jpg'))
-player = Player(resource.image('ship.png'))
+player = Player(resource.image('ship.png'), wrapping_batch)
 win.push_handlers(player)
 
 # --------------------------------------------------------------------------
@@ -804,7 +782,6 @@ fps_display = clock.ClockDisplay(font=create_font(36))
 glEnable(GL_BLEND)
 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-batch = graphics.Batch()
 bullets = []
 animations = []
 
@@ -861,23 +838,26 @@ while not win.has_exit:
     # Render
     starfield.draw()
 
-    for asteroid in asteroids:
-        asteroid.draw()
+    for (x, y) in ((0, ARENA_HEIGHT),   # Top
+                   (-ARENA_WIDTH, 0),   # Left
+                   (0, 0),              # Center
+                   (ARENA_WIDTH, 0),    # Right
+                   (0, -ARENA_HEIGHT)): # Bottom
+        glLoadIdentity()
+        glTranslatef(x, y, 0)
+        wrapping_batch.draw()
 
     glLoadIdentity()
-
     batch.draw()
-    #batch.debug_draw_tree()
-    player.draw()
 
     glLoadIdentity()
 
     if in_game:
         # HUD ship lives
-        x = 10
+        x = 10 + player.image.width // 2
         for i in range(player_lives - 1):
-            player.img.blit(x, win.height - player.img.height - 10, 0)
-            x += player.img.width + 10
+            player.image.blit(x, win.height - player.image.height // 2 - 10, 0)
+            x += player.image.width + 10
         
         # HUD score
         score_text.text = str(score)

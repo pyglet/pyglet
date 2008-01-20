@@ -115,6 +115,8 @@ class Sprite(event.EventDispatcher):
         else:
             self.dispatch_event('on_animation_end')
 
+    batch = property(lambda self: self._batch)
+
     def _get_image(self):
         if self._animation:
             return self._animation
