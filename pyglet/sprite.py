@@ -36,13 +36,14 @@ class SpriteState(graphics.AbstractState):
     def __eq__(self, other):
         return (other.__class__ is self.__class__ and 
                 self.parent is other.parent and 
-                self.texture is other.texture and
+                self.texture.target == other.texture.target and
+                self.texture.id == other.texture.id and
                 self.blend_src == other.blend_src and
                 self.blend_dest == other.blend_dest)
 
     def __hash__(self):
         return hash((id(self.parent), 
-                     id(self.texture),
+                     self.texture.id, self.texture.target,
                      self.blend_src, self.blend_dest))
 
 class Sprite(event.EventDispatcher):

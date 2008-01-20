@@ -275,13 +275,17 @@ class MovingSprite(sprite.Sprite):
         self.x += self.dx * dt
         self.y += self.dy * dt
 
-    def in_bounds(self):
-        return (self.x >= 0 and self.x < ARENA_WIDTH and
-                self.y >= 0 and self.y < ARENA_HEIGHT)
-
 class Bullet(MovingSprite):
     def __init__(self, x, y, dx, dy, batch=None):
         super(Bullet, self).__init__(bullet_image, x, y, dx, dy, batch=batch)
+
+    def update(self, dt):
+        self.x += self.dx * dt
+        self.y += self.dy * dt
+        if not (self.x >= 0 and self.x < ARENA_WIDTH and
+                self.y >= 0 and self.y < ARENA_HEIGHT):
+            self.delete()
+            bullets.remove(self)
 
 class EffectSprite(MovingSprite):
     def on_animation_end(self):
@@ -607,6 +611,12 @@ def begin_round(*args):
         y = random.random() * ARENA_HEIGHT
         asteroids.append(Asteroid(x, y, asteroid_sizes[-1]))
 
+    for bullet in bullets:
+        bullet.delete()
+
+    for animation in animations:
+        animation.delete()
+
     bullets = []
     animations = []
     in_game = True
@@ -674,6 +684,12 @@ def begin_menu_background():
         y = random.random() * ARENA_HEIGHT
         asteroids.append(Asteroid(x, y, asteroid_sizes[i // 4]))
 
+    for bullet in bullets:
+        bullet.delete()
+
+    for animation in animations:
+        animation.delete()
+
     bullets = []
     animations = []
     in_game = False
@@ -684,6 +700,12 @@ def begin_clear_background():
     global asteroids
     global bullets
     global animations
+
+    for bullet in bullets:
+        bullet.delete()
+
+    for animation in animations:
+        animation.delete()
 
     asteroids = []
     bullets = []
@@ -730,7 +752,6 @@ center_anchor(bullet_image)
 
 smoke_images_image = resource.image('smoke.png')
 smoke_images = image.ImageGrid(smoke_images_image, 1, 8)
-smoke_images = smoke_images.get_texture_sequence()
 map(center_anchor, smoke_images)
 smoke_animation = \
     image.Animation.from_image_sequence(smoke_images,
@@ -784,6 +805,8 @@ glEnable(GL_BLEND)
 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 batch = graphics.Batch()
+bullets = []
+animations = []
 
 begin_menu_background()
 begin_main_menu()
@@ -802,13 +825,10 @@ while not win.has_exit:
         player.update(dt)
         for asteroid in asteroids:
             asteroid.update(dt)
-        for bullet in bullets:
+        for bullet in bullets[:]:
             bullet.update(dt)
-        for animation in animations:
+        for animation in animations[:]:
             animation.update(dt)
-
-    # Destroy bullets that have left the arena
-    bullets = [bullet for bullet in bullets if bullet.in_bounds()]
 
     if not player.invincible:
         # Collide bullets and player with asteroids
@@ -847,6 +867,7 @@ while not win.has_exit:
     glLoadIdentity()
 
     batch.draw()
+    #batch.debug_draw_tree()
     player.draw()
 
     glLoadIdentity()

@@ -1993,7 +1993,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
     def __len__(self):
         return self.rows * self.columns
 
-    def __getitem__(self, index):
+    def _update_items(self):
         if not self._items:
             self._items = []
             y = 0
@@ -2005,10 +2005,13 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
                     x += self.item_width + self.column_padding
                 y += self.item_height + self.row_padding
 
+    def __getitem__(self, index):
+        self._update_items()
         # TODO tuples
         return self._items[index]
 
     def __iter__(self):
+        self._update_items()
         return iter(self._items)
 
 class TextureGrid(TextureRegion, UniformTextureSequence):
