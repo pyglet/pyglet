@@ -81,6 +81,22 @@ class Sprite(event.EventDispatcher):
                                   parent_state)
         self._create_vertex_list()
 
+    def __del__(self):
+        if self._vertex_list is not None:
+            self._vertex_list.delete()
+
+    def delete(self):
+        '''Force immediate removal from video memory.  
+        
+        This is often necessary when using batches, as the Python garbage
+        collector will not necessarily call the finalizer as soon as the
+        sprite is garbage.
+        '''
+        if self._animation:
+            clock.unschedule(self._animate)
+        self._vertex_list.delete()
+        self._vertex_list = None
+
     def _animate(self, dt):
         self._frame_index += 1
         if self._frame_index >= len(self._animation.frames):
@@ -95,6 +111,8 @@ class Sprite(event.EventDispatcher):
             delay = min(max(0, delay), frame.delay)
             clock.schedule_once(self._animate, delay)
             self._next_dt = delay
+        else:
+            self.dispatch_event('on_animation_end')
 
     def _get_image(self):
         if self._animation:

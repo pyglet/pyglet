@@ -568,7 +568,7 @@ class Animation(object):
     def from_image_sequence(cls, sequence, period, loop=True):
         frames = [AnimationFrame(image, period) for image in sequence]
         if not loop:
-            frames[-1].period = None
+            frames[-1].delay = None
         return cls(frames)
 
 class AnimationFrame(object):
