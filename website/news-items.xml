@@ -1,4 +1,13 @@
 <news>
+  <item date="21-January-2008" author="Alex"
+        title="Patch for OS X installer">
+    Some Mac users had problems with the pyglet-1.0 OS X runtime installer.  A
+    <a
+    href="http://code.google.com/p/pyglet/downloads/detail?name=pyglet-1.0.1.dmg">new
+    OS X distribution</a> is now available that resolves the issue.  This is
+    tagged version 1.0.1, though there are no additional changes from 1.0
+    beyond the installation procedure.
+  </item>
   <item date="17-January-2008" author="Alex"
         title="pyglet 1.0 released">
     <a href="download.html">pyglet 1.0</a> has been uploaded.  Thanks to
