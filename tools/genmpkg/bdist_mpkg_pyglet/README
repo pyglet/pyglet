@@ -1,0 +1,28 @@
+This is a patched branch of bdist_mpkg by Bob Ippolito.  The version of this
+module (0.4.3-pyglet) is deliberately incompatible with the original
+package's.  The original package's metadata follows.
+
+Metadata-Version: 1.0
+Name: bdist_mpkg
+Version: 0.4.3
+Summary: Builds Mac OS X installer packages from distutils
+Home-page: http://undefined.org/python/#bdist_mpkg
+Author: Bob Ippolito
+Author-email: bob@redivi.com
+License: MIT License
+Description: 
+        bdist_mpkg is a distutils plugin that implements the bdist_mpkg
+        command, which builds a Mac OS X metapackage for use by Installer.app
+        for easy GUI installation of Python modules, much like bdist_wininst.
+        
+        It also comes with a bdist_mpkg script, which is a setup.py front-end
+        that will allow you to easy build an installer metapackage from nearly
+        any existing package that uses distutils.
+        
+Platform: any
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Software Development :: Build Tools

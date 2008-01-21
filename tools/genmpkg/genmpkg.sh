@@ -11,6 +11,9 @@ rsync -a /usr/lib/libavbin.dylib $ROOT/build/avbin/
 cp /usr/lib/`ls -l /usr/lib/libavbin.dylib | sed 's/.* -> \(.*\)$/\1/'` \
     $ROOT/build/avbin/
 
+PYTHONPATH=`dirname $0`:$PYTHONPATH
+export PYTHONPATH
+
 python $ROOT/setup.py bdist_mpkg \
     --background=$RES/background.pdf \
     --readme=$RES/readme.rtf 
