@@ -91,21 +91,10 @@ if 'bdist_egg' in sys.argv or 'develop' in sys.argv:
 elif 'bdist_mpkg' in sys.argv:
     from setuptools import setup
     _have_setuptools = True
+
+    from bdist_mpkg_pyglet import plists, pkg, cmd_bdist_mpkg, tools
     
-    # Allow PDF background image
-    from bdist_mpkg_pyglet import pkg
-    pkg.IMAGE_EXTS = ('.pdf',)
-
-    # Fix background filename by overriding pkg.copy_doc
-    old_copy_doc = pkg.copy_doc
-    def copy_doc(path, name, *args, **kwargs):
-        if name == 'Background':
-            name = 'background'
-        return old_copy_doc(path, name, *args, **kwargs)
-    pkg.copy_doc = copy_doc
-
     # Check for ctypes if installing into Python 2.4
-    from bdist_mpkg_pyglet import plists
     def ctypes_requirement(pkgname, prefix):
         prefix = os.path.join(prefix, 'ctypes')
         title = '%s requires ctypes 1.0 or later to install with Python 2.4' \
@@ -119,7 +108,6 @@ elif 'bdist_mpkg' in sys.argv:
         return plists.path_requirement(prefix, **kw)
 
     # Subclass bdist_mpkg
-    from bdist_mpkg_pyglet import cmd_bdist_mpkg, tools
     class pyglet_bdist_mpkg(cmd_bdist_mpkg.bdist_mpkg):
         # Don't include platform or python version in mpkg name (aesthetics)
         def finalize_package_data(self):

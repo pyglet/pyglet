@@ -36,10 +36,12 @@ def run_setup(*args, **kwargs):
 
 def adminperms(src, verbose=0, dry_run=0):
     try:
+        # Awful unavoidable quirk: package must be built as root.
+        spawn(['/usr/sbin/chown', '-R', 'root', src])
         spawn(['/usr/bin/chgrp', '-R', 'admin', src])
-        spawn(['/bin/chmod', '-R', 'g+w', src])
+        spawn(['/bin/chmod', '-R', 'u=rwX,g=rwX,o=rX', src])
     except:
-        return False
+        raise RuntimeError('Cannot chown/chgrp/chmod.  Are you running sudo?')
     return True
 
 def mkbom(src, pkgdir, verbose=0, dry_run=0, TOOL='/usr/bin/mkbom'):

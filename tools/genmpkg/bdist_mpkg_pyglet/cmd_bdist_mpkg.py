@@ -14,8 +14,8 @@ from distutils.dir_util import remove_tree, mkpath
 from distutils.errors import *
 from distutils import log
 
-from bdist_mpkg import pkg, tools, plists
-from bdist_mpkg.util import copy_tree
+from bdist_mpkg_pyglet import pkg, tools, plists
+from bdist_mpkg_pyglet.util import copy_tree
 
 INSTALL_SCHEME_DESCRIPTIONS = dict(
     purelib = u'(Required) Pure Python modules and packages',

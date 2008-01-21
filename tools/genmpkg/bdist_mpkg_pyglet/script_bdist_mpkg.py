@@ -3,7 +3,7 @@
 import sys, os
 
 import setuptools
-import bdist_mpkg
+import bdist_mpkg_pyglet
 
 def main():
     del sys.argv[0]
@@ -13,7 +13,7 @@ def main():
         sys.argv[:0] = ['setup.py']
     elif len(sys.argv) == 1:
         sys.argv[1:1] = ['--open']
-    sys.argv.insert(1, 'bdist_mpkg')
+    sys.argv.insert(1, 'bdist_mpkg_pyglet')
     if os.path.isdir(sys.argv[0]):
         sys.argv[0] = os.path.join(sys.argv[0], 'setup.py')
     path, name = os.path.split(os.path.abspath(sys.argv[0]))

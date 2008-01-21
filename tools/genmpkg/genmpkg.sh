@@ -17,6 +17,11 @@ export PYTHONPATH
 python $ROOT/setup.py bdist_mpkg \
     --background=$RES/background.pdf \
     --readme=$RES/readme.rtf 
+
+if [ $? != 0 ]; then
+    exit 1
+fi
+
 MPKG=$ROOT/dist/pyglet-$VERSION.mpkg
 
 DMG_BUILD=$ROOT/build/dmg

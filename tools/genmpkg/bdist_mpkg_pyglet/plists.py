@@ -2,8 +2,8 @@ import os
 import sys
 from plistlib import Plist
 
-import bdist_mpkg
-from bdist_mpkg import tools
+import bdist_mpkg_pyglet
+from bdist_mpkg_pyglet import tools
 
 def _major_minor(v):
     rval = [0, 0]
@@ -32,7 +32,7 @@ def common_info(name, version):
             PythonShortVersion=unicode(sys.version[:3]),
             PythonExecutable=unicode(sys.executable),
             bdist_mpkg=dict(
-                version=unicode(bdist_mpkg.__version__),
+                version=unicode(bdist_mpkg_pyglet.__version__),
             ),
         ),
     )
@@ -48,7 +48,7 @@ def pkg_info(name, version):
         IFPkgFlagFollowLinks=True,
         IFPkgFlagInstallFat=False,
         IFPkgFlagIsRequired=False,
-        IFPkgFlagOverwritePermissions=False,
+        IFPkgFlagOverwritePermissions=True,
         IFPkgFlagRelocatable=False,
         IFPkgFlagRestartAction=u'NoRestart',
         IFPkgFlagRootVolumeOnly=True,

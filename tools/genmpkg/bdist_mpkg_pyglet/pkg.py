@@ -4,9 +4,9 @@ from cStringIO import StringIO
 from distutils.dir_util import mkpath
 from distutils.file_util import copy_file
 
-from bdist_mpkg import tools, plists
-from bdist_mpkg.util import copy_tree
-from bdist_mpkg.templates import InstallationCheck
+from bdist_mpkg_pyglet import tools, plists
+from bdist_mpkg_pyglet.util import copy_tree
+from bdist_mpkg_pyglet.templates import InstallationCheck
 
 def write_template((script, strings), dest, mkpath=mkpath):
     spath = os.path.join(dest, 'InstallationCheck')
@@ -31,7 +31,7 @@ def write_sizes(count, size, compressed, pkgdir):
     f.close()
 
 TEXT_EXTS = '.rtfd', '.rtf', '.html', '.txt'
-IMAGE_EXTS = '.tiff', '.png', '.jpg'
+IMAGE_EXTS = '.tiff', '.png', '.jpg', '.pdf'
 
 def write_pkginfo(pkgdir):
     f = open(os.path.join(pkgdir, 'Contents', 'PkgInfo'), 'w')
@@ -130,7 +130,7 @@ def make_metapackage(cmd, name, version, packages, pkgdir,
     doc(readme, 'ReadMe')
     doc(license, 'License')
     doc(welcome, 'Welcome')
-    doc(background, 'Background', exts=IMAGE_EXTS)
+    doc(background, 'background', exts=IMAGE_EXTS)
 
 def make_package(cmd, name, version, files, common, prefix, pkgdir,
         info=(), description=None):
@@ -154,7 +154,7 @@ def make_package(cmd, name, version, files, common, prefix, pkgdir,
 
     tools.mkbom(common, pkgdir)
     count = len(files)
-    admin = tools.admin_writable(prefix)
+    admin = True #tools.admin_writable(prefix)
     size = tools.reduce_size(files)
     compressed = tools.pax(common, pkgdir)
     if not dry_run:
@@ -198,4 +198,4 @@ def make_package(cmd, name, version, files, common, prefix, pkgdir,
     doc(readme, 'ReadMe')
     doc(license, 'License')
     doc(welcome, 'Welcome')
-    doc(background, 'Background', exts=IMAGE_EXTS)
+    doc(background, 'background', exts=IMAGE_EXTS)
