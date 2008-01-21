@@ -141,7 +141,7 @@ application's demand on the CPU.  With `clock.set_fps_limit` you specify a
 target FPS, which pyglet will then try to match.  For example, if you
 decide that it's sufficient to update the display only ten times a second::
 
-    clock.set_fps_limit(20)
+    clock.set_fps_limit(10)
 
     while not win.has_exit:
         win.dispatch_events()
