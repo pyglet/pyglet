@@ -94,6 +94,8 @@ if getattr(sys, 'frozen', None):
 #:     * alsa, the ALSA audio module (Linux only) 
 #:     * openal, the OpenAL audio module
 #:     * silent, no audio
+#: debug_lib
+#:     If True, prints the path of each dynamic library loaded.
 #: debug_gl
 #:     If True, all calls to OpenGL functions are checked afterwards for
 #:     errors using ``glGetError``.  This will severely impact performance,
@@ -112,6 +114,7 @@ options = {
     'font': ('gdiplus', 'win32'), # ignored outside win32; win32 is deprecated
     'debug_font': False,
     'debug_gl': not _enable_optimisations,
+    'debug_lib': False,
     'debug_media': False,
     'debug_win32': False,
     'vsync': None,
@@ -122,6 +125,7 @@ _option_types = {
     'font': tuple,
     'debug_font': bool,
     'debug_gl': bool,
+    'debug_lib': bool,
     'debug_media': bool,
     'debug_win32': bool,
     'vsync': bool,

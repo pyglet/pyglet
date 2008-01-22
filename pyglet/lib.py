@@ -46,6 +46,10 @@ import sys
 import ctypes
 import ctypes.util
 
+import pyglet
+
+_debug_lib = pyglet.options['debug_lib']
+
 class LibraryLoader(object):
     def load_library(self, *names, **kwargs):
         '''Find and load a library.  
@@ -70,12 +74,18 @@ class LibraryLoader(object):
         platform_names.extend(names)
         for name in platform_names:
             try:
-                return ctypes.cdll.LoadLibrary(name)
+                lib = ctypes.cdll.LoadLibrary(name)
+                if _debug_lib:
+                    print name
+                return lib
             except OSError:
                 path = self.find_library(name)
                 if path:
                     try:
-                        return ctypes.cdll.LoadLibrary(path)
+                        lib = ctypes.cdll.LoadLibrary(path)
+                        if _debug_lib:
+                            print path
+                        return lib
                     except OSError:
                         pass
         raise ImportError('Library "%s" not found.' % names[0])
@@ -166,7 +176,10 @@ class MachOLibraryLoader(LibraryLoader):
     def load_framework(self, path):
         realpath = self.find_framework(path)
         if realpath:
-            return ctypes.cdll.LoadLibrary(realpath)
+            lib = ctypes.cdll.LoadLibrary(realpath)
+            if _debug_lib:
+                print realpath
+            return lib
 
         raise ImportError("Can't find framework %s." % path)
 
