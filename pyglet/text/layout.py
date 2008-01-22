@@ -469,7 +469,6 @@ class TextLayout(object):
         
     def _create_vertex_lists(self, x, y, glyph_runs, 
                              i, colors_iter, background_iter):
-        print x, y
         x0 = x1 = x
         vertex_lists = []
         batch = self.batch
