@@ -561,17 +561,45 @@ def get_default():
     '''
     return _default
 
-def tick():
+def tick(poll=False):
     '''Signify that one frame has passed on the default clock.
 
     This will call any scheduled functions that have elapsed.
+
+    :Parameters:
+        `poll` : bool
+            If True, the function will call any scheduled functions
+            but will not sleep or busy-wait for any reason.  Recommended
+            for advanced applications managing their own sleep timers
+            only.
+            
+            Since pyglet 1.1.
 
     :rtype: float
     :return: The number of seconds since the last "tick", or 0 if this was the
         first frame.
     '''
 
-    return _default.tick()
+    return _default.tick(poll)
+
+def get_sleep_time(sleep_idle):
+    '''Get the time until the next item is scheduled on the default clock.
+
+    See `Clock.get_sleep_time` for details.
+
+    :Parameters:
+        `sleep_idle` : bool
+            If True, the application intends to sleep through its idle
+            time; otherwise it will continue ticking at the maximum 
+            frame rate allowed.
+
+    :rtype: float
+    :return: Time until the next scheduled event in seconds, or ``None``
+        if there is no event scheduled.
+
+    :since: pyglet 1.1
+    '''
+    return _default.get_sleep_time(sleep_idle)
 
 def get_fps():
     '''Return the current measured FPS of the default clock.
