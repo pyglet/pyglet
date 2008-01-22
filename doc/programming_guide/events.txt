@@ -246,7 +246,7 @@ an event handler.
 Implementing the Observer pattern
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The [Observer design pattern]_, also known as Publisher/Subscriber, is a
+The `Observer design pattern`_, also known as Publisher/Subscriber, is a
 simple way to decouple software components.  It is used extensively in many
 large software projects; for example, Java's AWT and Swing GUI toolkits and the
 Python ``logging`` module; and is fundamental to any Model-View-Controller
@@ -287,8 +287,7 @@ neither the timer nor the clocks needed prior knowledge of the other.  During
 object construction any relationships between subjects and observers can be
 created.
 
-.. [Observer design pattern] Gamma, et al., `Design Patterns`
-                             Addison-Wesley 1994
+.. _Observer design pattern: Gamma, et al., `Design Patterns` Addison-Wesley 1994
 
 Documenting events
 ^^^^^^^^^^^^^^^^^^
