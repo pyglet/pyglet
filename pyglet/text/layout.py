@@ -197,7 +197,14 @@ class TextLayout(object):
             vertex_list.delete()
 
     def draw(self):
-        self.batch.draw()
+        # TODO XXX BUG HACK background items need to be drawn with background
+        # state.
+        self.top_state.set()
+        self.foreground_state.set()
+        for vertex_list in self._vertex_lists:
+            vertex_list.draw(GL_QUADS)
+        self.foreground_state.unset()
+        self.top_state.unset()
 
     def _init_states(self, state_order):
         if state_order != 0:
@@ -462,6 +469,7 @@ class TextLayout(object):
         
     def _create_vertex_lists(self, x, y, glyph_runs, 
                              i, colors_iter, background_iter):
+        print x, y
         x0 = x1 = x
         vertex_lists = []
         batch = self.batch

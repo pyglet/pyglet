@@ -14,8 +14,8 @@ class Label(layout.TextLayout):
         super(Label, self).__init__(doc, multiline=False, batch=batch,
                                     state_order=state_order)
 
-        self._x = 0
-        self._y = 0
+        self._x = x
+        self._y = y
         self._halign = halign
         self._valign = valign
         self._update()
