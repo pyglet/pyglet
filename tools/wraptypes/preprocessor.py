@@ -1052,6 +1052,11 @@ class PreprocessorParser(yacc.Parser):
 
         self.lexer.filename = ''
 
+        self.defines = {}
+
+    def define(self, name, value):
+        self.defines[name] = value
+
     def add_gcc_search_path(self):
         from subprocess import Popen, PIPE
         path = Popen('gcc -print-file-name=include', 
@@ -1063,6 +1068,8 @@ class PreprocessorParser(yacc.Parser):
         self.output = []
         if not namespace:
             namespace = PreprocessorNamespace()
+        for name, value in self.defines.items():
+            namespace.define_object(name, (create_token('IDENTIFIER', value),))
         self.namespace = namespace
         self.imported_headers = set()
         self.condition_stack = [ExecutionState(True, True)]

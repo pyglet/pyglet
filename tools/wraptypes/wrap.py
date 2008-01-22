@@ -215,6 +215,11 @@ def main(*argv):
                   help='write wrapper to FILE', metavar='FILE')
     op.add_option('-l', '--library', dest='library',
                   help='link to LIBRARY', metavar='LIBRARY')
+    op.add_option('-D', '--define', dest='defines',
+                  help='define token NAME=VALUE', action='append')
+    op.add_option('-i', '--include-file', action='append', dest='include_files',
+                  help='assume FILE is iincluded', metavar='FILE',
+                  default=[])
     op.add_option('-I', '--include-dir', action='append', dest='include_dirs',
                   help='add DIR to include search path', metavar='DIR',
                   default=[])
@@ -243,6 +248,11 @@ def main(*argv):
                          link_modules=options.link_modules,
                          all_headers=options.all_headers)
     wrapper.preprocessor_parser.include_path += options.include_dirs
+    for define in options.defines:
+        name, value = define.split('=')
+        wrapper.preprocessor_parser.define(name, value)
+    for file in options.include_files:
+        wrapper.wrap(file)
     for header in headers:
         wrapper.wrap(header)
     wrapper.end_output()
