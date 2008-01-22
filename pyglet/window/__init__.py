@@ -150,6 +150,7 @@ import pprint
 import sys
 
 import pyglet
+from pyglet import app
 from pyglet import gl
 from pyglet.gl import gl_info
 from pyglet.event import EventDispatcher
@@ -214,7 +215,7 @@ class Display(object):
     an instance of this class.  Use a display to obtain `Screen` instances.
     '''
     def __init__(self):
-        self._windows = []
+        app.displays.add(self)
 
     def get_screens(self):
         '''Get the available screens.
@@ -243,7 +244,7 @@ class Display(object):
 
         :rtype: sequence of `Window`
         '''
-        return self._windows
+        return [window for window in app.windows if window.display is self]
 
 class Screen(object):
     '''A virtual monitor that supports fullscreen windows.
@@ -672,7 +673,7 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
             caption = sys.argv[0]
         self._caption = caption
 
-        display._windows.append(self)
+        app.windows.add(self)
         self._create()
 
         self.switch_to()
@@ -786,7 +787,7 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
         After closing the window, the GL context will be invalid.  The
         window instance cannot be reused once closed (see also `set_visible`).
         '''
-        self._display._windows.remove(self)
+        app.windows.remove(self)
         self._context.destroy()
         self._config = None
         self._context = None

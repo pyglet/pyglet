@@ -46,8 +46,9 @@ setup_info = dict(
     # Package info
     packages=[
         'pyglet', 
-        'pyglet.gl', 
+        'pyglet.app',
         'pyglet.font', 
+        'pyglet.gl', 
         'pyglet.graphics',
         'pyglet.image', 
         'pyglet.image.codecs',
