@@ -51,9 +51,8 @@ object instead of a filename::
 The hint helps the module locate an appropriate decoder to use based on the
 file extension.  It is optional.
 
-Once loaded, images can be used directly by most other modules of pyglet (for
-example, pyglet.ext.scene2d).  All images have a width and height you can
-access::
+Once loaded, images can be used directly by most other modules of pyglet.  All
+images have a width and height you can access::
 
     width, height = pic.width, pic.height
 
