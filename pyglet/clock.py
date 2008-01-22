@@ -237,20 +237,32 @@ class Clock(_ClockBase):
         self._schedule_interval_items = []
         self._schedule_functions = {}
 
-    def tick(self):
+    def tick(self, poll=False):
         '''Signify that one frame has passed.
 
         This will call any scheduled functions that have elapsed.
+
+        :Parameters:
+            `poll` : bool
+                If True, the function will call any scheduled functions
+                but will not sleep or busy-wait for any reason.  Recommended
+                for advanced applications managing their own sleep timers
+                only.
+                
+                Since pyglet 1.1.
 
         :rtype: float
         :return: The number of seconds since the last "tick", or 0 if this was
             the first frame.
         '''
-        if self.period_limit:
-            self._limit()
+        if poll:
+            self.next_ts = self.next_ts + self.period_limit
+        else:
+            if self.period_limit:
+                self._limit()
 
-        if self._force_sleep:
-            self.sleep(0)
+            if self._force_sleep:
+                self.sleep(0)
 
         ts = self.time()
         if self.last_ts is None: 
@@ -303,10 +315,10 @@ class Clock(_ClockBase):
         '''
         ts = self.time()
         # Sleep to just before the desired time
-        sleeptime = self.next_ts - self.time()
+        sleeptime = self.get_sleep_time(False)
         while sleeptime - self.SLEEP_UNDERSHOOT > self.MIN_SLEEP:
             self.sleep(1000000 * (sleeptime - self.SLEEP_UNDERSHOOT))
-            sleeptime = self.next_ts - self.time()
+            sleeptime = self.get_sleep_time(False)
 
         # Busy-loop CPU to get closest to the mark
         sleeptime = self.next_ts - self.time()
@@ -321,8 +333,57 @@ class Clock(_ClockBase):
             # Otherwise keep the clock steady
             self.next_ts = self.next_ts + self.period_limit
 
+    def get_sleep_time(self, sleep_idle):
+        '''Get the time until the next item is scheduled.
+
+        This method considers all scheduled items and the current
+        ``fps_limit``, if any.
+
+        Applications can choose to continue receiving updates at the
+        maximum framerate during idle time (when no functions are scheduled),
+        or they can sleep through their idle time and allow the CPU to
+        switch to other processes or run in low-power mode.
+
+        If `sleep_idle` is ``True`` the latter behaviour is selected, and
+        ``None`` will be returned if there are no scheduled items.
+
+        Otherwise, if `sleep_idle` is ``False``, a sleep time allowing
+        the maximum possible framerate (considering ``fps_limit``) will
+        be returned; or an earlier time if a scheduled function is ready.
+
+        :Parameters:
+            `sleep_idle` : bool
+                If True, the application intends to sleep through its idle
+                time; otherwise it will continue ticking at the maximum 
+                frame rate allowed.
+
+        :rtype: float
+        :return: Time until the next scheduled event in seconds, or ``None``
+            if there is no event scheduled.
+
+        :since: pyglet 1.1
+        '''
+        if self._schedule_items or not sleep_idle:
+            if not self.period_limit:
+                return 0.
+            else:
+                wake_time = self.next_ts
+                if self._schedule_interval_items:
+                    wake_time = min(wake_time,
+                                    self._schedule_interval_items[0].next_ts)
+                return wake_time - self.time()
+
+        if self._schedule_interval_items:
+            return self._schedule_interval_items[0].next_ts - self.time()
+            
+        return None
+
     def set_fps_limit(self, fps_limit):
         '''Set the framerate limit.
+
+        The framerate limit applies only when a function is scheduled
+        for every frame.  That is, the framerate limit can be exceeded by
+        scheduling a function for a very small period of time.
 
         :Parameters:
             `fps_limit` : float
