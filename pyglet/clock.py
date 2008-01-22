@@ -371,10 +371,11 @@ class Clock(_ClockBase):
                 if self._schedule_interval_items:
                     wake_time = min(wake_time,
                                     self._schedule_interval_items[0].next_ts)
-                return wake_time - self.time()
+                return max(wake_time - self.time(), 0.)
 
         if self._schedule_interval_items:
-            return self._schedule_interval_items[0].next_ts - self.time()
+            return max(self._schedule_interval_items[0].next_ts - self.time(),
+                       0)
             
         return None
 
