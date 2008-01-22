@@ -13,7 +13,6 @@ class StyleRuns(object):
     def __init__(self, size, initial):
         self.runs = [StyleRun(initial, size)]
 
-
     def insert(self, pos, length):
         i = 0
         for run in self.runs:
@@ -110,6 +109,9 @@ class StyleRuns(object):
             return self.runs[0].style
 
         assert False, 'Index not in range'
+
+    def __repr__(self):
+        return str(list(self))
 
 class StyleRunsRangeIterator(object):
     '''Perform sequential range iterations over a StyleRuns.'''

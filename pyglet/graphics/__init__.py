@@ -198,6 +198,31 @@ class Batch(object):
         for func in self._draw_list:
             func()
 
+    def draw_subset(self, vertex_lists):
+        # Horrendously inefficient.
+        def visit(state):
+            state.set()
+
+            # Draw domains using this state
+            domain_map = self.state_map[state]
+            for (_, mode, _), domain in domain_map.items():
+                for list in vertex_lists:
+                    if list.domain is domain:
+                        list.draw(mode)
+
+            # Sort and visit child states of this state
+            children = self.state_children.get(state)
+            if children:
+                children.sort()
+                for child in children:
+                    visit(child)
+
+            state.unset()
+
+        self.top_states.sort()
+        for state in self.top_states:
+            visit(state)
+
     def debug_draw_tree(self):
         if self._draw_list_dirty:
             self._update_draw_list()

@@ -162,12 +162,17 @@ class TextLayoutTextureState(graphics.AbstractState):
     # enable bit.
 
     def __hash__(self):
-        return hash((self.texture, self.parent))
+        return hash((self.texture.id, self.parent))
 
     def __eq__(self, other):
         return (self.__class__ is other.__class__ and 
-                self.texture == other.texture and
-                self.parent == other.parent)
+                self.texture.id == other.texture.id and
+                self.parent is other.parent)
+
+    def __repr__(self):
+        return '%s(%d, %r)' % (self.__class__.__name__, 
+                               self.texture.id,
+                               self.parent)
 
 class TextLayout(object):
     _document = None
@@ -197,14 +202,7 @@ class TextLayout(object):
             vertex_list.delete()
 
     def draw(self):
-        # TODO XXX BUG HACK background items need to be drawn with background
-        # state.
-        self.top_state.set()
-        self.foreground_state.set()
-        for vertex_list in self._vertex_lists:
-            vertex_list.draw(GL_QUADS)
-        self.foreground_state.unset()
-        self.top_state.unset()
+        self.batch.draw_subset(self._vertex_lists)
 
     def _init_states(self, state_order):
         if state_order != 0:
