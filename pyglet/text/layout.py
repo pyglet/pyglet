@@ -196,6 +196,9 @@ class TextLayout(object):
         for vertex_list in self._vertex_lists:
             vertex_list.delete()
 
+    def draw(self):
+        self.batch.draw()
+
     def _init_states(self, state_order):
         if state_order != 0:
             self.top_state = TextLayoutState(state_order)
@@ -222,7 +225,7 @@ class TextLayout(object):
             _vertex_list.delete()
         self._vertex_lists = []
         
-        if not self._document:
+        if not self._document or not self._document.text:
             return
 
         len_text = len(self._document.text)
@@ -350,7 +353,8 @@ class TextLayout(object):
                     
                     next_start = index
                 else:
-                    if x + glyph.advance >= self._width or text == '\n':
+                    if (self._width is not None and
+                            x + glyph.advance >= self._width) or text == '\n':
                         if text == '\n':
                             for run in run_accum:
                                 line.add_glyph_run(run)
