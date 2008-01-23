@@ -2,8 +2,8 @@ import operator
 
 from pyglet import gl, event
 
-from tilemap import Map
-from spryte import Layer, Sprite, AnimatedSprite
+import spryte
+import tilemap
 
 class View(object):
     '''Render a flat view of a scene2d.Scene.
@@ -40,7 +40,7 @@ class View(object):
         return event.EVENT_UNHANDLED
 
     @classmethod
-    def from_window(cls, window, **kw):
+    def for_window(cls, window, **kw):
         '''Create a view which is the same dimensions as the supplied
         window.'''
         return cls(0, 0, window.width, window.height, **kw)
@@ -64,10 +64,6 @@ class View(object):
         ''' Pick whatever is on the top at the position x, y. '''
         r = []
 
-        for sprite in self.sprites:
-            if sprite.contains(x, y):
-                r.append(sprite)
-
         for layer in self.layers:
             cell = layer.get(x, y)
             if cell:
@@ -82,30 +78,25 @@ class View(object):
     def remove_layer(self, layer):
         self.layers.remove(layer)
 
-    def get_layer(self, z, blended=False):
+    def get_layer(self, z):
         '''Get a layer for the specified Z depth, adding it if necessary.
         '''
         for layer in self.layers:
             if layer.z == z:
-                # XXX assert layer.blended == blended or raise error about z values
                 break
         else:
-            layer = Layer(blended=blended)
+            layer = spryte.SpriteBatch()
             layer.z = z
             self.layers.append(layer)
             self.layers.sort(key=operator.attrgetter('z'))
         return layer
 
-    def add_sprite(self, im, x, y, z=0, klass=Sprite, **kw):
-        layer = self.get_layer(z, blended=True)
-        return Sprite(im, layer, x, y, **kw)
+    def add_sprite(self, im, x, y, z=0, klass=spryte.Sprite, **kw):
+        layer = self.get_layer(z)
+        return klass(im, x, y, batch=layer, **kw)
 
-    def add_animsprite(self, im, rows, frames, x, y, period, z=0, **kw):
-        layer = self.get_layer(z, blended=True)
-        return AnimatedSprite(im, rows, frames, layer, x, y, period, **kw)
-
-    def add_map(self, im, rows, frames, cells, z=0, **kw):
-        map = Map.from_imagegrid(im, rows, frames, cells, **kw)
+    def add_map(self, im, cells, z=0, **kw):
+        map = tilemap.Map.from_imagegrid(im, cells, **kw)
         map.z = z
         self.layers.append(map)
         self.layers.sort(key=operator.attrgetter('z'))

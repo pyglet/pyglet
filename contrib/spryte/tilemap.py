@@ -2,7 +2,7 @@ from pyglet import image
 
 import spryte
 
-class Map(spryte.Layer):
+class Map(spryte.SpriteBatch):
     '''Rectangular map.
 
     "cells" argument must be a row-major list of lists of Sprite instances.
@@ -64,30 +64,23 @@ class Map(spryte.Layer):
         self.cells = []
 
     @classmethod
-    def from_imagegrid(cls, im, rows, frames, cells, file=None,
-            blended=False, origin=None):
+    def from_imagegrid(cls, im, cells, file=None, origin=None):
         '''Initialise the map using an image the image grid.
 
         Both the image grid and the map cells have y=0 at the bottom of
         the grid / map.
 
         Return a Map instance.'''
-        if isinstance(im, image.UniformTextureSequence):
-            self.texture_sequence = im.self.texture_sequence
-        else:
-            if im not in spryte.texture_cache:
-                spryte.texture_cache[im] = image.ImageGrid(image.load(im,
-                    file), rows, frames).texture_sequence
-            texture_sequence = spryte.texture_cache[im]
+        texture_sequence = im.texture_sequence
         l = []
         cw, ch = texture_sequence.item_width, texture_sequence.item_height
-        inst = cls(blended=False)
+        inst = cls()
         for y, row in enumerate(cells):
             m = []
             l.append(m)
             for x, num in enumerate(row):
-                m.append(spryte.Sprite(texture_sequence[num], inst, x*cw, y*ch,
-                    map=inst))
+                m.append(spryte.Sprite(texture_sequence[num], x*cw, y*ch,
+                    map=inst, batch=inst))
         inst.set_cells(cw, ch, l, origin)
         return inst
 

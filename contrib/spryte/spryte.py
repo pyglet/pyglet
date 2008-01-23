@@ -100,6 +100,9 @@ class Sprite(sprite.Sprite):
         if other.top < self.bottom: return False
         return True
 
+    def on_mouse_press(self, x, y, buttons, modifiers):
+        pass
+
     # r/w, in pixels, y extent
     def get_top(self): return self.y + self.height - self._texture.anchor_y
     def set_top(self, y): self.y = y - self.height + self._texture.anchor_y
