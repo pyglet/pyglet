@@ -18,32 +18,33 @@ import random
 from pyglet import options
 options['debug_gl'] = False
 
-from pyglet.window import Window
+from pyglet import window
 from pyglet import clock
-from spryte import *
+from pyglet import resource
+import spryte
 from pyglet.gl import *
 
-w = Window(600, 600, vsync=False)
+w = window.Window(600, 600, vsync=False)
 
-class BouncySprite(Sprite):
+class BouncySprite(spryte.Sprite):
     def update(self):
         # move, check bounds
-        self.pos = (self.x + self.dx, self.y + self.dy)
+        self.position = (self.x + self.dx, self.y + self.dy)
         if self.x < 0: self.x = 0; self.dx = -self.dx
         elif self.right > 600: self.right = 600; self.dx = -self.dx
         if self.y < 0: self.y = 0; self.dy = -self.dy
         elif self.top > 600: self.top = 600; self.dy = -self.dy
 
-layer = Layer()
+batch = spryte.SpriteBatch()
 
-sprites = []
 numsprites = int(sys.argv[1])
+resource.path.append('examples/noisy')
+ball = resource.image('ball.png')
 for i in range(numsprites):
-    s = BouncySprite('examples/noisy/ball.png', layer, 0, 0,
+    x = random.randint(0, w.width - ball.width)
+    y = random.randint(0, w.height - ball.height)
+    BouncySprite(ball, x, y, batch=batch,
         dx=random.randint(-10, 10), dy=random.randint(-10, 10))
-    s.x = random.randint(0, w.width - s.width)
-    s.y = random.randint(0, w.height - s.height)
-    sprites.append(s)
 
 t = 0
 numframes = 0
@@ -55,9 +56,9 @@ while 1:
         break
     t += clock.tick()
     w.dispatch_events()
-    for s in sprites: s.update()
+    for s in batch: s.update()
     w.clear()
-    layer.draw()
+    batch.draw()
     w.flip()
     numframes += 1
 w.close()

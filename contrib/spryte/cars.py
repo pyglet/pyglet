@@ -2,26 +2,31 @@ import sys
 import random
 import math
 
-from pyglet import window, clock, gl, event
+from pyglet import window
+from pyglet import clock
+from pyglet import resource
 
 import spryte
 
-NUM_BOOMS = 100
+NUM_CARS = 100
 if len(sys.argv) > 1:
-    NUM_BOOMS = int(sys.argv[1])
+    NUM_CARS = int(sys.argv[1])
 
 win = window.Window(vsync=False)
 fps = clock.ClockDisplay(color=(1, 1, 1, 1))
 
-cars = spryte.Layer()
-for x in range(1000):
-    spryte.Sprite('car.png', cars,
+cars = spryte.SpriteBatch()
+car = resource.image('car.png')
+car.anchor_x = 16
+car.anchor_y = 20
+for i in range(NUM_CARS):
+    s = spryte.Sprite(car,
         win.width*random.random(), win.height*random.random(),
-        rothandle = (16, 16), dr=-45 + random.random()*90)
+        batch=cars, dr=-45 + random.random()*90)
 
 while not win.has_exit:
-    clock.tick()
     win.dispatch_events()
+    clock.tick()
 
     win.clear()
     for car in cars:
