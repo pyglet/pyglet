@@ -700,7 +700,11 @@ class XlibWindow(BaseWindow):
             gl.glFlush()
         except gl.GLException:
             pass
-        glx.glXMakeCurrent(self._x_display, 0, None)
+
+        if self._glx_1_3:
+            glx.glXMakeContextCurrent(self._x_display, 0, 0, None)
+        else:
+            glx.glXMakeCurrent(self._x_display, 0, None)
 
         self._unmap()
         if self._glx_window:
