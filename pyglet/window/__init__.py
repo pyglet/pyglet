@@ -150,7 +150,6 @@ import pprint
 import sys
 
 import pyglet
-from pyglet import app
 from pyglet import gl
 from pyglet.gl import gl_info
 from pyglet.event import EventDispatcher
@@ -215,6 +214,7 @@ class Display(object):
     an instance of this class.  Use a display to obtain `Screen` instances.
     '''
     def __init__(self):
+        from pyglet import app
         app.displays.add(self)
 
     def get_screens(self):
@@ -536,6 +536,7 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
     _mouse_in_window = True
 
     _event_queue = None
+    _enable_event_queue = True    # overridden by EventLoop.
     _allow_dispatch_event = False # controlled by dispatch_events stack frame
 
     # Class attributes
@@ -673,6 +674,7 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
             caption = sys.argv[0]
         self._caption = caption
 
+        from pyglet import app
         app.windows.add(self)
         self._create()
 
@@ -787,6 +789,7 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
         After closing the window, the GL context will be invalid.  The
         window instance cannot be reused once closed (see also `set_visible`).
         '''
+        from pyglet import app
         app.windows.remove(self)
         self._context.destroy()
         self._config = None
@@ -1188,7 +1191,7 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
     
     def dispatch_event(self, *args):
-        if self._allow_dispatch_event:
+        if not self._enable_event_queue or self._allow_dispatch_event:
             EventDispatcher.dispatch_event(self, *args)
         else:
             self._event_queue.append(args)
@@ -1578,6 +1581,8 @@ BaseWindow.register_event_type('on_show')
 BaseWindow.register_event_type('on_hide')
 BaseWindow.register_event_type('on_context_lost')
 BaseWindow.register_event_type('on_context_state_lost')
+BaseWindow.register_event_type('on_update') # XXX TODO doc
+BaseWindow.register_event_type('on_draw')   # XXX TODO doc
 
 def get_platform():
     '''Get an instance of the Platform most appropriate for this

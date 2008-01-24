@@ -256,7 +256,8 @@ class Clock(_ClockBase):
             the first frame.
         '''
         if poll:
-            self.next_ts = self.next_ts + self.period_limit
+            if self.period_limit:
+                self.next_ts = self.next_ts + self.period_limit
         else:
             if self.period_limit:
                 self._limit()
