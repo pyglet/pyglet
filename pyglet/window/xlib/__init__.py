@@ -102,6 +102,31 @@ _motion_map = {
     (key.DELETE, False):    key.MOTION_DELETE,
 }
 
+# Set up error handler
+def _error_handler(display, event):
+    # By default, all errors are silently ignored: this has a better chance
+    # of working than the default behaviour of quitting ;-)
+    #
+    # We've actually never seen an error that was our fault; they're always
+    # driver bugs (and so the reports are useless).  Nevertheless, set
+    # environment variable PYGLET_DEBUG_X11 to 1 to get dumps of the error
+    # and a traceback (execution will continue).
+    if pyglet.options['debug_x11']:
+        event = event.contents
+        buf = c_buffer(1024)
+        xlib.XGetErrorText(display, event.error_code, buf, len(buf))
+        print 'X11 error:', buf.value
+        print '   serial:', event.serial
+        print '  request:', event.request_code
+        print '    minor:', event.minor_code
+        print ' resource:', event.resourceid
+
+        import traceback
+        print 'Python stack trace (innermost last):'
+        traceback.print_stack()
+_error_handler_ptr = xlib.XErrorHandler(_error_handler)
+xlib.XSetErrorHandler(_error_handler_ptr)
+
 class XlibException(WindowException):
     '''An X11-specific exception.  This exception is probably a programming
     error in pyglet.'''
@@ -142,7 +167,6 @@ class XlibDisplayDevice(Display):
         glx_info.set_display(self._display.contents)
 
         self._fileno = xlib.XConnectionNumber(self._display)
-
         self._window_map = {}
 
         # Initialise XSync
@@ -1341,7 +1365,6 @@ class XlibWindow(BaseWindow):
             self._current_sync_valid = True
 
         self.switch_to()
-        glx.glXWaitX()
 
         w, h = ev.xconfigure.width, ev.xconfigure.height
         x, y = ev.xconfigure.x, ev.xconfigure.y

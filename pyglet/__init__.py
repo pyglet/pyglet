@@ -124,6 +124,7 @@ options = {
     'debug_lib': False,
     'debug_media': False,
     'debug_win32': False,
+    'debug_x11': False,
     'vsync': None,
     'xsync': True,
 }
@@ -136,6 +137,7 @@ _option_types = {
     'debug_lib': bool,
     'debug_media': bool,
     'debug_win32': bool,
+    'debug_x11': bool,
     'vsync': bool,
     'xsync': bool,
 }
