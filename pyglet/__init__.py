@@ -108,6 +108,13 @@ if getattr(sys, 'frozen', None):
 #:     this option overrides it (to either force vsync on or off).  If unset,
 #:     or set to None, the `pyglet.window.Window.vsync` property behaves
 #:     as documented.
+#: xsync
+#:     If set (the default), pyglet will attempt to synchronise the drawing of
+#:     double-buffered windows to the border updates of the X11 window
+#:     manager.  This improves the appearance of the window during resize
+#:     operations.  This option only affects double-buffered windows on
+#:     X11 servers supporting the Xsync extension with a window manager
+#:     that implements the _NET_WM_SYNC_REQUEST protocol.
 #:
 options = {
     'audio': ('directsound', 'openal', 'alsa', 'silent'),
@@ -118,6 +125,7 @@ options = {
     'debug_media': False,
     'debug_win32': False,
     'vsync': None,
+    'xsync': True,
 }
 
 _option_types = {
@@ -129,6 +137,7 @@ _option_types = {
     'debug_media': bool,
     'debug_win32': bool,
     'vsync': bool,
+    'xsync': bool,
 }
 
 def _read_environment():

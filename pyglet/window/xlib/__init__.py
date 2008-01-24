@@ -64,6 +64,12 @@ try:
 except:
     _have_xinerama = False
 
+try:
+    import pyglet.window.xlib.xsync
+    _have_xsync = True
+except:
+    _have_xsync = False
+
 class mwmhints_t(Structure):
     _fields_ = [
         ('flags', c_uint32),
@@ -72,6 +78,8 @@ class mwmhints_t(Structure):
         ('input_mode', c_int32),
         ('status', c_uint32)
     ]
+
+XA_CARDINAL = 6 # Xatom.h:14
 
 # Do we have the November 2000 UTF8 extension?
 _have_utf8 = hasattr(xlib._lib, 'Xutf8TextListToTextProperty')
@@ -120,6 +128,8 @@ class XlibPlatform(Platform):
 class XlibDisplayDevice(Display):
     _display = None     # POINTER(xlib.Display)
 
+    _enable_xsync = False
+
     def __init__(self, name):
         super(XlibDisplayDevice, self).__init__()
 
@@ -130,6 +140,27 @@ class XlibDisplayDevice(Display):
 
         # Also set the default GLX display for future info queries
         glx_info.set_display(self._display.contents)
+
+        self._fileno = xlib.XConnectionNumber(self._display)
+
+        self._window_map = {}
+
+        # Initialise XSync
+        if _have_xsync:
+            event_base = c_int()
+            error_base = c_int()
+            if xsync.XSyncQueryExtension(self._display, 
+                                         byref(event_base),
+                                         byref(error_base)):
+                major_version = c_int()
+                minor_version = c_int()
+                if xsync.XSyncInitialize(self._display,
+                                         byref(major_version),
+                                         byref(minor_version)):
+                    self._enable_xsync = True
+
+    def fileno(self):
+        return self._fileno
 
     def get_screens(self):
         x_screen = xlib.XDefaultScreen(self._display)
@@ -391,6 +422,10 @@ class XlibWindow(BaseWindow):
     _lost_context = False
     _lost_context_state = False
 
+    _enable_xsync = False
+    _current_sync_value = None
+    _current_sync_valid = False
+
     _default_event_mask = (0x1ffffff 
         & ~xlib.PointerMotionHintMask
         & ~xlib.ResizeRedirectMask)
@@ -425,6 +460,7 @@ class XlibWindow(BaseWindow):
                 glx.glXDestroyWindow(self._x_display, self._glx_window)
             xlib.XDestroyWindow(self._x_display, self._window)
             self._glx_window = None
+            del self.display._window_map[self._window]
             self._window = None 
             self._mapped = False
 
@@ -484,18 +520,41 @@ class XlibWindow(BaseWindow):
                 0, 0, self._width, self._height, 0, visual_info.depth,
                 xlib.InputOutput, visual, xlib.CWColormap, 
                 byref(window_attributes))
+            self.display._window_map[self._window] = self
 
             # Setting null background pixmap disables drawing the background,
             # preventing flicker while resizing (in theory).
             xlib.XSetWindowBackgroundPixmap(self._x_display, self._window, 0)
 
-            # Enable WM_DELETE_WINDOW message
-            wm_delete_window = xlib.XInternAtom(self._x_display,
-                'WM_DELETE_WINDOW', False)
-            wm_delete_window = c_ulong(wm_delete_window)
-            xlib.XSetWMProtocols(self._x_display, self._window,
-                byref(wm_delete_window), 1)
+            self._enable_xsync = (pyglet.options['xsync'] and
+                                  self.display._enable_xsync and
+                                  self.config.double_buffer)
 
+            # Set supported protocols
+            protocols = []
+            protocols.append(xlib.XInternAtom(self._x_display,
+                                              'WM_DELETE_WINDOW', False))
+            if self._enable_xsync:
+                protocols.append(xlib.XInternAtom(self._x_display,
+                                                  '_NET_WM_SYNC_REQUEST',
+                                                  False))
+            protocols = (c_ulong * len(protocols))(*protocols)
+            xlib.XSetWMProtocols(self._x_display, self._window,
+                                 protocols, len(protocols))
+
+            # Create window resize sync counter
+            if self._enable_xsync:
+                value = xsync.XSyncValue()
+                self._sync_counter = xlib.XID(
+                    xsync.XSyncCreateCounter(self._x_display, value))
+                atom = xlib.XInternAtom(self._x_display,
+                                        '_NET_WM_SYNC_REQUEST_COUNTER', False)
+                ptr = pointer(self._sync_counter)
+
+                xlib.XChangeProperty(self._x_display, self._window,
+                                     atom, XA_CARDINAL, 32,
+                                     xlib.PropModeReplace,
+                                     cast(ptr, POINTER(c_ubyte)), 1)
         # Set window attributes
         attributes = xlib.XSetWindowAttributes()
         attributes_mask = 0
@@ -528,7 +587,7 @@ class XlibWindow(BaseWindow):
         if self._style in styles:
             self._set_atoms_property('_NET_WM_WINDOW_TYPE', 
                                      (styles[self._style],))
-        elif self._style == self.WINDOW_STYLE_BORDERLESS:
+        elif self._style == selmf.WINDOW_STYLE_BORDERLESS:
             MWM_HINTS_DECORATIONS = 1 << 1
             PROP_MWM_HINTS_ELEMENTS = 5
             mwmhints = mwmhints_t()
@@ -625,12 +684,15 @@ class XlibWindow(BaseWindow):
         if self._window:
             xlib.XDestroyWindow(self._x_display, self._window)
 
+        del self.display._window_map[self._window]
         self._window = None
         self._glx_window = None
 
         if _have_utf8:
             xlib.XDestroyIC(self._x_ic)
             xlib.XCloseIM(self._x_im)
+
+        super(XlibWindow, self).close()
 
     def switch_to(self):
         if self._glx_1_3:
@@ -664,6 +726,8 @@ class XlibWindow(BaseWindow):
             glx.glXSwapBuffers(self._x_display, self._glx_window)
         else:
             glx.glXSwapBuffers(self._x_display, self._window)
+
+        self._sync_resize()
 
     def set_vsync(self, vsync):
         if pyglet.options['vsync'] is not None:
@@ -898,7 +962,6 @@ class XlibWindow(BaseWindow):
         buffer = (c_ubyte * len(data))()
         memmove(buffer, data, len(data))
         atom = xlib.XInternAtom(self._x_display, '_NET_WM_ICON', False)
-        XA_CARDINAL = 6 # Xatom.h:14
         xlib.XChangeProperty(self._x_display, self._window, atom, XA_CARDINAL,
             32, xlib.PropModeReplace, buffer, len(data)/sizeof(c_ulong))
 
@@ -983,16 +1046,7 @@ class XlibWindow(BaseWindow):
     # Event handling
 
     def dispatch_events(self):
-        while self._event_queue:
-            EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
-
-        # Dispatch any context-related events
-        if self._lost_context:
-            self._lost_context = False
-            EventDispatcher.dispatch_event(self, 'on_context_lost')
-        if self._lost_context_state:
-            self._lost_context_state = False
-            EventDispatcher.dispatch_event(self, 'on_context_state_lost')
+        self.dispatch_pending_events()
 
         self._allow_dispatch_event = True
 
@@ -1007,18 +1061,31 @@ class XlibWindow(BaseWindow):
                 0x1ffffff, byref(e)):
             if xlib.XFilterEvent(e, 0):
                 continue
-            event_handler = self._event_handlers.get(e.type)
-            if event_handler:
-                event_handler(e)
+            self.dispatch_platform_event(e)
 
         # Generic events for this window (the window close event).
         while xlib.XCheckTypedWindowEvent(_x_display, _window, 
                 xlib.ClientMessage, byref(e)):
-            event_handler = self._event_handlers.get(e.type)
-            if event_handler:
-                event_handler(e)
+            self.dispatch_platform_event(e) 
         
         self._allow_dispatch_event = False
+
+    def dispatch_pending_events(self):
+        while self._event_queue:
+            EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
+
+        # Dispatch any context-related events
+        if self._lost_context:
+            self._lost_context = False
+            EventDispatcher.dispatch_event(self, 'on_context_lost')
+        if self._lost_context_state:
+            self._lost_context_state = False
+            EventDispatcher.dispatch_event(self, 'on_context_state_lost')
+
+    def dispatch_platform_event(self, e):
+        event_handler = self._event_handlers.get(e.type)
+        if event_handler:
+            event_handler(e)
 
     @staticmethod
     def _translate_modifiers(state):
@@ -1185,10 +1252,27 @@ class XlibWindow(BaseWindow):
 
     @XlibEventHandler(xlib.ClientMessage)
     def _event_clientmessage(self, ev):
-        wm_delete_window = xlib.XInternAtom(ev.xclient.display,
-            'WM_DELETE_WINDOW', False)
-        if ev.xclient.data.l[0] == wm_delete_window:
+        atom = ev.xclient.data.l[0]
+        if atom == xlib.XInternAtom(ev.xclient.display,
+                                    'WM_DELETE_WINDOW', False):
             self.dispatch_event('on_close')
+        elif (self._enable_xsync and 
+              atom == xlib.XInternAtom(ev.xclient.display, 
+                                       '_NET_WM_SYNC_REQUEST', False)):
+            lo = ev.xclient.data.l[2]
+            hi = ev.xclient.data.l[3]
+            self._current_sync_value = xsync.XSyncValue(hi, lo)
+
+    def _sync_resize(self):
+        if self._enable_xsync and self._current_sync_valid:
+            if xsync.XSyncValueIsZero(self._current_sync_value):
+                self._current_sync_valid = False
+                return
+            xsync.XSyncSetCounter(self._x_display, 
+                                  self._sync_counter,
+                                  self._current_sync_value)
+            self._current_sync_value = None
+            self._current_sync_valid = False
 
     @XlibEventHandler(xlib.ButtonPress)
     @XlibEventHandler(xlib.ButtonRelease)
@@ -1253,6 +1337,12 @@ class XlibWindow(BaseWindow):
 
     @XlibEventHandler(xlib.ConfigureNotify)
     def _event_configurenotify(self, ev):
+        if self._enable_xsync and self._current_sync_value:
+            self._current_sync_valid = True
+
+        self.switch_to()
+        glx.glXWaitX()
+
         w, h = ev.xconfigure.width, ev.xconfigure.height
         x, y = ev.xconfigure.x, ev.xconfigure.y
         if self._width != w or self._height != h:
