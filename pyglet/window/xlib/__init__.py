@@ -124,6 +124,7 @@ def _error_handler(display, event):
         import traceback
         print 'Python stack trace (innermost last):'
         traceback.print_stack()
+    return 0
 _error_handler_ptr = xlib.XErrorHandler(_error_handler)
 xlib.XSetErrorHandler(_error_handler_ptr)
 
