@@ -601,9 +601,6 @@ class CarbonWindow(BaseWindow):
         agl.aglSetInteger(self._agl_context, agl.AGL_SWAP_INTERVAL, byref(swap))
 
     def dispatch_events(self):
-        if self._recreate_deferred:
-            self._recreate_immediate()
-
         self._allow_dispatch_event = True
         while self._event_queue:
             EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
@@ -628,6 +625,13 @@ class CarbonWindow(BaseWindow):
         # Fixes issue 180.
         if result not in (eventLoopTimedOutErr, eventLoopQuitErr):
             raise 'Error %d' % result
+
+    def dispatch_pending_events(self):
+        if self._recreate_deferred:
+            self._recreate_immediate()
+
+        while self._event_queue:
+            EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
 
     def set_caption(self, caption):
         self._caption = caption

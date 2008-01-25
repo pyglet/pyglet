@@ -244,6 +244,7 @@ class Display(object):
 
         :rtype: sequence of `Window`
         '''
+        from pyglet import app
         return [window for window in app.windows if window.display is self]
 
 class Screen(object):
