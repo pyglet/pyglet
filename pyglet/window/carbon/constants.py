@@ -259,6 +259,8 @@ kEventClassSystem = _name('macs')
 kEventClassInk = _name('ink ')
 kEventClassTSMDocumentAccess = _name('tdac')
 
+kEventDurationForever = -1.0
+
 # Appearance.h
 kThemeArrowCursor             = 0
 kThemeCopyArrowCursor         = 1

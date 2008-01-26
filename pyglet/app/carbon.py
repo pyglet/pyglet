@@ -10,11 +10,10 @@ import ctypes
 
 from pyglet.app import windows, BaseEventLoop
 from pyglet import clock
-from pyglet.window.carbon import carbon
-
-kEventDurationForever = ctypes.c_double(-1.0)
+from pyglet.window.carbon import carbon, types, constants
 
 EventLoopTimerProc = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p)
+kEventDurationForever = ctypes.c_double(constants.kEventDurationForever)
 
 class CarbonEventLoop(BaseEventLoop):
     def run(self):
@@ -35,7 +34,7 @@ class CarbonEventLoop(BaseEventLoop):
 
 
         while not self.has_exit:
-            if carbon.ReceiveNextEvent(0, None, kEventDurationForever, 
+            if carbon.ReceiveNextEvent(0, None, kEventDurationForever,
                                        True, ctypes.byref(e)) == 0:
                 carbon.SendEventToEventTarget(e, event_dispatcher)
                 carbon.ReleaseEvent(e)
@@ -47,8 +46,22 @@ class CarbonEventLoop(BaseEventLoop):
     def _timer_proc(self, timer, data):
         dt = clock.tick(True)
 
-        # Dispatch update event
         for window in windows:
+            # Check for live resizing
+            if window._resizing is not None:
+                old_width, old_height = window._resizing
+                rect = types.Rect()
+                carbon.GetWindowBounds(window._window, 
+                                       constants.kWindowContentRgn,
+                                       ctypes.byref(rect))
+                width = rect.right - rect.left
+                height = rect.bottom - rect.top
+                if width != old_width or height != old_height:
+                    window._resizing = width, height
+                    window.switch_to()
+                    window.dispatch_event('on_resize', width, height) 
+
+            # Dispatch update event
             window.dispatch_event('on_update', dt)
             window.dispatch_pending_events()
             if window.has_exit:
@@ -67,5 +80,5 @@ class CarbonEventLoop(BaseEventLoop):
         # Update timout
         sleep_time = clock.get_sleep_time(True)
         if sleep_time is None:
-            sleep_time = kEventDurationForever
+            sleep_time = constants.kEventDurationForever
         carbon.SetEventLoopTimerNextFireTime(timer, ctypes.c_double(sleep_time))

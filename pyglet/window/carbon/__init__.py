@@ -502,6 +502,7 @@ class CarbonWindow(BaseWindow):
 
             if self._resizable:
                 window_attributes |= (kWindowFullZoomAttribute |
+                                      kWindowLiveResizeAttribute |
                                       kWindowResizableAttribute)
 
             r = carbon.CreateNewWindow(window_class,
@@ -1181,13 +1182,25 @@ class CarbonWindow(BaseWindow):
         #carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
+    _resizing = None
+
+    @CarbonEventHandler(kEventClassWindow, kEventWindowResizeStarted)
+    def _on_window_resize_started(self, next_handler, ev, data):
+        self._resizing = (self.width, self.height)
+
+        carbon.CallNextEventHandler(next_handler, ev)
+        return noErr
+
     @CarbonEventHandler(kEventClassWindow, kEventWindowResizeCompleted)
     def _on_window_resize_completed(self, next_handler, ev, data):
+        self._resizing = None
+
         rect = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
         width = rect.right - rect.left
         height = rect.bottom - rect.top
 
+        self.switch_to()
         self.dispatch_event('on_resize', width, height)
         self.dispatch_event('on_expose')
 
