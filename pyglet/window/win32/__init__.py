@@ -818,6 +818,15 @@ class Win32Window(BaseWindow):
 
     def dispatch_events(self):
         self._allow_dispatch_event = True
+        self.dispatch_pending_events()
+
+        msg = MSG()
+        while _user32.PeekMessageW(byref(msg), 0, 0, 0, PM_REMOVE):
+            _user32.TranslateMessage(byref(msg))
+            _user32.DispatchMessageW(byref(msg))
+        self._allow_dispatch_event = False
+
+    def dispatch_pending_events(self):
         while self._event_queue:
             event = self._event_queue.pop(0)
             if type(event[0]) is str:
@@ -826,12 +835,6 @@ class Win32Window(BaseWindow):
             else:
                 # win32 event
                 event[0](*event[1:])
-
-        msg = MSG()
-        while _user32.PeekMessageW(byref(msg), 0, 0, 0, PM_REMOVE):
-            _user32.TranslateMessage(byref(msg))
-            _user32.DispatchMessageW(byref(msg))
-        self._allow_dispatch_event = False
 
     def _wnd_proc(self, hwnd, msg, wParam, lParam):
         event_handler = self._event_handlers.get(msg, None)
@@ -1076,6 +1079,7 @@ class Win32Window(BaseWindow):
             self.dispatch_event('on_show')
         w, h = self._get_location(lParam)
         self._reset_exclusive_mouse_screen()
+        self.switch_to()
         self.dispatch_event('on_resize', w, h)
         return 0
 

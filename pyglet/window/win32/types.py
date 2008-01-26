@@ -55,6 +55,7 @@ HBITMAP = HANDLE
 LPARAM = c_long
 
 WNDPROC = WINFUNCTYPE(c_long, c_int, c_uint, c_int, c_int)
+TIMERPROC = WINFUNCTYPE(None, HWND, c_uint, POINTER(c_uint), c_uint)
 
 class RECT(Structure):
     _fields_ = [
