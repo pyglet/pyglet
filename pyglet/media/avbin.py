@@ -329,6 +329,7 @@ class AVbinSource(StreamingSource):
             while self._audio_packet_size > 0:
                 size_out = ctypes.c_int(len(self._audio_buffer))
 
+                #print self._audio_stream, self._audio_packet_ptr, self._audio_packet_size, self._audio_buffer, size_out
                 used = av.avbin_decode_audio(self._audio_stream,
                     self._audio_packet_ptr, self._audio_packet_size,
                     self._audio_buffer, size_out)
@@ -356,6 +357,7 @@ class AVbinSource(StreamingSource):
 
             self._audio_packet_timestamp = \
                 timestamp_from_avbin(packet.timestamp)
+            self._audio_packet = packet # keep from GC
             self._audio_packet_ptr = ctypes.cast(packet.data,
                                                  ctypes.c_void_p)
             self._audio_packet_size = packet.size
