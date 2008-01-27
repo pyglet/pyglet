@@ -453,12 +453,8 @@ class Clock(_ClockBase):
         else:
             self._schedule_functions[func] = item
 
-    def _schedule_item(self, func, interval, repeat, *args, **kwargs):
+    def _schedule_item(self, func, next_ts, interval, *args, **kwargs):
         last_ts = self.last_ts or self.next_ts
-        next_ts = last_ts + interval
-        if not repeat:
-            interval = 0
-
         item = _ScheduledIntervalItem(
             func, interval, last_ts, next_ts, args, kwargs)
 
@@ -495,7 +491,86 @@ class Clock(_ClockBase):
                 The number of seconds to wait between each call.
 
         '''
-        self._schedule_item(func, interval, True, *args, **kwargs)
+        last_ts = self.last_ts or self.next_ts
+        next_ts = last_ts + interval
+        self._schedule_item(func, next_ts, interval, *args, **kwargs)
+
+    def schedule_interval_soft(self, func, interval, *args, **kwargs):
+        '''Schedule a function to be called every `interval` seconds,
+        beginning at a time that does not coincide with other scheduled
+        events.
+        
+        This method is similar to `schedule_interval`, except that the
+        clock will move the interval out of phase with other scheduled
+        functions so as to distribute CPU more load evenly over time.
+
+        This is useful for functions that need to be called regularly, 
+        but not relative to the initial start time.  `pyglet.media`
+        does this for scheduling audio buffer updates, which need to occur
+        regularly -- if all audio updates are scheduled at the same time 
+        (for example, mixing several tracks of a music score, or playing
+        multiple videos back simultaneously), the resulting load on the
+        CPU is excessive for those intervals but idle outside.  Using
+        the soft interval scheduling, the load is more evenly distributed.
+
+        Soft interval scheduling can also be used as an easy way to schedule
+        graphics animations out of phase; for example, multiple flags
+        waving in the wind.
+
+        :since: pyglet 1.1
+
+        :Parameters:
+            `func` : function
+                The function to call when the timer lapses.
+            `interval` : float
+                The number of seconds to wait between each call.
+
+        '''
+        last_ts = self.last_ts or self.next_ts
+
+        def taken(ts):
+            '''Return True if the given time has already got an item
+            scheduled.  Could do an epsilon search around ts as well.
+            '''
+            for item in self._schedule_interval_items:
+                if item.next_ts == ts:
+                    return True
+                elif item.next_ts > ts:
+                    return False
+            return False
+
+        # Binary division over interval:
+        #
+        # 0                          interval
+        # |--------------------------|
+        #   5  3   6   2   7  4  8   1          Order of search
+        #
+        # i.e., first scheduled at interval,
+        #       then at            interval/2 
+        #       then at            interval/4 
+        #       then at            interval*3/4
+        #       then at            ...
+        #
+        # Schedule is hopefully then evenly distributed for any interval,
+        # and any number of scheduled functions.
+
+        next_ts = last_ts + interval
+        if taken(next_ts): 
+            dt = interval
+            divs = 1
+            while True:
+                next_ts = last_ts
+                for i in range(divs - 1):
+                    next_ts += dt
+                    if not taken(next_ts):
+                        break
+                else:
+                    dt /= 2
+                    divs *= 2
+                    continue
+                break
+
+        self._schedule_item(func, next_ts, interval, *args, **kwargs)
 
     def schedule_once(self, func, delay, *args, **kwargs):
         '''Schedule a function to be called once after `delay` seconds.
@@ -508,7 +583,9 @@ class Clock(_ClockBase):
             `delay` : float
                 The number of seconds to wait before the timer lapses.
         '''
-        self._schedule_item(func, delay, False, *args, **kwargs)
+        last_ts = self.last_ts or self.next_ts
+        next_ts = last_ts + delay
+        self._schedule_item(func, next_ts, 0, *args, **kwargs)
 
     def unschedule(self, func):
         '''Remove a function from the schedule.  
@@ -657,6 +734,27 @@ def schedule_interval(func, interval, *args, **kwargs):
 
     '''
     _default.schedule_interval(func, interval, *args, **kwargs)
+
+def schedule_interval_soft(func, interval, *args, **kwargs):
+    '''Schedule 'func' to be called every 'interval' seconds on the default
+    clock, beginning at a time that does not coincide with other scheduled
+    events. 
+    
+    The arguments passed to 'func' are 'dt' (time since last function call),
+    followed by any ``*args`` and ``**kwargs`` given here.
+
+    :see: `Clock.schedule_interval_soft`
+
+    :since: pyglet 1.1
+    
+    :Parameters:
+        `func` : function
+            The function to call when the timer lapses.
+        `interval` : float
+            The number of seconds to wait between each call.
+
+    '''
+    _default.schedule_interval_soft(func, interval, *args, **kwargs)
 
 def schedule_once(func, delay, *args, **kwargs):
     '''Schedule 'func' to be called once after 'delay' seconds (can be

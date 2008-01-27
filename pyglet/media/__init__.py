@@ -712,7 +712,7 @@ class Player(event.EventDispatcher):
                 interval = min(interval, 1/60.)
             if self._audio:
                 interval = min(interval, self._audio.UPDATE_PERIOD)
-            clock.schedule_interval(self.dispatch_events, interval)
+            clock.schedule_interval_soft(self.dispatch_events, interval)
 
     def queue(self, source):
         '''Queue the source on this player.
