@@ -53,6 +53,9 @@ class WindowExitHandler(object):
     of this class is automatically attached to all new `pyglet.window.Window`
     objects.
 
+    :deprecated: This class's functionality is provided directly on `Window`
+        in pyglet 1.1.
+
     :Ivariables:
         `has_exit` : bool
             True if the user wants to close the window.

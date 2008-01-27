@@ -237,10 +237,15 @@ class CarbonDisplay(Display):
         item.
 
         The default implementation sets `has_exit` to true on all open
-        windows.
+        windows.  In pyglet 1.1 `has_exit` is set on `EventLoop` if it is
+        used instead of the windows.
         '''
-        for window in self.get_windows():
-            window.has_exit = True
+        from pyglet import app
+        if app.event_loop is not None:
+            app.has_exit = True
+        else:
+            for window in self.get_windows():
+                window.has_exit = True
     
 class CarbonScreen(Screen):
     def __init__(self, display, id):

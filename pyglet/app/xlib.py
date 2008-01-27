@@ -10,15 +10,18 @@ import select
 import weakref
 
 from pyglet.app import displays, windows, BaseEventLoop
-from pyglet import clock
 from pyglet.window.xlib import xlib
 
 class XlibEventLoop(BaseEventLoop):
     def run(self):
-        self.setup()
+        self._setup()
 
         e = xlib.XEvent()
         t = 0
+        sleep_time = 0.
+
+        self.dispatch_event('on_enter')
+
         while not self.has_exit:
             # Check for already pending events
             for display in displays:
@@ -28,8 +31,7 @@ class XlibEventLoop(BaseEventLoop):
             else:
                 # None found; select on all file descriptors or timeout
                 iwtd = self.get_select_files()
-                timeout = clock.get_sleep_time(True)
-                pending_displays, _, _ = select.select(iwtd, (), (), timeout)
+                pending_displays, _, _ = select.select(iwtd, (), (), sleep_time)
 
             # Dispatch platform events
             for display in pending_displays:
@@ -45,25 +47,9 @@ class XlibEventLoop(BaseEventLoop):
 
                     window.dispatch_platform_event(e)
 
-            # Call scheduled functions
-            dt = clock.tick(True)
+            sleep_time = self.idle()
 
-            # Dispatch update event
-            for window in windows:
-                window.dispatch_event('on_update', dt)
-                window.dispatch_pending_events()
-                if window.has_exit:
-                    window.close() # XXX hack
-
-            # Redraw all windows
-            for window in windows:
-                window.switch_to()
-                window.dispatch_event('on_draw')
-                window.flip()
-
-            # XXX temporary hack
-            if not windows:
-                self.has_exit = True
+        self.dispatch_event('on_exit')
 
     def get_select_files(self):
         return list(displays)

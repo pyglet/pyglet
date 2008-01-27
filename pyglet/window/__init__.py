@@ -153,7 +153,6 @@ import pyglet
 from pyglet import gl
 from pyglet.gl import gl_info
 from pyglet.event import EventDispatcher
-from pyglet.window.event import WindowExitHandler
 import pyglet.window.key
 
 class WindowException(Exception):
@@ -426,7 +425,7 @@ class _WindowMetaclass(type):
                 cls._platform_event_names.add(name)
         super(_WindowMetaclass, cls).__init__(name, bases, dict)
 
-class BaseWindow(EventDispatcher, WindowExitHandler):
+class BaseWindow(EventDispatcher):
     '''Platform-independent application window.
 
     A window is a "heavyweight" object occupying operating system resources.
@@ -447,6 +446,15 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
     To render into a window, you must first call `switch_to`, to make
     it the current OpenGL context.  If you use only one window in the
     application, there is no need to do this.
+
+    :Ivariables:
+        `has_exit` : bool
+            True if the user has attempted to close the window.
+
+            :deprecated: Windows are closed immediately by the default
+                `on_close` handler when `pyglet.app.event_loop` is being
+                used.
+
     '''
     __metaclass__ = _WindowMetaclass
 
@@ -509,6 +517,8 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
     CURSOR_WAIT = 'wait'
     #: The "wait" mouse cursor combined with an arrow.
     CURSOR_WAIT_ARROW = 'wait_arrow'
+
+    has_exit = False
 
     # Instance variables accessible only via properties
 
@@ -773,28 +783,44 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
         Override this event handler with your own to create another
         projection, for example in perspective.
         '''
-        self.switch_to()
         gl.glViewport(0, 0, width, height)
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
         gl.glOrtho(0, width, 0, height, -1, 1)
         gl.glMatrixMode(gl.GL_MODELVIEW)
 
+    def on_close(self):
+        '''Default on_close handler.'''
+        self.has_exit = True
+        from pyglet import app
+        if app.event_loop is not None:
+            self.close()
+
+    def on_key_press(self, symbol, modifiers):
+        '''Default on_key_press handler.'''
+        if symbol == key.ESCAPE:
+            self.dispatch_event('on_close')
+
+    def on_draw(self):
+        '''Default draw handler.'''
+        self.clear()
+
     def close(self):
         '''Close the window.
 
-        Windows are closed automatically when the process exits, so this
-        method need only be called when multiple windows or console input
-        are being used.
-
         After closing the window, the GL context will be invalid.  The
         window instance cannot be reused once closed (see also `set_visible`).
+
+        The `on_window_close` event is dispatched on `pyglet.app.event_loop`
+        when this method is called.
         '''
         from pyglet import app
         app.windows.remove(self)
         self._context.destroy()
         self._config = None
         self._context = None
+        if app.event_loop:
+            app.event_loop.dispatch_event('on_window_close', self)
 
     def draw_mouse_cursor(self):
         '''Draw the custom mouse cursor.
@@ -1209,6 +1235,12 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
         def on_key_press(symbol, modifiers):
             '''A key on the keyboard was pressed (and held down).
 
+            In pyglet 1.0 the default handler sets `has_exit` to ``True`` if
+            the ``ESC`` key is pressed.
+
+            In pyglet 1.1 the default handler dispatches the `on_close`
+            event if the ``ESC`` key is pressed.
+
             :Parameters:
                 `symbol` : int
                     The key symbol pressed.
@@ -1410,7 +1442,7 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
                 `scroll_x` : int
                     Number of "clicks" towards the right (left if negative).
                 `scroll_y` : int
-                    Number of "clicks" upwards (downards if negative).
+                    Number of "clicks" upwards (downwards if negative).
 
             :event:
             '''
@@ -1420,6 +1452,10 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
 
             This event can be triggered by clicking on the "X" control box in
             the window title bar, or by some other platform-dependent manner.
+
+            The default handler sets `has_exit` to ``True``.  In pyglet 1.1, if
+            `pyglet.app.event_loop` is being used, `close` is also called,
+            closing the window immediately.
 
             :event:
             '''
@@ -1472,6 +1508,9 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
 
         def on_resize(width, height):
             '''The window was resized.
+
+            The window will have the GL context when this event is dispatched;
+            there is no need to call `switch_to` in this handler.
 
             :Parameters:
                 `width` : int
@@ -1560,6 +1599,29 @@ class BaseWindow(EventDispatcher, WindowExitHandler):
 
             :event:
             '''
+
+        def on_draw():
+            '''The window contents must be redrawn.
+
+            The `EventLoop` will dispatch this event when the window
+            should be redrawn.  This will happen during idle time after
+            any window events and after any scheduled functions were called.
+
+            The window will already have the GL context, so there is no
+            need to call `switch_to`.  The window's `flip` method will
+            be called after this event, so your event handler should not.
+
+            You should make no assumptions about the window contents when
+            this event is triggered; a resize or expose event may have
+            invalidated the framebuffer since the last time it was drawn.
+
+            The default handler clears the window background.
+
+            :since: pyglet 1.1
+
+            :event:
+            '''
+
 BaseWindow.register_event_type('on_key_press')
 BaseWindow.register_event_type('on_key_release')
 BaseWindow.register_event_type('on_text')
@@ -1582,8 +1644,7 @@ BaseWindow.register_event_type('on_show')
 BaseWindow.register_event_type('on_hide')
 BaseWindow.register_event_type('on_context_lost')
 BaseWindow.register_event_type('on_context_state_lost')
-BaseWindow.register_event_type('on_update') # XXX TODO doc
-BaseWindow.register_event_type('on_draw')   # XXX TODO doc
+BaseWindow.register_event_type('on_draw')
 
 def get_platform():
     '''Get an instance of the Platform most appropriate for this
