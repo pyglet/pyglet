@@ -840,7 +840,7 @@ class Win32Window(BaseWindow):
         event_handler = self._event_handlers.get(msg, None)
         result = 0
         if event_handler:
-            if self._allow_dispatch_event:
+            if self._allow_dispatch_event or not self._enable_event_queue:
                 result = event_handler(msg, wParam, lParam)
             else:
                 self._event_queue.append((event_handler, msg, wParam, lParam))
@@ -1053,13 +1053,34 @@ class Win32Window(BaseWindow):
         self.dispatch_event('on_close')
         return 0
 
+    def _immediate_redraw(self):
+        '''If using EventLoop, redraw and flip the window immediately.
+
+        Assumes window has GL context.
+        '''
+        from pyglet import app
+        if app.event_loop is not None:
+            self.dispatch_event('on_draw')
+            self.flip()
+
     @Win32EventHandler(WM_PAINT)
     def _event_paint(self, msg, wParam, lParam):
         self.dispatch_event('on_expose')
+
+        self._immediate_redraw()
+        
         # Validating the window using ValidateRect or ValidateRgn
         # doesn't clear the paint message when more than one window
         # is open [why?]; defer to DefWindowProc instead.
         return None
+
+    @Win32EventHandler(WM_SIZING)
+    def _event_sizing(self, msg, wParam, lParam):
+        rect = cast(lParam, POINTER(RECT)).contents
+        width, height = self.get_size()
+        self.switch_to()
+        self.dispatch_event('on_resize', width, height)
+        return 1
 
     @Win32EventHandler(WM_SIZE)
     def _event_size(self, msg, wParam, lParam):
@@ -1081,6 +1102,7 @@ class Win32Window(BaseWindow):
         self._reset_exclusive_mouse_screen()
         self.switch_to()
         self.dispatch_event('on_resize', w, h)
+        self._immediate_redraw()
         return 0
 
     @Win32EventHandler(WM_MOVE)
@@ -1134,4 +1156,4 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_ERASEBKGND)
     def _event_erasebkgnd(self, msg, wParam, lParam):
         # Prevent flicker during resize.
-        return 0
+        return 1
