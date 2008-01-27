@@ -1067,6 +1067,7 @@ class Win32Window(BaseWindow):
     def _event_paint(self, msg, wParam, lParam):
         self.dispatch_event('on_expose')
 
+        self.switch_to()
         self._immediate_redraw()
         
         # Validating the window using ValidateRect or ValidateRgn
