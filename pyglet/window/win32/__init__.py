@@ -1081,6 +1081,10 @@ class Win32Window(BaseWindow):
         width, height = self.get_size()
         self.switch_to()
         self.dispatch_event('on_resize', width, height)
+
+        from pyglet import app
+        if app.event_loop is not None:
+            app.event_loop._idle_chance()
         return 1
 
     @Win32EventHandler(WM_SIZE)

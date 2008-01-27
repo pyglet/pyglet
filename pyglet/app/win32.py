@@ -2,6 +2,7 @@
 # $Id:$
 
 import ctypes
+import time
 
 from pyglet.app import windows, BaseEventLoop
 from pyglet.window.win32 import _user32, types, constants
@@ -11,7 +12,7 @@ class Win32EventLoop(BaseEventLoop):
         self._setup()
 
         self._timer_proc = types.TIMERPROC(self._timer_func)
-        timer = _user32.SetTimer(0, 0, 0, self._timer_proc)
+        self._timer = timer = _user32.SetTimer(0, 0, 0, self._timer_proc)
         msg = types.MSG()
         
         self.dispatch_event('on_enter')
@@ -27,11 +28,18 @@ class Win32EventLoop(BaseEventLoop):
 
         self.dispatch_event('on_exit')
 
+    def _idle_chance(self):
+        if (self._next_idle_time is not None and 
+            self._next_idle_time <= time.time()):
+            self._timer_func(0, 0, self._timer, 0)
+
     def _timer_func(self, hwnd, msg, timer, t):
         sleep_time = self.idle()
 
         if sleep_time is None:
             millis = constants.USER_TIMER_MAXIMUM
+            self._next_idle_time = None
         else:
             millis = int(sleep_time * 1000)
+            self._next_idle_time = time.time() + sleep_time
         _user32.SetTimer(0, timer, millis, self._timer_proc)

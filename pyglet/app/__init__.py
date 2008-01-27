@@ -116,6 +116,13 @@ class BaseEventLoop(event.EventDispatcher):
             window.switch_to()
             window.dispatch_pending_events()
 
+    def _idle_chance(self):
+        '''If timeout has expired, manually force an idle loop.
+
+        Called by window that have blocked the event loop (e.g. during
+        resizing).
+        '''
+
     def idle(self):
         '''Called during each iteration of the event loop.
 
