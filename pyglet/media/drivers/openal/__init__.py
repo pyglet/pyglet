@@ -250,7 +250,7 @@ class OpenALAudioPlayer(AudioPlayer):
     def get_time(self):
         state = al.ALint()
         al.alGetSourcei(self._al_source, al.AL_SOURCE_STATE, state)
-        if state.value != al.AL_PLAYING:
+        if not self._playing:
             return self._pause_timestamp
 
         if not self._timestamps:
