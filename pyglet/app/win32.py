@@ -23,7 +23,10 @@ class Win32EventLoop(BaseEventLoop):
             _user32.DispatchMessageW(ctypes.byref(msg))
             
             # Manual idle event
-            if not _user32.GetQueueStatus(constants.QS_ALLINPUT) & 0xffff0000:
+            msg_types = \
+                _user32.GetQueueStatus(constants.QS_ALLINPUT) & 0xffff0000
+            if (msg.message != constants.WM_TIMER and
+                not msg_types & ~(constants.QS_TIMER<<16)):
                 self._timer_func(0, 0, timer, 0)
 
         self.dispatch_event('on_exit')
@@ -40,6 +43,8 @@ class Win32EventLoop(BaseEventLoop):
             millis = constants.USER_TIMER_MAXIMUM
             self._next_idle_time = None
         else:
+            # XXX hack to avoid oversleep; needs to be api
+            sleep_time = max(sleep_time - 0.01, 0) 
             millis = int(sleep_time * 1000)
             self._next_idle_time = time.time() + sleep_time
         _user32.SetTimer(0, timer, millis, self._timer_proc)
