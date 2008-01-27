@@ -289,11 +289,13 @@ class Clock(_ClockBase):
                 break
             item.func(ts - item.last_ts, *item.args, **item.kwargs)
             if item.interval:
-                item.last_ts = ts
                 # Try to keep timing regular, even if overslept this time;
                 # but don't schedule in the past (which could lead to
                 # infinitely-worsing error).
-                item.next_ts = max(item.next_ts + item.interval, ts + 0.01)
+                item.next_ts = item.last_ts + item.interval
+                item.last_ts = ts
+                if item.next_ts < ts:
+                    item.next_ts = self._get_soft_next_ts(ts, item.interval)
                 need_resort = True
 
         # Remove finished one-shots.
@@ -453,8 +455,7 @@ class Clock(_ClockBase):
         else:
             self._schedule_functions[func] = item
 
-    def _schedule_item(self, func, next_ts, interval, *args, **kwargs):
-        last_ts = self.last_ts or self.next_ts
+    def _schedule_item(self, func, last_ts, next_ts, interval, *args, **kwargs):
         item = _ScheduledIntervalItem(
             func, interval, last_ts, next_ts, args, kwargs)
 
@@ -493,7 +494,7 @@ class Clock(_ClockBase):
         '''
         last_ts = self.last_ts or self.next_ts
         next_ts = last_ts + interval
-        self._schedule_item(func, next_ts, interval, *args, **kwargs)
+        self._schedule_item(func, last_ts, next_ts, interval, *args, **kwargs)
 
     def schedule_interval_soft(self, func, interval, *args, **kwargs):
         '''Schedule a function to be called every `interval` seconds,
@@ -527,15 +528,19 @@ class Clock(_ClockBase):
 
         '''
         last_ts = self.last_ts or self.next_ts
+        next_ts = self._get_soft_next_ts(last_ts, interval)
+        last_ts = next_ts - interval
+        self._schedule_item(func, last_ts, next_ts, interval, *args, **kwargs)
 
-        def taken(ts):
+    def _get_soft_next_ts(self, last_ts, interval):
+        def taken(ts, e):
             '''Return True if the given time has already got an item
-            scheduled.  Could do an epsilon search around ts as well.
+            scheduled nearby.
             '''
             for item in self._schedule_interval_items:
-                if item.next_ts == ts:
+                if abs(item.next_ts - ts) <= e:
                     return True
-                elif item.next_ts > ts:
+                elif item.next_ts > ts + e:
                     return False
             return False
 
@@ -555,22 +560,23 @@ class Clock(_ClockBase):
         # and any number of scheduled functions.
 
         next_ts = last_ts + interval
-        if taken(next_ts): 
-            dt = interval
-            divs = 1
-            while True:
-                next_ts = last_ts
-                for i in range(divs - 1):
-                    next_ts += dt
-                    if not taken(next_ts):
-                        break
-                else:
-                    dt /= 2
-                    divs *= 2
-                    continue
-                break
+        if not taken(next_ts, interval / 4):
+            return next_ts
 
-        self._schedule_item(func, next_ts, interval, *args, **kwargs)
+        dt = interval
+        divs = 1
+        while True:
+            next_ts = last_ts
+            for i in range(divs - 1):
+                next_ts += dt
+                if not taken(next_ts, dt / 4):
+                    return next_ts
+            dt /= 2
+            divs *= 2
+            
+            # Avoid infinite loop in pathological case
+            if divs > 16:
+                return next_ts
 
     def schedule_once(self, func, delay, *args, **kwargs):
         '''Schedule a function to be called once after `delay` seconds.
@@ -585,7 +591,7 @@ class Clock(_ClockBase):
         '''
         last_ts = self.last_ts or self.next_ts
         next_ts = last_ts + delay
-        self._schedule_item(func, next_ts, 0, *args, **kwargs)
+        self._schedule_item(func, last_ts, next_ts, 0, *args, **kwargs)
 
     def unschedule(self, func):
         '''Remove a function from the schedule.  
