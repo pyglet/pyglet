@@ -283,7 +283,12 @@ class PlayerWindow(window.Window):
         if symbol == key.SPACE:
             self.on_play_pause()
         elif symbol == key.ESCAPE:
-            self.close()
+            self.dispatch_event('on_close')
+
+    def on_close(self):
+        self.player.pause()
+        self.close()
+        windows.remove(self)
 
     def on_play_pause(self):
         if self.player.playing:
