@@ -127,9 +127,7 @@ class DirectSoundAudioPlayer(AudioPlayer):
         if self._data_size < self._buffer_size:
             return self._buffer_size - self._data_size
 
-        play_cursor = lib.DWORD()
-        self._buffer.GetCurrentPosition(play_cursor, None)
-        play_cursor = play_cursor.value
+        play_cursor = self._play_cursor
         if self._write_cursor == play_cursor and self._buffer_playing:
             # Polling too fast, no play cursor movement
             return 0
@@ -168,7 +166,7 @@ class DirectSoundAudioPlayer(AudioPlayer):
         assert length == l1.value + l2.value
 
         if audio_data:
-            if self._write_cursor > self._play_cursor:
+            if self._write_cursor >= self._play_cursor:
                 wc = self._write_cursor
             else:
                 wc = self._write_cursor + self._buffer_size
