@@ -264,8 +264,6 @@ class Context(object):
         `object_space` : `ObjectSpace`
             An object which is shared between all contexts that share
             GL objects.
-        `window` : `pyglet.window.Window`
-            The window this context is used by.
 
     '''
 
@@ -344,7 +342,7 @@ class Context(object):
 
         Usually, the texture is released immediately using
         ``glDeleteTextures``, however if another context that does not share
-        this context's object space is current active, the deletion will
+        this context's object space is currently active, the deletion will
         be deferred until an appropriate context is activated.
 
         :Parameters:
