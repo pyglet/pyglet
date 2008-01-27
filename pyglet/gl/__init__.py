@@ -335,6 +335,10 @@ class Context(object):
         if _current_context is self:
             _current_context = None
             gl_info.remove_active_context()
+
+            # Switch back to shadow context.
+            if _shadow_window is not None:
+                _shadow_window.switch_to()
         _contexts.remove(self)
 
     def delete_texture(self, texture_id):
@@ -358,3 +362,24 @@ class Context(object):
 
 class ContextException(Exception):
     pass
+
+def _create_shadow_window():
+    global _shadow_window
+    
+    import pyglet
+    if not pyglet.options['shadow_window']:
+        return
+    
+    # Need to jump through some hoops for this circularish import
+    import sys
+    pyglet.gl = sys.modules[__name__]
+    from pyglet.window import Window
+
+    _shadow_window = Window(width=1, height=1, visible=False)
+    _shadow_window.switch_to()
+
+    from pyglet import app
+    app.windows.remove(_shadow_window)
+
+_shadow_window = None
+_create_shadow_window()

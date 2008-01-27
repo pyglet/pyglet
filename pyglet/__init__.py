@@ -103,6 +103,13 @@ if getattr(sys, 'frozen', None):
 #:     this option is enabled if ``__debug__`` is (i.e., if Python was not run
 #:     with the -O option).  It is disabled by default when pyglet is "frozen"
 #:     within a py2exe or py2app library archive.
+#: shadow_window
+#:     By default, pyglet creates a hidden window with a GL context when
+#:     pyglet.gl is imported.  This allows resources to be loaded before
+#:     the application window is created, and permits GL objects to be
+#:     shared between windows even after they've been closed.  You can
+#:     disable the creation of the shadow window by setting this option to
+#:     False.  Recommended for advanced devlopers only.
 #: vsync
 #:     If set, the `pyglet.window.Window.vsync` property is ignored, and
 #:     this option overrides it (to either force vsync on or off).  If unset,
@@ -125,6 +132,7 @@ options = {
     'debug_media': False,
     'debug_win32': False,
     'debug_x11': False,
+    'shadow_window': True,
     'vsync': None,
     'xsync': True,
 }
@@ -138,6 +146,7 @@ _option_types = {
     'debug_media': bool,
     'debug_win32': bool,
     'debug_x11': bool,
+    'shadow_window': bool,
     'vsync': bool,
     'xsync': bool,
 }

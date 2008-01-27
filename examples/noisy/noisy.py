@@ -59,7 +59,6 @@ BALL_SOUND = 'ball.wav'
 if len(sys.argv) > 1:
     BALL_SOUND = sys.argv[1]
 
-window = Window(640, 480)
 sound = resource.media(BALL_SOUND, streaming=False)
 
 class Ball(sprite.Sprite):
@@ -89,6 +88,7 @@ class Ball(sprite.Sprite):
         self.x = min(max(self.x, 0), window.width - self.width)
         self.y = min(max(self.y, 0), window.height - self.height)
 
+window = Window(640, 480)
 balls = []
 
 @window.event
