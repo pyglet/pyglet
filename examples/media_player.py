@@ -42,6 +42,7 @@ __version__ = '$Id: $'
 import sys
 
 from pyglet.gl import *
+from pyglet import app
 from pyglet import event
 from pyglet import font
 from pyglet import media
@@ -282,7 +283,7 @@ class PlayerWindow(window.Window):
         if symbol == key.SPACE:
             self.on_play_pause()
         elif symbol == key.ESCAPE:
-            self.has_exit = True
+            self.close()
 
     def on_play_pause(self):
         if self.player.playing:
@@ -293,41 +294,40 @@ class PlayerWindow(window.Window):
             self.player.play()
         self.gui_update_state()
 
-    def draw_video(self):
+    def on_draw(self):
+        self.clear()
+        
+        # Video
         if self.player.source and self.player.source.video_format:
             self.player.texture.blit(self.video_x,
                                      self.video_y,
                                      width=self.video_width,
                                      height=self.video_height)
 
-    def draw_gui(self):
+        # GUI
         self.slider.value = self.player.time
         for control in self.controls:
             control.draw()
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print 'Usage: media_player.py <filename>'
+    if len(sys.argv) < 2:
+        print 'Usage: media_player.py <filename> [<filename> ...]'
         sys.exit(1)
 
-    player = media.Player()
-    win = PlayerWindow(player)
+    windows = []
+    for filename in sys.argv[1:]:
+        player = media.Player()
+        win = PlayerWindow(player)
+        windows.append(win)
 
-    filename = sys.argv[1]
-    source = media.load(filename)
-    player.queue(source)
+        source = media.load(filename)
+        player.queue(source)
 
-    win.gui_update_source()
-    win.set_default_video_size()
-    win.set_visible(True)
+        win.gui_update_source()
+        win.set_default_video_size()
+        win.set_visible(True)
 
-    player.play()
-    win.gui_update_state()
-    while not win.has_exit:
-        win.dispatch_events()
-        player.dispatch_events()
+        win.gui_update_state()
+        player.play()
 
-        win.clear()
-        win.draw_video()
-        win.draw_gui()
-        win.flip()
+    app.run()

@@ -82,6 +82,7 @@ import sys
 import time
 import StringIO
 
+from pyglet import clock
 from pyglet import event
 
 class MediaException(Exception):
@@ -228,6 +229,8 @@ class AudioPlayer(object):
             The player's audio format (read-only).
 
     '''
+
+    UPDATE_PERIOD = 0.1
     
     def __init__(self, audio_format):
         '''Create a new audio player for the given audio format.
@@ -701,6 +704,16 @@ class Player(event.EventDispatcher):
         if not source:
             yield 'end', None
 
+    def _update_schedule(self):
+        clock.unschedule(self.dispatch_events)
+        if self._playing and self._sources:
+            interval = 1000.
+            if self._sources[0].video_format:
+                interval = min(interval, 1/60.)
+            if self._audio:
+                interval = min(interval, self._audio.UPDATE_PERIOD)
+            clock.schedule_interval(self.dispatch_events, interval)
+
     def queue(self, source):
         '''Queue the source on this player.
 
@@ -731,6 +744,9 @@ class Player(event.EventDispatcher):
         else:
             self._last_system_time = time.time()
 
+        self.dispatch_events()
+        self._update_schedule()
+
     def pause(self):
         '''Pause playback of the current source.
 
@@ -741,6 +757,7 @@ class Player(event.EventDispatcher):
         
         if self._audio:
             self._audio.stop()
+        self._update_schedule()
 
     def seek(self, timestamp):
         '''Seek for playback to the indicated timestamp in seconds on the
@@ -768,6 +785,8 @@ class Player(event.EventDispatcher):
             self._audio.clear()
         else:
             self._last_system_time = time.time()
+
+        self.dispatch_events()
         
     def next(self):
         '''Move immediately to the next queued source.
@@ -788,6 +807,7 @@ class Player(event.EventDispatcher):
 
     def _next_source(self):
         if not self._sources:
+            self._update_schedule()
             return
 
         self._source_read_index -= 1
@@ -810,6 +830,7 @@ class Player(event.EventDispatcher):
 
         if self._playing:
             self.play()
+            self._update_schedule()
 
     def _on_eos(self):
         '''Internal method when EOS is encountered.  Returns False if
@@ -826,9 +847,17 @@ class Player(event.EventDispatcher):
         self.dispatch_event('on_eos')
         return True
 
-    def dispatch_events(self):
+    def dispatch_events(self, dt=None):
         '''Dispatch any pending events and perform regular heartbeat functions
         to maintain playback.
+
+        :Parameters:
+            `dt` : None
+                Ignored (for compatibility with `Clock.schedule`)
+
+        :deprecated: Since pyglet 1.1, Player objects schedule themselves on
+            the default clock automatically.
+
         '''
         if not self._sources:
             return
@@ -1125,6 +1154,7 @@ class ManagedSoundPlayer(Player):
 
     def stop(self):
         self._timestamp = 0.
+        clock.unschedule(self.dispatch_events)
         managed_players.remove(self)
 
 class Listener(object):
@@ -1258,6 +1288,10 @@ def dispatch_events():
 
     You must call this function regularly (typically once per run loop
     iteration) in order to keep audio buffers of managed players full.
+
+    :deprecated: Since pyglet 1.1, Player objects schedule themselves on
+        the default clock automatically.
+
     '''
     for player in managed_players:
         player.dispatch_events()

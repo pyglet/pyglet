@@ -112,7 +112,6 @@ if __name__ == '__main__':
 
     while not window.has_exit:
         window.dispatch_events()
-        media.dispatch_events()
         dt = clock.tick()
 
         glClear(GL_COLOR_BUFFER_BIT)
