@@ -63,6 +63,8 @@ class DirectSoundAudioPlayer(AudioPlayer):
 
     _cone_inner_angle = 360
     _cone_outer_angle = 360
+
+    UPDATE_PERIOD = 0.05
     
     def __init__(self, audio_format):
         super(DirectSoundAudioPlayer, self).__init__(audio_format)

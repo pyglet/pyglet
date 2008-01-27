@@ -709,7 +709,7 @@ class Player(event.EventDispatcher):
         if self._playing and self._sources:
             interval = 1000.
             if self._sources[0].video_format:
-                interval = min(interval, 1/60.)
+                interval = min(interval, 1/24.)
             if self._audio:
                 interval = min(interval, self._audio.UPDATE_PERIOD)
             clock.schedule_interval_soft(self.dispatch_events, interval)
