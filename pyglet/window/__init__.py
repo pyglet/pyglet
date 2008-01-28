@@ -811,8 +811,8 @@ class BaseWindow(EventDispatcher):
         After closing the window, the GL context will be invalid.  The
         window instance cannot be reused once closed (see also `set_visible`).
 
-        The `on_window_close` event is dispatched on `pyglet.app.event_loop`
-        when this method is called.
+        The `pyglet.app.EventLoop.on_window_close` event is dispatched on
+        `pyglet.app.event_loop` when this method is called.
         '''
         from pyglet import app
         app.windows.remove(self)

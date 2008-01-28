@@ -65,12 +65,16 @@ class WeakSet(object):
 #: Set of all open displays.  Instances of `Display` are automatically added
 #: to this set upon construction.  The set uses weak references, so displays
 #: are removed from the set when they are no longer referenced.
+#:
+#: :type: `WeakSet`
 displays = WeakSet()
 
 #: Set of all open windows (including invisible windows).  Instances of
 #: `Window` are automatically added to this set upon construction.  The set
 #: uses weak references, so windows are removed from the set when they are no
 #: longer referenced or are closed explicitly.
+#:
+#: :type: `WeakSet`
 windows = WeakSet()
 
 
@@ -78,9 +82,9 @@ class BaseEventLoop(event.EventDispatcher):
     '''The main run loop of the application.
 
     Calling `run` begins the application event loop, which processes
-    operating system events, calls `Clock.tick` to call scheduled
-    functions and calls `Window.draw` and `Window.flip` to update
-    window contents.
+    operating system events, calls `pyglet.clock.tick` to call scheduled
+    functions and calls `pyglet.window.Window.on_draw` and
+    `pyglet.window.Window.flip` to update window contents.
 
     Applications can subclass `EventLoop` and override certain methods
     to integrate another framework's run loop, or to customise processing
@@ -135,12 +139,14 @@ class BaseEventLoop(event.EventDispatcher):
         For example, return ``1.0`` to have the idle method called every
         second, or immediately after any user events.
 
-        The default implementation dispatches the `on_draw` event for all
-        windows and uses `pyglet.clock.tick` and `pyglet.clock.get_sleep_time`
-        on the default clock to determine the return value.
+        The default implementation dispatches the
+        `pyglet.window.Window.on_draw` event for all windows and uses
+        `pyglet.clock.tick` and `pyglet.clock.get_sleep_time` on the default
+        clock to determine the return value.
 
         This method should be overridden by advanced users only.  To have
-        code execute at regular intervals, use the `Clock.schedule` methods.
+        code execute at regular intervals, use the
+        `pyglet.clock.schedule` methods.
 
         :rtype: float
         :return: The number of seconds before the idle method should
@@ -222,6 +228,8 @@ else:
 
 #: The global event loop.  Set to the correct instance when an `EventLoop` is
 #: started.
+#:
+#: :type: `EventLoop`
 event_loop = None
 
 def run():

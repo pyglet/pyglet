@@ -110,6 +110,8 @@ if getattr(sys, 'frozen', None):
 #:     shared between windows even after they've been closed.  You can
 #:     disable the creation of the shadow window by setting this option to
 #:     False.  Recommended for advanced devlopers only.
+#:
+#:     **Since:** pyglet 1.1
 #: vsync
 #:     If set, the `pyglet.window.Window.vsync` property is ignored, and
 #:     this option overrides it (to either force vsync on or off).  If unset,
@@ -122,6 +124,8 @@ if getattr(sys, 'frozen', None):
 #:     operations.  This option only affects double-buffered windows on
 #:     X11 servers supporting the Xsync extension with a window manager
 #:     that implements the _NET_WM_SYNC_REQUEST protocol.
+#:
+#:     **Since:** pyglet 1.1
 #:
 options = {
     'audio': ('directsound', 'openal', 'alsa', 'silent'),

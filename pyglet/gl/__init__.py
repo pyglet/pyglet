@@ -365,13 +365,15 @@ class ContextException(Exception):
 
 def _create_shadow_window():
     global _shadow_window
+
+    import sys
+    _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
     
     import pyglet
-    if not pyglet.options['shadow_window']:
+    if not pyglet.options['shadow_window'] or _is_epydoc:
         return
     
     # Need to jump through some hoops for this circularish import
-    import sys
     pyglet.gl = sys.modules[__name__]
     from pyglet.window import Window
 

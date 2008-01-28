@@ -853,7 +853,7 @@ class Player(event.EventDispatcher):
 
         :Parameters:
             `dt` : None
-                Ignored (for compatibility with `Clock.schedule`)
+                Ignored (for compatibility with `pyglet.clock.schedule`)
 
         :deprecated: Since pyglet 1.1, Player objects schedule themselves on
             the default clock automatically.
