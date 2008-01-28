@@ -31,17 +31,21 @@ class CarbonEventLoop(BaseEventLoop):
                                      None,
                                      ctypes.byref(timer))
 
+        self._sleep_time = None
 
         self.dispatch_event('on_enter')
 
         while not self.has_exit:
-            if carbon.ReceiveNextEvent(0, None, kEventDurationForever,
+            duration = kEventDurationForever
+            if self._sleep_time == 0.:
+                duration = 0
+            if carbon.ReceiveNextEvent(0, None, duration,
                                        True, ctypes.byref(e)) == 0:
                 carbon.SendEventToEventTarget(e, event_dispatcher)
                 carbon.ReleaseEvent(e)
 
             # Manual idle event 
-            if carbon.GetNumEventsInQueue(event_queue) == 0:
+            if carbon.GetNumEventsInQueue(event_queue) == 0 or duration == 0:
                 self._timer_proc(timer, None)
 
         self.dispatch_event('on_exit')
@@ -62,7 +66,7 @@ class CarbonEventLoop(BaseEventLoop):
                     window.switch_to()
                     window.dispatch_event('on_resize', width, height) 
 
-        sleep_time = self.idle()
+        self._sleep_time = sleep_time = self.idle()
 
         if sleep_time is None:
             sleep_time = constants.kEventDurationForever
