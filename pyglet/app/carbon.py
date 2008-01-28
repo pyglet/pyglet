@@ -31,12 +31,12 @@ class CarbonEventLoop(BaseEventLoop):
                                      None,
                                      ctypes.byref(timer))
 
-        self._sleep_time = None
+        self._force_idle = False
 
         self.dispatch_event('on_enter')
 
         while not self.has_exit:
-            if self._sleep_time == 0.:
+            if self._force_idle:
                 duration = 0
                 self._blocked = False
             else:
@@ -48,12 +48,14 @@ class CarbonEventLoop(BaseEventLoop):
                 carbon.ReleaseEvent(e)
 
             # Manual idle event 
-            if carbon.GetNumEventsInQueue(event_queue) == 0 or duration == 0:
-                self._timer_proc(timer, None)
+            if carbon.GetNumEventsInQueue(event_queue) == 0 or self._force_idle:
+                self._force_idle = False
+                self._timer_proc(timer, None, False)
+
 
         self.dispatch_event('on_exit')
 
-    def _timer_proc(self, timer, data):
+    def _timer_proc(self, timer, data, in_events=True):
         for window in windows:
             # Check for live resizing
             if window._resizing is not None:
@@ -69,12 +71,25 @@ class CarbonEventLoop(BaseEventLoop):
                     window.switch_to()
                     window.dispatch_event('on_resize', width, height) 
 
-        self._sleep_time = sleep_time = self.idle()
+            # Check for deferred recreate
+            if window._recreate_deferred:
+                if in_events:
+                    # Break out of ReceiveNextEvent so it can be processed
+                    # in next iteration.
+                    carbon.QuitEventLoop(self._event_loop)
+                    self._force_idle = True
+                else:
+                    # Do it now.
+                    window._recreate_immediate()
+
+        sleep_time = self.idle()
 
         if sleep_time is None:
             sleep_time = constants.kEventDurationForever
         elif sleep_time == 0.:
             if self._blocked:
                 carbon.QuitEventLoop(self._event_loop)
+            self._force_idle = True
             sleep_time = constants.kEventDurationForever
         carbon.SetEventLoopTimerNextFireTime(timer, ctypes.c_double(sleep_time))
+
