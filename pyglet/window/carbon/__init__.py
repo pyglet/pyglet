@@ -1193,6 +1193,10 @@ class CarbonWindow(BaseWindow):
     def _on_window_resize_started(self, next_handler, ev, data):
         self._resizing = (self.width, self.height)
 
+        from pyglet import app
+        if app.event_loop is not None:
+            app.event_loop._stop_polling()
+
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
@@ -1212,8 +1216,23 @@ class CarbonWindow(BaseWindow):
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
+    _dragging = False
+
+    @CarbonEventHandler(kEventClassWindow, kEventWindowDragStarted)
+    def _on_window_drag_started(self, next_handler, ev, data):
+        self._dragging = True
+
+        from pyglet import app
+        if app.event_loop is not None:
+            app.event_loop._stop_polling()
+
+        carbon.CallNextEventHandler(next_handler, ev)
+        return noErr
+
     @CarbonEventHandler(kEventClassWindow, kEventWindowDragCompleted)
     def _on_window_drag_completed(self, next_handler, ev, data):
+        self._dragging = False
+
         rect = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
 

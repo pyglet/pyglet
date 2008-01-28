@@ -22,7 +22,7 @@ class CarbonEventLoop(BaseEventLoop):
         event_dispatcher = carbon.GetEventDispatcherTarget()
         self._event_loop = event_loop = carbon.GetMainEventLoop()
         event_queue = carbon.GetMainEventQueue()
-        timer = ctypes.c_void_p()
+        self._timer = timer = ctypes.c_void_p()
         idle_event_proc = EventLoopTimerProc(self._timer_proc)
         carbon.InstallEventLoopTimer(event_loop,
                                      ctypes.c_double(0.1), #?
@@ -55,10 +55,16 @@ class CarbonEventLoop(BaseEventLoop):
 
         self.dispatch_event('on_exit')
 
+    def _stop_polling(self):
+        carbon.SetEventLoopTimerNextFireTime(self._timer, ctypes.c_double(0.0))
+
     def _timer_proc(self, timer, data, in_events=True):
+        allow_polling = True
+
         for window in windows:
             # Check for live resizing
             if window._resizing is not None:
+                allow_polling = False
                 old_width, old_height = window._resizing
                 rect = types.Rect()
                 carbon.GetWindowBounds(window._window, 
@@ -70,6 +76,10 @@ class CarbonEventLoop(BaseEventLoop):
                     window._resizing = width, height
                     window.switch_to()
                     window.dispatch_event('on_resize', width, height) 
+    
+            # Check for live dragging
+            if window._dragging:
+                allow_polling = False
 
             # Check for deferred recreate
             if window._recreate_deferred:
@@ -86,7 +96,8 @@ class CarbonEventLoop(BaseEventLoop):
 
         if sleep_time is None:
             sleep_time = constants.kEventDurationForever
-        elif sleep_time == 0.:
+        elif sleep_time == 0. and allow_polling:
+            # Switch to event loop to polling.
             if self._blocked:
                 carbon.QuitEventLoop(self._event_loop)
             self._force_idle = True
