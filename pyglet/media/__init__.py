@@ -51,12 +51,7 @@ associated with a single player by "queuing" it::
     source = load('background_music.mp3')
     player.queue(source)
 
-Use the `Player` to control playback.  Within your main run loop, you must
-periodically call `dispatch_events` to ensure the audio buffers are refilled::
-
-    player.play()
-    while player.source:    # While the source hasn't finished
-        player.dispatch_events()
+Use the `Player` to control playback.  
 
 If the source contains video, the `Source.video_format` attribute will be
 non-None, and the `Player.texture` attribute will contain the current video
@@ -856,7 +851,8 @@ class Player(event.EventDispatcher):
                 Ignored (for compatibility with `pyglet.clock.schedule`)
 
         :deprecated: Since pyglet 1.1, Player objects schedule themselves on
-            the default clock automatically.
+            the default clock automatically.  Applications should not call
+            this method.
 
         '''
         if not self._sources:
@@ -1127,8 +1123,6 @@ class ManagedSoundPlayer(Player):
 
     This player will continue playing the sound until the sound is
     finished, even if the application discards the player early.
-    There is no need to call `Player.dispatch_events` on this player,
-    though you must call `pyglet.media.dispatch_events`.
 
     Only one source can be queued on the player; the player will be 
     discarded when the source finishes.
@@ -1290,7 +1284,8 @@ def dispatch_events():
     iteration) in order to keep audio buffers of managed players full.
 
     :deprecated: Since pyglet 1.1, Player objects schedule themselves on
-        the default clock automatically.
+        the default clock automatically.  Applications should not call this
+        method.
 
     '''
     for player in managed_players:
