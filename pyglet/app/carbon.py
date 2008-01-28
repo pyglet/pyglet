@@ -9,7 +9,7 @@ __version__ = '$Id: $'
 import ctypes
 
 from pyglet.app import windows, BaseEventLoop
-from pyglet.window.carbon import carbon, types, constants
+from pyglet.window.carbon import carbon, types, constants, _oscheck
 
 EventLoopTimerProc = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p)
 kEventDurationForever = ctypes.c_double(constants.kEventDurationForever)
@@ -20,7 +20,7 @@ class CarbonEventLoop(BaseEventLoop):
 
         e = ctypes.c_void_p()
         event_dispatcher = carbon.GetEventDispatcherTarget()
-        event_loop = carbon.GetMainEventLoop()
+        self._event_loop = event_loop = carbon.GetMainEventLoop()
         event_queue = carbon.GetMainEventQueue()
         timer = ctypes.c_void_p()
         idle_event_proc = EventLoopTimerProc(self._timer_proc)
@@ -36,9 +36,12 @@ class CarbonEventLoop(BaseEventLoop):
         self.dispatch_event('on_enter')
 
         while not self.has_exit:
-            duration = kEventDurationForever
             if self._sleep_time == 0.:
                 duration = 0
+                self._blocked = False
+            else:
+                duration = kEventDurationForever
+                self._blocked = True
             if carbon.ReceiveNextEvent(0, None, duration,
                                        True, ctypes.byref(e)) == 0:
                 carbon.SendEventToEventTarget(e, event_dispatcher)
@@ -69,5 +72,9 @@ class CarbonEventLoop(BaseEventLoop):
         self._sleep_time = sleep_time = self.idle()
 
         if sleep_time is None:
+            sleep_time = constants.kEventDurationForever
+        elif sleep_time == 0.:
+            if self._blocked:
+                carbon.QuitEventLoop(self._event_loop)
             sleep_time = constants.kEventDurationForever
         carbon.SetEventLoopTimerNextFireTime(timer, ctypes.c_double(sleep_time))
