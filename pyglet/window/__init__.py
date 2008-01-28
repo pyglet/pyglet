@@ -57,14 +57,17 @@ Attach your own event handlers::
     def on_key_press(symbol, modifiers):
         # ... handle this event ...
 
-Within your main run loop, you must call `Window.dispatch_events` regularly.
-Windows are double-buffered by default, so you must call `Window.flip` to
-update the display::
+Place drawing code for the window within the `on_draw` event handler::
 
-    while not win.has_exit:
-        win.dispatch_events()
-        # ... drawing commands ...
-        win.flip()
+    @win.event
+    def on_draw():
+        # ... drawing code ...
+
+Call `pyglet.app.run` to enter the main event loop (by default, this
+returns when all open windows are closed)::
+
+    from pyglet import app
+    app.run()
 
 Creating a game window
 ----------------------
@@ -76,30 +79,6 @@ window::
 
     win = Window(fullscreen=True)
     win.set_exclusive_mouse()
-
-Working with multiple windows
------------------------------
-
-You can open any number of windows and render to them individually.  Each
-window must have the event handlers set on it that you are interested in
-(i.e., each window will have its own mouse event handler).  
-
-You must call `Window.dispatch_events` for each window.  Before rendering
-to a window, you must call `Window.switch_to` to set the active GL context.
-Here is an example run loop for a list of windows::
-
-    windows = # list of Window instances
-    while windows:
-        for win in windows:
-            win.dispatch_events()
-            if win.has_exit:
-                win.close()
-        windows = [w for w in windows if not w.has_exit]
-   
-        for win in windows:
-            win.switch_to()
-            # ... drawing commands for this window ...
-            win.flip()
 
 Working with multiple screens
 -----------------------------
@@ -1224,8 +1203,14 @@ class BaseWindow(EventDispatcher):
             self._event_queue.append(args)
 
     def dispatch_events(self):
-        '''Process the operating system event queue and call attached
-        event handlers.
+        '''Poll the operating system event queue for new events and call
+        attached event handlers.
+
+        This method is provided for legacy applications targeting pyglet 1.0,
+        and advanced applications that must integrate their event loop
+        into another framework.
+
+        Typical applications should use `pyglet.app.run`.
         '''
         raise NotImplementedError('abstract')
 
