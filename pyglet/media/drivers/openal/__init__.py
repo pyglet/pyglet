@@ -101,6 +101,8 @@ class OpenALAudioPlayer(AudioPlayer):
     #: Maximum size of an OpenAL buffer, in bytes.  TODO: use OpenAL maximum
     _max_buffer_size = 65536
 
+    UPDATE_PERIOD = 0.07
+
     def __init__(self, audio_format):
         super(OpenALAudioPlayer, self).__init__(audio_format)
 
