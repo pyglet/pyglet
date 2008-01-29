@@ -373,10 +373,7 @@ def _create_shadow_window():
     if not pyglet.options['shadow_window'] or _is_epydoc:
         return
     
-    # Need to jump through some hoops for this circularish import
-    pyglet.gl = sys.modules[__name__]
     from pyglet.window import Window
-
     _shadow_window = Window(width=1, height=1, visible=False)
     _shadow_window.switch_to()
 
@@ -384,4 +381,12 @@ def _create_shadow_window():
     app.windows.remove(_shadow_window)
 
 _shadow_window = None
-_create_shadow_window()
+
+# Import pyglet.window now if it isn't currently being imported (this creates
+# the shadow window).
+import sys as _sys
+if 'pyglet.window' not in _sys.modules:
+    # trickery is for circular import 
+    import pyglet
+    pyglet.gl = _sys.modules[__name__]
+    import pyglet.window

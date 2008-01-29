@@ -1660,3 +1660,6 @@ else:
         _platform = XlibPlatform()
         Window = XlibWindow
 
+# Create shadow window. (trickery is for circular import)
+pyglet.window = sys.modules[__name__]
+gl._create_shadow_window()
