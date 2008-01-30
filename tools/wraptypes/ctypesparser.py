@@ -246,7 +246,7 @@ class CtypesEnum(CtypesType):
         if not self.tag:
             self.tag = anonymous_enum_tag()
 
-        value = 1
+        value = 0
         context = EvaluationContext()
         self.enumerators = []
         for e in specifier.enumerators:

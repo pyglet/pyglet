@@ -215,7 +215,7 @@ def main(*argv):
                   help='write wrapper to FILE', metavar='FILE')
     op.add_option('-l', '--library', dest='library',
                   help='link to LIBRARY', metavar='LIBRARY')
-    op.add_option('-D', '--define', dest='defines',
+    op.add_option('-D', '--define', dest='defines', default=[],
                   help='define token NAME=VALUE', action='append')
     op.add_option('-i', '--include-file', action='append', dest='include_files',
                   help='assume FILE is iincluded', metavar='FILE',
