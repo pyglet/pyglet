@@ -612,7 +612,7 @@ class XlibWindow(BaseWindow):
         if self._style in styles:
             self._set_atoms_property('_NET_WM_WINDOW_TYPE', 
                                      (styles[self._style],))
-        elif self._style == selmf.WINDOW_STYLE_BORDERLESS:
+        elif self._style == self.WINDOW_STYLE_BORDERLESS:
             MWM_HINTS_DECORATIONS = 1 << 1
             PROP_MWM_HINTS_ELEMENTS = 5
             mwmhints = mwmhints_t()
