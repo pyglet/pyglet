@@ -26,14 +26,24 @@ class SpriteBatch(graphics.Batch):
 
     def __len__(self): return len(self.sprites)
 
+    def hit(self, x, y):
+        '''See whether there's a Sprite at the pixel location
+
+        XXX optimise me
+        '''
+        for sprite in self.sprites:
+            if sprite.contains(x, y):
+                return sprite
+        return None
+
     def on_mouse_press(self, x, y, buttons, modifiers):
         '''See if the press occurs over a sprite and if it does, invoke the
         on_mouse_press handler on the sprite.
 
         XXX optimise me
         '''
-        for sprite in self.sprites:
-            if sprite.contains(x, y):
+        sprite = self.hit(x, y)
+        if sprite:
                 return sprite.on_mouse_press(x, y, buttons, modifiers)
         return False
 
@@ -103,30 +113,49 @@ class Sprite(sprite.Sprite):
     def on_mouse_press(self, x, y, buttons, modifiers):
         pass
 
-    # r/w, in pixels, y extent
-    def get_top(self): return self.y + self.height - self._texture.anchor_y
-    def set_top(self, y): self.y = y - self.height + self._texture.anchor_y
+    def get_top(self):
+        t = self._texture
+        height = t.height * self._scale
+        return self._y + height - t.anchor_y
+    def set_top(self, y):
+        t = self._texture
+        height = t.height * self._scale
+        self._y = y - height + t.anchor_y
+        self._update_position()
     top = property(get_top, set_top)
 
-    # r/w, in pixels, y extent
-    def get_bottom(self): return self.y - self._texture.anchor_y
-    def set_bottom(self, y): self.y = y + self._texture.anchor_y
+    def get_bottom(self):
+        return self._y - self._texture.anchor_y
+    def set_bottom(self, y):
+        self._y = y + self._texture.anchor_y
+        self._update_position()
     bottom = property(get_bottom, set_bottom)
 
-    # r/w, in pixels, x extent
-    def get_left(self): return self.x - self._texture.anchor_x
-    def set_left(self, x): self.x = x + self._texture.anchor_x
+    def get_left(self):
+        return self._x - self._texture.anchor_x
+    def set_left(self, x):
+        self._x = x + self._texture.anchor_x
+        self._update_position()
     left = property(get_left, set_left)
 
-    # r/w, in pixels, x extent
-    def get_right(self): return self.x + self.width - self._texture.anchor_x
-    def set_right(self, x): self.x = x - self.width + self._texture.anchor_x
+    def get_right(self):
+        t = self._texture
+        width = t.width * self._scale
+        return self._x + width - t.anchor_x
+    def set_right(self, x):
+        t = self._texture
+        width = t.width * self._scale
+        self._x = x - width + t.anchor_x
+        self._update_position()
     right = property(get_right, set_right)
 
-    # r/w, in pixels, (x, y)
     def get_center(self):
-        # XXX optimise this
-        return (self.left + self.width/2, self.bottom + self.height/2)
+        t = self._texture
+        left = self._x - t.anchor_x
+        bottom = self._y - t.anchor_y
+        height = t.height * self._scale
+        width = t.width * self._scale
+        return (left + width/2, bottom + height/2)
     def set_center(self, center):
         x, y = center
         # XXX optimise this

@@ -8,7 +8,7 @@ platform                                      us per sprite per frame
 Intel C2Quad Q6600 (2.4GHz), GeForce 7800     18.2478245656
 Intel C2Duo T7500 (2.2GHz), GeForce 8400M GS  19.115903827
 AMD 64 3500+ (1.8GHz), GeForce 7800           23.6
-EEE PC                                        73.5
+EEE PC                                        75.0
 '''
 
 import os
@@ -28,12 +28,17 @@ w = window.Window(600, 600, vsync=False)
 
 class BouncySprite(spryte.Sprite):
     def update(self):
-        # move, check bounds
-        self.position = (self.x + self.dx, self.y + self.dy)
-        if self.x < 0: self.x = 0; self.dx = -self.dx
-        elif self.right > 600: self.right = 600; self.dx = -self.dx
-        if self.y < 0: self.y = 0; self.dy = -self.dy
-        elif self.top > 600: self.top = 600; self.dy = -self.dy
+        # micro-optimisation: only access properties once
+        x, y = self.x, self.y
+
+        # move
+        self.position = (x + self.dx, y + self.dy)
+
+        # check bounds
+        if x < 0: self.x = 0; self.dx = -self.dx
+        elif x + self.width > 600: self.dx = -self.dx
+        if y < 0: self.y = 0; self.dy = -self.dy
+        elif self.top > 600: self.dy = -self.dy
 
 batch = spryte.SpriteBatch()
 
@@ -48,12 +53,7 @@ for i in range(numsprites):
 
 t = 0
 numframes = 0
-while 1:
-    if w.has_exit:
-        print 'FPS:', clock.get_fps()
-        print 'us per sprite:', float(t) / (numsprites * numframes) * 1000000
-
-        break
+while not w.has_exit:
     t += clock.tick()
     w.dispatch_events()
     for s in batch: s.update()
@@ -61,5 +61,7 @@ while 1:
     batch.draw()
     w.flip()
     numframes += 1
+print 'FPS:', clock.get_fps()
+print 'us per sprite:', float(t) / (numsprites * numframes) * 1000000
 w.close()
 
