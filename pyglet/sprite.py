@@ -52,6 +52,7 @@ class Sprite(event.EventDispatcher):
     _rotation = 0
     _opacity = 255
     _scale = 1.0
+    vertex_list = None
 
     def __init__(self, 
                  img, x=0, y=0, 
@@ -60,7 +61,7 @@ class Sprite(event.EventDispatcher):
                  batch=None,
                  parent_state=None):
 
-        assert batch is None or parent_state is None, \
+        assert bool(batch is None) == bool(parent_state is None), \
             'parent_state requires batch rendering'
 
         if batch is not None:
@@ -208,6 +209,9 @@ class Sprite(event.EventDispatcher):
         self._y = y
         self._update_position()
 
+    position = property(lambda self: (self._x, self._y),
+                 lambda self, t: self.set_position(*t))
+
     def _set_x(self, x):
         self._x = x
         self._update_position()
@@ -235,6 +239,9 @@ class Sprite(event.EventDispatcher):
 
     scale = property(lambda self: self._scale,
                      _set_scale)
+
+    width = property(lambda self: self._texture.width * self._scale)
+    height = property(lambda self: self._texture.height * self._scale)
 
     def _set_opacity(self, opacity):
         self._opacity = opacity
