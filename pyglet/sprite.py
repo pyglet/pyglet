@@ -61,8 +61,9 @@ class Sprite(event.EventDispatcher):
                  batch=None,
                  parent_state=None):
 
-        assert bool(batch is None) == bool(parent_state is None), \
-            'parent_state requires batch rendering'
+        # make sure parent_state is accompanied by a batch
+        if parent_state is not None and batch is None:
+            raise ValueError('parent_state requires batch rendering')
 
         if batch is not None:
             self._batch = batch
