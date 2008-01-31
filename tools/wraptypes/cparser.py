@@ -862,6 +862,7 @@ def p_declarator(p):
 
 def p_direct_declarator(p):
     '''direct_declarator : IDENTIFIER
+                         | TYPE_NAME
                          | '(' declarator ')'
                          | direct_declarator '[' constant_expression ']'
                          | direct_declarator '[' ']'
@@ -869,6 +870,9 @@ def p_direct_declarator(p):
                          | direct_declarator '(' identifier_list ')'
                          | direct_declarator '(' ')'
     '''
+    # TYPE_NAME path is because some types are predefined in wrapper scripts;
+    # it is not valid C.
+
     if isinstance(p[1], Declarator):
         p[0] = p[1] 
         if p[2] == '[':

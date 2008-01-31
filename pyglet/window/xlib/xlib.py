@@ -1,40 +1,7 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
 '''Wrapper for X11
 
 Generated with:
-tools/genwrappers.py
+tools/genwrappers.py xlib
 
 Do not modify this file.
 '''
@@ -319,7 +286,7 @@ GXorReverse = 11 	# /usr/include/X11/X.h:500
 GXcopyInverted = 12 	# /usr/include/X11/X.h:501
 GXorInverted = 13 	# /usr/include/X11/X.h:502
 GXnand = 14 	# /usr/include/X11/X.h:503
-GXset = 0.0 	# /usr/include/X11/X.h:504
+GXset = 15 	# /usr/include/X11/X.h:504
 LineSolid = 0 	# /usr/include/X11/X.h:508
 LineOnOffDash = 1 	# /usr/include/X11/X.h:509
 LineDoubleDash = 2 	# /usr/include/X11/X.h:510
@@ -435,43 +402,43 @@ _Xmblen.argtypes = [c_char_p, c_int]
 
 X_HAVE_UTF8_STRING = 1 	# /usr/include/X11/Xlib.h:106
 XPointer = pyglet.gl.glx.XPointer
-Bool = c_int 	# /usr/include/X11/Xlib.h:110 # XXX fixed manually
-Status = c_int 	# /usr/include/X11/Xlib.h:111 # XXX fixed manually
+Bool = 0 	# /usr/include/X11/Xlib.h:110
+Status = 0 	# /usr/include/X11/Xlib.h:111
 True = 1 	# /usr/include/X11/Xlib.h:112
 False = 0 	# /usr/include/X11/Xlib.h:113
 QueuedAlready = 0 	# /usr/include/X11/Xlib.h:115
 QueuedAfterReading = 1 	# /usr/include/X11/Xlib.h:116
 QueuedAfterFlush = 2 	# /usr/include/X11/Xlib.h:117
 XExtData = pyglet.gl.glx.XExtData
-class struct_anon_8(Structure):
+class struct_anon_15(Structure):
     __slots__ = [
         'extension',
         'major_opcode',
         'first_event',
         'first_error',
     ]
-struct_anon_8._fields_ = [
+struct_anon_15._fields_ = [
     ('extension', c_int),
     ('major_opcode', c_int),
     ('first_event', c_int),
     ('first_error', c_int),
 ]
 
-XExtCodes = struct_anon_8 	# /usr/include/X11/Xlib.h:197
-class struct_anon_9(Structure):
+XExtCodes = struct_anon_15 	# /usr/include/X11/Xlib.h:197
+class struct_anon_16(Structure):
     __slots__ = [
         'depth',
         'bits_per_pixel',
         'scanline_pad',
     ]
-struct_anon_9._fields_ = [
+struct_anon_16._fields_ = [
     ('depth', c_int),
     ('bits_per_pixel', c_int),
     ('scanline_pad', c_int),
 ]
 
-XPixmapFormatValues = struct_anon_9 	# /usr/include/X11/Xlib.h:207
-class struct_anon_10(Structure):
+XPixmapFormatValues = struct_anon_16 	# /usr/include/X11/Xlib.h:207
+class struct_anon_17(Structure):
     __slots__ = [
         'function',
         'plane_mask',
@@ -497,7 +464,7 @@ class struct_anon_10(Structure):
         'dash_offset',
         'dashes',
     ]
-struct_anon_10._fields_ = [
+struct_anon_17._fields_ = [
     ('function', c_int),
     ('plane_mask', c_ulong),
     ('foreground', c_ulong),
@@ -523,7 +490,14 @@ struct_anon_10._fields_ = [
     ('dashes', c_char),
 ]
 
-XGCValues = struct_anon_10 	# /usr/include/X11/Xlib.h:239
+XGCValues = struct_anon_17 	# /usr/include/X11/Xlib.h:239
+class struct__XGC(Structure):
+    __slots__ = [
+    ]
+struct__XGC._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 class struct__XGC(Structure):
     __slots__ = [
     ]
@@ -533,20 +507,20 @@ struct__XGC._fields_ = [
 
 GC = POINTER(struct__XGC) 	# /usr/include/X11/Xlib.h:254
 Visual = pyglet.gl.glx.Visual
-class struct_anon_12(Structure):
+class struct_anon_19(Structure):
     __slots__ = [
         'depth',
         'nvisuals',
         'visuals',
     ]
-struct_anon_12._fields_ = [
+struct_anon_19._fields_ = [
     ('depth', c_int),
     ('nvisuals', c_int),
     ('visuals', POINTER(Visual)),
 ]
 
-Depth = struct_anon_12 	# /usr/include/X11/Xlib.h:279
-class struct_anon_13(Structure):
+Depth = struct_anon_19 	# /usr/include/X11/Xlib.h:279
+class struct_anon_20(Structure):
     __slots__ = [
         'ext_data',
         'display',
@@ -576,7 +550,7 @@ struct__XDisplay._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-struct_anon_13._fields_ = [
+struct_anon_20._fields_ = [
     ('ext_data', POINTER(XExtData)),
     ('display', POINTER(struct__XDisplay)),
     ('root', Window),
@@ -599,23 +573,23 @@ struct_anon_13._fields_ = [
     ('root_input_mask', c_long),
 ]
 
-Screen = struct_anon_13 	# /usr/include/X11/Xlib.h:307
-class struct_anon_14(Structure):
+Screen = struct_anon_20 	# /usr/include/X11/Xlib.h:307
+class struct_anon_21(Structure):
     __slots__ = [
         'ext_data',
         'depth',
         'bits_per_pixel',
         'scanline_pad',
     ]
-struct_anon_14._fields_ = [
+struct_anon_21._fields_ = [
     ('ext_data', POINTER(XExtData)),
     ('depth', c_int),
     ('bits_per_pixel', c_int),
     ('scanline_pad', c_int),
 ]
 
-ScreenFormat = struct_anon_14 	# /usr/include/X11/Xlib.h:317
-class struct_anon_15(Structure):
+ScreenFormat = struct_anon_21 	# /usr/include/X11/Xlib.h:317
+class struct_anon_22(Structure):
     __slots__ = [
         'background_pixmap',
         'background_pixel',
@@ -633,7 +607,7 @@ class struct_anon_15(Structure):
         'colormap',
         'cursor',
     ]
-struct_anon_15._fields_ = [
+struct_anon_22._fields_ = [
     ('background_pixmap', Pixmap),
     ('background_pixel', c_ulong),
     ('border_pixmap', Pixmap),
@@ -651,8 +625,8 @@ struct_anon_15._fields_ = [
     ('cursor', Cursor),
 ]
 
-XSetWindowAttributes = struct_anon_15 	# /usr/include/X11/Xlib.h:338
-class struct_anon_16(Structure):
+XSetWindowAttributes = struct_anon_22 	# /usr/include/X11/Xlib.h:338
+class struct_anon_23(Structure):
     __slots__ = [
         'x',
         'y',
@@ -678,7 +652,7 @@ class struct_anon_16(Structure):
         'override_redirect',
         'screen',
     ]
-struct_anon_16._fields_ = [
+struct_anon_23._fields_ = [
     ('x', c_int),
     ('y', c_int),
     ('width', c_int),
@@ -704,35 +678,35 @@ struct_anon_16._fields_ = [
     ('screen', POINTER(Screen)),
 ]
 
-XWindowAttributes = struct_anon_16 	# /usr/include/X11/Xlib.h:366
-class struct_anon_17(Structure):
+XWindowAttributes = struct_anon_23 	# /usr/include/X11/Xlib.h:366
+class struct_anon_24(Structure):
     __slots__ = [
         'family',
         'length',
         'address',
     ]
-struct_anon_17._fields_ = [
+struct_anon_24._fields_ = [
     ('family', c_int),
     ('length', c_int),
     ('address', c_char_p),
 ]
 
-XHostAddress = struct_anon_17 	# /usr/include/X11/Xlib.h:377
-class struct_anon_18(Structure):
+XHostAddress = struct_anon_24 	# /usr/include/X11/Xlib.h:377
+class struct_anon_25(Structure):
     __slots__ = [
         'typelength',
         'valuelength',
         'type',
         'value',
     ]
-struct_anon_18._fields_ = [
+struct_anon_25._fields_ = [
     ('typelength', c_int),
     ('valuelength', c_int),
     ('type', c_char_p),
     ('value', c_char_p),
 ]
 
-XServerInterpretedAddress = struct_anon_18 	# /usr/include/X11/Xlib.h:387
+XServerInterpretedAddress = struct_anon_25 	# /usr/include/X11/Xlib.h:387
 class struct__XImage(Structure):
     __slots__ = [
         'width',
@@ -762,6 +736,13 @@ class struct_funcs(Structure):
         'sub_image',
         'add_pixel',
     ]
+class struct__XDisplay(Structure):
+    __slots__ = [
+    ]
+struct__XDisplay._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 struct_funcs._fields_ = [
     ('create_image', POINTER(CFUNCTYPE(POINTER(struct__XImage), POINTER(struct__XDisplay), POINTER(Visual), c_uint, c_int, c_int, c_char_p, c_uint, c_uint, c_int, c_int))),
     ('destroy_image', POINTER(CFUNCTYPE(c_int, POINTER(struct__XImage)))),
@@ -792,7 +773,7 @@ struct__XImage._fields_ = [
 ]
 
 XImage = struct__XImage 	# /usr/include/X11/Xlib.h:426
-class struct_anon_19(Structure):
+class struct_anon_26(Structure):
     __slots__ = [
         'x',
         'y',
@@ -802,7 +783,7 @@ class struct_anon_19(Structure):
         'sibling',
         'stack_mode',
     ]
-struct_anon_19._fields_ = [
+struct_anon_26._fields_ = [
     ('x', c_int),
     ('y', c_int),
     ('width', c_int),
@@ -812,8 +793,8 @@ struct_anon_19._fields_ = [
     ('stack_mode', c_int),
 ]
 
-XWindowChanges = struct_anon_19 	# /usr/include/X11/Xlib.h:437
-class struct_anon_20(Structure):
+XWindowChanges = struct_anon_26 	# /usr/include/X11/Xlib.h:437
+class struct_anon_27(Structure):
     __slots__ = [
         'pixel',
         'red',
@@ -822,7 +803,7 @@ class struct_anon_20(Structure):
         'flags',
         'pad',
     ]
-struct_anon_20._fields_ = [
+struct_anon_27._fields_ = [
     ('pixel', c_ulong),
     ('red', c_ushort),
     ('green', c_ushort),
@@ -831,49 +812,49 @@ struct_anon_20._fields_ = [
     ('pad', c_char),
 ]
 
-XColor = struct_anon_20 	# /usr/include/X11/Xlib.h:447
-class struct_anon_21(Structure):
+XColor = struct_anon_27 	# /usr/include/X11/Xlib.h:447
+class struct_anon_28(Structure):
     __slots__ = [
         'x1',
         'y1',
         'x2',
         'y2',
     ]
-struct_anon_21._fields_ = [
+struct_anon_28._fields_ = [
     ('x1', c_short),
     ('y1', c_short),
     ('x2', c_short),
     ('y2', c_short),
 ]
 
-XSegment = struct_anon_21 	# /usr/include/X11/Xlib.h:456
-class struct_anon_22(Structure):
+XSegment = struct_anon_28 	# /usr/include/X11/Xlib.h:456
+class struct_anon_29(Structure):
     __slots__ = [
         'x',
         'y',
     ]
-struct_anon_22._fields_ = [
+struct_anon_29._fields_ = [
     ('x', c_short),
     ('y', c_short),
 ]
 
-XPoint = struct_anon_22 	# /usr/include/X11/Xlib.h:460
-class struct_anon_23(Structure):
+XPoint = struct_anon_29 	# /usr/include/X11/Xlib.h:460
+class struct_anon_30(Structure):
     __slots__ = [
         'x',
         'y',
         'width',
         'height',
     ]
-struct_anon_23._fields_ = [
+struct_anon_30._fields_ = [
     ('x', c_short),
     ('y', c_short),
     ('width', c_ushort),
     ('height', c_ushort),
 ]
 
-XRectangle = struct_anon_23 	# /usr/include/X11/Xlib.h:465
-class struct_anon_24(Structure):
+XRectangle = struct_anon_30 	# /usr/include/X11/Xlib.h:465
+class struct_anon_31(Structure):
     __slots__ = [
         'x',
         'y',
@@ -882,7 +863,7 @@ class struct_anon_24(Structure):
         'angle1',
         'angle2',
     ]
-struct_anon_24._fields_ = [
+struct_anon_31._fields_ = [
     ('x', c_short),
     ('y', c_short),
     ('width', c_ushort),
@@ -891,8 +872,8 @@ struct_anon_24._fields_ = [
     ('angle2', c_short),
 ]
 
-XArc = struct_anon_24 	# /usr/include/X11/Xlib.h:471
-class struct_anon_25(Structure):
+XArc = struct_anon_31 	# /usr/include/X11/Xlib.h:471
+class struct_anon_32(Structure):
     __slots__ = [
         'key_click_percent',
         'bell_percent',
@@ -903,7 +884,7 @@ class struct_anon_25(Structure):
         'key',
         'auto_repeat_mode',
     ]
-struct_anon_25._fields_ = [
+struct_anon_32._fields_ = [
     ('key_click_percent', c_int),
     ('bell_percent', c_int),
     ('bell_pitch', c_int),
@@ -914,8 +895,8 @@ struct_anon_25._fields_ = [
     ('auto_repeat_mode', c_int),
 ]
 
-XKeyboardControl = struct_anon_25 	# /usr/include/X11/Xlib.h:485
-class struct_anon_26(Structure):
+XKeyboardControl = struct_anon_32 	# /usr/include/X11/Xlib.h:485
+class struct_anon_33(Structure):
     __slots__ = [
         'key_click_percent',
         'bell_percent',
@@ -925,7 +906,7 @@ class struct_anon_26(Structure):
         'global_auto_repeat',
         'auto_repeats',
     ]
-struct_anon_26._fields_ = [
+struct_anon_33._fields_ = [
     ('key_click_percent', c_int),
     ('bell_percent', c_int),
     ('bell_pitch', c_uint),
@@ -935,33 +916,33 @@ struct_anon_26._fields_ = [
     ('auto_repeats', c_char * 32),
 ]
 
-XKeyboardState = struct_anon_26 	# /usr/include/X11/Xlib.h:496
-class struct_anon_27(Structure):
+XKeyboardState = struct_anon_33 	# /usr/include/X11/Xlib.h:496
+class struct_anon_34(Structure):
     __slots__ = [
         'time',
         'x',
         'y',
     ]
-struct_anon_27._fields_ = [
+struct_anon_34._fields_ = [
     ('time', Time),
     ('x', c_short),
     ('y', c_short),
 ]
 
-XTimeCoord = struct_anon_27 	# /usr/include/X11/Xlib.h:503
-class struct_anon_28(Structure):
+XTimeCoord = struct_anon_34 	# /usr/include/X11/Xlib.h:503
+class struct_anon_35(Structure):
     __slots__ = [
         'max_keypermod',
         'modifiermap',
     ]
-struct_anon_28._fields_ = [
+struct_anon_35._fields_ = [
     ('max_keypermod', c_int),
     ('modifiermap', POINTER(KeyCode)),
 ]
 
-XModifierKeymap = struct_anon_28 	# /usr/include/X11/Xlib.h:510
+XModifierKeymap = struct_anon_35 	# /usr/include/X11/Xlib.h:510
 Display = pyglet.gl.glx.Display
-class struct_anon_29(Structure):
+class struct_anon_36(Structure):
     __slots__ = [
         'ext_data',
         'private1',
@@ -1015,6 +996,27 @@ struct__XPrivate._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
+class struct__XDisplay(Structure):
+    __slots__ = [
+    ]
+struct__XDisplay._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+class struct__XPrivate(Structure):
+    __slots__ = [
+    ]
+struct__XPrivate._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+class struct__XPrivate(Structure):
+    __slots__ = [
+    ]
+struct__XPrivate._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 class struct__XrmHashBucketRec(Structure):
     __slots__ = [
     ]
@@ -1022,7 +1024,14 @@ struct__XrmHashBucketRec._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-struct_anon_29._fields_ = [
+class struct__XDisplay(Structure):
+    __slots__ = [
+    ]
+struct__XDisplay._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+struct_anon_36._fields_ = [
     ('ext_data', POINTER(XExtData)),
     ('private1', POINTER(struct__XPrivate)),
     ('fd', c_int),
@@ -1069,8 +1078,8 @@ struct_anon_29._fields_ = [
     ('xdefaults', c_char_p),
 ]
 
-_XPrivDisplay = POINTER(struct_anon_29) 	# /usr/include/X11/Xlib.h:582
-class struct_anon_30(Structure):
+_XPrivDisplay = POINTER(struct_anon_36) 	# /usr/include/X11/Xlib.h:582
+class struct_anon_37(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1088,7 +1097,7 @@ class struct_anon_30(Structure):
         'keycode',
         'same_screen',
     ]
-struct_anon_30._fields_ = [
+struct_anon_37._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1106,10 +1115,10 @@ struct_anon_30._fields_ = [
     ('same_screen', c_int),
 ]
 
-XKeyEvent = struct_anon_30 	# /usr/include/X11/Xlib.h:603
+XKeyEvent = struct_anon_37 	# /usr/include/X11/Xlib.h:603
 XKeyPressedEvent = XKeyEvent 	# /usr/include/X11/Xlib.h:604
 XKeyReleasedEvent = XKeyEvent 	# /usr/include/X11/Xlib.h:605
-class struct_anon_31(Structure):
+class struct_anon_38(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1127,7 +1136,7 @@ class struct_anon_31(Structure):
         'button',
         'same_screen',
     ]
-struct_anon_31._fields_ = [
+struct_anon_38._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1145,10 +1154,10 @@ struct_anon_31._fields_ = [
     ('same_screen', c_int),
 ]
 
-XButtonEvent = struct_anon_31 	# /usr/include/X11/Xlib.h:621
+XButtonEvent = struct_anon_38 	# /usr/include/X11/Xlib.h:621
 XButtonPressedEvent = XButtonEvent 	# /usr/include/X11/Xlib.h:622
 XButtonReleasedEvent = XButtonEvent 	# /usr/include/X11/Xlib.h:623
-class struct_anon_32(Structure):
+class struct_anon_39(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1166,7 +1175,7 @@ class struct_anon_32(Structure):
         'is_hint',
         'same_screen',
     ]
-struct_anon_32._fields_ = [
+struct_anon_39._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1184,9 +1193,9 @@ struct_anon_32._fields_ = [
     ('same_screen', c_int),
 ]
 
-XMotionEvent = struct_anon_32 	# /usr/include/X11/Xlib.h:639
+XMotionEvent = struct_anon_39 	# /usr/include/X11/Xlib.h:639
 XPointerMovedEvent = XMotionEvent 	# /usr/include/X11/Xlib.h:640
-class struct_anon_33(Structure):
+class struct_anon_40(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1206,7 +1215,7 @@ class struct_anon_33(Structure):
         'focus',
         'state',
     ]
-struct_anon_33._fields_ = [
+struct_anon_40._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1226,10 +1235,10 @@ struct_anon_33._fields_ = [
     ('state', c_uint),
 ]
 
-XCrossingEvent = struct_anon_33 	# /usr/include/X11/Xlib.h:662
+XCrossingEvent = struct_anon_40 	# /usr/include/X11/Xlib.h:662
 XEnterWindowEvent = XCrossingEvent 	# /usr/include/X11/Xlib.h:663
 XLeaveWindowEvent = XCrossingEvent 	# /usr/include/X11/Xlib.h:664
-class struct_anon_34(Structure):
+class struct_anon_41(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1239,7 +1248,7 @@ class struct_anon_34(Structure):
         'mode',
         'detail',
     ]
-struct_anon_34._fields_ = [
+struct_anon_41._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1249,10 +1258,10 @@ struct_anon_34._fields_ = [
     ('detail', c_int),
 ]
 
-XFocusChangeEvent = struct_anon_34 	# /usr/include/X11/Xlib.h:680
+XFocusChangeEvent = struct_anon_41 	# /usr/include/X11/Xlib.h:680
 XFocusInEvent = XFocusChangeEvent 	# /usr/include/X11/Xlib.h:681
 XFocusOutEvent = XFocusChangeEvent 	# /usr/include/X11/Xlib.h:682
-class struct_anon_35(Structure):
+class struct_anon_42(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1261,7 +1270,7 @@ class struct_anon_35(Structure):
         'window',
         'key_vector',
     ]
-struct_anon_35._fields_ = [
+struct_anon_42._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1270,8 +1279,8 @@ struct_anon_35._fields_ = [
     ('key_vector', c_char * 32),
 ]
 
-XKeymapEvent = struct_anon_35 	# /usr/include/X11/Xlib.h:692
-class struct_anon_36(Structure):
+XKeymapEvent = struct_anon_42 	# /usr/include/X11/Xlib.h:692
+class struct_anon_43(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1284,7 +1293,7 @@ class struct_anon_36(Structure):
         'height',
         'count',
     ]
-struct_anon_36._fields_ = [
+struct_anon_43._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1297,8 +1306,8 @@ struct_anon_36._fields_ = [
     ('count', c_int),
 ]
 
-XExposeEvent = struct_anon_36 	# /usr/include/X11/Xlib.h:703
-class struct_anon_37(Structure):
+XExposeEvent = struct_anon_43 	# /usr/include/X11/Xlib.h:703
+class struct_anon_44(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1313,7 +1322,7 @@ class struct_anon_37(Structure):
         'major_code',
         'minor_code',
     ]
-struct_anon_37._fields_ = [
+struct_anon_44._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1328,8 +1337,8 @@ struct_anon_37._fields_ = [
     ('minor_code', c_int),
 ]
 
-XGraphicsExposeEvent = struct_anon_37 	# /usr/include/X11/Xlib.h:716
-class struct_anon_38(Structure):
+XGraphicsExposeEvent = struct_anon_44 	# /usr/include/X11/Xlib.h:716
+class struct_anon_45(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1339,7 +1348,7 @@ class struct_anon_38(Structure):
         'major_code',
         'minor_code',
     ]
-struct_anon_38._fields_ = [
+struct_anon_45._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1349,8 +1358,8 @@ struct_anon_38._fields_ = [
     ('minor_code', c_int),
 ]
 
-XNoExposeEvent = struct_anon_38 	# /usr/include/X11/Xlib.h:726
-class struct_anon_39(Structure):
+XNoExposeEvent = struct_anon_45 	# /usr/include/X11/Xlib.h:726
+class struct_anon_46(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1359,7 +1368,7 @@ class struct_anon_39(Structure):
         'window',
         'state',
     ]
-struct_anon_39._fields_ = [
+struct_anon_46._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1368,8 +1377,8 @@ struct_anon_39._fields_ = [
     ('state', c_int),
 ]
 
-XVisibilityEvent = struct_anon_39 	# /usr/include/X11/Xlib.h:735
-class struct_anon_40(Structure):
+XVisibilityEvent = struct_anon_46 	# /usr/include/X11/Xlib.h:735
+class struct_anon_47(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1384,7 +1393,7 @@ class struct_anon_40(Structure):
         'border_width',
         'override_redirect',
     ]
-struct_anon_40._fields_ = [
+struct_anon_47._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1399,8 +1408,8 @@ struct_anon_40._fields_ = [
     ('override_redirect', c_int),
 ]
 
-XCreateWindowEvent = struct_anon_40 	# /usr/include/X11/Xlib.h:748
-class struct_anon_41(Structure):
+XCreateWindowEvent = struct_anon_47 	# /usr/include/X11/Xlib.h:748
+class struct_anon_48(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1409,7 +1418,7 @@ class struct_anon_41(Structure):
         'event',
         'window',
     ]
-struct_anon_41._fields_ = [
+struct_anon_48._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1418,8 +1427,8 @@ struct_anon_41._fields_ = [
     ('window', Window),
 ]
 
-XDestroyWindowEvent = struct_anon_41 	# /usr/include/X11/Xlib.h:757
-class struct_anon_42(Structure):
+XDestroyWindowEvent = struct_anon_48 	# /usr/include/X11/Xlib.h:757
+class struct_anon_49(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1429,7 +1438,7 @@ class struct_anon_42(Structure):
         'window',
         'from_configure',
     ]
-struct_anon_42._fields_ = [
+struct_anon_49._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1439,8 +1448,8 @@ struct_anon_42._fields_ = [
     ('from_configure', c_int),
 ]
 
-XUnmapEvent = struct_anon_42 	# /usr/include/X11/Xlib.h:767
-class struct_anon_43(Structure):
+XUnmapEvent = struct_anon_49 	# /usr/include/X11/Xlib.h:767
+class struct_anon_50(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1450,7 +1459,7 @@ class struct_anon_43(Structure):
         'window',
         'override_redirect',
     ]
-struct_anon_43._fields_ = [
+struct_anon_50._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1460,8 +1469,8 @@ struct_anon_43._fields_ = [
     ('override_redirect', c_int),
 ]
 
-XMapEvent = struct_anon_43 	# /usr/include/X11/Xlib.h:777
-class struct_anon_44(Structure):
+XMapEvent = struct_anon_50 	# /usr/include/X11/Xlib.h:777
+class struct_anon_51(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1470,7 +1479,7 @@ class struct_anon_44(Structure):
         'parent',
         'window',
     ]
-struct_anon_44._fields_ = [
+struct_anon_51._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1479,8 +1488,8 @@ struct_anon_44._fields_ = [
     ('window', Window),
 ]
 
-XMapRequestEvent = struct_anon_44 	# /usr/include/X11/Xlib.h:786
-class struct_anon_45(Structure):
+XMapRequestEvent = struct_anon_51 	# /usr/include/X11/Xlib.h:786
+class struct_anon_52(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1493,7 +1502,7 @@ class struct_anon_45(Structure):
         'y',
         'override_redirect',
     ]
-struct_anon_45._fields_ = [
+struct_anon_52._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1506,8 +1515,8 @@ struct_anon_45._fields_ = [
     ('override_redirect', c_int),
 ]
 
-XReparentEvent = struct_anon_45 	# /usr/include/X11/Xlib.h:798
-class struct_anon_46(Structure):
+XReparentEvent = struct_anon_52 	# /usr/include/X11/Xlib.h:798
+class struct_anon_53(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1523,7 +1532,7 @@ class struct_anon_46(Structure):
         'above',
         'override_redirect',
     ]
-struct_anon_46._fields_ = [
+struct_anon_53._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1539,8 +1548,8 @@ struct_anon_46._fields_ = [
     ('override_redirect', c_int),
 ]
 
-XConfigureEvent = struct_anon_46 	# /usr/include/X11/Xlib.h:812
-class struct_anon_47(Structure):
+XConfigureEvent = struct_anon_53 	# /usr/include/X11/Xlib.h:812
+class struct_anon_54(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1551,7 +1560,7 @@ class struct_anon_47(Structure):
         'x',
         'y',
     ]
-struct_anon_47._fields_ = [
+struct_anon_54._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1562,8 +1571,8 @@ struct_anon_47._fields_ = [
     ('y', c_int),
 ]
 
-XGravityEvent = struct_anon_47 	# /usr/include/X11/Xlib.h:822
-class struct_anon_48(Structure):
+XGravityEvent = struct_anon_54 	# /usr/include/X11/Xlib.h:822
+class struct_anon_55(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1573,7 +1582,7 @@ class struct_anon_48(Structure):
         'width',
         'height',
     ]
-struct_anon_48._fields_ = [
+struct_anon_55._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1583,8 +1592,8 @@ struct_anon_48._fields_ = [
     ('height', c_int),
 ]
 
-XResizeRequestEvent = struct_anon_48 	# /usr/include/X11/Xlib.h:831
-class struct_anon_49(Structure):
+XResizeRequestEvent = struct_anon_55 	# /usr/include/X11/Xlib.h:831
+class struct_anon_56(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1601,7 +1610,7 @@ class struct_anon_49(Structure):
         'detail',
         'value_mask',
     ]
-struct_anon_49._fields_ = [
+struct_anon_56._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1618,8 +1627,8 @@ struct_anon_49._fields_ = [
     ('value_mask', c_ulong),
 ]
 
-XConfigureRequestEvent = struct_anon_49 	# /usr/include/X11/Xlib.h:846
-class struct_anon_50(Structure):
+XConfigureRequestEvent = struct_anon_56 	# /usr/include/X11/Xlib.h:846
+class struct_anon_57(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1629,7 +1638,7 @@ class struct_anon_50(Structure):
         'window',
         'place',
     ]
-struct_anon_50._fields_ = [
+struct_anon_57._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1639,8 +1648,8 @@ struct_anon_50._fields_ = [
     ('place', c_int),
 ]
 
-XCirculateEvent = struct_anon_50 	# /usr/include/X11/Xlib.h:856
-class struct_anon_51(Structure):
+XCirculateEvent = struct_anon_57 	# /usr/include/X11/Xlib.h:856
+class struct_anon_58(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1650,7 +1659,7 @@ class struct_anon_51(Structure):
         'window',
         'place',
     ]
-struct_anon_51._fields_ = [
+struct_anon_58._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1660,8 +1669,8 @@ struct_anon_51._fields_ = [
     ('place', c_int),
 ]
 
-XCirculateRequestEvent = struct_anon_51 	# /usr/include/X11/Xlib.h:866
-class struct_anon_52(Structure):
+XCirculateRequestEvent = struct_anon_58 	# /usr/include/X11/Xlib.h:866
+class struct_anon_59(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1672,7 +1681,7 @@ class struct_anon_52(Structure):
         'time',
         'state',
     ]
-struct_anon_52._fields_ = [
+struct_anon_59._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1683,8 +1692,8 @@ struct_anon_52._fields_ = [
     ('state', c_int),
 ]
 
-XPropertyEvent = struct_anon_52 	# /usr/include/X11/Xlib.h:877
-class struct_anon_53(Structure):
+XPropertyEvent = struct_anon_59 	# /usr/include/X11/Xlib.h:877
+class struct_anon_60(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1694,7 +1703,7 @@ class struct_anon_53(Structure):
         'selection',
         'time',
     ]
-struct_anon_53._fields_ = [
+struct_anon_60._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1704,8 +1713,8 @@ struct_anon_53._fields_ = [
     ('time', Time),
 ]
 
-XSelectionClearEvent = struct_anon_53 	# /usr/include/X11/Xlib.h:887
-class struct_anon_54(Structure):
+XSelectionClearEvent = struct_anon_60 	# /usr/include/X11/Xlib.h:887
+class struct_anon_61(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1718,7 +1727,7 @@ class struct_anon_54(Structure):
         'property',
         'time',
     ]
-struct_anon_54._fields_ = [
+struct_anon_61._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1731,8 +1740,8 @@ struct_anon_54._fields_ = [
     ('time', Time),
 ]
 
-XSelectionRequestEvent = struct_anon_54 	# /usr/include/X11/Xlib.h:900
-class struct_anon_55(Structure):
+XSelectionRequestEvent = struct_anon_61 	# /usr/include/X11/Xlib.h:900
+class struct_anon_62(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1744,7 +1753,7 @@ class struct_anon_55(Structure):
         'property',
         'time',
     ]
-struct_anon_55._fields_ = [
+struct_anon_62._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1756,8 +1765,8 @@ struct_anon_55._fields_ = [
     ('time', Time),
 ]
 
-XSelectionEvent = struct_anon_55 	# /usr/include/X11/Xlib.h:912
-class struct_anon_56(Structure):
+XSelectionEvent = struct_anon_62 	# /usr/include/X11/Xlib.h:912
+class struct_anon_63(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1768,7 +1777,7 @@ class struct_anon_56(Structure):
         'new',
         'state',
     ]
-struct_anon_56._fields_ = [
+struct_anon_63._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1779,8 +1788,8 @@ struct_anon_56._fields_ = [
     ('state', c_int),
 ]
 
-XColormapEvent = struct_anon_56 	# /usr/include/X11/Xlib.h:927
-class struct_anon_57(Structure):
+XColormapEvent = struct_anon_63 	# /usr/include/X11/Xlib.h:927
+class struct_anon_64(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1791,19 +1800,19 @@ class struct_anon_57(Structure):
         'format',
         'data',
     ]
-class struct_anon_58(Union):
+class struct_anon_65(Union):
     __slots__ = [
         'b',
         's',
         'l',
     ]
-struct_anon_58._fields_ = [
+struct_anon_65._fields_ = [
     ('b', c_char * 20),
     ('s', c_short * 10),
     ('l', c_long * 5),
 ]
 
-struct_anon_57._fields_ = [
+struct_anon_64._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1811,11 +1820,11 @@ struct_anon_57._fields_ = [
     ('window', Window),
     ('message_type', Atom),
     ('format', c_int),
-    ('data', struct_anon_58),
+    ('data', struct_anon_65),
 ]
 
-XClientMessageEvent = struct_anon_57 	# /usr/include/X11/Xlib.h:942
-class struct_anon_59(Structure):
+XClientMessageEvent = struct_anon_64 	# /usr/include/X11/Xlib.h:942
+class struct_anon_66(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1826,7 +1835,7 @@ class struct_anon_59(Structure):
         'first_keycode',
         'count',
     ]
-struct_anon_59._fields_ = [
+struct_anon_66._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1837,8 +1846,8 @@ struct_anon_59._fields_ = [
     ('count', c_int),
 ]
 
-XMappingEvent = struct_anon_59 	# /usr/include/X11/Xlib.h:954
-class struct_anon_60(Structure):
+XMappingEvent = struct_anon_66 	# /usr/include/X11/Xlib.h:954
+class struct_anon_67(Structure):
     __slots__ = [
         'type',
         'display',
@@ -1848,7 +1857,7 @@ class struct_anon_60(Structure):
         'request_code',
         'minor_code',
     ]
-struct_anon_60._fields_ = [
+struct_anon_67._fields_ = [
     ('type', c_int),
     ('display', POINTER(Display)),
     ('resourceid', XID),
@@ -1858,8 +1867,8 @@ struct_anon_60._fields_ = [
     ('minor_code', c_ubyte),
 ]
 
-XErrorEvent = struct_anon_60 	# /usr/include/X11/Xlib.h:964
-class struct_anon_61(Structure):
+XErrorEvent = struct_anon_67 	# /usr/include/X11/Xlib.h:964
+class struct_anon_68(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -1867,7 +1876,7 @@ class struct_anon_61(Structure):
         'display',
         'window',
     ]
-struct_anon_61._fields_ = [
+struct_anon_68._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -1875,7 +1884,7 @@ struct_anon_61._fields_ = [
     ('window', Window),
 ]
 
-XAnyEvent = struct_anon_61 	# /usr/include/X11/Xlib.h:972
+XAnyEvent = struct_anon_68 	# /usr/include/X11/Xlib.h:972
 class struct__XEvent(Union):
     __slots__ = [
         'type',
@@ -1949,7 +1958,7 @@ struct__XEvent._fields_ = [
 ]
 
 XEvent = struct__XEvent 	# /usr/include/X11/Xlib.h:1012
-class struct_anon_62(Structure):
+class struct_anon_69(Structure):
     __slots__ = [
         'lbearing',
         'rbearing',
@@ -1958,7 +1967,7 @@ class struct_anon_62(Structure):
         'descent',
         'attributes',
     ]
-struct_anon_62._fields_ = [
+struct_anon_69._fields_ = [
     ('lbearing', c_short),
     ('rbearing', c_short),
     ('width', c_short),
@@ -1967,19 +1976,19 @@ struct_anon_62._fields_ = [
     ('attributes', c_ushort),
 ]
 
-XCharStruct = struct_anon_62 	# /usr/include/X11/Xlib.h:1027
-class struct_anon_63(Structure):
+XCharStruct = struct_anon_69 	# /usr/include/X11/Xlib.h:1027
+class struct_anon_70(Structure):
     __slots__ = [
         'name',
         'card32',
     ]
-struct_anon_63._fields_ = [
+struct_anon_70._fields_ = [
     ('name', Atom),
     ('card32', c_ulong),
 ]
 
-XFontProp = struct_anon_63 	# /usr/include/X11/Xlib.h:1036
-class struct_anon_64(Structure):
+XFontProp = struct_anon_70 	# /usr/include/X11/Xlib.h:1036
+class struct_anon_71(Structure):
     __slots__ = [
         'ext_data',
         'fid',
@@ -1998,7 +2007,7 @@ class struct_anon_64(Structure):
         'ascent',
         'descent',
     ]
-struct_anon_64._fields_ = [
+struct_anon_71._fields_ = [
     ('ext_data', POINTER(XExtData)),
     ('fid', Font),
     ('direction', c_uint),
@@ -2017,49 +2026,49 @@ struct_anon_64._fields_ = [
     ('descent', c_int),
 ]
 
-XFontStruct = struct_anon_64 	# /usr/include/X11/Xlib.h:1055
-class struct_anon_65(Structure):
+XFontStruct = struct_anon_71 	# /usr/include/X11/Xlib.h:1055
+class struct_anon_72(Structure):
     __slots__ = [
         'chars',
         'nchars',
         'delta',
         'font',
     ]
-struct_anon_65._fields_ = [
+struct_anon_72._fields_ = [
     ('chars', c_char_p),
     ('nchars', c_int),
     ('delta', c_int),
     ('font', Font),
 ]
 
-XTextItem = struct_anon_65 	# /usr/include/X11/Xlib.h:1065
-class struct_anon_66(Structure):
+XTextItem = struct_anon_72 	# /usr/include/X11/Xlib.h:1065
+class struct_anon_73(Structure):
     __slots__ = [
         'byte1',
         'byte2',
     ]
-struct_anon_66._fields_ = [
+struct_anon_73._fields_ = [
     ('byte1', c_ubyte),
     ('byte2', c_ubyte),
 ]
 
-XChar2b = struct_anon_66 	# /usr/include/X11/Xlib.h:1070
-class struct_anon_67(Structure):
+XChar2b = struct_anon_73 	# /usr/include/X11/Xlib.h:1070
+class struct_anon_74(Structure):
     __slots__ = [
         'chars',
         'nchars',
         'delta',
         'font',
     ]
-struct_anon_67._fields_ = [
+struct_anon_74._fields_ = [
     ('chars', POINTER(XChar2b)),
     ('nchars', c_int),
     ('delta', c_int),
     ('font', Font),
 ]
 
-XTextItem16 = struct_anon_67 	# /usr/include/X11/Xlib.h:1077
-class struct_anon_68(Union):
+XTextItem16 = struct_anon_74 	# /usr/include/X11/Xlib.h:1077
+class struct_anon_75(Union):
     __slots__ = [
         'display',
         'gc',
@@ -2068,7 +2077,7 @@ class struct_anon_68(Union):
         'pixmap_format',
         'font',
     ]
-struct_anon_68._fields_ = [
+struct_anon_75._fields_ = [
     ('display', POINTER(Display)),
     ('gc', GC),
     ('visual', POINTER(Visual)),
@@ -2077,18 +2086,25 @@ struct_anon_68._fields_ = [
     ('font', POINTER(XFontStruct)),
 ]
 
-XEDataObject = struct_anon_68 	# /usr/include/X11/Xlib.h:1085
-class struct_anon_69(Structure):
+XEDataObject = struct_anon_75 	# /usr/include/X11/Xlib.h:1085
+class struct_anon_76(Structure):
     __slots__ = [
         'max_ink_extent',
         'max_logical_extent',
     ]
-struct_anon_69._fields_ = [
+struct_anon_76._fields_ = [
     ('max_ink_extent', XRectangle),
     ('max_logical_extent', XRectangle),
 ]
 
-XFontSetExtents = struct_anon_69 	# /usr/include/X11/Xlib.h:1090
+XFontSetExtents = struct_anon_76 	# /usr/include/X11/Xlib.h:1090
+class struct__XOM(Structure):
+    __slots__ = [
+    ]
+struct__XOM._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 class struct__XOM(Structure):
     __slots__ = [
     ]
@@ -2104,80 +2120,108 @@ struct__XOC._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
+class struct__XOC(Structure):
+    __slots__ = [
+    ]
+struct__XOC._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 XOC = POINTER(struct__XOC) 	# /usr/include/X11/Xlib.h:1097
+class struct__XOC(Structure):
+    __slots__ = [
+    ]
+struct__XOC._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+class struct__XOC(Structure):
+    __slots__ = [
+    ]
+struct__XOC._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 XFontSet = POINTER(struct__XOC) 	# /usr/include/X11/Xlib.h:1097
-class struct_anon_70(Structure):
+class struct_anon_77(Structure):
     __slots__ = [
         'chars',
         'nchars',
         'delta',
         'font_set',
     ]
-struct_anon_70._fields_ = [
+struct_anon_77._fields_ = [
     ('chars', c_char_p),
     ('nchars', c_int),
     ('delta', c_int),
     ('font_set', XFontSet),
 ]
 
-XmbTextItem = struct_anon_70 	# /usr/include/X11/Xlib.h:1104
-class struct_anon_71(Structure):
+XmbTextItem = struct_anon_77 	# /usr/include/X11/Xlib.h:1104
+class struct_anon_78(Structure):
     __slots__ = [
         'chars',
         'nchars',
         'delta',
         'font_set',
     ]
-struct_anon_71._fields_ = [
+struct_anon_78._fields_ = [
     ('chars', c_wchar_p),
     ('nchars', c_int),
     ('delta', c_int),
     ('font_set', XFontSet),
 ]
 
-XwcTextItem = struct_anon_71 	# /usr/include/X11/Xlib.h:1111
-class struct_anon_72(Structure):
+XwcTextItem = struct_anon_78 	# /usr/include/X11/Xlib.h:1111
+class struct_anon_79(Structure):
     __slots__ = [
         'charset_count',
         'charset_list',
     ]
-struct_anon_72._fields_ = [
+struct_anon_79._fields_ = [
     ('charset_count', c_int),
     ('charset_list', POINTER(c_char_p)),
 ]
 
-XOMCharSetList = struct_anon_72 	# /usr/include/X11/Xlib.h:1127
-enum_anon_73 = c_int
-XOMOrientation_LTR_TTB = 1
-XOMOrientation_RTL_TTB = 2
-XOMOrientation_TTB_LTR = 3
-XOMOrientation_TTB_RTL = 4
-XOMOrientation_Context = 5
-XOrientation = enum_anon_73 	# /usr/include/X11/Xlib.h:1135
-class struct_anon_74(Structure):
+XOMCharSetList = struct_anon_79 	# /usr/include/X11/Xlib.h:1127
+enum_anon_80 = c_int
+XOMOrientation_LTR_TTB = 0
+XOMOrientation_RTL_TTB = 1
+XOMOrientation_TTB_LTR = 2
+XOMOrientation_TTB_RTL = 3
+XOMOrientation_Context = 4
+XOrientation = enum_anon_80 	# /usr/include/X11/Xlib.h:1135
+class struct_anon_81(Structure):
     __slots__ = [
         'num_orientation',
         'orientation',
     ]
-struct_anon_74._fields_ = [
+struct_anon_81._fields_ = [
     ('num_orientation', c_int),
     ('orientation', POINTER(XOrientation)),
 ]
 
-XOMOrientation = struct_anon_74 	# /usr/include/X11/Xlib.h:1140
-class struct_anon_75(Structure):
+XOMOrientation = struct_anon_81 	# /usr/include/X11/Xlib.h:1140
+class struct_anon_82(Structure):
     __slots__ = [
         'num_font',
         'font_struct_list',
         'font_name_list',
     ]
-struct_anon_75._fields_ = [
+struct_anon_82._fields_ = [
     ('num_font', c_int),
     ('font_struct_list', POINTER(POINTER(XFontStruct))),
     ('font_name_list', POINTER(c_char_p)),
 ]
 
-XOMFontInfo = struct_anon_75 	# /usr/include/X11/Xlib.h:1146
+XOMFontInfo = struct_anon_82 	# /usr/include/X11/Xlib.h:1146
+class struct__XIM(Structure):
+    __slots__ = [
+    ]
+struct__XIM._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 class struct__XIM(Structure):
     __slots__ = [
     ]
@@ -2193,22 +2237,29 @@ struct__XIC._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
+class struct__XIC(Structure):
+    __slots__ = [
+    ]
+struct__XIC._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 XIC = POINTER(struct__XIC) 	# /usr/include/X11/Xlib.h:1149
 XIMProc = CFUNCTYPE(None, XIM, XPointer, XPointer) 	# /usr/include/X11/Xlib.h:1151
 XICProc = CFUNCTYPE(c_int, XIC, XPointer, XPointer) 	# /usr/include/X11/Xlib.h:1157
 XIDProc = CFUNCTYPE(None, POINTER(Display), XPointer, XPointer) 	# /usr/include/X11/Xlib.h:1163
 XIMStyle = c_ulong 	# /usr/include/X11/Xlib.h:1169
-class struct_anon_76(Structure):
+class struct_anon_83(Structure):
     __slots__ = [
         'count_styles',
         'supported_styles',
     ]
-struct_anon_76._fields_ = [
+struct_anon_83._fields_ = [
     ('count_styles', c_ushort),
     ('supported_styles', POINTER(XIMStyle)),
 ]
 
-XIMStyles = struct_anon_76 	# /usr/include/X11/Xlib.h:1174
+XIMStyles = struct_anon_83 	# /usr/include/X11/Xlib.h:1174
 XIMPreeditArea = 1 	# /usr/include/X11/Xlib.h:1176
 XIMPreeditCallbacks = 2 	# /usr/include/X11/Xlib.h:1177
 XIMPreeditPosition = 4 	# /usr/include/X11/Xlib.h:1178
@@ -2224,28 +2275,28 @@ XLookupChars = 2 	# /usr/include/X11/Xlib.h:1232
 XLookupKeySym = 3 	# /usr/include/X11/Xlib.h:1233
 XLookupBoth = 4 	# /usr/include/X11/Xlib.h:1234
 XVaNestedList = POINTER(None) 	# /usr/include/X11/Xlib.h:1236
-class struct_anon_77(Structure):
+class struct_anon_84(Structure):
     __slots__ = [
         'client_data',
         'callback',
     ]
-struct_anon_77._fields_ = [
+struct_anon_84._fields_ = [
     ('client_data', XPointer),
     ('callback', XIMProc),
 ]
 
-XIMCallback = struct_anon_77 	# /usr/include/X11/Xlib.h:1241
-class struct_anon_78(Structure):
+XIMCallback = struct_anon_84 	# /usr/include/X11/Xlib.h:1241
+class struct_anon_85(Structure):
     __slots__ = [
         'client_data',
         'callback',
     ]
-struct_anon_78._fields_ = [
+struct_anon_85._fields_ = [
     ('client_data', XPointer),
     ('callback', XICProc),
 ]
 
-XICCallback = struct_anon_78 	# /usr/include/X11/Xlib.h:1246
+XICCallback = struct_anon_85 	# /usr/include/X11/Xlib.h:1246
 XIMFeedback = c_ulong 	# /usr/include/X11/Xlib.h:1248
 XIMReverse = 1 	# /usr/include/X11/Xlib.h:1250
 XIMUnderline = 2 	# /usr/include/X11/Xlib.h:1251
@@ -2263,12 +2314,12 @@ class struct__XIMText(Structure):
         'encoding_is_wchar',
         'string',
     ]
-class struct_anon_79(Union):
+class struct_anon_86(Union):
     __slots__ = [
         'multi_byte',
         'wide_char',
     ]
-struct_anon_79._fields_ = [
+struct_anon_86._fields_ = [
     ('multi_byte', c_char_p),
     ('wide_char', c_wchar_p),
 ]
@@ -2277,7 +2328,7 @@ struct__XIMText._fields_ = [
     ('length', c_ushort),
     ('feedback', POINTER(XIMFeedback)),
     ('encoding_is_wchar', c_int),
-    ('string', struct_anon_79),
+    ('string', struct_anon_86),
 ]
 
 XIMText = struct__XIMText 	# /usr/include/X11/Xlib.h:1268
@@ -2311,12 +2362,12 @@ class struct__XIMStringConversionText(Structure):
         'encoding_is_wchar',
         'string',
     ]
-class struct_anon_80(Union):
+class struct_anon_87(Union):
     __slots__ = [
         'mbs',
         'wcs',
     ]
-struct_anon_80._fields_ = [
+struct_anon_87._fields_ = [
     ('mbs', c_char_p),
     ('wcs', c_wchar_p),
 ]
@@ -2325,7 +2376,7 @@ struct__XIMStringConversionText._fields_ = [
     ('length', c_ushort),
     ('feedback', POINTER(XIMStringConversionFeedback)),
     ('encoding_is_wchar', c_int),
-    ('string', struct_anon_80),
+    ('string', struct_anon_87),
 ]
 
 XIMStringConversionText = struct__XIMStringConversionText 	# /usr/include/X11/Xlib.h:1302
@@ -2338,20 +2389,20 @@ XIMStringConversionChar = 4 	# /usr/include/X11/Xlib.h:1311
 XIMStringConversionOperation = c_ushort 	# /usr/include/X11/Xlib.h:1313
 XIMStringConversionSubstitution = 1 	# /usr/include/X11/Xlib.h:1315
 XIMStringConversionRetrieval = 2 	# /usr/include/X11/Xlib.h:1316
-enum_anon_81 = c_int
-XIMForwardChar = 1
-XIMBackwardChar = 2
-XIMForwardWord = 3
-XIMBackwardWord = 4
-XIMCaretUp = 5
-XIMCaretDown = 6
-XIMNextLine = 7
-XIMPreviousLine = 8
-XIMLineStart = 9
-XIMLineEnd = 10
-XIMAbsolutePosition = 11
-XIMDontChange = 12
-XIMCaretDirection = enum_anon_81 	# /usr/include/X11/Xlib.h:1326
+enum_anon_88 = c_int
+XIMForwardChar = 0
+XIMBackwardChar = 1
+XIMForwardWord = 2
+XIMBackwardWord = 3
+XIMCaretUp = 4
+XIMCaretDown = 5
+XIMNextLine = 6
+XIMPreviousLine = 7
+XIMLineStart = 8
+XIMLineEnd = 9
+XIMAbsolutePosition = 10
+XIMDontChange = 11
+XIMCaretDirection = enum_anon_88 	# /usr/include/X11/Xlib.h:1326
 class struct__XIMStringConversionCallbackStruct(Structure):
     __slots__ = [
         'position',
@@ -2384,11 +2435,11 @@ struct__XIMPreeditDrawCallbackStruct._fields_ = [
 ]
 
 XIMPreeditDrawCallbackStruct = struct__XIMPreeditDrawCallbackStruct 	# /usr/include/X11/Xlib.h:1341
-enum_anon_82 = c_int
-XIMIsInvisible = 1
-XIMIsPrimary = 2
-XIMIsSecondary = 3
-XIMCaretStyle = enum_anon_82 	# /usr/include/X11/Xlib.h:1347
+enum_anon_89 = c_int
+XIMIsInvisible = 0
+XIMIsPrimary = 1
+XIMIsSecondary = 2
+XIMCaretStyle = enum_anon_89 	# /usr/include/X11/Xlib.h:1347
 class struct__XIMPreeditCaretCallbackStruct(Structure):
     __slots__ = [
         'position',
@@ -2402,28 +2453,28 @@ struct__XIMPreeditCaretCallbackStruct._fields_ = [
 ]
 
 XIMPreeditCaretCallbackStruct = struct__XIMPreeditCaretCallbackStruct 	# /usr/include/X11/Xlib.h:1353
-enum_anon_83 = c_int
-XIMTextType = 1
-XIMBitmapType = 2
-XIMStatusDataType = enum_anon_83 	# /usr/include/X11/Xlib.h:1358
+enum_anon_90 = c_int
+XIMTextType = 0
+XIMBitmapType = 1
+XIMStatusDataType = enum_anon_90 	# /usr/include/X11/Xlib.h:1358
 class struct__XIMStatusDrawCallbackStruct(Structure):
     __slots__ = [
         'type',
         'data',
     ]
-class struct_anon_84(Union):
+class struct_anon_91(Union):
     __slots__ = [
         'text',
         'bitmap',
     ]
-struct_anon_84._fields_ = [
+struct_anon_91._fields_ = [
     ('text', POINTER(XIMText)),
     ('bitmap', Pixmap),
 ]
 
 struct__XIMStatusDrawCallbackStruct._fields_ = [
     ('type', XIMStatusDataType),
-    ('data', struct_anon_84),
+    ('data', struct_anon_91),
 ]
 
 XIMStatusDrawCallbackStruct = struct__XIMStatusDrawCallbackStruct 	# /usr/include/X11/Xlib.h:1366
@@ -2454,17 +2505,17 @@ XIMHotKeyTriggers = struct__XIMHotKeyTriggers 	# /usr/include/X11/Xlib.h:1377
 XIMHotKeyState = c_ulong 	# /usr/include/X11/Xlib.h:1379
 XIMHotKeyStateON = 1 	# /usr/include/X11/Xlib.h:1381
 XIMHotKeyStateOFF = 2 	# /usr/include/X11/Xlib.h:1382
-class struct_anon_85(Structure):
+class struct_anon_92(Structure):
     __slots__ = [
         'count_values',
         'supported_values',
     ]
-struct_anon_85._fields_ = [
+struct_anon_92._fields_ = [
     ('count_values', c_ushort),
     ('supported_values', POINTER(c_char_p)),
 ]
 
-XIMValuesList = struct_anon_85 	# /usr/include/X11/Xlib.h:1387
+XIMValuesList = struct_anon_92 	# /usr/include/X11/Xlib.h:1387
 # /usr/include/X11/Xlib.h:1397
 XLoadQueryFont = _lib.XLoadQueryFont
 XLoadQueryFont.restype = POINTER(XFontStruct)
@@ -4179,6 +4230,13 @@ XSetLocaleModifiers = _lib.XSetLocaleModifiers
 XSetLocaleModifiers.restype = c_char_p
 XSetLocaleModifiers.argtypes = [c_char_p]
 
+class struct__XrmHashBucketRec(Structure):
+    __slots__ = [
+    ]
+struct__XrmHashBucketRec._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 # /usr/include/X11/Xlib.h:3559
 XOpenOM = _lib.XOpenOM
 XOpenOM.restype = XOM
@@ -4369,6 +4427,13 @@ Xutf8DrawImageString = _lib.Xutf8DrawImageString
 Xutf8DrawImageString.restype = None
 Xutf8DrawImageString.argtypes = [POINTER(Display), Drawable, XFontSet, GC, c_int, c_int, c_char_p, c_int]
 
+class struct__XrmHashBucketRec(Structure):
+    __slots__ = [
+    ]
+struct__XrmHashBucketRec._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 # /usr/include/X11/Xlib.h:3828
 XOpenIM = _lib.XOpenIM
 XOpenIM.restype = XIM
@@ -4474,10 +4539,24 @@ XVaCreateNestedList = _lib.XVaCreateNestedList
 XVaCreateNestedList.restype = XVaNestedList
 XVaCreateNestedList.argtypes = [c_int]
 
+class struct__XrmHashBucketRec(Structure):
+    __slots__ = [
+    ]
+struct__XrmHashBucketRec._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 # /usr/include/X11/Xlib.h:3933
 XRegisterIMInstantiateCallback = _lib.XRegisterIMInstantiateCallback
 XRegisterIMInstantiateCallback.restype = c_int
 XRegisterIMInstantiateCallback.argtypes = [POINTER(Display), POINTER(struct__XrmHashBucketRec), c_char_p, c_char_p, XIDProc, XPointer]
+
+class struct__XrmHashBucketRec(Structure):
+    __slots__ = [
+    ]
+struct__XrmHashBucketRec._fields_ = [
+    ('_opaque_struct', c_int)
+]
 
 # /usr/include/X11/Xlib.h:3942
 XUnregisterIMInstantiateCallback = _lib.XUnregisterIMInstantiateCallback
@@ -4756,7 +4835,7 @@ GXorReverse = 11 	# /usr/include/X11/X.h:4508
 GXcopyInverted = 12 	# /usr/include/X11/X.h:4509
 GXorInverted = 13 	# /usr/include/X11/X.h:4510
 GXnand = 14 	# /usr/include/X11/X.h:4511
-GXset = 0.0 	# /usr/include/X11/X.h:4512
+GXset = 15 	# /usr/include/X11/X.h:4512
 LineSolid = 0 	# /usr/include/X11/X.h:4516
 LineOnOffDash = 1 	# /usr/include/X11/X.h:4517
 LineDoubleDash = 2 	# /usr/include/X11/X.h:4518
@@ -5102,7 +5181,7 @@ GXorReverse = 11 	# /usr/include/X11/X.h:500
 GXcopyInverted = 12 	# /usr/include/X11/X.h:501
 GXorInverted = 13 	# /usr/include/X11/X.h:502
 GXnand = 14 	# /usr/include/X11/X.h:503
-GXset = 0.0 	# /usr/include/X11/X.h:504
+GXset = 15 	# /usr/include/X11/X.h:504
 LineSolid = 0 	# /usr/include/X11/X.h:508
 LineOnOffDash = 1 	# /usr/include/X11/X.h:509
 LineDoubleDash = 2 	# /usr/include/X11/X.h:510
@@ -5217,11 +5296,244 @@ _Xmblen.restype = c_int
 _Xmblen.argtypes = [c_char_p, c_int]
 
 X_HAVE_UTF8_STRING = 1 	# /usr/include/X11/Xlib.h:106
+XPointer = pyglet.gl.glx.XPointer
+Bool = 0 	# /usr/include/X11/Xlib.h:110
+Status = 0 	# /usr/include/X11/Xlib.h:111
 True = 1 	# /usr/include/X11/Xlib.h:112
 False = 0 	# /usr/include/X11/Xlib.h:113
 QueuedAlready = 0 	# /usr/include/X11/Xlib.h:115
 QueuedAfterReading = 1 	# /usr/include/X11/Xlib.h:116
 QueuedAfterFlush = 2 	# /usr/include/X11/Xlib.h:117
+class struct__XGC(Structure):
+    __slots__ = [
+    ]
+struct__XGC._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+class struct__XGC(Structure):
+    __slots__ = [
+    ]
+struct__XGC._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+GC = POINTER(struct__XGC) 	# /usr/include/X11/Xlib.h:254
+class struct_anon_93(Structure):
+    __slots__ = [
+        'ext_data',
+        'private1',
+        'fd',
+        'private2',
+        'proto_major_version',
+        'proto_minor_version',
+        'vendor',
+        'private3',
+        'private4',
+        'private5',
+        'private6',
+        'resource_alloc',
+        'byte_order',
+        'bitmap_unit',
+        'bitmap_pad',
+        'bitmap_bit_order',
+        'nformats',
+        'pixmap_format',
+        'private8',
+        'release',
+        'private9',
+        'private10',
+        'qlen',
+        'last_request_read',
+        'request',
+        'private11',
+        'private12',
+        'private13',
+        'private14',
+        'max_request_size',
+        'db',
+        'private15',
+        'display_name',
+        'default_screen',
+        'nscreens',
+        'screens',
+        'motion_buffer',
+        'private16',
+        'min_keycode',
+        'max_keycode',
+        'private17',
+        'private18',
+        'private19',
+        'xdefaults',
+    ]
+class struct__XPrivate(Structure):
+    __slots__ = [
+    ]
+struct__XPrivate._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+class struct__XDisplay(Structure):
+    __slots__ = [
+    ]
+struct__XDisplay._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+class struct__XPrivate(Structure):
+    __slots__ = [
+    ]
+struct__XPrivate._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+class struct__XPrivate(Structure):
+    __slots__ = [
+    ]
+struct__XPrivate._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+class struct__XrmHashBucketRec(Structure):
+    __slots__ = [
+    ]
+struct__XrmHashBucketRec._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+class struct__XDisplay(Structure):
+    __slots__ = [
+    ]
+struct__XDisplay._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+struct_anon_93._fields_ = [
+    ('ext_data', POINTER(XExtData)),
+    ('private1', POINTER(struct__XPrivate)),
+    ('fd', c_int),
+    ('private2', c_int),
+    ('proto_major_version', c_int),
+    ('proto_minor_version', c_int),
+    ('vendor', c_char_p),
+    ('private3', XID),
+    ('private4', XID),
+    ('private5', XID),
+    ('private6', c_int),
+    ('resource_alloc', POINTER(CFUNCTYPE(XID, POINTER(struct__XDisplay)))),
+    ('byte_order', c_int),
+    ('bitmap_unit', c_int),
+    ('bitmap_pad', c_int),
+    ('bitmap_bit_order', c_int),
+    ('nformats', c_int),
+    ('pixmap_format', POINTER(ScreenFormat)),
+    ('private8', c_int),
+    ('release', c_int),
+    ('private9', POINTER(struct__XPrivate)),
+    ('private10', POINTER(struct__XPrivate)),
+    ('qlen', c_int),
+    ('last_request_read', c_ulong),
+    ('request', c_ulong),
+    ('private11', XPointer),
+    ('private12', XPointer),
+    ('private13', XPointer),
+    ('private14', XPointer),
+    ('max_request_size', c_uint),
+    ('db', POINTER(struct__XrmHashBucketRec)),
+    ('private15', POINTER(CFUNCTYPE(c_int, POINTER(struct__XDisplay)))),
+    ('display_name', c_char_p),
+    ('default_screen', c_int),
+    ('nscreens', c_int),
+    ('screens', POINTER(Screen)),
+    ('motion_buffer', c_ulong),
+    ('private16', c_ulong),
+    ('min_keycode', c_int),
+    ('max_keycode', c_int),
+    ('private17', XPointer),
+    ('private18', XPointer),
+    ('private19', c_int),
+    ('xdefaults', c_char_p),
+]
+
+_XPrivDisplay = POINTER(struct_anon_93) 	# /usr/include/X11/Xlib.h:582
+class struct__XOM(Structure):
+    __slots__ = [
+    ]
+struct__XOM._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+class struct__XOM(Structure):
+    __slots__ = [
+    ]
+struct__XOM._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+XOM = POINTER(struct__XOM) 	# /usr/include/X11/Xlib.h:1096
+class struct__XOC(Structure):
+    __slots__ = [
+    ]
+struct__XOC._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+class struct__XOC(Structure):
+    __slots__ = [
+    ]
+struct__XOC._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+XOC = POINTER(struct__XOC) 	# /usr/include/X11/Xlib.h:1097
+class struct__XOC(Structure):
+    __slots__ = [
+    ]
+struct__XOC._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+class struct__XOC(Structure):
+    __slots__ = [
+    ]
+struct__XOC._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+XFontSet = POINTER(struct__XOC) 	# /usr/include/X11/Xlib.h:1097
+class struct__XIM(Structure):
+    __slots__ = [
+    ]
+struct__XIM._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+class struct__XIM(Structure):
+    __slots__ = [
+    ]
+struct__XIM._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+XIM = POINTER(struct__XIM) 	# /usr/include/X11/Xlib.h:1148
+class struct__XIC(Structure):
+    __slots__ = [
+    ]
+struct__XIC._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+class struct__XIC(Structure):
+    __slots__ = [
+    ]
+struct__XIC._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+XIC = POINTER(struct__XIC) 	# /usr/include/X11/Xlib.h:1149
+XIMProc = CFUNCTYPE(None, XIM, XPointer, XPointer) 	# /usr/include/X11/Xlib.h:1151
+XICProc = CFUNCTYPE(c_int, XIC, XPointer, XPointer) 	# /usr/include/X11/Xlib.h:1157
+XIDProc = CFUNCTYPE(None, POINTER(Display), XPointer, XPointer) 	# /usr/include/X11/Xlib.h:1163
 XIMPreeditArea = 1 	# /usr/include/X11/Xlib.h:1176
 XIMPreeditCallbacks = 2 	# /usr/include/X11/Xlib.h:1177
 XIMPreeditPosition = 4 	# /usr/include/X11/Xlib.h:1178
@@ -5236,6 +5548,7 @@ XLookupNone = 1 	# /usr/include/X11/Xlib.h:1231
 XLookupChars = 2 	# /usr/include/X11/Xlib.h:1232
 XLookupKeySym = 3 	# /usr/include/X11/Xlib.h:1233
 XLookupBoth = 4 	# /usr/include/X11/Xlib.h:1234
+XVaNestedList = POINTER(None) 	# /usr/include/X11/Xlib.h:1236
 XIMReverse = 1 	# /usr/include/X11/Xlib.h:1250
 XIMUnderline = 2 	# /usr/include/X11/Xlib.h:1251
 XIMHighlight = 4 	# /usr/include/X11/Xlib.h:1252
@@ -5694,11 +6007,13 @@ XScreenNumberOfScreen = _lib.XScreenNumberOfScreen
 XScreenNumberOfScreen.restype = c_int
 XScreenNumberOfScreen.argtypes = [POINTER(Screen)]
 
+XErrorHandler = CFUNCTYPE(c_int, POINTER(Display), POINTER(XErrorEvent)) 	# /usr/include/X11/Xlib.h:1845
 # /usr/include/X11/Xlib.h:1850
 XSetErrorHandler = _lib.XSetErrorHandler
 XSetErrorHandler.restype = XErrorHandler
 XSetErrorHandler.argtypes = [XErrorHandler]
 
+XIOErrorHandler = CFUNCTYPE(c_int, POINTER(Display)) 	# /usr/include/X11/Xlib.h:1855
 # /usr/include/X11/Xlib.h:1859
 XSetIOErrorHandler = _lib.XSetIOErrorHandler
 XSetIOErrorHandler.restype = XIOErrorHandler
@@ -5778,6 +6093,13 @@ XAddHost.argtypes = [POINTER(Display), POINTER(XHostAddress)]
 XAddHosts = _lib.XAddHosts
 XAddHosts.restype = c_int
 XAddHosts.argtypes = [POINTER(Display), POINTER(XHostAddress), c_int]
+
+class struct__XExtData(Structure):
+    __slots__ = [
+    ]
+struct__XExtData._fields_ = [
+    ('_opaque_struct', c_int)
+]
 
 # /usr/include/X11/Xlib.h:1950
 XAddToExtensionList = _lib.XAddToExtensionList
@@ -6969,6 +7291,13 @@ XSetLocaleModifiers = _lib.XSetLocaleModifiers
 XSetLocaleModifiers.restype = c_char_p
 XSetLocaleModifiers.argtypes = [c_char_p]
 
+class struct__XrmHashBucketRec(Structure):
+    __slots__ = [
+    ]
+struct__XrmHashBucketRec._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 # /usr/include/X11/Xlib.h:3559
 XOpenOM = _lib.XOpenOM
 XOpenOM.restype = XOM
@@ -7159,6 +7488,13 @@ Xutf8DrawImageString = _lib.Xutf8DrawImageString
 Xutf8DrawImageString.restype = None
 Xutf8DrawImageString.argtypes = [POINTER(Display), Drawable, XFontSet, GC, c_int, c_int, c_char_p, c_int]
 
+class struct__XrmHashBucketRec(Structure):
+    __slots__ = [
+    ]
+struct__XrmHashBucketRec._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 # /usr/include/X11/Xlib.h:3828
 XOpenIM = _lib.XOpenIM
 XOpenIM.restype = XIM
@@ -7264,16 +7600,31 @@ XVaCreateNestedList = _lib.XVaCreateNestedList
 XVaCreateNestedList.restype = XVaNestedList
 XVaCreateNestedList.argtypes = [c_int]
 
+class struct__XrmHashBucketRec(Structure):
+    __slots__ = [
+    ]
+struct__XrmHashBucketRec._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 # /usr/include/X11/Xlib.h:3933
 XRegisterIMInstantiateCallback = _lib.XRegisterIMInstantiateCallback
 XRegisterIMInstantiateCallback.restype = c_int
 XRegisterIMInstantiateCallback.argtypes = [POINTER(Display), POINTER(struct__XrmHashBucketRec), c_char_p, c_char_p, XIDProc, XPointer]
+
+class struct__XrmHashBucketRec(Structure):
+    __slots__ = [
+    ]
+struct__XrmHashBucketRec._fields_ = [
+    ('_opaque_struct', c_int)
+]
 
 # /usr/include/X11/Xlib.h:3942
 XUnregisterIMInstantiateCallback = _lib.XUnregisterIMInstantiateCallback
 XUnregisterIMInstantiateCallback.restype = c_int
 XUnregisterIMInstantiateCallback.argtypes = [POINTER(Display), POINTER(struct__XrmHashBucketRec), c_char_p, c_char_p, XIDProc, XPointer]
 
+XConnectionWatchProc = CFUNCTYPE(None, POINTER(Display), XPointer, c_int, c_int, POINTER(XPointer)) 	# /usr/include/X11/Xlib.h:3951
 # /usr/include/X11/Xlib.h:3960
 XInternalConnectionNumbers = _lib.XInternalConnectionNumbers
 XInternalConnectionNumbers.restype = c_int
@@ -7314,10 +7665,10 @@ XValue = 1 	# /usr/include/X11/Xutil.h:4792
 YValue = 2 	# /usr/include/X11/Xutil.h:4793
 WidthValue = 4 	# /usr/include/X11/Xutil.h:4794
 HeightValue = 8 	# /usr/include/X11/Xutil.h:4795
-AllValues = 0 	# /usr/include/X11/Xutil.h:4796
+AllValues = 15 	# /usr/include/X11/Xutil.h:4796
 XNegative = 16 	# /usr/include/X11/Xutil.h:4797
 YNegative = 32 	# /usr/include/X11/Xutil.h:4798
-class struct_anon_86(Structure):
+class struct_anon_94(Structure):
     __slots__ = [
         'flags',
         'x',
@@ -7336,27 +7687,27 @@ class struct_anon_86(Structure):
         'base_height',
         'win_gravity',
     ]
-class struct_anon_87(Structure):
+class struct_anon_95(Structure):
     __slots__ = [
         'x',
         'y',
     ]
-struct_anon_87._fields_ = [
+struct_anon_95._fields_ = [
     ('x', c_int),
     ('y', c_int),
 ]
 
-class struct_anon_88(Structure):
+class struct_anon_96(Structure):
     __slots__ = [
         'x',
         'y',
     ]
-struct_anon_88._fields_ = [
+struct_anon_96._fields_ = [
     ('x', c_int),
     ('y', c_int),
 ]
 
-struct_anon_86._fields_ = [
+struct_anon_94._fields_ = [
     ('flags', c_long),
     ('x', c_int),
     ('y', c_int),
@@ -7368,14 +7719,14 @@ struct_anon_86._fields_ = [
     ('max_height', c_int),
     ('width_inc', c_int),
     ('height_inc', c_int),
-    ('min_aspect', struct_anon_87),
-    ('max_aspect', struct_anon_88),
+    ('min_aspect', struct_anon_95),
+    ('max_aspect', struct_anon_96),
     ('base_width', c_int),
     ('base_height', c_int),
     ('win_gravity', c_int),
 ]
 
-XSizeHints = struct_anon_86 	# /usr/include/X11/Xutil.h:4817
+XSizeHints = struct_anon_94 	# /usr/include/X11/Xutil.h:4817
 USPosition = 1 	# /usr/include/X11/Xutil.h:4825
 USSize = 2 	# /usr/include/X11/Xutil.h:4826
 PPosition = 4 	# /usr/include/X11/Xutil.h:4828
@@ -7387,7 +7738,7 @@ PAspect = 128 	# /usr/include/X11/Xutil.h:4833
 PBaseSize = 256 	# /usr/include/X11/Xutil.h:4834
 PWinGravity = 512 	# /usr/include/X11/Xutil.h:4835
 PAllHints = 252 	# /usr/include/X11/Xutil.h:4838
-class struct_anon_89(Structure):
+class struct_anon_97(Structure):
     __slots__ = [
         'flags',
         'input',
@@ -7399,7 +7750,7 @@ class struct_anon_89(Structure):
         'icon_mask',
         'window_group',
     ]
-struct_anon_89._fields_ = [
+struct_anon_97._fields_ = [
     ('flags', c_long),
     ('input', c_int),
     ('initial_state', c_int),
@@ -7411,7 +7762,7 @@ struct_anon_89._fields_ = [
     ('window_group', XID),
 ]
 
-XWMHints = struct_anon_89 	# /usr/include/X11/Xutil.h:4853
+XWMHints = struct_anon_97 	# /usr/include/X11/Xutil.h:4853
 InputHint = 1 	# /usr/include/X11/Xutil.h:4857
 StateHint = 2 	# /usr/include/X11/Xutil.h:4858
 IconPixmapHint = 4 	# /usr/include/X11/Xutil.h:4859
@@ -7427,32 +7778,32 @@ IconicState = 3 	# /usr/include/X11/Xutil.h:4871
 DontCareState = 0 	# /usr/include/X11/Xutil.h:4876
 ZoomState = 2 	# /usr/include/X11/Xutil.h:4877
 InactiveState = 4 	# /usr/include/X11/Xutil.h:4878
-class struct_anon_90(Structure):
+class struct_anon_98(Structure):
     __slots__ = [
         'value',
         'encoding',
         'format',
         'nitems',
     ]
-struct_anon_90._fields_ = [
+struct_anon_98._fields_ = [
     ('value', POINTER(c_ubyte)),
     ('encoding', Atom),
     ('format', c_int),
     ('nitems', c_ulong),
 ]
 
-XTextProperty = struct_anon_90 	# /usr/include/X11/Xutil.h:4891
+XTextProperty = struct_anon_98 	# /usr/include/X11/Xutil.h:4891
 XNoMemory = -1 	# /usr/include/X11/Xutil.h:4893
 XLocaleNotSupported = -2 	# /usr/include/X11/Xutil.h:4894
 XConverterNotFound = -3 	# /usr/include/X11/Xutil.h:4895
-enum_anon_91 = c_int
-XStringStyle = 1
-XCompoundTextStyle = 2
-XTextStyle = 3
-XStdICCTextStyle = 4
-XUTF8StringStyle = 5
-XICCEncodingStyle = enum_anon_91 	# /usr/include/X11/Xutil.h:4904
-class struct_anon_92(Structure):
+enum_anon_99 = c_int
+XStringStyle = 0
+XCompoundTextStyle = 1
+XTextStyle = 2
+XStdICCTextStyle = 3
+XUTF8StringStyle = 4
+XICCEncodingStyle = enum_anon_99 	# /usr/include/X11/Xutil.h:4904
+class struct_anon_100(Structure):
     __slots__ = [
         'min_width',
         'min_height',
@@ -7461,7 +7812,7 @@ class struct_anon_92(Structure):
         'width_inc',
         'height_inc',
     ]
-struct_anon_92._fields_ = [
+struct_anon_100._fields_ = [
     ('min_width', c_int),
     ('min_height', c_int),
     ('max_width', c_int),
@@ -7470,18 +7821,18 @@ struct_anon_92._fields_ = [
     ('height_inc', c_int),
 ]
 
-XIconSize = struct_anon_92 	# /usr/include/X11/Xutil.h:4910
-class struct_anon_93(Structure):
+XIconSize = struct_anon_100 	# /usr/include/X11/Xutil.h:4910
+class struct_anon_101(Structure):
     __slots__ = [
         'res_name',
         'res_class',
     ]
-struct_anon_93._fields_ = [
+struct_anon_101._fields_ = [
     ('res_name', c_char_p),
     ('res_class', c_char_p),
 ]
 
-XClassHint = struct_anon_93 	# /usr/include/X11/Xutil.h:4915
+XClassHint = struct_anon_101 	# /usr/include/X11/Xutil.h:4915
 class struct__XComposeStatus(Structure):
     __slots__ = [
         'compose_ptr',
@@ -7493,6 +7844,13 @@ struct__XComposeStatus._fields_ = [
 ]
 
 XComposeStatus = struct__XComposeStatus 	# /usr/include/X11/Xutil.h:4957
+class struct__XRegion(Structure):
+    __slots__ = [
+    ]
+struct__XRegion._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 class struct__XRegion(Structure):
     __slots__ = [
     ]
@@ -7515,8 +7873,8 @@ VisualGreenMaskMask = 32 	# /usr/include/X11/Xutil.h:5033
 VisualBlueMaskMask = 64 	# /usr/include/X11/Xutil.h:5034
 VisualColormapSizeMask = 128 	# /usr/include/X11/Xutil.h:5035
 VisualBitsPerRGBMask = 256 	# /usr/include/X11/Xutil.h:5036
-VisualAllMask = 1 	# /usr/include/X11/Xutil.h:5037
-class struct_anon_95(Structure):
+VisualAllMask = 511 	# /usr/include/X11/Xutil.h:5037
+class struct_anon_103(Structure):
     __slots__ = [
         'colormap',
         'red_max',
@@ -7529,7 +7887,7 @@ class struct_anon_95(Structure):
         'visualid',
         'killid',
     ]
-struct_anon_95._fields_ = [
+struct_anon_103._fields_ = [
     ('colormap', Colormap),
     ('red_max', c_ulong),
     ('red_mult', c_ulong),
@@ -7542,7 +7900,7 @@ struct_anon_95._fields_ = [
     ('killid', XID),
 ]
 
-XStandardColormap = struct_anon_95 	# /usr/include/X11/Xutil.h:5054
+XStandardColormap = struct_anon_103 	# /usr/include/X11/Xutil.h:5054
 BitmapSuccess = 0 	# /usr/include/X11/Xutil.h:5062
 BitmapOpenFailed = 1 	# /usr/include/X11/Xutil.h:5063
 BitmapFileInvalid = 2 	# /usr/include/X11/Xutil.h:5064
@@ -8302,47 +8660,49 @@ __all__ = ['XlibSpecificationRelease', 'X_PROTOCOL', 'X_PROTOCOL_REVISION',
 'DefaultExposures', 'ScreenSaverReset', 'ScreenSaverActive', 'HostInsert',
 'HostDelete', 'EnableAccess', 'DisableAccess', 'StaticGray', 'GrayScale',
 'StaticColor', 'PseudoColor', 'TrueColor', 'DirectColor', 'LSBFirst',
-'MSBFirst', '_Xmblen', 'X_HAVE_UTF8_STRING', 'True',
-'False', 'QueuedAlready', 'QueuedAfterReading', 'QueuedAfterFlush',
-'XIMPreeditArea', 'XIMPreeditCallbacks', 'XIMPreeditPosition',
-'XIMPreeditNothing', 'XIMPreeditNone', 'XIMStatusArea', 'XIMStatusCallbacks',
-'XIMStatusNothing', 'XIMStatusNone', 'XBufferOverflow', 'XLookupNone',
-'XLookupChars', 'XLookupKeySym', 'XLookupBoth', 'XIMReverse', 'XIMUnderline',
-'XIMHighlight', 'XIMPrimary', 'XIMSecondary', 'XIMTertiary',
-'XIMVisibleToForward', 'XIMVisibleToBackword', 'XIMVisibleToCenter',
-'XIMPreeditUnKnown', 'XIMPreeditEnable', 'XIMPreeditDisable',
-'XIMInitialState', 'XIMPreserveState', 'XIMStringConversionLeftEdge',
-'XIMStringConversionRightEdge', 'XIMStringConversionTopEdge',
-'XIMStringConversionBottomEdge', 'XIMStringConversionConcealed',
-'XIMStringConversionWrapped', 'XIMStringConversionBuffer',
-'XIMStringConversionLine', 'XIMStringConversionWord',
-'XIMStringConversionChar', 'XIMStringConversionSubstitution',
-'XIMStringConversionRetrieval', 'XIMHotKeyStateON', 'XIMHotKeyStateOFF',
-'XLoadQueryFont', 'XQueryFont', 'XGetMotionEvents', 'XDeleteModifiermapEntry',
-'XGetModifierMapping', 'XInsertModifiermapEntry', 'XNewModifiermap',
-'XCreateImage', 'XInitImage', 'XGetImage', 'XGetSubImage', 'XOpenDisplay',
-'XrmInitialize', 'XFetchBytes', 'XFetchBuffer', 'XGetAtomName',
-'XGetAtomNames', 'XGetDefault', 'XDisplayName', 'XKeysymToString',
-'XSynchronize', 'XSetAfterFunction', 'XInternAtom', 'XInternAtoms',
-'XCopyColormapAndFree', 'XCreateColormap', 'XCreatePixmapCursor',
-'XCreateGlyphCursor', 'XCreateFontCursor', 'XLoadFont', 'XCreateGC',
-'XGContextFromGC', 'XFlushGC', 'XCreatePixmap', 'XCreateBitmapFromData',
-'XCreatePixmapFromBitmapData', 'XCreateSimpleWindow', 'XGetSelectionOwner',
-'XCreateWindow', 'XListInstalledColormaps', 'XListFonts',
-'XListFontsWithInfo', 'XGetFontPath', 'XListExtensions', 'XListProperties',
-'XListHosts', 'XKeycodeToKeysym', 'XLookupKeysym', 'XGetKeyboardMapping',
-'XStringToKeysym', 'XMaxRequestSize', 'XExtendedMaxRequestSize',
-'XResourceManagerString', 'XScreenResourceString', 'XDisplayMotionBufferSize',
-'XVisualIDFromVisual', 'XInitThreads', 'XLockDisplay', 'XUnlockDisplay',
-'XInitExtension', 'XAddExtension', 'XFindOnExtensionList',
-'XEHeadOfExtensionList', 'XRootWindow', 'XDefaultRootWindow',
-'XRootWindowOfScreen', 'XDefaultVisual', 'XDefaultVisualOfScreen',
-'XDefaultGC', 'XDefaultGCOfScreen', 'XBlackPixel', 'XWhitePixel',
-'XAllPlanes', 'XBlackPixelOfScreen', 'XWhitePixelOfScreen', 'XNextRequest',
-'XLastKnownRequestProcessed', 'XServerVendor', 'XDisplayString',
-'XDefaultColormap', 'XDefaultColormapOfScreen', 'XDisplayOfScreen',
-'XScreenOfDisplay', 'XDefaultScreenOfDisplay', 'XEventMaskOfScreen',
-'XScreenNumberOfScreen', 'XSetErrorHandler', 'XSetIOErrorHandler',
+'MSBFirst', '_Xmblen', 'X_HAVE_UTF8_STRING', 'XPointer', 'Bool', 'Status',
+'True', 'False', 'QueuedAlready', 'QueuedAfterReading', 'QueuedAfterFlush',
+'GC', '_XPrivDisplay', 'XOM', 'XOC', 'XFontSet', 'XIM', 'XIC', 'XIMProc',
+'XICProc', 'XIDProc', 'XIMPreeditArea', 'XIMPreeditCallbacks',
+'XIMPreeditPosition', 'XIMPreeditNothing', 'XIMPreeditNone', 'XIMStatusArea',
+'XIMStatusCallbacks', 'XIMStatusNothing', 'XIMStatusNone', 'XBufferOverflow',
+'XLookupNone', 'XLookupChars', 'XLookupKeySym', 'XLookupBoth',
+'XVaNestedList', 'XIMReverse', 'XIMUnderline', 'XIMHighlight', 'XIMPrimary',
+'XIMSecondary', 'XIMTertiary', 'XIMVisibleToForward', 'XIMVisibleToBackword',
+'XIMVisibleToCenter', 'XIMPreeditUnKnown', 'XIMPreeditEnable',
+'XIMPreeditDisable', 'XIMInitialState', 'XIMPreserveState',
+'XIMStringConversionLeftEdge', 'XIMStringConversionRightEdge',
+'XIMStringConversionTopEdge', 'XIMStringConversionBottomEdge',
+'XIMStringConversionConcealed', 'XIMStringConversionWrapped',
+'XIMStringConversionBuffer', 'XIMStringConversionLine',
+'XIMStringConversionWord', 'XIMStringConversionChar',
+'XIMStringConversionSubstitution', 'XIMStringConversionRetrieval',
+'XIMHotKeyStateON', 'XIMHotKeyStateOFF', 'XLoadQueryFont', 'XQueryFont',
+'XGetMotionEvents', 'XDeleteModifiermapEntry', 'XGetModifierMapping',
+'XInsertModifiermapEntry', 'XNewModifiermap', 'XCreateImage', 'XInitImage',
+'XGetImage', 'XGetSubImage', 'XOpenDisplay', 'XrmInitialize', 'XFetchBytes',
+'XFetchBuffer', 'XGetAtomName', 'XGetAtomNames', 'XGetDefault',
+'XDisplayName', 'XKeysymToString', 'XSynchronize', 'XSetAfterFunction',
+'XInternAtom', 'XInternAtoms', 'XCopyColormapAndFree', 'XCreateColormap',
+'XCreatePixmapCursor', 'XCreateGlyphCursor', 'XCreateFontCursor', 'XLoadFont',
+'XCreateGC', 'XGContextFromGC', 'XFlushGC', 'XCreatePixmap',
+'XCreateBitmapFromData', 'XCreatePixmapFromBitmapData', 'XCreateSimpleWindow',
+'XGetSelectionOwner', 'XCreateWindow', 'XListInstalledColormaps',
+'XListFonts', 'XListFontsWithInfo', 'XGetFontPath', 'XListExtensions',
+'XListProperties', 'XListHosts', 'XKeycodeToKeysym', 'XLookupKeysym',
+'XGetKeyboardMapping', 'XStringToKeysym', 'XMaxRequestSize',
+'XExtendedMaxRequestSize', 'XResourceManagerString', 'XScreenResourceString',
+'XDisplayMotionBufferSize', 'XVisualIDFromVisual', 'XInitThreads',
+'XLockDisplay', 'XUnlockDisplay', 'XInitExtension', 'XAddExtension',
+'XFindOnExtensionList', 'XEHeadOfExtensionList', 'XRootWindow',
+'XDefaultRootWindow', 'XRootWindowOfScreen', 'XDefaultVisual',
+'XDefaultVisualOfScreen', 'XDefaultGC', 'XDefaultGCOfScreen', 'XBlackPixel',
+'XWhitePixel', 'XAllPlanes', 'XBlackPixelOfScreen', 'XWhitePixelOfScreen',
+'XNextRequest', 'XLastKnownRequestProcessed', 'XServerVendor',
+'XDisplayString', 'XDefaultColormap', 'XDefaultColormapOfScreen',
+'XDisplayOfScreen', 'XScreenOfDisplay', 'XDefaultScreenOfDisplay',
+'XEventMaskOfScreen', 'XScreenNumberOfScreen', 'XErrorHandler',
+'XSetErrorHandler', 'XIOErrorHandler', 'XSetIOErrorHandler',
 'XListPixmapFormats', 'XListDepths', 'XReconfigureWMWindow',
 'XGetWMProtocols', 'XSetWMProtocols', 'XIconifyWindow', 'XWithdrawWindow',
 'XGetCommand', 'XGetWMColormapWindows', 'XSetWMColormapWindows',
@@ -8424,13 +8784,14 @@ __all__ = ['XlibSpecificationRelease', 'X_PROTOCOL', 'X_PROTOCOL_REVISION',
 'Xutf8ResetIC', 'XSetICValues', 'XGetICValues', 'XIMOfIC', 'XFilterEvent',
 'XmbLookupString', 'XwcLookupString', 'Xutf8LookupString',
 'XVaCreateNestedList', 'XRegisterIMInstantiateCallback',
-'XUnregisterIMInstantiateCallback', 'XInternalConnectionNumbers',
-'XProcessInternalConnection', 'XAddConnectionWatch', 'XRemoveConnectionWatch',
-'XSetAuthorization', '_Xmbtowc', '_Xwctomb', 'NoValue', 'XValue', 'YValue',
-'WidthValue', 'HeightValue', 'AllValues', 'XNegative', 'YNegative',
-'XSizeHints', 'USPosition', 'USSize', 'PPosition', 'PSize', 'PMinSize',
-'PMaxSize', 'PResizeInc', 'PAspect', 'PBaseSize', 'PWinGravity', 'PAllHints',
-'XWMHints', 'InputHint', 'StateHint', 'IconPixmapHint', 'IconWindowHint',
+'XUnregisterIMInstantiateCallback', 'XConnectionWatchProc',
+'XInternalConnectionNumbers', 'XProcessInternalConnection',
+'XAddConnectionWatch', 'XRemoveConnectionWatch', 'XSetAuthorization',
+'_Xmbtowc', '_Xwctomb', 'NoValue', 'XValue', 'YValue', 'WidthValue',
+'HeightValue', 'AllValues', 'XNegative', 'YNegative', 'XSizeHints',
+'USPosition', 'USSize', 'PPosition', 'PSize', 'PMinSize', 'PMaxSize',
+'PResizeInc', 'PAspect', 'PBaseSize', 'PWinGravity', 'PAllHints', 'XWMHints',
+'InputHint', 'StateHint', 'IconPixmapHint', 'IconWindowHint',
 'IconPositionHint', 'IconMaskHint', 'WindowGroupHint', 'AllHints',
 'XUrgencyHint', 'WithdrawnState', 'NormalState', 'IconicState',
 'DontCareState', 'ZoomState', 'InactiveState', 'XTextProperty', 'XNoMemory',
