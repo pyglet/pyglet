@@ -10,6 +10,9 @@ from wraptypes.wrap import main as wrap
 import os.path
 import sys
 
+import pyglet
+pyglet.options['shadow_window'] = False
+
 if __name__ == '__main__':
     if not os.path.exists('pyglet/window'):
         assert False, 'Run with CWD = trunk root.'
