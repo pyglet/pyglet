@@ -41,11 +41,11 @@ class Line(object):
         self.delete_vertex_lists()
 
 class GlyphRun(object):
-    def __init__(self, owner, font, glyphs):
+    def __init__(self, owner, font, glyphs, width):
         self.owner = owner
         self.font = font
         self.glyphs = glyphs
-        self.width = sum(g.advance for g in glyphs) # XXX
+        self.width = width 
 
     def add_glyphs(self, glyphs):
         self.glyphs.extend(glyphs)
@@ -331,80 +331,152 @@ class TextLayout(object):
                 yield line
 
     def _flow_glyphs_wrap(self, start, owner_iterator, glyphs):
+        '''Word-wrap styled text into lines of fixed width.
+
+        Fits `glyphs` covered by `owner_iterator` into `Line`s which are
+        then yielded.  The first glyph of the first line has position `start`.
+        '''
         font_iterator = self._document.get_font_runs()
 
         line = Line(start)
+
+        # Current right-most x position in line being laid out.
         x = 0
 
+        # GlyphRuns accumulated but not yet committed to a line.
         run_accum = []
+        run_accum_width = 0
+
+        # Iterate over glyph owners (texture states); these form GlyphRuns,
+        # but broken into lines.
+        font = font_iterator.get_style_at(0)
         for start, end, owner in owner_iterator:
             font = font_iterator.get_style_at(start)
+
+            # Glyphs accumulated in this owner but not yet committed to a
+            # line.
             owner_accum = []
+            owner_accum_width = 0
+
+            # Glyphs accumulated in this owner AND also committed to the
+            # current line (some whitespace has followed all of the committed
+            # glyphs).
             owner_accum_commit = []
+            owner_accum_commit_width = 0
+
+            # Current glyph index
             index = start
+
+            # Iterate over glyphs in this owner run.  `text` is the
+            # corresponding character data for the glyph, and is used to find
+            # whitespace and newlines.
             for (text, glyph) in zip(self.document.text[start:end],
                                      glyphs[start:end]):
                 if text in u'\u0020\u200b':
+                    # Whitespace: commit pending runs to thie line.
                     for run in run_accum:
                         line.add_glyph_run(run)
                     run_accum = []
+                    run_accum_width = 0
                     owner_accum.append(glyph)
                     owner_accum_commit.extend(owner_accum)
-                    owner_accum = []
+                    owner_accum_commit_width += owner_accum_width
 
-                    line.width = x # Do not include trailing space in line width
-                    x += glyph.advance
+                    # Note that the width of the space glyph is added to the
+                    # width of the new accumulation.  This is so whitespace at
+                    # the end of a line does not contribute to its width.
+                    owner_accum = []
+                    owner_accum_width = glyph.advance
+
                     index += 1
+                    x += glyph.advance
                     
+                    # The index at which the next line will begin (the current
+                    # index, because this is the current best breakpoint).
                     next_start = index
                 else:
                     if (self._width is not None and
-                            x + glyph.advance >= self._width) or text == '\n':
+                        x + glyph.advance >= self._width) or text == '\n':
+
+                        # Either the pending runs have overflowed the allowed
+                        # line width or a newline was encountered.  Either
+                        # way, the current line must be flushed.
+
                         if text == '\n':
+                            # Forced newline.  Commit everything pending
+                            # without exception.
                             for run in run_accum:
                                 line.add_glyph_run(run)
                             run_accum = []
+                            run_accum_width = 0
                             owner_accum_commit.extend(owner_accum)
+                            owner_accum_commit_width += owner_accum_width
                             owner_accum = []
+                            owner_accum_width = 0
 
-                            line.width = x 
                             next_start = index + 1
 
+                        # Create the GlyphRun for the committed glyphs in the
+                        # current owner.
                         if owner_accum_commit:
                             line.add_glyph_run(
-                                GlyphRun(owner, font, owner_accum_commit))
+                                GlyphRun(owner, font, owner_accum_commit,
+                                         owner_accum_commit_width))
                             owner_accum_commit = []
+                            owner_accum_commit_width = 0
 
                         if text == '\n' and not line.glyph_runs:
+                            # Empty line: give it the current font's default
+                            # line-height.
                             line.ascent = font.ascent
                             line.descent = font.descent
 
+                        # Flush the line, unless nothing got committed, in
+                        # which case it's a really long string of glyphs
+                        # without any breakpoints (in which case it will be
+                        # flushed at the earliest breakpoint, not before
+                        # something is committed).
                         if line.glyph_runs or text == '\n':
                             yield line
                             line = Line(next_start)
-                            x = sum(r.width for r in run_accum) # XXX
-                            x += sum(g.advance for g in owner_accum) # XXX
+                            x = run_accum_width + owner_accum_width
+
                     if text != '\n':
+                        # If the glyph was any non-whitespace, non-newline
+                        # character, add it to the pending run.
                         owner_accum.append(glyph)
+                        owner_accum_width += glyph.advance
                         x += glyph.advance
                     index += 1
 
+            # The owner run is finished; create GlyphRuns for the committed
+            # and pending glyphs.
             if owner_accum_commit:
-                line.add_glyph_run(GlyphRun(owner, font, owner_accum_commit))
+                line.add_glyph_run(GlyphRun(owner, font, owner_accum_commit,
+                                            owner_accum_commit_width))
             if owner_accum:
-                run_accum.append(GlyphRun(owner, font, owner_accum))
+                run_accum.append(GlyphRun(owner, font, owner_accum,
+                                          owner_accum_width))
+                run_accum_width += owner_accum_width
 
+        # All glyphs have been processed: commit everything pending and flush
+        # the final line.
         for run in run_accum:
             line.add_glyph_run(run)
+    
+        if not line.glyph_runs:
+            # Empty line gets font's line-height
+            line.ascent = font.ascent
+            line.descent = font.descent
 
-        if line.glyph_runs:
-            yield line
+        yield line
 
     def _flow_glyphs_nowrap(self,  start, owner_iterator, glyphs):
         font_iterator = self.document.get_font_runs()
 
         line = Line(start)
         x = 0
+        font = font_iterator.get_style_at(0)
 
         for start, end, owner in owner_iterator:
             font = font_iterator.get_style_at(start)
@@ -429,6 +501,7 @@ class TextLayout(object):
         if not line.glyph_runs:
             line.ascent = font.ascent
             line.descent = font.descent
+        
         yield line
 
     def _flow_glyphs_single_line(self, start, owner_iterator, glyphs):
@@ -436,6 +509,7 @@ class TextLayout(object):
 
         line = Line(start)
         x = 0
+        font = font_iterator.get_style_at(0)
 
         for start, end, owner in owner_iterator:
             font = font_iterator.get_style_at(start)
@@ -445,6 +519,7 @@ class TextLayout(object):
         if not line.glyph_runs:
             line.ascent = font.ascent
             line.descent = font.descent
+
         yield line 
 
     def _flow_lines(self, lines, y, start, end):
@@ -700,7 +775,10 @@ class TextViewportLayout(TextLayout):
     def ensure_x_visible(self, x):
         if x <= self.view_x + 10:
             self.view_x = x - 10
-        elif x >= self.view_x + self.width - 10:
+        elif x >= self.view_x + self.width:
+            self.view_x = x - self.width + 10 
+        elif (x >= self.view_x + self.width - 10 and 
+              self.content_width > self.width):
             self.view_x = x - self.width + 10 
 
 class IncrementalTextLayout(TextViewportLayout):
@@ -894,9 +972,9 @@ class IncrementalTextLayout(TextViewportLayout):
                 end = max(end, i) + 1
 
         # Delete newly invisible lines
-        for i in range(self.visible_lines.start, start):
+        for i in range(self.visible_lines.start, min(start, len(self.lines))):
             self.lines[i].delete_vertex_lists()
-        for i in range(end, self.visible_lines.end):
+        for i in range(end, min(self.visible_lines.end, len(self.lines))):
             self.lines[i].delete_vertex_lists()
         
         # Invalidate newly visible lines

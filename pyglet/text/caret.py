@@ -3,7 +3,7 @@
 
 import re
 
-from pyglet.gl import *
+from pyglet.window import key
 
 class Caret(object):
     _next_word_re = re.compile(r'(?<=\W)\w')
@@ -12,10 +12,11 @@ class Caret(object):
     _previous_para_re = re.compile(r'\n', flags=re.DOTALL)
     
     def __init__(self, text_view, batch=None):
+        from pyglet import gl
         self._text_view = text_view
         if batch is None:
             batch = text_view.batch
-        self._list = batch.add(2, GL_LINES, text_view.background_state, 
+        self._list = batch.add(2, gl.GL_LINES, text_view.background_state, 
             'v2f', 'c4B')
 
         self._ideal_x = None
@@ -69,7 +70,7 @@ class Caret(object):
         self._update(line=line, update_ideal_x=False)
 
     def _get_line(self):
-        if self._ideal_line:
+        if self._ideal_line is not None:
             return self._ideal_line
         else:
             return self._text_view.get_line_from_position(self._position)
@@ -92,8 +93,6 @@ class Caret(object):
         self.position += len(text)
 
     def on_text_motion(self, motion, select=False):
-        from pyglet.window import key
-
         if motion == key.MOTION_BACKSPACE:
             if self.mark is not None:
                 self._delete_selection()
@@ -129,8 +128,9 @@ class Caret(object):
         elif motion == key.MOTION_END_OF_LINE:
             line = self.line
             if line < self._text_view.get_line_count() - 1:
-                self.position = \
+                self._position = \
                     self._text_view.get_position_on_line(line + 1, 0) - 1
+                self._update(line)
             else:
                 self.position = len(self._text_view.document.text)
         elif motion == key.MOTION_BEGINNING_OF_FILE:
@@ -208,6 +208,7 @@ class Caret(object):
     def _update(self, line=None, update_ideal_x=True):
         if line is None:
             line = self._text_view.get_line_from_position(self._position)
+            self._ideal_line = None
         else:
             self._ideal_line = line
         x, y = self._text_view.get_point_from_position(self._position, line)
