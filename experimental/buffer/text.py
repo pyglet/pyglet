@@ -39,11 +39,12 @@ def main():
     @w.event
     def on_mouse_press(x, y, button, modifiers):
         caret.move_to_point(x, y)
-        caret.mark = caret.position
         cursor_not_idle()
 
     @w.event
     def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
+        if caret.mark is None:
+            caret.mark = caret.position
         caret.select_to_point(x, y)
         cursor_not_idle()
 

@@ -127,8 +127,10 @@ class TextViewportLayoutState(graphics.OrderedState):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         # Disable scissor to check culling.
         glEnable(GL_SCISSOR_TEST)
-        glScissor(self.scissor_x, self.scissor_y - self.scissor_height, 
-                  self.scissor_width, self.scissor_height)
+        glScissor(self.scissor_x - 1, 
+                  self.scissor_y - self.scissor_height, 
+                  self.scissor_width + 1, 
+                  self.scissor_height)
         glTranslatef(self.translate_x, self.translate_y, 0)
 
     def unset(self):
@@ -837,7 +839,7 @@ class IncrementalTextLayout(TextViewportLayout):
         size = end - start
         for line in self.lines:
             if line.start > start:
-                line.start -= size
+                line.start = max(line.start - size, start)
 
         if start == 0:
             self.invalid_flow.invalidate(0, 1)
@@ -897,7 +899,7 @@ class IncrementalTextLayout(TextViewportLayout):
         # different flow methods.
         line_index = 0
         for i, line in enumerate(self.lines):
-            if line.start > invalid_start:
+            if line.start >= invalid_start:
                 break
             line_index = i
 
@@ -912,6 +914,8 @@ class IncrementalTextLayout(TextViewportLayout):
             line = Line(0)
             self.lines.append(line)
             self.invalid_lines.insert(0, 1)
+
+        next_start = invalid_start
 
         owner_iterator = self.owner_runs.get_range_iterator().iter_range(
             invalid_start, len(self._document.text))
@@ -940,7 +944,7 @@ class IncrementalTextLayout(TextViewportLayout):
         else:
             # The last line is at line_index - 1, if there are any more lines
             # after that they are stale and need to be deleted.
-            if invalid_end == len(self._document.text):
+            if next_start == len(self._document.text):
                 for line in self.lines[line_index:]:
                     line.delete_vertex_lists()
                 del self.lines[line_index:]

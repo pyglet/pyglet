@@ -55,6 +55,8 @@ class Caret(object):
     def _set_mark(self, mark):
         self._mark = mark
         self._update(line=self._ideal_line)
+        if mark is None:
+            self._text_view.set_selection(0, 0)
     
     def _get_mark(self):
         return self._mark
@@ -65,7 +67,7 @@ class Caret(object):
         if self._ideal_x is None:
             self._ideal_x, _ = \
                 self._text_view.get_point_from_position(self._position)
-        self._position = self._mark = \
+        self._position = \
             self._text_view.get_position_on_line(line, self._ideal_x)
         self._update(line=line, update_ideal_x=False)
 
@@ -161,6 +163,7 @@ class Caret(object):
     def move_to_point(self, x, y):
         line = self._text_view.get_line_from_point(x, y)
         self._mark = None
+        self._text_view.set_selection(0, 0)
         self._position = self._text_view.get_position_on_line(line, x)
         self._update(line=line)
 
