@@ -1015,7 +1015,7 @@ class XlibWindow(BaseWindow):
         if _have_utf8 and allow_utf8:
             buf = create_string_buffer(value.encode('utf8'))
             result = xlib.Xutf8TextListToTextProperty(self._x_display,
-                cast(pointer(buf), c_char_p), 1, xlib.XUTF8TextStyle, 
+                cast(pointer(buf), c_char_p), 1, xlib.XUTF8StringStyle, 
                 byref(property))
             if result < 0:
                 raise XlibException('Could not create UTF8 text property')

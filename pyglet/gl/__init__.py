@@ -388,5 +388,5 @@ import pyglet as _pyglet
 import sys as _sys
 if 'pyglet.window' not in _sys.modules and _pyglet.options['shadow_window']:
     # trickery is for circular import 
-    pyglet.gl = _sys.modules[__name__]
+    _pyglet.gl = _sys.modules[__name__]
     import pyglet.window
