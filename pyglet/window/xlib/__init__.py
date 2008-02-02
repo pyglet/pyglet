@@ -1193,6 +1193,7 @@ class XlibWindow(BaseWindow):
                     # Found a key repeat: dispatch EVENT_TEXT* event
                     symbol = self._event_symbol(ev)
                     modifiers = self._translate_modifiers(ev.xkey.state)
+                    modifiers_ctrl = modifiers & (key.MOD_CTRL | key.MOD_ALT)
                     text = self._event_text(auto_event)
                     motion = self._event_text_motion(symbol, modifiers)
                     if motion:
@@ -1201,7 +1202,7 @@ class XlibWindow(BaseWindow):
                                 'on_text_motion_select', motion)
                         else:
                             self.dispatch_event('on_text_motion', motion)
-                    elif text:
+                    elif text and not modifiers_ctrl:
                         self.dispatch_event('on_text', text)
 
                     ditched = saved.pop()
@@ -1218,6 +1219,7 @@ class XlibWindow(BaseWindow):
 
         symbol = self._event_symbol(ev)
         modifiers = self._translate_modifiers(ev.xkey.state)
+        modifiers_ctrl = modifiers & (key.MOD_CTRL | key.MOD_ALT)
         text = self._event_text(ev)
         motion = self._event_text_motion(symbol, modifiers)
 
@@ -1228,7 +1230,7 @@ class XlibWindow(BaseWindow):
                     self.dispatch_event('on_text_motion_select', motion)
                 else:
                     self.dispatch_event('on_text_motion', motion)
-            elif text:
+            elif text and not modifiers_ctrl:
                 self.dispatch_event('on_text', text)
         elif ev.type == xlib.KeyRelease:
             self.dispatch_event('on_key_release', symbol, modifiers)
