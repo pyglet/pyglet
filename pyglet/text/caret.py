@@ -21,6 +21,7 @@ class Caret(object):
 
         self._ideal_x = None
         self._ideal_line = None
+        self._next_attributes = {}
     
     def _set_color(self, color):
         self._list.colors[:3] = color
@@ -44,6 +45,7 @@ class Caret(object):
     _position = 0
     def _set_position(self, index):
         self._position = index
+        self._next_attributes.clear()
         self._update()
 
     def _get_position(self):
@@ -80,16 +82,21 @@ class Caret(object):
     line = property(_get_line, _set_line)
 
     def get_style(self, attribute):
-        if self._mark is None:
-            return self._text_view.document.get_style(attribute, self._position)
+        if self._mark is None or self._mark == self._position:
+            try:
+                return self._next_attributes[attribute]
+            except KeyError:
+                return self._text_view.document.get_style(attribute, 
+                                                          self._position)
 
         start = min(self._position, self._mark)
         end = max(self._position, self._mark)
         return self._text_view.document.get_style_range(attribute, start, end)
 
     def set_style(self, attributes):
-        if self._mark is None:
-            return # TODO
+        if self._mark is None or self._mark == self._position:
+            self._next_attributes.update(attributes)
+            return
 
         start = min(self._position, self._mark)
         end = max(self._position, self._mark)
@@ -107,8 +114,10 @@ class Caret(object):
             self._delete_selection()
 
         text = text.replace('\r', '\n')
-        self._text_view.document.insert_text(self.position, text)
-        self.position += len(text)
+        self._text_view.document.insert_text(self.position, text,
+                                            self._next_attributes)
+        self._position += len(text)
+        self._update()
 
     def on_text_motion(self, motion, select=False):
         if motion == key.MOTION_BACKSPACE:
@@ -164,12 +173,14 @@ class Caret(object):
                 self.position = m.start()
         elif motion == key.MOTION_PREVIOUS_WORD:
             pos = self._position
-            m = self._previous_word_re.search(self._text_view.document.text, 0, pos)
+            m = self._previous_word_re.search(self._text_view.document.text, 
+                                              0, pos)
             if not m:
                 self.position = 0
             else:
                 self.position = m.start()
 
+        self._next_attributes.clear()
 
     def on_text_motion_select(self, motion):
         if self.mark is None:
@@ -182,11 +193,13 @@ class Caret(object):
         self._text_view.set_selection(0, 0)
         self._position = self._text_view.get_position_on_line(line, x)
         self._update(line=line)
+        self._next_attributes.clear()
 
     def select_to_point(self, x, y):
         line = self._text_view.get_line_from_point(x, y)
         self._position = self._text_view.get_position_on_line(line, x)
         self._update(line=line)
+        self._next_attributes.clear()
 
     def select_word(self, x, y):
         line = self._text_view.get_line_from_point(x, y)
@@ -205,6 +218,7 @@ class Caret(object):
             m2 = m2.start()
         self._position = m2
         self._update(line=line)
+        self._next_attributes.clear()
 
     def select_paragraph(self, x, y):
         line = self._text_view.get_line_from_point(x, y)
@@ -223,6 +237,7 @@ class Caret(object):
             m2 = m2.start()
         self._position = m2
         self._update(line=line) 
+        self._next_attributes.clear()
 
     def _update(self, line=None, update_ideal_x=True):
         if line is None:

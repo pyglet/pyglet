@@ -107,9 +107,9 @@ class StyleRuns(object):
                 return run.style
             i += run.count
 
-        # If runs are empty, first position still returns default style
-        if index == 0 and self.runs[0].count == 0:
-            return self.runs[0].style
+        # Append insertion point
+        if index == i:
+            return self.runs[-1].style
 
         assert False, 'Index not in range'
 
