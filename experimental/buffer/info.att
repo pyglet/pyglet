@@ -17,7 +17,7 @@ def foo():
 
 Special character: {#xe7}
 
-Escaping braces: {[} and {]}
+Escaping braces: {{ and }}
 
 {color [0, 0, 255, 255]}Different {color [255, 0, 0, 255]}
 {background_color [255, 255, 0, 255]}

@@ -18,16 +18,16 @@ from pyglet.text import document
 _pattern = re.compile(r'''
     (?P<escape_hex>\{\#x(?P<escape_hex_val>[0-9a-fA-F]+)\})
   | (?P<escape_dec>\{\#(?P<escape_dec_val>[0-9]+)\})
-  | (?P<escape_lbrace>\{\[\})
-  | (?P<escape_rbrace>\{\]\})
+  | (?P<escape_lbrace>\{\{)
+  | (?P<escape_rbrace>\}\})
   | (?P<attr>\{
-        (?P<attr_name>[^ \}]+)\s+
+        (?P<attr_name>[^ \{\}]+)\s+
         (?P<attr_val>[^\}]+)\})
   | (?P<nl_hard1>\n(?=[ \t]))
   | (?P<nl_hard2>\{\}\n)
   | (?P<nl_soft>\n(?=\S))
   | (?P<nl_para>\n\n+)
-  | (?P<text>[^{\n]+)
+  | (?P<text>[^\{\}\n]+)
     ''', re.VERBOSE | re.DOTALL)
 
 class AttributedTextDecoder(object):
