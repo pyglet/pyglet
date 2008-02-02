@@ -1,5 +1,5 @@
-{bold True}{font_name "Times New Roman"}{font_size 24}pyglet attributed
-text{bold False}{font_size 12}
+{bold True}{font_name ["Georgia", "Times New Roman"]}{font_size 24}pyglet attributed
+text{bold False}{font_size 14}
 
 Forced line{}
 break.
@@ -19,4 +19,6 @@ Special character: {#xe7}
 
 Escaping braces: {[} and {]}
 
-Float {f1 1.} another {f2 .2} another {f3 1.45}
+{color [0, 0, 255, 255]}Different {color [255, 0, 0, 255]}
+{background_color [255, 255, 0, 255]}
+color{color None}{background_color None}.

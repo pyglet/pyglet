@@ -7,7 +7,11 @@ documents.
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
+import operator
+import parser
 import re
+import symbol
+import token
 
 from pyglet.text import document
 
@@ -16,22 +20,9 @@ _pattern = re.compile(r'''
   | (?P<escape_dec>\{\#(?P<escape_dec_val>[0-9]+)\})
   | (?P<escape_lbrace>\{\[\})
   | (?P<escape_rbrace>\{\]\})
-  | (?P<attr_true>\{(?P<attr_true_name>[^ ]+)\s+True\})
-  | (?P<attr_false>\{(?P<attr_false_name>[^ ]+)\s+False\})
-  | (?P<attr_str1>\{
-        (?P<attr_str1_name>[^ ]+)\s+
-        "(?P<attr_str1_val>[^"]*)"\})
-  | (?P<attr_str2>\{
-        (?P<attr_str2_name>[^ ]+)\s+
-        '(?P<attr_str2_val>[^']*)'\})
-  | (?P<attr_int>\{
-        (?P<attr_int_name>[^ ]+)\s+
-        (?P<attr_int_val>[0-9]+)\})
-  | (?P<attr_float>\{
-        (?P<attr_float_name>[^ ]+)\s+
-        (?P<attr_float_val>
-            ([0-9]+\.[0-9]*|[0-9]*\.[0-9]+)
-        )\})
+  | (?P<attr>\{
+        (?P<attr_name>[^ \}]+)\s+
+        (?P<attr_val>[^\}]+)\})
   | (?P<nl_hard1>\n(?=[ \t]))
   | (?P<nl_hard2>\{\}\n)
   | (?P<nl_soft>\n(?=\S))
@@ -45,36 +36,31 @@ class AttributedTextDecoder(object):
 
         self.length = 0
         self.attributes = {}
-        self.trailing_space = False
+        next_trailing_space = True
 
         for m in _pattern.finditer(text):
             group = m.lastgroup
+            trailing_space = True
             if group == 'text':
                 self.append(m.group('text'))
-                self.trailing_space = text.endswith(' ')
+                trailing_space = text.endswith(' ')
             elif group == 'nl_soft':
-                if not self.trailing_space:
+                if not next_trailing_space:
                     self.append(' ')
             elif group in ('nl_hard1', 'nl_hard2'):
                 self.append('\n')
             elif group == 'nl_para':
                 self.append(m.group('nl_para'))
-            elif group == 'attr_float':
-                self.attributes[m.group('attr_float_name')] = \
-                    float(m.group('attr_float_val'))
-            elif group == 'attr_int':
-                self.attributes[m.group('attr_int_name')] = \
-                    int(m.group('attr_int_val'))
-            elif group == 'attr_str1':
-                self.attributes[m.group('attr_str1_name')] = \
-                    m.group('attr_str1_val')
-            elif group == 'attr_str2':
-                self.attributes[m.group('attr_str2_name')] = \
-                    m.group('attr_str2_val')
-            elif group == 'attr_false':
-                self.attributes[m.group('attr_false_name')] = False
-            elif group == 'attr_true':
-                self.attributes[m.group('attr_true_name')] = True
+            elif group == 'attr':
+                try:
+                    ast = parser.expr(m.group('attr_val'))
+                    if self.safe(ast):
+                        val = eval(ast.compile())
+                    else:
+                        val = None
+                except (parser.ParserError, SyntaxError):
+                    val = None
+                self.attributes[m.group('attr_name')] = val
             elif group == 'escape_dec':
                 self.append(unichr(int(m.group('escape_dec_val'))))
             elif group == 'escape_hex':
@@ -83,6 +69,7 @@ class AttributedTextDecoder(object):
                 self.append('{')
             elif group == 'escape_rbrace':
                 self.append('}')
+            next_trailing_space = trailing_space
 
         return self.doc
 
@@ -90,5 +77,17 @@ class AttributedTextDecoder(object):
         self.doc.insert_text(self.length, text, self.attributes)
         self.length += len(text)
         self.attributes.clear()
-        self.trailing_space = False
 
+    _safe_names = ('True', 'False', 'None')
+
+    def safe(self, ast):
+        tree = ast.totuple()
+        return self.safe_node(tree)
+
+    def safe_node(self, node):
+        if token.ISNONTERMINAL(node[0]):
+            return reduce(operator.and_, map(self.safe_node, node[1:]))
+        elif node[0] == token.NAME:
+            return node[1] in self._safe_names
+        else:
+            return True
