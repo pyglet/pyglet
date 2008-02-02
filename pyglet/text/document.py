@@ -23,7 +23,7 @@ class AbstractDocument(event.EventDispatcher):
         return self._text
 
     def _set_text(self, text):
-        self.remove_text(0, len(self._text))
+        self.delete_text(0, len(self._text))
         self.insert_text(0, text)
     
     text = property(_get_text, _set_text)
@@ -53,11 +53,11 @@ class AbstractDocument(event.EventDispatcher):
     def _insert_text(self, start, text):
         self._text = ''.join((self._text[:start], text, self._text[start:]))
 
-    def remove_text(self, start, end):
-        self._remove_text(start, end)
-        self.dispatch_event('on_remove_text', start, end)
+    def delete_text(self, start, end):
+        self._delete_text(start, end)
+        self.dispatch_event('on_delete_text', start, end)
 
-    def _remove_text(self, start, end):
+    def _delete_text(self, start, end):
         self._text = self._text[:start] + self._text[end:]
 
     def on_insert_text(self, start, text):
@@ -65,13 +65,13 @@ class AbstractDocument(event.EventDispatcher):
         :event:
         '''
 
-    def on_remove_text(self, start, end):
+    def on_delete_text(self, start, end):
         '''
         :event:
         '''
 
 AbstractDocument.register_event_type('on_insert_text')
-AbstractDocument.register_event_type('on_remove_text')
+AbstractDocument.register_event_type('on_delete_text')
 
 class UnformattedDocument(AbstractDocument):
     paragraph = Paragraph()
@@ -146,8 +146,8 @@ class FormattedDocument(AbstractDocument):
             self._paragraph_runs.set_style(last_para_start, para_end, 
                 prototype.clone())
 
-    def _remove_text(self, start, end):
-        super(FormattedDocument, self)._remove_text(start, end)
+    def _delete_text(self, start, end):
+        super(FormattedDocument, self)._delete_text(start, end)
         self._font_runs.delete(start, end)
         self._color_runs.delete(start, end)
         self._background_color_runs.delete(start, end)

@@ -80,7 +80,7 @@ class Caret(object):
     line = property(_get_line, _set_line)
 
     def _delete_selection(self):
-        self._text_view.document.remove_text(min(self._mark, self._position),
+        self._text_view.document.delete_text(min(self._mark, self._position),
                                              max(self._mark, self._position))
         self._position = min(self.position, self.mark)
         self._mark = None
@@ -100,7 +100,7 @@ class Caret(object):
                 self._delete_selection()
                 self._update()
             elif self.position > 0:
-                self._text_view.document.remove_text(
+                self._text_view.document.delete_text(
                     self.position - 1, self.position)
                 self.position -= 1
         elif motion == key.MOTION_DELETE:
@@ -108,7 +108,7 @@ class Caret(object):
                 self._delete_selection()
                 self._update()
             elif self.position < len(self._text_view.document.text):
-                self._text_view.document.remove_text(
+                self._text_view.document.delete_text(
                     self.position, self.position + 1)
                 self._update()
         elif self._mark is not None and not select:

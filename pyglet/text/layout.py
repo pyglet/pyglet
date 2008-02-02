@@ -299,7 +299,7 @@ class TextLayout(object):
     def on_insert_text(self, start, text):
         self._init_document()
 
-    def on_remove_text(self, start, end):
+    def on_delete_text(self, start, end):
         self._init_document()
 
     def _get_glyphs(self):
@@ -818,7 +818,7 @@ class IncrementalTextLayout(TextViewportLayout):
         self.on_insert_text(0, self._document.text)
 
     def _uninit_document(self):
-        self.on_remove_text(0, len(self._document.text))
+        self.on_delete_text(0, len(self._document.text))
 
     def on_insert_text(self, start, text):
         len_text = len(text)
@@ -836,7 +836,7 @@ class IncrementalTextLayout(TextViewportLayout):
 
         self._update()
 
-    def on_remove_text(self, start, end):
+    def on_delete_text(self, start, end):
         self.glyphs[start:end] = []
 
         self.invalid_glyphs.delete(start, end)
