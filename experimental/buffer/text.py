@@ -14,6 +14,7 @@ from pyglet.window import key
 
 from pyglet import graphics
 from pyglet.text import caret as caret_module
+from pyglet.text import style
 from pyglet.text import document
 from pyglet.text import layout
 
@@ -52,6 +53,25 @@ def main():
     def on_mouse_scroll(x, y, scroll_x, scroll_y):
         text.view_x -= scroll_x
         text.view_y += scroll_y * (12 * 96 / 72) # scroll 12pt @ 96dpi
+
+    @w.event
+    def on_key_press(symbol, modifiers):
+        if modifiers & key.MOD_CTRL:
+            if symbol == key.B:
+                toggle_style('bold')
+            elif symbol == key.I:
+                toggle_style('italic')
+
+        if symbol == key.ESCAPE:
+            w.has_exit = True
+
+    def toggle_style(attribute):
+        old = caret.get_style(attribute)
+        if old == style.INDETERMINATE:
+            value = True
+        else:
+            value = not old
+        caret.set_style({attribute: value})
 
     def on_resize(width, height):
         text.x = border

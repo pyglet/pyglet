@@ -1,6 +1,9 @@
 #!/usr/bin/python
 # $Id:$
 
+#: The style attribute takes on multiple values in the document.
+INDETERMINATE = 'indeterminate'
+
 class StyleRun(object):
     def __init__(self, style, count):
         self.style = style
@@ -171,12 +174,15 @@ class ZipStyleRunsRangeIterator(object):
     def iter_range(self, start, end):
         iterators = [i.iter_range(start, end) for i in self.range_iterators]
         starts, ends, styles = zip(*[i.next() for i in iterators])
+        starts = list(starts)
+        ends = list(ends)
+        styles = list(styles)
         while start < end:
-            end = min(ends)
-            yield start, end, styles
-            start = end
+            min_end = min(ends)
+            yield start, min_end, styles
+            start = min_end
             for i, iterator in enumerate(iterators):
-                if ends[i] == end:
+                if ends[i] == min_end:
                     starts[i], ends[i], styles[i] = iterator.next()
 
     def get_style_at(self, index):

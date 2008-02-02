@@ -79,6 +79,22 @@ class Caret(object):
 
     line = property(_get_line, _set_line)
 
+    def get_style(self, attribute):
+        if self._mark is None:
+            return self._text_view.document.get_style(attribute, self._position)
+
+        start = min(self._position, self._mark)
+        end = max(self._position, self._mark)
+        return self._text_view.document.get_style_range(attribute, start, end)
+
+    def set_style(self, attributes):
+        if self._mark is None:
+            return # TODO
+
+        start = min(self._position, self._mark)
+        end = max(self._position, self._mark)
+        self._text_view.document.set_style(start, end, attributes)
+
     def _delete_selection(self):
         self._text_view.document.delete_text(min(self._mark, self._position),
                                              max(self._mark, self._position))

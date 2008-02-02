@@ -302,6 +302,9 @@ class TextLayout(object):
     def on_delete_text(self, start, end):
         self._init_document()
 
+    def on_style_text(self, start, end, attributes):
+        self._init_document()
+
     def _get_glyphs(self):
         glyphs = []
         runs = self._document.get_font_runs()
@@ -856,6 +859,20 @@ class IncrementalTextLayout(TextViewportLayout):
             self.invalid_flow.invalidate(0, 1)
         else:
             self.invalid_flow.invalidate(start - 1, start)
+        self._update()
+
+    def on_style_text(self, start, end, attributes):
+        if ('font_name' in attributes or
+            'font_size' in attributes or
+            'bold' in attributes or
+            'italic' in attributes):
+            self.invalid_glyphs.invalidate(start, end)
+        elif False: # Attributes that change flow
+            self.invalid_flow.invalidate(start, end)
+        elif ('color' in attributes or
+              'background_color' in attributes):
+            self.invalid_style.invalidate(start, end)
+
         self._update()
 
     def _update(self):

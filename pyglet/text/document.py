@@ -125,6 +125,29 @@ class AbstractDocument(event.EventDispatcher):
         '''
         raise NotImplementedError('abstract')
 
+    def get_style_range(self, attribute, start, end):
+        '''Get an attribute style over the given range.
+
+        If the style varies over the range, `style.INDETERMINATE` is returned.
+
+        :Parameters:
+            `attribute` : str
+                Name of style attribute to query.
+            `start` : int
+                Starting character position.
+            `end` : int
+                Ending character position (exclusive).
+
+        :return: The style set for the attribute over the given range, or
+            `style.INDETERMINATE` if more than one value is set.
+        '''
+        iter = self.get_style_runs(attribute)
+        _, value_end, value = iter.iter_range(start, end).next()
+        if value_end < end:
+            return style.INDETERMINATE
+        else:
+            return value
+
     def get_font_runs(self, dpi=None):
         '''Get a style iterator over the `pyglet.font.Font` instances used in
         the document.
@@ -156,6 +179,7 @@ class AbstractDocument(event.EventDispatcher):
 
         :rtype: `pyglet.font.Font`
         '''
+        raise NotImplementedError('abstract')
     
     def insert_text(self, start, text, attributes=None):
         '''Insert text into the document.
@@ -279,6 +303,10 @@ class UnformattedDocument(AbstractDocument):
 
     def get_style(self, attribute, position=None):
         return self.styles.get(attribute)
+
+    def set_style(self, start, end, attributes):
+        return super(UnformattedDocument, self).set_style(
+            0, len(self.text), attributes)
 
     def _set_style(self, start, end, attributes):
         for attribute, value in attributes.items():
