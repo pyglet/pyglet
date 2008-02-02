@@ -56,11 +56,20 @@ def main():
 
     @w.event
     def on_key_press(symbol, modifiers):
-        if modifiers & key.MOD_CTRL:
+        if sys.platform == 'darwin':
+            accel = key.MOD_COMMAND
+        else:
+            accel = key.MOD_CTRL
+
+        if modifiers & accel:
             if symbol == key.B:
                 toggle_style('bold')
             elif symbol == key.I:
                 toggle_style('italic')
+            elif symbol in (key.EQUAL, key.NUM_ADD):
+                add_font_size(2)
+            elif symbol in (key.MINUS, key.NUM_SUBTRACT):
+                add_font_size(-2)
 
         if symbol == key.ESCAPE:
             w.has_exit = True
@@ -72,6 +81,12 @@ def main():
         else:
             value = not old
         caret.set_style({attribute: value})
+
+    def add_font_size(size):
+        old_size = caret.get_style('font_size')
+        if old_size in (style.INDETERMINATE, None):
+            old_size = 12
+        caret.set_style({'font_size': old_size + size})
 
     def on_resize(width, height):
         text.x = border
