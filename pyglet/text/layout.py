@@ -245,8 +245,8 @@ class TextLayout(object):
         self.content_width = 0
         self._flow_lines(lines, 0, 0, len(lines))
 
-        colors_iter = self._document.get_color_runs()
-        background_iter = self._document.get_background_color_runs()
+        colors_iter = self._document.get_style_runs('color')
+        background_iter = self._document.get_style_runs('background_color')
 
         if self._halign == 'left':
             offset_x = self._x
@@ -583,6 +583,8 @@ class TextLayout(object):
             # Text color
             colors = []
             for start, end, color in colors_iter.iter_range(i, i+n_glyphs):
+                if color is None:
+                    color = (0, 0, 0, 255)
                 colors.extend(color * ((end - start) * 4))
 
             list = batch.add(n_glyphs * 4, GL_QUADS, state, 
@@ -1005,8 +1007,8 @@ class IncrementalTextLayout(TextViewportLayout):
 
         batch = self.batch
 
-        colors_iter = self.document.get_color_runs()
-        background_iter = self.document.get_background_color_runs()
+        colors_iter = self.document.get_style_runs('color')
+        background_iter = self.document.get_style_runs('background_color')
         if self._selection_end - self._selection_start > 0:
             colors_iter = style.OverriddenStyleRunsRangeIterator(
                 colors_iter,

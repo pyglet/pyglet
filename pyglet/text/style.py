@@ -163,3 +163,22 @@ class OverriddenStyleRunsRangeIterator(object):
             return self.override_style
         else:
             return self.iter.get_style_at(index)
+
+class ZipStyleRunsRangeIterator(object):
+    def __init__(self, range_iterators):
+        self.range_iterators = range_iterators
+
+    def iter_range(self, start, end):
+        iterators = [i.iter_range(start, end) for i in self.range_iterators]
+        starts, ends, styles = zip([i.next() for i in iterators])
+        while start < end:
+            end = min(ends)
+            yield start, end, styles
+            start = end
+            for i in range(iterators):
+                if ends[i] == end:
+                    starts[i], ends[i], styles[i] = iterators[i].next()
+
+    def get_style_at(self, index):
+        return [i.get_style_at(index) for i in self.range_iterators]
+
