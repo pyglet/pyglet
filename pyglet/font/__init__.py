@@ -508,17 +508,19 @@ if not getattr(sys, 'is_epydoc', False):
         from pyglet.font.freetype import FreeTypeFont
         _font_class = FreeTypeFont
 
-def load(name, size, bold=False, italic=False, dpi=None):
+def load(name=None, size=None, bold=False, italic=False, dpi=None):
     '''Load a font for rendering.
 
     :Parameters:
         `name` : str, or list of str
             Font family, for example, "Times New Roman".  If a list of names
             is provided, the first one matching a known font is used.  If no
-            font can be matched to the name(s), a default font is used.
+            font can be matched to the name(s), a default font is used.  In
+            pyglet 1.1, the name may be omitted.
         `size` : float
             Size of the font, in points.  The returned font may be an exact
-            match or the closest available.
+            match or the closest available.  In pyglet 1.1, the size may be
+            omitted, and defaults to 12pt.
         `bold` : bool
             If True, a bold variant is returned, if one exists for the given
             family and size.
@@ -534,6 +536,10 @@ def load(name, size, bold=False, italic=False, dpi=None):
 
     :rtype: `Font`
     '''
+    # Arbitrary default size
+    if size is None:
+        size = 12
+
     # Find first matching name
     if type(name) in (tuple, list):
         for n in name:
