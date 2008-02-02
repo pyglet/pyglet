@@ -420,6 +420,7 @@ class TextLayout(object):
                             owner_accum = []
                             owner_accum_width = 0
 
+                            line.length += 1
                             next_start = index + 1
 
                         # Create the GlyphRun for the committed glyphs in the

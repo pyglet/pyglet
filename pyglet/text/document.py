@@ -323,7 +323,7 @@ class UnformattedDocument(AbstractDocument):
         bold = self.styles.get('bold', False)
         italic = self.styles.get('italic', False)
         return font.load(font_name, font_size, 
-                         bold=bold, italic=italic, dpi=dpi) 
+                         bold=bool(bold), italic=bool(italic), dpi=dpi) 
 
 class FormattedDocument(AbstractDocument):
     '''Simple implementation of a document that maintains text formatting.
@@ -431,14 +431,14 @@ class _FontStyleRunsRangeIterator(object):
         for start, end, styles in self.zip_iter.iter_range(start, end):
             font_name, font_size, bold, italic = styles
             ft = font.load(font_name, font_size, 
-                           bold=bold, italic=italic, dpi=self.dpi)
+                           bold=bool(bold), italic=bool(italic), dpi=self.dpi)
             yield start, end, ft
 
     def get_style_at(self, index):
         from pyglet import font
         font_name, font_size, bold, italic = self.zip_iter.get_style_at(index)
         return font.load(font_name, font_size,
-                         bold=bold, italic=italic, dpi=self.dpi)
+                         bold=bool(bold), italic=bool(italic), dpi=self.dpi)
 
 class _NoStyleRangeIterator(object):
     def iter_range(self, start, end):
