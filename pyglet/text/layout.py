@@ -17,6 +17,7 @@ class Line(object):
 
     def add_glyph_run(self, glyph_run):
         self.glyph_runs.append(glyph_run)
+        self.length += len(glyph_run.glyphs)
         self.ascent = max(self.ascent, glyph_run.font.ascent)
         self.descent = min(self.descent, glyph_run.font.descent)
         self.width += glyph_run.width
@@ -29,6 +30,7 @@ class Line(object):
 
     def clear(self, start):
         self.start = start
+        self.length = 0
         
         self.glyph_runs = []
         self.ascent = 0
@@ -239,8 +241,7 @@ class TextLayout(object):
         glyphs = self._get_glyphs()
         owner_runs = style.StyleRuns(len_text, None)
         self._get_owner_runs(owner_runs, glyphs, 0, len_text)
-        owner_iterator = owner_runs.get_range_iterator().iter_range(0, len_text)
-        lines = [line for line in self._flow_glyphs(0, owner_iterator, glyphs)]
+        lines = [line for line in self._flow_glyphs(glyphs, 0, len_text)]
         self.content_width = 0
         self._flow_lines(lines, 0, 0, len(lines))
 
@@ -320,24 +321,24 @@ class TextLayout(object):
                 run_start = i + start
         owner_runs.set_style(run_start, end, owner)    
 
-    def _flow_glyphs(self, start, owner_iterator, glyphs):
-        # XXX start param is weird
-        # TODO wrap/nowrap per-paragraph style
-        # TODO owner_iterator stops at paragraph boundary, esp. during
-        #   incremental.
+    def _flow_glyphs(self, glyphs, start, end):
+        # TODO change flow generator on self, avoiding this conditional.
         if not self.multiline:
-            for line in self._flow_glyphs_single_line(start, owner_iterator, glyphs):
+            for line in self._flow_glyphs_single_line(glyphs, start, end):
                 yield line
         else:
-            for line in self._flow_glyphs_wrap(start, owner_iterator, glyphs):
+            for line in self._flow_glyphs_wrap(glyphs, start, end):
                 yield line
 
-    def _flow_glyphs_wrap(self, start, owner_iterator, glyphs):
+    def _flow_glyphs_wrap(self, glyphs, start, end):
         '''Word-wrap styled text into lines of fixed width.
 
-        Fits `glyphs` covered by `owner_iterator` into `Line`s which are
-        then yielded.  The first glyph of the first line has position `start`.
+        Fits `glyphs` in range `start` to `end` into `Line`s which are
+        then yielded.
         '''
+        owner_iterator = \
+            self.owner_runs.get_range_iterator().iter_range(start, end)
+
         font_iterator = self._document.get_font_runs()
 
         line = Line(start)
@@ -351,7 +352,7 @@ class TextLayout(object):
 
         # Iterate over glyph owners (texture states); these form GlyphRuns,
         # but broken into lines.
-        font = font_iterator.get_style_at(0)
+        font = None
         for start, end, owner in owner_iterator:
             font = font_iterator.get_style_at(start)
 
@@ -468,12 +469,16 @@ class TextLayout(object):
     
         if not line.glyph_runs:
             # Empty line gets font's line-height
+            if font is None:
+                font = self._document.get_font(0)
             line.ascent = font.ascent
             line.descent = font.descent
 
         yield line
 
-    def _flow_glyphs_nowrap(self,  start, owner_iterator, glyphs):
+    '''
+    # XXX merge me with _wrap (paragraph based).
+    def _flow_glyphs_nowrap(self, owner_iterator, glyphs):
         font_iterator = self.document.get_font_runs()
 
         line = Line(start)
@@ -505,8 +510,12 @@ class TextLayout(object):
             line.descent = font.descent
         
         yield line
+    '''
 
-    def _flow_glyphs_single_line(self, start, owner_iterator, glyphs):
+    def _flow_glyphs_single_line(self, glyphs, start, end):
+        owner_iterator = \
+            self.owner_runs.get_range_iterator().iter_range(start, end)
+
         font_iterator = self.document.get_font_runs()
 
         line = Line(start)
@@ -853,14 +862,13 @@ class IncrementalTextLayout(TextViewportLayout):
             for line in self.lines:
                 line.delete_vertex_lists()
             del self.lines[1:]
+            if not self.lines:
+                self.lines.append(Line(0))
             self.lines[0].clear(0)
             font = self.document.get_font(0)
             self.lines[0].ascent = font.ascent
             self.lines[0].descent = font.descent
             self.invalid_lines.invalidate(0, 1)
-            self._update_flow_lines()
-            self._update_vertex_lists()
-            return
 
         self._update_glyphs()
         self._update_flow_glyphs()
@@ -894,14 +902,14 @@ class IncrementalTextLayout(TextViewportLayout):
             return
         
         # Find first invalid line
-        # TODO find last invalid line (use paragraph breaks); doesn't help
-        # current case but will when paragraph style needs to use
-        # different flow methods.
         line_index = 0
         for i, line in enumerate(self.lines):
             if line.start >= invalid_start:
                 break
             line_index = i
+
+        # (No need to find last invalid line; the update loop below stops
+        # calling the flow generator when no more changes are necessary.)
 
         try:
             line = self.lines[line_index]
@@ -917,10 +925,8 @@ class IncrementalTextLayout(TextViewportLayout):
 
         next_start = invalid_start
 
-        owner_iterator = self.owner_runs.get_range_iterator().iter_range(
-            invalid_start, len(self._document.text))
-        for line in self._flow_glyphs(
-                invalid_start, owner_iterator, self.glyphs):
+        for line in self._flow_glyphs(self.glyphs, 
+                                      invalid_start, len(self._document.text)):
             try:
                 self.lines[line_index].delete_vertex_lists()
                 self.lines[line_index] = line
@@ -929,9 +935,7 @@ class IncrementalTextLayout(TextViewportLayout):
                 self.lines.append(line)
                 self.invalid_lines.insert(line_index, 1)
                 
-            # XXX precompute
-            line_len = sum(len(r.glyphs) for r in line.glyph_runs)
-            next_start = line_len + line.start
+            next_start = line.start + line.length
             line_index += 1
                 
             try:
@@ -944,7 +948,7 @@ class IncrementalTextLayout(TextViewportLayout):
         else:
             # The last line is at line_index - 1, if there are any more lines
             # after that they are stale and need to be deleted.
-            if next_start == len(self._document.text):
+            if next_start == len(self._document.text) and line_index > 0:
                 for line in self.lines[line_index:]:
                     line.delete_vertex_lists()
                 del self.lines[line_index:]
