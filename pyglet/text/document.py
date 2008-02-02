@@ -393,6 +393,7 @@ class FormattedDocument(AbstractDocument):
                 except KeyError:
                     runs = self._style_runs[attribute] = \
                         style.StyleRuns(0, None)
+                    runs.insert(0, len(self.text))
                 runs.set_style(start, start + len_text, value)
 
         # Insert paragraph breaks

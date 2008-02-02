@@ -9,10 +9,12 @@ sys.path.insert(0, os.path.dirname(__file__))
 from pyglet.gl import *
 from pyglet import clock
 from pyglet import font
+from pyglet import resource
 from pyglet import window
 from pyglet.window import key
 
 from pyglet import graphics
+from pyglet.text import attributed
 from pyglet.text import caret as caret_module
 from pyglet.text import style
 from pyglet.text import document
@@ -111,13 +113,13 @@ def main():
     if len(sys.argv) > 1:
         content = open(sys.argv[1]).read()
     else:
-        content = 'Specify a text file for input as argv[1].'
+        content = resource.file('info.att').read()
 
     # Draw to this border so we can test clipping.
     border = 50
 
     batch = graphics.Batch()
-    doc = document.FormattedDocument(content)
+    doc = attributed(content)
     text = layout.IncrementalTextLayout(doc,  
                     w.width-border*2, w.height-border*2, multiline=True,
                     batch=batch) 

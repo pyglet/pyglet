@@ -3,6 +3,15 @@
 
 from pyglet.text import layout, document
 
+def attributed(text):
+    from pyglet.text.formats import attributed
+    return attributed.AttributedTextDecoder().decode(text)
+
+def load_attributed(filename, file=None):
+    if file is None:
+        file = open(filename)
+    return attributed(file.read())
+
 class Label(layout.TextLayout):
     def __init__(self, text='', font=None, color=(255, 255, 255, 255), 
                  x=0, y=0, halign='left', valign='top', batch=None,

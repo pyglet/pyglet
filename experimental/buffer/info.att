@@ -1,0 +1,22 @@
+{bold True}{font_name "Times New Roman"}{font_size 24}pyglet attributed
+text{bold False}{font_size 12}
+
+Forced line{}
+break.
+
+Line breaks are also forced when
+ the following line begins with whitespace.
+
+This is handy for showing Python code at least:
+
+{font_name "Courier New"}
+def foo():
+    a = 1
+    return blah
+{font_name 'Times New Roman'}
+
+Special character: {#xe7}
+
+Escaping braces: {[} and {]}
+
+Float {f1 1.} another {f2 .2} another {f3 1.45}
