@@ -320,10 +320,9 @@ class FormattedDocument(AbstractDocument):
 
     def get_style_runs(self, attribute):
         try:
-            runs = self._style_runs[attribute]
+            return self._style_runs[attribute].get_range_iterator()
         except KeyError:
-            runs = self._style_runs[attribute] = style.StyleRuns(0, None)
-        return runs.get_range_iterator()
+            return _no_style_range_iterator
 
     def get_style(self, attribute, position):
         try:
@@ -337,6 +336,7 @@ class FormattedDocument(AbstractDocument):
                 runs = self._style_runs[attribute]
             except KeyError:
                 runs = self._style_runs[attribute] = style.StyleRuns(0, None)
+                runs.insert(0, len(self._text))
             runs.set_style(start, end, value)
 
     def get_font_runs(self, dpi=None):
@@ -351,19 +351,21 @@ class FormattedDocument(AbstractDocument):
         return iter.get_style_at(position)
 
     def _insert_text(self, start, text, attributes):
-        super(FormattedDocument, self)._insert_text(start, text)
+        super(FormattedDocument, self)._insert_text(start, text, attributes)
 
         len_text = len(text)
         self._paragraph_runs.insert(start, len_text)
         for runs in self._style_runs.values():
             runs.insert(start, len_text)
 
-        for attribute, value in attributes.items():
-            try:
-                runs = self._style_runs[attribute]
-            except KeyError:
-                runs = self._style_runs[attribute] = style.StyleRuns(0, None)
-            runs.set_style(start, start + len_text, value)
+        if attributes is not None:
+            for attribute, value in attributes.items():
+                try:
+                    runs = self._style_runs[attribute]
+                except KeyError:
+                    runs = self._style_runs[attribute] = \
+                        style.StyleRuns(0, None)
+                runs.set_style(start, start + len_text, value)
 
         # Insert paragraph breaks
         last_para_start = None
@@ -409,3 +411,11 @@ class _FontStyleRunsRangeIterator(object):
         font_name, font_size, bold, italic = self.zip_iter.get_style_at(index)
         return font.load(font_name, font_size,
                          bold=bold, italic=italic, dpi=self.dpi)
+
+class _NoStyleRangeIterator(object):
+    def iter_range(self, start, end):
+        yield start, end, None
+
+    def get_style_at(self, index):
+        return None
+_no_style_range_iterator = _NoStyleRangeIterator()

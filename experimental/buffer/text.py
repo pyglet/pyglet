@@ -82,7 +82,7 @@ def main():
     border = 50
 
     batch = graphics.Batch()
-    doc = document.UnformattedDocument(content)
+    doc = document.FormattedDocument(content)
     text = layout.IncrementalTextLayout(doc,  
                     w.width-border*2, w.height-border*2, multiline=True,
                     batch=batch) 
