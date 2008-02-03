@@ -23,6 +23,8 @@ The following style attribute names are recognised by pyglet:
 ``background_color``
     4-tuple of ints in range (0, 255) giving RGBA text background color; or
     ``None`` for no background fill.
+``align``
+    ``left``, ``center`` or ``right``.
 
 Other attributes can be used to store additional style information within the
 document; it will be ignored by the built-in text classes.
@@ -84,10 +86,15 @@ class AbstractDocument(event.EventDispatcher):
 
         :rtype: int
         '''
+        # Tricky special case where the $ in pattern matches before the \n at
+        # the end of the string instead of the end of the string.
+        if self._text[:pos + 1].endswith('\n'):
+            return pos
+
         m = self._previous_paragraph_re.search(self._text, 0, pos + 1)
         if not m:
             return 0
-        return m.start()
+        return m.start() + 1
 
     def get_paragraph_end(self, pos):
         '''Get the end position of a paragraph.

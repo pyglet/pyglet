@@ -37,20 +37,26 @@ class AttributedTextDecoder(object):
         self.length = 0
         self.attributes = {}
         next_trailing_space = True
+        trailing_newline = True
 
         for m in _pattern.finditer(text):
             group = m.lastgroup
             trailing_space = True
             if group == 'text':
-                self.append(m.group('text'))
-                trailing_space = text.endswith(' ')
+                t = m.group('text')
+                self.append(t)
+                trailing_space = t.endswith(' ')
+                trailing_newline = False
             elif group == 'nl_soft':
                 if not next_trailing_space:
                     self.append(' ')
+                trailing_newline = False
             elif group in ('nl_hard1', 'nl_hard2'):
                 self.append('\n')
+                trailing_newline = True
             elif group == 'nl_para':
                 self.append(m.group('nl_para'))
+                trailing_newline = True
             elif group == 'attr':
                 try:
                     ast = parser.expr(m.group('attr_val'))
@@ -62,10 +68,13 @@ class AttributedTextDecoder(object):
                     val = None
                 name = m.group('attr_name')
                 if name[0] == '.':
-                    self.doc.set_paragraph_style(self.length, self.length, 
-                                                 {name[1:]: val})
+                    if trailing_newline:
+                        self.attributes[name[1:]] = val
+                    else:
+                        self.doc.set_paragraph_style(self.length, self.length, 
+                                                     {name[1:]: val})
                 else:
-                    self.attributes[m.group('attr_name')] = val
+                    self.attributes[name] = val
             elif group == 'escape_dec':
                 self.append(unichr(int(m.group('escape_dec_val'))))
             elif group == 'escape_hex':
