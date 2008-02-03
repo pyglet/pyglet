@@ -60,7 +60,12 @@ class AttributedTextDecoder(object):
                         val = None
                 except (parser.ParserError, SyntaxError):
                     val = None
-                self.attributes[m.group('attr_name')] = val
+                name = m.group('attr_name')
+                if name[0] == '.':
+                    self.doc.set_paragraph_style(self.length, self.length, 
+                                                 {name[1:]: val})
+                else:
+                    self.attributes[m.group('attr_name')] = val
             elif group == 'escape_dec':
                 self.append(unichr(int(m.group('escape_dec_val'))))
             elif group == 'escape_hex':

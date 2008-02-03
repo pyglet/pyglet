@@ -204,7 +204,8 @@ class Caret(object):
     def select_word(self, x, y):
         line = self._text_view.get_line_from_point(x, y)
         p = self._text_view.get_position_on_line(line, x)
-        m1 = self._previous_word_re.search(self._text_view.document.text, 0, p)
+        m1 = self._previous_word_re.search(self._text_view.document.text, 
+                                           0, p+1)
         if not m1:
             m1 = 0
         else:
@@ -223,19 +224,8 @@ class Caret(object):
     def select_paragraph(self, x, y):
         line = self._text_view.get_line_from_point(x, y)
         p = self._text_view.get_position_on_line(line, x)
-        m1 = self._previous_para_re.search(self._text_view.document.text, 0, p)
-        if not m1:
-            m1 = 0
-        else:
-            m1 = m1.start()
-        self.mark = m1
-
-        m2 = self._next_para_re.search(self._text_view.document.text, p)
-        if not m2:
-            m2 = len(self._text_view.document.text)
-        else:
-            m2 = m2.start()
-        self._position = m2
+        self.mark = self._text_view.document.get_paragraph_start(p)
+        self._position = self._text_view.document.get_paragraph_end(p)
         self._update(line=line) 
         self._next_attributes.clear()
 

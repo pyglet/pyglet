@@ -42,16 +42,6 @@ from pyglet.text import style
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
-class Paragraph(object):
-    '''Paragraph style.
-    
-    '''
-    def __init__(self):
-        pass
-
-    def clone(self):
-        return Paragraph()
-
 class AbstractDocument(event.EventDispatcher):
     '''Abstract document interface used by all `pyglet.text` classes.
 
@@ -60,6 +50,9 @@ class AbstractDocument(event.EventDispatcher):
     terms of one of the supplied concrete classes `FormattedDocument` or
     `UnformattedDocument`. 
     '''
+    _previous_paragraph_re = re.compile(r'\n[^\n]*$')
+    _next_paragraph_re = re.compile(r'\n')
+
     def __init__(self, text=''):
         super(AbstractDocument, self).__init__()
         self._text = ''
@@ -82,24 +75,33 @@ class AbstractDocument(event.EventDispatcher):
         :type: str
         ''')
 
-    def get_paragraph_runs(self):
-        '''Get a style iterator over the `Paragraph` instances of the
-        document.
-
-        :rtype: `StyleRunsRangeIterator`
-        '''
-        raise NotImplementedError('abstract')
-
-    def get_paragraph(self, position):
-        '''Get the paragraph style at the given position.
+    def get_paragraph_start(self, pos):
+        '''Get the starting position of a paragraph.
 
         :Parameters:
-            `position` : int
-                Character position of document to query.
-            
-        :rtype: `Paragraph`
+            `pos` : int
+                Character position within paragraph.
+
+        :rtype: int
         '''
-        raise NotImplementedError('abstract')
+        m = self._previous_paragraph_re.search(self._text, 0, pos + 1)
+        if not m:
+            return 0
+        return m.start()
+
+    def get_paragraph_end(self, pos):
+        '''Get the end position of a paragraph.
+
+        :Parameters:
+            `pos` : int
+                Character position within paragraph.
+
+        :rtype: int
+        '''
+        m = self._next_paragraph_re.search(self._text, pos)
+        if not m:
+            return len(self._text)
+        return m.start() + 1
 
     def get_style_runs(self, attribute):
         '''Get a style iterator over the given style attribute.
@@ -234,6 +236,26 @@ class AbstractDocument(event.EventDispatcher):
     def _set_style(self, start, end, attributes):
         raise NotImplementedError('abstract')
 
+    def set_paragraph_style(self, start, end, attributes):
+        '''Set the style for a range of paragraphs.
+
+        This is a convenience method for `set_style` that aligns the
+        character range to the enclosing paragraph(s).
+
+        :Parameters:
+            `start` : int
+                Starting character position.
+            `end` : int
+                Ending character position (exclusive).
+            `attributes` : dict
+                Dictionary giving named style attributes of the paragraphs.
+
+        '''
+        start = self.get_paragraph_start(start)
+        end = self.get_paragraph_end(end)
+        self._set_style(start, end, attributes)
+        self.dispatch_event('on_style_text', start, end, attributes)
+
     if _is_epydoc:
         def on_insert_text(start, text):
             '''Text was inserted into the document.
@@ -260,7 +282,7 @@ class AbstractDocument(event.EventDispatcher):
             '''
 
         def on_style_text(start, end, attributes):
-            '''Text style was modified.
+            '''Text character style was modified.
 
             :Parameters:
                 `start` : int
@@ -272,30 +294,21 @@ class AbstractDocument(event.EventDispatcher):
                     text.
 
             '''
-
 AbstractDocument.register_event_type('on_insert_text')
 AbstractDocument.register_event_type('on_delete_text')
 AbstractDocument.register_event_type('on_style_text')
 
 class UnformattedDocument(AbstractDocument):
-    '''A document having uniform character and paragraph style over all text.
+    '''A document having uniform style over all text.
 
-    Changes to the style of any paragraph or text within the document affects
-    the entire document.  For convenience, the `position` parameters of the
-    style methods may therefore be omitted.
+    Changes to the style of text within the document affects the entire
+    document.  For convenience, the `position` parameters of the style methods
+    may therefore be omitted.
     '''
 
     def __init__(self, text=''):
         super(UnformattedDocument, self).__init__(text)
-        self.paragraph = Paragraph()
         self.styles = {}
-
-    def get_paragraph_runs(self):
-        return style.StyleRunsRangeIterator(
-            ((0, len(self.text), self.paragraph),))
-
-    def get_paragraph(self, position=None):
-        return self.paragraph
 
     def get_style_runs(self, attribute):
         value = self.styles.get(attribute)
@@ -309,8 +322,11 @@ class UnformattedDocument(AbstractDocument):
             0, len(self.text), attributes)
 
     def _set_style(self, start, end, attributes):
-        for attribute, value in attributes.items():
-            self.styles[attribute] = value
+        self.styles.update(attributes)
+
+    def set_paragraph_style(self, start, end, attributes):
+        return super(UnformattedDocument, self).set_paragraph_style(
+            0, len(self.text), attributes)
 
     def get_font_runs(self, dpi=None):
         ft = self.get_font(dpi=dpi)
@@ -328,23 +344,13 @@ class UnformattedDocument(AbstractDocument):
 class FormattedDocument(AbstractDocument):
     '''Simple implementation of a document that maintains text formatting.
 
-    Changes to text and paragraph style are applied according to the
-    description in `AbstractDocument`.  All styles default to ``None``.
+    Changes to text style are applied according to the description in
+    `AbstractDocument`.  All styles default to ``None``.
     '''
 
-    _paragraph_re = re.compile(r'\n', flags=re.DOTALL)
-
     def __init__(self, text=''):
-        self._paragraph_runs = style.StyleRuns(0, Paragraph())
         self._style_runs = {}
-        self._font_runs = style.StyleRuns(0, None)
         super(FormattedDocument, self).__init__(text)
-
-    def get_paragraph_runs(self):
-        return self._paragraph_runs.get_range_iterator()
-
-    def get_paragraph(self, position):
-        return self._paragraph_runs.get_style_at(position)
 
     def get_style_runs(self, attribute):
         try:
@@ -382,7 +388,6 @@ class FormattedDocument(AbstractDocument):
         super(FormattedDocument, self)._insert_text(start, text, attributes)
 
         len_text = len(text)
-        self._paragraph_runs.insert(start, len_text)
         for runs in self._style_runs.values():
             runs.insert(start, len_text)
 
@@ -396,28 +401,8 @@ class FormattedDocument(AbstractDocument):
                     runs.insert(0, len(self.text))
                 runs.set_style(start, start + len_text, value)
 
-        # Insert paragraph breaks
-        last_para_start = None
-        for match in self._paragraph_re.finditer(text):
-            prototype = self._paragraph_runs.get_style_at(start)
-            para_start = start + match.start() + 1
-            if last_para_start is not None:
-                self._paragraph_runs.set_style(last_para_start, para_start, 
-                    prototype.clone())
-            last_para_start = para_start
-
-        if last_para_start is not None:
-            match = self._paragraph_re.search(self._text, last_para_start)
-            if match:
-                para_end = match.start()
-            else:
-                para_end = len_text
-            self._paragraph_runs.set_style(last_para_start, para_end, 
-                prototype.clone())
-
     def _delete_text(self, start, end):
         super(FormattedDocument, self)._delete_text(start, end)
-        self._paragraph_runs.delete(start, end)
         for runs in self._style_runs.values():
             runs.delete(start, end)
 

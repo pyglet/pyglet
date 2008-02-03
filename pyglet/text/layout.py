@@ -8,6 +8,8 @@ from pyglet import graphics
 from pyglet.text import style
 
 class Line(object):
+    align = 'left'
+
     def __init__(self, start):
         self.vertex_lists = []
         self.clear(start)
@@ -29,6 +31,7 @@ class Line(object):
         self.vertex_lists = []
 
     def clear(self, start):
+        # XXX clear() is redundant? lines get reconstructed anyway? 
         self.start = start
         self.length = 0
         
@@ -344,7 +347,15 @@ class TextLayout(object):
 
         font_iterator = self._document.get_font_runs()
 
+        para_align_iter = self._document.get_style_runs('align')
+        def get_align(pos):
+            align = para_align_iter.get_style_at(pos)
+            if align not in ('left', 'right', 'center'):
+                align = 'left'
+            return align
+
         line = Line(start)
+        line.align = get_align(start)
 
         # Current right-most x position in line being laid out.
         x = 0
@@ -446,6 +457,7 @@ class TextLayout(object):
                         if line.glyph_runs or text == '\n':
                             yield line
                             line = Line(next_start)
+                            line.align = get_align(next_start)
                             x = run_accum_width + owner_accum_width
 
                     if text != '\n':
@@ -541,7 +553,14 @@ class TextLayout(object):
         line_index = start
         for line in lines[start:]:
             y -= line.ascent
-            line.x = 0
+
+            if line.align == 'left' or line.width > self.width:
+                line.x = 0
+            elif line.align == 'center':
+                line.x = self.width // 2 - line.width // 2
+            elif line.align == 'right':
+                line.x = self.width - line.width
+
             # TODO incremental needs to reduce content width (trigger rescan
             # if deleted line has content width -- yikes)
             self.content_width = max(self.content_width, line.width)

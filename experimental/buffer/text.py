@@ -3,6 +3,7 @@
 
 import os
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -11,7 +12,7 @@ from pyglet import clock
 from pyglet import font
 from pyglet import resource
 from pyglet import window
-from pyglet.window import key
+from pyglet.window import key, mouse
 
 from pyglet import graphics
 from pyglet.text import attributed
@@ -19,6 +20,9 @@ from pyglet.text import caret as caret_module
 from pyglet.text import style
 from pyglet.text import document
 from pyglet.text import layout
+
+click_time = 0
+click_count = 0
 
 def main():
     w = window.Window(vsync=False, resizable=True)
@@ -41,7 +45,24 @@ def main():
 
     @w.event
     def on_mouse_press(x, y, button, modifiers):
-        caret.move_to_point(x, y)
+        global click_time
+        global click_count
+
+        t = time.time()
+        if t - click_time < 0.25:
+            click_count += 1
+        else:
+            click_count = 1
+        click_time = time.time()
+
+        if click_count == 1:
+            caret.move_to_point(x, y)
+        elif click_count == 2:
+            caret.select_word(x, y)
+        elif click_count == 3:
+            caret.select_paragraph(x, y)
+            click_count = 0
+
         cursor_not_idle()
 
     @w.event
