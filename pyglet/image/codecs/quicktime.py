@@ -118,6 +118,9 @@ class QuickTimeImageDecoder(ImageDecoder):
         quicktime.GetGraphicsImporterForDataRef(dataref, 
             HandleDataHandlerSubType, byref(importer))
 
+        if not importer:
+            raise ImageDecodeException(filename or file)
+
         rect = Rect()
         quicktime.GraphicsImportGetNaturalBounds(importer, byref(rect))
         width = rect.right
@@ -132,8 +135,11 @@ class QuickTimeImageDecoder(ImageDecoder):
             len(format) * width)
 
         quicktime.GraphicsImportSetGWorld(importer, world, c_void_p())
-        quicktime.GraphicsImportDraw(importer)
+        result = quicktime.GraphicsImportDraw(importer)
         quicktime.DisposeGWorld(world)
+
+        if result != 0:
+            raise ImageDecodeException(filename or file)
 
         pitch = len(format) * width
 
