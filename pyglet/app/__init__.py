@@ -214,18 +214,6 @@ BaseEventLoop.register_event_type('on_window_close')
 BaseEventLoop.register_event_type('on_enter')
 BaseEventLoop.register_event_type('on_exit')
 
-if _is_epydoc:
-    EventLoop = BaseEventLoop
-    EventLoop.__name__ = 'EventLoop'
-    del BaseEventLoop
-else:
-    if sys.platform == 'darwin':
-        from pyglet.app.carbon import CarbonEventLoop as EventLoop
-    elif sys.platform in ('win32', 'cygwin'):
-        from pyglet.app.win32 import Win32EventLoop as EventLoop
-    else:
-        from pyglet.app.xlib import XlibEventLoop as EventLoop
-
 #: The global event loop.  Set to the correct instance when an `EventLoop` is
 #: started.
 #:
@@ -241,3 +229,21 @@ def run():
 
     '''
     EventLoop().run()
+
+if _is_epydoc:
+    EventLoop = BaseEventLoop
+    EventLoop.__name__ = 'EventLoop'
+    del BaseEventLoop
+else:
+    # Permit cyclic import.
+    import pyglet
+    pyglet.app = sys.modules[__name__]
+
+    if sys.platform == 'darwin':
+        from pyglet.app.carbon import CarbonEventLoop as EventLoop
+    elif sys.platform in ('win32', 'cygwin'):
+        from pyglet.app.win32 import Win32EventLoop as EventLoop
+    else:
+        from pyglet.app.xlib import XlibEventLoop as EventLoop
+
+
