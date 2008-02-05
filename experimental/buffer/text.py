@@ -29,55 +29,6 @@ def main():
     w.set_mouse_cursor(w.get_system_mouse_cursor('text'))
 
     @w.event
-    def on_text(t):
-        caret.on_text(t)
-        cursor_not_idle()
-
-    @w.event
-    def on_text_motion(motion):
-        caret.on_text_motion(motion)
-        cursor_not_idle()
-
-    @w.event
-    def on_text_motion_select(motion):
-        caret.on_text_motion_select(motion)
-        cursor_not_idle()
-
-    @w.event
-    def on_mouse_press(x, y, button, modifiers):
-        global click_time
-        global click_count
-
-        t = time.time()
-        if t - click_time < 0.25:
-            click_count += 1
-        else:
-            click_count = 1
-        click_time = time.time()
-
-        if click_count == 1:
-            caret.move_to_point(x, y)
-        elif click_count == 2:
-            caret.select_word(x, y)
-        elif click_count == 3:
-            caret.select_paragraph(x, y)
-            click_count = 0
-
-        cursor_not_idle()
-
-    @w.event
-    def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
-        if caret.mark is None:
-            caret.mark = caret.position
-        caret.select_to_point(x, y)
-        cursor_not_idle()
-
-    @w.event
-    def on_mouse_scroll(x, y, scroll_x, scroll_y):
-        text.view_x -= scroll_x
-        text.view_y += scroll_y * (12 * 96 / 72) # scroll 12pt @ 96dpi
-
-    @w.event
     def on_key_press(symbol, modifiers):
         if sys.platform == 'darwin':
             accel = key.MOD_COMMAND
@@ -119,18 +70,6 @@ def main():
         caret._update()
     w.push_handlers(on_resize)
 
-    def blink_cursor(dt):
-        caret.visible = not caret.visible
-
-    def cursor_idle(dt):
-        clock.schedule_interval(blink_cursor, 0.5)
-
-    def cursor_not_idle():
-        clock.unschedule(blink_cursor)
-        clock.unschedule(cursor_idle)
-        clock.schedule_once(cursor_idle, 0.1)
-        caret.visible = True
-
     if len(sys.argv) > 1:
         content = open(sys.argv[1]).read()
     else:
@@ -148,7 +87,7 @@ def main():
     caret.color = (0, 0, 0)
     caret.visible = True
     caret.position = 0
-    cursor_idle(0)
+    w.push_handlers(caret)
 
     fps = clock.ClockDisplay(font=font.load('', 10, dpi=96), 
         color=(0, 0, 0, 1), interval=1., format='FPS: %(fps)d')
