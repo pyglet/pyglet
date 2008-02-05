@@ -8,7 +8,7 @@ TODO overview
 Style attributes
 ================
 
-The following style attribute names are recognised by pyglet:
+The following character style attribute names are recognised by pyglet:
 
 ``font_name``
     Font family name, as given to `pyglet.font.load`.
@@ -23,6 +23,9 @@ The following style attribute names are recognised by pyglet:
 ``background_color``
     4-tuple of ints in range (0, 255) giving RGBA text background color; or
     ``None`` for no background fill.
+
+The following paragraph style attribute names are recognised by pyglet:
+
 ``align``
     ``left``, ``center`` or ``right``.
 
