@@ -61,7 +61,6 @@ def on_draw():
     numframes += 1
     w.clear()
     batch.draw()
-    w.flip()
 
 pyglet.app.run()
 
