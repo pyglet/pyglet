@@ -19,7 +19,9 @@ import time
 from pyglet import options
 options['debug_gl'] = False
 
+from pyglet import app
 from pyglet import window
+from pyglet import clock
 from pyglet import resource
 import spryte
 from pyglet.gl import *
@@ -51,15 +53,21 @@ for i in range(numsprites):
     BouncySprite(ball, x, y, batch=batch,
         dx=random.randint(-10, 10), dy=random.randint(-10, 10))
 
+def update(dt):
+    for s in batch: s.update()
+clock.schedule(update)
+
 t = time.time()
 numframes = 0
-while not w.has_exit:
-    w.dispatch_events()
-    for s in batch: s.update()
+@w.event
+def on_draw():
+    global numframes
+    numframes += 1
     w.clear()
     batch.draw()
     w.flip()
-    numframes += 1
+
+app.run()
+
 print 'us per sprite:', float(time.time()-t) / (numsprites * numframes) * 1000000
-w.close()
 
