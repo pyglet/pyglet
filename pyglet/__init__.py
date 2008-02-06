@@ -178,3 +178,36 @@ if sys.platform == 'cygwin':
     ctypes.oledll = ctypes.cdll
     ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE
     ctypes.HRESULT = ctypes.c_long
+
+class _Module(object):
+    '''Lazily import submodules when accessed as attributes.  
+    
+    Allows applications to use pyglet.window without importing the
+    pyglet.window module directly.
+    '''
+    def __init__(self, submodules):
+        m = sys.modules[__name__]
+        for name in dir(m):
+            setattr(self, name, getattr(m, name))
+        self._name = __name__
+        self._file = __file__
+        self._submodules = submodules
+
+        _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+        if not _is_epydoc:
+            sys.modules[__name__] = self
+
+    def __getattr__(self, name):
+        if name in self._submodules:
+            m = __import__('.'.join((self._name, name)), fromlist=['foo'])
+            return m
+        raise AttributeError("'%s' has no attribute '%s'" % (self._name, name))
+
+    def __repr__(self):
+        return "<module '%s' from '%s' using class '%s'>" % (
+            self._name, self._file, self.__class__.__name__)
+
+_Module(
+    ('app', 'clock', 'com', 'event', 'font', 'gl', 'graphics', 'image',
+     'lib', 'media', 'resource', 'sprite', 'text', 'window')
+)
