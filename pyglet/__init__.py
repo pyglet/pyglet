@@ -199,7 +199,7 @@ class _Module(object):
 
     def __getattr__(self, name):
         if name in self._submodules:
-            m = __import__('.'.join((self._name, name)), fromlist=['foo'])
+            m = __import__('.'.join((self._name, name)), {}, {}, ['foo'])
             return m
         raise AttributeError("'%s' has no attribute '%s'" % (self._name, name))
 
