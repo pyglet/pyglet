@@ -19,12 +19,10 @@ import time
 from pyglet import options
 options['debug_gl'] = False
 
-from pyglet import window
-from pyglet import resource
+import pyglet
 import spryte
-from pyglet.gl import *
 
-w = window.Window(600, 600, vsync=False)
+w = pyglet.window.Window(600, 600, vsync=False)
 
 class BouncySprite(spryte.Sprite):
     def update(self):
@@ -43,8 +41,8 @@ class BouncySprite(spryte.Sprite):
 batch = spryte.SpriteBatch()
 
 numsprites = int(sys.argv[1])
-resource.path.append('examples/noisy')
-ball = resource.image('ball.png')
+pyglet.resource.path.append('examples/noisy')
+ball = pyglet.resource.image('ball.png')
 for i in range(numsprites):
     x = random.randint(0, w.width - ball.width)
     y = random.randint(0, w.height - ball.height)
