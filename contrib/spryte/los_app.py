@@ -53,16 +53,28 @@ def update(dt):
     for s in batch: s.update()
 pyglet.clock.schedule(update)
 
-t = time.time()
 numframes = 0
+sum_numframes = 0
+best_fps = 0
+def update_stats(dt):
+    global numframes, sum_numframes, best_fps
+    fps = numframes / dt
+    best_fps = max(best_fps, fps)
+    sum_numframes += numframes
+    numframes = 0
+pyglet.clock.schedule_interval(update_stats, 0.5)
+
 @w.event
 def on_draw():
     global numframes
     numframes += 1
+
     w.clear()
     batch.draw()
 
+t = time.time()
 pyglet.app.run()
 
-print 'us per sprite:', float(time.time()-t) / (numsprites * numframes) * 1000000
+print 'best us per sprite:', (1. / best_fps) * 1000000 / numsprites
+print 'avg  us per sprite:', float(time.time()-t) / (numsprites * sum_numframes) * 1000000
 
