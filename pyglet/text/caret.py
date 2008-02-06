@@ -66,12 +66,12 @@ class Caret(object):
     #: to 12pt at 96dpi.
     SCROLL_INCREMENT= 12 * 96 / 72
 
-    def __init__(self, text_view, batch=None):
+    def __init__(self, layout, batch=None):
         from pyglet import gl
-        self._text_view = text_view
+        self._layout = layout
         if batch is None:
-            batch = text_view.batch
-        self._list = batch.add(2, gl.GL_LINES, text_view.background_state, 
+            batch = layout.batch
+        self._list = batch.add(2, gl.GL_LINES, layout.background_state, 
             'v2f', ('c4B', [0, 0, 0, 255] * 2))
 
         self._ideal_x = None
@@ -147,7 +147,7 @@ class Caret(object):
         self._mark = mark
         self._update(line=self._ideal_line)
         if mark is None:
-            self._text_view.set_selection(0, 0)
+            self._layout.set_selection(0, 0)
     
     def _get_mark(self):
         return self._mark
@@ -168,16 +168,16 @@ class Caret(object):
     def _set_line(self, line):
         if self._ideal_x is None:
             self._ideal_x, _ = \
-                self._text_view.get_point_from_position(self._position)
+                self._layout.get_point_from_position(self._position)
         self._position = \
-            self._text_view.get_position_on_line(line, self._ideal_x)
+            self._layout.get_position_on_line(line, self._ideal_x)
         self._update(line=line, update_ideal_x=False)
 
     def _get_line(self):
         if self._ideal_line is not None:
             return self._ideal_line
         else:
-            return self._text_view.get_line_from_position(self._position)
+            return self._layout.get_line_from_position(self._position)
 
     line = property(_get_line, _set_line,
                     doc='''Index of line containing the caret's position.
@@ -206,12 +206,12 @@ class Caret(object):
             try:
                 return self._next_attributes[attribute]
             except KeyError:
-                return self._text_view.document.get_style(attribute, 
+                return self._layout.document.get_style(attribute, 
                                                           self._position)
 
         start = min(self._position, self._mark)
         end = max(self._position, self._mark)
-        return self._text_view.document.get_style_range(attribute, start, end)
+        return self._layout.document.get_style_range(attribute, start, end)
 
     def set_style(self, attributes):
         '''Set the document style at the caret's current position.
@@ -234,14 +234,14 @@ class Caret(object):
 
         start = min(self._position, self._mark)
         end = max(self._position, self._mark)
-        self._text_view.document.set_style(start, end, attributes)
+        self._layout.document.set_style(start, end, attributes)
 
     def _delete_selection(self):
-        self._text_view.document.delete_text(min(self._mark, self._position),
+        self._layout.document.delete_text(min(self._mark, self._position),
                                              max(self._mark, self._position))
         self._position = min(self.position, self.mark)
         self._mark = None
-        self._text_view.set_selection(0, 0)
+        self._layout.set_selection(0, 0)
 
     def move_to_point(self, x, y):
         '''Move the caret close to the given window coordinate.
@@ -255,10 +255,10 @@ class Caret(object):
                 Y coordinate.
 
         '''
-        line = self._text_view.get_line_from_point(x, y)
+        line = self._layout.get_line_from_point(x, y)
         self._mark = None
-        self._text_view.set_selection(0, 0)
-        self._position = self._text_view.get_position_on_line(line, x)
+        self._layout.set_selection(0, 0)
+        self._position = self._layout.get_position_on_line(line, x)
         self._update(line=line)
         self._next_attributes.clear()
 
@@ -273,8 +273,8 @@ class Caret(object):
                 Y coordinate.
 
         '''
-        line = self._text_view.get_line_from_point(x, y)
-        self._position = self._text_view.get_position_on_line(line, x)
+        line = self._layout.get_line_from_point(x, y)
+        self._position = self._layout.get_position_on_line(line, x)
         self._update(line=line)
         self._next_attributes.clear()
 
@@ -288,9 +288,9 @@ class Caret(object):
                 Y coordinate.
 
         '''
-        line = self._text_view.get_line_from_point(x, y)
-        p = self._text_view.get_position_on_line(line, x)
-        m1 = self._previous_word_re.search(self._text_view.document.text, 
+        line = self._layout.get_line_from_point(x, y)
+        p = self._layout.get_position_on_line(line, x)
+        m1 = self._previous_word_re.search(self._layout.document.text, 
                                            0, p+1)
         if not m1:
             m1 = 0
@@ -298,9 +298,9 @@ class Caret(object):
             m1 = m1.start()
         self.mark = m1
 
-        m2 = self._next_word_re.search(self._text_view.document.text, p)
+        m2 = self._next_word_re.search(self._layout.document.text, p)
         if not m2:
-            m2 = len(self._text_view.document.text)
+            m2 = len(self._layout.document.text)
         else:
             m2 = m2.start()
         self._position = m2
@@ -317,34 +317,34 @@ class Caret(object):
                 Y coordinate.
 
         '''
-        line = self._text_view.get_line_from_point(x, y)
-        p = self._text_view.get_position_on_line(line, x)
-        self.mark = self._text_view.document.get_paragraph_start(p)
-        self._position = self._text_view.document.get_paragraph_end(p)
+        line = self._layout.get_line_from_point(x, y)
+        p = self._layout.get_position_on_line(line, x)
+        self.mark = self._layout.document.get_paragraph_start(p)
+        self._position = self._layout.document.get_paragraph_end(p)
         self._update(line=line) 
         self._next_attributes.clear()
 
     def _update(self, line=None, update_ideal_x=True):
         if line is None:
-            line = self._text_view.get_line_from_position(self._position)
+            line = self._layout.get_line_from_position(self._position)
             self._ideal_line = None
         else:
             self._ideal_line = line
-        x, y = self._text_view.get_point_from_position(self._position, line)
+        x, y = self._layout.get_point_from_position(self._position, line)
         if update_ideal_x:
             self._ideal_x = x
 
-        x -= self._text_view.top_state.translate_x
-        y -= self._text_view.top_state.translate_y
-        font = self._text_view.document.get_font(max(0, self._position - 1))
+        x -= self._layout.top_state.translate_x
+        y -= self._layout.top_state.translate_y
+        font = self._layout.document.get_font(max(0, self._position - 1))
         self._list.vertices[:] = [x, y + font.descent, x, y + font.ascent]
 
         if self._mark is not None:
-            self._text_view.set_selection(min(self._position, self._mark),
+            self._layout.set_selection(min(self._position, self._mark),
                                           max(self._position, self._mark))
 
-        self._text_view.ensure_line_visible(line)
-        self._text_view.ensure_x_visible(x)
+        self._layout.ensure_line_visible(line)
+        self._layout.ensure_x_visible(x)
 
     def on_text(self, text):
         '''Handler for the `pyglet.window.Window.on_text` event.
@@ -357,7 +357,7 @@ class Caret(object):
             self._delete_selection()
 
         text = text.replace('\r', '\n')
-        self._text_view.document.insert_text(self.position, text,
+        self._layout.document.insert_text(self.position, text,
                                             self._next_attributes)
         self._position += len(text)
         self._nudge()
@@ -375,56 +375,56 @@ class Caret(object):
                 self._delete_selection()
                 self._update()
             elif self.position > 0:
-                self._text_view.document.delete_text(
+                self._layout.document.delete_text(
                     self.position - 1, self.position)
                 self.position -= 1
         elif motion == key.MOTION_DELETE:
             if self.mark is not None:
                 self._delete_selection()
                 self._update()
-            elif self.position < len(self._text_view.document.text):
-                self._text_view.document.delete_text(
+            elif self.position < len(self._layout.document.text):
+                self._layout.document.delete_text(
                     self.position, self.position + 1)
                 self._update()
         elif self._mark is not None and not select:
             self._mark = None
-            self._text_view.set_selection(0, 0)
+            self._layout.set_selection(0, 0)
 
         if motion == key.MOTION_LEFT:
             self.position = max(0, self.position - 1)
         elif motion == key.MOTION_RIGHT:
-            self.position = min(len(self._text_view.document.text), 
+            self.position = min(len(self._layout.document.text), 
                                 self.position + 1) 
         elif motion == key.MOTION_UP:
             self.line = max(0, self.line - 1)
         elif motion == key.MOTION_DOWN:
             line = self.line
-            if line < self._text_view.get_line_count() - 1:
+            if line < self._layout.get_line_count() - 1:
                 self.line = line + 1
         elif motion == key.MOTION_BEGINNING_OF_LINE:
-            self.position = self._text_view.get_position_from_line(self.line)
+            self.position = self._layout.get_position_from_line(self.line)
         elif motion == key.MOTION_END_OF_LINE:
             line = self.line
-            if line < self._text_view.get_line_count() - 1:
+            if line < self._layout.get_line_count() - 1:
                 self._position = \
-                    self._text_view.get_position_on_line(line + 1, 0) - 1
+                    self._layout.get_position_on_line(line + 1, 0) - 1
                 self._update(line)
             else:
-                self.position = len(self._text_view.document.text)
+                self.position = len(self._layout.document.text)
         elif motion == key.MOTION_BEGINNING_OF_FILE:
             self.position = 0
         elif motion == key.MOTION_END_OF_FILE:
-            self.position = len(self._text_view.document.text)
+            self.position = len(self._layout.document.text)
         elif motion == key.MOTION_NEXT_WORD:
             pos = self._position + 1
-            m = self._next_word_re.search(self._text_view.document.text, pos)
+            m = self._next_word_re.search(self._layout.document.text, pos)
             if not m:
-                self.position = len(self._text_view.document.text)
+                self.position = len(self._layout.document.text)
             else:
                 self.position = m.start()
         elif motion == key.MOTION_PREVIOUS_WORD:
             pos = self._position
-            m = self._previous_word_re.search(self._text_view.document.text, 
+            m = self._previous_word_re.search(self._layout.document.text, 
                                               0, pos)
             if not m:
                 self.position = 0
@@ -455,8 +455,8 @@ class Caret(object):
         The layout viewport is scrolled by `SCROLL_INCREMENT` pixels per
         "click".
         '''
-        self._text_view.view_x -= scroll_x * self.SCROLL_INCREMENT
-        self._text_view.view_y += scroll_y * self.SCROLL_INCREMENT 
+        self._layout.view_x -= scroll_x * self.SCROLL_INCREMENT
+        self._layout.view_y += scroll_y * self.SCROLL_INCREMENT 
 
     def on_mouse_press(self, x, y, button, modifiers):
         '''Handler for the `pyglet.window.Window.on_mouse_press` event.
