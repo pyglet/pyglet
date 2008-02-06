@@ -323,6 +323,7 @@ class Text(object):
         self.color = color
         self.x = x
         self.y = y
+        self.z = z
         self.leading = 0
         self._layout_width = width
         self._halign = halign
@@ -397,7 +398,7 @@ class Text(object):
         glEnable(GL_TEXTURE_2D)
         glColor4f(*self.color)
         glPushMatrix()
-        glTranslatef(0, y, 0)
+        glTranslatef(0, y, self.z)
         for start, end in self.lines:
             width = self._glyph_string.get_subwidth(start, end)
 
