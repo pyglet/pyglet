@@ -1082,6 +1082,17 @@ class IncrementalTextLayout(TextViewportLayout):
 
     width = property(_get_width, _set_width)
 
+    # Recalculate visible lines when height changes
+    def _set_height(self, height):
+        super(IncrementalTextLayout, self)._set_height(height)
+        self._update_visible_lines()
+        self._update_vertex_lists()
+
+    def _get_height(self):
+        return self._height
+
+    height = property(_get_height, _set_height)
+
     # Invalidate invisible/visible lines when y scrolls
 
     def _set_view_y(self, view_y):
