@@ -5,7 +5,7 @@ import sys
 
 from pyglet.gl import *
 from pyglet import graphics
-from pyglet.text import style
+from pyglet.text import runlist
 
 class Line(object):
     align = 'left'
@@ -247,7 +247,7 @@ class TextLayout(object):
 
         len_text = len(self._document.text)
         glyphs = self._get_glyphs()
-        owner_runs = style.StyleRuns(len_text, None)
+        owner_runs = runlist.StyleRuns(len_text, None)
         self._get_owner_runs(owner_runs, glyphs, 0, len_text)
         lines = [line for line in self._flow_glyphs(glyphs, 0, len_text)]
         self.content_width = 0
@@ -351,24 +351,24 @@ class TextLayout(object):
 
         font_iterator = self._document.get_font_runs()
 
-        align_iterator = style.FilteredRunIterator(
+        align_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs('align'),
             lambda value: value in ('left', 'right', 'center'), 
             'left')
-        wrap_iterator = style.FilteredRunIterator(
+        wrap_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs('wrap'),
             lambda value: value in (True, False),
             True)
-        margin_left_iterator = style.FilteredRunIterator(
+        margin_left_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs('margin_left'), 
             lambda value: value is not None, 0)
-        margin_right_iterator = style.FilteredRunIterator(
+        margin_right_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs('margin_right'),
             lambda value: value is not None, 0)
-        margin_top_iterator = style.FilteredRunIterator(
+        margin_top_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs('margin_top'),
             lambda value: value is not None, 0)
-        margin_bottom_iterator = style.FilteredRunIterator(
+        margin_bottom_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs('margin_bottom'),
             lambda value: value is not None, 0)
 
@@ -831,7 +831,7 @@ class IncrementalTextLayout(TextViewportLayout):
         self.invalid_vertex_lines = InvalidRange()
         self.visible_lines = InvalidRange()
 
-        self.owner_runs = style.RunList(0, None)
+        self.owner_runs = runlist.RunList(0, None)
 
         super(IncrementalTextLayout, self).__init__(
             document, width, height, multiline, batch, state_order)
@@ -1046,12 +1046,12 @@ class IncrementalTextLayout(TextViewportLayout):
         colors_iter = self.document.get_style_runs('color')
         background_iter = self.document.get_style_runs('background_color')
         if self._selection_end - self._selection_start > 0:
-            colors_iter = style.OverriddenRunIterator(
+            colors_iter = runlist.OverriddenRunIterator(
                 colors_iter,
                 self._selection_start, 
                 self._selection_end,
                 self._selection_color)
-            background_iter = style.OverriddenRunIterator(
+            background_iter = runlist.OverriddenRunIterator(
                 background_iter,
                 self._selection_start, 
                 self._selection_end,

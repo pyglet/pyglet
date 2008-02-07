@@ -53,7 +53,7 @@ import re
 import sys
 
 from pyglet import event
-from pyglet.text import style
+from pyglet.text import runlist
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
@@ -335,7 +335,7 @@ class UnformattedDocument(AbstractDocument):
 
     def get_style_runs(self, attribute):
         value = self.styles.get(attribute)
-        return style.RunIterator(((0, len(self.text), value),)) # XXX broke
+        return runlist.RunIterator(((0, len(self.text), value),)) # XXX broke
 
     def get_style(self, attribute, position=None):
         return self.styles.get(attribute)
@@ -353,7 +353,7 @@ class UnformattedDocument(AbstractDocument):
 
     def get_font_runs(self, dpi=None):
         ft = self.get_font(dpi=dpi)
-        return style.RunIterator(((0, len(self.text), ft),)) # XXX broke
+        return runlist.RunIterator(((0, len(self.text), ft),)) # XXX broke
 
     def get_font(self, position=None, dpi=None):
         from pyglet import font
@@ -392,7 +392,7 @@ class FormattedDocument(AbstractDocument):
             try:
                 runs = self._style_runs[attribute]
             except KeyError:
-                runs = self._style_runs[attribute] = style.RunList(0, None)
+                runs = self._style_runs[attribute] = runlist.RunList(0, None)
                 runs.insert(0, len(self._text))
             runs.set_style(start, end, value)
 
@@ -420,7 +420,7 @@ class FormattedDocument(AbstractDocument):
                     runs = self._style_runs[attribute]
                 except KeyError:
                     runs = self._style_runs[attribute] = \
-                        style.RunList(0, None)
+                        runlist.RunList(0, None)
                     runs.insert(0, len(self.text))
                 runs.set_run(start, start + len_text, value)
 
@@ -431,7 +431,7 @@ class FormattedDocument(AbstractDocument):
 
 class _FontStyleRunsRangeIterator(object):
     def __init__(self, font_names, font_sizes, bolds, italics, dpi):
-        self.zip_iter = style.ZipRunIterator(
+        self.zip_iter = runlist.ZipRunIterator(
             (font_names, font_sizes, bolds, italics))
         self.dpi = dpi
 
