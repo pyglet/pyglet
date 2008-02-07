@@ -58,15 +58,19 @@ class SpriteBatch(graphics.Batch):
         self.sprites = []
 
 class Sprite(sprite.Sprite):
-    def __init__(self, 
-                 img, x=0, y=0, 
-                 dx=0, dy=0, ddx=0, ddy=0,
-                 blend_src=gl.GL_SRC_ALPHA,
-                 blend_dest=gl.GL_ONE_MINUS_SRC_ALPHA,
-                 batch=None,
-                 parent_state=None,
-                 **attributes
-                 ):
+    def __init__(self, img, x=0, y=0,
+            blend_src=gl.GL_SRC_ALPHA, blend_dest=gl.GL_ONE_MINUS_SRC_ALPHA,
+            batch=None, parent_state=None, **attributes):
+        '''A sprite is an image at some position with some rotation.
+
+        Sprites are blended into the background by default.
+
+        If you're going to have many sprites you should consider creating your
+        own SpriteBatch.
+
+        Any additional keyword arguments will be assigned as attributes on the
+        sprite. This can be useful if you intend to use `update_kinematics`.
+        '''
 
         # default parent_state to batch state if it has one
         if parent_state is None and hasattr(batch, 'state'):
@@ -79,11 +83,7 @@ class Sprite(sprite.Sprite):
         if self._batch is not None and hasattr(self._batch, 'add_sprite'):
             self._batch.add_sprite(self)
 
-        self.dx = dx
-        self.dy = dy
-        self.ddx = ddx
-        self.ddy = ddy
-
+        # arbitrary attributes
         self.__dict__.update(attributes)
 
     def delete(self):
