@@ -10,6 +10,11 @@ from pyglet.text import style
 class Line(object):
     align = 'left'
 
+    margin_left = 0
+    margin_right = 0
+    margin_bottom = 0
+    margin_top = 0
+
     def __init__(self, start):
         self.vertex_lists = []
         self.clear(start)
@@ -347,15 +352,30 @@ class TextLayout(object):
 
         font_iterator = self._document.get_font_runs()
 
-        para_align_iter = self._document.get_style_runs('align')
-        def get_align(pos):
-            align = para_align_iter.get_style_at(pos)
-            if align not in ('left', 'right', 'center'):
-                align = 'left'
-            return align
+        align_iterator = style.EnumeratedStyleRunsRangeIterator(
+            self._document.get_style_runs('align'),
+            ('left', 'right', 'center'), 
+            'left')
+        wrap_iterator = style.EnumeratedStyleRunsRangeIterator(
+            self._document.get_style_runs('wrap'),
+            (True, False),
+            True)
+        margin_left_iterator = style.DefaultStyleRunsRangeIterator(
+            self._document.get_style_runs('margin_left'), 0)
+        margin_right_iterator = style.DefaultStyleRunsRangeIterator(
+            self._document.get_style_runs('margin_right'), 0)
+        margin_top_iterator = style.DefaultStyleRunsRangeIterator(
+            self._document.get_style_runs('margin_top'), 0)
+        margin_bottom_iterator = style.DefaultStyleRunsRangeIterator(
+            self._document.get_style_runs('margin_bottom'), 0)
 
         line = Line(start)
-        line.align = get_align(start)
+        line.align = align_iterator.get_style_at(start)
+        line.margin_left = margin_left_iterator.get_style_at(start)
+        line.margin_right = margin_right_iterator.get_style_at(start)
+        line.margin_top = margin_top_iterator.get_style_at(start)
+        wrap = wrap_iterator.get_style_at(start)
+        width = self._width - line.margin_left - line.margin_right
 
         # Current right-most x position in line being laid out.
         x = 0
@@ -412,8 +432,8 @@ class TextLayout(object):
                     # index, because this is the current best breakpoint).
                     next_start = index
                 else:
-                    if (self._width is not None and
-                        x + glyph.advance >= self._width) or text == '\n':
+                    if (wrap and self._width is not None and
+                        x + glyph.advance >= width) or text == '\n':
 
                         # Either the pending runs have overflowed the allowed
                         # line width or a newline was encountered.  Either
@@ -455,12 +475,24 @@ class TextLayout(object):
                         # flushed at the earliest breakpoint, not before
                         # something is committed).
                         if line.glyph_runs or text == '\n':
+                            if text == '\n':
+                                line.margin_bottom = \
+                                    margin_bottom_iterator.get_style_at(next_start - 1)
                             yield line
                             line = Line(next_start)
-                            line.align = get_align(next_start)
+                            line.align = align_iterator.get_style_at(next_start)
+                            line.margin_left = \
+                                margin_left_iterator.get_style_at(next_start)
+                            line.margin_right = \
+                                margin_right_iterator.get_style_at(next_start)
                             x = run_accum_width + owner_accum_width
 
-                    if text != '\n':
+                    if text == '\n':
+                        # New line started, update wrap style
+                        wrap = wrap_iterator.get_style_at(next_start)
+                        line.margin_top = margin_top_iterator.get_style_at(next_start)
+                        width = self._width - line.margin_left - line.margin_right
+                    else:
                         # If the glyph was any non-whitespace, non-newline
                         # character, add it to the pending run.
                         owner_accum.append(glyph)
@@ -492,42 +524,6 @@ class TextLayout(object):
 
         yield line
 
-    '''
-    # XXX merge me with _wrap (paragraph based).
-    def _flow_glyphs_nowrap(self, owner_iterator, glyphs):
-        font_iterator = self.document.get_font_runs()
-
-        line = Line(start)
-        x = 0
-        font = font_iterator.get_style_at(0)
-
-        for start, end, owner in owner_iterator:
-            font = font_iterator.get_style_at(start)
-
-            while '\n' in self.document.text[start:end]:
-                para_end = self.document.text.index('\n', start)
-                owner_glyphs = glyphs[start:para_end]
-                if owner_glyphs:
-                    line.add_glyph_run(GlyphRun(owner, font, owner_glyphs))
-
-                if not line.glyph_runs:
-                    line.ascent = font.ascent
-                    line.descent = font.descent
-                yield line
-                start = para_end + 1
-                line = Line(start)
-                
-            owner_glyphs = glyphs[start:end]
-            if owner_glyphs:
-                line.add_glyph_run(GlyphRun(owner, font, owner_glyphs))
-    
-        if not line.glyph_runs:
-            line.ascent = font.ascent
-            line.descent = font.descent
-        
-        yield line
-    '''
-
     def _flow_glyphs_single_line(self, glyphs, start, end):
         owner_iterator = \
             self.owner_runs.get_range_iterator().iter_range(start, end)
@@ -552,22 +548,24 @@ class TextLayout(object):
     def _flow_lines(self, lines, y, start, end):
         line_index = start
         for line in lines[start:]:
-            y -= line.ascent
+            y -= line.ascent + line.margin_top
 
             if line.align == 'left' or line.width > self.width:
-                line.x = 0
+                line.x = line.margin_left
             elif line.align == 'center':
-                line.x = self.width // 2 - line.width // 2
+                line.x = (self.width - line.margin_left - line.margin_right
+                          - line.width) // 2 + line.margin_left
             elif line.align == 'right':
-                line.x = self.width - line.width
+                line.x = self.width - line.margin_right - line.width
 
             # TODO incremental needs to reduce content width (trigger rescan
             # if deleted line has content width -- yikes)
-            self.content_width = max(self.content_width, line.width)
+            self.content_width = max(self.content_width, 
+                                     line.width + line.margin_left)
             if line.y == y and line_index >= end: 
                 break
             line.y = y
-            y += line.descent
+            y += line.descent - line.margin_bottom
             line_index += 1
         else:
             self.content_height = -y
@@ -779,7 +777,7 @@ class TextViewportLayout(TextLayout):
     # Offset of content within viewport
 
     def _set_view_x(self, view_x):
-        view_x = max(0, min(self.content_width - self.width, view_x) + 1)
+        view_x = max(0, min(self.content_width - self.width, view_x))
         self.top_state.view_x = view_x
         self.top_state.translate_x = self.top_state.scissor_x - view_x
 

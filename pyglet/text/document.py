@@ -27,7 +27,17 @@ The following character style attribute names are recognised by pyglet:
 The following paragraph style attribute names are recognised by pyglet:
 
 ``align``
-    ``left``, ``center`` or ``right``.
+    ``left`` (default), ``center`` or ``right``.
+``margin_left``
+    Left paragraph margin, in pixels.
+``margin_right``
+    Right paragraph margin, in pixels.
+``margin_top``
+    Margin above paragraph, in pixels.
+``margin_bottom``
+    Margin below paragraph, in pixels.  Adjacent margins do not collapse.
+``wrap``
+    Boolean.  If True (the default), text wraps within the width of the layout.
 
 Other attributes can be used to store additional style information within the
 document; it will be ignored by the built-in text classes.
