@@ -192,7 +192,7 @@ class Caret(object):
         '''Get the document's named style at the caret's current position.
 
         If there is a text selection and the style varies over the selection,
-        `pyglet.text.style.INDETERMINATE` is returned.
+        `pyglet.text.document.STYLE_INDETERMINATE` is returned.
 
         :Parameters:
             `attribute` : str

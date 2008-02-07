@@ -57,6 +57,9 @@ from pyglet.text import style
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
+#: The style attribute takes on multiple values in the document.
+STYLE_INDETERMINATE = 'indeterminate'
+
 class AbstractDocument(event.EventDispatcher):
     '''Abstract document interface used by all `pyglet.text` classes.
 
@@ -150,7 +153,7 @@ class AbstractDocument(event.EventDispatcher):
     def get_style_range(self, attribute, start, end):
         '''Get an attribute style over the given range.
 
-        If the style varies over the range, `style.INDETERMINATE` is returned.
+        If the style varies over the range, `STYLE_INDETERMINATE` is returned.
 
         :Parameters:
             `attribute` : str
@@ -161,12 +164,12 @@ class AbstractDocument(event.EventDispatcher):
                 Ending character position (exclusive).
 
         :return: The style set for the attribute over the given range, or
-            `style.INDETERMINATE` if more than one value is set.
+            `STYLE_INDETERMINATE` if more than one value is set.
         '''
         iter = self.get_style_runs(attribute)
-        _, value_end, value = iter.iter_range(start, end).next()
+        _, value_end, value = iter.ranges(start, end).next()
         if value_end < end:
-            return style.INDETERMINATE
+            return STYLE_INDETERMINATE
         else:
             return value
 
@@ -332,7 +335,7 @@ class UnformattedDocument(AbstractDocument):
 
     def get_style_runs(self, attribute):
         value = self.styles.get(attribute)
-        return style.StyleRunsRangeIterator(((0, len(self.text), value),))
+        return style.RunIterator(((0, len(self.text), value),)) # XXX broke
 
     def get_style(self, attribute, position=None):
         return self.styles.get(attribute)
@@ -350,7 +353,7 @@ class UnformattedDocument(AbstractDocument):
 
     def get_font_runs(self, dpi=None):
         ft = self.get_font(dpi=dpi)
-        return style.StyleRunsRangeIterator(((0, len(self.text), ft),))
+        return style.RunIterator(((0, len(self.text), ft),)) # XXX broke
 
     def get_font(self, position=None, dpi=None):
         from pyglet import font
@@ -374,13 +377,13 @@ class FormattedDocument(AbstractDocument):
 
     def get_style_runs(self, attribute):
         try:
-            return self._style_runs[attribute].get_range_iterator()
+            return iter(self._style_runs[attribute])
         except KeyError:
             return _no_style_range_iterator
 
     def get_style(self, attribute, position):
         try:
-            return self._style_runs[attribute].get_style_at(position)
+            return self._style_runs[attribute][position]
         except KeyError:
             return None
 
@@ -389,7 +392,7 @@ class FormattedDocument(AbstractDocument):
             try:
                 runs = self._style_runs[attribute]
             except KeyError:
-                runs = self._style_runs[attribute] = style.StyleRuns(0, None)
+                runs = self._style_runs[attribute] = style.RunList(0, None)
                 runs.insert(0, len(self._text))
             runs.set_style(start, end, value)
 
@@ -402,7 +405,7 @@ class FormattedDocument(AbstractDocument):
 
     def get_font(self, position, dpi=None):
         iter = self.get_font_runs(dpi)
-        return iter.get_style_at(position)
+        return iter[position]
 
     def _insert_text(self, start, text, attributes):
         super(FormattedDocument, self)._insert_text(start, text, attributes)
@@ -417,9 +420,9 @@ class FormattedDocument(AbstractDocument):
                     runs = self._style_runs[attribute]
                 except KeyError:
                     runs = self._style_runs[attribute] = \
-                        style.StyleRuns(0, None)
+                        style.RunList(0, None)
                     runs.insert(0, len(self.text))
-                runs.set_style(start, start + len_text, value)
+                runs.set_run(start, start + len_text, value)
 
     def _delete_text(self, start, end):
         super(FormattedDocument, self)._delete_text(start, end)
@@ -428,28 +431,28 @@ class FormattedDocument(AbstractDocument):
 
 class _FontStyleRunsRangeIterator(object):
     def __init__(self, font_names, font_sizes, bolds, italics, dpi):
-        self.zip_iter = style.ZipStyleRunsRangeIterator(
+        self.zip_iter = style.ZipRunIterator(
             (font_names, font_sizes, bolds, italics))
         self.dpi = dpi
 
-    def iter_range(self, start, end):
+    def ranges(self, start, end):
         from pyglet import font
-        for start, end, styles in self.zip_iter.iter_range(start, end):
+        for start, end, styles in self.zip_iter.ranges(start, end):
             font_name, font_size, bold, italic = styles
             ft = font.load(font_name, font_size, 
                            bold=bool(bold), italic=bool(italic), dpi=self.dpi)
             yield start, end, ft
 
-    def get_style_at(self, index):
+    def __getitem__(self, index):
         from pyglet import font
-        font_name, font_size, bold, italic = self.zip_iter.get_style_at(index)
+        font_name, font_size, bold, italic = self.zip_iter[index]
         return font.load(font_name, font_size,
                          bold=bool(bold), italic=bool(italic), dpi=self.dpi)
 
 class _NoStyleRangeIterator(object):
-    def iter_range(self, start, end):
+    def ranges(self, start, end):
         yield start, end, None
 
-    def get_style_at(self, index):
+    def __getitem__(self, index):
         return None
 _no_style_range_iterator = _NoStyleRangeIterator()

@@ -1,22 +1,62 @@
-#!/usr/bin/python
-# $Id:$
+'''Run list encoding utilities.
 
-#: The style attribute takes on multiple values in the document.
-INDETERMINATE = 'indeterminate'
+:since: pyglet 1.1
+'''
 
-class StyleRun(object):
-    def __init__(self, style, count):
-        self.style = style
+class _Run(object):
+    def __init__(self, value, count):
+        self.value = value
         self.count = count
 
     def __repr__(self):
-        return 'StyleRun(%r, %d)' % (self.style, self.count)
+        return 'Run(%r, %d)' % (self.value, self.count)
 
-class StyleRuns(object):
+class RunList(object):
+    '''List of contiguous runs of values.
+
+    A `RunList` is an efficient encoding of a sequence of values.  For
+    example, the sequence ``aaaabbccccc`` is encoded as ``(4, a), (2, b),
+    (5, c)``.  The class provides methods for modifying and querying the
+    run list without needing to deal with the tricky cases of splitting and
+    merging the run list entries.
+
+    Run lists are used to represent formatted character data in pyglet.  A
+    separate run list is maintained for each style attribute, for example,
+    bold, italic, font size, and so on.  Unless you are overriding the
+    document interfaces, the only interaction with run lists is via
+    `RunIterator`.
+
+    The length and ranges of a run list always refer to the character
+    positions in the decoded list.  For example, in the above sequence,
+    ``set_run(2, 5, 'x')`` would change the sequence to ``aaxxxbccccc``.
+    '''
     def __init__(self, size, initial):
-        self.runs = [StyleRun(initial, size)]
+        '''Create a run list of the given size and a default value.
+
+        :Parameters:
+            `size` : int
+                Number of characters to represent initially.
+            `initial` : object
+                The value of all characters in the run list.
+
+        '''
+        self.runs = [_Run(initial, size)]
 
     def insert(self, pos, length):
+        '''Insert characters into the run list.
+
+        The inserted characters will take on the value immediately preceding
+        the insertion point (or the value of the first character, if `pos` is
+        0).
+
+        :Parameters:
+            `pos` : int
+                Insertion index
+            `length` : int
+                Number of characters to insert.
+
+        '''
+
         i = 0
         for run in self.runs:
             if i <= pos <= i + run.count:
@@ -24,6 +64,15 @@ class StyleRuns(object):
             i += run.count
 
     def delete(self, start, end):
+        '''Remove characters from the run list.
+
+        :Parameters:
+            `start` : int
+                Starting index to remove from.
+            `end` : int
+                End index, exclusive.
+
+        '''
         i = 0
         for run in self.runs:
             if end - start == 0:
@@ -37,9 +86,20 @@ class StyleRuns(object):
 
         # Don't leave an empty list
         if not self.runs:
-            self.runs = [StyleRun(run.style, 0)]
+            self.runs = [_Run(run.value, 0)]
 
-    def set_style(self, start, end, style):
+    def set_run(self, start, end, value):
+        '''Set the value of a range of characters.
+
+        :Parameters:
+            `start` : int
+                Start index of range.
+            `end` : int
+                End of range, exclusive.
+            `value` : object
+                Value to set over the range.
+
+        '''
         if end - start <= 0:
             return
         
@@ -62,7 +122,7 @@ class StyleRuns(object):
         # Split runs
         if start_i is not None:
             run = self.runs[start_i]
-            self.runs.insert(start_i, StyleRun(run.style, start_trim))
+            self.runs.insert(start_i, _Run(run.value, start_trim))
             run.count -= start_trim
             if end_i is not None:
                 if end_i == start_i:
@@ -70,20 +130,20 @@ class StyleRuns(object):
                 end_i += 1
         if end_i is not None:
             run = self.runs[end_i]
-            self.runs.insert(end_i, StyleRun(run.style, end_trim))
+            self.runs.insert(end_i, _Run(run.value, end_trim))
             run.count -= end_trim
                 
-        # Set new style on runs
+        # Set new value on runs
         i = 0
         for run in self.runs:
             if start <= i and i + run.count <= end: 
-                run.style = style
+                run.value = value
             i += run.count 
 
         # Merge adjacent runs
         last_run = self.runs[0]
         for run in self.runs[1:]:
-            if run.style == last_run.style:
+            if run.value == last_run.value:
                 run.count += last_run.count
                 last_run.count = 0
             last_run = run
@@ -92,136 +152,241 @@ class StyleRuns(object):
         self.runs = [r for r in self.runs if r.count > 0]
 
     def __iter__(self):
-        i = 0
-        for run in self.runs:
-            yield i, i + run.count, run.style
-            i += run.count
+        '''Get an iterator over the run list.
 
-    def get_range_iterator(self):
-        return StyleRunsRangeIterator(self)
-    
-    def get_style_at(self, index):
+        :rtype: `RunIterator`
+        '''
+        return RunIterator(self)
+
+    def __getitem__(self, index):
+        '''Get the value at a character position.
+
+        :Parameters:
+            `index` : int
+                Index of character.  Must be within range and non-negative.
+
+        :rtype: object
+        '''
         i = 0
         for run in self.runs:
             if i <= index < i + run.count:
-                return run.style
+                return run.value
             i += run.count
 
         # Append insertion point
         if index == i:
-            return self.runs[-1].style
+            return self.runs[-1].value
 
         assert False, 'Index not in range'
 
     def __repr__(self):
         return str(list(self))
 
-class StyleRunsRangeIterator(object):
-    '''Perform sequential range iterations over a StyleRuns.'''
-    def __init__(self, style_runs):
-        self.iter = iter(style_runs)
-        self.curr_start, self.curr_end, self.curr_style = self.iter.next()
-    
-    def iter_range(self, start, end):
-        '''Iterate over range [start:end].  The range must be sequential from
-        the previous `iter_range` call.'''
-        while start >= self.curr_end:
-            self.curr_start, self.curr_end, self.curr_style = self.iter.next()
-        yield start, min(self.curr_end, end), self.curr_style
-        while end > self.curr_end:
-            self.curr_start, self.curr_end, self.curr_style = self.iter.next()
-            yield self.curr_start, min(self.curr_end, end), self.curr_style
+def _iter_runs(run_list):
+    i = 0
+    for run in run_list.runs:
+        yield i, i + run.count, run.value
+        i += run.count
 
-    def get_style_at(self, index):
-        while index >= self.curr_end:
-            self.curr_start, self.curr_end, self.curr_style = self.iter.next()
-        return self.curr_style
+class AbstractRunIterator(object):
+    '''Extended iteration over `RunList`.
 
-class OverriddenStyleRunsRangeIterator(object):
-    def __init__(self, base_iterator, start, end, style):
+    This class implements the *Iterator* and *Iterable* protocols.  The
+    iteration is over tuples of ``(start, end, value)``, where *start* and
+    *end* give the range of `value` within the document.  For example::
+
+        for start, end, value in iter(run_list):
+            pass
+
+    `RunIterator` objects also allow any monotonically non-decreasing
+    access of the iteration, including repeated iteration over the same index.
+    Use the ``[index]`` operator to get the value at a particular index within
+    the document.  For example::
+
+        run_iter = iter(run_list)
+        value = run_iter[0]
+        value = run_iter[0]       # non-decreasing access is OK
+        value = run_iter[15]
+        value = run_iter[17]
+        value = run_iter[16]      # this is illegal, the index decreased.
+
+    Using `RunIterator` to access increasing indices of the value runs is
+    more efficient than calling `RunList.__getitem__` repeatedly.
+
+    You can also iterate over monotonically non-decreasing ranges over the
+    iteration.  For example::
+        
+        run_iter = iter(run_list)
+        for start, end, value in run_iter.ranges(0, 20):
+            pass
+        for start, end, value in run_iter.ranges(25, 30):
+            pass
+        for start, end, value in run_iter.ranges(30, 40):
+            pass
+
+    Both start and end indices of the slice are required and must be positive.
+    '''
+
+    def __getitem__(self, index):
+        '''Get the value at a given index.
+
+        See the class documentation for examples of valid usage.
+
+        :Parameters:
+            `index` : int   
+                Document position to query.
+
+        :rtype: object
+        '''
+
+    def __iter__(self):
+        '''Implementation of iterable and iterator protocols.
+
+        Iterates over tuples of (start, end, value).
+        '''
+
+    def next(self):
+        '''Implementation of iterator protocol.
+        '''
+
+    def ranges(self, start, end):
+        '''Iterate over a subrange of the run list.
+
+        See the class documentation for examples of valid usage.
+
+        :Parameters:
+            `start` : int
+                Start index to iterate from.
+            `end` : int
+                End index, exclusive.
+
+        :rtype: iterator
+        :return: Iterator over (start, end, value) tuples.
+        '''
+
+class RunIterator(AbstractRunIterator):
+    def __init__(self, run_list):
+        self.next = _iter_runs(run_list).next
+        self.start, self.end, self.value = self.next()
+
+    def __iter__(self):
+        return self
+
+    # iter() needs to see this. (real next method is set in __init__)
+    def next(self):
+        raise RuntimeError()
+
+    def __getitem__(self, index):
+        while index >= self.end:
+            self.start, self.end, self.value = self.next()
+        return self.value
+
+    def ranges(self, start, end):
+        while start >= self.end:
+            self.start, self.end, self.value = self.next()
+        yield start, min(self.end, end), self.value
+        while end > self.end:
+            self.start, self.end, self.value = self.next()
+            yield self.start, min(self.end, end), self.value
+
+class OverriddenRunIterator(AbstractRunIterator):
+    '''Iterator over a `RunIterator`, with a value temporarily replacing
+    a given range.
+    '''
+    def __init__(self, base_iterator, start, end, value):
+        '''Create a derived iterator.
+
+        :Parameters:
+            `start` : int
+                Start of range to override
+            `end` : int
+                End of range to override, exclusive
+            `value` : object
+                Value to replace over the range
+
+        '''
         self.iter = base_iterator
         self.override_start = start
         self.override_end = end
-        self.override_style = style
+        self.override_value = value
 
-    def iter_range(self, start, end):
+    def ranges(self, start, end):
         if end <= self.override_start or start >= self.override_end:
             # No overlap
-            for r in self.iter.iter_range(start, end):
+            for r in self.iter.ranges(start, end):
                 yield r
         else:
             # Overlap: before, override, after
             if start < self.override_start < end:
-                for r in self.iter.iter_range(start, self.override_start):
+                for r in self.iter.ranges(start, self.override_start):
                     yield r
             yield (max(self.override_start, start),
                    min(self.override_end, end),
-                   self.override_style)
+                   self.override_value)
             if start < self.override_end < end:
-                for r in self.iter.iter_range(self.override_end, end):
+                for r in self.iter.ranges(self.override_end, end):
                     yield r
         
-    def get_style_at(self, index):
+    def __getitem__(self, index):
         if self.override_start <= index < self.override_end:
-            return self.override_style
+            return self.override_value
         else:
-            return self.iter.get_style_at(index)
+            return self.iter[index]
 
-class EnumeratedStyleRunsRangeIterator(object):
-    def __init__(self, base_iterator, values, default):
+class FilteredRunIterator(AbstractRunIterator):
+    '''Iterate over an `AbstractRunIterator` with filtered values replaced
+    by a default value.
+    '''
+    def __init__(self, base_iterator, filter, default):
+        '''Create a filtered run iterator.
+
+        :Parameters:
+            `base_iterator` : `AbstractRunIterator`
+                Source of runs.
+            `filter` : ``lambda object: bool``
+                Function taking a value as parameter, and returning ``True``
+                if the value is acceptable, and ``False`` if the default value
+                should be substituted.
+            `default` : object
+                Default value to replace filtered values.
+
+        '''
         self.iter = base_iterator
-        self.values = values
+        self.filter = filter
         self.default = default
 
-    def iter_range(self, start, end):
-        for start, end, value in self.iter.iter_range(start, end):
-            if value in self.values:
+    def ranges(self, start, end):
+        for start, end, value in self.iter.ranges(start, end):
+            if self.filter(value):
                 yield value
             else:
                 yield self.default
 
-    def get_style_at(self, index):
-        value = self.iter.get_style_at(index)
-        if value in self.values:
+    def __getitem__(self, index):
+        value = self.iter[index]
+        if self.filter(value):
             return value
         return self.default
 
-class DefaultStyleRunsRangeIterator(object):
-    def __init__(self, base_iterator, default):
-        self.iter = base_iterator
-        self.default = default
-
-    def iter_range(self, start, end):
-        for start, end, value in self.iter.iter_range(start, end):
-            if value is not None:
-                yield value
-            else:
-                yield self.default
-
-    def get_style_at(self, index):
-        value = self.iter.get_style_at(index)
-        if value is not None:
-            return value
-        return self.default
-
-class ZipStyleRunsRangeIterator(object):
+class ZipRunIterator(AbstractRunIterator):
+    '''Iterate over multiple run iterators concurrently.'''
     def __init__(self, range_iterators):
         self.range_iterators = range_iterators
 
-    def iter_range(self, start, end):
-        iterators = [i.iter_range(start, end) for i in self.range_iterators]
-        starts, ends, styles = zip(*[i.next() for i in iterators])
+    def ranges(self, start, end):
+        iterators = [i.ranges(start, end) for i in self.range_iterators]
+        starts, ends, values = zip(*[i.next() for i in iterators])
         starts = list(starts)
         ends = list(ends)
-        styles = list(styles)
+        values = list(values)
         while start < end:
             min_end = min(ends)
-            yield start, min_end, styles
+            yield start, min_end, values
             start = min_end
             for i, iterator in enumerate(iterators):
                 if ends[i] == min_end:
-                    starts[i], ends[i], styles[i] = iterator.next()
+                    starts[i], ends[i], values[i] = iterator.next()
 
-    def get_style_at(self, index):
-        return [i.get_style_at(index) for i in self.range_iterators]
+    def __getitem__(self, index):
+        return [i[index] for i in self.range_iterators]
 

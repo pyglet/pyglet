@@ -317,7 +317,7 @@ class TextLayout(object):
         glyphs = []
         runs = self._document.get_font_runs()
         text = self._document.text
-        for start, end, font in runs.iter_range(0, len(text)):
+        for start, end, font in runs.ranges(0, len(text)):
             glyphs.extend(font.get_glyphs(text[start:end]))
         return glyphs
 
@@ -327,10 +327,10 @@ class TextLayout(object):
         # TODO avoid glyph slice on non-incremental
         for i, glyph in enumerate(glyphs[start:end]):
             if owner != glyph.owner:
-                owner_runs.set_style(run_start, i + start, owner)
+                owner_runs.set_run(run_start, i + start, owner)
                 owner = glyph.owner
                 run_start = i + start
-        owner_runs.set_style(run_start, end, owner)    
+        owner_runs.set_run(run_start, end, owner)    
 
     def _flow_glyphs(self, glyphs, start, end):
         # TODO change flow generator on self, avoiding this conditional.
@@ -347,34 +347,37 @@ class TextLayout(object):
         Fits `glyphs` in range `start` to `end` into `Line`s which are
         then yielded.
         '''
-        owner_iterator = \
-            self.owner_runs.get_range_iterator().iter_range(start, end)
+        owner_iterator = iter(self.owner_runs).ranges(start, end)
 
         font_iterator = self._document.get_font_runs()
 
-        align_iterator = style.EnumeratedStyleRunsRangeIterator(
+        align_iterator = style.FilteredRunIterator(
             self._document.get_style_runs('align'),
-            ('left', 'right', 'center'), 
+            lambda value: value in ('left', 'right', 'center'), 
             'left')
-        wrap_iterator = style.EnumeratedStyleRunsRangeIterator(
+        wrap_iterator = style.FilteredRunIterator(
             self._document.get_style_runs('wrap'),
-            (True, False),
+            lambda value: value in (True, False),
             True)
-        margin_left_iterator = style.DefaultStyleRunsRangeIterator(
-            self._document.get_style_runs('margin_left'), 0)
-        margin_right_iterator = style.DefaultStyleRunsRangeIterator(
-            self._document.get_style_runs('margin_right'), 0)
-        margin_top_iterator = style.DefaultStyleRunsRangeIterator(
-            self._document.get_style_runs('margin_top'), 0)
-        margin_bottom_iterator = style.DefaultStyleRunsRangeIterator(
-            self._document.get_style_runs('margin_bottom'), 0)
+        margin_left_iterator = style.FilteredRunIterator(
+            self._document.get_style_runs('margin_left'), 
+            lambda value: value is not None, 0)
+        margin_right_iterator = style.FilteredRunIterator(
+            self._document.get_style_runs('margin_right'),
+            lambda value: value is not None, 0)
+        margin_top_iterator = style.FilteredRunIterator(
+            self._document.get_style_runs('margin_top'),
+            lambda value: value is not None, 0)
+        margin_bottom_iterator = style.FilteredRunIterator(
+            self._document.get_style_runs('margin_bottom'),
+            lambda value: value is not None, 0)
 
         line = Line(start)
-        line.align = align_iterator.get_style_at(start)
-        line.margin_left = margin_left_iterator.get_style_at(start)
-        line.margin_right = margin_right_iterator.get_style_at(start)
-        line.margin_top = margin_top_iterator.get_style_at(start)
-        wrap = wrap_iterator.get_style_at(start)
+        line.align = align_iterator[start]
+        line.margin_left = margin_left_iterator[start]
+        line.margin_right = margin_right_iterator[start]
+        line.margin_top = margin_top_iterator[start]
+        wrap = wrap_iterator[start]
         width = self._width - line.margin_left - line.margin_right
 
         # Current right-most x position in line being laid out.
@@ -388,7 +391,7 @@ class TextLayout(object):
         # but broken into lines.
         font = None
         for start, end, owner in owner_iterator:
-            font = font_iterator.get_style_at(start)
+            font = font_iterator[start]
 
             # Glyphs accumulated in this owner but not yet committed to a
             # line.
@@ -477,20 +480,19 @@ class TextLayout(object):
                         if line.glyph_runs or text == '\n':
                             if text == '\n':
                                 line.margin_bottom = \
-                                    margin_bottom_iterator.get_style_at(next_start - 1)
+                                    margin_bottom_iterator[next_start - 1]
                             yield line
                             line = Line(next_start)
-                            line.align = align_iterator.get_style_at(next_start)
-                            line.margin_left = \
-                                margin_left_iterator.get_style_at(next_start)
+                            line.align = align_iterator[next_start]
+                            line.margin_left = margin_left_iterator[next_start]
                             line.margin_right = \
-                                margin_right_iterator.get_style_at(next_start)
+                                margin_right_iterator[next_start]
                             x = run_accum_width + owner_accum_width
 
                     if text == '\n':
                         # New line started, update wrap style
-                        wrap = wrap_iterator.get_style_at(next_start)
-                        line.margin_top = margin_top_iterator.get_style_at(next_start)
+                        wrap = wrap_iterator[next_start]
+                        line.margin_top = margin_top_iterator[next_start]
                         width = self._width - line.margin_left - line.margin_right
                     else:
                         # If the glyph was any non-whitespace, non-newline
@@ -525,17 +527,16 @@ class TextLayout(object):
         yield line
 
     def _flow_glyphs_single_line(self, glyphs, start, end):
-        owner_iterator = \
-            self.owner_runs.get_range_iterator().iter_range(start, end)
+        owner_iterator = iter(self.owner_runs).ranges(start, end)
 
         font_iterator = self.document.get_font_runs()
 
         line = Line(start)
         x = 0
-        font = font_iterator.get_style_at(0)
+        font = font_iterator[0]
 
         for start, end, owner in owner_iterator:
-            font = font_iterator.get_style_at(start)
+            font = font_iterator[start]
             owner_glyphs = glyphs[start:end]
             line.add_glyph_run(GlyphRun(owner, font, owner_glyphs))
     
@@ -603,7 +604,7 @@ class TextLayout(object):
             
             # Text color
             colors = []
-            for start, end, color in colors_iter.iter_range(i, i+n_glyphs):
+            for start, end, color in colors_iter.ranges(i, i+n_glyphs):
                 if color is None:
                     color = (0, 0, 0, 255)
                 colors.extend(color * ((end - start) * 4))
@@ -618,7 +619,7 @@ class TextLayout(object):
             background_vertices = []
             background_colors = []
             background_vertex_count = 0
-            for start, end, bg in background_iter.iter_range(i, i+n_glyphs):
+            for start, end, bg in background_iter.ranges(i, i+n_glyphs):
                 if bg is None:
                     for glyph in glyph_run.glyphs[start - i:end - i]:
                         x1 += glyph.advance
@@ -830,7 +831,7 @@ class IncrementalTextLayout(TextViewportLayout):
         self.invalid_vertex_lines = InvalidRange()
         self.visible_lines = InvalidRange()
 
-        self.owner_runs = style.StyleRuns(0, None)
+        self.owner_runs = style.RunList(0, None)
 
         super(IncrementalTextLayout, self).__init__(
             document, width, height, multiline, batch, state_order)
@@ -921,7 +922,7 @@ class IncrementalTextLayout(TextViewportLayout):
 
         # Update glyphs
         runs = self.document.get_font_runs()
-        for start, end, font in runs.iter_range(invalid_start, invalid_end):
+        for start, end, font in runs.ranges(invalid_start, invalid_end):
             text = self.document.text[start:end]
             self.glyphs[start:end] = font.get_glyphs(text)
 
@@ -1045,12 +1046,12 @@ class IncrementalTextLayout(TextViewportLayout):
         colors_iter = self.document.get_style_runs('color')
         background_iter = self.document.get_style_runs('background_color')
         if self._selection_end - self._selection_start > 0:
-            colors_iter = style.OverriddenStyleRunsRangeIterator(
+            colors_iter = style.OverriddenRunIterator(
                 colors_iter,
                 self._selection_start, 
                 self._selection_end,
                 self._selection_color)
-            background_iter = style.OverriddenStyleRunsRangeIterator(
+            background_iter = style.OverriddenRunIterator(
                 background_iter,
                 self._selection_start, 
                 self._selection_end,
