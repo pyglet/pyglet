@@ -157,10 +157,12 @@ class TestWindow(window.Window):
 
     def on_resize(self, width, height):
         super(TestWindow, self).on_resize(width, height)
+        self.layout.begin_update()
         self.layout.x = self.margin
         self.layout.y = self.height - self.margin
         self.layout.width = width - self.margin * 2
         self.layout.height = height - self.margin * 2
+        self.layout.end_update()
         self.caret._update() # XXX
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):

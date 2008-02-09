@@ -189,6 +189,8 @@ class TextLayout(object):
     background_state = TextLayoutForegroundState(0, top_state)
     foreground_state = TextLayoutForegroundState(1, top_state)
 
+    _update_enabled = True
+
     def __init__(self, document, multiline=False, batch=None, state_order=0):
         self.content_width = 0
         self.content_height = 0
@@ -202,6 +204,28 @@ class TextLayout(object):
 
         self.multiline = multiline
         self.document = document       
+
+    def begin_update(self):
+        '''Indicate that a number of changes to the layout or document
+        are about to occur.
+
+        Changes to the layout or document between calls to `begin_update` and
+        `end_update` do not trigger any costly relayout of text.  Relayout of
+        all changes is performed when `end_update` is called.
+
+        Note that between the `begin_update` and `end_update` calls, values
+        such as `content_width` are undefined (i.e., they may or may not
+        be updated to reflect the latest changes).
+        '''
+        self._update_enabled = False
+
+    def end_update(self):
+        '''Perform pending layout changes since `begin_update`.
+
+        See `begin_update`.
+        '''
+        self._update_enabled = True
+        self._update()
 
     def delete(self):
         # TODO incremental
@@ -233,6 +257,9 @@ class TextLayout(object):
     document = property(_get_document, _set_document)
 
     def _update(self):
+        if not self._update_enabled:
+            return
+
         for _vertex_list in self._vertex_lists:
             _vertex_list.delete()
         self._vertex_lists = []
@@ -890,6 +917,7 @@ class IncrementalTextLayout(TextViewportLayout):
             self.invalid_flow.invalidate(0, 1)
         else:
             self.invalid_flow.invalidate(start - 1, start)
+
         self._update()
 
     def on_style_text(self, start, end, attributes):
@@ -907,6 +935,9 @@ class IncrementalTextLayout(TextViewportLayout):
         self._update()
 
     def _update(self):
+        if not self._update_enabled:
+            return
+
         # Special care if there is no text:
         if not self.glyphs:
             for line in self.lines:

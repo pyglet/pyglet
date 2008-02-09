@@ -358,7 +358,7 @@ class Caret(object):
 
         text = text.replace('\r', '\n')
         self._layout.document.insert_text(self.position, text,
-                                            self._next_attributes)
+                                          self._next_attributes)
         self._position += len(text)
         self._nudge()
         self._update()
