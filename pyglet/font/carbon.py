@@ -130,10 +130,34 @@ carbon.CGBitmapContextCreate.restype = POINTER(c_void_p)
 UniCharArrayOffset  = c_uint32
 UniCharCount = c_uint32
 
-def fixed(value):
-    # This is a guess... could easily be wrong
-    #return c_int32(int(value) * (1 << 16))
+kATSULayoutOperationJustification = 1
+kATSULayoutOperationPostLayoutAdjustment = 0x20
+kATSULayoutOperationCallbackStatusHandled = 0
+kATSULayoutOperationCallbackStatusContinue = c_long(1)
+kATSULayoutOperationOverrideTag = 15
+kATSUDirectDataAdvanceDeltaFixedArray = 0
+kATSUDirectDataDeviceDeltaSInt16Array = 2
+kATSUDirectDataLayoutRecordATSLayoutRecordVersion1 = 100
 
+ATSUDirectLayoutOperationOverrideUPP = CFUNCTYPE(c_int,
+    c_int, c_void_p, c_uint32, c_void_p, POINTER(c_int))
+
+class ATSULayoutOperationOverrideSpecifier(Structure):
+    _fields_ = [
+        ('operationSelector', c_uint32),
+        ('overrideUPP', ATSUDirectLayoutOperationOverrideUPP)
+    ]
+
+class ATSLayoutRecord(Structure):
+    _pack_ = 2
+    _fields_ = [
+        ('glyphID', c_uint16),
+        ('flags', c_uint32),
+        ('originalOffset', c_uint32),
+        ('realPos', Fixed),
+    ]
+
+def fixed(value):
     return c_int32(carbon.Long2Fix(c_long(int(value))))
 
 carbon.Fix2X.restype = c_double
@@ -162,7 +186,8 @@ def set_layout_attributes(layout, attributes):
         values = (c_void_p * len(values))(*[cast(pointer(v), c_void_p) \
                                             for v in values])
 
-        carbon.ATSUSetLayoutControls(layout, len(tags), tags, sizes, values)
+        r = carbon.ATSUSetLayoutControls(layout, len(tags), tags, sizes, values)
+        _oscheck(r)
 
 def str_ucs2(text):
     if byteorder == 'big':
@@ -171,10 +196,13 @@ def str_ucs2(text):
         text = text.encode('utf_16_le')   # explicit endian avoids BOM
     return create_string_buffer(text + '\0')
 
+
 class CarbonGlyphRenderer(base.GlyphRenderer):
     _bitmap = None
     _bitmap_context = None
     _bitmap_rect = None
+
+    _glyph_advance = 0 # set through callback
 
     def __init__(self, font):
         super(CarbonGlyphRenderer, self).__init__(font)
@@ -185,16 +213,42 @@ class CarbonGlyphRenderer(base.GlyphRenderer):
         if self._bitmap_context:
             carbon.CGContextRelease(self._bitmap_context)
 
+    def _layout_callback(self, operation, line, ref, extra, callback_status):
+        records = c_void_p()
+        n_records = c_uint()
+
+        r = carbon.ATSUDirectGetLayoutDataArrayPtrFromLineRef(line,
+            kATSUDirectDataLayoutRecordATSLayoutRecordVersion1,
+            0,
+            byref(records),
+            byref(n_records))
+        _oscheck(r)
+
+        records = cast(records, 
+                       POINTER(ATSLayoutRecord * n_records.value)).contents
+        self._glyph_advance = fix2float(records[-1].realPos)
+
+        callback_status.contents = kATSULayoutOperationCallbackStatusContinue
+        return 0
+
     def render(self, text):
         # Convert text to UCS2
         text_len = len(text)
         text = str_ucs2(text)
 
+        # Create layout override handler to extract device advance value.
+        override_spec = ATSULayoutOperationOverrideSpecifier()
+        override_spec.operationSelector = \
+            kATSULayoutOperationPostLayoutAdjustment
+        override_spec.overrideUPP = \
+            ATSUDirectLayoutOperationOverrideUPP(self._layout_callback)
+
         # Create ATSU text layout for this text and font
         layout = c_void_p()
         carbon.ATSUCreateTextLayout(byref(layout))
         set_layout_attributes(layout, {
-            kATSUCGContextTag: self._bitmap_context})
+            kATSUCGContextTag: self._bitmap_context,
+            kATSULayoutOperationOverrideTag: override_spec})
         carbon.ATSUSetTextPointerLocation(layout,
             text,
             kATSUFromTextBeginning,
@@ -229,26 +283,22 @@ class CarbonGlyphRenderer(base.GlyphRenderer):
             set_layout_attributes(layout, {
                 kATSUCGContextTag: self._bitmap_context})
 
-        # Get typographic box, which gives advance.
-        bounds_actual = c_uint32()
-        bounds = ATSTrapezoid()
-        carbon.ATSUGetGlyphBounds(
-            layout,
-            0, 0,
-            kATSUFromTextBeginning,
-            kATSUToTextEnd,
-            kATSUseDeviceOrigins,
-            1,
-            byref(bounds),
-            byref(bounds_actual))
-        advance = fix2float(bounds.lowerRight.x) - fix2float(bounds.lowerLeft.x)
-
         # Draw to the bitmap
         carbon.CGContextClearRect(self._bitmap_context, self._bitmap_rect)
         carbon.ATSUDrawText(layout,
             0,
             kATSUToTextEnd,
             fixed(-lsb + 1), fixed(baseline)) 
+
+        advance = self._glyph_advance
+
+        # Round advance to nearest int.  It actually looks good with sub-pixel
+        # advance as well -- Helvetica at 12pt is more tightly spaced, but
+        # Times New Roman at 12pt is too light.  With integer positioning
+        # overall look seems darker and perhaps more uniform.  It's also more
+        # similar (programmatically) to Win32 and FreeType.  Still, worth
+        # messing around with (comment out next line) if you're interested.
+        advance = int(round(advance))
         
         # A negative pitch is required, but it is much faster to load the
         # glyph upside-down and flip the tex_coords.  Note region used
