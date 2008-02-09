@@ -191,7 +191,8 @@ class TextLayout(object):
 
     _update_enabled = True
 
-    def __init__(self, document, multiline=False, batch=None, state_order=0):
+    def __init__(self, document, multiline=False, dpi=None, 
+                 batch=None, state_order=0):
         self.content_width = 0
         self.content_height = 0
 
@@ -203,7 +204,18 @@ class TextLayout(object):
         self.batch = batch
 
         self.multiline = multiline
+        if dpi is None:
+            if sys.platform == 'darwin':
+                dpi = 72
+            else:
+                dpi = 96
+        self._dpi = dpi
         self.document = document       
+
+    def _points_to_pixels(self, points):
+        if points is None:
+            return None
+        return int(self._dpi * points / 72)
 
     def begin_update(self):
         '''Indicate that a number of changes to the layout or document
@@ -226,6 +238,14 @@ class TextLayout(object):
         '''
         self._update_enabled = True
         self._update()
+
+    dpi = property(lambda self: self._dpi, 
+                   doc='''Get DPI used by this layout.
+
+    Read-only.
+
+    :type: float
+    ''')
 
     def delete(self):
         # TODO incremental
@@ -337,7 +357,7 @@ class TextLayout(object):
 
     def _get_glyphs(self):
         glyphs = []
-        runs = self._document.get_font_runs()
+        runs = self._document.get_font_runs(dpi=self._dpi)
         text = self._document.text
         for start, end, font in runs.ranges(0, len(text)):
             glyphs.extend(font.get_glyphs(text[start:end]))
@@ -371,7 +391,7 @@ class TextLayout(object):
         '''
         owner_iterator = iter(self.owner_runs).ranges(start, end)
 
-        font_iterator = self._document.get_font_runs()
+        font_iterator = self._document.get_font_runs(dpi=self._dpi)
 
         align_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs('align'),
@@ -537,7 +557,7 @@ class TextLayout(object):
         if not line.glyph_runs:
             # Empty line gets font's line-height
             if font is None:
-                font = self._document.get_font(0)
+                font = self._document.get_font(0, dpi=self._dpi)
             line.ascent = font.ascent
             line.descent = font.descent
 
@@ -546,7 +566,7 @@ class TextLayout(object):
     def _flow_glyphs_single_line(self, glyphs, start, end):
         owner_iterator = iter(self.owner_runs).ranges(start, end)
 
-        font_iterator = self.document.get_font_runs()
+        font_iterator = self.document.get_font_runs(dpi=self._dpi)
 
         line = Line(start)
         x = 0
@@ -570,29 +590,41 @@ class TextLayout(object):
         margin_bottom_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs('margin_bottom'),
             lambda value: value is not None, 0)
+        line_spacing_iterator = self._document.get_style_runs('line_spacing')
+        leading_iterator = runlist.FilteredRunIterator(
+            self._document.get_style_runs('leading'),
+            lambda value: value is not None, 0)
 
         if start == 0:
             y =  0
         else:
             line = lines[start - 1]
-            y = line.y + line.descent
+            line_spacing = \
+                self._points_to_pixels(line_spacing_iterator[line.start])
+            leading = \
+                self._points_to_pixels(leading_iterator[line.start])
+
+            y = line.y
+            if line_spacing is None:
+                y += line.descent
             if line.paragraph_end:
                 y -= margin_bottom_iterator[line.start]
+
 
         line_index = start
         for line in lines[start:]:
-            y -= line.ascent
             if line.paragraph_begin:
                 y -= margin_top_iterator[line.start]
-
-            if line.y == y and line_index >= end: 
-                break
-            line.y = y
-
-            y += line.descent
-            if line.paragraph_end:
-                y -= margin_bottom_iterator[line.start]
-
+                line_spacing = \
+                    self._points_to_pixels(line_spacing_iterator[line.start])
+                leading = self._points_to_pixels(leading_iterator[line.start])
+            else:
+                y -= leading
+            
+            if line_spacing is None:
+                y -= line.ascent
+            else:
+                y -= line_spacing
             if line.align == 'left' or line.width > self.width:
                 line.x = line.margin_left
             elif line.align == 'center':
@@ -605,6 +637,18 @@ class TextLayout(object):
             # if deleted line has content width -- yikes)
             self.content_width = max(self.content_width, 
                                      line.width + line.margin_left)
+
+            if line.y == y and line_index >= end: 
+                # Early exit: all invalidated lines have been reflowed and the
+                # next line has no change (therefore subsequent lines do not
+                # need to be changed).
+                break
+            line.y = y
+
+            if line_spacing is None:
+                y += line.descent
+            if line.paragraph_end:
+                y -= margin_bottom_iterator[line.start]
 
             line_index += 1
         else:
@@ -763,12 +807,12 @@ class TextLayout(object):
     valign = property(_get_valign, _set_valign)
 
 class TextViewportLayout(TextLayout):
-    def __init__(self, document, width, height, multiline=False,
+    def __init__(self, document, width, height, multiline=False, dpi=None,
                  batch=None, state_order=0):
         self._width = width
         self._height = height
         super(TextViewportLayout, self).__init__(
-            document, multiline, batch, state_order)
+            document, multiline, dpi, batch, state_order)
 
     def _init_states(self, state_order):
         self.top_state = TextViewportLayoutState(state_order)
@@ -858,7 +902,7 @@ class TextViewportLayout(TextLayout):
 class IncrementalTextLayout(TextViewportLayout):
     '''Displayed text suitable for interactive editing and/or scrolling
     large documents.'''
-    def __init__(self, document, width, height, multiline=False, 
+    def __init__(self, document, width, height, multiline=False, dpi=None,
                  batch=None, state_order=0):
         self.glyphs = []
         self.lines = []
@@ -873,7 +917,7 @@ class IncrementalTextLayout(TextViewportLayout):
         self.owner_runs = runlist.RunList(0, None)
 
         super(IncrementalTextLayout, self).__init__(
-            document, width, height, multiline, batch, state_order)
+            document, width, height, multiline, dpi, batch, state_order)
 
     def _init_document(self):
         assert self._document, \
@@ -944,7 +988,7 @@ class IncrementalTextLayout(TextViewportLayout):
                 line.delete_vertex_lists()
             del self.lines[:]
             self.lines.append(Line(0))
-            font = self.document.get_font(0)
+            font = self.document.get_font(0, dpi=self._dpi)
             self.lines[0].ascent = font.ascent
             self.lines[0].descent = font.descent
             self.invalid_lines.invalidate(0, 1)
@@ -962,7 +1006,7 @@ class IncrementalTextLayout(TextViewportLayout):
             return
 
         # Update glyphs
-        runs = self.document.get_font_runs()
+        runs = self.document.get_font_runs(dpi=self._dpi)
         for start, end, font in runs.ranges(invalid_start, invalid_end):
             text = self.document.text[start:end]
             self.glyphs[start:end] = font.get_glyphs(text)

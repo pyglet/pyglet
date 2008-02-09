@@ -41,9 +41,23 @@ This text has some {bold True}bold character style{bold False}, some
 This paragraph uses {font_name 'Courier New'}Courier New{font_name None} and
 {font_name 'Times New Roman'}Times New Roman{font_name None} fonts.
 
-{.align 'left'}This paragraph is left aligned. Lorem ipsum dolor
-sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut
-labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+{.leading 5}This paragraph has 5pts leading. Lorem ipsum dolor sit amet,
+consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
+dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui
+officia deserunt mollit anim id est laborum.
+
+{.leading None}{.line_spacing 12}This paragraph has constant line spacing of
+12pt.  When an {font_size 18}18pt font is used{font_size None}, the text
+overlaps and the baselines stay equally spaced. Lorem ipsum dolor sit amet,
+consectetur adipisicing elit, {font_size 18}sed do eiusmod tempor incididunt
+ut labore et dolore{font_size None} magna aliqua. 
+
+{.line_spacing None}{.align 'left'}This paragraph is left aligned. Lorem ipsum
+dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt
+ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
 exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis
 aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
 fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in

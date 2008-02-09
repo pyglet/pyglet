@@ -28,6 +28,13 @@ The following paragraph style attribute names are recognised by pyglet:
 
 ``align``
     ``left`` (default), ``center`` or ``right``.
+``leading``
+    Additional space to insert between consecutive lines within a paragraph,
+    in points.  Defaults to 0.
+``line_spacing``
+    Distance between consecutive baselines in a paragraph, in points.
+    Defaults to ``None``, which automatically calculates the tightest line
+    spacing for each line based on the font ascent and descent.
 ``margin_left``
     Left paragraph margin, in pixels.
 ``margin_right``
