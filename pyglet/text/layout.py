@@ -12,12 +12,22 @@ class Line(object):
 
     margin_left = 0
     margin_right = 0
-    margin_bottom = 0
-    margin_top = 0
+
+    length = 0
+        
+    ascent = 0
+    descent = 0
+    width = 0
+    paragraph_begin = False
+    paragraph_end = False
+
+    x = None
+    y = None
 
     def __init__(self, start):
         self.vertex_lists = []
-        self.clear(start)
+        self.start = start
+        self.glyph_runs = []
 
     def __repr__(self):
         return 'Line(%r)' % self.glyph_runs
@@ -34,21 +44,6 @@ class Line(object):
             list.delete()
 
         self.vertex_lists = []
-
-    def clear(self, start):
-        # XXX clear() is redundant? lines get reconstructed anyway? 
-        self.start = start
-        self.length = 0
-        
-        self.glyph_runs = []
-        self.ascent = 0
-        self.descent = 0
-        self.width = 0
-
-        self.x = None
-        self.y = None
-
-        self.delete_vertex_lists()
 
 class GlyphRun(object):
     def __init__(self, owner, font, glyphs, width):
@@ -251,7 +246,7 @@ class TextLayout(object):
         self._get_owner_runs(owner_runs, glyphs, 0, len_text)
         lines = [line for line in self._flow_glyphs(glyphs, 0, len_text)]
         self.content_width = 0
-        self._flow_lines(lines, 0, 0, len(lines))
+        self._flow_lines(lines, 0, len(lines))
 
         colors_iter = self._document.get_style_runs('color')
         background_iter = self._document.get_style_runs('background_color')
@@ -365,18 +360,13 @@ class TextLayout(object):
         margin_right_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs('margin_right'),
             lambda value: value is not None, 0)
-        margin_top_iterator = runlist.FilteredRunIterator(
-            self._document.get_style_runs('margin_top'),
-            lambda value: value is not None, 0)
-        margin_bottom_iterator = runlist.FilteredRunIterator(
-            self._document.get_style_runs('margin_bottom'),
-            lambda value: value is not None, 0)
-
+        
         line = Line(start)
         line.align = align_iterator[start]
+        if start == 0 or self.document.text[start - 1] == '\n':
+            line.paragraph_begin = True
         line.margin_left = margin_left_iterator[start]
         line.margin_right = margin_right_iterator[start]
-        line.margin_top = margin_top_iterator[start]
         wrap = wrap_iterator[start]
         width = self._width - line.margin_left - line.margin_right
 
@@ -479,20 +469,20 @@ class TextLayout(object):
                         # something is committed).
                         if line.glyph_runs or text == '\n':
                             if text == '\n':
-                                line.margin_bottom = \
-                                    margin_bottom_iterator[next_start - 1]
+                                line.paragraph_end = True
                             yield line
                             line = Line(next_start)
                             line.align = align_iterator[next_start]
                             line.margin_left = margin_left_iterator[next_start]
                             line.margin_right = \
                                 margin_right_iterator[next_start]
+                            if text == '\n':
+                                line.paragraph_begin = True
                             x = run_accum_width + owner_accum_width
 
                     if text == '\n':
                         # New line started, update wrap style
                         wrap = wrap_iterator[next_start]
-                        line.margin_top = margin_top_iterator[next_start]
                         width = self._width - line.margin_left - line.margin_right
                     else:
                         # If the glyph was any non-whitespace, non-newline
@@ -546,10 +536,35 @@ class TextLayout(object):
 
         yield line 
 
-    def _flow_lines(self, lines, y, start, end):
+    def _flow_lines(self, lines, start, end):
+        margin_top_iterator = runlist.FilteredRunIterator(
+            self._document.get_style_runs('margin_top'),
+            lambda value: value is not None, 0)
+        margin_bottom_iterator = runlist.FilteredRunIterator(
+            self._document.get_style_runs('margin_bottom'),
+            lambda value: value is not None, 0)
+
+        if start == 0:
+            y =  0
+        else:
+            line = lines[start - 1]
+            y = line.y + line.descent
+            if line.paragraph_end:
+                y -= margin_bottom_iterator[line.start]
+
         line_index = start
         for line in lines[start:]:
-            y -= line.ascent + line.margin_top
+            y -= line.ascent
+            if line.paragraph_begin:
+                y -= margin_top_iterator[line.start]
+
+            if line.y == y and line_index >= end: 
+                break
+            line.y = y
+
+            y += line.descent
+            if line.paragraph_end:
+                y -= margin_bottom_iterator[line.start]
 
             if line.align == 'left' or line.width > self.width:
                 line.x = line.margin_left
@@ -563,10 +578,7 @@ class TextLayout(object):
             # if deleted line has content width -- yikes)
             self.content_width = max(self.content_width, 
                                      line.width + line.margin_left)
-            if line.y == y and line_index >= end: 
-                break
-            line.y = y
-            y += line.descent - line.margin_bottom
+
             line_index += 1
         else:
             self.content_height = -y
@@ -899,10 +911,8 @@ class IncrementalTextLayout(TextViewportLayout):
         if not self.glyphs:
             for line in self.lines:
                 line.delete_vertex_lists()
-            del self.lines[1:]
-            if not self.lines:
-                self.lines.append(Line(0))
-            self.lines[0].clear(0)
+            del self.lines[:]
+            self.lines.append(Line(0))
             font = self.document.get_font(0)
             self.lines[0].ascent = font.ascent
             self.lines[0].descent = font.descent
@@ -952,7 +962,8 @@ class IncrementalTextLayout(TextViewportLayout):
         try:
             line = self.lines[line_index]
             invalid_start = min(invalid_start, line.start)
-            line.clear(invalid_start)
+            line.delete_vertex_lists() 
+            line = self.lines[line_index] = Line(invalid_start)
             self.invalid_lines.invalidate(line_index, line_index + 1)
         except IndexError:
             line_index = 0
@@ -996,14 +1007,7 @@ class IncrementalTextLayout(TextViewportLayout):
         if invalid_end - invalid_start <= 0:
             return
 
-        if invalid_start == 0:
-            y = 0
-        else:
-            last = self.lines[invalid_start - 1]
-            y = last.y + last.descent
-        
-        invalid_end = self._flow_lines(self.lines, y, 
-            invalid_start, invalid_end)
+        invalid_end = self._flow_lines(self.lines, invalid_start, invalid_end)
 
         # Invalidate lines that need new vertex lists.
         self.invalid_vertex_lines.invalidate(invalid_start, invalid_end)
