@@ -41,6 +41,14 @@ in red{underline None}, a {color [255, 0, 0, 255]}change {color [0, 255, 0,
 {kerning 2}This sentence has 3pt kerning.{kerning 0} 
 {kerning -1}This sentence has negative 1pt kerning.{kerning 0}
 
+Superscript is emulated by setting a positive baseline offset and reducing the
+font size, as in 
+a{font_size 9}{baseline 4}2{font_size None}{baseline 0} +
+b{font_size 9}{baseline 4}2{font_size None}{baseline 0} =
+c{font_size 9}{baseline 4}2{font_size None}{baseline 0}.
+Subscript is similarly emulated with a negative baseline offset, as in 
+H{font_size 9}{baseline -3}2{font_size None}{baseline 0}O.
+
 This paragraph uses {font_name 'Courier New'}Courier New{font_name None} and
 {font_name 'Times New Roman'}Times New Roman{font_name None} fonts.
 

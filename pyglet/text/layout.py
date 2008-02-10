@@ -723,7 +723,12 @@ class TextLayout(object):
 
         underline_iter = self._document.get_style_runs('underline')
         decoration_iter = runlist.ZipRunIterator(
-            (background_iter, underline_iter))
+            (background_iter, 
+             underline_iter))
+
+        baseline_iter = runlist.FilteredRunIterator(
+            self._document.get_style_runs('baseline'),
+            lambda value: value is not None, 0)
 
         for glyph_run in glyph_runs:
             assert glyph_run.glyphs
@@ -737,17 +742,19 @@ class TextLayout(object):
             n_glyphs = len(glyph_run.glyphs)
             vertices = []
             tex_coords = []
-            for kern, glyph in glyph_run.glyphs:
-                x0 += kern
-                v0, v1, v2, v3 = glyph.vertices
-                v0 += x0
-                v2 += x0
-                v1 += y
-                v3 += y
-                vertices.extend([v0, v1, v2, v1, v2, v3, v0, v3])
-                t = glyph.tex_coords
-                tex_coords.extend(t)
-                x0 += glyph.advance
+            for start, end, baseline in baseline_iter.ranges(i, i+n_glyphs):
+                baseline = self._points_to_pixels(baseline)
+                for kern, glyph in glyph_run.glyphs[start - i:end - i]:
+                    x0 += kern
+                    v0, v1, v2, v3 = glyph.vertices
+                    v0 += x0
+                    v2 += x0
+                    v1 += y + baseline
+                    v3 += y + baseline
+                    vertices.extend([v0, v1, v2, v1, v2, v3, v0, v3])
+                    t = glyph.tex_coords
+                    tex_coords.extend(t)
+                    x0 += glyph.advance
             
             # Text color
             colors = []
@@ -763,6 +770,11 @@ class TextLayout(object):
             vertex_lists.append(list)
 
             # Decoration (background color and underline)
+            #
+            # Should iterate over baseline too, but in practice any sensible
+            # change in baseline will correspond with a change in font size,
+            # and thus glyph run as well.  So we cheat and just use whatever
+            # baseline was seen last.
             background_vertices = []
             background_colors = []
             underline_vertices = []
@@ -774,15 +786,15 @@ class TextLayout(object):
                     x2 += glyph.advance + kern
 
                 if bg is not None:
-                    y1 = y + glyph_run.font.descent
-                    y2 = y + glyph_run.font.ascent
+                    y1 = y + glyph_run.font.descent + baseline
+                    y2 = y + glyph_run.font.ascent + baseline
                     background_vertices.extend(
                         [x1, y1, x2, y1, x2, y2, x1, y2])
                     background_colors.extend(bg * 4)
 
                 if underline is not None:
                     underline_vertices.extend(
-                        [x1, y - 2, x2, y - 2])
+                        [x1, y + baseline - 2, x2, y + baseline - 2])
                     underline_colors.extend(underline * 2)
 
                 x1 = x2
@@ -1315,7 +1327,13 @@ class IncrementalTextLayout(TextViewportLayout):
             line = self.lines[line]
             
         x = line.x
-        
+
+        baseline = self._document.get_style('baseline', max(0, position - 1))
+        if baseline is None:
+            baseline = 0
+        else:
+            baseline = self._points_to_pixels(baseline) 
+
         position -= line.start
         for glyph_run in line.glyph_runs:
             for kern, glyph in glyph_run.glyphs:
@@ -1323,8 +1341,9 @@ class IncrementalTextLayout(TextViewportLayout):
                     break
                 position -= 1
                 x += glyph.advance + kern
+        
         return (x + self.top_state.translate_x, 
-                line.y + self.top_state.translate_y)
+                line.y + self.top_state.translate_y + baseline)
 
     def get_line_from_point(self, x, y):
         x -= self.top_state.translate_x
