@@ -275,7 +275,10 @@ class Font(object):
         glyph_renderer = None
         glyphs = []         # glyphs that are committed.
         for c in text:
-            # Get the glyph for 'c'
+            # Get the glyph for 'c'.  Hide tabs (Windows and Linux render
+            # boxes)
+            if c == '\t':
+                c = ' '
             if c not in self.glyphs:
                 if not glyph_renderer:
                     glyph_renderer = self.glyph_renderer_class(self)
