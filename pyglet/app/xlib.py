@@ -47,6 +47,15 @@ class XlibEventLoop(BaseEventLoop):
 
                     window.dispatch_platform_event(e)
 
+            # Dispatch resize events
+            for window in windows:
+                if window._needs_resize:
+                    window.switch_to()
+                    window.dispatch_event('on_resize', 
+                                          window._width, window._height)
+                    window.dispatch_event('on_expose')
+                    window._needs_resize = False
+
             sleep_time = self.idle()
 
         self.dispatch_event('on_exit')
