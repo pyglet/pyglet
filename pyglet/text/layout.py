@@ -1203,6 +1203,10 @@ class IncrementalTextLayout(TextViewportLayout):
     # Invalidate everything when width changes
 
     def _set_width(self, width):
+        if width == self._width:
+            # Quick optimisation for speeding up vertical resize.
+            return
+
         self.invalid_flow.invalidate(0, len(self.document.text))
         super(IncrementalTextLayout, self)._set_width(width)
 
@@ -1214,8 +1218,9 @@ class IncrementalTextLayout(TextViewportLayout):
     # Recalculate visible lines when height changes
     def _set_height(self, height):
         super(IncrementalTextLayout, self)._set_height(height)
-        self._update_visible_lines()
-        self._update_vertex_lists()
+        if self._update_enabled:
+            self._update_visible_lines()
+            self._update_vertex_lists()
 
     def _get_height(self):
         return self._height
