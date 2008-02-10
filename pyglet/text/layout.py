@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # $Id:$
 
+import math
 import sys
 
 from pyglet.gl import *
@@ -436,6 +437,9 @@ class TextLayout(object):
         kerning_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs('kerning'),
             lambda value: value is not None, 0)
+        tab_stops_iterator = runlist.FilteredRunIterator(
+            self._document.get_style_runs('tab_stops'),
+            lambda value: value is not None, [])
         
         line = Line(start)
         line.align = align_iterator[start]
@@ -488,27 +492,44 @@ class TextLayout(object):
                 else:
                     kern = self._points_to_pixels(kerning_iterator[index])
 
-                if text in u'\u0020\u200b':
-                    # Whitespace: commit pending runs to thie line.
+                if text in u'\u0020\u200b\t':
+                    # Whitespace: commit pending runs to this line.
                     for run in run_accum:
                         line.add_glyph_run(run)
                     run_accum = []
                     run_accum_width = 0
+
+                    if text == '\t':
+                        # Fix up kern for this glyph to align to the next tab
+                        # stop
+                        for tab_stop in tab_stops_iterator[index]:
+                            if tab_stop > x - line.margin_left:
+                                break
+                        else:
+                            # No more tab stops, tab to 100 pixels
+                            tab = 50.
+                            tab_stop = \
+                              (((x + line.margin_left) // tab) + 1) * tab
+                        kern = int(tab_stop - x - line.margin_left - 
+                                   glyph.advance)
+
                     owner_accum.append((kern, glyph))
                     owner_accum_commit.extend(owner_accum)
                     owner_accum_commit_width += owner_accum_width
 
-                    # Note that the width of the space glyph is added to the
-                    # width of the new accumulation.  This is so whitespace at
-                    # the end of a line does not contribute to its width.
+                    # Note that the width of the space glyph is added to
+                    # the width of the new accumulation.  This is so
+                    # whitespace at the end of a line does not contribute
+                    # to its width.
                     owner_accum = []
                     owner_accum_width = glyph.advance
+                    x += glyph.advance + kern
 
                     index += 1
-                    x += glyph.advance + kern
-                    
-                    # The index at which the next line will begin (the current
-                    # index, because this is the current best breakpoint).
+                        
+                    # The index at which the next line will begin (the
+                    # current index, because this is the current best
+                    # breakpoint).
                     next_start = index
                 else:
                     if (wrap and self._width is not None and

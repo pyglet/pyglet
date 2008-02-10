@@ -74,6 +74,12 @@ aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
 fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
 culpa qui officia deserunt mollit anim id est laborum.
 
+{.indent None}{.tab_stops [300, 500]}Tablated data:{#x09}Player{#x09}Score{}
+{#x09}Alice{#x09}30,000{}
+{#x09}Bob{#x09}20,000{}
+{#x09}Candice{#x09}10,000{}
+{#x09}David{#x09}500
+
 {.indent None}{.align 'right'}This paragraph is right aligned. Lorem ipsum
 dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt
 ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
@@ -198,6 +204,11 @@ class TestWindow(window.Window):
         gl.glClearColor(1, 1, 1, 1)
         self.clear()
         self.batch.draw()
+
+    def on_key_press(self, symbol, modifiers):
+        super(TestWindow, self).on_key_press(symbol, modifiers)
+        if symbol == key.TAB:
+            self.caret.on_text('\t')
 
 class TestCase(unittest.TestCase):
     def test(self):

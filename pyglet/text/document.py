@@ -37,8 +37,7 @@ The following paragraph style attribute names are recognised by pyglet:
 ``align``
     ``left`` (default), ``center`` or ``right``.
 ``indent``
-    Additional horizontal space to insert before the first line of a
-    paragraph, in points.  Defaults to 0, and can be negative.
+    Additional horizontal space to insert before the first 
 ``leading``
     Additional space to insert between consecutive lines within a paragraph,
     in points.  Defaults to 0.
@@ -54,6 +53,10 @@ The following paragraph style attribute names are recognised by pyglet:
     Margin above paragraph, in pixels.
 ``margin_bottom``
     Margin below paragraph, in pixels.  Adjacent margins do not collapse.
+``tab_stops``
+    List of horizontal tab stops, in pixels, measured from the left edge of
+    the text layout.  Defaults to the empty list.  When the tab stops
+    are exhausted, they implicitly continue at 50 pixel intervals.
 ``wrap``
     Boolean.  If True (the default), text wraps within the width of the layout.
 
@@ -412,7 +415,7 @@ class FormattedDocument(AbstractDocument):
             except KeyError:
                 runs = self._style_runs[attribute] = runlist.RunList(0, None)
                 runs.insert(0, len(self._text))
-            runs.set_style(start, end, value)
+            runs.set_run(start, end, value)
 
     def get_font_runs(self, dpi=None):
         return _FontStyleRunsRangeIterator(self.get_style_runs('font_name'),
