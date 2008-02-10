@@ -19,10 +19,13 @@ The following character style attribute names are recognised by pyglet:
 ``italic``
     Boolean.
 ``underline``
-    4-tuple of ints in range(0, 255) giving RGBA underline color, or None
+    4-tuple of ints in range (0, 255) giving RGBA underline color, or None
     (default) for no underline.
 ``kerning``
     Additional space to insert between glyphs, in points.  Defaults to 0.
+``baseline``
+    Offset of glyph baseline from line baseline, in points.  Positive values
+    give a superscript, negative values give a subscript.  Defaults to 0.
 ``color``
     4-tuple of ints in range (0, 255) giving RGBA text color
 ``background_color``
@@ -33,6 +36,9 @@ The following paragraph style attribute names are recognised by pyglet:
 
 ``align``
     ``left`` (default), ``center`` or ``right``.
+``indent``
+    Additional horizontal space to insert before the first line of a
+    paragraph, in points.  Defaults to 0, and can be negative.
 ``leading``
     Additional space to insert between consecutive lines within a paragraph,
     in points.  Defaults to 0.

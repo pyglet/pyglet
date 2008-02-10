@@ -430,16 +430,20 @@ class TextLayout(object):
         margin_right_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs('margin_right'),
             lambda value: value is not None, 0)
+        indent_iterator = runlist.FilteredRunIterator(
+            self._document.get_style_runs('indent'),
+            lambda value: value is not None, 0)
         kerning_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs('kerning'),
             lambda value: value is not None, 0)
         
         line = Line(start)
         line.align = align_iterator[start]
-        if start == 0 or self.document.text[start - 1] == '\n':
-            line.paragraph_begin = True
         line.margin_left = margin_left_iterator[start]
         line.margin_right = margin_right_iterator[start]
+        if start == 0 or self.document.text[start - 1] == '\n':
+            line.paragraph_begin = True
+            line.margin_left += self._points_to_pixels(indent_iterator[start])
         wrap = wrap_iterator[start]
         width = self._width - line.margin_left - line.margin_right
 
@@ -578,6 +582,8 @@ class TextLayout(object):
                     if text == '\n':
                         # New line started, update wrap style
                         wrap = wrap_iterator[next_start]
+                        line.margin_left += \
+                            self._points_to_pixels(indent_iterator[next_start])
                         width = (self._width - 
                                  line.margin_left - line.margin_right)
                     else:
