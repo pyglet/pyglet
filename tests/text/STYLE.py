@@ -32,13 +32,14 @@ doctext = '''STYLE.py test document.
 This is 12pt text (as is everything that follows).
 
 This text has some {bold True}bold character style{bold False}, some
-{italic True}italic character style{italic False}, a {color [255, 0, 0,
-255]}change {color [0, 255, 0, 255]}in 
-{color [0, 0, 255, 255]}color{color None}, and in 
+{italic True}italic character style{italic False}, some {underline [0, 0, 0,
+255]}underlined text{underline None}, {underline [255, 0, 0, 255]}underline
+in red{underline None}, a {color [255, 0, 0, 255]}change {color [0, 255, 0,
+255]}in {color [0, 0, 255, 255]}color{color None}, and in 
 {background_color [255, 255, 0, 255]}background 
 {background_color [0, 255, 255, 255]}color{background_color None}.  
-{kerning 2}This sentence has 3pt kerning.{kerning 0} {kerning -1}This sentence
-has negative 1pt kerning.{kerning 0}
+{kerning 2}This sentence has 3pt kerning.{kerning 0} 
+{kerning -1}This sentence has negative 1pt kerning.{kerning 0}
 
 This paragraph uses {font_name 'Courier New'}Courier New{font_name None} and
 {font_name 'Times New Roman'}Times New Roman{font_name None} fonts.

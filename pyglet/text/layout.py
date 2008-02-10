@@ -164,8 +164,13 @@ class TextLayoutForegroundState(graphics.OrderedState):
     def set(self):
         glEnable(GL_TEXTURE_2D)
 
-    # unset not needed, as parent state will pop enable bit (background is
-    # ordered before foreground)
+    # unset not needed, as parent state will pop enable bit 
+
+class TextLayoutForegroundDecorationState(graphics.OrderedState):
+    def set(self):
+        glDisable(GL_TEXTURE_2D)
+
+    # unset not needed, as parent state will pop enable bit 
 
 class TextLayoutTextureState(graphics.AbstractState):
     def __init__(self, texture, parent):
@@ -198,8 +203,10 @@ class TextLayout(object):
     _vertex_lists = ()
 
     top_state = TextLayoutState(0)
-    background_state = TextLayoutForegroundState(0, top_state)
+    background_state = graphics.OrderedState(0, top_state)
     foreground_state = TextLayoutForegroundState(1, top_state)
+    foreground_decoration_state = \
+        TextLayoutForegroundDecorationState(2, top_state)
 
     _update_enabled = True
 
@@ -272,6 +279,8 @@ class TextLayout(object):
             self.top_state = TextLayoutState(state_order)
             self.background_state = graphics.OrderedState(0, self.top_state)
             self.foreground_state = TextLayoutForegroundState(1, self.top_state)
+            self.foreground_decoration_state = \
+                TextLayoutForegroundDecorationState(2, self.top_state)
 
     def _get_document(self):
         return self._document
@@ -712,6 +721,10 @@ class TextLayout(object):
         vertex_lists = []
         batch = self.batch
 
+        underline_iter = self._document.get_style_runs('underline')
+        decoration_iter = runlist.ZipRunIterator(
+            (background_iter, underline_iter))
+
         for glyph_run in glyph_runs:
             assert glyph_run.glyphs
             try:
@@ -749,34 +762,46 @@ class TextLayout(object):
                 ('c4B/dynamic', colors))
             vertex_lists.append(list)
 
-            # Background color
+            # Decoration (background color and underline)
             background_vertices = []
             background_colors = []
-            background_vertex_count = 0
-            for start, end, bg in background_iter.ranges(i, i+n_glyphs):
-                if bg is None:
-                    for kern, glyph in glyph_run.glyphs[start - i:end - i]:
-                        x1 += kern + glyph.advance
-                    continue
-                
-                y1 = y + glyph_run.font.descent
-                y2 = y + glyph_run.font.ascent
+            underline_vertices = []
+            underline_colors = []
+            for start, end, decoration in decoration_iter.ranges(i, i+n_glyphs):
+                bg, underline = decoration
                 x2 = x1
                 for kern, glyph in glyph_run.glyphs[start - i:end - i]:
                     x2 += glyph.advance + kern
+
+                if bg is not None:
+                    y1 = y + glyph_run.font.descent
+                    y2 = y + glyph_run.font.ascent
                     background_vertices.extend(
                         [x1, y1, x2, y1, x2, y2, x1, y2])
-                    x1 += glyph.advance + kern
-                background_colors.extend(bg * ((end - start) * 4))
-                background_vertex_count += (end - start) * 4
+                    background_colors.extend(bg * 4)
 
-            if background_vertex_count:
+                if underline is not None:
+                    underline_vertices.extend(
+                        [x1, y - 2, x2, y - 2])
+                    underline_colors.extend(underline * 2)
+
+                x1 = x2
+                
+            if background_vertices:
                 background_list = self.batch.add(
-                    background_vertex_count, GL_QUADS,
+                    len(background_vertices) // 2, GL_QUADS,
                     self.background_state,
                     ('v2f/dynamic', background_vertices),
                     ('c4B/dynamic', background_colors))
                 vertex_lists.append(background_list)
+
+            if underline_vertices:
+                underline_list = self.batch.add(
+                    len(underline_vertices) // 2, GL_LINES,
+                    self.foreground_decoration_state,
+                    ('v2f/dynamic', underline_vertices),
+                    ('c4B/dynamic', underline_colors))
+                vertex_lists.append(underline_list)
 
             i += n_glyphs
 
@@ -869,6 +894,8 @@ class TextViewportLayout(TextLayout):
         self.top_state = TextViewportLayoutState(state_order)
         self.background_state = graphics.OrderedState(0, self.top_state)
         self.foreground_state = TextLayoutForegroundState(1, self.top_state)
+        self.foreground_decoration_state = \
+            TextLayoutForegroundDecorationState(2, self.top_state)
 
     def _set_x(self, x):
         self.top_state.scissor_x = x

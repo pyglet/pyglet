@@ -18,6 +18,9 @@ The following character style attribute names are recognised by pyglet:
     Boolean.
 ``italic``
     Boolean.
+``underline``
+    4-tuple of ints in range(0, 255) giving RGBA underline color, or None
+    (default) for no underline.
 ``kerning``
     Additional space to insert between glyphs, in points.  Defaults to 0.
 ``color``
