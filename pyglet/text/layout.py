@@ -301,9 +301,10 @@ class TextLayout(object):
 
         len_text = len(self._document.text)
         glyphs = self._get_glyphs()
-        owner_runs = runlist.StyleRuns(len_text, None)
+        owner_runs = runlist.RunList(len_text, None)
         self._get_owner_runs(owner_runs, glyphs, 0, len_text)
-        lines = [line for line in self._flow_glyphs(glyphs, 0, len_text)]
+        lines = [line for line in self._flow_glyphs(glyphs, owner_runs, 
+                                                    0, len_text)]
         self.content_width = 0
         self._flow_lines(lines, 0, len(lines))
 
@@ -386,22 +387,23 @@ class TextLayout(object):
                 run_start = i + start
         owner_runs.set_run(run_start, end, owner)    
 
-    def _flow_glyphs(self, glyphs, start, end):
+    def _flow_glyphs(self, glyphs, owner_runs, start, end):
         # TODO change flow generator on self, avoiding this conditional.
         if not self.multiline:
-            for line in self._flow_glyphs_single_line(glyphs, start, end):
+            for line in self._flow_glyphs_single_line(glyphs, owner_runs, 
+                                                      start, end):
                 yield line
         else:
-            for line in self._flow_glyphs_wrap(glyphs, start, end):
+            for line in self._flow_glyphs_wrap(glyphs, owner_runs, start, end):
                 yield line
 
-    def _flow_glyphs_wrap(self, glyphs, start, end):
+    def _flow_glyphs_wrap(self, glyphs, owner_runs, start, end):
         '''Word-wrap styled text into lines of fixed width.
 
         Fits `glyphs` in range `start` to `end` into `Line`s which are
         then yielded.
         '''
-        owner_iterator = iter(self.owner_runs).ranges(start, end)
+        owner_iterator = iter(owner_runs).ranges(start, end)
 
         font_iterator = self._document.get_font_runs(dpi=self._dpi)
 
@@ -601,11 +603,12 @@ class TextLayout(object):
 
         yield line
 
-    def _flow_glyphs_single_line(self, glyphs, start, end):
-        # TODO kerning
-        owner_iterator = iter(self.owner_runs).ranges(start, end)
-
+    def _flow_glyphs_single_line(self, glyphs, owner_runs, start, end):
+        owner_iterator = iter(owner_runs).ranges(start, end)
         font_iterator = self.document.get_font_runs(dpi=self._dpi)
+        kern_iterator = runlist.FilteredRunIterator(
+            self.document.get_style_runs('kerning'),
+            lambda value: value is not None, 0)
 
         line = Line(start)
         x = 0
@@ -613,12 +616,20 @@ class TextLayout(object):
 
         for start, end, owner in owner_iterator:
             font = font_iterator[start]
-            owner_glyphs = glyphs[start:end]
-            line.add_glyph_run(GlyphRun(owner, font, owner_glyphs))
+            width = 0
+            owner_glyphs = []
+            for kern_start, kern_end, kern in kern_iterator.ranges(start, end): 
+                gs = glyphs[kern_start:kern_end]
+                width += sum([g.advance for g in gs])
+                width += kern * (kern_end - kern_start)
+                owner_glyphs.extend(zip([kern] * (kern_end - kern_start), gs))
+            line.add_glyph_run(GlyphRun(owner, font, owner_glyphs, width))
     
         if not line.glyph_runs:
             line.ascent = font.ascent
             line.descent = font.descent
+
+        line.paragraph_begin = line.paragraph_end = True
 
         yield line 
 
@@ -1089,7 +1100,7 @@ class IncrementalTextLayout(TextViewportLayout):
 
         next_start = invalid_start
 
-        for line in self._flow_glyphs(self.glyphs, 
+        for line in self._flow_glyphs(self.glyphs, self.owner_runs,
                                       invalid_start, len(self._document.text)):
             try:
                 self.lines[line_index].delete_vertex_lists()

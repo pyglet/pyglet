@@ -358,9 +358,9 @@ class FilteredRunIterator(AbstractRunIterator):
     def ranges(self, start, end):
         for start, end, value in self.iter.ranges(start, end):
             if self.filter(value):
-                yield value
+                yield start, end, value
             else:
-                yield self.default
+                yield start, end, self.default
 
     def __getitem__(self, index):
         value = self.iter[index]
@@ -390,3 +390,17 @@ class ZipRunIterator(AbstractRunIterator):
     def __getitem__(self, index):
         return [i[index] for i in self.range_iterators]
 
+class ConstRunIterator(AbstractRunIterator):
+    '''Iterate over a constant value without creating a RunList.'''
+    def __init__(self, length, value):
+        self.length = length
+        self.value = value
+
+    def next(self):
+        yield 0, self.length, self.value
+
+    def ranges(self, start, end):
+        yield start, end, self.value
+
+    def __getitem__(self, index):
+        return self.value

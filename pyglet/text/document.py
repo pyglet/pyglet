@@ -344,7 +344,7 @@ class UnformattedDocument(AbstractDocument):
 
     def get_style_runs(self, attribute):
         value = self.styles.get(attribute)
-        return runlist.RunIterator(((0, len(self.text), value),)) # XXX broke
+        return runlist.ConstRunIterator(len(self.text), value)
 
     def get_style(self, attribute, position=None):
         return self.styles.get(attribute)
@@ -362,7 +362,7 @@ class UnformattedDocument(AbstractDocument):
 
     def get_font_runs(self, dpi=None):
         ft = self.get_font(dpi=dpi)
-        return runlist.RunIterator(((0, len(self.text), ft),)) # XXX broke
+        return runlist.ConstRunIterator(len(self.text), ft)
 
     def get_font(self, position=None, dpi=None):
         from pyglet import font
@@ -439,6 +439,7 @@ class FormattedDocument(AbstractDocument):
             runs.delete(start, end)
 
 class _FontStyleRunsRangeIterator(object):
+    # XXX subclass runlist
     def __init__(self, font_names, font_sizes, bolds, italics, dpi):
         self.zip_iter = runlist.ZipRunIterator(
             (font_names, font_sizes, bolds, italics))
@@ -459,6 +460,7 @@ class _FontStyleRunsRangeIterator(object):
                          bold=bool(bold), italic=bool(italic), dpi=self.dpi)
 
 class _NoStyleRangeIterator(object):
+    # XXX subclass runlist
     def ranges(self, start, end):
         yield start, end, None
 

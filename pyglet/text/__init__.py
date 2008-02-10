@@ -16,10 +16,8 @@ class Label(layout.TextLayout):
     def __init__(self, text='', font=None, color=(255, 255, 255, 255), 
                  x=0, y=0, halign='left', valign='top', batch=None,
                  state_order=0):
-        if font is None:
-            from pyglet import font as font_module
-            font = font_module.load('', 10)
-        doc = document.UnformattedDocument(text, font, color)
+        doc = document.UnformattedDocument(text)
+        doc.set_style(0, 1, {'color': color})
         super(Label, self).__init__(doc, multiline=False, batch=batch,
                                     state_order=state_order)
 
