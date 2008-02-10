@@ -402,7 +402,7 @@ _Xmblen.argtypes = [c_char_p, c_int]
 
 X_HAVE_UTF8_STRING = 1 	# /usr/include/X11/Xlib.h:106
 XPointer = pyglet.gl.glx.XPointer
-Bool = 0 	# /usr/include/X11/Xlib.h:110
+Bool = c_int # XXX HACK
 Status = 0 	# /usr/include/X11/Xlib.h:111
 True = 1 	# /usr/include/X11/Xlib.h:112
 False = 0 	# /usr/include/X11/Xlib.h:113
@@ -5297,7 +5297,7 @@ _Xmblen.argtypes = [c_char_p, c_int]
 
 X_HAVE_UTF8_STRING = 1 	# /usr/include/X11/Xlib.h:106
 XPointer = pyglet.gl.glx.XPointer
-Bool = 0 	# /usr/include/X11/Xlib.h:110
+Bool = c_int # XXX HACK
 Status = 0 	# /usr/include/X11/Xlib.h:111
 True = 1 	# /usr/include/X11/Xlib.h:112
 False = 0 	# /usr/include/X11/Xlib.h:113
