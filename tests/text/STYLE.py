@@ -36,7 +36,9 @@ This text has some {bold True}bold character style{bold False}, some
 255]}change {color [0, 255, 0, 255]}in 
 {color [0, 0, 255, 255]}color{color None}, and in 
 {background_color [255, 255, 0, 255]}background 
-{background_color [0, 255, 255, 255]}color{background_color None}.
+{background_color [0, 255, 255, 255]}color{background_color None}.  
+{kerning 2}This sentence has 3pt kerning.{kerning 0} {kerning -1}This sentence
+has negative 1pt kerning.{kerning 0}
 
 This paragraph uses {font_name 'Courier New'}Courier New{font_name None} and
 {font_name 'Times New Roman'}Times New Roman{font_name None} fonts.

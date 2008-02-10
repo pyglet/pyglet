@@ -18,6 +18,8 @@ The following character style attribute names are recognised by pyglet:
     Boolean.
 ``italic``
     Boolean.
+``kerning``
+    Additional space to insert between glyphs, in points.  Defaults to 0.
 ``color``
     4-tuple of ints in range (0, 255) giving RGBA text color
 ``background_color``

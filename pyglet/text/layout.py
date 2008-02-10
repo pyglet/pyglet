@@ -47,13 +47,25 @@ class Line(object):
 
 class GlyphRun(object):
     def __init__(self, owner, font, glyphs, width):
+        '''Create a run of glyphs sharing the same texture.
+
+        :Parameters:
+            `owner` : `pyglet.image.Texture`
+                Texture of all glyphs in this run.
+            `font` : `pyglet.font.base.Font`
+                Font of all glyphs in this run.
+            `glyphs` : list of (int, `pyglet.font.base.Glyph`)
+                Pairs of ``(kern, glyph)``, where ``kern`` gives horizontal
+                displacement of the glyph in pixels (typically 0).
+            `width` : int
+                Width of glyph run; must correspond to the sum of advances
+                and kerns in the glyph list.
+
+        '''
         self.owner = owner
         self.font = font
         self.glyphs = glyphs
         self.width = width 
-
-    def add_glyphs(self, glyphs):
-        self.glyphs.extend(glyphs)
 
     def __repr__(self):
         return 'GlyphRun(%r)' % self.glyphs
@@ -407,6 +419,9 @@ class TextLayout(object):
         margin_right_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs('margin_right'),
             lambda value: value is not None, 0)
+        kerning_iterator = runlist.FilteredRunIterator(
+            self._document.get_style_runs('kerning'),
+            lambda value: value is not None, 0)
         
         line = Line(start)
         line.align = align_iterator[start]
@@ -441,6 +456,9 @@ class TextLayout(object):
             owner_accum_commit = []
             owner_accum_commit_width = 0
 
+            # Ignore kerning of first glyph on each line
+            nokern = True
+
             # Current glyph index
             index = start
 
@@ -449,13 +467,19 @@ class TextLayout(object):
             # whitespace and newlines.
             for (text, glyph) in zip(self.document.text[start:end],
                                      glyphs[start:end]):
+                if nokern:
+                    kern = 0
+                    nokern = False
+                else:
+                    kern = self._points_to_pixels(kerning_iterator[index])
+
                 if text in u'\u0020\u200b':
                     # Whitespace: commit pending runs to thie line.
                     for run in run_accum:
                         line.add_glyph_run(run)
                     run_accum = []
                     run_accum_width = 0
-                    owner_accum.append(glyph)
+                    owner_accum.append((kern, glyph))
                     owner_accum_commit.extend(owner_accum)
                     owner_accum_commit_width += owner_accum_width
 
@@ -466,14 +490,14 @@ class TextLayout(object):
                     owner_accum_width = glyph.advance
 
                     index += 1
-                    x += glyph.advance
+                    x += glyph.advance + kern
                     
                     # The index at which the next line will begin (the current
                     # index, because this is the current best breakpoint).
                     next_start = index
                 else:
                     if (wrap and self._width is not None and
-                        x + glyph.advance >= width) or text == '\n':
+                        x + kern + glyph.advance >= width) or text == '\n':
 
                         # Either the pending runs have overflowed the allowed
                         # line width or a newline was encountered.  Either
@@ -525,18 +549,32 @@ class TextLayout(object):
                                 margin_right_iterator[next_start]
                             if text == '\n':
                                 line.paragraph_begin = True
+
+                            # Remove kern from first glyph of line
+                            if run_accum:
+                                k, g = run_accum[0].glyphs[0]
+                                run_accum[0].glyphs[0] = (0, g)
+                                run_accum_width -= k
+                            elif owner_accum:
+                                k, g = owner_accum[0]
+                                owner_accum[0] = (0, g)
+                                owner_accum_width -= k
+                            else:
+                                nokern = True
+
                             x = run_accum_width + owner_accum_width
 
                     if text == '\n':
                         # New line started, update wrap style
                         wrap = wrap_iterator[next_start]
-                        width = self._width - line.margin_left - line.margin_right
+                        width = (self._width - 
+                                 line.margin_left - line.margin_right)
                     else:
                         # If the glyph was any non-whitespace, non-newline
                         # character, add it to the pending run.
-                        owner_accum.append(glyph)
-                        owner_accum_width += glyph.advance
-                        x += glyph.advance
+                        owner_accum.append((kern, glyph))
+                        owner_accum_width += glyph.advance + kern
+                        x += glyph.advance + kern
                     index += 1
 
             # The owner run is finished; create GlyphRuns for the committed
@@ -564,6 +602,7 @@ class TextLayout(object):
         yield line
 
     def _flow_glyphs_single_line(self, glyphs, start, end):
+        # TODO kerning
         owner_iterator = iter(self.owner_runs).ranges(start, end)
 
         font_iterator = self.document.get_font_runs(dpi=self._dpi)
@@ -674,7 +713,8 @@ class TextLayout(object):
             n_glyphs = len(glyph_run.glyphs)
             vertices = []
             tex_coords = []
-            for glyph in glyph_run.glyphs:
+            for kern, glyph in glyph_run.glyphs:
+                x0 += kern
                 v0, v1, v2, v3 = glyph.vertices
                 v0 += x0
                 v2 += x0
@@ -704,18 +744,18 @@ class TextLayout(object):
             background_vertex_count = 0
             for start, end, bg in background_iter.ranges(i, i+n_glyphs):
                 if bg is None:
-                    for glyph in glyph_run.glyphs[start - i:end - i]:
-                        x1 += glyph.advance
+                    for kern, glyph in glyph_run.glyphs[start - i:end - i]:
+                        x1 += kern + glyph.advance
                     continue
                 
                 y1 = y + glyph_run.font.descent
                 y2 = y + glyph_run.font.ascent
                 x2 = x1
-                for glyph in glyph_run.glyphs[start - i:end - i]:
-                    x2 += glyph.advance
+                for kern, glyph in glyph_run.glyphs[start - i:end - i]:
+                    x2 += glyph.advance + kern
                     background_vertices.extend(
                         [x1, y1, x2, y1, x2, y2, x1, y2])
-                    x1 += glyph.advance
+                    x1 += glyph.advance + kern
                 background_colors.extend(bg * ((end - start) * 4))
                 background_vertex_count += (end - start) * 4
 
@@ -1235,11 +1275,11 @@ class IncrementalTextLayout(TextViewportLayout):
         
         position -= line.start
         for glyph_run in line.glyph_runs:
-            for glyph in glyph_run.glyphs:
+            for kern, glyph in glyph_run.glyphs:
                 if position == 0:
                     break
                 position -= 1
-                x += glyph.advance 
+                x += glyph.advance + kern
         return (x + self.top_state.translate_x, 
                 line.y + self.top_state.translate_y)
 
@@ -1279,7 +1319,8 @@ class IncrementalTextLayout(TextViewportLayout):
         position = line.start
         last_glyph_x = line.x
         for glyph_run in line.glyph_runs:
-            for glyph in glyph_run.glyphs:
+            for kern, glyph in glyph_run.glyphs:
+                last_glyph_x += kern
                 if x < last_glyph_x + glyph.advance/2:
                     return position
                 position += 1
