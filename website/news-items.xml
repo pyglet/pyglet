@@ -1,4 +1,11 @@
 <news>
+  <item date="11-February-2008" author="Alex"
+        title="Patch for Python2.5 egg">
+    The pyglet-1.0-py2.5.egg distribution was inadvertently built for Python
+    2.5b3.  <a
+    href="http://code.google.com/p/pyglet/downloads/detail?name=pyglet-1.0.2-py2.5.egg">pyglet-1.0.2-py2.5.egg</a>,
+    correctly built for Python 2.5, is now available.
+  </item>
   <item date="21-January-2008" author="Alex"
         title="Patch for OS X installer">
     Some Mac users had problems with the pyglet-1.0 OS X runtime installer.  A
