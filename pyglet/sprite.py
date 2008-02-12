@@ -117,7 +117,25 @@ class Sprite(event.EventDispatcher):
         else:
             self.dispatch_event('on_animation_end')
 
+    # TODO set batch
     batch = property(lambda self: self._batch)
+
+    def _set_parent_state(self, parent_state):
+        if self._state.parent == parent_state:
+            return
+
+        if self._batch is not None:
+            self._state = SpriteState(self._texture, 
+                                      self._state.blend_src, 
+                                      self._state.blend_dest,
+                                      parent_state)
+            self._vertex_list.delete()
+            self._create_vertex_list()
+        
+    def _get_parent_state(self):
+        return self._state.parent
+
+    parent_state = property(_get_parent_state, _set_parent_state)
 
     def _get_image(self):
         if self._animation:
@@ -137,12 +155,13 @@ class Sprite(event.EventDispatcher):
             clock.schedule_once(self._animate, self._next_dt)
         else:
             self._set_texture(img.get_texture())
+        self._update_position()
 
     image = property(_get_image,
                      _set_image)
 
     def _set_texture(self, texture):
-        if texture is not self._texture:
+        if texture.id is not self._texture.id:
             self._state = SpriteState(texture, 
                                       self._state.blend_src, 
                                       self._state.blend_dest,
@@ -151,6 +170,7 @@ class Sprite(event.EventDispatcher):
                 self._vertex_list.tex_coords[:] = texture.tex_coords
             else:
                 self._vertex_list.delete()
+                self._texture = texture
                 self._create_vertex_list()
         else:
             self._vertex_list.tex_coords[:] = texture.tex_coords
