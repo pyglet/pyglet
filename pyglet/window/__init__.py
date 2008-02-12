@@ -342,7 +342,7 @@ class ImageMouseCursor(MouseCursor):
     '''
     drawable = True
 
-    def __init__(self, image, hot_x, hot_y):
+    def __init__(self, image, hot_x=0, hot_y=0):
         '''Create a mouse cursor from an image.
 
         :Parameters:
@@ -350,17 +350,19 @@ class ImageMouseCursor(MouseCursor):
                 Image to use for the mouse cursor.  It must have a
                 valid ``texture`` attribute.
             `hot_x` : int
-                X coordinate of the "hot" spot in the image.
+                X coordinate of the "hot" spot in the image relative to the
+                image's anchor.
             `hot_y` : int
-                Y coordinate of the "hot" spot in the image, measured
-                from the bottom.
+                Y coordinate of the "hot" spot in the image, relative to the
+                image's anchor.
         '''
         self.texture = image.get_texture()
         self.hot_x = hot_x
         self.hot_y = hot_y
 
     def draw(self, x, y):
-        gl.glPushAttrib(gl.GL_ENABLE_BIT)
+        gl.glPushAttrib(gl.GL_ENABLE_BIT | gl.GL_CURRENT_BIT)
+        gl.glColor4f(1, 1, 1, 1)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
