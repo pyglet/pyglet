@@ -1437,7 +1437,7 @@ class Texture(AbstractImage):
             data = data.get_region(0, z * self.height, self.width, self.height)
         return data
 
-    image_data = property(get_image_data,
+    image_data = property(lambda self: self.get_image_data(),
         doc='''An ImageData view of this texture.  
         
         Changes to the returned instance will not be reflected in this
@@ -1503,7 +1503,6 @@ class TextureRegion(Texture):
         v2 = (y + height) / float(owner.height)
         r = z / float(owner.images)
         self.tex_coords = (u1, v1, r, u2, v1, r, u2, v2, r, u1, v2, r)
-
 
     def get_image_data(self):
         image_data = self.owner.get_image_data(self.z)
