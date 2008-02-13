@@ -931,6 +931,9 @@ class ImageData(AbstractImage):
                             data)
         glPopClientAttrib()
 
+        # Flush image upload before data get GC'd.
+        glFlush()
+
         if matrix:
             glPopMatrix()
             glMatrixMode(GL_MODELVIEW)
