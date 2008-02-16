@@ -81,6 +81,85 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 #: The style attribute takes on multiple values in the document.
 STYLE_INDETERMINATE = 'indeterminate'
 
+class InlineElement(object):
+    '''Arbitrary inline element positioned within a formatted document.
+
+    Elements behave like a single glyph in the document.  They are
+    measured by their horizontal advance, ascent above the baseline, and
+    descent below the baseline.  
+    
+    The pyglet layout classes reserve space in the layout for elements and
+    call the element's methods to ensure they are rendered at the
+    appropriate position.
+
+    If the size of a element (any of the `advance`, `ascent`, or `descent`
+    instance variables) is modified it is the application's responsibility to
+    trigger a reflow of the appropriate area in the affected layouts.  This
+    can be done by forcing a style change over the element's position.
+
+    :Ivariables:
+        `advance` : int
+            Width of the element, in pixels.
+        `ascent` : int
+            Ascent of the element above the baseline, in pixels.
+        `descent` : int
+            Descent of the element below the baseline, in pixels.
+            Typically negative.
+
+    '''
+    def __init__(self, advance, ascent, descent):
+        self.advance = advance
+        self.ascent = ascent
+        self.descent = descent
+        self._position = None
+
+    position = property(lambda self: self._position,
+                        doc='''Position of the element within the
+        document.  Read-only.
+
+        :type: int
+        ''')
+
+    def place(self, layout, x, y):
+        '''Construct an instance of the element at the given coordinates.
+
+        Called when the element's position within a layout changes, either
+        due to the initial condition, changes in the document or changes in
+        the layout size.
+
+        It is the responsibility of the element to clip itself against
+        the layout boundaries, and position itself appropriately with respect
+        to the layout's position and viewport offset.  
+        
+        The `TextLayout.top_state` graphics state implements this transform
+        and clipping into window space.
+
+        :Parameters:
+            `layout` : `pyglet.text.layout.TextLayout`
+                The layout the element moved within.
+            `x` : int
+                Position of the left edge of the element, relative
+                to the left edge of the document, in pixels.
+            `y` : int
+                Position of the baseline, relative to the top edge of the
+                document, in pixels.  Note that this is typically negative.
+
+        '''
+        raise NotImplementedError('abstract')
+
+    def remove(self, layout):
+        '''Remove this element from a layout.
+
+        The couterpart of `add`; called when the element is no longer
+        visible in the given layout.
+
+        :Parameters:
+            `layout` : `pyglet.text.layout.TextLayout`
+                The layout the element was removed from.
+
+        '''
+        raise NotImplementedError('abstract')
+
 class AbstractDocument(event.EventDispatcher):
     '''Abstract document interface used by all `pyglet.text` classes.
 
@@ -95,6 +174,7 @@ class AbstractDocument(event.EventDispatcher):
     def __init__(self, text=''):
         super(AbstractDocument, self).__init__()
         self._text = ''
+        self._elements = []
         if text:
             self.insert_text(0, text)
 
@@ -224,6 +304,7 @@ class AbstractDocument(event.EventDispatcher):
                 `pyglet.font.load`.
 
         :rtype: `pyglet.font.Font`
+        :return: The font at the given position.
         '''
         raise NotImplementedError('abstract')
     
@@ -245,6 +326,10 @@ class AbstractDocument(event.EventDispatcher):
 
     def _insert_text(self, start, text, attributes):
         self._text = ''.join((self._text[:start], text, self._text[start:]))
+        len_text = len(text)
+        for element in self._elements:
+            if element._position >= start:
+                element._position += len_text
 
     def delete_text(self, start, end):
         '''Delete text from the document.
@@ -260,7 +345,45 @@ class AbstractDocument(event.EventDispatcher):
         self.dispatch_event('on_delete_text', start, end)
 
     def _delete_text(self, start, end):
+        for element in list(self._elements):
+            if start <= element.position < end:
+                self._elements.remove(element)
+
         self._text = self._text[:start] + self._text[end:]
+
+    def insert_element(self, position, element):
+        '''Insert a element into the document.
+
+        See the `InlineElement` class documentation for details of
+        usage.
+
+        :Parameters:
+            `position` : int
+                Character insertion point within document.
+            `element` : `InlineElement`
+                Element to insert.
+
+        '''
+        assert element._position is None, \
+            'Element is already in a document.'
+        self.insert_text(position, '\0')
+        element._position = position
+        self._elements.append(element)
+        self._elements.sort(key=lambda d:d.position)
+
+    def get_element(self, position):
+        '''Get the element at a specified position.
+
+        :Parameters:
+            `position` : int
+                Position in the document of the element.
+
+        :rtype: `InlineElement`
+        '''
+        for element in self._elements:
+            if element._position == position:
+                return element
+        raise RuntimeError('No element at position %d' % position)
 
     def set_style(self, start, end, attributes):
         '''Set text style of some or all of the document.
@@ -418,15 +541,19 @@ class FormattedDocument(AbstractDocument):
             runs.set_run(start, end, value)
 
     def get_font_runs(self, dpi=None):
-        return _FontStyleRunsRangeIterator(self.get_style_runs('font_name'),
-                                           self.get_style_runs('font_size'),
-                                           self.get_style_runs('bold'),
-                                           self.get_style_runs('italic'),
-                                           dpi)
+        return _FontStyleRunsRangeIterator(
+            self.get_style_runs('font_name'),
+            self.get_style_runs('font_size'),
+            self.get_style_runs('bold'),
+            self.get_style_runs('italic'),
+            dpi)
 
     def get_font(self, position, dpi=None):
         iter = self.get_font_runs(dpi)
         return iter[position]
+
+    def get_element_runs(self):
+        return _ElementIterator(self._elements, len(self._text))
 
     def _insert_text(self, start, text, attributes):
         super(FormattedDocument, self)._insert_text(start, text, attributes)
@@ -450,6 +577,20 @@ class FormattedDocument(AbstractDocument):
         for runs in self._style_runs.values():
             runs.delete(start, end)
 
+def _iter_elements(elements, length):
+    last = 0
+    for element in elements:
+        p = element.position
+        yield last, p, None
+        yield p, p + 1, element
+        last = p + 1
+    yield last, length, None
+
+class _ElementIterator(runlist.RunIterator):
+    def __init__(self, elements, length):
+        self.next = _iter_elements(elements, length).next
+        self.start, self.end, self.value = self.next()
+
 class _FontStyleRunsRangeIterator(object):
     # XXX subclass runlist
     def __init__(self, font_names, font_sizes, bolds, italics, dpi):
@@ -462,14 +603,16 @@ class _FontStyleRunsRangeIterator(object):
         for start, end, styles in self.zip_iter.ranges(start, end):
             font_name, font_size, bold, italic = styles
             ft = font.load(font_name, font_size, 
-                           bold=bool(bold), italic=bool(italic), dpi=self.dpi)
+                           bold=bool(bold), italic=bool(italic), 
+                           dpi=self.dpi)
             yield start, end, ft
 
     def __getitem__(self, index):
         from pyglet import font
         font_name, font_size, bold, italic = self.zip_iter[index]
         return font.load(font_name, font_size,
-                         bold=bool(bold), italic=bool(italic), dpi=self.dpi)
+                         bold=bool(bold), italic=bool(italic), 
+                         dpi=self.dpi)
 
 class _NoStyleRangeIterator(object):
     # XXX subclass runlist
