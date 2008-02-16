@@ -868,7 +868,7 @@ class TextLayout(object):
                 width += sum([g.advance for g in gs])
                 width += kern * (kern_end - kern_start)
                 owner_glyphs.extend(zip([kern] * (kern_end - kern_start), gs))
-            line.add_box(GlyphRun(owner, font, owner_glyphs, width))
+            line.add_box(GlyphBox(owner, font, owner_glyphs, width))
     
         if not line.boxes:
             line.ascent = font.ascent

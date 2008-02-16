@@ -508,6 +508,9 @@ class UnformattedDocument(AbstractDocument):
         return font.load(font_name, font_size, 
                          bold=bool(bold), italic=bool(italic), dpi=dpi) 
 
+    def get_element_runs(self):
+        return runlist.ConstRunIterator(len(self._text), None)
+
 class FormattedDocument(AbstractDocument):
     '''Simple implementation of a document that maintains text formatting.
 
