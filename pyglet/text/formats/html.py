@@ -25,6 +25,19 @@ import re
 
 from pyglet.text.formats import structured
 
+def int_to_roman(input):
+    # From http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/81611
+    if not 0 < input < 4000:
+        raise ValueError, "Argument must be between 1 and 3999"    
+    ints = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,   4,  1)
+    nums = ('M',  'CM', 'D', 'CD','C', 'XC','L','XL','X','IX','V','IV','I')
+    result = ""
+    for i in range(len(ints)):
+        count = int(input / ints[i])
+        result += nums[i] * count
+        input -= ints[i] * count
+    return result
+
 def _hex_color(val):
     return [(val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff, 255]
 
@@ -106,6 +119,7 @@ class OrderedList(object):
             self.next_value = int(attrs['start'])
         except (KeyError, ValueError):
             self.next_value = 1
+        self.type = attrs.get('type', '1')
 
     def get_mark(self, attrs):
         try:
@@ -113,7 +127,24 @@ class OrderedList(object):
         except (KeyError, ValueError):
             value = self.next_value
         self.next_value = value + 1
-        return '%d.' % value
+        if self.type in 'aA':
+            try:
+                mark = 'abcdefghijklmnopqrstuvwxyz'[value - 1]
+            except ValueError:
+                mark = '?'
+            if self.type == 'A':
+                mark = mark.upper()
+            return '%s.' % mark
+        elif self.type in 'iI':
+            try:
+                mark = int_to_roman(value)
+            except ValueError:
+                mark = '?'
+            if self.type == 'i':
+                mark = mark.lower()
+            return mark
+        else:
+            return '%d.' % value
 
 class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
     def decode_structured(self, text):
@@ -264,9 +295,9 @@ class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
                 tab_stops = list(tab_stops)
             else:
                 tab_stops = []
-            tab_stops.append(left_margin + 30)
-            style['margin_left'] = left_margin + 30
-            style['indent'] = -15
+            tab_stops.append(left_margin + 50)
+            style['margin_left'] = left_margin + 50
+            style['indent'] = -30
             style['tab_stops'] = tab_stops
             if element == 'ol':
                 self.list_stack.append(OrderedList(attrs))

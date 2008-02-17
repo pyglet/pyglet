@@ -159,6 +159,30 @@ Hard line breaks
         <li>Item 13.
     </ol>
 
+    <ol type="a">
+        <li>Numbered list with "a" type
+        <li>Item 2
+        <li>Item 3
+    </ol>
+
+    <ol type="A">
+        <li>Numbered list with "A" type
+        <li>Item 2
+        <li>Item 3
+    </ol>
+
+    <ol type="i">
+        <li>Numbered list with "i" type
+        <li>Item 2
+        <li>Item 3
+    </ol>
+
+    <ol type="I">
+        <li>Numbered list with "I" type
+        <li>Item 2
+        <li>Item 3
+    </ol>
+
     Here's a definition list:
 
     <dl>
