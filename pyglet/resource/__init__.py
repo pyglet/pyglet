@@ -223,6 +223,7 @@ class Loader(object):
         raise NotImplementedError('TODO')
 
     def _alloc_image(self, name, pad):
+        # XXX pad is ignored (probably not needed?)
         from pyglet import image
         file = self.file(name)
         img = image.load(name, file=file)
@@ -275,32 +276,8 @@ class Loader(object):
 
         if not rotate and not flip_x and not flip_y:
             return identity
-
-        region = identity.get_region(0, 0, identity.width, identity.height)
-        bl = region.tex_coords[:3]
-        br = region.tex_coords[3:6]
-        tr = region.tex_coords[6:9]
-        tl = region.tex_coords[9:]
-        if flip_x:
-            bl, br, tl, tr = br, bl, tr, tl
-        if flip_y:
-            bl, br, tl, tr = tl, tr, bl, br
-        rotate %= 360
-        if rotate < 0:
-            rotate += 360
-        if rotate == 0:
-            pass
-        elif rotate == 90:
-            bl, br, tr, tl = br, tr, tl, bl
-        elif rotate == 180:
-            bl, br, tr, tl = tr, tl, bl, br
-        elif rotate == 270:
-            bl, br, tr, tl = tl, bl, br, tr
-        else:
-            assert False, 'Only 90 degree rotations are supported.'
-        region.tex_coords = bl + br + tr + tl
-        
-        return region
+                
+        return identity.get_transform(flip_x, flip_y, rotate)
         
     def preload_images(self, *names):
         raise NotImplementedError('TODO')

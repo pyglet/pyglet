@@ -1542,6 +1542,48 @@ class Texture(AbstractImage):
     def get_region(self, x, y, width, height):
         return self.region_class(x, y, 0, width, height, self)
 
+    def get_transform(self, flip_x=False, flip_y=False, rotate=0):
+        '''Create a copy of this image applying a simple transformation.
+
+        A `TextureRegion` will be returned referencing this image as its
+        owner.
+
+        :Parameters:
+            `flip_x` : bool
+                If True, the returned image will be flipped horizontally.
+            `flip_y` : bool
+                If True, the returned image will be flipped vertically.
+            `rotate` : int
+                Degrees of clockwise rotation of the returned image.  Only 
+                90-degree increments are supported.
+        '''
+        transform = self.get_region(0, 0, self.width, self.height)
+        bl = transform.tex_coords[:3]
+        br = transform.tex_coords[3:6]
+        tr = transform.tex_coords[6:9]
+        tl = transform.tex_coords[9:]
+        if flip_x:
+            bl, br, tl, tr = br, bl, tr, tl
+        if flip_y:
+            bl, br, tl, tr = tl, tr, bl, br
+        rotate %= 360
+        if rotate < 0:
+            rotate += 360
+        if rotate == 0:
+            pass
+        elif rotate == 90:
+            bl, br, tr, tl = br, tr, tl, bl
+        elif rotate == 180:
+            bl, br, tr, tl = tr, tl, bl, br
+        elif rotate == 270:
+            bl, br, tr, tl = tl, bl, br, tr
+        else:
+            assert False, 'Only 90 degree rotations are supported.'
+        if rotate in (90, 270):
+            transform.width, transform.height = \
+                transform.height, transform.width
+        transform.tex_coords = bl + br + tr + tl
+        return transform
 
 class TextureRegion(Texture):
     '''A rectangular region of a texture, presented as if it were
