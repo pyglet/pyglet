@@ -259,7 +259,9 @@ class CarbonGlyphRenderer(base.GlyphRenderer):
 
         # Turning on transient font matching screws up font layout
         # predictability when strange fonts are installed
-        carbon.ATSUSetTransientFontMatching(layout, False)
+        # <ah> Don't believe this.  Can't get foreign/special characters
+        #      without transient on.
+        carbon.ATSUSetTransientFontMatching(layout, True)
 
         # Get bitmap dimensions required
         rect = Rect()

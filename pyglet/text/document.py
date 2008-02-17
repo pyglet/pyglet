@@ -168,8 +168,8 @@ class AbstractDocument(event.EventDispatcher):
     terms of one of the supplied concrete classes `FormattedDocument` or
     `UnformattedDocument`. 
     '''
-    _previous_paragraph_re = re.compile(r'\n[^\n]*$')
-    _next_paragraph_re = re.compile(r'\n')
+    _previous_paragraph_re = re.compile(u'\n[^\n\u2029]*$')
+    _next_paragraph_re = re.compile(u'[\n\u2029]')
 
     def __init__(self, text=''):
         super(AbstractDocument, self).__init__()
@@ -205,7 +205,8 @@ class AbstractDocument(event.EventDispatcher):
         '''
         # Tricky special case where the $ in pattern matches before the \n at
         # the end of the string instead of the end of the string.
-        if self._text[:pos + 1].endswith('\n'):
+        if (self._text[:pos + 1].endswith('\n') or 
+            self._text[:pos + 1].endswith(u'\u2029')):
             return pos
 
         m = self._previous_paragraph_re.search(self._text, 0, pos + 1)

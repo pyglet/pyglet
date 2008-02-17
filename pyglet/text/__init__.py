@@ -7,6 +7,10 @@ def attributed(text):
     from pyglet.text.formats import attributed
     return attributed.AttributedTextDecoder().decode(text)
 
+def html(text):
+    from pyglet.text.formats import html
+    return html.HTMLDecoder().decode(text)
+
 def load_attributed(filename, file=None):
     if file is None:
         file = open(filename)

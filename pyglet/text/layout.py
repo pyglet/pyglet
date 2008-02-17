@@ -1,6 +1,13 @@
 #!/usr/bin/python
 # $Id:$
 
+'''
+
+Layout distinguishes between paragraph breaks (\n or U+2029) and line breaks
+(U+2028).  Margin space is inserted between paragraph breaks, not between line
+breaks.  Follows UTR #13 http://unicode.org/reports/tr13/tr13-5.html.
+'''
+
 import math
 import sys
 
@@ -134,6 +141,7 @@ class GlyphBox(AbstractBox):
         x1 = x
         for start, end, baseline in context.baseline_iter.ranges(i, i+n_glyphs):
             baseline = layout._points_to_pixels(baseline)
+            assert len(self.glyphs[start - i:end - i]) == end - start
             for kern, glyph in self.glyphs[start - i:end - i]:
                 x1 += kern
                 v0, v1, v2, v3 = glyph.vertices
@@ -647,7 +655,7 @@ class TextLayout(object):
         line.align = align_iterator[start]
         line.margin_left = margin_left_iterator[start]
         line.margin_right = margin_right_iterator[start]
-        if start == 0 or self.document.text[start - 1] == '\n':
+        if start == 0 or self.document.text[start - 1] in u'\n\u2029':
             line.paragraph_begin = True
             line.margin_left += self._points_to_pixels(indent_iterator[start])
         wrap = wrap_iterator[start]
@@ -705,7 +713,7 @@ class TextLayout(object):
                         # Fix up kern for this glyph to align to the next tab
                         # stop
                         for tab_stop in tab_stops_iterator[index]:
-                            if tab_stop > x - line.margin_left:
+                            if tab_stop > x + line.margin_left:
                                 break
                         else:
                             # No more tab stops, tab to 100 pixels
@@ -736,14 +744,16 @@ class TextLayout(object):
                     # breakpoint).
                     next_start = index
                 else:
+                    new_paragraph = text in u'\n\u2029'
+                    new_line = (text == u'\u2028') or new_paragraph
                     if (wrap and self._width is not None and
-                        x + kern + glyph.advance >= width) or text == '\n':
+                        x + kern + glyph.advance >= width) or new_line:
 
                         # Either the pending runs have overflowed the allowed
                         # line width or a newline was encountered.  Either
                         # way, the current line must be flushed.
 
-                        if text == '\n':
+                        if new_line:
                             # Forced newline.  Commit everything pending
                             # without exception.
                             for run in run_accum:
@@ -767,7 +777,7 @@ class TextLayout(object):
                             owner_accum_commit = []
                             owner_accum_commit_width = 0
 
-                        if text == '\n' and not line.boxes:
+                        if new_line and not line.boxes:
                             # Empty line: give it the current font's default
                             # line-height.
                             line.ascent = font.ascent
@@ -778,8 +788,8 @@ class TextLayout(object):
                         # without any breakpoints (in which case it will be
                         # flushed at the earliest breakpoint, not before
                         # something is committed).
-                        if line.boxes or text == '\n':
-                            if text == '\n':
+                        if line.boxes or new_line:
+                            if new_paragraph:
                                 line.paragraph_end = True
                             yield line
                             line = Line(next_start)
@@ -787,7 +797,7 @@ class TextLayout(object):
                             line.margin_left = margin_left_iterator[next_start]
                             line.margin_right = \
                                 margin_right_iterator[next_start]
-                            if text == '\n':
+                            if new_paragraph:
                                 line.paragraph_begin = True
 
                             # Remove kern from first glyph of line
@@ -809,14 +819,14 @@ class TextLayout(object):
                         run_accum.append(glyph)
                         run_accum_width += glyph.advance
                         x += glyph.advance
-                    elif text == '\n':
-                        # New line started, update wrap style
+                    elif new_paragraph:
+                        # New paragraph started, update wrap style
                         wrap = wrap_iterator[next_start]
                         line.margin_left += \
                             self._points_to_pixels(indent_iterator[next_start])
                         width = (self._width - 
                                  line.margin_left - line.margin_right)
-                    else:
+                    elif not new_line:
                         # If the glyph was any non-whitespace, non-newline
                         # character, add it to the pending run.
                         owner_accum.append((kern, glyph))
