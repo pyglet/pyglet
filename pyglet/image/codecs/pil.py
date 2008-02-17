@@ -81,24 +81,25 @@ class PILImageEncoder(ImageEncoder):
     def encode(self, image, file, filename):
         # File format is guessed from filename extension, otherwise defaults
         # to PNG.
-        format = (filename and os.path.splitext(filename)[1][1:]) or 'png'
+        pil_format = (filename and os.path.splitext(filename)[1][1:]) or 'png'
 
-        if format.lower() == 'jpg':
-            format = 'JPEG'
+        if pil_format.lower() == 'jpg':
+            pil_format = 'JPEG'
 
         image = image.get_image_data()
-        if image.format != 'RGB':
+        format = image.format
+        if format != 'RGB':
             # Only save in RGB or RGBA formats.
-            image.format = 'RGBA'
-        image.pitch = -(image.width * len(image.format))
+            format = 'RGBA'
+        pitch = -(image.width * len(format))
 
         # Note: Don't try and use frombuffer(..); different versions of
         # PIL will orient the image differently.
         pil_image = Image.fromstring(
-            image.format, (image.width, image.height), image.data)
+            format, (image.width, image.height), image.get_data(format, pitch))
 
         try:
-            pil_image.save(file, format)
+            pil_image.save(file, pil_format)
         except Exception, e:
             raise ImageEncodeException(e)
 

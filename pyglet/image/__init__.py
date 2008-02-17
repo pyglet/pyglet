@@ -108,28 +108,23 @@ To access raw pixel data of an image::
 however if the image is a texture a relatively expensive readback operation
 will occur).  The pixels can be accessed as a string::
 
-    pixels = rawimage.data
+    format = 'RGBA'
+    pitch = rawimage.width * len(format)
+    pixels = rawimage.get_data(format, pitch)
 
-You determine the format of these pixels by examining rawimage.pitch,
-rawimage.format.  The "pitch" of an image is the number of bytes in a row
-(this may validly be more than the number required to make up the width of the
-image, it is common to see this for word alignment).  If "pitch" is negative
-the rows of the image are ordered from top to bottom, otherwise they are
-ordedred from bottom to top.
+"format" strings consist of characters that give the byte order of each color
+component.  For example, if rawimage.format is 'RGBA', there are four color
+components: red, green, blue and alpha, in that order.  Other common format
+strings are 'RGB', 'LA' (luminance, alpha) and 'I' (intensity).
 
-"format" strings consist of characters that give the byte
-order of each color component.  For example, if rawimage.format is 'RGBA',
-there are four color components: red, green, blue and alpha, in that order.
-Other common format strings are 'RGB', 'LA' (luminance, alpha) and 'I'
-(intensity).
+The "pitch" of an image is the number of bytes in a row (this may validly be
+more than the number required to make up the width of the image, it is common
+to see this for word alignment).  If "pitch" is negative the rows of the image
+are ordered from top to bottom, otherwise they are ordered from bottom to top.
 
-You can also set the format and pitch of an image.  This affects how "data"
-will be presented the next time it is read or written to::
-
-    # Read the alpha channel only, with rows tightly packed from bottom-to-top.
-    rawimage.format = 'A'
-    rawimage.pitch = rawimage.width
-    data = rawimage.data
+Retrieving data with the format and pitch given in `ImageData.format` and
+`ImageData.pitch` avoids the need for data conversion (assuming you can make
+use of the data in this arbitrary format).
 
 '''
 
@@ -591,6 +586,9 @@ class ImageData(AbstractImage):
             Number of bytes per row.  Negative values indicate a top-to-bottom
             arrangement.
 
+    Setting the `format` and `pitch` instance variables and reading `data` is
+    deprecated; use `get_data` and `set_data` in new applications.  (Reading
+    `format` and `pitch` to obtain the current encoding is not deprecated).
     '''
 
     _swap1_pattern = re.compile('(.)', re.DOTALL)
@@ -632,10 +630,11 @@ class ImageData(AbstractImage):
         return {
             'width': self.width, 
             'height': self.height, 
-            '_current_data': self.data, 
-            '_current_format': self.format,
-            '_desired_format': self.format,
-            '_current_pitch': self.pitch,
+            '_current_data': 
+                self.get_data(self._current_format, self._current_pitch), 
+            '_current_format': self._current_format,
+            '_desired_format': self._desired_format,
+            '_current_pitch': self._current_pitch,
             'pitch': self.pitch,
             'mipmap_images': self.mipmap_images
         }
@@ -672,9 +671,49 @@ class ImageData(AbstractImage):
 
     data = property(_get_data, _set_data, 
         doc='''The byte data of the image.  Read-write.
+
+        :deprecated: Use `get_data` and `set_data`.
         
         :type: sequence of bytes, or str
         ''')
+
+    def get_data(self, format, pitch):
+        '''Get the byte data of the image.
+
+        :Parameters:
+            `format` : str
+                Format string of the return data.
+            `pitch` : int
+                Number of bytes per row.  Negative values indicate a
+                top-to-bottom arrangement.
+
+        :since: pyglet 1.1
+
+        :rtype: sequence of bytes, or str
+        '''
+        if format == self._current_format and pitch == self._current_pitch:
+            return self._current_data
+        return self._convert(format, pitch)
+
+    def set_data(self, format, pitch, data):
+        '''Set the byte data of the image.
+
+        :Parameters:
+            `format` : str
+                Format string of the return data.
+            `pitch` : int
+                Number of bytes per row.  Negative values indicate a
+                top-to-bottom arrangement.
+            `data` : str or sequence of bytes
+                Image data.
+
+        :since: pyglet 1.1
+        '''
+        self._current_format = format
+        self._current_pitch = pitch
+        self._current_data = data
+        self._current_texture = None
+        self._current_mipmapped_texture = None
 
     def set_mipmap_image(self, level, image):
         '''Set a mipmap image for a particular level.
@@ -1080,10 +1119,11 @@ class ImageDataRegion(ImageData):
         return {
             'width': self.width, 
             'height': self.height, 
-            '_current_data': self.data, 
-            '_current_format': self.format,
-            '_desired_format': self.format,
-            '_current_pitch': self.pitch,
+            '_current_data': 
+                self.get_data(self._current_format, self._current_pitch), 
+            '_current_format': self._current_format,
+            '_desired_format': self._desired_format,
+            '_current_pitch': self._current_pitch,
             'pitch': self.pitch,
             'mipmap_images': self.mipmap_images,
             'x': self.x,
@@ -1113,6 +1153,22 @@ class ImageDataRegion(ImageData):
         super(ImageDataRegion, self)._set_data(data)
  
     data = property(_get_data, _set_data)
+
+    def get_data(self, format, pitch):
+        x1 = len(self._current_format) * self.x
+        x2 = len(self._current_format) * (self.x + self.width)
+
+        self._ensure_string_data()
+        data = self._convert(self._current_format, abs(self._current_pitch))
+        rows = re.findall('.' * abs(self._current_pitch), data, re.DOTALL)
+        rows = [row[x1:x2] for row in rows[self.y:self.y+self.height]]
+        self._current_data = ''.join(rows)
+        self._current_pitch = self.width * len(self._current_format)
+        self._current_texture = None
+        self.x = 0
+        self.y = 0
+
+        return super(ImageDataRegion, self).get_data(format, pitch) 
     
     def _apply_region_unpack(self):
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, self.x)
@@ -1548,7 +1604,7 @@ class Texture3D(Texture, UniformTextureSequence):
             depth = _nearest_pow2(depth)
 
         texture = cls.create_for_size(GL_TEXTURE_3D, item_width, item_height)
-        if self.anchor_x or self.anchor_y:
+        if images[0].anchor_x or images[0].anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
 
@@ -1591,7 +1647,7 @@ class Texture3D(Texture, UniformTextureSequence):
                                       image.anchor_x, image.anchor_y, item.z)
         else:
             value.blit_to_texture(self.target, self.level, 
-                                  image.anchor_x, image.anchor_y, self[index].z)
+                                  value.anchor_x, value.anchor_y, self[index].z)
 
     def __iter__(self):
         return iter(self.items)
@@ -1647,16 +1703,13 @@ class TileableTexture(Texture):
         if not _is_pow2(image.width) or not _is_pow2(image.height):
             # Potentially unnecessary conversion if a GL format exists.
             image = image.get_image_data()
-            image.format = 'RGBA'
-            image.pitch = image.width * len(image.format)
             texture_width = _nearest_pow2(image.width)
             texture_height = _nearest_pow2(image.height)
-            newdata = c_buffer(texture_width * texture_height *
-                               len(image.format))
+            newdata = c_buffer(texture_width * texture_height * 4)
             gluScaleImage(GL_RGBA,
                           image.width, image.height,
                           GL_UNSIGNED_BYTE,
-                          image.data,
+                          image.get_data('RGBA', image.width * 4),
                           texture_width,
                           texture_height,
                           GL_UNSIGNED_BYTE,

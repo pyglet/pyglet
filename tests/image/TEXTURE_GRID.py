@@ -42,9 +42,7 @@ class TestTextureGrid(unittest.TestCase):
 
         color = '%c' % (cellindex + 1)
         cellimage = cellimage.image_data
-        cellimage.pitch = cellimage.width
-        cellimage.format = 'L'
-        data = cellimage.data
+        data = cellimage.get_data('L', cellimage.width)
         self.assertTrue(data == color * len(data))
 
     def setUp(self):

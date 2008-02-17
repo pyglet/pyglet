@@ -826,16 +826,17 @@ class CarbonWindow(BaseWindow):
                 image = img
 
         image = image.get_image_data()
-        image.format = 'ARGB'
-        image.pitch = -len(image.format) * image.width
+        format = 'ARGB'
+        pitch = -len(format) * image.width
 
+        data = image.get_data(format, pitch)
         provider = carbon.CGDataProviderCreateWithData(
-            None, image.data, len(image.data), None)
+            None, data, len(data), None)
 
         colorspace = carbon.CGColorSpaceCreateDeviceRGB()
 
         cgi = carbon.CGImageCreate(
-            image.width, image.height, 8, 32, -image.pitch,
+            image.width, image.height, 8, 32, -pitch,
             colorspace,
             kCGImageAlphaFirst,
             provider,

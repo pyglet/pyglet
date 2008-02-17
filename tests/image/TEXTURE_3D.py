@@ -24,9 +24,7 @@ class TestTexture3D(unittest.TestCase):
         self.assertTrue(image.height == height)
         color = '%c' % (color)
         image = image.image_data
-        image.pitch = image.width
-        image.format = 'L'
-        data = image.data
+        data = image.get_data('L', image.width)
         self.assertTrue(data == color * len(data))
 
     def set_grid_image(self, itemwidth, itemheight, rows, cols, rowpad, colpad):
@@ -57,9 +55,7 @@ class TestTexture3D(unittest.TestCase):
 
         color = '%c' % (cellindex + 1)
         cellimage = cellimage.image_data
-        cellimage.pitch = cellimage.width
-        cellimage.format = 'L'
-        data = cellimage.data
+        data = cellimage.get_data('L', cellimage.width)
         self.assertTrue(data == color * len(data))
 
     def setUp(self):

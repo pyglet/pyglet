@@ -26,8 +26,7 @@ class TEST_MATRIX_RGBA(base_load.TestLoad):
         else:
             # Load image as usual then rearrange components
             super(TEST_MATRIX_RGBA, self).load_image()
-            self.image.format = 'GBAR'
-            pixels = self.image.data # forces conversion
+            pixels = self.image.get_data('GBAR', self.image.width * 4)
 
 if __name__ == '__main__':
     unittest.main()

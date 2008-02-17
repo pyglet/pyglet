@@ -34,14 +34,13 @@ class TestCase(unittest.TestCase):
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         img.blit(0, 0)
-        buffer = image.get_buffer_manager().get_color_buffer().image_data
-        buffer.format = 'RGBA'
-        buffer.pitch = len(buffer.format) * buffer.width
-        bytes = buffer.data
+        buffer = image.get_buffer_manager().get_color_buffer().get_image_data()
+        bytes = buffer.get_data('RGBA', buffer.width * 4)
         def sample(x, y):
             i = y * buffer.pitch + x * len(buffer.format)
             r, g, b, _ = bytes[i:i+len(buffer.format)]
-            r, g, b = map(ord, (r, g, b))
+            if type(r) is str:
+                r, g, b = map(ord, (r, g, b))
             return {
                 (255, 0, 0): 'r',
                 (0, 255, 0): 'g',

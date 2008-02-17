@@ -746,8 +746,8 @@ class Win32Window(BaseWindow):
 
         def get_icon(image):
             # Alpha-blended icon: see http://support.microsoft.com/kb/318876
-            image.format = 'BGRA'
-            image.pitch = len(image.format) * image.width
+            format = 'BGRA'
+            pitch = len(format) * image.width
 
             header = BITMAPV5HEADER()
             header.bV5Size = sizeof(header)
@@ -767,7 +767,8 @@ class Win32Window(BaseWindow):
                 byref(dataptr), None, 0)
             _user32.ReleaseDC(None, hdc)
 
-            memmove(dataptr, image.data, len(image.data))
+            data = image.get_data(format, pitch)
+            memmove(dataptr, data, len(data))
 
             mask = _gdi32.CreateBitmap(image.width, image.height, 1, 1, None)
 
