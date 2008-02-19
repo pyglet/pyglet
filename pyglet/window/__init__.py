@@ -782,10 +782,6 @@ class BaseWindow(EventDispatcher):
         if symbol == key.ESCAPE:
             self.dispatch_event('on_close')
 
-    def on_draw(self):
-        '''Default draw handler.'''
-        self.clear()
-
     def close(self):
         '''Close the window.
 
