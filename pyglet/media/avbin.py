@@ -400,6 +400,43 @@ class AVbinSource(StreamingSource):
             image.ImageData(width, height, 'RGB', buffer, pitch),
             timestamp)
 
+    def _next_image(self):
+        img = None
+        while not img:
+            packet = self._get_packet_for_stream(self._video_stream_index)
+            if not packet:
+                return
+            img = self._decode_video_packet(packet)
+
+        return img
+
+    def get_next_video_timestamp(self):
+        if not self.video_format:
+            return
+
+        try:
+            img = self._buffered_images[0]
+        except IndexError:
+            img = self._next_image()
+            self._buffered_images.append(img)
+        
+        if img:
+            return img.timestamp
+
+    def get_next_video_frame(self):
+        if not self.video_format:
+            return
+
+        try:
+            img = self._buffered_images.pop(0)
+        except IndexError:
+            img = self._next_image()
+
+        if img:
+            self._last_video_timestamp = img.timestamp
+            self._force_next_video_image = False
+            return img.image
+
     def _update_texture(self, player, timestamp):
         if not self.video_format:
             return

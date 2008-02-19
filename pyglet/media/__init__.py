@@ -393,6 +393,64 @@ class Source(object):
         player.play()
         return player
 
+    def get_animation(self):
+        '''Import all video frames into memory as an `Animation`.
+
+        An empty animation will be returned if the source has no video.
+        Otherwise, the animation will contain all unplayed video frames (the
+        entire source, if it has not been queued on a player).  After creating
+        the animation, the source will be at EOS.
+
+        This method is unsuitable for videos running longer than a
+        few seconds.
+
+        :since: pyglet 1.1
+
+        :rtype: `pyglet.image.Animation`
+        '''
+        from pyglet.image import Animation, AnimationFrame
+        if not self.video_format:
+            return Animation([])
+        else:
+            # Create a dummy player for the source to push its textures onto.
+            frames = []
+            last_ts = 0
+            next_ts = self.get_next_video_timestamp()
+            while next_ts is not None:
+                image = self.get_next_video_frame()
+                assert image is not None
+                delay = next_ts - last_ts
+                frames.append(AnimationFrame(image, delay))
+                last_ts = next_ts
+                next_ts = self.get_next_video_timestamp()
+            return Animation(frames)
+
+    def get_next_video_timestamp(self):
+        '''Get the timestamp of the next video frame.
+
+        :since: pyglet 1.1
+
+        :rtype: float
+        :return: The next timestamp, or ``None`` if there are no more video
+            frames.
+        '''
+        pass
+
+    def get_next_video_frame(self):
+        '''Get the next video frame.
+
+        Video frames may share memory: the previous frame may be invalidated
+        or corrupted when this method is called unless the application has
+        made a copy of it.
+
+        :since: pyglet 1.1
+
+        :rtype: `pyglet.image.AbstractImage`
+        :return: The next video frame image, or ``None`` if there are no more
+            video frames.
+        '''
+        pass
+
     # Internal methods that Players call on the source:
 
     def _play(self):
@@ -433,7 +491,7 @@ class Source(object):
     def _init_texture(self, player):
         '''Create the player's texture.'''
         pass
-
+    
     def _update_texture(self, player, timestamp):
         '''Update the texture on player.'''
         pass

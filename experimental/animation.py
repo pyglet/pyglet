@@ -34,7 +34,14 @@ class AnimationPlayer(object):
     def blit(self, x, y):
         self.animation.frames[self.index].image.blit(x, y)
 
-animation = image.load_animation(sys.argv[1])
+try:
+    animation = image.load_animation(sys.argv[1])
+except image.codecs.ImageDecodeException:
+    from pyglet import media
+    source = media.load(sys.argv[1])
+    source._seek(0)
+    animation = source.get_animation()
+
 clock.tick()
 player = AnimationPlayer(animation)
 
