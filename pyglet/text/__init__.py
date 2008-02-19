@@ -40,10 +40,11 @@ class Label(layout.TextLayout):
     text = property(_get_text, _set_text)
 
     def _get_color(self):
-        return self.document.color
+        return self.document.get_style('color')
 
     def _set_color(self, color):
-        self.document.color = color
+        # XXX passing in dummy start, end - didn't want to change the API
+        self.document.set_style(0, 0, dict(color=color))
         self._update() # XXX
 
     color = property(_get_color, _set_color)
