@@ -770,7 +770,7 @@ pointer_image_flip = resource.image('pointer.png', flip_x=True)
 explosion_sound = resource.media('explosion.wav', streaming=False)
 bullet_sound = resource.media('bullet.wav', streaming=False)
 
-starfield = Starfield(resource.image('starfield.jpg'))
+starfield = Starfield(resource.texture('starfield.jpg'))
 player = Player(resource.image('ship.png'))
 win.push_handlers(player)
 

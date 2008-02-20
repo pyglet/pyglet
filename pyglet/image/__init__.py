@@ -1586,7 +1586,7 @@ class Texture(AbstractImage):
         :type: `ImageData`
         ''')
 
-    def get_texture(self):
+    def get_texture(self, rectangle=False):
         return self
 
     # no implementation of blit_to_texture yet (could use aux buffer)
