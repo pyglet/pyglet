@@ -57,7 +57,7 @@ if __name__ == '__main__':
     filename = sys.argv[1]
 
     w = window.Window(visible=False, resizable=True)
-    img = image.load(filename).get_texture()
+    img = image.load(filename).get_texture(True)
     img.anchor_x = img.width // 2
     img.anchor_y = img.height // 2
 

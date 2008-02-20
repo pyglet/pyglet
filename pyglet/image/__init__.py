@@ -1459,14 +1459,9 @@ class Texture(AbstractImage):
         if rectangle:
             texture_width = width
             texture_height = height
-            tex_coords = (0., 0., 0., 
-                          width, 0., 0., 
-                          width, height, 0., 
-                          0., height, 0.)
         else:
             texture_width = _nearest_pow2(width)
             texture_height = _nearest_pow2(height)
-            tex_coords = cls.tex_coords
 
         id = GLuint()
         glGenTextures(1, byref(id))
@@ -1482,6 +1477,12 @@ class Texture(AbstractImage):
                      blank)
 
         texture = cls(texture_width, texture_height, target, id.value)
+        if rectangle:
+            texture.tex_coords = (0., 0., 0., 
+                                  width, 0., 0., 
+                                  width, height, 0., 
+                                  0., height, 0.)
+
         if texture_width == width and texture_height == height:
             return texture
 

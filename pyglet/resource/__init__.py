@@ -229,7 +229,7 @@ class Loader(object):
         img = image.load(name, file=file)
         bin = self._get_texture_atlas_bin(img.width, img.height)
         if bin is None:
-            return img.get_texture()
+            return img.get_texture(True)
 
         # Try atlases until image fits
         for atlas in bin:
