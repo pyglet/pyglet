@@ -332,7 +332,7 @@ class AbstractImage(object):
         raise ImageException('Cannot retrieve image data for %r' % self)
 
     image_data = property(lambda self: self.get_image_data(),
-        doc='''An ImageData view of this image.  
+        doc='''An `ImageData` view of this image.  
         
         Changes to the returned instance may or may not be reflected in this
         image.  Read-only.
@@ -342,11 +342,32 @@ class AbstractImage(object):
         :type: `ImageData`
         ''')
 
-    def get_texture(self):
-        '''A Texture view of this image.  
+    def get_texture(self, rectangle=False):
+        '''A `Texture` view of this image.  
+
+        By default, textures are created with dimensions that are powers of
+        two.  Smaller images will return a `TextureRegion` that covers just
+        the image portion of the larger texture.  This restriction is required
+        on older video cards, and for compressed textures, or where texture
+        repeat modes will be used, or where mipmapping is desired.
+
+        If the `rectangle` parameter is ``True``, this restriction is ignored
+        and a texture the size of the image may be created if the driver
+        supports the ``GL_ARB_texture_rectangle`` or
+        ``GL_NV_texture_rectangle`` extensions.  If the extensions are not
+        present or the image already is a texture, the `rectangle` parameter
+        is ignored.
+
+        Examine `Texture.target` to determine if the returned texture is a
+        rectangle (``GL_TEXTURE_RECTANGLE_ARB`` or
+        ``GL_TEXTURE_RECTANGLE_NV``) or not (``GL_TEXTURE_2D``).
         
         Changes to the returned instance may or may not be reflected in this
         image.
+
+        :Parameters:
+            `rectangle` : bool
+                True if the texture can be created as a rectangle.
 
         :rtype: `Texture`
 
@@ -355,7 +376,7 @@ class AbstractImage(object):
         raise ImageException('Cannot retrieve texture for %r' % self)
 
     texture = property(lambda self: self.get_texture(),
-        doc='''Get a Texture view of this image.  
+        doc='''Get a `Texture` view of this image.  
         
         Changes to the returned instance may or may not be reflected in this
         image.
@@ -366,7 +387,7 @@ class AbstractImage(object):
         ''')
 
     def get_mipmapped_texture(self):
-        '''Retrieve a Texture instance with all mipmap levels filled in.
+        '''Retrieve a `Texture` instance with all mipmap levels filled in.
 
         Requires that image dimensions be powers of 2. 
 
@@ -553,6 +574,13 @@ class UniformTextureSequence(TextureSequence):
     item_height = property(_get_item_height)
 
 class Animation(object):
+    # TODO: convenience methods for packing into texture(s)
+    #          share code with resource rectallocator
+    #       convert to media.Source
+    #       move to another module?  
+    #          pyglet.animation?
+    #          pyglet.image.animation?
+    #       AbstractImageSequence.create_animation(period, loop=True)
     def __init__(self, frames):
         self.frames = frames
 
@@ -750,7 +778,7 @@ class ImageData(AbstractImage):
         self.mipmap_images += [None] * (level - len(self.mipmap_images))
         self.mipmap_images[level - 1] = data
 
-    def create_texture(self, cls):
+    def create_texture(self, cls, rectangle=False):
         '''Create a texture containing this image.
 
         If the image's dimensions are not powers of 2, a TextureRegion of
@@ -760,46 +788,28 @@ class ImageData(AbstractImage):
         :Parameters:
             `cls` : class (subclass of Texture)
                 Class to construct.
+            `rectangle` : bool
+                ``True`` if a rectangle can be created; see
+                `AbstractImage.get_texture`.
+
+                **Since:** pyglet 1.1
 
         :rtype: cls or cls.region_class
         '''
-
-        texture = cls.create_for_size(
-            GL_TEXTURE_2D, self.width, self.height)
-        subimage = False
-        if texture.width != self.width or texture.height != self.height:
-            texture = texture.get_region(0, 0, self.width, self.height)
-            subimage = True
-
+        internalformat = self._get_internalformat(self.format)
+        texture = cls.create(self.width, self.height, internalformat, rectangle)
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
 
-        internalformat = self._get_internalformat(self.format)
-
-        glBindTexture(texture.target, texture.id)
-        glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-
-        if subimage:
-            width = texture.owner.width
-            height = texture.owner.height
-            blank = (c_ubyte * (width * height * 4))()
-            glTexImage2D(texture.target, texture.level,
-                         internalformat,
-                         width, height,
-                         0,
-                         GL_RGBA, GL_UNSIGNED_BYTE,
-                         blank) 
-            internalformat = None
-
         self.blit_to_texture(texture.target, texture.level, 
-            self.anchor_x, self.anchor_y, 0, internalformat)
+                             self.anchor_x, self.anchor_y, 0, None)
         
         return texture 
 
-    def get_texture(self):
+    def get_texture(self, rectangle=False):
         if not self._current_texture:
-            self._current_texture = self.create_texture(Texture)
+            self._current_texture = self.create_texture(Texture, rectangle)
         return self._current_texture
 
     def get_mipmapped_texture(self):
@@ -1257,7 +1267,7 @@ class CompressedImageData(AbstractImage):
             raise ImageException('%s is required to decode %r' % \
                 (self.extension, self))
 
-    def get_texture(self):
+    def get_texture(self, rectangle=False):
         if self._current_texture:
             return self._current_texture
 
@@ -1413,6 +1423,71 @@ class Texture(AbstractImage):
             pass
 
     @classmethod
+    def create(cls, width, height, internalformat=GL_RGBA, rectangle=False):
+        '''Create an empty Texture.
+
+        If `rectangle` is ``False`` or the appropriate driver extensions are
+        not available, a larger texture than requested will be created, and
+        a `TextureRegion` corresponding to the requested size will be
+        returned.
+
+        :Parameters:
+            `width` : int
+                Width of the texture.
+            `height` : int
+                Height of the texture.
+            `internalformat` : int
+                GL constant giving the internal format of the texture; for
+                example, ``GL_RGBA``.
+            `rectangle` : bool
+                ``True`` if a rectangular texture is permitted.  See
+                `AbstractImage.get_texture`.
+
+        :rtype: `Texture`
+        
+        :since: pyglet 1.1
+        '''
+        target = GL_TEXTURE_2D
+        if rectangle:
+            if gl_info.have_extension('GL_ARB_texture_rectangle'):
+                target = GL_TEXTURE_RECTANGLE_ARB
+            elif gl_info.have_extension('GL_NV_texture_rectangle'):
+                target = GL_TEXTURE_RECTANGLE_NV
+            else:
+                rectangle = False
+
+        if rectangle:
+            texture_width = width
+            texture_height = height
+            tex_coords = (0., 0., 0., 
+                          width, 0., 0., 
+                          width, height, 0., 
+                          0., height, 0.)
+        else:
+            texture_width = _nearest_pow2(width)
+            texture_height = _nearest_pow2(height)
+            tex_coords = cls.tex_coords
+
+        id = GLuint()
+        glGenTextures(1, byref(id))
+        glBindTexture(target, id.value)
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+
+        blank = (GLubyte * (texture_width * texture_height * 4))()
+        glTexImage2D(target, 0,
+                     internalformat,
+                     texture_width, texture_height,
+                     0,
+                     GL_RGBA, GL_UNSIGNED_BYTE,
+                     blank)
+
+        texture = cls(texture_width, texture_height, target, id.value)
+        if texture_width == width and texture_height == height:
+            return texture
+
+        return texture.get_region(0, 0, width, height)
+
+    @classmethod
     def create_for_size(cls, target, min_width, min_height,
                         internalformat=None):
         '''Create a Texture with dimensions at least min_width, min_height.
@@ -1434,6 +1509,8 @@ class Texture(AbstractImage):
                 initialised (only the texture name will be created on the
                 instance).   If specified, the image will be initialised
                 to this format with zero'd data.
+
+        :rtype: `Texture`
         '''
         if target not in (GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_RECTANGLE_ARB):
             width = _nearest_pow2(min_width)
@@ -1934,32 +2011,10 @@ class ColorBufferImage(BufferImage):
     gl_format = GL_RGBA
     format = 'RGBA'
 
-    def get_texture(self):
-        texture = Texture.create_for_size(GL_TEXTURE_2D, 
-            self.width, self.height)
-        if self.anchor_x or self.anchor_y:
-            texture.anchor_x = self.anchor_x
-            texture.anchor_y = self.anchor_y
-
-        if texture.width != self.width or texture.height != self.height:
-            texture = texture.get_region(0, 0, self.width, self.height)
-            width = texture.owner.width
-            height = texture.owner.height
-            blank = (c_ubyte * (width * height * 4))()
-            glTexImage2D(texture.target, texture.level,
-                         GL_RGBA,
-                         width, height,
-                         0,
-                         GL_RGBA, GL_UNSIGNED_BYTE,
-                         blank)
-            self.blit_to_texture(texture.target, texture.level, 
-                                 self.anchor_x, self.anchor_y, 0)
-        else:
-            glReadBuffer(self.gl_buffer)
-            glCopyTexImage2D(texture.target, texture.level,
-                             GL_RGBA,
-                             self.x, self.y, self.width, self.height,
-                             0)
+    def get_texture(self, rectangle=False):
+        texture = Texture.create(self.width, self.height, GL_RGBA, rectangle)
+        self.blit_to_texture(texture.target, texture.level, 
+                             self.anchor_x, self.anchor_y, 0)
         return texture
 
     def blit_to_texture(self, target, level, x, y, z):
@@ -1974,7 +2029,9 @@ class DepthBufferImage(BufferImage):
     gl_format = GL_DEPTH_COMPONENT
     format = 'L'
 
-    def get_texture(self):
+    def get_texture(self, rectangle=False):
+        assert rectangle == False, \
+            'Depth textures cannot be rectangular'
         if not _is_pow2(self.width) or not _is_pow2(self.height):
             raise ImageException(
                 'Depth texture requires that buffer dimensions be powers of 2')
@@ -2072,8 +2129,8 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
         self.row_padding = row_padding
         self.column_padding = column_padding
 
-    def get_texture(self):
-        return self.image.get_texture()
+    def get_texture(self, rectangle=False):
+        return self.image.get_texture(rectangle)
 
     def get_image_data(self):
         return self.image.get_image_data()
