@@ -52,7 +52,6 @@ class Sprite(event.EventDispatcher):
     _rotation = 0
     _opacity = 255
     _scale = 1.0
-    vertex_list = None
 
     def __init__(self, 
                  img, x=0, y=0, 
@@ -129,8 +128,9 @@ class Sprite(event.EventDispatcher):
                                       self._state.blend_src, 
                                       self._state.blend_dest,
                                       parent_state)
-            self._vertex_list.delete()
-            self._create_vertex_list()
+            self._batch.migrate(self._vertex_list, GL_QUADS, self._state,
+                                self._batch)
+        # TODO else?
         
     def _get_parent_state(self):
         return self._state.parent
@@ -272,6 +272,8 @@ class Sprite(event.EventDispatcher):
                        _set_opacity)
 
     def draw(self):
+        # TODO parent states
+        # TODO if batch
         self._state.set()
         self._vertex_list.draw(GL_QUADS)
         self._state.unset()

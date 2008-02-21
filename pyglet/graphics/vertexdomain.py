@@ -276,6 +276,27 @@ class VertexList(object):
         '''Delete this group.'''
         self.domain.allocator.dealloc(self.start, self.count)
 
+    def migrate(self, domain):
+        '''Move this group from its current domain and add to the specified
+        one.  Attributes on domains must match.  (In practice, used to change
+        parent state of some vertices).'''
+        assert domain.attribute_names.keys() == \
+            self.domain.attribute_names.keys(), 'Domain attributes must match.'
+
+        new_start = domain.allocator.alloc(self.count)
+        for key, old_attribute in self.domain.attribute_names.items():
+            old = old_attribute.get_region(old_attribute.buffer,
+                                           self.start, self.count)
+            new_attribute = domain.attribute_names[key]
+            new = new_attribute.get_region(new_attribute.buffer,
+                                           new_start, self.count)
+            new.array[:] = old.array[:]
+            new.invalidate()
+
+        self.domain.allocator.dealloc(self.start, self.count)
+        self.domain = domain
+        self.start = new_start
+
     def set_attribute_data(self, i, data):
         attribute = self.domain.attributes[i]
         # TODO without region

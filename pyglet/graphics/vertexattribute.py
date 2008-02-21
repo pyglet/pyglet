@@ -72,6 +72,7 @@ def serialize_attributes(count, attributes):
         attribute.offset = offset
         offset += count * attribute.stride
 
+# TODO: cache attributes
 def create_attribute(format):
     '''Create a vertex attribute description given a format string such as
     "v3f".  The initial stride and offset of the attribute will be 0.

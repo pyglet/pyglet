@@ -6,6 +6,7 @@ import ctypes
 from pyglet.gl import *
 from pyglet.graphics import vertexbuffer, vertexattribute, vertexdomain
 
+# TODO: separate out draw_indexed
 def draw(size, mode, *data, **kwargs):
     '''Draw a primitive immediately.
 
@@ -102,6 +103,7 @@ class Batch(object):
     def add(self, count, mode, state, *data):
         formats, initial_arrays = _parse_data(data)
         domain = self._get_domain(False, mode, state, formats)
+        domain.__formats = formats
             
         # Create vertex list and initialize
         vlist = domain.create(count)
@@ -109,6 +111,33 @@ class Batch(object):
             vlist.set_attribute_data(i, array)
 
         return vlist
+
+    def migrate(self, vertex_list, mode, state, batch):
+        '''Migrate a vertex list to another batch and/or state.
+
+        `vertex_list` and `mode` together identify the vertex list to migrate.
+        `state` and `batch` are new owners of the vertex list after migration.  
+
+        The results are undefined if `mode` is not correct or if `vertex_list`
+        does not belong to this batch (they are not checked and will not
+        necessarily throw an exception immediately).
+
+        `batch` can remain unchanged if only a state change is desired.
+        
+        :Parameters:
+            `vertex_list` : `VertexList`
+                A vertex list currently belonging to this batch.
+            `mode` : int
+                The current GL drawing mode of the vertex list.
+            `state` : `State`
+                The new state to migrate to.
+            `batch` : `Batch`
+                The batch to migrate to (or the current batch).
+
+        '''
+        formats = vertex_list.domain.__formats
+        domain = batch._get_domain(False, mode, state, formats)
+        vertex_list.migrate(domain)
 
     def add_indexed(self, count, mode, state, indices, *data):
         formats, initial_arrays = _parse_data(data)
@@ -122,7 +151,6 @@ class Batch(object):
             vlist.set_attribute_data(i, array)
 
         return vlist 
-
 
     def _get_domain(self, indexed, mode, state, formats):
         if state is None:
@@ -198,6 +226,7 @@ class Batch(object):
         for func in self._draw_list:
             func()
 
+    # TODO: remove?
     def draw_subset(self, vertex_lists):
         # Horrendously inefficient.
         def visit(state):
@@ -223,6 +252,7 @@ class Batch(object):
         for state in self.top_states:
             visit(state)
 
+    # TODO: conditional on a pyglet option.  better name.  to file
     def debug_draw_tree(self):
         if self._draw_list_dirty:
             self._update_draw_list()
