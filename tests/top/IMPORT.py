@@ -29,6 +29,7 @@ modules = [
     'graphics.vertexbuffer',
     'graphics.vertexdomain',
     'image',
+    'image.atlas',
     'media',
     'resource',
     'sprite',
