@@ -1,6 +1,33 @@
 #!/usr/bin/env python
 
-'''
+'''Load application resources from a known path.
+
+Loading resources by specifying relative paths to filenames is often
+problematic in Python, as the working directory is not necessarily the same
+directory as the application's script files.
+
+This module allows applications to specify a search path for resources.
+Relative paths are taken to be relative to the application's __main__ module.
+ZIP files can appear on the path; they will be searched inside.  The resource
+module also behaves as expected when applications are bundled using py2exe or
+py2app.
+
+By default, the search path `path` for resources includes the location of the
+application's ``__main__`` module and the current working directory.  This
+allows users or developers to easily override specific resources by adding
+newer files to the working directory.  The path is a list of locations to
+search and can be modified directly.  After modifying the path, call
+`reindex`.
+
+As well as providing file references (with the `file` function), the resource
+module also contains convenience functions for loading images, textures,
+fonts, media and documents.
+
+3rd party modules or packages not bound to a specific application should
+construct their own `Loader` instance and override the path to use the
+resources in the module's directory.
+
+:since: pyglet 1.1
 '''
 
 __docformat__ = 'restructuredtext'
@@ -50,6 +77,28 @@ def get_script_home():
     return ''
 
 def get_settings_path(name):
+    '''Get a directory to save user preferences.
+
+    Different platforms have different conventions for where to save user
+    preferences, saved games, and settings.  This function implements those
+    conventions.  Note that the returned path may not exist: applications
+    should use ``os.makedirs`` to construct it if desired.
+
+    On Linux, a hidden directory `name` in the user's home directory is
+    returned.
+
+    On Windows (including under Cygwin) the `name` directory in the user's
+    ``Application Settings`` directory is returned.
+
+    On Mac OS X the `name` directory under ``~/Library/Application Support``
+    is returned.
+
+    :Parameters:
+        `name` : str
+            The name of the application.
+
+    :rtype: str
+    '''
     if sys.platform in ('cygwin', 'win32'):
         if 'APPDATA' in os.environ:
             return os.path.join(os.environ['APPDATA'], name)
@@ -245,7 +294,26 @@ class Loader(object):
         return bin
 
     def image(self, name, flip_x=False, flip_y=False, rotate=0):
-        '''
+        '''Load an image with optional transformation.
+
+        This is similar to `texture`, except the resulting image will be
+        packed into a `TextureBin` if it is an appropriate size for packing.
+        This is more efficient than loading images into separate textures.
+
+        :Parameters:
+            `name` : str
+                Filename of the image source to load.
+            `flip_x` : bool
+                If True, the returned image will be flipped horizontally.
+            `flip_y` : bool
+                If True, the returned image will be flipped vertically.
+            `rotate` : int
+                The returned image will be rotated clockwise by the given
+                number of degrees (a mulitple of 90).
+
+        :rtype: `Texture`
+        :return: A complete texture if the image is large, otherwise a
+            `TextureRegion` of a texture atlas.
         '''
         if name in self._cached_images:
             identity = self._cached_images[name]
