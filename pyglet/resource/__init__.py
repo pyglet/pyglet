@@ -258,29 +258,25 @@ class Loader(object):
         return identity.get_transform(flip_x, flip_y, rotate)
        
     def get_cached_image_names(self):
+        '''Get a list of image filenames that have been cached.
+
+        This is useful for debugging and profiling only.
+
+        :rtype: list
+        :return: List of str
+        '''
         return self._cached_images.keys()
 
-    def get_texture_atlases(self):
-        return reduce(operator.add, self._texture_atlas_bins.values())
+    def get_texture_bins(self):
+        '''Get a list of texture bins in use.
 
-    def get_texture_atlas_usage(self):
-        usage = 0.0
-        count = 0
-        for bin in self._texture_atlas_bins:
-            for atlas in bin.atlases:
-                usage += atlas.allocator.get_usage()
-                count += 1
-        return usage / count
+        This is useful for debugging and profiling only.
 
-    def get_texture_atlas_fragmentation(self):
-        fragmentation = 0.0
-        count = 0
-        for bin in self._texture_atlas_bins:
-            for atlas in bin.atlases:
-                usage += atlas.allocator.get_fragmentation()
-                count += 1
-        return fragmentation / count 
-        
+        :rtype: list
+        :return: List of `TextureBin`
+        '''
+        return self._texture_atlas_bins.values()
+       
     def media(self, name, streaming=True):
         '''Load a sound or video resource.
 
@@ -359,10 +355,7 @@ file = _default_loader.file
 add_font = _default_loader.add_font
 image = _default_loader.image
 get_cached_image_names = _default_loader.get_cached_image_names
-get_texture_atlases = _default_loader.get_texture_atlases
-get_texture_atlas_usage = _default_loader.get_texture_atlas_usage
-get_texture_atlas_fragmentation = \
-    _default_loader.get_texture_atlas_fragmentation
+get_texture_bins = _default_loader.get_texture_bins
 media = _default_loader.media
 texture = _default_loader.texture
 get_cached_texture_names = _default_loader.get_cached_texture_names
