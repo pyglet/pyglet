@@ -715,7 +715,7 @@ wrapping_batch = graphics.Batch()
 resource.path.append('res')
 resource.reindex()
 
-resource.preload_font('saved_by_zero.ttf')
+resource.add_font('saved_by_zero.ttf')
 def create_font(size):
     return font.load('Saved By Zero', size, dpi=72)
 

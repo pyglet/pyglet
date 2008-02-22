@@ -192,35 +192,25 @@ class Loader(object):
         except KeyError:
             raise ResourceNotFoundException(name)
 
-    def preload_font(self, name):
+    def add_font(self, name):
         '''Add a font resource to the application.
 
-        Fonts not installed on the system must be preloaded before they
-        can be used with `font.load`.  Although the font is preloaded with
+        Fonts not installed on the system must be added to pyglet before they
+        can be used with `font.load`.  Although the font is added with
         its filename using this function, it is loaded by specifying its
         family name.  For example::
 
-            resource.preload_font('action_man.ttf')
+            resource.add_font('action_man.ttf')
             action_man = font.load('Action Man')
 
         :Parameters:
             `name` : str
-                Filename of the font resource to preload.
+                Filename of the font resource to add.
 
         '''
         from pyglet import font
         file = self.file(name)
         font.add_file(file)
-
-    def preload_fonts(self, *names):
-        if names:
-            for name in names:
-                self.preload_font(name)
-        else:
-            raise NotImplementedError('TODO')
-
-    def preload_fonts_iter(self, *names):
-        raise NotImplementedError('TODO')
 
     def _alloc_image(self, name):
         file = self.file(name)
@@ -266,13 +256,7 @@ class Loader(object):
             return identity
                 
         return identity.get_transform(flip_x, flip_y, rotate)
-        
-    def preload_images(self, *names):
-        raise NotImplementedError('TODO')
-
-    def preload_images_iter(self, *names):
-        raise NotImplementedError('TODO')
-
+       
     def get_cached_image_names(self):
         return self._cached_images.keys()
 
@@ -372,12 +356,8 @@ class _DefaultLoader(Loader):
 _default_loader = _DefaultLoader()
 reindex = _default_loader.reindex
 file = _default_loader.file
-preload_font = _default_loader.preload_font
-preload_fonts = _default_loader.preload_fonts
-preload_fonts_iter = _default_loader.preload_fonts_iter
+add_font = _default_loader.add_font
 image = _default_loader.image
-preload_images = _default_loader.preload_images
-preload_images_iter = _default_loader.preload_images_iter
 get_cached_image_names = _default_loader.get_cached_image_names
 get_texture_atlases = _default_loader.get_texture_atlases
 get_texture_atlas_usage = _default_loader.get_texture_atlas_usage
