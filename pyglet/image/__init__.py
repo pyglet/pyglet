@@ -145,6 +145,8 @@ from pyglet.gl import gl_info
 from pyglet import graphics
 from pyglet.window import *
 
+from pyglet.image import atlas
+
 class ImageException(Exception):
     pass
 
@@ -1449,7 +1451,9 @@ class Texture(AbstractImage):
         '''
         target = GL_TEXTURE_2D
         if rectangle:
-            if gl_info.have_extension('GL_ARB_texture_rectangle'):
+            if _is_pow2(width) and _is_pow2(height):
+                rectangle = False
+            elif gl_info.have_extension('GL_ARB_texture_rectangle'):
                 target = GL_TEXTURE_RECTANGLE_ARB
             elif gl_info.have_extension('GL_NV_texture_rectangle'):
                 target = GL_TEXTURE_RECTANGLE_NV
@@ -1676,11 +1680,17 @@ class TextureRegion(Texture):
         self.y = y
         self.z = z
         self.owner = owner
-        u1 = x / float(owner.width)
-        v1 = y / float(owner.height)
-        u2 = (x + width) / float(owner.width)
-        v2 = (y + height) / float(owner.height)
-        r = z / float(owner.images)
+        owner_u1 = owner.tex_coords[0]
+        owner_v1 = owner.tex_coords[1]
+        owner_u2 = owner.tex_coords[3]
+        owner_v2 = owner.tex_coords[7]
+        scale_u = owner_u2 - owner_u1
+        scale_v = owner_v2 - owner_v1
+        u1 = x / float(owner.width) * scale_u + owner_u1
+        v1 = y / float(owner.height) * scale_v + owner_v1
+        u2 = (x + width) / float(owner.width) * scale_u + owner_u1
+        v2 = (y + height) / float(owner.height) * scale_v + owner_v1
+        r = z / float(owner.images) + owner.tex_coords[2]
         self.tex_coords = (u1, v1, r, u2, v1, r, u2, v2, r, u1, v2, r)
 
     def get_image_data(self):

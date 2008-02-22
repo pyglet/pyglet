@@ -54,15 +54,6 @@ class TestCase(unittest.TestCase):
     def test0(self):
         self.check(resource.image('rgbm.png'), 'rgbm')
 
-    def test1(self):
-        self.check(resource.image('rgbm.png', pad=1), 'rgbm')
-
-    def test1a(self):
-        self.check(resource.image('rgbm.png', pad=2), 'rgbm')
-
-    def test1b(self):
-        self.check(resource.image('rgbm.png', pad=4), 'rgbm')
-
     def test2(self):
         self.check(resource.image('rgbm.png', flip_x=True), 'mbgr')
 

@@ -12,7 +12,7 @@ import sys
 import zipfile
 import StringIO
 
-import rectallocator
+import pyglet
 
 class ResourceNotFoundException(Exception):
     '''The named resource was not found on the search path.'''
@@ -222,27 +222,14 @@ class Loader(object):
     def preload_fonts_iter(self, *names):
         raise NotImplementedError('TODO')
 
-    def _alloc_image(self, name, pad):
-        # XXX pad is ignored (probably not needed?)
-        from pyglet import image
+    def _alloc_image(self, name):
         file = self.file(name)
-        img = image.load(name, file=file)
+        img = pyglet.image.load(name, file=file)
         bin = self._get_texture_atlas_bin(img.width, img.height)
         if bin is None:
             return img.get_texture(True)
 
-        # Try atlases until image fits
-        for atlas in bin:
-            try:
-                return atlas.add(img)
-            except rectallocator.AllocatorException:
-                pass
-
-        # No atlases could accept image, create a new one (all atlases are
-        # 256x256, an arbitrary choice).
-        atlas = TextureAtlas(256, 256)
-        bin.append(atlas)
-        return atlas.add(img)
+        return bin.add(img)
 
     def _get_texture_atlas_bin(self, width, height):
         '''A heuristic for determining the atlas bin to use for a given image
@@ -259,20 +246,21 @@ class Loader(object):
         if height > 32:
             bin_size = 2
 
-        if bin_size in self._texture_atlas_bins:
+        try:
             bin = self._texture_atlas_bins[bin_size]
-        else:
-            bin = self._texture_atlas_bins[bin_size] = []
+        except KeyError:
+            bin = self._texture_atlas_bins[bin_size] = \
+                pyglet.image.atlas.TextureBin()
 
         return bin
 
-    def image(self, name, pad=0, flip_x=False, flip_y=False, rotate=0):
+    def image(self, name, flip_x=False, flip_y=False, rotate=0):
         '''
         '''
         if name in self._cached_images:
             identity = self._cached_images[name]
         else:
-            identity = self._cached_images[name] = self._alloc_image(name, pad)
+            identity = self._cached_images[name] = self._alloc_image(name)
 
         if not rotate and not flip_x and not flip_y:
             return identity
@@ -295,7 +283,7 @@ class Loader(object):
         usage = 0.0
         count = 0
         for bin in self._texture_atlas_bins:
-            for atlas in bin:
+            for atlas in bin.atlases:
                 usage += atlas.allocator.get_usage()
                 count += 1
         return usage / count
@@ -304,7 +292,7 @@ class Loader(object):
         fragmentation = 0.0
         count = 0
         for bin in self._texture_atlas_bins:
-            for atlas in bin:
+            for atlas in bin.atlases:
                 usage += atlas.allocator.get_fragmentation()
                 count += 1
         return fragmentation / count 
@@ -348,12 +336,11 @@ class Loader(object):
 
         :rtype: `Texture`
         '''
-        from pyglet import image
         if name in self._cached_textures:
             return self._cached_textures[name]
 
         file = self.file(name)
-        texture = image.load(name, file=file).get_texture()
+        texture = pyglet.image.load(name, file=file).get_texture()
         self._cached_textures[name] = texture
         return texture
 
@@ -363,19 +350,6 @@ class Loader(object):
         :rtype: list of str
         '''
         return self._cached_textures.keys()
-
-class TextureAtlas(object):
-    def __init__(self, width, height):
-        from pyglet import gl
-        from pyglet import image
-        self.texture = image.Texture.create_for_size(
-            gl.GL_TEXTURE_2D, width, height, internalformat=gl.GL_RGBA)
-        self.allocator = rectallocator.RectAllocator(width, height)
-
-    def add(self, img):
-        x, y = self.allocator.alloc(img.width, img.height)
-        self.texture.blit_into(img, x, y, 0)
-        return self.texture.get_region(x, y, img.width, img.height)
 
 #: Default resource search path.
 #:
