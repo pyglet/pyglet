@@ -132,6 +132,7 @@ options = {
     'font': ('gdiplus', 'win32'), # ignored outside win32; win32 is deprecated
     'debug_font': False,
     'debug_gl': not _enable_optimisations,
+    'debug_graphics_batch': False,
     'debug_lib': False,
     'debug_media': False,
     'debug_win32': False,
@@ -146,6 +147,7 @@ _option_types = {
     'font': tuple,
     'debug_font': bool,
     'debug_gl': bool,
+    'debug_graphics_batch': bool,
     'debug_lib': bool,
     'debug_media': bool,
     'debug_win32': bool,

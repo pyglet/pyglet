@@ -3,8 +3,11 @@
 
 import ctypes
 
+import pyglet
 from pyglet.gl import *
 from pyglet.graphics import vertexbuffer, vertexattribute, vertexdomain
+
+_debug_graphics_batch = pyglet.options['debug_graphics_batch']
 
 # TODO: separate out draw_indexed
 def draw(size, mode, *data, **kwargs):
@@ -218,6 +221,23 @@ class Batch(object):
 
         self._draw_list = draw_list
         self._draw_list_dirty = False
+
+        if _debug_graphics_batch:
+            self._dump_draw_list()
+
+    def _dump_draw_list(self):
+        def dump(state, indent=''):
+            print indent, 'Begin state', state
+            domain_map = self.state_map[state]
+            for _, domain in domain_map.items():
+                print indent, '  ', domain
+            for child in self.state_children.get(state, ()):
+                dump(child, indent + '  ')
+            print indent, 'End state', state
+
+        print 'Draw list for %r:' % self
+        for state in self.top_states:
+            dump(state)
         
     def draw(self):
         if self._draw_list_dirty:
@@ -251,23 +271,6 @@ class Batch(object):
         self.top_states.sort()
         for state in self.top_states:
             visit(state)
-
-    # TODO: conditional on a pyglet option.  better name.  to file
-    def debug_draw_tree(self):
-        if self._draw_list_dirty:
-            self._update_draw_list()
-
-        def dump(state, indent=''):
-            print indent, 'Begin state', state
-            domain_map = self.state_map[state]
-            for _, domain in domain_map.items():
-                print indent, '  ', domain
-            for child in self.state_children.get(state, ()):
-                dump(child, indent + '  ')
-            print indent, 'End state', state
-
-        for state in self.top_states:
-            dump(state)
 
 class AbstractState(object):
     def __init__(self, parent=None):
