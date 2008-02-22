@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # $Id:$
 
-from pyglet.text import layout, document
+from pyglet.text import layout, document, caret
 
 def attributed(text):
     from pyglet.text.formats import attributed

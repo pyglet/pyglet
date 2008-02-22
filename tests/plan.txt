@@ -10,6 +10,9 @@
 #     requirements, developer status).
 #   * Order matters... tests are run in the order they are specified.
 
+top
+    top.IMPORT                                  GENERIC
+
 window
     window-basic
         window.WINDOW_OPEN                      X11 WIN OSX
