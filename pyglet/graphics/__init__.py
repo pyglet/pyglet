@@ -282,6 +282,27 @@ class AbstractState(object):
     def unset(self):
         pass
 
+    def set_recursive(self):
+        '''Set this state and its ancestry.
+
+        Call this method if you are using a state in isolation: the
+        parent states will be called in top-down order, with this class's
+        `set` being called last.
+        '''
+        if self.parent:
+            self.parent.set_recursive()
+        self.set()
+
+    def unset_recursive(self):
+        '''Unset this state and its ancestry.
+
+        The inverse of `set_recursive`.
+        '''
+        state = self
+        while state:
+            state.unset()
+            state = state.parent
+
 class NullState(AbstractState):
     pass
 
