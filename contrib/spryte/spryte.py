@@ -3,9 +3,9 @@ import math
 
 from pyglet import image, gl, clock, graphics, sprite
 
-class SpriteBatchState(graphics.AbstractState):
+class SpriteBatchGroup(graphics.AbstractGroup):
     def __init__(self, x, y, parent=None):
-        super(SpriteBatchState, self).__init__(parent)
+        super(SpriteBatchGroup, self).__init__(parent)
         self.x, self.y = x, y
 
     def set(self):
@@ -19,7 +19,7 @@ class SpriteBatchState(graphics.AbstractState):
 class SpriteBatch(graphics.Batch):
     def __init__(self, x=0, y=0):
         super(SpriteBatch, self).__init__()
-        self.state = SpriteBatchState(x, y)
+        self.state = SpriteBatchGroup(x, y)
         self.sprites = []
 
     def __iter__(self): return iter(self.sprites)

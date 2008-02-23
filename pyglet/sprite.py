@@ -14,14 +14,14 @@ from pyglet import event
 from pyglet import graphics
 from pyglet import image
 
-class SpriteState(graphics.AbstractState):
+class SpriteGroup(graphics.AbstractGroup):
     def __init__(self, texture, blend_src, blend_dest, parent=None):
-        super(SpriteState, self).__init__(parent)
+        super(SpriteGroup, self).__init__(parent)
         self.texture = texture
         self.blend_src = blend_src
         self.blend_dest = blend_dest
 
-    def set(self):
+    def set_state(self):
         glEnable(self.texture.target)
         glBindTexture(self.texture.target, self.texture.id)
 
@@ -29,7 +29,7 @@ class SpriteState(graphics.AbstractState):
         glEnable(GL_BLEND)
         glBlendFunc(self.blend_src, self.blend_dest)
 
-    def unset(self):
+    def unset_state(self):
         glPopAttrib()
         glDisable(self.texture.target)
 
@@ -58,11 +58,7 @@ class Sprite(event.EventDispatcher):
                  blend_src=GL_SRC_ALPHA,
                  blend_dest=GL_ONE_MINUS_SRC_ALPHA,
                  batch=None,
-                 parent_state=None):
-
-        # make sure parent_state is accompanied by a batch
-        if parent_state is not None and batch is None:
-            raise ValueError('parent_state requires batch rendering')
+                 group=None):
 
         if batch is not None:
             self._batch = batch
@@ -79,8 +75,7 @@ class Sprite(event.EventDispatcher):
         else:
             self._texture = img.get_texture()
 
-        self._state = SpriteState(self._texture, blend_src, blend_dest,
-                                  parent_state)
+        self._group = SpriteGroup(self._texture, blend_src, blend_dest, group)
         self._create_vertex_list()
 
     def __del__(self):
@@ -119,23 +114,23 @@ class Sprite(event.EventDispatcher):
     # TODO set batch
     batch = property(lambda self: self._batch)
 
-    def _set_parent_state(self, parent_state):
-        if self._state.parent == parent_state:
+    def _set_group(self, group):
+        if self._group.parent == group:
             return
 
-        if self._batch is not None:
-            self._state = SpriteState(self._texture, 
-                                      self._state.blend_src, 
-                                      self._state.blend_dest,
-                                      parent_state)
-            self._batch.migrate(self._vertex_list, GL_QUADS, self._state,
-                                self._batch)
-        # TODO else?
-        
-    def _get_parent_state(self):
-        return self._state.parent
+        self._group = SpriteGroup(self._texture, 
+                                  self._group.blend_src, 
+                                  self._group.blend_dest,
+                                  group)
 
-    parent_state = property(_get_parent_state, _set_parent_state)
+        if self._batch is not None:
+           self._batch.migrate(self._vertex_list, GL_QUADS, self._group,
+                               self._batch)
+
+    def _get_group(self):
+        return self._group.parent
+
+    group = property(_get_group, _set_group)
 
     def _get_image(self):
         if self._animation:
@@ -162,10 +157,10 @@ class Sprite(event.EventDispatcher):
 
     def _set_texture(self, texture):
         if texture.id is not self._texture.id:
-            self._state = SpriteState(texture, 
-                                      self._state.blend_src, 
-                                      self._state.blend_dest,
-                                      self._state.parent)
+            self._group = SpriteGroup(texture, 
+                                      self._group.blend_src, 
+                                      self._group.blend_dest,
+                                      self._group.parent)
             if self._batch is None:
                 self._vertex_list.tex_coords[:] = texture.tex_coords
             else:
@@ -181,7 +176,7 @@ class Sprite(event.EventDispatcher):
             self._vertex_list = graphics.vertex_list(4, 
                 'v2i', 'c4B', ('t3f', self._texture.tex_coords))
         else:
-            self._vertex_list = self._batch.add(4, GL_QUADS, self._state,
+            self._vertex_list = self._batch.add(4, GL_QUADS, self._group,
                 'v2i', 'c4B', ('t3f', self._texture.tex_coords))
         self._update_position()
         self._update_color()
@@ -272,10 +267,8 @@ class Sprite(event.EventDispatcher):
                        _set_opacity)
 
     def draw(self):
-        # TODO parent states
-        # TODO if batch
-        self._state.set()
+        self._group.set_state_recursive()
         self._vertex_list.draw(GL_QUADS)
-        self._state.unset()
+        self._group.unset_state_recursive()
 
 Sprite.register_event_type('on_animation_end')

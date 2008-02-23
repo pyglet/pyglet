@@ -121,21 +121,21 @@ def vertex_list_indexed(count, indices, *data):
 class Batch(object):
     def __init__(self):
         # Mapping to find domain.  
-        # state -> (attributes, mode, indexed) -> domain
-        self.state_map = {}
+        # group -> (attributes, mode, indexed) -> domain
+        self.group_map = {}
 
-        # Mapping of state to list of children.
-        self.state_children = {}
+        # Mapping of group to list of children.
+        self.group_children = {}
 
-        # List of top-level states
-        self.top_states = []
+        # List of top-level groups
+        self.top_groups = []
 
         self._draw_list = []
         self._draw_list_dirty = False
 
-    def add(self, count, mode, state, *data):
+    def add(self, count, mode, group, *data):
         formats, initial_arrays = _parse_data(data)
-        domain = self._get_domain(False, mode, state, formats)
+        domain = self._get_domain(False, mode, group, formats)
         domain.__formats = formats
             
         # Create vertex list and initialize
@@ -145,9 +145,9 @@ class Batch(object):
 
         return vlist
 
-    def add_indexed(self, count, mode, state, indices, *data):
+    def add_indexed(self, count, mode, group, indices, *data):
         formats, initial_arrays = _parse_data(data)
-        domain = self._get_domain(True, mode, state, formats)
+        domain = self._get_domain(True, mode, group, formats)
             
         # Create vertex list and initialize
         vlist = domain.create(count, len(indices))
@@ -158,42 +158,42 @@ class Batch(object):
 
         return vlist 
 
-    def migrate(self, vertex_list, mode, state, batch):
-        '''Migrate a vertex list to another batch and/or state.
+    def migrate(self, vertex_list, mode, group, batch):
+        '''Migrate a vertex list to another batch and/or group.
 
         `vertex_list` and `mode` together identify the vertex list to migrate.
-        `state` and `batch` are new owners of the vertex list after migration.  
+        `group` and `batch` are new owners of the vertex list after migration.  
 
         The results are undefined if `mode` is not correct or if `vertex_list`
         does not belong to this batch (they are not checked and will not
         necessarily throw an exception immediately).
 
-        `batch` can remain unchanged if only a state change is desired.
+        `batch` can remain unchanged if only a group change is desired.
         
         :Parameters:
             `vertex_list` : `VertexList`
                 A vertex list currently belonging to this batch.
             `mode` : int
                 The current GL drawing mode of the vertex list.
-            `state` : `State`
-                The new state to migrate to.
+            `group` : `Group`
+                The new group to migrate to.
             `batch` : `Batch`
                 The batch to migrate to (or the current batch).
 
         '''
         formats = vertex_list.domain.__formats
-        domain = batch._get_domain(False, mode, state, formats)
+        domain = batch._get_domain(False, mode, group, formats)
         vertex_list.migrate(domain)
 
-    def _get_domain(self, indexed, mode, state, formats):
-        if state is None:
-            state = null_state
+    def _get_domain(self, indexed, mode, group, formats):
+        if group is None:
+            group = null_group
         
-        # Batch state
-        if state not in self.state_map:
-            self._add_state(state)
+        # Batch group
+        if group not in self.group_map:
+            self._add_group(group)
 
-        domain_map = self.state_map[state]
+        domain_map = self.group_map[group]
 
         # Find domain given formats, indices and mode
         key = (formats, mode, indexed)
@@ -210,44 +210,44 @@ class Batch(object):
 
         return domain
 
-    def _add_state(self, state):
-        self.state_map[state] = {}
-        if state.parent is None:
-            self.top_states.append(state)
+    def _add_group(self, group):
+        self.group_map[group] = {}
+        if group.parent is None:
+            self.top_groups.append(group)
         else:
-            if state.parent not in self.state_map:
-                self._add_state(state.parent)
-            if state.parent not in self.state_children:
-                self.state_children[state.parent] = []
-            self.state_children[state.parent].append(state)
+            if group.parent not in self.group_map:
+                self._add_group(group.parent)
+            if group.parent not in self.group_children:
+                self.group_children[group.parent] = []
+            self.group_children[group.parent].append(group)
         self._draw_list_dirty = True
 
     def _update_draw_list(self):
-        # Visit state tree in preorder and create a list of bound methods
+        # Visit group tree in preorder and create a list of bound methods
         # to call.
         draw_list = []
 
-        def visit(state):
-            draw_list.append(state.set)
+        def visit(group):
+            draw_list.append(group.set_state)
 
-            # Draw domains using this state
-            domain_map = self.state_map[state]
+            # Draw domains using this group
+            domain_map = self.group_map[group]
             for (_, mode, _), domain in domain_map.items():
                 draw_list.append(
                     (lambda d, m: lambda: d.draw(m))(domain, mode))
 
-            # Sort and visit child states of this state
-            children = self.state_children.get(state)
+            # Sort and visit child groups of this group
+            children = self.group_children.get(group)
             if children:
                 children.sort()
                 for child in children:
                     visit(child)
 
-            draw_list.append(state.unset)
+            draw_list.append(group.unset_state)
 
-        self.top_states.sort()
-        for state in self.top_states:
-            visit(state)
+        self.top_groups.sort()
+        for group in self.top_groups:
+            visit(group)
 
         self._draw_list = draw_list
         self._draw_list_dirty = False
@@ -256,18 +256,18 @@ class Batch(object):
             self._dump_draw_list()
 
     def _dump_draw_list(self):
-        def dump(state, indent=''):
-            print indent, 'Begin state', state
-            domain_map = self.state_map[state]
+        def dump(group, indent=''):
+            print indent, 'Begin group', group
+            domain_map = self.group_map[group]
             for _, domain in domain_map.items():
                 print indent, '  ', domain
-            for child in self.state_children.get(state, ()):
+            for child in self.group_children.get(group, ()):
                 dump(child, indent + '  ')
-            print indent, 'End state', state
+            print indent, 'End group', group
 
         print 'Draw list for %r:' % self
-        for state in self.top_states:
-            dump(state)
+        for group in self.top_groups:
+            dump(group)
         
     def draw(self):
         if self._draw_list_dirty:
@@ -279,77 +279,77 @@ class Batch(object):
     # TODO: remove?
     def draw_subset(self, vertex_lists):
         # Horrendously inefficient.
-        def visit(state):
-            state.set()
+        def visit(group):
+            group.set_state()
 
-            # Draw domains using this state
-            domain_map = self.state_map[state]
+            # Draw domains using this group
+            domain_map = self.group_map[group]
             for (_, mode, _), domain in domain_map.items():
                 for list in vertex_lists:
                     if list.domain is domain:
                         list.draw(mode)
 
-            # Sort and visit child states of this state
-            children = self.state_children.get(state)
+            # Sort and visit child groups of this group
+            children = self.group_children.get(group)
             if children:
                 children.sort()
                 for child in children:
                     visit(child)
 
-            state.unset()
+            group.unset_state()
 
-        self.top_states.sort()
-        for state in self.top_states:
-            visit(state)
+        self.top_groups.sort()
+        for group in self.top_groups:
+            visit(group)
 
-class AbstractState(object):
+class AbstractGroup(object):
     def __init__(self, parent=None):
         self.parent = parent
         
-    def set(self):
+    def set_state(self):
         pass
 
-    def unset(self):
+    def unset_state(self):
         pass
 
-    def set_recursive(self):
-        '''Set this state and its ancestry.
+    def set_state_recursive(self):
+        '''Set this group and its ancestry.
 
-        Call this method if you are using a state in isolation: the
-        parent states will be called in top-down order, with this class's
+        Call this method if you are using a group in isolation: the
+        parent groups will be called in top-down order, with this class's
         `set` being called last.
         '''
         if self.parent:
-            self.parent.set_recursive()
-        self.set()
+            self.parent.set_state_recursive()
+        self.set_state()
 
-    def unset_recursive(self):
-        '''Unset this state and its ancestry.
+    def unset_state_recursive(self):
+        '''Unset this group and its ancestry.
 
         The inverse of `set_recursive`.
         '''
-        state = self
-        while state:
-            state.unset()
-            state = state.parent
+        group = self
+        while group:
+            group.unset_state_recursive()
+            group = group.parent
 
-class NullState(AbstractState):
+class NullGroup(AbstractGroup):
     pass
 
-null_state = NullState()
+null_group = NullGroup()
 
-class TextureState(AbstractState):
-    # Don't use this, create your own state classes that are more specific.
+class TextureGroup(AbstractGroup):
+    # Don't use this, create your own group classes that are more specific.
     # This is just an example.
     def __init__(self, texture, parent=None):
-        super(TextureState, self).__init__(parent)
+        super(TextureGroup, self).__init__(parent)
         self.texture = texture
 
-    def set(self):
+    def set_state(self):
         glEnable(self.texture.target)
         glBindTexture(self.texture.target, self.texture.id)
 
-    def unset(self):
+    def unset_state(self):
         glDisable(self.texture.target)
 
     def __hash__(self):
@@ -363,19 +363,19 @@ class TextureState(AbstractState):
     def __repr__(self):
         return '%s(id=%d)' % (self.__class__.__name__, self.texture.id)
 
-class OrderedState(AbstractState):
-    # This can be useful as a top-level state, or as a superclass for other
-    # states that need to be ordered.
+class OrderedGroup(AbstractGroup):
+    # This can be useful as a top-level group, or as a superclass for other
+    # groups that need to be ordered.
     #
-    # As a top-level state it's useful because graphics can be composited in a
+    # As a top-level group it's useful because graphics can be composited in a
     # known order even if they don't know about each other or share any known
-    # state.
+    # group.
     def __init__(self, order, parent=None):
-        super(OrderedState, self).__init__(parent)
+        super(OrderedGroup, self).__init__(parent)
         self.order = order
 
     def __cmp__(self, other):
-        if isinstance(other, OrderedState):
+        if isinstance(other, OrderedGroup):
             return cmp(self.order, other.order)
         return -1
 

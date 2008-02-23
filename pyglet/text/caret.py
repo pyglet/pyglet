@@ -71,7 +71,7 @@ class Caret(object):
         self._layout = layout
         if batch is None:
             batch = layout.batch
-        self._list = batch.add(2, gl.GL_LINES, layout.background_state, 
+        self._list = batch.add(2, gl.GL_LINES, layout.background_group, 
             'v2f', ('c4B', [0, 0, 0, 255] * 2))
 
         self._ideal_x = None

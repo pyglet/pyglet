@@ -799,6 +799,7 @@ while not win.has_exit:
 
     if not paused:
         starfield.update(dt)
+
         player.update(dt)
         for asteroid in asteroids:
             asteroid.update(dt)
@@ -806,6 +807,7 @@ while not win.has_exit:
             bullet.update(dt)
         for animation in animations[:]:
             animation.update(dt)
+
 
     if not player.invincible:
         # Collide bullets and player with asteroids

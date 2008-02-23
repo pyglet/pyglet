@@ -130,10 +130,10 @@ class GlyphBox(AbstractBox):
     def place(self, layout, i, x, y, context):
         assert self.glyphs
         try:
-            state = layout.states[self.owner]
+            group = layout.groups[self.owner]
         except KeyError:
-            state = layout.states[self.owner] = \
-                TextLayoutTextureState(self.owner, layout.foreground_state)
+            group = layout.groups[self.owner] = \
+                TextLayoutTextureGroup(self.owner, layout.foreground_group)
 
         n_glyphs = self.length
         vertices = []
@@ -161,7 +161,7 @@ class GlyphBox(AbstractBox):
                 color = (0, 0, 0, 255)
             colors.extend(color * ((end - start) * 4))
 
-        list = layout.batch.add(n_glyphs * 4, GL_QUADS, state, 
+        list = layout.batch.add(n_glyphs * 4, GL_QUADS, group, 
             ('v2f/dynamic', vertices),
             ('t3f/dynamic', tex_coords),
             ('c4B/dynamic', colors))
@@ -202,7 +202,7 @@ class GlyphBox(AbstractBox):
         if background_vertices:
             background_list = layout.batch.add(
                 len(background_vertices) // 2, GL_QUADS,
-                layout.background_state,
+                layout.background_group,
                 ('v2f/dynamic', background_vertices),
                 ('c4B/dynamic', background_colors))
             context.add_list(background_list)
@@ -210,7 +210,7 @@ class GlyphBox(AbstractBox):
         if underline_vertices:
             underline_list = layout.batch.add(
                 len(underline_vertices) // 2, GL_LINES,
-                layout.foreground_decoration_state,
+                layout.foreground_decoration_group,
                 ('v2f/dynamic', underline_vertices),
                 ('c4B/dynamic', underline_colors))
             context.add_list(underline_list)
@@ -309,22 +309,17 @@ class InvalidRange(object):
         self.end = 0
         return start, end
 
-class TextLayoutOrderedState(graphics.AbstractState):
-    def __init__(self, order, parent):
-        super(TextLayoutOrderedState, self).__init__(parent)
-        self.order = order
+# Text group hierarchy
+#
+# top_group                     Text[Viewport]LayoutGroup(AbstractGroup)
+#   background_group            OrderedGroup(0)
+#   foreground_group            TextLayoutForegroundGroup(OrderedGroup(1))
+#     [font textures]           TextLayoutTextureGroup(AbstractGroup)  
+#     [...]                     TextLayoutTextureGroup(AbstractGroup)  
+#   foreground_decoration_group 
+#                       TextLayoutForegroundDecorationGroup(OrderedGroup(2))
 
-    def __cmp__(self, other):
-        return cmp(self.order, other.order)
-
-# Text[Viewport]LayoutState(OrderedState) order = user-defined
-#   OrderedState; order = 0
-#   TextLayoutForegroundState(OrderedState); order = 1
-#     TextLayoutTextureState(AbstractState)  
-#     ... [one for each font texture used] 
-#     ...
-
-class TextLayoutState(graphics.OrderedState):
+class TextLayoutGroup(graphics.AbstractGroup):
     def set(self):
         glPushAttrib(GL_ENABLE_BIT)
         glEnable(GL_BLEND)
@@ -333,7 +328,7 @@ class TextLayoutState(graphics.OrderedState):
     def unset(self):
         glPopAttrib()
         
-class TextViewportLayoutState(graphics.OrderedState):
+class TextViewportLayoutGroup(graphics.AbstractGroup):
     scissor_x = 0
     scissor_y = 0
     scissor_width = 0
@@ -343,7 +338,7 @@ class TextViewportLayoutState(graphics.OrderedState):
     translate_x = 0 # x - view_x
     translate_y = 0 # y - view_y
 
-    def set(self):
+    def set_state(self):
         glPushAttrib(GL_ENABLE_BIT | GL_SCISSOR_BIT)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -355,7 +350,7 @@ class TextViewportLayoutState(graphics.OrderedState):
                   self.scissor_height)
         glTranslatef(self.translate_x, self.translate_y, 0)
 
-    def unset(self):
+    def unset_state(self):
         glTranslatef(-self.translate_x, -self.translate_y, 0)
         glPopAttrib()
 
@@ -365,30 +360,30 @@ class TextViewportLayoutState(graphics.OrderedState):
     def __hash__(self):
         return id(self)
 
-class TextLayoutForegroundState(graphics.OrderedState):
-    def set(self):
+class TextLayoutForegroundGroup(graphics.OrderedGroup):
+    def set_state(self):
         glEnable(GL_TEXTURE_2D)
 
-    # unset not needed, as parent state will pop enable bit 
+    # unset_state not needed, as parent group will pop enable bit 
 
-class TextLayoutForegroundDecorationState(graphics.OrderedState):
-    def set(self):
+class TextLayoutForegroundDecorationGroup(graphics.OrderedGroup):
+    def set_state(self):
         glDisable(GL_TEXTURE_2D)
 
-    # unset not needed, as parent state will pop enable bit 
+    # unset_state not needed, as parent group will pop enable bit 
 
-class TextLayoutTextureState(graphics.AbstractState):
+class TextLayoutTextureGroup(graphics.AbstractGroup):
     def __init__(self, texture, parent):
         assert texture.target == GL_TEXTURE_2D
-        super(TextLayoutTextureState, self).__init__(parent)
+        super(TextLayoutTextureGroup, self).__init__(parent)
 
         self.texture = texture
 
-    def set(self):
+    def set_state(self):
         glBindTexture(GL_TEXTURE_2D, self.texture.id)
 
-    # unset not needed, as next state will either bind a new texture or pop
-    # enable bit.
+    # unset_state not needed, as next group will either bind a new texture or
+    # pop enable bit.
 
     def __hash__(self):
         return hash((self.texture.id, self.parent))
@@ -407,21 +402,21 @@ class TextLayout(object):
     _document = None
     _vertex_lists = ()
 
-    top_state = TextLayoutState(0)
-    background_state = graphics.OrderedState(0, top_state)
-    foreground_state = TextLayoutForegroundState(1, top_state)
-    foreground_decoration_state = \
-        TextLayoutForegroundDecorationState(2, top_state)
+    top_group = TextLayoutGroup(0)
+    background_group = graphics.OrderedGroup(0, top_group)
+    foreground_group = TextLayoutForegroundGroup(1, top_group)
+    foreground_decoration_group = \
+        TextLayoutForegroundDecorationGroup(2, top_group)
 
     _update_enabled = True
 
     def __init__(self, document, multiline=False, dpi=None, 
-                 batch=None, state_order=0):
+                 batch=None, group=None):
         self.content_width = 0
         self.content_height = 0
 
-        self.states = {}
-        self._init_states(state_order)
+        self.groups = {}
+        self._init_groups(group)
 
         if batch is None:
             batch = graphics.Batch()
@@ -477,15 +472,17 @@ class TextLayout(object):
             vertex_list.delete()
 
     def draw(self):
+        # TODO only use of draw_subset.. replace with something else.
         self.batch.draw_subset(self._vertex_lists)
 
-    def _init_states(self, state_order):
-        if state_order != 0:
-            self.top_state = TextLayoutState(state_order)
-            self.background_state = graphics.OrderedState(0, self.top_state)
-            self.foreground_state = TextLayoutForegroundState(1, self.top_state)
-            self.foreground_decoration_state = \
-                TextLayoutForegroundDecorationState(2, self.top_state)
+    def _init_groups(self, group):
+        if group:
+            self.top_group = TextLayoutGroup(group)
+            self.background_group = graphics.OrderedGroup(0, self.top_group)
+            self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
+            self.foreground_decoration_group = \
+                TextLayoutForegroundDecorationGroup(2, self.top_group)
+        # Otherwise class groups are (re)used.
 
     def _get_document(self):
         return self._document
@@ -1044,34 +1041,35 @@ class TextLayout(object):
 
 class TextViewportLayout(TextLayout):
     def __init__(self, document, width, height, multiline=False, dpi=None,
-                 batch=None, state_order=0):
+                 batch=None, group=None):
         self._width = width
         self._height = height
         super(TextViewportLayout, self).__init__(
-            document, multiline, dpi, batch, state_order)
+            document, multiline, dpi, batch, group)
 
-    def _init_states(self, state_order):
-        self.top_state = TextViewportLayoutState(state_order)
-        self.background_state = graphics.OrderedState(0, self.top_state)
-        self.foreground_state = TextLayoutForegroundState(1, self.top_state)
-        self.foreground_decoration_state = \
-            TextLayoutForegroundDecorationState(2, self.top_state)
+    def _init_groups(self, group):
+        # Viewport layout never shares group becauase of translation.   
+        self.top_group = TextViewportLayoutGroup(group)
+        self.background_group = graphics.OrderedGroup(0, self.top_group)
+        self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
+        self.foreground_decoration_group = \
+            TextLayoutForegroundDecorationGroup(2, self.top_group)
 
     def _set_x(self, x):
-        self.top_state.scissor_x = x
-        self.top_state.translate_x = x - self.top_state.view_x
+        self.top_group.scissor_x = x
+        self.top_group.translate_x = x - self.top_group.view_x
 
     def _get_x(self):
-        return self.top_state.scissor_x
+        return self.top_group.scissor_x
 
     x = property(_get_x, _set_x)
 
     def _set_y(self, y):
-        self.top_state.scissor_y = y
-        self.top_state.translate_y = y - self.top_state.view_y
+        self.top_group.scissor_y = y
+        self.top_group.translate_y = y - self.top_group.view_y
 
     def _get_y(self):
-        return self.top_state.scissor_y
+        return self.top_group.scissor_y
 
     y = property(_get_y, _set_y)
 
@@ -1079,7 +1077,7 @@ class TextViewportLayout(TextLayout):
         if width is None:
             self.multiline = False
         self._width = width
-        self.top_state.scissor_width = width
+        self.top_group.scissor_width = width
         self._update()
 
     def _get_width(self):
@@ -1089,7 +1087,7 @@ class TextViewportLayout(TextLayout):
 
     def _set_height(self, height):
         self._height = height
-        self.top_state.scissor_height = height
+        self.top_group.scissor_height = height
 
     def _get_height(self):
         return self._height
@@ -1100,22 +1098,22 @@ class TextViewportLayout(TextLayout):
 
     def _set_view_x(self, view_x):
         view_x = max(0, min(self.content_width - self.width, view_x))
-        self.top_state.view_x = view_x
-        self.top_state.translate_x = self.top_state.scissor_x - view_x
+        self.top_group.view_x = view_x
+        self.top_group.translate_x = self.top_group.scissor_x - view_x
 
     def _get_view_x(self):
-        return self.top_state.view_x
+        return self.top_group.view_x
 
     view_x = property(_get_view_x, _set_view_x)
 
     def _set_view_y(self, view_y):
         # view_y must be negative.
         view_y = min(0, max(self.height - self.content_height, view_y))
-        self.top_state.view_y = view_y
-        self.top_state.translate_y = self.top_state.scissor_y - view_y
+        self.top_group.view_y = view_y
+        self.top_group.translate_y = self.top_group.scissor_y - view_y
 
     def _get_view_y(self):
-        return self.top_state.view_y
+        return self.top_group.view_y
 
     view_y = property(_get_view_y, _set_view_y)
 
@@ -1141,7 +1139,7 @@ class IncrementalTextLayout(TextViewportLayout):
     '''Displayed text suitable for interactive editing and/or scrolling
     large documents.'''
     def __init__(self, document, width, height, multiline=False, dpi=None,
-                 batch=None, state_order=0):
+                 batch=None, group=None):
         self.glyphs = []
         self.lines = []
 
@@ -1155,7 +1153,7 @@ class IncrementalTextLayout(TextViewportLayout):
         self.owner_runs = runlist.RunList(0, None)
 
         super(IncrementalTextLayout, self).__init__(
-            document, width, height, multiline, dpi, batch, state_order)
+            document, width, height, multiline, dpi, batch, group)
 
     def _init_document(self):
         assert self._document, \
@@ -1433,7 +1431,7 @@ class IncrementalTextLayout(TextViewportLayout):
         self._update_vertex_lists()
 
     def _get_view_y(self):
-        return self.top_state.view_y
+        return self.top_group.view_y
 
     view_y = property(_get_view_y, _set_view_y)
 
@@ -1500,12 +1498,12 @@ class IncrementalTextLayout(TextViewportLayout):
             position -= box.length
             x += box.advance
        
-        return (x + self.top_state.translate_x, 
-                line.y + self.top_state.translate_y + baseline)
+        return (x + self.top_group.translate_x, 
+                line.y + self.top_group.translate_y + baseline)
 
     def get_line_from_point(self, x, y):
-        x -= self.top_state.translate_x
-        y -= self.top_state.translate_y
+        x -= self.top_group.translate_x
+        y -= self.top_group.translate_y
 
         line_index = 0
         for line in self.lines:
@@ -1518,8 +1516,8 @@ class IncrementalTextLayout(TextViewportLayout):
 
     def get_point_from_line(self, line):
         line = self.lines[line]
-        return (line.x + self.top_state.translate_x, 
-                line.y + self.top_state.translate_y)
+        return (line.x + self.top_group.translate_x, 
+                line.y + self.top_group.translate_y)
 
     def get_line_from_position(self, position):
         line = -1
@@ -1534,7 +1532,7 @@ class IncrementalTextLayout(TextViewportLayout):
 
     def get_position_on_line(self, line, x):
         line = self.lines[line]
-        x -= self.top_state.translate_x
+        x -= self.top_group.translate_x
 
         position = line.start
         last_glyph_x = line.x
