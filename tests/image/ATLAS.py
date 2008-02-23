@@ -3,7 +3,7 @@
 
 import unittest
 
-from pyglet.resource import rectallocator
+from pyglet.image import atlas
 
 __noninteractive = True
 
@@ -26,7 +26,7 @@ class AllocatorEnvironment(object):
     def __init__(self, test_case, width, height):
         self.test_case = test_case
         self.rectes = []
-        self.allocator = rectallocator.RectAllocator(width, height)
+        self.allocator = atlas.Allocator(width, height)
 
     def check(self, test_case):
         for i, rect in enumerate(self.rectes):
@@ -43,7 +43,7 @@ class AllocatorEnvironment(object):
         self.check(self.test_case)
 
     def add_fail(self, width, height):
-        self.test_case.assertRaises(rectallocator.AllocatorException,
+        self.test_case.assertRaises(atlas.AllocatorException,
                                     self.allocator.alloc, width, height)
 
 class TestPack(unittest.TestCase):

@@ -159,6 +159,9 @@ image
         image.TEXTURE_GRID                      X11 WIN OSX
         image.TEXTURE_3D                        X11 WIN OSX
 
+    image-atlas
+        image.ATLAS                             GENERIC
+
 font
     font-render
         font.DEFAULT                            X11 WIN OSX
@@ -193,7 +196,6 @@ media
         media.PLAYER_STATIC_STATIC              GENERIC
 
 resource
-    resource.RECTALLOCATOR                      GENERIC
     resource.RES_LOAD                           GENERIC
     resource.RES_LOAD_IMAGE                     GENERIC
 
