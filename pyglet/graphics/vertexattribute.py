@@ -158,7 +158,8 @@ def create_attribute(format):
 
     '''
     try:
-        return _attribute_cache[format]
+        cls, args = _attribute_cache[format]
+        return cls(*args)
     except KeyError:
         pass
 
@@ -169,8 +170,8 @@ def create_attribute(format):
     generic_index = match.group('generic_index')
     if generic_index:
         normalized = match.group('generic_normalized')
-        attribute = GenericAttribute(
-            int(generic_index), normalized, count, gl_type)
+        attr_class = GenericAttribute
+        args = int(generic_index), normalized, count, gl_type
     else:
         name = match.group('name')
         attr_class = _attribute_classes[name]
@@ -178,12 +179,12 @@ def create_attribute(format):
             assert count == attr_class._fixed_count, \
                 'Attributes named "%s" must have count of %d' % (
                     name, attr_class._fixed_count)
-            attribute = attr_class(gl_type)
+            args = (gl_type,)
         else:
-            attribute = attr_class(count, gl_type)
+            args = (count, gl_type)
     
-    _attribute_cache[format] = attribute
-    return attribute
+    _attribute_cache[format] = attr_class, args
+    return attr_class(*args)
 
 class AbstractAttribute(object):
     '''Abstract accessor for an attribute in a mapped buffer.
