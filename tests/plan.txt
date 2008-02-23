@@ -13,6 +13,13 @@
 top
     top.IMPORT                                  GENERIC
 
+graphics
+    graphics.GRAPHICS_ALLOCATION                GENERIC
+    graphics.IMMEDIATE                          GENERIC
+    graphics.IMMEDIATE_INDEXED                  GENERIC
+    graphics.RETAINED                           GENERIC
+    graphics.RETAINED_INDEXED                   GENERIC
+
 window
     window-basic
         window.WINDOW_OPEN                      X11 WIN OSX
@@ -189,9 +196,6 @@ resource
     resource.RECTALLOCATOR                      GENERIC
     resource.RES_LOAD                           GENERIC
     resource.RES_LOAD_IMAGE                     GENERIC
-
-graphics
-    graphics.GRAPHICS_ALLOCATION                GENERIC
 
 text
     text.STYLE_RUNS                             GENERIC
