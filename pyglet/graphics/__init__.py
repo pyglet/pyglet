@@ -113,7 +113,7 @@ def vertex_list(count, *data):
     # returned from this function are drawn directly by the app.
     return _get_default_batch().add(count, 0, None, *data)
 
-def indexed_vertex_list(count, indices, *data):
+def vertex_list_indexed(count, indices, *data):
     # Note that mode=0 because the default batch is never drawn: vertex lists
     # returned from this function are drawn directly by the app.
     return _get_default_batch().add_indexed(count, 0, None, indices, *data)
