@@ -9,8 +9,7 @@ from pyglet.graphics import vertexbuffer, vertexattribute, vertexdomain
 
 _debug_graphics_batch = pyglet.options['debug_graphics_batch']
 
-# TODO: separate out draw_indexed
-def draw(size, mode, *data, **kwargs):
+def draw(size, mode, *data):
     '''Draw a primitive immediately.
 
     :Parameters:
@@ -22,13 +21,8 @@ def draw(size, mode, *data, **kwargs):
             Tuple of format string and array data.  Any number of
             data items can be given, each providing data for a different
             vertex attribute.
-        `indices` : sequence of int
-            Optional array integers giving indices into the arrays.
-            If unspecified, the arrays are drawn in sequence.
 
     '''
-    indices = kwargs.get('indices')
-
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
 
     for format, array in data:
@@ -38,28 +32,56 @@ def draw(size, mode, *data, **kwargs):
         buffer = vertexbuffer.create_mappable_buffer(
             size * attribute.stride, vbo=False)
 
-        # TODO set without creating region
-        region = attribute.get_region(buffer, 0, size)
-        region.array[:] = array
-
+        attribute.set_region(buffer, 0, size, array)
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
 
-    if indices is None:
-        glDrawArrays(mode, 0, size)
-    else:
-        if size <= 0xff:
-            index_type = GL_UNSIGNED_BYTE
-            index_c_type = ctypes.c_ubyte
-        elif size <= 0xffff:
-            index_type = GL_UNSIGNED_SHORT
-            index_c_type = ctypes.c_ushort
-        else:
-            index_type = GL_UNSIGNED_INT
-            index_c_type = ctypes.c_uint
+    glDrawArrays(mode, 0, size)
+        
+    glPopClientAttrib()
 
-        index_array = (index_c_type * len(indices))(*indices)
-        glDrawElements(mode, len(indices), index_type, index_array)
+def draw_indexed(size, mode, indices, *data):
+    '''Draw a primitive with indexed vertices immediately.
+
+    :Parameters:
+        `size` : int
+            Number of vertices given
+        `mode` : int
+            OpenGL drawing mode, e.g. ``GL_TRIANGLES``
+        `indices` : sequence of int
+            Sequence of integers giving indices into the vertex arrays.
+            If unspecified, the arrays are drawn in sequence.
+        `data` : (str, sequence)
+            Tuple of format string and array data.  Any number of
+            data items can be given, each providing data for a different
+            vertex attribute.
+
+    '''
+    glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+
+    for format, array in data:
+        attribute = vertexattribute.create_attribute(format)
+        assert size == len(array) // attribute.count, \
+            'Data for %s is incorrect length' % format
+        buffer = vertexbuffer.create_mappable_buffer(
+            size * attribute.stride, vbo=False)
+
+        attribute.set_region(buffer, 0, size, data)
+        attribute.enable()
+        attribute.set_pointer(buffer.ptr)
+
+    if size <= 0xff:
+        index_type = GL_UNSIGNED_BYTE
+        index_c_type = ctypes.c_ubyte
+    elif size <= 0xffff:
+        index_type = GL_UNSIGNED_SHORT
+        index_c_type = ctypes.c_ushort
+    else:
+        index_type = GL_UNSIGNED_INT
+        index_c_type = ctypes.c_uint
+
+    index_array = (index_c_type * len(indices))(*indices)
+    glDrawElements(mode, len(indices), index_type, index_array)
     
     glPopClientAttrib()
 
@@ -78,15 +100,23 @@ def _parse_data(data):
     formats = tuple(formats)
     return formats, initial_arrays
 
-def vertex_list(count, *data):
-    formats, initial_arrays = _parse_data(data)
-    domain = vertexdomain.create_domain(*formats)
-    vlist = domain.create(count)
-    for i, array in initial_arrays:
-        vlist.set_attribute_data(i, array)
-    return vlist
+def _get_default_batch():
+    shared_object_space = get_current_context().object_space
+    try:
+        return shared_object_space.pyglet_graphics_default_batch
+    except AttributeError:
+        shared_object_space.pyglet_graphics_default_batch = Batch()
+        return shared_object_space.pyglet_graphics_default_batch
 
-# TODO indexed_vertex_list
+def vertex_list(count, *data):
+    # Note that mode=0 because the default batch is never drawn: vertex lists
+    # returned from this function are drawn directly by the app.
+    return _get_default_batch().add(count, 0, None, *data)
+
+def indexed_vertex_list(count, indices, *data):
+    # Note that mode=0 because the default batch is never drawn: vertex lists
+    # returned from this function are drawn directly by the app.
+    return _get_default_batch().add_indexed(count, 0, None, indices, *data)
 
 class Batch(object):
     def __init__(self):
@@ -115,6 +145,19 @@ class Batch(object):
 
         return vlist
 
+    def add_indexed(self, count, mode, state, indices, *data):
+        formats, initial_arrays = _parse_data(data)
+        domain = self._get_domain(True, mode, state, formats)
+            
+        # Create vertex list and initialize
+        vlist = domain.create(count, len(indices))
+        start = vlist.start
+        vlist.set_index_data(map(lambda i: i + start, indices))
+        for i, array in initial_arrays:
+            vlist.set_attribute_data(i, array)
+
+        return vlist 
+
     def migrate(self, vertex_list, mode, state, batch):
         '''Migrate a vertex list to another batch and/or state.
 
@@ -141,19 +184,6 @@ class Batch(object):
         formats = vertex_list.domain.__formats
         domain = batch._get_domain(False, mode, state, formats)
         vertex_list.migrate(domain)
-
-    def add_indexed(self, count, mode, state, indices, *data):
-        formats, initial_arrays = _parse_data(data)
-        domain = self._get_domain(True, mode, state, formats)
-            
-        # Create vertex list and initialize
-        vlist = domain.create(count, len(indices))
-        start = vlist.start
-        vlist.set_index_data(map(lambda i: i + start, indices))
-        for i, array in initial_arrays:
-            vlist.set_attribute_data(i, array)
-
-        return vlist 
 
     def _get_domain(self, indexed, mode, state, formats):
         if state is None:

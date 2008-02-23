@@ -44,6 +44,8 @@ _attribute_format_re = re.compile(r'''
     (?P<type>[bBsSiIfd])
 ''', re.VERBOSE)
 
+_attribute_cache = {}
+
 def _align(v, align):
     return ((v - 1) & ~(align - 1)) + align
 
@@ -72,7 +74,6 @@ def serialize_attributes(count, attributes):
         attribute.offset = offset
         offset += count * attribute.stride
 
-# TODO: cache attributes
 def create_attribute(format):
     '''Create a vertex attribute description given a format string such as
     "v3f".  The initial stride and offset of the attribute will be 0.
@@ -156,6 +157,10 @@ def create_attribute(format):
         the type is unsigned)
 
     '''
+    try:
+        return _attribute_cache[format]
+    except KeyError:
+        pass
 
     match = _attribute_format_re.match(format)
     assert match, 'Invalid attribute format %r' % format
@@ -164,7 +169,7 @@ def create_attribute(format):
     generic_index = match.group('generic_index')
     if generic_index:
         normalized = match.group('generic_normalized')
-        return GenericAttribute(
+        attribute = GenericAttribute(
             int(generic_index), normalized, count, gl_type)
     else:
         name = match.group('name')
@@ -173,9 +178,12 @@ def create_attribute(format):
             assert count == attr_class._fixed_count, \
                 'Attributes named "%s" must have count of %d' % (
                     name, attr_class._fixed_count)
-            return attr_class(gl_type)
+            attribute = attr_class(gl_type)
         else:
-            return attr_class(count, gl_type)
+            attribute = attr_class(count, gl_type)
+    
+    _attribute_cache[format] = attribute
+    return attribute
 
 class AbstractAttribute(object):
     '''Abstract accessor for an attribute in a mapped buffer.
@@ -249,6 +257,19 @@ class AbstractAttribute(object):
             region = buffer.get_region(byte_start, byte_size, ptr_type)
             return vertexbuffer.IndirectArrayRegion(
                 region, array_count, self.count, elem_stride)
+
+    def set_region(self, buffer, start, count, data):
+        if self.stride == self.size:
+            # non-interleaved
+            byte_start = self.stride * start
+            byte_size = self.stride * count
+            array_count = self.count * count
+            data = (self.c_type * array_count)(*data)
+            buffer.set_data_region(data, byte_start, byte_size)
+        else:
+            # interleaved
+            region = self.get_region(buffer, start, count)
+            region[:] = data
 
 class ColorAttribute(AbstractAttribute):
     plural = 'colors'
