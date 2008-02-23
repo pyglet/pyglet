@@ -66,7 +66,7 @@ def draw_indexed(size, mode, indices, *data):
         buffer = vertexbuffer.create_mappable_buffer(
             size * attribute.stride, vbo=False)
 
-        attribute.set_region(buffer, 0, size, data)
+        attribute.set_region(buffer, 0, size, array)
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
 

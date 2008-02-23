@@ -541,7 +541,8 @@ class IndexedVertexDomain(VertexDomain):
         self.index_buffer.bind()
 
         if vertex_list is not None:
-            raise NotImplementedError('TODO')
+            glDrawElements(mode, vertex_list.count, self.index_gl_type,
+                self.index_buffer.ptr + vertex_list.start)
 
         starts, sizes = self.index_allocator.get_allocated_regions()
         primcount = len(starts)
