@@ -111,8 +111,22 @@ class Sprite(event.EventDispatcher):
         else:
             self.dispatch_event('on_animation_end')
 
-    # TODO set batch
-    batch = property(lambda self: self._batch)
+    def _set_batch(self, batch):
+        if self._batch == batch:
+            return
+
+        if batch is not None and self._batch is not None:
+            self._batch.migrate(self._vertex_list, GL_QUADS, self._group, batch)
+            self._batch = batch
+        else:
+            self._vertex_list.delete()
+            self._batch = batch
+            self._create_vertex_list()
+
+    def _get_batch(self):
+        return self._batch
+
+    batch = property(_get_batch, _set_batch)
 
     def _set_group(self, group):
         if self._group.parent == group:
