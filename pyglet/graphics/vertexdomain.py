@@ -543,27 +543,27 @@ class IndexedVertexDomain(VertexDomain):
         if vertex_list is not None:
             glDrawElements(mode, vertex_list.count, self.index_gl_type,
                 self.index_buffer.ptr + vertex_list.start)
-
-        starts, sizes = self.index_allocator.get_allocated_regions()
-        primcount = len(starts)
-        if primcount == 0:
-            pass
-        elif primcount == 1:
-            # Common case
-            glDrawElements(mode, sizes[0], self.index_gl_type,
-                self.index_buffer.ptr + starts[0])
-        elif gl_info.have_version(1, 4):
-            if not isinstance(self.index_buffer, 
-                              vertexbuffer.VertexBufferObject):
-                starts = [s + self.index_buffer.ptr for s in starts]
-            starts = (GLuint * primcount)(*starts) # actually need to be void*
-            sizes = (GLsizei * primcount)(*sizes)
-            glMultiDrawElements(mode, sizes, self.index_gl_type, starts,
-                                primcount)
         else:
-            for start, size in zip(starts, sizes):
-                glDrawElements(mode, size, self.index_gl_type,
-                    self.index_buffer.ptr + start)
+            starts, sizes = self.index_allocator.get_allocated_regions()
+            primcount = len(starts)
+            if primcount == 0:
+                pass
+            elif primcount == 1:
+                # Common case
+                glDrawElements(mode, sizes[0], self.index_gl_type,
+                    self.index_buffer.ptr + starts[0])
+            elif gl_info.have_version(1, 4):
+                if not isinstance(self.index_buffer, 
+                                  vertexbuffer.VertexBufferObject):
+                    starts = [s + self.index_buffer.ptr for s in starts]
+                starts = (GLuint * primcount)(*starts)
+                sizes = (GLsizei * primcount)(*sizes)
+                glMultiDrawElements(mode, sizes, self.index_gl_type, starts,
+                                    primcount)
+            else:
+                for start, size in zip(starts, sizes):
+                    glDrawElements(mode, size, self.index_gl_type,
+                        self.index_buffer.ptr + start)
         
         self.index_buffer.unbind()
         for buffer, _ in self.buffer_attributes:

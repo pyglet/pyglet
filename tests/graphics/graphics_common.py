@@ -11,7 +11,7 @@ import random
 
 from pyglet.gl import *
 
-n_vertices = 40
+n_vertices = 42
 v3f_data = [v/float(n_vertices*3 + 10) for v in range(n_vertices * 3)]
 v2f_data = reduce(add, zip(v3f_data[::3], v3f_data[1::3]))
 c4f_data = [v/float(n_vertices*4) for v in range(n_vertices * 4)]
@@ -36,7 +36,7 @@ def get_feedback(func):
     # Project in clip coords
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    glOrtho(0, 1, 0, 1, 0, 1)
+    glOrtho(0, 1, 0, 1, -1, 1)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 

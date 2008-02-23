@@ -11,7 +11,9 @@ __noninteractive = True
 
 class TEST_CASE(unittest.TestCase):
     def check(self, expected, result, dimensions):
-        for d in range(dimensions):
+        if len(expected) != len(result) * dimensions / 4:
+            self.fail('Incorrect number of vertices in feedback array')
+        for d in range(2):
             for e, r in zip(expected[d::dimensions], result[d::4]):
                 if abs(e - r) > 0.01:
                     self.fail('Feedback array is in error: %r, %r' % \
