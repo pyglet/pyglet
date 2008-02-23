@@ -334,8 +334,8 @@ class Caret(object):
         if update_ideal_x:
             self._ideal_x = x
 
-        x -= self._layout.top_state.translate_x
-        y -= self._layout.top_state.translate_y
+        x -= self._layout.top_group.translate_x
+        y -= self._layout.top_group.translate_y
         font = self._layout.document.get_font(max(0, self._position - 1))
         self._list.vertices[:] = [x, y + font.descent, x, y + font.ascent]
 

@@ -83,7 +83,7 @@ class TestElement(document.InlineElement):
 
     def place(self, layout, x, y):
         self.vertex_list = layout.batch.add(4, pyglet.gl.GL_QUADS, 
-            layout.top_state, 
+            layout.top_group, 
             'v2i', 
             ('c4B', [200, 200, 200, 255] * 4))
 
