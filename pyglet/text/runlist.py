@@ -152,7 +152,13 @@ class RunList(object):
         self.runs = [r for r in self.runs if r.count > 0]
 
     def __iter__(self):
-        '''Get an iterator over the run list.
+        i = 0
+        for run in self.runs:
+            yield i, i + run.count, run.value
+            i += run.count
+
+    def get_run_iterator(self):
+        '''Get an extended iterator over the run list.
 
         :rtype: `RunIterator`
         '''
@@ -182,23 +188,10 @@ class RunList(object):
     def __repr__(self):
         return str(list(self))
 
-def _iter_runs(run_list):
-    i = 0
-    for run in run_list.runs:
-        yield i, i + run.count, run.value
-        i += run.count
-
 class AbstractRunIterator(object):
-    '''Extended iteration over `RunList`.
+    '''Range iteration over `RunList`.
 
-    This class implements the *Iterator* and *Iterable* protocols.  The
-    iteration is over tuples of ``(start, end, value)``, where *start* and
-    *end* give the range of `value` within the document.  For example::
-
-        for start, end, value in iter(run_list):
-            pass
-
-    `RunIterator` objects also allow any monotonically non-decreasing
+    `AbstractRunIterator` objects allow any monotonically non-decreasing
     access of the iteration, including repeated iteration over the same index.
     Use the ``[index]`` operator to get the value at a particular index within
     the document.  For example::
@@ -210,8 +203,8 @@ class AbstractRunIterator(object):
         value = run_iter[17]
         value = run_iter[16]      # this is illegal, the index decreased.
 
-    Using `RunIterator` to access increasing indices of the value runs is
-    more efficient than calling `RunList.__getitem__` repeatedly.
+    Using `AbstractRunIterator` to access increasing indices of the value runs
+    is more efficient than calling `RunList.__getitem__` repeatedly.
 
     You can also iterate over monotonically non-decreasing ranges over the
     iteration.  For example::
@@ -239,16 +232,6 @@ class AbstractRunIterator(object):
         :rtype: object
         '''
 
-    def __iter__(self):
-        '''Implementation of iterable and iterator protocols.
-
-        Iterates over tuples of (start, end, value).
-        '''
-
-    def next(self):
-        '''Implementation of iterator protocol.
-        '''
-
     def ranges(self, start, end):
         '''Iterate over a subrange of the run list.
 
@@ -266,15 +249,8 @@ class AbstractRunIterator(object):
 
 class RunIterator(AbstractRunIterator):
     def __init__(self, run_list):
-        self.next = _iter_runs(run_list).next
+        self.next = iter(run_list).next
         self.start, self.end, self.value = self.next()
-
-    def __iter__(self):
-        return self
-
-    # iter() needs to see this. (real next method is set in __init__)
-    def next(self):
-        raise RuntimeError()
 
     def __getitem__(self, index):
         while index >= self.end:

@@ -142,7 +142,8 @@ class TestWindow(pyglet.window.Window):
 
 class TestCase(unittest.TestCase):
     def test(self):
-        self.window = TestWindow(resizable=True)
+        self.window = TestWindow(resizable=True, visible=False)
+        self.window.set_visible()
         pyglet.app.run()
 
 if __name__ == '__main__':

@@ -77,7 +77,8 @@ class TestWindow(window.Window):
 
 class TestCase(unittest.TestCase):
     def test(self):
-        self.window = TestWindow(resizable=True)
+        self.window = TestWindow(resizable=True, visible=False)
+        self.window.set_visible()
         app.run()
 
 if __name__ == '__main__':

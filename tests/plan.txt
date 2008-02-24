@@ -200,7 +200,7 @@ resource
     resource.RES_LOAD_IMAGE                     GENERIC
 
 text
-    text.STYLE_RUNS                             GENERIC
+    text.RUNLIST                                GENERIC
     text.PLAIN                                  GENERIC
     text.STYLE                                  GENERIC
     text.ELEMENT                                GENERIC

@@ -528,7 +528,7 @@ class FormattedDocument(AbstractDocument):
 
     def get_style_runs(self, attribute):
         try:
-            return iter(self._style_runs[attribute])
+            return self._style_runs[attribute].get_run_iterator()
         except KeyError:
             return _no_style_range_iterator
 

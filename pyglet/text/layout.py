@@ -311,7 +311,7 @@ class InvalidRange(object):
 
 # Text group hierarchy
 #
-# top_group                     Text[Viewport]LayoutGroup(AbstractGroup)
+# top_group                     [Scrollable]TextLayoutGroup(AbstractGroup)
 #   background_group            OrderedGroup(0)
 #   foreground_group            TextLayoutForegroundGroup(OrderedGroup(1))
 #     [font textures]           TextLayoutTextureGroup(AbstractGroup)  
@@ -328,7 +328,7 @@ class TextLayoutGroup(graphics.AbstractGroup):
     def unset_state(self):
         glPopAttrib()
         
-class TextViewportLayoutGroup(graphics.AbstractGroup):
+class ScrollableTextLayoutGroup(graphics.AbstractGroup):
     scissor_x = 0
     scissor_y = 0
     scissor_width = 0
@@ -616,7 +616,7 @@ class TextLayout(object):
         Fits `glyphs` in range `start` to `end` into `Line`s which are
         then yielded.
         '''
-        owner_iterator = iter(owner_runs).ranges(start, end)
+        owner_iterator = owner_runs.get_run_iterator().ranges(start, end)
 
         font_iterator = self._document.get_font_runs(dpi=self._dpi)
 
@@ -852,7 +852,7 @@ class TextLayout(object):
         yield line
 
     def _flow_glyphs_single_line(self, glyphs, owner_runs, start, end):
-        owner_iterator = iter(owner_runs).ranges(start, end)
+        owner_iterator = owner_runs.get_run_iterator.ranges(start, end)
         font_iterator = self.document.get_font_runs(dpi=self._dpi)
         kern_iterator = runlist.FilteredRunIterator(
             self.document.get_style_runs('kerning'),
@@ -1035,17 +1035,17 @@ class TextLayout(object):
 
     valign = property(_get_valign, _set_valign)
 
-class TextViewportLayout(TextLayout):
+class ScrollableTextLayout(TextLayout):
     def __init__(self, document, width, height, multiline=False, dpi=None,
                  batch=None, group=None):
         self._width = width
         self._height = height
-        super(TextViewportLayout, self).__init__(
+        super(ScrollableTextLayout, self).__init__(
             document, multiline, dpi, batch, group)
 
     def _init_groups(self, group):
-        # Viewport layout never shares group becauase of translation.   
-        self.top_group = TextViewportLayoutGroup(group)
+        # Scrollable layout never shares group becauase of translation.   
+        self.top_group = ScrollableTextLayoutGroup(group)
         self.background_group = graphics.OrderedGroup(0, self.top_group)
         self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
         self.foreground_decoration_group = \
@@ -1131,7 +1131,7 @@ class TextViewportLayout(TextLayout):
               self.content_width > self.width):
             self.view_x = x - self.width + 10 
 
-class IncrementalTextLayout(TextViewportLayout):
+class IncrementalTextLayout(ScrollableTextLayout):
     '''Displayed text suitable for interactive editing and/or scrolling
     large documents.'''
     def __init__(self, document, width, height, multiline=False, dpi=None,
