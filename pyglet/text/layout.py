@@ -472,7 +472,6 @@ class TextLayout(object):
             vertex_list.delete()
 
     def draw(self):
-        # TODO only use of draw_subset.. replace with something else.
         self.batch.draw_subset(self._vertex_lists)
 
     def _init_groups(self, group):
@@ -489,8 +488,6 @@ class TextLayout(object):
 
     def _set_document(self, document):
         if self._document:
-            # TODO
-            assert False, 'Requires pyglet 1.1 feature'
             self._document.remove_handlers(self)
             self._uninit_document(self._document)
         document.push_handlers(self)

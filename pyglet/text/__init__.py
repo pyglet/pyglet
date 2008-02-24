@@ -135,14 +135,12 @@ def decode_text(text):
     decoder = get_decoder(None, 'text/plain')
     return decoder.decode(text)
 
-class Label(layout.TextLayout):
-    def __init__(self, text='', font=None, color=(255, 255, 255, 255), 
-                 x=0, y=0, halign='left', valign='top', batch=None,
-                 group=None):
-        doc = document.UnformattedDocument(text)
-        doc.set_style(0, 1, {'color': color})
-        super(Label, self).__init__(doc, multiline=False, 
-                                    batch=batch, group=group)
+class DocumentLabel(layout.TextLayout):
+    def __init__(self, document=None,
+                 x=0, y=0, halign='left', valign='baseline', 
+                 dpi=None, batch=None, group=None):
+        super(DocumentLabel, self).__init__(document, multiline=False, 
+                                            dpi=dpi, batch=batch, group=group)
 
         self._x = x
         self._y = y
@@ -162,17 +160,81 @@ class Label(layout.TextLayout):
         return self.document.get_style('color')
 
     def _set_color(self, color):
-        # XXX passing in dummy start, end - didn't want to change the API
-        self.document.set_style(0, 0, dict(color=color))
-        self._update() # XXX
+        self.document.set_style(0, len(self.document.text), 
+                                {'color': color})
 
     color = property(_get_color, _set_color)
 
-    def _get_font(self):
-        return self.document.font
+    def _get_font_name(self):
+        return self.document.get_style('font_name')
 
-    def _set_font(self, font):
-        self.document.font = font
-        self._update() # XXX
+    def _set_font_name(self, font_name):
+        self.document.set_style(0, len(self.document.text), 
+                                {'font_name': font_name})
 
-    font = property(_get_font, _set_font)
+    font_name = property(_get_font_name, _set_font_name)
+
+    def _get_font_size(self):
+        return self.document.get_style('font_size')
+
+    def _set_font_size(self, font_size):
+        self.document.set_style(0, len(self.document.text), 
+                                {'font_size': font_size})
+
+    font_size = property(_get_font_size, _set_font_size)
+
+    def _get_bold(self):
+        return self.document.get_style('bold')
+
+    def _set_bold(self, bold):
+        self.document.set_style(0, len(self.document.text), 
+                                {'bold': bold})
+
+    bold = property(_get_bold, _set_bold)
+
+    def _get_italic(self):
+        return self.document.get_style('italic')
+
+    def _set_italic(self, italic):
+        self.document.set_style(0, len(self.document.text), 
+                                {'italic': italic})
+
+    italic = property(_get_italic, _set_italic)
+
+
+class Label(DocumentLabel):
+    def __init__(self, text='', 
+                 font_name=None, font_size=None, bold=False, italic=False,
+                 color=(255, 255, 255, 255),
+                 x=0, y=0, halign='left', valign='baseline',
+                 dpi=None, batch=None, group=None):
+        document = decode_text(text)
+        super(Label, self).__init__(document, x, y, halign, valign,
+                                    dpi, batch, group)
+
+        self.document.set_style(0, len(self.document.text), {
+            'font_name': font_name,
+            'font_size': font_size,
+            'bold': bold,
+            'italic': italic,
+            'color': color,
+        })
+
+class HTMLLabel(DocumentLabel):
+    def __init__(self, text='', path=None, 
+                 x=0, y=0, halign='left', valign='baseline',
+                 dpi=None, batch=None, group=None):
+        self._text = text
+        self._path = path
+        document = decode_html(text, path)
+        super(HTMLLabel, self).__init__(document, x, y, halign, valign,
+                                        dpi, batch, group)
+
+    def _set_text(self, text):
+        self._text = text
+        self.document = decode_html(text, self._path)
+
+    def _get_text(self):
+        return self._text
+
+    text = property(_get_text, _set_text)
