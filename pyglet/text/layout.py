@@ -467,7 +467,6 @@ class TextLayout(object):
     ''')
 
     def delete(self):
-        # TODO incremental
         for vertex_list in self._vertex_lists:
             vertex_list.delete()
 
@@ -1159,6 +1158,10 @@ class IncrementalTextLayout(TextViewportLayout):
 
     def _uninit_document(self):
         self.on_delete_text(0, len(self._document.text))
+
+    def delete(self):
+        for line in self.lines:
+            line.delete(self)
 
     def on_insert_text(self, start, text):
         len_text = len(text)

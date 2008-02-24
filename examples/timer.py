@@ -31,6 +31,7 @@ class Timer(object):
             self.label.text = '%02d:%02d' % (m, s)
             if m >= 5:
                 self.label.color = (180, 0, 0, 255)
+
 @window.event
 def on_key_press(symbol, modifiers):
     if symbol == pyglet.window.key.SPACE:
