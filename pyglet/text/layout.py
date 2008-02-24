@@ -409,6 +409,7 @@ class TextLayout(object):
         TextLayoutForegroundDecorationGroup(2, top_group)
 
     _update_enabled = True
+    _own_batch = False
 
     def __init__(self, document, multiline=False, dpi=None, 
                  batch=None, group=None):
@@ -420,9 +421,15 @@ class TextLayout(object):
 
         if batch is None:
             batch = graphics.Batch()
+            self._own_batch = True
         self.batch = batch
 
-        self.multiline = multiline
+        self._multiline = multiline
+        if multiline:
+            # Hack default width so we don't crash during initial layout
+            # Complete waste of time.
+            self._width = 100000
+
         if dpi is None:
             if sys.platform == 'darwin':
                 dpi = 72
@@ -471,7 +478,10 @@ class TextLayout(object):
             vertex_list.delete()
 
     def draw(self):
-        self.batch.draw_subset(self._vertex_lists)
+        if self._own_batch:
+            self.batch.draw()
+        else:
+            self.batch.draw_subset(self._vertex_lists)
 
     def _init_groups(self, group):
         if group:
@@ -602,7 +612,7 @@ class TextLayout(object):
 
     def _flow_glyphs(self, glyphs, owner_runs, start, end):
         # TODO change flow generator on self, avoiding this conditional.
-        if not self.multiline:
+        if not self._multiline:
             for line in self._flow_glyphs_single_line(glyphs, owner_runs, 
                                                       start, end):
                 yield line
@@ -852,7 +862,7 @@ class TextLayout(object):
         yield line
 
     def _flow_glyphs_single_line(self, glyphs, owner_runs, start, end):
-        owner_iterator = owner_runs.get_run_iterator.ranges(start, end)
+        owner_iterator = owner_runs.get_run_iterator().ranges(start, end)
         font_iterator = self.document.get_font_runs(dpi=self._dpi)
         kern_iterator = runlist.FilteredRunIterator(
             self.document.get_style_runs('kerning'),
@@ -992,8 +1002,6 @@ class TextLayout(object):
 
     _width = None
     def _set_width(self, width):
-        if width is None:
-            self.multiline = False
         self._width = width
         self._update()
 
@@ -1012,6 +1020,15 @@ class TextLayout(object):
 
     height = property(_get_height, _set_height)
 
+    _multiline = True
+    def _set_multiline(self, multiline):
+        self._multiline = multiline
+        self._update()
+
+    def _get_multiline(self):
+        return self._multiline
+
+    multiline = property(_get_multiline, _set_multiline)
 
     # XXX not valid for incremental.
     
@@ -1070,8 +1087,6 @@ class ScrollableTextLayout(TextLayout):
     y = property(_get_y, _set_y)
 
     def _set_width(self, width):
-        if width is None:
-            self.multiline = False
         self._width = width
         self.top_group.scissor_width = width
         self._update()
@@ -1421,6 +1436,15 @@ class IncrementalTextLayout(ScrollableTextLayout):
         return self._height
 
     height = property(_get_height, _set_height)
+
+    def _set_multiline(self, multiline):
+        self.invalid_flow.invalidate(0, len(self.document.text))
+        super(IncrementalTextLayout, self)._set_multiline(multiline)
+        
+    def _get_multiline(self):
+        return self._multiline
+
+    multiline = property(_get_multiline, _set_multiline)
 
     # Invalidate invisible/visible lines when y scrolls
 

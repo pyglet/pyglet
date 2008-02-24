@@ -324,6 +324,11 @@ class Win32Font(base.Font):
         self.logfont = self.get_logfont(name, size, bold, italic, dpi)
         self.hfont = gdi32.CreateFontIndirectA(byref(self.logfont))
 
+        if dpi is None:
+            self.dpi = 96
+        else:
+            self.dpi = dpi
+
         # Create a dummy DC for coordinate mapping
         dc = user32.GetDC(0)
         metrics = TEXTMETRIC()
@@ -546,9 +551,11 @@ class GDIPlusFont(Win32Font):
 
         if dpi is None:
             unit = UnitPoint
+            self.dpi = 96
         else:
             unit = UnitPixel
             size = (size * dpi) / 72
+            self.dpi = dpi
 
         style = 0
         if bold:

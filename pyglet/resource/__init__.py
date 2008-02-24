@@ -405,7 +405,7 @@ class Loader(object):
         # TODO path!
         return pyglet.text.load(name, file, 'text/html')
 
-    def attributed(self, name)
+    def attributed(self, name):
         '''Load an attributed text document.
 
         See `pyglet.text.formats.attributed` for details on this format.

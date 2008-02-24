@@ -233,6 +233,9 @@ class FreeTypeFont(base.Font):
 
         if dpi is None:
             dpi = 0  # Select default DPI of 72 by specifying 0.
+            self.dpi = 72
+        else:
+            self.dpi = dpi
 
         # Check if font name/style matches a font loaded into memory by user
         lname = name and name.lower() or ''
