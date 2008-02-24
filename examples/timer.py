@@ -1,40 +1,55 @@
-from pyglet import window
-from pyglet import text
-from pyglet import clock
-from pyglet import font
+'''A full-screen minute:second timer.  Leave it in charge of your conference
+lighting talks.
 
-w = window.Window(fullscreen=True)
+After 5 minutes, the timer goes red.  This limit is easily adjustable by
+hacking the source code.
 
-class Timer(text.Label):
-    def stop(self):
-        self.__time = 0
+Press spacebar to start, stop and reset the timer.
+'''
+
+import pyglet
+
+window = pyglet.window.Window(fullscreen=True)
+
+class Timer(object):
+    def __init__(self):
+        self.label = pyglet.text.Label('00:00', font_size=360, 
+                                       x=window.width//2, y=window.height//2,
+                                       valign='center', halign='center')
+        self.reset()
+
     def reset(self):
-        self.__time = 0
-        self.__running = False
-        self.text = '00:00'
-    def animate(self, dt):
-        if self.__running:
-            self.__time += dt
-            m, s = divmod(self.__time, 60)
-            self.text = '%02d:%02d'%(m, s)
+        self.time = 0
+        self.running = False
+        self.label.text = '00:00'
+        self.label.color = (255, 255, 255, 255)
 
-    def on_text(self, text):
-        if text == ' ':
-            self.__running = not self.__running
-            return True
-        return False
+    def update(self, dt):
+        if self.running:
+            self.time += dt
+            m, s = divmod(self.time, 60)
+            self.label.text = '%02d:%02d' % (m, s)
+            if m >= 5:
+                self.label.color = (180, 0, 0, 255)
+@window.event
+def on_key_press(symbol, modifiers):
+    if symbol == pyglet.window.key.SPACE:
+        if timer.running:
+            timer.running = False
+        else:
+            if timer.time > 0:
+                timer.reset()
+            else:
+                timer.running = True
+    elif symbol == pyglet.window.key.ESCAPE:
+        window.close()
 
-ft = font.load('', 360)
-timer = Timer('00:00', ft, x=w.width//2, y=w.height//2,
-    valign='center', halign='center')
-timer.reset()
-clock.schedule(timer.animate)
-w.push_handlers(timer)
+@window.event
+def on_draw():
+    window.clear()
+    timer.label.draw()
 
-while not w.has_exit:
-    w.dispatch_events()
-    clock.tick()
-    w.clear()
-    timer.draw()
-    w.flip()
+timer = Timer()
+pyglet.clock.schedule_interval(timer.update, 1)
+pyglet.app.run()
 
