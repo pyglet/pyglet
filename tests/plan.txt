@@ -205,3 +205,4 @@ text
     text.STYLE                                  GENERIC
     text.ELEMENT                                GENERIC
     text.HTML                                   GENERIC
+    text.HTML_IMAGE                             GENERIC

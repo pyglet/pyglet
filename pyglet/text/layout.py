@@ -54,7 +54,7 @@ class Line(object):
         self.vertex_lists = []
 
         for box in self.boxes:
-            box.delete(self)
+            box.delete(layout)
 
 class LayoutContext(object):
     def __init__(self, layout, document, colors_iter, background_iter):

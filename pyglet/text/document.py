@@ -98,19 +98,19 @@ class InlineElement(object):
     can be done by forcing a style change over the element's position.
 
     :Ivariables:
-        `advance` : int
-            Width of the element, in pixels.
         `ascent` : int
             Ascent of the element above the baseline, in pixels.
         `descent` : int
             Descent of the element below the baseline, in pixels.
             Typically negative.
+        `advance` : int
+            Width of the element, in pixels.
 
     '''
-    def __init__(self, advance, ascent, descent):
-        self.advance = advance
+    def __init__(self, ascent, descent, advance):
         self.ascent = ascent
         self.descent = descent
+        self.advance = advance
         self._position = None
 
     position = property(lambda self: self._position,
@@ -352,7 +352,7 @@ class AbstractDocument(event.EventDispatcher):
 
         self._text = self._text[:start] + self._text[end:]
 
-    def insert_element(self, position, element):
+    def insert_element(self, position, element, attributes=None):
         '''Insert a element into the document.
 
         See the `InlineElement` class documentation for details of
@@ -363,11 +363,14 @@ class AbstractDocument(event.EventDispatcher):
                 Character insertion point within document.
             `element` : `InlineElement`
                 Element to insert.
+            `attributes` : dict
+                Optional dictionary giving named style attributes of the
+                inserted text.
 
         '''
         assert element._position is None, \
             'Element is already in a document.'
-        self.insert_text(position, '\0')
+        self.insert_text(position, '\0', attributes)
         element._position = position
         self._elements.append(element)
         self._elements.sort(key=lambda d:d.position)

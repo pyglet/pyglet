@@ -5,8 +5,8 @@
 A subset of HTML 4.01 Transitional is implemented.  The following elements are
 supported fully::
 
-    B BLOCKQUOTE BR CENTER CODE DD DIR DL EM FONT H1 H2 H3 H4 H5 H6 I KBD LI
-    MENU OL P PRE Q SAMP STRONG SUB SUP TT U UL VAR 
+    B BLOCKQUOTE BR CENTER CODE DD DIR DL EM FONT H1 H2 H3 H4 H5 H6 I IMG KBD
+    LI MENU OL P PRE Q SAMP STRONG SUB SUP TT U UL VAR 
 
 The mark (bullet or number) of a list item is separated from the body of the
 list item with a tab, as the pyglet document model does not allow
@@ -21,8 +21,10 @@ __version__ = '$Id: $'
 
 import HTMLParser
 import htmlentitydefs
+import os
 import re
 
+import pyglet
 from pyglet.text.formats import structured
 
 def int_to_roman(input):
@@ -100,6 +102,34 @@ _block_containers = ['_top_block',
                      # Incorrect, but we treat list items as blocks:
                      'ul', 'ol', 'dir', 'menu', 'dl']
 
+class ImageElement(pyglet.text.document.InlineElement):
+    def __init__(self, image, width=None, height=None):
+        self.image = image.get_texture()
+        self.width = width is None and image.width or width
+        self.height = height is None and image.height or height
+        self.vertex_lists = {}
+
+        anchor_y = self.height / image.height * image.anchor_y
+        ascent = max(0, self.height - anchor_y)
+        descent = min(0, -anchor_y)
+        super(ImageElement, self).__init__(ascent, descent, self.width)
+
+    def place(self, layout, x, y):
+        group = pyglet.graphics.TextureGroup(self.image.texture, 
+                                             layout.top_group)
+        x1 = x
+        y1 = y + self.descent
+        x2 = x + self.width
+        y2 = y + self.height + self.descent
+        vertex_list = layout.batch.add(4, pyglet.gl.GL_QUADS, group,
+            ('v2i', (x1, y1, x2, y1, x2, y2, x1, y2)),
+            ('t3f', self.image.tex_coords))
+        self.vertex_lists[layout] = vertex_list
+
+    def remove(self, layout):
+        self.vertex_lists[layout].delete()
+        del self.vertex_lists[layout]
+
 class UnorderedList(object):
     def __init__(self, attrs):
         type = attrs.get('type', 'disc').lower()
@@ -148,6 +178,7 @@ class OrderedList(object):
 
 class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
     def decode_structured(self, text, path):
+        self.path = path
         self._font_size_stack = [3]
         self.list_stack = [UnorderedList({})]
         self.strip_leading_space = True
@@ -166,6 +197,16 @@ class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
         self.feed(text)
         self.close()
 
+    def get_image(self, filename):
+        filename = os.path.join(self.path, filename)
+        return pyglet.image.load(filename)
+
+    def prepare_for_data(self):
+        if self.need_block_begin:
+            self.add_text('\n')
+            self.block_begin = True
+            self.need_block_begin = False
+
     def handle_data(self, data):
         if self.in_metadata:
             return
@@ -175,10 +216,7 @@ class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
         else:
             data = _whitespace_re.sub(' ', data)
             if data.strip():
-                if self.need_block_begin:
-                    self.add_text('\n')
-                    self.block_begin = True
-                    self.need_block_begin = False
+                self.prepare_for_data()
                 if self.block_begin or self.strip_leading_space:
                     data = data.lstrip()
                     self.block_begin = False
@@ -312,6 +350,18 @@ class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
         elif element == 'dd':
             left_margin = self.current_style.get('margin_left') or 0
             style['margin_left'] = left_margin + 30
+        elif element == 'img':
+            image = self.get_image(attrs.get('src'))
+            if image:
+                width = attrs.get('width')
+                if width:
+                    width = int(width)
+                height = attrs.get('height')
+                if height:
+                    height = int(height)
+                self.prepare_for_data()
+                self.add_element(ImageElement(image, width, height))
+                self.strip_leading_space = False
 
         self.push_style(element, style)
 

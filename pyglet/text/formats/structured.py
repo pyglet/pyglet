@@ -50,3 +50,7 @@ class StructuredTextDecoder(pyglet.text.DocumentDecoder):
         self.next_style.clear()
         self.len_text += len(text)
 
+    def add_element(self, element):
+        self.document.insert_element(self.len_text, element, self.next_style)
+        self.next_style.clear()
+        self.len_text += 1

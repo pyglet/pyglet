@@ -105,7 +105,7 @@ class TestWindow(pyglet.window.Window):
         self.batch = pyglet.graphics.Batch()
         self.document = pyglet.text.decode_attributed(doctext)
         for i in range(0, len(doctext), 300):
-            self.document.insert_element(i, TestElement(70, 60, -10))
+            self.document.insert_element(i, TestElement(60, -10, 70))
         self.margin = 2
         self.layout = layout.IncrementalTextLayout(self.document,
             10, 10, # on_resize resolves this before layout happens
