@@ -1,5 +1,77 @@
-#!/usr/bin/python
 # $Id:$
+
+'''Low-level graphics rendering.
+
+This module provides an efficient low-level abstraction over OpenGL.  It gives
+very good performance for rendering OpenGL primitives; far better than the
+typical immediate-mode usage and, on modern graphics cards, better than using
+display lists in many cases.  The module is used internally by other areas of
+pyglet.  
+
+See the `pyglet Programming Guide <http://www.pyglet.org/doc>`_ for details on
+how to use this graphics API.
+
+Data item parameters
+====================
+
+Many of the functions and methods in this module accept any number of ``data``
+parameters as their final parameters.  In the documentation these are notated
+as ``*data`` in the formal parameter list.
+
+A data parameter describes a vertex attribute format and an optional sequence
+to initialise that attribute.  Examples of common attribute formats are:
+
+``"v3f"``
+    Vertex position, specified as three floats.
+``"c4B"``
+    Vertex color, specifed as four unsigned bytes.
+``"t2f"``
+    Texture coordinate, specified as two floats.
+
+See `pyglet.graphics.vertexattribute` for the complete syntax of the vertex
+format string.
+
+When no initial data is to be given, the data item is just the format string.
+For example, the following creates a 4 element vertex list with position and
+color attributes::
+
+    vertex_list = pyglet.graphics.vertex_list(4, 'v2f', 'c4B')
+
+When initial data is required, wrap the format string and the initial data in
+a tuple, for example::
+
+    vertex_list = pyglet.graphics.vertex_list(4, 
+                                              ('v2f', (0.0, 1.0, 1.0, 0.0)),
+                                              ('c4B', (255, 255, 255, 255)))
+
+Drawing modes
+=============
+
+Methods in this module that accept a ``mode`` parameter will accept any value
+in the OpenGL drawing mode enumeration; for example, ``GL_POINTS``,
+``GL_LINES``, ``GL_TRIANGLES``, etc.  
+
+Because of the way the graphics API renders multiple primitives with shared
+state, ``GL_POLYGON``, ``GL_LINE_LOOP`` and ``GL_TRIANGLE_FAN`` cannot be used
+--- the results are undefined.
+
+When using ``GL_LINE_STRIP``, ``GL_TRIANGLE_STRIP`` or ``GL_QUAD_STRIP`` care
+must be taken to insert degenrate vertices at the beginning and end of each
+vertex list.  For example, given the vertex list::
+
+    A, B, C, D
+
+the correct vertex list to provide the vertex list is::
+
+    A, A, B, C, D, D
+
+Alternatively, the ``NV_primitive_restart`` extension can be used if it is
+present.  This also permits use of ``GL_POLYGON``, ``GL_LINE_LOOP`` and
+``GL_TRIANGLE_FAN``.   Unfortunatley the extension is not provided by older
+video drivers, and requires indexed vertex lists.
+
+:since: pyglet 1.1
+'''
 
 import ctypes
 
@@ -17,10 +89,9 @@ def draw(size, mode, *data):
             Number of vertices given
         `mode` : int
             OpenGL drawing mode, e.g. ``GL_TRIANGLES``
-        `data` : (str, sequence)
-            Tuple of format string and array data.  Any number of
-            data items can be given, each providing data for a different
-            vertex attribute.
+        `data` : data items
+            Attribute formats and data.  See the module summary for 
+            details.
 
     '''
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
@@ -49,12 +120,9 @@ def draw_indexed(size, mode, indices, *data):
         `mode` : int
             OpenGL drawing mode, e.g. ``GL_TRIANGLES``
         `indices` : sequence of int
-            Sequence of integers giving indices into the vertex arrays.
-            If unspecified, the arrays are drawn in sequence.
-        `data` : (str, sequence)
-            Tuple of format string and array data.  Any number of
-            data items can be given, each providing data for a different
-            vertex attribute.
+            Sequence of integers giving indices into the vertex list.
+        `data` : data items
+            Attribute formats and data.  See the module summary for details.
 
     '''
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
@@ -109,17 +177,52 @@ def _get_default_batch():
         return shared_object_space.pyglet_graphics_default_batch
 
 def vertex_list(count, *data):
+    '''Create a `VertexList` not associated with a batch, group or mode.
+
+    :Parameters:
+        `count` : int
+            The number of vertices in the list.
+        `data` : data items
+            Attribute formats and initial data for the vertex list.  See the
+            module summary for details.
+
+    :rtype: `VertexList`
+    '''
     # Note that mode=0 because the default batch is never drawn: vertex lists
     # returned from this function are drawn directly by the app.
     return _get_default_batch().add(count, 0, None, *data)
 
 def vertex_list_indexed(count, indices, *data):
+    '''Create an `IndexedVertexList` not associated with a batch, group or mode.
+
+    :Parameters:
+        `count` : int
+            The number of vertices in the list.
+        `indices` : sequence
+            Sequence of integers giving indices into the vertex list.
+        `data` : data items
+            Attribute formats and initial data for the vertex list.  See the
+            module summary for details.
+
+    :rtype: `IndexedVertexList`
+    '''
     # Note that mode=0 because the default batch is never drawn: vertex lists
     # returned from this function are drawn directly by the app.
     return _get_default_batch().add_indexed(count, 0, None, indices, *data)
 
 class Batch(object):
+    '''Manage a collection of vertex lists for batched rendering.
+
+    Vertex lists are added to a `Batch` using the `add` and `add_indexed`
+    methods.  An optional group can be specified along with the vertex list,
+    which gives the OpenGL state required for its rendering.  Vertex lists
+    with shared mode and group are allocated into adjacent areas of memory and
+    sent to the graphics card in a single operation.
+
+    Call `VertexList.delete` to remove a vertex list from the batch.
+    '''
     def __init__(self):
+        '''Create a graphics batch.'''
         # Mapping to find domain.  
         # group -> (attributes, mode, indexed) -> domain
         self.group_map = {}
@@ -134,6 +237,23 @@ class Batch(object):
         self._draw_list_dirty = False
 
     def add(self, count, mode, group, *data):
+        '''Add a vertex list to the batch.
+
+        :Parameters:
+            `count` : int
+                The number of vertices in the list.
+            `mode` : int
+                OpenGL drawing mode enumeration; for example, one of
+                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
+                See the module summary for additional information.
+            `group` : `AbstractGroup`
+                Group of the vertex list, or ``None`` if no group is required.
+            `data` : data items
+                Attribute formats and initial data for the vertex list.  See
+                the module summary for details.
+
+        :rtype: `VertexList`
+        '''
         formats, initial_arrays = _parse_data(data)
         domain = self._get_domain(False, mode, group, formats)
         domain.__formats = formats
@@ -146,6 +266,25 @@ class Batch(object):
         return vlist
 
     def add_indexed(self, count, mode, group, indices, *data):
+        '''Add an indexed vertex list to the batch.
+
+        :Parameters:
+            `count` : int
+                The number of vertices in the list.
+            `mode` : int
+                OpenGL drawing mode enumeration; for example, one of
+                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
+                See the module summary for additional information.
+            `group` : `AbstractGroup`
+                Group of the vertex list, or ``None`` if no group is required.
+            `indices` : sequence
+                Sequence of integers giving indices into the vertex list.
+            `data` : data items
+                Attribute formats and initial data for the vertex list.  See
+                the module summary for details.
+
+        :rtype: `IndexedVertexList`
+        '''
         formats, initial_arrays = _parse_data(data)
         domain = self._get_domain(True, mode, group, formats)
             
@@ -270,14 +409,29 @@ class Batch(object):
             dump(group)
         
     def draw(self):
+        '''Draw the batch.
+        '''
         if self._draw_list_dirty:
             self._update_draw_list()
 
         for func in self._draw_list:
             func()
 
-    # TODO: remove?
     def draw_subset(self, vertex_lists):
+        '''Draw only some vertex lists in the batch.
+
+        The use of this method is highly discouraged, as it is quite
+        inefficient.  Usually an application can be redesigned so that batches
+        can always be drawn in their entirety, using `draw`.
+
+        The given vertex lists must belong to this batch; behaviour is
+        undefined if this condition is not met.
+
+        :Parameters:
+            `vertex_lists` : sequence of `VertexList` or `IndexedVertexList`
+                Vertex lists to draw.
+
+        '''
         # Horrendously inefficient.
         def visit(group):
             group.set_state()
@@ -303,13 +457,30 @@ class Batch(object):
             visit(group)
 
 class AbstractGroup(object):
+    '''Group of common OpenGL state.
+
+    Before a vertex list is rendered, its group's OpenGL state is set; as are
+    that state's ancestors' states.  This can be defined arbitrarily on
+    subclasses; the default state change has no effect, and groups vertex
+    lists only in the order in which they are drawn.
+    '''
     def __init__(self, parent=None):
+        '''Create a group.
+
+        :Parameters:
+            `parent` : `AbstractGroup`
+                Group to contain this group; its state will be set before this
+                state's.
+
+        '''
         self.parent = parent
         
     def set_state(self):
+        '''Apply the OpenGL state change.'''
         pass
 
     def unset_state(self):
+        '''Repeal the OpenGL state change.'''
         pass
 
     def set_state_recursive(self):
@@ -334,14 +505,34 @@ class AbstractGroup(object):
             group = group.parent
 
 class NullGroup(AbstractGroup):
+    '''The default group class used when ``None`` is given to a batch.
+
+    This implementation has no effect.
+    '''
     pass
 
+#: The default group.
+#:
+#: :type: `AbstractGroup`
 null_group = NullGroup()
 
 class TextureGroup(AbstractGroup):
+    '''A group that enables and binds a texture.
+
+    Texture groups are equal if their textures' targets and names are equal.
+    '''
     # Don't use this, create your own group classes that are more specific.
     # This is just an example.
     def __init__(self, texture, parent=None):
+        '''Create a texture group.
+
+        :Parameters:
+            `texture` : `Texture`
+                Texture to bind.
+            `parent` : `AbstractState`
+                Parent group.
+
+        '''
         super(TextureGroup, self).__init__(parent)
         self.texture = texture
 
@@ -364,6 +555,12 @@ class TextureGroup(AbstractGroup):
         return '%s(id=%d)' % (self.__class__.__name__, self.texture.id)
 
 class OrderedGroup(AbstractGroup):
+    '''A group with partial order.
+
+    Ordered groups with a common parent are rendered in ascending order of
+    their ``order`` field.  This is a useful way to render multiple layers of
+    a scene within a single batch.
+    '''
     # This can be useful as a top-level group, or as a superclass for other
     # groups that need to be ordered.
     #
@@ -371,6 +568,15 @@ class OrderedGroup(AbstractGroup):
     # known order even if they don't know about each other or share any known
     # group.
     def __init__(self, order, parent=None):
+        '''Create an ordered group.
+
+        :Parameters:
+            `order` : int
+                Order of this group.
+            `parent` : `AbstractGroup`
+                Parent of this group.
+
+        '''
         super(OrderedGroup, self).__init__(parent)
         self.order = order
 
