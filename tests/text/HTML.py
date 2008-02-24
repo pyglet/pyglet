@@ -203,7 +203,7 @@ class TestWindow(pyglet.window.Window):
         super(TestWindow, self).__init__(*args, **kwargs)
 
         self.batch = pyglet.graphics.Batch()
-        self.document = pyglet.text.html(doctext)
+        self.document = pyglet.text.decode_html(doctext)
         self.margin = 2
         self.layout = layout.IncrementalTextLayout(self.document,
             10, 10, # on_resize resolves this before layout happens

@@ -13,7 +13,7 @@ import re
 import symbol
 import token
 
-from pyglet.text import document
+import pyglet
 
 _pattern = re.compile(r'''
     (?P<escape_hex>\{\#x(?P<escape_hex_val>[0-9a-fA-F]+)\})
@@ -30,9 +30,9 @@ _pattern = re.compile(r'''
   | (?P<text>[^\{\}\n]+)
     ''', re.VERBOSE | re.DOTALL)
 
-class AttributedTextDecoder(object):
-    def decode(self, text):
-        self.doc = document.FormattedDocument()
+class AttributedTextDecoder(pyglet.text.DocumentDecoder):
+    def decode(self, text, path=None):
+        self.doc = pyglet.text.document.FormattedDocument()
 
         self.length = 0
         self.attributes = {}

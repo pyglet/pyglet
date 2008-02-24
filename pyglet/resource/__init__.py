@@ -392,6 +392,45 @@ class Loader(object):
         self._cached_textures[name] = texture
         return texture
 
+    def html(self, name):
+        '''Load an HTML document.
+
+        :Parameters:
+            `name` : str
+                Filename of the HTML resource to load.
+
+        :rtype: `FormattedDocument`
+        '''
+        file = self.file(name)
+        # TODO path!
+        return pyglet.text.load(name, file, 'text/html')
+
+    def attributed(self, name)
+        '''Load an attributed text document.
+
+        See `pyglet.text.formats.attributed` for details on this format.
+
+        :Parameters:
+            `name` : str
+                Filename of the attribute text resource to load.
+
+        :rtype: `FormattedDocument`
+        '''
+        file = self.file(name)
+        return pyglet.text.load(name, file, 'text/vnd.pyglet-attributed')
+
+    def text(self, name):
+        '''Load a plain text document.
+
+        :Parameters:
+            `name` : str
+                Filename of the plain text resource to load.
+
+        :rtype: `UnformattedDocument`
+        '''
+        file = self.file(name)
+        return pyglet.text.load(name, file, 'text/plain')
+
     def get_cached_texture_names(self):
         '''Get the names of textures currently cached.
 
@@ -426,4 +465,7 @@ get_cached_image_names = _default_loader.get_cached_image_names
 get_texture_bins = _default_loader.get_texture_bins
 media = _default_loader.media
 texture = _default_loader.texture
+html = _default_loader.html
+attributed = _default_loader.attributed
+text = _default_loader.text
 get_cached_texture_names = _default_loader.get_cached_texture_names

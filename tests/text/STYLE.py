@@ -175,7 +175,7 @@ class TestWindow(window.Window):
         super(TestWindow, self).__init__(*args, **kwargs)
 
         self.batch = graphics.Batch()
-        self.document = text.attributed(doctext)
+        self.document = text.decode_attributed(doctext)
         self.margin = 2
         self.layout = layout.IncrementalTextLayout(self.document,
             10, 10, # on_resize resolves this before layout happens

@@ -147,7 +147,7 @@ class OrderedList(object):
             return '%d.' % value
 
 class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
-    def decode_structured(self, text):
+    def decode_structured(self, text, path):
         self._font_size_stack = [3]
         self.list_stack = [UnorderedList({})]
         self.strip_leading_space = True

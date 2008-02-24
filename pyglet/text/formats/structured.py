@@ -6,19 +6,19 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-from pyglet.text import document
+import pyglet
 
-class StructuredTextDecoder(object):
-    def decode(self, text):
+class StructuredTextDecoder(pyglet.text.DocumentDecoder):
+    def decode(self, text, path=None):
         self.len_text = 0
         self.current_style = {}
         self.next_style = {}
         self.stack = []
-        self.document = document.FormattedDocument()
-        self.decode_structured(text)
+        self.document = pyglet.text.document.FormattedDocument()
+        self.decode_structured(text, path)
         return self.document
 
-    def decode_structured(self, text):
+    def decode_structured(self, text, path):
         raise NotImplementedError('abstract') 
 
     def push_style(self, key, styles):

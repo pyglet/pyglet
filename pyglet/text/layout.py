@@ -320,12 +320,12 @@ class InvalidRange(object):
 #                       TextLayoutForegroundDecorationGroup(OrderedGroup(2))
 
 class TextLayoutGroup(graphics.AbstractGroup):
-    def set(self):
+    def set_state(self):
         glPushAttrib(GL_ENABLE_BIT)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-    def unset(self):
+    def unset_state(self):
         glPopAttrib()
         
 class TextViewportLayoutGroup(graphics.AbstractGroup):
@@ -402,7 +402,7 @@ class TextLayout(object):
     _document = None
     _vertex_lists = ()
 
-    top_group = TextLayoutGroup(0)
+    top_group = TextLayoutGroup()
     background_group = graphics.OrderedGroup(0, top_group)
     foreground_group = TextLayoutForegroundGroup(1, top_group)
     foreground_decoration_group = \
