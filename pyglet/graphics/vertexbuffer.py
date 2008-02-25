@@ -15,8 +15,11 @@ the buffer.
 import ctypes
 import sys
 
+import pyglet
 from pyglet.gl import *
 from pyglet.gl import gl_info
+
+_enable_vbo = pyglet.options['debug_graphics_enable_vbo']
 
 def create_buffer(size, 
                   target=GL_ARRAY_BUFFER, 
@@ -37,7 +40,7 @@ def create_buffer(size,
 
     :rtype: `AbstractBuffer`
     '''
-    if vbo and gl_info.have_version(1, 5):
+    if vbo and gl_info.have_version(1, 5) and _enable_vbo:
         return VertexBufferObject(size, target, usage)
     else:
         return VertexArray(size)

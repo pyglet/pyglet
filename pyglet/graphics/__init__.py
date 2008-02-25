@@ -261,7 +261,7 @@ class Batch(object):
         # Create vertex list and initialize
         vlist = domain.create(count)
         for i, array in initial_arrays:
-            vlist.set_attribute_data(i, array)
+            vlist._set_attribute_data(i, array)
 
         return vlist
 
@@ -291,9 +291,9 @@ class Batch(object):
         # Create vertex list and initialize
         vlist = domain.create(count, len(indices))
         start = vlist.start
-        vlist.set_index_data(map(lambda i: i + start, indices))
+        vlist._set_index_data(map(lambda i: i + start, indices))
         for i, array in initial_arrays:
-            vlist.set_attribute_data(i, array)
+            vlist._set_attribute_data(i, array)
 
         return vlist 
 

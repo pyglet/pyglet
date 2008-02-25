@@ -54,7 +54,7 @@ def _nearest_pow2(v):
 
 def create_attribute_usage(format):
     '''Create an attribute and usage pair from a format string.  The
-    format string is the same as that used for `create_attribute`, with
+    format string is as documented in `pyglet.graphics.vertexattribute`, with
     the addition of an optional usage component::
 
         usage ::= attribute ( '/' ('static' | 'dynamic' | 'stream') )?
@@ -104,6 +104,11 @@ def create_indexed_domain(*attribute_usage_formats):
     return IndexedVertexDomain(attribute_usages)
 
 class VertexDomain(object):
+    '''Management of a set of vertex lists.
+
+    Construction of a vertex domain is usually done with the `create_domain`
+    function.
+    '''
     _version = 0
     _initial_count = 16
 
@@ -203,7 +208,12 @@ class VertexDomain(object):
         If `vertex_list` specifies a `VertexList`, only primitives in that
         list will be drawn.
 
-        Vertices are drawn using the given `mode`, e.g. ``GL_QUADS``.
+        :Parameters:
+            `mode` : int
+                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+            `vertex_list` : `VertexList`
+                Vertex list to draw, or ``None`` for all lists in this domain.
+
         '''
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         for buffer, attributes in self.buffer_attributes:
@@ -246,17 +256,37 @@ class VertexList(object):
         self.count = count
     
     def get_size(self):
-        # XXX terminology count vs size
+        '''Get the number of vertices in the list.
+
+        :rtype: int
+        '''
         return self.count
 
     def get_domain(self):
+        '''Get the domain this vertex list belongs to.
+
+        :rtype: `VertexDomain`
+        '''
         return self.domain
 
     def draw(self, mode):
+        '''Draw this vertex list in the given OpenGL mode.
+
+        :Parameters:
+            `mode` : int
+                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+
+        '''
         self.domain.draw(mode, self)
     
     def resize(self, count):
-        '''Resize this group.'''
+        '''Resize this group.
+        
+        :Parameters:
+            `count` : int
+                New number of vertices in the list. 
+
+        '''
         new_start = self.domain._safe_realloc(self.start, self.count, count)
         if new_start != self.start:
             # Copy contents to new location
@@ -279,7 +309,13 @@ class VertexList(object):
     def migrate(self, domain):
         '''Move this group from its current domain and add to the specified
         one.  Attributes on domains must match.  (In practice, used to change
-        parent state of some vertices).'''
+        parent state of some vertices).
+        
+        :Parameters:
+            `domain` : `VertexDomain`
+                Domain to migrate this vertex list to.
+
+        '''
         assert domain.attribute_names.keys() == \
             self.domain.attribute_names.keys(), 'Domain attributes must match.'
 
@@ -297,7 +333,7 @@ class VertexList(object):
         self.domain = domain
         self.start = new_start
 
-    def set_attribute_data(self, i, data):
+    def _set_attribute_data(self, i, data):
         attribute = self.domain.attributes[i]
         # TODO without region
         region = attribute.get_region(attribute.buffer, self.start, self.count)
@@ -323,28 +359,8 @@ class VertexList(object):
 
     _colors_cache = None
     _colors_cache_version = None
-    colors = property(_get_colors, _set_colors)
-
-    # ---
-
-    def _get_edge_flags(self):
-        if (self._edge_flags_cache_version != self.domain._version):
-            domain = self.domain
-            attribute = domain.attribute_names['edge_flags']
-            self._edge_flags_cache = attribute.get_region(
-                attribute.buffer, self.start, self.count)
-            self._edge_flags_cache_version = domain._version
-
-        region = self._edge_flags_cache
-        region.invalidate()
-        return region.array
-
-    def _set_edge_flags(self, data):
-        self._get_edge_flags()[:] = data
-
-    _edge_flags_cache = None
-    _edge_flags_cache_version = None
-    edge_flags = property(_get_edge_flags, _set_edge_flags)
+    colors = property(_get_colors, _set_colors, 
+                      doc='''Array of color data.''')
 
     # ---
 
@@ -365,7 +381,8 @@ class VertexList(object):
 
     _fog_coords_cache = None
     _fog_coords_cache_version = None
-    fog_coords = property(_get_fog_coords, _set_fog_coords)
+    fog_coords = property(_get_fog_coords, _set_fog_coords,
+                          doc='''Array of fog coordinate data.''')
 
     # ---
 
@@ -386,7 +403,8 @@ class VertexList(object):
 
     _edge_flags_cache = None
     _edge_flags_cache_version = None
-    edge_flags = property(_get_edge_flags, _set_edge_flags)
+    edge_flags = property(_get_edge_flags, _set_edge_flags,
+                          doc='''Array of edge flag data.''')
 
     # ---
 
@@ -407,7 +425,8 @@ class VertexList(object):
 
     _normals_cache = None
     _normals_cache_version = None
-    normals = property(_get_normals, _set_normals)
+    normals = property(_get_normals, _set_normals,
+                       doc='''Array of normal vector data.''')
 
     # ---
 
@@ -428,7 +447,8 @@ class VertexList(object):
 
     _secondary_colors_cache = None
     _secondary_colors_cache_version = None
-    secondary_colors = property(_get_secondary_colors, _set_secondary_colors)
+    secondary_colors = property(_get_secondary_colors, _set_secondary_colors,
+                                doc='''Array of secondary color data.''')
 
     # ---
 
@@ -450,7 +470,8 @@ class VertexList(object):
     def _set_tex_coords(self, data):
         self._get_tex_coords()[:] = data
 
-    tex_coords = property(_get_tex_coords, _set_tex_coords)
+    tex_coords = property(_get_tex_coords, _set_tex_coords,
+                          doc='''Array of texture coordinate data.''')
 
     # ---
     
@@ -472,9 +493,15 @@ class VertexList(object):
     def _set_vertices(self, data):
         self._get_vertices()[:] = data
     
-    vertices = property(_get_vertices, _set_vertices)
+    vertices = property(_get_vertices, _set_vertices,
+                        doc='''Array of vertex coordinate data.''')
 
 class IndexedVertexDomain(VertexDomain):
+    '''Management of a set of indexed vertex lists.
+
+    Construction of an indexed vertex domain is usually done with the
+    `create_indexed_domain` function.
+    '''
     _initial_index_count = 16
 
     def __init__(self, attribute_usages, index_gl_type=GL_UNSIGNED_INT):
@@ -526,12 +553,37 @@ class IndexedVertexDomain(VertexDomain):
         return IndexedVertexList(self, start, count, index_start, index_count) 
 
     def get_index_region(self, start, count):
+        '''Get a region of the index buffer.
+
+        :Parameters:
+            `start` : int
+                Start of the region to map.
+            `count` : int
+                Number of indices to map.
+
+        :rtype: Array of int
+        '''
         byte_start = self.index_element_size * start
         byte_count = self.index_element_size * count
         ptr_type = ctypes.POINTER(self.index_c_type * count)
         return self.index_buffer.get_region(byte_start, byte_count, ptr_type)
 
     def draw(self, mode, vertex_list=None):
+        '''Draw vertices in the domain.
+        
+        If `vertex_list` is not specified, all vertices in the domain are
+        drawn.  This is the most efficient way to render primitives.
+
+        If `vertex_list` specifies a `VertexList`, only primitives in that
+        list will be drawn.
+
+        :Parameters:
+            `mode` : int
+                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+            `vertex_list` : `IndexedVertexList`
+                Vertex list to draw, or ``None`` for all lists in this domain.
+
+        '''
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         for buffer, attributes in self.buffer_attributes:
             buffer.bind()
@@ -584,7 +636,15 @@ class IndexedVertexList(VertexList):
         self.domain.draw(mode, self)
 
     def resize(self, count, index_count):
-        '''Resize this group.'''
+        '''Resize this group.
+
+        :Parameters:
+            `count` : int
+                New number of vertices in the list. 
+            `index_count` : int
+                New number of indices in the list. 
+
+        '''
         old_start = self.start
         super(IndexedVertexList, self).resize(count)
 
@@ -612,7 +672,7 @@ class IndexedVertexList(VertexList):
         super(IndexedVertexList, self).delete()
         self.domain.index_allocator.dealloc(self.index_start, self.index_count)
 
-    def set_index_data(self, data):
+    def _set_index_data(self, data):
         # TODO without region
         region = self.domain.get_index_region(
             self.index_start, self.index_count)
@@ -637,4 +697,5 @@ class IndexedVertexList(VertexList):
 
     _indices_cache = None
     _indices_cache_version = None
-    indices = property(_get_indices, _set_indices)
+    indices = property(_get_indices, _set_indices, 
+                       doc='''Array of index data.''')

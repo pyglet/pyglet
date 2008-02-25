@@ -1,10 +1,96 @@
 #!/usr/bin/python
 # $Id:$
 
-'''Classes for manipulating buffer data as specific vertex attributes.
+'''Access byte arrays as arrays of vertex attributes.
 
 Use `create_attribute` to create an attribute accessor given a simple format
 string.  Alternatively, the classes may be constructed directly.
+
+Attribute format strings
+========================
+
+An attribute format string specifies the format of a vertex attribute.  Format
+strings are accepted by the `create_attribute` function as well as most
+methods in the `pyglet.graphics` module.
+
+Format strings have the following (BNF) syntax::
+
+    attribute ::= ( name | index 'g' 'n'? ) count type
+
+``name`` describes the vertex attribute, and is one of the following
+constants for the predefined attributes:
+
+``c``
+    Vertex color
+``e``
+    Edge flag
+``f``
+    Fog coordinate
+``n``
+    Normal vector
+``s``
+    Secondary color
+``t``
+    Texture coordinate
+``v``
+    Vertex coordinate
+
+You can alternatively create a generic indexed vertex attribute by
+specifying its index in decimal followed by the constant ``g``.  For
+example, ``0g`` specifies the generic vertex attribute with index 0.
+If the optional constant ``n`` is present after the ``g``, the
+attribute is normalised to the range ``[0, 1]`` or ``[-1, 1]`` within
+the range of the data type.
+
+``count`` gives the number of data components in the attribute.  For
+example, a 3D vertex position has a count of 3.  Some attributes
+constrain the possible counts that can be used; for example, a normal
+vector must have a count of 3.
+
+``type`` gives the data type of each component of the attribute.  The
+following types can be used:
+
+``b``
+    ``GLbyte``
+``B``
+    ``GLubyte``
+``s``
+    ``GLshort``
+``S``
+    ``GLushort``
+``i``
+    ``GLint``
+``I``
+    ``GLuint``
+``f``
+    ``GLfloat``
+``d``
+    ``GLdouble``
+
+Some attributes constrain the possible data types; for example,
+normal vectors must use one of the signed data types.  The use of
+some data types, while not illegal, may have severe performance
+concerns.  For example, the use of ``GLdouble`` is discouraged,
+and colours should be specified with ``GLubyte``.
+
+Whitespace is prohibited within the format string.
+
+Some examples follow:
+
+``v3f``
+    3-float vertex position
+``c4b``
+    4-byte colour
+``1eb``
+    Edge flag
+``0g3f``
+    3-float generic vertex attribute 0
+``1gn1i``
+    Integer generic vertex attribute 1, normalized to [-1, 1]
+``2gn4B``
+    4-byte generic vertex attribute 2, normalized to [0, 1] (because
+    the type is unsigned)
+
 '''
 
 import ctypes
@@ -50,8 +136,15 @@ def _align(v, align):
     return ((v - 1) & ~(align - 1)) + align
 
 def interleave_attributes(attributes):
-    '''Adjust the offsets and strides of the given attributes so that
+    '''Interleave attribute offsets.
+
+    Adjusts the offsets and strides of the given attributes so that
     they are interleaved.  Alignment constraints are respected.
+
+    :Parameters:
+        `attributes` : sequence of `AbstractAttribute`
+            Attributes to interleave in-place.
+
     '''
     stride = 0
     max_size = 0
@@ -65,8 +158,17 @@ def interleave_attributes(attributes):
         attribute.stride = stride
 
 def serialize_attributes(count, attributes):
-    '''Adjust the offsets of the given attributes so that they are
+    '''Serialize attribute offsets.
+    
+    Adjust the offsets of the given attributes so that they are
     packed serially against each other for `count` vertices.
+
+    :Parameters:
+        `count` : int
+            Number of vertices.
+        `attributes` : sequence of `AbstractAttribute`
+            Attributes to serialze in-place.
+
     '''
     offset = 0
     for attribute in attributes:
@@ -75,87 +177,15 @@ def serialize_attributes(count, attributes):
         offset += count * attribute.stride
 
 def create_attribute(format):
-    '''Create a vertex attribute description given a format string such as
-    "v3f".  The initial stride and offset of the attribute will be 0.
+    '''Create a vertex attribute description from a format string.
+    
+    The initial stride and offset of the attribute will be 0.
 
-    Format strings have the following syntax::
+    :Parameters:
+        `format` : str
+            Attribute format string.  See the module summary for details.
 
-        attribute ::= ( name | index 'g' 'n'? ) count type
-
-    ``name`` describes the vertex attribute, and is one of the following
-    constants for the predefined attributes:
-
-    ``c``
-        Vertex color
-    ``e``
-        Edge flag
-    ``f``
-        Fog coordinate
-    ``n``
-        Normal vector
-    ``s``
-        Secondary color
-    ``t``
-        Texture coordinate
-    ``v``
-        Vertex coordinate
-
-    You can alternatively create a generic indexed vertex attribute by
-    specifying its index in decimal followed by the constant ``g``.  For
-    example, ``0g`` specifies the generic vertex attribute with index 0.
-    If the optional constant ``n`` is present after the ``g``, the
-    attribute is normalised to the range ``[0, 1]`` or ``[-1, 1]`` within
-    the range of the data type.
-
-    ``count`` gives the number of data components in the attribute.  For
-    example, a 3D vertex position has a count of 3.  Some attributes
-    constrain the possible counts that can be used; for example, a normal
-    vector must have a count of 3.
-
-    ``type`` gives the data type of each component of the attribute.  The
-    following types can be used:
-
-    ``b``
-        GLbyte
-    ``B``
-        GLubyte
-    ``s``
-        GLshort
-    ``S``
-        GLushort
-    ``i``
-        GLint
-    ``I``
-        GLuint
-    ``f``
-        GLfloat
-    ``d``
-        GLdouble
-
-    Some attributes constrain the possible data types; for example,
-    normal vectors must use one of the signed data types.  The use of
-    some data types, while not illegal, may have severe performance
-    concerns.  For example, the use of ``GLdouble`` is discouraged,
-    and colours should be specified with ``GLubyte``.
-
-    Whitespace is prohibited within the format string.
-
-    Some examples follow:
-
-    ``v3f``
-        3-float vertex position
-    ``c4b``
-        4-byte colour
-    ``1eb``
-        Edge flag
-    ``0g3f``
-        3-float generic vertex attribute 0
-    ``1gn1i``
-        Integer generic vertex attribute 1, normalized to [-1, 1]
-    ``2gn4B``
-        4-byte generic vertex attribute 2, normalized to [0, 1] (because
-        the type is unsigned)
-
+    :rtype: `AbstractAttribute`
     '''
     try:
         cls, args = _attribute_cache[format]
@@ -193,6 +223,15 @@ class AbstractAttribute(object):
     _fixed_count = None
     
     def __init__(self, count, gl_type):
+        '''Create the attribute accessor.
+
+        :Parameters:
+            `count` : int
+                Number of components in the attribute.
+            `gl_type` : int
+                OpenGL type enumerant; for example, ``GL_FLOAT``
+
+        '''
         assert count in (1, 2, 3, 4), 'Component count out of range'
         self.gl_type = gl_type
         self.c_type = _c_types[gl_type]
@@ -260,6 +299,19 @@ class AbstractAttribute(object):
                 region, array_count, self.count, elem_stride)
 
     def set_region(self, buffer, start, count, data):
+        '''Set the data over a region of the buffer.
+
+        :Parameters:
+            `buffer` : AbstractMappable`
+                The buffer to modify.
+            `start` : int
+                Offset of the first vertex to set.
+            `count` : int
+                Number of vertices to set.
+            `data` : sequence
+                Sequence of data components.
+
+        '''
         if self.stride == self.size:
             # non-interleaved
             byte_start = self.stride * start
@@ -273,6 +325,8 @@ class AbstractAttribute(object):
             region[:] = data
 
 class ColorAttribute(AbstractAttribute):
+    '''Color vertex attribute.'''
+
     plural = 'colors'
     
     def __init__(self, count, gl_type):
@@ -287,6 +341,8 @@ class ColorAttribute(AbstractAttribute):
                        self.offset + pointer)
 
 class EdgeFlagAttribute(AbstractAttribute):
+    '''Edge flag attribute.'''
+
     plural = 'edge_flags'
     _fixed_count = 1
     
@@ -302,6 +358,8 @@ class EdgeFlagAttribute(AbstractAttribute):
         glEdgeFlagPointer(self.stride, self.offset + pointer)
 
 class FogCoordAttribute(AbstractAttribute):
+    '''Fog coordinate attribute.'''
+
     plural = 'fog_coords'
     
     def __init__(self, count, gl_type):
@@ -315,6 +373,8 @@ class FogCoordAttribute(AbstractAttribute):
                           self.offset + pointer)
 
 class NormalAttribute(AbstractAttribute):
+    '''Normal vector attribute.'''
+
     plural = 'normals'
     _fixed_count = 3
 
@@ -330,6 +390,8 @@ class NormalAttribute(AbstractAttribute):
         glNormalPointer(self.gl_type, self.stride, self.offset + pointer)
 
 class SecondaryColorAttribute(AbstractAttribute):
+    '''Secondary color attribute.'''
+
     plural = 'secondary_colors'
     _fixed_count = 3
 
@@ -344,6 +406,8 @@ class SecondaryColorAttribute(AbstractAttribute):
                                 self.offset + pointer)
 
 class TexCoordAttribute(AbstractAttribute):
+    '''Texture coordinate attribute.'''
+
     plural = 'tex_coords'
 
     def __init__(self, count, gl_type):
@@ -359,6 +423,8 @@ class TexCoordAttribute(AbstractAttribute):
                        self.offset + pointer)
 
 class VertexAttribute(AbstractAttribute):
+    '''Vertex coordinate attribute.'''
+
     plural = 'vertices'
 
     def __init__(self, count, gl_type):
@@ -376,6 +442,8 @@ class VertexAttribute(AbstractAttribute):
                         self.offset + pointer)
 
 class GenericAttribute(AbstractAttribute):
+    '''Generic vertex attribute, used by shader programs.'''
+
     def __init__(self, index, normalized, count, gl_type):
         self.normalized = normalized
         self.index = index
