@@ -499,10 +499,9 @@ class AbstractGroup(object):
 
         The inverse of `set_recursive`.
         '''
-        group = self
-        while group:
-            group.unset_state_recursive()
-            group = group.parent
+        self.unset_state()
+        if self.parent:
+            self.parent.unset_state_recursive()
 
 class NullGroup(AbstractGroup):
     '''The default group class used when ``None`` is given to a batch.
