@@ -431,10 +431,7 @@ class TextLayout(object):
             self._width = 100000
 
         if dpi is None:
-            if sys.platform == 'darwin':
-                dpi = 72
-            else:
-                dpi = 96
+            dpi = 96
         self._dpi = dpi
         self.document = document       
 

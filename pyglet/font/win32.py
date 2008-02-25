@@ -324,11 +324,6 @@ class Win32Font(base.Font):
         self.logfont = self.get_logfont(name, size, bold, italic, dpi)
         self.hfont = gdi32.CreateFontIndirectA(byref(self.logfont))
 
-        if dpi is None:
-            self.dpi = 96
-        else:
-            self.dpi = dpi
-
         # Create a dummy DC for coordinate mapping
         dc = user32.GetDC(0)
         metrics = TEXTMETRIC()
@@ -343,9 +338,8 @@ class Win32Font(base.Font):
         # Create a dummy DC for coordinate mapping
         dc = user32.GetDC(0)
         if dpi is None:
-            logpixelsy = gdi32.GetDeviceCaps(dc, LOGPIXELSY)
-        else:
-            logpixelsy = dpi
+            dpi = 96
+        logpixelsy = dpi
 
         logfont = LOGFONT()
         # Conversion of point size to device pixels

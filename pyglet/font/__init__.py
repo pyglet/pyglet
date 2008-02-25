@@ -516,17 +516,17 @@ def load(name=None, size=None, bold=False, italic=False, dpi=None):
             If True, an italic variant is returned, if one exists for the given
             family and size.
         `dpi` : float
-            If specified, the assumed resolution of the display device, for
-            the purposes of determining the pixel size of the font.  If not
-            specified, the platform's native resolution is used (72 DPI on Mac
-            OS X, 96 DPI on Windows, 120 DPI on Windows with large fonts, and
-            user-settable on Linux).
+            The assumed resolution of the display device, for the purposes of
+            determining the pixel size of the font.  Defaults to 96. 
 
     :rtype: `Font`
     '''
     # Arbitrary default size
     if size is None:
         size = 12
+
+    if dpi is None:
+        dpi = 96
 
     # Find first matching name
     if type(name) in (tuple, list):
@@ -551,12 +551,12 @@ def load(name=None, size=None, bold=False, italic=False, dpi=None):
     # Not in cache, create from scratch
     font = _font_class(name, size, bold=bold, italic=italic, dpi=dpi)
 
-    # Save parameters for new-style layout classes to recover (dpi is set by
-    # subclasses).
+    # Save parameters for new-style layout classes to recover
     font.name = name
     font.size = size
     font.bold = bold
     font.italic = italic
+    font.dpi = dpi
 
     font_cache[descriptor] = font
     return font

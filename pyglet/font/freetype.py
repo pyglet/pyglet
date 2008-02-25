@@ -232,10 +232,7 @@ class FreeTypeFont(base.Font):
         super(FreeTypeFont, self).__init__()
 
         if dpi is None:
-            dpi = 0  # Select default DPI of 72 by specifying 0.
-            self.dpi = 72
-        else:
-            self.dpi = dpi
+            dpi = 96  # as of pyglet 1.1; pyglet 1.0 had 72.
 
         # Check if font name/style matches a font loaded into memory by user
         lname = name and name.lower() or ''

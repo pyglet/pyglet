@@ -352,14 +352,13 @@ class CarbonFont(base.Font):
         if not name:
             name = 'Helvetica'
 
-        if dpi is not None:
-            # If application is not DPI-aware, DPI is fixed at 72.  Scale
-            # font size to emulate other DPI if necessary.  This will need
-            # to be fixed if issue #87 is implemented.
-            size = size * dpi / 72.
-            self.dpi = dpi
-        else:
-            self.dpi = 72
+        if dpi is None:
+            dpi = 96 # pyglet 1.1; in pyglet 1.0 this was 72.
+
+        # If application is not DPI-aware, DPI is fixed at 72.  Scale
+        # font size to emulate other DPI.  This will need to be fixed if issue
+        # #87 is implemented.
+        size = size * dpi / 72.
 
         font_id = ATSUFontID()
         carbon.ATSUFindFontFromName(
