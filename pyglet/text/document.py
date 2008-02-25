@@ -3,7 +3,55 @@
 
 '''Formatted and unformatted document interfaces used by text layout.
 
-TODO overview
+Abstract representation
+=======================
+
+Styled text in pyglet is represented by one of the `AbstractDocument` classes,
+which manage the state representation of text and style independently of how
+it is loaded or rendered.  
+
+A document consists of the document text (a Unicode string) and a set of
+named style ranges.  For example, consider the following (artificial)
+example::
+
+    0    5   10   15   20
+    The cat sat on the mat.
+    +++++++        +++++++    "bold"
+                ++++++      "italic"
+
+If this example were to be rendered, "The cat" and "the mat" would be in bold,
+and "on the" in italics.  Note that the second "the" is both bold and italic.
+
+The document styles recorded for this example would be ``"bold"`` over ranges
+(0-7, 15-22) and ``"italic"`` over range (12-18).  Overlapping styles are
+permitted; unlike HTML and other structured markup, the ranges need not be
+nested.
+
+The document has no knowledge of the semantics of ``"bold"`` or ``"italic"``,
+it stores only the style names.  The pyglet layout classes give meaning to
+these style names in the way they are rendered; but you are also free to
+invent your own style names (which will be ignored by the layout classes).
+This can be useful to tag areas of interest in a document, or maintain
+references back to the source material.
+
+As well as text, the document can contain arbitrary elements represented by
+`InlineElement`.  An inline element behaves like a single character in the
+documented, but can be rendered by the application.
+
+Document classes
+================
+
+Any class implementing `AbstractDocument` provides a an interface to a
+document model as described above.  In theory a structured document such as
+HTML or XML could export this model, though the classes provided by pyglet
+implement only unstructured documents.
+
+The `UnformattedDocument` class assumes any styles set are set over the entire
+document.  So, regardless of the range specified when setting a ``"bold"``
+style attribute, for example, the entire document will receive that style.
+
+The `FormattedDocument` class implements the document model directly, using
+the `RunList` class to represent style runs efficiently.
 
 Style attributes
 ================
@@ -32,7 +80,10 @@ The following character style attribute names are recognised by pyglet:
     4-tuple of ints in range (0, 255) giving RGBA text background color; or
     ``None`` for no background fill.
 
-The following paragraph style attribute names are recognised by pyglet:
+The following paragraph style attribute names are recognised by pyglet.  Note
+that paragraph styles are handled no differently from character styles by the
+document: it is the application's responsibility to set the style over an
+entire paragraph, otherwise results are undefined.
 
 ``align``
     ``left`` (default), ``center`` or ``right``.
