@@ -49,7 +49,6 @@ from pyglet.window.win32.types import *
 ole32 = windll.ole32
 kernel32 = windll.kernel32
 gdiplus = windll.gdiplus
-mapi32 = windll.mapi32
 
 LPSTREAM = c_void_p
 REAL = c_float
