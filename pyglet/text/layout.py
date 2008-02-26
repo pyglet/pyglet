@@ -592,10 +592,7 @@ class TextLayout(object):
             assert False, 'Invalid halign'
 
     def _get_top(self, lines):
-        if self._height is not None:
-            height = self._height
-        else:
-            height = self.content_height
+        height = self.content_height
 
         if self._valign == 'top':
             return self._y
@@ -604,7 +601,7 @@ class TextLayout(object):
         elif self._valign == 'bottom':
             return self._y + height
         elif self._valign == 'center':
-            if self._height is None and len(lines) == 1:
+            if len(lines) == 1:
                 # This "looks" more centered than considering all of the
                 # descent.
                 line = lines[0]
