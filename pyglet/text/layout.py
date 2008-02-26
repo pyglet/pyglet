@@ -329,12 +329,12 @@ class TextLayoutGroup(graphics.AbstractGroup):
         glPopAttrib()
         
 class ScrollableTextLayoutGroup(graphics.AbstractGroup):
-    scissor_x = 0
-    scissor_y = 0
-    scissor_width = 0
-    scissor_height = 0
-    view_x = 0
-    view_y = 0
+    _scissor_x = 0
+    _scissor_y = 0
+    _scissor_width = 0
+    _scissor_height = 0
+    _view_x = 0
+    _view_y = 0
     translate_x = 0 # x - view_x
     translate_y = 0 # y - view_y
 
@@ -344,15 +344,49 @@ class ScrollableTextLayoutGroup(graphics.AbstractGroup):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         # Disable scissor to check culling.
         glEnable(GL_SCISSOR_TEST)
-        glScissor(self.scissor_x - 1, 
-                  self.scissor_y - self.scissor_height, 
-                  self.scissor_width + 1, 
-                  self.scissor_height)
+        glScissor(self._scissor_x - 1, 
+                  self._scissor_y - self._scissor_height, 
+                  self._scissor_width + 1, 
+                  self._scissor_height)
         glTranslatef(self.translate_x, self.translate_y, 0)
 
     def unset_state(self):
         glTranslatef(-self.translate_x, -self.translate_y, 0)
         glPopAttrib()
+
+    def _set_top(self, top):
+        self._scissor_y = top
+        self.translate_y = self._scissor_y - self._view_y
+
+    top = property(lambda self: self._scissor_y, _set_top)
+
+    def _set_left(self, left):
+        self._scissor_x = left
+        self.translate_x = self._scissor_x - self._view_x
+
+    left = property(lambda self: self._scissor_x, _set_left)
+
+    def _set_width(self, width):
+        self._scissor_width = width
+
+    width = property(lambda self: self._width, _set_width)
+
+    def _set_height(self, height):
+        self._scissor_height = height
+
+    height = property(lambda self: self._height, _set_height)
+
+    def _set_view_x(self, view_x):
+        self._view_x = view_x
+        self.translate_x = self._scissor_x - self._view_x
+
+    view_x = property(lambda self: self._view_x, _set_view_x)
+
+    def _set_view_y(self, view_y):
+        self._view_y = view_y
+        self.translate_y = self._scissor_y - self._view_y
+
+    view_y = property(lambda self: self._view_y, _set_view_y)
 
     def __eq__(self, other):
         return self is other
@@ -430,6 +464,9 @@ class TextLayout(object):
             # Complete waste of time.
             self._width = 100000
 
+            # Default bottom for multiline, baseline for single line
+            self._valign = 'bottom'
+
         if dpi is None:
             dpi = 96
         self._dpi = dpi
@@ -502,6 +539,17 @@ class TextLayout(object):
     
     document = property(_get_document, _set_document)
 
+    def _get_lines(self):
+        len_text = len(self._document.text)
+        glyphs = self._get_glyphs()
+        owner_runs = runlist.RunList(len_text, None)
+        self._get_owner_runs(owner_runs, glyphs, 0, len_text)
+        lines = [line for line in self._flow_glyphs(glyphs, owner_runs, 
+                                                    0, len_text)]
+        self.content_width = 0
+        self._flow_lines(lines, 0, len(lines))
+        return lines
+
     def _update(self):
         if not self._update_enabled:
             return
@@ -513,61 +561,60 @@ class TextLayout(object):
         if not self._document or not self._document.text:
             return
 
-        len_text = len(self._document.text)
-        glyphs = self._get_glyphs()
-        owner_runs = runlist.RunList(len_text, None)
-        self._get_owner_runs(owner_runs, glyphs, 0, len_text)
-        lines = [line for line in self._flow_glyphs(glyphs, owner_runs, 
-                                                    0, len_text)]
-        self.content_width = 0
-        self._flow_lines(lines, 0, len(lines))
+        lines = self._get_lines()
 
         colors_iter = self._document.get_style_runs('color')
         background_iter = self._document.get_style_runs('background_color')
 
-        if self._halign == 'left':
-            offset_x = self._x
-        elif self._halign == 'center':
-            if self._width is None:
-                offset_x = self._x - self.content_width // 2
-            else:
-                offset_x = self._x + (self._width - self.content_width) // 2
-        elif self._halign == 'right':
-            if self._width is None:
-                offset_x = self._x - self.content_width
-            else:
-                offset_x = self._x + self._width - self.content_width
-        else:
-            assert False, 'Invalid halign'
-        
-        if self._valign == 'top':
-            offset_y = self._y
-        elif self._valign == 'baseline':
-            offset_y = self._y + lines[0].ascent
-        elif self._valign == 'bottom':
-            if self._height is None:
-                offset_y = self._y + self.content_height
-            else:
-                offset_y = self._y - self._height + self.content_height
-        elif self._valign == 'center':
-            if self._height is None:
-                if len(lines) == 1:
-                    offset_y = \
-                        self._y + lines[0].ascent // 2 - lines[0].descent // 4
-                else:
-                    offset_y = self._y + self.content_height // 2
-            else:
-                offset_y = self._y + (self._height + self.content_height) // 2
-        else:
-            assert False, 'Invalid valign'
+        left = self._get_left()
+        top = self._get_top(lines)
         
         context = StaticLayoutContext(self, self._document, 
                                       colors_iter, background_iter)
         for line in lines:
-            self._create_vertex_lists(offset_x + line.x, offset_y + line.y, 
+            self._create_vertex_lists(left + line.x, top + line.y, 
                                       line.start, line.boxes, context)
         self._vertex_lists.extend(context.vertex_lists)
 
+    def _get_left(self):
+        if self._multiline:
+            width = self._width
+        else:
+            width = self.content_width
+
+        if self._halign == 'left':
+            return self._x
+        elif self._halign == 'center':
+            return self._x - width // 2
+        elif self._halign == 'right':
+            return self._x - width
+        else:
+            assert False, 'Invalid halign'
+
+    def _get_top(self, lines):
+        if self._height is not None:
+            height = self._height
+        else:
+            height = self.content_height
+
+        if self._valign == 'top':
+            return self._y
+        elif self._valign == 'baseline':
+            return self._y + lines[0].ascent
+        elif self._valign == 'bottom':
+            return self._y + height
+        elif self._valign == 'center':
+            if self._height is None and len(lines) == 1:
+                # This "looks" more centered than considering all of the
+                # descent.
+                line = lines[0]
+                return self._y + line.ascent // 2 - line.descent // 4
+            else:
+                return self._y + height // 2
+        else:
+            assert False, 'Invalid valign'
+
+ 
     def _init_document(self):
         self._update()
 
@@ -746,9 +793,7 @@ class TextLayout(object):
                 else:
                     new_paragraph = text in u'\n\u2029'
                     new_line = (text == u'\u2028') or new_paragraph
-                    if (wrap and self._width is not None and
-                        x + kern + glyph.advance >= width) or new_line:
-
+                    if (wrap and x + kern + glyph.advance >= width) or new_line:
                         # Either the pending runs have overflowed the allowed
                         # line width or a newline was encountered.  Either
                         # way, the current line must be flushed.
@@ -1027,8 +1072,6 @@ class TextLayout(object):
 
     multiline = property(_get_multiline, _set_multiline)
 
-    # XXX not valid for incremental.
-    
     _halign = 'left'
     def _set_halign(self, halign):
         self._halign = halign
@@ -1039,7 +1082,7 @@ class TextLayout(object):
 
     halign = property(_get_halign, _set_halign)
 
-    _valign = 'top'
+    _valign = 'baseline'
     def _set_valign(self, valign):
         self._valign = valign
         self._update()
@@ -1057,6 +1100,10 @@ class ScrollableTextLayout(TextLayout):
         super(ScrollableTextLayout, self).__init__(
             document, multiline, dpi, batch, group)
 
+        # TODO this forces another layout
+        self.width = width
+        self.height = height
+
     def _init_groups(self, group):
         # Scrollable layout never shares group becauase of translation.   
         self.top_group = ScrollableTextLayoutGroup(group)
@@ -1066,26 +1113,27 @@ class ScrollableTextLayout(TextLayout):
             TextLayoutForegroundDecorationGroup(2, self.top_group)
 
     def _set_x(self, x):
-        self.top_group.scissor_x = x
-        self.top_group.translate_x = x - self.top_group.view_x
+        self._x = x
+        self.top_group.left = self._get_left()
 
     def _get_x(self):
-        return self.top_group.scissor_x
+        return self._x
 
     x = property(_get_x, _set_x)
 
     def _set_y(self, y):
-        self.top_group.scissor_y = y
-        self.top_group.translate_y = y - self.top_group.view_y
+        self._y = y
+        self.top_group.top = self._get_top(self._get_lines())
 
     def _get_y(self):
-        return self.top_group.scissor_y
+        return self._y
 
     y = property(_get_y, _set_y)
 
     def _set_width(self, width):
         self._width = width
-        self.top_group.scissor_width = width
+        self.top_group.width = width
+        self.top_group.left = self._get_left()
         self._update()
 
     def _get_width(self):
@@ -1095,19 +1143,37 @@ class ScrollableTextLayout(TextLayout):
 
     def _set_height(self, height):
         self._height = height
-        self.top_group.scissor_height = height
+        self.top_group.height = height
+        self.top_group.top = self._get_top(self._get_lines())
 
     def _get_height(self):
         return self._height
 
     height = property(_get_height, _set_height)
 
+    def _set_halign(self, halign):
+        self._halign = halign
+        self.top_group.top = self._get_top(self._get_lines())
+        
+    def _get_halign(self):
+        return self._halign
+
+    halign = property(_get_halign, _set_halign)
+
+    def _set_valign(self, valign):
+        self._valign = valign
+        self.top_group.left = self._get_left()
+        
+    def _get_valign(self):
+        return self._valign
+
+    valign = property(_get_valign, _set_valign)
+
     # Offset of content within viewport
 
     def _set_view_x(self, view_x):
         view_x = max(0, min(self.content_width - self.width, view_x))
         self.top_group.view_x = view_x
-        self.top_group.translate_x = self.top_group.scissor_x - view_x
 
     def _get_view_x(self):
         return self.top_group.view_x
@@ -1118,30 +1184,11 @@ class ScrollableTextLayout(TextLayout):
         # view_y must be negative.
         view_y = min(0, max(self.height - self.content_height, view_y))
         self.top_group.view_y = view_y
-        self.top_group.translate_y = self.top_group.scissor_y - view_y
 
     def _get_view_y(self):
         return self.top_group.view_y
 
     view_y = property(_get_view_y, _set_view_y)
-
-    def ensure_line_visible(self, line):
-        line = self.lines[line]
-        y1 = line.y + line.ascent
-        y2 = line.y + line.descent
-        if y1 > self.view_y:
-            self.view_y = y1
-        elif y2 < self.view_y - self.height:
-            self.view_y = y2  + self.height
-
-    def ensure_x_visible(self, x):
-        if x <= self.view_x + 10:
-            self.view_x = x - 10
-        elif x >= self.view_x + self.width:
-            self.view_x = x - self.width + 10 
-        elif (x >= self.view_x + self.width - 10 and 
-              self.content_width > self.width):
-            self.view_x = x - self.width + 10 
 
 class IncrementalTextLayout(ScrollableTextLayout):
     '''Displayed text suitable for interactive editing and/or scrolling
@@ -1170,6 +1217,9 @@ class IncrementalTextLayout(ScrollableTextLayout):
 
     def _uninit_document(self):
         self.on_delete_text(0, len(self._document.text))
+
+    def _get_lines(self):
+        return self.lines
 
     def delete(self):
         for line in self.lines:
@@ -1568,4 +1618,23 @@ class IncrementalTextLayout(ScrollableTextLayout):
 
     def get_line_count(self):
         return len(self.lines)
+
+    def ensure_line_visible(self, line):
+        line = self.lines[line]
+        y1 = line.y + line.ascent
+        y2 = line.y + line.descent
+        if y1 > self.view_y:
+            self.view_y = y1
+        elif y2 < self.view_y - self.height:
+            self.view_y = y2  + self.height
+
+    def ensure_x_visible(self, x):
+        if x <= self.view_x + 10:
+            self.view_x = x - 10
+        elif x >= self.view_x + self.width:
+            self.view_x = x - self.width + 10 
+        elif (x >= self.view_x + self.width - 10 and 
+              self.content_width > self.width):
+            self.view_x = x - self.width + 10 
+
 

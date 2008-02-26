@@ -120,7 +120,7 @@ class TestWindow(pyglet.window.Window):
         super(TestWindow, self).on_resize(width, height)
         self.layout.begin_update()
         self.layout.x = self.margin
-        self.layout.y = self.height - self.margin
+        self.layout.y = self.margin
         self.layout.width = width - self.margin * 2
         self.layout.height = height - self.margin * 2
         self.layout.end_update()

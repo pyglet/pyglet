@@ -330,12 +330,13 @@ class Text(object):
         self._layout.begin_update()
         self.font = font
         self.color = color
-        self.x = x
+        self._x = x
         self.y = y
         self.z = z
         self.width = width
         self.halign = halign
         self.valign = valign
+        self._update_layout_halign()
         self._layout.end_update()
 
     def _get_font(self):
@@ -367,11 +368,28 @@ class Text(object):
 
     color = property(_get_color, _set_color)
 
+    def _update_layout_halign(self):
+        if self._layout.multiline:
+            # TextLayout has a different interpretation of halign that doesn't
+            # consider the width to be a special factor; here we emulate the
+            # old behaviour by fudging the layout x value.
+            if self._layout.halign == 'left':
+                self._layout.x = self.x
+            elif self._layout.halign == 'center':
+                self._layout.x = self.x + self._layout.width - \
+                    self._layout.content_width // 2
+            elif self._layout.halign == 'right': 
+                self._layout.x = self.x + 2 * self._layout.width - \
+                    self._layout.content_width
+        else:
+            self._layout.x = self.x
+
     def _get_x(self):
-        return self._layout.x
+        return self._x
 
     def _set_x(self, x):
-        self._layout.x = x
+        self._x = x
+        self._update_layout_halign()
 
     x = property(_get_x, _set_x)
 
@@ -405,6 +423,7 @@ class Text(object):
             self._layout.multiline = True
             self._layout.width = width
             self._layout.end_update()
+        self._update_layout_halign()
 
     width = property(_get_width, _set_width, 
         doc='''Width of the text.
@@ -434,6 +453,7 @@ class Text(object):
 
     def _set_text(self, text):
         self._document.text = text
+        self._update_layout_halign()
 
     text = property(_get_text, _set_text,
         doc='''Text to render.
@@ -449,6 +469,7 @@ class Text(object):
 
     def _set_halign(self, halign):
         self._layout.halign = halign
+        self._update_layout_halign()
 
     halign = property(_get_halign, _set_halign,
         doc='''Horizontal alignment of the text.
