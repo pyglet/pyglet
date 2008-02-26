@@ -914,7 +914,7 @@ class XlibWindow(BaseWindow):
             self._applied_mouse_exclusive = mouse_exclusive
 
         if keyboard_exclusive != self._applied_keyboard_exclusive:
-            if exclusive:
+            if keyboard_exclusive:
                 xlib.XGrabKeyboard(self._x_display,
                     self._window,
                     False,
