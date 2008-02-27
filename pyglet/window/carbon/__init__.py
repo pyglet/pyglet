@@ -1242,6 +1242,16 @@ class CarbonWindow(BaseWindow):
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
+    @CarbonEventHandler(kEventClassWindow, kEventWindowBoundsChanging)
+    def _on_window_bounds_changing(self, next_handler, ev, data):
+        from pyglet import app
+        if app.event_loop is not None:
+            carbon.SetEventLoopTimerNextFireTime(app.event_loop._timer,
+                                                 c_double(0.0))
+
+        carbon.CallNextEventHandler(next_handler, ev)
+        return noErr
+
     @CarbonEventHandler(kEventClassWindow, kEventWindowBoundsChanged)
     def _on_window_bounds_change(self, next_handler, ev, data):
         self._update_track_region()
