@@ -1,11 +1,70 @@
 #!/usr/bin/python
 # $Id:$
 
-'''
+'''Render simple text and formatted documents efficiently.
 
-Layout distinguishes between paragraph breaks (\n or U+2029) and line breaks
-(U+2028).  Margin space is inserted between paragraph breaks, not between line
-breaks.  Follows UTR #13 http://unicode.org/reports/tr13/tr13-5.html.
+Style attributes
+================
+
+The following character style attribute names are recognised by pyglet:
+
+``font_name``
+    Font family name, as given to `pyglet.font.load`.
+``font_size``
+    Font size, in points.
+``bold``
+    Boolean.
+``italic``
+    Boolean.
+``underline``
+    4-tuple of ints in range (0, 255) giving RGBA underline color, or None
+    (default) for no underline.
+``kerning``
+    Additional space to insert between glyphs, in points.  Defaults to 0.
+``baseline``
+    Offset of glyph baseline from line baseline, in points.  Positive values
+    give a superscript, negative values give a subscript.  Defaults to 0.
+``color``
+    4-tuple of ints in range (0, 255) giving RGBA text color
+``background_color``
+    4-tuple of ints in range (0, 255) giving RGBA text background color; or
+    ``None`` for no background fill.
+
+The following paragraph style attribute names are recognised by pyglet.  Note
+that paragraph styles are handled no differently from character styles by the
+document: it is the application's responsibility to set the style over an
+entire paragraph, otherwise results are undefined.
+
+``align``
+    ``left`` (default), ``center`` or ``right``.
+``indent``
+    Additional horizontal space to insert before the first 
+``leading``
+    Additional space to insert between consecutive lines within a paragraph,
+    in points.  Defaults to 0.
+``line_spacing``
+    Distance between consecutive baselines in a paragraph, in points.
+    Defaults to ``None``, which automatically calculates the tightest line
+    spacing for each line based on the font ascent and descent.
+``margin_left``
+    Left paragraph margin, in pixels.
+``margin_right``
+    Right paragraph margin, in pixels.
+``margin_top``
+    Margin above paragraph, in pixels.
+``margin_bottom``
+    Margin below paragraph, in pixels.  Adjacent margins do not collapse.
+``tab_stops``
+    List of horizontal tab stops, in pixels, measured from the left edge of
+    the text layout.  Defaults to the empty list.  When the tab stops
+    are exhausted, they implicitly continue at 50 pixel intervals.
+``wrap``
+    Boolean.  If True (the default), text wraps within the width of the layout.
+
+Other attributes can be used to store additional style information within the
+document; it will be ignored by the built-in text classes.
+
+
 '''
 
 import math
@@ -71,16 +130,23 @@ class StaticLayoutContext(LayoutContext):
     def __init__(self, layout, document, colors_iter, background_iter):
         super(StaticLayoutContext, self).__init__(layout, document,
                                                   colors_iter, background_iter)
-        self.vertex_lists = []
+        self.vertex_lists = layout._vertex_lists
+        self.boxes = layout._boxes
 
     def add_list(self, list):
         self.vertex_lists.append(list)
+
+    def add_box(self, box):
+        self.boxes.append(box)
 
 class IncrementalLayoutContext(LayoutContext):
     line = None
 
     def add_list(self, list):
         self.line.vertex_lists.append(list)
+
+    def add_box(self, box):
+        pass
 
 class AbstractBox(object):
     owner = None
@@ -122,6 +188,7 @@ class GlyphBox(AbstractBox):
         '''
         super(GlyphBox, self).__init__(
             font.ascent, font.descent, advance, len(glyphs))
+        assert owner
         self.owner = owner
         self.font = font
         self.glyphs = glyphs
@@ -253,6 +320,7 @@ class InlineElementBox(AbstractBox):
     def place(self, layout, i, x, y, context):
         self.element.place(layout, x, y)
         self.placed = True
+        context.add_box(self)
 
     def delete(self, layout):
         # font == element
@@ -435,6 +503,7 @@ class TextLayoutTextureGroup(graphics.AbstractGroup):
 class TextLayout(object):
     _document = None
     _vertex_lists = ()
+    _boxes = ()
 
     top_group = TextLayoutGroup()
     background_group = graphics.OrderedGroup(0, top_group)
@@ -556,7 +625,10 @@ class TextLayout(object):
 
         for _vertex_list in self._vertex_lists:
             _vertex_list.delete()
+        for box in self._boxes:
+            box.delete(self)
         self._vertex_lists = []
+        self._boxes = []
         
         if not self._document or not self._document.text:
             return
@@ -574,7 +646,6 @@ class TextLayout(object):
         for line in lines:
             self._create_vertex_lists(left + line.x, top + line.y, 
                                       line.start, line.boxes, context)
-        self._vertex_lists.extend(context.vertex_lists)
 
     def _get_left(self):
         if self._multiline:
@@ -592,7 +663,10 @@ class TextLayout(object):
             assert False, 'Invalid halign'
 
     def _get_top(self, lines):
-        height = min(self.content_height, self._height)
+        if self._height is None:
+            height = self.content_height
+        else:
+            height = min(self.content_height, self._height)
 
         if self._valign == 'top':
             return self._y
@@ -920,7 +994,12 @@ class TextLayout(object):
                 width += sum([g.advance for g in gs])
                 width += kern * (kern_end - kern_start)
                 owner_glyphs.extend(zip([kern] * (kern_end - kern_start), gs))
-            line.add_box(GlyphBox(owner, font, owner_glyphs, width))
+            if owner is None:
+                # Assume glyphs are already boxes.
+                for kern, glyph in owner_glyphs:
+                    line.add_box(glyph)
+            else:
+                line.add_box(GlyphBox(owner, font, owner_glyphs, width))
     
         if not line.boxes:
             line.ascent = font.ascent
@@ -1011,13 +1090,17 @@ class TextLayout(object):
 
     _x = 0
     def _set_x(self, x):
-        dx = x - self._x
-        l_dx = lambda x: x + dx
-        for vertex_list in self._vertex_lists:
-            vertices = vertex_list.vertices[:]
-            vertices[::2] = map(l_dx, vertices[::2])
-            vertex_list.vertices[:] = vertices
-        self._x = x
+        if self._boxes:
+            self._x = x
+            self._update()
+        else:
+            dx = x - self._x
+            l_dx = lambda x: x + dx
+            for vertex_list in self._vertex_lists:
+                vertices = vertex_list.vertices[:]
+                vertices[::2] = map(l_dx, vertices[::2])
+                vertex_list.vertices[:] = vertices
+            self._x = x
 
     def _get_x(self):
         return self._x
@@ -1026,13 +1109,17 @@ class TextLayout(object):
 
     _y = 0
     def _set_y(self, y):
-        dy = y - self._y
-        l_dy = lambda y: y + dy
-        for vertex_list in self._vertex_lists:
-            vertices = vertex_list.vertices[:]
-            vertices[1::2] = map(l_dy, vertices[1::2])
-            vertex_list.vertices[:] = vertices
-        self._y = y
+        if self._boxes:
+            self._y = y
+            self._update()
+        else:
+            dy = y - self._y
+            l_dy = lambda y: y + dy
+            for vertex_list in self._vertex_lists:
+                vertices = vertex_list.vertices[:]
+                vertices[1::2] = map(l_dy, vertices[1::2])
+                vertex_list.vertices[:] = vertices
+            self._y = y
 
     def _get_y(self):
         return self._y

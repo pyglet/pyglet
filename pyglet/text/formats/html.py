@@ -178,7 +178,7 @@ class OrderedList(object):
 
 class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
     def decode_structured(self, text, path):
-        self.path = path
+        self.path = path and path or ''
         self._font_size_stack = [3]
         self.list_stack = [UnorderedList({})]
         self.strip_leading_space = True

@@ -33,24 +33,44 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''
+'''A simple demonstration of the HTMLLabel class, as it might be used on a
+help or introductory screen.
 '''
 
 __docformat__ = 'restructuredtext'
-__version__ = '$Id$'
+__version__ = '$Id: $'
 
+import os
 import pyglet
 
-window = pyglet.window.Window()
-label = pyglet.text.Label('Hello, world', 
-                          font_name='Times New Roman', 
-                          font_size=36,
-                          x=window.width//2, y=window.height//2,
-                          halign='center', valign='center')
+html = '''
+<h1>HTML labels in pyglet</h1>
+
+<p align="center"><img src="pyglet.png" /></p>
+
+<p>HTML labels are a simple way to add formatted text to your application.
+Different <font face="Helvetica,Arial" size=+2>fonts</font>, <em>styles</em>
+and <font color=maroon>colours</font> are supported.
+
+<p>This window has been made resizable; text will reflow to fit the new size.
+'''
+
+window = pyglet.window.Window(resizable=True)
+label = pyglet.text.HTMLLabel(html, path=os.path.dirname(__file__),
+                              multiline=True, valign='center')
+
+@window.event
+def on_resize(width, height):
+    # Wrap text to the width of the window
+    label.width = window.width
+
+    # Keep text vertically centered in the window
+    label.y = window.height // 2
 
 @window.event
 def on_draw():
     window.clear()
     label.draw()
 
+pyglet.gl.glClearColor(1, 1, 1, 1)
 pyglet.app.run()

@@ -2,30 +2,48 @@ Displaying text
 ===============
 
 pyglet provides the `font` module for rendering high-quality antialiased
-Unicode text efficiently.  Any installed font on the operating system can be
+Unicode glyphs efficiently.  Any installed font on the operating system can be
 used, or you can supply your own font with your application.  
 
-Some basic functionality is provided for rendering text in a single font, and
-additional complex rendering can be achieved by layering more sophisticated
-behaviour above the pyglet base classes.
-
-Before you can load any fonts you must have an active OpenGL context.  That
-is, you should create a window before loading fonts.  If you need to load the
-font before you can determine the size of the window, set the visibility of
-the window to False initially::
-
-    from pyglet import font
-    from pyglet import window
-
-    win = win.Window(visible=False)
-
-    # ... load fonts and calculate window layout
-
-    win.set_size(width, height)
-    win.set_visible(True)
+Text rendering is performed with the `text` module, which can display
+word-wrapped formatted text.  There is also support for interactive editing of
+text on-screen with a caret.
 
 .. contents::
     :local:
+
+Simple text rendering
+---------------------
+
+The following complete example creates a window that displays "Hello, World" 
+centered vertically and horizontally::
+
+    import pyglet
+
+    window = pyglet.window.Window()
+    label = pyglet.text.Label('Hello, world', 
+                              font_name='Times New Roman', 
+                              font_size=36,
+                              x=window.width//2, y=window.height//2,
+                              halign='center', valign='center')
+
+    @window.event
+    def on_draw():
+        window.clear()
+        label.draw()
+
+    pyglet.app.run() 
+
+The example demonstrates the most common uses of text rendering:
+
+* The font name and size are specified directly in the constructor.
+  Additional parameters exist for setting the bold and italic styles and the
+  color of the text.
+* The position of the text is given by the ``x`` and ``y`` coordinates.  The
+  meaning of these coordinates is given by the ``halign`` and ``valign``
+  parameters.
+* The actual text is drawn with the `Label.draw` method.  Labels can also be
+  added to a graphics batch; see (TODO) for details.
 
 Loading system fonts
 --------------------
@@ -217,117 +235,6 @@ The list of supported formats is shown in the table below.
                Mac OS X, the files can be used on any platform.  pyglet
                does not currently make use of the additional kerning and
                ligature information within OpenType fonts.
-
-Basic text rendering
---------------------
-
-Most of the text requirements of applications written with pyglet can be taken
-care of with the `Text` class.  This permits simple but efficient rendering of
-one or more lines of text in a single font.
-
-Drawing text is a two step process:
-
-1. Create a `Text` instance, specifying the text to display and the font to
-   use; and optionally the position, color and alignment of the text.
-2. Each frame, call `Text.draw` to draw the text to the window.
-
-The following is a reprint of the "Hello, World" example from the first
-chapter::
-
-    from pyglet import window
-    from pyglet import font
-
-    win = window.Window()
-
-    ft = font.load('Arial', 36)
-    text = font.Text(ft, 'Hello, World!')
-
-    while not win.has_exit:
-        win.dispatch_events()
-
-        win.clear()
-        text.draw()
-        win.flip()
-
-Position and alignment
-^^^^^^^^^^^^^^^^^^^^^^
-
-You can specify the location in the window of the text during construction::
-
-    text = font.Text(ft, 'Hello, World!', x=25, y=80)
-
-or change this at any time (for example, to animate some text moving across
-the screen)::
-
-    text.x += 10
-    text.y += 1
-
-By default the position you give determines the left edge of the text, and the
-baseline of the first line of text.  The `halign` and `valign` properties
-allow you to center or right-align text, and position relative to the top,
-center or bottom of the text.  For example, in the following example the text
-is centered within the window::
-
-    text = font.Text(ft, 'Hello, World!', 
-                     x=win.width / 2, 
-                     y=win.height / 2,
-                     halign=font.Text.CENTER,
-                     valign=font.Text.CENTER)
-
-You may find it useful to be able to align various assets around the text.  To
-do this, you need to know how much space it is taking.  The `width` and
-`height` attributes can be queried; these give the total dimensions of the
-text when it is laid out.
-
-Text color
-^^^^^^^^^^
-
-The color of the text is white by default, but can be changed with the `color`
-property::
-
-    text.color = (1, 0, 0, 1) # Red
-
-Colors are specified as if passed to `glColor4f`.  They are a tuple of the
-red, green, blue and alpha color components, in that order.  The range of each
-component is a float between 0 and 1.
-
-For example, to draw semi-translucent dark blue text::
-
-    text.color = (0, 0.5, 0, 0.5)
-
-Word wrapping
-^^^^^^^^^^^^^
-
-Text can be made to fit within a specified width.  When the `width` property
-is not ``None``, text will be split into separate lines along word boundaries
-so that the width of the text does not exceed the limit.  For example, to
-word-wrap a large paragraph into the whole window::
-
-    text = font.Text(ft, long_text,
-                     x=0,
-                     y=win.height,
-                     valign=font.Text.TOP)
-    text.width = win.width
-
-If you add the ``text.width = win.width`` line to an `on_resize` event handler
-for the window, you can ensure the text reflows as the window is resized.
-
-Limitations
-^^^^^^^^^^^
-
-The `Text` class is suitable only for text that can be displayed with a single
-font, size and color.  It does not support any markup, nor does it handle
-bidirectional text.  
-
-For more sophisticated text rendering, you may want to consider the ``layout``
-module located in the ``contrib`` directory of the SVN source tree.  The
-``layout`` module allows text to be marked-up with XML or HTML, and then
-styled with CSS.  This module is currently in development and is not yet
-supported.
-
-The `GlyphString` class gives lower-level access to some of the features
-provided by `Text`, which could be useful in implementing your own layout
-engine.
 
 OpenGL font considerations
 --------------------------

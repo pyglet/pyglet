@@ -38,6 +38,17 @@ As well as text, the document can contain arbitrary elements represented by
 `InlineElement`.  An inline element behaves like a single character in the
 documented, but can be rendered by the application.
 
+Paragraph breaks
+================
+
+Paragraph breaks are marked with a "newline" character (U+0010).  The Unicode
+paragraph break (U+2029) can also be used.
+
+Line breaks (U+2028) can be used to force a line break within a paragraph.
+
+See Unicode recommendation UTR #13 for more information:
+http://unicode.org/reports/tr13/tr13-5.html.
+
 Document classes
 ================
 

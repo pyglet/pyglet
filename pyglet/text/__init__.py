@@ -138,8 +138,8 @@ def decode_text(text):
 class DocumentLabel(layout.TextLayout):
     def __init__(self, document=None,
                  x=0, y=0, halign='left', valign='baseline', 
-                 dpi=None, batch=None, group=None):
-        super(DocumentLabel, self).__init__(document, multiline=False, 
+                 multiline=False, dpi=None, batch=None, group=None):
+        super(DocumentLabel, self).__init__(document, multiline=multiline, 
                                             dpi=dpi, batch=batch, group=group)
 
         self._x = x
@@ -207,10 +207,10 @@ class Label(DocumentLabel):
                  font_name=None, font_size=None, bold=False, italic=False,
                  color=(255, 255, 255, 255),
                  x=0, y=0, halign='left', valign='baseline',
-                 dpi=None, batch=None, group=None):
+                  multiline=False, dpi=None, batch=None, group=None):
         document = decode_text(text)
         super(Label, self).__init__(document, x, y, halign, valign,
-                                    dpi, batch, group)
+                                    multiline, dpi, batch, group)
 
         self.document.set_style(0, len(self.document.text), {
             'font_name': font_name,
@@ -223,12 +223,12 @@ class Label(DocumentLabel):
 class HTMLLabel(DocumentLabel):
     def __init__(self, text='', path=None, 
                  x=0, y=0, halign='left', valign='baseline',
-                 dpi=None, batch=None, group=None):
+                 multiline=False, dpi=None, batch=None, group=None):
         self._text = text
         self._path = path
         document = decode_html(text, path)
         super(HTMLLabel, self).__init__(document, x, y, halign, valign,
-                                        dpi, batch, group)
+                                        multiline, dpi, batch, group)
 
     def _set_text(self, text):
         self._text = text
