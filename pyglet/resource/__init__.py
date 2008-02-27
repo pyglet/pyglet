@@ -161,6 +161,7 @@ class Loader(object):
         # Map name to image
         self._cached_textures = {}
         self._cached_images = {}
+        self._cached_animatinos = {}
 
         # Map bin size to list of atlases
         self._texture_atlas_bins = {}
@@ -324,6 +325,41 @@ class Loader(object):
             return identity
                 
         return identity.get_transform(flip_x, flip_y, rotate)
+
+    def animation(self, name, flip_x=False, flip_y=False, rotate=0):
+        '''Load an animation with optional transformation.
+
+        Animations loaded from the same source but with different
+        transformations will use the same textures.
+
+        :Parameters:
+            `name` : str
+                Filename of the animation source to load.
+            `flip_x` : bool
+                If True, the returned image will be flipped horizontally.
+            `flip_y` : bool
+                If True, the returned image will be flipped vertically.
+            `rotate` : int
+                The returned image will be rotated clockwise by the given
+                number of degrees (a mulitple of 90).
+
+        :rtype: `Animation`
+        '''
+        try:
+            identity = self._cached_animations[name]
+        except KeyError:
+            animation = pyglet.image.load_animation(name, self.file(name))
+            bin = self._get_texture_atlas_bin(animation.get_max_width(), 
+                                              animation.get_max_height())
+            if bin:
+                animation.add_to_texture_bin(bin)
+
+            identity = self._cached_animations[name] = animation
+
+        if not rotate and not flip_x and not flip_y:
+            return identity
+                
+        return identity.get_transform(flip_x, flip_y, rotate)
        
     def get_cached_image_names(self):
         '''Get a list of image filenames that have been cached.
@@ -334,6 +370,16 @@ class Loader(object):
         :return: List of str
         '''
         return self._cached_images.keys()
+
+    def get_cached_animation_names(self):
+        '''Get a list of animation filenames that have been cached.
+
+        This is useful for debugging and profiling only.
+
+        :rtype: list
+        :return: List of str
+        '''
+        return self._cached_animations.keys()
 
     def get_texture_bins(self):
         '''Get a list of texture bins in use.
@@ -461,7 +507,9 @@ reindex = _default_loader.reindex
 file = _default_loader.file
 add_font = _default_loader.add_font
 image = _default_loader.image
+animation = _default_loader.animation
 get_cached_image_names = _default_loader.get_cached_image_names
+get_cached_animation_names = _default_loader.get_cached_animation_names
 get_texture_bins = _default_loader.get_texture_bins
 media = _default_loader.media
 texture = _default_loader.texture

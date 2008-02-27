@@ -70,7 +70,7 @@ class Sprite(event.EventDispatcher):
             self._animation = img
             self._frame_index = 0
             self._texture = img.frames[0].image.get_texture()
-            self._next_dt = img.frames[0].delay
+            self._next_dt = img.frames[0].duration
             clock.schedule_once(self._animate, self._next_dt)
         else:
             self._texture = img.get_texture()
@@ -103,11 +103,11 @@ class Sprite(event.EventDispatcher):
         frame = self._animation.frames[self._frame_index]
         self._set_texture(frame.image.get_texture())
 
-        if frame.delay is not None:
-            delay = frame.delay - (self._next_dt - dt)
-            delay = min(max(0, delay), frame.delay)
-            clock.schedule_once(self._animate, delay)
-            self._next_dt = delay
+        if frame.duration is not None:
+            duration = frame.duration - (self._next_dt - dt)
+            duration = min(max(0, duration), frame.duration)
+            clock.schedule_once(self._animate, duration)
+            self._next_dt = duration
         else:
             self.dispatch_event('on_animation_end')
 
@@ -160,7 +160,7 @@ class Sprite(event.EventDispatcher):
             self._animation = img
             self._frame_index = 0
             self._set_texture(img.frames[0].image.get_texture())
-            self._next_dt = img.frames[0].delay
+            self._next_dt = img.frames[0].duration
             clock.schedule_once(self._animate, self._next_dt)
         else:
             self._set_texture(img.get_texture())
