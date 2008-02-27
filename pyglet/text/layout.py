@@ -592,7 +592,7 @@ class TextLayout(object):
             assert False, 'Invalid halign'
 
     def _get_top(self, lines):
-        height = self.content_height
+        height = min(self.content_height, self._height)
 
         if self._valign == 'top':
             return self._y
