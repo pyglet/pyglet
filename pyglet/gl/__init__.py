@@ -367,7 +367,6 @@ class Context(object):
         '''
         if self.object_space is current_context.object_space:
             id = GLuint(texture_id)
-            print 'delete', id
             glDeleteTextures(1, id)
         else:
             self.object_space._doomed_textures.append(texture_id)
