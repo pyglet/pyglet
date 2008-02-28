@@ -1237,7 +1237,7 @@ class ScrollableTextLayout(TextLayout):
 
     def _set_halign(self, halign):
         self._halign = halign
-        self.top_group.top = self._get_top(self._get_lines())
+        self.top_group.left = self._get_left()
         
     def _get_halign(self):
         return self._halign
@@ -1246,7 +1246,7 @@ class ScrollableTextLayout(TextLayout):
 
     def _set_valign(self, valign):
         self._valign = valign
-        self.top_group.left = self._get_left()
+        self.top_group.top = self._get_top(self._get_lines())
         
     def _get_valign(self):
         return self._valign
