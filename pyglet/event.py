@@ -333,7 +333,7 @@ class EventDispatcher(object):
         assert event_type in self.event_types
 
         # Search handler stack for matching event handlers
-        for frame in self._event_stack:
+        for frame in list(self._event_stack):
             handler = frame.get(event_type, None)
             if handler:
                 try:
