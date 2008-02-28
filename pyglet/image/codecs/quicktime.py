@@ -54,8 +54,9 @@ Handle = POINTER(POINTER(c_byte))
 GWorldPtr = c_void_p
 carbon.NewHandle.restype = Handle
 HandleDataHandlerSubType = _name('hndl')
+kDataRefExtensionFileName = _name('fnam')
 ComponentInstance = c_void_p
-
+   
 k1MonochromePixelFormat       = 0x00000001
 k2IndexedPixelFormat          = 0x00000002
 k4IndexedPixelFormat          = 0x00000004
@@ -79,7 +80,7 @@ VisualMediaCharacteristic = _name('eyes')
 nextTimeMediaSample           = 1
 
 def Str255(value):
-    return chr(len(value)) + value
+    return create_string_buffer(chr(len(value)) + value)
 
 class QuickTimeImageDecoder(ImageDecoder):
     def get_file_extensions(self):
@@ -97,8 +98,12 @@ class QuickTimeImageDecoder(ImageDecoder):
         carbon.PtrToHand(data, byref(handle), len(data))
         carbon.PtrToHand(byref(handle), byref(dataref), sizeof(Handle))
 
-        self.filename = filename =Str255(filename)
-        carbon.PtrAndHand(filename, dataref, len(filename))
+        self.filename = filename = Str255(filename)
+        
+        filename_handle = Handle()
+        carbon.PtrToHand(filename, byref(filename_handle), len(filename) + 1)
+        quicktime.DataHSetDataRefExtension(dataref, filename_handle,
+                                           kDataRefExtensionFileName)
 
         return dataref
 
