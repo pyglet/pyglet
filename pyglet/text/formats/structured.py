@@ -15,6 +15,7 @@ class StructuredTextDecoder(pyglet.text.DocumentDecoder):
         self.next_style = {}
         self.stack = []
         self.document = pyglet.text.document.FormattedDocument()
+        path = path and path or ''
         self.decode_structured(text, path)
         return self.document
 
