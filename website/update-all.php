@@ -1,5 +1,5 @@
 <?php
-$BASE_URL = 'http://pyglet-users.googlegroups.com';
+$BASE_URL = 'http://groups.google.com';
 $FEED_URL = 
   'http://groups.google.com/group/pyglet-users/feed/atom_v1_0_msgs.xml';
 $MAX_DISCUSSION_ENTRIES = 3;
@@ -8,10 +8,10 @@ function get_pages()
 {
   global $BASE_URL;
 
-  echo "Reading $BASE_URL/web/...<br/>\n";
+  echo "Reading $BASE_URL/group/pyglet-users/web/...<br/>\n";
 
   $pages = array();
-  $html = file_get_contents($BASE_URL . '/web/');
+  $html = file_get_contents($BASE_URL . '/group/pyglet-users/web/');
   preg_match_all('|class="name ln"  href="([^"]*)">([^<]*)</a>|s', $html,
                  $matches, PREG_SET_ORDER);
   foreach ($matches as $match)
