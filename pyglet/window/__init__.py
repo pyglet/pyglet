@@ -630,7 +630,7 @@ class BaseWindow(EventDispatcher):
             config = screen.get_best_config(config)
 
         if not context:
-            context = config.create_context(gl.get_current_context())
+            context = config.create_context(gl.current_context)
 
         if fullscreen:
             if width is not None or height is not None:

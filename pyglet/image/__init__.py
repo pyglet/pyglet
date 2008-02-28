@@ -140,6 +140,7 @@ from ctypes import *
 from math import ceil
 from StringIO import StringIO
 
+from pyglet import gl
 from pyglet.gl import *
 from pyglet.gl import gl_info
 from pyglet import graphics
@@ -905,7 +906,7 @@ class ImageData(AbstractImage):
                 format, type = self._get_gl_format_and_type(data_format)
 
         # Workaround: don't use GL_UNPACK_ROW_LENGTH
-        if gl._current_context._workaround_unpack_row_length:
+        if gl.current_context._workaround_unpack_row_length:
             data_pitch = self.width * len(data_format)
 
         # Get data in required format (hopefully will be the same format it's
@@ -1369,7 +1370,7 @@ class Texture(AbstractImage):
         super(Texture, self).__init__(width, height)
         self.target = target
         self.id = id
-        self._context = get_current_context()
+        self._context = gl.current_context
 
     def delete(self):
         '''Delete the texture from video memory.
@@ -1927,7 +1928,7 @@ def get_buffer_manager():
     
     :rtype: `BufferManager`
     '''
-    context = get_current_context()
+    context = gl.current_context
     if not hasattr(context, 'image_buffer_manager'):
         context.image_buffer_manager = BufferManager()
     return context.image_buffer_manager

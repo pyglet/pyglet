@@ -77,6 +77,7 @@ import ctypes
 
 import pyglet
 from pyglet.gl import *
+from pyglet import gl
 from pyglet.graphics import vertexbuffer, vertexattribute, vertexdomain
 
 _debug_graphics_batch = pyglet.options['debug_graphics_batch']
@@ -169,7 +170,7 @@ def _parse_data(data):
     return formats, initial_arrays
 
 def _get_default_batch():
-    shared_object_space = get_current_context().object_space
+    shared_object_space = gl.current_context.object_space
     try:
         return shared_object_space.pyglet_graphics_default_batch
     except AttributeError:

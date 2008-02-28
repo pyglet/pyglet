@@ -107,18 +107,29 @@ from pyglet.gl import gl_info
 # share objects with.  Remember to remove from this list when context is
 # destroyed.
 _contexts = []
-_current_context = None
+
+#: The active OpenGL context.
+#:
+#: You can change the current context by calling `Context.set_current`; do not
+#: modify this global.
+#:
+#: :type: `Context`
+#:
+#: :since: pyglet 1.1
+current_context = None
 
 def get_current_context():
     '''Return the active OpenGL context.
 
     You can change the current context by calling `Context.set_current`.
 
+    :deprecated: Use `current_context`
+
     :rtype: `Context`
     :return: the context to which OpenGL commands are directed, or None
         if there is no selected context.
     '''
-    return _current_context
+    return current_context
 
 class Config(object):
     '''Graphics configuration.
@@ -305,9 +316,9 @@ class Context(object):
         return '%s()' % self.__class__.__name__
 
     def set_current(self):
-        global _current_context
+        global current_context
         assert self in _contexts
-        _current_context = self
+        current_context = self
 
         # Implement workarounds
         if not self._info:
@@ -331,9 +342,9 @@ class Context(object):
         that depend on it in the correct order; this should never be called
         by an application.
         '''
-        global _current_context
-        if _current_context is self:
-            _current_context = None
+        global current_context
+        if current_context is self:
+            current_context = None
             gl_info.remove_active_context()
 
             # Switch back to shadow context.
@@ -354,8 +365,9 @@ class Context(object):
                 The OpenGL name of the texture to delete.
 
         '''
-        if self.object_space is _current_context.object_space:
+        if self.object_space is current_context.object_space:
             id = GLuint(texture_id)
+            print 'delete', id
             glDeleteTextures(1, id)
         else:
             self.object_space._doomed_textures.append(texture_id)

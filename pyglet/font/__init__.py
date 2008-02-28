@@ -73,11 +73,13 @@ __version__ = '$Id$'
 import sys
 import os
 import math
+import weakref
 
 import pyglet
 from pyglet.gl import *
-from pyglet import window
+from pyglet import gl
 from pyglet import image
+from pyglet import window
 
 class GlyphString(object):
     '''An immutable string of glyphs that can be rendered quickly.
@@ -559,9 +561,10 @@ def load(name=None, size=None, bold=False, italic=False, dpi=None):
             name = None
 
     # Locate or create font cache   
-    shared_object_space = get_current_context().object_space
+    shared_object_space = gl.current_context.object_space
     if not hasattr(shared_object_space, 'pyglet_font_font_cache'):
-        shared_object_space.pyglet_font_font_cache = {}
+        shared_object_space.pyglet_font_font_cache = \
+            weakref.WeakValueDictionary()
     font_cache = shared_object_space.pyglet_font_font_cache
 
     # Look for font name in font cache
