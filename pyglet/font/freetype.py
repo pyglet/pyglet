@@ -271,8 +271,20 @@ class FreeTypeFont(base.Font):
 
         FT_Set_Char_Size(self.face, 0, float_to_f26p6(size), dpi, dpi)
         metrics = self.face.size.contents.metrics
-        self.ascent = int(f26p6_to_float(metrics.ascender))
-        self.descent = int(f26p6_to_float(metrics.descender))
+        if metrics.ascender == 0 and metrics.descender == 0:
+            # Workaround broken fonts with no metrics.  Has been observed with
+            # courR12-ISO8859-1.pcf.gz: "Courier" "Regular"
+            #
+            # None of the metrics fields are filled in, so render a glyph and
+            # grab its height as the ascent, and make up an arbitrary
+            # descent.
+            i = fontconfig.FcFreeTypeCharIndex(byref(self.face), ord('X'))
+            FT_Load_Glyph(self.face, i, FT_LOAD_RENDER)
+            self.ascent = self.face.available_sizes.contents.height
+            self.descent = -self.ascent // 4  # arbitrary.
+        else:
+            self.ascent = int(f26p6_to_float(metrics.ascender))
+            self.descent = int(f26p6_to_float(metrics.descender))
 
     @staticmethod
     def get_fontconfig_match(name, size, bold, italic):
