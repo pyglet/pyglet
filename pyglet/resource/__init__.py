@@ -242,6 +242,20 @@ class Loader(object):
         except KeyError:
             raise ResourceNotFoundException(name)
 
+    def locate(self, name):
+        '''Locate a resource.
+
+        :Parameters:
+            `name` : str
+                Filename of the resource to load.
+
+        :rtype: tuple of (opener, path)
+        '''
+        try:
+            return self._index[name]
+        except KeyError:
+            raise ResourceNotFoundException(name)
+
     def add_font(self, name):
         '''Add a font resource to the application.
 
@@ -505,6 +519,7 @@ class _DefaultLoader(Loader):
 _default_loader = _DefaultLoader()
 reindex = _default_loader.reindex
 file = _default_loader.file
+locate = _default_loader.locate
 add_font = _default_loader.add_font
 image = _default_loader.image
 animation = _default_loader.animation
