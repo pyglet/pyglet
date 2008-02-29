@@ -1,5 +1,44 @@
-#!/usr/bin/python
-# $Id:$
+# $Id: $
+
+'''Text formatting, layout and display.
+
+This module provides classes for loading styled documents from text files,
+HTML files and a pyglet-specific markup format.  Documents can be styled with
+multiple fonts, colours, styles, text sizes, margins, paragraph alignments,
+and so on.  
+
+Using the layout classes, documents can be laid out on a single line or
+word-wrapped to fit a rectangle.  A layout can then be efficiently drawn in
+a window or updated incrementally (for example, to support interactive text
+editing).
+
+The label classes provide a simple interface for the common case where an
+application simply needs to display some text in a window.
+
+A plain text label can be created with::
+
+    label = pyglet.text.Label('Hello, world', 
+                              font_name='Times New Roman', 
+                              font_size=36,
+                              x=10, y=10)
+
+Alternatively, a styled text label using HTML can be created with::
+
+    label = pyglet.text.HTMLLabel('<b>Hello</b>, <i>world</i>',
+                                  x=10, y=10)
+
+Either label can then be drawn at any time with::
+
+    label.draw()
+
+For details on the subset of HTML supported, see `pyglet.text.formats.html`.
+
+Refer to the Programming Guide for advanced usage of the document and layout
+classes, including interactive editing, embedding objects within documents and
+creating scrollable layouts.
+
+:since: pyglet 1.1
+'''
 
 import os.path
 
@@ -137,9 +176,40 @@ def decode_text(text):
     return decoder.decode(text)
 
 class DocumentLabel(layout.TextLayout):
+    '''Base label class.
+
+    A label is a layout that exposes convenience methods for manipulating the
+    associated document.
+    '''
     def __init__(self, document=None,
                  x=0, y=0, halign='left', valign='baseline', 
                  multiline=False, dpi=None, batch=None, group=None):
+        '''Create a label for a given document.
+
+        :Parameters:
+            `document` : `AbstractDocument`
+                Document to attach to the layout.
+            `x` : int
+                X coordinate of the label.
+            `y` : int
+                Y coordinate of the label.
+            `halign` : str
+                Anchor point of the X coordinate: one of ``"left"``,
+                ``"center"`` or ``"right"``.
+            `valign` : str
+                Anchor point of the Y coordinate: one of ``"bottom"``,
+                ``"baseline"``, ``"center"`` or ``"top"``.
+            `multiline` : bool
+                If True, the label will be word-wrapped.  You must also
+                set the width of the label.
+            `dpi` : float
+                Resolution of the fonts in this layout.  Defaults to 96.
+            `batch` : `Batch`
+                Optional graphics batch to add the label to.
+            `group` : `Group`
+                Optional graphics group to use.
+
+        '''
         super(DocumentLabel, self).__init__(document, multiline=multiline, 
                                             dpi=dpi, batch=batch, group=group)
 
@@ -155,7 +225,11 @@ class DocumentLabel(layout.TextLayout):
     def _set_text(self, text):
         self.document.text = text
 
-    text = property(_get_text, _set_text)
+    text = property(_get_text, _set_text,
+                    doc='''The text of the label.
+                    
+    :type: str
+    ''')
 
     def _get_color(self):
         return self.document.get_style('color')
@@ -164,7 +238,13 @@ class DocumentLabel(layout.TextLayout):
         self.document.set_style(0, len(self.document.text), 
                                 {'color': color})
 
-    color = property(_get_color, _set_color)
+    color = property(_get_color, _set_color,
+                     doc='''Text color.
+
+    Color is a 4-tuple of RGBA components, each in range [0, 255].
+
+    :type: (int, int, int, int)
+    ''')
 
     def _get_font_name(self):
         return self.document.get_style('font_name')
@@ -173,7 +253,14 @@ class DocumentLabel(layout.TextLayout):
         self.document.set_style(0, len(self.document.text), 
                                 {'font_name': font_name})
 
-    font_name = property(_get_font_name, _set_font_name)
+    font_name = property(_get_font_name, _set_font_name,
+                         doc='''Font family name.
+
+    The font name, as passed to `pyglet.font.load`.  A list of names can
+    optionally be given: the first matching font will be used.
+
+    :type: str or list
+    ''')
 
     def _get_font_size(self):
         return self.document.get_style('font_size')
@@ -182,7 +269,11 @@ class DocumentLabel(layout.TextLayout):
         self.document.set_style(0, len(self.document.text), 
                                 {'font_size': font_size})
 
-    font_size = property(_get_font_size, _set_font_size)
+    font_size = property(_get_font_size, _set_font_size,
+                         doc='''Font size, in points.
+
+    :type: float
+    ''') 
 
     def _get_bold(self):
         return self.document.get_style('bold')
@@ -191,7 +282,11 @@ class DocumentLabel(layout.TextLayout):
         self.document.set_style(0, len(self.document.text), 
                                 {'bold': bold})
 
-    bold = property(_get_bold, _set_bold)
+    bold = property(_get_bold, _set_bold,
+                    doc='''Bold font style.
+
+    :type: bool
+    ''')
 
     def _get_italic(self):
         return self.document.get_style('italic')
@@ -200,15 +295,57 @@ class DocumentLabel(layout.TextLayout):
         self.document.set_style(0, len(self.document.text), 
                                 {'italic': italic})
 
-    italic = property(_get_italic, _set_italic)
-
+    italic = property(_get_italic, _set_italic,
+                      doc='''Italic font style.
+                      
+    :type: bool
+    ''')
 
 class Label(DocumentLabel):
+    '''Plain text label.
+    '''
     def __init__(self, text='', 
                  font_name=None, font_size=None, bold=False, italic=False,
                  color=(255, 255, 255, 255),
                  x=0, y=0, halign='left', valign='baseline',
                   multiline=False, dpi=None, batch=None, group=None):
+        '''Create a plain text label.
+
+        :Parameters:
+            `text` : str
+                Text to display.
+            `font_name` : str or list
+                Font family name(s).  If more than one name is given, the
+                first matching name is used.
+            `font_size` : float
+                Font size, in points.
+            `bold` : bool
+                Bold font style.
+            `italic` : bool
+                Italic font style.
+            `color` : (int, int, int, int)
+                Font colour, as RGBA components in range [0, 255].
+            `x` : int
+                X coordinate of the label.
+            `y` : int
+                Y coordinate of the label.
+            `halign` : str
+                Anchor point of the X coordinate: one of ``"left"``,
+                ``"center"`` or ``"right"``.
+            `valign` : str
+                Anchor point of the Y coordinate: one of ``"bottom"``,
+                ``"baseline"``, ``"center"`` or ``"top"``.
+            `multiline` : bool
+                If True, the label will be word-wrapped.  You must also
+                set the width of the label.
+            `dpi` : float
+                Resolution of the fonts in this layout.  Defaults to 96.
+            `batch` : `Batch`
+                Optional graphics batch to add the label to.
+            `group` : `Group`
+                Optional graphics group to use.
+
+        '''
         document = decode_text(text)
         super(Label, self).__init__(document, x, y, halign, valign,
                                     multiline, dpi, batch, group)
@@ -222,20 +359,58 @@ class Label(DocumentLabel):
         })
 
 class HTMLLabel(DocumentLabel):
-    def __init__(self, text='', path=None, 
+    '''HTML formatted text label.
+    
+    A subset of HTML 4.01 is supported.  See `pyglet.text.formats.html` for
+    details.
+    '''
+    def __init__(self, text='', location=None, 
                  x=0, y=0, halign='left', valign='baseline',
                  multiline=False, dpi=None, batch=None, group=None):
+        '''Create a label with an HTML string.
+
+        :Parameters:
+            `text` : str
+                HTML formatted text to display.
+            `location` : `Location`
+                Location object for loading images referred to in the
+                document.  By default, the working directory is used.
+            `x` : int
+                X coordinate of the label.
+            `y` : int
+                Y coordinate of the label.
+            `halign` : str
+                Anchor point of the X coordinate: one of ``"left"``,
+                ``"center"`` or ``"right"``.
+            `valign` : str
+                Anchor point of the Y coordinate: one of ``"bottom"``,
+                ``"baseline"``, ``"center"`` or ``"top"``.
+            `multiline` : bool
+                If True, the label will be word-wrapped.  You must also
+                set the width of the label.
+            `dpi` : float
+                Resolution of the fonts in this layout.  Defaults to 96.
+            `batch` : `Batch`
+                Optional graphics batch to add the label to.
+            `group` : `Group`
+                Optional graphics group to use.
+
+        ''' 
         self._text = text
-        self._path = path
-        document = decode_html(text, path)
+        self._location = location
+        document = decode_html(text, location)
         super(HTMLLabel, self).__init__(document, x, y, halign, valign,
                                         multiline, dpi, batch, group)
 
     def _set_text(self, text):
         self._text = text
-        self.document = decode_html(text, self._path)
+        self.document = decode_html(text, self._location)
 
     def _get_text(self):
         return self._text
 
-    text = property(_get_text, _set_text)
+    text = property(_get_text, _set_text, 
+                    doc='''HTML formatted text of the label.
+
+    :type: str
+    ''')
