@@ -52,6 +52,7 @@ class Sprite(event.EventDispatcher):
     _rotation = 0
     _opacity = 255
     _scale = 1.0
+    _visible = True
 
     def __init__(self, 
                  img, x=0, y=0, 
@@ -197,7 +198,9 @@ class Sprite(event.EventDispatcher):
 
     def _update_position(self):
         img = self._texture
-        if self._rotation:
+        if not self._visible:
+            self._vertex_list.vertices[:] = [0, 0, 0, 0, 0, 0, 0, 0]
+        elif self._rotation:
             x1 = -img.anchor_x * self._scale
             y1 = -img.anchor_y * self._scale
             x2 = x1 + img.width * self._scale
@@ -279,6 +282,13 @@ class Sprite(event.EventDispatcher):
 
     opacity = property(lambda self: self._opacity,
                        _set_opacity)
+
+    def _set_visible(self, visible):
+        self._visible = visible
+        self._update_position()
+
+    visible = property(lambda self: self._visible,
+                       _set_visible)
 
     def draw(self):
         self._group.set_state_recursive()
