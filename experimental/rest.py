@@ -55,8 +55,12 @@ class DocutilsDecoder(structured.StructuredTextDecoder):
             stylesheet = Stylesheet()
         self.stylesheet = stylesheet
 
-    def decode_structured(self, text, path):
-        doctree = publish_doctree(text, source_path=path)
+    def decode_structured(self, text, location):
+        self.location = location
+        if isinstance(location, pyglet.resource.FileLocation):
+            doctree = publish_doctree(text, source_path=location.path)
+        else:
+            doctree = publish_doctree(text)
         self.decode_doctree(doctree)
 
     def decode_doctree(self, doctree):

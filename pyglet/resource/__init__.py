@@ -109,6 +109,89 @@ def get_settings_path(name):
     else:
         return os.path.expanduser('~/.%s' % name)
 
+class Location(object):
+    '''Abstract resource location.
+
+    Given a location, a file can be loaded from that location with the `open`
+    method.  This provides a convenient way to specify a path to load files
+    from, and not necessarily have that path reside on the filesystem.
+    '''
+    def open(self, filename, mode='rb'):
+        '''Open a file at this locaiton.
+
+        :Parameters:
+            `filename` : str
+                The filename to open.  Absolute paths are not supported.
+                Relative paths are not supported by most locations (you
+                should specify only a filename with no path component).
+            `mode` : str
+                The file mode to open with.  Only files opened on the
+                filesystem make use of this parameter; others ignore it.
+
+        :rtype: file object
+        '''
+        raise NotImplementedError('abstract')
+
+class FileLocation(Location):
+    '''Location on the filesystem.
+    '''
+    def __init__(self, path):
+        '''Create a location given a relative or absolute path.
+
+        :Parameters:
+            `path` : str
+                Path on the filesystem.
+        '''
+        self.path = path
+
+    def open(self, filename, mode='rb'):
+        return open(os.path.join(self.path, filename), mode)
+
+class ZIPLocation(Location):
+    '''Location within a ZIP file.
+    '''
+    def __init__(self, zip, dir):
+        '''Create a location given an open ZIP file and a path within that
+        file.
+
+        :Parameters:
+            `zip` : ``zipfile.ZipFile``
+                An open ZIP file from the ``zipfile`` module.
+            `dir` : str
+                A path within that ZIP file.  Can be empty to specify files at
+                the top level of the ZIP file.
+
+        '''
+        self.zip = zip
+        self.dir = dir
+        
+    def open(self, filename, mode='rb'):
+        path = os.path.join(self.dir, filename)
+        text = self.zip.read(path)
+        return StringIO.StringIO(text)
+        
+class URLLocation(Location):
+    '''Location on the network.
+
+    This class uses the ``urlparse`` and ``urllib2`` modules to open files on
+    the network given a URL.
+    '''
+    def __init__(self, base_url):
+        '''Create a location given a base URL.
+
+        :Parameters:
+            `base_url` : str
+                URL string to prepend to filenames.
+
+        '''
+        self.base = base_url
+
+    def open(self, filename, mode='rb'):
+        import urlparse
+        import urllib2
+        url = urlparse.urljoin(self.base, filename)
+        return urllib2.urlopen(url)
+
 class Loader(object):
     '''Load program resource files from disk.
 
@@ -198,8 +281,9 @@ class Loader(object):
 
             if os.path.isdir(path):
                 # Filesystem directory
+                location = FileLocation(path)
                 for name in os.listdir(path):
-                    self._index_file(name, open, os.path.join(path, name))
+                    self._index_file(name, location)
             else:
                 # Find path component that is the ZIP file.
                 dir = ''
@@ -211,18 +295,17 @@ class Loader(object):
                 # path is a ZIP file, dir resides within ZIP
                 if path and zipfile.is_zipfile(path):
                     zip = zipfile.ZipFile(path, 'r')
-                    zip_open = (lambda z: lambda name, mode:
-                        StringIO.StringIO(z.read(name)))(zip)
+                    location = ZIPLocation(zip, dir)
                     for name_path in zip.namelist():
                         name_dir, name = os.path.split(name_path)
                         assert '\\' not in name_dir
                         assert not name_dir.endswith('/')
                         if name_dir == dir:
-                            self._index_file(name, zip_open, name_path)
+                            self._index_file(name, location)
 
-    def _index_file(self, name, func, path):
+    def _index_file(self, name, location):
         if name not in self._index:
-            self._index[name] = (func, path)
+            self._index[name] = location
 
     def file(self, name, mode='rb'):
         '''Load a resource.
@@ -237,22 +320,27 @@ class Loader(object):
         :rtype: file object
         '''
         try:
-            func, path = self._index[name]
-            return func(path, mode)
+            location = self._index[name]
+            return location.open(name, mode)
         except KeyError:
             raise ResourceNotFoundException(name)
 
-    def locate(self, name):
-        '''Locate a resource.
+    def location(self, name):
+        '''Get the location of a resource.
+
+        This method is useful for opening files referenced from a resource.
+        For example, an HTML file loaded as a resource might reference some
+        images.  These images should be located relative to the HTML file, not
+        looked up individually in the loader's path.
 
         :Parameters:
             `name` : str
-                Filename of the resource to load.
+                Filename of the resource to locate.
 
-        :rtype: tuple of (opener, path)
+        :rtype: `Location`
         '''
         try:
-            return self._index[name]
+            return self.index[name]
         except KeyError:
             raise ResourceNotFoundException(name)
 
@@ -423,10 +511,14 @@ class Loader(object):
         '''
         from pyglet import media
         try:
-            func, path = self._index[name]
-            if func is open:
+            location = self._index[name]
+            if isinstance(location, FileLocation):
+                # Don't open the file if it's streamed from disk -- AVbin
+                # needs to do it.
+                path = os.path.join(location.path, name)
                 return media.load(path, streaming=streaming)
             else:
+                file = location.open(name)
                 return media.load(name, file=file, streaming=streaming)
         except KeyError:
             raise ResourceNotFoundException(name)
@@ -519,7 +611,7 @@ class _DefaultLoader(Loader):
 _default_loader = _DefaultLoader()
 reindex = _default_loader.reindex
 file = _default_loader.file
-locate = _default_loader.locate
+location = _default_loader.location
 add_font = _default_loader.add_font
 image = _default_loader.image
 animation = _default_loader.animation

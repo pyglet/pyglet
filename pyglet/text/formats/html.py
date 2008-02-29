@@ -177,8 +177,8 @@ class OrderedList(object):
             return '%d.' % value
 
 class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
-    def decode_structured(self, text, path):
-        self.path = path
+    def decode_structured(self, text, location):
+        self.location = location
         self._font_size_stack = [3]
         self.list_stack = [UnorderedList({})]
         self.strip_leading_space = True
@@ -198,8 +198,7 @@ class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
         self.close()
 
     def get_image(self, filename):
-        filename = os.path.join(self.path, filename)
-        return pyglet.image.load(filename)
+        return pyglet.image.load(filename, file=self.location.open(filename))
 
     def prepare_for_data(self):
         if self.need_block_begin:

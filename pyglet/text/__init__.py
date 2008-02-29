@@ -3,6 +3,7 @@
 
 import os.path
 
+import pyglet
 from pyglet.text import layout, document, caret
 
 class DocumentDecodeException(Exception):
@@ -13,14 +14,14 @@ class DocumentDecoder(object):
     '''Abstract document decoder.
     '''
 
-    def decode(self, text, path=None):
+    def decode(self, text, location=None):
         '''Decode document text.
         
         :Parameters:
             `text` : str
                 Text to decode
-            `path` : str
-                File system path to use as base path for additional resources
+            `location` : `Location`
+                Location to use as base path for additional resources
                 referenced within the document (for example, HTML images).
 
         :rtype: `AbstractDocument`
@@ -91,23 +92,23 @@ def load(filename, file=None, mimetype=None):
     decoder = get_decoder(filename, mimetype)
     if file is None:
         file = open(filename)
-    path = os.path.dirname(filename)
-    return decoder.decode(file.read(), path)
+    location = pyglet.resource.FileLocation(os.path.dirname(filename))
+    return decoder.decode(file.read(), location)
 
-def decode_html(text, path=None):
+def decode_html(text, location=None):
     '''Create a document directly from some HTML formatted text.
 
     :Parameters:
         `text` : str
             HTML data to decode.
         `path` : str
-            Filename path giving the base path for additional resources
+            Location giving the base path for additional resources
             referenced from the document (e.g., images).
 
     :rtype: `FormattedDocument`
     '''
     decoder = get_decoder(None, 'text/html')
-    return decoder.decode(text, path)
+    return decoder.decode(text, location)
 
 def decode_attributed(text):
     '''Create a document directly from some attributed text.

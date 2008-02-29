@@ -31,7 +31,7 @@ _pattern = re.compile(r'''
     ''', re.VERBOSE | re.DOTALL)
 
 class AttributedTextDecoder(pyglet.text.DocumentDecoder):
-    def decode(self, text, path=None):
+    def decode(self, text, location=None):
         self.doc = pyglet.text.document.FormattedDocument()
 
         self.length = 0

@@ -9,17 +9,18 @@ __version__ = '$Id: $'
 import pyglet
 
 class StructuredTextDecoder(pyglet.text.DocumentDecoder):
-    def decode(self, text, path=None):
+    def decode(self, text, location=None):
         self.len_text = 0
         self.current_style = {}
         self.next_style = {}
         self.stack = []
         self.document = pyglet.text.document.FormattedDocument()
-        path = path and path or ''
-        self.decode_structured(text, path)
+        if location is None:
+            location = pyglet.resource.FileLocation('')
+        self.decode_structured(text, location)
         return self.document
 
-    def decode_structured(self, text, path):
+    def decode_structured(self, text, location):
         raise NotImplementedError('abstract') 
 
     def push_style(self, key, styles):
