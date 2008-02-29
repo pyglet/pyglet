@@ -20,6 +20,7 @@ import re
 import time
 
 from pyglet import clock
+from pyglet import event
 from pyglet.window import key
 
 class Caret(object):
@@ -66,13 +67,13 @@ class Caret(object):
     #: to 12pt at 96dpi.
     SCROLL_INCREMENT= 12 * 96 / 72
 
-    def __init__(self, layout, batch=None):
+    def __init__(self, layout, batch=None, color=(0, 0, 0, 255)):
         from pyglet import gl
         self._layout = layout
         if batch is None:
             batch = layout.batch
         self._list = batch.add(2, gl.GL_LINES, layout.background_group, 
-            'v2f', ('c4B', [0, 0, 0, 255] * 2))
+            'v2f', ('c4B', color * 2))
 
         self._ideal_x = None
         self._ideal_line = None
@@ -362,6 +363,7 @@ class Caret(object):
         self._position += len(text)
         self._nudge()
         self._update()
+        return event.EVENT_HANDLED
 
     def on_text_motion(self, motion, select=False):
         '''Handler for the `pyglet.window.Window.on_text_motion` event.
@@ -433,6 +435,7 @@ class Caret(object):
 
         self._next_attributes.clear()
         self._nudge()
+        return event.EVENT_HANDLED
 
     def on_text_motion_select(self, motion):
         '''Handler for the `pyglet.window.Window.on_text_motion_select` event.
@@ -444,6 +447,7 @@ class Caret(object):
         if self.mark is None:
             self.mark = self.position
         self.on_text_motion(motion, True)
+        return event.EVENT_HANDLED
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         '''Handler for the `pyglet.window.Window.on_mouse_scroll` event.
@@ -457,6 +461,7 @@ class Caret(object):
         '''
         self._layout.view_x -= scroll_x * self.SCROLL_INCREMENT
         self._layout.view_y += scroll_y * self.SCROLL_INCREMENT 
+        return event.EVENT_HANDLED
 
     def on_mouse_press(self, x, y, button, modifiers):
         '''Handler for the `pyglet.window.Window.on_mouse_press` event.
@@ -488,6 +493,7 @@ class Caret(object):
             self._click_count = 0
 
         self._nudge()
+        return event.EVENT_HANDLED
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         '''Handler for the `pyglet.window.Window.on_mouse_drag` event.
@@ -500,6 +506,7 @@ class Caret(object):
             self.mark = self.position
         self.select_to_point(x, y)
         self._nudge()
+        return event.EVENT_HANDLED
 
     def on_activate(self):
         '''Handler for the `pyglet.window.Window.on_activate` event.
@@ -508,6 +515,7 @@ class Caret(object):
         '''
         self._active = True
         self.visible = self.visible
+        return event.EVENT_HANDLED
 
     def on_deactivate(self):
         '''Handler for the `pyglet.window.Window.on_deactivate` event.
@@ -516,3 +524,4 @@ class Caret(object):
         '''
         self._active = False
         self.visible = self.visible
+        return event.EVENT_HANDLED
