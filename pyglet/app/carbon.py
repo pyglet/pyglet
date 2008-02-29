@@ -52,7 +52,7 @@ class CarbonEventLoop(BaseEventLoop):
                 self._force_idle = False
                 self._timer_proc(timer, None, False)
 
-
+        carbon.RemoveEventLoopTimer(self._timer)
         self.dispatch_event('on_exit')
 
     def _stop_polling(self):
