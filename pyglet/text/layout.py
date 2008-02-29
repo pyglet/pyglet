@@ -1,12 +1,50 @@
-#!/usr/bin/python
-# $Id:$
+# $Id: $
 
 '''Render simple text and formatted documents efficiently.
+
+Three layout classes are provided:
+
+`TextLayout`
+    The entire document is laid out before it is rendered.  The layout will
+    be grouped with other layouts in the same batch (allowing for efficient
+    rendering of multiple layouts).  
+    
+    Any change to the layout or document,
+    and even querying some properties, will cause the entire document
+    to be laid out again.
+
+`ScrollableTextLayout`
+    Based on `TextLayout`.
+    
+    A separate group is used for layout which crops the contents of the
+    layout to the layout rectangle.  Additionally, the contents of the
+    layout can be "scrolled" within that rectangle with the ``view_x`` and
+    ``view_y`` properties.
+
+`IncrementalTextLayout`
+    Based on `ScrollableTextLayout`.    
+
+    When the layout or document are modified, only the affected regions
+    are laid out again.  This permits efficient interactive editing and
+    styling of text.
+
+    Only the visible portion of the layout is actually rendered; as the
+    viewport is scrolled additional sections are rendered and discarded as
+    required.  This permits efficient viewing and editing of large documents.
+
+    Additionally, this class provides methods for locating the position of a
+    caret in the document, and for displaying interactive text selections.
+
+All three layout classes can be used with either `UnformattedDocument` or
+`FormattedDocument`, and can be either single-line or ``multiline``.  The
+combinations of these options effectively provides 12 different text display
+possibilities.
 
 Style attributes
 ================
 
-The following character style attribute names are recognised by pyglet:
+The following character style attribute names are recognised by the layout
+classes:
 
 ``font_name``
     Font family name, as given to `pyglet.font.load`.
@@ -30,7 +68,7 @@ The following character style attribute names are recognised by pyglet:
     4-tuple of ints in range (0, 255) giving RGBA text background color; or
     ``None`` for no background fill.
 
-The following paragraph style attribute names are recognised by pyglet.  Note
+The following paragraph style attribute names are recognised.  Note
 that paragraph styles are handled no differently from character styles by the
 document: it is the application's responsibility to set the style over an
 entire paragraph, otherwise results are undefined.
@@ -64,7 +102,7 @@ entire paragraph, otherwise results are undefined.
 Other attributes can be used to store additional style information within the
 document; it will be ignored by the built-in text classes.
 
-
+:since: pyglet 1.1
 '''
 
 import math
