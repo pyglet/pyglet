@@ -394,6 +394,7 @@ class Clock(_ClockBase):
                 Maximum frames per second allowed, or None to disable
                 limiting.
 
+        :deprecated: Use `pyglet.app.run` and `schedule_interval` instead.
         '''
         if not fps_limit:
             self.period_limit = None
