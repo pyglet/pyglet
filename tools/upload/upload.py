@@ -48,8 +48,9 @@ if __name__ == '__main__':
                 labels.append('OpSys-Windows')
             elif filename.endswith('.dmg'):
                 labels.append('OpSys-OSX')
-            if not filename.endswith('.egg'):
-                labels.append('Featured')
+            # Don't feature 1.1 until release time
+            #if not filename.endswith('.egg'):
+            #    labels.append('Featured')
             files[filename] = description, labels
 
             print filename
