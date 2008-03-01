@@ -1,4 +1,15 @@
 <news>
+  <item date="1-March-2008" author="Alex"
+        title="pyglet 1.1 alpha 1 released">
+    pyglet 1.1 alpha 1 adds more features than any previous release, including
+    fast graphics routines, formatted text layout, animated GIF support,
+    resource loading, and even some bug fixes.  If you're not working in a
+    production environment and can afford some instability, go straight to the
+    <a href="http://code.google.com/p/pyglet/downloads/list?q=1.1alpha1">
+    download server</a> to grab a source or egg release, and start reading up
+    on all the
+    <a href="http://pyglet.org/doc/1.1/programming_guide/appendix_migrating_to_pyglet_1_1.html">new features</a>.
+  </item>
   <item date="11-February-2008" author="Alex"
         title="Patch for Python2.5 egg">
     The pyglet-1.0-py2.5.egg distribution was inadvertently built for Python

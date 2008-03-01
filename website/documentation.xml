@@ -2,7 +2,9 @@
   Documentation is available online, is included in the source distribution,
   and is available as a <a href="download.html">separate download</a>.
 
-  <h2>online documentation</h2>
+  <h2>current release</h2>
+
+  Documentation for <b>pyglet 1.0</b>.
 
   <ul>
     <li>
@@ -11,6 +13,23 @@
     </li>
     <li>
       <a href="doc/api/index.html">API Reference</a>.
+    </li>
+  </ul>
+
+  <h2>development release</h2>
+
+  Documentation for <b>pyglet 1.1 alpha 1</b>.
+
+  <ul>
+    <li>
+      <a href="doc/1.1/programming_guide/index.html">Programming Guide</a>
+    </li>
+    <li>
+      <a href="doc/1.1/programming_guide/appendix_migrating_to_pyglet_1_1.html">
+        Migrating to pyglet 1.1</a>
+    </li>
+    <li>
+      <a href="doc/1.1/api/index.html">API Reference</a>.
     </li>
   </ul>
 
