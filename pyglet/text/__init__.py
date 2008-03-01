@@ -40,6 +40,9 @@ creating scrollable layouts.
 :since: pyglet 1.1
 '''
 
+__docformat__ = 'restructuredtext'
+__version__ = '$Id: $'
+
 import os.path
 
 import pyglet
@@ -81,7 +84,7 @@ def get_decoder(filename, mimetype=None):
     ``text/vnd.pyglet-attributed``
         Attributed text; see `pyglet.text.formats.attributed`
 
-    `DocumendDecodeException` is raised if another MIME type is given.
+    `DocumentDecodeException` is raised if another MIME type is given.
 
     :Parameters:
         `filename` : str
@@ -140,7 +143,7 @@ def decode_html(text, location=None):
     :Parameters:
         `text` : str
             HTML data to decode.
-        `path` : str
+        `location` : str
             Location giving the base path for additional resources
             referenced from the document (e.g., images).
 

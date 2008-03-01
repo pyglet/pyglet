@@ -203,7 +203,7 @@ class TextureBin(object):
         for the image.
 
         `AllocatorException` is raised if the image exceeds the dimensions of
-        `texture_width` and `texture_height`.
+        ``texture_width`` and ``texture_height``.
 
         :Parameters:
             `img` : `AbstractImage`

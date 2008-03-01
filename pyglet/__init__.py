@@ -43,6 +43,8 @@ __version__ = '$Id$'
 import os
 import sys
 
+_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+
 #: The release version of this pyglet installation.  
 #:
 #: Valid only if pyglet was installed from a source or binary distribution
@@ -197,7 +199,6 @@ class _Module(object):
         self._file = __file__
         self._submodules = submodules
 
-        _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
         if not _is_epydoc:
             sys.modules[__name__] = self
 
@@ -215,3 +216,7 @@ _Module(
     ('app', 'clock', 'com', 'event', 'font', 'gl', 'graphics', 'image',
      'lib', 'media', 'resource', 'sprite', 'text', 'window')
 )
+
+# Hack around some epydoc bug that causes it to think pyglet.window is None.
+if _is_epydoc:
+    import window

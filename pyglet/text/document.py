@@ -132,6 +132,9 @@ of a ``None`` style is style- and application-dependent.
 :since: pyglet 1.1
 '''
 
+__docformat__ = 'restructuredtext'
+__version__ = '$Id: $'
+
 import re
 import sys
 
@@ -212,7 +215,7 @@ class InlineElement(object):
     def remove(self, layout):
         '''Remove this element from a layout.
 
-        The couterpart of `add`; called when the element is no longer
+        The couterpart of `place`; called when the element is no longer
         visible in the given layout.
 
         :Parameters:
@@ -297,7 +300,7 @@ class AbstractDocument(event.EventDispatcher):
             `attribute` : str
                 Name of style attribute to query.
 
-        :rtype: `StyleRunsRangeIterator`
+        :rtype: `AbstractRunIterator`
         '''
         raise NotImplementedError('abstract')
 
@@ -350,7 +353,7 @@ class AbstractDocument(event.EventDispatcher):
                 Optional resolution to construct fonts at.  See
                 `pyglet.font.load`.
 
-        :rtype: `StyleRunsRangeIterator`
+        :rtype: `AbstractRunIterator`
         '''
         raise NotImplementedError('abstract')
 
@@ -535,8 +538,8 @@ class UnformattedDocument(AbstractDocument):
     '''A document having uniform style over all text.
 
     Changes to the style of text within the document affects the entire
-    document.  For convenience, the `position` parameters of the style methods
-    may therefore be omitted.
+    document.  For convenience, the ``position`` parameters of the style
+    methods may therefore be omitted.
     '''
 
     def __init__(self, text=''):

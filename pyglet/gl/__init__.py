@@ -103,6 +103,9 @@ from pyglet.gl.glext_arb import *
 from pyglet.gl.glext_missing import *
 from pyglet.gl import gl_info
 
+import sys as _sys
+_is_epydoc = hasattr(_sys, 'is_epydoc') and _sys.is_epydoc
+
 # List of contexts currently in use, so we can create new contexts that
 # share objects with.  Remember to remove from this list when context is
 # destroyed.
@@ -377,9 +380,6 @@ class ContextException(Exception):
 def _create_shadow_window():
     global _shadow_window
 
-    import sys
-    _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
-    
     import pyglet
     if not pyglet.options['shadow_window'] or _is_epydoc:
         return
@@ -396,8 +396,9 @@ _shadow_window = None
 # Import pyglet.window now if it isn't currently being imported (this creates
 # the shadow window).
 import pyglet as _pyglet
-import sys as _sys
-if 'pyglet.window' not in _sys.modules and _pyglet.options['shadow_window']:
+if (not _is_epydoc and
+    'pyglet.window' not in _sys.modules and 
+    _pyglet.options['shadow_window']):
     # trickery is for circular import 
     _pyglet.gl = _sys.modules[__name__]
     import pyglet.window

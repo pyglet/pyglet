@@ -3,6 +3,9 @@
 :since: pyglet 1.1
 '''
 
+__docformat__ = 'restructuredtext'
+__version__ = '$Id: $'
+
 class _Run(object):
     def __init__(self, value, count):
         self.value = value

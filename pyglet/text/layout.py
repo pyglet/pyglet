@@ -105,6 +105,9 @@ document; they will be ignored by the built-in text classes.
 :since: pyglet 1.1
 '''
 
+__docformat__ = 'restructuredtext'
+__version__ = '$Id: $'
+
 import math
 import sys
 
@@ -417,15 +420,15 @@ class InvalidRange(object):
 
 # Text group hierarchy
 #
-# top_group                     [Scrollable]TextLayoutGroup(AbstractGroup)
+# top_group                     [Scrollable]TextLayoutGroup(Group)
 #   background_group            OrderedGroup(0)
 #   foreground_group            TextLayoutForegroundGroup(OrderedGroup(1))
-#     [font textures]           TextLayoutTextureGroup(AbstractGroup)  
-#     [...]                     TextLayoutTextureGroup(AbstractGroup)  
+#     [font textures]           TextLayoutTextureGroup(Group)  
+#     [...]                     TextLayoutTextureGroup(Group)  
 #   foreground_decoration_group 
 #                       TextLayoutForegroundDecorationGroup(OrderedGroup(2))
 
-class TextLayoutGroup(graphics.AbstractGroup):
+class TextLayoutGroup(graphics.Group):
     def set_state(self):
         glPushAttrib(GL_ENABLE_BIT)
         glEnable(GL_BLEND)
@@ -434,7 +437,7 @@ class TextLayoutGroup(graphics.AbstractGroup):
     def unset_state(self):
         glPopAttrib()
         
-class ScrollableTextLayoutGroup(graphics.AbstractGroup):
+class ScrollableTextLayoutGroup(graphics.Group):
     _scissor_x = 0
     _scissor_y = 0
     _scissor_width = 0
@@ -512,7 +515,7 @@ class TextLayoutForegroundDecorationGroup(graphics.OrderedGroup):
 
     # unset_state not needed, as parent group will pop enable bit 
 
-class TextLayoutTextureGroup(graphics.AbstractGroup):
+class TextLayoutTextureGroup(graphics.Group):
     def __init__(self, texture, parent):
         assert texture.target == GL_TEXTURE_2D
         super(TextLayoutTextureGroup, self).__init__(parent)
@@ -776,7 +779,7 @@ class TextLayout(object):
     def _flow_glyphs_wrap(self, glyphs, owner_runs, start, end):
         '''Word-wrap styled text into lines of fixed width.
 
-        Fits `glyphs` in range `start` to `end` into `Line`s which are
+        Fits `glyphs` in range `start` to `end` into `Line` s which are
         then yielded.
         '''
         owner_iterator = owner_runs.get_run_iterator().ranges(start, end)

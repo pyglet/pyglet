@@ -1,6 +1,9 @@
 #!/usr/bin/python
 # $Id:$
 
+__docformat__ = 'restructuredtext'
+__version__ = '$Id: $'
+
 import ctypes
 import time
 

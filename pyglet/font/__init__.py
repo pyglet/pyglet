@@ -247,7 +247,7 @@ class GlyphString(object):
         if from_index:
             glPopMatrix()
 
-class _TextZGroup(pyglet.graphics.AbstractGroup):
+class _TextZGroup(pyglet.graphics.Group):
     z = 0
 
     def set_state(self):

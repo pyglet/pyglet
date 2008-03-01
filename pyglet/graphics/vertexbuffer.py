@@ -12,6 +12,9 @@ method which provides the most efficient path for updating partial data within
 the buffer.
 '''
 
+__docformat__ = 'restructuredtext'
+__version__ = '$Id: $'
+
 import ctypes
 import sys
 
@@ -80,7 +83,7 @@ class AbstractBuffer(object):
             family of functions
         `target` : int
             OpenGL buffer target, for example ``GL_ARRAY_BUFFER``
-        `usage`` : int
+        `usage` : int
             OpenGL buffer usage, for example ``GL_DYNAMIC_DRAW``
 
     '''        
@@ -237,7 +240,7 @@ class VertexBufferObject(AbstractBuffer):
     is done so by the video driver).  While this can improve memory usage and
     possibly performance, updates to the buffer are relatively slow.
     
-    This class does not implement `AbstractMapping`, and so has no
+    This class does not implement `AbstractMappable`, and so has no
     ``get_region`` method.  See `MappableVertexBufferObject` for a VBO class
     that does implement ``get_region``.
     '''

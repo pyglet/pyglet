@@ -1811,6 +1811,10 @@ class DocIndex:
                 for identifier in name[len(root_valdoc.canonical_name):]:
                     if val_doc is None: break
                     var_doc, val_doc = self._get_from(val_doc, identifier)
+                    if type(val_doc) is GenericValueDoc:
+                        # <ah> Hack around some bug, pyglet.window not being
+                        # discovered.
+                        continue
                 else:
                     # If we found it, then return.
                     if var_doc is not None or val_doc is not None:

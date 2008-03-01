@@ -24,6 +24,9 @@ The entire domain can be efficiently drawn in one step with the
 the same OpenGL primitive mode.
 '''
 
+__docformat__ = 'restructuredtext'
+__version__ = '$Id: $'
+
 import ctypes
 import re
 
@@ -83,8 +86,9 @@ def create_attribute_usage(format):
 
 def create_domain(*attribute_usage_formats):
     '''Create a vertex domain covering the given attribute usage formats.
-    See documentation for `create_attribute_usage` and `create_attribute` for
-    the grammar of these format strings.
+    See documentation for `create_attribute_usage` and 
+    `pyglet.graphics.vertexattribute.create_attribute` for the grammar of
+    these format strings.
 
     :rtype: `VertexDomain`
     '''
@@ -95,7 +99,8 @@ def create_domain(*attribute_usage_formats):
 def create_indexed_domain(*attribute_usage_formats):
     '''Create an indexed vertex domain covering the given attribute usage
     formats.  See documentation for `create_attribute_usage` and
-    `create_attribute` for the grammar of these format strings.
+    `pyglet.graphics.vertexattribute.create_attribute` for the grammar of
+    these format strings.
 
     :rtype: `VertexDomain`
     '''

@@ -2819,6 +2819,9 @@ class HTMLWriter:
             url = self.url(doc)
             if not url: continue
             container = self.docindex.container(doc)
+            if type(container) is epydoc.apidoc.GenericValueDoc:
+                import pdb; pdb.set_trace()
+                self.docindex.container(doc)
             items.append( (name, url, container) )
         return sorted(items, key=lambda v:v[0].lower())
 

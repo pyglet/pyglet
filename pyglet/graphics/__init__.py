@@ -8,15 +8,14 @@ typical immediate-mode usage and, on modern graphics cards, better than using
 display lists in many cases.  The module is used internally by other areas of
 pyglet.  
 
-See the `pyglet Programming Guide <http://www.pyglet.org/doc>`_ for details on
-how to use this graphics API.
+See the Programming Guide for details on how to use this graphics API.
 
 Batches and groups
 ==================
 
 Without even needing to understand the details on how to draw primitives with
-the graphics API, developers can make use of `Batch` and `Group` objects to
-improve performance of sprite and text rendering.
+the graphics API, developers can make use of `Batch` and `Group`
+objects to improve performance of sprite and text rendering.
 
 The `Sprite`, `Label` and `TextLayout` classes all accept a ``batch`` and
 ``group`` parameter in their constructors.  A batch manages a set of objects
@@ -120,6 +119,9 @@ video drivers, and requires indexed vertex lists.
 
 :since: pyglet 1.1
 '''
+
+__docformat__ = 'restructuredtext'
+__version__ = '$Id: $'
 
 import ctypes
 
@@ -295,7 +297,7 @@ class Batch(object):
                 OpenGL drawing mode enumeration; for example, one of
                 ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
                 See the module summary for additional information.
-            `group` : `AbstractGroup`
+            `group` : `Group`
                 Group of the vertex list, or ``None`` if no group is required.
             `data` : data items
                 Attribute formats and initial data for the vertex list.  See
@@ -324,7 +326,7 @@ class Batch(object):
                 OpenGL drawing mode enumeration; for example, one of
                 ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
                 See the module summary for additional information.
-            `group` : `AbstractGroup`
+            `group` : `Group`
                 Group of the vertex list, or ``None`` if no group is required.
             `indices` : sequence
                 Sequence of integers giving indices into the vertex list.
@@ -505,7 +507,7 @@ class Batch(object):
         for group in self.top_groups:
             visit(group)
 
-class AbstractGroup(object):
+class Group(object):
     '''Group of common OpenGL state.
 
     Before a vertex list is rendered, its group's OpenGL state is set; as are
@@ -517,7 +519,7 @@ class AbstractGroup(object):
         '''Create a group.
 
         :Parameters:
-            `parent` : `AbstractGroup`
+            `parent` : `Group`
                 Group to contain this group; its state will be set before this
                 state's.
 
@@ -525,11 +527,15 @@ class AbstractGroup(object):
         self.parent = parent
         
     def set_state(self):
-        '''Apply the OpenGL state change.'''
+        '''Apply the OpenGL state change.  
+        
+        The default implementation does nothing.'''
         pass
 
     def unset_state(self):
-        '''Repeal the OpenGL state change.'''
+        '''Repeal the OpenGL state change.
+        
+        The default implementation does nothing.'''
         pass
 
     def set_state_recursive(self):
@@ -546,13 +552,13 @@ class AbstractGroup(object):
     def unset_state_recursive(self):
         '''Unset this group and its ancestry.
 
-        The inverse of `set_recursive`.
+        The inverse of `set_state_recursive`.
         '''
         self.unset_state()
         if self.parent:
             self.parent.unset_state_recursive()
 
-class NullGroup(AbstractGroup):
+class NullGroup(Group):
     '''The default group class used when ``None`` is given to a batch.
 
     This implementation has no effect.
@@ -561,10 +567,10 @@ class NullGroup(AbstractGroup):
 
 #: The default group.
 #:
-#: :type: `AbstractGroup`
+#: :type: `Group`
 null_group = NullGroup()
 
-class TextureGroup(AbstractGroup):
+class TextureGroup(Group):
     '''A group that enables and binds a texture.
 
     Texture groups are equal if their textures' targets and names are equal.
@@ -577,7 +583,7 @@ class TextureGroup(AbstractGroup):
         :Parameters:
             `texture` : `Texture`
                 Texture to bind.
-            `parent` : `AbstractState`
+            `parent` : `Group`
                 Parent group.
 
         '''
@@ -602,7 +608,7 @@ class TextureGroup(AbstractGroup):
     def __repr__(self):
         return '%s(id=%d)' % (self.__class__.__name__, self.texture.id)
 
-class OrderedGroup(AbstractGroup):
+class OrderedGroup(Group):
     '''A group with partial order.
 
     Ordered groups with a common parent are rendered in ascending order of
@@ -621,7 +627,7 @@ class OrderedGroup(AbstractGroup):
         :Parameters:
             `order` : int
                 Order of this group.
-            `parent` : `AbstractGroup`
+            `parent` : `Group`
                 Parent of this group.
 
         '''

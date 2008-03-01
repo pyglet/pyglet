@@ -57,7 +57,7 @@ Attach your own event handlers::
     def on_key_press(symbol, modifiers):
         # ... handle this event ...
 
-Place drawing code for the window within the `on_draw` event handler::
+Place drawing code for the window within the `Window.on_draw` event handler::
 
     @win.event
     def on_draw():
@@ -1638,7 +1638,9 @@ def get_platform():
     '''
     return _platform
 
-if hasattr(sys, 'is_epydoc') and sys.is_epydoc:
+_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+
+if _is_epydoc:
     # We are building documentation
     Window = BaseWindow
     Window.__name__ = 'Window'
@@ -1659,5 +1661,6 @@ else:
         Window = XlibWindow
 
 # Create shadow window. (trickery is for circular import)
-pyglet.window = sys.modules[__name__]
-gl._create_shadow_window()
+if not _is_epydoc:
+    pyglet.window = sys.modules[__name__]
+    gl._create_shadow_window()

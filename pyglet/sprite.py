@@ -68,7 +68,7 @@ from pyglet import image
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
-class SpriteGroup(graphics.AbstractGroup):
+class SpriteGroup(graphics.Group):
     '''Shared sprite rendering group.
 
     The group is automatically coallesced with other sprite groups sharing the
@@ -89,7 +89,7 @@ class SpriteGroup(graphics.AbstractGroup):
             `blend_dest` : int
                 OpenGL blend destination mode; for example,
                 ``GL_ONE_MINUS_SRC_ALPHA``.
-            `parent` : `AbstractGroup`
+            `parent` : `Group`
                 Optional parent group.
 
         '''
@@ -260,7 +260,7 @@ class Sprite(event.EventDispatcher):
     The sprite can change its rendering group, however this can be an 
     expensive operation.
 
-    :type: `AbstractGroup`
+    :type: `Group`
     ''')
 
     def _get_image(self):

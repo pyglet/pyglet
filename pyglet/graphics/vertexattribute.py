@@ -93,6 +93,9 @@ Some examples follow:
 
 '''
 
+__docformat__ = 'restructuredtext'
+__version__ = '$Id: $'
+
 import ctypes
 import re
 

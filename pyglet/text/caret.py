@@ -16,6 +16,9 @@ Example usage::
 :since: pyglet 1.1
 '''
 
+__docformat__ = 'restructuredtext'
+__version__ = '$Id: $'
+
 import re
 import time
 
@@ -201,7 +204,7 @@ class Caret(object):
                 `pyglet.text.document` for a list of recognised attribute
                 names.
 
-        :type: object
+        :rtype: object
         '''
         if self._mark is None or self._mark == self._position:
             try:
