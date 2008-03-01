@@ -6,6 +6,10 @@ pyglet documentation:
   * `Programming Guide <programming_guide/index.html>`_
   * `API Reference <api/index.html>`_
 
+..
+
+  * `Migrating to pyglet 1.1 <programming_guide/appendix_migrating_to_pyglet_1_1.html>`_
+
 Related documentation:
 
   * `OpenGL Programming Guide <http://www.glprogramming.com/red/>`_
