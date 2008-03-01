@@ -70,13 +70,15 @@ class Caret(object):
     #: to 12pt at 96dpi.
     SCROLL_INCREMENT= 12 * 96 / 72
 
-    def __init__(self, layout, batch=None, color=(0, 0, 0, 255)):
+    def __init__(self, layout, batch=None, color=(0, 0, 0)):
         from pyglet import gl
         self._layout = layout
         if batch is None:
             batch = layout.batch
+        r, g, b = color
+        colors = (r, g, b, 255, r, g, b, 255)
         self._list = batch.add(2, gl.GL_LINES, layout.background_group, 
-            'v2f', ('c4B', color * 2))
+            'v2f', ('c4B', colors))
 
         self._ideal_x = None
         self._ideal_line = None
