@@ -77,15 +77,15 @@ class GLException(Exception):
     pass
 
 def errcheck(result, func, arguments):
-    from pyglet import gl, glGetError, gluErrorString
+    from pyglet import gl
     context = gl.current_context
     if not context:
         raise GLException('No GL context; create a Window first')
     if not context._gl_begin:
-        error = glGetError()
+        error = gl.glGetError()
         if error:
-            message = ctypes.cast(gluErrorString(error), ctypes.c_char_p).value
-            raise GLException(message)
+            msg = ctypes.cast(gl.gluErrorString(error), ctypes.c_char_p).value
+            raise GLException(msg)
         return result
 
 def errcheck_glbegin(result, func, arguments):
