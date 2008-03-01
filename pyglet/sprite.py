@@ -231,8 +231,10 @@ class Sprite(event.EventDispatcher):
     def _animate(self, dt):
         self._frame_index += 1
         if self._frame_index >= len(self._animation.frames):
-            self.dispatch_event('on_animation_end')
             self._frame_index = 0
+            self.dispatch_event('on_animation_end')
+            if self._vertex_list is None:
+                return # Deleted in event handler.
 
         frame = self._animation.frames[self._frame_index]
         self._set_texture(frame.image.get_texture())
