@@ -1,4 +1,4 @@
-Current
+1.1alpha1
     * New modules: app, graphics, image.atlas, resource, sprite, text
     * pyglet: Most modules are now accessible after importing just "pyglet"
     * pyglet.clock: Added get_sleep_time
