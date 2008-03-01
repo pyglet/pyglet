@@ -1,3 +1,59 @@
+Current
+    * New modules: app, graphics, image.atlas, resource, sprite, text
+    * pyglet: Most modules are now accessible after importing just "pyglet"
+    * pyglet.clock: Added get_sleep_time
+    * pyglet.clock: Added optional poll parameter to tick
+    * pyglet.clock: Added schedule_interval_soft
+    * pyglet.event: Added remove_handler and remove_handlers
+    * pyglet.event: Fixed @event decorator overriding methods instead of using
+      the event stack
+    * pyglet.font: Font name and size parameters are now optional
+    * pyglet.font: Fixed Text.z attribute being ignored
+    * pyglet.font: Tab characters are now treated as whitespace glyphs
+    * pyglet.font: DPI now defaults to 96 on all platforms
+    * pyglet.font: Font cache is now a weakref dictionary, so font textures
+      will be deleted when they are not being used
+    * pyglet.gl: OpenGL can now be used before a window is created
+    * pyglet.gl: Added current_context var, deprecated get_current_context
+    * pyglet.image: Added get_image_data, get_texture, get_mipmapped_texture,
+      get_texture_sequence, get_image_data, get_data
+    * pyglet.image: Deprecated properties corresponding to those new methods
+    * pyglet.image: Added anchor_x, anchor_y attributes
+    * pyglet.image: Added Animation and support for animated GIF
+    * pyglet.image: Added __iter__ for AbstractImageSequence
+    * pyglet.image: Added get_transform
+    * pyglet.image: Fixed GC problem causing some loaded textures to appear
+      empty on some machines
+    * pyglet.image: Added Texture.create
+    * pyglet.image: Added rectangle parameter to many methods as a convenient
+      way to create texture rectangles
+    * pyglet.media: Player now schedules its own updates on clock
+    * pyglet.media: Deprecated dispatch_events
+    * pyglet.media: Fixed silent audio driver get_time
+    * pyglet.media: Fixed OpenAL behaviour during buffer underruns
+    * pyglet.media: Added get_next_video_timestamp and get_next_video_frame
+    * pyglet.window: on_resize handlers now have a guarantee that their window
+      is the active OpenGL context
+    * pyglet.window: Deprecated WindowExitHandler
+    * pyglet.window: Added on_draw event
+    * Linux: Windows implement _NET_WM_SYNC_REQUEST protocol where supported
+    * Linux: X11 errors are now ignored instead of causing a crash
+    * Linux: Fixed errors in private Xlib ctypes wrapping
+    * Linux: Fixed text events being generated while CTRL or ALT pressed
+    * Linux: Added workaround for PCF fonts that do not publish metrics
+    * OS X: Improved glyph kerning
+    * OS X: Fixed QuickTime image codec not raising an exception when decode
+      error encountered
+    * OS X: Fixed rare QuickTime image load problem causing Bus Error
+    * Win32: Fixed DirectSound audio driver timestamps
+    * Win32: Fixed reduntant attempt to load mapi32.dll 
+
+1.0.2
+    * Egg for 2.5 is now compiled for Python 2.5, not 2.5b3.
+
+1.0.1
+    * OS X: Fixed permissions on installed files.
+
 1.0
     * Added easy_install download URL
     * docs: Clarification to ManagedSoundPlayer
