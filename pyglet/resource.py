@@ -67,6 +67,7 @@ __version__ = '$Id: $'
 
 import operator
 import os
+import weakref
 import sys
 import zipfile
 import StringIO
@@ -274,9 +275,9 @@ class Loader(object):
         self.reindex()
 
         # Map name to image
-        self._cached_textures = {}
-        self._cached_images = {}
-        self._cached_animatinos = {}
+        self._cached_textures = weakref.WeakValueDictionary()
+        self._cached_images = weakref.WeakValueDictionary()
+        self._cached_animations = weakref.WeakValueDictionary()
 
         # Map bin size to list of atlases
         self._texture_atlas_bins = {}

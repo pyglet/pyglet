@@ -244,11 +244,15 @@ class TextureBin(object):
         :rtype: `TextureRegion`
         :return: The region of an atlas containing the newly added image.
         '''
-        for atlas in self.atlases:
+        for atlas in list(self.atlases):
             try:
                 return atlas.add(img)
             except AllocatorException:
-                pass
+                # Remove atlases that are no longer useful (this is so their
+                # textures can later be freed if the images inside them get
+                # collected).
+                if img.width < 64 and img.height < 64:
+                    self.atlases.remove(atlas)
 
         atlas = TextureAtlas(self.texture_width, self.texture_height)
         self.atlases.append(atlas)
