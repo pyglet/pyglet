@@ -100,7 +100,7 @@ entire paragraph, otherwise results are undefined.
     Boolean.  If True (the default), text wraps within the width of the layout.
 
 Other attributes can be used to store additional style information within the
-document; it will be ignored by the built-in text classes.
+document; they will be ignored by the built-in text classes.
 
 :since: pyglet 1.1
 '''

@@ -11,6 +11,54 @@ pyglet.
 See the `pyglet Programming Guide <http://www.pyglet.org/doc>`_ for details on
 how to use this graphics API.
 
+Batches and groups
+==================
+
+Without even needing to understand the details on how to draw primitives with
+the graphics API, developers can make use of `Batch` and `Group` objects to
+improve performance of sprite and text rendering.
+
+The `Sprite`, `Label` and `TextLayout` classes all accept a ``batch`` and
+``group`` parameter in their constructors.  A batch manages a set of objects
+that will be drawn all at once, and a group describes the manner in which an
+object is drawn.
+
+The following example creates a batch, adds two sprites to the batch, and then
+draws the entire batch::
+    
+    batch = pyglet.graphics.Batch()
+    car = pyglet.sprite.Sprite(car_image, batch=batch)
+    boat = pyglet.sprite.Sprite(boat_image, batch=batch)
+    
+    def on_draw()
+        batch.draw()
+
+Drawing a complete batch is much faster than drawing the items in the batch
+individually, especially when those items belong to a common group.  
+
+Groups describe the OpenGL state required for an item.  This is for the most
+part managed by the sprite and text classes, however you can also use groups
+to ensure items are drawn in a particular order.  For example,  the following
+example adds a background sprite which is guaranteed to be drawn before the
+car and the boat::
+
+    batch = pyglet.graphics.Batch()
+    background = pyglet.graphics.OrderedGroup(0)
+    foreground = pyglet.graphics.OrderedGroup(1)
+
+    background = pyglet.sprite.Sprite(background_image, 
+                                      batch=batch, group=background)
+    car = pyglet.sprite.Sprite(car_image, batch=batch, group=foreground)
+    boat = pyglet.sprite.Sprite(boat_image, batch=batch, group=foreground)
+    
+    def on_draw()
+        batch.draw()
+
+It's preferable to manage sprites and text objects within as few batches as
+possible.  If the drawing of sprites or text objects need to be interleaved
+with other drawing that does not use the graphics API, multiple batches will
+be required.
+
 Data item parameters
 ====================
 
