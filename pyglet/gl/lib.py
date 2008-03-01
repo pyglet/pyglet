@@ -41,8 +41,6 @@ __version__ = '$Id$'
 import sys
 import ctypes
 
-from pyglet import gl
-
 __all__ = ['link_GL', 'link_GLU', 'link_AGL', 'link_GLX', 'link_WGL']
 
 class MissingFunctionException(Exception):
@@ -79,11 +77,11 @@ class GLException(Exception):
     pass
 
 def errcheck(result, func, arguments):
+    from pyglet import gl, glGetError, gluErrorString
     context = gl.current_context
     if not context:
         raise GLException('No GL context; create a Window first')
     if not context._gl_begin:
-        from pyglet.gl import glGetError, gluErrorString
         error = glGetError()
         if error:
             message = ctypes.cast(gluErrorString(error), ctypes.c_char_p).value
@@ -91,6 +89,7 @@ def errcheck(result, func, arguments):
         return result
 
 def errcheck_glbegin(result, func, arguments):
+    from pyglet import gl
     context = gl.current_context
     if not context:
         raise GLException('No GL context; create a Window first')
@@ -98,6 +97,7 @@ def errcheck_glbegin(result, func, arguments):
     return result
 
 def errcheck_glend(result, func, arguments):
+    from pyglet import gl
     context = gl.current_context
     if not context:
         raise GLException('No GL context; create a Window first')
