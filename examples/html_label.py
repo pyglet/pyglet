@@ -56,7 +56,8 @@ and <font color=maroon>colours</font> are supported.
 '''
 
 window = pyglet.window.Window(resizable=True)
-label = pyglet.text.HTMLLabel(html, path=os.path.dirname(__file__),
+location = pyglet.resource.FileLocation(os.path.dirname(__file__))
+label = pyglet.text.HTMLLabel(html, location=location,
                               multiline=True, valign='center')
 
 @window.event

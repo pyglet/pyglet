@@ -36,15 +36,14 @@
 '''Prints all window events to stdout.
 '''
 
-from pyglet import window
-from pyglet.window.event import WindowEventLogger
+import pyglet
 
-win = window.Window(resizable=True)
+window = pyglet.window.Window(resizable=True)
 
-win.push_handlers(WindowEventLogger())
+@window.event
+def on_draw():
+    window.clear()
 
-while not win.has_exit:
-    win.dispatch_events()
-    win.clear()
-    win.flip()
+window.push_handlers(pyglet.window.event.WindowEventLogger())
 
+pyglet.app.run()

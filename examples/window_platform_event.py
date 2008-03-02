@@ -44,7 +44,7 @@ A message will be printed to stdout when the following events are caught:
 
 '''
 
-from pyglet.window import Window
+import pyglet
 
 # Check for Carbon (OS X)
 try:
@@ -69,11 +69,7 @@ except ImportError:
     _have_xlib = False
 
 # Subclass Window
-class MyWindow(Window):
-    def run(self):
-        while not self.has_exit:
-            self.dispatch_events()
-
+class MyWindow(pyglet.window.Window):
     if _have_carbon:
         @CarbonEventHandler(kEventClassWindow, kEventWindowClickDragRgn)
         def _on_window_click_drag_rgn(self, next_handler, event, data):
@@ -93,4 +89,5 @@ class MyWindow(Window):
             print 'Property notify.'
 
 if __name__ == '__main__':
-    MyWindow().run()
+    window = MyWindow()
+    pyglet.app.run()

@@ -47,15 +47,9 @@ import os
 import random
 import sys
 
+import pyglet
 from pyglet.gl import *
-from pyglet import clock
-from pyglet import font
-from pyglet import graphics
-from pyglet import image
-from pyglet import media
 from pyglet import resource
-from pyglet import sprite
-from pyglet import window
 from pyglet.window import key
 
 PLAYER_SPIN_SPEED = 360.
@@ -87,6 +81,8 @@ GET_READY_DELAY = 1.
 BEGIN_PLAY_DELAY = 2.
 LIFE_LOST_DELAY = 2.
 
+FONT_NAME = 'Saved By Zero'
+
 INSTRUCTIONS = \
 '''Your ship is lost in a peculiar unchartered area of space-time infested with asteroids!  You have no chance for survival except to rack up the highest score possible.
 
@@ -114,7 +110,7 @@ def wrap(value, width):
 def to_radians(degrees):
     return math.pi * degrees / 180.0
 
-class WrappingSprite(sprite.Sprite):
+class WrappingSprite(pyglet.sprite.Sprite):
     dx = 0
     dy = 0
     rotation_speed = 0
@@ -240,7 +236,7 @@ class Player(WrappingSprite, key.KeyStateHandler):
 
         self.opacity = (self.visible and self.flash_visible) and 255 or 0
 
-class MovingSprite(sprite.Sprite):
+class MovingSprite(pyglet.sprite.Sprite):
     def __init__(self, image, x, y, dx, dy, batch=None):
         super(MovingSprite, self).__init__(image, x, y, batch=batch)
         self.dx = dx
@@ -304,16 +300,18 @@ class Overlay(object):
 
 class Banner(Overlay):
     def __init__(self, label, dismiss_func=None, timeout=None):
-        self.text = font.Text(create_font(48),
-                              label,
-                              x = ARENA_WIDTH / 2, y = ARENA_HEIGHT / 2,
-                              halign=font.Text.CENTER,
-                              valign=font.Text.CENTER)
+        self.text = pyglet.text.Label(label,
+                                      font_name=FONT_NAME,
+                                      font_size=36,
+                                      x=ARENA_WIDTH / 2, 
+                                      y=ARENA_HEIGHT / 2,
+                                      halign='center',
+                                      valign='center')
 
         self.dismiss_func = dismiss_func
         self.timeout = timeout
         if timeout and dismiss_func:
-            clock.schedule_once(dismiss_func, timeout)
+            pyglet.clock.schedule_once(dismiss_func, timeout)
 
     def draw(self):
         self.text.draw()
@@ -326,11 +324,13 @@ class Banner(Overlay):
 class Menu(Overlay):
     def __init__(self, title):
         self.items = []
-        self.title_text = font.Text(create_font(48),
-                                    title, 
-                                    x=ARENA_WIDTH / 2, y=350,
-                                    halign=font.Text.CENTER,
-                                    valign=font.Text.CENTER)
+        self.title_text = pyglet.text.Label(title, 
+                                            font_name=FONT_NAME,
+                                            font_size=36,
+                                            x=ARENA_WIDTH // 2, 
+                                            y=350,
+                                            halign='center',
+                                            valign='center')
 
     def reset(self):
         self.selected_index = 0
@@ -360,11 +360,13 @@ class MenuItem(object):
 
     def __init__(self, label, y, activate_func):
         self.y = y
-        self.text = font.Text(create_font(18),
-                              label,
-                              x=ARENA_WIDTH / 2, y=y,
-                              halign=font.Text.CENTER,
-                              valign=font.Text.CENTER)
+        self.text = pyglet.text.Label(label,
+                                      font_name=FONT_NAME,
+                                      font_size=14,
+                                      x=ARENA_WIDTH // 2, 
+                                      y=y,
+                                      halign='center',
+                                      valign='center')
         self.activate_func = activate_func
 
     def draw_pointer(self, x, y, color, flip=False):
@@ -382,12 +384,12 @@ class MenuItem(object):
 
         if selected:
             self.draw_pointer(
-                self.text.x - self.text.width / 2 - pointer_image.width,
+                self.text.x - self.text.content_width / 2 - pointer_image.width,
                 self.y - pointer_image.height / 2, 
                 self.pointer_color,
                 self.inverted_pointers)
             self.draw_pointer(
-                self.text.x + self.text.width / 2,
+                self.text.x + self.text.content_width / 2,
                 self.y - pointer_image.height / 2,
                 self.pointer_color,
                 not self.inverted_pointers)
@@ -489,11 +491,13 @@ class InstructionsMenu(Menu):
         self.items.append(MenuItem('Ok', 50, begin_main_menu))
         self.reset()
 
-        self.instruction_text = font.Text(create_font(18),
-                                          INSTRUCTIONS,
-                                          x=20, y=300,
-                                          width=ARENA_WIDTH - 40,
-                                          valign=font.Text.TOP)
+        self.instruction_text = pyglet.text.Label(INSTRUCTIONS,
+                                                  font_name=FONT_NAME,
+                                                  font_size=14,
+                                                  x=20, y=300,
+                                                  valign='top',
+                                                  multiline=True)
+        self.instruction_text.width = ARENA_WIDTH - 40
 
     def draw(self):
         super(InstructionsMenu, self).draw()
@@ -596,14 +600,14 @@ def begin_round(*args):
     animations = []
     in_game = True
     set_overlay(None)
-    clock.schedule_once(begin_play, BEGIN_PLAY_DELAY)
+    pyglet.clock.schedule_once(begin_play, BEGIN_PLAY_DELAY)
 
 def begin_play(*args):
     player.invincible = False
 
 def begin_life(*args):
     player.reset()
-    clock.schedule_once(begin_play, BEGIN_PLAY_DELAY)
+    pyglet.clock.schedule_once(begin_play, BEGIN_PLAY_DELAY)
     
 def life_lost(*args):
     global player_lives
@@ -633,8 +637,8 @@ def end_game():
     paused = False
     in_game = False
     player.invincible = True
-    clock.unschedule(life_lost)
-    clock.unschedule(begin_play)
+    pyglet.clock.unschedule(life_lost)
+    pyglet.clock.unschedule(begin_play)
     begin_menu_background()
     set_overlay(MainMenu())
 
@@ -691,9 +695,11 @@ def begin_clear_background():
 # Create window
 # --------------------------------------------------------------------------
 
-win = window.Window(ARENA_WIDTH, ARENA_HEIGHT, caption='Astraea')
-# Override default Escape key behaviour
+win = pyglet.window.Window(ARENA_WIDTH, ARENA_HEIGHT, caption='Astraea')
+
+@win.event
 def on_key_press(symbol, modifiers):
+    # Overrides default Escape key behaviour
     if symbol == KEY_PAUSE and in_game:
         if not paused:
             pause_game()
@@ -702,22 +708,56 @@ def on_key_press(symbol, modifiers):
         return True
     elif symbol == key.ESCAPE:
         sys.exit()
-win.on_key_press = on_key_press
+    return pyglet.event.EVENT_HANDLED
+
+@win.event
+def on_draw():
+    # Render
+    starfield.draw()
+
+    for (x, y) in ((0, ARENA_HEIGHT),   # Top
+                   (-ARENA_WIDTH, 0),   # Left
+                   (0, 0),              # Center
+                   (ARENA_WIDTH, 0),    # Right
+                   (0, -ARENA_HEIGHT)): # Bottom
+        glLoadIdentity()
+        glTranslatef(x, y, 0)
+        wrapping_batch.draw()
+
+    glLoadIdentity()
+    batch.draw()
+
+    glLoadIdentity()
+
+    if in_game:
+        # HUD ship lives
+        x = 10 + player.image.width // 2
+        for i in range(player_lives - 1):
+            player.image.blit(x, win.height - player.image.height // 2 - 10, 0)
+            x += player.image.width + 10
+        
+        # HUD score
+        score_text.text = str(score)
+        score_text.draw()
+
+    if overlay:
+        overlay.draw()
+
+    if show_fps:
+        fps_display.draw()
 
 
 # --------------------------------------------------------------------------
 # Load resources
 # --------------------------------------------------------------------------
 
-batch = graphics.Batch()
-wrapping_batch = graphics.Batch()
+batch = pyglet.graphics.Batch()
+wrapping_batch = pyglet.graphics.Batch()
 
 resource.path.append('res')
 resource.reindex()
 
 resource.add_font('saved_by_zero.ttf')
-def create_font(size):
-    return font.load('Saved By Zero', size, dpi=72)
 
 asteroid_sizes = [AsteroidSize('asteroid1.png', 100),
                   AsteroidSize('asteroid2.png', 50),
@@ -729,21 +769,21 @@ bullet_image = resource.image('bullet.png')
 center_anchor(bullet_image)
 
 smoke_images_image = resource.image('smoke.png')
-smoke_images = image.ImageGrid(smoke_images_image, 1, 8)
+smoke_images = pyglet.image.ImageGrid(smoke_images_image, 1, 8)
 map(center_anchor, smoke_images)
 smoke_animation = \
-    image.Animation.from_image_sequence(smoke_images,
-                                        SMOKE_ANIMATION_PERIOD,
-                                        loop=False)
+    pyglet.image.Animation.from_image_sequence(smoke_images,
+                                               SMOKE_ANIMATION_PERIOD,
+                                               loop=False)
 
 explosion_images_image = resource.image('explosion.png')
-explosion_images = image.ImageGrid(explosion_images_image, 2, 8)
+explosion_images = pyglet.image.ImageGrid(explosion_images_image, 2, 8)
 explosion_images = explosion_images.get_texture_sequence()
 map(center_anchor, explosion_images)
 explosion_animation = \
-    image.Animation.from_image_sequence(explosion_images,
-                                        EXPLOSION_ANIMATION_PERIOD,
-                                        loop=False)
+    pyglet.image.Animation.from_image_sequence(explosion_images,
+                                               EXPLOSION_ANIMATION_PERIOD,
+                                               loop=False)
 
 pointer_image = resource.image('pointer.png')
 pointer_image_flip = resource.image('pointer.png', flip_x=True)
@@ -768,32 +808,24 @@ difficulty = 2
 show_fps = False
 enable_sound = True
 
-score_text = font.Text(create_font(24),
-                       '',
-                       x = ARENA_WIDTH - 10, y = ARENA_HEIGHT - 10,
-                       halign=font.Text.RIGHT, valign=font.Text.TOP)
+score_text = pyglet.text.Label('',
+                               font_name=FONT_NAME,
+                               font_size=18,
+                               x=ARENA_WIDTH - 10, 
+                               y=ARENA_HEIGHT - 10,
+                               halign='right',
+                               valign='top')
 
-fps_display = clock.ClockDisplay(font=create_font(36))
-
-# --------------------------------------------------------------------------
-# Enter run loop
-# --------------------------------------------------------------------------
-
-glEnable(GL_BLEND)
-glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+fps_display = pyglet.clock.ClockDisplay(font=pyglet.font.load(FONT_NAME, 24))
 
 bullets = []
 animations = []
 
-begin_menu_background()
-begin_main_menu()
+# --------------------------------------------------------------------------
+# Game update
+# --------------------------------------------------------------------------
 
-while not win.has_exit:
-    win.dispatch_events()
-    media.dispatch_events()
-
-    # Update
-    dt = clock.tick()
+def update(dt):
     if overlay:
         overlay.update(dt)
 
@@ -831,44 +863,21 @@ while not win.has_exit:
                                            batch=batch))
             player.invincible = True
             player.visible = False
-            clock.schedule_once(life_lost, LIFE_LOST_DELAY)
+            pyglet.clock.schedule_once(life_lost, LIFE_LOST_DELAY)
 
         # Check if the area is clear
         if not asteroids:
             next_round()
+pyglet.clock.schedule_interval(update, 1/60.)
 
-    # Render
-    starfield.draw()
+# --------------------------------------------------------------------------
+# Start game
+# --------------------------------------------------------------------------
 
-    for (x, y) in ((0, ARENA_HEIGHT),   # Top
-                   (-ARENA_WIDTH, 0),   # Left
-                   (0, 0),              # Center
-                   (ARENA_WIDTH, 0),    # Right
-                   (0, -ARENA_HEIGHT)): # Bottom
-        glLoadIdentity()
-        glTranslatef(x, y, 0)
-        wrapping_batch.draw()
+glEnable(GL_BLEND)
+glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-    glLoadIdentity()
-    batch.draw()
+begin_menu_background()
+begin_main_menu()
 
-    glLoadIdentity()
-
-    if in_game:
-        # HUD ship lives
-        x = 10 + player.image.width // 2
-        for i in range(player_lives - 1):
-            player.image.blit(x, win.height - player.image.height // 2 - 10, 0)
-            x += player.image.width + 10
-        
-        # HUD score
-        score_text.text = str(score)
-        score_text.draw()
-
-    if overlay:
-        overlay.draw()
-
-    if show_fps:
-        fps_display.draw()
-
-    win.flip()
+pyglet.app.run()

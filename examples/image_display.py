@@ -45,9 +45,17 @@ image.
 
 import sys
 
+import pyglet
 from pyglet.gl import *
-from pyglet import window
-from pyglet import image
+
+window = pyglet.window.Window(visible=False, resizable=True)
+
+@window.event
+def on_draw():
+    background.blit_tiled(0, 0, 0, window.width, window.height)
+    img.blit(window.width // 2, window.height // 2, 0)
+
+        
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
@@ -56,25 +64,19 @@ if __name__ == '__main__':
 
     filename = sys.argv[1]
 
-    w = window.Window(visible=False, resizable=True)
-    img = image.load(filename).get_texture(True)
+    img = pyglet.image.load(filename).get_texture(rectangle=True)
     img.anchor_x = img.width // 2
     img.anchor_y = img.height // 2
 
-    checks = image.create(32, 32, image.CheckerImagePattern())
-    background = image.TileableTexture.create_for_image(checks)
+    checks = pyglet.image.create(32, 32, pyglet.image.CheckerImagePattern())
+    background = pyglet.image.TileableTexture.create_for_image(checks)
 
-    w.width = img.width
-    w.height = img.height
-    w.set_visible()
-
+    # Enable alpha blending, required for image.blit.
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-    while not w.has_exit:
-        w.dispatch_events()
-        
-        background.blit_tiled(0, 0, 0, w.width, w.height)
-        img.blit(w.width // 2, w.height // 2, 0)
-        w.flip()
+    window.width = img.width
+    window.height = img.height
+    window.set_visible()
 
+    pyglet.app.run()

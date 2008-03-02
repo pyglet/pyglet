@@ -36,10 +36,8 @@
 '''Demonstrates how to manage OpenGL calls between two independent windows.
 '''
 
+import pyglet
 from pyglet.gl import *
-from pyglet import app
-from pyglet import window
-from pyglet import clock
 
 def on_resize(width, height):
     glViewport(0, 0, width, height)
@@ -65,18 +63,18 @@ def update(dt):
     r += 1
     if r > 360:
         r = 0
-clock.schedule_interval(update, 1/20.)
+pyglet.clock.schedule_interval(update, 1/20.)
 
-w1 = window.Window(200, 200, caption='First window', resizable=True)
+w1 = pyglet.window.Window(200, 200, caption='First window', resizable=True)
 w1.on_resize = on_resize
 w1.on_draw = on_draw
 w1.switch_to()
 setup()
 
-w2 = window.Window(300, 300, caption='Second window', resizable=True)
+w2 = pyglet.window.Window(300, 300, caption='Second window', resizable=True)
 w2.on_resize = on_resize
 w2.on_draw = on_draw
 w2.switch_to()
 setup()
 
-app.run()
+pyglet.app.run()

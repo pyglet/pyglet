@@ -42,11 +42,7 @@ __version__ = '$Id: $'
 import sys
 
 from pyglet.gl import *
-from pyglet import app
-from pyglet import event
-from pyglet import font
-from pyglet import media
-from pyglet import window
+import pyglet
 from pyglet.window import key
 
 def draw_rect(x, y, width, height):
@@ -57,7 +53,7 @@ def draw_rect(x, y, width, height):
     glVertex2f(x, y + height)
     glEnd()
 
-class Control(event.EventDispatcher):
+class Control(pyglet.event.EventDispatcher):
     x = y = 0
     width = height = 10
 
@@ -103,8 +99,7 @@ Button.register_event_type('on_press')
 class TextButton(Button):
     def __init__(self, *args, **kwargs):
         super(TextButton, self).__init__(*args, **kwargs)
-        self._text = font.Text(font.load('Arial', 12), '',
-                               valign='center', halign='center')
+        self._text = pyglet.text.Label('', valign='center', halign='center')
 
     def draw_label(self):
         self._text.x = self.x + self.width / 2
@@ -151,7 +146,7 @@ Slider.register_event_type('on_begin_scroll')
 Slider.register_event_type('on_end_scroll')
 Slider.register_event_type('on_change')
 
-class PlayerWindow(window.Window):
+class PlayerWindow(pyglet.window.Window):
     GUI_WIDTH = 400
     GUI_HEIGHT = 40
     GUI_PADDING = 4
@@ -288,7 +283,6 @@ class PlayerWindow(window.Window):
     def on_close(self):
         self.player.pause()
         self.close()
-        windows.remove(self)
 
     def on_play_pause(self):
         if self.player.playing:
@@ -319,20 +313,18 @@ if __name__ == '__main__':
         print 'Usage: media_player.py <filename> [<filename> ...]'
         sys.exit(1)
 
-    windows = []
     for filename in sys.argv[1:]:
-        player = media.Player()
-        win = PlayerWindow(player)
-        windows.append(win)
+        player = pyglet.media.Player()
+        window = PlayerWindow(player)
 
-        source = media.load(filename)
+        source = pyglet.media.load(filename)
         player.queue(source)
 
-        win.gui_update_source()
-        win.set_default_video_size()
-        win.set_visible(True)
+        window.gui_update_source()
+        window.set_default_video_size()
+        window.set_visible(True)
 
-        win.gui_update_state()
+        window.gui_update_state()
         player.play()
 
-    app.run()
+    pyglet.app.run()

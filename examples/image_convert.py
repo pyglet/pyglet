@@ -42,22 +42,18 @@ Usage::
 
 import sys
 
-from pyglet.window import Window
-from pyglet import image
+import pyglet
 
-window = None
 def convert(src, dest):
-    if '.dds' in src.lower() or '.dds' in dest.lower():
-        global window
-        # A window is necessary to create a GL context so we can do
-        # compressed texture conversions.
-        window = window or Window(visible=False)
-        texture = image.load(src).get_texture()
+    if '.dds' in src.lower():
+        # Compressed textures need to be uploaded to the video card before
+        # they can be saved.
+        texture = pyglet.image.load(src).get_texture()
         texture.save(dest)
     else:
-        # Can do straight conversion without a window or context.
-        img = image.load(src)
-        img.save(dest)
+        # Otherwise just save the loaded image in the new format.
+        image = pyglet.image.load(src)
+        image.save(dest)
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:

@@ -50,26 +50,23 @@ using EXT_framebuffer_object.  (This is not demonstrated in this example).
 '''
 
 from pyglet.gl import *
-from pyglet import clock
-from pyglet import image
-from pyglet import window
+import pyglet
 
 # Create a fullscreen window using the user's desktop resolution.  You can
 # also use this technique on ordinary resizable windows.
-win = window.Window(fullscreen=True)
+window = pyglet.window.Window(fullscreen=True)
 
 # Use 320x200 fixed resolution to make the effect completely obvious.  You
 # can change this to a more reasonable value such as 800x600 here.
 target_resolution = 320, 200
 
 class FixedResolutionViewport(object):
-    def __init__(self, win, width, height, filtered=False):
-        self.window = win
+    def __init__(self, window, width, height, filtered=False):
+        self.window = window
         self.width = width
         self.height = height
-        self.texture = image.Texture.create_for_size(GL_TEXTURE_2D, 
-            width, height, GL_RGB)
-        self.texture = self.texture.get_region(0, 0, width, height)
+        self.texture = pyglet.image.Texture.create(width, height, 
+            rectangle=True)
 
         if not filtered:
             # By default the texture will be bilinear filtered when scaled
@@ -85,7 +82,7 @@ class FixedResolutionViewport(object):
         self.set_fixed_projection()
 
     def end(self):
-        buffer = image.get_buffer_manager().get_color_buffer()
+        buffer = pyglet.image.get_buffer_manager().get_color_buffer()
         self.texture.blit_into(buffer, 0, 0, 0)
 
         glViewport(0, 0, self.window.width, self.window.height)
@@ -124,10 +121,13 @@ class FixedResolutionViewport(object):
         glOrtho(0, self.window.width, 0, self.window.height, -1, 1)
         glMatrixMode(GL_MODELVIEW)
 
-rotate = 0
+target_width, target_height = target_resolution
+viewport = FixedResolutionViewport(window, 
+    target_width, target_height, filtered=False)
+
 def draw_scene():
-    # Draw the scene, assuming the fixed resolution viewport and projection
-    # have been set up.
+    '''Draw the scene, assuming the fixed resolution viewport and projection
+    have been set up.  This just draws the rotated polygon.'''
     glClearColor(1, 1, 1, 1)
     glClear(GL_COLOR_BUFFER_BIT)
 
@@ -139,18 +139,18 @@ def draw_scene():
     s = min(w, h) / 3
     glRectf(-s, -s, s, s)
 
-target_width, target_height = target_resolution
-viewport = FixedResolutionViewport(win, 
-    target_width, target_height, filtered=False)
-while not win.has_exit:
-    dt = clock.tick()
+rotate = 0
+def update(dt):
+    global rotate
     rotate += dt * 20
+pyglet.clock.schedule_interval(update, 1/60.)
 
-    win.dispatch_events()
-
+@window.event
+def on_draw():
     viewport.begin()
-    win.clear()
+    window.clear()
     draw_scene()
     viewport.end()
 
-    win.flip()
+pyglet.app.run()
+

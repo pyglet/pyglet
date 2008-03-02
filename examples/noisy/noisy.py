@@ -44,13 +44,7 @@ import random
 import sys
 
 from pyglet.gl import *
-from pyglet import clock
-from pyglet import font
-from pyglet import image
-from pyglet import media
-from pyglet import resource
-from pyglet import sprite
-from pyglet.window import Window
+import pyglet
 from pyglet.window import key
 
 BALL_IMAGE = 'ball.png'
@@ -59,10 +53,10 @@ BALL_SOUND = 'ball.wav'
 if len(sys.argv) > 1:
     BALL_SOUND = sys.argv[1]
 
-sound = resource.media(BALL_SOUND, streaming=False)
+sound = pyglet.resource.media(BALL_SOUND, streaming=False)
 
-class Ball(sprite.Sprite):
-    ball_image = resource.image(BALL_IMAGE)
+class Ball(pyglet.sprite.Sprite):
+    ball_image = pyglet.resource.image(BALL_IMAGE)
     width = ball_image.width
     height = ball_image.height
 
@@ -70,7 +64,7 @@ class Ball(sprite.Sprite):
         x = random.random() * (window.width - self.width)
         y = random.random() * (window.height - self.height)
 
-        super(Ball, self).__init__(self.ball_image, x, y)
+        super(Ball, self).__init__(self.ball_image, x, y, batch=balls_batch)
 
         self.dx = (random.random() - 0.5) * 1000
         self.dy = (random.random() - 0.5) * 1000
@@ -88,8 +82,7 @@ class Ball(sprite.Sprite):
         self.x = min(max(self.x, 0), window.width - self.width)
         self.y = min(max(self.y, 0), window.height - self.height)
 
-window = Window(640, 480)
-balls = []
+window = pyglet.window.Window(640, 480)
 
 @window.event
 def on_key_press(symbol, modifiers):
@@ -101,23 +94,23 @@ def on_key_press(symbol, modifiers):
     elif symbol == key.ESCAPE:
         window.has_exit = True
 
+@window.event
+def on_draw():
+    window.clear()
+    balls_batch.draw()
+    label.draw()
+
+def update(dt):
+    for ball in balls:
+        ball.update(dt)
+pyglet.clock.schedule_interval(update, 1/30.)
+
+balls_batch = pyglet.graphics.Batch()
+balls = []
+label = pyglet.text.Label('Press space to add a ball, backspace to remove',
+                          font_size=14,
+                          x=window.width // 2, y=10, 
+                          halign='center')
+
 if __name__ == '__main__':
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-    label = font.Text(font.load('Arial', 14), 
-        'Press space to add a ball, backspace to remove.', 
-        window.width / 2, 10, 
-        halign=font.Text.CENTER)
-
-    while not window.has_exit:
-        window.dispatch_events()
-        dt = clock.tick()
-
-        glClear(GL_COLOR_BUFFER_BIT)
-        for ball in balls:
-            ball.update(dt)
-            ball.draw()
-        label.draw()
-
-        window.flip()
+    pyglet.app.run()

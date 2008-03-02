@@ -49,20 +49,18 @@ This example demonstrates:
 from math import pi, sin, cos
 
 from pyglet.gl import *
-from pyglet import app
-from pyglet import clock
-from pyglet import window
+import pyglet
 
 try:
     # Try and create a window with multisampling (antialiasing)
     config = Config(sample_buffers=1, samples=4, 
                     depth_size=16, double_buffer=True,)
-    w = window.Window(resizable=True, config=config)
-except window.NoSuchConfigException:
+    window = pyglet.window.Window(resizable=True, config=config)
+except pyglet.window.NoSuchConfigException:
     # Fall back to no multisampling for old hardware
-    w = window.Window(resizable=True)
+    window = pyglet.window.Window(resizable=True)
 
-@w.event
+@window.event
 def on_resize(width, height):
     # Override the default on_resize handler to create a 3D projection
     glViewport(0, 0, width, height)
@@ -70,6 +68,7 @@ def on_resize(width, height):
     glLoadIdentity()
     gluPerspective(60., width / float(height), .1, 1000.)
     glMatrixMode(GL_MODELVIEW)
+    return pyglet.event.EVENT_HANDLED
 
 def update(dt):
     global rx, ry, rz
@@ -79,9 +78,9 @@ def update(dt):
     rx %= 360
     ry %= 360
     rz %= 360
-clock.schedule(update)
+pyglet.clock.schedule(update)
 
-@w.event
+@window.event
 def on_draw():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
@@ -187,4 +186,4 @@ setup()
 torus = Torus(1, 0.3, 50, 30)
 rx = ry = rz = 0
 
-app.run()
+pyglet.app.run()
