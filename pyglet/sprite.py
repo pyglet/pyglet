@@ -79,7 +79,7 @@ entire batch of sprites is then drawn in one call::
         batch.draw()
 
 Sprites can be freely modified in any way even after being added to a batch,
-however a batch can belong to at most one batch.  See the documentation for
+however a sprite can belong to at most one batch.  See the documentation for
 `pyglet.graphics` for more details on batched rendering, and grouping of
 sprites within batches.
 
