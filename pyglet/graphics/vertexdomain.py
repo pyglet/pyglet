@@ -281,6 +281,9 @@ class VertexDomain(object):
             buffer.unbind()
         glPopClientAttrib()
 
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__, self.allocator)
+
 class VertexList(object):
     '''A list of vertices within a `VertexDomain`.  Use
     `VertexDomain.create` to construct this list.
