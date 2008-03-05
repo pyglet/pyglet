@@ -1312,6 +1312,14 @@ else:
         from pyglet.media import riff
         _source_class = riff.WaveSource
 
+# Pretend to import some common audio drivers so that py2exe/py2app
+# are fooled into packagin them.
+if False:
+    import pyglet.media.drivers.silent
+    import pyglet.media.drivers.openal
+    import pyglet.media.drivers.directsound
+    import pyglet.media.drivers.alsa
+
 def load(filename, file=None, streaming=True):
     '''Load a source from a file.
 
