@@ -75,6 +75,7 @@ def on_draw():
 t = time.time()
 pyglet.app.run()
 
+print 'best FPS:', best_fps
 print 'best us per sprite:', (1. / best_fps) * 1000000 / numsprites
 print 'avg  us per sprite:', float(time.time()-t) / (numsprites * sum_numframes) * 1000000
 

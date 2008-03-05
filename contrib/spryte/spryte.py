@@ -3,7 +3,7 @@ import math
 
 from pyglet import image, gl, clock, graphics, sprite
 
-class SpriteBatchGroup(graphics.AbstractGroup):
+class SpriteBatchGroup(graphics.Group):
     def __init__(self, x, y, parent=None):
         super(SpriteBatchGroup, self).__init__(parent)
         self.x, self.y = x, y
