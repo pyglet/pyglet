@@ -293,6 +293,14 @@ class Text(object):
     #: Y coordinate.
     TOP = 'top'
 
+    # None: no multiline
+    # 'width': multiline, wrapped to width
+    # 'multiline': multiline, no wrap
+    _wrap = None
+
+    # Internal bookkeeping for wrap only.
+    _width = None
+
     def __init__(self, font, text='', x=0, y=0, z=0, color=(1,1,1,1),
             width=None, halign=LEFT, valign=BASELINE):
         '''Create displayable text.
@@ -321,7 +329,15 @@ class Text(object):
                 Controls positioning of the text based off the y coordinate.
                 One of BASELINE, BOTTOM, CENTER or TOP. Defaults to BASELINE.
         '''
-        multiline = width is not None
+        multiline = False
+        if width is not None:
+            self._width = width
+            self._wrap = 'width'
+            multiline = True
+        elif '\n' in text:
+            self._wrap = 'multiline'
+            multiline = True
+
         self._group = _TextZGroup()
         self._document = pyglet.text.decode_text(text)
         self._layout = pyglet.text.layout.TextLayout(self._document, 
@@ -330,6 +346,8 @@ class Text(object):
                                               group=self._group)
 
         self._layout.begin_update()
+        if self._wrap == 'multiline':
+            self._document.set_style(0, len(text), dict(wrap=False))
         self.font = font
         self.color = color
         self._x = x
@@ -411,21 +429,34 @@ class Text(object):
 
     z = property(_get_z, _set_z)
 
+    def _update_wrap(self):
+        if self._width is not None:
+            self._wrap = 'width'
+        elif '\n' in self.text:
+            self._wrap = 'multiline'
+
+        self._layout.begin_update()
+        if self._wrap == None:
+            self._layout.multiline = False
+        elif self._wrap == 'width':
+            self._layout.multiline = True
+            self._layout.width = self._width
+            self._document.set_style(0, len(self.text), dict(wrap=True))
+        elif self._wrap == 'multiline':
+            self._layout.multiline = True
+            self._document.set_style(0, len(self.text), dict(wrap=False))
+        self._update_layout_halign()
+        self._layout.end_update()
+
     def _get_width(self):
-        if self._layout.multiline:
+        if self._wrap == 'width':
             return self._layout.width
         else:
             return self._layout.content_width
 
     def _set_width(self, width):
-        if width is None:
-            self._layout.multiline = False
-        else:
-            self._layout.begin_update()
-            self._layout.multiline = True
-            self._layout.width = width
-            self._layout.end_update()
-        self._update_layout_halign()
+        self._width = width
+        self._update_wrap()
 
     width = property(_get_width, _set_width, 
         doc='''Width of the text.
@@ -455,7 +486,7 @@ class Text(object):
 
     def _set_text(self, text):
         self._document.text = text
-        self._update_layout_halign()
+        self._update_wrap()
 
     text = property(_get_text, _set_text,
         doc='''Text to render.
