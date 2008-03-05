@@ -70,10 +70,8 @@ class CarbonEventLoop(BaseEventLoop):
         while not self.has_exit:
             if self._force_idle:
                 duration = 0
-                self._blocked = False
             else:
                 duration = kEventDurationForever
-                self._blocked = True
             if carbon.ReceiveNextEvent(0, None, duration,
                                        True, ctypes.byref(e)) == 0:
                 carbon.SendEventToEventTarget(e, event_dispatcher)
@@ -128,9 +126,9 @@ class CarbonEventLoop(BaseEventLoop):
 
         if sleep_time is None:
             sleep_time = constants.kEventDurationForever
-        elif sleep_time == 0. and allow_polling:
-            # Switch to event loop to polling.
-            if self._blocked:
+        elif sleep_time < 0.01 and allow_polling:
+            # Switch event loop to polling.
+            if in_events:
                 carbon.QuitEventLoop(self._event_loop)
             self._force_idle = True
             sleep_time = constants.kEventDurationForever
