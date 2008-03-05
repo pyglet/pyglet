@@ -217,6 +217,24 @@ _Module(
      'lib', 'media', 'resource', 'sprite', 'text', 'window')
 )
 
+# Fool py2exe, py2app into including all top-level modules (doesn't understand
+# lazy loading)
+if False:
+    import app
+    import clock
+    import com
+    import event
+    import font
+    import gl
+    import graphics
+    import image
+    import lib
+    import media
+    import resource
+    import sprite
+    import text
+    import window
+
 # Hack around some epydoc bug that causes it to think pyglet.window is None.
 if _is_epydoc:
     import window
