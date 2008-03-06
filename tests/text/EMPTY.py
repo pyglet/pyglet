@@ -38,11 +38,13 @@ class TestWindow(window.Window):
 class TestCase(unittest.TestCase):
     def testUnformatted(self):
         self.window = TestWindow(document.UnformattedDocument)
-        app.run()
+        self.window.dispatch_events()
+        self.window.close()
 
     def testFormatted(self):
         self.window = TestWindow(document.FormattedDocument)
-        app.run()
+        self.window.dispatch_events()
+        self.window.close()
 
 if __name__ == '__main__':
     unittest.main()
