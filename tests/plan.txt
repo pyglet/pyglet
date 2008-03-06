@@ -201,6 +201,7 @@ resource
 
 text
     text.RUNLIST                                GENERIC
+    text.EMPTY                                  GENERIC
     text.PLAIN                                  GENERIC
     text.STYLE                                  GENERIC
     text.ELEMENT                                GENERIC

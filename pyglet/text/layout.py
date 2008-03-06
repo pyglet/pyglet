@@ -1110,7 +1110,6 @@ class TextLayout(object):
             if line.paragraph_end:
                 y -= margin_bottom_iterator[line.start]
 
-
         line_index = start
         for line in lines[start:]:
             if line.paragraph_begin:
@@ -1447,6 +1446,7 @@ class IncrementalTextLayout(ScrollableTextLayout):
             font = self.document.get_font(0, dpi=self._dpi)
             self.lines[0].ascent = font.ascent
             self.lines[0].descent = font.descent
+            self.lines[0].paragraph_begin = self.lines[0].paragraph_end = True
             self.invalid_lines.invalidate(0, 1)
 
         self._update_glyphs()
