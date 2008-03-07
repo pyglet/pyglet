@@ -134,6 +134,14 @@ class Caret(object):
 
         layout.push_handlers(self)
 
+    def delete(self):
+        '''Remove the caret from its batch.
+
+        Also disconnects the caret from further layout events.
+        '''
+        self.delete()
+        self._layout.remove_handlers(self)
+
     def _blink(self, dt):
         self._blink_visible = not self._blink_visible
         if self._visible and self._active and self._blink_visible:
