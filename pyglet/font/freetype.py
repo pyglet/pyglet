@@ -320,7 +320,14 @@ class FreeTypeFont(base.Font):
         value = FcValue()
         match = cls.get_fontconfig_match(name, 12, False, False)
         result = fontconfig.FcPatternGet(match, FC_FAMILY, 0, byref(value))
-        return value.u.s == name
+        if value.u.s == name:
+            return True
+        else:
+            name = name.lower()
+            for font in cls._memory_fonts.values():
+                if font.name.lower() == name:
+                    return True
+        return False
     
     @classmethod
     def add_font_data(cls, data):
