@@ -6,52 +6,54 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: obj_test.py 111 2006-10-20 06:39:12Z r1chardj0n3s $'
 
+import sys
 import os
 import ctypes
-import pyglet.window
-from pyglet.window.event import *
+import pyglet
 
 from pyglet.gl import *
-from pyglet import clock
-from pyglet.ext.model import obj
+from model import obj, geometric
 
-w1 = pyglet.window.Window(width=300, height=300)
-
-c = clock.Clock(60)
+w = pyglet.window.Window()
 
 fourfv = ctypes.c_float * 4
-glLightfv(GL_LIGHT0, GL_POSITION, fourfv(100, 200, 200, 0))
-glLightfv(GL_LIGHT0, GL_AMBIENT, fourfv(0.5, 0.5, 0.5, 1.0))
+glLightfv(GL_LIGHT0, GL_POSITION, fourfv(10, 20, 20, 0))
+glLightfv(GL_LIGHT0, GL_AMBIENT, fourfv(0.2, 0.2, 0.2, 1.0))
 glLightfv(GL_LIGHT0, GL_DIFFUSE, fourfv(0.8, 0.8, 0.8, 1.0))
 glEnable(GL_LIGHT0)
 glEnable(GL_LIGHTING)
 glEnable(GL_DEPTH_TEST)
 
-def resize(width, height):
+@w.event
+def on_resize(width, height):
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     gluPerspective(60., float(width)/height, 1., 100.)
     glMatrixMode(GL_MODELVIEW)
-w1.push_handlers(on_resize=resize)
-resize(w1.width, w1.height)
+    return True
 
-glClearColor(0, 0, 0, 0)
-
-bunny = obj.OBJ(os.path.join(os.path.split(__file__)[0], 'rabbit.obj'))
+@w.event
+def on_draw():
+    w.clear()
+    glLoadIdentity()
+    gluLookAt(0, 3, 3, 0, 0, 0, 0, 1, 0)
+    glRotatef(r, 0, 1, 0)
+    glRotatef(r/2, 1, 0, 0)
+    bunny.draw()
+    w.flip()
 
 r = 0
-while not w1.has_exit:
-    c.tick()
-    w1.dispatch_events()
+def update(dt):
+    global r
+    r += 90*dt
+    if r > 720: r = 0
+pyglet.clock.schedule(update)
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glLoadIdentity()
-    gluLookAt(0, 5, 5, 0, 1, -1, 0, 1, 0)
+if len(sys.argv) == 1:
+    objfile = os.path.join(os.path.split(__file__)[0], 'rabbit.obj')
+else:
+    objfile = sys.argv[1]
 
-    r += 1
-    if r > 360: r = 0
-    glRotatef(r, 0, 1, 0)
-    bunny.draw()
+bunny = obj.OBJ(objfile)
 
-    w1.flip()
-
+pyglet.app.run()

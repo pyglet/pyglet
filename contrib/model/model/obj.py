@@ -23,13 +23,13 @@ class Material(object):
         else:
             glDisable(GL_TEXTURE_2D)
 
-        glMaterialfv(face, GL_DIFFUSE, 
+        glMaterialfv(face, GL_DIFFUSE,
             (GLfloat * 4)(*(self.diffuse + [self.opacity])))
-        glMaterialfv(face, GL_AMBIENT, 
+        glMaterialfv(face, GL_AMBIENT,
             (GLfloat * 4)(*(self.ambient + [self.opacity])))
-        glMaterialfv(face, GL_SPECULAR, 
+        glMaterialfv(face, GL_SPECULAR,
             (GLfloat * 4)(*(self.specular + [self.opacity])))
-        glMaterialfv(face, GL_EMISSION, 
+        glMaterialfv(face, GL_EMISSION,
             (GLfloat * 4)(*(self.emission + [self.opacity])))
 
 class MaterialGroup(object):
