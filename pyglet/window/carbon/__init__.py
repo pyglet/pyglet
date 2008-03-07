@@ -198,7 +198,20 @@ class CarbonDisplay(Display):
             # Mouse down in menu bar.  MenuSelect() takes care of all
             # menu tracking and blocks until the menu is dismissed.
             # Use command events to handle actual menu item invokations.
+
+            # This function blocks, so tell the event loop it needs to install
+            # a timer.
+            from pyglet import app
+            if app.event_loop is not None:
+                app.event_loop._enter_blocking()
+
             carbon.MenuSelect(position)
+
+            if app.event_loop is not None:
+                app.event_loop._exit_blocking()
+
+            # Menu selection has now returned.  Remove highlight from the
+            # menubar.
             carbon.HiliteMenu(0)
 
         carbon.CallNextEventHandler(next_handler, ev)

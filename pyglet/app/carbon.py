@@ -64,6 +64,7 @@ class CarbonEventLoop(BaseEventLoop):
                                      ctypes.byref(timer))
 
         self._force_idle = False
+        self._allow_polling = True
 
         self.dispatch_event('on_enter')
 
@@ -87,6 +88,13 @@ class CarbonEventLoop(BaseEventLoop):
 
     def _stop_polling(self):
         carbon.SetEventLoopTimerNextFireTime(self._timer, ctypes.c_double(0.0))
+
+    def _enter_blocking(self):
+        carbon.SetEventLoopTimerNextFireTime(self._timer, ctypes.c_double(0.0))
+        self._allow_polling = False
+
+    def _exit_blocking(self):
+        self._allow_polling = True
 
     def _timer_proc(self, timer, data, in_events=True):
         allow_polling = True
@@ -126,7 +134,7 @@ class CarbonEventLoop(BaseEventLoop):
 
         if sleep_time is None:
             sleep_time = constants.kEventDurationForever
-        elif sleep_time < 0.01 and allow_polling:
+        elif sleep_time < 0.01 and allow_polling and self._allow_polling:
             # Switch event loop to polling.
             if in_events:
                 carbon.QuitEventLoop(self._event_loop)
