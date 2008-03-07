@@ -373,6 +373,44 @@ FT_Load_Char = _get_function('FT_Load_Char',
 FT_Get_Kerning = _get_function('FT_Get_Kerning',
     [FT_Face, c_uint, c_uint, c_uint, POINTER(FT_Vector)], c_int)
 
+# SFNT interface
+
+class FT_SfntName(Structure):
+    _fields_ = [
+        ('platform_id', c_ushort),
+        ('encoding_id', c_ushort),
+        ('language_id', c_ushort),
+        ('name_id', c_ushort),
+        ('string', POINTER(c_byte)),
+        ('string_len', c_uint)
+    ]
+
+FT_Get_Sfnt_Name_Count = _get_function('FT_Get_Sfnt_Name_Count',
+    [FT_Face], c_uint)
+FT_Get_Sfnt_Name = _get_function('FT_Get_Sfnt_Name',
+    [FT_Face, c_uint, POINTER(FT_SfntName)], c_int)
+
+TT_PLATFORM_MICROSOFT = 3
+TT_MS_ID_UNICODE_CS = 1
+TT_NAME_ID_COPYRIGHT          = 0
+TT_NAME_ID_FONT_FAMILY        = 1
+TT_NAME_ID_FONT_SUBFAMILY     = 2
+TT_NAME_ID_UNIQUE_ID          = 3
+TT_NAME_ID_FULL_NAME          = 4
+TT_NAME_ID_VERSION_STRING     = 5
+TT_NAME_ID_PS_NAME            = 6
+TT_NAME_ID_TRADEMARK          = 7
+TT_NAME_ID_MANUFACTURER       = 8
+TT_NAME_ID_DESIGNER           = 9
+TT_NAME_ID_DESCRIPTION        = 10
+TT_NAME_ID_VENDOR_URL         = 11
+TT_NAME_ID_DESIGNER_URL       = 12
+TT_NAME_ID_LICENSE            = 13
+TT_NAME_ID_LICENSE_URL        = 14
+TT_NAME_ID_PREFERRED_FAMILY   = 16
+TT_NAME_ID_PREFERRED_SUBFAMILY= 17
+TT_NAME_ID_MAC_FULL_NAME      = 18
+TT_NAME_ID_CID_FINDFONT_NAME  = 20
 
 _library = None
 def ft_get_library():

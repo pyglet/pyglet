@@ -216,6 +216,22 @@ class FreeTypeMemoryFont(object):
         self.bold = self.face.contents.style_flags & FT_STYLE_FLAG_BOLD != 0
         self.italic = self.face.contents.style_flags & FT_STYLE_FLAG_ITALIC != 0
 
+        # Replace Freetype's generic family name with TTF/OpenType specific
+        # name if we can find one; there are some instances where Freetype
+        # gets it wrong.
+        if self.face.contents.face_flags & FT_FACE_FLAG_SFNT:
+            name = FT_SfntName()
+            for i in range(FT_Get_Sfnt_Name_Count(self.face)):
+                result = FT_Get_Sfnt_Name(self.face, i, name)
+                if result != 0:
+                    continue
+                if not (name.platform_id == TT_PLATFORM_MICROSOFT and
+                        name.encoding_id == TT_MS_ID_UNICODE_CS):
+                    continue
+                if name.name_id == TT_NAME_ID_FONT_FAMILY:
+                    string = string_at(name.string, name.string_len)
+                    self.name = string.decode('utf-16be', 'ignore')
+
     def __del__(self):
         try:
             FT_Done_Face(self.face)
