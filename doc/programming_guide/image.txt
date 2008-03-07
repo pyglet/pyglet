@@ -259,7 +259,12 @@ techniques are also possible::
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 You would only need to call the code above once during your program, before
-you draw any images. 
+you draw any images.
+
+The `blit` method is not designed for high-performance display of many
+images. See the `pyglet.graphics` and related `pyglet.sprite` modules for
+high-performance image display.
+
 
 The AbstractImage hierarchy
 ---------------------------
