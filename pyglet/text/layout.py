@@ -1594,6 +1594,11 @@ class IncrementalTextLayout(ScrollableTextLayout):
     provides event handlers for scrolling, selecting and editing text in an
     incremental text layout.
     '''
+    _selection_start = 0
+    _selection_end = 0
+    _selection_color = [255, 255, 255, 255]
+    _selection_background_color = [46, 106, 197, 255]
+
     def __init__(self, document, width, height, multiline=False, dpi=None,
                  batch=None, group=None):
         self.glyphs = []
@@ -1928,10 +1933,6 @@ class IncrementalTextLayout(ScrollableTextLayout):
 
     # Visible selection
 
-    # TODO public interface to selection range.
-    _selection_start = 0
-    _selection_end = 0
-
     def set_selection(self, start, end):
         '''Set the text selection range.
 
@@ -1966,9 +1967,59 @@ class IncrementalTextLayout(ScrollableTextLayout):
 
         self._update()
 
-    # TODO public interface to selection colors.
-    _selection_color = [255, 255, 255, 255]
-    _selection_background_color = [46, 106, 197, 255]
+    selection_start = property(
+        lambda self: self._selection_start,
+        lambda self, v: self.set_selection(v, self._selection_end),
+        doc='''Starting position of the active selection.
+
+    :see: `set_selection`
+
+    :type: int
+    ''')
+
+    selection_end = property(
+        lambda self: self._selection_end,
+        lambda self, v: self.set_selection(self._selection_start, v),
+        doc='''End position of the active selection (exclusive).
+
+    :see: `set_selection`
+
+    :type: int
+    ''')
+
+    def _get_selection_color(self):
+        return self._selection_color
+
+    def _set_selection_color(self, color):
+        self._selection_color = color
+        self.invalid_style.invalidate(self._selection_start,
+                                      self._selection_end)
+
+    selection_color = property(_get_selection_color, _set_selection_color,
+                               doc='''Text color of active selection.
+
+    The color is an RGBA tuple with components in range [0, 1].
+
+    :type: (int, int, int, int)
+    ''')
+
+    def _get_selection_background_color(self):
+        return self._selection_background_color
+
+    def _set_selection_background_color(self, background_color):
+        self._selection_background_color = background_color
+        self.invalid_style.invalidate(self._selection_start,
+                                      self._selection_end)
+
+    selection_background_color = property(_get_selection_background_color, 
+                                          _set_selection_background_color,
+                                          doc='''Background color of active
+    selection.
+
+    The color is an RGBA tuple with components in range [0, 1].
+
+    :type: (int, int, int, int)
+    ''')
 
     # Coordinate translation
 
