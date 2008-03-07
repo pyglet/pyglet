@@ -468,8 +468,6 @@ class AVbinSource(StreamingSource):
             self._force_next_video_image = False
 
     def _release_texture(self, player):
-        if player._texture:
-            player._texture.delete()
         player._texture = None
 
 av.avbin_init()
