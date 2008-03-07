@@ -242,7 +242,7 @@ class CarbonDisplay(Display):
         '''
         from pyglet import app
         if app.event_loop is not None:
-            app.has_exit = True
+            app.event_loop.exit()
         else:
             for window in self.get_windows():
                 window.has_exit = True
