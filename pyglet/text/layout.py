@@ -989,6 +989,9 @@ class TextLayout(object):
         run_accum = []
         run_accum_width = 0
 
+        # Amount of whitespace accumulated at end of line
+        eol_ws = 0
+
         # Iterate over glyph owners (texture states); these form GlyphBoxes,
         # but broken into lines.
         font = None
@@ -1047,17 +1050,13 @@ class TextLayout(object):
                     owner_accum.append((kern, glyph))
                     owner_accum_commit.extend(owner_accum)
                     owner_accum_commit_width += owner_accum_width + \
-                        glyph.advance
+                        glyph.advance + kern
+                    eol_ws += glyph.advance + kern
 
-                    # Note that the width of the space glyph is added to
-                    # the width of the new accumulation.  This is so
-                    # whitespace at the end of a line does not contribute
-                    # to its width.
                     owner_accum = []
                     owner_accum_width = 0
-                    #owner_accum_width = glyph.advance
-                    x += glyph.advance + kern
 
+                    x += glyph.advance + kern
                     index += 1
                         
                     # The index at which the next line will begin (the
@@ -1092,7 +1091,7 @@ class TextLayout(object):
                         if owner_accum_commit:
                             line.add_box(
                                 _GlyphBox(owner, font, owner_accum_commit,
-                                         owner_accum_commit_width))
+                                          owner_accum_commit_width))
                             owner_accum_commit = []
                             owner_accum_commit_width = 0
 
@@ -1108,6 +1107,8 @@ class TextLayout(object):
                         # flushed at the earliest breakpoint, not before
                         # something is committed).
                         if line.boxes or new_line:
+                            # Trim line width of whitespace on right-side.
+                            line.width -= eol_ws
                             if new_paragraph:
                                 line.paragraph_end = True
                             yield line
@@ -1152,15 +1153,16 @@ class TextLayout(object):
                         owner_accum_width += glyph.advance + kern
                         x += glyph.advance + kern
                     index += 1
+                    eol_ws = 0
 
             # The owner run is finished; create GlyphBoxes for the committed
             # and pending glyphs.
             if owner_accum_commit:
                 line.add_box(_GlyphBox(owner, font, owner_accum_commit,
-                                            owner_accum_commit_width))
+                                       owner_accum_commit_width))
             if owner_accum:
                 run_accum.append(_GlyphBox(owner, font, owner_accum,
-                                          owner_accum_width))
+                                           owner_accum_width))
                 run_accum_width += owner_accum_width
 
         # All glyphs have been processed: commit everything pending and flush
