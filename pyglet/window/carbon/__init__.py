@@ -410,6 +410,7 @@ class CarbonWindow(BaseWindow):
 
     _mouse_exclusive = False
     _mouse_platform_visible = True
+    _mouse_ignore_motion = False
 
     def _recreate(self, changes):
         # We can't destroy the window while event handlers are active,
@@ -769,6 +770,8 @@ class CarbonWindow(BaseWindow):
             point = CGPoint()
             point.x = (rect.right + rect.left) / 2
             point.y = (rect.bottom + rect.top) / 2
+            # Skip the next motion event, which would return a large delta.
+            self._mouse_ignore_motion = True
             carbon.CGWarpMouseCursorPosition(point)
             carbon.CGAssociateMouseAndMouseCursorPosition(False)
         else:
@@ -1084,7 +1087,8 @@ class CarbonWindow(BaseWindow):
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseMoved)
     def _on_mouse_moved(self, next_handler, ev, data):
-        if self._fullscreen or self._get_mouse_in_content(ev):
+        if ((self._fullscreen or self._get_mouse_in_content(ev))
+            and not self._mouse_ignore_motion):
             x, y = self._get_mouse_position(ev)
             y = self.height - y
 
@@ -1099,7 +1103,8 @@ class CarbonWindow(BaseWindow):
             # Motion event
             self.dispatch_event('on_mouse_motion', 
                 x, y, delta.x, -delta.y)
-
+        elif self._mouse_ignore_motion:
+            self._mouse_ignore_motion = False
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
