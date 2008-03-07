@@ -31,6 +31,7 @@ class Material(object):
             (GLfloat * 4)(*(self.specular + [self.opacity])))
         glMaterialfv(face, GL_EMISSION,
             (GLfloat * 4)(*(self.emission + [self.opacity])))
+        glMaterialf(face, GL_SHININESS, self.shininess)
 
 class MaterialGroup(object):
     def __init__(self, material):
