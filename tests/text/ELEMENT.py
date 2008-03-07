@@ -124,7 +124,6 @@ class TestWindow(pyglet.window.Window):
         self.layout.width = width - self.margin * 2
         self.layout.height = height - self.margin * 2
         self.layout.end_update()
-        self.caret._update() # XXX
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         self.layout.view_x -= scroll_x

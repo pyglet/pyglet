@@ -103,6 +103,20 @@ class Caret(object):
     SCROLL_INCREMENT= 12 * 96 / 72
 
     def __init__(self, layout, batch=None, color=(0, 0, 0)):
+        '''Create a caret for a layout.
+
+        By default the layout's batch is used, so the caret does not need to
+        be drawn explicitly.
+
+        :Parameters:
+            `layout` : `TextLayout`
+                Layout to control.
+            `batch` : `Batch`
+                Graphics batch to add vertices to.
+            `color` : (int, int, int)
+                RGB tuple with components in range [0, 255].
+
+        '''
         from pyglet import gl
         self._layout = layout
         if batch is None:
@@ -117,6 +131,8 @@ class Caret(object):
         self._next_attributes = {}
 
         self.visible = True
+
+        layout.push_handlers(self)
 
     def _blink(self, dt):
         self._blink_visible = not self._blink_visible
@@ -275,10 +291,11 @@ class Caret(object):
         self._layout.document.set_style(start, end, attributes)
 
     def _delete_selection(self):
-        self._layout.document.delete_text(min(self._mark, self._position),
-                                             max(self._mark, self._position))
-        self._position = min(self.position, self.mark)
+        start = min(self._mark, self._position)
+        end = max(self._mark, self._position)
+        self._position = start
         self._mark = None
+        self._layout.document.delete_text(start, end)
         self._layout.set_selection(0, 0)
 
     def move_to_point(self, x, y):
@@ -384,6 +401,9 @@ class Caret(object):
         self._layout.ensure_line_visible(line)
         self._layout.ensure_x_visible(x)
 
+    def on_layout_update(self):
+        self._update()
+
     def on_text(self, text):
         '''Handler for the `pyglet.window.Window.on_text` event.
 
@@ -395,11 +415,10 @@ class Caret(object):
             self._delete_selection()
 
         text = text.replace('\r', '\n')
-        self._layout.document.insert_text(self.position, text,
-                                          self._next_attributes)
+        pos = self._position
         self._position += len(text)
+        self._layout.document.insert_text(pos, text, self._next_attributes)
         self._nudge()
-        self._update()
         return event.EVENT_HANDLED
 
     def on_text_motion(self, motion, select=False):
@@ -412,19 +431,16 @@ class Caret(object):
         if motion == key.MOTION_BACKSPACE:
             if self.mark is not None:
                 self._delete_selection()
-                self._update()
-            elif self.position > 0:
+            elif self._position > 0:
+                self._position -= 1
                 self._layout.document.delete_text(
-                    self.position - 1, self.position)
-                self.position -= 1
+                    self._position - 2, self._position - 1)
         elif motion == key.MOTION_DELETE:
             if self.mark is not None:
                 self._delete_selection()
-                self._update()
-            elif self.position < len(self._layout.document.text):
+            elif self._position < len(self._layout.document.text):
                 self._layout.document.delete_text(
-                    self.position, self.position + 1)
-                self._update()
+                    self._position, self._position + 1)
         elif self._mark is not None and not select:
             self._mark = None
             self._layout.set_selection(0, 0)

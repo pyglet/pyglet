@@ -145,9 +145,12 @@ import math
 import sys
 
 from pyglet.gl import *
+from pyglet import event
 from pyglet import graphics
 from pyglet.text import document
 from pyglet.text import runlist
+
+_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
 class _Line(object):
     align = 'left'
@@ -450,6 +453,9 @@ class _InvalidRange(object):
         self.start = sys.maxint
         self.end = 0
         return start, end
+
+    def is_invalid(self):
+        return self.end > self.start
 
 # Text group hierarchy
 #
@@ -1576,7 +1582,7 @@ class ScrollableTextLayout(TextLayout):
     :type: int
     ''')
 
-class IncrementalTextLayout(ScrollableTextLayout):
+class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
     '''Displayed text suitable for interactive editing and/or scrolling
     large documents.
     
@@ -1601,6 +1607,7 @@ class IncrementalTextLayout(ScrollableTextLayout):
 
     def __init__(self, document, width, height, multiline=False, dpi=None,
                  batch=None, group=None):
+        event.EventDispatcher.__init__(self)
         self.glyphs = []
         self.lines = []
 
@@ -1613,7 +1620,7 @@ class IncrementalTextLayout(ScrollableTextLayout):
 
         self.owner_runs = runlist.RunList(0, None)
 
-        super(IncrementalTextLayout, self).__init__(
+        ScrollableTextLayout.__init__(self,
             document, width, height, multiline, dpi, batch, group)
 
     def _init_document(self):
@@ -1686,6 +1693,10 @@ class IncrementalTextLayout(ScrollableTextLayout):
         if not self._update_enabled:
             return
 
+        trigger_update_event = (self.invalid_glyphs.is_invalid() or
+                                self.invalid_flow.is_invalid() or
+                                self.invalid_lines.is_invalid())
+
         # Special care if there is no text:
         if not self.glyphs:
             for line in self.lines:
@@ -1703,6 +1714,9 @@ class IncrementalTextLayout(ScrollableTextLayout):
         self._update_flow_lines()
         self._update_visible_lines()
         self._update_vertex_lists()
+
+        if trigger_update_event:
+            self.dispatch_event('on_layout_update')
 
     def _update_glyphs(self):
         invalid_start, invalid_end = self.invalid_glyphs.validate()
@@ -1998,7 +2012,7 @@ class IncrementalTextLayout(ScrollableTextLayout):
     selection_color = property(_get_selection_color, _set_selection_color,
                                doc='''Text color of active selection.
 
-    The color is an RGBA tuple with components in range [0, 1].
+    The color is an RGBA tuple with components in range [0, 255].
 
     :type: (int, int, int, int)
     ''')
@@ -2016,7 +2030,7 @@ class IncrementalTextLayout(ScrollableTextLayout):
                                           doc='''Background color of active
     selection.
 
-    The color is an RGBA tuple with components in range [0, 1].
+    The color is an RGBA tuple with components in range [0, 255].
 
     :type: (int, int, int, int)
     ''')
@@ -2213,4 +2227,19 @@ class IncrementalTextLayout(ScrollableTextLayout):
               self.content_width > self.width):
             self.view_x = x - self.width + 10 
 
+    if _is_epydoc:
+        def on_layout_update():
+            '''Some or all of the layout text was reflowed.
+
+            Text reflow is caused by document edits or changes to the layout's
+            size.  Changes to the layout's position or active selection, and
+            certain document edits such as text color, do not cause a reflow.
+
+            Handle this event to update the position of a graphical element
+            that depends on the laid out position of a glyph or line.
+
+            :event:
+            '''
+
+IncrementalTextLayout.register_event_type('on_layout_update')
 
