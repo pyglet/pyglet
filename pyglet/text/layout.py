@@ -1263,8 +1263,6 @@ class TextLayout(object):
             elif line.align == 'right':
                 line.x = self.width - line.margin_right - line.width
 
-            # TODO incremental needs to reduce content width (trigger rescan
-            # if deleted line has content width -- yikes)
             self.content_width = max(self.content_width, 
                                      line.width + line.margin_left)
 
@@ -1755,12 +1753,19 @@ class IncrementalTextLayout(ScrollableTextLayout):
             self.lines.append(line)
             self.invalid_lines.insert(0, 1)
 
+        content_width_invalid = False
         next_start = invalid_start
 
         for line in self._flow_glyphs(self.glyphs, self.owner_runs,
                                       invalid_start, len(self._document.text)):
             try:
-                self.lines[line_index].delete(self)
+                old_line = self.lines[line_index]
+                old_line.delete(self)
+                old_line_width = old_line.width + old_line.margin_left
+                new_line_width = line.width + line.margin_left
+                if (old_line_width == self.content_width and 
+                    new_line_width < old_line_width):
+                    content_width_invalid = True
                 self.lines[line_index] = line
                 self.invalid_lines.invalidate(line_index, line_index + 1)
             except IndexError:
@@ -1782,8 +1787,19 @@ class IncrementalTextLayout(ScrollableTextLayout):
             # after that they are stale and need to be deleted.
             if next_start == len(self._document.text) and line_index > 0:
                 for line in self.lines[line_index:]:
+                    old_line_width = old_line.width + old_line.margin_left
+                    if old_line_width == self.content_width:
+                        content_width_invalid = True
                     line.delete(self)
                 del self.lines[line_index:]
+
+        if content_width_invalid:
+            # Rescan all lines to look for the new maximum content width
+            content_width = 0
+            for line in self.lines:
+                content_width = max(line.width + line.margin_left,
+                                    content_width)
+            self.content_width = content_width
 
     def _update_flow_lines(self):
         invalid_start, invalid_end = self.invalid_lines.validate()
