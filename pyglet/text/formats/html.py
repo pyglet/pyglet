@@ -134,79 +134,6 @@ _block_containers = ['_top_block',
                      # Incorrect, but we treat list items as blocks:
                      'ul', 'ol', 'dir', 'menu', 'dl']
 
-class ImageElement(pyglet.text.document.InlineElement):
-    def __init__(self, image, width=None, height=None):
-        self.image = image.get_texture()
-        self.width = width is None and image.width or width
-        self.height = height is None and image.height or height
-        self.vertex_lists = {}
-
-        anchor_y = self.height / image.height * image.anchor_y
-        ascent = max(0, self.height - anchor_y)
-        descent = min(0, -anchor_y)
-        super(ImageElement, self).__init__(ascent, descent, self.width)
-
-    def place(self, layout, x, y):
-        group = pyglet.graphics.TextureGroup(self.image.texture, 
-                                             layout.top_group)
-        x1 = x
-        y1 = y + self.descent
-        x2 = x + self.width
-        y2 = y + self.height + self.descent
-        vertex_list = layout.batch.add(4, pyglet.gl.GL_QUADS, group,
-            ('v2i', (x1, y1, x2, y1, x2, y2, x1, y2)),
-            ('t3f', self.image.tex_coords))
-        self.vertex_lists[layout] = vertex_list
-
-    def remove(self, layout):
-        self.vertex_lists[layout].delete()
-        del self.vertex_lists[layout]
-
-class UnorderedList(object):
-    def __init__(self, attrs):
-        type = attrs.get('type', 'disc').lower()
-        if type == 'circle':
-            self.mark = u'\u25cb'
-        elif type == 'square':
-            self.mark = u'\u25a1'
-        else:
-            self.mark = u'\u25cf'
-
-    def get_mark(self, attrs):
-        return self.mark
-
-class OrderedList(object):
-    def __init__(self, attrs):
-        try:
-            self.next_value = int(attrs['start'])
-        except (KeyError, ValueError):
-            self.next_value = 1
-        self.type = attrs.get('type', '1')
-
-    def get_mark(self, attrs):
-        try:
-            value = int(attrs['value'])
-        except (KeyError, ValueError):
-            value = self.next_value
-        self.next_value = value + 1
-        if self.type in 'aA':
-            try:
-                mark = 'abcdefghijklmnopqrstuvwxyz'[value - 1]
-            except ValueError:
-                mark = '?'
-            if self.type == 'A':
-                mark = mark.upper()
-            return '%s.' % mark
-        elif self.type in 'iI':
-            try:
-                mark = int_to_roman(value)
-            except ValueError:
-                mark = '?'
-            if self.type == 'i':
-                mark = mark.lower()
-            return mark
-        else:
-            return '%d.' % value
 
 class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
     '''Decoder for HTML documents.
@@ -214,7 +141,7 @@ class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
     def decode_structured(self, text, location):
         self.location = location
         self._font_size_stack = [3]
-        self.list_stack = [UnorderedList({})]
+        self.list_stack.append(structured.UnorderedListBuilder({}))
         self.strip_leading_space = True
         self.block_begin = True
         self.need_block_begin = False
@@ -359,24 +286,28 @@ class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
             style['margin_right'] = right_margin + 60
         elif element == 'q':
             self.handle_data(u'\u201c')
-        elif element in ('ul', 'ol', 'dir', 'menu'):
-            left_margin = self.current_style.get('margin_left') or 0
-            tab_stops = self.current_style.get('tab_stops')
-            if tab_stops:
-                tab_stops = list(tab_stops)
+        elif element == 'ol':
+            try:
+                start = int(attrs.get('start', 1))
+            except ValueError:
+                start = 1
+            format = attrs.get('type', '1') + '.'
+            builder = structured.OrderedListBuilder(start, format)
+            builder.begin(self, style)
+            self.list_stack.append(builder)
+        elif element in ('ul', 'dir', 'menu'):
+            type = attrs.get('type', 'disc').lower()
+            if type == 'circle':
+                mark = u'\u25cb'
+            elif type == 'square':
+                mark = u'\u25a1'
             else:
-                tab_stops = []
-            tab_stops.append(left_margin + 50)
-            style['margin_left'] = left_margin + 50
-            style['indent'] = -30
-            style['tab_stops'] = tab_stops
-            if element == 'ol':
-                self.list_stack.append(OrderedList(attrs))
-            else:
-                self.list_stack.append(UnorderedList(attrs))
+                mark = u'\u25cf'
+            builder = structured.UnorderedListBuilder(mark)
+            builder.begin(self, style)
+            self.list_stack.append(builder)
         elif element == 'li':
-            self.handle_data(self.list_stack[-1].get_mark(attrs))
-            self.add_text('\t')
+            self.list_stack[-1].item(self, style)
             self.strip_leading_space = True
         elif element == 'dl':
             style['margin_bottom'] = 0
@@ -393,7 +324,7 @@ class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
                 if height:
                     height = int(height)
                 self.prepare_for_data()
-                self.add_element(ImageElement(image, width, height))
+                self.add_element(structured.ImageElement(image, width, height))
                 self.strip_leading_space = False
 
         self.push_style(element, style)

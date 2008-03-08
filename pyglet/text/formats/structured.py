@@ -40,12 +40,177 @@ __version__ = '$Id: $'
 
 import pyglet
 
+class ImageElement(pyglet.text.document.InlineElement):
+    def __init__(self, image, width=None, height=None):
+        self.image = image.get_texture()
+        self.width = width is None and image.width or width
+        self.height = height is None and image.height or height
+        self.vertex_lists = {}
+
+        anchor_y = self.height / image.height * image.anchor_y
+        ascent = max(0, self.height - anchor_y)
+        descent = min(0, -anchor_y)
+        super(ImageElement, self).__init__(ascent, descent, self.width)
+
+    def place(self, layout, x, y):
+        group = pyglet.graphics.TextureGroup(self.image.texture, 
+                                             layout.top_group)
+        x1 = x
+        y1 = y + self.descent
+        x2 = x + self.width
+        y2 = y + self.height + self.descent
+        vertex_list = layout.batch.add(4, pyglet.gl.GL_QUADS, group,
+            ('v2i', (x1, y1, x2, y1, x2, y2, x1, y2)),
+            ('t3f', self.image.tex_coords))
+        self.vertex_lists[layout] = vertex_list
+
+    def remove(self, layout):
+        self.vertex_lists[layout].delete()
+        del self.vertex_lists[layout]
+
+def _int_to_roman(input):
+    # From http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/81611
+    if not 0 < input < 4000:
+        raise ValueError, "Argument must be between 1 and 3999"    
+    ints = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,   4,  1)
+    nums = ('M',  'CM', 'D', 'CD','C', 'XC','L','XL','X','IX','V','IV','I')
+    result = ""
+    for i in range(len(ints)):
+        count = int(input / ints[i])
+        result += nums[i] * count
+        input -= ints[i] * count
+    return result
+
+class ListBuilder(object):
+    def begin(self, decoder, style):
+        '''Begin a list.
+
+        :Parameters:
+            `decoder` : `StructuredTextDecoder`
+                Decoder.
+            `style` : dict
+                Style dictionary that applies over the entire list.
+
+        '''
+        left_margin = decoder.current_style.get('margin_left') or 0
+        tab_stops = decoder.current_style.get('tab_stops')
+        if tab_stops:
+            tab_stops = list(tab_stops)
+        else:
+            tab_stops = []
+        tab_stops.append(left_margin + 50)
+        style['margin_left'] = left_margin + 50
+        style['indent'] = -30
+        style['tab_stops'] = tab_stops
+
+    def item(self, decoder, style, value=None):
+        '''Begin a list item.
+
+        :Parameters:
+            `decoder` : `StructuredTextDecoder`
+                Decoder.
+            `style` : dict
+                Style dictionary that applies over the list item.
+            `value` : str
+                Optional value of the list item.  The meaning is list-type
+                dependent.
+
+        '''            
+        mark = self.get_mark(value)
+        if mark:
+            decoder.handle_data(mark)
+        decoder.add_text('\t')
+
+    def get_mark(self, value=None):
+        '''Get the mark text for the next list item.
+
+        :Parameters:
+            `value` : str
+                Optional value of the list item.  The meaning is list-type
+                dependent.
+
+        :rtype: str
+        '''
+        return ''
+
+class UnorderedListBuilder(ListBuilder):
+    def __init__(self, mark):
+        '''Create an unordered list with constant mark text.
+
+        :Parameters:
+            `mark` : str
+                Mark to prepend to each list item.
+
+        '''
+        self.mark = mark
+
+
+    def get_mark(self, value):
+        return self.mark
+
+class OrderedListBuilder(ListBuilder):
+    def __init__(self, start, format):
+        '''Create an ordered list with sequentially numbered mark text.
+
+        The format is composed of a numbering scheme character followed
+        by any delimiter text.  Valid numbering schemes are:
+
+        ``1``
+            Decimal Arabic
+        ``a``
+            Lowercase alphanumberic
+        ``A``
+            Uppercase alphanumeric
+        ``i``
+            Lowercase Roman
+        ``I``
+            Uppercase Roman
+
+        Delimiter text is typically ``.``, ``)`` or empty, but can be any
+        string.
+
+        :Parameters:
+            `start` : int
+                First list item number.
+            `format` : str
+                Format style, for example ``"1."``.
+
+        '''
+        self.next_value = start
+        self.numbering = format[:1]
+        assert self.numbering in '1aAiI'
+        self.delimiter = format[1:]
+
+    def get_mark(self, value):
+        if value is None:
+            value = self.next_value
+        self.next_value = value + 1
+        if self.numbering in 'aA':
+            try:
+                mark = 'abcdefghijklmnopqrstuvwxyz'[value - 1]
+            except ValueError:
+                mark = '?'
+            if self.numbering == 'A':
+                mark = mark.upper()
+            return '%s%s' % (mark, self.delimiter)
+        elif self.numbering in 'iI':
+            try:
+                mark = _int_to_roman(value)
+            except ValueError:
+                mark = '?'
+            if self.numbering == 'i':
+                mark = mark.lower()
+            return '%s%s' % (mark, self.delimiter)
+        else:
+            return '%d%s' % (value, self.delimiter)
+
 class StructuredTextDecoder(pyglet.text.DocumentDecoder):
     def decode(self, text, location=None):
         self.len_text = 0
         self.current_style = {}
         self.next_style = {}
         self.stack = []
+        self.list_stack = []
         self.document = pyglet.text.document.FormattedDocument()
         if location is None:
             location = pyglet.resource.FileLocation('')
