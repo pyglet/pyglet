@@ -4,8 +4,6 @@ include README
 include CHANGELOG
 
 # Public tools
-include tools/gl_info.py
-include tools/al_info.py
 include tools/inspect_font.py
 
 # Examples
