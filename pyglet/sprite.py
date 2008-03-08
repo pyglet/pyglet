@@ -2,14 +2,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -73,7 +73,7 @@ entire batch of sprites is then drawn in one call::
     for i in range(100):
         x, y = i * 10, 50
         ball_sprites.append(pyglet.sprite.Sprite(ball_image, x, y, batch=batch)
-        
+
     @window.event
     def on_draw():
         batch.draw()
@@ -143,15 +143,15 @@ class SpriteGroup(graphics.Group):
         glDisable(self.texture.target)
 
     def __eq__(self, other):
-        return (other.__class__ is self.__class__ and 
-                self.parent is other.parent and 
+        return (other.__class__ is self.__class__ and
+                self.parent is other.parent and
                 self.texture.target == other.texture.target and
                 self.texture.id == other.texture.id and
                 self.blend_src == other.blend_src and
                 self.blend_dest == other.blend_dest)
 
     def __hash__(self):
-        return hash((id(self.parent), 
+        return hash((id(self.parent),
                      self.texture.id, self.texture.target,
                      self.blend_src, self.blend_dest))
 
@@ -167,8 +167,8 @@ class Sprite(event.EventDispatcher):
     _scale = 1.0
     _visible = True
 
-    def __init__(self, 
-                 img, x=0, y=0, 
+    def __init__(self,
+                 img, x=0, y=0,
                  blend_src=GL_SRC_ALPHA,
                  blend_dest=GL_ONE_MINUS_SRC_ALPHA,
                  batch=None,
@@ -217,8 +217,8 @@ class Sprite(event.EventDispatcher):
             self._vertex_list.delete()
 
     def delete(self):
-        '''Force immediate removal of the sprite from video memory.  
-        
+        '''Force immediate removal of the sprite from video memory.
+
         This is often necessary when using batches, as the Python garbage
         collector will not necessarily call the finalizer as soon as the
         sprite is garbage.
@@ -269,15 +269,15 @@ class Sprite(event.EventDispatcher):
     batch (for individual drawing).  Note that this can be an expensive
     operation.
 
-    :type: `Batch` 
+    :type: `Batch`
     ''')
 
     def _set_group(self, group):
         if self._group.parent == group:
             return
 
-        self._group = SpriteGroup(self._texture, 
-                                  self._group.blend_src, 
+        self._group = SpriteGroup(self._texture,
+                                  self._group.blend_src,
                                   self._group.blend_dest,
                                   group)
 
@@ -291,7 +291,7 @@ class Sprite(event.EventDispatcher):
     group = property(_get_group, _set_group,
                      doc='''Parent graphics group.
 
-    The sprite can change its rendering group, however this can be an 
+    The sprite can change its rendering group, however this can be an
     expensive operation.
 
     :type: `Group`
@@ -325,8 +325,8 @@ class Sprite(event.EventDispatcher):
 
     def _set_texture(self, texture):
         if texture.id is not self._texture.id:
-            self._group = SpriteGroup(texture, 
-                                      self._group.blend_src, 
+            self._group = SpriteGroup(texture,
+                                      self._group.blend_src,
                                       self._group.blend_dest,
                                       self._group.parent)
             if self._batch is None:
@@ -341,7 +341,7 @@ class Sprite(event.EventDispatcher):
 
     def _create_vertex_list(self):
         if self._batch is None:
-            self._vertex_list = graphics.vertex_list(4, 
+            self._vertex_list = graphics.vertex_list(4,
                 'v2i', 'c4B', ('t3f', self._texture.tex_coords))
         else:
             self._vertex_list = self._batch.add(4, GL_QUADS, self._group,
@@ -417,7 +417,7 @@ class Sprite(event.EventDispatcher):
 
     x = property(lambda self: self._x, _set_x,
                  doc='''X coordinate of the sprite.
-                 
+
     :type: int
     ''')
 
@@ -437,7 +437,10 @@ class Sprite(event.EventDispatcher):
 
     rotation = property(lambda self: self._rotation, _set_rotation,
                         doc='''Clockwise rotation of the sprite, in degrees.
-                        
+
+    The sprite image will be rotated about its image's (anchor_x, anchor_y)
+    position.
+
     :type: float
     ''')
 
@@ -447,10 +450,10 @@ class Sprite(event.EventDispatcher):
 
     scale = property(lambda self: self._scale, _set_scale,
                      doc='''Scaling factor.
-                     
+
     A scaling factor of 1 (the default) has no effect.  A scale of 2 will draw
     the sprite at twice the native size of its image.
-    
+
     :type: float
     ''')
 
@@ -463,7 +466,7 @@ class Sprite(event.EventDispatcher):
     ''')
 
     height = property(lambda self: int(self._texture.height * self._scale),
-                      doc='''Scaled height of the sprite. 
+                      doc='''Scaled height of the sprite.
 
     Read-only.  Invariant under rotation.
 
@@ -476,7 +479,7 @@ class Sprite(event.EventDispatcher):
 
     opacity = property(lambda self: self._opacity, _set_opacity,
                        doc='''Blend opacity.
-                       
+
     This property sets the alpha component of the colour of the sprite's
     vertices.  With the default blend mode (see the constructor), this
     allows the sprite to be drawn with fractional opacity, blending with the
@@ -494,7 +497,7 @@ class Sprite(event.EventDispatcher):
 
     visible = property(lambda self: self._visible, _set_visible,
                        '''True if the sprite will be drawn.
-    
+
     :type: bool
     ''')
 
@@ -516,7 +519,7 @@ class Sprite(event.EventDispatcher):
             The event is triggered only if the sprite has an animation, not an
             image.  For looping animations, the event is triggered each time
             the animation loops.
-            
+
             :event:
             '''
 
