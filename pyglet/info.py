@@ -89,6 +89,18 @@ def dump_avbin():
     except:
         print 'AVbin not available.'
 
+def dump_al():
+    '''Dump OpenAL info.'''
+    try:
+        from pyglet.media.drivers import openal
+        print 'Library:', openal.al._lib
+        print 'Version:', openal.get_version()
+        print 'Extensions:'
+        for extension in openal.get_extensions():
+            print '  ', extension
+    except:
+        print 'OpenAL not available.'
+
 def _try_dump(heading, func):
     _heading(heading)
     try:
@@ -106,6 +118,7 @@ def dump():
     _try_dump('pyglet.gl.glu_info', dump_glu)
     _try_dump('pyglet.media', dump_media)
     _try_dump('pyglet.media.avbin', dump_avbin)
+    _try_dump('pyglet.media.drivers.openal', dump_al)
 
 if __name__ == '__main__':
     dump()
