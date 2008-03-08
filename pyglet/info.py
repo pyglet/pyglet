@@ -45,7 +45,7 @@ def dump_window():
     screens = display.get_screens()
     for i, screen in enumerate(screens):
         print 'screens[%d]: %r' % (i, screen)
-    window = pyglet.window.Window()
+    window = pyglet.window.Window(visible=False)
     for key, value in window.config.get_gl_attributes():
         print "config['%s'] = %r" % (key, value)
     print 'context:', repr(window.context)
