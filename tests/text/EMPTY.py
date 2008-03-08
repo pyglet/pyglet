@@ -28,7 +28,7 @@ class TestWindow(window.Window):
         self.batch = graphics.Batch()
         self.document = doctype()
         self.layout = layout.IncrementalTextLayout(self.document,
-            10, 10, batch=self.batch)
+            self.width, self.height, batch=self.batch)
 
     def on_draw(self):
         gl.glClearColor(1, 1, 1, 1)

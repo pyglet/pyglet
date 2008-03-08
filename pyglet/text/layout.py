@@ -675,8 +675,8 @@ class TextLayout(object):
     _update_enabled = True
     _own_batch = False
 
-    def __init__(self, document, multiline=False, dpi=None, 
-                 batch=None, group=None):
+    def __init__(self, document, width=None, height=None,
+                 multiline=False, dpi=None, batch=None, group=None):
         '''Create a text layout.
 
         :Parameters:
@@ -706,11 +706,12 @@ class TextLayout(object):
             self._own_batch = True
         self.batch = batch
 
-        self._multiline = multiline
+        if width is not None:
+            self._width = width
+        if height is not None:
+            self._height = height
         if multiline:
-            # Hack default width so we don't crash during initial layout
-            # Complete waste of time.
-            self._width = 100000
+            self._multiline = multiline
 
             # Default bottom for multiline, baseline for single line
             self._valign = 'bottom'
@@ -1377,7 +1378,7 @@ class TextLayout(object):
     :type: int
     ''')
 
-    _multiline = True
+    _multiline = False
     def _set_multiline(self, multiline):
         self._multiline = multiline
         self._update()
@@ -1469,14 +1470,8 @@ class ScrollableTextLayout(TextLayout):
     '''
     def __init__(self, document, width, height, multiline=False, dpi=None,
                  batch=None, group=None):
-        self._width = width
-        self._height = height
         super(ScrollableTextLayout, self).__init__(
-            document, multiline, dpi, batch, group)
-
-        # TODO this forces another layout
-        self.width = width
-        self.height = height
+            document, width, height, multiline, dpi, batch, group)
 
     def _init_groups(self, group):
         # Scrollable layout never shares group becauase of translation.   
@@ -1622,6 +1617,11 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
 
         ScrollableTextLayout.__init__(self,
             document, width, height, multiline, dpi, batch, group)
+
+        self.top_group.width = width
+        self.top_group.left = self._get_left()
+        self.top_group.height = height
+        self.top_group.top = self._get_top(self._get_lines())
 
     def _init_document(self):
         assert self._document, \
@@ -1900,7 +1900,6 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
 
     def _set_width(self, width):
         if width == self._width:
-            # Quick optimisation for speeding up vertical resize.
             return
 
         self.invalid_flow.invalidate(0, len(self.document.text))
@@ -1913,6 +1912,9 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
 
     # Recalculate visible lines when height changes
     def _set_height(self, height):
+        if height == self._height:
+            return
+
         super(IncrementalTextLayout, self)._set_height(height)
         if self._update_enabled:
             self._update_visible_lines()

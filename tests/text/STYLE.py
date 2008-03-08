@@ -178,7 +178,7 @@ class TestWindow(window.Window):
         self.document = text.decode_attributed(doctext)
         self.margin = 2
         self.layout = layout.IncrementalTextLayout(self.document,
-            10, 10, # on_resize resolves this before layout happens
+            self.width - self.margin * 2, self.height - self.margin * 2,
             multiline=True,
             batch=self.batch)
         self.caret = caret.Caret(self.layout)
