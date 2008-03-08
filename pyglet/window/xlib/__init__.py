@@ -393,7 +393,7 @@ class XlibGLConfig13(XlibGLConfig):
             result = glx.glXGetFBConfigAttrib(
                 self._display, self._fbconfig, attr, byref(value))
             if result >= 0:
-                setattr(self, name, value)
+                setattr(self, name, value.value)
 
     def get_visual_info(self):
         return glx.glXGetVisualFromFBConfig(
