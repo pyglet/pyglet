@@ -143,7 +143,7 @@ class DirectSoundAudioPlayer(AudioPlayer):
             # Play cursor behind write cursor, wraps around
             write_size = self._buffer_size - self._write_cursor + play_cursor
 
-        if write_size < self._update_buffer_size:
+        if write_size < self._update_buffer_size and not self._dirty_size:
             return 0
 
         return write_size
