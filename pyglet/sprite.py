@@ -59,6 +59,10 @@ draw event handler::
 The sprite can be moved by modifying the ``x`` and ``y`` properties.  Other
 properties determine the sprite's rotation, scale and opacity.
 
+The sprite's positioning, rotation and scaling all honor the original
+image's anchor (anchor_x, anchor_y).
+
+
 Drawing multiple sprites
 ========================
 
