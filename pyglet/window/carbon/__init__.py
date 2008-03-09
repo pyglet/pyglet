@@ -647,11 +647,11 @@ class CarbonWindow(BaseWindow):
             raise 'Error %d' % result
 
     def dispatch_pending_events(self):
-        if self._recreate_deferred:
-            self._recreate_immediate()
-
         while self._event_queue:
             EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
+
+        if self._recreate_deferred:
+            self._recreate_immediate()
 
     def set_caption(self, caption):
         self._caption = caption
