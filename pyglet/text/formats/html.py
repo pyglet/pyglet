@@ -59,19 +59,6 @@ import re
 import pyglet
 from pyglet.text.formats import structured
 
-def int_to_roman(input):
-    # From http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/81611
-    if not 0 < input < 4000:
-        raise ValueError, "Argument must be between 1 and 3999"    
-    ints = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,   4,  1)
-    nums = ('M',  'CM', 'D', 'CD','C', 'XC','L','XL','X','IX','V','IV','I')
-    result = ""
-    for i in range(len(ints)):
-        count = int(input / ints[i])
-        result += nums[i] * count
-        input -= ints[i] * count
-    return result
-
 def _hex_color(val):
     return [(val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff, 255]
 
