@@ -51,10 +51,14 @@ from pyglet.window.carbon.constants import _name
 from pyglet.window.carbon.types import *
 
 Handle = POINTER(POINTER(c_byte))
+
 GWorldPtr = c_void_p
 carbon.NewHandle.restype = Handle
 HandleDataHandlerSubType = _name('hndl')
+PointerDataHandlerSubType = _name('ptr ')
+kDataHCanRead = 1
 kDataRefExtensionFileName = _name('fnam')
+kDataRefExtensionMIMEType = _name('mime')
 ComponentInstance = c_void_p
    
 k1MonochromePixelFormat       = 0x00000001
@@ -79,6 +83,12 @@ movieTrackEnabledOnly = 1 << 2
 VisualMediaCharacteristic = _name('eyes')
 nextTimeMediaSample           = 1
 
+class PointerDataRefRecord(Structure):
+    _fields_ = [
+        ('data', c_void_p),
+        ('dataLength', c_long)
+    ]
+
 def Str255(value):
     return create_string_buffer(chr(len(value)) + value)
 
@@ -92,19 +102,36 @@ class QuickTimeImageDecoder(ImageDecoder):
         return ['.gif']
 
     def _get_data_ref(self, file, filename):
-        data = file.read()
-        handle = Handle()
-        dataref = Handle()
-        carbon.PtrToHand(data, byref(handle), len(data))
-        carbon.PtrToHand(byref(handle), byref(dataref), sizeof(Handle))
+        self._data_hold = data = create_string_buffer(file.read())
 
-        self.filename = filename = Str255(filename)
+        dataref = carbon.NewHandle(sizeof(PointerDataRefRecord))
+        datarec = cast(dataref,
+            POINTER(POINTER(PointerDataRefRecord))).contents.contents
+        datarec.data = addressof(data)
+        datarec.dataLength = len(data)
+
+        self._data_handler_holder = data_handler = ComponentInstance() 
+        r = quicktime.OpenADataHandler(dataref, PointerDataHandlerSubType,
+            None, 0, None, kDataHCanRead, byref(data_handler))
+        _oscheck(r)
+
+        extension_handle = Handle()
+
+        self._filename_hold = filename = Str255(filename)
+        r = carbon.PtrToHand(filename, byref(extension_handle), len(filename))
+        r = quicktime.DataHSetDataRefExtension(data_handler, extension_handle,
+                                               kDataRefExtensionFileName)
+        _oscheck(r)
+        quicktime.DisposeHandle(extension_handle)
+
+        quicktime.DisposeHandle(dataref)
+
+        dataref = c_void_p()
+        r = quicktime.DataHGetDataRef(data_handler, byref(dataref))
+        _oscheck(r)
         
-        filename_handle = Handle()
-        carbon.PtrToHand(filename, byref(filename_handle), len(filename) + 1)
-        quicktime.DataHSetDataRefExtension(dataref, filename_handle,
-                                           kDataRefExtensionFileName)
-
+        quicktime.CloseComponent(data_handler)
+        
         return dataref
 
     def _get_formats(self):
@@ -121,7 +148,7 @@ class QuickTimeImageDecoder(ImageDecoder):
         dataref = self._get_data_ref(file, filename)
         importer = ComponentInstance()
         quicktime.GetGraphicsImporterForDataRef(dataref, 
-            HandleDataHandlerSubType, byref(importer))
+            PointerDataHandlerSubType, byref(importer))
 
         if not importer:
             raise ImageDecodeException(filename or file)
@@ -166,7 +193,7 @@ class QuickTimeImageDecoder(ImageDecoder):
                                       newMovieActive,
                                       0,
                                       data_ref,
-                                      HandleDataHandlerSubType)
+                                      PointerDataHandlerSubType)
 
         if not movie:
             #_oscheck(result)
