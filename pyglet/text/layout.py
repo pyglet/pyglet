@@ -959,10 +959,14 @@ class TextLayout(object):
             self._document.get_style_runs('align'),
             lambda value: value in ('left', 'right', 'center'), 
             'left')
-        wrap_iterator = runlist.FilteredRunIterator(
-            self._document.get_style_runs('wrap'),
-            lambda value: value in (True, False),
-            True)
+        if self._width is None:
+            wrap_iterator = runlist.ConstRunIterator(
+                len(self.document.text), False)
+        else:
+            wrap_iterator = runlist.FilteredRunIterator(
+                self._document.get_style_runs('wrap'),
+                lambda value: value in (True, False),
+                True)
         margin_left_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs('margin_left'), 
             lambda value: value is not None, 0)
@@ -987,7 +991,10 @@ class TextLayout(object):
             line.paragraph_begin = True
             line.margin_left += self._points_to_pixels(indent_iterator[start])
         wrap = wrap_iterator[start]
-        width = self._width - line.margin_left - line.margin_right
+        if self._width is None:
+            width = None
+        else:
+            width = self._width - line.margin_left - line.margin_right
 
         # Current right-most x position in line being laid out.
         x = 0
@@ -1151,8 +1158,9 @@ class TextLayout(object):
                         wrap = wrap_iterator[next_start]
                         line.margin_left += \
                             self._points_to_pixels(indent_iterator[next_start])
-                        width = (self._width - 
-                                 line.margin_left - line.margin_right)
+                        if width is not None:
+                            width = (self._width - 
+                                     line.margin_left - line.margin_right)
                     elif not new_line:
                         # If the glyph was any non-whitespace, non-newline
                         # character, add it to the pending run.

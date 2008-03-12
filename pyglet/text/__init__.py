@@ -236,8 +236,8 @@ class DocumentLabel(layout.TextLayout):
                 Anchor point of the Y coordinate: one of ``"bottom"``,
                 ``"baseline"``, ``"center"`` or ``"top"``.
             `multiline` : bool
-                If True, the label will be word-wrapped.  You must also
-                set the width of the label.
+                If True, the label will be word-wrapped and accept newline
+                characters.  You must also set the width of the label.
             `dpi` : float
                 Resolution of the fonts in this layout.  Defaults to 96.
             `batch` : `Batch`
@@ -372,8 +372,8 @@ class Label(DocumentLabel):
                 Anchor point of the Y coordinate: one of ``"bottom"``,
                 ``"baseline"``, ``"center"`` or ``"top"``.
             `multiline` : bool
-                If True, the label will be word-wrapped.  You must also
-                set the width of the label.
+                If True, the label will be word-wrapped and accept newline
+                characters.  You must also set the width of the label.
             `dpi` : float
                 Resolution of the fonts in this layout.  Defaults to 96.
             `batch` : `Batch`
@@ -422,8 +422,8 @@ class HTMLLabel(DocumentLabel):
                 Anchor point of the Y coordinate: one of ``"bottom"``,
                 ``"baseline"``, ``"center"`` or ``"top"``.
             `multiline` : bool
-                If True, the label will be word-wrapped.  You must also
-                set the width of the label.
+                If True, the label will be word-wrapped and render paragraph
+                and line breaks.  You must also set the width of the label.
             `dpi` : float
                 Resolution of the fonts in this layout.  Defaults to 96.
             `batch` : `Batch`
