@@ -112,17 +112,17 @@ See `pyglet.graphics.vertexattribute` for the complete syntax of the vertex
 format string.
 
 When no initial data is to be given, the data item is just the format string.
-For example, the following creates a 4 element vertex list with position and
+For example, the following creates a 2 element vertex list with position and
 color attributes::
 
-    vertex_list = pyglet.graphics.vertex_list(4, 'v2f', 'c4B')
+    vertex_list = pyglet.graphics.vertex_list(2, 'v2f', 'c4B')
 
 When initial data is required, wrap the format string and the initial data in
 a tuple, for example::
 
-    vertex_list = pyglet.graphics.vertex_list(4, 
+    vertex_list = pyglet.graphics.vertex_list(2, 
                                               ('v2f', (0.0, 1.0, 1.0, 0.0)),
-                                              ('c4B', (255, 255, 255, 255)))
+                                              ('c4B', (255, 255, 255, 255) * 2))
 
 Drawing modes
 =============
