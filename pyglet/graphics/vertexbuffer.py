@@ -99,7 +99,7 @@ def create_mappable_buffer(size,
 
     :rtype: `AbstractBuffer` with `AbstractMappable`
     '''
-    if vbo and gl_info.have_version(1, 5):
+    if vbo and gl_info.have_version(1, 5) and _enable_vbo:
         return MappableVertexBufferObject(size, target, usage)
     else:
         return VertexArray(size)
