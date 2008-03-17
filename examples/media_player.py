@@ -298,10 +298,10 @@ class PlayerWindow(pyglet.window.Window):
         
         # Video
         if self.player.source and self.player.source.video_format:
-            self.player.texture.blit(self.video_x,
-                                     self.video_y,
-                                     width=self.video_width,
-                                     height=self.video_height)
+            self.player.get_texture().blit(self.video_x,
+                                           self.video_y,
+                                           width=self.video_width,
+                                           height=self.video_height)
 
         # GUI
         self.slider.value = self.player.time

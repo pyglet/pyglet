@@ -1153,12 +1153,27 @@ class Player(event.EventDispatcher):
         :type: float
         ''')
 
+    def get_texture(self):
+        '''Get the texture for the current video frame.
+
+        You should call this method every time you display a frame
+        of video, as multiple textures might be used.  The return value will
+        be `None` if there is no video in the current source.
+
+        :since: pyglet 1.1
+
+        :rtype: `pyglet.image.Texture`
+        '''
+        return self._texture
+
     texture = property(lambda self: self._texture,
                        doc='''The video texture.
 
         You should rerequest this property every time you display a frame
         of video, as multiple textures might be used.  This property will
         be `None` if there is no video in the current source.
+
+        :deprecated: Use `get_texture`.
 
         :type: `pyglet.image.Texture`
         ''')
