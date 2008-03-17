@@ -77,8 +77,11 @@ import sys
 import time
 import StringIO
 
+import pyglet
 from pyglet import clock
 from pyglet import event
+
+_debug_media = pyglet.options['debug_media']
 
 class MediaException(Exception):
     pass
@@ -214,8 +217,9 @@ class AudioPlayer(object):
     '''Abstract low-level interface for playing audio.
 
     AudioPlayer has no knowledge of sources or eos behaviour.  Once
-    created, its audio format cannot be modified.  Behaviour is undefined if
-    there is a data underrun.
+    created, its audio format cannot be modified.  The player will attempt
+    to recover automatically from a buffer underrun (but this is not
+    guaranteed).
     
     Applications should not use this class directly, but instead use `Player`.
 
@@ -225,7 +229,7 @@ class AudioPlayer(object):
 
     '''
 
-    UPDATE_PERIOD = 0.1
+    UPDATE_PERIOD = 0.15
     
     def __init__(self, audio_format):
         '''Create a new audio player for the given audio format.
@@ -920,10 +924,17 @@ class Player(event.EventDispatcher):
             self._fill_audio()
 
         if self._audio:
-            self._audio.pump()
+            underrun = self._audio.pump()
             while self._audio.clear_eos():
                 if not self._on_eos():
                     return
+            if underrun:
+                self._audio.UPDATE_PERIOD *= 0.75
+                self._audio.__class__.UPDATE_PERIOD *= 0.75
+                self._update_schedule()
+                if _debug_media:
+                    print '%r underrun: reducing update period to %.2f' % \
+                        (self._audio, self._audio.UPDATE_PERIOD)
         else:
             if self._playing:
                 t = time.time()

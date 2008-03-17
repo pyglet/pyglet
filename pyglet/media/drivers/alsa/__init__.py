@@ -218,8 +218,19 @@ class ALSAAudioPlayer(AudioPlayer):
         return timestamp.tv_sec + timestamp.tv_usec * 0.000001
 
     def pump(self):
+        underrun = False
+
         if self._stop_alsatime is not None:
-            return
+            return underrun
+
+        # Check that ALSA's still playing
+        if self._playing:
+            state = asound.snd_pcm_state(self.pcm)
+            if state not in (asound.SND_PCM_STATE_RUNNING,
+                             asound.SND_PCM_STATE_PREPARED):
+                # Underrun!
+                check(asound.snd_pcm_prepare(self.pcm))
+                underrun = True
 
         alsatime = self._get_asound_time()
         try:
@@ -230,6 +241,8 @@ class ALSAAudioPlayer(AudioPlayer):
                     self._timestamps.pop(0)
         except IndexError:
             pass
+
+        return underrun
 
     def get_time(self):
         if self._stop_alsatime is None:

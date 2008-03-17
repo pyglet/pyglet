@@ -101,7 +101,7 @@ class OpenALAudioPlayer(AudioPlayer):
     #: Maximum size of an OpenAL buffer, in bytes.  TODO: use OpenAL maximum
     _max_buffer_size = 65536
 
-    UPDATE_PERIOD = 0.07
+    UPDATE_PERIOD = 0.05
 
     def __init__(self, audio_format):
         super(OpenALAudioPlayer, self).__init__(audio_format)
@@ -212,6 +212,7 @@ class OpenALAudioPlayer(AudioPlayer):
         self._timestamps = []
 
     def pump(self):
+
         # Release spent buffers
         processed = al.ALint()
         al.alGetSourcei(self._al_source, al.AL_BUFFERS_PROCESSED, processed)
@@ -245,9 +246,13 @@ class OpenALAudioPlayer(AudioPlayer):
             self._current_buffer_time = time.time() - \
                 self._timestamp_system_time
 
-        # Begin playing if underrun previously
+        # Check for underrun
         if self._playing:
-            self._al_play()
+            state = al.ALint()
+            al.alGetSourcei(self._al_source, al.AL_SOURCE_STATE, state)
+            if state.value != al.AL_PLAYING:
+                al.alSourcePlay(self._al_source)
+                return True # underrun notification
 
     def get_time(self):
         state = al.ALint()
