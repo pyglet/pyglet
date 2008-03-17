@@ -170,6 +170,7 @@ class Sprite(event.EventDispatcher):
     _opacity = 255
     _scale = 1.0
     _visible = True
+    _vertex_list = None
 
     def __init__(self,
                  img, x=0, y=0,
