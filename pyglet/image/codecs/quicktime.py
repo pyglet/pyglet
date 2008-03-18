@@ -226,8 +226,6 @@ class QuickTimeImageDecoder(ImageDecoder):
         if not visual:
             raise ImageDecodeException('No video track')
 
-        animation = Animation([])
-
         time = 0
 
         interesting_time = c_int()
@@ -239,6 +237,8 @@ class QuickTimeImageDecoder(ImageDecoder):
             byref(interesting_time),
             None)
         duration = interesting_time.value / time_scale
+
+        frames = []
 
         while time >= 0:
             result = quicktime.GetMoviesError()
@@ -254,7 +254,7 @@ class QuickTimeImageDecoder(ImageDecoder):
             buffer_copy = (c_byte * len(buffer))()
             memmove(buffer_copy, buffer, len(buffer))
             image = ImageData(width, height, format, buffer_copy, -pitch)
-            animation.frames.append(AnimationFrame(image, duration))
+            frames.append(AnimationFrame(image, duration))
 
             interesting_time = c_int()
             duration = c_int()
@@ -275,7 +275,7 @@ class QuickTimeImageDecoder(ImageDecoder):
 
         quicktime.ExitMovies()
 
-        return animation
+        return Animation(frames)
 
 def get_decoders():
     return [QuickTimeImageDecoder()]
