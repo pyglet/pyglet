@@ -269,6 +269,14 @@ class CarbonScreen(Screen):
             int(rect.size.width), int(rect.size.height))
         self.id = id
 
+        mode = carbon.CGDisplayCurrentMode(id)
+        kCGDisplayRefreshRate = _create_cfstring('RefreshRate')
+        number = carbon.CFDictionaryGetValue(mode, kCGDisplayRefreshRate)
+        refresh = c_long()
+        kCFNumberLongType = 10
+        carbon.CFNumberGetValue(number, kCFNumberLongType, byref(refresh))
+        self._refresh_rate = refresh.value
+
     def get_gdevice(self):
         gdevice = GDHandle()
         r = carbon.DMGetGDeviceByDisplayID(self.id, byref(gdevice), False)
@@ -488,7 +496,8 @@ class CarbonWindow(BaseWindow):
             #self._width = self.screen.width
             #self._height = self.screen.height
             agl.aglSetFullScreen(self._agl_context, 
-                                 self._width, self._height, 0, 0)
+                                 self._width, self._height,
+                                 self.screen._refresh_rate, 0)
             self._mouse_in_window = True
             self.dispatch_event('on_resize', self._width, self._height)
             self.dispatch_event('on_show')
