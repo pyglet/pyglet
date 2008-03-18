@@ -751,6 +751,8 @@ class CarbonWindow(BaseWindow):
             carbon.HideWindow(self._window)
 
     def minimize(self):
+        self._mouse_in_window = False
+        self.set_mouse_platform_visible()
         carbon.CollapseWindow(self._window, True)
 
     def maximize(self):
