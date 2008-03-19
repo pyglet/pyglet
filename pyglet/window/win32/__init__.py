@@ -527,6 +527,8 @@ class Win32Window(BaseWindow):
 
     def close(self):
         super(Win32Window, self).close()
+        if not self._hwnd:
+            return
         _user32.DestroyWindow(self._hwnd)
         _user32.UnregisterClassW(self._window_class.lpszClassName, 0)
         self.set_mouse_platform_visible(True)

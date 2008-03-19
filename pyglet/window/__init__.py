@@ -792,6 +792,8 @@ class BaseWindow(EventDispatcher):
         `pyglet.app.event_loop` when this method is called.
         '''
         from pyglet import app
+        if not self._context:
+            return
         app.windows.remove(self)
         self._context.destroy()
         self._config = None

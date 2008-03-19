@@ -590,6 +590,8 @@ class CarbonWindow(BaseWindow):
 
     def close(self):
         super(CarbonWindow, self).close()
+        if not self._agl_context:
+            return
         self._agl_context = None
         self._remove_event_handlers()
         self._remove_track_region()
