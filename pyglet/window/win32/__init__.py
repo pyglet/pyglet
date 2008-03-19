@@ -360,7 +360,8 @@ class Win32Context(gl.Context):
         self._context = wgl.wglCreateContext(window._dc)
         if self._share:
             assert self._share._context is not None
-            wgl.wglShareLists(self._share._context, self._context)
+            if not wgl.wglShareLists(self._share._context, self._context):
+                raise gl.ContextException('Unable to share contexts')
 
     def destroy(self):
         super(Win32Context, self).destroy()
@@ -373,7 +374,8 @@ class Win32ContextARB(Win32Context):
         self._context = wgl.wglCreateContext(window._dc)
         if self._share:
             assert self._share._context is not None
-            wgl.wglShareLists(self._share._context, self._context)
+            if not wgl.wglShareLists(self._share._context, self._context):
+                raise gl.ContextException('Unable to share contexts')
 
 class Win32MouseCursor(MouseCursor):
     drawable = False
