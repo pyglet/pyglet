@@ -498,7 +498,7 @@ class Sprite(event.EventDispatcher):
     :type: int
     ''')
 
-    def _set_color(self, rgb)
+    def _set_color(self, rgb):
         self._rgb = map(int, rgb)
         self._update_color()
 
