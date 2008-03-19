@@ -1,2 +1,47 @@
 The application event loop
 ==========================
+
+.. about pyglet.app.run, pyglet.app.exit, clock.schedule*
+
+.. about EventLoop, subclassing, overriding idle
+
+Dispatching events manually
+---------------------------
+
+.. XXX reword this
+
+When do event handlers get called?  pyglet is single-threaded, and will only
+call event handlers at predictable points in your code.  Events will queue up
+until a `dispatch_events` function or method is called, at which point the
+appropriate event handlers are called, in the order that the events arrived
+in.
+
+`Window.dispatch_events` is the method which performs this task for a single
+window.  Though the user may resize a window at any time, the `on_resize`
+handler shown above is only notified when you call `dispatch_events`.  This
+leads inevitably to requiring some sort of main event or "run" loop::
+
+    while not win.has_exit:
+        win.dispatch_events()
+
+Note that unlike in other window frameworks, pyglet does not block on
+`dispatch_events` -- if there are no events pending, control is returned to
+your program immediately.
+
+For `pyglet.media`, the single `media.dispatch_events` function handles the
+dispatch of events for all media instances.  An application with two windows
+and any number of sounds and videos would have a run loop similar to::
+    
+    from pyglet import media
+
+    while not (win1.has_exit or win2.has_exit):
+        win1.dispatch_events()
+        win2.dispatch_events()
+        media.dispatch_events()
+
+It is necessary to call `dispatch_events` for every window that you create,
+and for `pyglet.media` if you have any sounds or videos playing, even if you
+have no event handlers.  This is so that behind-the-scenes operating system
+events can be processed (remember, pyglet is single-threaded).
+
+
