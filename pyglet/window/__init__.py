@@ -696,7 +696,8 @@ class BaseWindow(EventDispatcher):
         visible display with the back buffer.  The contents of the back buffer
         is undefined after this operation.
 
-        Windows are double-buffered by default.
+        Windows are double-buffered by default.  This method is called
+        automatically by `EventLoop` after the `on_draw` event.
         '''
         raise NotImplementedError('abstract')
 
@@ -1599,8 +1600,6 @@ class BaseWindow(EventDispatcher):
             You should make no assumptions about the window contents when
             this event is triggered; a resize or expose event may have
             invalidated the framebuffer since the last time it was drawn.
-
-            The default handler clears the window background.
 
             :since: pyglet 1.1
 
