@@ -125,8 +125,8 @@ _motion_map = {
     (key.END, False):       key.MOTION_END_OF_LINE,
     (key.PAGEUP, False):    key.MOTION_PREVIOUS_PAGE,
     (key.PAGEDOWN, False):  key.MOTION_NEXT_PAGE,
-    (key.PAGEUP, True):     key.MOTION_BEGINNING_OF_FILE,
-    (key.PAGEDOWN, True):   key.MOTION_END_OF_FILE,
+    (key.HOME, True):       key.MOTION_BEGINNING_OF_FILE,
+    (key.END, True):        key.MOTION_END_OF_FILE,
     (key.BACKSPACE, False): key.MOTION_BACKSPACE,
     (key.DELETE, False):    key.MOTION_DELETE,
 }
