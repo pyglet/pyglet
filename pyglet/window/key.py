@@ -180,6 +180,12 @@ MOD_COMMAND     = 1 << 6
 MOD_OPTION      = 1 << 7
 MOD_SCROLLLOCK  = 1 << 8
 
+#: Accelerator modifier.  On Windows and Linux, this is ``MOD_CTRL``, on
+#: Mac OS X it's ``MOD_COMMAND``.
+MOD_ACCEL       = MOD_CTRL
+import sys as _sys
+if _sys.platform == 'darwin':
+    MOD_ACCEL   = MOD_COMMAND
 
 
 # Key symbol constants
