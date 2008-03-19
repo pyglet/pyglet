@@ -262,6 +262,21 @@ def run():
     '''
     EventLoop().run()
 
+def exit():
+    '''Exit the application event loop.
+
+    Causes the application event loop to finish, if an event loop is currently
+    running.  The application may not necessarily exit (for example, there may
+    be additional code following the `run` invocation).
+
+    This is a convenience function, equivalent to::
+
+        event_loop.exit()
+
+    '''
+    if event_loop:
+        event_loop.exit()
+
 if _is_epydoc:
     EventLoop = BaseEventLoop
     EventLoop.__name__ = 'EventLoop'
