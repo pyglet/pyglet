@@ -39,19 +39,14 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-import os
+import pyglet
 
-from pyglet import image
-from pyglet import window
+window = pyglet.window.Window()
+image = pyglet.resource.image('kitten.jpg')
 
-win = window.Window()
+@window.event
+def on_draw():
+    window.clear()
+    image.blit(0, 0)
 
-img_filename = os.path.join(os.path.dirname(__file__), 'kitten.jpg')
-img = image.load(img_filename)
-
-while not win.has_exit:
-    win.dispatch_events()
-
-    win.clear()
-    img.blit(0, 0)
-    win.flip()
+pyglet.app.run()

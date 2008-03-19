@@ -36,26 +36,18 @@
 '''Demonstrates a useful pattern for pyglet applications: subclassing Window.
 '''
 
-from pyglet import font
-from pyglet import window
+import pyglet
 
-class HelloWorldWindow(window.Window):
+class HelloWorldWindow(pyglet.window.Window):
     def __init__(self):
         super(HelloWorldWindow, self).__init__()
 
-        ft = font.load('Arial', 36)
-        self.text = font.Text(ft, 'Hello, World!')
+        self.label = pyglet.text.Label('Hello, world!')
 
-    def draw(self):
-        self.text.draw()
-
-    def run(self):
-        while not self.has_exit:
-            self.dispatch_events()
-
-            self.clear()
-            self.draw()
-            self.flip()
+    def on_draw(self):
+        self.clear()
+        self.label.draw()
 
 if __name__ == '__main__':
-    HelloWorldWindow().run()
+    window = HelloWorldWindow()
+    pyglet.app.run()

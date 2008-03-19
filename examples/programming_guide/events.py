@@ -39,12 +39,13 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet import window
+import pyglet
 from pyglet.window import key
 from pyglet.window import mouse
 
-win = window.Window()
+window = pyglet.window.Window()
 
+@window.event
 def on_key_press(symbol, modifiers):
     if symbol == key.A:
         print 'The "A" key was pressed.'
@@ -53,16 +54,13 @@ def on_key_press(symbol, modifiers):
     elif symbol == key.ENTER:
         print 'The enter key was pressed.'
 
-win.on_key_press = on_key_press
-
+@window.event
 def on_mouse_press(x, y, button, modifiers):
     if button == mouse.LEFT:
         print 'The left mouse button was pressed.'
 
-win.on_mouse_press = on_mouse_press
+@window.event
+def on_draw():
+    window.clear()
 
-while not win.has_exit:
-    win.dispatch_events()
-
-    win.clear()
-    win.flip()
+pyglet.app.run()

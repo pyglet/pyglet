@@ -16,65 +16,76 @@ We'll begin with the requisite "Hello, World" introduction.  This program will
 open a window with some text in it and wait to be closed.  You can find the
 entire program in the `examples/programming_guide/hello_world.py` file.
 
-Begin by importing the modules from pyglet that we need::
+Begin by importing the pyglet package::
 
-    from pyglet import font
-    from pyglet import window
+    import pyglet
 
 Create a `Window` by calling its default constructor.  The window will be
 visible as soon as it's created, and will have reasonable default values for
 all its parameters::
 
-    win = window.Window()
+    window = pyglet.window.Window()
 
-To display the text, we'll create a `font.Text`.  The text requires a font,
-which we'll load from the system::
+To display the text, we'll create a `Label`.  Keyword arguments are used
+to set the font, position and alignment of the label::
 
-    ft = font.load('Arial', 36)
-    text = font.Text(ft, 'Hello, World!')
+    label = pyglet.text.Label('Hello, world', 
+                              font_name='Times New Roman', 
+                              font_size=36,
+                              x=window.width//2, y=window.height//2,
+                              halign='center', valign='center')
 
-Every pyglet application requires a "run loop".  You'll always need to write
-this loop yourself.  Within the loop, we need to:
+An `on_draw` event is dispatched to the window to give it a chance to redraw
+its contents.  pyglet provides several ways to attach event handlers to
+objects; a simple way is to use a decorator::
 
-* Update events for the window.  If you forget to do this, the window will
-  appear to "hang" and be unresponsive.
-* Clear the window
-* Draw the contents of the window.
+    @window.event
+    def on_draw():
+        window.clear()
+        label.draw()
 
-The run loop is shown below::
+Within the ``on_draw`` handler the window is cleared to the default background
+color (black), and the label is drawn.
 
-    while not win.has_exit:
-        win.dispatch_events()
-        win.clear()
-        text.draw()
-        win.flip()
+Finally, call::
 
-By default, windows in pyglet are double-buffered, which is necessary for
-flicker-free animation.  The `flip` method makes all previous drawing
-operations visible.
+    pyglet.app.run()
+
+To let pyglet respond to application events such as the mouse and keyboard.
+Your event handlers will now be called as required, and the `run` method will
+return only when all application windows have been closed.
+
+Note that earlier versions of pyglet required the application developer to
+write their own event-handling runloop.  This is still possible, but
+discouraged; see `The application event loop` for details.
 
 Image viewer
 ------------
 
 Most games will need to load and display images on the screen.  In this
-example we'll load an image and display it within the window::
+example we'll load an image from the application's directory and display it
+within the window::
 
-    from pyglet import image
-    from pyglet import window
+    import pyglet
 
-    win = window.Window()
+    window = pyglet.window.Window()
+    image = pyglet.resource.image('kitten.jpg')
 
-    img = image.load('kitten.jpg')
+    @window.event
+    def on_draw():
+        window.clear()
+        image.blit(0, 0)
 
-    while not win.has_exit:
-        win.dispatch_events()
-        win.clear()
-        img.blit(0, 0)
-        win.flip()
+    pyglet.app.run()
 
-We used the `image.load` function to load the image, and `AbstractImage.blit`
-method to draw it to the window.  The arguments ``(0, 0)`` tell pyglet to draw
-the image at pixel coordinates 0, 0 in the window (the lower-left corner).
+We used the `pyglet.resource.image` function to load the image, which
+automatically locates the file relative to the source file (rather than the
+working directory).  To load an image not bundled with the application (for
+example, specified on the command line, you would use `pyglet.image.load`).
+
+The `AbstractImage.blit` method draws the image.  The arguments ``(0, 0)``
+tell pyglet to draw the image at pixel coordinates 0, 0 in the window
+(the lower-left corner).
 
 The complete code for this example is located in
 `examples/programming_guide/image_viewer.py`.
@@ -82,23 +93,23 @@ The complete code for this example is located in
 Handling mouse and keyboard events
 ----------------------------------
 
-The ``dispatch_events`` method seen in the previous examples not only takes
-care of keeping the application responsive, it also calls any event handlers
-you install on the window.
+So far the only event used is the `on_draw` event.  To react to keyboard and
+mouse events, it's necessary to write and attach event handlers for these
+events as well.
 
-There are several ways to attach an event; the most straight-forward is to
-simply replace the method on the `Window` with your own function::
+    import pyglet
 
-    from pyglet import window
+    window = pyglet.window.Window()
 
+    @window.event
     def on_key_press(symbol, modifiers):
-        print 'A key was pressed.'
+        print 'A key was pressed'
 
-    win = window.Window()
-    win.on_key_press = on_key_press
+    @window.event
+    def on_draw():
+        window.clear()
 
-Remember to also write a run loop that calls `dispatch_events` every
-iteration.
+    pyglet.app.run()
 
 Keyboard events have two parameters: the virtual key `symbol` that was
 pressed, and a bitwise combination of any `modifiers` that are present (for
@@ -108,6 +119,7 @@ The key symbols are defined in `pyglet.window.key`::
 
     from pyglet.window import key
 
+    @window.event
     def on_key_press(symbol, modifiers):
         if symbol == key.A:
             print 'The "A" key was pressed.'
@@ -122,11 +134,10 @@ Mouse events are handled in a similar way::
 
     from pyglet.window import mouse
 
+    @window.event
     def on_mouse_press(x, y, button, modifiers):
         if button == mouse.LEFT:
             print 'The left mouse button was pressed.'
-
-    win.on_mouse_press = on_mouse_press
 
 The ``x`` and ``y`` parameters give the position of the mouse when the button
 was pressed, relative to the lower-left corner of the window.
@@ -135,9 +146,7 @@ There are more than 20 event types that you can handle on a window.  The
 easiest way to find the event name and parameters you need is to add the
 following line to your program::
 
-    from pyglet.window import event
-
-    win.push_handlers(event.WindowEventLogger())
+    window.push_handlers(pyglet.window.event.WindowEventLogger())
 
 This will cause all events received on the window to be printed to the
 console.
@@ -151,25 +160,24 @@ Playing sounds and music
 pyglet makes it easy to play and mix multiple sounds together in your game.
 The following example plays an MP3 file [#mp3]_::
 
-    from pyglet import media
+    import pyglet
 
-    music = media.load('music.mp3')
+    music = pyglet.resource.media('music.mp3')
     music.play()
 
-Short sounds, such as a gunfire shot used in a game should be decoded in
+    pyglet.app.run()
+
+As with the image loading example presented earlier, `pyglet.resource.media`
+locates the sound file in the application's directory (not the working
+directory).  If you know the actual filesystem path (either relative or
+absolute), use `pyglet.media.load`.
+
+Short sounds, such as a gunfire shot used in a game, should be decoded in
 memory before they are used, so that they play more immediately and incur less
 of a CPU performance penalty.  Specify ``streaming=False`` in this case::
 
-    sound = media.load('shot.wav', streaming=False)
+    sound = pyglet.resource.media('shot.wav', streaming=False)
     sound.play()
-
-Regardless of whether you are using streaming or non-streaming sounds, you
-must call `media.dispatch_events` in your run loop, in the same way that you
-do for `Window.dispatch_events`::
-
-    while not win.has_exit:
-        win.dispatch_events()
-        media.dispatch_events()
 
 The `examples/media_player.py` example demonstrates playback of streaming
 audio and video using pyglet.  The `examples/noisy/noisy.py` example

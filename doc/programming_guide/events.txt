@@ -62,8 +62,10 @@ subclassing the event dispatcher and adding the event handler as a method::
 
 In this case you must use the name of the event handler as the method name.
 
-Dispatching events
-------------------
+
+
+Dispatching events manually
+---------------------------
 
 When do event handlers get called?  pyglet is single-threaded, and will only
 call event handlers at predictable points in your code.  Events will queue up

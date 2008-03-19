@@ -41,7 +41,9 @@ __version__ = '$Id$'
 
 import pyglet
 
-window = pyglet.window.Window()
+config = pyglet.gl.Config(buffer_size=32)
+window = pyglet.window.Window(fullscreen=True)
+print window.config
 label = pyglet.text.Label('Hello, world', 
                           font_name='Times New Roman', 
                           font_size=36,
