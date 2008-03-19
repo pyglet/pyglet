@@ -168,6 +168,7 @@ class Sprite(event.EventDispatcher):
     _animation = None
     _rotation = 0
     _opacity = 255
+    _rgb = (255, 255, 255)
     _scale = 1.0
     _visible = True
     _vertex_list = None
@@ -393,7 +394,8 @@ class Sprite(event.EventDispatcher):
             self._vertex_list.vertices[:] = [x1, y1, x2, y1, x2, y2, x1, y2]
 
     def _update_color(self):
-        self._vertex_list.colors[:] = [255, 255, 255, int(self._opacity)] * 4
+        r, g, b = self._rgb
+        self._vertex_list.colors[:] = [r, g, b, int(self._opacity)] * 4
 
     def set_position(self, x, y):
         '''Set the X and Y coordinates of the sprite simultaneously.
@@ -490,10 +492,25 @@ class Sprite(event.EventDispatcher):
     allows the sprite to be drawn with fractional opacity, blending with the
     background.
 
-    An opacity of 1 (the default) has no effect.  An opacity of 0.5 will make
-    the sprite appear translucent.
+    An opacity of 255 (the default) has no effect.  An opacity of 128 will
+    make the sprite appear translucent.
 
-    :type: float
+    :type: int
+    ''')
+
+    def _set_color(self, rgb)
+        self._rgb = map(int, rgb)
+        self._update_color()
+
+    color = property(lambda self: self._color, _set_color,
+                       doc='''Blend color.
+
+    This property sets the color of the sprite's vertices. This allows the
+    sprite to be drawn with a color tint.
+    
+    The color should be specified between 0 (dark) and 255 (full).
+    
+    :type: (int, int, int)
     ''')
 
     def _set_visible(self, visible):
