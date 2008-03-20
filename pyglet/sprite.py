@@ -508,7 +508,8 @@ class Sprite(event.EventDispatcher):
     This property sets the color of the sprite's vertices. This allows the
     sprite to be drawn with a color tint.
     
-    The color should be specified between 0 (dark) and 255 (full).
+    The color is specified as an RGB tuple of integers ``(red, green, blue)``.
+    Each color component must be in the range 0 (dark) to 255 (saturated).
     
     :type: (int, int, int)
     ''')
