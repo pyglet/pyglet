@@ -20,15 +20,15 @@ class SCHEDULE_INTERVAL(unittest.TestCase):
     callback_3_count = 0
 
     def callback_1(self, dt):
-        self.assertTrue(abs(dt - 0.1) < 0.05)
+        self.assertTrue(abs(dt - 0.1) < 0.06)
         self.callback_1_count += 1
 
     def callback_2(self, dt):
-        self.assertTrue(abs(dt - 0.35) < 0.05)
+        self.assertTrue(abs(dt - 0.35) < 0.06)
         self.callback_2_count += 1
 
     def callback_3(self, dt):
-        self.assertTrue(abs(dt - 0.07) < 0.05)
+        self.assertTrue(abs(dt - 0.07) < 0.06)
         self.callback_3_count += 1
 
     def clear(self):
