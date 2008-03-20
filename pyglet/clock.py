@@ -294,7 +294,7 @@ class Clock(_ClockBase):
                 # infinitely-worsing error).
                 item.next_ts = item.last_ts + item.interval
                 item.last_ts = ts
-                if item.next_ts < ts:
+                if item.next_ts <= ts:
                     item.next_ts = self._get_soft_next_ts(ts, item.interval)
                 need_resort = True
 
