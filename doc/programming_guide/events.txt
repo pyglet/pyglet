@@ -1,10 +1,10 @@
 The pyglet event framework
 ==========================
 
-Both the `pyglet.window`, `pyglet.media` and `pyglet.text` modules make use of
-a consistent event pattern, which provides several ways to attach event
-handlers to objects.  You can also reuse this pattern in your own classes
-easily.
+The `pyglet.window`, `pyglet.media`, `pyglet.app` and `pyglet.text` modules
+make use of a consistent event pattern, which provides several ways to attach
+event handlers to objects.  You can also reuse this pattern in your own
+classes easily.
 
 Throughout this documentation, an "event dispatcher" is an object that has
 events it needs to notify other objects about, and an "event handler" is some

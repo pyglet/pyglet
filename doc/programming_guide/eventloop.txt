@@ -1,47 +1,126 @@
 The application event loop
 ==========================
 
-.. about pyglet.app.run, pyglet.app.exit, clock.schedule*
+In order to let pyglet process operating system events such as mouse and
+keyboard events, applications need to enter an application event loop.  The
+event loop continuously checks for new events, dispatches those events, and
+updates the contents of all open windows.
 
-.. about EventLoop, subclassing, overriding idle
+pyglet provides an application event loop that is tuned for performance and
+low power usage on Windows, Linux and Mac OS X.  Most applications need only
+call::
+
+    pyglet.app.run()
+
+to enter the event loop after creating their initial set of windows and
+attaching event handlers.  The `run` function does not return until all open
+windows have been closed, or until ``pyglet.app.exit()`` is called.
+
+The pyglet application event loop dispatches window events (such as for mouse
+and keyboard input) as they occur and dispatches the `on_draw` event to 
+each window after every iteration through the loop.
+
+To have additional code run periodically or every iteration through the loop,
+schedule functions on the clock (see `Scheduling functions for future
+execution`).  pyglet ensures that the loop iterates only as often as necessary
+to fulfil all scheduled functions and user input.
+
+Customising the event loop
+--------------------------
+
+The pyglet event loop is encapsulated in the `EventLoop` class, which provides
+several hooks that can be overridden for customising its behaviour.  This is
+recommended only for advanced users -- typical applications and games are
+unlikely to require this functionality.
+
+To use the `EventLoop` class directly, instantiate it and call `run`::
+
+    pyglet.app.EventLoop().run()
+
+Only one `EventLoop` can be running at a time; when the `run` method is called
+the module variable `pyglet.app.event_loop` is set to the running instance.
+Other pyglet modules such as `pyglet.window` depend on this.
+
+Event loop events
+^^^^^^^^^^^^^^^^^
+
+You can listen for several events on the event loop instance.  The most useful
+of these is `on_window_close`, which is dispatched whenever a window is
+closed.  The default handler for this event exits the event loop if there are
+no more windows.  The following example overrides this behaviour to exit the
+application whenever any window is closed::
+
+    event_loop = pyglet.app.EventLoop()
+
+    @event_loop.event
+    def on_window_close(window):
+        event_loop.exit()
+        return pyglet.event.EVENT_HANDLED
+
+    event_loop.run()
+
+Overriding the default idle policy
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The `EventLoop.idle` method is called every iteration of the event loop.  It
+is responsible for calling scheduled clock functions, redrawing windows, and
+deciding how idle the application is.  You can override this method if you
+have specific requirements for tuning the performance of your application;
+especially if it uses many windows.
+
+The default implementation has the following algorithm:
+
+1. Call `clock.tick` with ``poll=True`` to call any scheduled functions.
+2. Dispatch the `on_draw` event and call `flip` on every open window.
+3. Return the value of `clock.get_sleep_time`.
+
+The return value of the method is the number of seconds until the event loop
+needs to iterate again (unless there is an earlier user-input event); or
+``None`` if the loop can wait for input indefinitely.
+
+Note that this default policy causes every window to be redrawn during every
+user event -- if you have more knowledge about which events have an effect on
+which windows you can improve on the performance of this method.
 
 Dispatching events manually
 ---------------------------
 
-.. XXX reword this
+Earlier versions of pyglet and certain other windowing toolkits such as PyGame
+and SDL require the application developer to write their own event loop.
+This "manual" event loop is usually just an inconvenience compared to
+`pyglet.app.run`, but can be necessary in some situations when combining
+pyglet with other toolkits.
 
-When do event handlers get called?  pyglet is single-threaded, and will only
-call event handlers at predictable points in your code.  Events will queue up
-until a `dispatch_events` function or method is called, at which point the
-appropriate event handlers are called, in the order that the events arrived
-in.
+A simple event loop usually has the following form::
 
-`Window.dispatch_events` is the method which performs this task for a single
-window.  Though the user may resize a window at any time, the `on_resize`
-handler shown above is only notified when you call `dispatch_events`.  This
-leads inevitably to requiring some sort of main event or "run" loop::
+    while True:
+        pyglet.clock.tick()
 
-    while not win.has_exit:
-        win.dispatch_events()
+        for window in pyglet.app.windows:
+            window.switch_to()
+            window.dispatch_events()
+            window.dispatch_event('on_draw')
+            window.flip()
 
-Note that unlike in other window frameworks, pyglet does not block on
-`dispatch_events` -- if there are no events pending, control is returned to
-your program immediately.
+The `dispatch_events` method checks the window's operating system event queue
+for user input and dispatches any events found.  The method does not wait for
+input -- if ther are no events pending, control is returned to the program
+immediately.
 
-For `pyglet.media`, the single `media.dispatch_events` function handles the
-dispatch of events for all media instances.  An application with two windows
-and any number of sounds and videos would have a run loop similar to::
-    
-    from pyglet import media
+The call to `pyglet.clock.tick()` is required for ensuring scheduled functions
+are called, including the internal data pump functions for playing sounds and
+video.
 
-    while not (win1.has_exit or win2.has_exit):
-        win1.dispatch_events()
-        win2.dispatch_events()
-        media.dispatch_events()
+Developers are strongly discouraged from writing pyglet applications with
+event loops like this:
 
-It is necessary to call `dispatch_events` for every window that you create,
-and for `pyglet.media` if you have any sounds or videos playing, even if you
-have no event handlers.  This is so that behind-the-scenes operating system
-events can be processed (remember, pyglet is single-threaded).
+* The `EventLoop` class provides plenty of hooks for most toolkits to be
+  integrated without needing to resort to a manual event loop.
+* Because `EventLoop` is tuned for specific operating systems, it is more
+  responsive to user events, and continues calling clock functions while
+  windows are being resized, and (on Mac OS X) the menu bar is being tracked.
+* It is difficult to write a manual event loop that does not consume
+  100% CPU while still remaining responsive to user input.
 
-
+The capability for writing manual event loops remains for legacy support and
+extreme circumstances.
