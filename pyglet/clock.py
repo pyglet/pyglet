@@ -295,7 +295,13 @@ class Clock(_ClockBase):
                 item.next_ts = item.last_ts + item.interval
                 item.last_ts = ts
                 if item.next_ts <= ts:
-                    item.next_ts = self._get_soft_next_ts(ts, item.interval)
+                    if ts - item.next_ts < 0.05:
+                        # Only missed by a little bit, keep the same schedule
+                        item.next_ts = ts + item.interval
+                    else:
+                        # Missed by heaps, do a soft reschedule to avoid 
+                        # lumping everything together.
+                        item.next_ts = self._get_soft_next_ts(ts, item.interval)
                 need_resort = True
 
         # Remove finished one-shots.
