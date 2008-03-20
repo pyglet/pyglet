@@ -1,61 +1,104 @@
 Keeping track of time
 =====================
 
-For simple applications using animation, it is usually sufficient to use
-Python's built-in `time` module.  pyglet's `clock` module provides additional
-functionality for writing low-latency run loops which do not waste CPU cycles,
-for scheduling functions for future execution in the same thread, and
-for displaying an attractive frame-rate counter for users.
+pyglet's `clock` module provides functionality for scheduling functions for
+periodic or one-shot future execution and for calculating and displaying
+the application frame rate.
 
 .. contents::
     :local:
 
-Determining how much time has passed
-------------------------------------
+Calling functions periodically
+------------------------------
 
-Most pyglet applications will use a run loop similar to the following::
+pyglet applications begin execution with::
 
-    from pyglet import window
-    win = window.Window()
+    pyglet.app.run()
 
-    while not win.has_exit:
-        win.dispatch_events()
+Once called, this function doesn't return until the application windows have
+been closed.  This may leave you wondering how to execute code while the
+application is running.
 
-        # ... update objects
-        # ... render objects
-        win.flip()
+Typical applications need to execute code in only three circumstances:
 
-During the "update" phase, objects are moved according to their momentum and
-according to the user's input.  The movement of an object is usually governed
-by simple discrete integration following Newtonian dynamics, i.e.::
+* A user input event (such as a mouse movement or key press) has been
+  generated.  In this case the appropriate code can be attached as an
+  event handler to the window.
+* An animation or other time-dependent system needs to update the position
+  or parameters of an object.  We'll call this a "periodic" event.
+* A certain amount of time has passed, perhaps indicating that an
+  operation has timed out, or that a dialog can be automatically dismissed.
+  We'll call this a "one-shot" event.
 
-    velocity += time_passed * acceleration
-    position += time_passed * velocity
+To have a function called periodically, for example, once every 0.1 seconds::
 
-The `time_passed` variable is the amount of time since the last time the
-object was updated.  pyglet's `clock.tick` function provides an easy way to
-calculate this value, by inserting it into the run loop as follows::
+    def update(dt):
+        # ...
+    pyglet.clock.schedule_interval(update, 0.1)
 
-    from pyglet import clock
+The `dt` parameter gives the number of seconds (due to latency, load and timer
+inprecision, this might be slightly more or less than the requested interval).
 
-    while not win.has_exit:
-        win.dispatch_events()
+Scheduling functions with a set interval is ideal for animation, physics
+simulation, and game state updates.  pyglet ensures that the application does
+not consume more resources than necessary to execute the scheduled functions
+in time.  
 
-        time_passed = clock.tick()
-        # ... update objects according to time_passed
-        # ... render objects
-        win.flip()
+Rather than "limiting the frame rate", as required in other toolkits, simply
+schedule all your update functions for no less than the minimum period your
+application or game requires.  For example, most games need not run at more
+than 60Hz (60 times a second) for imperceptibly smooth animation, so the
+interval given to `schedule_interval` would be ``1/60.0`` (or more).
 
-You must take care to call `tick` exactly once per frame.  The value returned
-is a float giving the number of seconds that have passed since the last time
-`tick` was called.
+If you are writing a benchmarking program or otherwise wish to simply run at
+the highest possible frequency, use `schedule`::
+
+    def update(dt):
+        # ...
+    pyglet.clock.schedule(update)
+
+By default pyglet window buffer swaps are synchronised to the display refresh
+rate, so you may also want to disable `set_vsync`.
+
+For one-shot events, use `schedule_once`::
+    
+    def dismiss_dialog(dt):
+        # ...
+
+    # Dismiss the dialog after 5 seconds.   
+    pyglet.clock.schedule_once(dismiss_dialog, 5.0)
+
+To stop a scheduled function from being called, including cancelling a
+periodic function, use `pyglet.clock.unschedule`.
 
 Animation techniques
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
-With the knowledge that your unit of time increments is known, you can specify
-complete units for all your other animation variables.  Some examples are
-shown in the table below.
+Every scheduled function takes a `dt` parameter, giving the actual "wall
+clock" time that passed since the previous invocation (or the time the
+function was scheduled, if it's the first period).  This parameter can be
+used for numerical integration.
+
+For example, a non-accelerating particle with velocity ``v`` will travel
+some distance over a change in time ``dt``.  This distance is calculated as
+``v * dt``.  Similarly, a particle under constant acceleration ``a`` will have
+a change in velocity of ``a * dt``.
+
+The following example demonstrates a simple way to move a sprite across the
+screen at exactly 10 pixels per second::
+
+    sprite = pyglet.sprite.Sprite(image)
+    sprite.dx = 10.0
+    
+    def update(dt):
+        sprite.x += sprite.dx * dt
+    pyglet.clock.schedule_interval(update, 1/60.0) # update at 60Hz
+
+This is a robust technique for simple animation, as the velocity will remain
+constant regardless of the speed or load of the computer.
+
+Some examples of other common animation variables are given in the table
+below.
 
     .. list-table::
         :header-rows: 1
@@ -73,94 +116,20 @@ shown in the table below.
           - Frame number
           - Frames per second
 
-For example, the code to move a sprite across the screen so that it covers 200
-pixels every second is::
-
-    velocity = 200
-    position = 0
-
-    while not win.has_exit:
-        win.dispatch_events()
-
-        dt = clock.tick()
-        position += dt * velocity
-
-        # ... draw sprite at `position`
-        win.flip()
-
-Note the use of `dt` instead of `time_passed` -- this is a common naming
-convention within pyglet examples.  It is an abbreviation of "delta (change
-in) time", as used in physics courses.
-
-In the following example a list of images needs to be displayed in turn (like
-a flip book), with 10 images being displayed every second::
-
-    images = [image1, image2, image3, ...]
-    image_index = 0
-    image_period = 1.0 / 10             # Reciprocal of the frame rate
-    image_timeout = image_period
-
-    while not win.has_exit:
-        win.dispatch_events()
-
-        dt = clock.tick()
-        image_timeout -= dt
-        if image_timeout <= 0:
-            image_index += 1
-            image_timeout = image_period
-        
-        # ... draw `images[image_index]`
-        win.flip()
-
-Writing your animation or game code in this way ensures that it will play
-exactly the way you intend it to on all computers.  On slower computers the
-animation may become "jerky", but it will move at the same rate.  On faster
-computers the animation will be exceptionally smooth, but still move at the
-same rate.
-
 The frame rate
 --------------
 
 Game performance is often measured in terms of the number of times the display
-is updated every second; that is, the frames-per-second or FPS.  If you are
-using the `clock.tick` function described in the previous section, you can
+is updated every second; that is, the frames-per-second or FPS.  You can
 determine your application's FPS with a single function call::
 
     from pyglet import clock
 
     clock.get_fps()
 
-The value returned is more useful than simply taking the reciprocal of `dt`,
-as it is averaged over a sliding window of several frames.
-
-Controlling frame rate
-^^^^^^^^^^^^^^^^^^^^^^
-
-If you have no need for high-speed animation, you may wish to limit your
-application's demand on the CPU.  With `clock.set_fps_limit` you specify a
-target FPS, which pyglet will then try to match.  For example, if you
-decide that it's sufficient to update the display only ten times a second::
-
-    clock.set_fps_limit(10)
-
-    while not win.has_exit:
-        win.dispatch_events()
-
-        dt = clock.tick()
-        # ... update and render 
-        win.flip()
-
-You must remember to call `tick` even if you are not using the return value.
-pyglet will yield control of the process back to the operating system if there
-is time to spare.  It uses higher-resolution techniques than the built-in
-`time.sleep` function, which enables it to more accurately achieve the target
-frame rate.  If the computer is not fast enough to render your target
-frame rate, `set_fps_limit` will have no effect.
-
-Note that by default `Window.flip` is synchronised to the display refresh
-rate, which effectively caps your frame rate at 60-80 FPS, depending on the
-operating system display settings.  See `Windows and OpenGL contexts` for more
-details.
+The value returned is more useful than simply taking the reciprocal of `dt`
+from a period function, as it is averaged over a sliding window of several
+frames.
 
 Displaying the frame rate
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -174,74 +143,15 @@ class for displaying the frame rate with very little effort::
 
     fps_display = clock.ClockDisplay()
 
-    while not win.has_exit:
-        # ... 
+    @window.event
+    def on_draw():
+        window.clear()
         fps_display.draw()
-        win.flip()
 
 By default the frame rate will be drawn in the bottom-right corner of the
 window in a semi-translucent large font.  See the `ClockDisplay` documentation
 for details on how to customise this, or even display another clock value
 (such as the current time) altogether.
-
-Scheduling functions for future execution
------------------------------------------
-
-Animation code is often simplified if you can write commands like, "in 5
-seconds, start moving the umbrella," or, "change the colour of the player's
-face every 0.75 seconds."
-
-The approach shown in `Animation techniques` can be used to implement this,
-but too many separately scheduled actions can quickly make the code
-complex and difficult to read, requiring many variables.  It can also be
-inefficient: do you really want to be checking if a timeout scheduled for 5
-minutes has elapsed every frame?
-
-pyglet has a scheduler you can use to call functions at a later time.  For
-example::
-
-    from pyglet import clock
-
-    # The function to call after 5 seconds
-    def move_umbrella(dt):
-        pass
-
-    clock.schedule_once(move_umbrella, 5.0)
-
-The `schedule_once` function ensures that the provided function is called
-after a certain amount of time has passed.  Because it is impossible to call
-the function after *exactly* 5 seconds, the `dt` parameter gives the number of
-seconds that actually elapsed (for example, it may be 5.001).
-
-You can use `schedule_interval` to have a function called periodically.  For
-example::
-
-    # The function that is called every 0.75 seconds
-    def change_face_color(dt):
-        pass
-
-    clock.schedule_interval(change_face_color, 0.75)
-
-In this case the `dt` parameter gives the number of seconds since the last
-time the function was called, or since it was scheduled, if it is the first
-time (for example, 0.751).
-
-To stop the scheduled action taking place from either `schedule_once` or
-`schedule_interval`, use `unschedule`::
-
-    clock.unschedule(move_umbrella)
-    clock.unschedule(change_face_color)
-
-You should plan to do this if the animation needs to be aborted; for example,
-if the user starts the animation but then returns to the main menu, you need
-to unschedule all the functions already scheduled.
-
-Scheduled functions are called during the `tick` function call; no separate
-threads are used.  The clock uses an efficient priority queue giving linear
-cost with respect to the average number of scheduled functions that need to be
-called each frame, not the total number of scheduled functions.  This means
-there is no performance penalty for scheduling lots of functions well in
-advance of when they need to be called.
 
 User-defined clocks
 -------------------
