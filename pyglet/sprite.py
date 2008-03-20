@@ -502,7 +502,7 @@ class Sprite(event.EventDispatcher):
         self._rgb = map(int, rgb)
         self._update_color()
 
-    color = property(lambda self: self._color, _set_color,
+    color = property(lambda self: self._rgb, _set_color,
                        doc='''Blend color.
 
     This property sets the color of the sprite's vertices. This allows the
