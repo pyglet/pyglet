@@ -37,19 +37,14 @@ OpenGL::
 All function names and constants are identical to the C counterparts.  For
 example, the following program draws a triangle on the screen::
 
+    import pyglet
     from pyglet.gl import *
-    from pyglet import window
 
-    # The OpenGL context is created only when you create a window.  Any calls
-    # to OpenGL before a window is created will fail.
-    win = window.Window(visible=False)
+    # Direct OpenGL commands to this window.
+    window = pyglet.window.Window()
 
-    # ... perform any OpenGL state initialisation here.
-
-    win.set_visible()
-    while not win.has_exit:
-        win.dispatch_events()
-
+    @window.event
+    def on_draw():
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
         glBegin(GL_TRIANGLES)
@@ -58,7 +53,7 @@ example, the following program draws a triangle on the screen::
         glVertex2f(win.width, win.height)
         glEnd()
 
-        win.flip()
+    pyglet.app.run()
 
 Some OpenGL functions require an array of data.  These arrays must be
 constructed as ``ctypes`` arrays of the correct type.  The following example
@@ -66,10 +61,10 @@ draw the same triangle as above, but uses a vertex array instead of the
 immediate-mode functions.  Note the construction of the vertex array using a
 one-dimensional ``ctypes`` array of ``GLfloat``::
 
+    import pyglet
     from pyglet.gl import *
-    from pyglet import window
 
-    win = window.Window(visible=False)
+    win = pyglet.window.Window()
 
     vertices = [
         0, 0,
@@ -80,15 +75,13 @@ one-dimensional ``ctypes`` array of ``GLfloat``::
     glEnableClientState(GL_VERTEX_ARRAY)
     glVertexPointer(2, GL_FLOAT, 0, vertices_gl)
 
-    win.set_visible()
-    while not win.has_exit:
-        win.dispatch_events()
-
+    @window.event
+    def on_draw():
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
         glDrawArrays(GL_TRIANGLES, 0, len(vertices) // 2)
 
-        win.flip()
+    pyglet.app.run()
 
 Similar array constructions can be used to create data for vertex buffer
 objects, texture data, polygon stipple data and the map functions.
@@ -103,6 +96,7 @@ pyglet sets up the viewport and an orthographic projection on each window
 automatically.  It does this in a default `on_resize` handler defined on
 `Window`::
 
+    @window.event
     def on_resize(width, height):
         glViewport(0, 0, width, height)
         glMatrixMode(gl.GL_PROJECTION)
@@ -114,14 +108,14 @@ If you need to define your own projection (for example, to use
 a 3-dimensional perspective projection), you should override this
 event with your own; for example::
 
+    @window.event
     def on_resize(width, height):
         glViewport(0, 0, width, height)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(65, width / float(height), .1, 1000)
         glMatrixMode(GL_MODELVIEW)
-
-    win.on_resize = on_resize
+        return pyglet.event.EVENT_HANDLED
 
 Note that the `on_resize` handler is called for a window the first time
 it is displayed, as well as any time it is later resized.
@@ -141,13 +135,13 @@ You can also disable this error check by setting the following option `before`
 importing ``pyglet.gl`` or ``pyglet.window``::
 
     # Disable error checking for increased performance
-    from pyglet import options
-    options['debug_gl'] = False
+    import pyglet
+    pyglet.options['debug_gl'] = False
 
     from pyglet.gl import *
 
 Setting the option after importing ``pyglet.gl`` will have no effect.  Once
-disabled, there is no overhead in each GL call.
+disabled, there is no error-checking overhead in each GL call.
 
 Using extension functions
 -------------------------
@@ -157,16 +151,14 @@ implemented by the current driver.  Typically this is done using
 ``glGetString(GL_EXTENSIONS)``, but pyglet has a convenience module,
 `pyglet.gl.gl_info` that does this for you::
 
-    from pyglet.gl import gl_info
-
-    if gl_info.have_extension('GL_ARB_shadow'):
+    if pyglet.gl.gl_info.have_extension('GL_ARB_shadow'):
         # ... do shadow-related code.
     else:
         # ... raise an exception, or use a fallback method
 
 You can also easily check the version of OpenGL::
 
-    if gl_info.have_version(1,5):
+    if pyglet.gl.gl_info.have_version(1,5):
         # We can assume all OpenGL 1.5 functions are implemented.
 
 Remember to only call the ``gl_info`` functions after creating a window.
@@ -186,32 +178,16 @@ Using multiple windows
 
 pyglet allows you to create and display any number of windows simultaneously.
 Each will be created with its own OpenGL context, however all contexts will
-share the same texture objects, display lists, shader programs, and so on 
-[#objects]_.  Each context has its own state and framebuffers.
+share the same texture objects, display lists, shader programs, and so on,
+by default [#objects]_.  Each context has its own state and framebuffers.
 
-There is always an active context (unless there are no windows).  By default,
-the active context belongs to whichever window was displayed last.  This works
-well if there is only ever one window visible at a time.  If there are more,
-you need to explicitly set the active context when you start drawing.  You can
-do this by calling the window's ``switch_to`` method::
+There is always an active context (unless there are no windows).  When using
+`pyglet.app.run` for the application event loop, pyglet ensures that
+the correct window is the active context before dispatching the `on_draw`
+or `on_resize` events.  
 
-    window_1 = window.Window()
-    window_2 = window.Window()
-
-    while running:
-        window_1.dispatch_events()
-        window_2.dispatch_events()
-
-        # Draw the contents of window_1:
-        window_1.switch_to()
-        glClear(GL_COLOR_BUFFER_BIT)
-        # ...
-        window_1.flip()
-
-        window_2.switch_to()
-        glClear(GL_COLOR_BUFFER_BIT)
-        # ...
-        window_2.flip()
+In other cases, you can explicitly set the active context with
+`Window.switch_to`.
 
 .. [#objects] Sometimes objects and lists cannot be shared between contexts; for
               example, when the contexts are provided by different video
