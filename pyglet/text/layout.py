@@ -2166,7 +2166,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
             `line` : int
                 Line index.
 
-        :type: int
+        :rtype: int
         '''
         return self.lines[line].start
 
