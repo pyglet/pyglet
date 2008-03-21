@@ -2325,7 +2325,7 @@ def load_animation(filename, file=None, decoder=None):
 class Animation(object):
     '''Sequence of images with timing information.
 
-    If the no frames of the animation have a ``None`` duration, the animation
+    If no frames of the animation have a duration of ``None``, the animation
     loops continuously; otherwise the animation stops at the first frame with
     duration of ``None``.
 

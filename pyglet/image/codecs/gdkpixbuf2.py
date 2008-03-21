@@ -121,7 +121,6 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
         # raise.
         gif_stream = gif.read(file)
         delays = [image.delay for image in gif_stream.images]
-        print delays
 
         # Get GDK animation iterator
         file.seek(0)
