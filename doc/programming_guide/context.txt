@@ -33,9 +33,9 @@ that was used to create a context via the context's `config` attribute.
 For example, here we create a window using the default config and examine some
 of its properties::
 
-    >>> from pyglet import window
-    >>> win = window.Window()
-    >>> context = win.context
+    >>> import pyglet
+    >>> window = pyglet.window.Window()
+    >>> context = window.context
     >>> config = context.config
     >>> config.double_buffer
     c_int(1)
@@ -73,7 +73,7 @@ There is a singleton class `Platform` which provides access to the display(s);
 this represents the computer on which your application is running.  It is
 usually sufficient to use the default display::
 
-    >>> platform = window.get_platform()
+    >>> platform = pyglet.window.get_platform()
     >>> display = platform.get_default_display()
 
 On X11, you can specify the display string to use, for example to use a
@@ -251,25 +251,24 @@ the `Window` constructor to create the context.
 
 For example, to create a window with an alpha channel::
 
-    from pyglet import gl
-    from pyglet import window
-
-    config = gl.Config(alpha_size=8)
-    win = window.Window(config=config)
+    import pyglet
+    
+    config = pyglet.gl.Config(alpha_size=8)
+    window = pyglet.window.Window(config=config)
 
 It is sometimes necessary to create the context yourself, rather than letting
 the `Window` constructor do this for you.  In this case use
 `Screen.get_best_config` to obtain a "complete" config, which you can then use
 to create the context::
 
-    platform = window.get_platform()
+    platform = pyglet.window.get_platform()
     display = platform.get_default_display()
     screen = display.get_default_screen()
 
-    template = gl.Config(alpha_size=8)
+    template = pyglet.gl.Config(alpha_size=8)
     config = screen.get_best_config(template)
     context = config.create_context(None)
-    win = win.Window(context=context)
+    window = pyglet.window.Window(context=context)
 
 Note that you cannot create a context directly from a template (any `Config`
 you constructed yourself).  The `Window` constructor performs a similar
@@ -287,10 +286,10 @@ a window with multisampling if possible, otherwise leaves multisampling off::
     template = gl.Config(sample_buffers=1, samples=4)
     try:
         config = screen.get_best_config(template)
-    except window.NoSuchConfigException:
+    except pyglet.window.NoSuchConfigException:
         template = gl.Config()
         config = screen.get_best_config(template)
-    win = win.Window(config=config)
+    window = pyglet.window.Window(config=config)
 
 Selecting the best configuration
 --------------------------------
@@ -307,10 +306,9 @@ configurations supported by the screen.
 In the following example, all configurations with either an auxilliary buffer
 or an accumulation buffer are printed::
 
-    from pyglet import gl
-    from pyglet import window
+    import pyglet
 
-    platform = window.get_platform()
+    platform = pyglet.window.get_platform()
     display = platform.get_default_display()
     screen = display.get_default_screen()
     
@@ -362,6 +360,11 @@ lost or destroyed, the object space will be destroyed also.  This is why it is
 necessary to follow the steps outlined above for retaining objects when a
 context is recreated.
 
+pyglet creates a hidden "shadow" context as soon as `pyglet.gl` is imported.
+By default, all windows will share object space with this shadow context, so
+the above steps are generally not needed.  The shadow context also allows
+objects such as textures to be loaded before a window is created.
+
 When you create a `Context`, you tell pyglet which other context it will
 obtain an object space from.  By default (when using the `Window` constructor
 to create the context) the most recently created context will be used.  You
@@ -378,9 +381,9 @@ In the following example, an attribute is set on the object space indicating
 that game objects have been loaded.  This way, if the context is recreated,
 you can check for this attribute to determine if you need to load them again::
 
-    from pyglet import gl
+    import pyglet
 
-    context = gl.get_current_context()
+    context = pyglet.gl.get_current_context()
     object_space = context.object_space
     object_space.my_game_objects_loaded = True
 
