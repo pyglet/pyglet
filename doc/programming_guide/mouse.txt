@@ -130,9 +130,9 @@ image, or hidden completely.  The change to the cursor will be applicable only
 to the window you make the change to.  To hide the mouse cursor, call
 `Window.set_mouse_visible`::
 
-    from pyglet import window
-    win = window.Window()
-    win.set_mouse_visible(False)
+    import pyglet
+    window = pyglet.window.Window()
+    window.set_mouse_visible(False)
 
 This can be useful if the mouse would obscure text that the user is typing.
 If you are hiding the mouse cursor for use in a game environment, consider
@@ -142,8 +142,8 @@ Use `Window.set_mouse_cursor` to change the appearance of the mouse cursor.
 A mouse cursor is an instance of `MouseCursor`.  You can obtain the operating
 system-defined cursors with `Window.get_system_mouse_cursor`::
 
-    cursor = win.get_system_mouse_cursor(win.CURSOR_HELP)
-    win.set_mouse_cursor(cursor)
+    cursor = window.get_system_mouse_cursor(win.CURSOR_HELP)
+    window.set_mouse_cursor(cursor)
 
 The cursors that pyglet defines are listed below, along with their typical
 appearance on Windows and Mac OS X.  The pointer image on Linux is dependent
@@ -221,11 +221,9 @@ the image and "hot-spot" of the cursor.  The hot-spot is the point of the
 image that corresponds to the actual pointer location on screen, for example,
 the point of the arrow::
 
-    from pyglet import image
-
-    img = image.load('cursor.png')
-    cursor = window.ImageMouseCursor(img, 16, 8)
-    win.set_mouse_cursor(cursor)
+    image = pyglet.image.load('cursor.png')
+    cursor = pyglet.window.ImageMouseCursor(image, 16, 8)
+    window.set_mouse_cursor(cursor)
 
 You can even render a mouse cursor directly with OpenGL.  You could draw a
 3-dimensional cursor, or a particle trail, for example.  To do this, subclass
@@ -248,9 +246,8 @@ and `dy` parameters to determine how the mouse was moved.
 
 Activate mouse exclusive mode with `set_exclusive_mouse`::
 
-    from pyglet import window
-    win = window.Window()
-    win.set_exclusive_mouse(True)
+    window = pyglet.window.Window()
+    window.set_exclusive_mouse(True)
 
 You should activate mouse exclusive mode even if your window is full-screen:
 it will prevent the window "hitting" the edges of the screen, and behave
@@ -258,3 +255,7 @@ correctly in multi-monitor setups (a common problem with commercial
 full-screen games is that the mouse is only hidden, meaning it can
 accidentally travel onto the other monitor where applications are still
 visible).
+
+Note that on Linux setting exclusive mouse also disables Alt+Tab and other
+hotkeys for switching applications.  No workaround for this has yet been
+discovered.

@@ -128,6 +128,7 @@ constants defined in `pyglet.window.key` are::
     MOD_CAPSLOCK
     MOD_NUMLOCK
     MOD_SCROLLLOCK
+    MOD_ACCEL       Equivalent to MOD_CTRL, or MOD_COMMAND on Mac OS X.
 
 For example, to test if the shift key is held down::
 
@@ -164,12 +165,12 @@ pyglet provides the convenience class `KeyStateHandler` for storing the
 current keyboard state.  This can be pushed onto the event handler stack of
 any window and subsequently queried as a dict::
 
-    from pyglet import window
+    import pyglet
     from pyglet.window import key
 
-    win = window.Window()
+    window = pyglet.window.Window()
     keys = key.KeyStateHandler()
-    win.push_handlers(keys)
+    window.push_handlers(keys)
 
     # Check if the spacebar is currently pressed:
     if keys[key.SPACE]:

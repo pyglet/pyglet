@@ -13,19 +13,19 @@ your ``PYTHONPATH``.
 
 On Windows you can specify this from a command line::
 
-    set PYTHONPATH c:\path\to\pyglet-1.0alpha1\;%PYTHONPATH%
+    set PYTHONPATH c:\path\to\pyglet-1.1\;%PYTHONPATH%
 
 On Mac OS X, Linux or on Windows under cygwin using bash::
 
-    set PYTHONPATH /path/to/pyglet-1.0alpha1/:$PYTHONPATH
+    set PYTHONPATH /path/to/pyglet-1.1/:$PYTHONPATH
     export PYTHONPATH
 
 or, using tcsh or a variant::
 
-    setenv PYTHONPATH /path/to/pyglet-1.0alpha1/:$PYTHONPATH
+    setenv PYTHONPATH /path/to/pyglet-1.1/:$PYTHONPATH
 
 If you have downloaded a runtime egg instead of the source archive, you would
-specify the filename of the egg in place of ``pyglet-1.0alpha1/``.
+specify the filename of the egg in place of ``pyglet-1.1/``.
 
 .. contents::
     :local:

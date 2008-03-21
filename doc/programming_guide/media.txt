@@ -173,8 +173,10 @@ Loading media
 Audio and video files are loaded in the same way, using the
 `pyglet.media.load` function, providing a filename::
 
-    from pyglet import media
-    source = media.load('explosion.wav')
+    source = pyglet.media.load('explosion.wav')
+
+If the media file is bundled with the application, consider using the
+`Resource framework TODO`.
 
 The result of loading a media file is a `Source` object.  This object provides
 useful information about the type of media encoded in the file, and serves as
@@ -234,13 +236,13 @@ file in memory first.  For example, a sound that will be played many times
 (such as a bullet or explosion) should only be decoded once.  You can instruct
 pyglet to completely decode an audio file into memory at load time::
 
-    explosion = media.load('explosion.wav', streaming=False)
+    explosion = pyglet.media.load('explosion.wav', streaming=False)
 
 The resulting source is an instance of `StaticSource`, which provides the same
 interface as a streaming source.  You can also construct a `StaticSource`
 directly from an already-loaded `Source`::
 
-    explosion = media.StaticSource(media.load('explosion.wav'))
+    explosion = pyglet.media.StaticSource(pyglet.media.load('explosion.wav'))
 
 Simple audio playback
 ---------------------
@@ -253,18 +255,10 @@ have its volume adjusted, or be rewound, or interrupted.
 pyglet provides a simple interface for this kind of use-case.  Call the `play`
 method of any `Source` to play it immediately and completely::
 
-    from pyglet import media
-    explosion = media.load('explosion.wav', streaming=False)
+    explosion = pyglet.media.load('explosion.wav', streaming=False)
     explosion.play()
 
 You can call `play` on any `Source`, not just `StaticSource`.
-
-pyglet is not multi-threaded.  In order to ensure the audio buffers remain
-full, you must call `media.dispatch_events` periodically.  For example, it is
-common to do this in your main run loop::
-
-    while True:
-        media.dispatch_events()
 
 The return value of `Source.play` is a `ManagedPlayer`, which can either be
 discarded, or retained to maintain control over the sound's playback.
@@ -276,8 +270,7 @@ You can implement many functions common to a media player using the `Player`
 class.  Use of this class is also necessary for video playback.  There are no
 parameters to its construction::
 
-    from pyglet import media
-    player = media.Player()
+    player = pyglet.media.Player()
 
 A player will play any source that is "queued" on it.  Any number of sources
 can be queued on a single player, but once queued, a source can never be
@@ -340,18 +333,6 @@ There are several properties that describe the player's current state:
           - The audio level, expressed as a float from 0 (mute) to 1 (normal
             volume).  This can be set at any time.
 
-While a player is playing, it is important that your application periodically
-calls its `dispatch_events` method.  This is used to update the video texture
-and to ensure the audio buffers remain full.  Typically this call is done in
-every iteration of your main loop::
-
-    while True:
-        player.dispatch_events()
-
-Note that this `dispatch_events` method is unrelated to the
-`media.dispatch_events` function, which provides the same functionality for
-`ManagedPlayer` instances.
-
 When a player reaches the end of the current source, by default it will move
 immediately to the next queued source.  If there are no more sources, playback
 stops until another is queued.  There are several other possible behaviours,
@@ -382,20 +363,13 @@ of the end of the source (say, several seconds), there will be no disruption.
 Incorporating video
 -------------------
 
-When a `Player` is playing back a source with video, its `texture` property
-gives the current video image.  This can be used to display the current video
-image syncronised with the audio track, for example::
+When a `Player` is playing back a source with video, use the `get_texture`
+method to obtain the video frame image.  This can be used to display
+the current video image syncronised with the audio track, for example::
 
-    while True:
-        # Fill audio buffers and update the video texture
-        player.dispatch_events()
-
-        # Draw the video image to the current window.
-        player.texture.blit(0, 0)
-
-Because `Player` uses OpenGL to create video textures, you must ensure an
-OpenGL context is created before queueing a video source onto a player.  You
-normally do this by creating a `Window`.
+    @window.event
+    def on_draw():
+        player.get_texture().blit(0, 0)
 
 The texture is an instance of `pyglet.image.Texture`, with an internal format
 of either ``GL_TEXTURE_2D`` or ``GL_TEXTURE_RECTANGLE_ARB``.  While the

@@ -53,16 +53,17 @@ the font dialog of any application.  For example, all operating systems
 include the *Times New Roman* font.  You must also specify the font size to
 load, in points::
 
-    from pyglet import font
+    import pyglet
 
     # Load "Times New Roman" at 16pt
-    times = font.load('Times New Roman', 16)
+    times = pyglet.font.load('Times New Roman', 16)
 
 Bold and italic variants of the font can specified with keyword parameters::
 
-    times_bold = font.load('Times New Roman', 16, bold=True)
-    times_italic = font.load('Times New Roman', 16, italic=True)
-    times_bold_italic = font.load('Times New Roman', 16, bold=True, italic=True)
+    times_bold = pyglet.font.load('Times New Roman', 16, bold=True)
+    times_italic = pyglet.font.load('Times New Roman', 16, italic=True)
+    times_bold_italic = pyglet.font.load('Times New Roman', 16, 
+                                         bold=True, italic=True)
 
 For maximum compatibility on all platforms, you can specify a list of font
 names to load, in order of preference.  For example, many users will have
@@ -70,13 +71,13 @@ installed the Microsoft Web Fonts pack, which includes `Verdana`, but this
 cannot be guaranteed, so you might specify `Arial` or `Helvetica` as
 suitable alternatives::
 
-    sans_serif = font.load(('Verdana', 'Helvetica', 'Arial'), 16)
+    sans_serif = pyglet.font.load(('Verdana', 'Helvetica', 'Arial'), 16)
 
 If you do not particularly care which font is used, and just need to display
 some readable text, you can specify `None` as the family name, which will load
 a default sans-serif font (Helvetica on Mac OS X, Arial on Windows XP)::
 
-    sans_serif = font.load(None, 16)
+    sans_serif = pyglet.font.load(None, 16)
 
 Font sizes
 ----------
@@ -91,45 +92,12 @@ Font resolution
 ^^^^^^^^^^^^^^^
 
 The actual rendered size of the font on screen depends on the display
-resolution.  Each operating system defines its own assumed font resolution,
-given in dots (pixels) per inch (DPI):
+resolution. pyglet uses a default DPI of 96 on all operating systems.  Most
+Mac OS X applications use a DPI of 72, so the font sizes will not match up on
+that operating system.  However, application developers can be assured that
+font sizes remain consistent in pyglet across platforms.
 
-    .. list-table::
-        :header-rows: 1
-
-        * - Operating system
-          - Default DPI
-        * - Windows XP
-          - 96, or 120 with "Large Fonts" enabled
-        * - Mac OS X
-          - 72
-        * - Linux
-          - Depends on X11 configuration, but typically 96.
-
-You should keep in mind when writing your application that fonts are displayed
-at different pixel sizes on different operating systems.  For a typical
-application, this means you should not assume anything about the size of a
-font, except by using the font metrics functions desribed later.
-
-This can be quite inconvenient when writing a graphics-intensive application
-such as a game, for example.  If you need to mix text and graphics which
-cannot be easily resized, you can force pyglet to use a different font
-resolution.  This is given as the `dpi` parameter in the `font.load` method
-and can be set differently for each font loaded::
-
-    from pyglet import font
-
-    times = font.load('Times New Roman', 12, dpi=96)
-
-So, if you are primarily developing your application on Windows but wanted to
-ensure the fonts are displayed as similarly as possible on Mac OS X, you would
-specify a DPI of 96 when loading the font.  Conversely, if you primarily
-develop on Mac OS X you would specify a DPI of 72.
-
-By specifying a DPI you are overriding both the operating system defaults and
-potentially any user-defined settings.  This is not recommended for
-general-purpose applications, which should remain accessible to all users by
-not specifying a font resolution.
+The DPI can be specified directly in the `pyglet.font.load` function.
 
 Determining font size
 ^^^^^^^^^^^^^^^^^^^^^
@@ -169,10 +137,10 @@ Loading a custom font must be performed in two steps:
 For example, let's say you have the *Action Man* font in a file called
 ``action_man.ttf``.  The following code will load an instance of that font::
 
-    from pyglet import font
+    import pyglet
 
-    font.add_file('action_man.ttf')
-    action_man = font.load('Action Man')
+    pyglet.font.add_file('action_man.ttf')
+    action_man = pyglet.font.load('Action Man')
 
 Fonts are often distributed in separate files for each variant.  *Action Man
 Bold* would probably be distributed as a separate file called
@@ -182,11 +150,14 @@ Bold* would probably be distributed as a separate file called
     action_man_bold = font.load('Action Man', bold=True)
 
 Note that even when you know the filename of the font you want to load, you
-must specify the font's family name to `font.load`.
+must specify the font's family name to `pyglet.font.load`.
 
 You need not have the file on disk to add it to pyglet; you can specify any
 file-like object supporting the `read` method.  This can be useful for
 extracting fonts from a resource archive or over a network.
+
+If the custom font is distributed with your application, consider using the
+`Resource framework TODO`.
 
 Supported font formats
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -250,7 +221,7 @@ Context affinity
 When a font is loaded, it immediately creates a texture in the current
 context's object space.  Subsequent textures may need to be created if there
 is not enough room on the first texture for all the glyphs.  This is done when
-the glyph is first requested; for example, when drawing or measuring a `Text`.  
+the glyph is first requested.  
 
 pyglet always assumes that the object space that was active when the font was
 loaded is the active one when any texture operations are performed.  Normally
@@ -258,9 +229,6 @@ this assumption is valid, as pyglet shares object spaces between all contexts
 by default.  There are a few situations in which this will not be the case,
 though:
 
-* When closing the only window, then creating a new one and reusing the same
-  font.  In this case, the original object space was destroyed with the first
-  window's context, so could not be shared with the second window's context.
 * When explicitly setting the context share during context creation.
 * When multiple display devices are being used which cannot support a shared
   context object space.
@@ -282,12 +250,10 @@ will not alter it besides changing the currently bound texture.
 
 The following blend state is used for drawing font glyphs::
 
+    from pyglet.gl import *
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     glEnable(GL_BLEND)
 
 All glyph textures use the ``GL_TEXTURE_2D`` target, so you should ensure that
 a higher priority target such as ``GL_TEXTURE_3D`` is not enabled before
 trying to render text.
-
-For complete control over how text is rendered, use the `Glyph` objects
-returned from `Font.get_glyphs` to construct your own vertex arrays.
