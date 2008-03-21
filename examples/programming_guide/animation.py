@@ -12,6 +12,9 @@ If the filename is omitted, a sample animation is loaded
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+# The dinosaur.gif file packaged alongside this script is in the public
+# domain, it was obtained from http://www.gifanimations.com/.
+
 import sys
 
 import pyglet
