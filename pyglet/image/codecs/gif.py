@@ -162,4 +162,8 @@ def read_graphic_control_extension(file, stream, graphics_scope):
         raise ImageFormatException('Incorrect block size')
     
     if delay_time:
+        # Follow Firefox/Mac behaviour: use 100ms delay for any delay
+        # less than 10ms.
+        if delay_time <= 1:
+            delay_time = 10
         graphics_scope.delay = float(delay_time) / 100

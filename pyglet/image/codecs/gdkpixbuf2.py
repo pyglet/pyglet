@@ -121,6 +121,7 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
         # raise.
         gif_stream = gif.read(file)
         delays = [image.delay for image in gif_stream.images]
+        print delays
 
         # Get GDK animation iterator
         file.seek(0)
@@ -129,13 +130,13 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
         time = GTimeVal(0, 0)
         iter = gdkpixbuf.gdk_pixbuf_animation_get_iter(anim, byref(time))
 
-        animation = Animation([])
+        frames = []
 
         # Extract each image   
         for control_delay in delays:
             pixbuf = gdkpixbuf.gdk_pixbuf_animation_iter_get_pixbuf(iter)
             image = self._pixbuf_to_image(pixbuf)
-            animation.frames.append(AnimationFrame(image, control_delay))
+            frames.append(AnimationFrame(image, control_delay))
 
             gdk_delay = gdkpixbuf.gdk_pixbuf_animation_iter_get_delay_time(iter)
             gdk_delay *= 1000 # milliseconds to microseconds
@@ -150,7 +151,7 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
             time.tv_usec = us % 1000000
             gdkpixbuf.gdk_pixbuf_animation_iter_advance(iter, byref(time))
 
-        return animation
+        return Animation(frames)
 
 def get_decoders():
     return [GdkPixbuf2ImageDecoder()]
