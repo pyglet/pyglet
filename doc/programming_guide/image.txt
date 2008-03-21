@@ -9,9 +9,8 @@ Loaded images can be efficiently provided to OpenGL as a texture, and OpenGL
 textures and framebuffers can be retrieved as pyglet images to be saved or
 otherwise manipulated.
 
-Some simple methods are provided for drawing images to windows; these will
-usually be sufficient for writing simple sprite-based games.  For more
-advanced imaging you will need some knowledge of OpenGL.
+pyglet also provides an efficient and comprehensive `Sprite` class, for
+displaying images on the screen with an optional transform.
 
 .. contents::
     :local:
@@ -21,10 +20,13 @@ advanced imaging you will need some knowledge of OpenGL.
 Loading an image
 ----------------
 
-Images are loaded using the `pyglet.image.load` function::
+Images can be loaded using the `pyglet.image.load` function::
 
-    from pyglet import image
-    kitten = image.load('kitten.png')
+    import pyglet
+    kitten = pyglet.image.load('kitten.png')
+
+If the image is distributed with your application, consider using the
+`pyglet.resource` module (see `Loading resources TODO`).
 
 Without any additional arguments, `load` will attempt to load the
 filename specified using any available image decoder.  This will allow you to
@@ -37,7 +39,7 @@ You can load an image from any file-like object providing a `read` method by
 specifying the `file` keyword parameter::
 
     kitten_stream = open('kitten.png', 'rb')
-    kitten = image.load('kitten.png', file=kitten_stream)
+    kitten = pyglet.image.load('kitten.png', file=kitten_stream)
 
 In this case the filename ``kitten.png`` is optional, but gives a hint to the
 decoder as to the file type (it is otherwise unused).
@@ -82,7 +84,7 @@ use.  For example, in the following example the pure Python PNG decoder is
 always used rather than the operating system's decoder::
 
     from pyglet.image.codecs.png import PNGImageDecoder
-    kitten = image.load('kitten.png', decoder=PNGImageDecoder())
+    kitten = pyglet.image.load('kitten.png', decoder=PNGImageDecoder())
 
 This use is not recommended unless your application has to work around
 specific deficiences in an operating system decoder.
@@ -187,8 +189,8 @@ any format it supports can be written.
 Working with images
 -------------------
 
-The `image.load` function returns an `AbstractImage`.  The actual class of the
-object depends on the decoder that was used, but all images support the
+The `pyglet.image.load` function returns an `AbstractImage`.  The actual class
+of the object depends on the decoder that was used, but all images support the
 following attributes:
 
 `width`
@@ -219,53 +221,6 @@ to an image region may or may not be reflected on the source image, and
 changes to the source image may or may not be reflected on any region images.
 You should not assume either behaviour.
 
-Displaying images
------------------
-
-Use the `blit` method to draw an image to the current window::
-
-    kitten.blit(x, y)
-
-You can use the `blit` method to draw any image, including an image region.
-The `x` and `y` coordinates locate where to draw the anchor point of the
-image.  For example, to center the image at ``(x, y)``::
-
-    kitten.anchor_x = kitten.width // 2
-    kitten.anchor_y = kitten.height // 2
-    kitten.blit(x, y)
-
-You can also specify an optional `z` component to the `blit` method.  This has
-no effect unless you have changed the default projection or enabled depth
-testing.  In the following example, the second image is drawn *behind* the
-first, even though it is drawn after it::
-
-    from pyglet.gl import *
-    glEnable(GL_DEPTH_TEST)
-
-    kitten.blit(x, y, 0)
-    kitten.blit(x, y, -0.5)
-
-The default pyglet projection has a depth range of (-1, 1) -- images drawn
-with a z value outside this range will not be visible, regardless of whether
-depth testing is enabled or not.
-
-Images with an alpha channel can be blended with the existing framebuffer.  To
-do this you need to supply OpenGL with a blend equation.  The following code
-fragment implements the most common form of alpha blending, however other
-techniques are also possible::
-
-    from pyglet.gl import *
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-You would only need to call the code above once during your program, before
-you draw any images.
-
-The `blit` method is not designed for high-performance display of many
-images. See the `pyglet.graphics` and related `pyglet.sprite` modules for
-high-performance image display.
-
-
 The AbstractImage hierarchy
 ---------------------------
 
@@ -281,7 +236,7 @@ An image of any class can be converted into a `Texture` or `ImageData` using
 the `get_texture` and `get_image_data` methods defined on `AbstractImage`.  For
 example, to load an image and work with it as an OpenGL texture::
 
-    kitten = image.load('kitten.png').get_texture()
+    kitten = pyglet.image.load('kitten.png').get_texture()
 
 There is no penalty for accessing one of these methods if object is already
 of the requested class.  The following table shows how concrete classes are
@@ -341,7 +296,7 @@ data, or as a ctypes pointer.  Details such as the pitch and component layout
 are also stored in the class.  You can access an `ImageData` object for any
 image with `get_image_data`::
 
-    kitten = image.load('kitten.png').get_image_data()
+    kitten = pyglet.image.load('kitten.png').get_image_data()
 
 The design of `ImageData` is to allow applications to access the detail in the
 format they prefer, rather than having to understand the many formats that
@@ -375,22 +330,19 @@ The length of a format string always gives the number of bytes per pixel.  So,
 the minimum absolute pitch for a given image is ``len(kitten.format) *
 kitten.width``.   
 
-To retrieve pixel data in a particular format, set the `pitch` and `format`
-properties then read `data`.  The following example reads tightly packed rows
-in ``RGB`` format (the alpha component, if any, will be discarded)::
+To retrieve pixel data in a particular format, use the `get_data` method,
+specifying the desired format and pitch. The following example reads tightly
+packed rows in ``RGB`` format (the alpha component, if any, will be
+discarded)::
 
     kitten = kitten.get_image_data()
-    kitten.format = 'RGB'
-    kitten.pitch = len(kitten.format) * kitten.width
-    data = kitten.data
+    data = kitten.get_data('RGB', kitten.width * 3)
 
 `data` always returns a string, however it can be set to a ctypes array,
 stdlib array, list of byte data, string, or ctypes pointer.  To set the image
-data, set the format and pitch first, then the data::
+data use `set_data`, again specifying the format and pitch::
 
-    kitten.format = 'RGB'
-    kitten.pitch = kitten.width * 3
-    kitten.data = data
+    kitten.set_data('RGB', kitten.width * 3, data)
 
 You can also create `ImageData` directly, by providing each of these
 attributes to the constructor.  This is any easy way to load textures into
@@ -453,6 +405,372 @@ constructed to pull it into one.  If the rows are not tightly packed, or if
 the image is ordered from top-to-bottom, the rows will be split before the
 regular expression is applied.  Each of these may incur a performance penalty
 -- you should avoid such formats for real-time texture updates if possible.
+
+Image sequences and atlases
+---------------------------
+
+Sometimes a single image is used to hold several images.  For example, a
+"sprite sheet" is an image that contains each animation frame required for a
+character sprite animation.  
+
+pyglet provides convenience classes for extracting the individual images from
+such a composite image as if it were a simple Python sequence.  Discrete
+images can also be packed into one or more larger textures with texture bins
+and atlases.
+
+.. figure:: image_sequence.svg
+
+    The AbstractImageSequence class hierarchy.
+
+Image grids
+^^^^^^^^^^^
+
+An "image grid" is a single image which is divided into several smaller images
+by drawing an imaginary grid over it.  The following image shows an image used
+for the explosion animation in the *Astraea* example.
+
+.. figure:: explosion.png
+
+    An image consisting of eight animation frames arranged in a grid.
+
+This image has one row and eight columns.  This is all the information you
+need to create an `ImageGrid` with::
+
+    import pyglet
+
+    explosion = pyglet.image.load('explosion.png')
+    explosion_seq = pyglet.image.ImageGrid(explosion, 1, 8)
+
+The images within the grid can now be accessed as if they were their own
+images::
+
+    frame_1 = explosion_seq[0]
+    frame_2 = explosion_seq[1]
+
+Images with more than one row can be accessed either as a single-dimensional
+sequence, or as a (row, column) tuple; as shown in the following diagram.
+
+.. figure:: image_grid.svg
+
+    An image grid with several rows and columns, and the slices that can be
+    used to access it.
+
+Image sequences can be sliced like any other sequence in Python.  For example,
+the following obtains the first four frames in the animation::
+
+    start_frames = explosion_seq[:4]
+
+For efficient rendering, you should use a `TextureGrid`.  This uses a single
+texture for the grid, and each individual image returned from a slice will be
+a `TextureRegion`::
+
+    explosion_tex_seq = image.TextureGrid(explosion_seq)
+
+Because `TextureGrid` is also a `Texture`, you can use it either as individual
+images or as the whole grid at once.
+
+3D textures
+^^^^^^^^^^^
+
+`TextureGrid` is extremely efficient for drawing many sprites from a single
+texture.  One problem you may encounter, however, is bleeding between adjacent
+images.  
+
+When OpenGL renders a texture to the screen, by default it obtains each pixel
+colour by interpolating nearby texels.  You can disable this behaviour by
+switching to the ``GL_NEAREST`` interpolation mode, however you then lose the
+benefits of smooth scaling, distortion, rotation and sub-pixel positioning.
+
+You can alleviate the problem by always leaving a 1-pixel clear border around
+each image frame.  This will not solve the problem if you are using
+mipmapping, however.  At this stage you will need a 3D texture.
+
+You can create a 3D texture from any sequence of images, or from an
+`ImageGrid`.  The images must all be of the same dimension, however they need
+not be powers of two (pyglet takes care of this by returning `TextureRegion`
+as with a regular `Texture`).
+
+In the following example, the explosion texture from above is uploaded into a
+3D texture::
+
+    explosion_3d = pyglet.image.Texture3D.create_for_image_grid(explosion_seq)
+
+You could also have stored each image as a separate file and used
+`Texture3D.create_for_images` to create the 3D texture.
+
+Once created, a 3D texture behaves like any other `ImageSequence`; slices
+return `TextureRegion` for an image plane within the texture.  Unlike a
+`TextureGrid`, though, you cannot blit a `Texture3D` in its entirety.
+
+Texture bins and atlases
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Image grids are useful when the artist has good tools to construct the larger
+images of the appropriate format, and the contained images all have the same
+size.  However it is often simpler to keep individual images as separate files
+on disk, and only combine them into larger textures at runtime for efficiency.
+
+A `TextureAtlas` is initially an empty texture, but images of any size can be
+added to it at any time.  The atlas takes care of tracking the "free" areas
+within the texture, and of placing images at appropriate locations within the
+texture to avoid overlap.
+
+It's possible for a `TextureAtlas` to run out of space for new images, so
+applications will need to either know the correct size of the texture to
+allocate initally, or maintain multiple atlases as each one fills up.
+
+The `TextureBin` class provides a simple means to manage multiple atlases.
+The following example loads a list of images, then inserts those images into a
+texture bin.  The resulting list is a list of `TextureRegion` images that map
+into the larger shared texture atlases::
+
+    import pyglet
+
+    images = [
+        pyglet.image.load('img1.png'),
+        pyglet.image.load('img2.png'),
+        # ...
+    ]
+
+    bin = pyglet.image.atlas.TextureBin()
+    images = [bin.add(image) for image in images]
+
+The `pyglet.resource` module (see `Loading resources TODO`) uses texture bins
+internally to efficiently pack images automatically.
+
+Animations
+----------
+
+While image sequences and atlases provide storage for related images, they
+alone are not enough to describe a complete animation.  
+
+The `Animation` class manages a list of `AnimationFrame` objects, each of
+which references an image and a duration, in seconds.  The storage of 
+the images is up to the application developer: they can each be discrete, or
+packed into a texture atlas, or any other technique.
+
+An animation can loaded directly from a GIF 89a image file with
+`load_animation` (supported on Linux, Mac OS X and Windows) or constructed
+manually from a list of images or an image sequence using the class methods
+(in which case the timing information will also need to be provided).  The
+`add_to_texture_bin` method provides a convenient way to pack the image frames
+into a texture bin for efficient access.
+
+Individual frames can be accessed by the application for use with any kind of
+rendering, or the entire animation can be used directly with a `Sprite` (see
+next section).
+
+The following example loads a GIF animation and packs the images in that
+animation into a texture bin.  A sprite is used to display the animation in
+the window::
+
+    import pyglet
+
+    animation = pyglet.image.load_animation('animation.gif')
+    bin = pyglet.image.TextureBin()
+    animation.add_to_texture_bin(bin)
+    sprite = pyglet.sprite.Sprite(animation)
+
+    window = pyglet.window.Window()
+
+    @window.event
+    def on_draw():
+        sprite.draw()
+
+    pyglet.app.run()
+
+When animations are loaded with `pyglet.resource` (see `Loading resources
+TODO`) the frames are automatically packed into a texture bin.
+
+This example program is located in
+``examples/programming_guide/animation.py``, along with a sample GIF animation
+file.
+
+Buffer images
+-------------
+
+pyglet provides a basic representation of the framebuffer as components of the
+`AbstractImage` hierarchy.  At this stage this representation is based off
+OpenGL 1.1, and there is no support for newer features such as framebuffer
+objects.  Of course, this doesn't prevent you using framebuffer objects in
+your programs -- `pyglet.gl` provides this functionality -- just that they are
+not represented as `AbstractImage` types.
+
+.. figure:: buffer_image.svg
+    
+    The `BufferImage` hierarchy.
+
+A framebuffer consists of
+
+* One or more colour buffers, represented by `ColorBufferImage`
+* An optional depth buffer, represented by `DepthBufferImage`
+* An optional stencil buffer, with each bit represented by `BufferImageMask`
+* Any number of auxilliary buffers, also represented by `ColorBufferImage`
+
+You cannot create the buffer images directly; instead you must obtain
+instances via the `BufferManager`.  Use `get_buffer_manager` to
+get this singleton::
+
+    buffers = image.get_buffer_manager()
+
+Only the back-left color buffer can be obtained (i.e., the front buffer is
+inaccessible, and stereo contexts are not supported by the buffer manager)::
+
+    color_buffer = buffers.get_color_buffer()
+
+This buffer can be treated like any other image.  For example, you could copy
+it to a texture, obtain its pixel data, save it to a file, and so on.  Using
+the `texture` attribute is particularly useful, as it allows you to perform
+multipass rendering effects without needing a render-to-texture extension.
+
+The depth buffer can be obtained similarly::
+
+    depth_buffer = buffers.get_depth_buffer()
+
+When a depth buffer is converted to a texture, the class used will be a
+`DepthTexture`, suitable for use with shadow map techniques.
+
+The auxilliary buffers and stencil bits are obtained by requesting one, which
+will then be marked as "in-use".  This permits multiple libraries and your
+application to work together without clashes in stencil bits or auxilliary
+buffer names.  For example, to obtain a free stencil bit::
+
+    mask = buffers.get_buffer_mask()
+
+The buffer manager maintains a weak reference to the buffer mask, so that when
+you release all references to it, it will be returned to the pool of available
+masks.
+
+Similarly, a free auxilliary buffer is obtained::
+
+    aux_buffer = buffers.get_aux_buffer()
+
+When using the stencil or auxilliary buffers, make sure you explicitly request
+these when creating the window.  See `OpenGL configuration options` for
+details.
+
+Displaying images
+-----------------
+
+Images should be drawn into a window in the window's `on_draw` event handler.
+Usually a "sprite" should be created for each appearance of the image
+on-screen.  Images can also be drawn directly without creating a sprite.
+
+Sprites
+^^^^^^^
+
+A sprite is an instance of an image displayed in the window.  Multiple sprites
+can share the same image; for example, hundreds of bullet sprites might share
+the same bullet image.
+
+A sprite is constructed given an image or animation, and drawn with the
+`Sprite.draw` method::
+
+    sprite = pyglet.sprite.Sprite(image)    
+
+    @window.event
+    def on_draw():
+        window.clear()
+        sprite.draw()
+
+Sprites have properties for setting the position, rotation, scale, opacity,
+color tint and visibility of the displayed image.  Sprites automatically
+handle displaying the most up-to-date frame of an animation.  The following
+example uses a scheduled function to gradually move the sprite across the
+screen::
+
+    def update(dt):
+        # Move 10 pixels per second
+        sprite.x += dt * 10
+
+    # Call update 60 times a second
+    pyglet.clock.schedule_interval(update, 1/60.)
+
+If you need to draw many sprites, use a `Batch` to draw them all at once.
+This is far more efficient than calling `draw` on each of them in a loop::
+
+    batch = pyglet.graphics.Batch()
+
+    sprites = [pyglet.sprite.Sprite(image, batch=batch),
+               pyglet.sprite.Sprite(image, batch=batch),
+               # ...  ]
+
+    @window.event
+    def on_draw():
+        window.clear()
+        batch.draw()
+    
+When sprites are collected into a batch, no guarantee is made about the order
+in which they will be drawn.  If you need to ensure some sprites are drawn
+before others (for example, landscape tiles might be drawn before character
+sprites, which might be drawn before some particle effect sprites), use two or
+more `OrderedGroup` objects to specify the draw order::
+
+    batch = pyglet.graphics.Batch()
+    background = pyglet.graphics.OrderedGroup(0)
+    foreground = pyglet.graphics.OrderedGroup(1)
+
+    sprites = [pyglet.sprite.Sprite(image, batch=batch, group=background),
+               pyglet.sprite.Sprite(image, batch=batch, group=background),
+               pyglet.sprite.Sprite(image, batch=batch, group=foreground),
+               pyglet.sprite.Sprite(image, batch=batch, group=foreground),
+               # ...]
+
+    @window.event
+    def on_draw():
+        window.clear()
+        batch.draw()
+
+See the `Graphics TODO` section for more details on batch and group rendering.
+
+For best performance, try to collect all batch images into as few textures as
+possible; for example, by loading images with `pyglet.resource.image` (see 
+`Resource loading TODO`) or with `Texture bins and atlases`).
+
+Simple image blitting
+^^^^^^^^^^^^^^^^^^^^^
+
+A simple but less efficient way to draw an image directly into a window is
+with the `blit` method::
+
+    @window.event
+    def on_draw():
+        window.clear()
+        image.blit(x, y)
+
+The `x` and `y` coordinates locate where to draw the anchor point of the
+image.  For example, to center the image at ``(x, y)``::
+
+    kitten.anchor_x = kitten.width // 2
+    kitten.anchor_y = kitten.height // 2
+    kitten.blit(x, y)
+
+You can also specify an optional `z` component to the `blit` method.  This has
+no effect unless you have changed the default projection or enabled depth
+testing.  In the following example, the second image is drawn *behind* the
+first, even though it is drawn after it::
+
+    from pyglet.gl import *
+    glEnable(GL_DEPTH_TEST)
+
+    kitten.blit(x, y, 0)
+    kitten.blit(x, y, -0.5)
+
+The default pyglet projection has a depth range of (-1, 1) -- images drawn
+with a z value outside this range will not be visible, regardless of whether
+depth testing is enabled or not.
+
+Images with an alpha channel can be blended with the existing framebuffer.  To
+do this you need to supply OpenGL with a blend equation.  The following code
+fragment implements the most common form of alpha blending, however other
+techniques are also possible::
+
+    from pyglet.gl import *
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+You would only need to call the code above once during your program, before
+you draw any images (this is not necessary when using only sprites).
 
 OpenGL imaging
 --------------
@@ -525,9 +843,9 @@ region::
 
 The `Texture.blit` method does this.
 
-Use the ``Texture.create_for_size`` method to create a texture with
-non-power-2 dimensions using the ``GL_texture_rectangle_ARB`` extension (the
-`media` package does this for video textures where possible).
+Use the ``Texture.create`` method to create either a texture region from a
+larger power-2 sized texture, or a texture with the exact dimensions using 
+the ``GL_texture_rectangle_ARB`` extension.
 
 Texture internal format
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -560,163 +878,10 @@ their OpenGL counterparts.  For example, an image with format ``"RG"`` will use
 averaged from the red and green components, and the alpha channel will be
 empty (maximal).
 
-Use the ``Texture.create_for_size`` class method to create a texture with a
-specific internal format.
+Use the ``Texture.create`` class method to create a texture with a specific
+internal format.
 
 .. _OpenGL Programming Guide: http://opengl.org/documentation/red_book/
-
-Image sequences
----------------
-
-pyglet provides an abstraction for a sequence of images -- for example, an
-animation consisting of discrete image frames. 
-
-.. figure:: image_sequence.svg
-
-    The AbstractImageSequence class hierarchy.
-
-Image grids
-^^^^^^^^^^^
-
-An "image grid" is a single image which is divided into several smaller images
-by drawing an imaginary grid over it.  The following image shows an image used
-for the explosion animation in the *Astraea* example.
-
-.. figure:: explosion.png
-
-    An image consisting of eight animation frames arranged in a grid.
-
-This image has one row and eight columns.  This is all the information you
-need to create an `ImageGrid` with::
-
-    from pyglet import image
-
-    explosion = image.load('explosion.png')
-    explosion_seq = image.ImageGrid(explosion, 1, 8)
-
-The images within the grid can now be accessed as if they were their own
-images::
-
-    frame_1 = explosion_seq[0]
-    frame_2 = explosion_seq[1]
-
-Images with more than one row can be accessed either as a single-dimensional
-sequence, or as a (row, column) tuple; as shown in the following diagram.
-
-.. figure:: image_grid.svg
-
-    An image grid with several rows and columns, and the slices that can be
-    used to access it.
-
-Image sequences can be sliced like any other sequence in Python.  For example,
-the following obtains the first four frames in the animation::
-
-    start_frames = explosion_seq[:4]
-
-For efficient rendering, you should use a `TextureGrid`.  This uses a single
-texture for the grid, and each individual image returned from a slice will be
-a `TextureRegion`::
-
-    explosion_tex_seq = image.TextureGrid(explosion_seq)
-
-Because `TextureGrid` is also a `Texture`, you can use it either as individual
-images or as the whole grid at once.
-
-3D textures
-^^^^^^^^^^^
-
-`TextureGrid` is extremely efficient for drawing many sprites from a single
-texture.  One problem you may encounter, however, is bleeding between adjacent
-images.  
-
-When OpenGL renders a texture to the screen, by default it obtains each pixel
-colour by interpolating nearby texels.  You can disable this behaviour by
-switching to the ``GL_NEAREST`` interpolation mode, however you then lose the
-benefits of smooth scaling, distortion, rotation and sub-pixel positioning.
-
-You can alleviate the problem by always leaving a 1-pixel clear border around
-each image frame.  This will not solve the problem if you are using
-mipmapping, however.  At this stage you will need a 3D texture.
-
-You can create a 3D texture from any sequence of images, or from an
-`ImageGrid`.  The images must all be of the same dimension, however they need
-not be powers of two (pyglet takes care of this by returning `TextureRegion`
-as with a regular `Texture`).
-
-In the following example, the explosion texture from above is uploaded into a
-3D texture::
-
-    explosion_3d = image.Texture3D.create_for_image_grid(explosion_seq)
-
-You could also have stored each image as a separate file and used
-`Texture3D.create_for_images` to create the 3D texture.
-
-Once created, a 3D texture behaves like any other `ImageSequence`; slices
-return `TextureRegion` for an image plane within the texture.  Unlike a
-`TextureGrid`, though, you cannot blit a `Texture3D` in its entirety.
-
-Buffer images
--------------
-
-pyglet provides a basic representation of the framebuffer as components of the
-`AbstractImage` hierarchy.  At this stage this representation is based off
-OpenGL 1.1, and there is no support for newer features such as framebuffer
-objects.  Of course, this doesn't prevent you using framebuffer objects in
-your programs -- `pyglet.gl` provides this functionality -- just that they are
-not represented as `AbstractImage` types.
-
-.. figure:: buffer_image.svg
-    
-    The `BufferImage` hierarchy.
-
-A framebuffer consists of
-
-* One or more colour buffers, represented by `ColorBufferImage`
-* An optional depth buffer, represented by `DepthBufferImage`
-* An optional stencil buffer, with each bit represented by `BufferImageMask`
-* Any number of auxilliary buffers, also represented by `ColorBufferImage`
-
-You cannot create the buffer images directly; instead you must obtain
-instances via the `BufferManager`.  Use `get_buffer_manager` to
-get this singleton::
-
-    buffers = image.get_buffer_manager()
-
-Only the back-left color buffer can be obtained (i.e., the front buffer is
-inaccessible, and stereo contexts are not supported by the buffer manager)::
-
-    color_buffer = buffers.get_color_buffer()
-
-This buffer can be treated like any other image.  For example, you could copy
-it to a texture, obtain its pixel data, save it to a file, and so on.  Using
-the `texture` attribute is particularly useful, as it allows you to perform
-multipass rendering effects without needing a render-to-texture extension.
-
-The depth buffer can be obtained similarly::
-
-    depth_buffer = buffers.get_depth_buffer()
-
-When a depth buffer is converted to a texture, the class used will be a
-`DepthTexture`, suitable for use with shadow map techniques.
-
-The auxilliary buffers and stencil bits are obtained by requesting one, which
-will then be marked as "in-use".  This permits multiple libraries and your
-application to work together without clashes in stencil bits or auxilliary
-buffer names.  For example, to obtain a free stencil bit::
-
-    mask = buffers.get_buffer_mask()
-
-The buffer manager maintains a weak reference to the buffer mask, so that when
-you release all references to it, it will be returned to the pool of available
-masks.
-
-Similarly, a free auxilliary buffer is obtained::
-
-    aux_buffer = buffers.get_aux_buffer()
-
-When using the stencil or auxilliary buffers, make sure you explicitly request
-these when creating the window.  See `OpenGL configuration options` for
-details.
 
 Saving an image
 ---------------
