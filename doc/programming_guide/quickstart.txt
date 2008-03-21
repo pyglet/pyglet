@@ -95,7 +95,7 @@ Handling mouse and keyboard events
 
 So far the only event used is the `on_draw` event.  To react to keyboard and
 mouse events, it's necessary to write and attach event handlers for these
-events as well.
+events as well::
 
     import pyglet
 
