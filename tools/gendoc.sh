@@ -29,7 +29,7 @@ function html_api() {
     $EPYDOC/scripts/epydoc \
         --config=$TOOLS/epydoc.config \
         --css=$TOOLS/epydoc_pyglet.css \
-        -v
+        -v --debug
 }
 
 function html_guide() {
