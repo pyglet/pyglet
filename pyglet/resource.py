@@ -44,13 +44,6 @@ ZIP files can appear on the path; they will be searched inside.  The resource
 module also behaves as expected when applications are bundled using py2exe or
 py2app.
 
-By default, the search path `path` for resources includes the location of the
-application's ``__main__`` module and the current working directory.  This
-allows users or developers to easily override specific resources by adding
-newer files to the working directory.  The path is a list of locations to
-search and can be modified directly.  After modifying the path, call
-`reindex`.
-
 As well as providing file references (with the `file` function), the resource
 module also contains convenience functions for loading images, textures,
 fonts, media and documents.
@@ -58,6 +51,33 @@ fonts, media and documents.
 3rd party modules or packages not bound to a specific application should
 construct their own `Loader` instance and override the path to use the
 resources in the module's directory.
+
+Path format
+^^^^^^^^^^^
+
+The resource path `path` (see also `Loader.__init__` and `Loader.path`)
+is a list of locations to search for resources.  Locations are searched in the
+order given in the path.  If a location is not valid (for example, if the
+directory does not exist), it is skipped.
+
+Locations in the path beginning with an ampersand (''@'' symbol) specify
+Python packages.  Other locations specify a ZIP archive or directory on the
+filesystem.  Locations that are not absolute are assumed to be relative to the
+script home.  Some examples::
+
+    # Search just the `res` directory, assumed to be located alongside the
+    # main script file.
+    path = ['res'] 
+
+    # Search the directory containing the module `levels.level1`, followed
+    # by the `res` directory.
+    path = ['@levels.level1', 'res']
+
+Paths are always case-sensitive, even if the filesystem is not.  This
+avoids a common programmer error when porting applications between platforms.
+
+The default path is ``['.']``.  If you modify the path, you must call
+`reindex`.
 
 :since: pyglet 1.1
 '''
@@ -243,29 +263,21 @@ class Loader(object):
     def __init__(self, path=None, script_home=None):
         '''Create a loader for the given path.
 
-        The path is a list of locations to search for resources.  Locations
-        are searched in the order given in the path.  If a location is not
-        valid (for example, if the directory does not exist), it is skipped.
+        If no path is specified it defaults to ``['.']``; that is, just the
+        program directory.
 
-        Locations in the path beginning with an ampersand (''@'' symbol)
-        specify Python packages.  Other locations specify a ZIP archive
-        or directory on the filesystem.  Locations that are not absolute
-        are assumed to be relative to the script home.
-
-        Paths are always case-sensitive, even if the filesystem is not.  This
-        avoids a common error when porting applications between platforms.
-
-        If no path is specified it defaults to ``['.', '@__main__']``; that
-        is, the program directory is searched first, followed by the package
-        directory of the entry module.
+        See the module documentation for details on the path format.
 
         :Parameters:
             `path` : list of str
                 List of locations to search for resources.
+            `script_home` : str
+                Base location of relative files.  Defaults to the result of
+                `get_script_home`.
 
         '''
         if path is None:
-            path = ['.', '@__main__']
+            path = ['.']
         if type(path) in (str, unicode):
             path = [path]
         self.path = list(path)
@@ -587,8 +599,7 @@ class Loader(object):
         :rtype: `FormattedDocument`
         '''
         file = self.file(name)
-        # TODO path!
-        return pyglet.text.load(name, file, 'text/html')
+        return pyglet.text.decode_html(file.read(), self.location(name))
 
     def attributed(self, name):
         '''Load an attributed text document.
@@ -627,6 +638,8 @@ class Loader(object):
 #:
 #: Locations in the search path are searched in order and are always
 #: case-sensitive.  After changing the path you must call `reindex`.
+#:
+#: See the module documentation for details on the path format.
 #:
 #: :type: list of str
 path = []
