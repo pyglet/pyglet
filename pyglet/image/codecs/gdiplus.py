@@ -239,18 +239,20 @@ class GDIPlusDecoder(ImageDecoder):
         n_delays = prop_item.length / sizeof(c_long)
         delays = cast(prop_item.value, POINTER(c_long * n_delays)).contents
 
-        animation = Animation([])
+        frames = []
         
         for i in range(frame_count.value):
             gdiplus.GdipImageSelectActiveFrame(bitmap, dimensions, i)
             image = self._get_image(bitmap)
 
-            delay = delays[i] / 100.
-            animation.frames.append(AnimationFrame(image, delay))
+            delay = delays[i]
+            if delay <= 1:
+                delay = 10
+            frames.append(AnimationFrame(image, delay/100.))
 
         self._delete_bitmap(bitmap)
 
-        return animation
+        return Animation(frames)
 
 def get_decoders():
     return [GDIPlusDecoder()]
