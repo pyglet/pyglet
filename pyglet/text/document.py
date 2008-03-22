@@ -561,6 +561,7 @@ class AbstractDocument(event.EventDispatcher):
                     Dictionary giving updated named style attributes of the
                     text.
 
+            :event:
             '''
 AbstractDocument.register_event_type('on_insert_text')
 AbstractDocument.register_event_type('on_delete_text')
