@@ -269,6 +269,8 @@ class QuickTimeImageDecoder(ImageDecoder):
             quicktime.SetMovieTimeValue(movie, interesting_time)
             time = interesting_time.value
             duration = duration.value / time_scale
+            if duration <= 0.01:
+                duration = 0.1
 
         quicktime.DisposeMovie(movie)
         carbon.DisposeHandle(data_ref)
