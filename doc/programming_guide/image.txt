@@ -240,7 +240,7 @@ example, to load an image and work with it as an OpenGL texture::
 
 There is no penalty for accessing one of these methods if object is already
 of the requested class.  The following table shows how concrete classes are
-converted into other classes::
+converted into other classes:
 
     .. list-table::
         :header-rows: 1

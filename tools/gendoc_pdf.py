@@ -61,6 +61,10 @@ def rest2docbook(rest_filename, docbook_filename):
     for field in [n for n in doctree.traverse() if isinstance(n, nodes.field)]:
         field.parent.remove(field)
 
+    # Remove line nodes (docbook crashes on them)
+    for line in [n for n in doctree.traverse() if isinstance(n, nodes.line)]:
+        line.parent.replace(line, line.children)
+
     # Copy images
     for img in [n for n in doctree.traverse() if isinstance(n, nodes.image)]:
         img['scale'] = '50'
