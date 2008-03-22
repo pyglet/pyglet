@@ -316,7 +316,7 @@ in `Writing a pyglet application`, using a subclass of `Window`::
         pyglet.app.run()
 
 This example program is located in
-``examples/programming_guide/window_subclass.py``.
+`examples/programming_guide/window_subclass.py`.
 
 Windows and OpenGL contexts
 ---------------------------

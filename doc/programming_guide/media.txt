@@ -1,4 +1,4 @@
-Sound and Video
+Sound and video
 ===============
 
 pyglet can play many audio and video formats.  Audio is played back with

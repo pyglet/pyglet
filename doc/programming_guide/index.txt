@@ -10,8 +10,11 @@ API reference, provided separately.
 If this is your first time reading about pyglet, we suggest you start at
 `Writing a pyglet application`.
 
-.. contents::
-    :depth: 2
+.. contents:: Sections
+    :depth: 1
+
+.. contents:: Table of contents
+    :depth: 3
 
 .. include:: installation.txt
 .. include:: quickstart.txt
@@ -26,6 +29,7 @@ If this is your first time reading about pyglet, we suggest you start at
 .. include:: text.txt
 .. include:: image.txt
 .. include:: media.txt
+.. include:: resources.txt
 .. include:: advanced.txt
 .. include:: features1.1.txt
 

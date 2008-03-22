@@ -583,7 +583,7 @@ When animations are loaded with `pyglet.resource` (see `Loading resources
 TODO`) the frames are automatically packed into a texture bin.
 
 This example program is located in
-``examples/programming_guide/animation.py``, along with a sample GIF animation
+`examples/programming_guide/animation.py`, along with a sample GIF animation
 file.
 
 Buffer images
