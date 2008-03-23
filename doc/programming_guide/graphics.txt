@@ -94,6 +94,8 @@ Some attributes have a "recommended" format string, which is the most efficient
 form for the video driver as it requires less conversion.
 
     .. list-table::
+        :header-rows: 1
+
         * - Attribute
           - Formats
           - Recommended
@@ -126,6 +128,8 @@ The possible data types that can be specified in the format string are
 described below.
 
     .. list-table::
+        :header-rows: 1
+
         * - Format
           - Type
           - Python type
@@ -199,7 +203,7 @@ stored in video memory.
 
 Create a `VertexList` for a set of attributes and initial data with
 `pyglet.graphics.vertex_list`.  The following example creates a vertex
-list with the two coloured points used in the previous page.
+list with the two coloured points used in the previous page::
 
     vertex_list = pyglet.graphics.vertex_list(2,
         ('v2i', (10, 15,    30, 35)),
