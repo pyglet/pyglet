@@ -61,6 +61,7 @@ class ImageElement(pyglet.text.document.InlineElement):
         y2 = y + self.height + self.descent
         vertex_list = layout.batch.add(4, pyglet.gl.GL_QUADS, group,
             ('v2i', (x1, y1, x2, y1, x2, y2, x1, y2)),
+            ('c3B', (255, 255, 255) * 4),
             ('t3f', self.image.tex_coords))
         self.vertex_lists[layout] = vertex_list
 
