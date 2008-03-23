@@ -25,7 +25,7 @@ Images can be loaded using the `pyglet.image.load` function::
     kitten = pyglet.image.load('kitten.png')
 
 If the image is distributed with your application, consider using the
-`pyglet.resource` module (see `Loading resources TODO`).
+`pyglet.resource` module (see `Application resources`).
 
 Without any additional arguments, `load` will attempt to load the
 filename specified using any available image decoder.  This will allow you to
@@ -530,7 +530,7 @@ into the larger shared texture atlases::
     bin = pyglet.image.atlas.TextureBin()
     images = [bin.add(image) for image in images]
 
-The `pyglet.resource` module (see `Loading resources TODO`) uses texture bins
+The `pyglet.resource` module (see `Application resources`) uses texture bins
 internally to efficiently pack images automatically.
 
 Animations
@@ -572,8 +572,8 @@ the window::
 
     pyglet.app.run()
 
-When animations are loaded with `pyglet.resource` (see `Loading resources
-TODO`) the frames are automatically packed into a texture bin.
+When animations are loaded with `pyglet.resource` (see `Application
+resources`) the frames are automatically packed into a texture bin.
 
 This example program is located in
 `examples/programming_guide/animation.py`, along with a sample GIF animation
@@ -714,11 +714,11 @@ more `OrderedGroup` objects to specify the draw order::
         window.clear()
         batch.draw()
 
-See the `Graphics TODO` section for more details on batch and group rendering.
+See the `Graphics` section for more details on batch and group rendering.
 
 For best performance, try to collect all batch images into as few textures as
 possible; for example, by loading images with `pyglet.resource.image` (see 
-`Resource loading TODO`) or with `Texture bins and atlases`).
+`Application resources`) or with `Texture bins and atlases`).
 
 Simple image blitting
 ^^^^^^^^^^^^^^^^^^^^^

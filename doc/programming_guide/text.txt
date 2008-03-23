@@ -41,7 +41,7 @@ The example demonstrates the most common uses of text rendering:
   meaning of these coordinates is given by the ``halign`` and ``valign``
   parameters.
 * The actual text is drawn with the `Label.draw` method.  Labels can also be
-  added to a graphics batch; see (TODO) for details.
+  added to a graphics batch; see `Graphics` for details.
 
 Loading system fonts
 --------------------
@@ -151,7 +151,7 @@ file-like object supporting the `read` method.  This can be useful for
 extracting fonts from a resource archive or over a network.
 
 If the custom font is distributed with your application, consider using the
-`Resource framework TODO`.
+`Application resources`.
 
 Supported font formats
 ^^^^^^^^^^^^^^^^^^^^^^
