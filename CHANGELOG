@@ -1,3 +1,50 @@
+1.1alpha2
+    * New module: pyglet.info, for bug reports
+    * docs: Many docstrings added to public methods
+    * docs: Programming guide updated for pyglet 1.1
+    * docs: Fixed docstring errors in pyglet.resource
+    * examples: Most examples have been updated to demonstrate pyglet 1.1
+    * examples: Added animation.py and video.py
+    * pyglet: Fixed lazy importing for detection by py2exe, etc
+    * pyglet.app: Added exit() convenience function
+    * pyglet.clock: Fixed rescheduling bug on computers with lousy clocks
+    * pyglet.event: Fixed handlers deleted during dispatch
+    * pyglet.graphics: Fixed VBO disable option
+    * pyglet.image: Fixed animation loading on all platforms
+    * pyglet.image: Set a default delay of 100ms for GIF frames with a delay
+      of <= 10ms (mimicks Firefox and Safari behaviour)
+    * pyglet.media: Deprecated Player.texture for Player.get_texture
+    * pyglet.media: Fixed buffer underrun handling in ALSA and OpenAL
+    * pyglet.sprite: Fixed destruction of incomplete object
+    * pyglet.sprite: Added color property
+    * pyglet.text: Fixed layout of empty document
+    * pyglet.text: Fixed content width calculation causing glitches in
+      caret motion and scrolling
+    * pyglet.text: Added some public methods and properties to expose more
+      internal state
+    * pyglet.text: Added on_layout_change event
+    * pyglet.text: Fixed redundant incremental layout updates
+    * pyglet.text: Refactored HTML and structured text decoders
+    * pyglet.text: Fixed rendering of line breaks without word wrapping
+    * pyglet.resource: Caches now use weak references
+    * pyglet.window: Fixed Window.close() crashing when called more than once
+    * pyglet.window: Fixed motion event key mappings on Linux and Windows
+    * pyglet.window.key: Added MOD_ACCEL modifier
+    * Linux: Fixed font names for some TrueType fonts
+    * Linux: Fixed config attribute types
+    * OS X: Improved audio playback and event loop response
+    * OS X: Fixed mouse delta of first event after setting exclusive
+    * OS X: Fixed menu tracking and application quit event 
+    * OS X: Fixed window size events during creation and setting fullscreen
+    * OS X: Fixed TGA support
+    * OS X: Fixed fullscreen for external monitors that don't report their
+      maximum refresh rate
+    * OS X: Fixed mouse cursor visibility after minimising window
+    * Win32: Improved event loop response
+    * Win32: Fixed garbage being played after end of sounds
+    * Win32: Context sharing now raises an exception instead of failing
+      silently
+
 1.1alpha1
     * New modules: app, graphics, image.atlas, resource, sprite, text
     * pyglet: Most modules are now accessible after importing just "pyglet"
