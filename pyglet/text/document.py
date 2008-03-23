@@ -279,6 +279,8 @@ class AbstractDocument(event.EventDispatcher):
         return self._text
 
     def _set_text(self, text):
+        if text == self._text:
+            return
         self.delete_text(0, len(self._text))
         self.insert_text(0, text)
     
