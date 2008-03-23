@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 '''A full-screen minute:second timer.  Leave it in charge of your conference
 lighting talks.
 
