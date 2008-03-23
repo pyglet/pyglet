@@ -39,13 +39,13 @@ display the same image at different positions on the screen.  Sprites can also
 be scaled larger or smaller, rotated at any angle and drawn at a fractional
 opacity.
 
-The following complete example loads a ``"ball.png"`` image resource and
-creates a sprite for that image.  The sprite is then drawn in the window's
+The following complete example loads a ``"ball.png"`` image and creates a
+sprite for that image.  The sprite is then drawn in the window's
 draw event handler::
 
     import pyglet
 
-    ball_image = pyglet.resource.image('ball.png')
+    ball_image = pyglet.image.load('ball.png')
     ball = pyglet.sprite.Sprite(ball_image, x=50, y=50)
 
     window = pyglet.window.Window()
