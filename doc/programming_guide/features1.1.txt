@@ -140,6 +140,8 @@ another package.  Applications continuing to use `Window.dispatch_events`
 gain no advantage, but suffer from poorer response, increased CPU usage and
 artifacts during window resizing and moving.
 
+See `The application event loop` for more details.
+
 Loading resources
 ^^^^^^^^^^^^^^^^^
 
@@ -174,6 +176,8 @@ The resource module efficiently packs multiple small images into larger
 textures, so there is less need for artists to create sprite sheets themselves
 for efficient rendering.  Images and textures are also cached automatically.
 
+See `Application resources` for more details.
+
 New graphics features
 ---------------------
 
@@ -181,22 +185,23 @@ The `pyglet.graphics` module is a low-level abstraction of OpenGL vertex
 arrays and buffer objects.  It is intended for use by developers who are
 already very familiar with OpenGL and are after the best performance possible.
 pyglet uses this module internally to implement its new sprite module and the
-new text rendering module.
+new text rendering module.  The `Graphics` chapter describes this module in
+detail.
 
 The `pyglet.sprite` module provide a fast, easy way to display 2D graphics on
 screen.  Sprites can be moved, rotated, scaled and made translucent.  Using
 the *batch* features of the new graphics API, multiple sprites can be drawn in
-one go very quickly.
+one go very quickly.  See `Sprites` for details.
 
 The `pyglet.image.load_animation` function can load animated GIF images.
 These are returned as an `Animation`, which exposes the individual image
 frames and timings.  Animations can also be played directly on a sprite in
-place of an image.
+place of an image.  The `Animations` chapter describes how to use them.
 
 The `pyglet.image.atlas` module packs multiple images into larger textures for
 efficient rendering.  The `pyglet.resource` module uses this module for small
 images automatically, but you can use it directly even if you're not making
-use of `pyglet.resource`.
+use of `pyglet.resource`.  See `Texture bins and atlases` for details.
 
 Images now have ``anchor_x`` and ``anchor_y`` attributes, which specify a
 point from which the image should be drawn.  The sprite module also uses the
