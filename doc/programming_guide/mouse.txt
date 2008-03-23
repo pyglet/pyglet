@@ -130,7 +130,6 @@ image, or hidden completely.  The change to the cursor will be applicable only
 to the window you make the change to.  To hide the mouse cursor, call
 `Window.set_mouse_visible`::
 
-    import pyglet
     window = pyglet.window.Window()
     window.set_mouse_visible(False)
 

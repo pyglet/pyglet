@@ -18,8 +18,6 @@ Simple text rendering
 The following complete example creates a window that displays "Hello, World" 
 centered vertically and horizontally::
 
-    import pyglet
-
     window = pyglet.window.Window()
     label = pyglet.text.Label('Hello, world', 
                               font_name='Times New Roman', 
@@ -52,8 +50,6 @@ To load a font you must know its family name.  This is the name displayed in
 the font dialog of any application.  For example, all operating systems
 include the *Times New Roman* font.  You must also specify the font size to
 load, in points::
-
-    import pyglet
 
     # Load "Times New Roman" at 16pt
     times = pyglet.font.load('Times New Roman', 16)
@@ -136,8 +132,6 @@ Loading a custom font must be performed in two steps:
 
 For example, let's say you have the *Action Man* font in a file called
 ``action_man.ttf``.  The following code will load an instance of that font::
-
-    import pyglet
 
     pyglet.font.add_file('action_man.ttf')
     action_man = pyglet.font.load('Action Man')

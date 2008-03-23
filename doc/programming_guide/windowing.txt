@@ -14,7 +14,6 @@ Creating a window
 If the `Window` constructor is called with no arguments, defaults will be
 assumed for all parameters::
 
-    import pyglet
     window = pyglet.window.Window()
 
 The default parameters used are:
@@ -113,8 +112,7 @@ You can specify the size of a window as the first two arguments to the window
 constructor.  In the following example, a window is created with a width of
 800 pixels and a height of 600 pixels.
 
-    import pyglet
-    win = pyglet.window.Window(800, 600)
+    window = pyglet.window.Window(800, 600)
 
 The "size" of a window refers to the drawable space within it, excluding any
 additional borders or title bar drawn by the operating system.
@@ -203,9 +201,7 @@ implementing splash screens or custom window borders.
 You can specify the style of the window in the `Window` constructor.  Once
 created, the window style cannot be altered::
 
-    from pyglet import window
-
-    win = window.Window(style=window.Window.WINDOW_STYLE_DIALOG)
+    window = pyglet.window.Window(style=window.Window.WINDOW_STYLE_DIALOG)
 
 Caption
 ^^^^^^^
@@ -245,8 +241,6 @@ scale the image to the correct size using a simple interpolation algorithm.
 
 The following example provides both a 16x16 and a 32x32 image as the window
 icon::
-
-    import pyglet
 
     window = pyglet.window.Window()
     icon1 = pyglet.image.load('16x16.png')
@@ -298,8 +292,6 @@ benefits:
 
 The following example shows the same "Hello World" application as presented
 in `Writing a pyglet application`, using a subclass of `Window`::
-
-    import pyglet
 
     class HelloWorldWindow(pyglet.window.Window):
         def __init__(self):

@@ -123,9 +123,7 @@ Game performance is often measured in terms of the number of times the display
 is updated every second; that is, the frames-per-second or FPS.  You can
 determine your application's FPS with a single function call::
 
-    from pyglet import clock
-
-    clock.get_fps()
+    pyglet.clock.get_fps()
 
 The value returned is more useful than simply taking the reciprocal of `dt`
 from a period function, as it is averaged over a sliding window of several
@@ -139,9 +137,7 @@ rate while it is running.  Printing it to the console is not ideal as this
 will have a severe impact on performance.  pyglet provides the `ClockDisplay`
 class for displaying the frame rate with very little effort::
 
-    from pyglet import clock
-
-    fps_display = clock.ClockDisplay()
+    fps_display = pyglet.clock.ClockDisplay()
 
     @window.event
     def on_draw():

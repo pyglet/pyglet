@@ -28,13 +28,11 @@ The `Window` class subclasses `EventDispatcher`, which enables it to have
 event handlers attached to it.  The simplest way to attach an event handler is
 to set the corresponding attribute on the object::
 
-    from pyglet import window
-
-    win = window.Window()
+    window = pyglet.window.Window()
 
     def on_resize(width, height):
         pass
-    win.on_resize = on_resize
+    window.on_resize = on_resize
 
 Note that you need not even name your function the same as the event.  
 
@@ -42,22 +40,22 @@ While this technique is straight-forward, it requires you to write the name of
 the event three times for the one function, which can get tiresome.  pyglet
 provides a shortcut using the `event` decorator::
 
-    win = window.Window()
+    window = window.Window()
 
-    @win.event
+    @window.event
     def on_resize(width, height):
         pass
 
 You can even give the event handler another name if necessary::
 
-    @win.event('on_resize')
+    @window.event('on_resize')
     def handle_resize_event(width, height):
         pass
 
 As shown in `Subclassing Window`, you can also attach event handlers by
 subclassing the event dispatcher and adding the event handler as a method::
 
-    class MyWindow(window.Window):
+    class MyWindow(pyglet.window.Window):
         def on_resize(self, width, height):
             pass
 
@@ -77,7 +75,7 @@ To push an event handler onto the stack, use the `push_handlers` method::
         if symbol == key.SPACE
             fire_laser()
 
-    win.push_handlers(on_key_press)
+    window.push_handlers(on_key_press)
 
 One use for pushing handlers instead of setting them is to handle different
 parameterisations of events in different functions.  In the above example, if
@@ -96,7 +94,7 @@ onto the window, will prevent the escape key from exiting the program::
         if symbol == key.ESCAPE:
             return True
 
-    win.push_handlers(on_key_press)
+    window.push_handlers(on_key_press)
 
 You can push more than one event handler at a time, which is especially useful
 when coupled with the ``pop_handlers`` function.  In the following example,
@@ -113,10 +111,10 @@ popped off in one go::
             print 'Mouse button pressed in game'
             return True
 
-        win.push_handlers(on_key_press, on_mouse_press)
+        window.push_handlers(on_key_press, on_mouse_press)
 
     def end_game():
-        win.pop_handlers()
+        window.pop_handlers()
 
 Note that you do not specify which handlers to pop off the stack -- the entire
 top "level" (consisting of all handlers specified in a single call to
@@ -139,10 +137,10 @@ pushed on and popped off of a window::
     game_handlers = GameEventHandler()
 
     def start_game()
-        win.push_handlers(game_handlers)
+        window.push_handlers(game_handlers)
     
     def stop_game()
-        win.pop_handlers()
+        window.pop_handlers()
 
 Creating your own event dispatcher
 ----------------------------------
@@ -159,9 +157,7 @@ The steps for creating an event dispatcher are:
 
 In the following example, a hypothetical GUI widget provides several events::
 
-    from pyglet import event
-
-    class ClankingWidget(event.EventDispatcher):
+    class ClankingWidget(pyglet.event.EventDispatcher):
         def clank(self):
             self.dispatch_event('on_clank')
 
@@ -171,8 +167,8 @@ In the following example, a hypothetical GUI widget provides several events::
         def on_clank(self):
             print 'Default clank handler.'
 
-    register_event_type(ClankingWidget, 'on_clank')
-    register_event_type(ClankingWidget, 'on_clicked')
+    ClankingWidget.register_event_type('on_clank')
+    ClankingWidget.register_event_type('on_clicked')
     
 Event handlers can then be attached as described in the preceding sections::
 
@@ -216,7 +212,7 @@ application.  The following example recreates the `ClockTimer` example from
 ``Attach``, ``Detach`` and ``Notify`` methods::
 
     # The subject
-    class ClockTimer(event.EventDispatcher):
+    class ClockTimer(pyglet.event.EventDispatcher):
         def tick(self):
             self.dispatch_events('on_update')
     ClockTimer.register_event('on_update')

@@ -22,7 +22,6 @@ Loading an image
 
 Images can be loaded using the `pyglet.image.load` function::
 
-    import pyglet
     kitten = pyglet.image.load('kitten.png')
 
 If the image is distributed with your application, consider using the
@@ -436,8 +435,6 @@ for the explosion animation in the *Astraea* example.
 This image has one row and eight columns.  This is all the information you
 need to create an `ImageGrid` with::
 
-    import pyglet
-
     explosion = pyglet.image.load('explosion.png')
     explosion_seq = pyglet.image.ImageGrid(explosion, 1, 8)
 
@@ -524,8 +521,6 @@ The following example loads a list of images, then inserts those images into a
 texture bin.  The resulting list is a list of `TextureRegion` images that map
 into the larger shared texture atlases::
 
-    import pyglet
-
     images = [
         pyglet.image.load('img1.png'),
         pyglet.image.load('img2.png'),
@@ -563,8 +558,6 @@ next section).
 The following example loads a GIF animation and packs the images in that
 animation into a texture bin.  A sprite is used to display the animation in
 the window::
-
-    import pyglet
 
     animation = pyglet.image.load_animation('animation.gif')
     bin = pyglet.image.TextureBin()
@@ -898,8 +891,6 @@ or, specifying a file-like object::
 The following example shows how to grab a screenshot of your application
 window::
 
-    from pyglet import image
-
-    image.get_buffer_manager().get_color_buffer().save('screenshot.png')
+    pyglet.image.get_buffer_manager().get_color_buffer().save('screenshot.png')
 
 Note that images can only be saved in the PNG format unless PIL is installed.

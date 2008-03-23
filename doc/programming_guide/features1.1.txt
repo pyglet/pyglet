@@ -76,7 +76,6 @@ with importing just `pyglet`.  This is especially handy for modules that are
 typically only used once in an application, and frees up the names ``font``,
 ``image``, ``window`` and so on for the application developer.  For example::
 
-    import pyglet
     window = pyglet.window.Window()
 
 Application event loop
@@ -100,8 +99,6 @@ resources, even if the application is not doing anything.
 The new `pyglet.app` module provides an application event loop that is
 less demanding of the CPU yet more responsive to user events.  A complete
 application that opens an empty window can be written with::
-
-    import pyglet
 
     window = pyglet.window.Window()
 
@@ -216,8 +213,6 @@ The `pyglet.text` module can render formatted text efficiently.  A new class
 `Label` supercedes the old `pyglet.font.Text` class (which is now actually
 implemented in terms of `Label`).  The "Hello, World" application can now
 written::
-
-    import pyglet
 
     window = pyglet.window.Window()
     label = pyglet.text.Label('Hello, world', 

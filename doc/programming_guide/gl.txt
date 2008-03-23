@@ -37,7 +37,6 @@ OpenGL::
 All function names and constants are identical to the C counterparts.  For
 example, the following program draws a triangle on the screen::
 
-    import pyglet
     from pyglet.gl import *
 
     # Direct OpenGL commands to this window.
@@ -61,7 +60,6 @@ draw the same triangle as above, but uses a vertex array instead of the
 immediate-mode functions.  Note the construction of the vertex array using a
 one-dimensional ``ctypes`` array of ``GLfloat``::
 
-    import pyglet
     from pyglet.gl import *
 
     win = pyglet.window.Window()
@@ -135,7 +133,6 @@ You can also disable this error check by setting the following option `before`
 importing ``pyglet.gl`` or ``pyglet.window``::
 
     # Disable error checking for increased performance
-    import pyglet
     pyglet.options['debug_gl'] = False
 
     from pyglet.gl import *

@@ -165,7 +165,6 @@ pyglet provides the convenience class `KeyStateHandler` for storing the
 current keyboard state.  This can be pushed onto the event handler stack of
 any window and subsequently queried as a dict::
 
-    import pyglet
     from pyglet.window import key
 
     window = pyglet.window.Window()

@@ -251,8 +251,6 @@ the `Window` constructor to create the context.
 
 For example, to create a window with an alpha channel::
 
-    import pyglet
-    
     config = pyglet.gl.Config(alpha_size=8)
     window = pyglet.window.Window(config=config)
 
@@ -305,8 +303,6 @@ configurations supported by the screen.
 
 In the following example, all configurations with either an auxilliary buffer
 or an accumulation buffer are printed::
-
-    import pyglet
 
     platform = pyglet.window.get_platform()
     display = platform.get_default_display()
@@ -380,8 +376,6 @@ object.
 In the following example, an attribute is set on the object space indicating
 that game objects have been loaded.  This way, if the context is recreated,
 you can check for this attribute to determine if you need to load them again::
-
-    import pyglet
 
     context = pyglet.gl.get_current_context()
     object_space = context.object_space

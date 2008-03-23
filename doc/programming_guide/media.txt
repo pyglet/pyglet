@@ -51,7 +51,6 @@ operating system:
 The audio driver can be set through the ``audio`` key of the `pyglet.options`
 dictionary.  For example::
 
-    import pyglet
     pyglet.options['audio'] = ('openal', 'silent')
 
 This tells pyglet to use the OpenAL driver if it is available, and to
@@ -121,7 +120,6 @@ If your application needs stereo playback, or does not require spatialised
 sound, consider using the ALSA driver in preference to the OpenAL driver.  You
 can do this with::
 
-    import pyglet
     pyglet.options['audio'] = ('alsa', 'openal', 'silent')
 
 .. [#openalf] OpenAL is not installed by default on Windows, nor in many Linux
