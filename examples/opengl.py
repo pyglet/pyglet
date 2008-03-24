@@ -95,6 +95,7 @@ def setup():
     glClearColor(1, 1, 1, 1)
     glColor3f(1, 0, 0)
     glEnable(GL_DEPTH_TEST)
+    glEnable(GL_CULL_FACE)
 
     # Uncomment this line for a wireframe view
     #glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
@@ -162,7 +163,7 @@ class Torus(object):
             for j in range(inner_slices - 1):
                 p = i * inner_slices + j
                 indices.extend([p, p + inner_slices, p + inner_slices + 1])
-                indices.extend([p, p + 1, p + inner_slices + 1])
+                indices.extend([p,  p + inner_slices + 1, p + 1])
         indices = (GLuint * len(indices))(*indices)
 
         # Compile a display list
