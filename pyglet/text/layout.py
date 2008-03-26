@@ -715,6 +715,7 @@ class TextLayout(object):
         if height is not None:
             self._height = height
         if multiline:
+            assert not multiline or width, 'Must specify width with multiline'
             self._multiline = multiline
 
             # Default bottom for multiline, baseline for single line

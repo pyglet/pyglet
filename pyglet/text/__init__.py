@@ -251,8 +251,9 @@ class DocumentLabel(layout.TextLayout):
                 Optional graphics group to use.
 
         '''
-        super(DocumentLabel, self).__init__(document, width=width,
-                                            height=height, multiline=multiline, 
+        super(DocumentLabel, self).__init__(document, 
+                                            width=width, height=height, 
+                                            multiline=multiline, 
                                             dpi=dpi, batch=batch, group=group)
 
         self._x = x
@@ -343,6 +344,34 @@ class DocumentLabel(layout.TextLayout):
     :type: bool
     ''')
 
+    def get_style(self, name):
+        '''Get a document style value by name.
+
+        If the document has more than one value of the named style,
+        `pyglet.text.document.STYLE_INDETERMINATE` is returned.
+
+        :Parameters:
+            `name` : str
+                Style name to query.  See documentation for
+                `pyglet.text.layout` for known style names.
+
+        :rtype: object
+        '''
+        return self.document.get_style_range(name, 0, len(self.document.text))
+
+    def set_style(self, name, value):
+        '''Set a document style value by name over the whole document.
+
+        :Parameters:
+            `name` : str
+                Name of the style to set.  See documentation for
+                `pyglet.text.layout` for known style names.
+            `value` : object
+                Value of the style.
+
+        '''
+        self.document.set_style(0, len(self.document.text), {name: value})
+
 class Label(DocumentLabel):
     '''Plain text label.
     '''
@@ -394,7 +423,8 @@ class Label(DocumentLabel):
 
         '''
         document = decode_text(text)
-        super(Label, self).__init__(document, x, y, halign, valign,
+        super(Label, self).__init__(document, x, y, width, height, 
+                                    halign, valign,
                                     multiline, dpi, batch, group)
 
         self.document.set_style(0, len(self.document.text), {
@@ -451,7 +481,8 @@ class HTMLLabel(DocumentLabel):
         self._text = text
         self._location = location
         document = decode_html(text, location)
-        super(HTMLLabel, self).__init__(document, x, y, halign, valign,
+        super(HTMLLabel, self).__init__(document, x, y, width, height, 
+                                        halign, valign,
                                         multiline, dpi, batch, group)
 
     def _set_text(self, text):
