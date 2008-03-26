@@ -128,7 +128,7 @@ class GDIPlusDecoder(ImageDecoder):
         # animation, is it?
         return ['.gif']
 
-    def _load_bitmap(self, file):
+    def _load_bitmap(self, file, filename):
         data = file.read()
 
         # Create a HGLOBAL with image data
@@ -204,13 +204,13 @@ class GDIPlusDecoder(ImageDecoder):
         # TODO: How to call IUnknown::Release on stream?
 
     def decode(self, file, filename):
-        bitmap = self._load_bitmap(file)
+        bitmap = self._load_bitmap(file, filename)
         image = self._get_image(bitmap)
         self._delete_bitmap(bitmap)
         return image
 
     def decode_animation(self, file, filename):
-        bitmap = self._load_bitmap(file)
+        bitmap = self._load_bitmap(file, filename)
         
         dimension_count = c_uint()
         gdiplus.GdipImageGetFrameDimensionsCount(bitmap, byref(dimension_count))
