@@ -682,6 +682,10 @@ class TextLayout(object):
         :Parameters:
             `document` : `AbstractDocument`
                 Document to display.
+            `width` : int
+                Width of the layout in pixels, or None
+            `height` : int
+                Height of the layout in pixels, or None
             `multiline` : bool
                 If False, newline and paragraph characters are ignored, and
                 text is not word-wrapped.

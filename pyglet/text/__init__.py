@@ -218,7 +218,8 @@ class DocumentLabel(layout.TextLayout):
     associated document.
     '''
     def __init__(self, document=None,
-                 x=0, y=0, halign='left', valign='baseline', 
+                 x=0, y=0, width=None, height=None,
+                 halign='left', valign='baseline', 
                  multiline=False, dpi=None, batch=None, group=None):
         '''Create a label for a given document.
 
@@ -229,6 +230,10 @@ class DocumentLabel(layout.TextLayout):
                 X coordinate of the label.
             `y` : int
                 Y coordinate of the label.
+            `width` : int
+                Width of the label in pixels, or None
+            `height` : int
+                Height of the label in pixels, or None
             `halign` : str
                 Anchor point of the X coordinate: one of ``"left"``,
                 ``"center"`` or ``"right"``.
@@ -246,7 +251,8 @@ class DocumentLabel(layout.TextLayout):
                 Optional graphics group to use.
 
         '''
-        super(DocumentLabel, self).__init__(document, multiline=multiline, 
+        super(DocumentLabel, self).__init__(document, width=width,
+                                            height=height, multiline=multiline, 
                                             dpi=dpi, batch=batch, group=group)
 
         self._x = x
@@ -343,7 +349,8 @@ class Label(DocumentLabel):
     def __init__(self, text='', 
                  font_name=None, font_size=None, bold=False, italic=False,
                  color=(255, 255, 255, 255),
-                 x=0, y=0, halign='left', valign='baseline',
+                 x=0, y=0, width=None, height=None, 
+                 halign='left', valign='baseline',
                   multiline=False, dpi=None, batch=None, group=None):
         '''Create a plain text label.
 
@@ -365,6 +372,10 @@ class Label(DocumentLabel):
                 X coordinate of the label.
             `y` : int
                 Y coordinate of the label.
+            `width` : int
+                Width of the label in pixels, or None
+            `height` : int
+                Height of the label in pixels, or None
             `halign` : str
                 Anchor point of the X coordinate: one of ``"left"``,
                 ``"center"`` or ``"right"``.
@@ -401,7 +412,8 @@ class HTMLLabel(DocumentLabel):
     details.
     '''
     def __init__(self, text='', location=None, 
-                 x=0, y=0, halign='left', valign='baseline',
+                 x=0, y=0, width=None, height=None,
+                 halign='left', valign='baseline',
                  multiline=False, dpi=None, batch=None, group=None):
         '''Create a label with an HTML string.
 
@@ -415,6 +427,10 @@ class HTMLLabel(DocumentLabel):
                 X coordinate of the label.
             `y` : int
                 Y coordinate of the label.
+            `width` : int
+                Width of the label in pixels, or None
+            `height` : int
+                Height of the label in pixels, or None
             `halign` : str
                 Anchor point of the X coordinate: one of ``"left"``,
                 ``"center"`` or ``"right"``.
