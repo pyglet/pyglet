@@ -9,6 +9,9 @@ and inefficient.  The `pyglet.graphics` module provides a simpler means for
 drawing graphics that uses vertex arrays and vertex buffer objects internally
 to deliver better performance.
 
+.. contents::
+    :local:
+
 Drawing primitives
 ------------------
 
@@ -384,15 +387,15 @@ before drawing vertex lists, and then
 afterwards to avoid interfering with later drawing commands.
 
 With a `Group` these state changes can be encapsulated and associated with the
-vertex lists they affect.  Subclass `Group` and override the `Group.set` and
-`Group.unset` methods to perform the required state changes::
+vertex lists they affect.  Subclass `Group` and override the `Group.set_state`
+and `Group.unset_state` methods to perform the required state changes::
 
     class CustomGroup(pyglet.graphics.Group):
-        def set(self):
+        def set_state(self):
             glEnable(texture.target)
             glBindTexture(texture.target, texture.id)
 
-        def unset(self):
+        def unset_state(self):
             glDisable(texture.target)
 
 An instance of this group can now be attached to vertex lists in the batch::
@@ -403,25 +406,26 @@ An instance of this group can now be attached to vertex lists in the batch::
         ('c3B', (0, 0, 255, 0, 255, 0))
     )
 
-The `Batch` ensures that the appropriate ``set`` and ``unset`` methods are
-called before and after the vertex lists that use them.
+The `Batch` ensures that the appropriate ``set_state`` and ``unset_state``
+methods are called before and after the vertex lists that use them.
 
 Hierarchical state
 ^^^^^^^^^^^^^^^^^^
 
 Groups have a `parent` attribute that allows them to be implicitly organised
 in a tree structure.  If groups **B** and **C** have parent **A**, then the
-order of ``set`` and ``unset`` calls for vertex lists in a batch will be::
+order of ``set_state`` and ``unset_state`` calls for vertex lists in a batch
+will be::
 
-    A.set()
+    A.set_state()
     # Draw A vertices
-    B.set()
+    B.set_state()
     # Draw B vertices
-    B.unset()
-    C.set()
+    B.unset_state()
+    C.set_state()
     # Draw C vertices
-    C.unset()
-    A.unset()
+    C.unset_state()
+    A.unset_state()
 
 This is useful to group state changes into as few calls as possible.  For
 example, if you have a number of vertex lists that all need texturing enabled,
@@ -430,10 +434,10 @@ the parent group and bind each texture in the child groups.  The following
 example demonstrates this::
 
     class TextureEnableGroup(pyglet.graphics.Group):
-        def set(self):
+        def set_state(self):
             glEnable(GL_TEXTURE_2D)
 
-        def unset(self):
+        def unset_state(self):
             glDisable(GL_TEXTURE_2D)
 
     texture_enable_group = TextureEnableGroup()
@@ -444,10 +448,10 @@ example demonstrates this::
             assert texture.target = GL_TEXTURE_2D
             self.texture = texture
 
-        def set(self):
+        def set_state(self):
             glBindTexture(GL_TEXTURE_2D, self.texture.id)
 
-        # No unset method required.
+        # No unset_state method required.
 
         def __eq__(self, other):
             return (self.__class__ is other.__class__ and 
