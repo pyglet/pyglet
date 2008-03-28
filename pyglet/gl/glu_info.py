@@ -78,15 +78,19 @@ class GLUInfo(object):
     version = '0.0.0'
     extensions = []
 
+    _have_info = False
+
     def set_active_context(self):
         '''Store information for the currently active context.
 
         This method is called automatically for the default context.
         '''
         self.have_context = True
-        self.extensions = \
-            cast(gluGetString(GLU_EXTENSIONS), c_char_p).value.split()
-        self.version = cast(gluGetString(GLU_VERSION), c_char_p).value
+        if not self._have_info:
+            self.extensions = \
+                cast(gluGetString(GLU_EXTENSIONS), c_char_p).value.split()
+            self.version = cast(gluGetString(GLU_VERSION), c_char_p).value
+            self._have_info = True
 
     def have_version(self, major, minor=0, release=0):
         '''Determine if a version of GLU is supported.

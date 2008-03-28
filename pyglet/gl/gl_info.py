@@ -79,18 +79,22 @@ class GLInfo(object):
     renderer = ''
     extensions = set()
 
+    _have_info = False
+
     def set_active_context(self):
         '''Store information for the currently active context.
 
         This method is called automatically for the default context.
         '''
         self.have_context = True
-        self.vendor = cast(glGetString(GL_VENDOR), c_char_p).value
-        self.renderer = cast(glGetString(GL_RENDERER), c_char_p).value
-        self.extensions = cast(glGetString(GL_EXTENSIONS), c_char_p).value
-        if self.extensions:
-            self.extensions = set(self.extensions.split())
-        self.version = cast(glGetString(GL_VERSION), c_char_p).value
+        if not self._have_info:
+            self.vendor = cast(glGetString(GL_VENDOR), c_char_p).value
+            self.renderer = cast(glGetString(GL_RENDERER), c_char_p).value
+            self.extensions = cast(glGetString(GL_EXTENSIONS), c_char_p).value
+            if self.extensions:
+                self.extensions = set(self.extensions.split())
+            self.version = cast(glGetString(GL_VERSION), c_char_p).value
+            self._have_info = True
 
     def remove_active_context(self):
         self.have_context = False
