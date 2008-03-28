@@ -134,10 +134,15 @@ options = {
     'font': ('gdiplus', 'win32'), # ignored outside win32; win32 is deprecated
     'debug_font': False,
     'debug_gl': not _enable_optimisations,
+    'debug_gl_trace': False,
+    'debug_gl_trace_args': False,
     'debug_graphics_batch': False,
     'debug_graphics_enable_vbo': True,
     'debug_lib': False,
     'debug_media': False,
+    'debug_trace': False,
+    'debug_trace_args': False,
+    'debug_trace_depth': 1,
     'debug_win32': False,
     'debug_x11': False,
     'shadow_window': True,
@@ -150,10 +155,15 @@ _option_types = {
     'font': tuple,
     'debug_font': bool,
     'debug_gl': bool,
+    'debug_gl_trace': bool,
+    'debug_gl_trace_args': bool,
     'debug_graphics_batch': bool,
     'debug_graphics_enable_vbo': bool,
     'debug_lib': bool,
     'debug_media': bool,
+    'debug_trace': bool,
+    'debug_trace_args': bool,
+    'debug_trace_depth': int,
     'debug_win32': bool,
     'debug_x11': bool,
     'shadow_window': bool,
@@ -171,6 +181,8 @@ def _read_environment():
                 options[key] = value.split(',')
             elif _option_types[key] is bool:
                 options[key] = value in ('true', 'TRUE', 'True', '1')
+            elif _option_types[key] is int:
+                options[key] = int(value)
         except KeyError:
             pass
 _read_environment()
@@ -198,6 +210,11 @@ class _Module(object):
         self._name = __name__
         self._file = __file__
         self._submodules = submodules
+   
+        self._trace_args = options['debug_trace_args']
+        self._trace_depth = options['debug_trace_depth']
+        if options['debug_trace']:
+            self._install_trace()
 
         if not _is_epydoc:
             sys.modules[__name__] = self
@@ -211,6 +228,56 @@ class _Module(object):
     def __repr__(self):
         return "<module '%s' from '%s' using class '%s'>" % (
             self._name, self._file, self.__class__.__name__)
+
+    _trace_filename_abbreviations = {}
+
+    def _trace_func(self, frame, event, arg):
+        if event == 'call':
+            import os
+            indent = ''
+            for i in range(self._trace_depth):
+                code = frame.f_code
+                name = code.co_name
+                path = code.co_filename
+                try:
+                    filename = self._trace_filename_abbreviations[path]
+                except KeyError: 
+                    # Trim path down
+                    dir = ''
+                    path, filename = os.path.split(path)
+                    while len(dir + filename) < 30:
+                        filename = os.path.join(dir, filename)
+                        path, dir = os.path.split(path)
+                        if not dir:
+                            filename = os.path.join('', filename)
+                            break
+                    else:
+                        filename = os.path.join('...', filename)
+                    self._trace_filename_abbreviations[path] = filename
+
+                line = code.co_firstlineno
+                if i:
+                    name = 'Called from %s' % name
+                print '%s%s (%s:%d)' % (indent, name, filename, line)
+                if self._trace_args:
+                    for argname in code.co_varnames[:code.co_argcount]:
+                        try:
+                            argvalue = frame.f_locals[argname]
+                            print '  %s%s=%r' % (indent, argname, argvalue)
+                        except:
+                            pass
+                
+                indent += '  '
+                frame = frame.f_back
+                if not frame:
+                    break
+
+        elif event == 'exception':
+            (exception, value, traceback) = arg
+            print 'First chance exception raised:', repr(exception)
+
+    def _install_trace(self):
+        sys.settrace(self._trace_func)
 
 _Module(
     ('app', 'clock', 'com', 'event', 'font', 'gl', 'graphics', 'image',

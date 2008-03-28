@@ -41,7 +41,13 @@ __version__ = '$Id$'
 import sys
 import ctypes
 
+import pyglet
+
 __all__ = ['link_GL', 'link_GLU', 'link_AGL', 'link_GLX', 'link_WGL']
+
+_debug_gl = pyglet.options['debug_gl']
+_debug_gl_trace = pyglet.options['debug_gl_trace']
+_debug_gl_trace_args = pyglet.options['debug_gl_trace_args']
 
 class MissingFunctionException(Exception):
     def __init__(self, name, requires=None, suggestions=None):
@@ -77,6 +83,12 @@ class GLException(Exception):
     pass
 
 def errcheck(result, func, arguments):
+    if _debug_gl_trace:
+        if _debug_gl_trace_args:
+            print '%s%r' % (func.__name__, arguments)
+        else:
+            print func.__name__
+
     from pyglet import gl
     context = gl.current_context
     if not context:
@@ -105,8 +117,7 @@ def errcheck_glend(result, func, arguments):
     return errcheck(result, func, arguments)
 
 def decorate_function(func, name):
-    from pyglet import options
-    if options['debug_gl']:
+    if _debug_gl:
         if name == 'glBegin':
             func.errcheck = errcheck_glbegin
         elif name == 'glEnd':
