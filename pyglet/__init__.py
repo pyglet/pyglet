@@ -231,53 +231,77 @@ class _Module(object):
 
     _trace_filename_abbreviations = {}
 
+    def _trace_repr(self, value, size=40):
+        value = repr(value)
+        if len(value) > size:
+            value = value[:size//2-2] + '...' + value[-size//2-1:]
+        return value
+
+    def _trace_frame(self, frame, indent):
+        from pyglet import lib
+        import os
+        if frame.f_code is lib._TraceFunction.__call__.func_code:
+            is_ctypes = True
+            func = frame.f_locals['self']._func
+            name = func.__name__
+            location = '[ctypes]'
+        else:
+            is_ctypes = False
+            code = frame.f_code
+            name = code.co_name
+            path = code.co_filename
+            line = code.co_firstlineno
+        
+            try:
+                filename = self._trace_filename_abbreviations[path]
+            except KeyError: 
+                # Trim path down
+                dir = ''
+                path, filename = os.path.split(path)
+                while len(dir + filename) < 30:
+                    filename = os.path.join(dir, filename)
+                    path, dir = os.path.split(path)
+                    if not dir:
+                        filename = os.path.join('', filename)
+                        break
+                else:
+                    filename = os.path.join('...', filename)
+                self._trace_filename_abbreviations[path] = filename
+
+            location = '(%s:%d)' % (filename, line)
+
+        if indent:
+            name = 'Called from %s' % name
+        print '%s%s %s' % (indent, name, location)
+
+        if self._trace_args:
+            if is_ctypes:
+                args = [self._trace_repr(arg) for arg in frame.f_locals['args']]
+                print '  %sargs=(%s)' % (indent, ', '.join(args))
+            else:
+                for argname in code.co_varnames[:code.co_argcount]:
+                    try:
+                        argvalue = self._trace_repr(frame.f_locals[argname])
+                        print '  %s%s=%s' % (indent, argname, argvalue)
+                    except:
+                        pass
+
     def _trace_func(self, frame, event, arg):
         if event == 'call':
-            import os
             indent = ''
             for i in range(self._trace_depth):
-                code = frame.f_code
-                name = code.co_name
-                path = code.co_filename
-                try:
-                    filename = self._trace_filename_abbreviations[path]
-                except KeyError: 
-                    # Trim path down
-                    dir = ''
-                    path, filename = os.path.split(path)
-                    while len(dir + filename) < 30:
-                        filename = os.path.join(dir, filename)
-                        path, dir = os.path.split(path)
-                        if not dir:
-                            filename = os.path.join('', filename)
-                            break
-                    else:
-                        filename = os.path.join('...', filename)
-                    self._trace_filename_abbreviations[path] = filename
-
-                line = code.co_firstlineno
-                if i:
-                    name = 'Called from %s' % name
-                print '%s%s (%s:%d)' % (indent, name, filename, line)
-                if self._trace_args:
-                    for argname in code.co_varnames[:code.co_argcount]:
-                        try:
-                            argvalue = frame.f_locals[argname]
-                            print '  %s%s=%r' % (indent, argname, argvalue)
-                        except:
-                            pass
-                
+                self._trace_frame(frame, indent)
                 indent += '  '
                 frame = frame.f_back
                 if not frame:
                     break
-
+                
         elif event == 'exception':
             (exception, value, traceback) = arg
             print 'First chance exception raised:', repr(exception)
 
     def _install_trace(self):
-        sys.settrace(self._trace_func)
+        sys.setprofile(self._trace_func)
 
 _Module(
     ('app', 'clock', 'com', 'event', 'font', 'gl', 'graphics', 'image',

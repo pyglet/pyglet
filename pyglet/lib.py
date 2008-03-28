@@ -49,6 +49,33 @@ import ctypes.util
 import pyglet
 
 _debug_lib = pyglet.options['debug_lib']
+_debug_trace = pyglet.options['debug_trace']
+
+class _TraceFunction(object):
+    def __init__(self, func):
+        self.__dict__['_func'] = func
+
+    def __str__(self):
+        return self._func.__name__
+
+    def __call__(self, *args, **kwargs):
+        return self._func(*args, **kwargs)
+
+    def __getattr__(self, name):
+        return getattr(self._func, name)
+
+    def __setattr__(self, name, value):
+        setattr(self._func, name, value)
+
+class _TraceLibrary(object):
+    def __init__(self, library):
+        self._library = library
+        print library
+
+    def __getattr__(self, name):
+        func = getattr(self._library, name)
+        f = _TraceFunction(func)
+        return f
 
 class LibraryLoader(object):
     def load_library(self, *names, **kwargs):
@@ -77,6 +104,8 @@ class LibraryLoader(object):
                 lib = ctypes.cdll.LoadLibrary(name)
                 if _debug_lib:
                     print name
+                if _debug_trace:
+                    lib = _TraceLibrary(lib)
                 return lib
             except OSError:
                 path = self.find_library(name)
@@ -85,6 +114,8 @@ class LibraryLoader(object):
                         lib = ctypes.cdll.LoadLibrary(path)
                         if _debug_lib:
                             print path
+                        if _debug_trace:
+                            lib = _TraceLibrary(lib)
                         return lib
                     except OSError:
                         pass
@@ -179,6 +210,8 @@ class MachOLibraryLoader(LibraryLoader):
             lib = ctypes.cdll.LoadLibrary(realpath)
             if _debug_lib:
                 print realpath
+            if _debug_trace:
+                lib = _TraceLibrary(lib)
             return lib
 
         raise ImportError("Can't find framework %s." % path)

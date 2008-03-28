@@ -84,10 +84,15 @@ class GLException(Exception):
 
 def errcheck(result, func, arguments):
     if _debug_gl_trace:
+        try:
+            name = func.__name__
+        except AttributeError:
+            name = repr(func)
         if _debug_gl_trace_args:
-            print '%s%r' % (func.__name__, arguments)
+            trace_args = ', '.join([repr(arg)[:20] for arg in arguments])
+            print '%s(%s)' % (name, trace_args)
         else:
-            print func.__name__
+            print name
 
     from pyglet import gl
     context = gl.current_context

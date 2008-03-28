@@ -41,13 +41,22 @@ __version__ = '$Id: lib_glx.py 597 2007-02-03 16:13:07Z Alex.Holkner $'
 import ctypes
 from ctypes import *
 
+import pyglet
 from pyglet.gl.lib import missing_function, decorate_function
 
 __all__ = ['link_GL', 'link_GLU', 'link_WGL']
 
+_debug_trace = pyglet.options['debug_trace']
+
 gl_lib = ctypes.windll.opengl32
 glu_lib = ctypes.windll.glu32
 wgl_lib = gl_lib
+
+if _debug_trace:
+    from pyglet.lib import _TraceLibrary
+    gl_lib = _TraceLibrary(gl_lib)
+    glu_lib = _TraceLibrary(glu_lib)
+    wgl_lib = _TraceLibrary(wgl_lib)
 
 try:
     wglGetProcAddress = wgl_lib.wglGetProcAddress
