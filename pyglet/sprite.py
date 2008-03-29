@@ -178,7 +178,8 @@ class Sprite(event.EventDispatcher):
                  blend_src=GL_SRC_ALPHA,
                  blend_dest=GL_ONE_MINUS_SRC_ALPHA,
                  batch=None,
-                 group=None):
+                 group=None,
+                 usage='stream'):
         '''Create a sprite.
 
         :Parameters:
@@ -198,6 +199,9 @@ class Sprite(event.EventDispatcher):
                 Optional batch to add the sprite to.
             `group` : `Group`
                 Optional parent group of the sprite.
+            `usage` : str
+                Vertex buffer object usage hint, one of ``"stream"``
+                (default), ``"dynamic"`` or ``"static"``.
 
         '''
         if batch is not None:
@@ -216,6 +220,7 @@ class Sprite(event.EventDispatcher):
             self._texture = img.get_texture()
 
         self._group = SpriteGroup(self._texture, blend_src, blend_dest, group)
+        self._usage = usage
         self._create_vertex_list()
 
     def __del__(self):
@@ -348,10 +353,12 @@ class Sprite(event.EventDispatcher):
     def _create_vertex_list(self):
         if self._batch is None:
             self._vertex_list = graphics.vertex_list(4,
-                'v2i', 'c4B', ('t3f', self._texture.tex_coords))
+                'v2i/%s' % self._usage, 
+                'c4B', ('t3f', self._texture.tex_coords))
         else:
             self._vertex_list = self._batch.add(4, GL_QUADS, self._group,
-                'v2i', 'c4B', ('t3f', self._texture.tex_coords))
+                'v2i/%s' % self._usage, 
+                'c4B', ('t3f', self._texture.tex_coords))
         self._update_position()
         self._update_color()
 
