@@ -57,8 +57,8 @@ from pyglet.gl import gl_info
 _enable_vbo = pyglet.options['graphics_vbo']
 
 def create_buffer(size, 
-                  target=GL_ARRAY_BUFFER, 
-                  usage=GL_DYNAMIC_DRAW, 
+                  target=GL_ARRAY_BUFFER_ARB, 
+                  usage=GL_DYNAMIC_DRAW_ARB, 
                   vbo=True):
     '''Create a buffer of vertex data.
 
@@ -75,14 +75,16 @@ def create_buffer(size,
 
     :rtype: `AbstractBuffer`
     '''
-    if vbo and gl_info.have_version(1, 5) and _enable_vbo:
+    if (vbo and 
+        gl_info.have_extension('GL_ARB_vertex_buffer_object') and 
+        _enable_vbo):
         return VertexBufferObject(size, target, usage)
     else:
         return VertexArray(size)
 
 def create_mappable_buffer(size, 
-                           target=GL_ARRAY_BUFFER,
-                           usage=GL_DYNAMIC_DRAW, 
+                           target=GL_ARRAY_BUFFER_ARB,
+                           usage=GL_DYNAMIC_DRAW_ARB, 
                            vbo=True):
     '''Create a mappable buffer of vertex data.
 
@@ -99,7 +101,9 @@ def create_mappable_buffer(size,
 
     :rtype: `AbstractBuffer` with `AbstractMappable`
     '''
-    if vbo and gl_info.have_version(1, 5) and _enable_vbo:
+    if (vbo and 
+        gl_info.have_extension('GL_ARB_vertex_buffer_object') and 
+        _enable_vbo):
         return MappableVertexBufferObject(size, target, usage)
     else:
         return VertexArray(size)
@@ -114,9 +118,9 @@ class AbstractBuffer(object):
             Memory offset of the buffer, as used by the ``glVertexPointer``
             family of functions
         `target` : int
-            OpenGL buffer target, for example ``GL_ARRAY_BUFFER``
+            OpenGL buffer target, for example ``GL_ARRAY_BUFFER_ARB``
         `usage` : int
-            OpenGL buffer usage, for example ``GL_DYNAMIC_DRAW``
+            OpenGL buffer usage, for example ``GL_DYNAMIC_DRAW_ARB``
 
     '''        
 
@@ -283,62 +287,62 @@ class VertexBufferObject(AbstractBuffer):
         self.usage = usage
 
         id = GLuint()
-        glGenBuffers(1, id)
+        glGenBuffersARB(1, id)
         self.id = id.value
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        glBindBuffer(target, self.id)
-        glBufferData(target, self.size, None, self.usage)
+        glBindBufferARB(target, self.id)
+        glBufferDataARB(target, self.size, None, self.usage)
         glPopClientAttrib()
 
     def bind(self):
-        glBindBuffer(self.target, self.id)
+        glBindBufferARB(self.target, self.id)
 
     def unbind(self):
-        glBindBuffer(self.target, 0)
+        glBindBufferARB(self.target, 0)
 
     def set_data(self, data):
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        glBindBuffer(self.target, self.id)
-        glBufferData(self.target, self.size, data, self.usage)
+        glBindBufferARB(self.target, self.id)
+        glBufferDataARB(self.target, self.size, data, self.usage)
         glPopClientAttrib()
 
     def set_data_region(self, data, start, length):
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        glBindBuffer(self.target, self.id)
-        glBufferSubData(self.target, start, length, data)
+        glBindBufferARB(self.target, self.id)
+        glBufferSubDataARB(self.target, start, length, data)
         glPopClientAttrib()
 
     def map(self, invalidate=False):
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        glBindBuffer(self.target, self.id)
+        glBindBufferARB(self.target, self.id)
         if invalidate:
-            glBufferData(self.target, self.size, None, self.usage)
-        ptr = ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY),
+            glBufferDataARB(self.target, self.size, None, self.usage)
+        ptr = ctypes.cast(glMapBufferARB(self.target, GL_WRITE_ONLY_ARB),
                           ctypes.POINTER(ctypes.c_byte * self.size)).contents
         glPopClientAttrib()
         return ptr
 
     def unmap(self):
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        glUnmapBuffer(self.target)
+        glUnmapBufferARB(self.target)
         glPopClientAttrib()
 
     def delete(self):
         id = gl.GLuint(self.id)
-        glDeleteBuffers(1, id)
+        glDeleteBuffersARB(1, id)
 
     def resize(self, size):
         # Map, create a copy, then reinitialize.
         temp = (ctypes.c_byte * size)()
 
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        glBindBuffer(self.target, self.id)
-        data = glMapBuffer(self.target, GL_READ_ONLY)
+        glBindBufferARB(self.target, self.id)
+        data = glMapBufferARB(self.target, GL_READ_ONLY_ARB)
         ctypes.memmove(temp, data, min(size, self.size))
-        glUnmapBuffer(self.target)
+        glUnmapBufferARB(self.target)
 
         self.size = size
-        glBufferData(self.target, self.size, temp, self.usage)
+        glBufferDataARB(self.target, self.size, temp, self.usage)
         glPopClientAttrib()
 
 class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
@@ -365,9 +369,9 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
         size = self._dirty_max - self._dirty_min
         if size > 0:
             if size == self.size:
-                glBufferData(self.target, self.size, self.data, self.usage)
+                glBufferDataARB(self.target, self.size, self.data, self.usage)
             else:
-                glBufferSubData(self.target, self._dirty_min, size,
+                glBufferSubDataARB(self.target, self._dirty_min, size,
                     self.data_ptr + self._dirty_min)
             self._dirty_min = sys.maxint
             self._dirty_max = 0
@@ -403,8 +407,8 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
         
         self.size = size
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        glBindBuffer(self.target, self.id)
-        glBufferData(self.target, self.size, self.data, self.usage)
+        glBindBufferARB(self.target, self.id)
+        glBufferDataARB(self.target, self.size, self.data, self.usage)
         glPopClientAttrib()
 
         self._dirty_min = sys.maxint
