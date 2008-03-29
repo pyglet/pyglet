@@ -1,4 +1,16 @@
 <news>
+  <item date="23-March-2008" author="Alex"
+        title="pyglet 1.1 alpha 2 released">
+    This is a bug-fixing and documentation release.  Lots of bugs introduced
+    with the pyglet 1.1 features have been squashed, and all the new features
+    are now extensively documented in both the API Reference and Programming
+    Guide.  If you'd like to join the testing effort, please head on over
+    to the <a
+    href="http://code.google.com/p/pyglet/downloads/list?q=1.1alpha2">download
+    server</a> to grab a source or egg release.  The <a
+    href="http://pyglet.org/doc/1.1">new documentation</a> is also available
+    online.
+  </item>
   <item date="1-March-2008" author="Alex"
         title="pyglet 1.1 alpha 1 released">
     pyglet 1.1 alpha 1 adds more features than any previous release, including
