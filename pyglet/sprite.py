@@ -179,7 +179,7 @@ class Sprite(event.EventDispatcher):
                  blend_dest=GL_ONE_MINUS_SRC_ALPHA,
                  batch=None,
                  group=None,
-                 usage='stream'):
+                 usage='none'):
         '''Create a sprite.
 
         :Parameters:
@@ -200,8 +200,9 @@ class Sprite(event.EventDispatcher):
             `group` : `Group`
                 Optional parent group of the sprite.
             `usage` : str
-                Vertex buffer object usage hint, one of ``"stream"``
-                (default), ``"dynamic"`` or ``"static"``.
+                Vertex buffer object usage hint, one of ``"none"`` (default),
+                ``"stream"``, ``"dynamic"`` or ``"static"``.  Applies
+                only to vertex data.
 
         '''
         if batch is not None:

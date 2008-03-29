@@ -67,13 +67,14 @@ from pyglet.graphics import allocation, vertexattribute, vertexbuffer
 
 _usage_format_re = re.compile(r'''
     (?P<attribute>[^/]*)
-    (/ (?P<usage> static|dynamic|stream))?
+    (/ (?P<usage> static|dynamic|stream|none))?
 ''', re.VERBOSE)
 
 _gl_usages = {
     'static': GL_STATIC_DRAW_ARB,
     'dynamic': GL_DYNAMIC_DRAW_ARB,
     'stream': GL_STREAM_DRAW_ARB,
+    'none': GL_STREAM_DRAW_ARB, # Force no VBO
 }
 
 def _nearest_pow2(v):
@@ -92,9 +93,12 @@ def create_attribute_usage(format):
     format string is as documented in `pyglet.graphics.vertexattribute`, with
     the addition of an optional usage component::
 
-        usage ::= attribute ( '/' ('static' | 'dynamic' | 'stream') )?
+        usage ::= attribute ( '/' ('static' | 'dynamic' | 'stream' | 'none') )?
 
-    If the usage is not given it defaults to 'dynamic'.
+    If the usage is not given it defaults to 'dynamic'.  The usage corresponds
+    to the OpenGL VBO usage hint, and for ``static`` also indicates a
+    preference for interleaved arrays.  If ``none`` is specified a buffer
+    object is not created, and vertex data is stored in system memory.
     
     Some examples:
 
@@ -110,11 +114,13 @@ def create_attribute_usage(format):
     attribute = vertexattribute.create_attribute(attribute_format)
     usage = match.group('usage')
     if usage:
+        vbo = not usage == 'none'
         usage = _gl_usages[usage]
     else:
         usage = GL_DYNAMIC_DRAW
+        vbo = True
 
-    return (attribute, usage)
+    return (attribute, usage, vbo)
 
 def create_domain(*attribute_usage_formats):
     '''Create a vertex domain covering the given attribute usage formats.
@@ -155,7 +161,7 @@ class VertexDomain(object):
         static_attributes = []
         attributes = []
         self.buffer_attributes = []   # list of (buffer, attributes)
-        for attribute, usage in attribute_usages:
+        for attribute, usage, vbo in attribute_usages:
             if usage == GL_STATIC_DRAW:
                 # Group attributes for interleaved buffer
                 static_attributes.append(attribute)
@@ -163,7 +169,8 @@ class VertexDomain(object):
                 # Create non-interleaved buffer
                 attributes.append(attribute)
                 attribute.buffer = vertexbuffer.create_mappable_buffer(
-                    attribute.stride * self.allocator.capacity, usage=usage)
+                    attribute.stride * self.allocator.capacity, 
+                    usage=usage, vbo=vbo)
                 attribute.buffer.element_size = attribute.stride
                 attribute.buffer.attributes = (attribute,)
                 self.buffer_attributes.append(
