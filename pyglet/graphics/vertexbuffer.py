@@ -54,7 +54,7 @@ import pyglet
 from pyglet.gl import *
 from pyglet.gl import gl_info
 
-_enable_vbo = pyglet.options['debug_graphics_enable_vbo']
+_enable_vbo = pyglet.options['graphics_vbo']
 
 def create_buffer(size, 
                   target=GL_ARRAY_BUFFER, 
