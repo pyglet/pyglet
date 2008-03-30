@@ -385,7 +385,7 @@ class Loader(object):
         :rtype: `Location`
         '''
         try:
-            return self.index[name]
+            return self._index[name]
         except KeyError:
             raise ResourceNotFoundException(name)
 
