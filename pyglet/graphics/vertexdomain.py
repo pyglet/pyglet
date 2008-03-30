@@ -289,7 +289,8 @@ class VertexDomain(object):
         glPopClientAttrib()
 
     def __repr__(self):
-        return '<%s %s>' % (self.__class__.__name__, self.allocator)
+        return '<%s@%x %s>' % (self.__class__.__name__, id(self), 
+                               self.allocator)
 
 class VertexList(object):
     '''A list of vertices within a `VertexDomain`.  Use
@@ -379,6 +380,14 @@ class VertexList(object):
         self.domain.allocator.dealloc(self.start, self.count)
         self.domain = domain
         self.start = new_start
+        
+        self._colors_cache_version = None
+        self._fog_coords_cache_version = None
+        self._edge_flags_cache_version = None
+        self._normals_cache_version = None
+        self._secondary_colors_cache_version = None
+        self._tex_coords_cache_version = None
+        self._vertices_cache_version = None
 
     def _set_attribute_data(self, i, data):
         attribute = self.domain.attributes[i]
