@@ -484,6 +484,16 @@ class Batch(object):
             domain_map = self.group_map[group]
             for _, domain in domain_map.items():
                 print indent, '  ', domain
+                for start, size in zip(*domain.allocator.get_allocated_regions()):
+                    print indent, '    ', 'Region %d size %d:' % (start, size)
+                    for key, attribute in domain.attribute_names.items():
+                        print indent, '      ',
+                        try:
+                            region = attribute.get_region(attribute.buffer,
+                                                          start, size)
+                            print key, region.array[:]
+                        except:
+                            print key, '(unmappable)'
             for child in self.group_children.get(group, ()):
                 dump(child, indent + '  ')
             print indent, 'End group', group
