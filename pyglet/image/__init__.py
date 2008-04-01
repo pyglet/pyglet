@@ -1619,10 +1619,10 @@ class Texture(AbstractImage):
         transform.anchor_y = self.anchor_y
         if flip_x:
             bl, br, tl, tr = br, bl, tr, tl
-            transform.anchor_x = -self.anchor_x
+            transform.anchor_x = self.width - self.anchor_x
         if flip_y:
             bl, br, tl, tr = tl, tr, bl, br
-            transform.anchor_y = -self.anchor_y
+            transform.anchor_y = self.height - self.anchor_y
         rotate %= 360
         if rotate < 0:
             rotate += 360
