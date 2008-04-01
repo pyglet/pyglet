@@ -1615,13 +1615,18 @@ class Texture(AbstractImage):
         br = transform.tex_coords[3:6]
         tr = transform.tex_coords[6:9]
         tl = transform.tex_coords[9:]
+        transform.anchor_x = self.anchor_x
+        transform.anchor_y = self.anchor_y
         if flip_x:
             bl, br, tl, tr = br, bl, tr, tl
+            transform.anchor_x = -self.anchor_x
         if flip_y:
             bl, br, tl, tr = tl, tr, bl, br
+            transform.anchor_y = -self.anchor_y
         rotate %= 360
         if rotate < 0:
             rotate += 360
+        # TODO XXX rotate anchor point
         if rotate == 0:
             pass
         elif rotate == 90:
