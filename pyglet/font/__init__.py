@@ -341,6 +341,7 @@ class Text(object):
         self._group = _TextZGroup()
         self._document = pyglet.text.decode_text(text)
         self._layout = pyglet.text.layout.TextLayout(self._document, 
+                                              width=width,
                                               multiline=multiline,
                                               dpi=font.dpi,
                                               group=self._group)
