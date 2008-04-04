@@ -71,9 +71,9 @@ _usage_format_re = re.compile(r'''
 ''', re.VERBOSE)
 
 _gl_usages = {
-    'static': GL_STATIC_DRAW_ARB,
-    'dynamic': GL_DYNAMIC_DRAW_ARB,
-    'stream': GL_STREAM_DRAW_ARB,
+    'static': GL_STATIC_DRAW,
+    'dynamic': GL_DYNAMIC_DRAW,
+    'stream': GL_STREAM_DRAW,
     'none': GL_STREAM_DRAW_ARB, # Force no VBO
 }
 
@@ -570,7 +570,7 @@ class IndexedVertexDomain(VertexDomain):
         self.index_element_size = ctypes.sizeof(self.index_c_type)
         self.index_buffer = vertexbuffer.create_mappable_buffer(
             self.index_allocator.capacity * self.index_element_size, 
-            target=GL_ELEMENT_ARRAY_BUFFER_ARB)
+            target=GL_ELEMENT_ARRAY_BUFFER)
 
     def _safe_index_alloc(self, count):
         '''Allocate indices, resizing the buffers if necessary.'''
