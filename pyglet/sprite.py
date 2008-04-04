@@ -179,7 +179,7 @@ class Sprite(event.EventDispatcher):
                  blend_dest=GL_ONE_MINUS_SRC_ALPHA,
                  batch=None,
                  group=None,
-                 usage='none'):
+                 usage='dynamic'):
         '''Create a sprite.
 
         :Parameters:
