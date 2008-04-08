@@ -855,6 +855,19 @@ class ClockDisplay(object):
 
         self.format = format
 
+    def unschedule(self):
+        '''Remove the display from its clock's schedule.
+
+        `ClockDisplay` uses `Clock.schedule_interval` to periodically update
+        its display label.  Even if the ClockDisplay is not being used any
+        more, its update method will still be scheduled, which can be a
+        resource drain.  Call this method to unschedule the update method
+        and allow the ClockDisplay to be garbage collected.
+
+        :since: pyglet 1.1
+        '''
+        self.clock.unschedule(self.update_text)
+
     def update_text(self, dt=0):
         '''Scheduled method to update the label text.''' 
         fps = self.clock.get_fps()
