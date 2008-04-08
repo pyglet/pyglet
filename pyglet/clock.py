@@ -105,11 +105,15 @@ You can cancel a function scheduled with any of these methods using
 Displaying FPS
 ==============
 
-The ClockDisplay class provides a simple FPS counter::
+The ClockDisplay class provides a simple FPS counter.  You should create
+an instance of ClockDisplay once during the application's start up::
 
     fps_display = clock.ClockDisplay()
+
+Call draw on the ClockDisplay object for each frame::
+
     fps_display.draw()
-   
+
 There are several options to change the font, color and text displayed
 within the __init__ method.
 
