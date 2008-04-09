@@ -695,7 +695,7 @@ class TextLayout(object):
                 Optional graphics batch to add this layout to.
             `group` : `Group`
                 Optional rendering group to parent all groups this text layout
-                uses.  Note that layouts with different groups are not
+                uses.  Note that layouts with different 
                 rendered simultaneously in a batch.
 
         '''
@@ -829,6 +829,7 @@ class TextLayout(object):
             box.delete(self)
         self._vertex_lists = []
         self._boxes = []
+        self.groups.clear()
         
         if not self._document or not self._document.text:
             return

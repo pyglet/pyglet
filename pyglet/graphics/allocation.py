@@ -380,6 +380,9 @@ class Allocator(object):
             return 0.
         return self.get_fragmented_free_size() / float(self.get_free_size())
 
+    def _is_empty(self):
+        return not self.starts
+
     def __str__(self):
         return 'allocs=' + repr(zip(self.starts, self.sizes))
 

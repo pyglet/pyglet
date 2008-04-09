@@ -455,7 +455,11 @@ class Batch(object):
 
             # Draw domains using this group
             domain_map = self.group_map[group]
-            for (_, mode, _), domain in domain_map.items():
+            for (formats, mode, indexed), domain in list(domain_map.items()):
+                # Remove unused domains from batch
+                if domain._is_empty():
+                    del domain_map[(formats, mode, indexed)]
+                    continue
                 draw_list.append(
                     (lambda d, m: lambda: d.draw(m))(domain, mode))
 
@@ -463,10 +467,24 @@ class Batch(object):
             children = self.group_children.get(group)
             if children:
                 children.sort()
-                for child in children:
+                for child in list(children):
                     visit(child)
 
             draw_list.append(group.unset_state)
+
+            # Remove unused group from batch
+            if not children and not domain_map:
+                del self.group_map[group]
+                if group.parent:
+                    self.group_children[group.parent].remove(group)
+                try:
+                    del self.group_children[group]
+                except KeyError:
+                    pass
+                try:
+                    self.top_groups.remove(group)
+                except ValueError:
+                    pass
 
         self.top_groups.sort()
         for group in self.top_groups:
@@ -568,7 +586,7 @@ class Group(object):
 
         '''
         self.parent = parent
-        
+
     def set_state(self):
         '''Apply the OpenGL state change.  
         

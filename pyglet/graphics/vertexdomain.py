@@ -288,6 +288,9 @@ class VertexDomain(object):
             buffer.unbind()
         glPopClientAttrib()
 
+    def _is_empty(self):
+        return not self.allocator.starts
+
     def __repr__(self):
         return '<%s@%x %s>' % (self.__class__.__name__, id(self), 
                                self.allocator)
