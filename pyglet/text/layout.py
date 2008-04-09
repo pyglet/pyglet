@@ -499,7 +499,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
     translate_y = 0 # y - view_y
 
     def set_state(self):
-        glPushAttrib(GL_ENABLE_BIT | GL_SCISSOR_BIT)
+        glPushAttrib(GL_ENABLE_BIT | GL_SCISSOR_BIT | GL_CURRENT_BIT)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         # Disable scissor to check culling.
