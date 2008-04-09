@@ -475,7 +475,7 @@ class TextLayoutGroup(graphics.Group):
     instances as it has no internal state.
     '''
     def set_state(self):
-        glPushAttrib(GL_ENABLE_BIT)
+        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
