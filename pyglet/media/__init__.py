@@ -1310,6 +1310,14 @@ if getattr(sys, 'is_epydoc', False):
     #:
     #: :type: `Listener`
     listener = Listener()
+
+    #: Indication of the presence of AVbin.  When `have_avbin` is ``True``
+    #: pyglet will be able to play back compressed media streams such as
+    #: MP3, OGG and various video formats.  If ``False`` only uncompressed
+    #: Wave files can be loaded.
+    #:
+    #: :type: bool
+    have_avbin = False
 else:
     # Find best available sound driver according to user preference
     import pyglet
@@ -1331,9 +1339,11 @@ else:
     listener = driver.driver_listener
 
     # Find best available source loader
+    have_avbin = False
     try:
         from pyglet.media import avbin
         _source_class = avbin.AVbinSource
+        have_avbin = True
     except ImportError:
         from pyglet.media import riff
         _source_class = riff.WaveSource
