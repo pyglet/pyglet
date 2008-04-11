@@ -410,6 +410,8 @@ class Caret(object):
         self._layout.ensure_x_visible(x)
 
     def on_layout_update(self):
+        if self.position > len(self._layout.document.text):
+            self.position = len(self._layout.document.text)
         self._update()
 
     def on_text(self, text):
