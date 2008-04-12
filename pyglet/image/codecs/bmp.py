@@ -88,21 +88,7 @@ class BITMAPINFOHEADER(ctypes.LittleEndianStructure):
         ('biClrImportant', DWORD)
     ]
 
-class CIEXYZ(ctypes.LittleEndianStructure):
-    _pack_ = 1
-    _fields_ = [
-        ('ciexyzX', FXPT2DOT30),
-        ('ciexyzY', FXPT2DOT30),
-        ('ciexyzZ', FXPT2DOT30),
-    ]
-
-class CIEXYZTRIPLE(ctypes.LittleEndianStructure):
-    _pack_ = 1
-    _fields_ = [
-        ('ciexyzRed', CIEXYZ),
-        ('ciexyzGreen', CIEXYZ),
-        ('ciexyzBlue', CIEXYZ),
-    ]
+CIEXYZTRIPLE = FXPT2DOT30 * 9
 
 class BITMAPV4HEADER(ctypes.LittleEndianStructure):
     _pack_ = 1
@@ -262,8 +248,12 @@ class BMPImageDecoder(pyglet.image.codecs.ImageDecoder):
                 r_mask = fields.red
                 g_mask = fields.green
                 b_mask = fields.blue
-            bits = to_ctypes(buffer, bits_offset, 
-                             bits_type * packed_width * height)
+            class _BitsArray(ctypes.LittleEndianStructure):
+                _pack_ = 1
+                _fields_ = [
+                    ('data', bits_type * packed_width * height),
+                ]
+            bits = to_ctypes(buffer, bits_offset, _BitsArray).data
             return decoder(bits, r_mask, g_mask, b_mask, 
                            width, height, pitch, pitch_sign)
 
