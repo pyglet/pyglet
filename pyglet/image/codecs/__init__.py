@@ -222,3 +222,10 @@ def add_default_image_codecs():
     except ImportError:
         pass
 
+    # Fallback: BMP loader (slow)
+    try:
+        import pyglet.image.codecs.bmp
+        add_encoders(bmp)
+        add_decoders(bmp)
+    except ImportError:
+        pass

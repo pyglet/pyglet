@@ -122,6 +122,15 @@ image
             image.PYPNG_LA_SAVE                 X11 WIN OSX
             image.PYPNG_L_SAVE                  X11 WIN OSX
 
+    image-bmp
+        image.BMP_RGB_1BPP_LOAD                 X11 WIN OSX
+        image.BMP_RGB_4BPP_LOAD                 X11 WIN OSX
+        image.BMP_RGB_8BPP_LOAD                 X11 WIN OSX
+        image.BMP_RGB_16BPP_LOAD                X11 WIN OSX
+        image.BMP_RGB_24BPP_LOAD                X11 WIN OSX
+        image.BMP_RGB_32BPP_LOAD                X11 WIN OSX
+        image.BMP_RGBA_32BPP_LOAD               X11 WIN OSX
+
     image-pil
         image-pil-load
             image.PIL_RGBA_LOAD                 X11 WIN OSX
