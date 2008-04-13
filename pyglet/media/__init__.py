@@ -86,7 +86,7 @@ _debug_media = pyglet.options['debug_media']
 class MediaException(Exception):
     pass
 
-class MediaFormatException(Exception):
+class MediaFormatException(MediaException):
     pass
 
 class CannotSeekException(MediaException):

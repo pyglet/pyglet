@@ -195,7 +195,11 @@ class WaveSource(StreamingSource):
             data_chunk = wave_form.get_data_chunk()
 
         if not wave_form or not format or not data_chunk:
-            raise WAVEFormatException('Not a WAVE file')
+            if not filename or filename.lower().endswith('.wav'):
+                raise WAVEFormatException('Not a WAVE file')
+            else:
+                raise WAVEFormatException(
+                    'AVbin is required to decode compressed media')
 
         if format.wFormatTag != WAVE_FORMAT_PCM:
             raise WAVEFormatException('Unsupported WAVE format category')
