@@ -62,16 +62,6 @@ from pyglet.text.formats import structured
 def _hex_color(val):
     return [(val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff, 255]
 
-_font_sizes = {
-    1: 8,
-    2: 10,
-    3: 12,
-    4: 14,
-    5: 18,
-    6: 24,
-    7: 48
-}
-
 _color_names = {
     'black':    _hex_color(0x000000),
     'silver':   _hex_color(0xc0c0c0),
@@ -125,6 +115,28 @@ _block_containers = ['_top_block',
 class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
     '''Decoder for HTML documents.
     '''
+    #: Default style attributes for unstyled text in the HTML document.
+    #:
+    #: :type: dict
+    default_style = {
+        'font_name': 'Times New Roman',
+        'font_size': 12,
+        'margin_bottom': 12,
+    }
+
+    #: Map HTML font sizes to actual font sizes, in points.
+    #: 
+    #: :type: dict
+    font_sizes = {
+        1: 8,
+        2: 10,
+        3: 12,
+        4: 14,
+        5: 18,
+        6: 24,
+        7: 48
+    }
+
     def decode_structured(self, text, location):
         self.location = location
         self._font_size_stack = [3]
@@ -136,11 +148,7 @@ class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
         self.in_metadata = False
         self.in_pre = False
 
-        self.push_style('_default', {
-            'font_name': 'Times New Roman',
-            'font_size': 12,
-            'margin_bottom': 12,
-        })
+        self.push_style('_default', self.default_style)
 
         self.feed(text)
         self.close()
@@ -218,8 +226,8 @@ class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
                 except ValueError:
                     size = 3
                 self._font_size_stack.append(size)
-                if size in _font_sizes:
-                    style['font_size'] = _font_sizes.get(size, 3)
+                if size in self.font_sizes:
+                    style['font_size'] = self.font_sizes.get(size, 3)
             else:
                 self._font_size_stack.append(self._font_size_stack[-1])
             if 'color' in attrs:
@@ -229,11 +237,11 @@ class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
                     pass
         elif element == 'sup':
             size = self._font_size_stack[-1] - 1
-            style['font_size'] = _font_sizes.get(size, 1)
+            style['font_size'] = self.font_sizes.get(size, 1)
             style['baseline'] = 3
         elif element == 'sub':
             size = self._font_size_stack[-1] - 1
-            style['font_size'] = _font_sizes.get(size, 1)
+            style['font_size'] = self.font_sizes.get(size, 1)
             style['baseline'] = -3
         elif element == 'h1':
             style['font_size'] = 24
