@@ -104,7 +104,7 @@ class AudioFormat(object):
             The number of channels: 1 for mono or 2 for stereo (pyglet does
             not yet support surround-sound sources).
         `sample_size` : int
-            Bits per sample; typically 8 or 16.
+            Bits per sample; only 8 or 16 are supported.
         `sample_rate` : int
             Samples per second (in Hertz).
 

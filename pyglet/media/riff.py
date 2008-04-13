@@ -204,6 +204,10 @@ class WaveSource(StreamingSource):
         if format.wFormatTag != WAVE_FORMAT_PCM:
             raise WAVEFormatException('Unsupported WAVE format category')
 
+        if format.wBitsPerSample not in (8, 16):
+            raise WAVEFormatException('Unsupported sample bit size: %d' %
+                format.wBitsPerSample)
+
         self.audio_format = AudioFormat(
             channels=format.wChannels,
             sample_size=format.wBitsPerSample,
