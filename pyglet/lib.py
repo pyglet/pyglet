@@ -155,23 +155,39 @@ class MachOLibraryLoader(LibraryLoader):
         '''Implements the dylib search as specified in Apple documentation:
         
         http://developer.apple.com/documentation/DeveloperTools/Conceptual/DynamicLibraries/Articles/DynamicLibraryUsageGuidelines.html
+
+        Before commencing the standard search, the method first checks
+        the bundle's ``Frameworks`` directory if the application is running
+        within a bundle (OS X .app).
         '''
 
         libname = os.path.basename(path)
+        search_path = []
+
+        if sys.frozen == 'macosx_app':
+            search_path.append(os.path.join(
+                os.environ['RESOURCEPATH'],
+                '..',
+                'Frameworks',
+                libname))
+
         if '/' in path:
-            search_path = (
+            search_path.extend(
                 [os.path.join(p, libname) \
-                    for p in self.dyld_library_path] +
-                [path] + 
+                    for p in self.dyld_library_path])
+            search_path.append(path)
+            search_path.extend(
                 [os.path.join(p, libname) \
                     for p in self.dyld_fallback_library_path])
         else:
-            search_path = (
+            search_path.extend(
                 [os.path.join(p, libname) \
-                    for p in self.ld_library_path] +
+                    for p in self.ld_library_path])
+            search_path.extend(
                 [os.path.join(p, libname) \
-                    for p in self.dyld_library_path] +
-                [path] + 
+                    for p in self.dyld_library_path])
+            search_path.append(path)
+            search_path.extend(
                 [os.path.join(p, libname) \
                     for p in self.dyld_fallback_library_path])
 
