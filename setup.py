@@ -154,7 +154,7 @@ elif 'bdist_mpkg' in sys.argv:
             description = 'AVbin audio and video support (recommended)'
             files = list(tools.walk_files('build/avbin'))
             common = 'build/avbin'
-            prefix = '/usr/lib'
+            prefix = '/usr/local/lib'
             pkg.make_package(self,
                 pkgname, version,
                 files, common, prefix,
