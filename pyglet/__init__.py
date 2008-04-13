@@ -303,7 +303,7 @@ class _ModuleProxy(object):
 
     def __setattr__(self, name, value):
        try:
-            setattr(self._module, name)
+            setattr(self._module, name, value)
        except AttributeError:
             if self._module is not None:
                 raise
