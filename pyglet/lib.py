@@ -164,7 +164,7 @@ class MachOLibraryLoader(LibraryLoader):
         libname = os.path.basename(path)
         search_path = []
 
-        if sys.frozen == 'macosx_app':
+        if hasattr(sys, 'frozen') and sys.frozen == 'macosx_app':
             search_path.append(os.path.join(
                 os.environ['RESOURCEPATH'],
                 '..',
