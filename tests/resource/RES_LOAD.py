@@ -39,8 +39,11 @@ class TestCase(unittest.TestCase):
         self.script_home = os.path.dirname(__file__)
 
     def check(self, path, result):
+        self.check_file(path, 'file.txt', result)
+
+    def check_file(self, path, file, result):
         loader = resource.Loader(path, script_home=self.script_home)
-        self.assertTrue(loader.file('file.txt').read() == '%s\n' % result)
+        self.assertTrue(loader.file(file).read() == '%s\n' % result)
 
     def checkFail(self, path):
         loader = resource.Loader(path, script_home=self.script_home)
@@ -118,6 +121,40 @@ class TestCase(unittest.TestCase):
 
     def test14(self):
         self.check(['dir2', 'dir1'], 'F6')
+
+    # path tests
+
+    def test15(self):
+        self.check_file([''], 'dir1/file.txt', 'F2')
+
+    def test15a(self):
+        self.check_file([''], 'dir1/dir1/file.txt', 'F3')
+
+    def test15b(self):
+        self.check_file(['dir1'], 'dir1/file.txt', 'F3')
+
+    def test15c(self):
+        self.check_file([''], 'dir2/file.txt', 'F6')
+
+    def test15d(self):
+        self.check_file(['.'], 'dir2/file.txt', 'F6')
+
+    # zip path tests
+
+    def test16(self):
+        self.check_file(['dir1/res.zip'], 'dir1/file.txt', 'F8')
+
+    def test16a(self):
+        self.check_file(['dir1/res.zip/'], 'dir1/file.txt', 'F8')
+
+    def test16a(self):
+        self.check_file(['dir1/res.zip/'], 'dir1/dir1/file.txt', 'F9')
+
+    def test16b(self):
+        self.check_file(['dir1/res.zip/dir1'], 'dir1/file.txt', 'F9')
+
+    def test16c(self):
+        self.check_file(['dir1/res.zip/dir1/'], 'dir1/file.txt', 'F9')
 
 if __name__ == '__main__':
     unittest.main()
