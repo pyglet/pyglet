@@ -1362,6 +1362,7 @@ class Texture(AbstractImage):
 
     region_class = None # Set to TextureRegion after it's defined
     tex_coords = (0., 0., 0., 1., 0., 0., 1., 1., 0., 0., 1., 0.)
+    tex_coords_order = (0, 1, 2, 3)
     level = 0
     images = 1
     x = y = z = 0
@@ -1596,8 +1597,9 @@ class Texture(AbstractImage):
     def get_transform(self, flip_x=False, flip_y=False, rotate=0):
         '''Create a copy of this image applying a simple transformation.
 
-        A `TextureRegion` will be returned referencing this image as its
-        owner.
+        The transformation is applied to the texture coordinates only;
+        `get_image_data` will return the untransformed data.  The
+        transformation is applied around the anchor point.
 
         :Parameters:
             `flip_x` : bool
@@ -1608,13 +1610,10 @@ class Texture(AbstractImage):
                 Degrees of clockwise rotation of the returned image.  Only 
                 90-degree increments are supported.
 
-        :rtype: `Animation`
+        :rtype: `TextureRegion`
         '''
         transform = self.get_region(0, 0, self.width, self.height)
-        bl = transform.tex_coords[:3]
-        br = transform.tex_coords[3:6]
-        tr = transform.tex_coords[6:9]
-        tl = transform.tex_coords[9:]
+        bl, br, tr, tl = 0, 1, 2, 3 
         transform.anchor_x = self.anchor_x
         transform.anchor_y = self.anchor_y
         if flip_x:
@@ -1626,22 +1625,41 @@ class Texture(AbstractImage):
         rotate %= 360
         if rotate < 0:
             rotate += 360
-        # TODO XXX rotate anchor point
         if rotate == 0:
             pass
         elif rotate == 90:
             bl, br, tr, tl = br, tr, tl, bl
+            transform.anchor_x, transform.anchor_y = \
+                transform.anchor_y, \
+                transform.width - transform.anchor_x
         elif rotate == 180:
             bl, br, tr, tl = tr, tl, bl, br
+            transform.anchor_x = transform.width - transform.anchor_x
+            transform.anchor_y = transform.height - transform.anchor_y
         elif rotate == 270:
             bl, br, tr, tl = tl, bl, br, tr
+            transform.anchor_x, transform.anchor_y = \
+                transform.height - transform.anchor_y, \
+                transform.anchor_x
         else:
             assert False, 'Only 90 degree rotations are supported.'
         if rotate in (90, 270):
             transform.width, transform.height = \
                 transform.height, transform.width
-        transform.tex_coords = bl + br + tr + tl
+        transform._set_tex_coords_order(bl, br, tr, tl)
         return transform
+
+    def _set_tex_coords_order(self, bl, br, tr, tl):
+        tex_coords = (self.tex_coords[:3],
+                      self.tex_coords[3:6],
+                      self.tex_coords[6:9],
+                      self.tex_coords[9:])
+        self.tex_coords = \
+            tex_coords[bl] + tex_coords[br] + tex_coords[tr] + tex_coords[tl]
+
+        order = self.tex_coords_order
+        self.tex_coords_order = \
+            (order[bl], order[br], order[tr], order[tl])
 
 class TextureRegion(Texture):
     '''A rectangular region of a texture, presented as if it were
@@ -1676,7 +1694,9 @@ class TextureRegion(Texture):
     def get_region(self, x, y, width, height):
         x += self.x
         y += self.y
-        return self.region_class(x, y, self.z, width, height, self.owner)
+        region = self.region_class(x, y, self.z, width, height, self.owner)
+        region._set_tex_coords_order(*self.tex_coords_order)
+        return region
 
     def blit_into(self, source, x, y, z):
         self.owner.blit_into(source, x + self.x, y + self.y, z + self.z)
@@ -2367,8 +2387,9 @@ class Animation(object):
     def get_transform(self, flip_x=False, flip_y=False, rotate=0):
         '''Create a copy of this animation applying a simple transformation.
 
-        The texture data is shared between the original animation and the
-        transformed animation.
+        The transformation is applied around the image's anchor point of
+        each frame.  The texture data is shared between the original animation
+        and the transformed animation.
 
         :Parameters:
             `flip_x` : bool

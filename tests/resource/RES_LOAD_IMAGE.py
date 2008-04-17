@@ -33,7 +33,7 @@ class TestCase(unittest.TestCase):
         glClear(GL_COLOR_BUFFER_BIT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-        img.blit(0, 0)
+        img.blit(img.anchor_x, img.anchor_y)
         buffer = image.get_buffer_manager().get_color_buffer().get_image_data()
         bytes = buffer.get_data('RGBA', buffer.width * 4)
         def sample(x, y):
