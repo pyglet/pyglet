@@ -384,13 +384,15 @@ class MenuItem(object):
 
         if selected:
             self.draw_pointer(
-                self.text.x - self.text.content_width / 2 - pointer_image.width,
-                self.y - pointer_image.height / 2, 
+                self.text.x - self.text.content_width / 2 - 
+                    pointer_image.width / 2,
+                self.y, 
                 self.pointer_color,
                 self.inverted_pointers)
             self.draw_pointer(
-                self.text.x + self.text.content_width / 2,
-                self.y - pointer_image.height / 2,
+                self.text.x + self.text.content_width / 2 + 
+                    pointer_image.width / 2,
+                self.y,
                 self.pointer_color,
                 not self.inverted_pointers)
 
@@ -495,9 +497,9 @@ class InstructionsMenu(Menu):
                                                   font_name=FONT_NAME,
                                                   font_size=14,
                                                   x=20, y=300,
+                                                  width=ARENA_WIDTH - 40,
                                                   valign='top',
                                                   multiline=True)
-        self.instruction_text.width = ARENA_WIDTH - 40
 
     def draw(self):
         super(InstructionsMenu, self).draw()
@@ -788,6 +790,8 @@ explosion_animation = \
                                                loop=False)
 
 pointer_image = resource.image('pointer.png')
+pointer_image.anchor_x = pointer_image.width // 2
+pointer_image.anchor_y = pointer_image.height // 2
 pointer_image_flip = resource.image('pointer.png', flip_x=True)
 
 explosion_sound = resource.media('explosion.wav', streaming=False)
