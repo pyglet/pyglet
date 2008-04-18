@@ -7,9 +7,9 @@ VERSION=`grep 'VERSION =' $ROOT/setup.py | cut -d "'" -f2`
 
 # Create AVbin files
 mkdir -p $ROOT/build/avbin
-rsync -a /usr/lib/libavbin.dylib $ROOT/build/avbin/
-cp /usr/lib/`ls -l /usr/lib/libavbin.dylib | sed 's/.* -> \(.*\)$/\1/'` \
-    $ROOT/build/avbin/
+rsync -a /usr/local/lib/libavbin.dylib $ROOT/build/avbin/
+cp /usr/local/lib/`ls -l /usr/local/lib/libavbin.dylib | \
+    sed 's/.* -> \(.*\)$/\1/'` $ROOT/build/avbin/
 
 PYTHONPATH=`dirname $0`:$PYTHONPATH
 export PYTHONPATH
