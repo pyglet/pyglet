@@ -10,13 +10,17 @@ mkdir -p $ROOT/build/avbin
 rsync -a /usr/local/lib/libavbin.dylib $ROOT/build/avbin/
 cp /usr/local/lib/`ls -l /usr/local/lib/libavbin.dylib | \
     sed 's/.* -> \(.*\)$/\1/'` $ROOT/build/avbin/
+chmod a+rx $ROOT/build/avbin/*
+chown root $ROOT/build/avbin/*
+chgrp wheel $ROOT/build/avbin/*
 
 PYTHONPATH=`dirname $0`:$PYTHONPATH
 export PYTHONPATH
 
 python $ROOT/setup.py bdist_mpkg \
     --background=$RES/background.pdf \
-    --readme=$RES/readme.rtf 
+    --readme=$RES/readme.rtf \
+    --keep-temp
 
 if [ $? != 0 ]; then
     exit 1
