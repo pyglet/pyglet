@@ -1,3 +1,41 @@
+1.1beta1
+    * docs: Added "Debugging tools" section to programming guide
+    * docs: Clarified usage of ClockDisplay in module docstring
+    * examples: Fixed polygon winding in opengl.py
+    * pyglet: Added debug trace options
+    * pyglet: Renamed "debug_graphics_enable_vbo" option to "graphics_vbo"
+    * pyglet: Fixed import errors breaking the exception stack due to
+      class instance used as module
+    * pyglet.clock: Added ClockDisplay.unschedule
+    * pyglet.font: Fixed Text.width
+    * pyglet.image: get_transform() now operates around the anchor
+    * pyglet.image: Added fallback BMP loader
+    * pyglet.gl: Fixed GL/GLU strings being re-requested each frame
+    * pyglet.graphics: Fixed VertexList.migrate
+    * pyglet.graphics: Fixed memory leak with unused groups in a batch
+    * pyglet.graphics: Fixed IndexedVertexList.draw
+    * pyglet.media: Added have_avbin
+    * pyglet.media: MediaFormatException now subclasses MediaException
+    * pyglet.media: 24 bit audio files loaded with RIFF loader are now
+      rejected early
+    * pyglet.resource: Fixed resource.get_location
+    * pyglet.resource: Resource path locations are now indexed deeply
+    * pyglet.sprite: Added usage parameter
+    * pyglet.text: Fixed multiple width/multiline issues, changed text
+      class constructors to accomodate
+    * pyglet.text: Added DocumentLabel.get_style and set_style
+    * pyglet.text: Fixed layout states clobbering current color
+    * pyglet.text: Fixed error when document truncated past caret position
+    * pyglet.text: Move some style constants into HTML loader class for
+      easier overriding
+    * Linux: Fixed BMP loading for certain BMP files
+    * OS X: AVbin default location is now /usr/local/lib
+    * OS X: Libraries are now searched for in the application bundle before
+      standard system paths
+    * OS X: Now distributed with AVbin 3
+    * Win32: Fixed GDI+ error message
+    * Win32: Now distributed with AVbin 3
+
 1.1alpha2
     * New module: pyglet.info, for bug reports
     * docs: Many docstrings added to public methods
