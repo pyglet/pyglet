@@ -49,7 +49,8 @@ __version__ = '$Id$'
 
 import ctypes
 
-import pyglet
+from pyglet.image import ImageData
+from pyglet.image.codecs import ImageDecoder, ImageDecodeException
 
 BYTE = ctypes.c_ubyte
 WORD = ctypes.c_uint16
@@ -142,12 +143,11 @@ def ptr_add(ptr, offset):
 
 def to_ctypes(buffer, offset, type):
     if offset + ctypes.sizeof(type) > len(buffer):
-        raise pyglet.image.codecs.ImageDecodeException(
-            'BMP file is truncated')
+        raise ImageDecodeException('BMP file is truncated')
     ptr = ptr_add(ctypes.pointer(buffer), offset)
     return ctypes.cast(ptr, ctypes.POINTER(type)).contents
 
-class BMPImageDecoder(pyglet.image.codecs.ImageDecoder):
+class BMPImageDecoder(ImageDecoder):
     def get_file_extensions(self):
         return ['.bmp']
 
@@ -158,7 +158,7 @@ class BMPImageDecoder(pyglet.image.codecs.ImageDecoder):
         buffer = ctypes.c_buffer(bytes)
 
         if bytes[:2] != 'BM':
-            raise pyglet.image.codecs.ImageDecodeException(
+            raise ImageDecodeException(
                 'Not a Windows bitmap file: %r' % (filename or file))
 
         file_header = to_ctypes(buffer, 0, BITMAPFILEHEADER)
@@ -168,20 +168,20 @@ class BMPImageDecoder(pyglet.image.codecs.ImageDecoder):
         palette_offset = info_header_offset + info_header.biSize
 
         if info_header.biSize < ctypes.sizeof(BITMAPINFOHEADER):
-            raise pyglet.image.codecs.ImageDecodeException(
+            raise ImageDecodeException(
                 'Unsupported BMP type: %r' % (filename or file))
 
         width = info_header.biWidth
         height = info_header.biHeight
         if width <= 0  or info_header.biPlanes != 1:
-            raise pyglet.image.codecs.ImageDecodeException(
+            raise ImageDecodeException(
                 'BMP file has corrupt parameters: %r' % (filename or file))
         pitch_sign = height < 0 and -1 or 1
         height = abs(height)
 
         compression = info_header.biCompression
         if compression not in (BI_RGB, BI_BITFIELDS):
-            raise pyglet.image.codecs.ImageDecodeException(
+            raise ImageDecodeException(
                 'Unsupported compression: %r' % (filename or file))
 
         clr_used = 0
@@ -215,10 +215,10 @@ class BMPImageDecoder(pyglet.image.codecs.ImageDecoder):
                 decoder = decode_bitfields
                 bits_type = ctypes.c_uint32
             else:
-                raise pyglet.image.codecs.ImageDecodeException(
+                raise ImageDecodeException(
                     'Unsupported compression: %r' % (filename or file))
         else:
-            raise pyglet.image.codecs.ImageDecodeException(
+            raise ImageDecodeException(
                 'Unsupported bit count %d: %r' % (bitcount, filename or file))
 
         pitch = (pitch + 3) & ~3
@@ -271,8 +271,7 @@ def decode_1bit(bits, palette, width, height, pitch, pitch_sign):
                 i += 3
                 packed <<= 1
 
-    return pyglet.image.ImageData(width, height, 'RGB', buffer, 
-                                  pitch_sign * rgb_pitch)
+    return ImageData(width, height, 'RGB', buffer, pitch_sign * rgb_pitch)
 
 def decode_4bit(bits, palette, width, height, pitch, pitch_sign):
     rgb_pitch = (((pitch << 1) + 1) & ~0x1) * 3
@@ -287,8 +286,7 @@ def decode_4bit(bits, palette, width, height, pitch, pitch_sign):
                 buffer[i + 2] = rgb.rgbBlue
                 i += 3
 
-    return pyglet.image.ImageData(width, height, 'RGB', buffer, 
-                                  pitch_sign * rgb_pitch)
+    return ImageData(width, height, 'RGB', buffer, pitch_sign * rgb_pitch)
 
 def decode_8bit(bits, palette, width, height, pitch, pitch_sign):
     rgb_pitch = pitch * 3
@@ -302,21 +300,18 @@ def decode_8bit(bits, palette, width, height, pitch, pitch_sign):
             buffer[i + 2] = rgb.rgbBlue
             i += 3
 
-    return pyglet.image.ImageData(width, height, 'RGB', buffer, 
-                                  pitch_sign * rgb_pitch)
+    return ImageData(width, height, 'RGB', buffer, pitch_sign * rgb_pitch)
 
 
 def decode_24bit(bits, palette, width, height, pitch, pitch_sign):
     buffer = (ctypes.c_ubyte * (height * pitch))()
     ctypes.memmove(buffer, bits, len(buffer))
-    return pyglet.image.ImageData(width, height, 'BGR', buffer,
-                                  pitch_sign * pitch)
+    return ImageData(width, height, 'BGR', buffer, pitch_sign * pitch)
 
 def decode_32bit_rgb(bits, palette, width, height, pitch, pitch_sign):
     buffer = (ctypes.c_ubyte * (height * pitch))()
     ctypes.memmove(buffer, bits, len(buffer))
-    return pyglet.image.ImageData(width, height, 'BGRA', buffer,
-                                  pitch_sign * pitch)
+    return ImageData(width, height, 'BGRA', buffer, pitch_sign * pitch)
 
 def get_shift(mask):
     if not mask:
@@ -355,8 +350,7 @@ def decode_bitfields(bits, r_mask, g_mask, b_mask,
             buffer[i+2] = (packed & b_mask) >> b_shift1 << b_shift2
             i += 3
 
-    return pyglet.image.ImageData(width, height, 'RGB', buffer,
-                                  pitch_sign * rgb_pitch)
+    return ImageData(width, height, 'RGB', buffer, pitch_sign * rgb_pitch)
 
 def get_decoders():
     return [BMPImageDecoder()]
