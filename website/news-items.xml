@@ -1,4 +1,17 @@
 <news>
+  <item date="19-April-2008" author="Alex"
+        title="pyglet 1.1 beta 1 released">
+    pyglet 1.1 has hit the beta milestone, which means the API is very
+    unlikely to change and the feature set has been frozen.  We'd like you
+    to try this version out for compatibility, and you might also enjoy
+    the new features.  This release is available in both source and
+    Windows and Mac OS X installer forms.  These installers also bundle
+    the very-recently-released AVbin version 3.  All distributions are
+    available from the 
+    <a href="http://code.google.com/p/pyglet/downloads/list?q=1.1beta1">download
+    server</a>.  The latest documentation is available for download and
+    <a href="http://pyglet.org/doc/1.1">online</a>.
+  </item>
   <item date="23-March-2008" author="Alex"
         title="pyglet 1.1 alpha 2 released">
     This is a bug-fixing and documentation release.  Lots of bugs introduced
