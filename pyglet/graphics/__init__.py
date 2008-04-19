@@ -446,12 +446,12 @@ class Batch(object):
         self._draw_list_dirty = True
 
     def _update_draw_list(self):
-        # Visit group tree in preorder and create a list of bound methods
-        # to call.
-        draw_list = []
+        '''Visit group tree in preorder and create a list of bound methods
+        to call.
+        '''
 
         def visit(group):
-            draw_list.append(group.set_state)
+            draw_list = []
 
             # Draw domains using this group
             domain_map = self.group_map[group]
@@ -468,12 +468,12 @@ class Batch(object):
             if children:
                 children.sort()
                 for child in list(children):
-                    visit(child)
+                    draw_list.extend(visit(child))
 
-            draw_list.append(group.unset_state)
-
-            # Remove unused group from batch
-            if not children and not domain_map:
+            if children or domain_map:
+                return [group.set_state] + draw_list + [group.unset_state]
+            else:
+                # Remove unused group from batch
                 del self.group_map[group]
                 if group.parent:
                     self.group_children[group.parent].remove(group)
@@ -485,12 +485,14 @@ class Batch(object):
                     self.top_groups.remove(group)
                 except ValueError:
                     pass
+                return []
+
+        self._draw_list = []
 
         self.top_groups.sort()
-        for group in self.top_groups:
-            visit(group)
+        for group in list(self.top_groups):
+            self._draw_list.extend(visit(group))
 
-        self._draw_list = draw_list
         self._draw_list_dirty = False
 
         if _debug_graphics_batch:
