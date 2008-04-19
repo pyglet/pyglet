@@ -146,6 +146,9 @@ class SpriteGroup(graphics.Group):
         glPopAttrib()
         glDisable(self.texture.target)
 
+    def __repr__(self):
+        return '%s(%r)' % (self.__class__.__name__, self.texture)
+
     def __eq__(self, other):
         return (other.__class__ is self.__class__ and
                 self.parent is other.parent and
@@ -239,6 +242,10 @@ class Sprite(event.EventDispatcher):
             clock.unschedule(self._animate)
         self._vertex_list.delete()
         self._vertex_list = None
+        self._texture = None
+
+        # Easy way to break circular reference, speeds up GC
+        self.group = None
 
     def _animate(self, dt):
         self._frame_index += 1
