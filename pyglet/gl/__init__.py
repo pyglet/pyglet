@@ -377,6 +377,68 @@ class Context(object):
 class ContextException(Exception):
     pass
 
+import pyglet as _pyglet
+
+if _pyglet.options['debug_texture']:
+    _debug_texture_total = 0
+    _debug_texture_sizes = {}
+    _debug_texture = None
+
+    def _debug_texture_alloc(texture, size):
+        global _debug_texture_total
+
+        _debug_texture_sizes[texture] = size
+        _debug_texture_total += size
+
+        print '%d (+%d)' % (_debug_texture_total, size)
+
+    def _debug_texture_dealloc(texture):
+        global _debug_texture_total
+
+        size = _debug_texture_sizes[texture]
+        del _debug_texture_sizes[texture]
+        _debug_texture_total -= size
+
+        print '%d (-%d)' % (_debug_texture_total, size)
+
+    _glBindTexture = glBindTexture
+    def glBindTexture(target, texture):
+        global _debug_texture
+        _debug_texture = texture
+        return _glBindTexture(target, texture)
+
+    _glTexImage2D = glTexImage2D
+    def glTexImage2D(target, level, internalformat, width, height, border,
+                     format, type, pixels):
+        try:
+            _debug_texture_dealloc(_debug_texture)
+        except KeyError:
+            pass
+
+        if internalformat in (1, GL_ALPHA, GL_INTENSITY, GL_LUMINANCE):
+            depth = 1
+        elif internalformat in (2, GL_RGB16, GL_RGBA16):
+            depth = 2
+        elif internalformat in (3, GL_RGB):
+            depth = 3
+        else:
+            depth = 4 # Pretty crap assumption
+        size = (width + 2 * border) * (height + 2 * border) * depth
+        _debug_texture_alloc(_debug_texture, size)
+
+        return _glTexImage2D(target, level, internalformat, width, height,
+                             border, format, type, pixels)
+
+    _glDeleteTextures = glDeleteTextures
+    def glDeleteTextures(n, textures):
+        if not hasattr(textures, '__len__'):
+            _debug_texture_dealloc(textures.value)
+        else:
+            for i in range(n):
+                _debug_texture_dealloc(textures[i].value)
+        
+        return _glDeleteTextures(n, textures)
+
 def _create_shadow_window():
     global _shadow_window
 
@@ -391,11 +453,11 @@ def _create_shadow_window():
     from pyglet import app
     app.windows.remove(_shadow_window)
 
+
 _shadow_window = None
 
 # Import pyglet.window now if it isn't currently being imported (this creates
 # the shadow window).
-import pyglet as _pyglet
 if (not _is_epydoc and
     'pyglet.window' not in _sys.modules and 
     _pyglet.options['shadow_window']):
