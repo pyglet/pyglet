@@ -320,7 +320,7 @@ Indexed vertex lists
 ^^^^^^^^^^^^^^^^^^^^
 
 `IndexedVertexList` performs the same role as `VertexList`, but for indexed
-vertices.  Use `pyglet.graphics.indexed_vertex_list` to construct an indexed
+vertices.  Use `pyglet.graphics.vertex_list_indexed` to construct an indexed
 vertex list, and update the `IndexedVertexList.indices` sequence to change the
 indices.
 
@@ -347,7 +347,7 @@ no arguments::
 
 Vertex lists can now be created with the `Batch.add` and `Batch.add_indexed`
 methods instead of `pyglet.graphics.vertex_list` and
-`pyglet.graphics.indexed_vertex_list` functions.  Unlike the module functions,
+`pyglet.graphics.vertex_list_indexed` functions.  Unlike the module functions,
 these methods accept a ``mode`` parameter (the primitive mode) and a ``group``
 parameter (described below).
 
