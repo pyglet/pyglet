@@ -597,7 +597,9 @@ def load(name=None, size=None, bold=False, italic=False, dpi=None):
     if not hasattr(shared_object_space, 'pyglet_font_font_cache'):
         shared_object_space.pyglet_font_font_cache = \
             weakref.WeakValueDictionary()
+        shared_object_space.pyglet_font_font_hold = []
     font_cache = shared_object_space.pyglet_font_font_cache
+    font_hold = shared_object_space.pyglet_font_font_hold
 
     # Look for font name in font cache
     descriptor = (name, size, bold, italic, dpi)
@@ -614,7 +616,14 @@ def load(name=None, size=None, bold=False, italic=False, dpi=None):
     font.italic = italic
     font.dpi = dpi
 
+    # Cache font in weak-ref dictionary to avoid reloading while still in use
     font_cache[descriptor] = font
+
+    # Hold onto refs of last three loaded fonts to prevent them being
+    # collected if momentarily dropped.
+    del font_hold[3:]
+    font_hold.insert(0, font)
+    
     return font
 
 def add_file(font):
