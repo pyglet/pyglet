@@ -794,7 +794,7 @@ class TextLayout(object):
     def _set_document(self, document):
         if self._document:
             self._document.remove_handlers(self)
-            self._uninit_document(self._document)
+            self._uninit_document()
         document.push_handlers(self)
         self._document = document
         self._init_document()
