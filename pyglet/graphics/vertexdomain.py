@@ -653,7 +653,8 @@ class IndexedVertexDomain(VertexDomain):
 
         if vertex_list is not None:
             glDrawElements(mode, vertex_list.index_count, self.index_gl_type,
-                self.index_buffer.ptr + vertex_list.start)
+                self.index_buffer.ptr + 
+                    vertex_list.index_start * self.index_element_size)
         else:
             starts, sizes = self.index_allocator.get_allocated_regions()
             primcount = len(starts)
@@ -674,7 +675,8 @@ class IndexedVertexDomain(VertexDomain):
             else:
                 for start, size in zip(starts, sizes):
                     glDrawElements(mode, size, self.index_gl_type,
-                        self.index_buffer.ptr + start)
+                        self.index_buffer.ptr + 
+                            start * self.index_element_size)
         
         self.index_buffer.unbind()
         for buffer, _ in self.buffer_attributes:
