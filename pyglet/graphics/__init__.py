@@ -664,7 +664,8 @@ class TextureGroup(Group):
         return hash((self.texture.target, self.texture.id, self.parent))
 
     def __eq__(self, other):
-        return (self.texture.target == other.texture.target and
+        return (self.__class__ is other.__class__ and
+            self.texture.target == other.texture.target and
             self.texture.id == other.texture.id and
             self.parent == self.parent)
 
