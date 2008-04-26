@@ -20,3 +20,6 @@ if sys.platform == 'darwin':
 elif sys.platform == 'linux2':
     import linux
     get_devices = linux.get_devices
+elif sys.platform in ('win32', 'cygwin'):
+    import dinput
+    get_devices = dinput.get_devices
