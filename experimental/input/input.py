@@ -17,3 +17,6 @@ class InputDeviceExclusiveException(InputException):
 if sys.platform == 'darwin':
     import osx
     get_devices = osx.get_devices
+elif sys.platform == 'linux2':
+    import linux
+    get_devices = linux.get_devices
