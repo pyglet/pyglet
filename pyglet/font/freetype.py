@@ -317,7 +317,7 @@ class FreeTypeFont(base.Font):
         fontconfig.FcInit()
 
         if isinstance(name, unicode):
-            name = name.decode('utf8')
+            name = name.encode('utf8')
 
         pattern = fontconfig.FcPatternCreate()
         fontconfig.FcPatternAddDouble(pattern, FC_SIZE, c_double(size))
