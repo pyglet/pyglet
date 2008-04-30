@@ -699,7 +699,7 @@ class XlibWindow(BaseWindow):
         return attributes.root
 
     def close(self):
-        if not self._glx_window:
+        if not self._window:
             return
 
         # clear out the GLX context.  Can fail if current context already
