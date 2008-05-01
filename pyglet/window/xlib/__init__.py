@@ -795,6 +795,8 @@ class XlibWindow(BaseWindow):
                 glxext_arb.glXSwapIntervalSGI(interval)
 
     def set_caption(self, caption):
+        if caption is None:
+            caption = ''
         self._caption = caption
         self._set_text_property('WM_NAME', caption, allow_utf8=False)
         self._set_text_property('WM_ICON_NAME', caption, allow_utf8=False)
