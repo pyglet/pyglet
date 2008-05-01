@@ -119,7 +119,7 @@ class ListBuilder(object):
         '''            
         mark = self.get_mark(value)
         if mark:
-            decoder.handle_data(mark)
+            decoder.add_text(mark)
         decoder.add_text('\t')
 
     def get_mark(self, value=None):

@@ -144,3 +144,4 @@ class DocutilsVisitor(nodes.NodeVisitor):
         method = getattr(self.decoder, 'depart_%s' % node_name, 
                          self.decoder.depart_unknown)
         method(node)
+
