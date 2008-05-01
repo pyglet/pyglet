@@ -649,6 +649,13 @@ class XlibWindow(BaseWindow):
 
             xlib.XFlush(self._x_display);
 
+            # Need to set argtypes on this function because it's vararg,
+            # and ctypes guesses wrong.
+            xlib.XCreateIC.argtypes = [xlib.XIM,    
+                                       c_char_p, c_int,
+                                       c_char_p, xlib.Window,
+                                       c_char_p, xlib.Window,
+                                       c_void_p]
             self._x_ic = xlib.XCreateIC(self.display._x_im, 
                 'inputStyle', xlib.XIMPreeditNothing|xlib.XIMStatusNothing,
                 'clientWindow', self._window,
@@ -656,9 +663,8 @@ class XlibWindow(BaseWindow):
                 None)
 
             filter_events = c_ulong()
-            XNFilterEvents = 'filterEvents'
             xlib.XGetICValues(self._x_ic,
-                              XNFilterEvents, byref(filter_events),
+                              'filterEvents', byref(filter_events),
                               None)
             self._default_event_mask |= filter_events.value
             xlib.XSetICFocus(self._x_ic)
@@ -1112,9 +1118,12 @@ class XlibWindow(BaseWindow):
 
         # Check for the events specific to this window
         while xlib.XCheckWindowEvent(_x_display, _window,
-                0x1ffffff, byref(e)):
-            if xlib.XFilterEvent(e, 0):
-                continue
+                                     0x1ffffff, byref(e)):
+            # Key events are filtered by the xlib window event
+            # handler so they get a shot at the prefiltered event.
+            if e.xany.type not in (xlib.KeyPress, xlib.KeyRelease):
+                if xlib.XFilterEvent(e, 0):
+                    continue
             self.dispatch_platform_event(e)
 
         # Generic events for this window (the window close event).
@@ -1166,37 +1175,79 @@ class XlibWindow(BaseWindow):
         return modifiers
 
     # Event handlers
+    '''
     def _event_symbol(self, event):
         # pyglet.self.key keysymbols are identical to X11 keysymbols, no
         # need to map the keysymbol.
         symbol = xlib.XKeycodeToKeysym(self._x_display, event.xkey.keycode, 0)
-        if symbol not in key._key_names.keys():
+        if symbol == 0:
+            # XIM event
+            return None
+        elif symbol not in key._key_names.keys():
             symbol = key.user_key(event.xkey.keycode)
         return symbol
+    '''
 
-    def _event_text(self, event):
-        if event.type == xlib.KeyPress:
-            buffer = create_string_buffer(128)
-            text = None
+    def _event_text_symbol(self, ev):
+        text = None
+        symbol = xlib.KeySym()
+        buffer = create_string_buffer(128)
+
+        # Look up raw keysym before XIM filters it (default for keypress and
+        # keyrelease)
+        count = xlib.XLookupString(ev.xkey,
+                                   buffer, len(buffer) - 1,
+                                   byref(symbol), None)
+
+        # Give XIM a shot
+        filtered = xlib.XFilterEvent(ev, ev.xany.window)
+
+        if ev.type == xlib.KeyPress and not filtered:
+            status = c_int()
             if _have_utf8:
-                status = c_int()
-                count = xlib.XmbLookupString(self._x_ic,
-                                               event.xkey,
+                encoding = 'utf8'
+                count = xlib.Xutf8LookupString(self._x_ic,
+                                               ev.xkey,
                                                buffer, len(buffer) - 1,
-                                               None, byref(status))
+                                               byref(symbol), byref(status))
                 if status.value == xlib.XBufferOverflow:
                     raise NotImplementedError('TODO: XIM buffer resize')
-                if status.value == xlib.XLookupChars and count > 0:
-                    text = buffer.value[:count].decode('utf8')
+
             else:
-                count = xlib.XLookupString(event.xkey,
-                                           buffer, len(buffer),
-                                           None, None)
-                if count > 0:
-                    text = buffer.value[:count].decode('ascii', 'ignore')
-            if text and unicodedata.category(text) != 'Cc' or text == '\r':
-                return text
-        return None
+                encoding = 'ascii'
+                count = xlib.XLookupString(ev.xkey,
+                                           buffer, len(buffer) - 1,
+                                           byref(symbol), None)
+                if count:
+                    status.value = xlib.XLookupBoth
+
+            if status.value & (xlib.XLookupChars | xlib.XLookupBoth):
+                text = buffer.value[:count].decode(encoding)
+
+            # Don't treat Unicode command codepoints as text, except Return.
+            if text and unicodedata.category(text) == 'Cc' and text != '\r':
+                text = None
+
+        symbol = symbol.value
+
+        # If the event is a XIM filtered event, the keysym will be virtual
+        # (e.g., aacute instead of A after a dead key).  Drop it, we don't
+        # want these kind of key events.
+        if ev.xkey.keycode == 0 and not filtered:
+            symbol = None
+
+        # pyglet.self.key keysymbols are identical to X11 keysymbols, no
+        # need to map the keysymbol.  For keysyms outside the pyglet set, map
+        # raw key code to a user key.
+        if symbol and symbol not in key._key_names and ev.xkey.keycode:
+            symbol = key.user_key(ev.xkey.keycode)
+
+        if filtered:
+            # The event was filtered, text must be ignored, but the symbol is
+            # still good.
+            return None, symbol
+
+        return text, symbol
 
     def _event_text_motion(self, symbol, modifiers):
         if modifiers & key.MOD_ALT:
@@ -1224,10 +1275,9 @@ class XlibWindow(BaseWindow):
                     continue
                 if ev.xkey.keycode == auto_event.xkey.keycode:
                     # Found a key repeat: dispatch EVENT_TEXT* event
-                    symbol = self._event_symbol(ev)
+                    text, symbol = self._event_text_symbol(auto_event)
                     modifiers = self._translate_modifiers(ev.xkey.state)
                     modifiers_ctrl = modifiers & (key.MOD_CTRL | key.MOD_ALT)
-                    text = self._event_text(auto_event)
                     motion = self._event_text_motion(symbol, modifiers)
                     if motion:
                         if modifiers & key.MOD_SHIFT:
@@ -1250,14 +1300,14 @@ class XlibWindow(BaseWindow):
             for auto_event in reversed(saved):
                 xlib.XPutBackEvent(self._x_display, byref(auto_event))
 
-        symbol = self._event_symbol(ev)
+        text, symbol = self._event_text_symbol(ev)
         modifiers = self._translate_modifiers(ev.xkey.state)
         modifiers_ctrl = modifiers & (key.MOD_CTRL | key.MOD_ALT)
-        text = self._event_text(ev)
         motion = self._event_text_motion(symbol, modifiers)
 
         if ev.type == xlib.KeyPress:
-            self.dispatch_event('on_key_press', symbol, modifiers)
+            if symbol:
+                self.dispatch_event('on_key_press', symbol, modifiers)
             if motion:
                 if modifiers & key.MOD_SHIFT:
                     self.dispatch_event('on_text_motion_select', motion)
@@ -1266,7 +1316,8 @@ class XlibWindow(BaseWindow):
             elif text and not modifiers_ctrl:
                 self.dispatch_event('on_text', text)
         elif ev.type == xlib.KeyRelease:
-            self.dispatch_event('on_key_release', symbol, modifiers)
+            if symbol:
+                self.dispatch_event('on_key_release', symbol, modifiers)
 
     @XlibEventHandler(xlib.MotionNotify)
     def _event_motionnotify(self, ev):

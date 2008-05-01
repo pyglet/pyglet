@@ -69,8 +69,11 @@ class XlibEventLoop(BaseEventLoop):
             for display in pending_displays:
                 while xlib.XPending(display._display):
                     xlib.XNextEvent(display._display, e)
-                    if xlib.XFilterEvent(e, e.xany.window):
-                        if e.xany.type not in (xlib.KeyPress, xlib.KeyRelease):
+
+                    # Key events are filtered by the xlib window event
+                    # handler so they get a shot at the prefiltered event.
+                    if e.xany.type not in (xlib.KeyPress, xlib.KeyRelease):
+                        if xlib.XFilterEvent(e, e.xany.window):
                             continue
                     try:
                         window = display._window_map[e.xany.window]
