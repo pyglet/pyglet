@@ -154,6 +154,8 @@ class XlibPlatform(Platform):
 class XlibDisplayDevice(Display):
     _display = None     # POINTER(xlib.Display)
 
+    _x_im = None        # X input method
+                        # TODO close _x_im when display connection closed.
     _enable_xsync = False
 
     def __init__(self, name):
@@ -427,6 +429,7 @@ XlibEventHandler = _PlatformEventHandler
 class XlibWindow(BaseWindow):
     _x_display = None       # X display connection
     _x_screen_id = None     # X screen index
+    _x_ic = None            # X input context
     _glx_context = None     # GLX context handle
     _glx_window = None      # GLX window handle
     _window = None          # Xlib window handle
@@ -636,19 +639,33 @@ class XlibWindow(BaseWindow):
         # Set caption
         self.set_caption(self._caption)
 
+        # Create input context.  A good but very outdated reference for this
+        # is http://www.sbin.org/doc/Xlib/chapt_11.html
+        if _have_utf8 and not self._x_ic:
+            if not self.display._x_im:
+                xlib.XSetLocaleModifiers('@im=none')
+                self.display._x_im = \
+                    xlib.XOpenIM(self._x_display, None, None, None)
+
+            xlib.XFlush(self._x_display);
+
+            self._x_ic = xlib.XCreateIC(self.display._x_im, 
+                'inputStyle', xlib.XIMPreeditNothing|xlib.XIMStatusNothing,
+                'clientWindow', self._window,
+                'focusWindow', self._window,
+                None)
+
+            filter_events = c_ulong()
+            XNFilterEvents = 'filterEvents'
+            xlib.XGetICValues(self._x_ic,
+                              XNFilterEvents, byref(filter_events),
+                              None)
+            self._default_event_mask |= filter_events.value
+            xlib.XSetICFocus(self._x_ic)
+
         self.switch_to()
         if self._visible:
             self.set_visible(True)
-
-        # Create input context.  A good but very outdated reference for this
-        # is http://www.sbin.org/doc/Xlib/chapt_11.html
-        if _have_utf8:
-            self._x_im = xlib.XOpenIM(self._x_display, None, None, None)
-            # TODO select best input style.
-            self._x_ic = xlib.XCreateIC(self._x_im, 
-                'inputStyle', xlib.XIMPreeditNothing|xlib.XIMStatusNothing,
-                None)
-            xlib.XSetICFocus(self._x_ic)
 
     def _map(self):
         if self._mapped:
@@ -726,7 +743,7 @@ class XlibWindow(BaseWindow):
 
         if _have_utf8:
             xlib.XDestroyIC(self._x_ic)
-            xlib.XCloseIM(self._x_im)
+            self._x_ic = None
 
         super(XlibWindow, self).close()
 
@@ -1157,14 +1174,17 @@ class XlibWindow(BaseWindow):
 
     def _event_text(self, event):
         if event.type == xlib.KeyPress:
-            buffer = create_string_buffer(16)
+            buffer = create_string_buffer(128)
             text = None
             if _have_utf8:
-                count = xlib.Xutf8LookupString(self._x_ic,
+                status = c_int()
+                count = xlib.XmbLookupString(self._x_ic,
                                                event.xkey,
-                                               buffer, len(buffer),
-                                               None, None)
-                if count > 0:
+                                               buffer, len(buffer) - 1,
+                                               None, byref(status))
+                if status.value == xlib.XBufferOverflow:
+                    raise NotImplementedError('TODO: XIM buffer resize')
+                if status.value == xlib.XLookupChars and count > 0:
                     text = buffer.value[:count].decode('utf8')
             else:
                 count = xlib.XLookupString(event.xkey,
@@ -1400,12 +1420,14 @@ class XlibWindow(BaseWindow):
         self._active = True
         self._update_exclusivity()
         self.dispatch_event('on_activate')
+        xlib.XSetICFocus(self._x_ic)
 
     @XlibEventHandler(xlib.FocusOut)
     def _event_focusout(self, ev):
         self._active = False
         self._update_exclusivity()
         self.dispatch_event('on_deactivate')
+        xlib.XUnsetICFocus(self._x_ic)
 
     @XlibEventHandler(xlib.MapNotify)
     def _event_mapnotify(self, ev):
