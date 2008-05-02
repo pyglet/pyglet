@@ -183,6 +183,7 @@ class TestWindow(window.Window):
             batch=self.batch)
         self.caret = caret.Caret(self.layout)
         self.push_handlers(self.caret)
+        self.layout.push_handlers(self)
 
         self.set_mouse_cursor(self.get_system_mouse_cursor('text'))
 
@@ -194,20 +195,27 @@ class TestWindow(window.Window):
         self.layout.width = width - self.margin * 2
         self.layout.height = height - self.margin * 2
         self.layout.end_update()
+        self.invalid = True
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         self.layout.view_x -= scroll_x
         self.layout.view_y += scroll_y * 16
+        self.invalid = True
 
     def on_draw(self):
         gl.glClearColor(1, 1, 1, 1)
         self.clear()
         self.batch.draw()
+        self.invalid = False
 
     def on_key_press(self, symbol, modifiers):
         super(TestWindow, self).on_key_press(symbol, modifiers)
         if symbol == key.TAB:
             self.caret.on_text('\t')
+        self.invalid = True
+    
+    def on_layout_change(self, start, end):
+        self.invalid = True
 
 class TestCase(unittest.TestCase):
     def test(self):

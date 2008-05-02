@@ -188,9 +188,10 @@ class BaseEventLoop(event.EventDispatcher):
 
         # Redraw all windows
         for window in windows:
-            window.switch_to()
-            window.dispatch_event('on_draw')
-            window.flip()
+            if window.invalid:
+                window.switch_to()
+                window.dispatch_event('on_draw')
+                window.flip()
 
         # Update timout
         return clock.get_sleep_time(True)
