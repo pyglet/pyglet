@@ -501,20 +501,6 @@ class BaseWindow(EventDispatcher):
 
     has_exit = False
 
-    #: Window display contents validity.  The `pyglet.app` event loop
-    #: examines every window each iteration and only dispatches the `on_draw`
-    #: event to windows that have `invalid` set.  By default, windows always
-    #: have `invalid` set to ``True``.
-    #:
-    #: You can prevent redundant redraws by setting this variable to ``False``
-    #: in the window's `on_draw` handler, and setting it to True again in
-    #: response to any events that actually do require a window contents
-    #: update.
-    #:
-    #: :type: bool
-    #: :since: pyglet 1.1
-    invalid = True
-
     # Instance variables accessible only via properties
 
     _width = None
