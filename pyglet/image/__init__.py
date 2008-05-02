@@ -948,12 +948,12 @@ class ImageData(AbstractImage):
                             data)
         glPopClientAttrib()
 
-        # Flush image upload before data get GC'd.
-        glFlush()
-
         if matrix:
             glPopMatrix()
             glMatrixMode(GL_MODELVIEW)
+
+        # Flush image upload before data get GC'd.
+        glFlush()
 
     def _apply_region_unpack(self):
         pass
@@ -1259,6 +1259,7 @@ class CompressedImageData(AbstractImage):
             assert texture.width == self.width
             assert texture.height == self.height
                 
+        glFlush()
         self._current_texture = texture
         return texture
 
@@ -1303,6 +1304,8 @@ class CompressedImageData(AbstractImage):
                 self.gl_format,
                 width, height, 0,
                 len(data), data)
+
+        glFlush()
 
         self._current_mipmap_texture = texture
         return texture
@@ -1454,6 +1457,8 @@ class Texture(AbstractImage):
                                   width, height, 0., 
                                   0., height, 0.)
 
+        glFlush()
+
         if texture_width == width and texture_height == height:
             return texture
 
@@ -1508,6 +1513,7 @@ class Texture(AbstractImage):
                          0,
                          GL_RGBA, GL_UNSIGNED_BYTE,
                          blank)
+            glFlush()
                          
         texture = cls(width, height, target, id.value)
         texture.tex_coords = tex_coords
@@ -1750,6 +1756,8 @@ class Texture3D(Texture, UniformTextureSequence):
             items.append(item)
             image.blit_to_texture(texture.target, texture.level, 
                                   image.anchor_x, image.anchor_y, i)
+
+        glFlush()
 
         texture.items = items
         texture.item_width = item_width
