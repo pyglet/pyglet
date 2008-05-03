@@ -30,7 +30,7 @@ x = 0
 tracked_elements = []
 for device in devices:
     y = window.height
-    label = pyglet.text.Label(device.name, x=x, y=y, valign='top', batch=batch)
+    label = pyglet.text.Label(device.name or '', x=x, y=y, valign='top', batch=batch)
     y -= label.content_height
 
     try:
