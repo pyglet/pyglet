@@ -116,3 +116,7 @@ Don't really like "cursor" name, anything better?
 Maybe don't even attempt to support multiple tablets (unlikely case, may not
 even be supported by wintab and carbon)... instead have a function (on
 Window?) to open a tablet context for a window.
+
+xinput is display-dependent, so device enumeration depends on display.
+Perhaps should skip the tablet device (as prev para suggests) and just
+add a method on window? (or function that takes window, if want modularity).
