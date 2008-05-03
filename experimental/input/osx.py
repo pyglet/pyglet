@@ -8,6 +8,7 @@ __version__ = '$Id: $'
 
 import ctypes
 
+import pyglet
 from pyglet.window.carbon import carbon, _oscheck, _create_cfstring
 from pyglet.window.carbon.constants import *
 
@@ -89,6 +90,31 @@ class IUnknown(ctypes.Structure):
 
 # Most of these function prototypes are not filled in yet because I haven't
 # bothered.
+class IOHIDQueueInterface(ctypes.Structure):
+    _fields_ = IUnknown._fields_ + (
+        ('createAsyncEventSource', ctypes.c_void_p),
+        ('getAsyncEventSource', ctypes.c_void_p),
+        ('createAsyncPort', ctypes.c_void_p),
+        ('getAsyncPort', ctypes.c_void_p),
+        ('create', ctypes.CFUNCTYPE(IOReturn,
+            Self, ctypes.c_uint32, ctypes.c_uint32)),
+        ('dispose', ctypes.CFUNCTYPE(IOReturn,
+            Self)),
+        ('addElement', ctypes.CFUNCTYPE(IOReturn,
+            Self, IOHIDElementCookie)),
+        ('removeElement', ctypes.c_void_p),
+        ('hasElement', ctypes.c_void_p),
+        ('start', ctypes.CFUNCTYPE(IOReturn,
+            Self)),
+        ('stop', ctypes.CFUNCTYPE(IOReturn,
+            Self)),
+        ('getNextEvent', ctypes.CFUNCTYPE(IOReturn,
+            Self, ctypes.POINTER(IOHIDEventStruct), AbsoluteTime,
+            ctypes.c_uint32)),
+        ('setEventCallout', ctypes.c_void_p),
+        ('getEventCallout', ctypes.c_void_p),
+    )
+
 class IOHIDDeviceInterface(ctypes.Structure):
     _fields_ = IUnknown._fields_ + (
         ('createAsyncEventSource', ctypes.c_void_p),
@@ -106,7 +132,9 @@ class IOHIDDeviceInterface(ctypes.Structure):
         ('queryElementValue', ctypes.c_void_p),
         ('startAllQueues', ctypes.c_void_p),
         ('stopAllQueues', ctypes.c_void_p),
-        ('allocQueue', ctypes.c_void_p),
+        ('allocQueue', ctypes.CFUNCTYPE(
+            ctypes.POINTER(ctypes.POINTER(IOHIDQueueInterface)), 
+            Self)),
         ('allocOutputTransaction', ctypes.c_void_p),
         # 1.2.1 (10.2.3)
         ('setReport', ctypes.c_void_p),
@@ -211,6 +239,8 @@ class Device(object):
         self.elements = self._get_elements()
 
         self._open = False
+        self._queue = None
+        self._queue_depth = 8 # Number of events queue can buffer
 
     def _init_properties(self, generic_device):
         properties = CFMutableDictionaryRef()
@@ -259,11 +289,14 @@ class Device(object):
                 None, ctypes.byref(elements_array))
         )
 
+        self._element_cookies = {}
         elements = []
         n_elements = carbon.CFArrayGetCount(elements_array)
         for i in range(n_elements):
             properties = carbon.CFArrayGetValueAtIndex(elements_array, i)
-            elements.append(DeviceElement(self, properties))
+            element = DeviceElement(self, properties)
+            elements.append(element)
+            self._element_cookies[element._cookie] = element
 
         carbon.CFRelease(elements_array)
 
@@ -280,18 +313,68 @@ class Device(object):
         result = self._device.contents.contents.open(self._device, flags)
         if result == 0:
             self._open = True
-            return
         elif result == kIOReturnExclusiveAccess:
             raise input.InputDeviceExclusiveException()
+
+        # Create event queue
+        self._queue = self._device.contents.contents.allocQueue(self._device)
+        _oscheck(
+            self._queue.contents.contents.create(self._queue, 
+                                                 0, self._queue_depth)
+        )
+        # Add all elements into queue
+        # TODO: only "interesting/known" elements?
+        for element in self.elements:
+            r = self._queue.contents.contents.addElement(self._queue,
+                                                         element._cookie, 0)
+            if r != 0:
+                print 'error adding %r' % element
+
+        _oscheck(
+            self._queue.contents.contents.start(self._queue)
+        )
+
+        # HACK XXX
+        pyglet.clock.schedule(self.dispatch_events)
 
     def close(self):
         if not self._open:
             return
 
+        # HACK XXX
+        pyglet.clock.unschedule(self.dispatch_events)
+
+        _oscheck(
+            self._queue.contents.contents.stop(self._queue)
+        )
+        _oscheck(
+            self._queue.contents.contents.dispose(self._queue)
+        )
+        self._queue.contents.contents.Release(self._queue)
+        self._queue = None
         _oscheck(
             self._device.contents.contents.close(self._device)
         )
         self._open = False
+
+    # XXX TEMP/HACK
+    def dispatch_events(self, dt=None):
+        if not self._open:
+            return
+
+        event = IOHIDEventStruct()
+        r = self._queue.contents.contents.getNextEvent(self._queue,
+                ctypes.byref(event), 0, 0)
+        if r != 0:
+            # Undocumented behaviour?  returns 3758097127L when no events are
+            # in queue (is documented to block)
+            return
+
+        try:
+            element = self._element_cookies[event.elementCookie]
+            element.value = event.value
+        except KeyError:
+            pass
 
 class DeviceElement(object):
     def __init__(self, device, properties):
@@ -303,12 +386,18 @@ class DeviceElement(object):
 
         self.name = usage.get_element_usage_name(usage_page, _usage)
         self.known = usage.get_element_usage_known(usage_page, _usage)
+        self.value = None
 
+    def get_value(self):
+        return self.value
+
+    '''
     def get_value(self):
         event = IOHIDEventStruct()
         self.device._device.contents.contents.getElementValue(
             self.device._device, self._cookie, ctypes.byref(event))
         return event.value
+    '''
 
 def get_devices():
     return get_existing_devices(get_master_port(), get_matching_dictionary())
