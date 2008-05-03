@@ -43,3 +43,13 @@ if __name__ == '__main__':
                  '-i/usr/include/X11/Xdefs.h',
                  '-DStatus=int',
                  '/usr/include/X11/extensions/sync.h')
+        if 'xinput' in names:
+            wrap('tools/wraptypes/wrap.py',
+                 '-oexperimental/input/lib_xinput.py',
+                 '-lXi',
+                 '-mpyglet.window.xlib.xlib',
+                 '-i/usr/include/X11/Xlib.h',
+                 '-i/usr/include/X11/X.h',
+                 '-i/usr/include/X11/Xdefs.h',
+                 '/usr/include/X11/extensions/XInput.h',
+                 '/usr/include/X11/extensions/XI.h')
