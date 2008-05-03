@@ -265,6 +265,7 @@ class VertexDomain(object):
             for attribute in attributes:
                 attribute.enable()
                 attribute.set_pointer(attribute.buffer.ptr)
+        glFinish()
 
         if vertex_list is not None:
             glDrawArrays(mode, vertex_list.start, vertex_list.count)
@@ -650,6 +651,7 @@ class IndexedVertexDomain(VertexDomain):
                 attribute.enable()
                 attribute.set_pointer(attribute.buffer.ptr)
         self.index_buffer.bind()
+        glFinish()
 
         if vertex_list is not None:
             glDrawElements(mode, vertex_list.index_count, self.index_gl_type,
