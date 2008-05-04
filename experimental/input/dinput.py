@@ -404,6 +404,9 @@ class Element(object):
 class Device(object):
     def __init__(self, device, device_instance):
         self.name = device_instance.tszInstanceName
+        #print self.name, hex(device_instance.dwDevType & 0xff), \
+        #                hex(device_instance.dwDevType & 0xff00)
+        #print hex(device_instance.wUsagePage), hex(device_instance.wUsage)
 
         self._device = device
         self._init_elements()
@@ -458,7 +461,11 @@ class Device(object):
             return
 
         if window is None:
+            # Pick any open window, or the shadow window if no windows
+            # have been created yet.
             window = pyglet.gl._shadow_window
+            for window in pyglet.app.windows:
+                break
 
         self._device.SetCooperativeLevel(window._hwnd, 
             DISCL_BACKGROUND | DISCL_NONEXCLUSIVE)
