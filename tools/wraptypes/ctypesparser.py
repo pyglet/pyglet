@@ -272,6 +272,16 @@ class CtypesParser(CParser):
     
     Subclass and override the handle_ctypes_* methods.
     '''
+    def handle_define(self, name, value, filename, lineno):
+        # Handle #define style of typedeffing.
+        # XXX At the moment, just a hack for `int`, which is used by
+        # Status and Bool in Xlib.h.  More complete functionality would
+        # parse value as a type (back into cparser).
+        if value == 'int':
+            t = CtypesType('c_int')
+            self.handle_ctypes_type_definition(
+                name, t, filename, lineno)
+
     def handle_define_constant(self, name, value, filename, lineno):
         if name in reserved_names:
             name += '_'

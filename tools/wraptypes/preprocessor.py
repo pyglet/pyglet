@@ -573,7 +573,8 @@ class PreprocessorGrammar(Grammar):
             # Try to parse replacement list as an expression
             tokens = p.parser.namespace.apply_macros(p[3])
             lexer = TokenListLexer(tokens)
-            expr_parser = ConstantExpressionParser(lexer, p.parser.namespace)
+            expr_parser = StrictConstantExpressionParser(lexer, 
+                                                         p.parser.namespace)
             value = expr_parser.parse(debug=False)
             if value is not None:
                 value = value.evaluate(p.parser.namespace)
@@ -1017,6 +1018,15 @@ class ConstantExpressionGrammar(Grammar):
     def p_error(self, t):
         raise ConstantExpressionParseException()
 
+class StrictConstantExpressionGrammar(ConstantExpressionGrammar):
+    name = 'strict_expr'
+    tokens = tokens
+
+    def p_identifier(self, p):
+        '''identifier : IDENTIFIER
+        '''
+        raise ConstantExpressionParseException()
+
 class ExecutionState(object):
     def __init__(self, parent_enabled, enabled):
         self.enabled = parent_enabled and enabled
@@ -1053,6 +1063,7 @@ class PreprocessorParser(yacc.Parser):
         self.lexer.filename = ''
 
         self.defines = {}
+        self.namespace = PreprocessorNamespace()
 
     def define(self, name, value):
         self.defines[name] = value
@@ -1067,7 +1078,7 @@ class PreprocessorParser(yacc.Parser):
     def parse(self, filename=None, data=None, namespace=None, debug=False): 
         self.output = []
         if not namespace:
-            namespace = PreprocessorNamespace()
+            namespace = self.namespace
         for name, value in self.defines.items():
             namespace.define_object(name, (create_token('IDENTIFIER', value),))
         self.namespace = namespace
@@ -1240,11 +1251,13 @@ class PreprocessorParser(yacc.Parser):
                 set(self.namespace.functions.keys()))
 
 class ConstantExpressionParser(yacc.Parser):
+    _const_grammar = ConstantExpressionGrammar
+
     def __init__(self, lexer, namespace):
         yacc.Parser.__init__(self)
         self.lexer = lexer
         self.namespace = namespace
-        ConstantExpressionGrammar.get_prototype().init_parser(self)
+        self._const_grammar.get_prototype().init_parser(self)
 
     def parse(self, debug=False):
         self.result = None
@@ -1254,6 +1267,9 @@ class ConstantExpressionParser(yacc.Parser):
             # XXX warning here?
             pass
         return self.result
+
+class StrictConstantExpressionParser(ConstantExpressionParser):
+    _const_grammar = StrictConstantExpressionGrammar
 
 class PreprocessorNamespace(EvaluationContext):
     def __init__(self, gcc_macros=True, 
