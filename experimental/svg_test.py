@@ -11,17 +11,23 @@ import math
 import random
 import re
 import os.path
-from pyglet.window import Window
-from pyglet import clock
-from pyglet.window.event import *
+import pyglet
 from pyglet.gl import *
 import xml.dom
 import xml.dom.minidom
 
-# sample from http://www.w3.org/TR/SVG/paths.html#PathDataCubicBezierCommands
-sample = 'M100,200 C100,100 250,100 250,200 S400,300 400,200'
+class SmoothLineGroup(pyglet.graphics.Group):
+    def set_state(self):
+        glPushAttrib(GL_ENABLE_BIT)
+        glEnable(GL_LINE_SMOOTH)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE)
 
-class Curve:
+    def unset_state(self):
+        glPopAttrib()
+
+class Curve(object):
     PATH_RE = re.compile(r'([MLHVCSQTAZ])([^MLHVCSQTAZ]+)', re.IGNORECASE)
     INT = r'([+-]?\d+)'
     FLOAT = r'(?:[\s,]*)([+-]?\d+(?:\.\d+)?)'
@@ -33,15 +39,15 @@ class Curve:
             return function
         return register
 
-    def __init__(self, spec):
+    def __init__(self, spec, batch):
+        self.batch = batch
+
         self.start = None
         self.current = None
-
-        self.gl_list = glGenLists(1)
-        glNewList(self.gl_list, GL_COMPILE)
+        self.min_x = self.min_y = self.max_x = self.max_y = None
 
         for cmd, value in self.PATH_RE.findall(spec):
-#            print (cmd, value)
+            #print (cmd, value)
             if not cmd: continue
             rx, handler, types = self.HANDLERS[cmd.upper()]
             if rx is None:
@@ -51,10 +57,17 @@ class Curve:
                 for fields in rx.findall(value):
                     v.append([types[i](e) for i, e in enumerate(fields)])
                 handler(self, cmd, v)
-        glEndList()
 
-    def draw(self):
-        glCallList(self.gl_list)
+    def _determine_rect(self, x, y):
+        y = -y
+        if self.min_x is None:
+            self.min_x = self.max_x = x
+            self.min_y = self.max_y = y
+        else:
+            if self.min_x > x: self.min_x = x
+            elif self.max_x < x: self.max_x = x
+            if self.min_y > y: self.min_y = y
+            elif self.max_y < y: self.max_y = y
 
     @handle('M', FLOAT*2, (float, float))
     def moveto(self, cmd, points):
@@ -87,15 +100,16 @@ class Curve:
 
         Parameters are (x y)+
         '''
-        glBegin(GL_LINE_STRIP)
+        l = []
+        self._determine_rect(*self.current)
         for point in points:
             cx, cy = self.current
             x, y = map(float, point)
-            glVertex2f(cx, cy)
-            glVertex2f(x, y)
+            l.extend([cx, -cy])
+            l.extend([x, -y])
             self.current = (x, y)
-        glEnd()
-
+            self._determine_rect(x, y)
+        self.batch.add(len(l)/2, GL_LINES, SmoothLineGroup(), ('v2f', l))
 
     @handle('H', FLOAT, (float,))
     def horizontal_lineto(self, cmd, xvals):
@@ -108,13 +122,12 @@ class Curve:
 
         Parameters are x+
         '''
-        glBegin(GL_LINE_STRIP)
         cx, cy = self.current
+        self._determine_rect(*self.current)
         x = float(xvals[-1])
-        glVertex2f(cx, cy)
-        glVertex2f(x, cy)
+        self.batch.add(2, GL_LINES, None, ('v2f', (cx, -cy, x, -cy)))
         self.current = (x, cy)
-        glEnd()
+        self._determine_rect(x, cy)
 
 
     @handle('V', FLOAT, (float,))
@@ -128,13 +141,12 @@ class Curve:
 
         Parameters are y+
         '''
-        glBegin(GL_LINE_STRIP)
         cx, cy = self.current
+        self._determine_rect(*self.current)
         y = float(yvals[-1])
-        glVertex2f(cx, cy)
-        glVertex2f(cx, y)
+        self.batch.add(2, GL_LINES, None, ('v2f', [cx, -cy, cx, -y]))
         self.current = (cx, y)
-        glEnd()
+        self._determine_rect(cx, y)
 
 
     @handle('Z', None, None)
@@ -142,10 +154,7 @@ class Curve:
         '''Close the current subpath by drawing a straight line from the
         current point to current subpath's initial point.
         '''
-        glBegin(GL_LINE_STRIP)
-        glVertex2f(*self.current)
-        glVertex2f(*self.start)
-        glEnd()
+        self.batch.add(2, GL_LINES, SmoothLineGroup(), ('v2f', self.current + tuple(self.start)))
 
 
     @handle('C', FLOAT*6, (float, )*6)
@@ -161,7 +170,8 @@ class Curve:
 
         Control points are (x1 y1 x2 y2 x y)+
         '''
-        glBegin(GL_LINE_STRIP)
+        l = []
+        last=None
         for entry in control_points:
             x1, y1, x2, y2, x, y = map(float, entry)
             t = 0
@@ -175,9 +185,13 @@ class Curve:
                 b = 1 - t; b2 = b**2; b3 = b**3
                 px = cx*b3 + x1*b2*a + x2*b*a2 + x*a3
                 py = cy*b3 + y1*b2*a + y2*b*a2 + y*a3
-                glVertex2f(px, py)
+                if last is not None:
+                    l.extend(last)
+                    l.extend((px, -py))
+                last = (px, -py)
+                self._determine_rect(px, py)
                 t += 0.01
-        glEnd()
+        self.batch.add(len(l)/2, GL_LINES, SmoothLineGroup(), ('v2f', l))
 
 
     @handle('S', FLOAT*4, (float, )*4)
@@ -198,7 +212,8 @@ class Curve:
         '''
         assert self.last_control is not None, 'S must follow S or C'
 
-        glBegin(GL_LINE_STRIP)
+        l = []
+        last = None
         for entry in control_points:
             x2, y2, x, y = map(float, entry)
 
@@ -219,9 +234,14 @@ class Curve:
                 b = 1 - t; b2 = b**2; b3 = b**3
                 px = cx*b3 + x1*b2*a + x2*b*a2 + x*a3
                 py = cy*b3 + y1*b2*a + y2*b*a2 + y*a3
-                glVertex2f(px, py)
+                if last is not None:
+                    l.extend(last)
+                    l.extend((px, -py))
+                last = (px, -py)
+                self._determine_rect(px, py)
                 t += 0.01
-        glEnd()
+        # degenerate vertices
+        self.batch.add(len(l)/2, GL_LINES, SmoothLineGroup(), ('v2f', l))
 
 
     @handle('Q', FLOAT*4, (float, )*4)
@@ -272,42 +292,61 @@ class Curve:
         raise NotImplementedError('not implemented')
 
 
-class SVG:
-    def __init__(self, filename):
+class SVG(object):
+    def __init__(self, filename, rect=None):
         dom = xml.dom.minidom.parse(filename)
         tag = dom.documentElement
         if tag.tagName != 'svg':
             raise ValueError('document is <%s> instead of <svg>'%tag.tagName)
 
+        # generate all the drawing elements
+        self.batch = pyglet.graphics.Batch()
         self.objects = []
         for tag in tag.getElementsByTagName('g'):
             for tag in tag.getElementsByTagName('path'):
-                self.objects.append(Curve(tag.getAttribute('d')))
+                self.objects.append(Curve(tag.getAttribute('d'), self.batch))
+
+        # determine drawing bounds
+        self.min_x = min(o.min_x for o in self.objects)
+        self.max_x = max(o.max_x for o in self.objects)
+        self.min_y = min(o.min_y for o in self.objects)
+        self.max_y = max(o.max_y for o in self.objects)
+
+        # determine or apply drawing rect
+        if rect is None:
+            self._rect = (self.min_x, self.min_y, self.max_x - self.min_x,
+                self.max_y - self.min_y)
+        else:
+            self.set_rect(rect)
+
+    def set_rect(self, rect):
+        self._rect = rect
+        # figure transform for display rect
+        self.translate_x, self.translate_y, rw, rh = rect
+        self.scale_x = abs(rw / float(self.max_x - self.min_x))
+        self.scale_y = abs(rh / float(self.max_y - self.min_y))
+    rect = property(lambda self: self._rect, set_rect)
 
     def draw(self):
         glPushMatrix()
-        glTranslatef(0, 1024, 0)
-        glScalef(1, -1, 1)
-        for object in self.objects:
-            object.draw()
+        if self._rect is not None:
+            glScalef(self.scale_x, self.scale_y, 1)
+            glTranslatef(self.translate_x-self.min_x, self.translate_x-self.min_y, 0)
+        self.batch.draw()
         glPopMatrix()
 
-w = Window(width=1024, height=768)
-
-# XXX move this into display list
-glEnable(GL_LINE_SMOOTH)
-glEnable(GL_BLEND)
-glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE)
+w = pyglet.window.Window(width=600, height=300, resizable=True)
 
 dirname = os.path.dirname(__file__)
-svg = SVG(os.path.join(dirname, 'hello_world.svg'))
+svg = SVG(os.path.join(dirname, 'hello_world.svg'), rect=(0, 0, 600, 300))
 
-clock.set_fps_limit(10)
-while not w.has_exit:
-    clock.tick()
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    w.dispatch_events()
+@w.event
+def on_draw():
+    w.clear()
     svg.draw()
-    w.flip()
+
+@w.event
+def on_resize(w, h): svg.rect = svg.rect[:2] + (w, h)
+
+pyglet.app.run()
 
