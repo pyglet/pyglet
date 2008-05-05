@@ -34,6 +34,10 @@ if __name__ == '__main__':
                  '-mpyglet.window.xlib.xlib',
                  '/usr/include/X11/extensions/Xinerama.h')
         if 'xsync' in names:
+            print '------------------------------------'
+            print 'WARNING xsync requires import hacks.'
+            print ' ... copy over from current xsync.py'
+            print '------------------------------------'
             wrap('tools/wraptypes/wrap.py',
                  '-opyglet/window/xlib/xsync.py',
                  '-lXext',
@@ -53,3 +57,13 @@ if __name__ == '__main__':
                  '-i/usr/include/X11/Xdefs.h',
                  '/usr/include/X11/extensions/XInput.h',
                  '/usr/include/X11/extensions/XI.h')
+        if 'xrandr' in names:
+            wrap('tools/wraptypes/wrap.py',
+                 '-oexperimental/modeswitch/lib_xrandr.py',
+                 '-lXrandr',
+                 '-mpyglet.window.xlib.xlib',
+                 '-i/usr/include/X11/Xlib.h',
+                 '-i/usr/include/X11/X.h',
+                 '-i/usr/include/X11/Xdefs.h',
+                 '/usr/include/X11/extensions/Xrandr.h',
+                 '/usr/include/X11/extensions/randr.h')
