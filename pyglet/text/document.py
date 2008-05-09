@@ -338,7 +338,7 @@ class AbstractDocument(event.EventDispatcher):
         '''
         raise NotImplementedError('abstract')
 
-    def get_style(self, attribute, position):
+    def get_style(self, attribute, position=0):
         '''Get an attribute style at the given position.
 
         :Parameters:
@@ -632,7 +632,7 @@ class FormattedDocument(AbstractDocument):
         except KeyError:
             return _no_style_range_iterator
 
-    def get_style(self, attribute, position):
+    def get_style(self, attribute, position=0):
         try:
             return self._style_runs[attribute][position]
         except KeyError:
