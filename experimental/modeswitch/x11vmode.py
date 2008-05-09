@@ -18,7 +18,7 @@ import sys
 import threading
 
 from pyglet.window.xlib import xlib
-import xf86vmode
+import lib_xf86vmode as xf86vmode
 
 class ModeList(object):
     invalid = True
