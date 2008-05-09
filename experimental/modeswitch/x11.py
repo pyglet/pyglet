@@ -145,7 +145,8 @@ def test_change_modes():
     screen.width = 1024
     screen.height = 768
     window = pyglet.window.Window(fullscreen=True, screen=screen)
-    window.set_location(0, 0)
+    xlib.XMoveResizeWindow(x_display, window._window, screen.x, screen.y,
+        screen.width, screen.height)
 
     xlib.XGrabPointer(x_display, window._window,
                        True,
