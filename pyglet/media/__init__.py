@@ -826,7 +826,7 @@ class Player(event.EventDispatcher):
                 Timestamp to seek to.
         '''
         if not self._sources:
-            pass
+            return
 
         if not self._playing:
             self._pause_seek = True
