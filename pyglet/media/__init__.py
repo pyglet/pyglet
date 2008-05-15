@@ -867,7 +867,7 @@ class Player(event.EventDispatcher):
             self._update_schedule()
             return
 
-        self._source_read_index -= 1
+        self._source_read_index = max(0, self._source_read_index - 1)
         source = self._sources.pop(0)
         source._release_texture(self)
         source._stop()
