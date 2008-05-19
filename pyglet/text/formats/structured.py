@@ -38,6 +38,8 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
+import re
+
 import pyglet
 
 class ImageElement(pyglet.text.document.InlineElement):
@@ -150,11 +152,14 @@ class UnorderedListBuilder(ListBuilder):
         return self.mark
 
 class OrderedListBuilder(ListBuilder):
+    format_re = re.compile('(.*?)([1aAiI])(.*)')
+
     def __init__(self, start, format):
         '''Create an ordered list with sequentially numbered mark text.
 
-        The format is composed of a numbering scheme character followed
-        by any delimiter text.  Valid numbering schemes are:
+        The format is composed of an optional prefix text, a numbering
+        scheme character followed by suffix text. Valid numbering schemes
+        are:
 
         ``1``
             Decimal Arabic
@@ -167,8 +172,8 @@ class OrderedListBuilder(ListBuilder):
         ``I``
             Uppercase Roman
 
-        Delimiter text is typically ``.``, ``)`` or empty, but can be any
-        string.
+        Prefix text may typically be ``(`` or ``[`` and suffix text is
+        typically ``.``, ``)`` or empty, but either can be any string.
 
         :Parameters:
             `start` : int
@@ -178,9 +183,9 @@ class OrderedListBuilder(ListBuilder):
 
         '''
         self.next_value = start
-        self.numbering = format[:1]
+
+        self.prefix, self.numbering, self.suffix = self.format_re.match(format).groups()
         assert self.numbering in '1aAiI'
-        self.delimiter = format[1:]
 
     def get_mark(self, value):
         if value is None:
@@ -193,7 +198,7 @@ class OrderedListBuilder(ListBuilder):
                 mark = '?'
             if self.numbering == 'A':
                 mark = mark.upper()
-            return '%s%s' % (mark, self.delimiter)
+            return '%s%s%s' % (self.prefix, mark, self.suffix)
         elif self.numbering in 'iI':
             try:
                 mark = _int_to_roman(value)
@@ -201,9 +206,9 @@ class OrderedListBuilder(ListBuilder):
                 mark = '?'
             if self.numbering == 'i':
                 mark = mark.lower()
-            return '%s%s' % (mark, self.delimiter)
+            return '%s%s%s' % (self.prefix, mark, self.suffix)
         else:
-            return '%d%s' % (value, self.delimiter)
+            return '%s%d%s' % (self.prefix, value, self.suffix)
 
 class StructuredTextDecoder(pyglet.text.DocumentDecoder):
     def decode(self, text, location=None):
