@@ -139,7 +139,7 @@ class Caret(object):
 
         Also disconnects the caret from further layout events.
         '''
-        self.delete()
+        self._list.delete()
         self._layout.remove_handlers(self)
 
     def _blink(self, dt):
