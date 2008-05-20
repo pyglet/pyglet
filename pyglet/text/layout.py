@@ -1728,6 +1728,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         self._update_flow_lines()
         self._update_visible_lines()
         self._update_vertex_lists()
+        self.top_group.top = self._get_top(self.lines)
 
         if trigger_update_event:
             self.dispatch_event('on_layout_update')
