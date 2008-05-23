@@ -1,0 +1,17 @@
+Basic implementation of the paper "Improved Alpha-Tested Magnification for
+Vector Textures and Special Effects" by Chris Green, Valve.  
+http://www.valvesoftware.com/publications/2007/SIGGRAPH2007_AlphaTestedMagnification.pdf
+
+Run genfield.py over a large monochrome image (at least 1024x1024) to generate
+the compressed distance field image.  e.g.
+
+    python genfield.py --size=64 py.png
+
+Produces py.df.png (or use -o to specify output file).
+
+Then preview the alpha-tested rendering using renderfield.py
+
+    python renderfield.py py.df.png
+
+The current implementation does not use pixel shaders, and so implements only
+the first part of the paper.
