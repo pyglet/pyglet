@@ -187,6 +187,7 @@ class PulseAudioPlayer(AudioPlayer):
         self._timestamp_pa_time = 0.0
         self._eos_count = 0
         self._ended = False
+        self._ended_underflowed = False
 
         # Callback trampoline for success operations
         self._success_cb_func = pa.pa_stream_success_cb_t(self._success_cb)
@@ -223,11 +224,17 @@ class PulseAudioPlayer(AudioPlayer):
                 self._eos_count += 1
         self._timestamps = []
 
-    def __del__(self):   
-        # XXX should be in pyglet.media API
+        if self._ended:
+            self._ended_underflowed = True
+
+    def _delete(self):   
+        if _debug:
+            print '_delete'
         driver_listener.lock()
-        pa.pa_stream_unref(self.stream)
+        pa.pa_stream_disconnect(self.stream)
         driver_listener.unlock()
+        pa.pa_stream_unref(self.stream)
+        self.stream = None
         
     def get_write_size(self):
         driver_listener.lock()
@@ -286,7 +293,6 @@ class PulseAudioPlayer(AudioPlayer):
         self._timestamps = []
         self._timestamp = 0.0
         self._timestamp_pa_time = 0.0
-        # TODO wait for drop then read write time?
 
         self._write_time = self._get_pa_time()
 
@@ -319,6 +325,10 @@ class PulseAudioPlayer(AudioPlayer):
         # TODO ech.  Refactor media to use pull callbacks and threads for
         # drivers that support it (PulseAudio, DirectSound and ALSA,
         # probably).
+
+        if self._ended_underflowed:
+            self._delete()
+            return
 
         pa_time = self._get_pa_time()
 
