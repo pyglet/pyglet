@@ -73,6 +73,7 @@ class DistFieldTextureGroup(pyglet.sprite.SpriteGroup):
         glPushAttrib(GL_COLOR_BUFFER_BIT)
         if enable_shader:
             glUseProgram(shader.program)
+            glUniform1i(shader['bidirectional'], enable_bidirectional)
             glUniform1i(shader['antialias'], enable_antialias)
             glUniform1i(shader['outline'], enable_outline)
             glUniform1f(shader['outline_width'], outline_width)
@@ -126,6 +127,7 @@ def on_draw():
 @window.event
 def on_key_press(symbol, modifiers):
     global enable_shader
+    global enable_bidirectional
     global enable_antialias
     global enable_outline
     global enable_glow
@@ -133,6 +135,8 @@ def on_key_press(symbol, modifiers):
     global glow_width
     if symbol == key.S:
         enable_shader = not enable_shader
+    elif symbol == key.B:
+        enable_bidirectional = not enable_bidirectional
     elif symbol == key.A:
         enable_antialias = not enable_antialias
     elif symbol == key.O:
@@ -154,6 +158,7 @@ def on_key_press(symbol, modifiers):
 
     print '-' * 78
     print 'enable_shader', enable_shader
+    print 'enable_bidirectional', enable_bidirectional
     print 'enable_antialias', enable_antialias
     print 'enable_outline', enable_outline
     print 'enable_glow', enable_glow
@@ -178,17 +183,27 @@ void main()
 /* Fragment shader */
 uniform sampler2D tex;
 
+uniform bool bidirectional;
 uniform bool antialias;
 uniform bool outline;
 uniform bool glow;
-uniform float outline_width = 0.02;
-uniform float glow_width = 0.1;
+uniform float outline_width;
+uniform float glow_width;
 const vec4 outline_color = vec4(0.0, 0.0, 1.0, 1.0);
 const vec4 glow_color = vec4(1.0, 0.0, 0.0, 1.0);
 
 void main()
 {
-    float alpha_mask = texture2D(tex, gl_TexCoord[0].st).a;
+    float alpha_mask;
+    if (bidirectional)
+    {
+        vec4 field = texture2D(tex, gl_TexCoord[0].st);
+        alpha_mask = float(field.r >= 0.5 && field.g >= 0.5);
+    }
+    else
+    {
+        alpha_mask = texture2D(tex, gl_TexCoord[0].st).a;
+    }
     float alpha_width = fwidth(alpha_mask);
     float intensity = alpha_mask;
 
@@ -213,7 +228,7 @@ void main()
     {
         float outline_intensity = 0.0;
         float outline_min = 0.5 - outline_width;
-        float outline_max = 0.5 + outline_width;
+        float outline_max = 0.5;
         if (antialias)
         {
 
@@ -247,7 +262,8 @@ void main()
     gl_FragColor.a = intensity;
 }
 ''')
-enable_shader = False
+enable_shader = True
+enable_bidirectional = False
 enable_antialias = False
 enable_outline = False
 enable_glow = False
