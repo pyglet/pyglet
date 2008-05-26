@@ -13,5 +13,12 @@ Then preview the alpha-tested rendering using renderfield.py
 
     python renderfield.py py.df.png
 
-The current implementation does not use pixel shaders, and so implements only
-the first part of the paper.
+Enable pixel shader (requires OpenGL 2.0) with 'S' key.  Following keys modify
+the shader operation (and have no effect when shader is disabled):
+
+    A   Toggle antialiasing
+    O   Toggle outline
+    G   Toggle glow
+    ,   Decrease outline/glow
+    .   Increase outline/glow
+
