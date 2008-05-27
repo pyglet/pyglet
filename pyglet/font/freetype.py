@@ -235,7 +235,7 @@ class FreeTypeMemoryFont(object):
     def __del__(self):
         try:
             FT_Done_Face(self.face)
-        except NameError:
+        except:
             pass
 
 class FreeTypeFont(base.Font):

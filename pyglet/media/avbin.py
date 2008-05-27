@@ -282,7 +282,7 @@ class AVbinSource(StreamingSource):
             if self._audio_stream:
                 av.avbin_close_stream(self._audio_stream)
             av.avbin_close_file(self._file)
-        except (NameError, AttributeError):
+        except:
             pass
 
     def _seek(self, timestamp):

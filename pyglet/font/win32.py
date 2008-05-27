@@ -207,10 +207,13 @@ class Win32GlyphRenderer(base.GlyphRenderer):
 
 class GDIGlyphRenderer(Win32GlyphRenderer):
     def __del__(self):
-        if self._dc:
-            gdi32.DeleteDC(self._dc)
-        if self._bitmap:
-            gdi32.DeleteObject(self._bitmap)
+        try:
+            if self._dc:
+                gdi32.DeleteDC(self._dc)
+            if self._bitmap:
+                gdi32.DeleteObject(self._bitmap)
+        except:
+            pass
 
     def render(self, text):
         # Attempt to get ABC widths (only for TrueType)

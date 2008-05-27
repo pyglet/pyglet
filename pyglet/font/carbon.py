@@ -210,8 +210,11 @@ class CarbonGlyphRenderer(base.GlyphRenderer):
         self.font = font
 
     def __del__(self):
-        if self._bitmap_context:
-            carbon.CGContextRelease(self._bitmap_context)
+        try:
+            if self._bitmap_context:
+                carbon.CGContextRelease(self._bitmap_context)
+        except:
+            pass
 
     def _layout_callback(self, operation, line, ref, extra, callback_status):
         records = c_void_p()

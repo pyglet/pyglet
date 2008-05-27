@@ -229,8 +229,11 @@ class Sprite(event.EventDispatcher):
         self._create_vertex_list()
 
     def __del__(self):
-        if self._vertex_list is not None:
-            self._vertex_list.delete()
+        try:
+            if self._vertex_list is not None:
+                self._vertex_list.delete()
+        except:
+            pass
 
     def delete(self):
         '''Force immediate removal of the sprite from video memory.

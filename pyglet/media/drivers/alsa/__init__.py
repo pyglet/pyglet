@@ -127,7 +127,7 @@ class ALSAAudioPlayer(AudioPlayer):
     def __del__(self):
         try:
             check(asound.snd_pcm_close(self.pcm))
-        except (NameError, AttributeError):
+        except:
             pass
 
     def get_write_size(self):

@@ -64,10 +64,13 @@ class FT_LibraryRec(Structure):
         ('dummy', c_int),
     ]
 
-    def __del__(self, byref=byref, FT_Done_FreeType=FT_Done_FreeType):
+    def __del__(self):
         global _library
-        FT_Done_FreeType(byref(self))
-        _library = None
+        try:
+            FT_Done_FreeType(byref(self))
+            _library = None
+        except:
+            pass
 FT_Library = POINTER(FT_LibraryRec)
 
 class FT_Glyph_Metrics(Structure):
