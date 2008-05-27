@@ -548,15 +548,26 @@ class XlibWindow(BaseWindow):
                 window_attributes.colormap = xlib.XDefaultColormap(
                     self._x_display, self._x_screen_id)
             window_attributes.bit_gravity = xlib.NorthWestGravity
+
+            # Issue 287: Compiz on Intel/Mesa doesn't draw window decoration
+            #            unless CWBackPixel is given in mask.  Should have
+            #            no effect on other systems, so it's set
+            #            unconditionally.
+            mask = xlib.CWColormap | xlib.CWBitGravity | xlib.CWBackPixel
+
             self._window = xlib.XCreateWindow(self._x_display, root,
                 0, 0, self._width, self._height, 0, visual_info.depth,
-                xlib.InputOutput, visual, xlib.CWColormap | xlib.CWBitGravity, 
+                xlib.InputOutput, visual, mask,
                 byref(window_attributes))
             self.display._window_map[self._window] = self
 
             # Setting null background pixmap disables drawing the background,
             # preventing flicker while resizing (in theory).
-            xlib.XSetWindowBackgroundPixmap(self._x_display, self._window, 0)
+            #
+            # Issue 287: Compiz on Intel/Mesa doesn't draw window decoration if
+            #            this is called.  As it doesn't seem to have any
+            #            effect anyway, it's just commented out.
+            #xlib.XSetWindowBackgroundPixmap(self._x_display, self._window, 0)
 
             self._enable_xsync = (pyglet.options['xsync'] and
                                   self.display._enable_xsync and
