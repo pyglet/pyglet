@@ -1115,11 +1115,28 @@ class Win32Window(BaseWindow):
         self._immediate_redraw()
         return 0
 
+    @Win32EventHandler(WM_SYSCOMMAND)
+    def _event_syscommand(self, msg, wParam, lParam):
+        if wParam & 0xfff0 in (SC_MOVE, SC_SIZE):
+            # Should be in WM_ENTERSIZEMOVE, but we never get that message.
+            from pyglet import app
+            if app.event_loop is not None:
+                app.event_loop._allow_polling = False
+                app.event_loop._idle_chance()
+        return 0
+
     @Win32EventHandler(WM_MOVE)
     def _event_move(self, msg, wParam, lParam):
         x, y = self._get_location(lParam)
         self._reset_exclusive_mouse_screen()
         self.dispatch_event('on_move', x, y)
+        return 0
+
+    @Win32EventHandler(WM_EXITSIZEMOVE)
+    def _event_entersizemove(self, msg, wParam, lParam):
+        from pyglet import app
+        if app.event_loop is not None:
+            app.event_loop._allow_polling = True
         return 0
 
     '''

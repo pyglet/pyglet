@@ -49,6 +49,7 @@ class Win32EventLoop(BaseEventLoop):
         self._timer_proc = types.TIMERPROC(self._timer_func)
         self._timer = timer = _user32.SetTimer(0, 0, 0, self._timer_proc)
         self._polling = False
+        self._allow_polling = False
         msg = types.MSG()
         
         self.dispatch_event('on_enter')
@@ -88,7 +89,7 @@ class Win32EventLoop(BaseEventLoop):
             self._next_idle_time = None
             self._polling = False
             _user32.SetTimer(0, timer, millis, self._timer_proc)
-        elif sleep_time < 0.01:
+        elif sleep_time < 0.01 and self._allow_polling:
             # Degenerate to polling
             millis = constants.USER_TIMER_MAXIMUM
             self._next_idle_time = 0.
