@@ -109,7 +109,8 @@ entire paragraph, otherwise results are undefined.
 ``align``
     ``left`` (default), ``center`` or ``right``.
 ``indent``
-    Additional horizontal space to insert before the first 
+    Additional horizontal space to insert before the first glyph of the 
+    first line of a paragraph, in points.
 ``leading``
     Additional space to insert between consecutive lines within a paragraph,
     in points.  Defaults to 0.
@@ -1153,6 +1154,8 @@ class TextLayout(object):
                                 nokern = True
 
                             x = run_accum_width + owner_accum_width
+                            width = (self._width - 
+                                     line.margin_left - line.margin_right)
 
                     if isinstance(glyph, _AbstractBox):
                         # Glyph is already in a box. XXX Ignore kern?
