@@ -38,21 +38,21 @@ in red{underline None}, a {color [255, 0, 0, 255]}change {color [0, 255, 0,
 255]}in {color [0, 0, 255, 255]}color{color None}, and in 
 {background_color [255, 255, 0, 255]}background 
 {background_color [0, 255, 255, 255]}color{background_color None}.  
-{kerning 2}This sentence has 3pt kerning.{kerning 0} 
-{kerning -1}This sentence has negative 1pt kerning.{kerning 0}
+{kerning '2pt'}This sentence has 2pt kerning.{kerning 0} 
+{kerning '-1pt'}This sentence has negative 1pt kerning.{kerning 0}
 
 Superscript is emulated by setting a positive baseline offset and reducing the
 font size, as in 
-a{font_size 9}{baseline 4}2{font_size None}{baseline 0} +
-b{font_size 9}{baseline 4}2{font_size None}{baseline 0} =
-c{font_size 9}{baseline 4}2{font_size None}{baseline 0}.
+a{font_size 9}{baseline '4pt'}2{font_size None}{baseline 0} +
+b{font_size 9}{baseline '4pt'}2{font_size None}{baseline 0} =
+c{font_size 9}{baseline '4pt'}2{font_size None}{baseline 0}.
 Subscript is similarly emulated with a negative baseline offset, as in 
-H{font_size 9}{baseline -3}2{font_size None}{baseline 0}O.
+H{font_size 9}{baseline '-3pt'}2{font_size None}{baseline 0}O.
 
 This paragraph uses {font_name 'Courier New'}Courier New{font_name None} and
 {font_name 'Times New Roman'}Times New Roman{font_name None} fonts.
 
-{.leading 5}This paragraph has 5pts leading. Lorem ipsum dolor sit amet,
+{.leading '5pt'}This paragraph has 5pts leading. Lorem ipsum dolor sit amet,
 consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
 dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
 ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
@@ -60,19 +60,19 @@ in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
 pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui
 officia deserunt mollit anim id est laborum.
 
-{.leading None}{.line_spacing 12}This paragraph has constant line spacing of
+{.leading None}{.line_spacing '12pt'}This paragraph has constant line spacing of
 12pt.  When an {font_size 18}18pt font is used{font_size None}, the text
 overlaps and the baselines stay equally spaced. Lorem ipsum dolor sit amet,
 consectetur adipisicing elit, {font_size 18}sed do eiusmod tempor incididunt
 ut labore et dolore{font_size None} magna aliqua. 
 
-{.line_spacing None}{.indent 20}This paragraph has a 20pt indent. Lorem ipsum
-dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt
-ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
-exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis
-aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-culpa qui officia deserunt mollit anim id est laborum.
+{.line_spacing None}{.indent '20pt'}This paragraph has a 20pt indent. Lorem
+ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
+incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
+nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore
+eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt
+in culpa qui officia deserunt mollit anim id est laborum.
 
 {.indent None}{.tab_stops [300, 500]}Tablated data:{#x09}Player{#x09}Score{}
 {#x09}Alice{#x09}30,000{}
@@ -104,13 +104,13 @@ consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
 cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
 proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-{.margin_left 0}{.margin_right 50}This paragraph has a 50 pixel right margin.
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
-quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
-cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+{.margin_left 0}{.margin_right '50px'}This paragraph has a 50 pixel right
+margin.  Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
+commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit
+esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat
+non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
 {.margin_left 200}{.margin_right 200}This paragraph has 200 pixel left and
 right margins. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed

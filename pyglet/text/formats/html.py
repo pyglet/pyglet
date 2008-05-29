@@ -121,7 +121,7 @@ class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
     default_style = {
         'font_name': 'Times New Roman',
         'font_size': 12,
-        'margin_bottom': 12,
+        'margin_bottom': '12pt',
     }
 
     #: Map HTML font sizes to actual font sizes, in points.
@@ -238,11 +238,11 @@ class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
         elif element == 'sup':
             size = self._font_size_stack[-1] - 1
             style['font_size'] = self.font_sizes.get(size, 1)
-            style['baseline'] = 3
+            style['baseline'] = '3pt'
         elif element == 'sub':
             size = self._font_size_stack[-1] - 1
             style['font_size'] = self.font_sizes.get(size, 1)
-            style['baseline'] = -3
+            style['baseline'] = '-3pt'
         elif element == 'h1':
             style['font_size'] = 24
             style['bold'] = True

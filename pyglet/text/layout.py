@@ -77,7 +77,15 @@ Style attributes
 ================
 
 The following character style attribute names are recognised by the layout
-classes:
+classes.  Data types and units are as specified.  
+
+Where an attribute is marked "as a distance" the value is assumed to be
+in pixels if given as an int or float, otherwise a string of the form
+``"0u"`` is required, where ``0`` is the distance and ``u`` is the unit; one
+of ``"px"`` (pixels), ``"pt"`` (points), ``"pc"`` (picas), ``"cm"``
+(centimeters), ``"mm"`` (millimeters) or ``"in"`` (inches).  For example, 
+``"14pt"`` is the distance covering 14 points, which at the default DPI of 96
+is 18 pixels.
 
 ``font_name``
     Font family name, as given to `pyglet.font.load`.
@@ -91,10 +99,11 @@ classes:
     4-tuple of ints in range (0, 255) giving RGBA underline color, or None
     (default) for no underline.
 ``kerning``
-    Additional space to insert between glyphs, in points.  Defaults to 0.
+    Additional space to insert between glyphs, as a distance.  Defaults to 0.
 ``baseline``
-    Offset of glyph baseline from line baseline, in points.  Positive values
-    give a superscript, negative values give a subscript.  Defaults to 0.
+    Offset of glyph baseline from line baseline, as a distance.  Positive
+    values give a superscript, negative values give a subscript.  Defaults to
+    0.
 ``color``
     4-tuple of ints in range (0, 255) giving RGBA text color
 ``background_color``
@@ -110,24 +119,24 @@ entire paragraph, otherwise results are undefined.
     ``left`` (default), ``center`` or ``right``.
 ``indent``
     Additional horizontal space to insert before the first glyph of the 
-    first line of a paragraph, in points.
+    first line of a paragraph, as a distance.
 ``leading``
     Additional space to insert between consecutive lines within a paragraph,
-    in points.  Defaults to 0.
+    as a distance.  Defaults to 0.
 ``line_spacing``
-    Distance between consecutive baselines in a paragraph, in points.
+    Distance between consecutive baselines in a paragraph, as a distance.
     Defaults to ``None``, which automatically calculates the tightest line
     spacing for each line based on the font ascent and descent.
 ``margin_left``
-    Left paragraph margin, in pixels.
+    Left paragraph margin, as a distance.
 ``margin_right``
-    Right paragraph margin, in pixels.
+    Right paragraph margin, as a distance.
 ``margin_top``
-    Margin above paragraph, in pixels.
+    Margin above paragraph, as a distance.
 ``margin_bottom``
-    Margin below paragraph, in pixels.  Adjacent margins do not collapse.
+    Margin below paragraph, as a distance.  Adjacent margins do not collapse.
 ``tab_stops``
-    List of horizontal tab stops, in pixels, measured from the left edge of
+    List of horizontal tab stops, as distances, measured from the left edge of
     the text layout.  Defaults to the empty list.  When the tab stops
     are exhausted, they implicitly continue at 50 pixel intervals.
 ``wrap``
@@ -143,6 +152,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import math
+import re
 import sys
 
 from pyglet.gl import *
@@ -152,6 +162,39 @@ from pyglet.text import document
 from pyglet.text import runlist
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+
+_distance_re = re.compile(r'([-0-9.]+)([a-zA-Z]+)')
+
+def _parse_distance(distance, dpi):
+    '''Parse a distance string and return corresponding distance in pixels as
+    an integer.
+    '''
+    if isinstance(distance, int):
+        return distance
+    elif isinstance(distance, float):
+        return int(distance)
+
+    match = _distance_re.match(distance)
+    assert match, 'Could not parse distance %s' % (distance)
+    if not match:
+        return 0
+
+    value, unit = match.groups()
+    value = float(value)
+    if unit == 'px':
+        return int(value)
+    elif unit == 'pt':
+        return int(value * dpi / 72.0)
+    elif unit == 'pc':
+        return int(value * dpi / 6.0)
+    elif unit == 'in':
+        return int(value * dpi)
+    elif unit == 'mm':
+        return int(value * dpi * 0.0393700787)
+    elif unit == 'cm':
+        return int(value * dpi * 0.393700787)
+    else:
+        assert False, 'Unknown distance unit %s' % unit
 
 class _Line(object):
     align = 'left'
@@ -285,7 +328,7 @@ class _GlyphBox(_AbstractBox):
         tex_coords = []
         x1 = x
         for start, end, baseline in context.baseline_iter.ranges(i, i+n_glyphs):
-            baseline = layout._points_to_pixels(baseline)
+            baseline = layout._parse_distance(baseline)
             assert len(self.glyphs[start - i:end - i]) == end - start
             for kern, glyph in self.glyphs[start - i:end - i]:
                 x1 += kern
@@ -724,10 +767,10 @@ class TextLayout(object):
         self._dpi = dpi
         self.document = document       
 
-    def _points_to_pixels(self, points):
-        if points is None:
+    def _parse_distance(self, distance):
+        if distance is None:
             return None
-        return int(self._dpi * points / 72)
+        return _parse_distance(distance, self._dpi)
 
     def begin_update(self):
         '''Indicate that a number of changes to the layout or document
@@ -998,11 +1041,11 @@ class TextLayout(object):
         
         line = _Line(start)
         line.align = align_iterator[start]
-        line.margin_left = margin_left_iterator[start]
-        line.margin_right = margin_right_iterator[start]
+        line.margin_left = self._parse_distance(margin_left_iterator[start])
+        line.margin_right = self._parse_distance(margin_right_iterator[start])
         if start == 0 or self.document.text[start - 1] in u'\n\u2029':
             line.paragraph_begin = True
-            line.margin_left += self._points_to_pixels(indent_iterator[start])
+            line.margin_left += self._parse_distance(indent_iterator[start])
         wrap = wrap_iterator[start]
         if self._width is None:
             width = None
@@ -1051,7 +1094,7 @@ class TextLayout(object):
                     kern = 0
                     nokern = False
                 else:
-                    kern = self._points_to_pixels(kerning_iterator[index])
+                    kern = self._parse_distance(kerning_iterator[index])
 
                 if text in u'\u0020\u200b\t':
                     # Whitespace: commit pending runs to this line.
@@ -1064,6 +1107,7 @@ class TextLayout(object):
                         # Fix up kern for this glyph to align to the next tab
                         # stop
                         for tab_stop in tab_stops_iterator[index]:
+                            tab_stop = self._parse_distance(tab_stop)
                             if tab_stop > x + line.margin_left:
                                 break
                         else:
@@ -1141,9 +1185,10 @@ class TextLayout(object):
                             yield line
                             line = _Line(next_start)
                             line.align = align_iterator[next_start]
-                            line.margin_left = margin_left_iterator[next_start]
-                            line.margin_right = \
-                                margin_right_iterator[next_start]
+                            line.margin_left = self._parse_distance(
+                                margin_left_iterator[next_start])
+                            line.margin_right = self._parse_distance(
+                                margin_right_iterator[next_start])
                             if new_paragraph:
                                 line.paragraph_begin = True
 
@@ -1172,7 +1217,7 @@ class TextLayout(object):
                         # New paragraph started, update wrap style
                         wrap = wrap_iterator[next_start]
                         line.margin_left += \
-                            self._points_to_pixels(indent_iterator[next_start])
+                            self._parse_distance(indent_iterator[next_start])
                         if width is not None:
                             width = (self._width - 
                                      line.margin_left - line.margin_right)
@@ -1261,23 +1306,23 @@ class TextLayout(object):
         else:
             line = lines[start - 1]
             line_spacing = \
-                self._points_to_pixels(line_spacing_iterator[line.start])
+                self._parse_distance(line_spacing_iterator[line.start])
             leading = \
-                self._points_to_pixels(leading_iterator[line.start])
+                self._parse_distance(leading_iterator[line.start])
 
             y = line.y
             if line_spacing is None:
                 y += line.descent
             if line.paragraph_end:
-                y -= margin_bottom_iterator[line.start]
+                y -= self._parse_distance(margin_bottom_iterator[line.start])
 
         line_index = start
         for line in lines[start:]:
             if line.paragraph_begin:
-                y -= margin_top_iterator[line.start]
+                y -= self._parse_distance(margin_top_iterator[line.start])
                 line_spacing = \
-                    self._points_to_pixels(line_spacing_iterator[line.start])
-                leading = self._points_to_pixels(leading_iterator[line.start])
+                    self._parse_distance(line_spacing_iterator[line.start])
+                leading = self._parse_distance(leading_iterator[line.start])
             else:
                 y -= leading
             
@@ -1306,7 +1351,7 @@ class TextLayout(object):
             if line_spacing is None:
                 y += line.descent
             if line.paragraph_end:
-                y -= margin_bottom_iterator[line.start]
+                y -= self._parse_distance(margin_bottom_iterator[line.start])
 
             line_index += 1
         else:
@@ -2146,7 +2191,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         if baseline is None:
             baseline = 0
         else:
-            baseline = self._points_to_pixels(baseline) 
+            baseline = self._parse_distance(baseline) 
 
         position -= line.start
         for box in line.boxes:
