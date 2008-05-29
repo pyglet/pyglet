@@ -305,8 +305,8 @@ class Banner(Overlay):
                                       font_size=36,
                                       x=ARENA_WIDTH / 2, 
                                       y=ARENA_HEIGHT / 2,
-                                      halign='center',
-                                      valign='center')
+                                      anchor_x='center',
+                                      anchor_y='center')
 
         self.dismiss_func = dismiss_func
         self.timeout = timeout
@@ -329,8 +329,8 @@ class Menu(Overlay):
                                             font_size=36,
                                             x=ARENA_WIDTH // 2, 
                                             y=350,
-                                            halign='center',
-                                            valign='center')
+                                            anchor_x='center',
+                                            anchor_y='center')
 
     def reset(self):
         self.selected_index = 0
@@ -365,8 +365,8 @@ class MenuItem(object):
                                       font_size=14,
                                       x=ARENA_WIDTH // 2, 
                                       y=y,
-                                      halign='center',
-                                      valign='center')
+                                      anchor_x='center',
+                                      anchor_y='center')
         self.activate_func = activate_func
 
     def draw_pointer(self, x, y, color, flip=False):
@@ -498,7 +498,7 @@ class InstructionsMenu(Menu):
                                                   font_size=14,
                                                   x=20, y=300,
                                                   width=ARENA_WIDTH - 40,
-                                                  valign='top',
+                                                  anchor_y='top',
                                                   multiline=True)
 
     def draw(self):
@@ -819,8 +819,8 @@ score_text = pyglet.text.Label('',
                                font_size=18,
                                x=ARENA_WIDTH - 10, 
                                y=ARENA_HEIGHT - 10,
-                               halign='right',
-                               valign='top')
+                               anchor_x='right',
+                               anchor_y='top')
 
 fps_display = pyglet.clock.ClockDisplay(font=pyglet.font.load(FONT_NAME, 24))
 

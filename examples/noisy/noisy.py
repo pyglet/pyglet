@@ -110,7 +110,7 @@ balls = []
 label = pyglet.text.Label('Press space to add a ball, backspace to remove',
                           font_size=14,
                           x=window.width // 2, y=10, 
-                          halign='center')
+                          anchor_x='center')
 
 if __name__ == '__main__':
     pyglet.app.run()

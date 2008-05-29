@@ -394,12 +394,12 @@ class Text(object):
             # TextLayout has a different interpretation of halign that doesn't
             # consider the width to be a special factor; here we emulate the
             # old behaviour by fudging the layout x value.
-            if self._layout.halign == 'left':
+            if self._layout.anchor_x == 'left':
                 self._layout.x = self.x
-            elif self._layout.halign == 'center':
+            elif self._layout.anchor_x == 'center':
                 self._layout.x = self.x + self._layout.width - \
                     self._layout.content_width // 2
-            elif self._layout.halign == 'right': 
+            elif self._layout.anchor_x == 'right': 
                 self._layout.x = self.x + 2 * self._layout.width - \
                     self._layout.content_width
         else:
@@ -502,7 +502,7 @@ class Text(object):
         return self._layout.halign
 
     def _set_halign(self, halign):
-        self._layout.halign = halign
+        self._layout.anchor_x = halign
         self._update_layout_halign()
 
     halign = property(_get_halign, _set_halign,
@@ -516,10 +516,10 @@ class Text(object):
         ''')
 
     def _get_valign(self):
-        return self._layout.valign
+        return self._layout.anchor_y
 
     def _set_valign(self, valign):
-        self._layout.valign = valign
+        self._layout.anchor_y = valign
 
     valign = property(_get_valign, _set_valign,
         doc='''Vertical alignment of the text.

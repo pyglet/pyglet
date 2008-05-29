@@ -719,9 +719,6 @@ class TextLayout(object):
             assert not multiline or width, 'Must specify width with multiline'
             self._multiline = multiline
 
-            # Default bottom for multiline, baseline for single line
-            self._valign = 'bottom'
-
         if dpi is None:
             dpi = 96
         self._dpi = dpi
@@ -855,37 +852,46 @@ class TextLayout(object):
         else:
             width = self.content_width
 
-        if self._halign == 'left':
+        if self._anchor_x == 'left':
             return self._x
-        elif self._halign == 'center':
+        elif self._anchor_x == 'center':
             return self._x - width // 2
-        elif self._halign == 'right':
+        elif self._anchor_x == 'right':
             return self._x - width
         else:
-            assert False, 'Invalid halign'
+            assert False, 'Invalid anchor_x'
 
     def _get_top(self, lines):
         if self._height is None:
             height = self.content_height
+            offset = 0
         else:
-            height = min(self.content_height, self._height)
+            height = self._height
+            if self._content_valign == 'top':
+                offset = 0
+            elif self._content_valign == 'bottom':
+                offset = max(0, self._height - self.content_height)
+            elif self._content_valign == 'center':
+                offset = max(0, self._height - self.content_height) // 2
+            else:
+                assert False, 'Invalid content_valign'
 
-        if self._valign == 'top':
-            return self._y
-        elif self._valign == 'baseline':
-            return self._y + lines[0].ascent
-        elif self._valign == 'bottom':
-            return self._y + height
-        elif self._valign == 'center':
+        if self._anchor_y == 'top':
+            return self._y - offset
+        elif self._anchor_y == 'baseline':
+            return self._y + lines[0].ascent - offset
+        elif self._anchor_y == 'bottom':
+            return self._y + height - offset
+        elif self._anchor_y == 'center':
             if len(lines) == 1:
                 # This "looks" more centered than considering all of the
                 # descent.
                 line = lines[0]
-                return self._y + line.ascent // 2 - line.descent // 4
+                return self._y + line.ascent // 2 - line.descent // 4 - offset
             else:
-                return self._y + height // 2
+                return self._y + height // 2 - offset
         else:
-            assert False, 'Invalid valign'
+            assert False, 'Invalid anchor_y'
 
  
     def _init_document(self):
@@ -1334,7 +1340,7 @@ class TextLayout(object):
     x = property(_get_x, _set_x, 
                  doc='''X coordinate of the layout.
 
-    See also `halign`.
+    See also `anchor_x`.
 
     :type: int
     ''')
@@ -1359,7 +1365,7 @@ class TextLayout(object):
     y = property(_get_y, _set_y,
                  doc='''Y coordinate of the layout.
 
-    See also `valign`.
+    See also `anchor_y`.
 
     :type: int
     ''')
@@ -1412,15 +1418,15 @@ class TextLayout(object):
     :type: bool
     ''')
 
-    _halign = 'left'
-    def _set_halign(self, halign):
-        self._halign = halign
+    _anchor_x = 'left'
+    def _set_anchor_x(self, anchor_x):
+        self._anchor_x = anchor_x
         self._update()
 
-    def _get_halign(self):
-        return self._halign
+    def _get_anchor_x(self):
+        return self._anchor_x
 
-    halign = property(_get_halign, _set_halign,
+    anchor_x = property(_get_anchor_x, _set_anchor_x,
                       doc='''Horizontal anchor alignment.
                       
     This property determines the meaning of the `x` coordinate.  It is one of
@@ -1440,15 +1446,15 @@ class TextLayout(object):
     :type: str
     ''')
 
-    _valign = 'baseline'
-    def _set_valign(self, valign):
-        self._valign = valign
+    _anchor_y = 'bottom'
+    def _set_anchor_y(self, anchor_y):
+        self._anchor_y = anchor_y
         self._update()
 
-    def _get_valign(self):
-        return self._valign
+    def _get_anchor_y(self):
+        return self._anchor_y
 
-    valign = property(_get_valign, _set_valign,
+    anchor_y = property(_get_anchor_y, _set_anchor_y,
                       doc='''Vertical anchor alignment.
                       
     This property determines the meaning of the `y` coordinate.  It is one of
@@ -1461,19 +1467,48 @@ class TextLayout(object):
     ``"baseline"``
         The Y coordinate gives the position of the baseline of the first
         line of text in the layout.
-    ``"bottom"``
+    ``"bottom"`` (default)
         The Y coordinate gives the position of the bottom edge of the layout.
-
-    `valign` defaults to ``"baseline"`` when ``multiline`` is False in the
-    constructor, and ``"bottom"`` when ``multiline`` is True in the
-    constructor.
 
     For the purposes of calculating the position resulting from this
     alignment, the height of the layout is taken to be the smaller of
     `height` and `content_height`.
 
+    See also `content_valign`.
+
     :type: str
     ''') 
+
+    _content_valign = 'top'
+    def _set_content_valign(self, content_valign):
+        self._content_valign = content_valign
+        self._update()
+
+    def _get_content_valign(self):
+        return self._content_valign
+
+    content_valign = property(_get_content_valign, _set_content_valign, 
+                              doc='''Vertical alignment of content within
+    larger layout box.
+
+    This property determines how content is positioned within the layout
+    box when ``content_height`` is less than ``height``.  It is one
+    of the enumerants:
+
+    ``top`` (default)
+        Content is aligned to the top of the layout box.
+    ``center``
+        Content is centered vertically within the layout box.
+    ``bottom``
+        Content is aligned to the bottom of the layout box.
+
+    This property has no effect when ``content_height`` is greater
+    than ``height`` (in which case the content is aligned to the top) or when
+    ``height`` is ``None`` (in which case there is no vertical layout box
+    dimension).
+
+    :type: str
+    ''')
 
 class ScrollableTextLayout(TextLayout):
     '''Display text in a scrollable viewport.
@@ -1537,23 +1572,23 @@ class ScrollableTextLayout(TextLayout):
 
     height = property(_get_height, _set_height)
 
-    def _set_halign(self, halign):
-        self._halign = halign
+    def _set_anchor_x(self, anchor_x):
+        self._anchor_x = anchor_x
         self.top_group.left = self._get_left()
         
-    def _get_halign(self):
-        return self._halign
+    def _get_anchor_x(self):
+        return self._anchor_x
 
-    halign = property(_get_halign, _set_halign)
+    anchor_x = property(_get_anchor_x, _set_anchor_x)
 
-    def _set_valign(self, valign):
-        self._valign = valign
+    def _set_anchor_y(self, anchor_y):
+        self._anchor_y = anchor_y
         self.top_group.top = self._get_top(self._get_lines())
         
-    def _get_valign(self):
-        return self._valign
+    def _get_anchor_y(self):
+        return self._anchor_y
 
-    valign = property(_get_valign, _set_valign)
+    anchor_y = property(_get_anchor_y, _set_anchor_y)
 
     # Offset of content within viewport
 
@@ -1587,9 +1622,12 @@ class ScrollableTextLayout(TextLayout):
                       doc='''Vertical scroll offset.
 
     The initial value is 0, and the top of the text will touch the top of the
-    layout bounds.  A negative value causes the text to "scroll" upwards.
-    Values outside of the range ``[height - content_height, 0]`` are
-    automatically clipped in range.
+    layout bounds (unless the content height is less than the layout height,
+    in which case `content_valign` is used).  
+    
+    A negative value causes the text to "scroll" upwards.  Values outside of
+    the range ``[height - content_height, 0]`` are automatically clipped in
+    range.
 
     :type: int
     ''')
@@ -1732,6 +1770,11 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         self._update_visible_lines()
         self._update_vertex_lists()
         self.top_group.top = self._get_top(self.lines)
+
+        # Reclamp view_y in case content height has changed and reset top of
+        # content.
+        self.view_y = self.view_y
+        self.top_group.top = self._get_top(self._get_lines())
 
         if trigger_update_event:
             self.dispatch_event('on_layout_update')

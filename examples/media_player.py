@@ -99,7 +99,7 @@ Button.register_event_type('on_press')
 class TextButton(Button):
     def __init__(self, *args, **kwargs):
         super(TextButton, self).__init__(*args, **kwargs)
-        self._text = pyglet.text.Label('', valign='center', halign='center')
+        self._text = pyglet.text.Label('', anchor_x='center', anchor_y='center')
 
     def draw_label(self):
         self._text.x = self.x + self.width / 2

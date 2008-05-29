@@ -59,7 +59,7 @@ window = pyglet.window.Window(resizable=True)
 location = pyglet.resource.FileLocation(os.path.dirname(__file__))
 label = pyglet.text.HTMLLabel(html, location=location,
                               width=window.width,
-                              multiline=True, valign='center')
+                              multiline=True, anchor_y='center')
 
 @window.event
 def on_resize(width, height):

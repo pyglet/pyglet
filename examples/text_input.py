@@ -30,7 +30,6 @@ class TextWidget(object):
 
         self.layout = pyglet.text.layout.IncrementalTextLayout(
             self.document, width, height, multiline=False, batch=batch)
-        self.layout.valign = 'bottom'
         self.caret = pyglet.text.caret.Caret(self.layout)
 
         self.layout.x = x
@@ -51,12 +50,13 @@ class Window(pyglet.window.Window):
 
         self.batch = pyglet.graphics.Batch()
         self.labels = [
-            pyglet.text.Label('Name', x=10, y=100, valign='bottom',
+            pyglet.text.Label('Name', x=10, y=100, anchor_y='bottom',
                               color=(0, 0, 0, 255), batch=self.batch),
-            pyglet.text.Label('Species', x=10, y=60, valign='bottom',
+            pyglet.text.Label('Species', x=10, y=60, anchor_y='bottom',
                               color=(0, 0, 0, 255), batch=self.batch),
-            pyglet.text.Label('Special abilities', x=10, y=20, valign='bottom',
-                              color=(0, 0, 0, 255), batch=self.batch)
+            pyglet.text.Label('Special abilities', x=10, y=20, 
+                              anchor_y='bottom', color=(0, 0, 0, 255), 
+                              batch=self.batch)
         ]
         self.widgets = [
             TextWidget('', 200, 100, self.width - 210, self.batch),

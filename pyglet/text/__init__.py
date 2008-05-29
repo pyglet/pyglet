@@ -219,7 +219,7 @@ class DocumentLabel(layout.TextLayout):
     '''
     def __init__(self, document=None,
                  x=0, y=0, width=None, height=None,
-                 halign='left', valign='baseline', 
+                 anchor_x='left', anchor_y='baseline', 
                  multiline=False, dpi=None, batch=None, group=None):
         '''Create a label for a given document.
 
@@ -234,10 +234,10 @@ class DocumentLabel(layout.TextLayout):
                 Width of the label in pixels, or None
             `height` : int
                 Height of the label in pixels, or None
-            `halign` : str
+            `anchor_x` : str
                 Anchor point of the X coordinate: one of ``"left"``,
                 ``"center"`` or ``"right"``.
-            `valign` : str
+            `anchor_y` : str
                 Anchor point of the Y coordinate: one of ``"bottom"``,
                 ``"baseline"``, ``"center"`` or ``"top"``.
             `multiline` : bool
@@ -258,8 +258,8 @@ class DocumentLabel(layout.TextLayout):
 
         self._x = x
         self._y = y
-        self._halign = halign
-        self._valign = valign
+        self._anchor_x = anchor_x
+        self._anchor_y = anchor_y
         self._update()
 
     def _get_text(self):
@@ -379,7 +379,7 @@ class Label(DocumentLabel):
                  font_name=None, font_size=None, bold=False, italic=False,
                  color=(255, 255, 255, 255),
                  x=0, y=0, width=None, height=None, 
-                 halign='left', valign='baseline',
+                 anchor_x='left', anchor_y='baseline',
                   multiline=False, dpi=None, batch=None, group=None):
         '''Create a plain text label.
 
@@ -405,10 +405,10 @@ class Label(DocumentLabel):
                 Width of the label in pixels, or None
             `height` : int
                 Height of the label in pixels, or None
-            `halign` : str
+            `anchor_x` : str
                 Anchor point of the X coordinate: one of ``"left"``,
                 ``"center"`` or ``"right"``.
-            `valign` : str
+            `anchor_y` : str
                 Anchor point of the Y coordinate: one of ``"bottom"``,
                 ``"baseline"``, ``"center"`` or ``"top"``.
             `multiline` : bool
@@ -424,7 +424,7 @@ class Label(DocumentLabel):
         '''
         document = decode_text(text)
         super(Label, self).__init__(document, x, y, width, height, 
-                                    halign, valign,
+                                    anchor_x, anchor_y,
                                     multiline, dpi, batch, group)
 
         self.document.set_style(0, len(self.document.text), {
@@ -443,7 +443,7 @@ class HTMLLabel(DocumentLabel):
     '''
     def __init__(self, text='', location=None, 
                  x=0, y=0, width=None, height=None,
-                 halign='left', valign='baseline',
+                 anchor_x='left', anchor_y='baseline',
                  multiline=False, dpi=None, batch=None, group=None):
         '''Create a label with an HTML string.
 
@@ -461,10 +461,10 @@ class HTMLLabel(DocumentLabel):
                 Width of the label in pixels, or None
             `height` : int
                 Height of the label in pixels, or None
-            `halign` : str
+            `anchor_x` : str
                 Anchor point of the X coordinate: one of ``"left"``,
                 ``"center"`` or ``"right"``.
-            `valign` : str
+            `anchor_y` : str
                 Anchor point of the Y coordinate: one of ``"bottom"``,
                 ``"baseline"``, ``"center"`` or ``"top"``.
             `multiline` : bool
@@ -482,7 +482,7 @@ class HTMLLabel(DocumentLabel):
         self._location = location
         document = decode_html(text, location)
         super(HTMLLabel, self).__init__(document, x, y, width, height, 
-                                        halign, valign,
+                                        anchor_x, anchor_y,
                                         multiline, dpi, batch, group)
 
     def _set_text(self, text):

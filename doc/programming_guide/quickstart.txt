@@ -27,13 +27,13 @@ all its parameters::
     window = pyglet.window.Window()
 
 To display the text, we'll create a `Label`.  Keyword arguments are used
-to set the font, position and alignment of the label::
+to set the font, position and anchorage of the label::
 
     label = pyglet.text.Label('Hello, world', 
                               font_name='Times New Roman', 
                               font_size=36,
                               x=window.width//2, y=window.height//2,
-                              halign='center', valign='center')
+                              anchor_x='center', anchor_y='center')
 
 An `on_draw` event is dispatched to the window to give it a chance to redraw
 its contents.  pyglet provides several ways to attach event handlers to
