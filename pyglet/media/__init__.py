@@ -834,6 +834,7 @@ class Player(event.EventDispatcher):
         self._audio_finished = False
         source = self._sources[0]
         self._source_read_index = 0
+        self._next_audio_data = None
         source._seek(timestamp)
         self._timestamp = timestamp
 
