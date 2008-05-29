@@ -209,6 +209,7 @@ class OpenALAudioPlayer(AudioPlayer):
 
         self._pause_timestamp = 0.0
         self._buffered_time = 0.0
+        self._current_buffer_time = 0.0
         self._timestamps = []
 
     def pump(self):
