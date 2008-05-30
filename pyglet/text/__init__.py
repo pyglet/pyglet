@@ -380,7 +380,8 @@ class Label(DocumentLabel):
                  color=(255, 255, 255, 255),
                  x=0, y=0, width=None, height=None, 
                  anchor_x='left', anchor_y='baseline',
-                  multiline=False, dpi=None, batch=None, group=None):
+                 halign='left',
+                 multiline=False, dpi=None, batch=None, group=None):
         '''Create a plain text label.
 
         :Parameters:
@@ -411,6 +412,10 @@ class Label(DocumentLabel):
             `anchor_y` : str
                 Anchor point of the Y coordinate: one of ``"bottom"``,
                 ``"baseline"``, ``"center"`` or ``"top"``.
+            `halign` : str
+                Horizontal alignment of text on a line, only applies if
+                a width is supplied. One of ``"left"``, ``"center"``
+                or ``"right"``.
             `multiline` : bool
                 If True, the label will be word-wrapped and accept newline
                 characters.  You must also set the width of the label.
@@ -433,6 +438,7 @@ class Label(DocumentLabel):
             'bold': bold,
             'italic': italic,
             'color': color,
+            'halign': halign,
         })
 
 class HTMLLabel(DocumentLabel):
