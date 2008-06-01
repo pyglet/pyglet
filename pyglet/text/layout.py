@@ -926,11 +926,11 @@ class TextLayout(object):
         elif self._anchor_y == 'bottom':
             return self._y + height - offset
         elif self._anchor_y == 'center':
-            if len(lines) == 1:
+            if len(lines) == 1 and self._height is None:
                 # This "looks" more centered than considering all of the
                 # descent.
                 line = lines[0]
-                return self._y + line.ascent // 2 - line.descent // 4 - offset
+                return self._y + line.ascent // 2 - line.descent // 4
             else:
                 return self._y + height // 2 - offset
         else:
