@@ -23,7 +23,7 @@ centered vertically and horizontally::
                               font_name='Times New Roman', 
                               font_size=36,
                               x=window.width//2, y=window.height//2,
-                              halign='center', valign='center')
+                              anchor_x='center', anchor_y='center')
 
     @window.event
     def on_draw():
@@ -38,13 +38,133 @@ The example demonstrates the most common uses of text rendering:
   Additional parameters exist for setting the bold and italic styles and the
   color of the text.
 * The position of the text is given by the ``x`` and ``y`` coordinates.  The
-  meaning of these coordinates is given by the ``halign`` and ``valign``
+  meaning of these coordinates is given by the ``anchor_x`` and ``anchor_y``
   parameters.
 * The actual text is drawn with the `Label.draw` method.  Labels can also be
   added to a graphics batch; see `Graphics` for details.
 
+The `HTMLLabel` class is used similarly, but accepts an HTML formatted string
+instead of parameters describing the style.  This allows the label to display
+text with mixed style::
+
+    label = pyglet.text.HTMLLabel(
+        '<font face="Times New Roman" size="4">Hello, <i>world</i></font>',
+        x=window.width//2, y=window.height//2,
+        anchor_x='center', anchor_y='center')
+
+See `Formatted text` for details on the subset of HTML that is supported.
+
+The document/layout model
+-------------------------
+
+The `Label` class demonstrated above presents a simplified interface to
+pyglet's complete text rendering capabilities.  The underlying `TextLayout`
+and `AbstractDocument` classes provide a "model/view" interface to all of
+pyglet's text features.
+
+    .. image:: layout-classes.svg
+
+Documents
+^^^^^^^^^
+
+A `document` is the "model" part of the architecture, and describes the
+content and style of the text to be displayed.  There are two concrete
+document classes: `UnformattedDocument` and `FormattedDocument`.
+`UnformattedDocument` models a document containing text in just one style,
+whereas `FormattedDocument` allows the style to change within the text.
+
+An empty, unstyled document can be created by constructing either of the
+classes directly.  Usually you will want to initialise the document with some
+text, however.  The `decode_text`, `decode_attributed` and `decode_html`
+functions return a document given a source string.  For `decode_text`, this is
+simply a plain text string, and the return value is an `UnformattedDocument`::
+
+    document = pyglet.text.decode_text('Hello, world.')
+
+`decode_attributed` and `decode_html` are described in detail in the next
+section.
+
+The text of a document can be modified directly as a property on the object::
+
+    document.text = 'Goodbye, cruel world.')
+
+However, if small changes are being made to the document it can be more
+efficient (when coupled with an appropriate layout; see below) to use the
+`remove_text` and `insert_text` methods instead.
+
+Layouts
+^^^^^^^
+
+The actual layout and rendering of a document is performed by the `TextLayout`
+classes.  This split exists to reduce the complexity of the code, and to allow
+a single document to be displayed in multiple layouts simultaneously (in other
+words, many layouts can display one document).
+
+Each of the `TextLayout` classes perform layout in the same way, but represent
+a trade-off in efficiency of update against efficiency of drawing and memory
+usage.
+
+The base `TextLayout` class uses little memory, and shares its graphics
+group with other `TextLayout` instances in the same batch (see `Batched
+rendering`).  When the text or style of the document is modified, or the
+layout constraints change (for example, the width of the layout changes), the
+entire text layout is recalculated.  This is a potentially expensive
+operation, especially for long documents.  This makes `TextLayout` suitable
+for relatively short or unchanging documents.
+
+`ScrollableTextLayout` is a small extension to `TextLayout` that clips the
+text to a specified view rectangle, and allows text to be scrolled within that
+rectangle without performing the layout calculuation again.  Because of this
+clipping rectangle the graphics group cannot be shared with other text
+layouts, so for ideal performance `ScrollableTextLayout` should be used only
+if this behaviour is required.
+
+`IncrementalTextLayout` uses a more sophisticated layout algorithm that
+performs less work for small changes to documents.  For example, if a document
+is being edited by the user, only the immediately affected lines of text are
+recalculated when a character is typed or deleted.  `IncrementalTextLayout`
+also performs view rectangle culling, reducing the amount of layout and
+rendering required when the document is larger than the view.
+`IncrementalTextLayout` should be used for large documents or documents that
+change rapidly.
+
+All the layout classes can be constructed given a document and display
+dimensions::
+
+    layout = pyglet.text.TextLayout(document, width, height)
+
+Additional arguments to the constructor allow the specification of a graphics
+batch and group (recommended if many layouts are to be rendered), and the
+optional `multiline` flag.  To render more than one line of text (either
+through word-wrapping or explicit line breaks) `multiline` must be ``True``.
+
+Like labels, layouts are positioned through their `x`, `y`, `anchor_x` and
+`anchor_y` properties.  Note that unlike `AbstractImage`, the `anchor`
+properties accept a string such as ``"bottom"`` or ``"center"`` instead of a
+numeric displacement.
+
+Formatted text
+--------------
+
+HTML
+
+Attributed text
+
+Custom elements
+
+
+User-editable text
+------------------
+
+Incremental
+
+Caret, selection
+
 Loading system fonts
 --------------------
+
+..
+    XXX TODO separate from layout stuff above
 
 To load a font you must know its family name.  This is the name displayed in
 the font dialog of any application.  For example, all operating systems
@@ -98,6 +218,9 @@ The DPI can be specified directly in the `pyglet.font.load` function.
 Determining font size
 ^^^^^^^^^^^^^^^^^^^^^
 
+.. 
+    TODO XXX make relevant to layout
+
 Once a font is loaded at a particular size, you can query its pixel size with
 the attributes::
 
@@ -119,6 +242,9 @@ where `leading` is the number of pixels to insert between each line of text.
 
 Loading custom fonts
 --------------------
+
+..
+    XXX TODO change examples to use Label
 
 You can supply a font with your application if it's not commonly installed on
 the target platform.  You should ensure you have a license to distribute the
@@ -204,6 +330,9 @@ The list of supported formats is shown in the table below.
 OpenGL font considerations
 --------------------------
 
+..
+    TODO XXX N/A for layout?
+
 Text in pyglet is drawn using textured quads.  Each font maintains a set of
 one or more textures, into which glyphs are uploaded as they are needed.  For
 most applications this detail is transparent and unimportant, however some of
@@ -211,6 +340,9 @@ the details of these glyph textures are described below for advanced users.
 
 Context affinity
 ^^^^^^^^^^^^^^^^
+
+..
+    TODO XXX When is a font loaded
 
 When a font is loaded, it immediately creates a texture in the current
 context's object space.  Subsequent textures may need to be created if there
@@ -231,14 +363,13 @@ In any of these cases, you will need to reload the font for each object space
 that it's needed in.  pyglet keeps a cache of fonts, but does so
 per-object-space, so it knows when it can reuse an existing font instance or
 if it needs to load it and create new textures.  You will also need to ensure
-that an appropriate context is active when any glyphs may need to be added
-(for example, when reading the `width` or `height` properties of `Text`).
+that an appropriate context is active when any glyphs may need to be added.
 
 Blend state
 ^^^^^^^^^^^
 
 The glyph textures have an internal format of ``GL_ALPHA``, which provides
-a simple way to recolour and blend antialiased text simply by changing the
+a simple way to recolour and blend antialiased text by changing the
 vertex colors.  pyglet makes very few assumptions about the OpenGL state, and
 will not alter it besides changing the currently bound texture.
 
