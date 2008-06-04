@@ -207,9 +207,6 @@ class Clock(_ClockBase):
     # List of schedule interval items kept in sort order.
     _schedule_interval_items = None
 
-    # Dict mapping function to schedule item for fast removal 
-    _schedule_functions = None
-
     # If True, a sleep(0) is inserted on every tick.   
     _force_sleep = False
 
@@ -239,7 +236,6 @@ class Clock(_ClockBase):
 
         self._schedule_items = []
         self._schedule_interval_items = []
-        self._schedule_functions = {}
 
     def tick(self, poll=False):
         '''Signify that one frame has passed.
@@ -455,17 +451,6 @@ class Clock(_ClockBase):
         item = (func, args, kwargs)
         self._schedule_items.append(item)
 
-        # _schedule_functions gives mapping of func to item.  if func
-        # is already scheduled, the mapping becomes a list of items.
-        if func in self._schedule_functions:
-            entry = self._schedule_functions[func]
-            if type(entry) == list:
-                self._schedule_functions[func].append(item)
-            else:
-                self._schedule_functions[func] = [entry, item]
-        else:
-            self._schedule_functions[func] = item
-
     def _schedule_item(self, func, last_ts, next_ts, interval, *args, **kwargs):
         item = _ScheduledIntervalItem(
             func, interval, last_ts, next_ts, args, kwargs)
@@ -477,16 +462,6 @@ class Clock(_ClockBase):
                 break
         else:
             self._schedule_interval_items.append(item)
-
-        # add item to func mapping
-        if func in self._schedule_functions:
-            entry = self._schedule_functions[func]
-            if type(entry) == list:
-                self._schedule_functions[func].append(item)
-            else:
-                self._schedule_functions[func] = [entry, item]
-        else:
-            self._schedule_functions[func] = item
 
     def schedule_interval(self, func, interval, *args, **kwargs):
         '''Schedule a function to be called every `interval` seconds.
@@ -615,23 +590,12 @@ class Clock(_ClockBase):
                 The function to remove from the schedule.
 
         '''
-        if func not in self._schedule_functions:
-            return
-
-        items = self._schedule_functions[func]
-        if type(items) == list:
-            for item in items:
-                if item in self._schedule_items:
-                    self._schedule_items.remove(item)
-                elif item in self._schedule_interval_items:
-                    self._schedule_interval_items.remove(item)
-        else:
-            if items in self._schedule_items:
-                self._schedule_items.remove(items)
-            elif items in self._schedule_interval_items:
-                self._schedule_interval_items.remove(items)
-        del self._schedule_functions[func]
-
+        self._schedule_items = \
+            [(f, args, kwargs) for (f, args, kwargs) in self._schedule_items \
+                               if f != func]
+        self._schedule_interval_items = \
+            [item for item in self._schedule_interval_items \
+                  if item.func != func]
 
 # Default clock.
 _default = Clock()
