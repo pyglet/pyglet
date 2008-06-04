@@ -661,7 +661,7 @@ class Player(event.EventDispatcher):
     _position = (0, 0, 0)
     _pitch = 1.0
 
-    _cone_orientation = (0, 0, 0)
+    _cone_orientation = (0, 0, 1)
     _cone_inner_angle = 360.
     _cone_outer_angle = 360.
     _cone_outer_gain = 1.
@@ -690,6 +690,15 @@ class Player(event.EventDispatcher):
                 self._audio = None
 
         self._audio = audio_player_class(source.audio_format)
+        self._audio.set_volume(self._volume)
+        self._audio.set_min_distance(self._min_distance)
+        self._audio.set_max_distance(self._max_distance)
+        self._audio.set_position(self._position)
+        self._audio.set_pitch(self._pitch)
+        self._audio.set_cone_orientation(self._cone_orientation)
+        self._audio.set_cone_inner_angle(self._cone_inner_angle)
+        self._audio.set_cone_outer_angle(self._cone_outer_angle)
+        self._audio.set_cone_outer_gain(self._cone_outer_gain)
 
     def _fill_audio(self):
         '''Ensure _audio is full.'''
