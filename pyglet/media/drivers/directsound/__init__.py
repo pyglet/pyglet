@@ -54,7 +54,7 @@ def _db(gain):
     '''Convert linear gain in range [0.0, 1.0] to 100ths of dB.'''
     if gain <= 0:
         return -10000
-    return int(1000 * math.log(min(gain, 1)))
+    return max(-10000, min(int(1000 * math.log(min(gain, 1))), 0))
 
 class DirectSoundAudioPlayer(AudioPlayer):
     _buffer_size = 44800 * 1
