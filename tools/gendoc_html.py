@@ -255,10 +255,20 @@ def gendoc_html(input_file, html_dir, api_objects, options):
     # Colorize literal blocks
     for block in [n for n in doctree.traverse() \
                   if (isinstance(n, nodes.literal_block))]:
-        pysrc = block.astext()
-        html = PythonColorizer().colorize_codeblock(pysrc)
-        raw = nodes.raw(text=html, format='html')
-        block.replace_self(raw)
+        # Use "plain" class on literal blocks to disable syntax coloring,
+        # e.g.:
+        #
+        # .. class:: plain
+        #
+        #   ::
+        #
+        #     Plain text goes here.
+        #
+        if 'plain' not in block.attributes['classes']:
+            pysrc = block.astext()
+            html = PythonColorizer().colorize_codeblock(pysrc)
+            raw = nodes.raw(text=html, format='html')
+            block.replace_self(raw)
 
     # Recursively split sections down to depth N into separate doctrees
     root_filename = os.path.splitext(os.path.basename(input_file))[0]

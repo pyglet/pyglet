@@ -62,7 +62,7 @@ pyglet's complete text rendering capabilities.  The underlying `TextLayout`
 and `AbstractDocument` classes provide a "model/view" interface to all of
 pyglet's text features.
 
-    .. image:: layout-classes.svg
+    .. image:: text_classes.svg
 
 Documents
 ^^^^^^^^^
@@ -86,7 +86,7 @@ section.
 
 The text of a document can be modified directly as a property on the object::
 
-    document.text = 'Goodbye, cruel world.')
+    document.text = 'Goodbye, cruel world.'
 
 However, if small changes are being made to the document it can be more
 efficient (when coupled with an appropriate layout; see below) to use the
@@ -256,10 +256,11 @@ exactly describe any `FormattedDocument`.  You must use this encoding to
 access all of the features of pyglet text layout.  For a more accessible, yet
 less featureful encoding, see the `HTML` encoding, described below.
 
-..
-    XXX TODO these examples are python colored... fix it.
+The following example shows a simple attributed text encoded document:
 
-The following example shows a simple attributed text encoded document::
+.. class:: plain
+
+  ::
 
     Chapter 1
 
@@ -276,7 +277,11 @@ The following example shows a simple attributed text encoded document::
     like, were unreasonably derived from their tombstones.
 
 Newlines are ignored, unless two are made in succession, indicating a
-paragraph break.  Line breaks can be forced with the ``\\`` sequence::
+paragraph break.  Line breaks can be forced with the ``\\`` sequence:
+
+.. class:: plain
+
+  ::
 
     This is the way the world ends \\
     This is the way the world ends \\
@@ -284,7 +289,11 @@ paragraph break.  Line breaks can be forced with the ``\\`` sequence::
     Not with a bang but a whimper.
 
 Line breaks are also forced when the text is indented with one or more spaces
-or tabs, which is useful for typesetting code::
+or tabs, which is useful for typesetting code:
+
+.. class:: plain
+
+  ::
 
     The following paragraph has hard line breaks for every line of code:
 
@@ -293,7 +302,11 @@ or tabs, which is useful for typesetting code::
         window = pyglet.window.Window()
         pyglet.app.run()
 
-Text can be styled using a attribute tag::
+Text can be styled using a attribute tag:
+
+.. class:: plain
+
+  ::
 
     This sentence makes a {bold True}bold{bold False} statement.
 
@@ -305,7 +318,11 @@ of the "end" of a style; styles merely change within the document.  This
 corresponds exactly to the representation used by `FormattedDocument`
 internally.
 
-Some more examples follow::
+Some more examples follow:
+
+.. class:: plain
+
+  ::
 
     {font_name 'Times New Roman'}{font_size 28}Hello{font_size 12}, 
     {color (255, 0, 0, 255)}world{color (0, 0, 0, 255)}!
@@ -314,7 +331,11 @@ Some more examples follow::
 red text for the word "world").
 
 Paragraph styles can be set by prefixing the style name with a period (.).
-This ensures the style range exactly encompasses the paragraph::
+This ensures the style range exactly encompasses the paragraph:
+
+.. class:: plain
+
+  ::
 
     {.margin_left "12px"}This is a block quote, as the margin is inset.
 
@@ -322,15 +343,27 @@ This ensures the style range exactly encompasses the paragraph::
 
 Attributed text can be loaded as a Unicode string.  In addition, any character
 can be inserted given its Unicode code point in numeric form, either in
-decimal::
+decimal:
+
+.. class:: plain
+
+  ::
 
     This text is Copyright {#169}.
 
-or hexadecimal::
+or hexadecimal:
+
+.. class:: plain
+
+  ::
 
     This text is Copyright {#xa9}.
 
-The characters ``{`` and ``}`` can be escaped by duplicating them::
+The characters ``{`` and ``}`` can be escaped by duplicating them:
+
+.. class:: plain
+
+  ::
 
     Attributed text uses many "{{" and "}}" characters.
 
@@ -357,7 +390,11 @@ a string of HTML::
 
     document = pyglet.text.decode_html('Hello, <b>world</b>')
 
-The following elements are supported::
+The following elements are supported:
+
+.. class:: plain
+
+  ::
 
     B BLOCKQUOTE BR CENTER CODE DD DIR DL EM FONT H1 H2 H3 H4 H5 H6 I IMG KBD
     LI MENU OL P PRE Q SAMP STRONG SUB SUP TT U UL VAR
