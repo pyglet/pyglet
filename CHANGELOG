@@ -1,3 +1,43 @@
+1.1beta2
+    * docs: Added sections on new text layout features
+    * examples: Added text_input.py example
+    * pyglet: Added debug_texture option
+    * pyglet: Fixed destructors calling non-existent methods during program
+      shutdown
+    * pyglet.clock: Fixed memory leak in all schedule functions
+    * pyglet.font: Fixed fonts being GC'd inefficiently in common case
+    * pyglet.font: Fixed Unicode font names with fontconfig
+    * pyglet.graphics: Fixed memory leak, improved GC performance
+    * pyglet.graphics: Fixed IndexedVertexDomain.draw
+    * pyglet.graphics: Fixed TextureGroup.__eq__
+    * pyglet.graphics: Fixed VBO data being drawn before upload complete on
+      non-nvidia drivers
+    * pyglet.image: Fixed glTexImage data being GC'd before finished
+    * pyglet.media: Fixed Player when next() called redundantly
+    * pyglet.media: Fixed Player.seek() when no sources queued
+    * pyglet.media: Reduced garbage noise after seeking in OpenAL
+    * pyglet.media: Fixed initial audio properties propogation when audio
+      player recreated
+    * pyglet.text: Fixed HTMLLabel.text property set
+    * pyglet.text: Added default position for AbstractDocument.get_style
+    * pyglet.text: Fixed IncrementalTextLayout vertical alignment after
+      modification
+    * pyglet.text: Fixed layout width for paragraphs with indent style
+    * pyglet.text: Renamed halign and valign properties to anchor_x and
+      anchor_y
+    * pyglet.text: Added TextLayout.content_valign property
+    * pyglet.text: Changed styles using points and pixels to consistent
+      "distance" units 
+    * pyglet.text: Added halign to Layout constructor
+    * pyglet.sprite: Fixed animations with only one frame
+    * pyglet.window: Added Window.invalid flag
+    * Linux: Removed redundant declarations in xlib.py for faster loading
+    * Linux: Fixed Window.on_close event for GLX 1.2 and earlier
+    * Linux: Fixed international dead key processing
+    * Linux: Fixed window borders on Intel chips running Compiz
+    * Win32: Fixed event loop during window move and resize
+    * Win32: Fixed DirectSound crash when specifying very low volume
+
 1.1beta1
     * docs: Added "Debugging tools" section to programming guide
     * docs: Clarified usage of ClockDisplay in module docstring

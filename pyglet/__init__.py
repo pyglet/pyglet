@@ -57,7 +57,7 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 #:    >>> parse_version(pyglet.version) >= parse_version('1.0')
 #:    True
 #:
-version = '1.1beta1'
+version = '1.1beta2'
 
 def _require_ctypes_version(version):
     # Check ctypes version
