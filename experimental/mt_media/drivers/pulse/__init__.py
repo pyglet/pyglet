@@ -35,8 +35,8 @@ class PulseAudioDriver(mt_media.AbstractAudioDriver):
             self.threaded_mainloop)
 
 
-    def create_audio_player(self, source, player):
-        return PulseAudioPlayer(source, player)
+    def create_audio_player(self, source_group, player):
+        return PulseAudioPlayer(source_group, player)
         
     def connect(self, server=None):
         '''Connect to pulseaudio server.
@@ -164,21 +164,19 @@ class PulseAudioDriver(mt_media.AbstractAudioDriver):
         pass
 
 class PulseAudioPlayer(mt_media.AbstractAudioPlayer):
-    def __init__(self, source, player):
-        super(PulseAudioPlayer, self).__init__(source, player)
+    def __init__(self, source_group, player):
+        super(PulseAudioPlayer, self).__init__(source_group, player)
 
-        '''
-        self._timestamps = [] # List of (pa_time, timestamp)
-        self._write_time = 0.0
-        self._timestamp = 0.0
-        self._timestamp_pa_time = 0.0
-        '''
+        self._events = []
+        self._timestamps = []  # List of (ref_time, timestamp)
+        self._write_index = 0  # Current write index (tracked manually)
 
+        self._clear_write = False
         self._buffered_audio_data = None
         self._underflow_is_eos = False
         self._playing = False
 
-        audio_format = source.audio_format
+        audio_format = source_group.audio_format
         assert audio_format
 
         # Create sample_spec
@@ -261,60 +259,84 @@ class PulseAudioPlayer(mt_media.AbstractAudioPlayer):
         if _debug:
             print 'write callback: %d bytes' % bytes
 
+        # Asynchronously update time
+        if self._events:
+            context.async_operation(
+                pa.pa_stream_update_timing_info(self.stream, 
+                                                self._success_cb_func, None)
+            )
+
         # Grab next audio packet, or leftovers from last callback.
         if self._buffered_audio_data:
             audio_data = self._buffered_audio_data
             self._buffered_audio_data = None
         else:
-            audio_data = self.source.get_audio_data(bytes)
+            audio_data = self.source_group.get_audio_data(bytes)
+
+        seek_flag = pa.PA_SEEK_RELATIVE
+        if self._clear_write:
+            if _debug:
+                print 'seek PA_SEEK_RELATIVE_ON_READ'
+            seek_flag = pa.PA_SEEK_RELATIVE_ON_READ
+            self._clear_write = False
 
         # Keep writing packets until `bytes` is depleted
         while audio_data and bytes > 0:
+            if _debug:
+                print 'packet', audio_data.timestamp
+            if _debug and audio_data.events:
+                print 'events', audio_data.events
+            self._events.extend(audio_data.events)
+            self._events.sort(key=lambda (t,e): t)
             consumption = min(bytes, audio_data.length)
+            
             check(
                 pa.pa_stream_write(self.stream,
                                    audio_data.data,
                                    consumption,
                                    pa.pa_free_cb_t(0),  # Data is copied
                                    0,
-                                   pa.PA_SEEK_RELATIVE)
+                                   seek_flag)
             )
 
-            #self._timestamps.append((self._write_time, audio_data.timestamp))
-            #self._write_time += audio_data.duration 
-            self._underflow_is_eos = True
+            seek_flag = pa.PA_SEEK_RELATIVE
+            self._timestamps.append((self._write_index, audio_data.timestamp))
+            self._write_index += consumption
+            self._underflow_is_eos = False
 
             if _debug:
                 print 'write', consumption
             if consumption < audio_data.length:
-                audio_data.consume(consumption, self.source.audio_format)
+                audio_data.consume(consumption, self.source_group.audio_format)
                 self._buffered_audio_data = audio_data
                 break
 
             bytes -= consumption
             if bytes > 0:
-                audio_data = self.source.get_audio_data(bytes) #XXX name change
+                audio_data = self.source_group.get_audio_data(bytes) #XXX name change
 
         if not audio_data:
-            # Whole source has been written.  Any underflow encountered after
-            # now is the EOS.
+            # Whole source group has been written.  Any underflow encountered
+            # after now is the EOS.
             self._underflow_is_eos = True
             
-            # In case the source wasn't long enough to prebuffer stream to
-            # PA's satisfaction, trigger immediate playback (has no effect if
-            # stream is already playing).
+            # In case the source group wasn't long enough to prebuffer stream
+            # to PA's satisfaction, trigger immediate playback (has no effect
+            # if stream is already playing).
             if self._playing:
                 context.async_operation(
                      pa.pa_stream_trigger(self.stream, 
                                           pa.pa_stream_success_cb_t(0), None)
                 )
 
+        self._process_events()
+
     def _underflow_cb(self, stream, data):
+        self._process_events()
+
         if self._underflow_is_eos:
-            # TODO if EventLoop not being used, hook into
-            #      pyglet.media.dispatch_events.
-            if pyglet.app.event_loop:
-                pyglet.app.event_loop.post_event(self.player, 'on_eos')
+            self._sync_dispatch_player_event('on_eos')
+            self._sync_dispatch_player_event('on_source_group_eos')
             self._underflow_is_eos = False
             if _debug:
                 print 'eos'
@@ -324,10 +346,49 @@ class PulseAudioPlayer(mt_media.AbstractAudioPlayer):
             # TODO: does PA automatically restart stream when buffered again?
             # XXX: sometimes receive an underflow after EOS... need to filter?
 
-    def _delete(self):   
-        # TODO not called by anyone yet
+    def _process_events(self):
+        if not self._events:
+            return
+
+        timing_info = pa.pa_stream_get_timing_info(self.stream)
+        if not timing_info:
+            if _debug:
+                print 'abort _process_events'
+            return
+
+        read_index = timing_info.contents.read_index
+        time = self.get_time(read_index)
+
+        timestamp, event = self._events[0]
+        try:
+            while time >= timestamp:
+                if event == 'on_video_frame':
+                    self._sync_dispatch_player_event(event, timestamp)
+                else:
+                    self._sync_dispatch_player_event(event)
+                del self._events[0]
+                timestamp, event = self._events[0]
+        except IndexError:
+            pass
+
+    def _sync_dispatch_player_event(self, event, *args):
+        # TODO if EventLoop not being used, hook into
+        #      pyglet.media.dispatch_events.
+        if pyglet.app.event_loop:
+            pyglet.app.event_loop.post_event(self.player, event, *args)
+
+    def __del__(self):
+        try:
+            self.delete()
+        except:
+            pass
+        
+    def delete(self):   
         if _debug:
-            print '_delete'
+            print 'delete'
+        if not self.stream:
+            return
+
         context.lock()
         pa.pa_stream_disconnect(self.stream)
         context.unlock()
@@ -337,17 +398,16 @@ class PulseAudioPlayer(mt_media.AbstractAudioPlayer):
     def clear(self):
         if _debug:
             print 'clear'
+
+        self._clear_write = True
+        self._write_index = self._get_read_index()
+        self._timestamps = []
+
         context.lock()
         context.sync_operation(
-            pa.pa_stream_flush(self.stream, self._success_cb_func, None)
+            pa.pa_stream_prebuf(self.stream, self._success_cb_func, None)
         )
         context.unlock()
-
-        self._timestamps = []
-        self._timestamp = 0.0
-        self._timestamp_pa_time = 0.0
-
-        self._write_time = self._get_pa_time()
 
     def play(self):
         if _debug:
@@ -381,7 +441,7 @@ class PulseAudioPlayer(mt_media.AbstractAudioPlayer):
 
         self._playing = False
 
-    def _get_pa_time(self):
+    def _get_read_index(self):
         time = pa.pa_usec_t()
 
         context.lock()
@@ -389,20 +449,47 @@ class PulseAudioPlayer(mt_media.AbstractAudioPlayer):
             pa.pa_stream_update_timing_info(self.stream, 
                                             self._success_cb_func, None)
         )
-        check(
-            pa.pa_stream_get_time(self.stream, time)
-        )
         context.unlock()
 
-        time = float(time.value) / 1000000.0
+        timing_info = pa.pa_stream_get_timing_info(self.stream)
+        if timing_info:
+            read_index = timing_info.contents.read_index
+        else:
+            read_index = 0
 
         if _debug:
-            print '_get_pa_time ->', time
-        return time 
+            print '_get_read_index ->', read_index
+        return read_index
 
-    def get_time(self):
-        pa_time = self._get_pa_time()
-        time = self._timestamp + pa_time - self._timestamp_pa_time
+    def _get_write_index(self):
+        timing_info = pa.pa_stream_get_timing_info(self.stream)
+        if timing_info:
+            write_index = timing_info.contents.write_index
+        else:
+            write_index = 0
+
+        if _debug:
+            print '_get_write_index ->', write_index
+        return write_index
+
+    def get_time(self, read_index=None):
+        if read_index is None:
+            read_index = self._get_read_index()
+
+        write_index = 0
+        timestamp = 0.0
+
+        try:
+            write_index, timestamp = self._timestamps[0]
+            write_index, timestamp = self._timestamps[1]
+            while read_index >= write_index:
+                del self._timestamps[0]
+                write_index, timestamp = self._timestamps[1]
+        except IndexError:
+            pass
+
+        bytes_per_second = self.source_group.audio_format.bytes_per_second
+        time = timestamp + (read_index - write_index) / float(bytes_per_second)
 
         if _debug:
             print 'get_time ->', time

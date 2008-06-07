@@ -317,7 +317,10 @@ class struct_timeval(Structure):
     __slots__ = [
     ]
 struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
+    # XXX HACK struct timeval wasn't picked up by wraptypes
+    #('_opaque_struct', c_int)
+    ('tv_sec', c_long),
+    ('tv_usec', c_long),
 ]
 
 struct_pa_timing_info._fields_ = [

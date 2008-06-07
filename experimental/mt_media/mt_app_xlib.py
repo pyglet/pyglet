@@ -21,9 +21,9 @@ class XlibEventDispatcher(object):
 
 from pyglet.window.xlib import xlib
 
-class XlibDisplayEventDispatcher(pyglet.window.xlib.XlibDisplayDevice):
+class XlibDisplayDevice(pyglet.window.xlib.XlibDisplayDevice):
     def dispatch_events(self):
-        e = xlib.XEvent
+        e = xlib.XEvent()
         while xlib.XPending(self._display):
             xlib.XNextEvent(self._display, e)
 
@@ -39,7 +39,14 @@ class XlibDisplayEventDispatcher(pyglet.window.xlib.XlibDisplayDevice):
 
             window.dispatch_platform_event(e)
     
-pyglet.window.xlib.XlibDisplay = XlibDisplayEventDispatcher
+class XlibPlatform(pyglet.window.xlib.XlibPlatform):
+    def get_display(self, name):
+        if name not in self._displays:
+            self._displays[name] = XlibDisplayDevice(name)
+        return self._displays[name]
+
+platform = XlibPlatform()
+pyglet.window.get_platform = lambda: platform
 
 import os
 class SynchronizedEventDispatcher(XlibEventDispatcher):

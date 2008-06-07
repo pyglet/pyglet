@@ -184,7 +184,9 @@ class AudioData(object):
         self.events = events
 
     def consume(self, bytes, audio_format):
-        '''Remove some data from beginning of packet.'''
+        '''Remove some data from beginning of packet.  All events are
+        cleared.'''
+        self.events = ()
         if bytes == self.length:
             self.data = None
             self.length = 0
@@ -449,7 +451,7 @@ class StaticMemorySource(StaticSource):
         duration = float(len(data)) / self.audio_format.bytes_per_second
         return AudioData(data, len(data), timestamp, duration)
 
-class CompoundSource(object):
+class SourceGroup(object):
     '''Read data from a queue of sources, with support for looping.  All
     sources must share the same audio format.
     
@@ -459,23 +461,38 @@ class CompoundSource(object):
 
     '''
 
+    # TODO can sources list go empty?  what behaviour (ignore or error)?
+
     _advance_after_eos = False
     _loop = False
 
     def __init__(self, audio_format):
         self.audio_format = audio_format
+        self.duration = 0.
         self._timestamp_offset = 0.
         self._sources = []
+
+    def seek(self, time):
+        if self._sources:
+            self._sources[0]._seek(time)
 
     def queue(self, source):
         assert(source.audio_format == self.audio_format)
         self._sources.append(source)
+        self.duration += source.duration
+
+    def has_next(self):
+        return len(self._sources) > 1
 
     def next(self, immediate=True):
         if immediate:
             self._advance()
         else:
             self._advance_after_eos = True
+
+    def get_current_source(self):
+        if self._sources:
+            return self._sources[0]
 
     def _advance(self):
         if self._sources:
@@ -507,8 +524,9 @@ class CompoundSource(object):
         '''
 
         data = self._sources[0]._get_audio_data(bytes) # TODO method rename
+        eos = False
         while not data:
-            # EOS
+            eos = True
             if self._loop and not self._advance_after_eos:
                 self._sources[0].seek(0)
             else:
@@ -521,13 +539,20 @@ class CompoundSource(object):
                 else:
                     return None
                 
-            data = self._sources[0].get_audio_data(bytes)
+            data = self._sources[0]._get_audio_data(bytes) # TODO method rename
 
         data.timestamp += self._timestamp_offset
+        # XXX HACK TEMP
+        if not hasattr(data, 'events'):
+            data.events = []
+        if eos:
+            # TODO events are supposed to be sorted
+            data.events.append((data.timestamp, 'on_eos'))
         return data
 
     def translate_timestamp(self, timestamp):
         '''Get source-relative timestamp for the audio player's timestamp.'''
+        # XXX 
         timestamp = timestamp - self._timestamp_offset
         if timestamp < 0:
             # Timestamp is from an dequeued source... need to keep track of
@@ -539,17 +564,17 @@ class AbstractAudioPlayer(object):
     '''Base class for driver audio players.
     '''
     
-    def __init__(self, source, player):
+    def __init__(self, source_group, player):
         '''Create a new audio player.
 
         :Parameters:
-            `source` : `Source`
-                Source of audio data.
+            `source_group` : `SourceGroup`
+                Source group to play from.
             `player` : `Player`
                 Player to receive EOS and video frame sync events.
 
         '''
-        self.source = source
+        self.source_group = source_group
         self.player = player
 
     def play(self):
@@ -558,6 +583,10 @@ class AbstractAudioPlayer(object):
 
     def stop(self):
         '''Stop (pause) playback.'''
+        raise NotImplementedError('abstract')
+
+    def delete(self):
+        '''Stop playing and clean up all resources used by player.'''
         raise NotImplementedError('abstract')
 
     def clear(self):
@@ -573,6 +602,7 @@ class AbstractAudioPlayer(object):
         :rtype: float
         :return: current play cursor time, in seconds.
         '''
+        # TODO determine which source within group
         raise NotImplementedError('abstract')
 
     def set_volume(self, volume):
@@ -615,24 +645,27 @@ class Player(pyglet.event.EventDispatcher):
     '''High-level sound and video player.
     '''
 
+    _texture = None
+
     def __init__(self):
-        # All sources are CompoundSource instances (created automatically in
-        # queue).
-        self._sources = []
+        # List of queued source groups
+        self._groups = []
 
         self._audio_player = None
 
         # Desired play state (not an indication of actual state).
         self._playing = False
 
+        self._paused_time = 0.0
+
     def queue(self, source):
-        if (self._sources and
-            source.audio_format == self._sources[-1].audio_format):
-            self._sources[-1].queue(source)
+        if (self._groups and
+            source.audio_format == self._groups[-1].audio_format):
+            self._groups[-1].queue(source)
         else:
-            compound_source = CompoundSource(source.audio_format)
-            compound_source.queue(source)
-            self._sources.append(compound_source)
+            group = SourceGroup(source.audio_format)
+            group.queue(source)
+            self._groups.append(group)
 
         if not self._audio_player:
             self._create_audio_player()
@@ -645,24 +678,101 @@ class Player(pyglet.event.EventDispatcher):
 
     def pause(self):
         if self._audio_player:
+            self._paused_time = self._audio_player.get_time()
             self._audio_player.stop()
 
         self._playing = False
 
+    def next(self):
+        if not self._groups:
+            return
+
+        group = self._groups[0]
+        if group.has_next():
+            group.next()
+            return
+
+        if self._audio_player:
+            self._audio_player.delete()
+            self._audio_player = None
+
+        del self._groups[0]
+        if self._groups:
+            self._create_audio_player()
+            return
+
+        self._playing = False
+        self.dispatch_event('on_player_eos')
+
+    def seek(self, time):
+        self.source.seek(time)
+        self._audio_player.clear()
+        self._paused_time = time
+
     def _create_audio_player(self):
         assert not self._audio_player
-        assert self._sources
+        assert self._groups
 
-        source = self._sources[0]
-        audio_format = source.audio_format
+        group = self._groups[0]
+        audio_format = group.audio_format
         if audio_format:
             audio_driver = get_audio_driver()
-            self._audio_player = audio_driver.create_audio_player(source, self)
+            self._audio_player = audio_driver.create_audio_player(group, self)
         else:
-            self._audio_player = create_silent_audio_player(source, self)
+            self._audio_player = create_silent_audio_player(group, self)
+
 
         if self._playing:
             self._audio_player.play()
+
+    def _get_source(self):
+        if not self._groups:
+            return None
+        return self._groups[0].get_current_source()
+
+    source = property(_get_source)
+
+    playing = property(lambda self: self._playing)
+
+    def _get_time(self):
+        if self._playing and self._audio_player:
+            return self._audio_player.get_time()
+        else:
+            return self._paused_time
+
+    time = property(_get_time)
+
+    def get_texture(self):
+        if not self.source:
+            return
+
+        # TODO recreate texture
+        video_format = self.source.video_format
+        if video_format:
+            if not self._texture:
+                self._texture = pyglet.image.Texture.create(
+                    video_format.width, video_format.height, rectangle=True)
+        return self._texture
+
+    def on_player_eos(self):
+        '''The player ran out of sources.
+
+        :event:
+        '''
+        if _debug_media:
+            print 'Player.on_player_eos'
+
+    def on_source_group_eos(self):
+        '''The current source group ran out of data.
+
+        The default behaviour is to advance to the next source group if
+        possible.
+
+        :event:
+        '''
+        self.next()
+        if _debug_media:
+            print 'Player.on_source_group_eos'
 
     def on_eos(self):
         '''
@@ -672,7 +782,19 @@ class Player(pyglet.event.EventDispatcher):
         if _debug_media:
             print 'Player.on_eos'
 
+    def on_video_frame(self, timestamp):
+        if _debug_media:
+            print 'Player.on_video_frame', timestamp
+        
+        image = self.source.get_video_frame(timestamp)
+        if image:
+            # TODO avoid get_texture
+            self.get_texture().blit_into(image, 0, 0, 0)
+
 Player.register_event_type('on_eos')
+Player.register_event_type('on_player_eos')
+Player.register_event_type('on_source_group_eos')
+Player.register_event_type('on_video_frame')
 
 class AbstractAudioDriver(object):
     def create_audio_player(self, audio_format):
@@ -684,8 +806,8 @@ class AbstractSourceLoader(object):
 
 class AVbinSourceLoader(AbstractSourceLoader):
     def load(self, filename, file):
-        from pyglet.media import avbin
-        return avbin.AVbinSource(filename, file)
+        import mt_avbin
+        return mt_avbin.AVbinSource(filename, file)
 
 def load(filename, file=None, streaming=True):
     '''Load a source from a file.
@@ -730,7 +852,7 @@ def get_source_loader():
         return _source_loader
 
     try:
-        from pyglet.media import avbin
+        import mt_avbin
         _source_loader = AVbinSourceLoader()
     except ImportError:
         raise NotImplementedError('TODO: RIFFSourceLoader')
