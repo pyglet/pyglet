@@ -1,4 +1,15 @@
 <news>
+  <item date="6-June-2008" author="Alex"
+        title="pyglet 1.1 beta 2 released">
+    pyglet 1.1 beta 2 is now available.  This release fixes many bugs from
+    the previous release and introduces some minor incompatible API changes in
+    the <tt>pyglet.text</tt> module.  The new text layout features are now 
+    <a href="http://pyglet.org/doc/1.1">documented</a> in the Programming
+    Guide.  Windows, Mac and source downloads are available from the <a
+    href="http://code.google.com/p/pyglet/downloads/list?q=1.1beta2">download
+    server</a>.  The latest Windows and Mac installation packs also include
+    the latest <a href="http://code.google.com/p/avbin">AVbin</a> library.
+  </item>
   <item date="19-April-2008" author="Alex"
         title="pyglet 1.1 beta 1 released">
     pyglet 1.1 has hit the beta milestone, which means the API is very
