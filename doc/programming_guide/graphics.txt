@@ -380,7 +380,7 @@ must be set.  For example, to enable and bind a texture requires::
     glEnable(texture.target)
     glBindTexture(texture.target, texture.id)
 
-before drawing vertex lists, and then
+before drawing vertex lists, and then::
 
     glDisable(texture.target)
 
