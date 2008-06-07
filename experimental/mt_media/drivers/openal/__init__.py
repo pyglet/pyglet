@@ -145,9 +145,17 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
 
     def __del__(self):
         try:
-            al.alDeleteSources(1, self._al_source)
+            self.delete()
         except:
             pass
+
+    def delete(self):
+        return
+        # XXX TODO crashes
+        context.lock()
+        al.alDeleteSources(1, self._al_source)
+        context.unlock()
+        self._al_source = None
 
     def play(self):
         if self._playing:
@@ -210,6 +218,13 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
             return time.time() - self._timestamp_system_time
 
     def _pump(self):
+        if _debug:
+            print 'pump'
+
+        if not self._al_source:
+            # Deleted.
+            return
+
         # Release spent buffers
         processed = al.ALint()
         context.lock()
@@ -231,14 +246,19 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
 
         current_buffer_time = self._get_current_buffer_time()
 
+        repump = True
+
         # Refill buffers
         refill_time = \
             self._update_buffer_time - self._buffered_time + \
             current_buffer_time
         refill_bytes = \
-            refill_time * self.source_group.audio_format.bytes_per_second
+            int(refill_time * self.source_group.audio_format.bytes_per_second)
         while refill_bytes > self._min_buffer_size:
             audio_data = self.source_group.get_audio_data(refill_bytes)
+            if not audio_data:
+                repump = False
+                break
 
             buffer = al.ALuint()
             context.lock()
@@ -265,7 +285,19 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
             context.unlock()
 
         # Schedule future pump
-        context.post_job(self.UPDATE_PERIOD, self._pump)
+        if repump:
+            context.post_job(self.UPDATE_PERIOD, self._pump)
+        else:
+            # End of source group XXX wrong
+            if pyglet.app.event_loop:
+                # TODO if no event loop
+                if _debug:
+                    print 'event_loop.post_event(on_source_group_eos)'
+                pyglet.app.event_loop.post_event(self.player, 
+                                                 'on_source_group_eos')
+            else:
+                if _debug:
+                    print 'EOS source group, no event loop'
 
     def get_time(self):
         # Assumes pump has been called recently.
@@ -373,8 +405,12 @@ class OpenALDriver(mt_media.AbstractAudioDriver):
             target_time, job = self._work_queue.get()
             wait_time = target_time - time.time()
             while wait_time > 0:
+                if _debug:
+                    print 'worker sleep', wait_time
                 time.sleep(wait_time)
                 wait_time = target_time - time.time()
+            if _debug:
+                print 'worker job', job
             job()
 
     def have_version(self, major, minor):
@@ -424,4 +460,6 @@ context = None
 def create_audio_driver(device_name=None):
     global context
     context = OpenALDriver(device_name)
+    if _debug:
+        print 'OpenAL', context.get_version()
     return context

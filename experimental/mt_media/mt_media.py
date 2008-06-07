@@ -879,6 +879,6 @@ import sys
 if sys.platform == 'linux2':
     import mt_app_xlib
 elif sys.platform == 'darwin':
-    pass #TODO
+    import mt_app_carbon
 else:
     raise NotImplementedError('TODO')
