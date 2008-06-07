@@ -79,7 +79,7 @@ import StringIO
 
 import pyglet
 
-_debug_media = pyglet.options['debug_media']
+_debug = pyglet.options['debug_media']
 
 class MediaException(Exception):
     pass
@@ -759,7 +759,7 @@ class Player(pyglet.event.EventDispatcher):
 
         :event:
         '''
-        if _debug_media:
+        if _debug:
             print 'Player.on_player_eos'
 
     def on_source_group_eos(self):
@@ -771,7 +771,7 @@ class Player(pyglet.event.EventDispatcher):
         :event:
         '''
         self.next()
-        if _debug_media:
+        if _debug:
             print 'Player.on_source_group_eos'
 
     def on_eos(self):
@@ -779,11 +779,11 @@ class Player(pyglet.event.EventDispatcher):
 
         :event:
         '''
-        if _debug_media:
+        if _debug:
             print 'Player.on_eos'
 
     def on_video_frame(self, timestamp):
-        if _debug_media:
+        if _debug:
             print 'Player.on_video_frame', timestamp
         
         image = self.source.get_video_frame(timestamp)
@@ -839,8 +839,22 @@ def get_audio_driver():
     if _audio_driver:
         return _audio_driver
 
-    from drivers import pulse
-    _audio_driver = pulse.create_audio_driver()
+    _audio_driver = None
+
+    # TODO  options
+    driver_names = ('pulse', 'openal')
+
+    for driver_name in driver_names:
+        try:
+            if driver_name == 'pulse':
+                from drivers import pulse
+                _audio_driver = pulse.create_audio_driver()
+            elif driver_name == 'openal':
+                from drivers import openal
+                _audio_driver = openal.create_audio_driver()
+        except ImportError:
+            if _debug:
+                print 'Error importing driver %s' % driver_name
     return _audio_driver
 
 _audio_driver = None
@@ -864,5 +878,7 @@ _source_loader = None
 import sys
 if sys.platform == 'linux2':
     import mt_app_xlib
+elif sys.platform == 'darwin':
+    pass #TODO
 else:
     raise NotImplementedError('TODO')
