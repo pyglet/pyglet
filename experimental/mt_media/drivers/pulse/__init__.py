@@ -287,7 +287,6 @@ class PulseAudioPlayer(mt_media.AbstractAudioPlayer):
             if _debug and audio_data.events:
                 print 'events', audio_data.events
             self._events.extend(audio_data.events)
-            self._events.sort(key=lambda (t,e): t)
             consumption = min(bytes, audio_data.length)
             
             check(
@@ -359,15 +358,14 @@ class PulseAudioPlayer(mt_media.AbstractAudioPlayer):
         read_index = timing_info.contents.read_index
         time = self.get_time(read_index)
 
-        timestamp, event = self._events[0]
+        event = self._events[0]
         try:
-            while time >= timestamp:
-                if event == 'on_video_frame':
-                    self._sync_dispatch_player_event(event, timestamp)
-                else:
-                    self._sync_dispatch_player_event(event)
+            while time >= event.timestamp:
+                if _debug:
+                    print 'dispatch event', event
+                event._sync_dispatch_to_player(self.player)
                 del self._events[0]
-                timestamp, event = self._events[0]
+                event = self._events[0]
         except IndexError:
             pass
 

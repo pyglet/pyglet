@@ -558,7 +558,7 @@ class SourceGroup(object):
             data.events = []
         if eos:
             # TODO events are supposed to be sorted
-            data.events.append((data.timestamp, 'on_eos'))
+            data.events.append(MediaEvent(data.timestamp, 'on_eos'))
         return data
 
     def translate_timestamp(self, timestamp):
