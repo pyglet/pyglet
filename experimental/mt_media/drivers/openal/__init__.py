@@ -130,10 +130,13 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         # List of (timestamp, duration) corresponding to currently queued AL
         # buffers
         self._timestamps = []
+        self._events = []
+
+        self._lock = threading.Lock()
 
         # OpenAL 1.0 timestamp interpolation
         if not context.have_1_1:
-            self._timestamp_system_time = 0.0
+            self._timestamp_system_time = time.time()
 
         # Desired play state (True even if stopped due to underrun)
         self._playing = False
@@ -186,10 +189,19 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         self._playing = False
 
     def clear(self):
+    
+        self._lock.acquire()
         context.lock()
 
         al.alSourceStop(self._al_source)
         self._playing = False
+
+        del self._events[:]
+
+        '''
+        # XXX what's the point of this?  need to dequeue unprocessed buffers
+        # as well as processed ones.  clearing timestamps list confuses pump,
+        # serves no purpose.
 
         processed = al.ALint()
         al.alGetSourcei(self._al_source, al.AL_BUFFERS_PROCESSED, processed)
@@ -198,11 +210,13 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
             al.alSourceUnqueueBuffers(self._al_source, len(buffers), buffers)
             al.alDeleteBuffers(len(buffers), buffers)
 
-        context.unlock()
 
         self._pause_timestamp = 0.0
         self._buffered_time = 0.0
         self._timestamps = []
+        '''
+        context.unlock()
+        self._lock.release()
 
     def _get_current_buffer_time(self):
         # Estimate how far into current buffer
@@ -224,6 +238,8 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         if not self._al_source:
             # Deleted.
             return
+
+        self._lock.acquire()
 
         # Release spent buffers
         processed = al.ALint()
@@ -260,6 +276,8 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
                 repump = False
                 break
 
+            self._events.extend(audio_data.events)
+
             buffer = al.ALuint()
             context.lock()
             al.alGenBuffers(1, buffer)
@@ -284,20 +302,52 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
                 al.alSourcePlay(self._al_source)
             context.unlock()
 
+        # Process events
+        self._process_events()
+
+        update_period = self.UPDATE_PERIOD
+        if self._events:
+            repump = True # ech, stupid flag
+            timestamp, _ = self._events[0]
+            # XXX avoid call to get_time()
+            update_period = min(update_period, timestamp - self.get_time())
+
         # Schedule future pump
         if repump:
-            context.post_job(self.UPDATE_PERIOD, self._pump)
+            context.post_job(update_period, self._pump)
         else:
-            # End of source group XXX wrong
-            if pyglet.app.event_loop:
-                # TODO if no event loop
-                if _debug:
-                    print 'event_loop.post_event(on_source_group_eos)'
-                pyglet.app.event_loop.post_event(self.player, 
-                                                 'on_source_group_eos')
-            else:
-                if _debug:
-                    print 'EOS source group, no event loop'
+            # End of source group XXX wrong, wait for underrun
+            self._sync_dispatch_player_event('on_eos')
+            self._sync_dispatch_player_event('on_source_group_eos')
+
+        self._lock.release()
+
+    # TODO consolidate with other drivers
+    # XXX not locked
+    def _process_events(self):
+        if not self._events:
+            return
+
+        time = self.get_time()
+
+        timestamp, event = self._events[0]
+        try:
+            while time >= timestamp:
+                if event == 'on_video_frame': #XXX HACK
+                    self._sync_dispatch_player_event(event, timestamp)
+                else:
+                    self._sync_dispatch_player_event(event)
+                del self._events[0]
+                timestamp, event = self._events[0]
+        except IndexError:
+            pass
+
+    # TODO consolidate with other drivers
+    def _sync_dispatch_player_event(self, event, *args):
+        # TODO if EventLoop not being used, hook into
+        #      pyglet.media.dispatch_events.
+        if pyglet.app.event_loop:
+            pyglet.app.event_loop.post_event(self.player, event, *args)
 
     def get_time(self):
         # Assumes pump has been called recently.
@@ -309,12 +359,13 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         if not self._playing:
             return self._pause_timestamp
 
-        if not self._timestamps:
+        try:
+            ts, _ = self._timestamps[0]
+        except IndexError:
             return self._pause_timestamp
 
-        ts, _ = self._timestamps[0]
-
-        return ts + self._get_current_buffer_time()
+        current_buffer_time = self._get_current_buffer_time()
+        return ts + current_buffer_time
 
     def set_volume(self, volume):
         self.lock()
@@ -375,7 +426,7 @@ class OpenALDriver(mt_media.AbstractAudioDriver):
         alcontext = alc.alcCreateContext(self._device, None)
         alc.alcMakeContextCurrent(alcontext)
 
-        self.have_1_1 = self.have_version(1, 1)
+        self.have_1_1 = self.have_version(1, 1) and False
 
         self._lock = threading.Lock()
 

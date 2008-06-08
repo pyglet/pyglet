@@ -68,6 +68,11 @@ POST_EVENT_KIND = 0
 # handler?
 
 class MTCarbonEventLoop(BaseEventLoop):
+    _running = False
+
+    def __init__(self):
+        self._post_event_queue = Queue.Queue()
+
     def post_event(self, dispatcher, event, *args):
         self._post_event_queue.put((dispatcher, event, args))
 
@@ -97,7 +102,6 @@ class MTCarbonEventLoop(BaseEventLoop):
     def _setup_post_event_handler(self):
         # Handler for PYGL events (interrupt from post_event)
         # TODO remove later?
-        self._post_event_queue = Queue.Queue()
         application_target = carbon.GetApplicationEventTarget()
         self._post_event_target = ctypes.c_void_p(application_target)
         proc = EventHandlerProcPtr(self._post_event_handler)
@@ -152,6 +156,10 @@ class MTCarbonEventLoop(BaseEventLoop):
         self._allow_polling = True
 
         self.dispatch_event('on_enter')
+
+        # Dispatch events posted before entered run looop
+        self._running = True #XXX consolidate
+        self._post_event_handler(None, None, None)
 
         while not self.has_exit:
             if self._force_idle:
