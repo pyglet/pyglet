@@ -871,9 +871,11 @@ def get_audio_driver():
             if driver_name == 'pulse':
                 from drivers import pulse
                 _audio_driver = pulse.create_audio_driver()
+                break
             elif driver_name == 'openal':
                 from drivers import openal
                 _audio_driver = openal.create_audio_driver()
+                break
         except ImportError:
             if _debug:
                 print 'Error importing driver %s' % driver_name
