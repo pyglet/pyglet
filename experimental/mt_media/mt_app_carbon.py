@@ -76,7 +76,9 @@ class MTCarbonEventLoop(BaseEventLoop):
     def post_event(self, dispatcher, event, *args):
         self._post_event_queue.put((dispatcher, event, args))
 
-        # TODO if not running ...
+        if not self._running:
+            return
+
         event_class = POST_EVENT_CLASS
         event_kind = POST_EVENT_KIND
         event_ref = ctypes.c_void_p()

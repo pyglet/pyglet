@@ -308,17 +308,19 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         update_period = self.UPDATE_PERIOD
         if self._events:
             repump = True # ech, stupid flag
-            timestamp, _ = self._events[0]
             # XXX avoid call to get_time()
-            update_period = min(update_period, timestamp - self.get_time())
+            update_period = min(update_period, 
+                                self._events[0].timestamp - self.get_time())
 
         # Schedule future pump
         if repump:
             context.post_job(update_period, self._pump)
         else:
             # End of source group XXX wrong, wait for underrun
-            self._sync_dispatch_player_event('on_eos')
-            self._sync_dispatch_player_event('on_source_group_eos')
+            mt_media.MediaEvent(0, 'on_eos')._sync_dispatch_to_player(
+                self.player)
+            mt_media.MediaEvent(0, 'on_source_group_eos')._sync_dispatch_to_player(
+                self.player)
 
         self._lock.release()
 
@@ -330,24 +332,16 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
 
         time = self.get_time()
 
-        timestamp, event = self._events[0]
+        event = self._events[0]
         try:
-            while time >= timestamp:
-                if event == 'on_video_frame': #XXX HACK
-                    self._sync_dispatch_player_event(event, timestamp)
-                else:
-                    self._sync_dispatch_player_event(event)
+            while time >= event.timestamp:
+                if _debug:
+                    print 'dispatch event', event
+                event._sync_dispatch_to_player(self.player)
                 del self._events[0]
-                timestamp, event = self._events[0]
+                event = self._events[0]
         except IndexError:
             pass
-
-    # TODO consolidate with other drivers
-    def _sync_dispatch_player_event(self, event, *args):
-        # TODO if EventLoop not being used, hook into
-        #      pyglet.media.dispatch_events.
-        if pyglet.app.event_loop:
-            pyglet.app.event_loop.post_event(self.player, event, *args)
 
     def get_time(self):
         # Assumes pump has been called recently.

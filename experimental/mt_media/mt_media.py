@@ -218,6 +218,17 @@ class AudioData(object):
         ctypes.memmove(buf, self.data, self.length)
         return buf.raw
 
+class MediaEvent(object):
+    def __init__(self, timestamp, event, *args):
+        self.timestamp = timestamp
+        self.event = event
+        self.args = args
+
+    def _sync_dispatch_to_player(self, player):
+        if pyglet.app.event_loop:
+            pyglet.app.event_loop.post_event(player, self.event, *self.args)
+        # TODO sync with media.dispatch_events
+
 class Source(object):
     '''An audio and/or video source.
 
@@ -320,7 +331,7 @@ class Source(object):
         '''
         pass
 
-    # Internal methods that SourceReaders call on the source:
+    # Internal methods that SourceGroup calls on the source:
 
     def _seek(self, timestamp):
         '''Seek to given timestamp.'''
@@ -646,6 +657,8 @@ class Player(pyglet.event.EventDispatcher):
     '''
 
     _texture = None
+    _video_frame_id = -1
+    _video_frame_dirty = False
 
     def __init__(self):
         # List of queued source groups
@@ -752,7 +765,16 @@ class Player(pyglet.event.EventDispatcher):
             if not self._texture:
                 self._texture = pyglet.image.Texture.create(
                     video_format.width, video_format.height, rectangle=True)
+        if self._video_frame_dirty:
+            self.update_texture()
         return self._texture
+
+    def update_texture(self):
+        image = self.source.get_video_frame(self._video_frame_id)
+        if image:
+            # TODO avoid get_texture
+            self.get_texture().blit_into(image, 0, 0, 0)
+        self._video_frame_dirty = False
 
     def on_player_eos(self):
         '''The player ran out of sources.
@@ -782,14 +804,14 @@ class Player(pyglet.event.EventDispatcher):
         if _debug:
             print 'Player.on_eos'
 
-    def on_video_frame(self, timestamp):
+    def on_video_frame(self, id):
         if _debug:
-            print 'Player.on_video_frame', timestamp
+            print 'Player.on_video_frame', id
+            if self._video_frame_dirty:
+                print 'Skipping frame', self._video_frame_id
         
-        image = self.source.get_video_frame(timestamp)
-        if image:
-            # TODO avoid get_texture
-            self.get_texture().blit_into(image, 0, 0, 0)
+        self._video_frame_id = id
+        self._video_frame_dirty = True
 
 Player.register_event_type('on_eos')
 Player.register_event_type('on_player_eos')
