@@ -972,6 +972,11 @@ class Win32Window(BaseWindow):
             track.hwndTrack = self._hwnd
             _user32.TrackMouseEvent(byref(track))
 
+        # Don't generate motion/drag events when mouse hasn't moved. (Issue
+        # 305)
+        if self._mouse_x == x and self._mouse_y == y:
+            return 0
+
         self._mouse_x = x
         self._mouse_y = y
         
