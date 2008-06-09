@@ -51,6 +51,7 @@ import ctypes
 import sys
 
 import pyglet
+from pyglet import gl
 from pyglet.gl import *
 from pyglet.gl import gl_info
 
@@ -75,7 +76,10 @@ def create_buffer(size,
 
     :rtype: `AbstractBuffer`
     '''
-    if vbo and gl_info.have_version(1, 5) and _enable_vbo:
+    if (vbo and 
+        gl_info.have_version(1, 5) and 
+        _enable_vbo and
+        not gl.current_context._workaround_vbo):
         return VertexBufferObject(size, target, usage)
     else:
         return VertexArray(size)
@@ -99,7 +103,10 @@ def create_mappable_buffer(size,
 
     :rtype: `AbstractBuffer` with `AbstractMappable`
     '''
-    if vbo and gl_info.have_version(1, 5) and _enable_vbo:
+    if (vbo and 
+        gl_info.have_version(1, 5) and 
+        _enable_vbo and
+        not gl.current_context._workaround_vbo):
         return MappableVertexBufferObject(size, target, usage)
     else:
         return VertexArray(size)

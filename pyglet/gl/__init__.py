@@ -303,7 +303,11 @@ class Context(object):
         # GDI Generic renderer on Windows does not implement
         # GL_UNPACK_ROW_LENGTH correctly.
         ('_workaround_unpack_row_length',
-             lambda info: info.get_renderer() == 'GDI Generic'),
+         lambda info: info.get_renderer() == 'GDI Generic'),
+
+        # Reportedly segfaults in text_input.py example.
+        ('_workaround_vbo',
+         lambda info: info.get_renderer() == 'ATI Radeon X1600 OpenGL Engine'),
     ]
 
     def __init__(self, context_share=None):
