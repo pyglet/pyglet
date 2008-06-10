@@ -143,6 +143,7 @@ options = {
     'debug_trace': False,
     'debug_trace_args': False,
     'debug_trace_depth': 1,
+    'debug_trace_flush': True,
     'debug_win32': False,
     'debug_x11': False,
     'graphics_vbo': True,
@@ -165,6 +166,7 @@ _option_types = {
     'debug_trace': bool,
     'debug_trace_args': bool,
     'debug_trace_depth': int,
+    'debug_trace_flush': bool,
     'debug_win32': bool,
     'debug_x11': bool,
     'graphics_vbo': bool,
@@ -259,6 +261,9 @@ def _trace_frame(frame, indent):
                 except:
                     pass
 
+    if _trace_flush:
+        sys.stdout.flush()
+
 def _trace_func(frame, event, arg):
     if event == 'call':
         indent = ''
@@ -278,6 +283,7 @@ def _install_trace():
 
 _trace_args = options['debug_trace_args']
 _trace_depth = options['debug_trace_depth']
+_trace_flush = options['debug_trace_flush']
 if options['debug_trace']:
     _install_trace()
 

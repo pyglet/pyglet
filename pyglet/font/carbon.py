@@ -363,6 +363,8 @@ class CarbonFont(base.Font):
         # #87 is implemented.
         size = size * dpi / 72.
 
+        name = name.encode('ascii', 'ignore')
+
         font_id = ATSUFontID()
         carbon.ATSUFindFontFromName(
             name,
@@ -387,6 +389,7 @@ class CarbonFont(base.Font):
     @classmethod
     def have_font(cls, name):
         font_id = ATSUFontID()
+        name = name.encode('ascii', 'ignore')
         r = carbon.ATSUFindFontFromName(
             name,
             len(name),
