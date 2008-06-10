@@ -2,14 +2,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -51,15 +51,14 @@ import ctypes
 import sys
 
 import pyglet
-from pyglet import gl
 from pyglet.gl import *
 from pyglet.gl import gl_info
 
 _enable_vbo = pyglet.options['graphics_vbo']
 
-def create_buffer(size, 
-                  target=GL_ARRAY_BUFFER, 
-                  usage=GL_DYNAMIC_DRAW, 
+def create_buffer(size,
+                  target=GL_ARRAY_BUFFER,
+                  usage=GL_DYNAMIC_DRAW,
                   vbo=True):
     '''Create a buffer of vertex data.
 
@@ -76,17 +75,18 @@ def create_buffer(size,
 
     :rtype: `AbstractBuffer`
     '''
-    if (vbo and 
-        gl_info.have_version(1, 5) and 
+    from pyglet import gl
+    if (vbo and
+        gl_info.have_version(1, 5) and
         _enable_vbo and
         not gl.current_context._workaround_vbo):
         return VertexBufferObject(size, target, usage)
     else:
         return VertexArray(size)
 
-def create_mappable_buffer(size, 
+def create_mappable_buffer(size,
                            target=GL_ARRAY_BUFFER,
-                           usage=GL_DYNAMIC_DRAW, 
+                           usage=GL_DYNAMIC_DRAW,
                            vbo=True):
     '''Create a mappable buffer of vertex data.
 
@@ -103,8 +103,9 @@ def create_mappable_buffer(size,
 
     :rtype: `AbstractBuffer` with `AbstractMappable`
     '''
-    if (vbo and 
-        gl_info.have_version(1, 5) and 
+    from pyglet import gl
+    if (vbo and
+        gl_info.have_version(1, 5) and
         _enable_vbo and
         not gl.current_context._workaround_vbo):
         return MappableVertexBufferObject(size, target, usage)
@@ -125,7 +126,7 @@ class AbstractBuffer(object):
         `usage` : int
             OpenGL buffer usage, for example ``GL_DYNAMIC_DRAW``
 
-    '''        
+    '''
 
     ptr = 0
     size = 0
@@ -229,10 +230,10 @@ class VertexArray(AbstractBuffer, AbstractMappable):
     Many of the methods on this class are effectively no-op's, such as `bind`,
     `unbind`, `map`, `unmap` and `delete`; they exist in order to present
     a consistent interface with `VertexBufferObject`.
-    
+
     This buffer type is also mappable, and so `get_region` can be used.
     '''
-        
+
     def __init__(self, size):
         self.size = size
 
@@ -244,7 +245,7 @@ class VertexArray(AbstractBuffer, AbstractMappable):
 
     def unbind(self):
         pass
-    
+
     def set_data(self, data):
         ctypes.memmove(self.ptr, data, self.size)
 
@@ -278,12 +279,12 @@ class VertexBufferObject(AbstractBuffer):
     The data in the buffer is not replicated in any system memory (unless it
     is done so by the video driver).  While this can improve memory usage and
     possibly performance, updates to the buffer are relatively slow.
-    
+
     This class does not implement `AbstractMappable`, and so has no
     ``get_region`` method.  See `MappableVertexBufferObject` for a VBO class
     that does implement ``get_region``.
     '''
-    
+
     def __init__(self, size, target, usage):
         self.size = size
         self.target = target
@@ -331,7 +332,7 @@ class VertexBufferObject(AbstractBuffer):
         glPopClientAttrib()
 
     def delete(self):
-        id = gl.GLuint(self.id)
+        id = GLuint(self.id)
         glDeleteBuffers(1, id)
 
     def resize(self, size):
@@ -350,11 +351,11 @@ class VertexBufferObject(AbstractBuffer):
 
 class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
     '''A VBO with system-memory backed store.
-    
+
     Updates to the data via `set_data`, `set_data_region` and `map` will be
     held in local memory until `bind` is called.  The advantage is that fewer
-    OpenGL calls are needed, increasing performance.  
-    
+    OpenGL calls are needed, increasing performance.
+
     There may also be less performance penalty for resizing this buffer.
 
     Updates to data via `map` are committed immediately.
@@ -394,7 +395,7 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
         self._dirty_min = 0
         self._dirty_max = self.size
         return self.data
-        
+
     def unmap(self):
         pass
 
@@ -407,7 +408,7 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
         ctypes.memmove(data, self.data, min(size, self.size))
         self.data = data
         self.data_ptr = ctypes.cast(self.data, ctypes.c_void_p).value
-        
+
         self.size = size
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glBindBuffer(self.target, self.id)
@@ -429,7 +430,7 @@ class AbstractBufferRegion(object):
     '''
     def invalidate(self):
         '''Mark this region as changed.
-        
+
         The buffer may not be updated with the latest contents of the
         array until this method is called.  (However, it may not be updated
         until the next time the buffer is used, for efficiency).
@@ -451,7 +452,7 @@ class VertexBufferObjectRegion(AbstractBufferRegion):
 
 class VertexArrayRegion(AbstractBufferRegion):
     '''A mapped region of a vertex array.
-    
+
     The `invalidate` method is a no-op but is provided in order to present
     a consistent interface with `VertexBufferObjectRegion`.
     '''
@@ -480,7 +481,7 @@ class IndirectArrayRegion(AbstractBufferRegion):
                 The region with interleaved data
             `size` : int
                 The number of elements that this region will provide access to.
-            `component_count` : int 
+            `component_count` : int
                 The number of elements that are contiguous before some must
                 be skipped.
             `component_stride` : int
@@ -555,7 +556,7 @@ class IndirectArrayRegion(AbstractBufferRegion):
 
         assert step == 1 or step % count == 0, \
             'Step must be multiple of component count'
-        
+
         data_start = (start // count) * self.stride + start % count
         data_stop = (stop // count) * self.stride + stop % count
 
