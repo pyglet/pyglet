@@ -300,7 +300,14 @@ class AVbinSource(StreamingSource):
 
     def seek(self, timestamp):
         av.avbin_seek_file(self._file, timestamp_to_avbin(timestamp))
-        self._video_packets = []
+
+        # Clear _video_packets
+        while True:
+            try:
+                self._video_packets.get(block=False)
+            except Queue.Empty:
+                break
+
         self._audio_packet_size = 0
         self._force_next_video_image = True
         self._last_video_timestamp = None

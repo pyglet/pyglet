@@ -477,8 +477,9 @@ class SourceGroup(object):
     _advance_after_eos = False
     _loop = False
 
-    def __init__(self, audio_format):
+    def __init__(self, audio_format, video_format):
         self.audio_format = audio_format
+        self.video_format = video_format
         self.duration = 0.
         self._timestamp_offset = 0.
         self._sources = []
@@ -673,10 +674,11 @@ class Player(pyglet.event.EventDispatcher):
 
     def queue(self, source):
         if (self._groups and
-            source.audio_format == self._groups[-1].audio_format):
+            source.audio_format == self._groups[-1].audio_format and
+            source.video_format == self._groups[-1].video_format):
             self._groups[-1].queue(source)
         else:
-            group = SourceGroup(source.audio_format)
+            group = SourceGroup(source.audio_format, source.video_format)
             group.queue(source)
             self._groups.append(group)
 
@@ -734,6 +736,7 @@ class Player(pyglet.event.EventDispatcher):
         else:
             self._audio_player = create_silent_audio_player(group, self)
 
+        # TODO video texture create here.
 
         if self._playing:
             self._audio_player.play()
@@ -819,7 +822,7 @@ Player.register_event_type('on_source_group_eos')
 Player.register_event_type('on_video_frame')
 
 class AbstractAudioDriver(object):
-    def create_audio_player(self, audio_format):
+    def create_audio_player(self, source_group, player):
         raise NotImplementedError('abstract')
 
 class AbstractSourceLoader(object):
@@ -864,7 +867,8 @@ def get_audio_driver():
     _audio_driver = None
 
     # TODO  options
-    driver_names = ('pulse', 'openal')
+    driver_names = ('silent',)
+    #driver_names = ('pulse', 'openal')
 
     for driver_name in driver_names:
         try:
@@ -875,6 +879,10 @@ def get_audio_driver():
             elif driver_name == 'openal':
                 from drivers import openal
                 _audio_driver = openal.create_audio_driver()
+                break
+            elif driver_name == 'silent':
+                from drivers import silent
+                _audio_driver = silent.create_audio_driver()
                 break
         except ImportError:
             if _debug:
