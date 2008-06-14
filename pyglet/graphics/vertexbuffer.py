@@ -289,6 +289,7 @@ class VertexBufferObject(AbstractBuffer):
         self.size = size
         self.target = target
         self.usage = usage
+        self._context = pyglet.gl.current_context
 
         id = GLuint()
         glGenBuffers(1, id)
@@ -331,9 +332,17 @@ class VertexBufferObject(AbstractBuffer):
         glUnmapBuffer(self.target)
         glPopClientAttrib()
 
+    def __del__(self):
+        try:
+            if self.id is not None:
+                self._context.delete_buffer(self.id)
+        except:
+            pass
+
     def delete(self):
         id = GLuint(self.id)
         glDeleteBuffers(1, id)
+        self.id = None
 
     def resize(self, size):
         # Map, create a copy, then reinitialize.

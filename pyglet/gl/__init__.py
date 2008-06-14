@@ -263,9 +263,10 @@ class Config(object):
 
 class ObjectSpace(object):
     def __init__(self):
-        # Textures scheduled for deletion the next time this object space is
-        # active.
+        # Textures and buffers scheduled for deletion the next time this
+        # object space is active.
         self._doomed_textures = []
+        self._doomed_buffers = []
 
 class Context(object):
     '''OpenGL context for drawing.
@@ -341,6 +342,13 @@ class Context(object):
             glDeleteTextures(len(textures), textures)
             self.object_space._doomed_textures = []
 
+        # Release buffers on this context scheduled for deletion
+        if self.object_space._doomed_buffers:
+            buffers = self.object_space._doomed_buffers
+            buffers = (GLuint * len(buffers))(*buffers)
+            glDeleteBuffers(len(buffers), buffers)
+            self.object_space._doomed_buffers = []
+
     def destroy(self):
         '''Release the context.
 
@@ -377,6 +385,24 @@ class Context(object):
             glDeleteTextures(1, id)
         else:
             self.object_space._doomed_textures.append(texture_id)
+
+    def delete_buffer(self, buffer_id):
+        '''Safely delete a buffer object belonging to this context.
+
+        This method behaves similarly to `delete_texture`, though for
+        ``glDeleteBuffers`` instead of ``glDeleteTextures``.
+
+        :Parameters:
+            `buffer_id` : int
+                The OpenGL name of the buffer to delete.
+
+        :since: pyglet 1.1
+        '''
+        if self.object_space is current_context.object_space and False:
+            id = GLuint(buffer_id)
+            glDeleteBuffers(1, id)
+        else:
+            self.object_space._doomed_buffers.append(buffer_id)
 
 class ContextException(Exception):
     pass

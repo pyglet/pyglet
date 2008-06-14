@@ -207,6 +207,12 @@ class VertexDomain(object):
                     'More than one "%s" attribute given' % name
                 self.attribute_names[name] = attribute
 
+    def __del__(self):
+        # Break circular refs that Python GC seems to miss even when forced
+        # collection.
+        for attribute in self.attributes:
+            del attribute.buffer
+
     def _safe_alloc(self, count):
         '''Allocate vertices, resizing the buffers if necessary.'''
         try:
