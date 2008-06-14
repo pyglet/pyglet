@@ -1072,6 +1072,8 @@ class CarbonWindow(BaseWindow):
             button = mouse.RIGHT
         elif button.value == 3: 
             button = mouse.MIDDLE
+        else:
+            button = None
 
         modifiers = c_uint32()
         carbon.GetEventParameter(ev, kEventParamKeyModifiers,
@@ -1092,9 +1094,10 @@ class CarbonWindow(BaseWindow):
     def _on_mouse_down(self, next_handler, ev, data):
         if self._fullscreen or self._get_mouse_in_content(ev):
             button, modifiers = self._get_mouse_button_and_modifiers(ev)
-            x, y = self._get_mouse_position(ev)
-            y = self.height - y
-            self.dispatch_event('on_mouse_press', x, y, button, modifiers)
+            if button is not None:
+                x, y = self._get_mouse_position(ev)
+                y = self.height - y
+                self.dispatch_event('on_mouse_press', x, y, button, modifiers)
 
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
@@ -1104,9 +1107,10 @@ class CarbonWindow(BaseWindow):
         # Always report mouse up, even out of content area, because it's
         # probably after a drag gesture.
         button, modifiers = self._get_mouse_button_and_modifiers(ev)
-        x, y = self._get_mouse_position(ev)
-        y = self.height - y
-        self.dispatch_event('on_mouse_release', x, y, button, modifiers)
+        if button is not None:
+            x, y = self._get_mouse_position(ev)
+            y = self.height - y
+            self.dispatch_event('on_mouse_release', x, y, button, modifiers)
 
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
@@ -1137,20 +1141,21 @@ class CarbonWindow(BaseWindow):
     @CarbonEventHandler(kEventClassMouse, kEventMouseDragged)
     def _on_mouse_dragged(self, next_handler, ev, data):
         button, modifiers = self._get_mouse_button_and_modifiers(ev)
-        x, y = self._get_mouse_position(ev)
-        y = self.height - y
+        if button is not None:
+            x, y = self._get_mouse_position(ev)
+            y = self.height - y
 
-        self._mouse_x = x
-        self._mouse_y = y
+            self._mouse_x = x
+            self._mouse_y = y
 
-        delta = HIPoint()
-        carbon.GetEventParameter(ev, kEventParamMouseDelta,
-            typeHIPoint, c_void_p(), sizeof(delta), c_void_p(),
-            byref(delta))
+            delta = HIPoint()
+            carbon.GetEventParameter(ev, kEventParamMouseDelta,
+                typeHIPoint, c_void_p(), sizeof(delta), c_void_p(),
+                byref(delta))
 
-        # Drag event
-        self.dispatch_event('on_mouse_drag',
-            x, y, delta.x, -delta.y, button, modifiers)
+            # Drag event
+            self.dispatch_event('on_mouse_drag',
+                x, y, delta.x, -delta.y, button, modifiers)
 
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
