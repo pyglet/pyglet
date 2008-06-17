@@ -249,7 +249,7 @@ class Sprite(event.EventDispatcher):
         self._texture = None
 
         # Easy way to break circular reference, speeds up GC
-        self.group = None
+        self._group = None
 
     def _animate(self, dt):
         self._frame_index += 1
