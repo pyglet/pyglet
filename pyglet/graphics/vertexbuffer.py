@@ -56,6 +56,12 @@ from pyglet.gl import gl_info
 
 _enable_vbo = pyglet.options['graphics_vbo']
 
+# Enable workaround permanently if any VBO is created on a context that has
+# this workaround.  (On systems with multiple contexts where one is
+# unaffected, the workaround will be enabled unconditionally on all of the
+# contexts anyway.  This is completely unlikely anyway).
+_workaround_vbo_finish = False
+
 def create_buffer(size,
                   target=GL_ARRAY_BUFFER,
                   usage=GL_DYNAMIC_DRAW,
@@ -298,6 +304,10 @@ class VertexBufferObject(AbstractBuffer):
         glBindBuffer(target, self.id)
         glBufferData(target, self.size, None, self.usage)
         glPopClientAttrib()
+
+        global _workaround_vbo_finish
+        if pyglet.gl.current_context._workaround_vbo_finish:
+            _workaround_vbo_finish = True
 
     def bind(self):
         glBindBuffer(self.target, self.id)

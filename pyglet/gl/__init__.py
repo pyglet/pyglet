@@ -309,6 +309,14 @@ class Context(object):
         # Reportedly segfaults in text_input.py example.
         ('_workaround_vbo',
          lambda info: info.get_renderer() == 'ATI Radeon X1600 OpenGL Engine'),
+
+        # Some ATI cards on OS X start drawing from a VBO before it's written
+        # to.  In these cases pyglet needs to call glFinish() to flush the
+        # pipeline after updating a buffer but before rendering.
+        ('_workaround_vbo_finish',
+         lambda info: ('ATI' in info.get_renderer() and 
+                       info.have_version(1, 5) and
+                       _sys.platform == 'darwin')),
     ]
 
     def __init__(self, context_share=None):
