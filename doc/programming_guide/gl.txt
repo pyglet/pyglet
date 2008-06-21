@@ -48,8 +48,8 @@ example, the following program draws a triangle on the screen::
         glLoadIdentity()
         glBegin(GL_TRIANGLES)
         glVertex2f(0, 0)
-        glVertex2f(win.width, 0)
-        glVertex2f(win.width, win.height)
+        glVertex2f(window.width, 0)
+        glVertex2f(window.width, window.height)
         glEnd()
 
     pyglet.app.run()
