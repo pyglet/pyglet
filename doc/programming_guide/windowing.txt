@@ -153,7 +153,7 @@ diagram:
 
 .. figure:: window_location.svg
 
-    The position ond size of the window relative to the desktop.
+    The position and size of the window relative to the desktop.
 
 Appearance
 ----------
