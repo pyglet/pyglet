@@ -62,12 +62,12 @@ one-dimensional ``ctypes`` array of ``GLfloat``::
 
     from pyglet.gl import *
 
-    win = pyglet.window.Window()
+    window = pyglet.window.Window()
 
     vertices = [
         0, 0,
-        win.width, 0,
-        win.width, win.height]
+        window.width, 0,
+        window.width, window.height]
     vertices_gl = (GLfloat * len(vertices))(*vertices)
 
     glEnableClientState(GL_VERTEX_ARRAY)

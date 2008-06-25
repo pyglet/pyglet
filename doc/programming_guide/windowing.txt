@@ -110,7 +110,7 @@ windows always have the width and height of the screen they fill.
 
 You can specify the size of a window as the first two arguments to the window
 constructor.  In the following example, a window is created with a width of
-800 pixels and a height of 600 pixels.
+800 pixels and a height of 600 pixels::
 
     window = pyglet.window.Window(800, 600)
 
