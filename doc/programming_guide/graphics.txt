@@ -182,7 +182,7 @@ reproduces the two points from the previous page, except that the first point
 is blue and the second green::
 
     pyglet.graphics.draw(2, pyglet.gl.GL_POINTS, 
-        ('v2i', (10, 15,    30, 35)),
+        ('v2i', (10, 15, 30, 35)),
         ('c3B', (0, 0, 255, 0, 255, 0))
     )
 
@@ -209,7 +209,7 @@ Create a `VertexList` for a set of attributes and initial data with
 list with the two coloured points used in the previous page::
 
     vertex_list = pyglet.graphics.vertex_list(2,
-        ('v2i', (10, 15,    30, 35)),
+        ('v2i', (10, 15, 30, 35)),
         ('c3B', (0, 0, 255, 0, 255, 0))
     )
     
@@ -355,7 +355,7 @@ The two coloured points from previous pages can be added to a batch as a
 single vertex list with::
 
     vertex_list = batch.add(2, pyglet.gl.GL_POINTS, None,
-        ('v2i', (10, 15,    30, 35)),
+        ('v2i', (10, 15, 30, 35)),
         ('c3B', (0, 0, 255, 0, 255, 0))
     )
 
@@ -402,7 +402,7 @@ An instance of this group can now be attached to vertex lists in the batch::
 
     custom_group = CustomGroup()
     vertex_list = batch.add(2, pyglet.gl.GL_POINTS, custom_group,
-        ('v2i', (10, 15,    30, 35)),
+        ('v2i', (10, 15, 30, 35)),
         ('c3B', (0, 0, 255, 0, 255, 0))
     )
 
