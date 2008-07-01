@@ -544,7 +544,7 @@ which references an image and a duration, in seconds.  The storage of
 the images is up to the application developer: they can each be discrete, or
 packed into a texture atlas, or any other technique.
 
-An animation can loaded directly from a GIF 89a image file with
+An animation can be loaded directly from a GIF 89a image file with
 `load_animation` (supported on Linux, Mac OS X and Windows) or constructed
 manually from a list of images or an image sequence using the class methods
 (in which case the timing information will also need to be provided).  The
