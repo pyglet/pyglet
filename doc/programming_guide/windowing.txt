@@ -340,7 +340,7 @@ Double-buffering eliminates one cause of flickering: the user is unable to see
 the image as it painted, only the final rendering.  However, it does introduce
 another source of flicker known as "tearing".
 
-Tearing becomes apparent when display fast-moving objects in an animation.
+Tearing becomes apparent when displaying fast-moving objects in an animation.
 The buffer flip occurs while the video display is still reading data from the
 framebuffer, causing the top half of the display to show the previous frame
 while the bottom half shows the updated frame.  If you are updating the
