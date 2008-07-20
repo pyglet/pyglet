@@ -582,7 +582,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
     def _set_width(self, width):
         self._scissor_width = width
 
-    width = property(lambda self: self._width, _set_width,
+    width = property(lambda self: self._scissor_width, _set_width,
                      doc='''Width of the text layout.
 
     :type: int
