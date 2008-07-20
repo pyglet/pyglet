@@ -499,7 +499,7 @@ class Text(object):
         ''')
 
     def _get_halign(self):
-        return self._layout.halign
+        return self._layout.anchor_x
 
     def _set_halign(self, halign):
         self._layout.anchor_x = halign
