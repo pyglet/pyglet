@@ -2013,6 +2013,7 @@ class BufferImage(AbstractImage):
             return self.owner.get_region(x + self.x, y + self.y, width, height)
 
         region = self.__class__(x + self.x, y + self.y, width, height)
+        region.gl_buffer = self.gl_buffer
         region.owner = self
         return region
 
