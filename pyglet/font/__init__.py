@@ -531,6 +531,32 @@ class Text(object):
         :type: str
         ''')
 
+    def _get_leading(self):
+        return self._document.get_style('leading') or 0
+
+    def _set_leading(self, leading):
+        self._document.set_style(0, len(self._document.text), {
+            'leading': leading,
+        })
+
+    leading = property(_get_leading, _set_leading,
+        doc='''Vertical space between adjacent lines, in pixels.
+
+        :type: int
+        ''')
+
+    def _get_line_height(self):
+        return self._font.ascent - self._font.descent + self.leading
+
+    def _set_line_height(self, line_height):
+        self.leading = line_height - (self._font.ascent - self._font.descent)
+
+    line_height = property(_get_line_height, _set_line_height,
+        doc='''Vertical distance between adjacent baselines, in pixels.
+
+        :type: int
+        ''')
+
     def draw(self):
         self._layout.draw()
 
