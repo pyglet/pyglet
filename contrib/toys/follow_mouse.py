@@ -1,3 +1,18 @@
+'''
+Code by Richard Jones, released into the public domain.
+
+Inspired by http://screamyguy.net/lines/index.htm
+
+This code uses a single drawing buffer so that successive drawing passes
+may be used to create the line fading effect. The fading is achieved
+by drawing a translucent black quad over the entire scene before drawing
+the next line segment.
+
+Note: when working with a single buffer it is always a good idea to
+glFlush() when you've finished your rendering.
+'''
+
+
 import sys
 import random
 
@@ -25,12 +40,18 @@ class Line(object):
         self.power = random.random() * .1 + .05
 
     def update(self, dt):
+        # calculate my acceleration based on the distance to the mouse
+        # pointer and my acceleration power
         dx2 = (self.x - self.mouse_x) / self.power
         dy2 = (self.y - self.mouse_y) / self.power
+
+        # now figure my new velocity
         self.dx -= dx2 * dt
         self.dy -= dy2 * dt
         self.dx *= self.damping
         self.dy *= self.damping
+
+        # calculate new line endpoints
         self.lx = self.x
         self.ly = self.y
         self.x += self.dx * dt
@@ -39,7 +60,7 @@ class Line(object):
     @classmethod
     def on_draw(cls):
         # darken the existing display a little
-        glColor4f(0, 0, 0, .1)
+        glColor4f(0, 0, 0, .05)
         glRectf(0, 0, window.width, window.height)
 
         # render the new lines
