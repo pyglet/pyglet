@@ -379,6 +379,8 @@ class Text(object):
 
     def _get_color(self):
         color = self._document.get_style('color')
+        if color is None:
+            return (1., 1., 1., 1.)
         return tuple([c/255. for c in color])
 
     def _set_color(self, color):
