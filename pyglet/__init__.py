@@ -306,6 +306,7 @@ class _ModuleProxy(object):
             import_name = 'pyglet.%s' % self._module_name
             __import__(import_name)
             module = sys.modules[import_name]
+            object.__setattr__(self, '_module', module)
             globals()[self._module_name] = module
             return getattr(module, name)
 
@@ -319,6 +320,7 @@ class _ModuleProxy(object):
             import_name = 'pyglet.%s' % self._module_name
             __import__(import_name)
             module = sys.modules[import_name]
+            object.__setattr__(self, '_module', module)
             globals()[self._module_name] = module
             setattr(module, name, value) 
 
