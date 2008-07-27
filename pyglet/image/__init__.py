@@ -2463,7 +2463,7 @@ class Animation(object):
         '''
         frames = [AnimationFrame(image, period) for image in sequence]
         if not loop:
-            frames[-1].delay = None
+            frames[-1].duration = None
         return cls(frames)
 
 class AnimationFrame(object):
