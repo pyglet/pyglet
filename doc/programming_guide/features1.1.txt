@@ -216,7 +216,7 @@ New text features
 
 The `pyglet.text` module can render formatted text efficiently.  A new class
 `Label` supercedes the old `pyglet.font.Text` class (which is now actually
-implemented in terms of `Label`).  The "Hello, World" application can now
+implemented in terms of `Label`).  The "Hello, World" application can now be
 written::
 
     window = pyglet.window.Window()
@@ -236,7 +236,7 @@ written::
 You can also display multiple fonts and styles within one label, with
 `HTMLLabel`::
 
-    label = pyglet.text.HTMLLabel('<b>Hello</b>, <font color=red>world!')
+    label = pyglet.text.HTMLLabel('<b>Hello</b>, <font color=red>world!</font>')
 
 More advanced uses of the new text module permit applications to efficiently
 display large, scrolling, formatted documents (for example, HTML files with

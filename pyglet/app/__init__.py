@@ -45,7 +45,7 @@ one window is::
     app.run()
 
 To handle events on the main event loop, instantiate it manually.  The
-following example exists the application as soon as any window is closed (the
+following example exits the application as soon as any window is closed (the
 default policy is to wait until all windows are closed)::
 
     event_loop = app.EventLoop()
