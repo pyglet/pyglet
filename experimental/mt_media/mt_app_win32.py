@@ -11,6 +11,12 @@ class MTWin32EventLoop(pyglet.app.win32.Win32EventLoop):
     def __init__(self, *args, **kwargs):
         super(MTWin32EventLoop, self).__init__(*args, **kwargs)
 
+        # Force immediate creation of an event queue on this thread
+        msg = types.MSG()
+        _user32.PeekMessageW(ctypes.byref(msg), 0,
+                             constants.WM_USER, constants.WM_USER, 
+                             constants.PM_NOREMOVE)
+
         self._event_thread = _kernel32.GetCurrentThreadId()
         self._post_event_queue = Queue.Queue()
 
@@ -19,6 +25,16 @@ class MTWin32EventLoop(pyglet.app.win32.Win32EventLoop):
 
         # Nudge the event loop with a message it will discard
         _user32.PostThreadMessageW(self._event_thread, constants.WM_USER, 0, 0)
+
+    def _dispatch_posted_events(self):
+        # Dispatch (synchronised) queued events
+        while True:
+            try:
+                dispatcher, event, args = self._post_event_queue.get(False)
+            except Queue.Empty:
+                break
+
+            dispatcher.dispatch_event(event, *args)
 
     def run(self):
         self._setup()
@@ -30,6 +46,8 @@ class MTWin32EventLoop(pyglet.app.win32.Win32EventLoop):
         msg = types.MSG()
         
         self.dispatch_event('on_enter')
+
+        self._dispatch_posted_events()
 
         while not self.has_exit:
             if self._polling:
@@ -50,14 +68,7 @@ class MTWin32EventLoop(pyglet.app.win32.Win32EventLoop):
                     not msg_types & ~(constants.QS_TIMER<<16)):
                     self._timer_func(0, 0, timer, 0)
 
-            # Dispatch (synchronised) queued events
-            while True:
-                try:
-                    dispatcher, event, args = self._post_event_queue.get(False)
-                except Queue.Empty:
-                    break
-
-                dispatcher.dispatch_event(event, *args)
+            self._dispatch_posted_events()
 
         self.dispatch_event('on_exit')
 
