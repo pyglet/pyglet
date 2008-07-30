@@ -867,8 +867,8 @@ def get_audio_driver():
     _audio_driver = None
 
     # TODO  options
-    driver_names = ('silent',)
-    #driver_names = ('pulse', 'openal')
+    #driver_names = ('silent',)
+    driver_names = ('pulse', 'openal')
 
     for driver_name in driver_names:
         try:
@@ -912,5 +912,7 @@ if sys.platform == 'linux2':
     import mt_app_xlib
 elif sys.platform == 'darwin':
     import mt_app_carbon
+elif sys.platform == 'win32':
+    import mt_app_win32
 else:
     raise NotImplementedError('TODO')
