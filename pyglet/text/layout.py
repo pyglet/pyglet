@@ -807,6 +807,7 @@ class TextLayout(object):
         '''
         for vertex_list in self._vertex_lists:
             vertex_list.delete()
+        self._vertex_lists = []
 
     def draw(self):
         '''Draw this text layout.
