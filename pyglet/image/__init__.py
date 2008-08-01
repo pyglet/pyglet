@@ -1862,7 +1862,8 @@ class DepthTexture(Texture):
 class BufferManager(object):
     '''Manages the set of framebuffers for a context.
 
-    Use `get_buffer_manager` to obtain the singleton instance of this class.
+    Use `get_buffer_manager` to obtain the instance of this class for the
+    current context.
     '''
     def __init__(self):
         self.color_buffer = None
@@ -1896,8 +1897,12 @@ class BufferManager(object):
 
         :rtype: `ColorBufferImage`
         '''
-        if not self.color_buffer:
-            viewport = self.get_viewport()
+        viewport = self.get_viewport()
+        viewport_width = viewport[2]
+        viewport_height = viewport[3]
+        if (not self.color_buffer or 
+            viewport_width != self.color_buffer.width or
+            viewport_height != self.color_buffer.height):
             self.color_buffer = ColorBufferImage(*viewport)
         return self.color_buffer
 
@@ -1928,8 +1933,12 @@ class BufferManager(object):
 
         :rtype: `DepthBufferImage`
         '''
-        if not self.depth_buffer:
-            viewport = self.get_viewport()
+        viewport = self.get_viewport()
+        viewport_width = viewport[2]
+        viewport_height = viewport[3]
+        if (not self.depth_buffer or 
+            viewport_width != self.depth_buffer.width or
+            viewport_height != self.depth_buffer.height):
             self.depth_buffer = DepthBufferImage(*viewport)
         return self.depth_buffer
 
@@ -1957,7 +1966,7 @@ class BufferManager(object):
         return buffer
 
 def get_buffer_manager():
-    '''Get the singleton buffer manager.
+    '''Get the buffer manager for the current OpenGL context.
     
     :rtype: `BufferManager`
     '''
