@@ -744,7 +744,7 @@ class ImageData(AbstractImage):
 
         # Extend mipmap_images list to required level
         self.mipmap_images += [None] * (level - len(self.mipmap_images))
-        self.mipmap_images[level - 1] = data
+        self.mipmap_images[level - 1] = image
 
     def create_texture(self, cls, rectangle=False):
         '''Create a texture containing this image.
