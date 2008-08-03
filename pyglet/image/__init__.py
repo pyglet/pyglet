@@ -2431,8 +2431,8 @@ class Animation(object):
 
         :rtype: float
         '''
-        return sum([frame.period for frame in self.frames \
-                                 if frame.duration is not None])
+        return sum([frame.duration for frame in self.frames \
+                                   if frame.duration is not None])
 
     def get_max_width(self):
         '''Get the maximum image frame width.
