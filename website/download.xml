@@ -1,7 +1,8 @@
 <div>
   <p>
-    The current stable version of pyglet is <strong>1.0</strong>.
-    See below for the latest <a href="#unstable">development release</a>.
+    The current stable version of pyglet is <strong>1.1</strong>.
+    <!--See below for the latest <a href="#unstable">development
+    release</a>.-->
   </p>
 
   <h2>current release</h2>
@@ -26,11 +27,11 @@
     file to install pyglet.
   </p>
   <ul>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0.msi">pyglet-1.0.msi</a>: Windows
-    installer, includes AVbin-2</li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.1.msi">pyglet-1.1.msi</a>: Windows
+    installer, includes AVbin-5</li>
     <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.0.1.dmg">pyglet-1.0.1.dmg</a>: Mac OS X
-    disk image, includes AVbin-2</li>
+    href="http://pyglet.googlecode.com/files/pyglet-1.1.dmg">pyglet-1.1.dmg</a>: Mac OS X
+    disk image, includes AVbin-5</li>
   </ul>
 
   <h3>documentation</h3>
@@ -39,7 +40,7 @@
     the above platform distributions.
   </p>
   <ul>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0-docs.zip">pyglet-1.0-docs.zip</a></li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.1-docs.zip">pyglet-1.1-docs.zip</a></li>
   </ul>
 
   <h3>source distributions</h3>
@@ -55,10 +56,11 @@
     href="http://code.google.com/p/avbin">AVbin</a>.
   </p>
   <ul>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0.tar.gz">pyglet-1.0.tar.gz</a></li>
-    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.0.zip">pyglet-1.0.zip</a></li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.1.tar.gz">pyglet-1.1.tar.gz</a></li>
+    <li><a href="http://pyglet.googlecode.com/files/pyglet-1.1.zip">pyglet-1.1.zip</a></li>
   </ul>
 
+  <!--
   <a name="unstable" />
   <h2>development release</h2>
 
@@ -73,5 +75,5 @@
       download server</a>.
     </li>
   </ul>
-
+  -->
 </div>

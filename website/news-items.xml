@@ -1,4 +1,14 @@
 <news>
+  <item date="5-August-2008" author="Alex"
+        title="pyglet 1.1 released">
+    The <a href="download.html">final release</a> of pyglet 1.1 has been
+    released.  pyglet 1.1 is backward compatible with pyglet 1.0 and
+    introduces many new features such as formatted text rendering, animated
+    GIF support, fast sprite rendering, resource loading and a managed event
+    loop.  Please see the <a
+    href="doc/programming_guide/appendix_migrating_to_pyglet_1_1.html">migration
+    guide</a> for all the details.
+  </item>
   <item date="6-June-2008" author="Alex"
         title="pyglet 1.1 beta 2 released">
     pyglet 1.1 beta 2 is now available.  This release fixes many bugs from

@@ -4,7 +4,7 @@
 
   <h2>current release</h2>
 
-  Documentation for <b>pyglet 1.0</b>.
+  Documentation for <b>pyglet 1.1</b>.
 
   <ul>
     <li>
@@ -12,10 +12,15 @@
       also available as a <a href="doc/programming_guide.pdf">PDF</a>.
     </li>
     <li>
+      <a href="doc/programming_guide/appendix_migrating_to_pyglet_1_1.html">
+        Migrating to pyglet 1.1</a>
+    </li>
+    <li>
       <a href="doc/api/index.html">API Reference</a>.
     </li>
   </ul>
 
+  <!--
   <h2>development release</h2>
 
   Documentation for <b>pyglet 1.1 beta 2</b>.
@@ -32,6 +37,7 @@
       <a href="doc/1.1/api/index.html">API Reference</a>.
     </li>
   </ul>
+  -->
 
   <h2>additional resources</h2>
 
