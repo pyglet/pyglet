@@ -173,6 +173,13 @@ else:
         def sleep(self, microseconds):
             _c.usleep(int(microseconds))
 
+class _ScheduledItem(object):
+    __slots__ = ['func', 'args', 'kwargs']
+    def __init__(self, func, args, kwargs):
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+
 class _ScheduledIntervalItem(object):
     __slots__ = ['func', 'interval', 'last_ts', 'next_ts', 
                  'args', 'kwargs']
@@ -183,6 +190,12 @@ class _ScheduledIntervalItem(object):
         self.next_ts = next_ts
         self.args = args
         self.kwargs = kwargs
+
+def _dummy_schedule_func(*args, **kwargs):
+    '''Dummy function that does nothing, placed onto zombie scheduled items
+    to ensure they have no side effect if already queued inside tick() method.
+    '''
+    pass
 
 class Clock(_ClockBase):
     '''Class for calculating and limiting framerate, and for calling scheduled
@@ -278,8 +291,8 @@ class Clock(_ClockBase):
 
         # Call functions scheduled for every frame  
         # Dupe list just in case one of the items unchedules itself
-        for func, args, kwargs in list(self._schedule_items):
-            func(delta_t, *args, **kwargs)
+        for item in list(self._schedule_items):
+            item.func(delta_t, *item.args, **item.kwargs)
 
         # Call all scheduled interval functions and reschedule for future.
         need_resort = False
@@ -448,7 +461,7 @@ class Clock(_ClockBase):
             `func` : function
                 The function to call each frame.
         '''
-        item = (func, args, kwargs)
+        item = _ScheduledItem(func, args, kwargs)
         self._schedule_items.append(item)
 
     def _schedule_item(self, func, last_ts, next_ts, interval, *args, **kwargs):
@@ -590,9 +603,22 @@ class Clock(_ClockBase):
                 The function to remove from the schedule.
 
         '''
+        # First replace zombie items' func with a dummy func that does
+        # nothing, in case the list has already been cloned inside tick().
+        # (Fixes issue 326).
+        for item in self._schedule_items:
+            if item.func == func:
+                item.func = _dummy_schedule_func
+
+        for item in self._schedule_interval_items:
+            if item.func == func:
+                item.func = _dummy_schedule_func
+    
+        # Now remove matching items from both schedule lists.
         self._schedule_items = \
-            [(f, args, kwargs) for (f, args, kwargs) in self._schedule_items \
-                               if f != func]
+            [item for item in self._schedule_items \
+                  if item.func != func]
+
         self._schedule_interval_items = \
             [item for item in self._schedule_interval_items \
                   if item.func != func]
