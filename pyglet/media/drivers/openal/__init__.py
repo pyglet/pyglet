@@ -335,7 +335,7 @@ def driver_init(device_name = None):
 
     _device = alc.alcOpenDevice(device_name)
     if not _device:
-        raise Exception('No OpenAL device.')
+        raise OpenALException('No OpenAL device.')
 
     alcontext = alc.alcCreateContext(_device, None)
     alc.alcMakeContextCurrent(alcontext)

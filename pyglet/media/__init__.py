@@ -1337,14 +1337,14 @@ else:
             driver_name = 'pyglet.media.drivers.' + driver_name
             __import__(driver_name)
             driver = sys.modules[driver_name]
+            driver.driver_init()
             break
-        except (ImportError, AttributeError):
+        except (ImportError, AttributeError, MediaException):
             pass
 
     if not driver:
         raise ImportError('No suitable audio driver could be loaded.')
 
-    driver.driver_init()
     audio_player_class = driver.driver_audio_player_class
     listener = driver.driver_listener
 
