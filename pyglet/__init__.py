@@ -54,10 +54,10 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 #:
 #:    >>> import pyglet
 #:    >>> from pkg_resources import parse_version
-#:    >>> parse_version(pyglet.version) >= parse_version('1.0')
+#:    >>> parse_version(pyglet.version) >= parse_version('1.1')
 #:    True
 #:
-version = '1.1beta2'
+version = '1.1'
 
 def _require_ctypes_version(version):
     # Check ctypes version

@@ -24,15 +24,6 @@ pyglet requires either:
 * Python 2.4 with ctypes installed
 * Python 2.5
 
-Beta release
--------------
-
-This is a beta release, not suitable for production work.  The API is
-subject to change.  Documentation is incomplete, and refers in places to
-deprecated methods.  
-
-Please report all bugs to the issue tracker listed below.
-
 Installation
 ------------
 

@@ -1,3 +1,30 @@
+1.1
+    * docs: Various minor documentation fixes
+    * docs: Fixed docstrings referring to pyglet.image.BufferManager as being
+      singleton
+    * pyglet: Fixed lazy loading bug failing to update module cache
+    * pyglet.clock: Fixed unschedule not taking effect until after current
+      tick is complete
+    * pyglet.font: Reintroduced Text.leading and Text.line_height properties
+    * pyglet.font: Fixed Text.halign
+    * pyglet.font: Fixed Text.color
+    * pyglet.graphics: Disabled VBO for Radeon X1600
+    * pyglet.graphics: Fixed resource leak of VBOs
+    * pyglet.graphics: Fixed GC of cyclic buffer and attribute objects
+    * pyglet.graphics: Improved performance for drivers that don't suffer
+      the VBO flush problem
+    * pyglet.image: Fixed ColorbufferImage.get_region
+    * pyglet.image: Fixed Animation.from_image_sequence with loop
+    * pyglet.image: Fixed BufferManager cache for resizing windows
+    * pyglet.image: Fixed Texture.set_mipmap_image
+    * pyglet.image: Fixed Animation.get_duration
+    * pyglet.sprite: Fixed unassignment of Sprite.group
+    * pyglet.text: Fixed ScrollableTextLayoutGroup.width
+    * pyglet.text: Fixed TextLayout usage after vertex list deletion
+    * OS X: Fixed loading of fonts with Unicode names
+    * OS X: Fixed handling of mice with more than three buttons
+    * Win32: Fixed redundant mouse motion events being generated
+
 1.1beta2
     * docs: Added sections on new text layout features
     * examples: Added text_input.py example
