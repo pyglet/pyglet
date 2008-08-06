@@ -39,21 +39,108 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import ctypes
+import Queue
 
 from pyglet.app import windows, BaseEventLoop
 from pyglet.window.carbon import carbon, types, constants, _oscheck
 
+EventHandlerProcPtr = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, 
+                                       ctypes.c_void_p, ctypes.c_void_p)
 EventLoopTimerProc = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p)
+
+carbon.CreateEvent.argtypes = (ctypes.c_void_p,
+                               ctypes.c_uint32, ctypes.c_uint32,
+                               ctypes.c_double,
+                               ctypes.c_int, ctypes.c_void_p)
+
 kEventDurationForever = ctypes.c_double(constants.kEventDurationForever)
+kEventPriorityStandard = 1
+kEventAttributeNone = 0
+kEventAttributeUserEvent = 1
+kEventParamPostTarget = constants._name('ptrg')
+typeEventTargetRef = constants._name('etrg')
+
+POST_EVENT_CLASS = constants._name('PYGL')
+POST_EVENT_KIND = 0
+
+# TODO when no windows are open Ctrl+C doesn't kill event loop.  Install a sig
+# handler?
 
 class CarbonEventLoop(BaseEventLoop):
+    _running = False
+
+    def __init__(self):
+        self._post_event_queue = Queue.Queue()
+
+    def post_event(self, dispatcher, event, *args):
+        self._post_event_queue.put((dispatcher, event, args))
+
+        if not self._running:
+            return
+
+        event_class = POST_EVENT_CLASS
+        event_kind = POST_EVENT_KIND
+        event_ref = ctypes.c_void_p()
+        _oscheck(
+            carbon.CreateEvent(None, 
+                               event_class, event_kind, 0,
+                               kEventAttributeUserEvent,
+                               ctypes.byref(event_ref))
+        )
+        _oscheck(
+            carbon.SetEventParameter(event_ref, 
+                                     kEventParamPostTarget,
+                                     typeEventTargetRef,
+                                     ctypes.sizeof(ctypes.c_void_p),
+                                     ctypes.byref(self._post_event_target))
+        )
+        _oscheck(
+            carbon.PostEventToQueue(self._event_queue, event_ref, 
+                                    kEventPriorityStandard)
+        )
+        carbon.ReleaseEvent(event_ref)
+
+    def _setup_post_event_handler(self):
+        # Handler for PYGL events (interrupt from post_event)
+        # TODO remove later?
+        application_target = carbon.GetApplicationEventTarget()
+        self._post_event_target = ctypes.c_void_p(application_target)
+        proc = EventHandlerProcPtr(self._post_event_handler)
+        self._proc = proc
+        upp = carbon.NewEventHandlerUPP(proc)
+        event_types = types.EventTypeSpec()
+        event_types.eventClass = POST_EVENT_CLASS
+        event_types.eventKind = POST_EVENT_KIND
+        handler_ref = types.EventHandlerRef()
+        _oscheck(
+            carbon.InstallEventHandler(application_target,
+                                       upp,
+                                       1,
+                                       ctypes.byref(event_types),
+                                       ctypes.c_void_p(),
+                                       ctypes.byref(handler_ref))
+        )
+
+    def _post_event_handler(self, next_handler, ev, data):
+        while True:
+            try:
+                dispatcher, event, args = self._post_event_queue.get(False)
+            except Queue.Empty:
+                break
+
+            dispatcher.dispatch_event(event, *args)
+
+        return constants.noErr
+
     def run(self):
         self._setup()
 
         e = ctypes.c_void_p()
         event_dispatcher = carbon.GetEventDispatcherTarget()
         self._event_loop = event_loop = carbon.GetMainEventLoop()
-        event_queue = carbon.GetMainEventQueue()
+        self._event_queue = carbon.GetMainEventQueue()
+
+        # Create timer
         self._timer = timer = ctypes.c_void_p()
         idle_event_proc = EventLoopTimerProc(self._timer_proc)
         carbon.InstallEventLoopTimer(event_loop,
@@ -63,10 +150,17 @@ class CarbonEventLoop(BaseEventLoop):
                                      None,
                                      ctypes.byref(timer))
 
+        # TODO only once
+        self._setup_post_event_handler()
+
         self._force_idle = False
         self._allow_polling = True
 
         self.dispatch_event('on_enter')
+
+        # Dispatch events posted before entered run looop
+        self._running = True #XXX consolidate
+        self._post_event_handler(None, None, None)
 
         while not self.has_exit:
             if self._force_idle:
@@ -79,7 +173,8 @@ class CarbonEventLoop(BaseEventLoop):
                 carbon.ReleaseEvent(e)
 
             # Manual idle event 
-            if carbon.GetNumEventsInQueue(event_queue) == 0 or self._force_idle:
+            if (carbon.GetNumEventsInQueue(self._event_queue) == 0 or 
+                self._force_idle):
                 self._force_idle = False
                 self._timer_proc(timer, None, False)
 
@@ -141,4 +236,3 @@ class CarbonEventLoop(BaseEventLoop):
             self._force_idle = True
             sleep_time = constants.kEventDurationForever
         carbon.SetEventLoopTimerNextFireTime(timer, ctypes.c_double(sleep_time))
-

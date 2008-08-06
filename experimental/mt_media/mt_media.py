@@ -911,7 +911,7 @@ import sys
 if sys.platform == 'linux2':
     import mt_app_xlib
 elif sys.platform == 'darwin':
-    import mt_app_carbon
+    pass # in trunk
 elif sys.platform == 'win32':
     import mt_app_win32
 else:
