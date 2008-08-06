@@ -323,11 +323,20 @@ class EventDispatcher(object):
         `EventDispatcher` implementors; applications should call
         the ``dispatch_events`` method.
 
+        Since pyglet 1.2, the method returns ``True`` if an event handler
+        returned `EVENT_HANDLED`.  If no matching event handlers are in the
+        stack, or if none returned `EVENT_HANDLED`, ``False`` is returned.
+
         :Parameters:
             `event_type` : str
                 Name of the event.
             `args` : sequence
                 Arguments to pass to the event handler.
+
+        :rtype: bool
+        :return: (Since pyglet 1.2) ``True`` if an event handler was invoked and
+            it returned `EVENT_HANDLED`; otherwise ``False``.  In pyglet 1.1
+            and earler, the return value is always ``None``.
 
         '''
         assert event_type in self.event_types
@@ -338,7 +347,7 @@ class EventDispatcher(object):
             if handler:
                 try:
                     if handler(*args):
-                        return
+                        return True
                 except TypeError:
                     self._raise_dispatch_exception(event_type, args, handler)
 
@@ -346,10 +355,13 @@ class EventDispatcher(object):
         # Check instance for an event handler
         if hasattr(self, event_type):
             try:
-                getattr(self, event_type)(*args)
+                if getattr(self, event_type)(*args):
+                    return True
             except TypeError:
                 self._raise_dispatch_exception(
                     event_type, args, getattr(self, event_type))
+
+        return False
 
     def _raise_dispatch_exception(self, event_type, args, handler):
         # A common problem in applications is having the wrong number of
