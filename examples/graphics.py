@@ -159,7 +159,7 @@ class Torus(object):
             for j in range(inner_slices - 1):
                 p = i * inner_slices + j
                 indices.extend([p, p + inner_slices, p + inner_slices + 1])
-                indices.extend([p, p + 1, p + inner_slices + 1])
+                indices.extend([p, p + inner_slices + 1, p + 1])
 
         self.vertex_list = batch.add_indexed(len(vertices)//3, 
                                              GL_TRIANGLES,
