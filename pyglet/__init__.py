@@ -290,6 +290,9 @@ if options['debug_trace']:
 # Lazy loading
 # ------------
 
+import threading as _threading
+_import_lock = _threading.RLock()
+
 class _ModuleProxy(object):
     _module = None
 
@@ -304,7 +307,11 @@ class _ModuleProxy(object):
                 raise
 
             import_name = 'pyglet.%s' % self._module_name
+
+            _import_lock.acquire()
             __import__(import_name)
+            _import_lock.release()
+
             module = sys.modules[import_name]
             object.__setattr__(self, '_module', module)
             globals()[self._module_name] = module
