@@ -163,21 +163,24 @@ class CarbonEventLoop(BaseEventLoop):
         self._running = True #XXX consolidate
         self._post_event_handler(None, None, None)
 
-        while not self.has_exit:
-            if self._force_idle:
-                duration = 0
-            else:
-                duration = kEventDurationForever
-            if carbon.ReceiveNextEvent(0, None, duration,
-                                       True, ctypes.byref(e)) == 0:
-                carbon.SendEventToEventTarget(e, event_dispatcher)
-                carbon.ReleaseEvent(e)
+        try:
+            while not self.has_exit:
+                if self._force_idle:
+                    duration = 0
+                else:
+                    duration = kEventDurationForever
+                if carbon.ReceiveNextEvent(0, None, duration,
+                                           True, ctypes.byref(e)) == 0:
+                    carbon.SendEventToEventTarget(e, event_dispatcher)
+                    carbon.ReleaseEvent(e)
 
-            # Manual idle event 
-            if (carbon.GetNumEventsInQueue(self._event_queue) == 0 or 
-                self._force_idle):
-                self._force_idle = False
-                self._timer_proc(timer, None, False)
+                # Manual idle event 
+                if (carbon.GetNumEventsInQueue(self._event_queue) == 0 or 
+                    self._force_idle):
+                    self._force_idle = False
+                    self._timer_proc(timer, None, False)
+        except KeyboardInterrupt:
+            self.exit()
 
         carbon.RemoveEventLoopTimer(self._timer)
         self.dispatch_event('on_exit')

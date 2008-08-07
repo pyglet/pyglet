@@ -254,6 +254,7 @@ class BaseEventLoop(event.EventDispatcher):
         `sleep`).
         '''
         self._set_has_exit(True)
+        self.post_event(None, None) # XXX
 
     def sleep(self, timeout):
         '''Wait for some amount of time, or until the `has_exit` flag is
