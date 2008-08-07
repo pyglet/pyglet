@@ -71,6 +71,7 @@ class CarbonEventLoop(BaseEventLoop):
 
     def __init__(self):
         self._post_event_queue = Queue.Queue()
+        super(CarbonEventLoop, self).__init__()
 
     def post_event(self, dispatcher, event, *args):
         self._post_event_queue.put((dispatcher, event, args))

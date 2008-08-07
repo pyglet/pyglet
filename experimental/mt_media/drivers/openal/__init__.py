@@ -427,7 +427,6 @@ class OpenALDriver(mt_media.AbstractAudioDriver):
         # Start worker thread
         self._work_queue = PriorityQueue()
         self._worker_thread = threading.Thread(target=self._worker_thread_func)
-        self._worker_thread.setDaemon(True)
         self._worker_thread.start()
 
     def create_audio_player(self, source_group, player):
@@ -452,11 +451,16 @@ class OpenALDriver(mt_media.AbstractAudioDriver):
             while wait_time > 0:
                 if _debug:
                     print 'worker sleep', wait_time
-                time.sleep(wait_time)
+                if pyglet.app.event_loop.sleep(wait_time):
+                    break
                 wait_time = target_time - time.time()
             if _debug:
                 print 'worker job', job
             job()
+            if pyglet.app.event_loop.has_exit:
+                break
+        if _debug:
+            print 'worker exit'
 
     def have_version(self, major, minor):
         return (major, minor) <= self.get_version()

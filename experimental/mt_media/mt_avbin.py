@@ -189,6 +189,41 @@ def timestamp_from_avbin(timestamp):
 def timestamp_to_avbin(timestamp):
     return int(timestamp * 1000000)
 
+class InterruptableQueue(object):
+    def __init__(self):
+        self._list = []
+        self._condition = threading.Condition()
+        self._interrupted = False
+
+    def interrupt(self):
+        self._condition.acquire()
+        self._condition.notify()
+        self._interrupted = True
+        self._condition.release()
+
+    def put(self, value):
+        self._condition.acquire()
+        self._list.append(value)
+        self._condition.notify()
+        self._condition.release()
+
+    def get(self):
+        # Blocks for an item, or returns None on interrupt
+        self._condition.acquire()
+        while not self._list and not self._interrupted:
+            self._condition.wait()
+        if not self._interrupted:
+            result = self._list.pop(0)
+        self._condition.release()
+        
+        if not self._interrupted:
+            return result
+
+    def clear(self):
+        self._condition.acquire()
+        del self._list[:]
+        self._condition.release()
+
 class VideoPacket(object):
     _next_id = 0
 
@@ -268,7 +303,7 @@ class AVbinSource(StreamingSource):
 
         self._buffer_streams = []
         self._events = []
-        self._video_packets = Queue.Queue()
+        self._video_packets = InterruptableQueue()
         self._video_images = Queue.Queue()
         if self.audio_format:
             self._audio_packet_ptr = 0
@@ -282,13 +317,17 @@ class AVbinSource(StreamingSource):
             self._buffer_streams.append(self._video_stream_index)
             self._force_next_video_image = True
             self._last_video_timestamp = None
-            self._decode_thread = \
+            self._app_exit_handler = \
+                (lambda queue: lambda: queue.interrupt())(self._video_packets)
+            pyglet.app.event_loop.push_handlers(on_exit=self._app_exit_handler)
+            decode_thread = \
                 threading.Thread(target=self._decode_video_frames_worker)
-            self._decode_thread.setDaemon(True)
-            self._decode_thread.start()
+            decode_thread.start()
             self._requested_video_frame_id = -1
 
     def __del__(self):
+        if _debug:
+            print 'del avbin source'
         try:
             if self._video_stream:
                 av.avbin_close_stream(self._video_stream)
@@ -298,15 +337,12 @@ class AVbinSource(StreamingSource):
         except:
             pass
 
+        pyglet.app.event_loop.remove_handlers(self._app_exit_handler)
+
     def seek(self, timestamp):
         av.avbin_seek_file(self._file, timestamp_to_avbin(timestamp))
 
-        # Clear _video_packets
-        while True:
-            try:
-                self._video_packets.get(block=False)
-            except Queue.Empty:
-                break
+        self._video_packets.clear()
 
         self._audio_packet_size = 0
         self._force_next_video_image = True
@@ -424,9 +460,12 @@ class AVbinSource(StreamingSource):
             return img.image
 
     def _decode_video_frames_worker(self):
-        # TODO let thread die when source deleted.
         while True:
             packet = self._video_packets.get()
+            if packet is None:
+                # get was interrupted, need to die now
+                break
+
             '''
             # TODO
             # Need a way to decode these frames (for FFmpeg to interpolate
@@ -445,6 +484,8 @@ class AVbinSource(StreamingSource):
                 self._video_images.put(buffered_image)
             if _debug:
                 print 'done decoding video frame', packet.id
+        if _debug:
+            print '_decode_video_frames_worked exiting'
 
     def get_video_frame(self, id):
         if _debug:

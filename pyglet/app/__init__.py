@@ -61,6 +61,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import sys
+import threading
 import weakref
 
 from pyglet import clock
@@ -109,7 +110,6 @@ displays = WeakSet()
 #: :type: `WeakSet`
 windows = WeakSet()
 
-
 class BaseEventLoop(event.EventDispatcher):
     '''The main run loop of the application.
 
@@ -125,9 +125,13 @@ class BaseEventLoop(event.EventDispatcher):
     remains responsive to the user while keeping CPU usage to a minimum.
     '''
 
-    #: Flag indicating if the event loop will exit in the next iteration.
-    #: This is
-    has_exit = False
+    _exit_functions = None
+    _has_exit_condition = None
+    _has_exit = False
+
+    def __init__(self):
+        self._has_exit_condition = threading.Condition()
+        self._exit_functions = []
 
     def run(self):
         '''Begin processing events, scheduled functions and window updates.
@@ -219,12 +223,59 @@ class BaseEventLoop(event.EventDispatcher):
         # Update timout
         return clock.get_sleep_time(True)
 
+    def _get_has_exit(self):
+        self._has_exit_condition.acquire()
+        result = self._has_exit
+        self._has_exit_condition.release()
+        return result
+
+    def _set_has_exit(self, value):
+        self._has_exit_condition.acquire()
+        self._has_exit = value
+        self._has_exit_condition.notify()
+        self._has_exit_condition.release()
+
+    has_exit = property(_get_has_exit, _set_has_exit,
+                        doc='''Flag indicating if the event loop will exit in
+    the next iteration.  When set, all waiting threads are interrupted (see
+    `sleep`).
+    
+    Thread-safe since pyglet 1.2.
+
+    :see: `exit`
+    :type: bool
+    ''')
+
     def exit(self):
         '''Safely exit the event loop at the end of the current iteration.
 
-        This method is convenience for setting `has_exit` to ``True``.
+        This method is a thread-safe equivalent for for setting `has_exit` to
+        ``True``.  All waiting threads will be interrupted (see
+        `sleep`).
         '''
-        self.has_exit = True
+        self._set_has_exit(True)
+
+    def sleep(self, timeout):
+        '''Wait for some amount of time, or until the `has_exit` flag is
+        set or `exit` is called.
+
+        This method is thread-safe.
+
+        :Parameters:
+            `timeout` : float
+                Time to wait, in seconds.
+
+        :since: pyglet 1.2
+
+        :rtype: bool
+        :return: ``True`` if the `has_exit` flag is now set, otherwise
+        ``False``.
+        '''
+        self._has_exit_condition.acquire()
+        self._has_exit_condition.wait(timeout)
+        result = self._has_exit
+        self._has_exit_condition.release()
+        return result
 
     def on_window_close(self, window):
         '''Default window close handler.'''
@@ -270,21 +321,15 @@ BaseEventLoop.register_event_type('on_window_close')
 BaseEventLoop.register_event_type('on_enter')
 BaseEventLoop.register_event_type('on_exit')
 
-#: The global event loop.  Set to the correct instance when an `EventLoop` is
-#: started.
-#:
-#: :type: `EventLoop`
-event_loop = None
-
 def run():
     '''Begin processing events, scheduled functions and window updates.
 
     This is a convenience function, equivalent to::
 
-        EventLoop().run()
+        pyglet.app.event_loop.run()
 
     '''
-    EventLoop().run()
+    event_loop.run()
 
 def exit():
     '''Exit the application event loop.
@@ -298,8 +343,7 @@ def exit():
         event_loop.exit()
 
     '''
-    if event_loop:
-        event_loop.exit()
+    event_loop.exit()
 
 if _is_epydoc:
     EventLoop = BaseEventLoop
@@ -317,4 +361,10 @@ else:
     else:
         from pyglet.app.xlib import XlibEventLoop as EventLoop
 
-
+#: The global event loop.  Applications can replace this with their own
+#: subclass of `EventLoop`, but must take care to do so before any
+#: pyglet.app function is called, and before any other pyglet threads
+#: are started (for example, via media playback).
+#:
+#: :type: `EventLoop`
+event_loop = EventLoop()
